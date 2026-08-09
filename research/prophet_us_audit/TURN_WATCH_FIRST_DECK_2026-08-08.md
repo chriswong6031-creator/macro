@@ -1,8 +1,14 @@
 # TURN WATCH desk — first deck (ANTICIPATION §6.9 R8)
 
-**Built:** 2026-08-08 · **Data session:** 2026-08-07 · **Era:** `anticipation-v1-2026-08-08`
-· **Anchor era:** `abs-session-2026-08-06` · **Artifact:** `site/prophet/turn_watch.json`
+**Built:** 2026-08-08 · **Re-baked:** 2026-08-09 (see §9) · **Data session:** 2026-08-07
+· **Era:** `anticipation-v1-2026-08-08` · **Anchor era:** `abs-session-2026-08-06`
+· **Artifact:** `site/turn_watch/turn_watch.json`
 · **Engine:** `engine/us_turn_watch.py` · **Builder:** `scripts/build_turn_watch.py`
+
+> Every number below is the **re-baked** deck: leg (d) now runs the R4 organ
+> (`engine/us_leader_pullback.py`, merged 2026-08-09), not the inline fallback the
+> 08-08 first bake used. §9 records what moved and why the earlier lane-(d) figures
+> should not be carried forward.
 
 ## §0 What this is, and what it is not
 
@@ -31,14 +37,15 @@ PR is the data plane only.
 | Universe (`data/yahoo`, equities only) | 697 |
 | Graded (≥ 200 daily bars) | **681** |
 | Skipped, short history | 16 |
-| Triggered (any trigger within 5 sessions) | **348** (51.1% of graded) |
+| Triggered (any trigger within 5 sessions) | **345** (50.7% of graded) |
 | Deck (capped) | 40 |
-| Beyond the cap | **308** — listed in §6, and in the artifact's `beyond_cap` |
+| Beyond the cap | **305** — listed in §6, and in the artifact's `beyond_cap` |
 | Group states read (`us_basket_turn`) | 49 baskets |
-| Runtime | **100.8 s** (nightly budget 600 s; self-reported as `runtime_seconds`) |
+| RS cross-section fed to leg (d) | 681 names (`coverage.leader_rs_cross_section`) |
+| Runtime | **181.0 s** (nightly budget 600 s; self-reported as `runtime_seconds`) |
 
 Triggered by lane: `dot_1d` 171 · `pre_confluence_2d` 154 · `basket_turn` 78 ·
-`leader_reset_turn` 28. In the deck: 9 · 35 · 26 · 5.
+`leader_reset_turn` 7. In the deck: 9 · 33 · 26 · 6.
 
 A 51% trigger rate is high **on purpose**. Recall is the product; the cap and the reading
 order are what make it usable, and both are disclosed rather than tuned away.
@@ -52,7 +59,7 @@ A name enters the deck if ANY of these fired within the last **5 sessions**.
 | `dot_1d` | Daily StochRSI %K crosses above %D · %D was < 20 within the last 8 sessions · daily RSI-MACD histogram rising | `confluence_tiers._stoch_rsi_kd` / `._rsi_macd` on the DAILY series |
 | `pre_confluence_2d` | Fresh 2D RSI-MACD cross (≤ 2 2D-ticks) while the **3D has NOT crossed** — the 3D `bars_to_cross` is printed on the row | the module's 2D/3D machinery |
 | `basket_turn` | Member of any basket in `us_basket_turn` state TURNING or CONFIRMED | that organ's committed artifact/ledger |
-| `leader_reset_turn` | High-RS leader · uptrend intact · shallow controlled retrace · daily stoch reset · turn back up | soft-imports `engine.us_leader_pullback` (R4); **absent on this base**, so the minimal inline signature ran and is stamped per row |
+| `leader_reset_turn` | High-RS leader · uptrend intact · shallow controlled retrace · daily stoch reset · turn back up | `engine.us_leader_pullback` (R4) — the **first session** of its `RESET_TURN` state, fed the run-wide PIT RS cross-section; the inline signature remains only for genuine absence and every row stamps which one ran |
 
 The indicator helpers are **imported from `engine.confluence_tiers`, never forked**. The
 deck's whole claim — "the slow tier has not admitted this yet" — is only meaningful if both
@@ -102,15 +109,15 @@ relative strength.
 | 29 | **CCJ** | 67.1 | 2D>3D(1) · group(0) | T2 (deep, 2t) | null | — | -27.4% | -36.9% / 132s | 15.2% | -1.0pp | -6.9% | M:off 2W:pinned/39s^ | uranium_miners (TURNING, 4.5pp) |
 | 30 | **ENTG** | 66.7 | 2D>3D(0) · group(0) | — | 0.75 | macd_below_signal | -17.3% | -41.8% / 33s | 42.1% | 2.3pp | 26.4% | M:off 2W:off | semicap_equipment (TURNING, -11.3pp) |
 | 31 | **AEIS** | 66.5 | 2D>3D(1) · group(0) | T2 (deep, 1t) | null | — | -16.4% | -35.1% / 67s | 28.7% | 3.1pp | 12.1% | M:off 2W:pinned/39s | semicap_equipment (TURNING, -11.3pp) |
-| 32 | **MNSO** | 65.0 | dot(0) | — | null | stoch_overbought, stoch_bear_cross, stoch_3d_not_crossed | -51.7% | -56.5% / 240s | 9.9% | 4.0pp | -23.7% | M:pinned/112s^ 2W:pinned/154s^ | — |
-| 33 | **MPWR** | 61.3 | 2D>3D(0) · leader(0) | — | 1.00 | macd_below_signal | -16.9% | -26.0% / 45s | 12.2% | 1.2pp | 15.2% | M:off 2W:pinned/1s | ai_semiconductors (NONE, -5.4pp) |
-| 34 | **UCTT** | 61.0 | dot(0) · group(0) | — | 7.04 | macd_below_signal, macd_2d_not_crossed | -38.8% | -51.2% / 27s | 25.4% | -20.3pp | 40.3% | M:off 2W:off | semicap_equipment (TURNING, -11.3pp) |
-| 35 | **FWONK** | 60.5 | dot(1) · 2D>3D(3) | T4 (shallow, 0t) | null | — | -5.1% | -24.8% / 210s | 7.1% | 4.6pp | 12.0% | M:pinned/131s^ 2W:off | — |
-| 36 | **TUR** | 60.0 | dot(4) · 2D>3D(0) | — | 0.32 | stoch_bear_cross, macd_below_signal, no_deep_or_weekly_confirm | -10.3% | -16.1% / 61s | 2.7% | -2.9pp | 2.2% | M:off 2W:pinned/11s | — |
-| 37 | **FDS** | 46.0 | dot(3) · leader(3) | — | null | stoch_overbought | -25.1% | -50.6% / 242s | 17.1% | 13.1pp | 16.2% | M:pinned/215s^ 2W:off^ | us_sector_financials (FALLING, 1.9pp) |
-| 38 | **GSG** | 45.6 | dot(1) · leader(1) | — | null | stoch_bear_cross | -10.6% | -18.8% / 55s | 2.1% | 3.1pp | 11.0% | M:off 2W:pinned/11s^ | — |
-| 39 | **DBC** | 45.0 | dot(1) · leader(1) | — | null | stoch_bear_cross | -8.8% | -16.5% / 60s | 2.1% | 2.6pp | 10.0% | M:off 2W:pinned/11s^ | — |
-| 40 | **YOU** | 44.8 | dot(2) · 2D>3D(1) · leader(2) | — | null | macd_below_signal, macd_2d_not_crossed | -17.5% | -19.2% / 51s | 0.0% | -9.5pp | 14.1% | M:off 2W:off | — |
+| 32 | **UCTT** | 66.0 | dot(0) · group(0) · leader(0) | — | 7.04 | macd_below_signal, macd_2d_not_crossed | -38.8% | -51.2% / 27s | 25.4% | -20.3pp | 40.3% | M:off 2W:off | semicap_equipment (TURNING, -11.3pp) |
+| 33 | **MNSO** | 65.0 | dot(0) | — | null | stoch_overbought, stoch_bear_cross, stoch_3d_not_crossed, below_200dma | -51.7% | -56.5% / 240s | 9.9% | 4.0pp | -23.7% | M:pinned/112s^ 2W:pinned/154s^ | — |
+| 34 | **FWONK** | 60.5 | dot(1) · 2D>3D(3) | T4 (shallow, 0t) | null | — | -5.1% | -24.8% / 210s | 7.1% | 4.6pp | 12.0% | M:pinned/131s^ 2W:off | — |
+| 35 | **TUR** | 60.0 | dot(4) · 2D>3D(0) | — | 0.32 | stoch_bear_cross, macd_below_signal, no_deep_or_weekly_confirm | -10.3% | -16.1% / 61s | 2.7% | -2.9pp | 2.2% | M:off 2W:pinned/11s | — |
+| 36 | **ON** | 47.8 | leader(0) | — | 9.48 | stoch_bear_cross, macd_below_signal, macd_2d_not_crossed | -39.4% | -42.6% / 45s | 5.5% | -17.8pp | 7.2% | M:off 2W:off | non_ai_tech (NONE, -3.4pp) |
+| 37 | **SIRI** | 30.7 | dot(2) · leader(2) | — | null | stoch_bear_cross, macd_below_signal, no_deep_or_weekly_confirm, macd_2d_not_crossed | -8.2% | -9.1% / 7s | 1.0% | -4.1pp | 24.2% | M:off^ 2W:off^ | — |
+| 38 | **CRS** | 21.6 | dot(4) · leader(4) | — | 10.48 | macd_below_signal, macd_2d_not_crossed | -7.8% | -18.7% / 24s | 13.3% | -3.8pp | 38.1% | M:off 2W:off | — |
+| 39 | **OC** | 20.1 | dot(4) · leader(4) | — | null | rsi_too_hot | -0.6% | -13.7% / 27s | 15.2% | 7.8pp | 30.3% | M:off^ 2W:off^ | housing (NONE, 1.2pp) |
+| 40 | **MIDD** | 19.0 | dot(4) · leader(4) | — | null | stoch_bear_cross, macd_below_signal, macd_2d_not_crossed | -6.7% | -10.1% / 24s | 3.8% | -3.3pp | 12.8% | M:off^ 2W:off | — |
 
 ### What the deck says tonight, in plain words
 
@@ -127,9 +134,14 @@ Nine rows have already crossed (T2, 1-2 ticks). One carries an S1 badge (SOUN).
 3D cross, 41.4% off its reset low and 6.2% above its 200dMA.** No claim attaches to that;
 it is the surfacing, which is all this desk does.
 
-The bottom of the deck is the lane floor working (§5): FDS/GSG/DBC/YOU score 44-46 and are
-there because the leader-pullback and dot lanes are guaranteed slots. Without the floor the
-deck would have shown **zero** leader-pullback rows.
+The bottom of the deck is the lane floor working (§5): ON/SIRI/CRS/OC/MIDD score 19-48 and
+are there because the leader-pullback and dot lanes are guaranteed slots. Without the floor
+the deck would have shown **one** leader-pullback row (UCTT at rank 32, which earns its
+place on the group and dot lanes anyway). The floor matters MORE on the organ than it did on
+the inline fallback: leg (d) fires 7 names across the whole 681-name universe tonight, so
+without a guaranteed slot a score-ordered cap would hide the entire lane behind the
+critical-minerals/space cohort. That is the floor's whole purpose, and it is why the lane's
+rows sit at the bottom of the reading order rather than being ranked up to meet it.
 
 ## §4 ACCEPTANCE MINI-REPLAY
 
@@ -186,6 +198,13 @@ First-in-window, for completeness (and its boundary flag):
   state to read. Back-filling one would manufacture exactly the earliness the replay exists
   to measure. Every replay number above is therefore the union of (a), (b) and (d) only —
   **a lower bound** on what the live deck surfaces.
+* **The replay's leg (d) is the INLINE construction, not the organ (unchanged by the §9
+  re-bake).** `first_deck_entry` walks one name at a time and has no cross-section to give
+  the organ, so it falls back and stamps `leader_pullback_source` accordingly. The two rows
+  that lean on lane (d) above — NEM's leg-paired entry and ADAM's 18 in-window fires — are
+  therefore inline-signature numbers, and are **not** comparable to the nightly deck's lane
+  (d) or to R4's own two-year replay. Re-measuring the leg on the organ needs a PIT
+  cross-section per replay day; it is left un-actioned rather than approximated.
 * **The paired-adjacent lead is ~1 session on every name.** `pre_confluence_2d` fires by
   construction on the bar before the 3D crosses, so the *last* trigger before a T2 is
   nearly always adjacent. That number is computed and published (`paired_lead_sessions`)
@@ -235,32 +254,34 @@ fills the remainder. It changes what is **visible**, never what is claimed; ever
 carries its own score and the same non-authoritative label, and both `lane_floor` and
 `deck_by_trigger` are published in `coverage`.
 
-## §6 Beyond the cap (308 names, in reading order)
+## §6 Beyond the cap (305 names, in reading order)
 
-The cap is 40. These triggered and did not make it; the full list ships in the artifact's
-`beyond_cap` so nothing is hidden by the cap:
+The cap is 40. These triggered and did not make it. Nothing is hidden by the cap: the
+artifact's `beyond_cap` carries each of them as `{ticker, triggers_fired, basket}` — the
+operator is the second-stage filter here, and a bare ticker with its reason stripped is not
+something anyone can filter on. The bare list below is the reading order only.
 
 > NRG, AA, VOYG, BWXT, IREN, RGTI, DXYZ, CIEN, SMR, NXT, KRRO, FTAI, ORA, APLD, SQM, COHR,
-> SMCI, FN, FIP, COIN, RBRK, LITE, IONQ, SPOT, VIAV, TER, TAN, LUMN, GOOG, GOOGL, FLL, GLW,
-> MTSI, IRDM, NIO, VSEC, ISRG, CRWV, ENPH, SPGI, NB, TIP, DUOL, FICO, LRN, PPTA, LQD, CHKP,
-> CODI, CABA, KALU, VRSK, FSLR, NOVT, NVT, CVNA, VWOB, EMB, ERIE, PCY, PWR, HPE, GH, IWF,
-> BIRK, CIFR, MTZ, ONON, CHTR, KVYO, RBLX, TOST, TTD, ADI, XLI, VPL, BEP, NKE, HOOD, CAVA,
-> PLTR, IWM, XLK, HUT, NTAP, **NVDA**, HD, MCD, EFX, POOL, FSV, EEM, TWLO, ASHR, QQQ, SSP,
-> XLY, PAYX, EWN, WRB, AG, NOW, UEC, ALHC, CF, AAXJ, SPHB, NVO, D, F, EU, SPG, VCYT, COR,
-> EWJ, IEF, CGNX, APP, DKNG, HUBS, KTOS, LEU, PLG, WHR, ZS, LOW, BR, CI, HUBB, MCK, MLM,
-> DNN, PNR, CTRA, CW, ITRI, AIT, VXUS, IRM, GILD, FSM, CL, MKL, RVTY, ETHA, U, BIDU, XLU,
-> PAAS, CPB, RSPU, RMD, CART, RSPC, LNG, ABBV, MRK, XLRE, RIVN, IDXX, XYL, ALT, INSP, MSTR,
-> OGN, SE, TECH, ITB, SBUX, ST, ARQT, TEM, CRM, CEG, AZN, ARE, IMPUY, KRMN, PAYC, RDDT,
-> SBSW, UROY, W, WDAY, CHRW, PPG, VST, PCVX, JNJ, EXK, AGCO, AAPL, APO, ONCY, BZFD, LLY,
-> SRRK, SIRI, ASPI, CB, UNH, SVM, GEN, ANGPY, OMC, TLN, XLC, CDW, ONTO, ETN, HYG, SPY, HOG,
-> NVMI, DLTR, ADP, NXE, DE, CTVA, NCDL, HEI, NEE, XHB, IBIT, BLK, PG, DIS, HLT, HQY, PATH,
-> CVS, EME, RELY, VECO, FBIN, MAGS, NWS, COHU, ACLS, AMCR, XME, NSSC, STZ, MSI, ICHR, KLAC,
-> XLV, QCOM, SPLV, MKSI, STLD, LRCX, BA, SHW, RIO, PMPEX, EWL, NEO, AMAT, WMT, DXCM, KLIC,
-> AMZN, IGV, BHP, CRS, KEX, LUV, BBIO, OC, AEP, TLT, MIDD, XYZ, SARO, IBB, AVGO, VKTX, GEV,
-> VLY, V, CARR, RSP, XLF, RSPF, AMT, EWS, RSPH, USMV, URI, DCO, ELV, DRI, ALLY, DBA, CSX,
-> INDB, FULT, KRE, GE, WCC, VIK, KBE, PNC, NUE, IWD, S, SWK
+> SMCI, FN, FIP, COIN, RBRK, LITE, IONQ, SPOT, VIAV, TER, MPWR, TAN, LUMN, GOOG, GOOGL,
+> FLL, GLW, MTSI, IRDM, NIO, VSEC, ISRG, CRWV, ENPH, SPGI, NB, TIP, DUOL, FICO, LRN, PPTA,
+> LQD, CHKP, CODI, CABA, KALU, VRSK, FSLR, NOVT, NVT, CVNA, VWOB, EMB, ERIE, PCY, PWR,
+> HPE, GH, IWF, BIRK, CIFR, MTZ, ONON, CHTR, KVYO, RBLX, TOST, TTD, ADI, XLI, VPL, BEP,
+> NKE, HOOD, CAVA, PLTR, IWM, XLK, HUT, NTAP, **NVDA**, HD, MCD, EFX, POOL, FSV, EEM,
+> TWLO, ASHR, QQQ, SSP, XLY, EWN, WRB, AG, NOW, UEC, ALHC, AAXJ, SPHB, NVO, F, EU, COR,
+> EWJ, IEF, CGNX, APP, DKNG, FDS, HUBS, KTOS, LEU, PLG, WHR, ZS, LOW, GSG, BR, CI, HUBB,
+> MCK, DBC, YOU, MLM, DNN, PNR, CTRA, CW, ITRI, AIT, VXUS, IRM, GILD, FSM, CL, MKL, RVTY,
+> ETHA, U, BIDU, XLU, PAAS, CPB, RSPU, RMD, D, SPG, VCYT, RSPC, LNG, MRK, XLRE, RIVN,
+> IDXX, XYL, ALT, INSP, MSTR, OGN, SE, TECH, ITB, SBUX, ST, ARQT, TEM, CRM, CEG, AZN, ARE,
+> IMPUY, KRMN, PAYC, RDDT, SBSW, UROY, W, WDAY, CHRW, CART, PPG, VST, PCVX, JNJ, EXK,
+> AGCO, ABBV, APO, ONCY, BZFD, SRRK, ASPI, CB, SVM, GEN, ANGPY, OMC, TLN, XLC, CDW, ONTO,
+> ETN, HYG, SPY, NVMI, DLTR, ADP, NXE, CTVA, NCDL, HEI, NEE, XHB, IBIT, BLK, PG, DIS, HLT,
+> AAPL, HQY, PATH, LLY, EME, VECO, FBIN, UNH, MAGS, NWS, COHU, ACLS, AMCR, XME, NSSC, STZ,
+> MSI, ICHR, KLAC, HOG, XLV, QCOM, SPLV, MKSI, STLD, LRCX, BA, SHW, RIO, PMPEX, EWL, DE,
+> AMAT, WMT, DXCM, KLIC, AMZN, IGV, BHP, KEX, LUV, CVS, RELY, BBIO, AEP, TLT, XYZ, SARO,
+> IBB, AVGO, VKTX, GEV, V, CARR, RSP, XLF, RSPF, AMT, EWS, RSPH, USMV, URI, ELV, DRI,
+> ALLY, DBA, VLY, INDB, FULT, KRE, GE, WCC, VIK, DCO, KBE, PNC, NUE, IWD, S, SWK
 
-Note **NVDA** sits at position 85 of the beyond-cap list: its dot fired on 07-31 and the
+Note **NVDA** sits at position 87 of the beyond-cap list: its dot fired on 07-31 and the
 cascade admitted it (T2) on 08-05, so by 08-07 it is a name the slow tier has already
 taken — the deck's job on it is done.
 
@@ -291,9 +312,11 @@ leader row).
 ## §8 What ships, what does not
 
 **Ships:** `engine/us_turn_watch.py`, `scripts/build_turn_watch.py`,
-`tests/test_us_turn_watch.py` (61 assertions, frozen fixtures only), the `config/dag.yml`
+`tests/test_us_turn_watch.py` (65 assertions, frozen fixtures only) — enumerated in
+`.github/ci/legacy-jobs.yml` (`washout-turn-organ`) beside `tests/test_us_basket_turn.py`,
+which had been named by **no** run step in any workflow — the `config/dag.yml`
 + `.github/workflows/daily.yml` paired registration in the `engine` job, and the first
-`site/prophet/turn_watch.json` so the deck exists immediately (house precedent: the Prophet
+`site/turn_watch/turn_watch.json` so the deck exists immediately (house precedent: the Prophet
 family is 2-for-2 on committing the first site/ artifact in the builder's own commit —
 `474129213e02` build_prophet, `1d97633e9c57` build_track_record_page).
 
@@ -307,10 +330,62 @@ low to build from (sibling receipt PR #5007 measured the zone mechanism moving e
 
 1. ADAM (and any name whose only store rung is `data/baskets/ohlcv`) is invisible to the
    deck. Universe question, not a desk question.
-2. `engine/us_leader_pullback.py` (R4) was absent on this base, so lane (d) ran on the
-   minimal inline signature. The swap is one import site and the live source is stamped on
-   every row as `leader_pullback_source`; when R4 lands, the deck should be re-baked and
-   this receipt's lane-(d) numbers re-read.
+2. ~~`engine/us_leader_pullback.py` (R4) was absent on this base, so lane (d) ran on the
+   minimal inline signature.~~ **Closed 2026-08-09 — see §9.** R4 merged; the deck was
+   re-baked on the organ and every row now stamps
+   `leader_pullback_source = engine.us_leader_pullback:evaluate`.
 3. `us_basket_turn`'s ledger has one date. Trigger (c)'s `days_since` is 0 while the state
    holds and null otherwise — it is never back-dated. The replay's (c) column stays null
    until that ledger has history.
+
+## §9 Re-bake, 2026-08-09 — publish path + the R4 organ
+
+Three things changed after the re-audit against the #5071 base. Every number in §1, §3 and
+§6 above is from the re-baked artifact; nothing from the 08-08 first bake is carried forward
+except the tape it read (data session 2026-08-07).
+
+**(a) The publish path moved — `site/prophet/` → `site/turn_watch/`.** The deck was inert
+as first written. `site/prophet` is exclusive Prophet publisher authority
+(`PROPHET_AUTHORITY_PATHS`), and the nightly `engine` job's "commit engine outputs" step
+restores that root from HEAD — `git checkout HEAD -- site/prophet`, plus a scoped
+`git clean -fd` and `git reset` — **before** it stages. A deck written there is reverted on
+a SUCCESSFUL night, not only a failed one, so the published artifact would have frozen at
+whatever was committed by hand, and the step comment's "a failure loses nothing but a day's
+refresh" was false in the other direction. The desk now owns its own site root, which is
+picked up by that step's existing broad `git add data/ site/ reports/` and touched by none
+of the Prophet restores. Pinned by
+`test_us_turn_watch.py::test_the_deck_never_writes_under_prophet_authority`.
+
+**(b) Leg (d) now runs the R4 organ.** `engine/us_leader_pullback.py` merged the same day.
+Its public surface is a per-session STATE frame, not a boolean stream, so the deck reads the
+**first session of a `RESET_TURN` state** — the entry EVENT. Mapping the whole state would
+have pinned `days_since` at 0 for as long as the state held and inflated the fire count; an
+early-surfacing deck reads entries, not tenure. The organ's LEADER leg needs a PIT
+cross-sectional RS percentile it does not compute for itself: passed none, it prints
+`rs_pct_unavailable` and claims no state, so the lane would have gone **dark** while looking
+exactly like a quiet tape. The deck builds that cross-section once per run over its 681
+graded names (`us_leader_pullback.rs_excess_percentile`) and hands each name its column.
+`coverage.leader_rs_cross_section` publishes the width; `coverage.leader_pullback_sources`
+counts which construction ran (this bake: 345 of 345 triggered rows on the organ).
+
+*What moved:* lane (d) fires **28 → 7** (in the deck, 5 → 6), triggered 348 → 345, beyond
+cap 308 → 305. The organ is the stricter and better-evidenced construction — it is the one
+R4's two-year replay measured — and the earlier count came from a deliberately
+weakest-honest inline signature. **Do not read the 08-08 lane-(d) figures as the same
+quantity.** Callers with no cross-section (the single-name `first_deck_entry` replay) still
+fall back inline and now say so in the result's own `leader_pullback_source`.
+
+**(c) Beyond-cap rows carry their reason.** They were bare tickers, which contradicts the
+stated rationale for a recall-optimised deck — the operator cannot second-stage-filter names
+stripped of why they surfaced. Each beyond-cap entry is now
+`{ticker, triggers_fired, basket}`. Full rows stay capped at `DECK_CAP = 40`: this is a
+recall list, not a second deck.
+
+**Runtime:** 100.8 s → 181.0 s on the same 681-name universe, against a 600 s budget. The
+organ walks a per-session state machine per name where the inline signature was vectorised;
+the cross-section itself is one ranked frame. The desk's own `::warning` threshold and the
+step's 12-minute cap are both unchanged and both still clear it.
+
+**Also registered:** `tests/test_us_turn_watch.py` and the pre-existing dark suite
+`tests/test_us_basket_turn.py` (36 tests, named by no run step in any workflow before this)
+now run in `.github/ci/legacy-jobs.yml`'s `washout-turn-organ` job.

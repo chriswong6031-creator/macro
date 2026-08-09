@@ -5268,6 +5268,13 @@ jobs:
         run: python -m pytest tests/test_washout_turn.py tests/test_mtf_upturn.py tests/test_oracle_memory_analogues_step.py tests/test_stock_events.py tests/test_event_atlas.py -q
       - name: leader-pullback organ (§6.9 R4 — RS-leader reset detection, self-containment + no-authority pins)
         run: python -m pytest tests/test_us_leader_pullback.py -q
+      - name: turn-watch desk + group-turn organ (§6.9 R8 — publish path, leg-(d) organ vs fallback, recall contract; §6.9 R6 basket lifecycle)
+        # The TURN WATCH desk consumes the group-turn organ's artifact and R4's organ, so
+        # all three ride one lane. test_us_basket_turn.py was named by NO run: step in any
+        # workflow before this — the same unrun-suite hole this job's header records for
+        # test_mtf_upturn.py, found while auditing the desk (2026-08-09, 36 tests, green on
+        # the base that registered it). test_us_turn_watch.py is enumerated at birth.
+        run: python -m pytest tests/test_us_turn_watch.py tests/test_us_basket_turn.py -q
 
   coiled-mtf-anchor-era:
     # COILED bonus/fire + mtf trend.d3 absolute session anchor (era

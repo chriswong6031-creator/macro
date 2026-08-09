@@ -622,6 +622,44 @@ def test_leader_pullback_source_is_always_disclosed():
     assert src.startswith("inline_minimal_v1") or src.startswith("engine.us_leader_pullback:")
 
 
+def test_leg_d_runs_the_r4_organ_on_this_base_not_the_fallback():
+    """#5007 landed `engine/us_leader_pullback.py` — leg (d) must be the ORGAN now.
+
+    The fallback is a DIFFERENT construction from the one R4's 2-year replay measured, so a
+    silent fallback would publish fires the replay's numbers do not describe.  This pins the
+    live path: the organ resolves, and a name handed its cross-section column reports the
+    organ as its source.
+    """
+    from engine import us_leader_pullback as LP
+    fn, src = TW._leader_source()
+    assert fn is not None, "the R4 organ is on this base but leg (d) resolved no callable"
+    assert src == "engine.us_leader_pullback:evaluate", src
+
+    close = _series(_LEADER_PULLBACK)
+    bench = _bench(len(_LEADER_PULLBACK))
+    cross = TW._leader_rs_cross_section({"TEST": close, "OTHER": close * 0.98}, bench)
+    assert set(cross) == {"TEST", "OTHER"}
+    stream, live = TW._leader_stream(close, bench, cross["TEST"])
+    assert live == "engine.us_leader_pullback:evaluate", live
+    assert stream.dtype == bool and len(stream) == len(close)
+
+    # The organ publishes a persistent STATE; this deck reads the ENTRY EVENT. Mapping the
+    # whole state would pin days_since at 0 for as long as the state holds.
+    frame = LP.evaluate(close, rs_pct=cross["TEST"])
+    tenure = int((frame["state"] == LP.STATE_RESET_TURN).sum())
+    assert int(stream.sum()) <= tenure, "the event stream cannot exceed the state's tenure"
+
+
+def test_without_a_cross_section_the_organ_is_not_called_and_the_row_says_so():
+    """The organ nulls its LEADER leg with no rs_pct — a board of NONE looks like a quiet
+    tape.  Refuse the call instead, and name the fallback and its reason on the row."""
+    close = _series(_LEADER_PULLBACK)
+    stream, src = TW._leader_stream(close, _bench(len(_LEADER_PULLBACK)), None)
+    assert src.startswith("inline_minimal_v1")
+    assert "no cross-section" in src, src
+    assert stream.dtype == bool
+
+
 # ---------------------------------------------------------------------------
 # (13) Universe
 # ---------------------------------------------------------------------------
@@ -769,11 +807,76 @@ def test_compute_deck_end_to_end_on_a_frozen_store(tmp_path):
     assert wash["triggers"]["basket_turn"]["fired"] is True
     assert wash["in_deck_universe"] is True
 
+    # Which leg-(d) construction ran is answerable from `coverage` alone.
+    assert isinstance(art["coverage"]["leader_pullback_sources"], dict)
+    assert art["coverage"]["leader_rs_cross_section"] == art["coverage"]["graded"]
+
     # The whole artifact must round-trip through strict JSON.
+    json.loads(json.dumps(art, default=str))
+
+
+def test_beyond_cap_rows_carry_their_reason_not_a_bare_ticker(tmp_path):
+    """RECALL CONTRACT: the deck is optimised for recall and the operator is the second-stage
+    filter — a beyond-cap name stripped to a bare ticker cannot be filtered on anything.  Each
+    carries WHY it triggered and WHICH group it sits in; full rows stay capped.
+    """
+    root = tmp_path / "data"
+    site = tmp_path / "site"
+    (root / TW.DECK_STORE).mkdir(parents=True)
+    (root / "baskets").mkdir(parents=True)
+
+    def _write(stem, vals):
+        idx = pd.date_range(end=_FIXTURE_END, periods=len(vals), freq="B")
+        pd.DataFrame({"close": vals}, index=idx).to_parquet(
+            root / TW.DECK_STORE / f"{stem}.parquet")
+
+    members = []
+    for i in range(6):
+        tk = f"WSH{i}"
+        _write(tk, _WASHOUT)
+        members.append({"ticker": tk, "added": "2020-01-01", "removed": None})
+    _write(TW.BENCHMARK, [100.0 * (1.0 + 0.0002) ** i for i in range(len(_UPTREND))])
+    (root / "baskets" / "membership.json").write_text(json.dumps({"baskets": {
+        "test_theme": {"name": "Test Theme", "name_zh": "测试主题", "members": members}}}))
+    (site / "basketdata").mkdir(parents=True)
+    (site / "basketdata" / "us_basket_turn.json").write_text(json.dumps({
+        "baskets": {"test_theme": {"state": "TURNING", "days_in_state": 3,
+                                   "data_session": _FIXTURE_END}}}))
+
+    art = TW.compute_deck(root, site, cap=2, lane_floor=1)
+    beyond = art["beyond_cap"]
+    assert beyond, "the cap did not push any name beyond the deck"
+    assert all(isinstance(r, dict) for r in beyond), "a beyond-cap row is a bare ticker"
+    for r in beyond:
+        assert set(r) == {"ticker", "triggers_fired", "basket"}
+        assert r["triggers_fired"], f"{r['ticker']} published with no reason to be listed"
+        assert set(r["triggers_fired"]) <= set(TW.TRIGGER_IDS)
+        assert r["basket"] is None or "basket_id" in r["basket"]
+    assert len(art["deck"]) <= 2, "the recall list must not become a second deck"
+    assert art["coverage"]["beyond_cap"] == len(beyond)
     json.loads(json.dumps(art, default=str))
 
 
 def test_write_artifact_lands_at_the_documented_path(tmp_path):
     p = TW.write_artifact({"schema": TW.SCHEMA, "deck": []}, tmp_path)
-    assert p == tmp_path / "prophet" / "turn_watch.json"
+    assert p == tmp_path / "turn_watch" / "turn_watch.json"
     assert json.loads(p.read_text())["schema"] == TW.SCHEMA
+
+
+def test_the_deck_never_writes_under_prophet_authority(tmp_path):
+    """site/prophet is restored from HEAD by the engine job before it stages.
+
+    A deck written there is reverted on a SUCCESSFUL night, not just a failed one, so the
+    site would serve the seeded blob forever.  Pin the root here and in the builder text —
+    this is a publishing contract, not a filing preference.
+    """
+    p = TW.write_artifact({"schema": TW.SCHEMA, "deck": []}, tmp_path)
+    assert "prophet" not in p.parts, f"deck landed inside Prophet authority: {p}"
+    assert not (tmp_path / "prophet").exists()
+
+    src = Path(TW.__file__).read_text(encoding="utf-8")
+    assert "site/turn_watch/turn_watch.json" in src
+    builder = (Path(TW.__file__).resolve().parents[1]
+               / "scripts" / "build_turn_watch.py").read_text(encoding="utf-8")
+    assert "site/turn_watch/turn_watch.json" in builder
+    assert "site/prophet/turn_watch.json" not in builder

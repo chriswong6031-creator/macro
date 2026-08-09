@@ -39,7 +39,9 @@ THE TRIGGER UNION (a name enters on ANY of the four, within the lookback)
 (d) ``leader_reset_turn`` — the leader-pullback reset (§6.8(d) lane 2, the NVDA/AVGO-class
     catcher): a high-RS name in an intact uptrend takes a shallow controlled retrace, the
     daily stochastic resets, and turns back up.  Sourced from `engine.us_leader_pullback`
-    when that organ (R4) is present, else from the MINIMAL INLINE signature below.
+    (R4) — the FIRST session of its RESET_TURN state — falling back to the MINIMAL INLINE
+    signature below only when that organ or its cross-section is genuinely unavailable.
+    Every row stamps which one ran in ``leader_pullback_source``.
 
 WHY THE INDICATOR HELPERS ARE IMPORTED, NOT FORKED
 --------------------------------------------------
@@ -142,18 +144,28 @@ TRIGGER_IDS = ("dot_1d", "pre_confluence_2d", "basket_turn", "leader_reset_turn"
 #: The basket lifecycle states that flag their members (R8 brief).
 BASKET_TURN_STATES = ("TURNING", "CONFIRMED")
 
-# ── (d) minimal inline leader-pullback reset signature ─────────────────────────────────
-# SWAP-IN PLAN: `engine/us_leader_pullback.py` is R4 of the same run order and was still in
-# flight when this shipped, so leg (d) soft-imports it (see `_leader_source`) and falls back
-# to the signature below.  When R4 lands, the fallback stays as the documented default only
-# until its organ exposes one of `_LEADER_ENTRY_POINTS`; the artifact stamps
-# ``leader_pullback_source`` on every run, so which one is live is never a guess.  Nothing
-# else in this module changes — the swap is one import site.
+# ── (d) leader-pullback reset — the R4 organ, with an inline fallback ──────────────────
+# SWAP DONE (#5007 merged 2026-08-09): `engine/us_leader_pullback.py` is R4 of the same run
+# order and is now the LIVE construction for this leg.  Its public surface is a per-session
+# STATE frame (`evaluate(close, rs_pct=...)`), not a boolean stream, so `_organ_reset_turn`
+# maps it to the EVENT this deck reads: the FIRST session of a `RESET_TURN` state.  Mapping
+# the whole state to True would make `days_since` meaningless (0 for as long as the state
+# holds) and inflate the fire count — an early-surfacing deck reads entries, not tenure.
 #
-# The inline signature is deliberately the WEAKEST honest form of §6.8(d) lane 2: high
-# relative strength, an intact uptrend, a SHALLOW controlled retrace (not a washout), a
-# reset daily stochastic, and a turn back up.  It claims nothing about forward outcome —
-# R4's replay is what will measure that.
+# The organ's LEADER leg reads a PIT CROSS-SECTIONAL RS percentile it never computes for
+# itself: pass none and every row prints `rs_pct_unavailable` and NO state, so the lane goes
+# DARK rather than merely quiet.  `_leader_rs_cross_section` builds it once per run over the
+# graded universe (`us_leader_pullback.rs_excess_percentile`) and the deck hands each name
+# its own column.  Callers without a cross-section (the per-name replay below) fall back
+# inline and say so — `leader_pullback_source` is stamped on every row, so which construction
+# produced a fire is never a guess.
+#
+# The inline signature is retained for genuine absence (organ missing, cross-section
+# unavailable, organ raised).  It is deliberately the WEAKEST honest form of §6.8(d) lane 2:
+# high relative strength, an intact uptrend, a SHALLOW controlled retrace (not a washout), a
+# reset daily stochastic, and a turn back up.  It claims nothing about forward outcome, and
+# it is a DIFFERENT construction from the one R4's replay measured — never read a fallback
+# row as if the replay's numbers applied to it.
 LEADER_RS_WINDOW = 126          # relative-strength lookback vs the benchmark
 LEADER_RETRACE_WINDOW = 63      # the "controlled retrace" is measured off this high
 LEADER_RETRACE_MIN = 0.03       # shallower than this is not a pullback, it is noise
@@ -431,24 +443,65 @@ def leader_reset_turn(close: pd.Series, benchmark: pd.Series | None) -> pd.Serie
     return (rs_leader & uptrend & controlled & reset & turn).fillna(False).astype(bool)
 
 
-def _leader_source() -> tuple[Any | None, str]:
-    """Soft-import the R4 leader-pullback organ. Returns ``(callable_or_None, source_id)``."""
+def _leader_organ() -> Any | None:
+    """Soft-import the R4 leader-pullback organ, or None when it is genuinely absent."""
     try:
         from engine import us_leader_pullback as organ  # type: ignore  # noqa: PLC0415
-    except Exception:  # noqa: BLE001 — absent on this base is the EXPECTED path
+    except Exception:  # noqa: BLE001 — absence is a supported state, not an error
+        return None
+    return organ
+
+
+def _leader_source() -> tuple[Any | None, str]:
+    """Resolve the live leg-(d) construction. Returns ``(callable_or_None, source_id)``.
+
+    The callable takes ``(close, benchmark, rs_pct)`` and returns a boolean event stream.
+    Legacy stream entry points (``_LEADER_ENTRY_POINTS``) are tried first so a future organ
+    that publishes one is picked up with no change here; the organ's real API
+    (``evaluate`` → state frame) is the path taken on this base.
+    """
+    organ = _leader_organ()
+    if organ is None:
         return None, "inline_minimal_v1"
     for name in _LEADER_ENTRY_POINTS:
         fn = getattr(organ, name, None)
         if callable(fn):
-            return fn, f"engine.us_leader_pullback:{name}"
+            return (lambda c, b, _rs, _fn=fn: _fn(c, b)), f"engine.us_leader_pullback:{name}"
+    if callable(getattr(organ, "evaluate", None)) and hasattr(organ, "STATE_RESET_TURN"):
+        return (lambda c, _b, rs, _o=organ: _organ_reset_turn(_o, c, rs)), (
+            "engine.us_leader_pullback:evaluate")
     return None, "inline_minimal_v1 (organ present, no known entry point)"
 
 
-def _leader_stream(close: pd.Series, benchmark: pd.Series | None) -> tuple[pd.Series, str]:
+def _organ_reset_turn(organ: Any, close: pd.Series,
+                      rs_pct: pd.Series | None) -> pd.Series:
+    """The organ's state frame, mapped to this deck's EVENT stream.
+
+    True on the FIRST session of a ``RESET_TURN`` state and nowhere else — see the leg-(d)
+    note above for why tenure is not an event.  ``rs_pct`` is the organ's PIT cross-sectional
+    RS percentile; it is REQUIRED here (the caller checks) because the organ nulls its LEADER
+    leg without one and would report a board of NONE that looks exactly like a quiet tape.
+    """
+    if rs_pct is None:
+        raise ValueError("organ leg needs a cross-sectional rs_pct")
+    frame = organ.evaluate(close, rs_pct=rs_pct.reindex(close.index))
+    if frame is None or len(frame) == 0:
+        return pd.Series(False, index=close.index, dtype=bool)
+    state = frame["state"]
+    days_in = pd.to_numeric(frame["days_in_state"], errors="coerce")
+    ev = (state == organ.STATE_RESET_TURN) & (days_in == 1)
+    return ev.reindex(close.index).fillna(False).astype(bool)
+
+
+def _leader_stream(close: pd.Series, benchmark: pd.Series | None,
+                   rs_pct: pd.Series | None = None) -> tuple[pd.Series, str]:
     fn, src = _leader_source()
+    if fn is not None and rs_pct is None and src.endswith(":evaluate"):
+        # No cross-section, no honest organ call — say which construction ran and why.
+        fn, src = None, f"inline_minimal_v1 (no cross-section for {src})"
     if fn is not None:
         try:
-            out = fn(close, benchmark)
+            out = fn(close, benchmark, rs_pct)
             if isinstance(out, pd.Series):
                 return out.reindex(close.index).fillna(False).astype(bool), src
             log.debug("us_turn_watch: %s returned %s, not a Series", src, type(out))
@@ -456,6 +509,30 @@ def _leader_stream(close: pd.Series, benchmark: pd.Series | None) -> tuple[pd.Se
             log.debug("us_turn_watch: %s raised %s — falling back inline", src, e)
         src = f"inline_minimal_v1 (fallback from {src})"
     return leader_reset_turn(close, benchmark), src
+
+
+def _leader_rs_cross_section(closes: dict[str, pd.Series],
+                             benchmark: pd.Series | None) -> dict[str, pd.Series]:
+    """PIT cross-sectional RS percentile per name, computed ONCE for the whole run.
+
+    The cross-section is THIS deck's graded universe (~700 US names on the deck store) — that
+    is what the percentile means here, and `coverage.leader_rs_cross_section` publishes its
+    width so the number is never read as a market-wide rank.  An empty return is the honest
+    "no cross-section" state and sends every name to the inline fallback, disclosed per row.
+    """
+    organ = _leader_organ()
+    if organ is None or benchmark is None or len(benchmark) == 0 or not closes:
+        return {}
+    if not callable(getattr(organ, "rs_excess_percentile", None)):
+        return {}
+    try:
+        wide = pd.DataFrame(closes).sort_index()
+        pct = organ.rs_excess_percentile(wide, benchmark)
+        return {str(tk): pct[tk] for tk in pct.columns}
+    except Exception as e:  # noqa: BLE001 — the deck degrades, it never dies
+        log.warning("us_turn_watch: RS cross-section failed (%s) — leg (d) falls back "
+                    "inline for every name", e)
+        return {}
 
 
 # ---------------------------------------------------------------------------
@@ -939,12 +1016,16 @@ def _pick_basket(bids: list[str], membership: dict[str, dict],
 
 def evaluate(ticker: str, close: pd.Series, *, benchmark: pd.Series | None = None,
              basket_ctx: dict[str, Any] | None = None, market: str = "US",
-             store: str | None = None) -> dict[str, Any]:
+             store: str | None = None, rs_pct: pd.Series | None = None) -> dict[str, Any]:
     """One deck row: the trigger union plus the whole pre-computed checklist. Never raises.
 
     ``basket_ctx`` carries the cohort columns the caller resolved once for the whole run
     (``{"basket_id","name","name_zh","turn_state","days_in_state","rel_20d_pp","sector",
     "fired_date"}``); pass None and the group columns publish as null.
+
+    ``rs_pct`` is this name's column of the run-wide PIT RS cross-section
+    (:func:`_leader_rs_cross_section`).  Omit it and leg (d) runs the inline fallback — the
+    row says so in ``leader_pullback_source``; it never silently changes construction.
     """
     row: dict[str, Any] = {
         "ticker": ticker, "store": store, "bars": int(len(close)),
@@ -959,7 +1040,7 @@ def evaluate(ticker: str, close: pd.Series, *, benchmark: pd.Series | None = Non
 
         dot = dot_signature(close)
         pre, btc3_stream = pre_confluence_2d(close, market)
-        lead, lead_src = _leader_stream(close, benchmark)
+        lead, lead_src = _leader_stream(close, benchmark, rs_pct)
         row["leader_pullback_source"] = lead_src
         if benchmark is None or benchmark.empty:
             row["null_notes"].append(
@@ -1066,6 +1147,15 @@ def _session_stamp(closes: dict[str, pd.Series],
     return session, newest, note
 
 
+def _source_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
+    """``leader_pullback_source`` → row count, in descending count order."""
+    counts: dict[str, int] = {}
+    for r in rows:
+        s = r.get("leader_pullback_source") or "unrecorded"
+        counts[s] = counts.get(s, 0) + 1
+    return dict(sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])))
+
+
 def compute_deck(data_root: Path | None = None, site_root: Path | None = None, *,
                  universe_limit: int | None = None, cap: int = DECK_CAP,
                  lane_floor: int = LANE_FLOOR, market: str = "US") -> dict[str, Any]:
@@ -1078,10 +1168,12 @@ def compute_deck(data_root: Path | None = None, site_root: Path | None = None, *
     ``lexicon`` ``blocker_lexicon`` ``context_score``{``formula``,``label``,``label_zh``}
     ``triggers``  the four trigger ids and their EN/ZH labels
     ``coverage``  {universe, graded, skipped_short_history, deck, beyond_cap, universe_limit,
-                   basket_states_read, benchmark}
+                   basket_states_read, benchmark, leader_pullback_sources,
+                   leader_rs_cross_section}
     ``runtime_seconds``
     ``deck``      the capped, context-score-sorted rows (schema per :func:`evaluate`)
-    ``beyond_cap`` the tickers that triggered but did not make the cap, in sort order
+    ``beyond_cap`` the triggered names that did not make the cap, in sort order, each
+                   ``{ticker, triggers_fired, basket}`` — never a bare ticker
     """
     t0 = time.time()
     from lib import config as _cfg  # noqa: PLC0415
@@ -1110,6 +1202,8 @@ def compute_deck(data_root: Path | None = None, site_root: Path | None = None, *
 
     # Group columns, resolved once for the whole run.
     brel = _basket_rel(membership, closes, bench)
+    # Leg (d)'s cross-section, also resolved once — see `_leader_rs_cross_section`.
+    rs_cross = _leader_rs_cross_section(closes, bench)
 
     rows: list[dict[str, Any]] = []
     for tk in sorted(closes):
@@ -1130,7 +1224,7 @@ def compute_deck(data_root: Path | None = None, site_root: Path | None = None, *
             "turn_state_evaluated": turn_evaluated,
         }
         row = evaluate(tk, closes[tk], benchmark=bench, basket_ctx=ctx, market=market,
-                       store=stores.get(tk))
+                       store=stores.get(tk), rs_pct=rs_cross.get(tk))
         if row.get("triggers_fired"):
             rows.append(row)
 
@@ -1184,19 +1278,37 @@ def compute_deck(data_root: Path | None = None, site_root: Path | None = None, *
             "universe_limit": universe_limit,
             "basket_states_read": len(turn),
             "benchmark": BENCHMARK if bench is not None else None,
+            # Which leg-(d) construction actually ran, counted over the triggered rows —
+            # answers "organ or fallback" without scanning the deck row by row.
+            "leader_pullback_sources": _source_counts(rows),
+            "leader_rs_cross_section": len(rs_cross),
         },
         "runtime_seconds": elapsed,
         "deck": deck,
-        "beyond_cap": [r["ticker"] for r in beyond],
+        # RECALL CONTRACT: a beyond-cap row is a name the deck could not show in full, NOT a
+        # name it withdrew. A bare ticker strips exactly the context the operator needs to be
+        # the second-stage filter, so each carries WHY it triggered and WHICH group it sits
+        # in. Full rows stay capped at `cap` — this is a recall list, not a second deck.
+        "beyond_cap": [{"ticker": r["ticker"],
+                        "triggers_fired": list(r.get("triggers_fired") or []),
+                        "basket": r.get("basket")} for r in beyond],
     }
 
 
 def write_artifact(artifact: dict[str, Any], site_root: Path | None = None) -> Path:
-    """Write ``site/prophet/turn_watch.json``."""
+    """Write ``site/turn_watch/turn_watch.json``.
+
+    NOT ``site/prophet/`` — that root is exclusive Prophet publisher authority
+    (``PROPHET_AUTHORITY_PATHS``), and the nightly engine job's commit step restores it from
+    HEAD (`git checkout HEAD -- site/prophet` + scoped `git clean`/`git reset`) before
+    staging.  A deck written there is reverted on a SUCCESSFUL night, not just a failed one,
+    so the published artifact would freeze at whatever was last committed by hand.  This desk
+    owns its own root and rides the step's broad `git add site/`.
+    """
     if site_root is None:
         from lib import config as _cfg  # noqa: PLC0415
         site_root = _cfg.site_dir()
-    out_dir = site_root / "prophet"
+    out_dir = site_root / "turn_watch"
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / "turn_watch.json"
     out.write_text(json.dumps(artifact, separators=(",", ":"), default=str) + "\n",
@@ -1209,7 +1321,8 @@ def write_artifact(artifact: dict[str, Any], site_root: Path | None = None) -> P
 # ---------------------------------------------------------------------------
 
 def first_deck_entry(ticker: str, close: pd.Series, *, benchmark: pd.Series | None,
-                     sessions: int = 120, market: str = "US") -> dict[str, Any]:
+                     sessions: int = 120, market: str = "US",
+                     rs_pct: pd.Series | None = None) -> dict[str, Any]:
     """When would this name FIRST have entered the deck, and when did the slow tier admit it?
 
     Walks the last ``sessions`` daily bars, TRUNCATING the series at each day before every
@@ -1259,6 +1372,9 @@ def first_deck_entry(ticker: str, close: pd.Series, *, benchmark: pd.Series | No
         # comparison cannot be accused of picking the flattering denominator.
         "first_any_tier_date": None, "first_any_tier": None,
         "off_20d_low_pct_at_any_tier": None, "lead_sessions_any_tier": None,
+        # Stamped from the walk below: a single-name replay has no cross-section, so leg (d)
+        # here may run a DIFFERENT construction from the nightly deck. Say which, always.
+        "leader_pullback_source": None,
         "note": "triggers (a) dot_1d + (b) pre_confluence_2d + (d) leader_reset_turn only; "
                 "(c) group-turn has no ledger history before 2026-08-07. "
                 "confirm = first CROSSED tier (T1/T2); cascade awards no T1 without an "
@@ -1290,7 +1406,9 @@ def first_deck_entry(ticker: str, close: pd.Series, *, benchmark: pd.Series | No
             pre, _btc = pre_confluence_2d(w, market)
             if bool(pre.iloc[-1]):
                 fired.append("pre_confluence_2d")
-            lead, _src = _leader_stream(w, b)
+            lead, lead_src = _leader_stream(w, b, rs_pct.reindex(w.index)
+                                            if rs_pct is not None else None)
+            out["leader_pullback_source"] = lead_src
             if bool(lead.iloc[-1]):
                 fired.append("leader_reset_turn")
             if fired:

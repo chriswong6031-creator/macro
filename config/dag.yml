@@ -679,10 +679,15 @@ lanes:
           TURN WATCH desk (ANTICIPATION §6.9 R8) — nightly early-surfacing deck of names whose
           earliest turn evidence fired in the last 5 sessions, with the operator's review
           checklist pre-computed. Reads data/yahoo/*.parquet, data/baskets/membership.json and
-          site/basketdata/us_basket_turn.json; writes site/prophet/turn_watch.json ONLY.
+          site/basketdata/us_basket_turn.json; writes site/turn_watch/turn_watch.json ONLY —
+          its OWN site root, never site/prophet, which the engine job restores from HEAD
+          before staging (a deck written there is lost on a SUCCESSFUL night).
           Advances NO ledger and writes no data/ path. DISPLAY TIER, ZERO SCORED AUTHORITY —
           its context_score orders the deck for reading and nothing else. Optimised for RECALL,
-          not precision: the operator is the second-stage filter. Never-raise; non-fatal.
+          not precision: the operator is the second-stage filter, so beyond-cap names publish
+          {ticker, triggers_fired, basket} — never a bare ticker with its reason stripped.
+          Leg (d) runs the engine.us_leader_pullback organ on the run-wide PIT RS
+          cross-section; every row stamps leader_pullback_source. Never-raise; non-fatal.
           Measured 2026-08-08: ~135s over 702 graded names (budget 600s, self-reported as
           runtime_seconds and ::warning past it).
       # parallel band

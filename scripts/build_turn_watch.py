@@ -2,7 +2,12 @@
 """build_turn_watch.py — nightly builder for the TURN WATCH desk (ANTICIPATION §6.9 R8).
 
 Writes:
-  site/prophet/turn_watch.json   — the early-surfacing deck + its whole disclosure block
+  site/turn_watch/turn_watch.json  — the early-surfacing deck + its whole disclosure block
+
+  NOT site/prophet/ — that root is exclusive Prophet publisher authority and the nightly
+  engine job restores it from HEAD before staging, so a deck written there is reverted on a
+  SUCCESSFUL night too. This desk owns its own site root; see engine.us_turn_watch
+  .write_artifact.
 
 Reads (all committed, no network, no data/ mutations):
   data/yahoo/*.parquet                     the graded deck universe + the SPY benchmark
@@ -63,7 +68,7 @@ def build(argv: list[str] | None = None) -> int:
         )
     except Exception as e:  # noqa: BLE001 — the deck never fails the nightly
         print(f"::warning title=turn-watch::deck build failed ({e}) "
-              f"— site/prophet/turn_watch.json NOT refreshed this run", flush=True)
+              f"— site/turn_watch/turn_watch.json NOT refreshed this run", flush=True)
         log.warning("build_turn_watch: compute_deck failed: %s", e, exc_info=True)
         return 0
 

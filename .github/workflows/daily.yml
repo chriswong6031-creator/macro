@@ -3454,11 +3454,19 @@ jobs:
           if [ "$rc" -ne 0 ]; then echo "::warning title=reconcile_prophet_live::rc=$rc (non-fatal — the R2 spool is durable, tomorrow picks the day back up)"; fi
           exit 0
       - name: TURN WATCH desk (early-surfacing deck — display tier)
-        # ANTICIPATION §6.9 R8. Rebuilds site/prophet/turn_watch.json: every name whose
+        # ANTICIPATION §6.9 R8. Rebuilds site/turn_watch/turn_watch.json: every name whose
         # earliest turn evidence fired in the last 5 sessions, with the operator's review
         # checklist pre-computed. Reads committed stores only (data/yahoo, membership.json,
         # site/basketdata/us_basket_turn.json); writes ONE site/ artifact and advances NO
-        # ledger, so a re-run is idempotent and a failure loses nothing but a day's refresh.
+        # ledger, so a re-run is idempotent and a failed run costs a day's refresh — the
+        # deck keeps yesterday's committed artifact and tomorrow's run replaces it.
+        #
+        # PATH IS LOAD-BEARING — site/turn_watch/, never site/prophet/. The "commit engine
+        # outputs" step below restores site/prophet from HEAD (`git checkout HEAD --
+        # site/prophet` + scoped clean/reset, PROPHET_AUTHORITY_PATHS) before staging, so a
+        # deck written under that root is reverted on a SUCCESSFUL night too and the site
+        # would serve the seed forever. site/turn_watch/ rides that step's broad
+        # `git add data/ site/ reports/` and is touched by none of the Prophet restores.
         #
         # DISPLAY TIER, ZERO SCORED AUTHORITY — nothing here ranks, gates or sizes a graded
         # position. Measured 2026-08-08: ~135s over 702 graded names; the cap below is ~4x
