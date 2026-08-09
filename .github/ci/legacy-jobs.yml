@@ -1041,6 +1041,14 @@ jobs:
       # (jinja2) and imports build_china_library (pandas/pyarrow), and it is the only
       # guard tying the template's English wording to the regex
       # scripts/freshness_sentinel.py parses.
+      #
+      # Also the two Act-Now hover-card icon suites (doctrine §5.8, emoji are not UI
+      # icons). test_intl_act_now_board_icons.py renders the China partial, canada.html.j2
+      # and hk.html.j2 through the harnesses already in this step
+      # (test_china_stocks_w1c_render, test_canada_build) plus test_hk_board_ui, so this
+      # is its natural home. test_act_now_board_icons.py — the US original it is modelled
+      # on — was referenced NOWHERE under .github/ and had never been run by CI; it is
+      # wired here in the same edit, since there is no tests/-wide sweep in this repo.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -1125,6 +1133,8 @@ jobs:
           tests/test_china_library_limited.py
           tests/test_china_standouts_serialization.py
           tests/test_china_stocks_w1c_render.py
+          tests/test_intl_act_now_board_icons.py
+          tests/test_act_now_board_icons.py
           tests/test_china_delayed_board_disclosure.py
           tests/test_cn_calendar.py
           tests/test_china_stocks_copy_w09.py
