@@ -88,10 +88,62 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 .dots-grid i { width:10px; height:10px; border-radius:50%; border:1.5px solid var(--muted);
                display:block; }
 .dots-grid i.df { background:var(--up); border-color:var(--up); }
+.dots-grid i.dn { background:#e0a030; border-color:#e0a030; }
 .dots-grid i.dp { border-color:#e0a030; }
 .axis-rail { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
 .hon-note { margin-top:12px; font-size:11px; color:var(--muted);
             border-top:1px solid var(--line); padding-top:10px; }
+
+/* ---- rolling filing-season radar ---- */
+.filing-live { margin:14px 0 4px; padding:18px 20px; border:1px solid color-mix(in srgb,var(--info) 42%,var(--line));
+               border-radius:15px; background:linear-gradient(135deg,color-mix(in srgb,var(--info) 7%,var(--panel)),var(--panel) 48%);
+               overflow:hidden; }
+.fl-head { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(260px,.8fr); gap:22px; align-items:end; }
+.fl-kicker { display:flex; align-items:center; gap:8px; color:var(--info); font-size:11px; font-weight:700;
+             letter-spacing:.06em; text-transform:uppercase; }
+.fl-pulse { width:8px; height:8px; border-radius:50%; background:var(--info); box-shadow:0 0 0 5px color-mix(in srgb,var(--info) 15%,transparent); }
+.filing-live h2 { margin:6px 0 4px; font-size:clamp(19px,2.5vw,25px); letter-spacing:-.01em; }
+.fl-sub { max-width:700px; color:var(--muted); font-size:12.5px; line-height:1.55; }
+.fl-progress-meta { display:flex; justify-content:space-between; gap:12px; margin-bottom:7px; font-size:11px; color:var(--muted); }
+.fl-progress-meta strong { color:var(--text); font-size:13px; }
+.fl-track { height:9px; border-radius:9px; background:var(--panel2); overflow:hidden; border:1px solid var(--line); }
+.fl-track i { display:block; height:100%; min-width:4px; border-radius:9px; background:linear-gradient(90deg,var(--info),var(--up)); }
+.fl-baseline { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.fl-cohort { font-size:11px; color:var(--muted); padding:4px 8px; border:1px solid var(--line); border-radius:6px; background:var(--panel2); }
+.fl-cohort strong { color:var(--text); }
+.fl-filers { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:14px; }
+.fl-filer { min-width:0; padding:12px 13px; border:1px solid var(--line); border-radius:11px; background:color-mix(in srgb,var(--panel) 90%,transparent); }
+.fl-filer-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.fl-filer-name { font-size:12.5px; font-weight:700; line-height:1.25; }
+.fl-filer-date { margin-top:3px; font-size:10.5px; color:var(--muted); }
+.fl-filer-stats { display:flex; gap:10px; flex-wrap:wrap; margin-top:9px; font-size:11px; color:var(--muted); }
+.fl-filer-stats strong { color:var(--text); font-variant-numeric:tabular-nums; }
+.fl-actions { margin-top:9px; display:flex; gap:5px; flex-wrap:wrap; }
+.fl-actions span { font-size:10.5px; padding:2px 6px; border-radius:5px; background:var(--panel2); color:var(--muted); }
+.fl-actions .pos { color:var(--up); } .fl-actions .neg { color:var(--down); }
+.fl-unit { display:inline-block; margin-top:7px; font-size:9.5px; color:var(--info); }
+.fl-notices { margin-top:10px; padding:9px 11px; border:1px solid color-mix(in srgb,#e0a030 45%,var(--line));
+              border-radius:9px; background:color-mix(in srgb,#e0a030 7%,var(--panel));
+              color:var(--muted); font-size:11px; line-height:1.5; }
+.fl-notices strong { color:var(--text); }
+.fl-title { margin:16px 0 7px; display:flex; align-items:baseline; justify-content:space-between; gap:10px; font-size:12px; font-weight:700; }
+.fl-title span { font-size:10.5px; font-weight:500; color:var(--muted); }
+.fl-changes { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.fl-change { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:9px; min-width:0;
+             padding:8px 10px; border:1px solid var(--line); border-radius:9px; background:var(--panel); }
+.fl-change .fc-rank { width:24px; height:24px; display:grid; place-items:center; border-radius:6px; font-weight:700;
+                      font-size:10.5px; color:var(--info); background:color-mix(in srgb,var(--info) 10%,var(--panel2)); }
+.fl-change .fc-main { min-width:0; }
+.fl-change .fc-tk { font-size:12px; font-weight:750; }
+.fl-change .fc-fund { color:var(--muted); font-size:10.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fl-change .fc-metric { text-align:right; font-size:10.5px; color:var(--muted); }
+.fl-change .fc-metric strong { display:block; color:var(--text); font-size:11.5px; }
+.fl-method { margin-top:10px; color:var(--muted); font-size:10.5px; line-height:1.5; }
+@media(max-width:820px){
+  .fl-head { grid-template-columns:1fr; gap:14px; }
+  .fl-filers { grid-template-columns:1fr; }
+  .fl-changes { grid-template-columns:1fr; }
+}
 
 /* ---- section headers ---- */
 .sm-sec { margin:42px 0 10px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
@@ -233,7 +285,8 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
              border:1px solid var(--line); color:var(--muted); text-decoration:none;
              white-space:nowrap; }
 .sm-rail a:hover { color:var(--text); border-color:var(--info); }
-.sm-sec[id] { scroll-margin-top:56px; }
+.sm-sec[id], .filing-live[id] { scroll-margin-top:56px; }
+@media(max-width:620px){ .sm-sec[id], .filing-live[id] { scroll-margin-top:96px; } }
 
 /* ---- v3: ticker logos (big boards only — never wire rows / leaderboard) ---- */
 .tlogo { width:18px; height:18px; border-radius:4px; vertical-align:-4px; margin-right:6px;
@@ -415,6 +468,7 @@ a.mem-card:hover { border-color:var(--info); }
 
 {#- ===== set desk shorthand ===== -#}
 {% set d_fresh = desk.get('freshness') or {} %}
+{% set d_roll = desk.get('filing_transition') or {} %}
 {% set d_wire = desk.get('wire') or [] %}
 {% set WIRE_FOLD = 20 %}{#- newest N shown by default; "See more" reveals the rest (client-side) -#}
 {% set d_gp = desk.get('grand_portfolio') or [] %}
@@ -439,39 +493,53 @@ a.mem-card:hover { border-color:var(--info); }
 
   {# Centre: filing clock #}
   <div class="sm-clock">
-    <div class="ck">{{ t('Next 13F deadline · Q2 2026','下一13F截止日 · 2026年Q2') }}</div>
-    <div class="bignum">{{ d_fresh.get('days_to_deadline') or '—' }} <span>{{ t('days','天') }} · {{ d_fresh.get('next_deadline') or '—' }}</span></div>
+    <div class="ck">{{ t('Next 13F deadline','下一13F截止日') }} · {{ d_roll.get('expected_label') or d_fresh.get('quarter_end') or '—' }}</div>
+    {% set _days = d_fresh.get('days_to_deadline') %}
+    <div class="bignum">
+      {% if _days is none %}—{% elif _days >= 0 %}{{ _days }}{% else %}{{ _days | abs }}{% endif %}
+      <span>{% if _days is not none and _days < 0 %}{{ t('days past','天已过') }}{% else %}{{ t('days','天') }}{% endif %} · {{ d_fresh.get('next_deadline') or '—' }}</span>
+    </div>
     {% set qs = d_fresh.get('quarter_state') or '' %}
     {% if qs == 'window_open' %}
       {% set filed_ct = (d_fresh.get('filed_pending') or []) | selectattr('status','equalto','filed') | list | length %}
+      {% set notice_ct = (d_fresh.get('filed_pending') or []) | selectattr('status','equalto','notice') | list | length %}
       {% set total_ct = (d_fresh.get('filed_pending') or []) | rejectattr('status','equalto','closed') | list | length %}
-      <div class="qstate">{{ t('Filing window open','披露窗口已开启') }} — {{ filed_ct }}/{{ total_ct }} {{ t('funds filed','家基金已披露') }}</div>
-    {% elif qs == 'closed' %}
+      <div class="qstate">{{ t('Filing window open','披露窗口已开启') }} — {{ filed_ct }}/{{ total_ct }} {{ t('holdings reports','份持仓报告') }}{% if notice_ct %} · {{ notice_ct }} {{ t('notice','份通知') }}{% endif %}</div>
+    {% elif qs == 'window_closed' %}
       <div class="qstate" style="color:var(--muted)">{{ t('Window closed','窗口已关闭') }}</div>
     {% else %}
       <div class="qstate" style="color:var(--muted)">{{ qs }}</div>
     {% endif %}
-    <div class="ck" style="margin-top:6px">{{ t('Quarter on display: Q1 2026 (period end Mar 31)','展示季度：2026年Q1（期末3月31日）') }}</div>
+    <div class="ck" style="margin-top:6px">
+      {{ t('Main boards','主面板') }}: {{ d_roll.get('canonical_label') or '—' }} ·
+      {% if d_roll.get('cohort_basis') == 'paired_reporters' %}
+        {{ d_roll.get('canonical_count') }}/{{ d_roll.get('active_count') }} {{ t('paired reporters','已披露配对样本') }}
+      {% else %}
+        {{ t('complete baseline cohort','完整基准样本') }}
+      {% endif %}
+    </div>
   </div>
 
   {# Right: dot grid #}
   <div class="sm-gridbox">
     <div class="gbk">
-      <span>{{ t('Filed vs pending — Q2 2026 window','已披露 vs 待披露 — 2026年Q2窗口') }}</span>
-      <span>&#9679; {{ t('filed','已披露') }} · &#9675; {{ t('pending','待披露') }}</span>
+      <span>{{ t('Filed vs pending','已披露 vs 待披露') }} — {{ d_roll.get('expected_label') or '—' }}</span>
+      <span>&#9679; {{ t('filed','已披露') }}{% if d_roll.get('notice_count') %} · ◉ {{ t('notice','通知') }}{% endif %} · &#9675; {{ t('pending','待披露') }}</span>
     </div>
     <div class="dots-grid">
       {% for fp in d_fresh.get('filed_pending') or [] %}
         {% if fp.get('status') == 'filed' %}
-          <i class="df" title="{{ fp.slug }} — filed {{ fp.filing_date }}"></i>
+          <i class="df" role="img" tabindex="0" aria-label="{{ fp.name or fp.slug }} — filed {{ fp.filing_date }}" title="{{ fp.name or fp.slug }} — filed {{ fp.filing_date }}"></i>
+        {% elif fp.get('status') == 'notice' %}
+          <i class="dn" role="img" tabindex="0" aria-label="{{ fp.name or fp.slug }} — {{ fp.notice_form or '13F-NT' }} {{ fp.notice_filing_date }}" title="{{ fp.name or fp.slug }} — {{ fp.notice_form or '13F-NT' }} {{ fp.notice_filing_date }}"></i>
         {% elif fp.get('status') == 'closed' %}
-          <i style="opacity:.3" title="{{ fp.slug }} — closed"></i>
+          <i style="opacity:.3" role="img" tabindex="0" aria-label="{{ fp.name or fp.slug }} — closed" title="{{ fp.name or fp.slug }} — closed"></i>
         {% else %}
-          <i class="dp" title="{{ fp.slug }} — pending"></i>
+          <i class="dp" role="img" tabindex="0" aria-label="{{ fp.name or fp.slug }} — pending" title="{{ fp.name or fp.slug }} — pending"></i>
         {% endif %}
       {% endfor %}
     </div>
-    <div class="hon-note"><span data-tip-en="13F = quarterly, ~45-day lag, long-only US listed ≥$100M. No shorts, no cash, no non-US positions." data-tip-zh="13F = 季度披露，约45天滞后，仅含美股多头且持仓≥1亿美元。不含空头、现金或非美股仓位。">{{ t('Quarterly filings, ~45-day lag — context, never a directional signal.','季度披露、约45天滞后——仅为背景参考，永远不是方向性信号。') }}</span></div>
+    <div class="hon-note"><span data-tip-en="13F = quarterly, ~45-day lag, reported long positions from managers with at least $100M in Section 13(f) securities. No shorts, no cash, no non-US positions." data-tip-zh="13F = 季度披露，约45天滞后；适用于持有至少1亿美元13(f)证券的经理所披露的多头持仓。不含空头、现金或非美股仓位。">{{ t('Quarterly filings, ~45-day lag — context, never a directional signal.','季度披露、约45天滞后——仅为背景参考，永远不是方向性信号。') }}</span></div>
   </div>
 
   {# Full-width row 2: per-axis freshness chips (long labels — never fit a 1/3 column) #}
@@ -484,12 +552,80 @@ a.mem-card:hover { border-color:var(--info); }
 
 </div>{# /sm-deck #}
 
+{% if d_roll.get('show_early_radar') %}
+<section class="filing-live" id="sec-filing-live">
+  <div class="fl-head">
+    <div>
+      <div class="fl-kicker"><i class="fl-pulse"></i>{{ d_roll.get('expected_label') }} {{ t('filing season · rolling','披露季 · 滚动') }}</div>
+      <h2>{{ t('Reported so far','已披露动态') }}</h2>
+      <div class="fl-sub">{{ t('Incoming books roll here manager by manager. Main consensus stays on a complete baseline until a strict majority has filed; pending managers never count as exits.', '新季度持仓按基金逐一滚动到这里。主共识面板在严格多数披露前保持完整基准；待披露基金绝不会被计作清仓。') }}</div>
+    </div>
+    <div>
+      <div class="fl-progress-meta"><span><strong>{{ d_roll.get('filed_count') }}/{{ d_roll.get('active_count') }}</strong> {{ t('managers reported','家经理已披露') }}</span><span>{{ d_roll.get('progress_pct') }}%</span></div>
+      <div class="fl-track" aria-label="{{ d_roll.get('progress_pct') }} percent filed"><i style="width:{{ d_roll.get('progress_pct') }}%"></i></div>
+      <div class="fl-baseline">
+        <span class="fl-cohort">{{ t('Baseline','基准') }} · <strong>{{ d_roll.get('canonical_label') }}</strong></span>
+        <span class="fl-cohort">{{ t('Incoming','新季度') }} · <strong>{{ d_roll.get('expected_label') }} ({{ d_roll.get('filed_count') }})</strong></span>
+        <span class="fl-cohort">{{ t('Auto-handoff','自动切换') }} · <strong>{{ d_roll.get('majority_at') }}/{{ d_roll.get('active_count') }}</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="fl-filers">
+    {% for f in d_roll.get('filers') or [] %}
+    <article class="fl-filer">
+      <div class="fl-filer-top">
+        <div><a class="fund-link fl-filer-name" href="fund_{{ f.slug }}.html">{{ f.name }}</a><div class="fl-filer-date">{{ t('Filed','披露') }} {{ f.filing_date }} · {{ d_roll.get('expected_label') }}</div></div>
+        {{ gradeb(f.grade or 'n/a') }}
+      </div>
+      <div class="fl-filer-stats">
+        <span><strong>{{ usd(f.book_value_usd) }}</strong> {{ t('reported book','披露组合') }}</span>
+        <span><strong>{{ f.n_positions if f.n_positions is not none else '—' }}</strong> {{ t('positions','项持仓') }}</span>
+      </div>
+      <div class="fl-actions">
+        <span class="pos">{{ f.action_counts.get('new',0) }} {{ t('new','新建') }}</span>
+        <span class="pos">{{ f.action_counts.get('add',0) }} {{ t('adds','加仓') }}</span>
+        <span class="neg">{{ f.action_counts.get('trim',0) }} {{ t('trims','减仓') }}</span>
+        <span class="neg">{{ f.action_counts.get('exit',0) }} {{ t('exits','清仓') }}</span>
+      </div>
+      {% if f.value_unit_adjusted %}<span class="fl-unit" data-tip-en="SEC reported value retained; display normalized from a detected legacy-thousands filing." data-tip-zh="保留SEC原始披露值；显示值按检测到的旧千美元单位完成标准化。">{{ t('SEC unit normalized','SEC单位已标准化') }}</span>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+
+  {% if d_roll.get('notices') %}
+  <div class="fl-notices"><strong>{{ t('Notice-only filings','仅通知披露') }}:</strong>
+    {% for n in d_roll.get('notices') or [] %}{{ n.name }} · {{ n.form }} · {{ n.filing_date }}{% if not loop.last %}; {% endif %}{% endfor %}.
+    {{ t('No holdings book was supplied, so these managers remain outside incoming-quarter consensus and never count as exits.','未提交持仓明细，因此这些经理不进入新季度共识，也绝不会被计作清仓。') }}
+  </div>
+  {% endif %}
+
+  {% if d_roll.get('ranked_changes') %}
+  <div class="fl-title">{{ t('What matters in the reported cohort','已披露样本中的重点变化') }} <span>{{ t('Disclosure importance · not expected return','披露重要度 · 非预期收益') }}</span></div>
+  <div class="fl-changes">
+    {% for c in d_roll.get('ranked_changes') or [] %}
+    <div class="fl-change">
+      <span class="fc-rank">{{ loop.index }}</span>
+      <div class="fc-main">
+        <span class="fc-tk">{{ c.ticker }}</span> <span class="act-pill {{ c.action }}">{{ c.action }}</span>
+        <div class="fc-fund">{{ c.fund_name }} · {{ c.filing_date }}</div>
+      </div>
+      <div class="fc-metric"><strong>{{ pctf(c.book_pct,1) }} {{ t('book','组合') }}</strong>{{ c.importance_label }} · {{ c.importance_score }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <details class="fl-method"><summary>{{ t('Method & automatic retirement','方法与自动收起规则') }}</summary><div>{{ d_roll.get('importance_note') }} {{ d_roll.get('retire_note') }} {{ d_roll.get('unit_note') }} {{ d_roll.get('notice_note') }}</div></details>
+</section>
+{% endif %}
+
 {# ---- v3: sticky section rail — pure CSS anchors, no JS ---- #}
 {% set _has_ii = (desk.get('insider_intel') or {}) | length > 0 %}
 {% set _has_flow = (desk.get('flow') or {}) | length > 0 %}
 {% set _has_follow = (desk.get('follow') or {}) | length > 0 %}
 {# aria-label is an attribute — t()'s <span> markup breaks the quote and leaks text; plain EN only #}
 <nav class="sm-rail" aria-label="Sections">
+  {% if d_roll.get('show_early_radar') %}<a href="#sec-filing-live">{{ t('Filing live','披露直播') }}</a>{% endif %}
   <a href="#sec-follow">{{ t('Follow','跟随台') }}</a>
   <a href="#sec-wire">{{ t('Wire','播报') }}</a>
   <a href="#sec-ideas">{{ t('Ideas','想法榜') }}</a>
@@ -638,7 +774,7 @@ a.mem-card:hover { border-color:var(--info); }
   <button type="button" class="smfold-btn" onclick="(function(el){el.closest('.sm-card').querySelectorAll('.sm-fold-row').forEach(function(r){r.style.display='';});el.parentNode.style.display='none';})(this)">{{ t('See more','展开更多') }}</button>
 </div>
 {%- endif -%}
-<p class="hon-note" style="margin-top:8px">{{ t('Descriptive record, not a forecast — 13F filings arrive ~45 days late; scores start at each quarter\'s filing deadline.','描述性战绩，非预测——13F披露滞后约45天；计分自每季披露截止日起算。') }}</p>
+<p class="hon-note" style="margin-top:8px">{{ t('Descriptive record, not a forecast — 13F filings arrive ~45 days late; scoring starts when each filing became publicly available.','描述性战绩，非预测——13F披露滞后约45天；计分自每份文件公开可用时开始。') }}</p>
 </div>
 {% else %}{# no memory data #}
 <div class="sm-card" style="padding:16px"><p class="follow-empty">{{ t('Fund memory not computed this build — will appear after the next successful run.','本次构建未计算基金记忆——将在下次成功构建后出现。') }}</p></div>
@@ -1697,15 +1833,15 @@ research/smart_money_grade_a_q1_2026.md
     <th class="l">{{ t('Filer','披露人') }}</th>
     <th class="l">{{ t('Ticker','标的') }}</th>
     <th>{{ t('Form','表格') }}</th>
-    <th>{{ t('State','状态') }}</th>
+    <th data-tip-en="Current ticker-level 13D/G regime, not necessarily the form on this row." data-tip-zh="当前标的层面的13D/G状态，不一定等同于本行表格类型。">{{ t('Current regime','当前状态') }}</th>
     <th>{{ t('Signal','信号') }}</th>
     <th>{{ t('Tracked holders','追踪持有者') }}</th>
     <th>{{ t('Since filing','自披露') }}</th>
   </tr></thead>
   <tbody>
-  {% for row in act_active[:20] %}
+  {% for row in act_active %}
     {% set st = row.get('state') or 'other' %}
-    <tr>
+    <tr{% if loop.index > 20 %} style="display:none"{% endif %}>
       <td class="l num">{{ row.date_filed }}</td>
       <td class="l">{{ row.filer }}</td>
       <td class="l"><span class="tk">{{ row.ticker }}</span></td>
@@ -1737,7 +1873,7 @@ research/smart_money_grade_a_q1_2026.md
       <th class="l">{{ t('Filer','披露人') }}</th>
       <th class="l">{{ t('Ticker','标的') }}</th>
       <th>{{ t('Form','表格') }}</th>
-      <th>{{ t('State','状态') }}</th>
+      <th data-tip-en="Current ticker-level 13D/G regime, not necessarily the form on this row." data-tip-zh="当前标的层面的13D/G状态，不一定等同于本行表格类型。">{{ t('Current regime','当前状态') }}</th>
       <th>{{ t('Signal','信号') }}</th>
       <th>{{ t('Tracked holders','追踪持有者') }}</th>
       <th>{{ t('Since filing','自披露') }}</th>

@@ -97,7 +97,7 @@ GRADE_FIELDS = ["prox", "t_off", "undercut", "undercut_class", "mfe60", "mae60",
 
 # stable column order for the parquet store (deterministic row/column layout).
 STORE_COLS = [
-    "flag_date", "ticker", "source", "lane", "rung", "tier",
+    "flag_date", "ticker", "source", "source_ref", "lane", "rung", "tier",
     "conviction", "act", "washout_tier", "weeks_at_floor", "late_pct",
     "graded", "grade_asof",
 ] + GRADE_FIELDS
@@ -185,6 +185,38 @@ def _read_snapshots() -> list[dict]:
     return rows
 
 
+def _prophet_flag_date(plan: dict, *, canonical: bool) -> str | None:
+    """Resolve the causal/entry session this learning instrument may grade.
+
+    Canonical Prophet rows must obey the explicit signal-date family. In
+    particular, ``legacy_formation_alias`` is a base anchor embedded in the stable
+    plan id, not the date on which Prophet called the bottom. The chronology audit
+    can prove its entry-price session, so that session is the only honest learning
+    date. Rows with no audited basis are withheld rather than teaching the learner
+    that an old formation anchor was a live call.
+
+    Non-canonical fixture directories retain the pre-contract fallback so isolated
+    tests and offline experiments do not need a repository correction ledger.
+    """
+    if not canonical:
+        value = (
+            plan.get("signal_date") or plan.get("observed_date")
+            or plan.get("price_basis_date") or plan.get("entry_date")
+        )
+        return str(value) if value else None
+
+    basis = plan.get("signal_date_basis")
+    if basis == "tier_event_date":
+        value = plan.get("signal_date")
+    elif basis == "tier_observation":
+        value = plan.get("observed_date")
+    elif basis == "legacy_formation_alias":
+        value = plan.get("price_basis_date") or plan.get("entry_date")
+    else:
+        value = None
+    return str(value) if value else None
+
+
 def _flag_row(**kw: Any) -> dict:
     """Build a store row with every column present (missing → None), grade fields null."""
     row = {c: None for c in STORE_COLS}
@@ -239,19 +271,56 @@ def collect_flags() -> list[dict]:
                 late_pct=wash.get("late_pct"),
             ))
 
-    # (c) Prophet plans -> prophet_plan; flag_date = signal_date.
+    # (c) Prophet plans -> prophet_plan.  Prefer the canonical append-only correction
+    # projection so a known-wrong publication clock cannot seed a second learning ledger.
+    # Tier-aware T3 plans have no fired signal; their observation date is the honest flag
+    # vintage.  A non-standard test/fixture directory falls back to raw plan files.
     if PROPHET_PLANS_DIR.exists():
-        for p in sorted(glob.glob(str(PROPHET_PLANS_DIR / "*.json"))):
+        plan_rows: list[dict] = []
+        quarantined: set[str] = set()
+        canonical = (
+            PROPHET_PLANS_DIR.name == "plans"
+            and PROPHET_PLANS_DIR.parent.name == "prophet"
+        )
+        if canonical:
             try:
-                d = json.loads(Path(p).read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
+                from engine.prophet_integrity import (  # noqa: PLC0415
+                    load_effective_ledger,
+                    load_effective_plans,
+                )
+
+                repo_root = PROPHET_PLANS_DIR.parents[2]
+                projection = load_effective_plans(repo_root)
+                ledger_projection = load_effective_ledger(repo_root)
+                plan_rows = list(projection.plans.values())
+                quarantined = set(projection.quarantined_ids) | set(
+                    ledger_projection.quarantined_ids
+                )
+            except Exception as exc:  # noqa: BLE001 — canonical integrity fails closed
+                print(
+                    "[bottom-ledger] Prophet correction projection rejected; "
+                    f"canonical Prophet flags withheld: {exc}"
+                )
+        else:
+            for p in sorted(glob.glob(str(PROPHET_PLANS_DIR / "*.json"))):
+                try:
+                    plan_rows.append(json.loads(Path(p).read_text(encoding="utf-8")))
+                except (json.JSONDecodeError, OSError):
+                    continue
+        for d in plan_rows:
+            try:
+                plan_id = str(d.get("id") or "")
+            except (AttributeError, TypeError):
                 continue
-            sd = d.get("signal_date")
+            if plan_id in quarantined:
+                continue
+            sd = _prophet_flag_date(d, canonical=canonical)
             tkr = d.get("asset") or d.get("ticker")
             if not sd or not tkr:
                 continue
             flags.append(_flag_row(
                 flag_date=sd, ticker=tkr, source="prophet_plan",
+                source_ref=plan_id or None,
                 lane=(d.get("direction") or "").lower() or None,
                 conviction=d.get("_conviction_score"),
                 act=d.get("_act_level"),
@@ -277,6 +346,65 @@ def _load_store(rows_path: Path) -> pd.DataFrame:
         except Exception:
             return _empty_store()
     return _empty_store()
+
+
+def _project_effective_store(
+    store: pd.DataFrame,
+) -> tuple[pd.DataFrame, int, str | None]:
+    """Exclude superseded/quarantined Prophet flags without rewriting raw accrual.
+
+    The parquet remains the append-only evidence store. Its effective learning view is
+    keyed by ``source_ref`` (the stable Prophet plan id) and must match today's
+    canonical signal-family date. That projects a later date correction by excluding
+    the old raw row and admitting the newly accrued corrected row; a quarantine
+    excludes both. Legacy rows without source provenance fail closed.
+
+    Non-canonical fixture directories have no repository correction authority and are
+    returned unchanged.
+    """
+    if store.empty:
+        return store.copy(), 0, None
+    canonical = (
+        PROPHET_PLANS_DIR.name == "plans"
+        and PROPHET_PLANS_DIR.parent.name == "prophet"
+    )
+    if not canonical:
+        return store.copy(), 0, None
+
+    prophet_mask = store["source"].astype(str) == "prophet_plan"
+    try:
+        from engine.prophet_integrity import (  # noqa: PLC0415
+            load_effective_ledger,
+            load_effective_plans,
+        )
+
+        repo_root = PROPHET_PLANS_DIR.parents[2]
+        plans = load_effective_plans(repo_root)
+        ledger = load_effective_ledger(repo_root)
+        quarantined = set(plans.quarantined_ids) | set(ledger.quarantined_ids)
+        allowed_dates = {
+            str(plan_id): flag_date
+            for plan_id, plan in plans.plans.items()
+            if plan_id not in quarantined
+            if (flag_date := _prophet_flag_date(plan, canonical=True)) is not None
+        }
+        valid_prophet = pd.Series(False, index=store.index)
+        for idx in store.index[prophet_mask]:
+            source_ref = store.at[idx, "source_ref"]
+            plan_id = "" if pd.isna(source_ref) else str(source_ref)
+            expected_date = allowed_dates.get(plan_id)
+            row_date = store.at[idx, "flag_date"]
+            row_date = "" if pd.isna(row_date) else str(row_date)
+            valid_prophet.at[idx] = bool(expected_date and row_date == expected_date)
+        keep = ~prophet_mask | valid_prophet
+        return store.loc[keep].copy(), int((~keep).sum()), None
+    except Exception as exc:  # noqa: BLE001 — learner authority fails closed
+        keep = ~prophet_mask
+        return (
+            store.loc[keep].copy(),
+            int(prophet_mask.sum()),
+            f"canonical Prophet projection unavailable: {exc}",
+        )
 
 
 def _sort_store(df: pd.DataFrame) -> pd.DataFrame:
@@ -313,7 +441,12 @@ def merge_flags(store: pd.DataFrame, flags: list[dict]) -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 # MATURE — grade rows whose window has closed, ONCE, frozen
 # --------------------------------------------------------------------------- #
-def mature_rows(store: pd.DataFrame, as_of: pd.Timestamp) -> tuple[pd.DataFrame, int]:
+def mature_rows(
+    store: pd.DataFrame,
+    as_of: pd.Timestamp,
+    *,
+    eligible_indices: set[Any] | None = None,
+) -> tuple[pd.DataFrame, int]:
     """Grade every ungraded row whose flag_date + H trading days has closed on/before `as_of`.
 
     A row is graded ONCE and then frozen (graded=True); already-graded rows are skipped. The
@@ -324,6 +457,8 @@ def mature_rows(store: pd.DataFrame, as_of: pd.Timestamp) -> tuple[pd.DataFrame,
     price_cache: dict[str, Any] = {}
     n_graded = 0
     for idx in store.index:
+        if eligible_indices is not None and idx not in eligible_indices:
+            continue
         if bool(store.at[idx, "graded"]):
             continue
         tkr = store.at[idx, "ticker"]
@@ -634,7 +769,10 @@ def run_pipeline(rows_path: Path, emit_path: Path, *, accrue: bool, as_of: pd.Ti
         flags = collect_flags()
         store = merge_flags(store, flags)
         n_new = len(store) - n_before
-        store, n_graded = mature_rows(store, as_of)
+        effective, _, _ = _project_effective_store(store)
+        store, n_graded = mature_rows(
+            store, as_of, eligible_indices=set(effective.index)
+        )
         _atomic_write_parquet(rows_path, store)
         if not quiet:
             print(f"[accrue] +{n_new} new flags (store {n_before}->{len(store)}); "
@@ -644,7 +782,19 @@ def run_pipeline(rows_path: Path, emit_path: Path, *, accrue: bool, as_of: pd.Ti
         if not quiet:
             print(f"[read-only] store {len(store)} rows (no forward advance)")
 
-    doc = build_emit(store, as_of)
+    effective, n_integrity_excluded, integrity_error = _project_effective_store(store)
+    doc = build_emit(effective, as_of)
+    doc["integrity_projection"] = {
+        "raw_rows": len(store),
+        "effective_rows": len(effective),
+        "excluded_prophet_rows": n_integrity_excluded,
+        "error": integrity_error,
+        "effect": (
+            "raw learning rows remain append-only; Prophet rows require a stable plan "
+            "source_ref and the current canonical signal-family date, and correction/"
+            "quarantine authority excludes superseded claims from grades and cohorts"
+        ),
+    }
     _atomic_write_json(emit_path, doc)
     if not quiet:
         print(f"[emit] n_accruing={doc['n_accruing']} n_matured={doc['n_matured']} "

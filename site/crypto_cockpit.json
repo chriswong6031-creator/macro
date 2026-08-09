@@ -3,10 +3,10 @@
   "contract_phase": "w0",
   "display_only": true,
   "as_of": "2026-08-08",
-  "generated_at": "2026-08-08T16:26:00+00:00",
+  "generated_at": "2026-08-09T05:43:38+00:00",
   "hero": {
     "asset": "BTC-USD",
-    "price": 64970.94,
+    "price": 64969.75,
     "change_24h_pct": 0.12,
     "stance_en": "RISK-ON",
     "stance_zh": "偏多",

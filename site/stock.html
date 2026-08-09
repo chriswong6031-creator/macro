@@ -485,7 +485,7 @@
 
     <div class="panel" id="panel_smartmoney" style="display:none">
       <h2>🏦 <span class="l-en">Super-investors — 13F holders</span><span class="l-zh">超级投资者 — 13F 持仓</span>
-        <span class="help">?<span class="tip"><span class="l-en">Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position&#39;s share of that fund&#39;s reported US-equity book. 13F is QUARTERLY with a ~45-day lag — long-only US equity &gt;= $100M only (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.</span><span class="l-zh">哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度披露，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。</span></span></span></h2>
+        <span class="help">?<span class="tip"><span class="l-en">Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position&#39;s share of that fund&#39;s reported US-equity book. 13F is QUARTERLY with a ~45-day lag and reports long positions for managers with at least $100M in Section 13(f) securities (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.</span><span class="l-zh">哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度披露，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。</span></span></span></h2>
       <div id="r_smartmoney"></div>
     </div>
     </details>
@@ -2298,7 +2298,7 @@
     }
     el('r_smartmoney').innerHTML = head + vipline + trendLine + sinceFilingLine + '<table>' + th + rows + '</table>' +
       '<p class="srcline">' + lz(
-        '13F filed quarterly, ~45-day lag — long-only US stakes ≥ $100M only (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
+        '13F filed quarterly, ~45-day lag — reported long positions from managers with at least $100M in Section 13(f) securities (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
         '13F 季度披露、约45天滞后 —— 仅美股多头持仓（≥1亿美元，不含空头／期权／非美）。仅作「谁持有」背景，非实时信号。') + '</p>';
     show('panel_smartmoney', true);
   }
@@ -3166,11 +3166,10 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-08-08 15:11 UTC · charts rendered in-house with
+<p class="muted" style="font-size:12px">Generated 2026-08-09 04:44 UTC · charts rendered in-house with
 Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

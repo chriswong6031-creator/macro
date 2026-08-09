@@ -2999,3 +2999,5 @@
 {"date": "2026-08-07", "ticker": "TDS", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-07", "ticker": "MSGS", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-07", "ticker": "LSCC", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "DAR", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "FIX", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}

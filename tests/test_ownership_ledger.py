@@ -111,6 +111,69 @@ class TestLedgerIdempotency:
         p = ol._ledger_path("L1", root=tmp_path)
         assert not p.exists()
 
+    def test_existing_row_matures_null_forward_cells(self, tmp_path):
+        """A registered row gains horizons as they settle without duplicating."""
+        first = [{
+            "ticker": "AAPL", "anchor_date": "2026-04-10", "slug": "alpha",
+            "cohort": "L1", "action": "new", "pct_portfolio": 2.5,
+            "entry_price": 200.0, "fill_date": "2026-04-13",
+            "excess_21": 0.03, "excess_63": None,
+        }]
+        matured = [{
+            "ticker": "AAPL", "anchor_date": "2026-04-10", "slug": "alpha",
+            "cohort": "L1", "action": "new", "pct_portfolio": 9.9,
+            "entry_price": 999.0, "fill_date": "2099-01-01",
+            "excess_21": 0.99, "excess_63": 0.12,
+            "fwd_ret_63": 0.18,
+        }]
+        assert ol._append_rows("L1", first, root=tmp_path) == 1
+        assert ol._append_rows("L1", matured, root=tmp_path) == 0
+
+        row = ol._load_ledger("L1", root=tmp_path).iloc[0]
+        assert row["excess_63"] == pytest.approx(0.12)
+        assert row["fwd_ret_63"] == pytest.approx(0.18)
+        # Existing results and registration facts are frozen.
+        assert row["excess_21"] == pytest.approx(0.03)
+        assert row["entry_price"] == pytest.approx(200.0)
+        assert row["fill_date"] == "2026-04-13"
+        assert row["pct_portfolio"] == pytest.approx(2.5)
+
+    def test_missing_entry_fact_can_fill_once(self, tmp_path):
+        """A temporarily unavailable fill may mature, then remains immutable."""
+        base = [{
+            "ticker": "MSFT", "anchor_date": "2026-04-10", "slug": "alpha",
+            "cohort": "L1", "action": "add", "entry_price": None,
+            "fill_date": None,
+        }]
+        fill = [{
+            **base[0], "entry_price": 410.0, "fill_date": "2026-04-13",
+        }]
+        revision = [{
+            **base[0], "entry_price": 420.0, "fill_date": "2026-04-14",
+        }]
+        ol._append_rows("L1", base, root=tmp_path)
+        ol._append_rows("L1", fill, root=tmp_path)
+        ol._append_rows("L1", revision, root=tmp_path)
+        row = ol._load_ledger("L1", root=tmp_path).iloc[0]
+        assert row["entry_price"] == pytest.approx(410.0)
+        assert row["fill_date"] == "2026-04-13"
+
+    def test_method_vintages_coexist_but_summary_uses_current(self, tmp_path):
+        base = {
+            "ticker": "AAPL", "anchor_date": "2026-04-10", "slug": "alpha",
+            "cohort": "L1", "action": "new", "excess_21": 0.25,
+        }
+        legacy = {**base, "method_version": ol._METHOD_V1}
+        current = {**base, "method_version": ol._METHOD_V2, "excess_21": 0.05}
+        assert ol._append_rows("L1", [legacy], root=tmp_path) == 1
+        assert ol._append_rows("L1", [current], root=tmp_path) == 1
+        assert len(ol._load_ledger("L1", root=tmp_path)) == 2
+        summary = ol.ledger_summary(root=tmp_path)["L1"]
+        assert summary["method_version"] == ol._METHOD_V2
+        assert summary["n_total"] == 1
+        assert summary["n_total_all_vintages"] == 2
+        assert summary["legs"]["h21"]["median_excess"] == pytest.approx(0.05)
+
 
 # --------------------------------------------------------------------------- #
 # _grade_entry: null panel degrades gracefully                                  #
