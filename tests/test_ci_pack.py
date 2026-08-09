@@ -138,13 +138,174 @@ jobs:
 
 
 def test_workflows_cancel_superseded_pr_runs() -> None:
+    """PR runs coalesce by cancel; MAIN proofs must be allowed to conclude.
+
+    THE 2026-08-09 BASELINE LIVELOCK — a flat `cancel-in-progress: true` on these two
+    workflows made main's CI proof structurally unreachable, and 12 merge-blocked +
+    56 cap-deferred pull requests could not drain (sweep run 31311549150, 11:44:42Z:
+    "0 main commit(s) classified … main proof: NO clean name at unknown-sha").
+
+      ci.yml has no `push` trigger, so main is proven ONLY by a workflow_dispatch,
+      and every main-ref dispatch shares `ci-refs/heads/main`. Each pinned session
+      re-firing the documented `gh workflow run ci.yml --ref main` lever therefore
+      KILLED the proof already running: 31309720615 cancelled at 44 minutes by
+      31311537537, itself cancelled 4 minutes later by 31311693575.
+
+      fences.yml is the OTHER proof merge_on_green reads, and the only one that
+      triggers on push to main — but main takes a wire/nightly push every ~30-90s,
+      and each one cancelled its predecessor (5 runs between 11:40:38Z and
+      11:43:04Z). All ten runs in the sweeper's walk were `cancelled`. A run longer
+      than the gap between pushes can NEVER conclude.
+
+    So the expressions below are load-bearing, not stylistic. Reverting either to a
+    flat `true` re-closes the sweeper's base-inherited-red refresh and re-pins the
+    whole fleet — if this test is what is in your way, you are removing the fix.
+    Dedup is NOT what the expressions cost: GitHub replaces the single PENDING run
+    per group regardless of the flag, so bursts still collapse; only the kill is gone.
+    """
     ci = _yaml(WORKFLOW)
     fences = _yaml(FENCES)
-    for workflow in (ci, fences):
-        assert workflow["concurrency"]["cancel-in-progress"] is True
+    # PR events keep cancel-on-newer-push. Dispatches (ci) and main pushes (fences)
+    # do not — those are the two proof paths.
+    assert ci["concurrency"]["cancel-in-progress"] == (
+        "${{ github.event_name != 'workflow_dispatch' }}"
+    ), "a main baseline dispatch must never cancel the proof already running"
+    assert fences["concurrency"]["cancel-in-progress"] == (
+        "${{ github.event_name == 'pull_request' }}"
+    ), "a push to main must never cancel the fence run proving an earlier main SHA"
     assert "pull_request.number" in ci["concurrency"]["group"]
     assert "github.ref" in ci["concurrency"]["group"]
     assert "pull_request.number" in fences["concurrency"]["group"]
+    # The 2026-07-28 merged-close fence (PR #3867) lives in the same expression and
+    # must survive every later edit to this block.
+    assert "merged" in ci["concurrency"]["group"], (
+        "a MERGED close must stay fenced into its own group, or a fast squash-merge "
+        "cancels the PR's own proof run and the merged head is unproven forever"
+    )
+
+
+def test_scope_glob_separator_semantics() -> None:
+    """`*` must not cross `/`, or a one-directory scope silently covers a subtree."""
+    match = lambda pattern, path: bool(  # noqa: E731
+        PACK._glob_to_regex(pattern).match(path)
+    )
+    assert match("engine/*", "engine/a.py")
+    assert not match("engine/*", "engine/a/b.py")
+    assert match("engine/**", "engine/a/b.py")
+    assert match("engine/", "engine/a/b.py")
+    assert match("tests/test_x*.py", "tests/test_xy.py")
+    assert not match("tests/test_x*.py", "tests/test_y.py")
+    assert match("**/conftest.py", "tests/conftest.py")
+    assert match("**/conftest.py", "conftest.py")
+
+
+def test_selection_fails_safe_toward_running_everything() -> None:
+    """Every unknown must widen the run, never narrow it.
+
+    A wasted runner-minute is cheap; a false green is not. These four are the
+    only ways scoping can be wrong, and all four must resolve to the full suite.
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST)
+    scoped = [job for job in jobs if job.paths]
+
+    # 1. changed set unknowable (git failed, or main's baseline passes no ref)
+    assert len(PACK.select_jobs(jobs, None)[0]) == len(jobs)
+    # 2. a global invalidator can change what ANY job means
+    for invalidator in ("scripts/run_ci_pack.py", "tests/conftest.py",
+                        "requirements.txt", ".github/ci/legacy-jobs.yml"):
+        selected, reason = PACK.select_jobs(jobs, [invalidator])
+        assert len(selected) == len(jobs), f"{invalidator} must force a full run"
+        assert "full suite" in reason
+    # 3. an unscoped job is always-on, so an unrelated diff still runs them all
+    selected, _ = PACK.select_jobs(jobs, ["no/such/path/at/all.txt"])
+    assert len(selected) == len(jobs) - len(scoped)
+    assert all(not job.paths for job in selected)
+    # 4. a scoped job runs whenever its own scope matches
+    for job in scoped:
+        probe = job.paths[0].replace("**/", "").replace("**", "x").replace("*", "x")
+        hit, _ = PACK.select_jobs(jobs, [probe])
+        assert job in hit, f"{job.job_id} must run when {probe} changes"
+
+
+def test_declared_scope_must_cover_paths_the_job_itself_reads() -> None:
+    """A scope narrower than the job's own commands is a hard manifest error.
+
+    This is what makes scoping reviewable instead of trusted: a job that runs
+    `pytest tests/test_x.py` but scopes itself elsewhere would never re-run when
+    that test changed, and would report green forever.
+    """
+    findings = PACK._scope_coverage_findings(
+        "demo",
+        {"steps": [{"run": "python -m pytest tests/test_ci_pack.py"}]},
+        ("engine/nowhere/**",),
+    )
+    assert findings and "tests/test_ci_pack.py" in findings[0]
+    # Widening to cover it clears the finding.
+    assert not PACK._scope_coverage_findings(
+        "demo",
+        {"steps": [{"run": "python -m pytest tests/test_ci_pack.py"}]},
+        ("tests/**",),
+    )
+    # A path that no longer exists must not be able to fail the build.
+    assert not PACK._scope_coverage_findings(
+        "demo",
+        {"steps": [{"run": "python -m pytest tests/test_deleted_long_ago.py"}]},
+        ("engine/nowhere/**",),
+    )
+
+
+def test_every_declared_scope_in_the_real_manifest_is_covered() -> None:
+    """The production manifest itself must satisfy the coverage rule."""
+    PACK.load_legacy_jobs(MANIFEST)  # raises ManifestError on any gap
+
+
+def test_packs_stay_balanced_over_the_selected_subset() -> None:
+    """Balance must be computed on the SELECTION, not the full manifest.
+
+    Otherwise a scoped run leaves whole packs empty while one pack carries the
+    work, and time-to-green gets worse instead of better.
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST)
+    subset = sorted(jobs, key=lambda job: -job.weight)[:40]
+    packs = PACK.partition_jobs(subset, 4)
+    weights = [sum(job.weight for job in pack) for pack in packs]
+    assert sum(len(pack) for pack in packs) == len(subset)
+    assert max(weights) - min(weights) <= max(job.weight for job in subset)
+
+
+def test_workflow_scopes_only_pull_requests() -> None:
+    """Main's baseline must never pass --changed-from: it proves the full 173."""
+    pack = _yaml(WORKFLOW)["jobs"]["ci-pack"]
+    step = next(
+        s for s in pack["steps"]
+        if isinstance(s, dict) and "legacy CI pack" in str(s.get("name", ""))
+    )
+    scope_arg = str(step["env"]["CI_SCOPE_ARG"])
+    assert "github.event_name == 'pull_request'" in scope_arg
+    assert "--changed-from" in scope_arg
+    assert "$CI_SCOPE_ARG" in str(step["run"])
+
+
+def test_pack_command_folds_to_exactly_one_shell_command() -> None:
+    """A newline in the folded scalar splits one command into two, silently.
+
+    Putting the scope expression inline across continuation lines did exactly
+    that: YAML preserves newlines for MORE-indented lines inside `>-`, so
+    `--execute` landed on its own line and the pack ran without it. Same family
+    as the `#`-in-a-folded-scalar trap, and invisible in review.
+    """
+    pack = _yaml(WORKFLOW)["jobs"]["ci-pack"]
+    for step in pack["steps"]:
+        if not isinstance(step, dict) or "run" not in step:
+            continue
+        if not str(step["run"]).lstrip().startswith('"$RUNNER_TEMP'):
+            continue
+        command = str(step["run"])
+        assert "\n" not in command, (
+            "the pack command must fold to ONE line; a newline here silently "
+            f"drops every argument after it: {command!r}"
+        )
+        assert command.rstrip().endswith("--execute")
 
 
 def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
@@ -159,8 +320,34 @@ def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
     matrix = pack["strategy"]["matrix"]["pack"]
     assert matrix == list(range(len(matrix)))
     assert 2 <= len(matrix) <= 8
+    # EVERY event runs on the hosted pool — one `runs-on`, no event-dependent routing,
+    # so main's baseline and a pull request prove the packs the SAME way.
+    #
+    # This replaces the 2026-08-09 self-hosted detour. Main's proof was briefly routed
+    # to `["self-hosted","render-linux"]` because it sat `queued` 30+ minutes behind 133
+    # queued runs while that pool idled, and a starved main proof blocks the whole fleet
+    # (`merge_on_green.main_proof` reads the newest CONCLUDED ci.yml run on main, so
+    # without one the base-inherited-red refresh cannot fire). The repository then moved
+    # to the MastermindX enterprise org and hosted concurrency went 40 -> 180; the queue
+    # fell from 103 runs to 7. There is nothing left to escape, and the detour cost more
+    # than it saved: `render-linux` is FOUR runners shared with render.yml,
+    # engine-render.yml and merge-on-green.yml, so main's four packs took the entire
+    # pool and starved the sweeper that merges every armed pull request.
     assert pack["runs-on"] == "ubuntu-latest"
+    # The self-hosted pools are the render/nightly lanes and must never absorb CI packs.
+    runs_on = " ".join(str(pack["runs-on"]).split())
+    assert "macstudio" not in runs_on
+    assert "render-linux" not in runs_on
+    assert "self-hosted" not in runs_on
     assert pack["strategy"]["fail-fast"] is False
+    # No `max-parallel`: it existed only to stop main's packs from taking all four
+    # `render-linux` runners. With no shared pool to protect, throttling would only
+    # double main's proof (~26 min -> ~50 min), and it cannot help against the hosted
+    # ceiling because that limit is ACCOUNT-wide, not per-matrix.
+    assert "max-parallel" not in pack["strategy"], (
+        "reintroducing max-parallel only slows main's proof; the hosted concurrency "
+        "ceiling is account-wide and this key cannot raise it"
+    )
     assert pack["if"] == "github.event.action != 'closed'"
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
@@ -338,4 +525,158 @@ def test_every_workflow_test_path_exists() -> None:
         "every other test listed in that step never runs and the job is red for "
         "a reason unrelated to the code. Delete the stale path from the workflow "
         "(or restore the file if the deletion was a mistake)."
+    )
+
+
+# ── the converse: a suite NAMED BY NOTHING never runs ────────────────────────
+#
+# READ THIS BEFORE "FIXING" AN `if: ${{ false }}` LINE. `.github/ci/legacy-jobs.yml`
+# is a MANIFEST, not a set of GitHub jobs. Every one of its ~162 jobs declares
+# `if: ${{ false }}`, and that line is REQUIRED BOILERPLATE, not a disable switch:
+# scripts/run_ci_pack.py FLAGS AS AN ERROR any manifest job that omits it, so that
+# GitHub does not allocate a second, duplicate runner for steps the ci-pack matrix
+# already executes. Removing or inverting it fails validation and breaks the pack.
+# The manifest's jobs genuinely run — unrun-government-revenue executes in
+# ci-pack-1.
+#
+# The real darkness sits one line away and looks like nothing at all: a suite that
+# no `run:` step ANYWHERE names is executed by nothing, whatever any `if:` says.
+# This repo has no catch-all `pytest tests/` sweep to pick up the omission, so an
+# unnamed suite is silently inert. It passes locally, it is never red, and the lobe
+# it guards reads green because its guards are INVISIBLE, not because they hold.
+# Nineteen Government Revenue suites sat that way — among them
+# test_government_revenue_award_spine.py and test_government_revenue_award_events.py,
+# which own the forward award-event spine whose persistence break shipped to
+# production on 2026-08-06. A line tracer over the seven suites CI did name
+# executed 0 of 147 function bodies across metrics.py, candidates.py,
+# opportunities.py, budget_program.py, freshness.py and federation.py (5,279
+# lines) — including the fail-closed withholding gate in metrics.py.
+#
+# test_every_workflow_test_path_exists (above) checks NAMED -> EXISTS. The two
+# below check the converse, EXISTS -> NAMED, and then the same question one layer
+# down: a contract the ENGINE loads at runtime must be able to start the CI that
+# validates against it.
+#
+# SCOPE — deliberately Government Revenue only. scripts/audit_unrun_tests.py
+# measures 963 of 2,015 tests/test_*.py suites unrun repo-wide, so the generalised
+# "every suite must be named" assertion would be red on ~48% of the tree the day it
+# landed and would be deleted rather than fixed. Widen this per-program, behind a
+# program that has actually closed its own darkness.
+
+_GOVERNMENT_REVENUE_SUITE_GLOBS = (
+    # also catches tests/test_prophet_government_revenue_context.py
+    "tests/test_*government_revenue*.py",
+    "tests/test_usaspending*.py",
+)
+
+_CLOSURE_SPEC = importlib.util.spec_from_file_location(
+    "check_ci_trigger_closure", ROOT / "scripts" / "check_ci_trigger_closure.py"
+)
+assert _CLOSURE_SPEC and _CLOSURE_SPEC.loader
+CLOSURE = importlib.util.module_from_spec(_CLOSURE_SPEC)
+sys.modules[_CLOSURE_SPEC.name] = CLOSURE
+_CLOSURE_SPEC.loader.exec_module(CLOSURE)
+
+
+def _executable_run_commands() -> str:
+    """Every `run:` body CI can execute: the packed manifest plus real workflows.
+
+    The manifest is the usual home, but a suite wired into a standalone workflow
+    genuinely runs too. Scanning both keeps this guard from going red on a correct
+    fix — a guard that punishes the right answer gets weakened, not obeyed.
+    """
+    bodies: list[str] = []
+
+    def walk(node: object) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == "run" and isinstance(value, str):
+                    bodies.append(value)
+                else:
+                    walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    for path in [MANIFEST] + sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+        walk(yaml.safe_load(path.read_text(encoding="utf-8")))
+    return "\n".join(bodies)
+
+
+def test_every_government_revenue_suite_is_named_by_a_run_step() -> None:
+    """A Government Revenue suite no `run:` step names is executed by nothing."""
+    on_disk = sorted(
+        {
+            str(path.relative_to(ROOT))
+            for pattern in _GOVERNMENT_REVENUE_SUITE_GLOBS
+            for path in ROOT.glob(pattern)
+        }
+    )
+    # Vacuity gate: if the globs stop matching the program, this guard would pass
+    # by finding nothing at all. 29 suites exist as of 2026-08-06.
+    assert len(on_disk) >= 25, (
+        f"only {len(on_disk)} Government Revenue suites matched "
+        f"{_GOVERNMENT_REVENUE_SUITE_GLOBS} — the program was renamed or moved and "
+        "this guard is now measuring an empty set. Re-point the globs; do not "
+        "lower this floor."
+    )
+
+    commands = _executable_run_commands()
+    unnamed = [rel for rel in on_disk if rel not in commands]
+
+    assert not unnamed, (
+        f"{len(unnamed)} Government Revenue suite(s) are named by NO `run:` step in "
+        ".github/ci/legacy-jobs.yml or .github/workflows/, so nothing executes "
+        "them:\n  " + "\n  ".join(unnamed) + "\n\n"
+        "This is NOT the `if: ${{ false }}` line, and 'enabling' a job does not fix "
+        "it. That line is required boilerplate on every manifest job — "
+        "scripts/run_ci_pack.py errors on any job missing it so GitHub does not "
+        "allocate a duplicate runner — and the manifest's steps really are "
+        "executed, by the ci-pack matrix in ci.yml. The defect is being UNNAMED: "
+        "there is no catch-all `pytest tests/` sweep in this repo, so a suite no "
+        "step lists is inert, green-by-absence, and its subject ships unguarded. "
+        "Fix by naming the suite in a `run:` step of the owning manifest job "
+        "(unrun-government-revenue) AND adding its path to ci.yml's "
+        "on.pull_request.paths so an edit to it can start that job."
+    )
+
+
+_RUNTIME_SCHEMA_RE = re.compile(r'"([A-Za-z0-9_.]+\.schema\.json)"')
+_WORKSPACE = ROOT / "engine" / "government_revenue" / "workspace.py"
+
+
+def test_workspace_runtime_contracts_can_start_the_ci_that_validates_them() -> None:
+    """A contract the engine loads at runtime must be a trigger for its own CI."""
+    names = sorted(set(_RUNTIME_SCHEMA_RE.findall(_WORKSPACE.read_text("utf-8"))))
+    assert names, (
+        f"{_WORKSPACE.relative_to(ROOT)} no longer names a *.schema.json literal. "
+        "Either the runtime loader moved (re-point this guard at its new home) or "
+        "the extractor drifted — a silently empty extraction turns this assertion "
+        "into a no-op, which is the exact failure mode it exists to prevent."
+    )
+
+    contracts = [f"contracts/government_revenue/{name}" for name in names]
+    absent = [rel for rel in contracts if not (ROOT / rel).exists()]
+    assert not absent, (
+        "workspace.py loads contract files that are not in the tree:\n  "
+        + "\n  ".join(absent)
+        + "\n\nThe validator fails CLOSED on a missing schema, so every payload "
+        "would read invalid at runtime."
+    )
+
+    workflow = _yaml(WORKFLOW)
+    triggers = (workflow.get("on") or workflow.get(True))["pull_request"]["paths"]
+    unmatched = [rel for rel in contracts if not CLOSURE.matched(rel, triggers)]
+
+    assert not unmatched, (
+        f"{len(unmatched)} contract(s) that engine/government_revenue/workspace.py "
+        "loads AT RUNTIME match no glob in ci.yml's on.pull_request.paths:\n  "
+        + "\n  ".join(unmatched)
+        + "\n\nSo editing one of these schemas cannot fire the CI that validates "
+        "against it. workspace.py's validator fails CLOSED — a schema edit that "
+        "makes every payload read invalid merges without a single check running. "
+        "scripts/check_ci_trigger_closure.py does not cover this: it is DEPTH 1 "
+        "(the files a test file itself reads), and these are read one layer "
+        "deeper, inside the engine module the test imports. Fix by adding "
+        '- "contracts/government_revenue/**" to that paths list.'
     )

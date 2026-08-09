@@ -1,20 +1,39 @@
 """Backfill script — FINRA CNMSshvol daily short-volume history.
 
-Fetches daily FINRA off-exchange (FINRA-facility) volume files back to
-2018-08-01, appending to data/finra_short_volume/panel.parquet.
+Fetches daily FINRA off-exchange (FINRA-facility) volume files and appends them to
+data/finra_short_volume/**panel_deep.parquet** — NOT the collector's panel.parquet.
+build_darkpool_desk.py reads the union of the two. See PANEL_PATH_KEY below for why
+the split exists (a frozen research family seals the collector's panel).
 
-SIZE LAW: The full ~8-year universe projects to ~67MB — exceeding the 30MB
-git-tracked-file ceiling. This backfill restricts the DISPLAY UNIVERSE to the
-union of:
-  - engine/options_universe.py → gex_symbols()  (~360 tickers)
-  - tickers already present in the existing panel.parquet
+SIZE LAW (corrected 2026-08-05 — the union was a repo-breaking landmine):
+The historical universe is `engine/options_universe.gex_symbols()` ONLY (~375
+tickers) — exactly the universe build_darkpool_desk.py displays.
 
-This restricts the projected file to ~16MB, well under the 30MB limit.
-All build_darkpool_desk.py computations operate on this universe only.
+The original code unioned gex_symbols with *every ticker already in the panel*.
+That was safe when the panel was young, but the nightly collector accrues the
+full breadth universe (~1,533 tickers today), so the union silently grew to
+1,633. Measured at the panel's own 26.2 compressed bytes/row:
+
+    window   universe          projected panel.parquet
+    3y       gex only                     7.4 MB   ok
+    3y       union (as coded)            32.3 MB   OVER the 30MB git ceiling
+    8y       gex only                    19.8 MB   ok
+    8y       union (as coded)            86.1 MB   ~3x OVER
+
+i.e. this script's own documented invocation (`--start 2018-08-01`) would have
+written an 86MB tracked parquet. `--universe union` is retained for deliberate
+off-git analysis but is no longer the default, and MAX_PANEL_MB hard-stops the
+run before an oversized file is committed rather than after.
+
+Restricting history to gex_symbols loses nothing on the desk: every
+build_darkpool_desk.py computation already runs on `panel ∩ gex_symbols()`.
+Rows already in the panel are never removed — the universe is a filter on
+newly fetched rows only.
 
 Usage:
     python -m scripts.backfill_finra_short_volume [--start YYYY-MM-DD] [--end YYYY-MM-DD]
-    python -m scripts.backfill_finra_short_volume --start 2018-08-01
+    python -m scripts.backfill_finra_short_volume --start 2023-08-01     # ~3y, ~7MB
+    python -m scripts.backfill_finra_short_volume --universe union       # off-git only
 
 Resumable: already-fetched dates are skipped.  Polite: 0.4s sleep between requests.
 """
@@ -22,63 +41,128 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 import time
 from datetime import date, timedelta
+from pathlib import Path
 
 import pandas as pd
 import requests
 
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
 
 log = logging.getLogger(__name__)
 
 BASE = "https://cdn.finra.org/equity/regsho/daily"
-PANEL_PATH_KEY = ("finra_short_volume", "panel.parquet")
+# Writes the DEEP store, never the collector's panel.parquet.
+#
+# engine/personality_flow_absorption.py (PSS-AF1, a FROZEN prospective family — see
+# research/DO_NOT_REBUILD.md) seals every panel row dated <= its FINRA_PREFIX_END with a
+# row count + SHA256. That seal is tamper-evidence: deliberately brittle, and unable to
+# tell "legitimately backfilled from the authoritative source" from "edited to
+# manufacture a result". Backfilling straight into panel.parquet broke it — the write was
+# verified purely additive (0 pre-existing rows missing, 0 modified, 258,198 added) and
+# the seal still, correctly, refused. Re-cutting a frozen family's seal is an operator
+# decision, so history lands here and panel.parquet stays exactly as attested.
+PANEL_PATH_KEY = ("finra_short_volume", "panel_deep.parquet")
+SEALED_PANEL_KEY = ("finra_short_volume", "panel.parquet")
 START_DEFAULT = date(2018, 8, 1)
 SLEEP_BETWEEN = 0.4     # seconds — polite crawl rate
+MAX_PANEL_MB = 25.0     # hard stop: refuse to grow the tracked panel past this (30MB git ceiling, 5MB margin)
 
 
 def _panel_path():
+    """The DEEP store this script owns."""
     return config.data_dir() / PANEL_PATH_KEY[0] / PANEL_PATH_KEY[1]
 
 
-def _display_universe() -> set[str]:
-    """Tickers for the backfill: options_universe ∪ existing panel tickers."""
+def _sealed_panel_path():
+    """The collector's panel — read-only here, and never written."""
+    return config.data_dir() / SEALED_PANEL_KEY[0] / SEALED_PANEL_KEY[1]
+
+
+def _display_universe(mode: str = "display") -> set[str]:
+    """Tickers the backfill will KEEP from each fetched day.
+
+    mode="display" (default): gex_symbols() only — the universe the desk renders.
+    mode="union":   gex_symbols() ∪ existing panel tickers. Off-git analysis only;
+                    see the SIZE LAW block in the module docstring (8y union ≈ 86MB).
+
+    This filters newly fetched rows; it never deletes rows already in the panel.
+    """
     universe: set[str] = set()
-    # 1. Options universe (~360 names — the Dark Pool Desk display set)
     try:
         import sys, pathlib
-        sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
         from engine.options_universe import gex_symbols
         universe.update(gex_symbols())
         log.info("options_universe: %d symbols", len(universe))
     except Exception as e:  # noqa: BLE001
-        log.warning("options_universe load failed (%s) — using existing panel only", e)
+        log.warning("options_universe load failed (%s)", e)
 
-    # 2. Existing panel tickers (never remove history we already have)
-    p = _panel_path()
-    if p.exists():
-        try:
-            existing = pd.read_parquet(p, columns=["ticker"])["ticker"].unique()
-            before = len(universe)
-            universe.update(existing)
-            log.info("panel tickers added: %d new, total universe now %d",
-                     len(universe) - before, len(universe))
-        except Exception as e:  # noqa: BLE001
-            log.warning("existing panel read failed (%s)", e)
+    if mode == "union":
+        p = _sealed_panel_path()
+        if p.exists():
+            try:
+                existing = pd.read_parquet(p, columns=["ticker"])["ticker"].unique()
+                before = len(universe)
+                universe.update(existing)
+                log.warning("--universe union: +%d panel tickers → %d total. "
+                            "NOT size-lawful for git at multi-year windows.",
+                            len(universe) - before, len(universe))
+            except Exception as e:  # noqa: BLE001
+                log.warning("existing panel read failed (%s)", e)
 
+    if not universe:
+        raise RuntimeError(
+            "backfill: empty universe — refusing to fetch the unrestricted FINRA "
+            "universe (~8k symbols) into a git-tracked panel. Fix options_universe first.")
     return universe
 
 
+def _panel_mb(path) -> float:
+    return path.stat().st_size / 1e6 if path.exists() else 0.0
+
+
+def _assert_size_lawful(path) -> None:
+    """Hard-stop before an oversized panel reaches a commit (see SIZE LAW)."""
+    mb = _panel_mb(path)
+    if mb > MAX_PANEL_MB:
+        raise RuntimeError(
+            f"backfill: {path.name} is {mb:.1f}MB, over the {MAX_PANEL_MB}MB stop "
+            f"(30MB git ceiling). Narrow --start or keep --universe display.")
+
+
+def _assert_not_the_sealed_panel(path) -> None:
+    """Refuse to write the collector's panel — PSS-AF1 attests every row in it.
+
+    A fail-closed backstop for the PANEL_PATH_KEY contract: if someone points this
+    script back at panel.parquet, stop before the write rather than discovering it as
+    a red CI seal two hours later.
+    """
+    if path.resolve() == _sealed_panel_path().resolve():
+        raise RuntimeError(
+            "backfill: refusing to write panel.parquet — it carries the PSS-AF1 frozen "
+            "attestation (engine/personality_flow_absorption.py FINRA_PREFIX_SHA256). "
+            "Backfill history into panel_deep.parquet; the desk unions the two.")
+
+
 def _have_dates() -> set[date]:
-    p = _panel_path()
-    if not p.exists():
-        return set()
-    try:
-        ts = pd.read_parquet(p, columns=["date"])["date"].unique()
-        return {pd.Timestamp(t).date() for t in ts}
-    except Exception:  # noqa: BLE001
-        return set()
+    """Dates already held across BOTH stores — the deep one we own and the sealed one
+    the collector owns. Skipping the collector's dates keeps this from re-fetching (and
+    then trying to re-store) sessions that already exist upstream."""
+    out: set[date] = set()
+    for p in (_panel_path(), _sealed_panel_path()):
+        if not p.exists():
+            continue
+        try:
+            ts = pd.read_parquet(p, columns=["date"])["date"].unique()
+            out.update(pd.Timestamp(t).date() for t in ts)
+        except Exception:  # noqa: BLE001
+            continue
+    return out
 
 
 def _all_business_days(start: date, end: date) -> list[date]:
@@ -117,10 +201,11 @@ def _parse(text: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def run(start: date = START_DEFAULT, end: date | None = None, dry_run: bool = False) -> None:
+def run(start: date = START_DEFAULT, end: date | None = None, dry_run: bool = False,
+        universe_mode: str = "display") -> None:
     end = end or date.today()
-    universe = _display_universe()
-    log.info("display universe: %d tickers (options_universe ∪ existing panel)", len(universe))
+    universe = _display_universe(universe_mode)
+    log.info("backfill universe: %d tickers (mode=%s)", len(universe), universe_mode)
 
     have = _have_dates()
     wanted = [d for d in _all_business_days(start, end) if d not in have]
@@ -128,7 +213,9 @@ def run(start: date = START_DEFAULT, end: date | None = None, dry_run: bool = Fa
              len(_all_business_days(start, end)), len(have), len(wanted))
 
     if dry_run:
-        log.info("DRY RUN — would fetch %d dates", len(wanted))
+        est_mb = _panel_mb(_panel_path()) + len(wanted) * len(universe) * 26.2 / 1e6
+        log.info("DRY RUN — would fetch %d dates; projected panel ≈ %.1f MB (stop=%.0f MB)",
+                 len(wanted), est_mb, MAX_PANEL_MB)
         return
 
     path = _panel_path()
@@ -173,8 +260,9 @@ def run(start: date = START_DEFAULT, end: date | None = None, dry_run: bool = Fa
         if fetched % 100 == 0:
             _flush(path, new_frames)
             new_frames = []
-            log.info("checkpoint: %d/%d dates fetched, %d skipped, %d errors",
-                     fetched, len(wanted), skipped, errors)
+            _assert_size_lawful(path)
+            log.info("checkpoint: %d/%d dates fetched, %d skipped, %d errors, panel %.1f MB",
+                     fetched, len(wanted), skipped, errors, _panel_mb(path))
 
         time.sleep(SLEEP_BETWEEN)
 
@@ -185,14 +273,16 @@ def run(start: date = START_DEFAULT, end: date | None = None, dry_run: bool = Fa
     log.info("backfill complete: fetched=%d skipped=%d errors=%d", fetched, skipped, errors)
     if path.exists():
         panel = pd.read_parquet(path)
-        log.info("final panel: %d rows, %d dates, %d tickers",
-                 len(panel), panel["date"].nunique(), panel["ticker"].nunique())
+        log.info("final panel: %d rows, %d dates, %d tickers, %.1f MB",
+                 len(panel), panel["date"].nunique(), panel["ticker"].nunique(), _panel_mb(path))
+        _assert_size_lawful(path)
 
 
 def _flush(path, frames: list[pd.DataFrame]) -> None:
-    """Append frames to panel, dedup, sort."""
+    """Append frames to the deep store, dedup, sort."""
     if not frames:
         return
+    _assert_not_the_sealed_panel(path)
     fresh = pd.concat(frames, ignore_index=True)
     if path.exists():
         prev = pd.read_parquet(path)
@@ -212,11 +302,15 @@ def main() -> None:
     p.add_argument("--start", default=str(START_DEFAULT), help="Start date YYYY-MM-DD")
     p.add_argument("--end", default=str(date.today()), help="End date YYYY-MM-DD")
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--universe", choices=("display", "union"), default="display",
+                   help="display = gex_symbols only (size-lawful, default); "
+                        "union = + existing panel tickers (off-git analysis only)")
     args = p.parse_args()
     run(
         start=date.fromisoformat(args.start),
         end=date.fromisoformat(args.end),
         dry_run=args.dry_run,
+        universe_mode=args.universe,
     )
 
 

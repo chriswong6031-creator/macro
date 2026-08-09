@@ -1,0 +1,396 @@
+# BioCatalyst M0a — outcome family policy (CONTRACT ONLY).
+#
+# This file freezes the shared outcome envelope, known-at clock, censoring and
+# terminality grammar, correction grammar, and the per-family ENTRY GATE for the
+# nine outcome families.  It EXTENDS the seed policy in
+# config/biocatalyst_outcomes.yml (biocatalyst_outcome_policy.v1); it does not
+# restate or contradict it.
+#
+# It produces nothing.  Every family's state is `clock_not_opened` and every
+# entry gate is `satisfied: false`.  No forecast is created, no clock is opened,
+# and nothing accrues from this file.
+#
+# m0a.2 (2026-08-07) records ONE change in the world: BC-O1b shipped, so
+# `biocatalyst_outcome_record.v1` now exists and the `o1b_outcome_writer`
+# precondition is discharged for all nine families.  Discharging it exposed what
+# the m0a.1 gate lists had left implicit -- eight of the nine families require a
+# source that is NOT production-ingest-allowed, and the ninth requires an
+# identity contract that does not exist.  Every clock therefore stays closed,
+# and each family now names the blocker that actually stands.  The clock state
+# of record is the activation receipt in the O1b store, not this file:
+# `engine/biocatalyst/family_clock.py` re-derives source eligibility from
+# config/biocatalyst_sources.yml on every evaluation, so editing a gate here
+# cannot open a family whose sources cannot be read.
+#
+# `contract_id` registers the document with ContractRegistry; `schema` mirrors
+# the first-line idiom of the sibling BioCatalyst config files.
+
+contract_id: biocatalyst_outcome_family_policy.v1
+schema: biocatalyst_outcome_family_policy.v1
+schema_version: "1.0.0"
+policy_version: m0a.2
+effective_at: "2026-08-06T00:00:00Z"
+owner: biocatalyst
+state: contract_only_no_clock_opened
+
+extends:
+  seed_policy_schema: biocatalyst_outcome_policy.v1
+  seed_policy_file: config/biocatalyst_outcomes.yml
+  executable_outcome_contract: outcome_label.v1
+  relationship: extends_without_restating_or_contradicting
+
+outcome_envelope:
+  required_fields:
+    - outcome_id
+    - family_id
+    - subject_ref
+    - seed_layer
+    - value
+    - censoring_state
+    - effective_at
+    - known_at
+    - observed_at
+    - evidence_refs
+    - policy_version
+    - resolver_type
+    - revision_of
+  forbidden_fields:
+    - probability
+    - score
+    - rank
+    - position_size
+    - expected_return
+    - ticker
+    - issuer_id
+    - security_id
+    - sponsor_id
+  value_authority: source_native_status_only
+  model_may_originate_value: false
+  evidence_floor_inherited_from_seed: true
+
+known_at_clock:
+  clock_fields:
+    effective_at: When the event itself took effect in the world, as stated by the evidencing source.
+    known_at: The earliest instant the fact was knowable from an eligible source, never earlier than its publication.
+    observed_at: When this system actually read the fact; always at or after known_at.
+  ordering_rule: effective_at_le_known_at_le_observed_at
+  timezone: utc_only
+  timestamp_format: iso8601_utc_z
+  backfill_behavior: forbidden_after_clock_open
+  unknown_known_at_behavior: record_stays_uncensored_and_unresolved
+
+censoring:
+  censoring_state_required: true
+  missing_is_not_negative: true
+  unresolved_is_not_failure: true
+  rules:
+    right_censored_open_window:
+      description: The observation window is still open, so the outcome is not yet knowable and must not be read as a negative result.
+      resolves_outcome: false
+      terminality: non_terminal
+    administratively_censored_at_policy_freeze:
+      description: Observation stopped because the policy version was frozen, not because anything happened to the subject.
+      resolves_outcome: false
+      terminality: non_terminal
+    interval_censored_between_snapshots:
+      description: The change is known to fall between two source snapshots, so the effective_at instant is an interval and not a point.
+      resolves_outcome: false
+      terminality: non_terminal
+    not_censored_terminal_event:
+      description: An eligible source states a terminal disposition directly, so the outcome resolves at a known instant.
+      resolves_outcome: true
+      terminality: terminal
+
+correction_grammar:
+  correction_is_a_new_record: true
+  original_snapshot_is_never_rewritten: true
+  behavior: append_revision_and_close_prior_transaction_interval
+  required_link_field: revision_of
+  lineage_record_contract: biocatalyst_operational_record.v1
+  lineage_record_kind: correction_lineage
+  correction_reasons:
+    - operator_correction
+    - source_correction
+    - policy_correction
+    - duplicate_merge
+  model_may_correct: false
+
+family_registration:
+  required_preconditions:
+    - frozen_policy_version
+    - eligible_source_registration
+    - eligible_identity_contract
+    - o1b_outcome_writer
+  registration_authority: operator_review
+  model_may_register: false
+  unsatisfied_precondition_behavior: clock_stays_closed
+  writer_contract: biocatalyst_outcome_record.v1
+  writer_contract_state: built_in_bc_o1b
+
+clock_activation:
+  evaluator_module: engine.biocatalyst.family_clock
+  activation_record_contract: biocatalyst_family_clock_activation.v1
+  activation_record_kind: family_clock_activation
+  clock_state_authority: activation_receipt_not_this_file
+  source_eligibility_rule: required_source_ids_must_all_be_production_ingest_allowed
+  source_registry_file: config/biocatalyst_sources.yml
+  backfill: forbidden_no_history_recorded
+  accrual_start_rule: known_at_of_the_activation_never_earlier
+  model_may_open_a_clock: false
+
+families:
+  trial_progression_termination:
+    description: Operational progression or termination of one registered study, as stated by the registry record itself.
+    seed_layer: study_conduct
+    state: clock_not_opened
+    terminality: revisable_state
+    censoring_rule: right_censored_open_window
+    known_at_source: registry_record_version
+    forbidden_inference:
+      - terminated_means_endpoint_failure
+      - suspended_means_regulatory_hold
+      - last_update_date_is_event_date
+    entry_gate:
+      required_preconditions:
+        - frozen_policy_version
+        - eligible_source_registration
+        - o1b_outcome_writer
+      required_source_ids:
+        - clinicaltrials_gov_v2
+        - clinicaltrials_gov_record_history
+      required_identity_adapters: []
+      required_writer_contract: biocatalyst_outcome_record.v1
+      satisfied: false
+      unsatisfied_preconditions:
+        - eligible_source_registration
+      blockers:
+        - required_source_not_production_ingest_allowed
+
+  endpoint_readout:
+    description: Result status for one named endpoint, population, and time frame, from a results record or primary document.
+    seed_layer: endpoint_result
+    state: clock_not_opened
+    terminality: terminal_event
+    censoring_rule: not_censored_terminal_event
+    known_at_source: results_record
+    forbidden_inference:
+      - top_line_positive_means_every_endpoint_met
+      - p_value_without_estimand_is_complete_result
+      - registry_results_absence_means_endpoint_missed
+    entry_gate:
+      required_preconditions:
+        - frozen_policy_version
+        - eligible_source_registration
+        - o1b_outcome_writer
+      required_source_ids:
+        - clinicaltrials_gov_v2
+        - clinicaltrials_gov_record_history
+      required_identity_adapters: []
+      required_writer_contract: biocatalyst_outcome_record.v1
+      satisfied: false
+      unsatisfied_preconditions:
+        - eligible_source_registration
+      blockers:
+        - endpoint_alignment_review_queue_not_drained
+        - required_source_not_production_ingest_allowed
+
+  timing_slip:
+    description: A movement of a registered study date such as primary completion or study completion, measured between two source snapshots.
+    seed_layer: study_conduct
+    state: clock_not_opened
+    terminality: recurring_observation
+    censoring_rule: interval_censored_between_snapshots
+    known_at_source: registry_record_version
+    forbidden_inference:
+      - date_change_means_trial_trouble
+      - registry_edit_date_is_the_decision_date
+      - one_slip_predicts_the_next
+    entry_gate:
+      required_preconditions:
+        - frozen_policy_version
+        - eligible_source_registration
+        - o1b_outcome_writer
+      required_source_ids:
+        - clinicaltrials_gov_record_history
+      required_identity_adapters: []
+      required_writer_contract: biocatalyst_outcome_record.v1
+      satisfied: false
+      unsatisfied_preconditions:
+        - eligible_source_registration
+      blockers:
+        - required_source_not_production_ingest_allowed
+
+  enrollment_site_change:
+    description: A change in enrollment count, enrollment type, or registered site roster for one study.
+    seed_layer: study_conduct
+    state: clock_not_opened
+    terminality: recurring_observation
+    censoring_rule: interval_censored_between_snapshots
+    known_at_source: registry_record_version
+    forbidden_inference:
+      - site_added_means_enrollment_accelerating
+      - anticipated_enrollment_is_actual_enrollment
+      - site_count_is_a_velocity
+    entry_gate:
+      required_preconditions:
+        - frozen_policy_version
+        - eligible_source_registration
+        - o1b_outcome_writer
+      required_source_ids:
+        - clinicaltrials_gov_record_history
+      required_identity_adapters: []
+      required_writer_contract: biocatalyst_outcome_record.v1
+      satisfied: false
+      unsatisfied_preconditions:
+        - eligible_source_registration
+      blockers:
+        - required_source_not_production_ingest_allowed
+
+  regulatory_outcome:
+    description: Jurisdiction-specific disposition of one named application or product, as published by the regulator.
+    seed_layer: regulatory_disposition
+    state: clock_not_opened
+    terminality: terminal_event
+    censoring_rule: not_censored_terminal_event
+    known_at_source: regulator_publication
+    forbidden_inference:
+      - foreign_approval_implies_fda_approval
+      - pdufa_guidance_is_regulator_confirmed_without_evidence
+      - action_date_silence_means_delay
+    entry_gate:
+      required_preconditions:
+        - frozen_policy_version
+        - eligible_source_registration
+        - o1b_outcome_writer
+      required_source_ids:
+        - drugs_at_fda
+        - openfda
+      required_identity_adapters: []
+      required_writer_contract: biocatalyst_outcome_record.v1
+      satisfied: false
+      unsatisfied_preconditions:
+        - eligible_source_registration
+      blockers:
+        - regulatory_sources_not_production_ingest_allowed
+        - required_source_not_production_ingest_allowed
+
+  financing_dilution_event:
+    description: An issuance, offering, or other capital-structure change attributed to the party that owns a program.
+    seed_layer: not_in_seed_policy
+    state: clock_not_opened
+    terminality: terminal_event
+    censoring_rule: administratively_censored_at_policy_freeze
+    known_at_source: corporate_filing
+    forbidden_inference:
+      - trial_event_implies_a_financing
+      - shelf_registration_is_an_issuance
+      - dilution_is_an_outcome_of_the_study
+    entry_gate:
+      required_preconditions:
+        - frozen_policy_version
+        - eligible_source_registration
+        - eligible_identity_contract
+        - o1b_outcome_writer
+      required_source_ids:
+        - sec_company_facts_and_filings
+      required_identity_adapters:
+        - biocatalyst_company_identity_pit_adapter.v1
+        - biocatalyst_capital_structure_pit_adapter.v1
+      required_writer_contract: biocatalyst_outcome_record.v1
+      satisfied: false
+      unsatisfied_preconditions:
+        - eligible_identity_contract
+        - eligible_source_registration
+      blockers:
+        - required_source_not_production_ingest_allowed
+        - reviewed_point_in_time_company_identity_contract
+        - versioned_internal_pit_adapter_with_unavailable_state_semantics
+
+  partnership_event:
+    description: A licensing, option, collaboration, or return event that changes who owns or funds an asset-indication program.
+    seed_layer: asset_program_state
+    state: clock_not_opened
+    terminality: terminal_event
+    censoring_rule: administratively_censored_at_policy_freeze
+    known_at_source: corporate_filing
+    forbidden_inference:
+      - trial_termination_means_asset_discontinuation
+      - one_jurisdiction_state_applies_globally
+      - option_exercise_is_a_partnership_signing
+    entry_gate:
+      required_preconditions:
+        - frozen_policy_version
+        - eligible_source_registration
+        - eligible_identity_contract
+        - o1b_outcome_writer
+      required_source_ids:
+        - sec_company_facts_and_filings
+      required_identity_adapters:
+        - biocatalyst_company_identity_pit_adapter.v1
+        - biocatalyst_corporate_document_span_adapter.v1
+      required_writer_contract: biocatalyst_outcome_record.v1
+      satisfied: false
+      unsatisfied_preconditions:
+        - eligible_identity_contract
+        - eligible_source_registration
+      blockers:
+        - required_source_not_production_ingest_allowed
+        - reviewed_point_in_time_company_identity_contract
+        - versioned_document_and_exact_span_read_contract
+
+  market_reaction:
+    description: A price or volume response measured on a security over a stated window around a dated program event.
+    seed_layer: not_in_seed_policy
+    state: clock_not_opened
+    terminality: recurring_observation
+    censoring_rule: administratively_censored_at_policy_freeze
+    known_at_source: market_data_plane
+    forbidden_inference:
+      - nct_record_identifies_a_security
+      - sponsor_name_match_is_an_issuer_join
+      - move_after_an_event_was_caused_by_the_event
+    entry_gate:
+      required_preconditions:
+        - frozen_policy_version
+        - eligible_source_registration
+        - eligible_identity_contract
+        - o1b_outcome_writer
+      required_source_ids: []
+      required_identity_adapters:
+        - biocatalyst_security_identity_pit_adapter.v1
+      required_writer_contract: biocatalyst_outcome_record.v1
+      satisfied: false
+      unsatisfied_preconditions:
+        - eligible_identity_contract
+        - eligible_source_registration
+      blockers:
+        - complete_point_in_time_security_and_corporate_actions_contract
+        - identity_review_queue_not_drained
+
+  forecast_calibration:
+    description: Graded agreement between a previously recorded forward window and the family outcome that later resolved it.
+    seed_layer: not_in_seed_policy
+    state: clock_not_opened
+    terminality: recurring_observation
+    censoring_rule: right_censored_open_window
+    known_at_source: internal_forecast_ledger
+    forbidden_inference:
+      - prediction_is_an_outcome
+      - an_ungraded_window_is_a_miss
+      - resolved_only_rows_describe_the_whole_history
+    entry_gate:
+      required_preconditions:
+        - frozen_policy_version
+        - eligible_source_registration
+        - eligible_identity_contract
+        - o1b_outcome_writer
+      required_source_ids: []
+      required_identity_adapters: []
+      required_writer_contract: biocatalyst_outcome_record.v1
+      satisfied: false
+      unsatisfied_preconditions:
+        - eligible_identity_contract
+        - eligible_source_registration
+        - frozen_policy_version
+      blockers:
+        - no_graded_family_clock_is_open

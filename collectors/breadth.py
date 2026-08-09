@@ -197,6 +197,90 @@ def compute_updown(closes: pd.DataFrame, volume: pd.DataFrame) -> pd.DataFrame:
     return out.dropna(how="all", subset=["up_vol", "down_vol"])
 
 
+_STALE_CAL_DAYS = 7  # cross-ref: engine.name_score_grader._MAX_BAR_LAG_DAYS /
+# collectors.yahoo._STALE_CAL_DAYS — the SAME 7-calendar-day staleness law, duplicated
+# here because collectors must not import engine (layering).
+
+
+def disclose_stale_constituent_columns(members_symbols, closes: pd.DataFrame,
+                                       group_name: str) -> dict:
+    """Current-constituent column disclosure (R4, research/ADJUDICATION_20260803_
+    UNIVERSE_SIDE_STORE_FRESHNESS.md). ``_merge_refreshed``'s
+    ``fresh.combine_first(cached)`` is a deliberate FEATURE (a survivorship-honest
+    perpetual archive for replay/backtest readers) — it must never prune history.
+    But it also means a symbol Yahoo silently stops returning (CWEN-A: dead at
+    Yahoo since 2026-06-26, sibling CWEN advancing daily in the same batches)
+    carries its frozen column forward every night, byte-identical to a departed
+    name, with zero disclosure. This only classifies CURRENT members (a name
+    Wikipedia already dropped is correctly gone — no disclosure owed there).
+
+    Classifies each symbol in ``members_symbols`` against ``closes``:
+      no column          — symbol absent from the closes matrix entirely
+      never populated     — column present but 100% NaN (FI/MMC class)
+      frozen(tip)          — column's own last non-NaN obs is more than
+                            _STALE_CAL_DAYS behind the merged frame's overall tip
+    Bare ::warning (cap 15) if any non-empty category; annotation law — never
+    through the logger. Returns {"no_column": [...], "never_populated": [...],
+    "frozen": {ticker: tip}} so a caller/test can assert on the classification
+    without re-parsing the printed text."""
+    no_column: list[str] = []
+    never_populated: list[str] = []
+    frozen: dict[str, str] = {}
+    if closes is None or closes.empty:
+        return {"no_column": list(members_symbols), "never_populated": [], "frozen": {}}
+    # the merged frame's own overall tip — the freshest date ANY column still carries
+    # data for (closes.index.max() is not reliable once trailing rows are all-NaN).
+    _nonempty = closes.dropna(axis=1, how="all")
+    overall_tip = _nonempty.index[_nonempty.notna().any(axis=1)].max() if not _nonempty.empty else None
+    for sym in members_symbols:
+        if sym not in closes.columns:
+            no_column.append(sym)
+            continue
+        col = closes[sym].dropna()
+        if col.empty:
+            never_populated.append(sym)
+            continue
+        if overall_tip is not None:
+            tip = col.index.max()
+            if (pd.Timestamp(overall_tip) - pd.Timestamp(tip)).days > _STALE_CAL_DAYS:
+                frozen[sym] = str(pd.Timestamp(tip).date())
+    if no_column or never_populated or frozen:
+        parts: list[str] = []
+        if no_column:
+            shown = sorted(no_column)[:15]
+            more = len(no_column) - len(shown)
+            parts.append(f"no column ({len(no_column)}): {', '.join(shown)}"
+                         f"{f', +{more} more' if more > 0 else ''}")
+        if never_populated:
+            shown = sorted(never_populated)[:15]
+            more = len(never_populated) - len(shown)
+            parts.append(f"never populated ({len(never_populated)}): {', '.join(shown)}"
+                         f"{f', +{more} more' if more > 0 else ''}")
+        if frozen:
+            shown = sorted(frozen)[:15]
+            more = len(frozen) - len(shown)
+            parts.append(f"frozen ({len(frozen)}): "
+                         f"{', '.join(f'{t}({frozen[t]})' for t in shown)}"
+                         f"{f', +{more} more' if more > 0 else ''}")
+        print(f"::warning title={group_name} breadth constituents not refreshing::"
+              f"{'; '.join(parts)}", flush=True)
+    # M1: self-relative blindness backstop — the `frozen` check above is relative to
+    # overall_tip (this merged frame's own tip), so a TOTAL freeze (every constituent
+    # frozen together, e.g. the whole download host down) is invisible to it. Disclosure
+    # only, against wall-clock now — never a gate.
+    if overall_tip is not None:
+        _now = pd.Timestamp.utcnow().tz_localize(None)
+        _tip_ts = pd.Timestamp(overall_tip)
+        if _tip_ts.tzinfo is not None:
+            _tip_ts = _tip_ts.tz_localize(None)
+        _behind_wall = (_now.normalize() - _tip_ts.normalize()).days
+        if _behind_wall > _STALE_CAL_DAYS:
+            print(f"::warning title={group_name} breadth tip stale::overall tip "
+                  f"{_tip_ts.date()} is >{_STALE_CAL_DAYS}d behind today — possible "
+                  "collector outage", flush=True)
+    return {"no_column": no_column, "never_populated": never_populated, "frozen": frozen}
+
+
 class BreadthAdapter(Adapter):
     name = "breadth"
     group = "breadth"
@@ -220,14 +304,18 @@ class BreadthAdapter(Adapter):
     def _repair(self, members: pd.DataFrame) -> pd.DataFrame:
         """Clean a freshly-scraped constituents table before it becomes the universe.
 
-        Wikipedia is community-edited and intermittently ships a *plausible-looking*
-        but wrong symbol — vandalism (Marsh & McLennan shown as the non-existent
-        "MRSH") or a stale pre-rename ticker (Fiserv as "FISV", renamed "FI" in
-        2023) — plus the occasional non-ticker junk cell. Left unrepaired those
-        silently drop the real name from the searchable universe and can mint a
-        bogus page for the garbage symbol. This normalises symbols, drops
-        non-ticker junk, and applies the config ``ticker_fixups`` repair map
-        (bad -> real current ticker). Pure + logged; never raises."""
+        Wikipedia is community-edited and ships the occasional non-ticker junk cell,
+        which is dropped outright. It also ships symbols that are perfectly correct but
+        disagree with the key this repo stores a company under, because a TICKER RENAME
+        moved one side and not the other (Fiserv FISV->FI in 2023, where the page kept
+        the old symbol; Marsh McLennan MMC->MRSH on 2026-01-14, where the page took the
+        new one). Left unpinned those silently split one company across two universe
+        keys. This normalises symbols, drops junk, and applies the config
+        ``ticker_fixups`` map (scraped symbol -> the stored key).
+
+        ``ticker_fixups`` is a KEY PIN, not a claim about which symbol trades today —
+        see the config comment before changing a row; the price feed's own view of the
+        same renames lives in lib/ticker_aliases. Pure + logged; never raises."""
         df = members.copy()
         df["symbol"] = (df["symbol"].astype(str).str.strip().str.upper()
                         .str.replace(".", "-", regex=False))         # BRK.B -> BRK-B
@@ -325,7 +413,15 @@ class BreadthAdapter(Adapter):
                         "retried next run", self.name, missed[:12])
         for k, w in list(fresh_extras.items()):
             rw = repull_extras.get(k)
-            cols = [t for t in healed if rw is not None and t in rw.columns and t in w.columns]
+            # NOT filtered by `t in w.columns` (2026-08-06 split-basis incident): w is the
+            # FRESH 1mo window, and a healed ticker missing from it — yfinance returned no
+            # High/Low for that name in that batch — is exactly the case where the extras
+            # cache still holds the OLD basis. Skipping it there healed the closes and left
+            # high/low re-based, with no warning (the closes half succeeded), which is the
+            # one split shape no scanner in the tree can see: seam_suspects only ever reads
+            # the closes matrix. The assignment below creates the column when absent, and
+            # the union reindex already guarantees it spans the extras cache's rows.
+            cols = [t for t in healed if rw is not None and t in rw.columns]
             if not cols:
                 continue
             # union index: the grafted column must span the extras CACHE's rows,
@@ -357,6 +453,17 @@ class BreadthAdapter(Adapter):
                 closes = self._download_closes(tickers, f"{max(1, days // 365 + 1)}y")
             cutoff = closes.index.max() - pd.Timedelta(days=self.cfg["lookback_days_live"] + 30)
             closes = closes[closes.index >= cutoff]
+
+        # R4 current-constituent column disclosure (CWEN-A class): a symbol Yahoo
+        # silently stops returning is otherwise indistinguishable from a departed
+        # member — combine_first carries the frozen column forward forever, silently.
+        # NIT fix: this runs BEFORE the coverage-sanity raise below — the run that
+        # most needs this report (sparse enough to abort) is exactly the one a
+        # post-raise placement would have denied it to.
+        try:
+            disclose_stale_constituent_columns(tickers, closes, self.name)
+        except Exception as e:  # noqa: BLE001 — disclosure must never break the run
+            log.warning("%s: constituent freshness disclosure failed (%s)", self.name, e)
 
         # coverage sanity: a half-empty matrix silently poisons every ratio
         live_cols = closes.dropna(axis=1, how="all").shape[1]

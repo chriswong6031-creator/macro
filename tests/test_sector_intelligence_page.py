@@ -94,8 +94,12 @@ def test_merged_template_sections() -> None:
 # on: the router sends every legacy anchor to a specific view, so an organ in the wrong
 # view means a deep link that scrolls to a hidden element and shows the user nothing.
 VIEW_MEMBERSHIP = {
+    # 'id="actnow"' was the OLD client-rendered lanes div; the SI-central transplant
+    # (2026-08) replaced it with the shared server-rendered board include (#action-board
+    # lives inside the include, invisible to raw-source scanning) — pin the include filename,
+    # mirroring how the explore view pins "_forming_narratives.html.j2".
     "overview": ('id="ftr-tape-strip"', 'id="ftr-tape-band"', 'id="regime"',
-                 'id="actnow-section"', 'id="actnow"', 'id="grader"'),
+                 'id="actnow-section"', '_us_act_now_board.html.j2', 'id="grader"'),
     "map": ('id="rotmap-section"', 'id="si-map"', 'id="rvx-rmap"', 'id="rvx-board"',
             'id="sc-cyclemap"', 'id="sc-chart"', 'id="board"'),
     "moving": ('id="si-movement"', 'id="rc-events-mount"', 'id="rotation-app"',
@@ -116,14 +120,23 @@ def test_organs_sit_in_their_assigned_view(view: str, anchors: tuple) -> None:
 
 
 def test_view_order_is_the_sidebar_order() -> None:
-    """Five views, in the pinned order, each driven by a sidebar button of the same
+    """Six views, in the pinned order, each driven by a sidebar button of the same
     name. Order is load-bearing twice over: it is the reading order of the product
-    (overview → map → moving → money → explore) and it is the tab order of the mobile
-    switcher."""
+    (overview → map → moving → money → explore → confluence) and it is the tab order of
+    the mobile switcher. Confluence sits LAST on purpose: it is the entry-timing funnel
+    you reach after the rotation read, not a lens on the desk itself, and appending it
+    leaves the five original tab positions where returning readers left them."""
     s = _read(TPL / "sector_central.html.j2")
-    order = ["overview", "map", "moving", "money", "explore"]
+    order = ["overview", "map", "moving", "money", "explore", "confluence"]
     assert re.findall(r'<section class="si-view[^"]*" data-view="([a-z]+)"', s) == order
     assert re.findall(r'class="si-view-btn[^"]*" data-view="([a-z]+)"', s) == order
+    # The funnel exit link is gone: it pointed at subsectors.html from one row below the
+    # #confluence button, wearing the same glyph — two rail entries to the same board.
+    assert 'class="si-side-out"' not in s, \
+        "the old funnel exit LINK survived — it should be the routed #confluence view now"
+    assert 'href="subsectors.html"' not in s, \
+        "the sidebar still links the standalone page the confluence view absorbed"
+
     # the V1 sticky anchor rail is retired — the sidebar replaced it
     assert 'id="si-rail"' not in s, "the V1 anchor rail came back"
     assert 'class="scc-rail"' not in s
@@ -192,12 +205,7 @@ def test_dead_v1_desk_stays_dead() -> None:
 def test_gated_read_and_movement_posture() -> None:
     s = _read(TPL / "sector_central.html.j2")
     # The lanes stay the only gated/graded surface; movement stays display-only.
-    # The footnote that SAID so was cut (operator, 2026-08-04) — it restated the
-    # section header. The posture is structural, so pin the structure: the lanes
-    # container exists, and movement is still labelled display-only.
-    assert 'id="actnow" class="rvx-lanes"' in s, "the lanes container is the gated surface"
-    assert "Lanes are the only gated, graded calls on this page" not in s, \
-        "the removed footnote came back"
+    assert "Lanes are the only gated, graded calls on this page" in s
     assert "display-only" in s
 
 
@@ -250,4 +258,10 @@ def test_nav_flyout_collapsed_to_two_entries() -> None:
     us_zone = s.split("China")[0]
     assert 'href="{{ NP }}baskets.html"' not in us_zone
     assert 'href="{{ NP }}subsector_rotation.html"' not in us_zone
-    assert 'href="{{ NP }}subsectors.html"' in s  # confluence funnel stays
+    # The confluence funnel stays in the nav, but as a DEEP LINK into the merged page's
+    # rail view rather than a link out to the standalone page — the same move #4637 made
+    # for China, whose note deferred this US half. The standalone subsectors.html keeps
+    # only its internal links; it is no longer a nav destination.
+    assert 'href="{{ NP }}sector_central.html#confluence"' in s
+    assert 'href="{{ NP }}subsectors.html"' not in s, \
+        "the old funnel exit LINK survived — it should be a routed #confluence view now"

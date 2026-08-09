@@ -1,0 +1,16 @@
+{
+  "_comment": "Fleet session-worktree GC (scripts/worktree_gc.py). armed:false = report-only; deletion refuses. Flipping armed to true is the operator's ratification act — see research/WORKTREE_GC_POLICY.md before arming. JSON (not yml) so the tool runs on a bare system python3 under launchd with no pyyaml.",
+  "armed": false,
+  "min_age_days": 7,
+  "include_open_pr": false,
+  "include_orphans": false,
+  "delete_local_branches": true,
+  "max_delete_per_run": 200,
+  "pr_limit": 1000,
+  "roots": [
+    ".claude/worktrees",
+    ".claire/worktrees",
+    ".codex-worktrees",
+    "~/.codex/worktrees"
+  ]
+}

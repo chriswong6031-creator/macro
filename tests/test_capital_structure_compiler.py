@@ -790,9 +790,46 @@ def test_generation_receipt_hashes_artifacts_and_failed_promotion_rolls_back(tmp
 
 
 def test_nightly_order_and_render_network_firewall_are_pinned():
-    """A capital-structure integrity failure must BLOCK the nightly checkpoint.
+    """A capital-structure integrity failure blocks ITS OWN checkpoint — and no other.
 
-    The step is located STRUCTURALLY — its own parsed step dict — never by
+    RESTATED 2026-08-06 TWICE, first for the checkpoint split and then for the
+    JOB split.  This pin originally read `collect < compile < commit` with
+    `commit` found by `name.startswith("commit data")`.  That was one checkpoint,
+    and this compiler sat upstream of it, which is exactly what let a
+    capital-structure defect hold the night's market collection on the runner:
+    six consecutive nights from 2026-08-01 through four unrelated causes (#4534
+    duck-typing, runner ENOSPC, #4600 ledger identity, #4640 SEC grammar),
+    `data/stocks` frozen at 2026-07-31.
+
+    The invariant now has two halves and BOTH must hold:
+
+      1. `run collectors` -> "commit market data" -> "push market data" all
+         happen in the `collect` job, and this compiler runs in a DIFFERENT job
+         that `needs:` it.  The market plane is committed and published before
+         this lane can start at all; nothing it does — failing, hanging, or
+         spending its job's whole budget — can reach it.
+      2. this compiler -> "commit capital-structure data", inside that job.  The
+         compiler is still upstream of its OWN checkpoint and still carries no
+         `continue-on-error`, so an integrity failure still blocks publication of
+         a partial event generation.  (#4578 added continue-on-error here;
+         correctly reverted.)
+
+    Half 1 is asserted through `needs:`, NOT through a position in a flattened
+    list of every job's steps.  That distinction is the whole point after the job
+    split: a flattened index across jobs is just YAML declaration order, which
+    guarantees nothing about execution and would keep this test green if the
+    compiler were moved into a job that runs CONCURRENTLY with `collect`.  Only
+    the dependency edge orders two jobs.
+
+    Half 2 alone is the old assertion and is NOT sufficient: naming the second
+    checkpoint "commit data ..." would satisfy it verbatim while restoring the
+    very coupling the split removed.  So the market checkpoint is asserted by its
+    own name, in its own job, and no step anywhere may be named "commit data" any
+    more.  Both sides are guarded from the other direction by
+    tests/test_daily_collect_commit_path.py and
+    tests/test_daily_capital_structure_job.py.
+
+    The steps are located STRUCTURALLY — their own parsed step dicts — never by
     slicing the file text between two step names. The old slice ran from
     "- name: compile capital-structure" to "- name: refresh Finviz themes", so
     it only held while those two steps stayed adjacent: on 2026-08-01 #4013
@@ -804,24 +841,91 @@ def test_nightly_order_and_render_network_firewall_are_pinned():
     import yaml
 
     daily = (ROOT / ".github/workflows/daily.yml").read_text()
+    jobs = yaml.safe_load(daily)["jobs"]
     compile_call = "python -m scripts.compile_capital_structure_events"
-    steps = [
-        step
-        for job in yaml.safe_load(daily)["jobs"].values()
+
+    def _locate(predicate, label):
+        """Return (job_name, step_index) for the single step matching predicate."""
+        hits = [
+            (job_name, i)
+            for job_name, job in jobs.items()
+            for i, step in enumerate(job.get("steps") or [])
+            if predicate(step)
+        ]
+        assert len(hits) == 1, f"expected exactly one {label} step, got {hits}"
+        return hits[0]
+
+    def _named(prefix):
+        return _locate(
+            lambda s: str(s.get("name") or "").startswith(prefix), repr(prefix)
+        )
+
+    collect_job, collect_at = _locate(
+        lambda s: "python -m scripts.collect " in str(s.get("run") or ""), "collectors"
+    )
+    market_commit_job, market_commit_at = _named("commit market data")
+    market_push_job, market_push_at = _named("push market data")
+    compile_job, compile_at = _locate(
+        lambda s: compile_call in str(s.get("run") or ""), "event-spine compile"
+    )
+    cs_commit_job, cs_commit_at = _named("commit capital-structure data")
+
+    # Half 1a — the market checkpoint is complete inside the collectors' own job.
+    assert collect_job == market_commit_job == market_push_job, (
+        "the collectors and the market checkpoint must stay in one job "
+        f"(collectors in {collect_job!r}, commit in {market_commit_job!r}, push in "
+        f"{market_push_job!r}); otherwise the collected bytes cross a job boundary "
+        "before anything has committed them"
+    )
+    assert collect_at < market_commit_at < market_push_at, (
+        f"in {collect_job!r} the order must be collectors -> commit -> push "
+        f"(got {collect_at}, {market_commit_at}, {market_push_at})"
+    )
+
+    # Half 1b — the compiler runs in a LATER job, ordered by `needs:`, not by
+    # where its YAML happens to sit.
+    assert compile_job != collect_job, (
+        f"the capital-structure compiler is back inside {collect_job!r}. It is "
+        "fatal by design, so it would again red the one job the whole nightly "
+        "hangs off — three consecutive lost nights (#4600, #4640, #4740)."
+    )
+    compile_needs = jobs[compile_job].get("needs") or []
+    if isinstance(compile_needs, str):
+        compile_needs = [compile_needs]
+    assert collect_job in compile_needs, (
+        f"job {compile_job!r} runs the capital-structure compiler but does not "
+        f"`needs: {collect_job}` (needs={compile_needs!r}). Without that edge the "
+        "two jobs may run CONCURRENTLY and the compiler is no longer downstream "
+        "of the market checkpoint at all — it would merely be declared later in "
+        "the file, which orders nothing."
+    )
+
+    # Half 2 — the compiler still gates its own generation, fatally, in its job.
+    assert compile_job == cs_commit_job, (
+        f"the compiler runs in {compile_job!r} but its checkpoint is in "
+        f"{cs_commit_job!r}; a step outcome cannot gate a commit in another job"
+    )
+    assert compile_at < cs_commit_at, (
+        "the capital-structure compiler must still run BEFORE the checkpoint that "
+        "publishes its generation, or a rejected ledger could be committed"
+    )
+    compile_step = jobs[compile_job]["steps"][compile_at]
+    assert "continue-on-error" not in compile_step, (
+        "the compile step must stay fatal for its own checkpoint (#4578)"
+    )
+    # The second checkpoint must not impersonate the first.
+    all_names = [
+        str(step.get("name") or "")
+        for job in jobs.values()
         for step in (job.get("steps") or [])
     ]
-    runs = [str(step.get("run") or "") for step in steps]
-    collect_at = next(
-        i for i, run in enumerate(runs) if "python -m scripts.collect " in run
+    assert not [n for n in all_names if n.startswith("commit data")], (
+        "a step is named 'commit data ...' again. The two checkpoints are 'commit "
+        "market data' and 'commit capital-structure data'; a step reusing the old "
+        "name would satisfy this pin's previous form while re-coupling the market "
+        "plane to the capital-structure lane."
     )
-    compile_at = next(i for i, run in enumerate(runs) if compile_call in run)
-    commit_at = next(
-        i for i, step in enumerate(steps)
-        if str(step.get("name") or "").startswith("commit data")
-    )
-    assert collect_at < compile_at
-    assert compile_at < commit_at
-    assert "continue-on-error" not in steps[compile_at]
+
     assert "R2_BUCKET: ${{ secrets.R2_BUCKET }}" in daily
     assert (
         "R2_CAPITAL_STRUCTURE_BUCKET: ${{ secrets.R2_CAPITAL_STRUCTURE_BUCKET }}"

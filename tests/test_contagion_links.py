@@ -18,12 +18,26 @@ Coverage:
   10. degradation_missing_proxy— missing proxy for one mkt → dynamic=null, L=S, artifact complete
   11. schema_roundtrip         — artifact round-trips JSON; required keys present
   12. glance_lines_high        — high-level line contains 'HIGH' and is non-empty EN+ZH
+
+Data-plane session stamps (forward-ledger calendar-asof audit 2026-08-05):
+  13. session_ladder           — bench > incumbent > none; weekend refused (unit)
+  14. friday_tape_monday_run   — clock pinned to Monday, store frozen on Friday →
+                                 BOTH ledgers stamp FRIDAY (this is the defect)
+  15. session_keyed_idempotent — second run on the same frozen store appends 0 rows
+  16. bench_missing_incumbent  — no bench → incumbent_as_of stamps the row
+  17. no_session_row_skipped   — neither → row skipped in BOTH ledgers + gap printed
+  18. weekend_session_refused  — a weekend bench stamp is refused + gap printed
+
+Every date in this file is a PINNED WEEKDAY LITERAL.  The wall clock must never
+appear here: the stamping law is about the tape, so a test that reads the clock
+would grade differently depending on the day it runs.
 """
 from __future__ import annotations
 
 import json
 import os
 import sys
+from datetime import date as _date
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -562,3 +576,336 @@ def test_glance_lines_low():
     en, zh = cgl._glance_lines("us", "low", [])
     assert "low" in en.lower(), f"Expected 'low' in EN line, got: {en}"
     assert len(zh) > 0
+
+
+# ===========================================================================
+# 13–18. Data-plane session stamps (forward-ledger calendar-asof audit 2026-08-05)
+#
+# The defect: snapshot() stamped ONE wall-clock calendar date across all 11
+# markets (the 11 close on different calendars, so one stamp was never honest),
+# so a weekend or drifted nightly re-run appended a brand-new row that merely
+# re-described the previous session's tape under a fresh calendar date — which
+# also defeated the ledgers' own asof-keyed idempotency.  Every date below is a
+# pinned weekday literal so these tests grade identically on any run day.
+# ===========================================================================
+
+_FRIDAY    = "2026-07-31"   # the frozen store's newest bar (a real NYSE session)
+_MONDAY    = "2026-08-03"   # the following Monday — the drifted run's calendar day
+_WEDNESDAY = "2026-07-29"   # an incumbent forward-log stamp (rung 2 of the ladder)
+_SATURDAY  = "2026-08-01"   # a corrupt bench stamp: no market opens on this date
+
+
+class _PinnedClock(_date):
+    """`datetime.date` with today() pinned to _MONDAY — never the wall clock.
+
+    Patched over ``contagion_links.date`` so the ledger tests run *as if* the
+    nightly fired on the Monday after the store froze.  If the calendar stamp is
+    ever reintroduced into snapshot(), the rows come back Monday-dated and the
+    assertions below fail — that is the mutation pin, not decoration.
+    """
+
+    @classmethod
+    def today(cls) -> _date:
+        return _date(2026, 8, 3)
+
+
+class _PinnedClockNextDay(_PinnedClock):
+    """The same pinned clock one calendar day later (Tue 2026-08-04).
+
+    Used for the SECOND run of the idempotency test: the store has not moved, so
+    only a calendar-fed stamp would produce a new key.  Without this the
+    idempotency assertion is vacuous — two runs on the same frozen clock dedupe
+    even under the defect.
+    """
+
+    @classmethod
+    def today(cls) -> _date:
+        return _date(2026, 8, 4)
+
+
+def _series_ending(end: str, n: int = 200, start_price: float = 100.0,
+                   seed: int = 7) -> pd.Series:
+    """Synthetic close series whose LAST bar is the pinned literal `end`."""
+    idx = pd.bdate_range(end=end, periods=n)
+    np.random.seed(seed)
+    rets = np.random.normal(0.0003, 0.01, n)
+    return pd.Series(start_price * np.cumprod(1.0 + rets), index=idx)
+
+
+def _series_map_ending(end: str, n: int = 200,
+                       skip_bench: tuple[str, ...] = (),
+                       bench_overrides: dict[str, pd.Series] | None = None) -> dict:
+    """(group, ticker) → synthetic series, every bench/proxy ending on `end`.
+
+    `skip_bench` omits a market's bench entirely (store read returns None);
+    `bench_overrides` pins a different series for one market's bench.
+    """
+    series_map: dict = {}
+    for mkt in MARKETS:
+        s = _series_ending(end, n, start_price=100.0 + _MKT_IDX[mkt] * 5,
+                           seed=_MKT_IDX[mkt] + 11)
+        spec = cgl._PROXY[mkt]
+        pairs = spec if isinstance(spec, list) else [spec]
+        for grp, tkr in pairs:
+            series_map[(grp, tkr)] = s
+        if mkt in skip_bench:
+            continue
+        series_map[cgl._BENCH[mkt]] = (bench_overrides or {}).get(mkt, s)
+    return series_map
+
+
+def _seed_incumbents(root: Path, asof: str, markets=None, state: str = "caution") -> None:
+    """Write a one-row live risk-radar forward log per market (the incumbent)."""
+    for mkt in (markets if markets is not None else MARKETS):
+        p = cgl._fwd_log_path(mkt, str(root))
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"asof": asof, "market": mkt, "state": state}) + "\n",
+                     encoding="utf-8")
+
+
+def _read_rows(p: Path) -> list[dict]:
+    if not p.exists():
+        return []
+    return [json.loads(ln) for ln in p.read_text(encoding="utf-8").splitlines() if ln.strip()]
+
+
+def _hist_rows(root: Path) -> list[dict]:
+    return _read_rows(root / "data" / "contagion_links" / "history.jsonl")
+
+
+def _shadow_rows(root: Path, mkt: str) -> list[dict]:
+    return _read_rows(cgl._cgl_shadow_log_path(mkt, str(root)))
+
+
+# ---------------------------------------------------------------------------
+# 13. session_ladder (unit)
+# ---------------------------------------------------------------------------
+
+def test_session_ladder_prefers_bench():
+    """Rung 1: the market's own bench close's newest bar."""
+    session, source, gap = cgl._resolve_data_session(
+        "jp",
+        severity={"jp": {"as_of": _FRIDAY}},
+        pressure={"jp": {"incumbent_as_of": _WEDNESDAY}},
+    )
+    assert (session, source, gap) == (_FRIDAY, "bench", None)
+
+
+def test_session_ladder_falls_back_to_incumbent():
+    """Rung 2: no bench → the incumbent forward log's (already tape-stamped) asof."""
+    session, source, gap = cgl._resolve_data_session(
+        "jp",
+        severity={"jp": {"as_of": None}},
+        pressure={"jp": {"incumbent_as_of": _WEDNESDAY}},
+    )
+    assert (session, source, gap) == (_WEDNESDAY, "incumbent", None)
+
+
+def test_session_ladder_no_rung_is_a_gap_not_a_clock_read():
+    """Rung 3: neither available → no session, and the gap says the row is skipped."""
+    session, source, gap = cgl._resolve_data_session(
+        "jp", severity={"jp": {"as_of": None}}, pressure={"jp": {}},
+    )
+    assert session is None and source is None
+    assert gap is not None and "no data-plane session" in gap and "skipped" in gap
+
+
+def test_session_ladder_refuses_a_weekend_stamp():
+    """A bench index date is always a real session — a weekend one is corrupt.
+
+    It is refused outright (no fall-through to the incumbent rung), so the
+    corruption is disclosed instead of papered over.
+    """
+    session, source, gap = cgl._resolve_data_session(
+        "au",
+        severity={"au": {"as_of": _SATURDAY}},
+        pressure={"au": {"incumbent_as_of": _WEDNESDAY}},
+    )
+    assert session is None and source is None
+    assert gap is not None and "weekend" in gap and _SATURDAY in gap
+
+
+def test_is_weekend_stamp_fails_open_on_garbage():
+    """An unparseable stamp is not evidence of a weekend — never refuse on it."""
+    assert cgl._is_weekend_stamp(_SATURDAY) is True
+    assert cgl._is_weekend_stamp(_FRIDAY) is False
+    assert cgl._is_weekend_stamp("not-a-date") is False
+
+
+# ---------------------------------------------------------------------------
+# 14. friday_tape_monday_run — THE DEFECT, pinned
+# ---------------------------------------------------------------------------
+
+def test_snapshot_stamps_friday_tape_on_a_monday_run(tmp_path, monkeypatch):
+    """Store frozen on Friday, nightly fires on Monday → BOTH ledgers say FRIDAY.
+
+    Pre-fix this appended an all-new Monday-dated row for Friday's numbers, in
+    history.jsonl and in all 11 shadow forward logs.
+    """
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    monkeypatch.setattr(cgl, "date", _PinnedClock)
+
+    series_map = _series_map_ending(_FRIDAY)
+    _seed_incumbents(tmp_path, asof=_FRIDAY)
+
+    with patch("engine.contagion_links.store.read", side_effect=_store_read_factory(series_map)):
+        art = cgl.snapshot(root=str(tmp_path))
+
+    # Artifact provenance: every market read Friday's tape.
+    assert art["data_sessions"] == {m: _FRIDAY for m in MARKETS}, art["data_sessions"]
+
+    hist = _hist_rows(tmp_path)
+    assert len(hist) == len(MARKETS), f"expected one history row per market, got {len(hist)}"
+    assert {r["asof"] for r in hist} == {_FRIDAY}, (
+        f"history stamped the calendar, not the tape: {sorted({r['asof'] for r in hist})}"
+    )
+    assert all(r["data_session"] == _FRIDAY and r["session_source"] == "bench" for r in hist)
+    assert _MONDAY not in {r["asof"] for r in hist}
+
+    for mkt in MARKETS:
+        rows = _shadow_rows(tmp_path, mkt)
+        assert len(rows) == 1, f"{mkt}: expected 1 shadow row, got {len(rows)}"
+        row = rows[0]
+        assert row["asof"] == _FRIDAY, f"{mkt}: shadow row stamped {row['asof']}"
+        assert row["data_session"] == _FRIDAY and row["session_source"] == "bench"
+        # frozen schema fields survive untouched
+        assert row["graded"] is None and row["bench_path"] is None
+
+
+# ---------------------------------------------------------------------------
+# 15. session_keyed_idempotent — the property the calendar stamp destroyed
+# ---------------------------------------------------------------------------
+
+def test_second_snapshot_on_a_frozen_store_appends_nothing(tmp_path, monkeypatch):
+    """Re-running against the same frozen store appends 0 rows to BOTH ledgers.
+
+    The dedupe keys are unchanged in shape — (market, asof) for history, asof for
+    the shadow logs — they simply key on the session now, so the second run
+    re-derives the session it already recorded and the dedupe refuses it.
+
+    The clock ADVANCES a day between the two runs while the store stays frozen:
+    that is the real drift, and it is the only way this assertion can see the
+    defect (two runs under one frozen clock dedupe even when stamping it).
+    """
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    monkeypatch.setattr(cgl, "date", _PinnedClock)
+
+    series_map = _series_map_ending(_FRIDAY)
+    _seed_incumbents(tmp_path, asof=_FRIDAY)
+    reader = _store_read_factory(series_map)
+
+    with patch("engine.contagion_links.store.read", side_effect=reader):
+        cgl.snapshot(root=str(tmp_path))
+    first_hist = len(_hist_rows(tmp_path))
+    first_shadow = {m: len(_shadow_rows(tmp_path, m)) for m in MARKETS}
+    assert first_hist == len(MARKETS) and all(v == 1 for v in first_shadow.values())
+
+    monkeypatch.setattr(cgl, "date", _PinnedClockNextDay)
+    with patch("engine.contagion_links.store.read", side_effect=reader):
+        cgl.snapshot(root=str(tmp_path))
+
+    assert len(_hist_rows(tmp_path)) == first_hist, (
+        "second run appended history rows — session-keyed idempotency is broken"
+    )
+    for mkt in MARKETS:
+        assert len(_shadow_rows(tmp_path, mkt)) == first_shadow[mkt], (
+            f"{mkt}: second run appended a shadow row"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 16. bench_missing_incumbent — rung 2 of the ladder, end to end
+# ---------------------------------------------------------------------------
+
+def test_missing_bench_stamps_from_the_incumbent_forward_log(tmp_path, monkeypatch):
+    """jp has no bench close → its rows stamp the incumbent's tape date."""
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    monkeypatch.setattr(cgl, "date", _PinnedClock)
+
+    series_map = _series_map_ending(_FRIDAY, skip_bench=("jp",))
+    _seed_incumbents(tmp_path, asof=_FRIDAY)
+    # jp's own incumbent sits one session earlier than everyone else's.
+    _seed_incumbents(tmp_path, asof=_WEDNESDAY, markets=["jp"])
+
+    with patch("engine.contagion_links.store.read", side_effect=_store_read_factory(series_map)):
+        art = cgl.snapshot(root=str(tmp_path))
+
+    assert art["data_sessions"]["jp"] == _WEDNESDAY, art["data_sessions"]["jp"]
+
+    jp_hist = [r for r in _hist_rows(tmp_path) if r["market"] == "jp"]
+    assert len(jp_hist) == 1
+    assert jp_hist[0]["asof"] == _WEDNESDAY
+    assert jp_hist[0]["data_session"] == _WEDNESDAY
+    assert jp_hist[0]["session_source"] == "incumbent"
+
+    jp_shadow = _shadow_rows(tmp_path, "jp")
+    assert len(jp_shadow) == 1
+    assert jp_shadow[0]["asof"] == _WEDNESDAY
+    assert jp_shadow[0]["session_source"] == "incumbent"
+
+    # Markets with a bench are unaffected — each resolves its OWN session.
+    assert all(r["asof"] == _FRIDAY for r in _hist_rows(tmp_path) if r["market"] != "jp")
+
+
+# ---------------------------------------------------------------------------
+# 17. no_session_row_skipped — skip + PRINT the gap (never invent a date)
+# ---------------------------------------------------------------------------
+
+def test_no_data_plane_session_skips_the_row_and_records_a_gap(tmp_path, monkeypatch):
+    """tw has neither bench nor incumbent → skipped in BOTH ledgers, gap printed."""
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    monkeypatch.setattr(cgl, "date", _PinnedClock)
+
+    series_map = _series_map_ending(_FRIDAY, skip_bench=("tw",))
+    _seed_incumbents(tmp_path, asof=_FRIDAY,
+                     markets=[m for m in MARKETS if m != "tw"])
+
+    with patch("engine.contagion_links.store.read", side_effect=_store_read_factory(series_map)):
+        art = cgl.snapshot(root=str(tmp_path))
+
+    assert art["data_sessions"]["tw"] is None
+
+    # The gap is the disclosure — assert it, not merely the absence of the row.
+    gaps = art.get("gaps") or []
+    matching = [g for g in gaps if g.startswith("tw: no data-plane session")]
+    assert matching, f"no tw session gap recorded; gaps={gaps}"
+    assert "ledger row skipped" in matching[0]
+
+    assert not [r for r in _hist_rows(tmp_path) if r["market"] == "tw"], (
+        "tw got a history row despite having no resolvable session"
+    )
+    assert _shadow_rows(tmp_path, "tw") == [], "tw got a shadow row with no session"
+    # Every other market still wrote normally — one market's gap darkens nothing else.
+    assert len(_hist_rows(tmp_path)) == len(MARKETS) - 1
+
+
+# ---------------------------------------------------------------------------
+# 18. weekend_session_refused
+# ---------------------------------------------------------------------------
+
+def test_weekend_bench_stamp_is_refused_with_a_gap(tmp_path, monkeypatch):
+    """A bench series whose newest bar is a Saturday is a corrupt upstream stamp."""
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    monkeypatch.setattr(cgl, "date", _PinnedClock)
+
+    weekend_bench = _series_ending(_FRIDAY, n=200, start_price=120.0, seed=3)
+    weekend_bench.index = weekend_bench.index[:-1].append(
+        pd.DatetimeIndex([pd.Timestamp(_SATURDAY)])
+    )
+    series_map = _series_map_ending(_FRIDAY, bench_overrides={"au": weekend_bench})
+    _seed_incumbents(tmp_path, asof=_FRIDAY)
+
+    with patch("engine.contagion_links.store.read", side_effect=_store_read_factory(series_map)):
+        art = cgl.snapshot(root=str(tmp_path))
+
+    assert art["data_sessions"]["au"] is None
+
+    gaps = art.get("gaps") or []
+    matching = [g for g in gaps if g.startswith("au:") and "weekend" in g]
+    assert matching, f"no au weekend-refusal gap recorded; gaps={gaps}"
+    assert _SATURDAY in matching[0]
+
+    hist_asofs = {r["asof"] for r in _hist_rows(tmp_path)}
+    assert _SATURDAY not in hist_asofs, "a Saturday stamp reached history.jsonl"
+    assert not [r for r in _hist_rows(tmp_path) if r["market"] == "au"]
+    assert _shadow_rows(tmp_path, "au") == []

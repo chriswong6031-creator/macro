@@ -167,10 +167,15 @@ def main() -> int:
             )
             _an_ba["bottoming_watch"] = _bw["bottoming_watch"]
             _an_ba["dual_read_ids"] = _bw["dual_read_ids"]
+            # Graduation gap: reduce/avoid rows the cycle organ reads as
+            # recovering off a low but which have left the bottoming lane.
+            # Disjoint from dual_read_ids — a separate chip, separate sentence.
+            _an_ba["recovering_ids"] = _bw["recovering_ids"]
             _an_ba["bottoming_authority"] = _bw["authority"]
             log.info(
-                "bottoming watch: %d row(s), %d dual-read id(s)%s",
+                "bottoming watch: %d row(s), %d dual-read id(s), %d recovering id(s)%s",
                 len(_bw["bottoming_watch"]), len(_bw["dual_read_ids"]),
+                len(_bw["recovering_ids"]),
                 (" — " + "; ".join(_bw["notes"])) if _bw["notes"] else "",
             )
     except Exception as e:  # noqa: BLE001 — additive, never fatal
@@ -213,6 +218,43 @@ def main() -> int:
             (fdir / "flow.json").write_text(json.dumps(flow, separators=(",", ":"), default=str))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("group_flow lens failed: %s", e)
+
+    # GR0 — GROUP PULSE (engine.group_pulse, group_pulse.v1). The basket-level
+    # PARTICIPATION / DIRECTION / ARC read plane: how many members are actually
+    # moving, whether they are moving the same way, and where the group sits in a
+    # washout->advance arc. An ASSEMBLER over organs that already exist (group_flow's
+    # cohesion + the sign-agreement leg added beside it, coiled's capitulation read,
+    # weinstein_stage) — NOT a new scorer, and the artifact carries no fused
+    # score/rank/heat number of any kind (tests/test_group_pulse_tripwire.py).
+    #
+    # Placed here, immediately after the flow lens, for the same reason flow sits
+    # here: membership + the member tape are fresh at this point in the DAG band and
+    # fdir already exists. site/basketdata/pulse.json is written in ANY lane (it is a
+    # display snapshot); only the episode LEDGER append is nightly-gated, inside the
+    # engine on engine.ledger_lane.nightly_advance_enabled() — house law, nightly is
+    # the sole advancer of forward ledgers and an intraday lane computes and discards.
+    #
+    # DISPLAY TIER, ZERO AUTHORITY: no lane, rank, gate, or size reads it.
+    # Own try/except — exit-0 always (additive, never fatal).
+    try:
+        from engine.group_pulse import run as _gp_run
+        _gp_res = _gp_run()
+        _gp_led = _gp_res.get("ledger") or {}
+        log.info(
+            "group_pulse: %d basket(s) as_of=%s in %.1fs -> %s; episode ledger %s"
+            " (%s rows, %s closed); history -> %s (%s closed episode(s) published)",
+            _gp_res.get("n_baskets", 0), _gp_res.get("as_of"),
+            float(_gp_res.get("elapsed_s") or 0.0), _gp_res.get("artifact"),
+            "advanced" if _gp_led.get("written") else
+            f"skipped ({_gp_led.get('reason', 'unknown')})",
+            _gp_led.get("rows", 0), _gp_led.get("closed", 0),
+            _gp_res.get("episodes_artifact"), _gp_res.get("n_closed_episodes", 0),
+        )
+    except Exception as _gp_exc:  # noqa: BLE001 — additive, never fatal
+        # Bare print at column 0, NOT a logger call: this package's logging format
+        # prefixes every record, and GitHub only parses a "::" that STARTS the line.
+        print(f"::warning title=group-pulse::group_pulse hook failed: {_gp_exc}",
+              flush=True)
 
     # SECTOR PULSE — compact per-theme rotation data product for Mastermind bot / Terminal.
     # Reads theme_intel (already computed above) and writes basketdata/sector_pulse.json.
@@ -496,6 +538,35 @@ def main() -> int:
         # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
         print(f"::warning::basket_turn_watch hook failed: {_btw_exc}", flush=True)
 
+    # W1-D — US WASHOUT-LIFECYCLE organ (us_basket_turn.v1), the port of the CN
+    # engine/china_basket_turn.py machine that was the only detector in the estate
+    # to change state before the 2026-07 precious-metals low (masterplan G0.6,
+    # research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md).
+    # A SEPARATE organ from basket_turn_watch above — different construction
+    # (washout lifecycle, no K-of-N legs) — placed immediately after it because
+    # both read the same member tape and the freshness sentinel below audits both.
+    # DISPLAY TIER, ZERO SCORED AUTHORITY: writes a state artifact + forward ledger
+    # and nothing else; no lane, rank, or gate reads it.
+    # Own try/except — exit-0 always (additive, never fatal).
+    try:
+        from engine.us_basket_turn import run as _ubt_run
+        _ubt_result = _ubt_run()
+        _ubt_states: dict[str, int] = {}
+        for _ubt_row in _ubt_result.get("baskets", {}).values():
+            _ubt_s = _ubt_row.get("state", "NONE")
+            _ubt_states[_ubt_s] = _ubt_states.get(_ubt_s, 0) + 1
+        _ubt_cov = _ubt_result.get("coverage", {})
+        log.info(
+            "us_basket_turn: %d baskets, session=%s, members %s/%s — dist: %s",
+            len(_ubt_result.get("baskets", {})),
+            _ubt_result.get("data_session"),
+            _ubt_cov.get("members_read"), _ubt_cov.get("members_total"),
+            _ubt_states,
+        )
+    except Exception as _ubt_exc:  # noqa: BLE001 — additive, never fatal
+        # Bare print at line start, never a logger (see the note above).
+        print(f"::warning::us_basket_turn hook failed: {_ubt_exc}", flush=True)
+
     # TS-U2 — MTF UPTURN per-stock K-of-N confluence organ (mtf_upturn.v1).
     # Placed immediately after basket_turn_watch (U2 is the per-stock twin of that organ).
     # Own try/except — exit-0 always (additive, display-tier).
@@ -512,6 +583,52 @@ def main() -> int:
         )
     except Exception as _mtu_exc:  # noqa: BLE001 — additive, never fatal
         print(f"::warning::mtf_upturn hook failed: {_mtu_exc}", flush=True)
+
+    # WTN-W1 — per-name WEEKLY washout-turn watch organ (washout_turn.v1).
+    # The MCD miss (research/washout_turn_name_lane/MCD_MISS_EVIDENCE_2026-08-05.md):
+    # nothing consumed the house canon RSI-MACD at WEEKLY grain per name, so a
+    # 6th-percentile-depth weekly cross reached no surface. Sits beside mtf_upturn
+    # (that organ watches standard PRICE MACD-vs-zero — a different indicator family).
+    # Display-tier, zero authority; own try/except — exit-0 always.
+    try:
+        from engine.washout_turn import compute as _wtn_compute, write_site_artifact as _wtn_write
+        _wtn_result = _wtn_compute()
+        _wtn_path = _wtn_write(_wtn_result)
+        _wtn_n_turn = len(_wtn_result.get("cohort", {}).get("turn", []))
+        _wtn_n_watch = len(_wtn_result.get("cohort", {}).get("watch", []))
+        log.info(
+            "washout_turn: wrote %s (%d washout-turn, %d turn-watch, elapsed=%.1fs)",
+            _wtn_path, _wtn_n_turn, _wtn_n_watch,
+            _wtn_result.get("elapsed_s", 0),
+        )
+    except Exception as _wtn_exc:  # noqa: BLE001 — additive, never fatal
+        # Bare print, NOT a logger call — GitHub only parses "::" at LINE START.
+        print(f"::warning::washout_turn hook failed: {_wtn_exc}", flush=True)
+
+    # SEA-W1/W2 — Signal Episode Atlas: nightly event append + outcome maturation
+    # + the cohort-grain atlas artifact (research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md).
+    # Sits after washout_turn: that organ says a name IS in a washout turn, this
+    # library says what the matching historical episodes of the same CLASS did.
+    # The append and the maturation are both COLLECT_LANE-gated inside the engine
+    # (an off-lane run computes and discards); only small monthly live parts are
+    # ever rewritten (#4540). Measurement tier, zero authority; own try/except.
+    try:
+        from engine import event_atlas as _sea_atlas
+        from engine import stock_events as _sea_events
+        _sea_upd = _sea_events.nightly_update()
+        _sea_payload = _sea_atlas.build_atlas(refresh_cache=True)
+        _sea_path = _sea_atlas.write_site_artifact(_sea_payload)
+        log.info(
+            "stock_events: %d events extracted, %d appended, %d outcome cells matured "
+            "(lane_write=%s); event_atlas: %d cells → %s (elapsed=%.1fs)",
+            _sea_upd.get("extracted", 0), _sea_upd.get("appended", 0),
+            _sea_upd.get("matured_filled", 0), _sea_upd.get("written"),
+            _sea_payload.get("n_cells", 0), _sea_path,
+            float(_sea_upd.get("elapsed_s", 0.0)) + float(_sea_payload.get("elapsed_s", 0.0)),
+        )
+    except Exception as _sea_exc:  # noqa: BLE001 — additive, never fatal
+        # Bare print, NOT a logger call — GitHub only parses "::" at LINE START.
+        print(f"::warning::stock_events hook failed: {_sea_exc}", flush=True)
 
     # NAR-W1 — Flare Persistence organ (flare_persistence.v1). Reads raw tape witnesses
     # (T1 altdata convergence, T2 call premium z, T3 GEX flip, T4 news bull ratio z).
@@ -565,6 +682,22 @@ def main() -> int:
         _notify_turn_events()
     except Exception as _nte_exc:  # noqa: BLE001 — additive, never fatal
         print(f"::warning::notify_turn_events hook failed: {_nte_exc}", flush=True)
+
+    # GR3 — filing-linked outsiders per basket (outside confirmation).
+    # Placed AFTER the group_pulse hook on purpose: it reads pulse.json from the
+    # same run for each basket's direction sign.  A missing pulse.json degrades to
+    # "unavailable" states with a coverage warning rather than failing.
+    try:
+        from engine.group_linked_outsiders import run as _glo_run
+        _glo_summary = _glo_run()
+        log.info(
+            "group_linked_outsiders: wrote %s (%d baskets, %d with outsiders, %d ledger rows)",
+            _glo_summary["path"], _glo_summary["baskets"],
+            _glo_summary["baskets_with_outsiders"], _glo_summary["edges_appended"],
+        )
+    except Exception as _glo_exc:  # noqa: BLE001 — additive, never fatal
+        # Bare print, NOT a logger call — GitHub only parses "::" at LINE START.
+        print(f"::warning::group_linked_outsiders hook failed: {_glo_exc}", flush=True)
 
     # FT-R8 — surface-freshness sentinel: assert first-class artifacts carry today's
     # NYSE session.  Warn-only (exits 0 always); annotations appear in the job summary.

@@ -1,0 +1,109 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "AIG-2026-06-30-buy",
+  "ticker": "AIG",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "AIG",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "AIG",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "beta_tailwind",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Financials",
+    "excess_spy": 0.024279590301939935,
+    "excess_sector": -0.013447869954789304,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CUSHIONED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "AIG outperformed SPY and finished CUSHIONED. Beta tailwind is the recorded cause, but the available facts cannot separate broad-market support from Financials rotation or company alpha.",
+    "root_cause": "AIG outperformed SPY and finished CUSHIONED. Beta tailwind is the recorded cause, but the available facts cannot separate broad-market support from Financials rotation or company alpha.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The outcome book captured a favorable beta-linked result, while the regime and Financials-rotation books did not supply discriminating evidence.",
+    "engines_credit": "The outcome ledger is the role model for attribution preservation; macro, rotation, company-alpha, and catalyst organs remain unresolved.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "macro_regime",
+        "factor": "",
+        "mechanism": "Broad beta support was the stated first-order driver.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Weak performance among comparable high-beta Financials names would undermine the beta explanation.",
+        "evidence_refs": [
+          "outcome_cause=beta_tailwind",
+          "excess_spy positive"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "market_rotation",
+        "factor": "",
+        "mechanism": "Rotation into Financials may have converted the broad regime into relative strength.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "If Financials did not strengthen relative to SPY, rotation would not explain AIG's result.",
+        "evidence_refs": [
+          "sector=Financials"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The matured path retained enough support to end CUSHIONED.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A terminal breakdown would indicate that the tailwind failed to cushion the path.",
+        "evidence_refs": [
+          "terminal_state=CUSHIONED"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Financials rotation may have mattered more than general beta.",
+      "AIG-specific re-rating or estimate improvement may have supplied alpha."
+    ],
+    "missing_evidence": [
+      "Financials relative-strength series",
+      "AIG factor loadings and peer-relative return",
+      "Rate-curve and credit-spread state at entry",
+      "Company catalyst and estimates chronology"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "financials_rotation_confirmation",
+        "feature": "Financials rotation confirmation",
+        "measurement": "Compare sector breadth, relative strength, and peer participation at entry with matured relative outcomes.",
+        "expected_direction": "Broader Financials participation should strengthen confidence in a rotation-mediated result.",
+        "falsifier": "AIG-like outcomes occur without sector breadth or relative-strength confirmation.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-07",
+  "asof": "2026-08-07",
+  "ts": "2026-08-07T08:35:36+00:00"
+}

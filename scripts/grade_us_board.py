@@ -25,11 +25,28 @@ HONESTY CONVENTIONS (read these — they bound every claim downstream)
   session's close (next-bar realism). Horizon h return = close[entry+h] / close[entry] - 1.
   W0.1 (B-b): forward returns and MFE are now computed via engine.grading.forward_metrics
   (the one-grader law §1.2) — same next-bar convention, same window semantics.
-* Prices come from engine.equity_factors._closes("broad") extended by
+* PRICE BASIS (corrected 2026-08-06 — this paragraph asserted something false about its
+  own inputs from inception until #4698 measured it). Name prices come from
+  engine.equity_factors._closes("broad") — the breadth close caches — which are RAW:
+  re-based only at an infrequent full rebuild and accruing unadjusted rows after it.
+  The benchmark legs (SPY, the GICS sector ETFs) are read from data/yahoo, which IS
+  back-adjusted. `excess = name_ret - benchmark_ret` therefore subtracted an adjusted
+  leg from an unadjusted one, booking a name's own dividend as a loss whenever its
+  measurement window straddled an ex-date. Names with no in-window ex-date agreed to the
+  cent across both families, which is why the defect read as noise for two months.
+  Prices are now resolved ADJUSTED-FIRST through engine.price_ladder (baskets_ohlcv →
+  yahoo → data_stocks → the cache, disclosed and stamped), then extended by
   engine.grading.resolve_series (which appends the 8-K Item 1.03 dead-name imputation
-  store when present). All are DIVIDEND-ADJUSTED total-return closes (see MEMORY:
-  yahoo-close-is-total-return). Excess return subtracts benchmark total return, so
-  both legs share the same basis — the comparison is clean; absolute levels are TR.
+  store when present). Both legs now share the adjusted basis. Every row carries its own
+  `price_source` + `price_basis` stamp so a future audit reads basis off the row instead
+  of re-deriving it from archaeology.
+* HISTORY IS NOT RESTATED. The caches are re-based IN PLACE, so the same (ticker, date)
+  reads differently on different days and a re-grade silently rewrites a published
+  number: measured 2026-08-06, re-running this grader against the shipped ledger moved
+  75 already-graded rows, 19 materially (worst −1.94pp, LPG 2026-06-18 H5). Price-derived
+  columns are now FROZEN once a row is graded (see _merge_into_store / _FROZEN_PRICE_COLS);
+  annotations and new spine columns still accrue. The pre-fix era is rows whose
+  price_basis is null (see data/us_board_ledger/README.md, "Price-basis era").
 * Excess return = name_ret - benchmark_ret (SPY and, separately, sector ETF).
 * MAE = maximum ADVERSE excursion. We only have daily CLOSES, not intraday lows, so
   this is a CLOSE-PATH MAE: min_over_window(name_cum_ret - bench_cum_ret), in EXCESS
@@ -57,9 +74,27 @@ SPINE COLUMNS (W0.1 B-b — §3.4, §5.1 sub-task 2):
   post_cushion_breach      — per-fire flag at horizon=21 (grading primitive)
   rate_pressure, quad_hard_label, fused_risk_label, vol_regime, risk_radar_state,
   regime_vector_degraded, vector_asof, staleness_hours  — PIT regime stamp
-  species_id               — null (multiple species bind this ledger; ambiguous)
-  archetype                — from board row payload at grade time; null if absent
+  archetype                — board row payload at grade time, else the PIT archetype
+    store (data/archetypes/history.parquet, greatest asof_date <= as_of); null when
+    the store does not classify the name.  Historical rows are filled by
+    _backfill_archetype at each row's own as_of (fill-null-only)
+  species_id               — RETIRED 2026-08-04 (_RETIRED_LEDGER_COLS): literal None on
+    every row since inception, because no species uniquely binds this ledger. No longer
+    written, and dropped from the store on merge
 All nullable; existing rows keep nulls (schema-union only; keep-FIRST on dedup key).
+Per-column coverage starts and the mechanisms that bound them: data/us_board_ledger/README.md.
+
+ENTRY_STATUS DISCLOSURE LAW (2026-08-04 — battery §1: 177/403 matured buy rows,
+the worst-performing cell, graded entry_status=None with no cause on record):
+  entry_status_reason — non-null exactly when entry_status is null on a freshly
+  graded row. Values: no_cycle_ladder / short_history / gauge_error:* (the gauge
+  self-gated or raised at publish, stamped by build_stock_library as
+  entry_signal_null_reason on the board row), lane_not_stamped (the ran lane
+  ships no gauge BY DESIGN, us_prophet_v1 §3.5), not_assessed (writer catch-all),
+  unstamped_at_publish (grader fallback: the frozen snapshot/blob carries neither
+  gauge nor reason — the pre-instrumentation boards 2026-06-15..17).
+  PIT: the reason describes the frozen artifact being graded, never a recomputed
+  label; entry_status itself is NEVER backfilled — the 06-15..17 rows stay None.
 """
 from __future__ import annotations
 
@@ -78,6 +113,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from engine.equity_factors import _closes  # noqa: E402
+from engine.price_ladder import is_adjusted as _px_is_adjusted  # noqa: E402
 from engine.grading import (  # noqa: E402
     fill_index,
     forward_metrics,
@@ -136,6 +172,17 @@ _TROUGH_TOL = 0.97  # BROKEN below trough × 0.97 — engine/hold.py TROUGH_TOL
 # The excluded count ships in meta.history so the cut is auditable, never silent.
 LEDGER_HISTORY_FROM = "2026-06-25"
 
+# The era cut, in one sentence, so every artifact that applies it says the same thing.
+# ONE RULE, ONE FILE (G3 2026-08-06): emit_ledger and build_track both read it — the
+# grader used to exclude the broad-screen era from the ledger and pool it into the
+# track record, publishing two records over two different products from one file.
+_ERA_BASIS = (
+    f"boards before {LEDGER_HISTORY_FROM} published ~120 names on the buy key against "
+    "~780 eligible — a broad screen, not a selection, whose own labels included "
+    "DOWNTREND and TOPPING names. Grading them would grade recommendations the board "
+    "never made, so they are excluded here and in the episode ledger by the same rule."
+)
+
 # SA-W5: v2 parallel lane (sibling files, ISOLATED from main lane)
 # These files NEVER touch retro_grades.parquet / us_board_track.json.
 # Decision: sibling files (not co-tenancy) because the v2 board schema diverges
@@ -182,12 +229,47 @@ _GICS_ETF = {
 }
 BENCH = "SPY"
 
+#: PRICE-BASIS ERA BOUNDARY (2026-08-06, this PR). Rows graded before it were priced from
+#: the raw breadth caches against an adjusted benchmark; rows graded after it resolve
+#: adjusted-first through engine.price_ladder. Pre-boundary rows are NOT re-graded — a
+#: graded row is a point-in-time claim — so the two eras are separated by the stamp
+#: instead: `price_basis == PRE_ERA_BASIS` is era 1, "adjusted"/"unadjusted" is era 2.
+#: Measured at the boundary: 2,277 of 2,287 shipped rows already agreed with the adjusted
+#: basis to <0.01pp (the grade-time caches happened to be re-based), so era 1 is not
+#: presumed wrong — it is presumed UNVERIFIED, which is the honest word.
+PRICE_BASIS_ERA_BOUNDARY = "2026-08-06"
+PRE_ERA_BASIS = "unverified_pre_20260806"
+
+#: Alarm floor for the share of freshly-graded rows whose NAME leg had no adjusted
+#: counterpart and fell through to the raw breadth cache. MEASURED baseline 2026-08-06:
+#: 154 of 855 board-admitted tickers have no series in baskets/ohlcv, yahoo, data/stocks
+#: or baskets/extras → 1,141 of 5,538 freshly-graded rows, 20.6%. That residual is real
+#: and is stamped on every row it touches; the floor sits above it so the standing hole
+#: is reported quietly and only a COVERAGE REGRESSION — an adjusted store that stopped
+#: being written — pages anyone. Raise it only with a fresh measurement, never to silence
+#: a real drop. Closing the hole means back-filling those 154 names into an adjusted
+#: store; that is a collector change, not a grader change.
+_UNADJUSTED_ROW_SHARE_ALARM = 0.30
+
 
 # --------------------------------------------------------------------------- #
 # price loading
 # --------------------------------------------------------------------------- #
 def _load_prices() -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Return (names_closes, etf_closes). Both dividend-adjusted TR closes."""
+    """Return (names_closes, etf_closes).
+
+    BASIS WARNING — the two frames returned here are NOT on the same basis. `names` is
+    the breadth close caches, which are UNADJUSTED (raw closes accrued forward, re-based
+    only at a full rebuild); `etfs` is data/yahoo, which is back-adjusted. Differencing
+    a name return against an ETF return straight off this pair books the name's own
+    distribution as a loss.
+
+    Callers MUST pass `names` through `rebase_to_adjusted()` before grading anything
+    against `etfs`. main() does; `tests/test_price_basis_graders.py` fails the build if a
+    production grader stops doing it. The cache frame is still the starting point because
+    it defines the panel's column set and calendar, which coverage and continuity
+    reporting are denominated in.
+    """
     names = _closes("broad")
     names.index = pd.to_datetime(names.index)
     names = names.sort_index()
@@ -307,6 +389,55 @@ def extend_prices_to_admitted(
 
 
 # --------------------------------------------------------------------------- #
+# PRICE-BASIS LAW — the name leg and the benchmark leg must share one basis
+# --------------------------------------------------------------------------- #
+# `_load_prices` returns names from the breadth caches (UNADJUSTED) and ETFs from
+# data/yahoo (ADJUSTED). `excess_spy = nret - sret` differences them, so before #4698
+# every name that went ex-distribution inside a measurement window booked its own payout
+# as a loss against an unaffected SPY. Receipt (2026-06-22, CFG): cache 67.9900 vs
+# adjusted 67.5514 — exactly the quarterly dividend; JPM/KO, with no in-window ex-date,
+# agree to the cent, which is why this read as noise.
+#
+# The engine already knew: engine/desk_grader.py was hardened against this same cache on
+# 2026-07-04 ("the S&P-1500 breadth close cache is SPLIT-CORRUPTED") and prices yahoo-only.
+# The knowledge never propagated here. It now lives in ONE place — engine.price_ladder —
+# and tests/test_price_basis_graders.py fails the build if a production grader re-hand-rolls
+# a cache-first ladder against an adjusted benchmark.
+#
+# Coverage is NOT traded for basis purity: a name with no adjusted counterpart keeps its
+# cache column and is STAMPED `closes_cache_UNADJUSTED` on every row it produces, so the
+# residual is measured on the artifact instead of argued about.
+def rebase_to_adjusted(
+    names: pd.DataFrame, boards: list[dict],
+) -> tuple[pd.DataFrame, dict]:
+    """Re-base every ADMITTED name's column onto the adjusted-first ladder.
+
+    Returns ``(names, provenance)``. Only board-admitted tickers are resolved — the panel
+    carries ~1,550 columns and the grader prices a few hundred of them, so resolving the
+    rest would buy nothing and cost the render path a thousand parquet opens. The column
+    SET and the index are preserved, so coverage denominators (`_survivorship_block`) and
+    the continuity clock are unchanged; only the VALUES of graded names move.
+    """
+    from engine.price_ladder import overlay_adjusted
+
+    admitted: set[str] = set()
+    for b in boards or []:
+        for r in b.get("rows") or []:
+            tk = r.get("ticker")
+            if tk:
+                admitted.add(str(tk))
+
+    # Clip to the panel's own span for the same reason extend_prices_to_admitted does:
+    # baskets/ohlcv carries history to 2014 and an un-clipped union index would grow the
+    # frame by an order of magnitude on the 4-core render path, for bars no grader reads.
+    start = None
+    if names is not None and not getattr(names, "empty", True) and len(names.index):
+        start = pd.Timestamp(names.index.min())
+
+    return overlay_adjusted(names, sorted(admitted), start=start)
+
+
+# --------------------------------------------------------------------------- #
 # CONTINUITY — a dead nightly must be visible the next morning
 # --------------------------------------------------------------------------- #
 # The forward ledger only advances in the nightly (ledger lane-gate law), so when the
@@ -379,6 +510,97 @@ def warn_if_stale(cont: dict) -> bool:
 
 
 # --------------------------------------------------------------------------- #
+# ZERO-ACCRUAL — a grader that records nothing must say so, and say why
+# --------------------------------------------------------------------------- #
+# Measured outage 2026-07-31 -> 2026-08-06: the store sat at 2,282 rows for nine days
+# while the step concluded `success` every night. Nothing was broken in this module —
+# the breadth close caches (engine.equity_factors._closes) froze at 2026-07-31 when the
+# collect lane's "data: daily collection" commit wedged, so no horizon could mature and
+# the grader correctly emitted nothing. Correct, and invisible.
+#
+# The trap that makes a naive alarm vacuous: grade_boards re-computes EVERY matured row
+# on EVERY run and _merge_into_store is keep-fresh, so `len(df)` is re-grades, not
+# accrual. The nightly of 2026-08-04 printed "[grade] 1332 new matured rows this run"
+# while the store went 2282 -> 2282. A zero-row alarm keyed on the fresh frame would
+# never have fired through the entire outage. It must be keyed on STORE GROWTH.
+def _panel_reach(names: pd.DataFrame, boards: list[dict]) -> str | None:
+    """Modal last-close date across the tickers the boards actually name.
+
+    NOT ``names.index.max()``. extend_prices_to_admitted splices in yahoo-sourced
+    columns that run ahead of the breadth caches, so the frame's index max reads fresh
+    while almost every column is stale — measured on origin/main 2026-08-06, index.max()
+    was 2026-08-04 while 1498 of 1540 columns ended 2026-07-31. An index-level max is
+    exactly the number that let this outage look healthy."""
+    if names is None or getattr(names, "empty", True) or not boards:
+        return None
+    tickers = {r["ticker"] for b in boards for r in b["rows"] if r.get("ticker")}
+    cols = [t for t in tickers if t in names.columns]
+    if not cols:
+        return None
+    lasts = [names[c].last_valid_index() for c in cols]
+    lasts = [str(d)[:10] for d in lasts if d is not None]
+    if not lasts:
+        return None
+    return max(set(lasts), key=lasts.count)  # modal, not max
+
+
+def no_accrual_reason(*, boards: list[dict], names: pd.DataFrame, cont: dict,
+                      ungraded: list[str], skipped_no_price: int) -> tuple[str, str]:
+    """(slug, human clause) naming WHY a nightly added no rows. Pure — no I/O.
+
+    The benign case (weekend, or a horizon that simply has not come round yet) and the
+    malignant case (the price lane died) are indistinguishable from the board's own
+    panel — a build that never ran leaves board and prices frozen together and reads as
+    perfectly fresh. They are told apart by the SAME independent clock continuity_block
+    already uses: the benchmark ETF close, refreshed by a different lane than the board.
+    Panel behind that clock = starved. Level with it = genuinely nothing to grade.
+
+    That is also why the alarm is never suppressed on the benign branch: the two cases
+    are one branch apart, so a silent 'probably just the weekend' path would re-open the
+    exact hole it is here to close. The reason slug is what makes it filterable."""
+    n_board_rows = sum(len(b["rows"]) for b in boards)
+    reach = _panel_reach(names, boards)
+    last_session = cont.get("last_session")
+    if not boards:
+        return ("no_boards",
+                "no board could be reconstructed at all (snapshots and git history "
+                "both came back empty)")
+    if n_board_rows and skipped_no_price >= n_board_rows:
+        return ("no_priceable_names",
+                f"not one of the {n_board_rows} board rows resolved to a price series "
+                "(live cache and dead-name store both missed every name)")
+    if reach and last_session and reach < last_session:
+        return ("price_panel_stale",
+                f"the price panel's modal last close is {reach} but the last completed "
+                f"session is {last_session} — no horizon can mature past a frozen panel, "
+                "so the collect lane is what has to move, not this grader")
+    return ("no_new_maturity",
+            f"the panel is level with the session clock ({reach or 'n/a'}) and no "
+            "horizon came round this run — nothing to record")
+
+
+def warn_if_no_accrual(n_added: int, *, nightly: bool, boards: list[dict],
+                       names: pd.DataFrame, cont: dict, ungraded: list[str],
+                       skipped_no_price: int) -> bool:
+    """Emit the line-start annotation when a nightly grades but records NOTHING.
+
+    Returns True when it fired. Bare ``print`` with ``flush=True`` per the repo's
+    annotation law. `n_added` is store growth, never the fresh frame's length."""
+    if not nightly or n_added > 0:
+        return False
+    slug, why = no_accrual_reason(boards=boards, names=names, cont=cont,
+                                  ungraded=ungraded, skipped_no_price=skipped_no_price)
+    newest = boards[-1]["as_of"] if boards else None
+    print("::warning title=us-board-ledger-no-accrual::"
+          f"the nightly added 0 rows to {RETRO_PARQUET.name} [{slug}] — {why}; "
+          f"newest board on file {newest}, {len(ungraded)} board date(s) still awaiting "
+          f"a first grade, {skipped_no_price} board row(s) skipped for no price. "
+          "The missing days stay missing — they are disclosed, never backfilled",
+          flush=True)
+    return True
+
+
+# --------------------------------------------------------------------------- #
 # board reconstruction (git archaeology + snapshot union)
 # --------------------------------------------------------------------------- #
 def _git_revisions() -> list[tuple[str, str]]:
@@ -406,10 +628,35 @@ def _git_revisions() -> list[tuple[str, str]]:
 
 
 def _load_blob(sha: str) -> dict | None:
-    blob = subprocess.run(
+    """One board revision, or None when that revision genuinely has no board.
+
+    LOUD on a git FAILURE, for the same reason :func:`_git_revisions` is (G2).  This
+    used to read `.stdout` without ever looking at the return code, so `git show`
+    failing — a corrupt object, a missing pack, an interrupted checkout — produced an
+    empty string, which read as "this commit had no board" and dropped the revision
+    silently.  Enough dropped revisions and the track record ships a Wilson CI computed
+    over a SINGLE date while still calling itself the history.  A truncated history is
+    the one thing a track record may never be quiet about: an empty stdout WITH rc=0 is
+    a real absence, an empty stdout with rc!=0 is a broken read, and only the first is
+    a None.
+    """
+    proc = subprocess.run(
         ["git", "show", f"{sha}:{BOARD_PATH}"],
         cwd=ROOT, capture_output=True, text=True,
-    ).stdout
+    )
+    if proc.returncode != 0:
+        stderr = (proc.stderr or "").strip()
+        # A path that does not exist in this revision is a legitimate absence, not a
+        # failure: the board was added at some commit, and every earlier revision
+        # answers "does not exist" with rc=128.  Everything else is a broken read.
+        if "does not exist" in stderr or "exists on disk, but not in" in stderr:
+            return None
+        raise RuntimeError(
+            f"git show {sha}:{BOARD_PATH} failed (rc={proc.returncode}): "
+            f"{stderr[:300]} — refusing to grade on a silently truncated history; "
+            "re-run once the object store is readable."
+        )
+    blob = proc.stdout
     if not blob.strip():
         return None
     try:
@@ -447,6 +694,16 @@ def _row_features(r: dict) -> dict:
     conv = r.get("conviction") or {}
     sig = r.get("signal") or {}
     es = r.get("entry_signal") or {}
+    # entry_status disclosure law (2026-08-04): a graded row never carries a SILENT
+    # entry_status null. When the board row has no entry_signal.status, the reason
+    # resolves in priority order: the writer's own stamp (entry_signal_null_reason —
+    # no_cycle_ladder / short_history / gauge_error:* / lane_not_stamped /
+    # not_assessed), else "unstamped_at_publish" (the published row that night
+    # carried neither the gauge nor a reason — the pre-instrumentation boards,
+    # 2026-06-15..17, whose 442 silent-null rows were the battery §1 finding).
+    # PIT: the reason is a property of the frozen snapshot/blob being graded, never
+    # a recomputed label; entry_status itself is NEVER backfilled.
+    _estat = _dig(r, ("entry_signal", "status"), default=es.get("status"))
     return {
         "ticker": r.get("ticker"),
         "sector": r.get("sector"),
@@ -462,7 +719,10 @@ def _row_features(r: dict) -> dict:
         "validation_status": _dig(r, ("conviction", "validation_status"), ("validation_status",)),
         "trust_tier": _dig(r, ("conviction", "trust_tier", "tier"), ("trust_tier", "tier")),
         # entry_signal.status = the confluence-gated "buyable now" flag
-        "entry_status": _dig(r, ("entry_signal", "status"), default=es.get("status")),
+        "entry_status": _estat,
+        "entry_status_reason": (None if _estat is not None
+                                else (r.get("entry_signal_null_reason")
+                                      or "unstamped_at_publish")),
         "act_level": _num(_dig(r, ("entry_signal", "act_level"),
                                ("conviction", "act_level"), default=es.get("act_level"))),
         # signal.last.quality = block/ok — the master-veto state (latest schema only)
@@ -521,11 +781,19 @@ def _num(x):
         return None
 
 
-def collect_boards() -> list[dict]:
+def collect_boards(receipt: dict | None = None) -> list[dict]:
     """Union git-history boards with snapshot JSONL, de-dup on (as_of).
 
     Each element: {as_of: 'YYYY-MM-DD', dispersion_state, rank_by, rows: [ {lane, position, **features} ]}.
-    Position = 0-based order within lane as published (this IS the ranking under test)."""
+    Position = 0-based order within lane as published (this IS the ranking under test).
+
+    `receipt`, when supplied, is filled with the PROVENANCE SPLIT — how many board
+    dates each of the two legs actually contributed, and how many revisions of the
+    board artifact git could see.  _git_revisions() is LOUD when git *errors*, but a
+    truncated history is not an error: on a shallow checkout `git log -- <path>`
+    exits 0 and returns one revision, so the retro half degrades to nothing while
+    every other number in the run looks normal.  The split is what makes that
+    visible (see warn_if_history_truncated)."""
     boards: dict[str, dict] = {}
 
     # 1) snapshots (forward-accruing source) — take precedence (exact bytes at build time)
@@ -541,9 +809,11 @@ def collect_boards() -> list[dict]:
             b = _board_to_record(snap)
             if b:
                 boards[b["as_of"]] = b
+    n_from_snapshots = len(boards)
 
     # 2) git history (retro source) — fills any as_of not already present
-    for sha in _git_revisions():
+    revisions = _git_revisions()
+    for sha in revisions:
         d = _load_blob(sha)
         if not d:
             continue
@@ -551,7 +821,51 @@ def collect_boards() -> list[dict]:
         if b and b["as_of"] not in boards:
             boards[b["as_of"]] = b
 
+    if receipt is not None:
+        receipt.update({
+            "n_git_revisions": len(revisions),
+            "n_from_snapshots": n_from_snapshots,
+            "n_from_git": len(boards) - n_from_snapshots,
+            "n_boards": len(boards),
+        })
     return sorted(boards.values(), key=lambda x: x["as_of"])
+
+
+def warn_if_history_truncated(receipt: dict) -> bool:
+    """Emit the line-start annotation when the retro (git-archaeology) leg is DARK.
+
+    Returns True when it fired.  Bare ``print`` with ``flush=True`` per the repo's
+    annotation law (a logger prefixes the line and GitHub drops the annotation).
+
+    WHY THIS EXISTS (measured 2026-08-06).  `_git_revisions` is loud on a git *error*,
+    which closed the 2026-07-26 class where a failing subprocess silently halved the
+    ledger.  It cannot see the other way this half dies: `actions/checkout@v4` defaults
+    to ``fetch-depth: 1``, so on the nightly runner `git log -- site/factordata/
+    us_standouts.json` exits 0 with ONE revision and the archaeology leg contributes
+    nothing.  Evidence from the nightlies' own logs — the grader printed
+    ``[boards] 13 distinct as_of dates`` (2026-07-27) and ``[boards] 17`` (2026-08-05),
+    both exactly the snapshot count, while the same code over a full local checkout
+    reads 524 revisions and 32 board dates.  The 15 archaeology-only dates
+    (2026-06-15..06-29, 07-07, 07-08, 07-13, 07-22, 07-23) are therefore invisible to
+    every nightly: 8 of them have never had a single graded row, and 2026-06-17..06-24
+    are frozen at the 5d horizon because no later run could re-reach them.
+
+    The trigger is deliberately narrow — one revision or none, while the ledger already
+    knows about more than one board date. A repo that genuinely holds a single revision
+    of a single board cannot trip it, and a healthy full checkout is nowhere near it."""
+    n_rev = int(receipt.get("n_git_revisions") or 0)
+    n_boards = int(receipt.get("n_boards") or 0)
+    if n_rev > 1 or n_boards <= 1:
+        return False
+    print("::warning title=us-board-ledger-history-truncated::"
+          f"git log over {BOARD_PATH} returned {n_rev} revision(s) but the ledger knows "
+          f"{n_boards} board date(s) — this checkout is too shallow to reconstruct any "
+          f"history, so the retro half of the ledger contributed "
+          f"{int(receipt.get('n_from_git') or 0)} board date(s) and every board that "
+          "exists only in git history is ungraded and unreachable from this run; "
+          "the fix is fetch-depth: 0 on this job's checkout, not a backfill",
+          flush=True)
+    return True
 
 
 def _board_to_record(d: dict) -> dict | None:
@@ -628,8 +942,26 @@ def _excess_close_path_mae(
     return float(worst)
 
 
+def _archetype_pit(ticker, as_of) -> str | None:
+    """PIT archetype label for (ticker, as_of) — greatest asof_date <= as_of from
+    data/archetypes/history.parquet, via engine.neuralweb.context_api.archetype_asof.
+
+    The import is lazy on purpose: context_api pulls the fundamental-forensics chain at
+    module import, and the CI packs install minimal deps — the grader must not carry that
+    weight just to grade a board.  ImportError → None (column stays null, as before).
+    Nothing broader is caught: the reader is already fail-soft on an absent store, ticker,
+    or PIT-eligible row, so a genuine read failure stays LOUD instead of a silent null.
+    """
+    try:
+        from engine.neuralweb.context_api import archetype_asof
+    except ImportError:
+        return None
+    return archetype_asof(str(ticker), as_of)
+
+
 def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
-                 _stored_df: pd.DataFrame | None = None) -> pd.DataFrame:
+                 _stored_df: pd.DataFrame | None = None,
+                 price_sources: dict | None = None) -> pd.DataFrame:
     """Grade all matured board rows, routing all forward metrics through engine.grading
     (one-grader law §1.2). New in W0.1 B-b:
 
@@ -640,7 +972,8 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
     4. SPINE COLUMNS: fwd_mfe_{H} for each H; terminal_state_clean15_126,
        terminal_state_clean8_21, post_cushion_breach (at horizon=21); all nullable.
     5. REGIME STAMP: PIT regime_vector fields stamped per as_of row.
-    6. SPECIES/ARCHETYPE: species_id=null (ambiguous ledger); archetype from row payload.
+    6. ARCHETYPE: from the row payload, else the PIT archetype store at this board's
+       as_of.  species_id is no longer emitted (retired 2026-08-04 — see module header).
     7. IN-BATCH TENURE (FIX-5): boards processed in ascending as_of order; a running
        in-memory presence map (union of stored + freshly-graded (as_of, ticker) pairs)
        is maintained and passed to _board_tenure so consecutive dates graded in the
@@ -677,6 +1010,7 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
 
     recs = []
     skipped_no_price = 0
+    unadjusted_tickers: set[str] = set()
     for b in boards:
         as_of = pd.Timestamp(b["as_of"])
         as_of_str = b["as_of"]
@@ -698,6 +1032,16 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
             if nser is None or nser.empty:
                 skipped_no_price += 1
                 continue
+
+            # price-basis stamp for every row this ticker produces (see rec below).
+            # `price_sources` is the provenance rebase_to_adjusted returned; a ticker
+            # missing from it was never resolved through the ladder (dead-name store
+            # only), which is itself worth recording rather than guessing at.
+            _px_src = (price_sources or {}).get(tk)
+            _px_basis = {True: "adjusted", False: "unadjusted"}.get(
+                _px_is_adjusted(_px_src))
+            if _px_basis == "unadjusted":
+                unadjusted_tickers.add(tk)
 
             # fill position: strictly after as_of (next-bar entry convention)
             fill = fill_index(nser, as_of)
@@ -736,8 +1080,10 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
             etf_fwd = (forward_metrics(etf_al, as_of, horizons=tuple(HORIZONS))
                        if etf_al is not None else {})
 
-            # archetype: from the board row payload (never backfilled; null if absent)
-            archetype = feat.get("archetype")
+            # archetype: board row payload first, else the PIT archetype store at this
+            # board's own as_of.  The payload has never carried the field (0/2282 rows
+            # measured 2026-08-04), so the PIT leg is what actually populates it.
+            archetype = feat.get("archetype") or _archetype_pit(tk, as_of_str)
 
             for h in HORIZONS:
                 # maturity check: forward_metrics returns None for unmatured H
@@ -763,6 +1109,10 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
                     "verdict": feat.get("verdict"), "align_tier": feat.get("align_tier"),
                     "urgency": feat.get("urgency"), "state": feat.get("state"),
                     "entry_status": feat.get("entry_status"),
+                    # disclosure twin: non-null exactly when entry_status is null on a
+                    # freshly-graded row (see _row_features); existing stored rows keep
+                    # nulls until their board is re-graded (schema-union).
+                    "entry_status_reason": feat.get("entry_status_reason"),
                     "act_level": feat.get("act_level"),
                     "signal_quality": feat.get("signal_quality"),
                     "validation_status": feat.get("validation_status"),
@@ -821,9 +1171,18 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
                     "regime_vector_degraded": regime_stamp.get("regime_vector_degraded"),
                     "vector_asof":            regime_stamp.get("vector_asof"),
                     "staleness_hours":        regime_stamp.get("staleness_hours"),
-                    # species/archetype (§3.4; species_id=null because ledger is ambiguous)
-                    "species_id": None,
+                    # archetype (§3.4) — payload first, else the PIT store (see above).
+                    # species_id is NOT emitted: retired 2026-08-04, _RETIRED_LEDGER_COLS.
                     "archetype":  archetype,
+                    # PRICE-BASIS STAMP (2026-08-06). Which store this row's NAME leg was
+                    # priced from, and whether that store is back-adjusted. The benchmark
+                    # leg is always adjusted (data/yahoo), so `price_basis == "adjusted"`
+                    # is the row's certificate that both legs shared one basis. A row
+                    # stamped "unadjusted" is a name with no adjusted counterpart —
+                    # disclosed, not dropped. NULL on every row graded before this PR:
+                    # that null IS the era marker (see README "Price-basis era").
+                    "price_source": _px_src,
+                    "price_basis": _px_basis,
                 }
                 # excess vs SPY
                 if spy_al is not None:
@@ -858,6 +1217,23 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
     df = pd.DataFrame(recs)
     df.attrs["skipped_no_price"] = skipped_no_price
     df.attrs["dead_price_store_tickers"] = _dead_price_count
+    df.attrs["unadjusted_basis_tickers"] = sorted(unadjusted_tickers)
+
+    # Nulls printed, not hidden — but only alarm on a REGRESSION in adjusted-store
+    # coverage, not on the standing residual. A steady handful of off-index names with no
+    # adjusted counterpart is the known cost of not dropping them; a sudden jump means an
+    # adjusted store stopped being written, which silently re-contaminates the ledger.
+    # Bare line-start print: a logger prefixes the line and GitHub drops the annotation.
+    if not df.empty and "price_basis" in df.columns:
+        n_unadj = int((df["price_basis"] == "unadjusted").sum())
+        share = n_unadj / len(df)
+        if share > _UNADJUSTED_ROW_SHARE_ALARM:
+            print("::warning title=us-board-price-basis-coverage::"
+                  f"{n_unadj}/{len(df)} freshly-graded rows ({share:.1%}) priced a name "
+                  f"from the UNADJUSTED breadth cache against an adjusted benchmark — "
+                  f"above the {_UNADJUSTED_ROW_SHARE_ALARM:.0%} floor. Their own "
+                  f"distributions are booked as losses. Tickers: "
+                  f"{', '.join(sorted(unadjusted_tickers)[:15])}", flush=True)
     return df
 
 
@@ -890,28 +1266,60 @@ def _hit_stats(sub: pd.DataFrame, col: str = "excess_spy") -> dict:
 
 
 def _precision_at_k(sub: pd.DataFrame, col: str = "excess_spy",
-                    rank_col: str = "position", ascending: bool = True) -> dict:
-    """P(excess>0) among the top-k by `rank_col` (published board position by default;
-    position ascending = higher rank). Set rank_col='alpha', ascending=False to score the
-    counterfactual alpha-ordered board. Averaged across boards so each day contributes
-    equally (mitigates n-heavy days)."""
+                    rank_col: str = "position", ascending: bool = True,
+                    published: bool = True) -> dict:
+    """P(excess>0) among the top-k by `rank_col`.
+
+    PUBLISHED TOP-K, NOT TOP-K-OF-THE-SURVIVORS (G1, 2026-08-06)
+    ------------------------------------------------------------
+    `precision@k` is a claim about the k names a reader actually saw at the top of the
+    board.  `head(k)` of the GRADED subset is a different question: every published row
+    that failed to grade (no price, not yet matured, delisted) is skipped and the row
+    BELOW it is promoted into the top-k.  On a board where position 1 is the one that
+    delisted, `head(3)` scores published #2, #4 and #5 and calls the answer P@3.
+    Promotion by absence is not a ranking result.
+
+    So for the as-published order (`rank_col="position"`, the ranking under test) the
+    top-k is defined by the PUBLISHED RANK — `position` is 0-based within the lane, so
+    the published top-k is `position < k` — and rows missing from the graded frame are
+    simply absent, never backfilled from below.  Each cell then discloses
+    `published_topk_rows` / `graded_topk_rows` / `coverage`, so a thin cell is visible
+    as thin rather than reported at full confidence.
+
+    `published=False` is the honest fallback and the ONLY mode available to a
+    COUNTERFACTUAL ordering (`rank_col='alpha'` / `'composite_z'`): those orders exist
+    only over the rows that graded, so head-of-the-graded-subset IS their definition.
+    Such cells are stamped `basis="graded_subset"` with the same coverage counts, so
+    the reader can never mistake one basis for the other.
+    """
     out = {}
+    use_published = bool(published) and rank_col == "position"
     for k in K_LIST:
         per_board_hit = []
         per_board_mean = []
-        for as_of, g in sub.groupby("as_of"):
-            g = g.sort_values(rank_col, ascending=ascending)
-            topk = g.head(k)[col].dropna()
+        pooled_frames = []
+        published_rows = 0
+        graded_rows = 0
+        for _as_of, g in sub.groupby("as_of"):
+            if use_published:
+                # `position` is the published 0-based rank inside the lane, so the
+                # published top-k is a LEVEL test, not a head() of what survived.
+                pos = pd.to_numeric(g[rank_col], errors="coerce")
+                topk_rows = g[pos < k]
+                published_rows += k          # what the board actually showed at this k
+            else:
+                topk_rows = g.sort_values(rank_col, ascending=ascending).head(k)
+                published_rows += min(k, len(g))
+            topk = topk_rows[col].dropna()
+            graded_rows += len(topk)
             if len(topk) == 0:
                 continue
+            pooled_frames.append(topk)
             per_board_hit.append(float((topk > 0).mean()))
             per_board_mean.append(float(topk.mean()))
+        basis = "published_rank" if use_published else "graded_subset"
         if per_board_hit:
-            # pooled across (board, name) too, for the Wilson CI
-            pooled = pd.concat([
-                sub[sub["as_of"] == a].sort_values(rank_col, ascending=ascending).head(k)[col].dropna()
-                for a in sub["as_of"].unique()
-            ])
+            pooled = pd.concat(pooled_frames)
             kk = int((pooled > 0).sum())
             nn = len(pooled)
             lo, hi = wilson_ci(kk, nn)
@@ -921,9 +1329,21 @@ def _precision_at_k(sub: pd.DataFrame, col: str = "excess_spy",
                 "pooled_precision": round(kk / nn, 4) if nn else None,
                 "wilson_lo": round(lo, 4), "wilson_hi": round(hi, 4),
                 "mean_excess_topk": round(float(np.mean(per_board_mean)), 5),
+                # G1 disclosure — how much of the top-k this cell could actually see.
+                "basis": basis,
+                "published_topk_rows": published_rows,
+                "graded_topk_rows": graded_rows,
+                "coverage": (round(graded_rows / published_rows, 4)
+                             if published_rows else None),
             }
         else:
-            out[f"k{k}"] = {"n_boards": 0, "n_rows": 0}
+            out[f"k{k}"] = {
+                "n_boards": 0, "n_rows": 0, "basis": basis,
+                "published_topk_rows": published_rows,
+                "graded_topk_rows": graded_rows,
+                "coverage": (round(graded_rows / published_rows, 4)
+                             if published_rows else None),
+            }
     return out
 
 
@@ -1001,7 +1421,31 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
     survivorship = _survivorship_block(boards, names)
     if df.empty:
         return {"generated": dt.datetime.now(dt.timezone.utc).isoformat(), "empty": True,
-                "note": "no matured graded rows", "survivorship": survivorship}
+                "note": "no matured graded rows", "survivorship": survivorship,
+                "history": {"era_from": LEDGER_HISTORY_FROM, "n_rows_excluded": 0,
+                            "basis": _ERA_BASIS}}
+    # ── ONE ERA RULE (G3, 2026-08-06) ────────────────────────────────────────
+    # `emit_ledger` already refuses to score anything before LEDGER_HISTORY_FROM: the
+    # 2026-06-15..06-24 boards published 120 names on the `buy` key against ~780
+    # eligible — a broad screen, not a selection, whose own labels included DOWNTREND
+    # and TOPPING names.  `build_track` pooled them anyway, so the SAME FILE published
+    # two different track records over two different products and the headline one
+    # described a board nobody can follow.  A track record is a claim about a specific
+    # instrument; two era rules in one file means at least one of them is wrong.
+    #
+    # The excluded count ships in `history` so the cut is auditable, never silent —
+    # and note that INCLUDING the old era is the choice that flatters the desk, which
+    # is the reason to leave it out rather than a reason to keep it.
+    _n_before = int(len(df))
+    df = df[df["as_of"].astype(str) >= LEDGER_HISTORY_FROM]
+    _n_excluded = _n_before - int(len(df))
+    if df.empty:
+        return {"generated": dt.datetime.now(dt.timezone.utc).isoformat(), "empty": True,
+                "note": (f"no matured graded rows on or after {LEDGER_HISTORY_FROM} "
+                         f"({_n_excluded} pre-era row(s) excluded)"),
+                "survivorship": survivorship,
+                "history": {"era_from": LEDGER_HISTORY_FROM,
+                            "n_rows_excluded": _n_excluded, "basis": _ERA_BASIS}}
     board_dates = sorted({b["as_of"] for b in boards})
     graded_dates = sorted(df["as_of"].unique().tolist())
     per_horizon = {}
@@ -1066,14 +1510,19 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
                 },
             },
         }
-        # P(fwd>0 | top-5) vs base rate for the buy lane
+        # P(fwd>0 | top-5) vs base rate for the buy lane.  G1: the top-5 is the
+        # PUBLISHED top-5 (`position < 5`, 0-based), not head(5) of whatever graded —
+        # `head()` promotes row 6 into the top-5 whenever a published top name has no
+        # price, which reports a ranking result produced by absence.
         base = buy["excess_spy"].dropna()
-        top5_frames = [buy[buy["as_of"] == a].sort_values("position").head(5)["excess_spy"].dropna()
+        _pos = pd.to_numeric(buy["position"], errors="coerce")
+        top5_frames = [buy[(buy["as_of"] == a) & (_pos < 5)]["excess_spy"].dropna()
                        for a in buy["as_of"].unique()]
         top5 = pd.concat(top5_frames) if top5_frames else pd.Series(dtype=float)
         block["buy_lane"]["p_fwd_pos_top5_vs_base"] = {
             "top5_p": round(float((top5 > 0).mean()), 4) if len(top5) else None,
             "top5_n": int(len(top5)),
+            "top5_basis": "published_rank (position < 5)",
             "base_p": round(float((base > 0).mean()), 4) if len(base) else None,
             "base_n": int(len(base)),
             "lift": round(float((top5 > 0).mean() - (base > 0).mean()), 4)
@@ -1088,6 +1537,13 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
         "board_dates_range": [board_dates[0], board_dates[-1]] if board_dates else None,
         "graded_dates": graded_dates,
         "graded_rows_total": int(len(df)),
+        # G3 — the ONE era rule this file applies, and what it cost, stated where the
+        # numbers are (not only in emit_ledger's own meta block).
+        "history": {
+            "era_from": LEDGER_HISTORY_FROM,
+            "n_rows_excluded": _n_excluded,
+            "basis": _ERA_BASIS,
+        },
         "price_source": ("engine.equity_factors._closes('broad') + engine.grading.resolve_series "
                          "(extends with edgar dead-name terminals) + data/yahoo/{SPY,XL*}"),
         "price_coverage_note": (
@@ -1166,6 +1622,23 @@ def snapshot_today() -> str | None:
 # store management
 # --------------------------------------------------------------------------- #
 _DEDUP_KEYS = ["as_of", "ticker", "lane", "horizon"]
+
+# Columns retired from the ledger schema. Dropped by NAME (never by null-ness) from
+# every frame this script writes or returns, on BOTH merge exits — the legacy store
+# carries them, so a retirement that only stops writing them leaves the store-merge
+# carry path re-emitting the column forever.
+#   species_id (retired 2026-08-04): written as a literal None on every row since
+#   inception — no species uniquely binds this ledger, so it could never populate.
+#   Known consumers (engine/standout_audit.py, engine/neuralweb/query.py) read it
+#   through .get() and keep emitting null, unchanged.
+_RETIRED_LEDGER_COLS = ["species_id"]
+
+
+def _drop_retired(df: pd.DataFrame) -> pd.DataFrame:
+    """Shed _RETIRED_LEDGER_COLS from a ledger frame (no-op when absent)."""
+    cols = [c for c in _RETIRED_LEDGER_COLS if c in df.columns]
+    return df.drop(columns=cols) if cols else df
+
 
 # ---------------------------------------------------------------------------
 # P2 — board tenure stamping for H5 (PREREGISTRATION.md §2.4)
@@ -1287,6 +1760,82 @@ def _board_tenure(
         return None
 
 
+#: Price-derived measurement columns. Everything here is a function of the close panel,
+#: so re-computing it after the breadth caches are re-based RESTATES a published number.
+#: Everything NOT here (regime stamps, archetype, board_tenure_days, the evidence-stack
+#: strata, new spine columns) is an annotation and still accrues onto historical rows —
+#: that is what keeps schema-union and the backfills working.
+_FROZEN_PRICE_COLS = [
+    "entry_date",                                   # the fill bar itself is calendar-derived
+    "ret", "spy_ret", "excess_spy", "mae_close_excess_spy",
+    "sector_etf", "etf_ret", "excess_sector", "mae_close_excess_sector",
+    "fwd_mfe_5", "fwd_mfe_10", "fwd_mfe_21", "fwd_mfe_63",
+    "terminal_state_clean15_126", "terminal_state_clean8_21", "post_cushion_breach",
+    "price_source", "price_basis",                  # the basis stamp travels with its row
+]
+
+
+def _freeze_graded_prices(fresh: pd.DataFrame, stored: pd.DataFrame,
+                          key_cols: list[str]) -> pd.DataFrame:
+    """Restore the STORED price-derived values onto any row that was already graded.
+
+    A graded row is a POINT-IN-TIME CLAIM. The breadth close caches are re-based in
+    place, so the same (ticker, date) reads differently on different days and a plain
+    keep-FRESH merge silently rewrites history: measured 2026-08-06, re-grading the
+    shipped ledger moved 75 already-published rows, 19 of them materially (worst
+    −1.94pp, LPG 2026-06-18 H5). Restating a track record without saying so is worse
+    than a disclosed basis change, so the measurement is frozen at first grade and the
+    era is separated by the `price_basis` stamp instead (null = pre-2026-08-06).
+
+    Only rows whose STORED `ret` is non-null are frozen — an unscored row that has now
+    matured still takes the fresh grade, which is the whole point of the nightly.
+    """
+    if fresh.empty or stored.empty or not key_cols:
+        return fresh
+    if "ret" not in stored.columns:
+        return fresh
+
+    graded = stored[stored["ret"].notna()]
+    if graded.empty:
+        return fresh
+    cols = [c for c in _FROZEN_PRICE_COLS if c in stored.columns]
+    if not cols:
+        return fresh
+
+    prior = (graded.drop_duplicates(subset=key_cols, keep="last")
+             .set_index(key_cols)[cols])
+    out = fresh.set_index(key_cols)
+    common = out.index.intersection(prior.index)
+    if len(common):
+        for c in cols:
+            if c not in out.columns:
+                out[c] = None
+            out.loc[common, c] = prior.loc[common, c]
+        # ERA MARKER. A row frozen at a value this ladder did not produce must not
+        # inherit this ladder's stamp — that would assert a basis nobody verified. The
+        # test is what the STORE knows, never what the fresh row computed: a row whose
+        # stored price_basis is absent or null was graded before the boundary, so it is
+        # stamped PRE_ERA_BASIS ("priced from the breadth cache at grade time, basis
+        # unverified"). That makes the two eras separable in one column instead of by
+        # archaeology, and it is why history is disclosed rather than restated.
+        if "price_basis" in out.columns:
+            if "price_basis" in graded.columns:
+                prior_basis = (graded.drop_duplicates(subset=key_cols, keep="last")
+                               .set_index(key_cols)["price_basis"])
+                pre_mask = prior_basis.reindex(common).isna().to_numpy()
+            else:
+                pre_mask = np.ones(len(common), dtype=bool)   # store predates the stamp
+            idx = common[pre_mask]
+            if len(idx):
+                out.loc[idx, "price_basis"] = PRE_ERA_BASIS
+                if "price_source" in out.columns:
+                    out.loc[idx, "price_source"] = None
+    out = out.reset_index()
+    out.attrs.update(fresh.attrs)
+    out.attrs["frozen_rows"] = int(len(common))
+    return out
+
+
 def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
     """Merge freshly-graded rows into the accumulated retro_grades.parquet store.
 
@@ -1298,18 +1847,28 @@ def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
     to mature in this run.
 
     W0.1 B-b: schema-union — new spine columns (fwd_mfe_*, terminal_state_*,
-    post_cushion_breach, regime stamp, species_id, archetype) are added to the
+    post_cushion_breach, regime stamp, archetype) are added to the
     stored frame with NaN/None for legacy rows that predate this PR. Merge is
-    keep-FRESH on the dedup key (as main always was): a fresh row replaces the
-    stored row wholesale — safe because a grade is a deterministic re-computation
-    from prices (a matured horizon can never regress to null). The PIT fire log
-    is snapshots.jsonl; this parquet is the derived grade store.
+    keep-FRESH on the dedup key for ANNOTATIONS, so new columns and backfills still
+    reach historical rows.
+
+    2026-08-06 — the price-derived columns are the exception. This docstring used to
+    justify wholesale replacement as "a deterministic re-computation from prices"; that
+    premise is false, because the breadth close caches are re-based IN PLACE and the same
+    (ticker, date) reads differently on different days. Re-grading the shipped ledger on
+    2026-08-06 moved 75 already-published rows, 19 materially. `_freeze_graded_prices`
+    therefore restores the stored values of `_FROZEN_PRICE_COLS` on any row that already
+    carries a grade. The PIT fire log is snapshots.jsonl; this parquet is the derived
+    grade store, and its grades are now write-once.
 
     If fresh is empty AND the store already exists, the store is returned as-is
     (no write needed).  This is the key guard against the empty:true regression."""
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     if RETRO_PARQUET.exists():
-        stored = pd.read_parquet(RETRO_PARQUET)
+        # shed retired columns at READ time so both exits below are covered — including
+        # the fresh.empty return, which would otherwise hand a retired column downstream
+        # on any night that matures no new rows
+        stored = _drop_retired(pd.read_parquet(RETRO_PARQUET))
     else:
         stored = pd.DataFrame()
 
@@ -1328,8 +1887,11 @@ def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
         key_cols = [c for c in _DEDUP_KEYS if c in fresh.columns and c in stored.columns]
         fresh_keys = set(map(tuple, fresh[key_cols].values.tolist()))
         mask = stored.apply(lambda r: tuple(r[k] for k in key_cols) not in fresh_keys, axis=1)
+        # ...except the price-derived measurement, which is FROZEN once graded.
+        fresh = _freeze_graded_prices(fresh, stored, key_cols)
         merged = pd.concat([stored[mask], fresh], ignore_index=True)
 
+    merged = _drop_retired(merged)
     merged.to_parquet(RETRO_PARQUET, index=False)
     return merged
 
@@ -1375,6 +1937,43 @@ def _backfill_regime_stamps(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
     return df, newly_stamped
 
 
+def _backfill_archetype(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+    """Backfill null `archetype` from the PIT archetype store (FIX-6 precedent).
+
+    Each row resolves at its OWN as_of (greatest asof_date <= as_of), so a backfilled
+    label is exactly what the row would have carried at grade time — the same PIT-honest
+    retro-stamp blessed for board_tenure_days.  Fill-null-only: a payload archetype is
+    never overwritten, and a row the store cannot cover stays null.
+    Returns (updated_df, n_newly_filled) so main() can print the still-null count.
+    """
+    if df.empty or not {"archetype", "ticker", "as_of"} <= set(df.columns):
+        return df, 0
+
+    null_mask = df["archetype"].isna()
+    if not null_mask.any():
+        return df, 0
+
+    df = df.copy()
+    # (ticker, as_of) → label.  archetype_asof caches the parquet read itself; this
+    # caches the per-row PIT scan, which repeats across lanes and horizons.
+    cache: dict[tuple, str | None] = {}
+    n_filled = 0
+    for idx in df.index[null_mask]:
+        tk = df.at[idx, "ticker"]
+        as_of = df.at[idx, "as_of"]
+        if tk is None or pd.isna(tk) or as_of is None or pd.isna(as_of):
+            continue
+        key = (str(tk), str(as_of))
+        if key not in cache:
+            cache[key] = _archetype_pit(key[0], key[1])
+        if cache[key] is None:
+            continue
+        df.at[idx, "archetype"] = cache[key]
+        n_filled += 1
+
+    return df, n_filled
+
+
 # --------------------------------------------------------------------------- #
 # outcomes strip (W2)
 # --------------------------------------------------------------------------- #
@@ -1386,8 +1985,8 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
     - Collect every ticker that appeared on the BUY lane within the last
       OUTCOMES_LOOKBACK_BOARDS board dates.
     - Find tickers that are ABSENT from the CURRENT (most-recent) buy board.
-    - For each such exited ticker, compute pct change from the close on their
-      first_surfaced date to the most-recent available close.
+    - For each such exited ticker, compute pct change from the NEXT session's close
+      after first_surfaced to the close on the date it left the board.
     - Skip rows with missing prices (never fabricate) — but COUNT them: the broad
       cache is current-membership only, so a name that left the board BECAUSE it
       collapsed and got delisted is exactly the name with no price here. Silently
@@ -1398,6 +1997,24 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
 
     Returns the dict to be serialised as us_board_outcomes.json.
     Degrades to {"empty": True, ...} only when genuinely no exited names exist.
+
+    THREE CONVENTION FIXES (G4, 2026-08-06) — all of them lowered the headline
+    ---------------------------------------------------------------------------
+    1. NEXT-BAR FILL.  The buy price was the close ON first_surfaced — the bar the
+       board is computed from and published that evening.  It is unbuyable.  Worth
+       +3.4pp of win rate and 66% of the reported average return, measured on the
+       shipped artifact.  Entry is now the next session's close, the same convention
+       `build_track`, `engine.grading.fill_index` and `track_scoring` already use;
+       a name whose next bar has not printed is skipped and counted, never filled.
+    2. MARK AT THE EXIT BAR.  Every row is an EXITED name, and each was marked at
+       TODAY's close — so a name that left the board in June kept accruing July's
+       move under the board's name.  The strip claims "surfaced → outcome", and the
+       outcome ends when the board stopped saying it.
+    3. FLATS STAY IN THE DENOMINATOR.  `win_rate` divided by running+stopped only,
+       deleting every |move| <= 2% row (96 of 321 on the shipped artifact).  A flat
+       is a real outcome of a buy call — it is simply not a win — and a denominator
+       conditioned on the size of the result is the resolution-conditioned
+       denominator that deletes exactly the rows a reader wants counted.
     """
     if not boards:
         return {"empty": True, "as_of": str(dt.date.today()), "reason": "no boards"}
@@ -1468,19 +2085,23 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
         except Exception:
             continue
 
-        # Close on or after first_surfaced (next available bar at or after that date)
-        idx_first = ser.index.searchsorted(first_dt, side="left")
+        # G4.1 NEXT-BAR FILL: side="right" lands on the first bar STRICTLY AFTER
+        # first_surfaced.  side="left" returned the surfaced bar itself whenever that
+        # date was a session — the close the board was computed from, published after
+        # the bell.  Where first_surfaced is not a session both sides agree, so this
+        # only ever moves the fill off an unbuyable bar.
+        idx_first = ser.index.searchsorted(first_dt, side="right")
         if idx_first >= len(ser):
+            # The next bar has not printed yet — in flight, not fillable. Counted as a
+            # skip rather than filled at the signal bar (which is the defect above).
             skipped_no_price.append(tk)
             continue
         surfaced_price = float(ser.iloc[idx_first])
         if surfaced_price <= 0:
             continue
 
-        last_price = float(ser.iloc[-1])
-        pct_since = (last_price / surfaced_price - 1.0) * 100.0
-
-        # Determine exit_date: first board date in window where this ticker is absent
+        # Determine exit_date: first board date in window where this ticker is absent.
+        # Computed BEFORE the mark, because it IS the mark date (G4.2).
         exit_date_str = current_as_of  # fallback: use current as_of as exit date
         appeared_before = False
         for b in window:
@@ -1492,6 +2113,22 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             elif appeared_before:
                 exit_date_str = b.get("as_of", current_as_of)
                 break
+
+        # G4.2 MARK AT THE EXIT BAR: the last close at or before the date the name
+        # left the board, never today's.  Falls back to the last available close only
+        # when the exit date is unreadable or precedes the fill (never silently
+        # extends the window past the exit).
+        exit_idx = len(ser) - 1
+        try:
+            _exit_dt = pd.Timestamp(exit_date_str)
+            _pos = ser.index.searchsorted(_exit_dt, side="right") - 1
+            if _pos >= idx_first:
+                exit_idx = min(_pos, len(ser) - 1)
+        except Exception:
+            pass
+        last_price = float(ser.iloc[exit_idx])
+        mark_date_str = ser.index[exit_idx].date().isoformat()
+        pct_since = (last_price / surfaced_price - 1.0) * 100.0
 
         # days_on_board: count of board dates the ticker appeared on the buy lane
         days_on_board = sum(
@@ -1516,6 +2153,10 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             "pct_since": round(pct_since, 1),
             "days_on_board": days_on_board,
             "exit_date": exit_date_str,
+            # The bar `last_price` was actually read from (G4.2). Equal to the last
+            # session at or before exit_date; present so a reader can check the mark
+            # is not today's close on a name that left the board weeks ago.
+            "mark_date": mark_date_str,
             "status": status,
             "lane": meta.get("lane") or "buy",
         })
@@ -1537,7 +2178,11 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
     n_running = sum(1 for r in rows_out if r["status"] == "running")
     n_stopped = sum(1 for r in rows_out if r["status"] == "stopped")
     n_flat = sum(1 for r in rows_out if r["status"] == "flat")
-    _denom = n_running + n_stopped
+    # G4.3: EVERY priced exited name is in the denominator. `n_running + n_stopped`
+    # deleted the flats — 96 of 321 rows on the shipped artifact — and a flat is not a
+    # missing outcome, it is a buy call that went nowhere. Conditioning the denominator
+    # on the SIZE of the result is the same shape as conditioning it on the direction.
+    _denom = n_running + n_stopped + n_flat
     win_rate = round(n_running / _denom, 3) if _denom > 0 else None
     _all_pcts = [r["pct_since"] for r in rows_out]
     avg_pct = round(sum(_all_pcts) / len(_all_pcts), 1) if _all_pcts else None
@@ -1568,6 +2213,13 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             # full-set metrics (over all exited rows, before the display cut)
             "win_rate": win_rate,
             "avg_pct": avg_pct,
+            # G4 conventions, stated where the numbers are.
+            "conventions": {
+                "entry": "next session's close after first_surfaced (the surfaced "
+                         "bar is the bar the board is computed from — unbuyable)",
+                "mark": "close on the date the name left the buy board, not today's",
+                "win_rate_denominator": "every priced exited name, flats included",
+            },
         },
     }
 
@@ -1609,8 +2261,40 @@ def _ob_mask(close: pd.Series) -> pd.Series | None:
     The desk's OWN cycle-top read — engine/hold.py's LAUNCHED leg, pre-registered in
     research/entry_timing/WAVE6_PREREG.md §3 ("oversold → overbought"). Reused here as
     the episode's TARGET exit so the track record measures the system's own sell
-    discipline instead of an arbitrary calendar date. Known-date mapped (causal — a 3D
-    bucket is only readable once complete), so it can never peek.
+    discipline instead of an arbitrary calendar date.
+
+    CAUSAL, BUT NOT STABLE — these are different properties and this docstring used to
+    claim only the first.
+
+    * CAUSAL (holds): known-date mapped, so a 3D bucket is only readable once complete
+      and this can never peek. Truncating TRAILING bars leaves every past flag
+      unchanged — pinned by tests/test_ob_mask_start_invariance.py.
+    * NOT STABLE (defect): `_tf_bars` resamples on `3B`, whose bin edges anchor to the
+      SERIES' FIRST TIMESTAMP. `emit_ledger` calls this on the full rolling close cache,
+      and the smallcap/midcap `data/*/_closes_cache.parquet` stores are a ROLLING window
+      (first date moved 2023-06-27 -> 2023-07-03 across three sessions in early Aug 2026).
+      Move the start and every 3D bucket in the WHOLE history re-phases, so overbought
+      flags from weeks ago flip and the exit bar of an episode that closed long ago moves.
+
+    Measured (reports/ob_mask_track_record_blast_radius.md, regenerate with
+    scripts/measure_ob_mask_track_record_blast_radius.py). Dropping 4 leading sessions with
+    the end date and every retained price held IDENTICAL moved 126 of 359 already-matured
+    episodes (35.1%), max 28.9 pp, and the PUBLISHED headline expectancy 0.94% -> 1.29% —
+    on zero new information. The phase depends on (leading bars dropped) mod 3, so a
+    re-phase is not even monotone in how much history rolls off.
+
+    So `site/factordata/us_track_ledger.json` — the Track-record dialog plus the hero
+    win-rate/expectancy on the Track-record page — is not stable under re-grading.
+
+    THE FIX IS IN FLIGHT, NOT SHIPPED. PR #4732 (era `abs-session-2026-08-06`) migrates
+    `_tf_bars` to an absolute session anchor in place; because this function imports it
+    directly, the repair reaches here for free and drives the controlled movement above to
+    0 of 359 (verified against that branch). That is also the hazard: merging #4732 changes
+    every published historical number here SILENTLY — `scripts/grade_us_board.py` is not in
+    that PR's file list, its blast-radius report never measures this consumer, and R5's era
+    stamp rides `cascade`/`tier_stream`/`signal_gate`, none of which this path touches. That
+    is a graded-population change and needs its own era boundary:
+    research/US_TRACK_RECORD_ERA_BREAK_PROPOSAL.md.
     """
     try:
         c = close.dropna()
@@ -1656,11 +2340,19 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
     bench = {"code": "SPY", "en": "S&P 500", "zh": "标普500"}
     empty_summary = _ts.summarize([], metric="pnl", horizon=LEDGER_HORIZON)
 
+    # The last session this grading run actually saw — see the priced_through block
+    # below for why the artifact has to carry it. Stamped on EVERY return path,
+    # including the degenerate one: a provenance field with holes in it is a field a
+    # reader has to already know the shape of to trust.
+    priced_through = (str(pd.DatetimeIndex(names.index).max())[:10]
+                      if names is not None and not getattr(names, "empty", True) else None)
+
     if not boards:
         return _tl.build_shell(
             "US", str(dt.date.today()), "accruing", bench,
             summary=empty_summary, rows=[], grain="episode",
             survivorship={"n_skipped_no_price": 0},
+            extra_meta={"priced_through": priced_through},
         )
 
     current_as_of = boards[-1].get("as_of", "")
@@ -1803,6 +2495,19 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
                           "n_boards": len(_days),
                           "scored_from": LEDGER_HISTORY_FROM,
                           "n_boards_before_current_definition": n_boards_predefinition}}
+    # PRICE FRONTIER — the last session this grading run actually saw.
+    #
+    # Unconditional provenance, not an outage disclosure: it is the only field on the
+    # artifact that says which price vintage produced these numbers. `as_of` above is the
+    # last BOARD date and `continuity.last_session` is the SPY clock — a deliberately
+    # different lane (see continuity_block) — so neither answers it, and on 2026-08-06
+    # both were read as if they did. That night collect committed prices through 08-05
+    # while this grader last ran against a cache stopping at 07-31; downstream
+    # (scripts/exit_policy_study.calibrate) compared its own recomputation to this
+    # summary and reported the 3-session gap as "the reconstruction drifted". With this
+    # stamp the gap is legible from the file alone.
+    _extra["priced_through"] = priced_through
+
     # Outage disclosure: sessions after the newest snapshot on which no board was
     # recorded. Present in the artifact so the dialog can say so in one quiet line
     # instead of the reader inferring a healthy record from a frozen one.
@@ -1924,7 +2629,9 @@ def _merge_v2_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
     """
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     if V2_RETRO_PARQUET.exists():
-        stored = pd.read_parquet(V2_RETRO_PARQUET)
+        # v2 rows come from the same grade_boards rec dict, so the same retirement and
+        # the same legacy-carry path apply here (see _merge_into_store)
+        stored = _drop_retired(pd.read_parquet(V2_RETRO_PARQUET))
     else:
         stored = pd.DataFrame()
 
@@ -1940,13 +2647,17 @@ def _merge_v2_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
         key_cols = [c for c in _DEDUP_KEYS if c in fresh.columns and c in stored.columns]
         fresh_keys = set(map(tuple, fresh[key_cols].values.tolist()))
         mask = stored.apply(lambda r: tuple(r[k] for k in key_cols) not in fresh_keys, axis=1)
+        # same write-once law as the main ledger: a graded row is a point-in-time claim
+        fresh = _freeze_graded_prices(fresh, stored, key_cols)
         merged = pd.concat([stored[mask], fresh], ignore_index=True)
 
+    merged = _drop_retired(merged)
     merged.to_parquet(V2_RETRO_PARQUET, index=False)
     return merged
 
 
-def run_v2_lane(names: pd.DataFrame, etfs: pd.DataFrame, quiet: bool = False) -> None:
+def run_v2_lane(names: pd.DataFrame, etfs: pd.DataFrame, quiet: bool = False,
+                price_sources: dict | None = None) -> None:
     """Run the v2 parallel grader lane.
 
     ISOLATION: reads V2_SNAPSHOTS_JSONL, writes V2_RETRO_PARQUET + V2_TRACK_JSON.
@@ -1967,8 +2678,21 @@ def run_v2_lane(names: pd.DataFrame, etfs: pd.DataFrame, quiet: bool = False) ->
         print(f"[v2_lane] {len(v2_boards)} v2 board dates "
               f"({v2_boards[0]['as_of']}..{v2_boards[-1]['as_of']})")
 
+    # The v2 lane admits names the v1 boards never carried, so it resolves its OWN basis
+    # provenance rather than inheriting main()'s — otherwise a v2-only ticker would grade
+    # against an adjusted SPY with a null price_basis stamp, which is the exact silent
+    # state this PR exists to remove. `names` was already re-based for the shared names;
+    # this only adds the v2-only ones.
+    names, _v2_basis = rebase_to_adjusted(names, v2_boards)
+    if price_sources:
+        _v2_basis["price_source"] = {**price_sources, **_v2_basis["price_source"]}
+    if not quiet and _v2_basis["names_on_unadjusted_basis"]:
+        print(f"[v2_lane] {_v2_basis['names_on_unadjusted_basis']} v2 name(s) have no "
+              f"adjusted counterpart — stamped price_basis=unadjusted")
+
     _pre_existing = pd.read_parquet(V2_RETRO_PARQUET) if V2_RETRO_PARQUET.exists() else None
-    df = grade_boards(v2_boards, names, etfs, _stored_df=_pre_existing)
+    df = grade_boards(v2_boards, names, etfs, _stored_df=_pre_existing,
+                      price_sources=_v2_basis["price_source"])
     full_df = _merge_v2_into_store(df)
 
     if not quiet:
@@ -2028,10 +2752,18 @@ def main() -> None:
             print(f"[v2_snapshot] as_of={snap_v2} → {V2_SNAPSHOTS_JSONL.name}")
 
     names, etfs = _load_prices()
-    boards = collect_boards()
+    _board_receipt: dict = {}
+    boards = collect_boards(_board_receipt)
     if not args.quiet:
         print(f"[boards] {len(boards)} distinct as_of dates "
-              f"({boards[0]['as_of']}..{boards[-1]['as_of']})" if boards else "[boards] none")
+              f"({boards[0]['as_of']}..{boards[-1]['as_of']}; "
+              f"{_board_receipt.get('n_from_snapshots')} from snapshots, "
+              f"{_board_receipt.get('n_from_git')} from "
+              f"{_board_receipt.get('n_git_revisions')} git revision(s))"
+              if boards else "[boards] none")
+    # A shallow checkout kills the retro half silently — git log exits 0 and returns one
+    # revision, so the count above degrades with nothing else in the run to say so.
+    warn_if_history_truncated(_board_receipt)
 
     # Price what the board ADMITTED, not just what the breadth caches carry — otherwise
     # every curated-extras admission (ADRs, recent IPOs) is ungradeable forever.
@@ -2043,6 +2775,20 @@ def main() -> None:
               f"{'…' if len(_price_receipt['recovered']) > 15 else ''}; "
               f"{_price_receipt['n_unresolved']} still unresolvable)")
 
+    # PRICE-BASIS LAW: the name leg must share the benchmark's adjusted basis before any
+    # excess return is taken. Must run AFTER extend_prices_to_admitted so the recovered
+    # extras are stamped by the same ladder as everything else.
+    names, _basis_prov = rebase_to_adjusted(names, boards)
+    if not args.quiet:
+        _rf = _basis_prov["resolved_from"]
+        print(f"[price_basis] {_basis_prov['n_columns_rebased']} admitted columns re-based "
+              f"onto the adjusted ladder ({_rf['baskets_ohlcv']} baskets_ohlcv, "
+              f"{_rf['yahoo']} yahoo, {_rf['data_stocks']} data_stocks); "
+              f"{_basis_prov['names_on_unadjusted_basis']} name(s) have no adjusted "
+              f"counterpart and stay on the raw cache — stamped price_basis=unadjusted: "
+              f"{', '.join(_basis_prov['unadjusted_tickers'][:12])}"
+              f"{'…' if len(_basis_prov['unadjusted_tickers']) > 12 else ''}")
+
     # A dead nightly must be visible in Actions the next morning, not discovered days
     # later by an operator noticing a missing name. Never backfills — the gap is stated.
     _cont = continuity_block(boards, names, etfs)
@@ -2053,20 +2799,38 @@ def main() -> None:
 
     # P2: load existing store BEFORE grading so _board_tenure can look up history
     _pre_existing = pd.read_parquet(RETRO_PARQUET) if RETRO_PARQUET.exists() else None
-    df = grade_boards(boards, names, etfs, _stored_df=_pre_existing)
+    _n_stored_before = 0 if _pre_existing is None else len(_pre_existing)
+    _graded_before = (set(_pre_existing["as_of"].astype(str))
+                      if _pre_existing is not None and "as_of" in _pre_existing.columns
+                      else set())
+    _ungraded = [b["as_of"] for b in boards if b["as_of"] not in _graded_before]
+    # price_sources arrives from #4715's adjusted-first ladder; the zero-accrual
+    # bookkeeping above is #4727's. Both legs are required — keep them together.
+    df = grade_boards(boards, names, etfs, _stored_df=_pre_existing,
+                      price_sources=_basis_prov["price_source"])
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     # Merge freshly-graded rows INTO the accumulated store, then always build the
     # track from the full store.  This prevents the empty:true regression that fires
     # whenever no *new* rows mature in a given nightly run (the store still holds
     # all previously-graded rows and must not be discarded).
     full_df = _merge_into_store(df)
+    # ACCRUAL is store growth, not the size of the fresh frame. grade_boards re-computes
+    # every matured row every run and the merge is keep-fresh, so len(df) counts
+    # re-grades: the nightly of 2026-08-04 emitted 1332 "new matured rows" while the
+    # store went 2282 -> 2282. Reporting len(df) as accrual is what made a nine-day
+    # outage read as nine normal nights.
+    _n_added = max(0, len(full_df) - _n_stored_before)
     if not args.quiet:
-        new_rows = len(df) if not df.empty else 0
         dead_n = df.attrs.get("dead_price_store_tickers", 0)
-        print(f"[grade] {new_rows} new matured rows this run "
-              f"(skipped {df.attrs.get('skipped_no_price', 0)} no-price rows, "
+        print(f"[grade] {_n_added} rows ADDED to the store this run "
+              f"({len(df)} matured rows re-graded, skipped "
+              f"{df.attrs.get('skipped_no_price', 0)} no-price rows, "
               f"dead_name_store_tickers={dead_n}); "
               f"store total -> {len(full_df)} rows in {RETRO_PARQUET.name}")
+    # A nightly that records nothing for nine days is the defect underneath the defect.
+    warn_if_no_accrual(_n_added, nightly=args.nightly, boards=boards, names=names,
+                       cont=_cont, ungraded=_ungraded,
+                       skipped_no_price=int(df.attrs.get("skipped_no_price", 0) or 0))
 
     # W0.1 B-b: backfill null regime stamps on historical rows where the persisted
     # regime_vector covers the as_of date (PIT-safe: reads only persisted rows ≤ as_of)
@@ -2080,6 +2844,19 @@ def main() -> None:
     if not args.quiet:
         print(f"[regime_stamp] {n_unstamped}/{len(full_df)} rows still unstamped "
               f"(regime_vector.parquet absent or no coverage for those as_of dates)")
+
+    # Backfill null archetype from the PIT archetype store at each row's own as_of.
+    # The board payload has never carried the field, so historical rows are all null
+    # until this pass runs (coverage map: data/us_board_ledger/README.md).
+    full_df, n_arch_filled = _backfill_archetype(full_df)
+    if n_arch_filled > 0:
+        full_df.to_parquet(RETRO_PARQUET, index=False)
+    n_arch_null = (int(full_df["archetype"].isna().sum())
+                   if "archetype" in full_df.columns else len(full_df))
+    if not args.quiet:
+        print(f"[archetype_stamp] backfilled {n_arch_filled} historical rows; "
+              f"{n_arch_null}/{len(full_df)} rows still null "
+              f"(no PIT archetype coverage)")
 
     track = build_track(full_df, boards, names)
     TRACK_JSON.parent.mkdir(parents=True, exist_ok=True)
@@ -2144,7 +2921,8 @@ def main() -> None:
 
     # SA-W5: v2 parallel grader lane — additive, never fatal, never touches main stores
     try:
-        run_v2_lane(names, etfs, quiet=args.quiet)
+        run_v2_lane(names, etfs, quiet=args.quiet,
+                    price_sources=_basis_prov["price_source"])
     except Exception as _v2e:  # noqa: BLE001
         if not args.quiet:
             print(f"[v2_lane] skipped ({_v2e})")

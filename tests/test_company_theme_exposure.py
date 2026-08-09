@@ -171,9 +171,11 @@ def test_live_theme_inputs_are_closed_accounted_and_contract_valid() -> None:
 
     # 48 since 2026-08-05: silver_miners, the sleeve gold_miners' charter deferred, joins
     # gold_miners in unmapped_baskets (29 -> 30). The mapped 18 are untouched.
-    assert len(known_baskets) == 48
+    # 49 since 2026-08-07 (W1-C): pgm_miners, the platinum-group leg, is the third
+    # precious-metals sleeve and joins the same unmapped side (30 -> 31).
+    assert len(known_baskets) == 49
     assert len(theme_by_basket) == 18
-    assert len(explicit_unmapped) == 30
+    assert len(explicit_unmapped) == 31
     assert set(theme_by_basket).isdisjoint(explicit_unmapped)
     assert set(theme_by_basket) | explicit_unmapped == known_baskets
     assert {item["mapping_qualifier"] for item in theme_by_basket.values()} <= {"direct", "proxy", "curated"}
@@ -186,9 +188,24 @@ def test_live_theme_inputs_are_closed_accounted_and_contract_valid() -> None:
     unmapped_count = active_count - mapped_count
     # +10 on every unmapped-side count: silver_miners' ten members appear in no other
     # basket, so each is a NEW active ticker whose only basket is unmapped.
-    assert (active_count, mapped_count, unmapped_count) == (1019, 246, 773)
-    assert len(active) == 701
-    assert sum(not bool(baskets & set(theme_by_basket)) for baskets in active.values()) == 499
+    # -1 on the active/unmapped pair (2026-08-05): BLD left the ACTIVE census when the
+    # exit ledger became its ruler. TopBuild was acquired by QXO (trading suspended
+    # 2026-07-01, Form 15-12G 2026-07-13), so no successor ticker carries its series.
+    # `mapped_count` is unmoved because BLD's only basket is an unmapped one, and BLD is
+    # the only WHOLLY removed ticker — FUTU/NSSC/YOU are cross-listed and stay active
+    # under another basket, which is why one delisting moves these counts by exactly one.
+    # NET +2 on 2026-08-07 (W1-C), and the two halves pull opposite ways:
+    #   +4  pgm_miners' SBSW/IMPUY/ANGPY/PLG are in no other basket, so each is a NEW
+    #       active ticker whose only basket is unmapped;
+    #   -2  silver_miners' MAG and GATO leave the ACTIVE census. Both securities had
+    #       already stopped existing when the sleeve was curated on 2026-08-05 — MAG
+    #       acquired by Pan American Silver (25-NSE 2025-09-04), GATO by First Majestic
+    #       (25-NSE 2025-01-16) — so their `removed` stamps predate their own
+    #       `curated_added`. Same shape as BLD above: wholly-removed, unmapped-only,
+    #       so `mapped_count` does not move.
+    assert (active_count, mapped_count, unmapped_count) == (1020, 246, 774)
+    assert len(active) == 702   # 700 + 4 PGM - 2 delisted silver names
+    assert sum(not bool(baskets & set(theme_by_basket)) for baskets in active.values()) == 500   # 498 + 4 - 2
 
     assert theme_state["schema"] == "neuralweb.theme_state.v1"
     state_as_of = date.fromisoformat(theme_state["as_of"])

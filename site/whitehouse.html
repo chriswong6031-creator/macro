@@ -33,147 +33,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>White House Watch</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=315a84eb">
+<link rel="stylesheet" href="theme.css?v=70725c26">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
-<style>
-  /* ---------- shared Research-Reports chrome ---------- */
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
-  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
-  a { color:var(--link); text-decoration:none; }
-  .wrap { max-width:1060px; margin:0 auto; }
-  /* unambiguous move colours (NOT tied to the zh red=up swap) */
-  .r-neg { color:#d23f3f; font-weight:600; }
-  .r-pos { color:#1f9a55; font-weight:600; }
-  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
-  html[data-theme="dark"] .r-pos { color:#3fc07e; }
-  .mut { color:var(--muted); }
-  /* tags / chips */
-  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
-          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
-  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
-  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
-  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
-  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
-  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
-  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
-  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
-  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
-  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
-  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
-  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
-  /* XG-W7 follow line — its own row, never appended to the disclaimer sentence:
-     a legal notice and a marketing CTA must not read as one thought. */
-  footer.rfoot .rf-x { display:inline-flex; align-items:center; gap:6px; margin-top:11px; padding:4px 10px;
-    border-radius:100px; border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600;
-    transition:color .16s, border-color .16s; }
-  footer.rfoot .rf-x:hover { color:var(--text); border-color:color-mix(in srgb,var(--text) 26%,transparent); }
-  
-  .wh-hero { max-width:1060px; margin:16px auto 0; background:var(--panel); border:1px solid var(--line);
-             border-radius:16px; padding:24px 28px; position:relative; overflow:hidden; box-shadow:var(--card-shadow); }
-  .wh-hero::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
-             background:linear-gradient(90deg,#1f4ea8,color-mix(in srgb,#1f4ea8 22%,transparent)); }
-  .wh-kick { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 8px; font-weight:700; }
-  .wh-hero h1 { font-size:27px; line-height:1.18; margin:0 0 8px; letter-spacing:-.01em; }
-  .wh-hero p.sub { font-size:14.5px; color:var(--text); opacity:.82; margin:0; max-width:80ch; }
-  .wh-empty { max-width:1060px; margin:22px auto; padding:30px; text-align:center; color:var(--muted);
-              border:1px dashed var(--line); border-radius:14px; }
-
-  .wh-list { max-width:1060px; margin:22px auto 0; display:flex; flex-direction:column; gap:18px; }
-  .wh-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 22px;
-             scroll-margin-top:84px; position:relative; box-shadow:var(--card-shadow); }
-  .wh-card.live { border-color:#b23b4e66; }
-  .wh-card .row1 { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-bottom:8px; }
-  .wh-badge { font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
-              padding:4px 9px; border-radius:999px; border:1px solid var(--line); white-space:nowrap; }
-  .wh-badge.live { color:#fff; background:#b23b4e; border-color:#b23b4e; }
-  .wh-badge.tone-tailwind { color:#1f9a55; border-color:#1f9a5566; }
-  .wh-badge.tone-headwind { color:#d23f3f; border-color:#d23f3f66; }
-  html[data-lang="zh"] .wh-badge.tone-tailwind { color:#d23f3f; border-color:#d23f3f66; }
-  html[data-lang="zh"] .wh-badge.tone-headwind { color:#1f9a55; border-color:#1f9a5566; }
-  .wh-badge.tone-mixed    { color:#d9a441; border-color:#d9a44166; }
-  .wh-badge.tone-neutral  { color:var(--muted); }
-  .wh-when { font-size:12px; color:var(--muted); }
-  .wh-card h2 { font-size:20px; line-height:1.25; margin:2px 0 6px; }
-  .wh-summary { font-size:14.5px; opacity:.92; margin:0 0 6px; }
-
-  .wh-meter { display:flex; align-items:center; gap:9px; margin:10px 0 4px; font-size:11.5px; color:var(--muted); }
-  .wh-meter .bar { flex:0 0 130px; height:7px; border-radius:999px; background:var(--panel2); overflow:hidden; border:1px solid var(--line); }
-  .wh-meter .bar > i { display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#1f4ea8,#b23b4e); }
-
-  .wh-body { font-size:14px; line-height:1.7; margin:10px 0; }
-  .wh-body p { margin:8px 0; opacity:.93; }
-
-  .wh-sub-h { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:16px 0 7px; font-weight:700; }
-  table.wh-tbl { border-collapse:collapse; width:100%; font-size:13px; margin:4px 0 2px; }
-  table.wh-tbl th { text-align:left; padding:7px 10px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
-  table.wh-tbl td { padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
-  table.wh-tbl tr:hover td { background:var(--panel2); }
-  .wh-dir { font-weight:700; font-size:11.5px; white-space:nowrap; }
-  .wh-dir.benefit { color:#1f9a55; }
-  .wh-dir.hurt { color:#d23f3f; }
-  .wh-dir.neutral { color:var(--muted); }
-  html[data-theme="dark"] .wh-dir.benefit { color:#3fc07e; }
-  html[data-theme="dark"] .wh-dir.hurt { color:#ef6a6a; }
-  html[data-lang="zh"] .wh-dir.benefit { color:#d23f3f; }
-  html[data-lang="zh"] .wh-dir.hurt { color:#1f9a55; }
-  html[data-lang="zh"][data-theme="dark"] .wh-dir.benefit { color:#ef6a6a; }
-  html[data-lang="zh"][data-theme="dark"] .wh-dir.hurt { color:#3fc07e; }
-  .wh-sym { font-weight:700; font-variant-numeric:tabular-nums; }
-  .wh-chg { font-variant-numeric:tabular-nums; font-size:12px; }
-  .wh-chg.up { color:#1f9a55; } .wh-chg.dn { color:#d23f3f; }
-  html[data-theme="dark"] .wh-chg.up { color:#3fc07e; } html[data-theme="dark"] .wh-chg.dn { color:#ef6a6a; }
-  html[data-lang="zh"] .wh-chg.up { color:#d23f3f; } html[data-lang="zh"] .wh-chg.dn { color:#1f9a55; }
-  html[data-lang="zh"][data-theme="dark"] .wh-chg.up { color:#ef6a6a; } html[data-lang="zh"][data-theme="dark"] .wh-chg.dn { color:#3fc07e; }
-
-  .wh-src { font-size:12.5px; margin:14px 0 2px; }
-  .wh-src a { color:var(--link); word-break:break-word; }
-  .wh-disc { font-size:11.5px; color:var(--muted); border-top:1px solid var(--line); margin-top:14px; padding-top:10px; }
-  .wh-pagedisc { max-width:1060px; margin:18px auto 0; font-size:12px; color:var(--muted);
-                 border:1px solid var(--line); border-radius:12px; padding:12px 16px; background:var(--panel2); }
-
-  /* Treasury Watch panel — the TGA liquidity read (money-green → gold accent) */
-  .wh-tre { max-width:1060px; margin:22px auto 0; background:var(--panel); border:1px solid var(--line);
-            border-radius:16px; padding:22px 24px; box-shadow:var(--card-shadow); position:relative; overflow:hidden; }
-  .wh-tre::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
-            background:linear-gradient(90deg,#1f7a4e,#2f8f6f 55%,#d9a441); }
-  .wh-tre .tk { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 6px; font-weight:700; }
-  .wh-tre h2 { font-size:19px; line-height:1.2; margin:0 0 4px; letter-spacing:-.01em; }
-  .wh-tre p.sub { font-size:13px; color:var(--text); opacity:.78; margin:0 0 14px; max-width:78ch; }
-  .wh-stats { display:flex; flex-wrap:wrap; gap:10px 12px; margin:0 0 6px; }
-  .wh-stat { flex:1 1 150px; min-width:138px; background:var(--panel2); border:1px solid var(--line);
-             border-radius:12px; padding:10px 13px; }
-  .wh-stat .lab { font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin:0 0 3px; }
-  .wh-stat .val { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.15; }
-  .wh-stat .val .u { font-size:12px; font-weight:600; opacity:.6; }
-  .wh-stat .delta { font-size:12px; font-variant-numeric:tabular-nums; margin-top:2px; }
-  .wh-stat .delta.up { color:#1f9a55; } .wh-stat .delta.dn { color:#d23f3f; }
-  .wh-stat .val.up { color:#1f9a55; } .wh-stat .val.dn { color:#d23f3f; }
-  html[data-theme="dark"] .wh-stat .delta.up, html[data-theme="dark"] .wh-stat .val.up { color:#3fc07e; }
-  html[data-theme="dark"] .wh-stat .delta.dn, html[data-theme="dark"] .wh-stat .val.dn { color:#ef6a6a; }
-  html[data-lang="zh"] .wh-stat .delta.up, html[data-lang="zh"] .wh-stat .val.up { color:#d23f3f; }
-  html[data-lang="zh"] .wh-stat .delta.dn, html[data-lang="zh"] .wh-stat .val.dn { color:#1f9a55; }
-  html[data-lang="zh"][data-theme="dark"] .wh-stat .delta.up, html[data-lang="zh"][data-theme="dark"] .wh-stat .val.up { color:#ef6a6a; }
-  html[data-lang="zh"][data-theme="dark"] .wh-stat .delta.dn, html[data-lang="zh"][data-theme="dark"] .wh-stat .val.dn { color:#3fc07e; }
-  .wh-chip { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.03em;
-             padding:3px 9px; border-radius:999px; border:1px solid var(--line); }
-  .wh-chip.green { color:#1f9a55; border-color:#1f9a5566; }
-  .wh-chip.amber { color:#d9a441; border-color:#d9a44166; }
-  .wh-chip.red   { color:#d23f3f; border-color:#d23f3f66; }
-  .wh-chip.mut   { color:var(--muted); }
-  html[data-theme="dark"] .wh-chip.green { color:#3fc07e; }
-  .wh-tre .impulse { font-size:13.5px; line-height:1.55; margin:12px 0; padding:10px 13px;
-             background:var(--panel2); border-radius:10px; border-left:3px solid #2f8f6f; }
-  .wh-tre .sparkwrap { margin:12px 0 2px; }
-  .wh-tre .sparkcap { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted);
-             margin:0 0 4px; font-variant-numeric:tabular-nums; }
-  .wh-spark { width:100%; height:64px; display:block; }
-  .wh-tre .foot { font-size:11.5px; color:var(--muted); margin:12px 0 0; border-top:1px solid var(--line); padding-top:9px; }
-  .wh-badge.tre { color:#1f7a4e; border-color:#1f7a4e66; }
-  html[data-theme="dark"] .wh-badge.tre { color:#3fc07e; }
-
-</style>
+<link rel="preload" as="style" href="navigation-refresh.css?v=65bba21c">
+<link rel="stylesheet" href="assets/css/4b59f808.css?v=4b59f808">
 
 
 
@@ -200,7 +63,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
+    <link rel="stylesheet" href="navigation-refresh.css?v=65bba21c">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -240,7 +103,7 @@
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         
         <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
-        <a href="subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+        <a href="sector_central.html#confluence"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
         <a href="strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
@@ -263,7 +126,7 @@
         <a href="china_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · alpha · setups</span><span class="l-zh">先知 · 阿尔法 · 布局</span></span></a>
         
         <a href="sector_central_china.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Gated board · cycle map · whole-market rotation · theme baskets — one page</span><span class="l-zh">门控研判 · 周期图谱 · 全市场轮动 · 主题篮子 — 一页尽览</span></span></a>
-        <a href="subsectors_china.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+        <a href="sector_central_china.html#confluence"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
         <a href="china_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
         <a href="china_strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="china_news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
@@ -347,11 +210,16 @@
             <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
             <div class="item-grid nav-mega-item-grid">
               <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
+              
+              <a class="mega-item nm-feat" href="watchlist.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M25 7a17 17 0 0 1 16 16"/><circle cx="21" cy="26" r="14"/><circle class="ghost" cx="21" cy="26" r="6"/><path class="accent" d="M21 12a14 14 0 0 1 12.1 7L21 26Z"/><path d="M21 12v14l12.1-7"/><circle class="soft-fill" cx="21" cy="26" r="3.2"/><path class="accent" d="M39 41v-9M44 41v-15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Mastermind Portfolio</span><span class="l-zh">Mastermind 组合</span></span><span class="item-desc d"><span class="l-en">Your holdings with tonight’s signals</span><span class="l-zh">你的持仓与今晚信号</span></span></span></a>
+              
+              <a class="mega-item nm-feat" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M17 11V6M24 11V6M31 11V6M17 37v5M24 37v5M31 37v5M11 17H6M11 24H6M11 31H6M37 17h5M37 24h5M37 31h5"/><rect x="11" y="11" width="26" height="26" rx="5"/><path class="accent" d="m15 29 4-4 3.5 2.5 3.5-5.5"/><circle class="soft-fill" cx="26" cy="22" r="2.4"/><path class="ghost" d="m28 20.5 6-5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Mastermind Bot</span><span class="l-zh">Mastermind 交易机器人</span><span class="nm-tier">PRO</span></span><span class="item-desc d"><span class="l-en">The AI’s own paper account — every trade explained</span><span class="l-zh">AI 自己的模拟账户，每笔交易都附理由</span></span></span></a>
               <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
               <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
               <a class="mega-item nm-feat" data-nav-file="earnings_wire" href="stocks/earnings/index.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 7h25l7 7v27H8z"/><path d="M6 5h25l7 7v27H6zM31 5v8h7"/><path class="accent" d="M12 29h5l3-7 5 12 4-9 3 4h3"/><path d="M12 16h14M12 20h9"/><circle class="soft-fill" cx="34" cy="29" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Earnings Wire</span><span class="l-zh">财报情报线</span></span><span class="item-desc d"><span class="l-en">Verified calls, weekly intelligence and company context</span><span class="l-zh">已核验电话会、每周情报与公司语境</span></span></span></a>
               <a class="mega-item nm-feat" href="fundamental_forensics.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M9 6h24l6 6v28H9z"/><path d="M7 4h24l6 6v23H7zM31 4v7h6"/><path d="M13 15h16M13 21h12M13 27h8"/><circle class="soft-fill" cx="31" cy="31" r="8"/><circle cx="29" cy="29" r="7"/><path class="accent" d="m34 34 7 7M25 29h8M29 25v8"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Filing Forensics</span><span class="l-zh">财报取证</span></span><span class="item-desc d"><span class="l-en">Find the accounting changes worth reviewing</span><span class="l-zh">发现值得复核的会计变化</span></span></span></a>
               <a class="mega-item nm-feat" href="neural_web.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="item-desc d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
+              <a class="mega-item nm-feat" href="market_memory.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 10h32v28H8z"/><path d="M7 8h14c5 0 8 3 8 8v24c0-5-3-8-8-8H7zM41 8H27v32c0-5 3-8 8-8h6z"/><path class="accent" d="M13 16h9M13 21h7M33 15h4M33 20h4"/><circle class="soft-fill" cx="27" cy="29" r="4"/><path d="M24 29h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Market Memory</span><span class="l-zh">市场记忆</span></span><span class="item-desc d"><span class="l-en">Put today beside comparable episodes</span><span class="l-zh">将今天与可比历史片段并排</span></span></span></a>
             </div>
           </section>
           <section class="mega-section nav-mega-section">
@@ -456,24 +324,24 @@
   
   <div class="wh-stats">
     <div class="wh-stat">
-      <div class="lab"><span class="l-en">TGA balance</span><span class="l-zh">TGA 余额</span> · 2026-08-04</div>
-      <div class="val">$924<span class="u">bn</span></div>
-      <div class="delta up">+54.1 <span class="l-en">1d</span><span class="l-zh">单日</span></div>
+      <div class="lab"><span class="l-en">TGA balance</span><span class="l-zh">TGA 余额</span> · 2026-08-06</div>
+      <div class="val">$962<span class="u">bn</span></div>
+      <div class="delta up">+32.4 <span class="l-en">1d</span><span class="l-zh">单日</span></div>
     </div>
 
     
     
     <div class="wh-stat">
       <div class="lab"><span class="l-en">Δ since quarter-end</span><span class="l-zh">较季末</span> (06-30)</div>
-      <div class="val up">+5<span class="u">bn</span></div>
+      <div class="val up">+43<span class="u">bn</span></div>
     </div>
     
 
     
     <div class="wh-stat">
       <div class="lab"><span class="l-en">Net liquidity</span><span class="l-zh">净流动性</span></div>
-      <div class="val">$5738<span class="u">bn</span></div>
-      <div class="delta dn">-207 <span class="l-en">20d</span><span class="l-zh">20日</span> · 76<span class="l-en">th pct</span><span class="l-zh">分位</span></div>
+      <div class="val">$5785<span class="u">bn</span></div>
+      <div class="delta dn">-211 <span class="l-en">20d</span><span class="l-zh">20日</span> · 77<span class="l-en">th pct</span><span class="l-zh">分位</span></div>
     </div>
     
 
@@ -495,14 +363,14 @@
   
 
   
-  <div class="impulse"><span class="l-en">TGA rebuild of $128.2bn over 14 business day(s) since Jul 15 — cash drained from bank reserves.</span><span class="l-zh">自Jul 15以来，TGA在14个交易日内回补约1282亿美元——现金从银行准备金抽离。</span></div>
+  <div class="impulse"><span class="l-en">TGA rebuild of $146.3bn over 14 business day(s) since Jul 17 — cash drained from bank reserves.</span><span class="l-zh">自Jul 17以来，TGA在14个交易日内回补约1463亿美元——现金从银行准备金抽离。</span></div>
   
 
   
   <div class="sparkwrap">
-    <div class="sparkcap"><span><span class="l-en">TGA · last 60 sessions</span><span class="l-zh">TGA · 近60个交易日</span></span><span>2026-05-11 → 2026-08-04</span></div>
+    <div class="sparkcap"><span><span class="l-en">TGA · last 60 sessions</span><span class="l-zh">TGA · 近60个交易日</span></span><span>2026-05-13 → 2026-08-06</span></div>
     <svg class="wh-spark" viewBox="0 0 560 64" preserveAspectRatio="none" aria-hidden="true">
-      <polyline fill="none" stroke="var(--link)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="0.0,34.9 9.5,37.2 19.0,45.1 28.5,46.2 38.0,55.6 47.5,49.7 56.9,41.9 66.4,50.6 75.9,49.7 85.4,41.2 94.9,29.1 104.4,37.5 113.9,36.0 123.4,24.3 132.9,34.4 142.4,32.4 151.9,36.8 161.4,37.1 170.8,41.2 180.3,37.1 189.8,40.1 199.3,46.5 208.8,46.8 218.3,43.2 227.8,7.9 237.3,7.6 246.8,12.9 256.3,21.9 265.8,15.9 275.3,19.5 284.7,24.7 294.2,31.3 303.7,26.1 313.2,30.1 322.7,21.0 332.2,45.1 341.7,53.0 351.2,51.7 360.7,50.3 370.2,49.9 379.7,57.6 389.2,58.6 398.6,60.0 408.1,57.4 417.6,49.3 427.1,47.6 436.6,41.8 446.1,43.4 455.6,40.6 465.1,30.5 474.6,39.1 484.1,30.0 493.6,28.1 503.1,24.5 512.5,10.9 522.0,9.9 531.5,4.0 541.0,30.2 550.5,31.6 560.0,19.9"></polyline>
+      <polyline fill="none" stroke="var(--link)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="0.0,45.1 9.5,46.2 19.0,55.6 28.5,49.7 38.0,41.9 47.5,50.6 56.9,49.7 66.4,41.2 75.9,29.1 85.4,37.5 94.9,36.0 104.4,24.3 113.9,34.4 123.4,32.4 132.9,36.8 142.4,37.1 151.9,41.2 161.4,37.1 170.8,40.1 180.3,46.5 189.8,46.8 199.3,43.2 208.8,7.9 218.3,7.6 227.8,12.9 237.3,21.9 246.8,15.9 256.3,19.5 265.8,24.7 275.3,31.3 284.7,26.1 294.2,30.1 303.7,21.0 313.2,45.1 322.7,53.0 332.2,51.7 341.7,50.3 351.2,49.9 360.7,57.6 370.2,58.6 379.7,60.0 389.2,57.4 398.6,49.3 408.1,47.6 417.6,41.8 427.1,43.4 436.6,40.6 446.1,30.5 455.6,39.1 465.1,30.0 474.6,28.1 484.1,24.5 493.6,10.9 503.1,9.9 512.5,4.0 522.0,30.2 531.5,31.6 541.0,19.9 550.5,18.8 560.0,11.8"></polyline>
     </svg>
   </div>
   
@@ -514,9 +382,811 @@
 
   <div class="wh-list">
   
-    <section class="wh-card live" id="wh-2026-08-04-manufacturing-jobs-flock-to-the-u-s-thanks-to-president-trumps-america-first-eco">
+    <section class="wh-card live" id="wh-2026-08-07-fact-sheet-president-donald-j-trump-announces-billions-in-new-deals-and-investme">
       <div class="row1">
         <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
+        
+        <span class="wh-badge tone-mixed">
+          <span class="l-en">Mixed</span><span class="l-zh">涨跌互现</span>
+          
+        </span>
+        <span class="wh-when">🗓 Aug 7, 2026 · news</span>
+        <span class="wh-when">· <span class="l-en">confidence</span><span class="l-zh">置信度</span>: medium</span>
+      </div>
+
+      <h2><span class="l-en">$2B+ defense &amp; EXIM push into US mining — domestic battery, magnet, alloy supply chains reshaped</span><span class="l-zh">超20亿美元国防与进出口银行资金注入美国矿业 — 本土电池、磁材、合金供应链重塑</span></h2>
+
+      <p class="wh-summary"><span class="l-en">The White House detailed over $2 billion in multi-agency investments targeting critical mineral mining, processing, and workforce development. The DoD-led push funds domestic bauxite, rare-earth-free magnets, silicon anodes, and scandium, directly subsidizing defense-aligned supply chains while EXIM and DFC extend support to foreign mines feeding US industry. Sectors with exposure to Chinese supply dominance face a potential reshaping of competitive dynamics.</span><span class="l-zh">分析指出，这些并非广泛的关税措施，而是一系列针对性投资，代表国防与能源工业的本土化与友岸外包显著升级。资金直接投向特定企业以建立本土产能，目标直指中国主导的供应链薄弱环节，构成结构性支撑。</span></p>
+
+      
+      <div class="wh-meter">
+        <span><span class="l-en">Market significance</span><span class="l-zh">市场重要性</span></span>
+        <span class="bar"><i style="width:68%"></i></span>
+        <span>68/100</span>
+      </div>
+      
+
+      
+      <div class="wh-body"><p>This fact sheet catalogs a series of targeted investments — not broad tariffs — that represent a significant escalation in on-shoring and friend-shoring the defense and energy industrial base. The Department of War (a typo for &#39;Defense&#39; in the original or a rebranded designation) is the dominant spender, committing $2.035B directly to specific companies: Sila Nanotechnologies ($1.4B for silicon anodes and Li-ion cells), Niron Magnetics ($150M for rare-earth-free permanent magnets), Standard Bauxite ($85M for refractory bauxite), and Sunrise Energy Metals ($400M for a domestic scandium value chain). These are not procurement contracts but investments aimed at building domestic production capacity, which directly targets vulnerabilities in sectors dominated by China.</p></div>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Sector impact</span><span class="l-zh">行业影响</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Sector</span><span class="l-zh">行业</span></th><th><span class="l-en">Impact</span><span class="l-zh">影响</span></th><th><span class="l-en">Why</span><span class="l-zh">原因</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td>Domestic Critical Minerals &amp; Mining</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Direct government capital injections and offtake commitments accelerate revenue growth for U.S.-focused miners and processors.</td>
+          </tr>
+        
+          <tr>
+            <td>Advanced Battery Materials</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>$1.4B investment in Sila Nanotechnologies boosts domestic silicon anode and Li-ion battery cell production, challenging Asian dominance.</td>
+          </tr>
+        
+          <tr>
+            <td>Defense &amp; Aerospace Supply Chain</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>On-shoring of scandium, bauxite, and magnets secures critical inputs for fighter jets and munitions, reducing geopolitical supply risk.</td>
+          </tr>
+        
+          <tr>
+            <td>Global Rare Earth &amp; Graphite Producers (ex-US aligned)</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>U.S. policy explicitly aims to reduce dependency on foreign sources, threatening long-term demand for non-aligned international suppliers.</td>
+          </tr>
+        
+          <tr>
+            <td>Mining Equipment &amp; Services</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>A new generation of domestic mines and processing facilities, plus workforce expansion, will drive demand for heavy equipment and engineering services.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names that benefit</span><span class="l-zh">受益标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">MP</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg dn">-0.88%</span></td>
+            <td>MP Materials Corp is the largest U.S. rare earth producer; the policy push and friend-shoring narrative validate its strategic domestic position.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">SGML</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg up">+2.18%</span></td>
+            <td>Sigma Lithium Corp operates a large lithium project; the U.S. battery supply chain emphasis supports demand for non-Chinese lithium sources.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">LAC</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg dn">-2.27%</span></td>
+            <td>Lithium Americas Corp benefits from the overarching U.S. policy goal of developing a vertically integrated domestic battery supply chain.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">UEC</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg up">+0.37%</span></td>
+            <td>Uranium Energy Corp represents the pivot to domestic energy metals; the broader national-security frame for mining aids permitting and sentiment for U.S. uranium extraction.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+
+      <p class="wh-src">🔗 <a href="https://www.whitehouse.gov/fact-sheets/2026/08/fact-sheet-president-donald-j-trump-announces-billions-in-new-deals-and-investments-to-power-american-mining/" target="_blank" rel="noopener noreferrer"><span class="l-en">Read the primary White House source</span><span class="l-zh">阅读白宫一手来源</span> →</a></p>
+      <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
+    </section>
+  
+    <section class="wh-card live" id="wh-2026-08-06-continuing-to-protect-the-meaning-and-value-of-american-citizenship">
+      <div class="row1">
+        <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
+        
+        <span class="wh-badge tone-mixed">
+          <span class="l-en">Mixed</span><span class="l-zh">涨跌互现</span>
+          
+        </span>
+        <span class="wh-when">🗓 Aug 6, 2026 · news</span>
+        <span class="wh-when">· <span class="l-en">confidence</span><span class="l-zh">置信度</span>: medium</span>
+      </div>
+
+      <h2><span class="l-en">Trump restricts birthright citizenship for terrorists, foreign officials &amp; &#39;birth tourism&#39; — immigration, healthcare, fertility sectors ratt</span><span class="l-zh">特朗普限制恐怖分子、外国官员及“生育旅游”者的出生公民权——移民、医疗、辅助生殖板块震荡</span></h2>
+
+      <p class="wh-summary"><span class="l-en">A new executive order directs federal agencies to deny citizenship documents to children born in the U.S. if either parent is a designated terrorist, foreign government employee, or engaged in &#39;birth tourism&#39; or commercial surrogacy. The order injects legal uncertainty for hospitals, fertility clinics, and sectors reliant on immigrant labor or international clientele.</span><span class="l-zh">一项新的行政命令指示联邦机构，若新生儿的父母一方为指定的恐怖分子、外国政府雇员，或从事“生育旅游”及商业代孕，则拒绝向其发放公民身份文件。该命令给医院、生育诊所及依赖移民劳动力或国际客户的行业带来了法律不确定性。</span></p>
+
+      
+      <div class="wh-meter">
+        <span><span class="l-en">Market significance</span><span class="l-zh">市场重要性</span></span>
+        <span class="bar"><i style="width:75%"></i></span>
+        <span>75/100</span>
+      </div>
+      
+
+      
+      <div class="wh-body"><p>This executive order codifies a narrow but significant reinterpretation of the 14th Amendment&#39;s birthright citizenship clause, citing the Supreme Court&#39;s recent Trump v. Barbara decision. It directs the State Department, DHS, and Social Security Administration to withhold citizenship documentation from children whose parents fall into four categories: alien enemies (FTOs/SDGTs), foreign government employees, those engaged in &#39;birth tourism&#39; commercial transactions, and those born in territories without statutory citizenship.</p><p>The market impact is multidimensional. It directly targets the &#39;birth tourism&#39; industry and commercial surrogacy arrangements, creating headwinds for fertility clinics, maternity tourism operators, and hospitals serving international maternity patients—particularly in states like California and Florida. The &#39;alien enemy&#39; and foreign government employee provisions add layers of compliance for employers and financial institutions verifying identity and work authorization.</p><p>The broader transmission mechanism runs through labor markets and immigration-sensitive sectors. By reinforcing a restrictive stance on citizenship, the order signals continued tightness in the low-to-middle-skilled labor pool, affecting agriculture, construction, hospitality, and healthcare support. However, companies specializing in domestic workforce solutions or compliance/identity-verification services may see increased demand.</p><p>Key uncertainty: The order relies on agency rulemaking and public guidance within 30 days, leaving immediate enforcement scope unclear. Legal challenges are likely, given the ambiguity in applying &#39;commercial transaction&#39; tests to surrogacy or determining &#39;alien enemy&#39; status at birth. Market reaction will hinge on how aggressively agencies implement the order and whether it signals further immigration restrictions ahead of the midterms.</p></div>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Sector impact</span><span class="l-zh">行业影响</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Sector</span><span class="l-zh">行业</span></th><th><span class="l-en">Impact</span><span class="l-zh">影响</span></th><th><span class="l-en">Why</span><span class="l-zh">原因</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td>Fertility &amp; Reproductive Health Services</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Explicit targeting of commercial surrogacy and &#39;birth tourism&#39; reduces the international client pool for U.S.-based fertility clinics and surrogacy agencies.</td>
+          </tr>
+        
+          <tr>
+            <td>Hospital &amp; Healthcare Facilities</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Hospitals in border states and major metros face new compliance burdens verifying parental status, plus lost revenue from international maternity patients.</td>
+          </tr>
+        
+          <tr>
+            <td>Immigration-Dependent Industries (Agriculture, Construction,</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>A restrictive citizenship stance tightens labor supply by discouraging immigrant workers&#39; family formation and signaling a hostile enforcement climate.</td>
+          </tr>
+        
+          <tr>
+            <td>Identity Verification &amp; Biometrics</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Expanded citizenship documentation rules increase demand for government and private-sector identity proofing, compliance, and fraud detection tools.</td>
+          </tr>
+        
+          <tr>
+            <td>Domestic Staffing &amp; Workforce Solutions</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Tighter immigration policy increases demand for firms providing legally compliant domestic workforce management and E-Verify services.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names that benefit</span><span class="l-zh">受益标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">IDCC</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="mut">—</span></td>
+            <td>Identity and security solutions firm; stricter citizenship verification mandates may increase government and enterprise demand for identity-proofing technologies.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">ADP</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg dn">-0.20%</span></td>
+            <td>Payroll and HR compliance giant; E-Verify and work authorization verification services likely see increased adoption amid tighter immigration enforcement.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names under pressure</span><span class="l-zh">承压标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">PGNY</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="mut">—</span></td>
+            <td>Leading fertility benefits manager; reduced access to U.S. citizenship for children of international surrogacy clients could dampen cross-border surrogacy demand.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">HCA</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="mut">—</span></td>
+            <td>Major hospital operator with significant maternity services in Florida and Texas, states with high international maternity tourism exposure.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">TDOC</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="mut">—</span></td>
+            <td>Telehealth provider with global fertility and surrogacy support services; could see reduced international patient flows from citizenship restrictions.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      <p class="wh-src">🔗 <a href="https://www.whitehouse.gov/presidential-actions/2026/08/continuing-to-protect-the-meaning-and-value-of-american-citizenship/" target="_blank" rel="noopener noreferrer"><span class="l-en">Read the primary White House source</span><span class="l-zh">阅读白宫一手来源</span> →</a></p>
+      <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
+    </section>
+  
+    <section class="wh-card live" id="wh-2026-08-06-fact-sheet-president-donald-j-trump-bolsters-national-security-and-strengthens-u">
+      <div class="row1">
+        <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
+        
+        <span class="wh-badge tone-mixed">
+          <span class="l-en">Mixed</span><span class="l-zh">涨跌互现</span>
+          
+        </span>
+        <span class="wh-when">🗓 Aug 6, 2026 · news</span>
+        <span class="wh-when">· <span class="l-en">confidence</span><span class="l-zh">置信度</span>: medium</span>
+      </div>
+
+      <h2><span class="l-en">Trump imposes polysilicon tariff &amp; minimum price — domestic producers shielded, solar &amp; semi supply chains face margin squeeze</span><span class="l-zh">特朗普对多晶硅实施关税和最低限价——本土生产商受保护，太阳能与半导体供应链利润承压</span></h2>
+
+      <p class="wh-summary"><span class="l-en">The White House announced a minimum import price program and a 15% tariff on downstream derivatives for polysilicon, aiming to revive U.S. production from historic lows. The action shields domestic manufacturers but raises input costs for solar wafer, cell, and module makers reliant on imported material.</span><span class="l-zh">白宫宣布对多晶硅实施最低进口限价计划并对下游衍生产品征收15%关税，旨在重振跌至历史低位的美国产能。此举保护了本土制造商，但提高了依赖进口材料的太阳能硅片、电池及组件厂商的投入成本。</span></p>
+
+      
+      <div class="wh-meter">
+        <span><span class="l-en">Market significance</span><span class="l-zh">市场重要性</span></span>
+        <span class="bar"><i style="width:65%"></i></span>
+        <span>65/100</span>
+      </div>
+      
+
+      
+      <div class="wh-body"><p>The Proclamation imposes a minimum import price on polysilicon and polysilicon derivatives, effectively a floor price mechanism, alongside a 15% ad valorem tariff on goods downstream from polysilicon. The goal is to reverse a decades-long decline that shrunk U.S. global polysilicon capacity share from 50% to under 2%, by making dumped imports uncompetitive and incentivizing domestic onshoring of both polysilicon production and derivative manufacturing.</p><p>For markets, this directly benefits remaining U.S. polysilicon producers by reducing price competition from imports, while the derivative tariff aims to force solar cell and module manufacturing back onshore. However, near-term, it raises costs for domestic solar panel assemblers and other downstream users who rely on imported polysilicon wafers and cells, squeezing their margins unless they can rapidly switch to or invest in domestic supply chains.</p><p>The transmission mechanism is a classic trade-policy shock: elevated input costs for downstream industries versus a protected profit window for upstream domestic producers. The 120-day implementation delay creates a pre-buying window that could distort near-term inventory and pricing. The authorized Commerce Department incentive program adds a fiscal tailwind for capacity expansion but introduces uncertainty around scale and speed of execution.</p><p>Key uncertainty is whether the minimum price truly re-establishes commercially viable U.S. polysilicon capacity at scale, or simply raises costs throughout the solar supply chain without a competitive domestic alternative, potentially slowing U.S. solar deployment and benefiting foreign module makers not subject to the downstream tariff.</p></div>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Sector impact</span><span class="l-zh">行业影响</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Sector</span><span class="l-zh">行业</span></th><th><span class="l-en">Impact</span><span class="l-zh">影响</span></th><th><span class="l-en">Why</span><span class="l-zh">原因</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td>Polysilicon Producers (U.S.)</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Minimum import price directly protects them from foreign dumping, improving pricing power and margins.</td>
+          </tr>
+        
+          <tr>
+            <td>Solar Equipment Manufacturers (U.S., import-dependent)</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Higher costs for imported wafers and cells before domestic derivative production ramps; margin compression likely.</td>
+          </tr>
+        
+          <tr>
+            <td>Semiconductor Equipment &amp; Materials</td>
+            <td><span class="wh-dir neutral">◆ <span class="l-en">Mixed</span><span class="l-zh">涨跌互现</span></span></td>
+            <td>Polysilicon is a key input; tariffs may raise costs for non-vertically integrated chipmakers but benefit domestic materials suppliers.</td>
+          </tr>
+        
+          <tr>
+            <td>Industrial Gas &amp; Chemicals (polysilicon-related)</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Domestic production ramp-up increases demand for related chemicals and gases used in polysilicon manufacturing.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names that benefit</span><span class="l-zh">受益标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">FSLR</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg dn">-2.80%</span></td>
+            <td>Uses cadmium telluride thin-film technology rather than crystalline silicon, avoiding polysilicon input cost increases while potentially benefiting from a protected domestic solar manufacturing environment.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">AMAT</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg dn">-2.26%</span></td>
+            <td>Supplies equipment to both polysilicon producers and downstream manufacturers; near-term demand pull for domestic capacity expansion offsets risk of higher customer costs.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names under pressure</span><span class="l-zh">承压标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">ENPH</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg dn">-6.75%</span></td>
+            <td>Sources microinverters and components globally; higher polysilicon derivative costs could raise overall solar system input prices, pressuring margins.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      <p class="wh-src">🔗 <a href="https://www.whitehouse.gov/fact-sheets/2026/08/fact-sheet-president-donald-j-trump-bolsters-national-security-and-strengthens-u-s-supply-chains-by-imposing-tariffs-on-polysilicon-and-its-derivatives/" target="_blank" rel="noopener noreferrer"><span class="l-en">Read the primary White House source</span><span class="l-zh">阅读白宫一手来源</span> →</a></p>
+      <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
+    </section>
+  
+    <section class="wh-card live" id="wh-2026-08-06-adjusting-imports-of-polysilicon-and-its-derivatives-into-the-united-states">
+      <div class="row1">
+        <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
+        
+        <span class="wh-badge tone-mixed">
+          <span class="l-en">Mixed</span><span class="l-zh">涨跌互现</span>
+          
+        </span>
+        <span class="wh-when">🗓 Aug 6, 2026 · news</span>
+        <span class="wh-when">· <span class="l-en">confidence</span><span class="l-zh">置信度</span>: high</span>
+      </div>
+
+      <h2><span class="l-en">Trump imposes MIPs and 15% tariff on polysilicon, ingots, wafers, cells, modules — solar costs up, domestic producers shielded</span><span class="l-zh">特朗普对多晶硅、硅锭、晶圆、电池片及组件施加最低进口价和15%关税——太阳能成本上升，国内生产商获保护</span></h2>
+
+      <p class="wh-summary"><span class="l-en">Under Section 232, the U.S. will establish Minimum Import Prices (MIPs) on polysilicon, wafers, ingots, cells, and modules, alongside a 15% tariff on downstream derivatives, to revive the domestic polysilicon sector. The move directly raises U.S. solar project costs but creates a protected market for American polysilicon and solar manufacturing.</span><span class="l-zh">依据232条款，美国将对多晶硅、硅锭、晶圆、电池片及组件设定最低进口价格（MIP），并对下游衍生产品加征15%关税，以重振国内多晶硅产业。此举直接抬升美国太阳能项目成本，但为本土多晶硅及太阳能制造创造受保护市场。</span></p>
+
+      
+      <div class="wh-meter">
+        <span><span class="l-en">Market significance</span><span class="l-zh">市场重要性</span></span>
+        <span class="bar"><i style="width:78%"></i></span>
+        <span>78/100</span>
+      </div>
+      
+
+      
+      <div class="wh-body"><p>This proclamation imposes a structured trade barrier on the foundational material for both semiconductors and solar panels — polysilicon — and a cascading set of derivatives (ingots, wafers, cells, modules). It establishes a price floor: $21/kg for polysilicon, $100/kg for ingots/wafers, $0.22/watt for cells, and $0.38/watt for modules. It layers a 15% ad valorem tariff on top for downstream products, replacing an expired solar safeguard tariff. The effective date is December 4, 2026, giving importers a window to stockpile before Christmas.</p><p>The market impact hits two massive sectors in opposite ways. For the U.S. solar development and utility-scale project pipeline, this is a headwind. It raises the input cost of modules and cells, which may slow installations or compress developer margins unless power purchase agreement (PPA) prices adjust upward. For the tiny, remaining U.S. polysilicon producers and any domestic ingot/wafer/cell manufacturers, this is a structural tailwind, creating a price umbrella that makes their output commercially viable after years of being undercut by global oversupply (especially from China).</p><p>The transmission mechanism is direct: importers must certify arm’s-length sales at or above MIPs, or pay a specific duty equal to the MIP. This effectively sets a floor on U.S. domestic market prices for these goods, severing the link with the deeply depressed global spot market (where polysilicon prices have been crushed by a 270% supply surge since 2020 and 400,000 tons of inventory). It also includes an onshoring incentive authority for the Commerce Secretary to strike company-specific deals, which could attract new investment announcements.</p><p>Key uncertainty is whether this policy actually succeeds in onshoring a wafer-to-module supply chain, or simply raises costs for U.S. downstream consumers (solar developers, semiconductor fabs) while providing rents to the handful of existing U.S. polysilicon producers. The global oversupply is vast; a price floor in one market does not eliminate it. Watch for retaliation or circumvention risks from major trading partners not exempted.</p></div>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Sector impact</span><span class="l-zh">行业影响</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Sector</span><span class="l-zh">行业</span></th><th><span class="l-en">Impact</span><span class="l-zh">影响</span></th><th><span class="l-en">Why</span><span class="l-zh">原因</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td>U.S. Polysilicon Producers</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>MIPs create a protected domestic price floor directly benefiting the sole remaining U.S. producer.</td>
+          </tr>
+        
+          <tr>
+            <td>U.S. Solar Manufacturers (Ingot-to-Module)</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Price umbrella and onshoring incentives make new domestic wafer/cell/module fabs viable against imports.</td>
+          </tr>
+        
+          <tr>
+            <td>U.S. Utility-Scale Solar Developers / IPPs</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Higher module and cell costs raise project CapEx, potentially slowing new installations or compressing returns.</td>
+          </tr>
+        
+          <tr>
+            <td>U.S. Residential Solar Installers</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Increased module pricing feeds through to higher end-customer costs, potentially dampening demand.</td>
+          </tr>
+        
+          <tr>
+            <td>Solar Inverter / Tracker / BOS Suppliers</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Higher project costs could reduce overall solar deployment volumes, indirectly hitting balance-of-system demand.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names that benefit</span><span class="l-zh">受益标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">FSLR</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg dn">-2.80%</span></td>
+            <td>Domestic thin-film manufacturer reliant on CdTe, but stands to gain from a protected U.S. module market and reduced crystalline silicon import competition.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names under pressure</span><span class="l-zh">承压标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">NEE</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg dn">-1.48%</span></td>
+            <td>Largest U.S. utility-scale solar developer; higher module and cell costs pressure new project IRRs.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">SEDG</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg dn">-30.48%</span></td>
+            <td>Supplier to U.S. residential/commercial solar; higher module costs may slow adoption and inverters demand.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">ENPH</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg dn">-6.75%</span></td>
+            <td>U.S. residential solar exposure; higher system costs risk slowing rooftop solar uptake.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">ARRY</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="mut">—</span></td>
+            <td>Utility-scale solar tracker supplier; faces indirect headwinds if project pipelines slow due to elevated module costs.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      <p class="wh-src">🔗 <a href="https://www.whitehouse.gov/presidential-actions/2026/08/adjusting-imports-of-polysilicon-and-its-derivatives-into-the-united-states/" target="_blank" rel="noopener noreferrer"><span class="l-en">Read the primary White House source</span><span class="l-zh">阅读白宫一手来源</span> →</a></p>
+      <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
+    </section>
+  
+    <section class="wh-card" id="wh-2026-08-06-private-sector-answers-president-trumps-call-to-lower-prices-for-american-famili">
+      <div class="row1">
+        
+        
+        <span class="wh-badge tone-mixed">
+          <span class="l-en">Mixed</span><span class="l-zh">涨跌互现</span>
+          
+        </span>
+        <span class="wh-when">🗓 Aug 6, 2026 · news</span>
+        <span class="wh-when">· <span class="l-en">confidence</span><span class="l-zh">置信度</span>: medium</span>
+      </div>
+
+      <h2><span class="l-en">White House touts sweeping corporate price cuts — disinflationary pulse hits pharma, grocers, autos</span><span class="l-zh">白宫宣传企业大范围降价 — 通缩脉冲冲击制药、食品杂货与汽车业</span></h2>
+
+      <p class="wh-summary"><span class="l-en">The White House announced a raft of private-sector price reductions across groceries, prescription drugs, energy, and autos, framing it as a response to Trump&#39;s policies. While politically positive, the implied margin compression and disinflationary signal create clear sector-level headwinds and tailwinds.</span><span class="l-zh">白宫宣布私营部门在食品杂货、处方药、能源和汽车领域的一系列降价举措，称这是对特朗普政策的响应。虽然在政治上利好，但隐含的利润率压缩和通缩信号在行业层面造成了明显的利空与利好分化。</span></p>
+
+      
+      <div class="wh-meter">
+        <span><span class="l-en">Market significance</span><span class="l-zh">市场重要性</span></span>
+        <span class="bar"><i style="width:65%"></i></span>
+        <span>65/100</span>
+      </div>
+      
+
+      
+      <div class="wh-body"><p>The announcement aggregates pre-existing or newly-negotiated price cuts from major retailers (Walmart, Target, Kroger), drugmakers (Novo Nordisk, Pfizer, Eli Lilly), utilities, and automakers. It serves as a White House victory lap on inflation, but for markets it crystallizes a powerful disinflationary consumer narrative. The immediate transmission mechanism is margin risk for the named companies, as lower prices without corresponding cost relief compress profitability, especially in consumer staples and pharma.</p><p>For grocers and consumer staples, the broad-based price cuts signal intense competition and potential volume/margin tradeoffs. Walmart, Target, and Kroger lowering prices on thousands of items suggests a fight for market share that could hurt sector margins into earnings. The pharma section names specific, deep price reductions (50-85%) on major drugs, directly threatening revenue streams for companies like Novo Nordisk, Pfizer, and Eli Lilly in their highly profitable US market.</p><p>The auto and energy items (deferred payments, rate freezes, localized gas discounts) are less macro-critical but add to the perception that pricing power is consolidating toward consumers. The key uncertainty is whether these are temporary, promotional moves or a structural shift in corporate pricing power. If volumes don&#39;t surge to offset price cuts, earnings estimates for the highlighted consumer-facing sectors face downside risk. Conversely, this is a tailwind for consumer discretionary spending power and could bolster the case for a less hawkish Fed, supporting broader market multiples.</p></div>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Sector impact</span><span class="l-zh">行业影响</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Sector</span><span class="l-zh">行业</span></th><th><span class="l-en">Impact</span><span class="l-zh">影响</span></th><th><span class="l-en">Why</span><span class="l-zh">原因</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td>Pharmaceuticals &amp; Biotech</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Specific, deep price cuts (50-85%) on major drugs by Novo Nordisk, Pfizer, Eli Lilly and others directly threaten US revenue and margins.</td>
+          </tr>
+        
+          <tr>
+            <td>Grocery &amp; Consumer Staples Retail</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Widespread price cuts by Walmart, Target, Kroger, and others signal margin compression and intense price competition in essentials.</td>
+          </tr>
+        
+          <tr>
+            <td>Packaged Foods &amp; Beverages</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>PepsiCo&#39;s 15% snack price cut exemplifies pressure; broader industry weakness if large retailers demand concessions.</td>
+          </tr>
+        
+          <tr>
+            <td>Automakers (Traditional)</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Ford employee pricing and GM/Stellantis deferred-payment financing incentives directly erode per-unit profitability.</td>
+          </tr>
+        
+          <tr>
+            <td>Utilities (Rate-Regulated)</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Explicit rate freezes or customer returns (Alliant, DTE, Entergy) cap revenue growth in those jurisdictions.</td>
+          </tr>
+        
+          <tr>
+            <td>Broad Consumer Discretionary</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Lower food, drug, and energy costs boost real disposable income, potentially freeing up spending for other goods and services.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names under pressure</span><span class="l-zh">承压标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">NVO</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg up">+0.56%</span></td>
+            <td>Headline risk from Ozempic/Wegovy slashed to $199-$350/month, directly undercutting blockbuster US revenue per script.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">LLY</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg up">+4.86%</span></td>
+            <td>Emgality and Trulicity cuts of ~60% threaten major revenue streams in competitive diabetes/migraine markets.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">PFE</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg up">+1.57%</span></td>
+            <td>50-85% savings on primary care and select brands via TrumpRx implies significant US price realizations at risk.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">PEP</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg dn">-0.23%</span></td>
+            <td>Announced 15% snack price cut confirms margin pressure and could signal a broader pricing reset in convenient foods.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">TGT</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="mut">—</span></td>
+            <td>Explicitly named in broad grocery price cuts; reinforces the painful margin tradeoff in the hyper-competitive retail grocery space.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">WMT</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg up">+0.71%</span></td>
+            <td>Nationwide price cuts on everyday items highlight its role as a price leader, potentially compressing grocery margins.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">F</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg dn">-0.77%</span></td>
+            <td>Extending employee pricing to all U.S. customers is a direct discounting move likely to impact average transaction prices and margins.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      <p class="wh-src">🔗 <a href="https://www.whitehouse.gov/releases/2026/08/private-sector-answers-president-trumps-call-to-lower-prices-for-american-families/" target="_blank" rel="noopener noreferrer"><span class="l-en">Read the primary White House source</span><span class="l-zh">阅读白宫一手来源</span> →</a></p>
+      <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
+    </section>
+  
+    <section class="wh-card live" id="wh-2026-08-06-fraud-gov-track-the-trump-administrations-relentless-war-on-fraud">
+      <div class="row1">
+        <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
+        
+        <span class="wh-badge tone-mixed">
+          <span class="l-en">Mixed</span><span class="l-zh">涨跌互现</span>
+          
+        </span>
+        <span class="wh-when">🗓 Aug 6, 2026 · news</span>
+        <span class="wh-when">· <span class="l-en">confidence</span><span class="l-zh">置信度</span>: medium</span>
+      </div>
+
+      <h2><span class="l-en">Trump admin escalates fraud crackdown — hospice, Medicare, Medicaid providers under direct pressure</span><span class="l-zh">特朗普政府升级反欺诈行动——临终关怀、医疗保险、医疗补助供应商面临直接压力</span></h2>
+
+      <p class="wh-summary"><span class="l-en">The White House launched fraud.gov to showcase aggressive enforcement against government healthcare fraud, with sweeping provider suspensions and moratoriums. The scale of actions against hospice, home health, and Medicare/Medicaid providers creates immediate, sector-specific headwinds.</span><span class="l-zh">白宫推出fraud.gov网站展示激进的反医保欺诈执法，并大范围暂停或暂停新供应商入网。针对临终关怀、居家护理及医疗保险/医疗补助提供商的行动规模给这些细分板块带来即期逆风。</span></p>
+
+      
+      <div class="wh-meter">
+        <span><span class="l-en">Market significance</span><span class="l-zh">市场重要性</span></span>
+        <span class="bar"><i style="width:65%"></i></span>
+        <span>65/100</span>
+      </div>
+      
+
+      
+      <div class="wh-body"><p>The establishment of fraud.gov is primarily a transparency and messaging tool, but the accompanying data release reveals the operational breadth of the White House Task Force to Eliminate Fraud. The actions described span Medicaid payment suspensions to states, a national moratorium on new Medicare hospice enrollments (May 13), mass suspension of billing privileges, and a historic health care fraud takedown (June 23, 455 defendants, $6.5B in false claims).</p><p>The most concentrated market impact is on publicly traded companies with significant exposure to hospice, home health, and skilled nursing Medicare/Medicaid revenue. The announcement cites 1,076 hospices removed from Medicare in California alone and a $1.4 billion suspension in home health and hospice funding. The May 13 moratorium on new Medicare hospice enrollments is a direct clamp on sector growth, reducing the total addressable market and signaling heightened regulatory risk.</p><p>The transmission mechanism is straightforward: aggressive audit, enrollment freezes, and clawbacks directly threaten top-line revenue for service providers reliant on government reimbursement. While the crackdown aims to eliminate bad actors, the broad net—suspending thousands of providers—increases compliance costs and revenue uncertainty across the sector. Companies with robust internal compliance and diversified payer mixes may be relative beneficiaries, while those with heavy exposure to California or recently acquired Medicare-focused assets are most vulnerable.</p><p>Key uncertainty is whether these enforcement actions are a temporary political exercise or a structural shift toward permanently tighter reimbursement and audit standards under the Trump administration, which would sustain sector valuation compression.</p></div>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Sector impact</span><span class="l-zh">行业影响</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Sector</span><span class="l-zh">行业</span></th><th><span class="l-en">Impact</span><span class="l-zh">影响</span></th><th><span class="l-en">Why</span><span class="l-zh">原因</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td>Hospice and Home Health Providers</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>National moratorium on new Medicare enrollments and mass provider suspensions directly cap industry growth and reduce government reimbursement flows.</td>
+          </tr>
+        
+          <tr>
+            <td>Medicare Advantage / Managed Care</td>
+            <td><span class="wh-dir neutral">◆ <span class="l-en">Mixed</span><span class="l-zh">涨跌互现</span></span></td>
+            <td>Crackdown on fraudulent billing and overpayments could lower total system costs, but increased audit scrutiny on plan encounters raises administrative burden.</td>
+          </tr>
+        
+          <tr>
+            <td>Healthcare Staffing / Revenue Cycle Management</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Suspended provider operations and audit activity reduce demand for billing and staffing services tied to affected home health and hospice agencies.</td>
+          </tr>
+        
+          <tr>
+            <td>Diagnostics and Durable Medical Equipment (DME)</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Specific mention of stopping $220M in fraudulent skin substitute claims and suspending 800+ DME providers signals targeted enforcement beyond hospice.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names that benefit</span><span class="l-zh">受益标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">HUM</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="mut">—</span></td>
+            <td>Medicare Advantage giant: may benefit from broader system savings but faces short-term headwinds from tighter encounter data reviews.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names under pressure</span><span class="l-zh">承压标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">CHE</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="mut">—</span></td>
+            <td>Pure-play hospice provider (VITAS) directly exposed to the national moratorium on new Medicare hospice enrollments and heightened audit risk.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">ADUS</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="mut">—</span></td>
+            <td>Home care and hospice operator faces headwinds from mass provider suspensions and chilled government reimbursement environment.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">ENSG</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="mut">—</span></td>
+            <td>Skilled nursing operator dependent on Medicare/Medicaid; enforcement surge raises compliance cost and audit risk for the sector.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      <p class="wh-src">🔗 <a href="https://www.whitehouse.gov/releases/2026/08/fraud-gov-track-the-trump-administrations-relentless-war-on-fraud/" target="_blank" rel="noopener noreferrer"><span class="l-en">Read the primary White House source</span><span class="l-zh">阅读白宫一手来源</span> →</a></p>
+      <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
+    </section>
+  
+    <section class="wh-card live" id="tw-2026-07-17-tga-build">
+      <div class="row1">
+        <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
+        <span class="wh-badge tre">💵 <span class="l-en">Treasury</span><span class="l-zh">财政部</span></span>
+        <span class="wh-badge tone-headwind">
+          <span class="l-en">Headwind</span><span class="l-zh">逆风</span>
+          
+        </span>
+        <span class="wh-when">🗓 Aug 5, 2026 · treasury</span>
+        <span class="wh-when">· <span class="l-en">confidence</span><span class="l-zh">置信度</span>: high</span>
+      </div>
+
+      <h2><span class="l-en">Treasury drains $114bn into TGA rebuild — reserves tighten in an already-contracting regime</span><span class="l-zh">财政部TGA重建吸走1140亿美元——在本就收缩的环境中进一步收紧银行储备</span></h2>
+
+      <p class="wh-summary"><span class="l-en">The Treasury has rebuilt its cash balance by ~$114bn since mid-July, pulling reserves out of a system with an exhausted RRP buffer. This amplifies the existing orderly liquidity drain and tightens financial conditions at the margin.</span><span class="l-zh">自7月中旬以来，财政部已重建约1140亿美元现金余额，从隔夜逆回购工具已耗尽的市场中抽走准备金，放大了本就持续的流动性收缩，边际上收紧金融条件。</span></p>
+
+      
+      <div class="wh-meter">
+        <span><span class="l-en">Market significance</span><span class="l-zh">市场重要性</span></span>
+        <span class="bar"><i style="width:78%"></i></span>
+        <span>78/100</span>
+      </div>
+      
+
+      
+      <div class="wh-body"><p>The mechanism is straightforward: a $114bn TGA rebuild over 13 sessions mechanically drains reserves, as the Treasury pulls cash from private accounts into its Fed account. With the overnight RRP buffer effectively exhausted at $1.6bn, this withdrawal lands directly on bank reserves rather than being absorbed by idle cash parked at the Fed—making this the highest-impact transmission case. Under the hood, this is a classic &#39;TGA rebuild → reserve drain&#39; dynamic that tightens the plumbing at the margin.</p><p>This drain lands into a market already facing an &#39;orderly drain&#39; in net liquidity, a contracting Fed balance sheet, and a Reflation macro regime that typically punishes long-duration assets when reserves are squeezed. The $114bn drawdown is not a one-off tax date swing—it is a sustained rebuild across two weeks that has pushed the TGA from $815bn to $929bn, making it a genuine headwind for risk assets that are sensitive to reserve conditions. It doesn&#39;t cause a crash, but it removes a key backstop, turning the liquidity tide from neutral-to-supportive into a tightening impulse.</p><p>The rate-sensitive, long-duration growth complex—the megacap tech names and broad indexes like QQQ—feels this most directly. When reserves are drained and the Fed is still contracting its balance sheet, the marginal discount-rate pressure rises on assets priced for distant cash flows. Defensive, low-duration, or value-oriented sectors are comparatively insulated. The read is confirmed by the durability of the move: if the TGA were to reverse $50bn+ in a sudden spend-down (e.g., a large coupon maturity or unplanned disbursement) within the next week, the headwind would be neutralized. Conversely, if the TGA continues grinding toward the $1T mark, the squeeze intensifies.</p></div>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Sector impact</span><span class="l-zh">行业影响</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Sector</span><span class="l-zh">行业</span></th><th><span class="l-en">Impact</span><span class="l-zh">影响</span></th><th><span class="l-en">Why</span><span class="l-zh">原因</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td>Megacap growth / long-duration equities</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>A reserve drain in a contracting regime raises the marginal discount rate, pressuring valuations of long-duration, rate-sensitive names.</td>
+          </tr>
+        
+          <tr>
+            <td>Defensive / low-duration sectors (utilities, consumer staple</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>These sectors are relatively insulated from reserve-driven tightening and benefit from rotation out of duration-sensitive growth.</td>
+          </tr>
+        
+          <tr>
+            <td>Banks / financials</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Reserve scarcity tightens funding conditions and can pressure net interest margins if deposit costs rise.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names that benefit</span><span class="l-zh">受益标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">XLP</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg dn">-0.05%</span></td>
+            <td>Consumer staples offer low-duration, defensive exposure that tends to attract flows when liquidity headwinds hit growth.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names under pressure</span><span class="l-zh">承压标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">QQQ</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg dn">-0.90%</span></td>
+            <td>The Nasdaq-100 ETF is a concentrated proxy for long-duration megacap growth, the epicenter of reserve-drain headwinds.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">IWM</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg dn">-0.64%</span></td>
+            <td>Small-caps are more sensitive to financial conditions and funding stress than large defensives, making them vulnerable to reserve drains.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">MSFT</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg dn">-1.09%</span></td>
+            <td>A bellwether megacap growth name whose long-duration cash flows are discounted more heavily as reserve conditions tighten.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      <p class="wh-src">🔗 <a href="https://fiscaldata.treasury.gov/datasets/daily-treasury-statement/operating-cash-balance" target="_blank" rel="noopener noreferrer"><span class="l-en">Read the primary White House source</span><span class="l-zh">阅读白宫一手来源</span> →</a></p>
+      <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
+    </section>
+  
+    <section class="wh-card" id="wh-2026-08-04-manufacturing-jobs-flock-to-the-u-s-thanks-to-president-trumps-america-first-eco">
+      <div class="row1">
+        
         
         <span class="wh-badge tone-neutral">
           <span class="l-en">Neutral</span><span class="l-zh">中性</span>
@@ -603,9 +1273,9 @@
       <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
     </section>
   
-    <section class="wh-card live" id="tw-2026-07-15-tga-build">
+    <section class="wh-card" id="tw-2026-07-15-tga-build">
       <div class="row1">
-        <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
+        
         <span class="wh-badge tre">💵 <span class="l-en">Treasury</span><span class="l-zh">财政部</span></span>
         <span class="wh-badge tone-headwind">
           <span class="l-en">Headwind</span><span class="l-zh">逆风</span>
@@ -907,9 +1577,9 @@
       <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
     </section>
   
-    <section class="wh-card live" id="tw-2026-07-13-tga-build">
+    <section class="wh-card" id="tw-2026-07-13-tga-build">
       <div class="row1">
-        <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
+        
         <span class="wh-badge tre">💵 <span class="l-en">Treasury</span><span class="l-zh">财政部</span></span>
         <span class="wh-badge tone-headwind">
           <span class="l-en">Headwind</span><span class="l-zh">逆风</span>
@@ -2573,7 +3243,7 @@
   
 </footer>
 
-<script src="theme.js?v=37ffbce3" defer></script>
+<script src="theme.js?v=f8abb176" defer></script>
 <script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

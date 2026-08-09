@@ -5,7 +5,6 @@ from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
-import shutil
 
 import pytest
 from fastapi import HTTPException
@@ -16,20 +15,22 @@ from engine.government_revenue.candidates import (
     candidate_queue_content_id,
 )
 from scripts import build_government_revenue_candidates as projection
+from tests.government_revenue_candidate_fixture import (
+    canonical_frozen_at,
+    canonical_fixture_root,
+)
 from tests.test_government_revenue_candidates import _award_event, _graph, _payload
 
 
-ROOT = Path(__file__).resolve().parents[1]
-FROZEN_AT = "2026-08-03T15:00:00+00:00"
+# Derived from the canonical inputs `_fixture_root` copies, never hand-typed --
+# see `tests/government_revenue_candidate_fixture` for why a wall-clock literal
+# here is a scheduled failure rather than a constant.
+FROZEN_AT = canonical_frozen_at()
 
 
 def _fixture_root(tmp_path: Path) -> Path:
     """Copy only the materializer's immutable input boundary into a temp root."""
-    data_dir = tmp_path / "data" / "government_revenue"
-    data_dir.mkdir(parents=True)
-    for name in ("latest.json", "workspace.json", "recipient_entity_graph.json"):
-        shutil.copy2(ROOT / "data" / "government_revenue" / name, data_dir / name)
-    return tmp_path
+    return canonical_fixture_root(tmp_path)
 
 
 def _artifact_paths(root: Path) -> dict[str, Path]:

@@ -1,0 +1,20 @@
+
+  /* Bottoming watch — the act board's watch strip. Reuses the V2 lane chrome
+     (.actcol/.acth/.actitem/.ab-chip) verbatim; the only additions are the
+     full-width span and the internal row grid, because this strip is as wide as
+     the whole board rather than one column. Rides with the include for the same
+     reason the board CSS does: editing theme.css rehashes it and stales the ?v=
+     stamp on ~176 committed pages. */
+  .actcol.act-bottom { grid-column: 1 / -1; --act-accent: var(--info); --act-accent-ink: var(--ink-info, var(--info)); }
+  .abw-rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; padding: 6px 0; }
+  @media (max-width: 900px) { .abw-rows { grid-template-columns: minmax(0, 1fr); } }
+  /* The turn reading sits right of the name, like .act-row-score on a theme row.
+     Info-toned, NOT green: a rising oscillator on a watch lane is a state, not an
+     endorsement, and green here would read as the buy verb this lane must not carry. */
+  .abw-turn { flex: none; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+              white-space: nowrap; color: var(--ink-info, var(--info)); cursor: help; }
+  .abw-foot { padding: 8px 13px 10px; border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+              font-size: 10.5px; line-height: 1.5; color: var(--muted); }
+  .abw-foot p { margin: 0 0 4px; }
+  .abw-foot p:last-child { margin-bottom: 0; }
+  

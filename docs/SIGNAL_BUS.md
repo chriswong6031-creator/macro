@@ -13,13 +13,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | XSR | 1 |
 | active-build-map | 1 |
 | agentic_media | 4 |
-| biopharma-seasonality-intelligence | 6 |
+| biopharma-seasonality-intelligence | 7 |
 | btc-vector | 6 |
 | capital-structure-intelligence | 20 |
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
 | ccw | 10 |
-| china-alpha | 20 |
+| china-alpha | 25 |
 | china-intel-hub | 2 |
 | china-pick-lab | 3 |
 | china-system | 6 |
@@ -61,7 +61,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-phase-v2d | 4 |
 | metabolism-phase0 | 2 |
 | mlc | 1 |
-| momoedge | 9 |
+| momoedge | 10 |
 | narrative-ignition | 5 |
 | nasdaq-internals | 1 |
 | neural-web | 64 |
@@ -70,13 +70,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | nw-mastermind-bridge | 5 |
 | nw-rails | 7 |
 | options-alpha | 8 |
-| options-intelligence-program | 6 |
+| options-dislocation | 1 |
+| options-flow | 1 |
+| options-intelligence-program | 12 |
 | options-nw-entry-intelligence | 3 |
+| options-prophet-shadow | 1 |
 | oracle | 29 |
 | personality-timing | 12 |
 | pick-lab | 3 |
 | policy-shock | 5 |
-| prophet | 1 |
+| prophet | 3 |
 | qualitative-intelligence | 23 |
 | rates-inflation-command | 8 |
 | research-factory | 3 |
@@ -107,19 +110,19 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 364 |
-| infrastructure | 139 |
+| display | 367 |
+| infrastructure | 147 |
 | scored | 4 |
-| shadow | 82 |
+| shadow | 89 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 557 |
-| git+r2 | 2 |
-| gitignored-local | 15 |
-| r2 | 15 |
+| git | 571 |
+| git+r2 | 3 |
+| gitignored-local | 17 |
+| r2 | 16 |
 
 ## Artifacts by owner_program
 
@@ -148,12 +151,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| data-neuralweb-biopharma-seasonality-state | `data/neuralweb/biopharma_seasonality_state.json` | json | daily-engine | shadow | 2 | 0 |
+| data-seasonality-nw-forward-ledger | `data/seasonality/nw_forward_ledger.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | site-stock-seasonality-entity | `site/seasonalitydata/entities/<SYM>.json` | json | daily-engine | display | 1 | 1 |
 | site-stock-seasonality-index | `site/seasonalitydata/index.json` | json | daily-engine | display | 1 | 1 |
-| data-neuralweb-biopharma-seasonality-state | `data/neuralweb/biopharma_seasonality_state.json` | json | daily-engine | shadow | 1 | 0 |
 | data-stock-seasonality-selection-cache | `data/seasonality/selection/<SYM>.json` | json | daily-engine | infrastructure | 1 | 0 |
 | site-biopharma-seasonality-methodology | `site/seasonalitydata/methodology.json` | json | daily-engine | display | 0 | 1 |
-| data-seasonality-nw-forward-ledger | `data/seasonality/nw_forward_ledger.jsonl` | jsonl | daily-engine | shadow | 0 | 0 |
+| data-seasonality-program-watch | `data/seasonality/program_watch.json` | json | daily-engine | infrastructure | 0 | 0 |
 
 ### btc-vector
 
@@ -231,8 +235,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| site-china-standouts | `site/factordata/china_standouts.json` | json | asia-close | display | 5 | 2 |
 | china-sector-cycles-forward-log | `data/china_sector_cycles/forward_log.parquet` | parquet | asia-close | shadow | 6 | 0 |
-| site-china-standouts | `site/factordata/china_standouts.json` | json | asia-close | display | 4 | 2 |
 | name-score-calls | `data/name_score/us_calls.parquet` | parquet | daily-engine | shadow | 3 | 0 |
 | china-basket-turn-cn | `site/chinabasketdata/basket_turn_cn.json` | json | daily-engine | display | 2 | 0 |
 | china-board-ledger | `data/china_standout_track/board.parquet` | parquet | asia-close | shadow | 2 | 0 |
@@ -240,16 +244,21 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-standout-cn-audit-state | `data/standout_audit/cn_audit_state.json` | json | asia-close | infrastructure | 2 | 0 |
 | site-china-altdata-mastermind | `site/chinaaltdata/mastermind.json` | json | asia-close | display | 2 | 0 |
 | site-china-intel-briefing | `site/china_intel/briefing.json` | json | asia-close | display | 1 | 1 |
+| site-cn-track-ledger | `site/factordata/cn_track_ledger.json` | json | asia-close | display | 2 | 0 |
 | china-mtf-upturn | `site/chinastockdata/mtf_upturn_cn.json` | json | daily-engine | display | 1 | 0 |
 | china-radar-ledger | `data/china_radar/ledger.parquet` | parquet | asia-close | shadow | 1 | 0 |
 | china-standout-cn-attribution | `data/standout_audit/cn_attribution.parquet` | parquet | asia-close | shadow | 1 | 0 |
 | china-standout-cn-audit-scoreboard | `site/factordata/cn_audit_scoreboard.json` | json | asia-close | shadow | 1 | 0 |
 | china-standout-cn-evidence | `data/standout_audit/cn_evidence.jsonl` | jsonl | asia-close | shadow | 1 | 0 |
 | china-standout-cn-fitness | `data/metabolism/fitness/standouts_cn.json` | json | asia-close | shadow | 1 | 0 |
+| cn-prophet-audit-latest | `data/cn_prophet_audit/latest.json` | json | asia-close | shadow | 1 | 0 |
 | cn-reversal-sleeve-ledger | `data/cn_reversal_sleeve_track/sleeve.parquet` | parquet | asia-close | shadow | 1 | 0 |
 | site-china-altdata-by-ticker | `site/chinaaltdata/by_ticker.json` | json | asia-close | display | 1 | 0 |
 | china-basket-turn-ledger | `data/china_basket_turn/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| china-curated-membership-pit | `data/baskets_china/membership_history.parquet` | parquet | asia-close | infrastructure | 0 | 0 |
 | china-mtf-upturn-ledger | `data/mtf_upturn_cn/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| china-ths-membership-pit | `data/baskets_china_ths/membership_history.parquet` | parquet | asia-close | infrastructure | 0 | 0 |
+| cn-prophet-audit-forward-log | `data/cn_prophet_audit/forward_log.parquet` | parquet | asia-close | shadow | 0 | 0 |
 | site-china-altdata-feed | `site/chinaaltdata/feed.json` | json | asia-close | display | 0 | 0 |
 
 ### china-intel-hub
@@ -305,8 +314,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | cycle-ontology-falsifiers | `data/cycle_ontology/falsifiers.json` | json | on-demand | infrastructure | 6 | 0 |
+| sector-cycles-forward-log | `data/sector_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 6 | 0 |
 | country-cycles-forward-log | `data/country_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 5 | 0 |
-| sector-cycles-forward-log | `data/sector_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 5 | 0 |
 | cycle-pattern-state | `data/neuralweb/cycle_pattern_state.json` | json | daily-engine | display | 4 | 0 |
 | hazard-model | `data/hazard/model_price_c4414dcb.json` | json | on-demand | scored | 4 | 0 |
 | cycle-pattern-truths | `data/cycle_pattern/truths.jsonl` | jsonl | on-demand | display | 2 | 0 |
@@ -394,7 +403,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| site-flow-leaders | `site/flowleaders/leaders.json` | json | daily-engine | display | 2 | 0 |
+| site-flow-leaders | `site/flowleaders/leaders.json` | json | daily-engine | display | 3 | 0 |
 | site-flow-leaders-page | `site/flow_leaders.html` | other | daily-engine | display | 0 | 0 |
 
 ### fundamental-forensics
@@ -693,13 +702,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | options-structure-gex-state | `options_structure/gex_state/<ROOT>.json` | json | daily-engine | display | 2 | 2 |
 | prophet-trade-plan | `prophet/trade_plan/<ID>.json` | json | daily-engine | display | 2 | 1 |
+| us-context-vector | `data/us_prophet_rank/candidates/YYYY-MM.parquet` | parquet | daily-engine | shadow | 3 | 0 |
 | options-flow-chain-heat | `live_flow/chain_heat_current.json` | json | collect | display | 1 | 1 |
 | options-structure-matrix | `options_structure/matrix/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
 | prophet-management-state | `prophet/state/<ID>.json` | json | daily-engine | display | 1 | 1 |
+| us-prophet-grades | `data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet` | parquet | daily-engine | shadow | 2 | 0 |
 | options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
 | prophet-index | `site/prophet/index.json` | json | daily-engine | display | 0 | 1 |
 | prophet-ledger | `data/prophet/ledger.jsonl` | jsonl | daily-engine | display | 1 | 0 |
-| us-context-vector | `data/us_prophet_rank/candidates/YYYY-MM.parquet` | parquet | daily-engine | shadow | 0 | 0 |
 
 ### narrative-ignition
 
@@ -791,8 +801,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | operator-exposure-log | `data/operator/exposure_log.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
+| options-entry-coverage | `data/options_entry/coverage.json` | json | collect | infrastructure | 1 | 0 |
 | operator-exposure-summary | `data/governance/operator_exposure_summary.json` | json | daily-engine | infrastructure | 0 | 0 |
-| options-entry-coverage | `data/options_entry/coverage.json` | json | collect | infrastructure | 0 | 0 |
 
 ### nw-context-intelligence
 
@@ -817,7 +827,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 4 | 0 |
-| covariance-spine | `data/neuralweb/covariance_spine.json` | json | daily-engine | infrastructure | 2 | 0 |
+| covariance-spine | `data/neuralweb/covariance_spine.json` | json | daily-engine | infrastructure | 3 | 0 |
 | grading-closure | `data/governance/grading_closure.json` | json | collect | infrastructure | 1 | 0 |
 | covariance-spine-history | `data/neuralweb/covariance_spine_history.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 | operator-action-ledger | `data/operator/action_ledger.jsonl` | jsonl | on-demand | infrastructure | 0 | 0 |
@@ -837,6 +847,18 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-flow-index | `site/flow/index.json` | json | collect | display | 0 | 1 |
 | options-ivspread-snapshots | `data/options_ivspread/snapshots.parquet` | parquet | collect | display | 1 | 0 |
 
+### options-dislocation
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| options-dislocation-gate | `data/options_dislocation/validation_gate.json` | json | weekly | shadow | 2 | 0 |
+
+### options-flow
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| options-flow-signing-gate | `data/options_flow/signing_gate.json` | json | on-demand | infrastructure | 2 | 0 |
+
 ### options-intelligence-program
 
 | id | path | format | cadence | tier | consumers | external consumers |
@@ -844,7 +866,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | live-flow-dte-tide-dated | `live_flow/dte_tide/<DATE>.json` | json | intraday | display | 1 | 1 |
 | live-flow-surface-dated | `live_flow/surface/<ROOT>/<DATE>/idx.json` | json | intraday | display | 1 | 1 |
 | live-flow-tide-dated | `live_flow/tide/<DATE>.json` | json | intraday | display | 1 | 1 |
+| live-flow-event-stage-dated | `live_flow/events/<DATE>.jsonl` | jsonl | intraday | infrastructure | 1 | 0 |
 | options-session-ledger | `data/options_session/ledger.parquet` | parquet | daily-engine | display | 1 | 0 |
+| options-signal-episode-checkpoint | `data/options_signal_episode/checkpoint.json` | json | daily-engine | infrastructure | 1 | 0 |
+| options-signal-episode-h60-outcomes | `data/options_signal_episode/outcomes_h60.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| options-signal-episodes | `data/options_signal_episode/episodes.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| polygon-intraday-price-cache | `data/intraday/<TICKER>.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| polygon-intraday-price-receipt | `data/intraday/<TICKER>.parquet.receipt.json` | json | daily-engine | infrastructure | 1 | 0 |
 | options-session-latest | `site/session/` | json | daily-engine | display | 0 | 0 |
 | options-session-records | `data/options_session/` | json | daily-engine | display | 0 | 0 |
 
@@ -853,8 +881,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | options-entry-state | `data/options_entry/state.parquet` | parquet | collect | display | 3 | 1 |
-| options-entry-gate | `data/options_entry/gate.json` | json | collect | shadow | 1 | 1 |
+| options-entry-gate | `data/options_entry/gate.json` | json | collect | shadow | 2 | 1 |
 | live-options-flow-current | `live_flow/feed_current.json` | json | collect | display | 0 | 1 |
+
+### options-prophet-shadow
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| options-prophet-shadow | `site/options_prophet/index.json` | json | daily-engine | shadow | 1 | 1 |
 
 ### oracle
 
@@ -911,7 +945,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| pick-lab-entry-ledger | `site/labdata/pick_lab.json` | json | daily-engine | display | 1 | 0 |
+| pick-lab-entry-ledger | `site/labdata/pick_lab.json` | json | daily-engine | display | 2 | 0 |
 | pick-lab-longhold-ledger | `site/labdata/pick_lab_longhold.json` | json | daily-engine | display | 1 | 0 |
 | pick-lab-snapshots | `data/pick_lab/snapshots/` | parquet | daily-engine | infrastructure | 1 | 0 |
 
@@ -929,7 +963,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| us-basket-turn | `site/basketdata/us_basket_turn.json` | json | daily-engine | display | 1 | 0 |
 | us-track-history | `site/factordata/us_track_history.json` | json | daily-engine | display | 1 | 0 |
+| us-basket-turn-ledger | `data/us_basket_turn/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
 ### qualitative-intelligence
 
@@ -1017,7 +1053,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| baskets-membership | `data/baskets/membership.json` | json | weekly | infrastructure | 16 | 0 |
+| baskets-membership | `data/baskets/membership.json` | json | weekly | infrastructure | 17 | 0 |
 | site-baskets-json | `site/basketdata/baskets.json` | json | daily-engine | display | 9 | 1 |
 | site-sector-pulse | `site/basketdata/sector_pulse.json` | json | daily-engine | display | 3 | 2 |
 
@@ -1203,7 +1239,7 @@ flowchart LR
     C_engine_financial_news_py["engine/financial_news.py"]
     C_engine_froth_fragility_py["engine/froth_fragility.py"]
     C_engine_news_common_py["engine/news_common.py"]
-    OVF_baskets_membership["...+12 more"]
+    OVF_baskets_membership["...+13 more"]
     P_scripts_build_stock_library_py(("scripts/build_stock_library.py"))
     A_site_us_standouts["site-us-standouts"]
     C_engine_intelligence_py["engine/intelligence.py"]
@@ -1411,6 +1447,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - engine/stock_fundamentals.py — _compute_capital_allocation_block() calls compute_capital_allocation() inside panels()
 
+### china-curated-membership-pit
+
+- **path:** `data/baskets_china/membership_history.parquet`
+- **declared producer:** `engine/basket_membership_pit.py`
+- **extra writers:**
+  - scripts/build_baskets_china_ths.py — calls basket_membership_pit.append_all() on --snapshot
+
 ### china-regime-pit-daily
 
 - **path:** `data/china_regime/regime_daily.parquet`
@@ -1467,6 +1510,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/china_standout_audit.py`
 - **extra writers:**
   - scripts/build_china_library.py — calls china_standout_audit.run_attribution()
+
+### china-ths-membership-pit
+
+- **path:** `data/baskets_china_ths/membership_history.parquet`
+- **declared producer:** `engine/basket_membership_pit.py`
+- **extra writers:**
+  - scripts/build_baskets_china_ths.py — calls basket_membership_pit.append_all() on --snapshot
 
 ### cn-pick-lab-snapshots
 
@@ -1761,6 +1811,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - scripts/build_flow_desk.py — calls engine.flow_cohorts.build_cohorts() which writes via store.upsert
 
+### options-flow-signing-gate
+
+- **path:** `data/options_flow/signing_gate.json`
+- **declared producer:** `scripts/calibrate_flow_signing.py`
+- **extra writers:**
+  - scripts/calibrate_thetadata_tape_sessions.py — updates only the thetadata_tape sub-key
+
 ### pick-lab-snapshots
 
 - **path:** `data/pick_lab/snapshots/`
@@ -1943,6 +2000,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `scripts/grade_us_board.py`
 - **extra writers:**
   - scripts/stamp_options_state.py — nightly options-state + tape-flow stamp pass (runs after grade_us_board in daily.yml): schema-unions and fills the nullable opt_* columns from engine/options_stamp.STAMP_COLS (incl. W-OVC keys opt_vanna_relief, opt_front7_charm_share, opt_root_class; registered 2026-08-02 after the six-week silent-null repair) + engine/tape_flow_stamp.TAPE_FLOW_STAMP_COLS; no-overwrite per family, never touches grading columns (A9)
+
+### us-context-vector
+
+- **path:** `data/us_prophet_rank/candidates/YYYY-MM.parquet`
+- **declared producer:** `engine/us_context_vector.py`
+- **extra writers:**
+  - scripts/run_us_scan_tier.py
 
 ### world-state
 

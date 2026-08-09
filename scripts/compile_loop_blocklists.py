@@ -71,6 +71,28 @@ def _slug(text: str) -> str:
     return text[:80].strip("-")
 
 
+# A GFM cell boundary is an UNESCAPED pipe.  `\|` is the documented way to put a
+# literal bar inside a cell, and this registry uses it for absolute-value bars
+# (`\|ρ\|`) and conditional-expectation notation (`E[… \| market regime]`).  A plain
+# `.split("|")` treats those as boundaries, which does not merely mangle one cell:
+# the row gains cells, `zip(headers, cells)` below keeps only the first len(headers),
+# and every column shifts one place left while the LAST one is dropped in silence.
+# Two rows shipped that way (KILL-PM4-OVERHEAD-SUPPLY compiled to
+# verdict: 'REDUNDANT — \' / source: 'ρ\'; KILL-PER-SIGNAL-FAMILY-RELIABILITY lost
+# its ruling entirely) — see tests/test_dnr_registry_keys.py, which was dark.
+_CELL_BOUNDARY_RE = re.compile(r"(?<!\\)\|")
+
+
+def _split_row(line: str) -> list[str]:
+    """Split one GFM pipe row on unescaped `|`, then unescape the cells."""
+    inner = line.strip()
+    if inner.startswith("|"):
+        inner = inner[1:]
+    if inner.endswith("|") and not inner.endswith("\\|"):
+        inner = inner[:-1]
+    return [c.strip().replace("\\|", "|") for c in _CELL_BOUNDARY_RE.split(inner)]
+
+
 def _parse_markdown_table(lines: list[str]) -> list[dict[str, str]]:
     """Parse a GFM pipe-table and return list of row dicts.
 
@@ -86,7 +108,7 @@ def _parse_markdown_table(lines: list[str]) -> list[dict[str, str]]:
             if headers:
                 break  # table ended
             continue
-        cells = [c.strip() for c in line.strip("|").split("|")]
+        cells = _split_row(line)
         if not headers:
             headers = cells
             continue
@@ -166,11 +188,15 @@ def parse_do_not_rebuild(md_text: str) -> list[dict[str, Any]]:
                 or row.get("Source")
                 or ""
             ).strip()
+            # Stable citation key (optional column; see the registry's append
+            # convention — cite rows as DNR:<KEY>, never by row/line number).
+            key = (row.get("Key") or row.get("key") or "").strip().strip("`")
 
             if not topic:
                 continue
 
             entries.append({
+                "key": key,
                 "topic": topic,
                 "verdict": verdict,
                 "source": source,
@@ -204,6 +230,8 @@ def _write_compiled_registry(entries: list[dict[str, Any]], out_path: Path) -> N
     ]
     for entry in entries:
         lines.append(f"  - topic: {_yaml_str(entry['topic'])}")
+        if entry.get("key"):
+            lines.append(f"    key: {entry['key']}")
         lines.append(f"    verdict: {_yaml_str(entry['verdict'])}")
         lines.append(f"    source: {_yaml_str(entry['source'])}")
         lines.append(f"    section: {entry['section']}")
@@ -346,6 +374,18 @@ def compile_blocklists(repo_root: Path) -> int:
             "WARNING: no entries parsed from DO_NOT_REBUILD.md — check section headers",
             file=sys.stderr,
         )
+
+    # Stable keys are the citation anchor (DNR:<KEY>); a duplicate poisons every
+    # citation that uses it, so this is a hard failure, not a warning.
+    keyed = [e["key"] for e in entries if e.get("key")]
+    dupes = sorted({k for k in keyed if keyed.count(k) > 1})
+    if dupes:
+        print(
+            "ERROR: duplicate Key(s) in DO_NOT_REBUILD.md: " + ", ".join(dupes)
+            + " — registry keys must be unique file-wide (append convention).",
+            file=sys.stderr,
+        )
+        return 1
 
     print(f"Parsed {len(entries)} entries from DO_NOT_REBUILD.md")
 

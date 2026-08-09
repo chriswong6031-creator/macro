@@ -2,11 +2,15 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 
 import pandas as pd
 
 from engine import signal_archive as sa
 from scripts import build_gex_board as bg
+
+
+SESSION = date(2026, 7, 31)
 
 
 def _manifest() -> list[dict]:
@@ -29,7 +33,7 @@ def _manifest() -> list[dict]:
 
 
 def test_snapshot_keeps_index_etf_excludes_single_names(tmp_path):
-    bg._write_archive_snapshot(_manifest(), tmp_path)
+    bg._write_archive_snapshot(_manifest(), tmp_path, SESSION)
     snap = json.loads((tmp_path / "gex" / "latest.json").read_text())
     assert set(snap["indices"]) == {"SPX", "SPY"}          # TSLA (single name) excluded
     assert snap["indices"]["SPX"]["net_gex_bn"] == 26.2
@@ -56,7 +60,7 @@ def test_market_context_reads_cboe(tmp_path):
 
 
 def test_snapshot_flattens_and_dedups_in_archive(tmp_path):
-    bg._write_archive_snapshot(_manifest(), tmp_path)
+    bg._write_archive_snapshot(_manifest(), tmp_path, SESSION)
     snap = json.loads((tmp_path / "gex" / "latest.json").read_text())
     asof = sa.find_asof(snap, prefer="asof")
     arch = tmp_path / "arch"
@@ -68,5 +72,7 @@ def test_snapshot_flattens_and_dedups_in_archive(tmp_path):
 
 
 def test_empty_or_nonindex_manifest_writes_nothing(tmp_path):
-    bg._write_archive_snapshot([{"key": "TSLA", "net_gex_bn": -0.4}], tmp_path)
+    bg._write_archive_snapshot(
+        [{"key": "TSLA", "net_gex_bn": -0.4}], tmp_path, SESSION
+    )
     assert not (tmp_path / "gex" / "latest.json").exists()        # no index/ETF -> no snapshot

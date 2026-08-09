@@ -55,6 +55,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 if __name__ == "__main__":
     # CLI-only silencer: the warnings filter list is PROCESS-GLOBAL, so at module
     # scope this muted warnings for anything that merely imports this file (pytest

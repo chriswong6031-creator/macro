@@ -7,638 +7,807 @@ schema: compiled_kill_registry.v1
 
 entries:
   - topic: 'Fused shield / meta-router over buy-decision vetoes'
+    key: KILL-FUSED-SHIELD
     verdict: 'FORBIDDEN'
     source: 'FR-1/R3; Codex buy-decision docket adjudication (#1781)'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Kernel conditioning before NW clocks arm (kernel-FDR 2026-10)'
+    key: KILL-KERNEL-PRECLOCK
     verdict: 'FORBIDDEN'
     source: 'Signal Commons rulings (2026-07-05)'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Positioning fusion (positioning keys fused into signal scores)'
+    key: KILL-POSITIONING-FUSION
     verdict: 'ILLEGAL'
     source: 'Signal Commons rulings (2026-07-05)'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'LLM-originated signals, scores, or escalations'
+    key: KILL-LLM-ORIGINATION
     verdict: 'FORBIDDEN — LLMs may only de-escalate calibrated keys'
     source: 'House law (CLAUDE.md §Epistemics)'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'New human-override gates laundered into `allocation()` (pattern: midterm-blackout gate)'
+    key: KILL-LAUNDERED-OVERRIDE-GATES
     verdict: 'FORBIDDEN pattern'
     source: 'BTC vector override audit D1–D5'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Rotation × cycle-position entry-confluence'
+    key: KILL-ROTATION-CYCLE-CONFLUENCE
     verdict: 'DON''T-TEST'
     source: 'Rotation×cycle confluence ruling (cycle intelligence program)'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'rs-based member-dispersion gates'
+    key: KILL-RS-DISPERSION-GATES
     verdict: 'DON''T-TEST — rs is zero-sum tautology (R-4)'
     source: 'Healthcare member-dispersion adjudication'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Short-side lobe as directional shorting'
+    key: KILL-DIRECTIONAL-SHORTING
     verdict: 'FORBIDDEN — L1 is AVOID-not-SHORT evidence only'
     source: 'NW rails+lobes program (2026-07-06)'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Signal-engine verdicts at non-pre-declared horizons'
+    key: KILL-OFFHORIZON-VERDICTS
     verdict: 'FORBIDDEN — verdicts only at registered `horizon_role` ruler'
     source: 'Backtest-horizon ladder law'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Chronicle store regen in intraday lanes (research-ingest or any hourly job advancing `data/chronicle/*.jsonl`)'
+    key: KILL-INTRADAY-CHRONICLE
     verdict: 'FORBIDDEN — gate 5: nightly is the sole advancer, intraday lanes discard writes. Built independently by TWO sessions on 2026-07-26 before the law caught both; the catalog-outruns-store gap is an ASSERTION defect, fixed by the vintage-attested gate 1 (#3648/#3660), never by lane-cadence writes'
     source: 'Chronicle masterplan §0 gate 5; #3643 revert 90050eb535f + #3647 drop eb769be108c (2026-07-26)'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Parallel shock-vector classifier beside `market_drivers` (12-type re-vocabulary)'
+    key: KILL-PARALLEL-SHOCK-CLASSIFIER
     verdict: 'REJECT-REDUNDANT — `snapshot()` is the canonical shock read; crosswalk printed'
     source: 'TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Shock→archetype beneficiary/casualty ("shelter") map as an NW/brain feed'
+    key: KILL-SHOCK-SHELTER-MAP
     verdict: 'KILLED — laundered directional escalation on nulled continuation claims'
     source: 'TI-R5, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'LLM classification of narrative-only shock types (tariff/regulatory/cyber/edge/consumer) into calibrated keys'
+    key: KILL-LLM-SHOCK-TAGS
     verdict: 'FORBIDDEN — no deterministic price basis; A7 ORIGINATE ban'
     source: 'TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Fused composite risk/health number in ANY scored path, board ordering, ranker, sizing, NW artifact, or alert escalation — and any user-facing composite that violates the PSI §3.1.2 construction law (hidden inputs, fitted/unversioned weights, LLM legs, no coverage abstention, no forward grading)'
+    key: KILL-FUSED-COMPOSITE
     verdict: 'FORBIDDEN — the authority half of PRD-R2 stands in full. **Amendment 2 (operator override 2026-08-03)**: the user-facing DISPLAY-TIER composite (Portfolio Health Score + sub-scores) on watchlist/portfolio surfaces + digest emails is now ALLOWED under `PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md` §3.1.2 (transparent printed legs, v0-equal weights, abstention, day-one grading; dissent on record). (History: PRD-R1 placement struck 2026-07-18 Amendment 1; PRD-R2 display half struck 2026-08-03 Amendment 2)'
     source: 'PRD-R2 + Amendments 1–2, `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md` §13; PSI §3.1, `PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md`; UWP-R1..R7'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Causal DAG → alpha score → trade / portfolio construction from discovered graphs'
+    key: KILL-CAUSAL-DAG-ALPHA
     verdict: 'FORBIDDEN — CHF is proposal/audit tier only; Article 1/2'
     source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Administration-timing predictor / policy-intent classifier (forecasting WHEN a policy lever fires; LLM-emitted geopolitical re-escalation probabilities)'
+    key: KILL-POLICY-TIMING-PREDICTOR
     verdict: 'FORBIDDEN — intent unfalsifiable; conditions-framing only'
     source: 'PS-R1/PS-R4, `POLICY_SHOCK_REGIME_MASTERPLAN_BY_FABLE.md`'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'LLM numeric confidence anywhere in CHF surfaces'
+    key: KILL-LLM-CONFIDENCE
     verdict: 'FORBIDDEN — RF-16 extension'
     source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Data-lane merge of Top-setups (`setups.json`) into the Prophet graded board (`us_standouts.json`) — any change to the graded-board population from the trigger lane, or a single blended conviction×timing ranking'
+    key: KILL-PROPHET-POP-MERGE
     verdict: 'FORBIDDEN — contaminates the `us_board_ledger` graded population (track record + landing showcase); re-opens the Phase-0 timing-blend null (`reports/setup-score-phase0.md`); `top_setups` is a governed article2 surface. Presentation-tier merge (⚡ chip + residual sub-board) is the ratified form'
     source: 'Operator-ratified adjudication 2026-07-24, `PROPHET_TOPSETUPS_PRESENTATION_MERGE_MASTERPLAN.md` §2'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Runtime LLM frame-tag / narrative-frame classification feeding any organ state or escalation-eligible key'
+    key: KILL-LLM-FRAME-TAGS
     verdict: 'FORBIDDEN — TI-R1/CONST-ART1 restated; char-span receipts validate the quote, not the classification; frame annotation is display-only'
     source: 'NAR-R4, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md`'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Chatter-only promotion to a narrative candidate state (source-credibility-alone escalation without the cross-modal tape veto)'
+    key: KILL-CHATTER-PROMOTION
     verdict: 'FORBIDDEN — single credible flare earns salience, never authority; veto unconditional'
     source: 'NAR-R2, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md`'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Hypothesis-slot pre-reservation via standalone coverage census (bypassing WA-R8''s ≥8-cases + Opus fingerprint + explicit-ruling gate)'
+    key: KILL-SLOT-PRERESERVATION
     verdict: 'FORBIDDEN — a census proves testability, never entitlement; second attempted end-run (LR docket round 1, LH brainstorm round 2)'
     source: 'LHB-R5, `LONG_HOLD_LOBE_BRAINSTORM_ADJUDICATION_BY_FABLE.md`; precedent LR-R9'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Calendar/event-window-gated risk-radar `_SCARES` legs (any tier — Tier-B advances state, state sets gross)'
+    key: KILL-CALENDAR-GATED-RISK
     verdict: 'FORBIDDEN — laundered pre-event conviction dampener; event/OPEX windows are display context only; risk channels must be calendar-agnostic constructions'
     source: 'RIC-R3, `RATES_INFLATION_COMMAND_MASTERPLAN_BY_FABLE.md` judge-panel ruling (2026-07-13)'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: '`sector_rotation_schedule.v1` display artifact (parallel rotation-schedule surface)'
+    key: KILL-ROTATION-SCHEDULE
     verdict: 'DO NOT BUILD — duplicates shipped Turn Desk (#1541); macro conditioners, if wanted, fold into Turn Desk / `oracle_state.json` as Family-D columns, not a parallel uncalibrated surface'
     source: '`ORACLE_ROTATION_TM_CODEX_ADJUDICATION.md` (2026-07-06, #1750); RL-R10(e), `RATIO_LENS_MASTERPLAN_BY_FABLE.md`'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Hard-gating nightly downstream jobs on the collect job''s result (skip engine/publish when collect cancels)'
+    key: KILL-NIGHTLY-HARD-GATE
     verdict: 'FORBIDDEN — reverts the ratified `if: always()` resilience law (partial output beats shipping nothing; salvage-push covers the push-race). Staleness is handled by disclosure (CSP-W5) + heartbeat detection (CSP-W6), never by fail-dark'
     source: 'CSP-R1, `CONTAGION_SENSING_PROPAGATION_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Composite market-regime scorecard fusing gamma/vol/flow/breadth into a regime verdict + tactical ETF allocation surface (Ivory Hill Gamma Report intake §17, SPLV/SPHB/SPXL grid)'
+    key: KILL-REGIME-SCORECARD
     verdict: 'REJECT-REDUNDANT + FORBIDDEN fusion path — duplicates the risk_radar→market_state→regime_vector authority chain and the strategies allocation layer (SPVector); fusing positioning keys into a regime score restates Signal-Commons positioning-fusion ILLEGAL'
     source: 'MSP-R2, `IVORY_HILL_MARKET_STRUCTURE_MASTERPLAN_BY_FABLE.md` (2026-07-18)'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Second hand-maintained knowledge base / wiki / RAG memory service parallel to canonical sources (agents required to write session knowledge into a separate database)'
+    key: KILL-PARALLEL-KNOWLEDGE-BASE
     verdict: 'FORBIDDEN — knowledge retrieval is the Macro Context Index (derived, rebuildable, canonical-sources-keep-truth); a hand-curated parallel store is the ratified program''s named degenerate form'
     source: 'CXI-R12, `MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md` (2026-07-18)'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Wiring repo-internals retrieval into ANY public-facing surface (public/subscriber Brain chat, public API, or site endpoint serving `context_search`, the site-semantics glossary, engine source, or research docs)'
+    key: KILL-PUBLIC-INTERNALS
     verdict: 'FORBIDDEN — public-audience answers come only from what the site ships (Tier-2 receipts, on-page help) or a separately curated public FAQ; CXI retrieval is operator/agent-audience only. SOLE exception (CXI-R23a, operator order 2026-07-20): Brain-gateway sessions whose SERVER-VERIFIED email is in the env-only operator allowlist (BRAIN_INTERNALS_ALLOWLIST; never committed) may receive shared-plane internals tools. Source-visibility acceptance (repo public for mirror + live-quotes) does NOT extend to serving internals through product surfaces'
     source: 'CXI-R23, `MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md` Amendment 2 (2026-07-20, operator ruling)'
     section: 1
     section_name: forbidden_by_ruling
 
   - topic: 'Cross-organ flip-counter (conjunction-of-transitions deterioration meter) as a standalone organ'
+    key: KILL-FLIP-COUNTER
     verdict: 'KILLED — double-counts the cascade meter''s intl leg, log-birth FP (07-07 artifact), count-conjunction class (RISK_RADAR_TUNING line 93 governs any authority path)'
     source: 'RSR-R6a, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
     section: 2
     section_name: killed_signal_families
 
   - topic: '"4-of-4 defensive-lean floor bundle" v1 (radar-caution × ≥3-intl-alerts × rotation-bottom × weekly-roll → display 35)'
+    key: KILL-DEFENSIVE-FLOOR-BUNDLE
     verdict: 'KILLED — claimed 1–2d lead collapsed on verification (only CN+HK alerted pre-07-16, TW log born 07-16 → zero lead); count-conjunction class. Floor QUESTION stays open via RSR-W5 prereg'
     source: 'RSR-R6b, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
     section: 2
     section_name: killed_signal_families
 
   - topic: '1-tick asymmetric escalation flips of the live risk-band debounce'
+    key: KILL-ONE-TICK-ESCALATION
     verdict: 'KILLED — a single noisy print flips the authoritative band (whipsaw → operator mutes). Lawful form is the pending-escalation badge: band keeps the 2-tick debounce, in-progress escalation surfaced the same tick'
     source: 'CSP-R2, `CONTAGION_SENSING_PROPAGATION_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'News-intel / thematic-desk LLM contagion tagging of theme rows'
+    key: KILL-LLM-CONTAGION-TAGS
     verdict: 'KILLED — NAR-R4-adjacent surface with near-zero marginal value; engine-originated contagion key (CSP-W1) + glance chip (CSP-W4) supersede'
     source: 'CSP-R3, `CONTAGION_SENSING_PROPAGATION_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Insider × T2 interaction'
+    key: KILL-INSIDER-T2
     verdict: 'KILLED'
     source: 'Codex buy-decision docket adjudication (#1781)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Per-name timing-tool selection by OUTCOME AUDITION (in-sample best-of-grid per name; PTT-W1a)'
+    key: KILL-OUTCOME-AUDITION
     verdict: 'KILLED, TWO-RULER — zero OOS persistence at panel scale under BOTH the fwd63 apparatus (FIT-best in TEST top-2 33.2% vs 33.3% chance, Spearman −0.03, (a)−(d) −0.26% [−0.79, +0.11]) AND the §7 bottom-picking ruler with timing-native selection (top-2 35.0%, Spearman +0.03, (aT)−(random) U_MAE +0.08pp [−0.12, +0.47]); n=1,300 names / 109,974 TEST signals. Per-name "home rungs" are also ruler-dependent (MCD 1W→2W flip; 5/7 defensives flip) — no home-rung claim is citable without stating the ruler. Closes the audition CONSTRUCTION only — structure-MEASUREMENT tailoring (PTT-W1b reversion-by-scale, S-family at derived rung) stays OPEN and is UPGRADED under the timing ruler (U_MAE vs random +0.41pp [+0.13, +1.16] excludes 0; W3 Prophet shadow is the evidence vehicle), and W4 per-class gate profiles are UNLICENSED under both rulers. Any audition-derived per-name gate/rank/size anywhere is this row''s construction'
     source: 'PTT-W1 §6 + PTT-W1-T §8, `PERSONALITY_TIMING_TAILORING_HANDOFF_FOR_FABLE.md`; `reports/ptt_w1_persistence_of_fit.md` + `reports/ptt_w1_timing_regrade.md` (families `personality_timing_w1`/`_w1t`, 2026-07-25)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Down-volume envelope CONTRACTION on new lows as a STANDALONE entry-timing signal (PSS-F1)'
+    key: KILL-PSS-F1-DOWNVOL
     verdict: 'KILLED — pre-stated falsifier not cleared under the §7 timing ruler. The near-low property is GENERIC to new-low conditioning, not to the envelope: the treatment-disjoint complement (ordinary new-low bars that did NOT fire F1) shows the SAME near-low rate (F1 U_W5 vs all-days +23..+35pp, complement +23..+34pp), and F1−complement straddles 0 on both inferential metrics both eras (U_MAE [−0.37,+1.17] / [−0.39,+1.18]; U_W5 [−3.68,+4.11] / [−3.60,+4.30]); C32-gated same. A contracting down-volume envelope adds no MAE/proximity information beyond an ordinary new-low bar in the same decline. 2022-containment prediction also not borne out per-name (JPM 7, META 9 H1-2022 fires vs 2–3 near the Oct-2022 low). Closes the standalone contraction-TIMER construction only — down-volume persistence half-life stays OPEN as a codex measurement axis and a candidate W-CONF confluence input; the volume-exhaustion search space is NOT closed. (Errata E1/E2: the initial −7pp U_W5 was a pooled-fire-median-of-a-binary sign-flip artifact, corrected to the pre-registered per-name-first rate−rate; RNL null decontaminated to the disjoint complement.)'
     source: 'PSS-F1, `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F1; `reports/pss_f1_downvol.md` (family `pss_f1_downvol`, 2026-07-25)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Overnight-vs-intraday return DECOMPOSITION flip as a STANDALONE entry-timing signal (PSS-F2)'
+    key: KILL-PSS-F2-OVERNIGHT
     verdict: 'KILLED — three independent failures under the §7 timing ruler. (1) No MAE edge: U_MAE vs all-days [−1.49,+0.74] includes 0. (2) Fires LESS near-low than the name''s own base rate: U_W5 [−5.66,−0.98] excludes 0 DOWN (worse than random). (3) The decomposition adds NOTHING over the aggregate — F2 − net-return-analog U_MAE [−0.76,+0.50] includes 0 (F2''s positive U_W5-vs-analog is only "less bad": the analog is even further below base, both worse than random). (4) Pre-trough EARLINESS claim RETRACTED: F2 tdt −9td is more POST-trough than the incumbent Stoch-RSI cross (−2td) — a LATE confirmer, earlier than the aggregate only. Gates do not rescue: +ATR-veto barely moves it; +C32 flips positive only by collapsing to a tiny near-low subset (571 names, U_W5 CI [−4.73,+69.11]). 2022 RAW fires into H1-2022 (AAPL 8 / NVDA 9); veto trims ~30–40%, does not zero; NVDA/TSLA behave like mega-caps, not a distinct all-gap class. Closes the standalone decomposition-TIMER construction only — the per-name overnight/intraday split-ratio stays OPEN as a codex descriptor / candidate W-CONF confluence input; session-accumulation detection space NOT closed. F1-class estimator bugs verified ABSENT (per-name-first aggregation self-check + main-loop recompute agree at U_W5 −2.64; placebo is a matched-construction analog, not a contaminated pool).'
     source: 'PSS-F2, `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F2; `reports/pss_f2_overnight.md` (family `pss_f2_overnight`, 2026-07-26)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Idiosyncratic-residual reset (beta-stripped vs sector ETF) as a STANDALONE entry-timing signal (PSS-F3)'
+    key: KILL-PSS-F3-RESIDUAL
     verdict: 'KILLED — the pre-stated MECHANISM falsifier failed in the OPPOSITE direction. Fires CONCENTRATE in HIGH-R² (systemic) windows 42% vs LOW-R² (idiosyncratic) 24% (mid 34%; n=6708 fires) — the charter''s explicit mechanism-dead signature (the thesis required low-R² concentration). The residualization also does NOT beat the raw-return analog on MAE: F3 − raw-analog U_MAE [−2.00,+0.02] full-TEST includes 0, 2021+ [−2.01,−0.02] excludes 0 DOWN (residual is WORSE). The one positive — near-low rate (U_W5 vs all-days [+6.68,+15.60]; vs raw-analog [+7.28,+15.55]) — comes from the WRONG (systemic) regime, i.e. it is the systemic-low signal the incumbent already catches, not an idiosyncratic edge. F3 IS strictly earlier than the incumbent (+4.5td) and the raw analog (+8td) — but earliness without the idiosyncratic mechanism = early into systemic drawdowns (TSLA 7 / NVDA 8 / PG 7 H1-2022 fires at high regime-R²; +C32 suppresses to ~0). Closes this residual-DD-z-extreme+turn construction only — residual-return autocorrelation stays OPEN as a candidate codex descriptor; the cross-sectional-residual search space is not fully closed. F1-class bugs verified ABSENT (per-name-first self-check U_W5 +12.91pp matches direct; raw-analog is a matched-construction placebo, 100% mutual-exclusion is a real "residual leads while price still falls" property). Deviations verified pre-outcome: sector-map re-pin (`data/sector_holdings` resolved only 164/1300 → `data/breadth/ticker_sectors.parquet` 799/1300) is in the prereg commit; the mech_mid arithmetic fix touches only the MIDDLE tercile, not the high-vs-low verdict.'
     source: 'PSS-F3, `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F3; `reports/pss_f3_residual.md` (family `pss_f3_residual`, 2026-07-26)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Downside-vol asymmetry (semivariance RV_down/RV_up) flip as a STANDALONE entry-timing signal (PSS-F4)'
+    key: KILL-PSS-F4-SEMIVAR
     verdict: 'KILLED as a standalone timer — fails pre-stated falsifier prong 2 (collapses into a later-than-incumbent confirmer with no earliness gain). F4 fires at td_to_trough −9td — LATER than the incumbent Stoch-RSI cross (−2td) — at a near-low rate of 10.4% vs the 16.3% base (U_W5 vs all-days [−8.36,−5.93] excludes 0 DOWN, worse than random on proximity). So as a bottom-timer it is strictly worse than the incumbent (later AND further from the low). NOTABLE DISTINCTION (the one sign of life across all 4 families): F4 is the ONLY family to CLEAR its mirror placebo — F4 − total-vol-analog excludes 0 UP on U_MAE [+0.43,+2.92] AND (as a "less-bad" artifact, both below base) U_W5 [+0.54,+3.23] — so the DIRECTIONAL down/up asymmetry carries information plain vol-normalization does not (F4 selects calmer, shallower-MAE entries: F4 MAE −6.79% vs analog −8.21% vs incumbent −8.20%, on 96% disjoint fire sets). But that shallow MAE is "safe late entry past the trough," not bottom-timing. Closes the standalone-timer construction only — the semivariance-asymmetry MEASUREMENT is RETAINED as a codex descriptor and is the single best candidate for a future incumbent×asymmetry CONFLUENCE probe (the one W-CONF thread not moot). Charter''s "defensives correctly-null" prediction NOT confirmed (KO/WMT/COST eligible with normal conditional asymmetry). F1-class bugs verified ABSENT (per-name-first self-check U_W5 −5.98pp matches direct). Deviations pre-outcome (A1/A2/A3 re-pin from absolute crossing/eligibility to per-name-baseline crossing + dispersion eligibility — universe FIT A_base≈0.96 made the absolute form degenerate; measurement-distribution probe only, in the prereg commit; +C32 U_W5 +73.70pp flagged in-report as a single-fire small-sample degeneracy, CI includes 0).'
     source: 'PSS-F4, `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F4; `reports/pss_f4_semivar.md` (family `pss_f4_semivar`, 2026-07-26)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Incumbent × semivariance-asymmetry confluence / causal F4 stress arms (PSS-F4R/F4H)'
+    key: KILL-PSS-F4-REPAIR
     verdict: 'KILLED as a hard gate — causal rejection, terminality, volume/range exhaustion, relative/systemic repair, survival, structure-break, and frozen hazard variants were tested on 1,300 names / 25,343 incumbent events with DEV 2020H2–2022, VAL 2023–24, and FWD 2025+ splits. No hand-built construction cleared MAE/tail promotion, and combined-minus-orthogonal F4 ablations were effectively zero across eras. Do not rebuild by retiming persistence, adding F4 stress to the incumbent, or wrapping F4 around the orthogonal locator. The F4-free orthogonal score remains open only as a prospective shadow locator.'
     source: '`reports/pss_f4_repair.md`; `reports/pss_f4_hazard.md`; `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F4 repair wave (2026-07-26)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Stress-matched second-test elasticity collapse after a fresh-low systemic anchor (PSS-SR1)'
+    key: KILL-PSS-SR1-ELASTICITY
     verdict: 'KILLED — the frozen challenge–response construction failed every promotion layer. It produced 236 treatments across only 200 names (one name with ≥3 fires), versus the frozen 500-name / 100-repeat floor; informative same-sector-pulse clusters fell from 45 DEV to 13 VAL. Against the disjoint tested-low geometry control, DEV effects were adverse on MAE (−1.15pp, month-block CI [−4.07,+0.84], pulse-permutation p=0.869), tail (−2.35pp, [−13.17,+8.11], p=0.631), W5 (−14.69pp), and called timing (−10.81pp). VAL MAE/tail were small and non-confirming while W5/called stayed adverse; FWD MAE/tail reversed negative. H1-2022 density also exceeded Sep–Nov (13.83 vs 11.33 actions/month). The exact anchor→pulse-A damage→1ATR rebound→stress-matched pulse-B→0.5× elasticity/0.5ATR tested-low construction is closed. Do not revive by retiming the 15-session window, loosening R²/stress/elasticity thresholds, or adding F4. The broader challenge–response idea remains open only as a genuinely different preregistered species that avoids sparse double-conditioning and does not mistake rebound distance from the trough for timing quality.'
     source: '`research/PSS_SR1_STRESS_ELASTICITY_PREREG.md`; `reports/pss_sr1_stress_elasticity.md` (family `pss_sr1_stress_elasticity`, 2026-07-27)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Persistent ex-self sector-peer new-low diffusion at a name-specific tested low (PSS-SR2)'
+    key: KILL-PSS-SR2-PEER-DIFFUSION
     verdict: 'KILLED — the exact externally-labeled construction solved SR1''s coverage and safe-late problems but failed in the opposite direction on every outcome layer. The frozen tape contains 3,586 treatments across 791 names (659 names with ≥3) and 69 DEV / 55 VAL exact sector×month×anchor-severity×delay strata; treatment-control action distance is only +0.03/+0.00 ATR, so the result is not SR1''s rebound-distance confound. Yet stratified DEV effects are adverse on MAE −2.14pp (3-month-block CI [−3.32,−1.25], within-stratum permutation p=0.9995), tail −6.97pp, W5 −14.73pp, called −9.06pp, and rebound-first −16.42pp; VAL independently worsens MAE −2.80pp ([−4.32,−1.22], p=0.9990), tail −12.68pp, W5 −18.78pp, called −3.77pp, and rebound-first −16.78pp. FWD MAE remains negative. Mechanism inversion: once peers stop making new lows, a subject that alone returns to its reference low is an idiosyncratic laggard, not evidence that systemic supply is terminal. Close the exact fresh-low anchor→1ATR rebound→first tested-low→three-session ex-self breadth≤0.5×peak construction. Do not reverse the label, shorten persistence, change the 0.50 ratio, or remove the tested-low condition on this inspected history. Peer-state research remains open only as a genuinely new preregistered species that does not condition on the subject lagging recovered peers; any sign-reversed idea must accrue prospectively or use untouched data.'
     source: '`research/PSS_SR2_PEER_DIFFUSION_PREREG.md`; `reports/pss_sr2_peer_diffusion.md` (family `pss_sr2_peer_diffusion`, 2026-07-27)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Synchronized active sector-peer participation at a held subject recovery after systemic fresh lows (PSS-SR3)'
+    key: KILL-PSS-SR3-PARTICIPATION
     verdict: 'KILLED — the affirmative-demand repair solved both prior objections (coverage and subject-laggard selection) and still failed in the opposite direction across every era and outcome layer. The frozen tape has 2,065 treatments across 733 names (380 with ≥3) and 91 DEV / 55 VAL exact sector×month×anchor-severity×delay strata. Treatment-control action distance is matched at −0.02/+0.02 ATR, so this is not safe-late geometry. Against controls with the same held subject recovery and the same passive majority peer level recovery, requiring a majority of peers also to advance over five sessions worsens DEV MAE −1.39pp (3-month-block CI [−2.81,−0.47], permutation p=0.9875), tail −6.39pp, W5 −6.15pp, called −2.12pp, and rebound-first −10.76pp; VAL independently worsens MAE −1.28pp, tail −2.13pp, W5 −11.83pp, called −1.89pp, and rebound-first −13.20pp. FWD worsens MAE −2.17pp and tail −7.42pp. Mechanism inversion: synchronized short-horizon peer advancement after a systemic low is often correlation-one relief-rally / beta re-risking near a local rally crest, not evidence that marginal supply is exhausted. Close the exact fresh-low anchor→three-session subject hold→majority peer +0.50ATR level recovery→majority positive-five-day active participation construction. Do not reverse the label, retime the trend lookback, change the 50% floors, shorten persistence, or replace the nested level-recovered control with weak peers on this inspected history. A future species must measure an orthogonal source of durable absorption or selective leadership—not another contemporaneous sector-breadth relief label—and any sign-reversed use must accrue prospectively or use untouched data.'
     source: '`research/PSS_SR3_PARTICIPATION_RECOVERY_PREREG.md`; `reports/pss_sr3_participation_recovery.md` (family `pss_sr3_participation_recovery`, 2026-07-27)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Washout × turn (2W operator seed)'
+    key: KILL-WASHOUT-TURN
     verdict: 'KILLED — operator seed dies in test'
     source: 'Entry-stack Amendment-3 adjudication (#1747)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Signed-charm / charm-intensity narratives'
+    key: KILL-CHARM-NARRATIVES
     verdict: 'KILLED — vol/size confound, trail-RV IC .5–.6'
     source: 'OPEX vanna/charm adjudication (2026-07-06)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'DOI (options delta-OI family)'
+    key: KILL-DOI-FAMILY
     verdict: 'DEAD'
     source: 'Options→NW entry-intelligence W-E1 gauntlet'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Skew-deceleration'
+    key: KILL-SKEW-DECELERATION
     verdict: 'UNSUPPORTED'
     source: 'Options→NW entry-intelligence W-E1 gauntlet'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'DannyTrades directional chip reads (all)'
+    key: KILL-DT-CHIP-READS
     verdict: 'RETIRED — chip is descriptive only; H1 pooled effect was pre-2010-only'
     source: 'DT-R15/DT-R16; DANNYTRADES adjudication + DT-W2 (#1751)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Entry-time thesis at 21d (insider / macro / positioning)'
+    key: KILL-ENTRY-21D-THESIS
     verdict: 'REFUTED 3-for-3 — T2 ceded to long-hold LT-3a'
     source: 'Nontech-bottom program (RUL-18..29)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Election / midterm cycle as standalone signal'
+    key: KILL-ELECTION-CYCLE
     verdict: 'REFUTED — survives only as US-only Risk-Radar modulator'
     source: 'Election-cycle modulator study'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Gating A-share reversal by subsector state'
+    key: KILL-ASHARE-SUBSECTOR-GATE
     verdict: 'FALSIFIED — hurts vs flat'
     source: 'China subsector-gate study (#791 era)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Label-faltering B1/B3'
+    key: KILL-LABEL-FALTERING
     verdict: 'NO-GO'
     source: 'Phase-0 verdicts (#1031)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'PM1 AVWAP-from-base-low distance (standalone, as-constructed)'
+    key: KILL-PM1-AVWAP
     verdict: 'FALSIFIED phase-0 — nulls + unfavorable dead-money read; retained as display-tier confluence input'
     source: 'EI-PM0 run (2026-07-10, r4)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'PM3 unfilled-overhead-gap map (as-constructed, incl. sign-flip revival)'
+    key: KILL-PM3-GAP-MAP
     verdict: 'FALSIFIED phase-0 — DIRECTION-CONTRADICTED (clean-sky fires stop MORE, BH 0.0031); inverse reading needs a new PREREG'
     source: 'EI-PM0 run (2026-07-10, r4)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'PM4 overhead-supply fraction (any promotion path)'
-    verdict: 'REDUNDANT — \'
-    source: 'ρ\'
+    key: KILL-PM4-OVERHEAD-SUPPLY
+    verdict: 'REDUNDANT — |ρ| 0.95/0.88/0.875 vs ext_atr / poc_dist_126 / dist_to_52wh (§4.3 fence)'
+    source: 'EI-PM0 run (2026-07-10, r4)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Codex rotation Time Machine KEEPs (A18/A19/A24 same-complex)'
+    key: KILL-ROTATION-TM-KEEPS
     verdict: 'REJECT-REDUNDANT / INVALID — complex already screened dead'
     source: '`ORACLE_ROTATION_TM_CODEX_ADJUDICATION` (#1750)'
     section: 2
     section_name: killed_signal_families
 
   - topic: '"Thesis lobe"'
+    key: KILL-THESIS-LOBE
     verdict: 'KILL — duplicate of long-hold program'
     source: 'NW next-lobes adjudication (#1666/#1669/#1671)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'BD-4 species'
+    key: KILL-BD4-SPECIES
     verdict: 'PARKED — sign-reversed in Phase-0b'
     source: 'Next3-upgrades program (#1710 era)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'BD-ECON-1'
+    key: KILL-BD-ECON1
     verdict: 'ALL-NULL — avoid lens ≠ board fires'
     source: 'Next3-upgrades program'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'FRESH BUY as a buy edge on the Act-Now board'
+    key: KILL-FRESH-BUY-EDGE
     verdict: 'REFUTED — worst state on the board; reduce-gate is the only board edge'
     source: 'Act-Now board ruling (#1513)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Codex OOS-decay orthogonality claim'
+    key: KILL-OOS-DECAY-ORTHOGONALITY
     verdict: 'NOISE ARTIFACT — null law'
     source: 'RUL-ORTH-8, R-ORTH program (#1739)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Staleness alpha t+1..t+5'
+    key: KILL-STALENESS-ALPHA
     verdict: 'HONEST NULL'
     source: 'NW quant synthesis (#1455–1465)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Measured signal half-lives; dissent signal'
+    key: KILL-SIGNAL-HALF-LIVES
     verdict: 'ALL-NULL'
     source: 'Signal Commons W3/W5 (2026-07-05)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'construction_divergence (healthcare R-1)'
+    key: KILL-CONSTRUCTION-DIVERGENCE
     verdict: 'LOCKED DESCRIPTIVE — null held'
     source: 'Healthcare member-dispersion adjudication'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'CPI-020'
+    key: KILL-CPI-020
     verdict: 'RETIRED — re-test FAIL'
     source: 'CPI lattice batch 2 (#1754)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'CPI IX-1 index-transfer down cells'
+    key: KILL-CPI-IX1-DOWN
     verdict: 'KILLED by sign-stability leg (0/4 PASS)'
     source: 'CPI IX-1 §17 (#1779)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Buyback-floor washout (S11)'
+    key: KILL-S11-BUYBACK-FLOOR
     verdict: 'FALSIFIED'
     source: 'S11 phase-0 (#1782)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Margin-inflection reclaim (S10 v1.0, strict-sign single-quarter turn as-constructed)'
+    key: KILL-S10-MARGIN-RECLAIM
     verdict: 'FALSIFIED phase-0 — construction-scoped kill (predicate anti-persistent, EDGAR Q4-gap row-adjacency, episode MDE ≈6–8pp vs 5pp floor); margin-direction retained as confluence input; revival needs a NEW species version + fresh prereg (durability-gated, calendar-adjacent, prefix-matched comparator)'
     source: 'S10 phase-0 adjudication (#2396), research/species/W5_S10_REPORT.md §12'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Fused 100-point "sponsorship breakaway" score (Codex Moderna docket §5.2)'
+    key: KILL-SPONSORSHIP-SCORE
     verdict: 'STRUCK — positioning-fusion illegal + Signal Commons R3; replaced by per-axis AND-gate'
     source: 'WA-R1, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md`'
     section: 2
     section_name: killed_signal_families
 
   - topic: '13F/ownership as a POSITIVE breakaway signal (Codex Moderna docket §4.1 ownership_pressure)'
+    key: KILL-OWNERSHIP-BREAKAWAY
     verdict: 'STRUCK — restates NEXTL-U13 (opposite sign to 3 filed verdicts); survives as context/crowding-hazard only'
     source: 'WA-R2, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md`'
     section: 2
     section_name: killed_signal_families
 
   - topic: '`cn_supply_absorption` family (incl. D4-01b staged re-entry)'
+    key: KILL-CN-SUPPLY-ABSORPTION
     verdict: 'CLOSED — Stage-0 falsifier dead in both 减持新规 regimes at the frozen ruler (EW +1.1pp/21d, t_NW 1.91/1.77 < 2; overlap-lag sensitivity confirms); construct kill (price-only absorption ≡ momentum) stands per #1944. Close-call POSITIVE null retained as confluence context; re-entry needs a fresh operator-ratified prereg (post-规 cell ~doubles by ~2028)'
     source: 'D4-01b Stage 0, `reports/d4-cn-supply-absorption-d401b-stage0.md`; Day-4 adjudication §D4-01 reassessment'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Hindenburg Omen / Titanic Syndrome as Risk-Radar inputs'
+    key: KILL-HINDENBURG-OMEN
     verdict: 'REJECT-DATA/STAT — needs uncollected NYSE full-universe NH/NL; N~20–30 clusters/40y; ~40% 1y WR (≤ random)'
     source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'IBD distribution-day count as a radar leg'
+    key: KILL-IBD-DISTRIBUTION-DAYS
     verdict: 'REJECT-REDUNDANT — coincident down-day counter; froth_fragility owns distribution physics'
     source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'McClellan MCO thrust / MCO-oversold+MSI-washout *bounce* as radar legs'
+    key: KILL-MCO-THRUST
     verdict: 'REJECT-KILLED — coincident-by-construction (SIGNAL_AUDIT); display homes (advanced_breadth, fear_greed) stand; rare Summation low→high *upswing* adjudicated separately as recovery chip'
     source: 'RRX-R4/R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Absolute-VIX spike-and-fade thresholds'
+    key: KILL-ABSOLUTE-VIX-THRESHOLDS
     verdict: 'REJECT-STAT — non-stationary absolute anchors (R-SP21); <10 episodes in >50 bucket'
     source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Lumber/gold ratio (daily growth filter)'
+    key: KILL-LUMBER-GOLD
     verdict: 'REJECT-DATA — FRED monthly-only, LBS=F thin, supply-shock contaminated; use copper/gold'
     source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Dow Theory transports non-confirmation as a radar leg'
+    key: KILL-DOW-TRANSPORTS
     verdict: 'REJECT — lagging (2007 signal fired post-peak), oil-confounded; rotation physics covered by validated XLY/XLP + XLU legs'
     source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'CPI revision-direction model (first→latest MoM revision prediction)'
+    key: KILL-CPI-REVISION-MODEL
     verdict: 'KILLED before attempt — CPI revisions are annual seasonal-recalc only, tiny magnitude; empirics on our own vintage store show no exploitable structure'
     source: 'MRI-R38, `MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md` §12.3'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Stage-2 (and Stage-2∩EC) as a WIN-RATE gate or ranking bonus on the T1/T2 confluence timing entry'
+    key: KILL-STAGE-WIN-GATE
     verdict: 'KILLED (construction-scoped) — PSF-H1/H2 FAIL on the primary month-block bootstrap DIFFERENCE CI (B−A and C−B straddle 0 at effective n≈49–54 monthly blocks), negative (win_B−win_A) delta persisted at n_dates≥50 across ≥2 regimes → KILL per `PROPHET_STAGE_FUSION_PREREG.md` §5. Closes THIS SPECIFIC CONSTRUCTION ONLY (Stage/EC as a win-rate authority on the timing entry). **RETAINED as display-tier confluence context** — the return-distribution right-shift + (conditional) hold tilt is real and powers the Stage Analysis product; Stage/EC never deleted. **LEFT OPEN:** (i) the live-Prophet forward-shadow (definitive on-Prophet test, different signal, matures ~Dec 2026); (ii) RESOLVED 2026-07-20 → PSQ tested the quality/hold-tilt leg, PSQ-H1 PASS (provisional promotion; see PSQ row context in `research/PROPHET_STAGE_QUALITY_PREREG.md` + `research/reports/PROPHET_STAGE_QUALITY_RESULTS.md`)'
     source: 'PSF-H1/H2, `PROPHET_STAGE_FUSION_PREREG.md` §5; `research/reports/PROPHET_STAGE_FUSION_RESULTS.md`'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'W2 fingerprint candidates (F1 catalyst-rung counts, F2 gap-holds, F4/F5 initial-excess magnitude) as onset kept-going-vs-blow_off discriminators'
+    key: KILL-ONSET-FINGERPRINTS
     verdict: 'REFUTED / TAUTOLOGICAL (W3 census, construction-scoped) — F2 gap-hold is an algebraic consequence of the `clean_hold` label + onset new-high (100% by construction; ineligible vs current labels — any early-hold conditioner needs non-hold-embedding outcome labels + fresh prereg); F1 rung counts null on the 8-K-covered subset (trailing AND t0+21td); F4≡F5 exactly (new_high_63d constant by detector construction) and null at α/m with direction reversal vs the failed contrast. Closes these constructions only: options/revisions fingerprints keep accruing (~2027-06 first-answerable clock), F3 blocked by A2-firewall coverage, F6 blocked pending PIT short-interest, Layer-3(b) matched-controls study unrun'
     source: 'WA-R8, `research/winners/FINGERPRINT_CENSUS_W3.md` (#3161)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Volume-spike features (`dollar_vol_z21`, `dv_5_60_ratio`) as PRE-onset breakaway fingerprints / watchlist rankers'
+    key: KILL-VOLUME-FINGERPRINTS
     verdict: 'REFUTED (W4 matched-controls, construction-scoped) — onset-bar + selection-gate artifacts: episode median dollar_vol_z21 1.99 at t0 collapses to 0.67 at t0−1 (the spike IS the breakout bar), and only 27.4% of matched controls pass the detector''s own vol gate; at t0−1 with gate-matched controls both go NULL at α/m (Δ0.14 [−0.026,0.374]; Δ0.056 [−0.024,0.136]). SURVIVORS retained as display-tier confluence context, motion-not-quality: `realized_vol_63d` (+11.6 gate-matched, α/m-clean) and `updown_dollar_vol_ratio` (+0.13, α/m-clean) — any promotion of either needs a fresh prereg AND must clear the gate-matched t0−1 ruler (full-population t0 effect sizes are known-inflated and may not be cited); `drawdown_252d` suggestive-only (α/m-fragile). Layer-3 complete: (a) quality null (W3), (b) motion-only signatures (W4) — nothing measurable today identifies the future winner pre-onset'
     source: 'W4 adjudication, `research/winners/FINGERPRINT_CONTROLS_W4.md` (#3202)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Cross-sectional commodity momentum (xsec-mom) — 12-1m rank, long-top/short-bottom-tercile EW, vol-target 10%, 19-asset deep universe'
+    key: KILL-COMMODITY-XSEC-MOM
     verdict: 'KILLED phase-0 (construction-scoped) — 6 of 7 gates FAIL (sole PASS = same-sign split-half, and both halves are NEGATIVE). Headline 12-1m L/S net Sharpe −0.23 (CAGR −3.01%, MaxDD −65%, 2002–2026) LOSES to the dumb baselines EW-long commodity B&H (+0.64) and each-name 200dma (+0.18); headline fwd rank-IC −0.018 (t_HAC −1.01) fails BH-FDR (q=0.31); DSR 0.0025 (grid n=12) and adversarial best-of-30 DSR 0.0013 both fail the <0.90 haircut; leave-one-crisis-out WEAK on all 4 crises; purged 5-fold CV fails (3 of 5 folds NEGATIVE). Signal is sign-NEGATIVE (short-momentum/reversal) at every lookback and in BOTH the 2002–11 supercycle (Sharpe −0.46) and post-2012 (−0.08) eras — never real-but-decayed. Thin 19-asset cross-section (terciles ~6 long / ~6 short), honest-N ~6–10 regimes → small-N ceiling on commodity factors; adversarial refute confirms no lookahead and no survivorship gap. Closes the cross-sectional-momentum construction ONLY — long-only EW commodity exposure is the surviving baseline, not this signal; revival needs a materially different construction + fresh prereg'
     source: 'Phase-0 + adversarial refute (2026-07-22): reports/commodity-xsec-mom-phase0.md; reports/commodity-xsec-mom-refute.md'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Operator force-add of un-gauntleted directional calls to signal surfaces (incident: Mag-7 "Big Seven" leadership board, MLC-W1)'
+    key: KILL-FORCED-CALLS
     verdict: 'KILLED (process class + this surface) — the program was operator-initiated 2026-07-11 ("MAG 7 is on the run … our dashboard does not reflect any of this") OVERRIDING the engines'' contemporaneous reads (action-board mag7 deteriorating→avoid, Ignition Radar ⚪ OFF K=0/8, "recovery inside a larger consolidation") and higher-timeframe structure (Nasdaq weekly/bi-weekly/monthly topping); the multi-name 3-day bullish-crossover confluence failed as a false breakout → 2026-07-23 worst 1-day Mag-7 basket drop in ~5y (TSLA −15%, GOOGL −7% intraday, per GS). Board + Ignition strip removed from us_stocks. Closes the FORCED-CALL construction: operator conviction may seed a display-tier watch item or a prereg, never pin an un-gauntleted call to a signal surface; a Mag-7 leadership read may return only via prereg + gauntlet. Mag-7 as plain data display (heatmap rows, options-flow groups, intraday watchlist membership, allocation''s own 200d-gated sleeve) stays lawful. **Amendment (operator override 2026-07-24, MWR prereg §4 Amendment 2 — PRD-Amendment-1 precedent):** MWR Use-B promoted to CONDITIONAL-LIVE behind the accelerating-tightening veto, after the §4 census adjudication (family-wise p=0.143) + 1,630-name mechanism panel (direction confirmed, magnitude unproven — dissent on record); §4 kill-switch binding (2 live FAILs or −25% adverse auto-demotes); Prophet linkage presentation-tier ONLY (graded-board contamination row §1 governs)'
     source: 'Operator ruling 2026-07-23 + `POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md`; context `MAG7_COMMAND_MASTERPLAN_BY_FABLE.md` §0 + `POSTMORTEM_20260722_CROSSOVERS_VS_CAPEX_BIND_BY_FABLE.md`; Amendment: MWR prereg §4 Amendment 2 + `reports/mwr_phase1_conditioner_study.md` (2026-07-24)'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'ClinicalTrials.gov Phase-3 START (`first_post`) as a lead-time-carrying SCORED catalyst leg (convergence weight)'
+    key: KILL-PHASE3-START-WEIGHT
     verdict: 'KILLED (construction-scoped) — two independent event studies return null: house run 2026-07-19 (`data/special_situations/event_priors/clinicaltrials.json` — hac_t −0.78/−0.42/+0.60 at h5/h20/h60, DSR ≤0.21, BH q=0.6614 reject=false, split-half sign unstable at ALL horizons) and 2026-08-03 exploratory replication (n=1,156 ticker-date cells: day-0 abnormal return −0.9bp t=−0.17 — a public posting with no same-day reaction is not information; CAR[0,20] vs SPY +0.07% t=0.28; calendar-time NW-t 0.86; random-date placebo reproduces ~70% of the apparent XLV-benchmark effect, empirical p=0.186; 36% of CAAR accrues pre-event). Feed keeps accruing display/context-tier (START as display catalyst chip stays lawful); the HALT caution channel stays OPEN, blocked on ClinicalTrials.gov Record History for a halt-onset date (BioCatalyst lane, #4218 — extend, never parallel-path). Any re-test requires collector pagination first (current store is top-100-per-sponsor by last-update, look-ahead-selected pre-2019) AND a prereg (none exists). Do not re-propose a scored Phase-3-START weight on this store.'
     source: '2026-08-03 experiments audit; `data/experiments/clinicaltrials_phase3_event_study_results.json`; corroborates `scripts/backtest_event_priors.py` run 2026-07-19'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'FRESH_TICKS admission-window widening (2→3/4) on the US cascade'
+    key: KILL-FRESH-TICKS-WINDOW
     verdict: 'KILLED (construction-scoped, THIRD look) — #4546 frozen replay (pinned 2026-07-31; 1,540×777 panel; S-B table reproduced exactly; 939,611-cell leg equality vs tier_stream): full-population tick walk 0→6 FLAT (loser 31.2–34.7%); ticks-3/4 vs ticks-0/2 marginal +0.04pp demeaned, date-blocked 95% CI [−0.18,+0.24] — a TIGHT null (449 day-blocks; half-split sign-flips); paired same-cross entry at tick 3/4 COSTS −0.53/−0.38pp (waiting is mechanism-negative); and S-B''s within-admission cross-age gradient re-read as BOARD SELECTION (era-matched delta 12.7–18.3pp; state-population gradient runs opposite) — the ranker''s conditioning at 2 ticks, not population confirmation pricing. Corroborates Trial Ledger family `provisional_fresh_ticks_us` (2026-07-02, ship:false, monotone wider-is-worse) and the §2.5 leader-family null; label-battery freshness_expired-as-label also NULL (#4547 §2). Widening buys +16.5% board volume with NO quality gain and silently re-tiers projection-tier names upward (secondary effect named). Closes the WIDENING construction only: FRESH_TICKS=2 stands (mirrors at us_board_rank.py:84, check_board_contradictions.py:49, build_stock_library.py:4513 — and Door R''s prereg-frozen ticks∈[3,15] window would collapse under a change, an amendment not a refactor); the standing watch is Door R''s recorded-feature stratification (a subset cohort — substitution named at any future ratification). Re-open needs regime-store evidence of a distinct US regime + a fresh prereg clearing the stricter third-look bar in `FRESH_TICKS_EXTENSION_PREREG.md`'
     source: '#4546 (`research/prophet_us_audit/fresh_ticks_extension_replay.py` + results JSON + `FRESH_TICKS_EXTENSION_PREREG.md`); #4547 battery §2; `data/trial_ledger.jsonl` family `provisional_fresh_ticks_us`'
     section: 2
     section_name: killed_signal_families
 
   - topic: 'Bottom-radar PRIMED tier as a DIRECTIONAL durable-bottom gate for starter size (raw score + expansion/veto gates, deep universe, 42d/+8% target, close-only stops, half-target timeout)'
+    key: KILL-PRIMED-DIRECTIONAL-GATE
     verdict: 'KILLED phase-0 (construction-scoped) — first-ever calibration run 2026-08-02, NO-GO on all three pre-registered legs (75,722 events, 233 names, 2012-07-18..2026-05-29): calib_ok FALSE (decile durable rate FLAT 47.4–50.2% across raw 29.9→58.7, top-minus-bottom +2.3pp vs +5pp bar); deadcat_ok FALSE (veto separation wrong sign, ticker-block CI [−1.25,+0.38]pp vs +5pp bar); primed_beats_base FALSE (primed E[R] +0.142 vs watch +0.235; primed−watch −0.093, 95% ticker-block CI [−0.156,−0.034] ENTIRELY NEGATIVE — PRIMED significantly worse than its base arm). Every stage has E[R]>0 (blocked +0.205) = survivor-universe drift; the weaker "expectancy>0 net of stop" criterion would have shipped a FALSE GO and is retired as a gate. Biases all favored the signal (survivor mega-cap universe, close-only stops, half-target timeout) and it still failed. Closes THIS construction only: the DRAWDOWN/cone leg stays validated separately (`bottom_confidence_calibration.json` held% 36.8→74.8 monotone), PRIMED stays lawful as display-only watchlist ordering, and a revival needs a materially different registered construction (breadth/smallcap universe, intraday-low stops, single success bar) + fresh prereg.'
     source: '2026-08-03 experiments audit (first run of `scripts/calibrate_bottom_radar.py` gate, universe=deep); registry entry `bottom-radar-calibration` (closed_no_go)'
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Composite "regime reliability" monitor fusing 16 vol/dispersion/correlation/breadth/credit/curve/commodity/dollar/factor/short-interest/skew/dealer-positioning/leadership signals into a new regime engine'
+    key: KILL-COMPOSITE-REGIME-RELIABILITY-MONITOR
+    verdict: 'REJECT-REDUNDANT + FORBIDDEN fusion path — restates MSP-R2 on a wider input list; all 16 inputs already ship (`vol_regime`, `dispersion`, `contagion`, `live_breadth`, `bond_compass`, `bonds`, `active_commodity`, `forex_regime`, `equity_factors`, `crowding`, `options_desk`, `gex_state`, `theme_crowding`, `index_leadership`) and are already composed by risk_radar→market_state→regime_vector + `regime_one` decomposition; short-interest/skew/dealer-positioning are positioning keys, whose fusion into a regime score is Signal-Commons ILLEGAL'
+    source: 'RRC-R1, `REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md` §2 (2026-08-05)'
+    section: 2
+    section_name: killed_signal_families
+
+  - topic: 'Per-signal-family reliability table `R[s,t] = E[strategy performance | market regime]` graded on forward drawdown (the "momentum reliability 0.31 / breakout continuation 0.24" grid)'
+    key: KILL-PER-SIGNAL-FAMILY-RELIABILITY
+    verdict: 'KILLED (construction-scoped) — the claim requires a family×regime INTERACTION, and on the only multi-regime graded record (`track_record.parquet`, 57,642 matured signals, 763 months, 1962–2026) the interaction is **3.8× smaller than the family main effect** (3.59pp vs 0.95pp regime spread, month-FE demeaned to strip the shared-market tautology — `regime_at_entry` and `fwd_mdd_60` are both price functions); only 5/15 cells'' month-block bootstrap 95% CI excludes 0 (B=600); the two largest interactions sit in the two thinnest cells (n=48, n=41) with CIs spanning 0; era-split sign stability 8/13 = **62%, at coin-flip**. The richer axes the proposal names are UNESTIMABLE, not merely null: `quad_hard_label`/`vol_regime`/`fused_risk_label`/`rate_pressure`/`risk_radar_state` are stamped on **0.4% of the record inside one month**, with `vol_regime` and `rate_pressure` observed in a SINGLE state (conditional expectation undefined elsewhere); the board ledger''s 2,282 graded fires span 18 trading days, all in Q1/normalizing/pressure — zero contrast; PIT regime history gives only 128 post-2010 quad episodes, 14 of them ≥63d. Closes THIS construction only — regime conditioning as de-escalation context stays live (`dispersion.py`, `style_regime`, `regime_one` confidence decay), as does pre-registered H1. Re-open requires `engine.regime_conditioning_coverage.assess()` returning `estimable` for the target axis + a fresh prereg with the interaction as primary'
+    source: 'RRC-R2, `REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md` §4; `reports/regime-reliability-phase0.md` (2026-08-05)'
+    section: 2
+    section_name: killed_signal_families
+
+  - topic: 'Liquidity-shock reversal classifier (LSR-P0) — separating forced-liquidation from information-driven ±3σ shocks by an information firewall + OHLCV-derived microstructure, for mean-reversion candidates or a Prophet entry veto'
+    key: KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER
+    verdict: 'KILLED phase-0 (construction-scoped) — all three pre-registered gates FAIL on 16,315 firewall-covered shocks (4,281-name tradeable panel, 1,274 covered names × 1,191 dates, 2021-09..2026-07, date-clustered block bootstrap). (a) SEPARATION 0 of 10 news-vs-no-news contrasts exclude zero at any horizon or side; the Savor-2012 prediction inverts — no-news down-shocks CONTINUE (−0.33% resid at 5d, CI [−0.649,−0.040]) and continue hardest when largest (z≤−6 → −1.0% vs −0.03% at z∈(−4,−3]), while up-shocks fade MORE with news (−0.402% [−0.666,−0.147]) than without. (b) COST: the only real effect is plain unconditional reversal (1d formation, liquid tercile D10−D1 +0.284%/5d, rank-IC +0.013 [+0.004,+0.022]) which breaks even at 14.2bp round-trip PER LEG at 50 cycles/yr — 4–9bp in the other terciles. (c) ERA: consistently null in both halves. Classifier fires 3/36 feature×horizon tests (1.8 expected; no feature consistent across horizons, several sign-flip); veto stand-in 0/6 gaps (chasing a +3σ day is if anything marginally BETTER than the momentum base state). Firewall validated BEFORE the null was believed (8-K windows = 4.1% of days but 60.0% of down-shocks, ~15× enrichment; news shocks carry 4.1× the overnight gap). Reproduces `validate_reversal`/`validate_reversal_nonsurvivor` (monthly) at the 1–5d horizon. Closes the OHLCV-grade construction ONLY — do not re-propose by re-tuning z/volume/horizon/peer-basis/label taxonomy. REOPENERS MEASURED (`scripts/research_lsr_reopeners.py`, report §7): the ILLIQUID TAIL is now CLOSED too (rebuilt $2/$250k → 7,087 names / 63,352 events: news contrast 0 of 5; unconditional reversal genuinely stronger — bottom decile 5d +0.392% [+0.231,+0.555], rank-IC +0.032 vs +0.013 liquid — but break-even 19.6bp/leg, which a $2/$250k-ADV name does not trade inside: bigger gross, worse net, same place `validate_reversal_nonsurvivor` landed); the VIX/liquidity-REGIME split closes the SEPARATION claim (0 of 9 contrasts, fails in every regime). STILL OPEN: (1) TAPE-GRADE features (signed order imbalance, price-impact-per-signed-dollar, true spread) were NEVER TESTED at fidelity — massive.com is aggregates-only, `trades_v1`/`quotes_v1` both 403 — blocked on entitlement, not effort; (2) an analyst-revision firewall (Savor''s OWN proxy) is COVERAGE-BLOCKED not null — `data/revisions/history.parquet` starts 2026-06-16, only 239 of 35,678 events (0.67%) on 12 dates are inside it; keep accruing. ONE LEAD LOGGED, NOT CLAIMED: the no-news down arm runs −0.599% (calm, VIX 16) → −0.312% → +0.261% (stressed, VIX 24.5) at h=5, and the DIRECT gradient test (overlapping intervals are the wrong test) gives calm−stressed −0.860% [−1.575,−0.145], excluding zero at 1 of 3 horizons — but the stressed level itself spans zero, breakpoints were post hoc, it is an ARM MEAN not a tradeable spread, and a ranker inside the stressed bucket is what the classifier test already nulled. It is a DIFFERENT claim from this row''s ("down-shock continuation weakens as market liquidity tightens", Nagel 2012) and needs its own prereg with frozen breakpoints — it does NOT revive the classifier. METHOD NOTE: Corwin-Schultz `spread_shock` is NOT a cost estimate (5bp planted reads 38bp at 1.5%/day vol, 74bp at 3%) — never subtract it from a return; §3 of the report withdraws an early cut that did'
+    source: 'LSR-P0 (2026-08-05): `research/LIQUIDITY_SHOCK_REVERSAL_PHASE0.md`; `reports/liquidity-shock-reversal-phase0.md`; `scripts/research_liquidity_shock_reversal.py` + `scripts/research_lsr_reopeners.py` (family `liquidity_shock_reversal_p0`)'
+    section: 2
+    section_name: killed_signal_families
+
+  - topic: 'US 200dma reclaim-veto flat drop (the HK #4470 mirror on `signal_quality._buy_filter`)'
+    key: KILL-200DMA-RECLAIM-VETO-FLAT
+    verdict: 'REJECTED-ON-MEASUREMENT (operator-delegated ruling 2026-08-05) — pooled packet read favours the veto (refused fires −4.54pp @21, 173 losers saved vs 91 winners cost, no drawdown band positive at any horizon); pro-drop evidence confined to a date-clustered May–Jul slice. Revive ONLY as a regime-conditional construction (CN handoff §6 machinery) + fresh prereg + `us_prophet_v1→v2` era stamp; packet re-run after ≥60 sessions is lawful prereg input'
+    source: '`research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md` §9 + frozen JSON (#4607)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Ticker-cluster bootstrap CIs without time control'
+    key: LAW-TIME-CLUSTERED-CI
     verdict: 'FORBIDDEN estimator — anti-conservative, effective N = months'
     source: 'DT-R14; `TIME_CONFOUND_EXPOSURE_AUDIT` (#1755)'
     section: 3
     section_name: estimator_laws
 
   - topic: '63d factor apparatus applied to Oracle reversion signals'
+    key: LAW-REVERSION-RULER
     verdict: 'WRONG RULER — score as reversion-capture (~20–25d time-exit, absolute)'
     source: 'Oracle reversion metric reframe (#1458)'
     section: 3
     section_name: estimator_laws
 
   - topic: 'Era-pooled inference across the 2010 regime break'
+    key: LAW-ERA-SPLIT
     verdict: 'FORBIDDEN without era split'
     source: 'DT-R16 era-split law (#1751)'
     section: 3
     section_name: estimator_laws
 
   - topic: 'Closing a factor family on a single-factor kill'
+    key: LAW-FAMILY-CLOSURE
     verdict: 'INCOMPLETE — diagnose mechanism + pre-registered pairlets first'
     source: 'Factor-kill interaction feedback law'
     section: 3
     section_name: estimator_laws
 
   - topic: 'R1-M estimator shortcuts'
+    key: LAW-R1M-ESTIMATOR
     verdict: 'Constrained per R1-M estimator law'
     source: 'Nontech-bottom program'
     section: 3
     section_name: estimator_laws
 
   - topic: 'PSS-RH1 exact SR3 label as an adverse synchronized relief-rally hazard'
+    key: HOLD-PSS-RH1-RELIEF-HAZARD
     verdict: 'PROSPECTIVE-ONLY ACCRUAL — lawful use of the SR3 mechanism inversion, but historical SR3 rows count as zero and the 2026-07-24 boundary is absolute. Frozen 799-name membership; one exact configuration; 63-session maturity; no interim effect reads; sole formal read only after ≥500 matured primary paths / ≥250 names / ≥12 action months spanning ≥365d / ≥30 informative strata. No entry, rank, size, gate, alert, user-display, or auto-promotion authority. Even full qualification opens only a separately preregistered intervention review. Do not backfill, retime, tune, expose per-ticker state, or combine historical outcomes with prospective confirmation.'
     source: '`research/PSS_RH1_RELIEF_HAZARD_PROSPECTIVE_CHARTER.md`; `data/personality_timing/relief_hazard_manifest_v1.json` (family `pss_rh1_relief_hazard_prospective`, frozen 2026-07-27)'
     section: 4
     section_name: held_suspended
 
   - topic: 'PSS-CR1 first real sector-pullback challenge and selective leadership'
+    key: HOLD-PSS-CR1-CHALLENGE
     verdict: 'PROSPECTIVE-ONLY ACCRUAL — future RH1 relief-hazard rows only; first peer pullback completion B+5:B+20 against a q20 threshold frozen at B; same frozen recovery required; top-quartile and +0.50-ATR relative leadership versus a nested challenged control. Historical SR3/RH1-shaped paths count as zero. One exact configuration, one read, 63-session maturity, and no authority. Do not retime the challenge, change the rank/relative floor, import no-challenge paths as controls, or inspect interim outcomes.'
     source: '`research/PSS_CR1_CHALLENGE_RESILIENCE_PROSPECTIVE_CHARTER.md`; `data/personality_timing/challenge_resilience_manifest_v1.json` (family `pss_cr1_challenge_resilience_prospective`, frozen 2026-07-27)'
     section: 4
     section_name: held_suspended
 
   - topic: 'PSS-CD1 correlation-one / low-dispersion overlay inside RH1 hazards'
+    key: HOLD-PSS-CD1-CROWDING
     verdict: 'PROSPECTIVE-ONLY ACCRUAL — future RH1 relief-hazard rows only; ten-session ex-self peer PC1 share and five-session return dispersion compared with strictly prior 126-session q80/q20 thresholds. Joint extremes are the hazard, joint normals the nested control, mixed rows diagnostic. One exact configuration, one read, 63-session maturity, and no authority. Do not convert the AND to OR, reuse mixed rows, change covariance/dispersion windows, or treat this as a validated crowding/sell gate.'
     source: '`research/PSS_CD1_CORRELATION_DISPERSION_PROSPECTIVE_CHARTER.md`; `data/personality_timing/crowding_hazard_manifest_v1.json` (family `pss_cd1_correlation_dispersion_prospective`, frozen 2026-07-27)'
     section: 4
     section_name: held_suspended
 
   - topic: 'PSS-AF1 FINRA short-marked activity as an absorption witness after CR1'
+    key: HOLD-PSS-AF1-FINRA
     verdict: 'PROSPECTIVE-ONLY ACCRUAL — future CR1 resilient leaders only; exact 20-session own-history baseline and three-session challenge coverage; challenge short ratio versus prior rolling-three-session q75, with treatment and control both requiring at-least-median FINRA activity. FINRA short volume is not short interest, net selling, or institutional buying. Raw short ratio/off-exchange share remains forbidden as a standalone direction signal. One exact configuration, one read, 63-session maturity, and no authority. Do not add Quiver/ATS, relax exact-date coverage, retime the baseline, or call the label confirmed absorption.'
     source: '`research/PSS_AF1_FINRA_ABSORPTION_PROSPECTIVE_CHARTER.md`; `data/personality_timing/flow_absorption_manifest_v1.json` (family `pss_af1_finra_absorption_witness_prospective`, frozen 2026-07-27)'
     section: 4
     section_name: held_suspended
 
   - topic: 'Ontology W4.7 pos_v2 acceptance'
+    key: HOLD-POS-V2-ACCEPTANCE
     verdict: 'HOLD — peak gate IQR 48.8 > 25'
     source: 'Open PR #1639 (do not accidentally revive)'
     section: 4
     section_name: held_suspended
 
   - topic: 'Theta tape'
+    key: HOLD-THETA-TAPE
     verdict: 'SUSPENDED'
     source: 'Final3-lobes program (2026-07-06)'
     section: 4
     section_name: held_suspended
 
   - topic: 'DISP-GATE-1'
+    key: HOLD-DISP-GATE-1
     verdict: 'DEFER ×2-replicated'
     source: 'Final3-lobes program (#1696)'
     section: 4
     section_name: held_suspended
 
   - topic: 'PM5 × 6 price-memory trials'
+    key: HOLD-PM5-PRICE-MEMORY
     verdict: 'SUSPENDED `data_blocked` (pre-declared; coverage measured 55.3% < 60% floor at execution)'
     source: 'PM0 prereg (#1761) + EI-PM0 run (2026-07-10)'
     section: 4
     section_name: held_suspended
 
   - topic: 'G1'
+    key: HOLD-G1-LONG-HOLD
     verdict: 'DEFERRED'
     source: 'Long-hold thesis program (#1507/#1588)'
     section: 4
     section_name: held_suspended
 
   - topic: 'W-F (options)'
+    key: HOLD-WF-OPTIONS
     verdict: 'PARKED until preconditions (1)+(2)'
     source: 'Options→NW masterplan'
     section: 4
     section_name: held_suspended
 
   - topic: 'CODEOWNERS / branch protection'
+    key: HOLD-CODEOWNERS
     verdict: 'DEFERRED to RF codegen lane scope'
     source: 'ABM-R3; `RF_CODEGEN_LANE_FOR_FABLE.md`'
     section: 4
     section_name: held_suspended
 
   - topic: 'Per-ticker multi-label business-model exposure tags (tech)'
+    key: HOLD-TICKER-EXPOSURE-TAGS
     verdict: 'DEFERRED — group-level taxonomy only; revive needs revenue-geography ingestion + own adjudication'
     source: 'TI-R2, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
     section: 4
     section_name: held_suspended
 
   - topic: 'Public "Breakaway Desk" site page (Codex Moderna docket §7.1)'
+    key: HOLD-BREAKAWAY-DESK-PUBLIC
     verdict: 'DEFERRED — W0 ships admin-panel surface only; public copy needs its own wave'
     source: '`WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` §8'
     section: 4
     section_name: held_suspended
 
   - topic: 'Winner-autopsy short-interest / squeeze-fuel legs (Codex Moderna docket §4.3)'
+    key: HOLD-SHORT-INTEREST-LEGS
     verdict: 'DEFERRED with L10 — no PIT short-interest history (single FINRA settlement date)'
     source: 'WA-R (docket adjudication), aligns NEXTL-U19'
     section: 4
     section_name: held_suspended
 
   - topic: 'Full-graph causal structure learners (NOTEARS/DAG-GNN/LoRAM/CMIN-class) + weekly full-DAG re-estimation'
+    key: HOLD-STRUCTURE-LEARNERS
     verdict: 'KILLED for v1 / REJECTED (churn) — small-universe NOTEARS-with-priors is a Phase-3 question behind the 2027-01-15 clock'
     source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
     section: 4
     section_name: held_suspended
 
   - topic: 'Dedicated CHF machine-registration family through metabolism'
+    key: HOLD-CHF-METABOLISM-FAMILY
     verdict: 'DEFERRED — Phase-2 clock 2026-10-15, needs ≥8 matured exit-(a)/(b) candidates + fresh ruling; cortex 3/week chokepoint stands (QS-U2)'
     source: 'CHF-R2, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
     section: 4
     section_name: held_suspended
 
   - topic: 'Ignition Radar user-facing surfaces (us_stocks strip, macro Upturn hero button, dlg-ignition dialog, wnx "Turning up?" card, risk-dialog cross-ref row)'
-    verdict: 'SUSPENDED → background-only (2026-07-23) — surfaced ahead of its own pre-registered display gate ("display-only until ≥30 grades + operator ruling", never met); the 07-23 tape showed the narrow-theme channel promoting an event-driven war-bid (XLE day-8 streak → "Warming" with 1/8 broad lit) and a dead-cat AI Semiconductors as "#3 igniting". Engine + nightly forward self-grading KEEP ACCRUING (engine/ignition_radar.py + ignition_audit.py; the forward log accrues at data/ignition_log/us_ignition.jsonl, display snapshot at data/ignition_radar/). Re-surface needs ALL of: ≥30 graded calls with acceptable broad TP rate, event-sector exclusion for narrow themes (geopolitical single-sector bids ≠ ignition), an honest-null "nothing igniting" state (no forced top-3 ranking in a dead tape), and an operator ruling'
+    key: HOLD-IGNITION-SURFACES
+    verdict: 'SUSPENDED → background-only (2026-07-23) — surfaced ahead of its own pre-registered display gate ("display-only until ≥30 grades + operator ruling", never met); the 07-23 tape showed the narrow-theme channel promoting an event-driven war-bid (XLE day-8 streak → "Warming" with 1/8 broad lit) and a dead-cat AI Semiconductors as "#3 igniting". Engine + nightly forward self-grading KEEP ACCRUING (engine/ignition_radar.py + ignition_audit.py, data/ignition_radar/). Re-surface needs ALL of: ≥30 graded calls with acceptable broad TP rate, event-sector exclusion for narrow themes (geopolitical single-sector bids ≠ ignition), an honest-null "nothing igniting" state (no forced top-3 ranking in a dead tape), and an operator ruling'
     source: 'Operator ruling 2026-07-23 + `POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md` §2'
+    section: 4
+    section_name: held_suspended
+
+  - topic: 'POOLED widening of the factor price universe — adding `russell_breadth` to `engine/equity_factors.py::_UNIVERSE_GROUPS["broad"]` so one cross-section defines μ/σ for S&P 1500 and Russell 2000 together'
+    key: HOLD-FACTOR-UNIVERSE-WIDENING
+    verdict: 'HELD — pre-registration required (charter §11), NOT a config bump. `composite_rank` is the **board TIEBREAK** (`build_stock_library.py:2188`, `build_site.py:3797`) so this is rank AUTHORITY, not display tier. Measured cost of the pooled form (FY2024 census, n 1,354→2,400, +77.3%): within the SAME incumbent names composite Spearman **0.703**, **74.7% change decile**, displayed-percentile abs-shift p50 **11.94pp**, composite **top-10 survives 2/10** (7 new Russell names), per-leg top-20 value 1/20 · quality 1/20. Mechanism: legs that are a MEAN OF SEPARATELY-WINSORIZED z''s (`value`, `quality`) reorder because R2000''s fat-tailed raw ratios (bp sd 11,319 vs 0.469) move the ±3σ clip point — single-ratio legs keep Spearman 1.000. Equal-N decomposition is **cohort-direction, read on ORDERING not level**: median shift identical in both arms (−0.0256 vs −0.0259) but cap-ordered removal loses **8.5×** more rank information (1−ρ 0.222 vs 0.026) and half the top-50 (Jaccard 0.196 vs 0.495) — a median-shift-only reading returns a false GO. Coverage is NOT the blocker (Russell-only EDGAR reach 93–96% on assets/cfo/ni/equity; 98.3% clear the ≥3-leg bar); `payout` halving (86.6%→49.4%) is the known `fillna(0)` single-tag defect, which poisons **53.2% of the S&P 1500** already. Closes the POOLED construction only — **Option D (frozen S&P-1500 reference μ/σ applied to Russell names) is RECOMMENDED and unblocked**: zero incumbent churn by construction, ~1,028 newly archetype-labelable names, display/prior tier, no gauntlet. Prerequisites for any option: `data/russell_breadth/_closes_cache.parquet` must be TRACKED (it is the only one of the four US closes caches gitignored; absent in every `ci.yml` pack and on cold clones — the same hazard already left a permanent hole in the name-score PIT ledger, `build_stock_library.py:686`), and #4685 D1 input repair must land first'
+    source: 'FUW charter `research/FACTOR_UNIVERSE_WIDENING_CHARTER.md` §3–§11; harness `scripts/factor_universe_widening_phase0.py`; tripwire `tests/test_factor_universe_hold.py` (2026-08-06)'
+    section: 4
+    section_name: held_suspended
+
+  - topic: 'The PSQ-H1 provisional quality/hold-tilt authority''s maturity clock (Stage-2∩EC hold-leash on Prophet, `STAGE_TILT_LEASH = 1.25`)'
+    key: HOLD-PSQ-TILT-CLOCK
+    verdict: '**PROMOTION CLOCK FROZEN — de-escalation only, 2026-08-06.** The provisional grant (PSQ-H1 PASS, 2026-07-20) was conditioned on a ~2026-12 forward-shadow read that **structurally cannot occur**. Its sole EC input, `data/stage_analysis/backfill/earnings_calls.parquet`, is gitignored (`.gitignore:575-580`), has zero commits in `git log --all`, and has no fetch/publish pair — the repo''s own comment states it is absent on every CI/deploy. So `ec_sent` is always null, the Stage-2∩EC conjunction never holds, the leash has been pinned at 1.0 since it shipped, and `engine/prophet_stage_shadow.py` accrues an empty cohort. The auto-demote clause is therefore **unreachable, not merely unmet**: `_stage_tilt_demoted` requires `n_matured_126.stage2_ec >= 30` (`engine/prophet_bridge.py:1538`) and the starved cohort is 0, so it returns `False` forever. A promotion whose falsifier can never fire must not age toward confirmed-by-default. The provisional status is frozen where it stands and does **not** advance on the calendar. Unfreezing requires BOTH `median_tilt.ec_coverage.state == "available"` (machine-checkable as of #4781) for a genuine accrual window AND a fresh operator ruling. This row de-escalates a clock; it does not kill the construction — `DNR:KILL-STAGE-WIN-GATE`''s retained display-tier confluence context is untouched, and no rank/size/gate authority is created or removed. Do **not** "revive" by re-pointing the EC join at `data/earnings_calls/scores.parquet`: its −1..1 `sentiment` is a different construction from the 0–100 `earnings_call_sent` that `EC_SENT_GATE = 24` is calibrated to, and swapping them would silently re-scale a promoted signal'
+    source: 'PR #4781 (severance + `ec_source_state`/`ec_coverage` disclosure); `research/PROPHET_STAGE_QUALITY_PREREG.md` §6 auto-demote clause; `research/reports/PROPHET_STAGE_QUALITY_RESULTS.md` §Adjudication; `DNR:KILL-STAGE-WIN-GATE`'
+    section: 4
+    section_name: held_suspended
+
+  - topic: 'The PERIOD BASIS of the four shared forensic detector ids (`margin_compression_despite_revenue_growth`, `receivables_stretch`, `inventory_build`, `capital_intensity_rising`), which exist in three implementations that pair periods differently: `scripts/build_fundamental_forensics.py:620-625` pairs matched fiscal QUARTERS purely on the `(fiscal_quarter, fiscal_year - 1)` LABELS with no day-gap check; `engine/moat_falsifiers.py:423-435` pairs adjacent ANNUAL fiscal years (`fy_gap == 1`); `engine/fundamental_forensics/detectors.py:20-21,34-39,191` pairs an annual vintage pair constrained to a 300-430 day `period_end` gap'
+    key: HOLD-FF-DETECTOR-PERIOD-BASIS
+    verdict: 'HELD — NOT an inconsistency to refactor away. The same `detector_id`, carrying the same numeric constants, therefore MEANS "quarterly YoY" on `site/fundamental_forensics.html` and "annual YoY" on `site/stock.html`; a reader comparing the two surfaces is comparing different measurements under one name. Unifying the basis moves EVERY published figure on whichever surface is converted, so it is a product decision with published-output consequences, not a cleanup. Two riders travel with it: (a) the label-only pairing means a relabelled fiscal calendar silently slides A''s pair and mislabels the rendered "year over year" text, and (b) point-in-time gating differs three ways — A has NO availability gate at all, B gates at `period_end + _REPORTING_LAG_DAYS` but keeps NULL-`period_end` rows fail-open (measured 2026-08-07: 30 of 8,784 annual rows carry NULL `period_end`, 12 fall inside the 120d window), C uses acceptance-time vintage selection plus a rule-availability as-of clock. Do not "fix" any one leg in isolation: making the three agree on periods without an operator ruling silently republishes one surface'
+    source: 'PR #4961; pinned by `tests/test_forensic_detector_crosspin.py` §7 `test_period_and_point_in_time_models_are_pinned_as_unresolved_divergences` (2026-08-07)'
+    section: 4
+    section_name: held_suspended
+
+  - topic: 'What a NEGATIVE prior denominator means to the three forensic detector implementations. `scripts/build_fundamental_forensics.py:161-165` (`_growth`) returns None whenever the prior value is `<= 0`, so it refuses the comparison; `engine/moat_falsifiers.py:183-189` (`_pct_change`) and `engine/fundamental_forensics/detectors.py:29-32` (`_growth`) both normalise by `abs(prior)` and return a real growth figure. Affects the prior `revenue`, `receivables`, `inventory`, `capex` and `op_income` legs — the `op_income` case is the loss-to-profit turnaround, where A can NEVER fire `capital_intensity_rising` and the other two can'
+    key: HOLD-FF-NEGATIVE-PRIOR-DENOMINATOR
+    verdict: 'HELD — closing the gap in either direction is an ESCALATION, which is promotion-gauntlet territory, not a bug fix. Aligning A with its siblings makes the Filing Forensics workbench fire on pairs it has never fired on (measured 2026-08-07: 7 of the 9 three-way disagreements in the cross-pin table are this family, three of them A=not_evaluable vs B/C=FIRED); aligning B and C with A DELETES findings that two live surfaces already publish. Note this is NOT the non-positive operating-income revenue-only fallback, which keys on the CURRENT value and on which all three implementations agree — that branch is disclosed bilingually to users and must stay. Supersedes the narrower capex-only framing: the divergence is in the shared growth helper, not in any one detector'
+    source: 'PR #4961; pinned row-by-row with rationale in `tests/test_forensic_detector_crosspin.py` §6b `PINNED_THREE_WAY_DISAGREEMENTS` family "negative prior denominator" (2026-08-07)'
+    section: 4
+    section_name: held_suspended
+
+  - topic: '`accruals_trending_up` is a registered detector in `config/fundamental_forensics.yml:81` and in the run contract enum `contracts/fundamental_forensics_run.schema.json:182`, and it is implemented by the projection builder (`scripts/build_fundamental_forensics.py::detect_accruals`) and by the registry kernel — but there is NO sensor for it in `engine/moat_falsifiers.py:297` (`_SENSOR_FNS` registers exactly four)'
+    key: HOLD-FF-ACCRUALS-ABSENT-FROM-MOAT-SENSORS
+    verdict: 'HELD — this asymmetry is a DELIBERATE surface boundary, not an unfinished port. A company flagged for accruals on the Filing Forensics workbench shows nothing for it on its stock page, and adding the sensor publishes a signal on production ticker pages that has never appeared there — a new signal on a live surface is an escalation and needs a pre-registered promotion decision, not a completeness patch. The four-vs-five split is the intended state until such a ruling exists'
+    source: 'PR #4961; pinned by `tests/test_forensic_detector_crosspin.py` §7 `test_accruals_has_no_moat_sensor_and_that_gap_is_still_open` and by `NON_MOAT_DETECTOR_IDS` in test 1 (2026-08-07)'
     section: 4
     section_name: held_suspended
 

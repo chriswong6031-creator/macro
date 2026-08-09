@@ -19,11 +19,37 @@ THE LAW, applied at every marker write (one merge with the previously rendered f
   • a recomputed marker with no rendered counterpart is APPENDED if it is recent
     (inside FRESH_DAYS of the previous as-of — a genuinely new signal), DROPPED and
     counted if it lands deep in history (a recompute inventing the past);
-  • a rendered marker the recompute no longer produces is RETAINED and counted.
+  • a rendered marker the recompute no longer produces is RETAINED and counted;
+  • the DERIVED date fields (`signal_date`, `confirmed_date` — functions of the marker's
+    own `date` plus the grid, not independent facts) are BACKFILLED when the rendered
+    marker carries no value, and a non-null rendered value is never overwritten. That is
+    what lets a marker published mid-confirmation with `confirmed_date: null` name the
+    date it cleared, without opening a channel that could re-date a shown marker. A
+    `confirmed_date` is admitted atomically with a final take/block verdict: if an old
+    pending marker is outside the refinement window, both stay frozen pending/null;
+  • `recorded_at` — the run that FIRST published a marker — is sticky: a rendered marker
+    keeps its stamp, and one rendered before the field existed discloses null rather than
+    being back-stamped with tonight's run (see `merge_markers`).
 
 All divergence is disclosed in the payload's `pit` dict (cumulative across nights) —
 the merged file may drift from tonight's pure recompute, and that is the point: the
 file is the record of what was shown, not of what tonight's data revision implies.
+
+THE ONE EXCEPTION — AN ADJUDICATED ERA CHANGE (R-SQ7). The law above exists to stop
+UNEXPLAINED nightly mutation. It cannot be allowed to absorb an EXPLAINED one: when the
+marker engine's bucketing grid is deliberately re-anchored, every historical marker
+legitimately re-dates at once. Under the same-era law that re-draw would be swallowed —
+re-dated markers inside TOL_DAYS keep their old rendered date forever, re-phased ones
+beyond it are DROPPED (`drift_deep_new`) or ghost-RETAINED (`drift_lost`) — so the
+rendered chart would keep the OLD grid while every live `gate()` consumer (boards, the
+HK/CN lanes) moved to the new one the same night: a permanent split-brain, plus a
+one-time drift-counter burst burying real future drift. So `merge_payload` compares the
+payload's `anchor_era`, and on a MISMATCH it yields exactly once — tonight's recompute
+replaces the marker history WHOLESALE, `pit["era_cutover"]` records the crossing forever,
+and the append-only law resumes under the new era on the next night. That is the same
+doctrine as `regen_hk_g1_fixture --force`: an engine-change PR knows itself. Unexplained
+re-datings stay blocked exactly as before.
+
 Pure functions; no I/O.
 """
 from __future__ import annotations
@@ -33,19 +59,120 @@ from datetime import date, timedelta
 TOL_DAYS = 4        # same-type prints this close (calendar days) are the same marker
 FRESH_DAYS = 21     # markers younger than this vs the previous as-of may still refine
 
+#: Derived date fields (engine/signal_quality.analyze) — a pure function of the marker's
+#: own `date` plus the bucketing grid, NOT independent facts. They are BACKFILLED when the
+#: rendered marker has no value (it predates the field, or its confirmation window was
+#: still open and it published a disclosed null), and a NON-NULL rendered value is never
+#: overwritten: that would be exactly the silent re-dating this module exists to stop.
+#: null -> value is not a mutation of a shown date, it is filling a disclosed hole, so it
+#: normally needs no FRESH_DAYS gate — a marker's confirmation lands ~6 sessions out, and
+#: an old final marker that predates the field must still be able to gain it. The exception
+#: is a frozen `pending` verdict: its confirmation date stays null unless the final verdict
+#: is admitted too, avoiding the contradictory `pending` + `confirmed_date` state.
+_DERIVED_DATE_FIELDS = ("signal_date", "confirmed_date")
+_DATE_FAMILY_FIELDS = (*_DERIVED_DATE_FIELDS, "recorded_at")
+
 
 def _d(s: str) -> date:
     return date.fromisoformat(str(s)[:10])
 
 
+def _first_write(m: dict, run_stamp: str | None) -> dict:
+    """A copy of ``m`` stamped as first published, or honestly null without a run stamp."""
+    out = dict(m)
+    if run_stamp is not None:
+        out["recorded_at"] = run_stamp
+    elif any(field in out for field in _DERIVED_DATE_FIELDS):
+        # A date-family producer that did not supply a wall clock still owes the key; null
+        # says provenance is unavailable and is strictly safer than a guessed run date.
+        out.setdefault("recorded_at", None)
+    return out
+
+
+def _date_fields_for(marker: dict) -> tuple[str, ...]:
+    """Fields materialised for this marker type under the date-family contract."""
+    if marker.get("type") in ("buy", "rebuy"):
+        return _DERIVED_DATE_FIELDS
+    return ("signal_date",)
+
+
+def _materialize_date_holes(row: dict) -> None:
+    """Make an unresolved derived date explicit without manufacturing a value."""
+    for field in _date_fields_for(row):
+        row.setdefault(field, None)
+
+
+def _backfill_dates(row: dict, nm: dict) -> tuple[int, int]:
+    """Fill absent/null derived dates on a rendered marker from tonight's recompute.
+
+    A tolerance match can preserve a rendered marker whose label differs from the
+    recomputed marker's label. In that case the recompute's derived dates belong to a
+    different bucket and MUST NOT be copied onto the frozen identity; unresolved nulls
+    are safer than a precisely formatted lie.
+
+    Returns ``(filled, blocked)`` for PIT disclosure.
+    """
+    filled = blocked = 0
+    same_label = row.get("date") == nm.get("date")
+    for field in _date_fields_for(row):
+        if field not in nm:
+            # Tonight's recompute does not carry the field at all — e.g. `confirmed_date`
+            # on a sell/cut, where materialising it would be a schema violation.
+            continue
+        if row.get(field) is not None:
+            continue                      # a published value is never re-dated
+        if not same_label:
+            row.setdefault(field, None)
+            if nm[field] is not None:
+                blocked += 1
+            continue
+        if (field == "confirmed_date" and row.get("quality") == "pending"
+                and nm[field] is not None):
+            # Confirmation is a verdict transition, not merely a clock fill. If the
+            # pending->take/block refinement was refused (normally because the marker is
+            # outside FRESH_DAYS), admitting only its date would publish an impossible
+            # hybrid. Keep both sides of the transition frozen. A non-null value already
+            # published above is still append-only and is never erased here.
+            row.setdefault(field, None)
+            blocked += 1
+            continue
+        if nm[field] is not None:
+            filled += 1
+        # Materialised even when null: a marker still inside its confirmation window
+        # publishes `confirmed_date: null`, and a reader must be able to tell "pending"
+        # from "this build predates the field". An absent key says neither.
+        row[field] = nm[field]
+    return filled, blocked
+
+
 def merge_markers(prev: list[dict] | None, new: list[dict] | None,
-                  prev_asof: str | None) -> tuple[list[dict], dict]:
+                  prev_asof: str | None, *,
+                  run_stamp: str | None = None) -> tuple[list[dict], dict]:
     """Merge tonight's recomputed markers into the previously rendered ones under the
-    law above. Returns (merged_markers, pit_stats_for_tonight)."""
+    law above. Returns (merged_markers, pit_stats_for_tonight).
+
+    ``run_stamp`` opts into the ``recorded_at`` provenance contract: the wall-clock date
+    of the run that FIRST published a marker. A marker already in the rendered file keeps
+    whatever it was stamped with — it was not first written tonight — and one rendered
+    before the field existed discloses ``None`` rather than claiming tonight's date, which
+    is the whole point: ``recorded_at`` is what makes a publication LAG measurable
+    (``recorded_at`` minus ``signal_date``), and back-stamping it with the current run
+    would erase exactly the outage evidence it exists to carry. Old-shaped callers that
+    pass nothing remain byte-identical; a producer that emits the new derived fields but
+    has no wall clock gets an honest ``recorded_at: null`` rather than guessed provenance.
+    """
     new = list(new or [])
     if not prev:
-        return new, {"new_file": True, "appended": len(new)}
+        # A brand-new file: every marker in it genuinely IS first written by this run.
+        return ([_first_write(m, run_stamp) for m in new],
+                {"new_file": True, "appended": len(new)})
     prev = list(prev)
+    # Old callers and old-shaped fixtures remain byte-identical. Once any side opts into
+    # the family (or asks for a publication stamp), all retained rows disclose unresolved
+    # values as null rather than leaving their semantics unknowable.
+    date_family_enabled = (run_stamp is not None
+                           or any(any(f in m for f in _DATE_FAMILY_FIELDS) for m in new)
+                           or any(any(f in m for f in _DATE_FAMILY_FIELDS) for m in prev))
     anchor = _d(prev_asof) if prev_asof else max((_d(m["date"]) for m in prev),
                                                  default=_d(new[-1]["date"]) if new else date.min)
     fresh_floor = anchor - timedelta(days=FRESH_DAYS)
@@ -68,7 +195,8 @@ def merge_markers(prev: list[dict] | None, new: list[dict] | None,
             unmatched_new.remove(best)
 
     stats = {"kept_frozen": 0, "refined": 0, "appended": 0,
-             "drift_lost": 0, "drift_deep_new": 0, "relabel_blocked": 0}
+             "drift_lost": 0, "drift_deep_new": 0, "relabel_blocked": 0,
+             "date_backfilled": 0, "date_backfill_blocked": 0}
     merged: list[dict] = []
     for pi, pm in enumerate(prev):
         row = dict(pm)
@@ -84,16 +212,28 @@ def merge_markers(prev: list[dict] | None, new: list[dict] | None,
                     stats["refined"] += 1
                 else:
                     stats["relabel_blocked"] += 1
+            # Derived dates normally fill holes independently of the refine window. The
+            # atomic exception lives in _backfill_dates: a still-frozen pending verdict
+            # cannot gain a confirmed_date from a final recompute it was too old to adopt.
+            filled, blocked = _backfill_dates(row, nm)
+            stats["date_backfilled"] += filled
+            stats["date_backfill_blocked"] += blocked
         else:
             if _d(pm["date"]) <= anchor - timedelta(days=TOL_DAYS):
                 stats["drift_lost"] += 1        # recompute lost it; the render keeps it
+        if date_family_enabled:
+            _materialize_date_holes(row)
+            # Already rendered => not first written tonight. No prior stamp means it
+            # predates the field: a disclosed null, never a back-stamp. The same honest
+            # null applies when a date-family caller cannot supply a run clock.
+            row.setdefault("recorded_at", None)
         stats["kept_frozen"] += 1
         merged.append(row)
 
     for ni in unmatched_new:
         nm = new[ni]
         if _d(nm["date"]) >= fresh_floor:
-            merged.append(dict(nm))
+            merged.append(_first_write(nm, run_stamp))
             stats["appended"] += 1
         else:
             stats["drift_deep_new"] += 1        # recompute invented deep history; dropped
@@ -102,13 +242,43 @@ def merge_markers(prev: list[dict] | None, new: list[dict] | None,
     return merged, stats
 
 
-def merge_payload(prev: dict | None, new: dict) -> dict:
+def merge_payload(prev: dict | None, new: dict, *,
+                  run_stamp: str | None = None) -> dict:
     """Full signal-file merge: tonight's live fields (asof/state/trail_stop/…) pass
-    through; `markers` obey the law; `pit` accumulates drift counts across nights."""
+    through; `markers` obey the law; `pit` accumulates drift counts across nights.
+
+    THE ERA GATE (R-SQ7) runs first. When the payload's ``anchor_era`` differs from the
+    rendered file's — including the pre-era case where the stored file carries none —
+    tonight's marker history is taken WHOLESALE, with no matching pass at all, and the
+    crossing is stamped into ``pit["era_cutover"]``. The cumulative drift counters carry
+    over untouched: they measure the same-era law's history and must not be reset by a
+    change that is not drift. Callers need no edit — ``build_signal_quality`` and
+    ``build_subsector_confluence`` both merge through here, so the cutover happens once,
+    in one place, on the night the era moves.
+    """
     out = dict(new)
     prev_markers = (prev or {}).get("markers")
+    prev_era = (prev or {}).get("anchor_era")
+    new_era = new.get("anchor_era")
+    if prev and prev_era != new_era:
+        # Wholesale replacement: every marker is re-dated onto the new grid, so tonight IS
+        # the run that first published these rows in this form. The crossing is recorded in
+        # pit["era_cutover"], which is where a reader learns the stamps moved as a cohort.
+        out["markers"] = [_first_write(m, run_stamp) for m in (new.get("markers") or [])]
+        cum = dict((prev or {}).get("pit") or {})
+        cum.pop("last_night", None)
+        # A cutover is NOT drift: the counters keep their meaning across the seam, and the
+        # night itself is recorded as its own shape so no reader mistakes a wholesale
+        # replacement for `appended` markers.
+        cutover = {"from": prev_era, "to": new_era, "at_asof": new.get("asof"),
+                   "prev_markers": len(prev_markers or [])}
+        cum["last_night"] = {"era_cutover": cutover}
+        cum["era_cutover"] = cutover
+        cum["prev_asof"] = (prev or {}).get("asof")
+        out["pit"] = cum
+        return out
     merged, stats = merge_markers(prev_markers, new.get("markers"),
-                                  (prev or {}).get("asof"))
+                                  (prev or {}).get("asof"), run_stamp=run_stamp)
     out["markers"] = merged
     cum = dict((prev or {}).get("pit") or {})
     cum.pop("last_night", None)

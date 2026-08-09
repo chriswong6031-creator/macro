@@ -1,0 +1,39 @@
+{
+ "asof": "2026-08-08",
+ "audit": "massive_stock_day",
+ "config": {
+  "price_max_gap_days": 4,
+  "price_move_alert_pct": 20,
+  "price_recent_days": 120,
+  "macro_revision_alert_pct": 5,
+  "macro_stale_days": 45,
+  "universe_min_bars": 250,
+  "abort_fail_pct": 5,
+  "warn_fail_pct": 1,
+  "macro_outlier_z": 5,
+  "massive_max_gap_bdays": 5,
+  "massive_stale_bdays": 5,
+  "massive_manifest_ahead_bdays": 2,
+  "massive_min_files": 100,
+  "massive_recent_window_bdays": 90,
+  "stocks_stale_calendar_days": 7,
+  "email_alerts": false
+ },
+ "n": 6,
+ "n_failed": 0,
+ "fail_pct": 0.0,
+ "n_flags": 0,
+ "universes": [
+  {
+   "name": "massive_stock_day",
+   "n": 6,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 0,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": []
+  }
+ ]
+}

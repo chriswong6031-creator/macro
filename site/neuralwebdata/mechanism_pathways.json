@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-08-05",
+  "as_of": "2026-08-09",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -25,161 +25,29 @@
   },
   "pathways": [
     {
-      "family": "equity-leadership",
+      "family": "ai_semis",
       "driver": "ai_semis",
       "pathway_role": "primary",
-      "as_of": "2026-08-05",
-      "direction_en": "AI/semis leadership — narrow tech-led tape",
-      "direction_zh": "AI/半导体领涨 — 窄幅科技主导",
-      "confidence_ceiling": "context_only",
-      "coverage_score": 1.0,
-      "coherence": "supported",
-      "stale_legs": [],
-      "nodes": [
-        {
-          "node_id": "driver_ai_semis",
-          "as_of": "2026-08-05",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "ai_semis",
-          "observation": {
-            "en": "AI/semis leadership — narrow tech-led tape",
-            "zh": "AI/半导体领涨 — 窄幅科技主导"
-          },
-          "direction": 1,
-          "value": 2.0,
-          "z_or_percentile": 1.98,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "trigger",
-          "evidence_refs": [
-            "market_drivers.primary"
-          ]
-        },
-        {
-          "node_id": "leg_ai_semis_0",
-          "as_of": "2026-08-05",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "tech vs utilities",
-          "observation": {
-            "en": "tech vs utilities (+2.9σ)",
-            "zh": "科技对公用事业 (+2.9σ)"
-          },
-          "direction": "positive",
-          "value": 2.9,
-          "z_or_percentile": 2.9,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "required_leg",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[0]"
-          ]
-        },
-        {
-          "node_id": "leg_ai_semis_1",
-          "as_of": "2026-08-05",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "growth vs value",
-          "observation": {
-            "en": "growth vs value (+2.7σ)",
-            "zh": "成长对价值 (+2.7σ)"
-          },
-          "direction": "positive",
-          "value": 2.7,
-          "z_or_percentile": 2.7,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "required_leg",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[1]"
-          ]
-        },
-        {
-          "node_id": "leg_ai_semis_2",
-          "as_of": "2026-08-05",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "cap-weight vs equal-weight",
-          "observation": {
-            "en": "cap-weight vs equal-weight (+2.7σ)",
-            "zh": "市值加权对等权重 (+2.7σ)"
-          },
-          "direction": "positive",
-          "value": 2.7,
-          "z_or_percentile": 2.7,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "required_leg",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[2]"
-          ]
-        }
-      ],
-      "edges": [
-        {
-          "src_node": "driver_ai_semis",
-          "dst_node": "leg_ai_semis_0",
-          "mechanism_type": "evidence_leg",
-          "expected_lag": "same_day",
-          "expected_sign": "positive",
-          "observed_sign": "positive",
-          "status": "measured",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[0]"
-          ]
-        },
-        {
-          "src_node": "driver_ai_semis",
-          "dst_node": "leg_ai_semis_1",
-          "mechanism_type": "evidence_leg",
-          "expected_lag": "same_day",
-          "expected_sign": "positive",
-          "observed_sign": "positive",
-          "status": "measured",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[1]"
-          ]
-        },
-        {
-          "src_node": "driver_ai_semis",
-          "dst_node": "leg_ai_semis_2",
-          "mechanism_type": "evidence_leg",
-          "expected_lag": "same_day",
-          "expected_sign": "positive",
-          "observed_sign": "positive",
-          "status": "measured",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[2]"
-          ]
-        }
-      ]
-    },
-    {
-      "family": "fx",
-      "driver": "usd_shock",
-      "pathway_role": "alternate",
-      "as_of": "2026-08-05",
-      "direction_en": "dollar falling — risk tailwind, commodities & EM bid",
-      "direction_zh": "",
+      "as_of": "2026-08-09",
+      "direction_en": "Bubble / blow-off unwind",
+      "direction_zh": "泡沫/见顶回吐",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
       "coherence": "partial",
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_usd_shock",
-          "as_of": "2026-08-05",
+          "node_id": "driver_ai_semis",
+          "as_of": "2026-08-09",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "usd_shock",
+          "entity": "ai_semis",
           "observation": {
-            "en": "dollar falling — risk tailwind, commodities & EM bid",
-            "zh": ""
+            "en": "Bubble / blow-off unwind",
+            "zh": "泡沫/见顶回吐"
           },
           "direction": "",
-          "value": 1.01,
+          "value": 71.2,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -190,13 +58,15 @@
         }
       ],
       "edges": [],
-      "coverage_basis": "scare_trigger"
+      "coverage_basis": "scare_trigger",
+      "source_trigger": "risk_radar",
+      "scare": "bubble"
     },
     {
       "family": "rates",
       "driver": "real_rate_shock",
       "pathway_role": "alternate",
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-09",
       "direction_en": "real yields falling — easing, gold & duration bid",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -206,7 +76,7 @@
       "nodes": [
         {
           "node_id": "driver_real_rate_shock",
-          "as_of": "2026-08-05",
+          "as_of": "2026-08-09",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "real_rate_shock",
@@ -215,7 +85,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 0.89,
+          "value": 1.21,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -226,7 +96,7 @@
         },
         {
           "node_id": "transmission_real_rate_order1",
-          "as_of": "2026-08-05",
+          "as_of": "2026-08-09",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -246,7 +116,7 @@
         },
         {
           "node_id": "transmission_real_rate_order2",
-          "as_of": "2026-08-05",
+          "as_of": "2026-08-09",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -266,7 +136,7 @@
         },
         {
           "node_id": "transmission_real_rate_order3",
-          "as_of": "2026-08-05",
+          "as_of": "2026-08-09",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",

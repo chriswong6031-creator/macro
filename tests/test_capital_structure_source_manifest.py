@@ -245,3 +245,41 @@ def test_dedicated_r2_credentials_fall_back_per_field_to_shared(monkeypatch):
         "access_key": "shared-access",
         "secret_key": "capital-secret",
     }
+
+
+def test_make_r2_client_normalizes_schemeless_pasted_endpoint(capsys):
+    """2026-08-08 nightly: a re-provisioned R2_CAPITAL_STRUCTURE_ENDPOINT whose
+    value lacked its https:// scheme killed the document-terms step at boto3
+    client construction (``Invalid endpoint``). A schemeless/whitespace-wrapped
+    value must construct a client against the https account root instead."""
+    client = source_store_module._make_r2_client(
+        endpoint="  abc123.r2.cloudflarestorage.com \n",
+        access_key="ak\n",
+        secret_key=" sk ",
+    )
+    assert client is not None
+    assert client.meta.endpoint_url == "https://abc123.r2.cloudflarestorage.com"
+    out = capsys.readouterr().out
+    warning_lines = [line for line in out.splitlines() if "::warning" in line]
+    assert warning_lines and all(
+        line.startswith("::warning") for line in warning_lines
+    )
+    assert "abc123" not in out  # never leak the endpoint value into annotations
+
+
+def test_make_r2_client_leaves_explicit_scheme_and_incomplete_env_alone(capsys):
+    client = source_store_module._make_r2_client(
+        endpoint="https://abc123.r2.cloudflarestorage.com",
+        access_key="ak",
+        secret_key="sk",
+    )
+    assert client is not None
+    assert client.meta.endpoint_url == "https://abc123.r2.cloudflarestorage.com"
+    assert "::warning" not in capsys.readouterr().out  # exact value: no noise
+
+    assert (
+        source_store_module._make_r2_client(
+            endpoint="   ", access_key="ak", secret_key="sk"
+        )
+        is None
+    )

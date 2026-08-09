@@ -28,6 +28,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from engine import ignition_features as ig
 from engine import prophet_doors as pdz
 
 REPO = Path(__file__).resolve().parents[1]
@@ -44,13 +45,20 @@ def _wave(n: int = 430, *, wave: int, amp: float, drift: float, phase: int,
     return pd.Series(vals, index=pd.bdate_range(start, periods=n), dtype=float)
 
 
-# Measured against the frozen confluence_tiers math at authoring time:
-#   R_POS      -> 2D cross-up on the last COMPLETED bucket = True,  3D K 30.46 >= D 28.41
-#   R_NO_CROSS -> 2D cross-up = False,                              3D K 51.46 >= D 29.07
-#   R_NO_STOCH -> 2D cross-up = True,                               3D K 33.66 <  D 50.06
-R_POS = dict(wave=18, amp=0.08, drift=0.0016, phase=5)
-R_NO_CROSS = dict(wave=18, amp=0.08, drift=0.0016, phase=7)
-R_NO_STOCH = dict(wave=12, amp=0.04, drift=0.0016, phase=4)
+# RE-DERIVED under the abs-session anchor (era abs-session-2026-08-06). The 2D/3D buckets are
+# no longer phased to the series' first timestamp, so a fixture's phase index shifts; each
+# triple was re-measured against the CURRENT confluence_tiers math to isolate the SAME leg it
+# always isolated. The wave/amp/drift shapes are untouched — only `phase` moved (+1, +1, +2),
+# which is precisely the re-phase the anchor change predicts.
+#   R_POS      -> 2D cross-up on the last COMPLETED bucket = True,  3D K 30.41 >= D 28.23
+#                 (was phase=5, K 30.46 >= D 28.41 pre-anchor)
+#   R_NO_CROSS -> 2D cross-up = False,                              3D K 54.51 >= D 32.78
+#                 (was phase=7, K 51.46 >= D 29.07 pre-anchor)
+#   R_NO_STOCH -> 2D cross-up = True,                               3D K 37.45 <  D 48.69
+#                 (was phase=4, K 33.66 <  D 50.06 pre-anchor)
+R_POS = dict(wave=18, amp=0.08, drift=0.0016, phase=6)
+R_NO_CROSS = dict(wave=18, amp=0.08, drift=0.0016, phase=8)
+R_NO_STOCH = dict(wave=12, amp=0.04, drift=0.0016, phase=6)
 
 
 def _verdict(**over) -> dict:
@@ -282,11 +290,19 @@ class TestCompletedBucketIsPointInTime:
             assert base.index.max() >= tail_close, "a completed bucket must have closed"
 
     def test_in_progress_tail_is_excluded_from_the_completed_read(self):
-        """Guards against completed_tf silently degrading into _tf_bars. An ODD-length series
-        leaves the final 2B bucket holding one bar, so a spike ON that bar must move the raw
-        read and leave the completed read byte-identical."""
+        """Guards against completed_tf silently degrading into _tf_bars. A series whose last
+        bar OPENS its 2-session bucket leaves that bucket in progress, so a spike ON that bar
+        must move the raw read and leave the completed read byte-identical.
+
+        RE-DERIVED under the abs-session anchor: "in progress" is now the last bar's session
+        POSITION (``pos % 2 == 0`` opens a 2-bucket), not the series' length parity.
+        """
         from engine.confluence_tiers import _tf_bars
-        base = _wave(n=429, **R_POS)                 # odd -> final 2B bucket is in progress
+        from engine.session_anchor import session_positions
+        base = _wave(n=430, **R_POS)
+        pos = session_positions(base.index)
+        opening = np.where(pos % 2 == 0)[0]          # last bar OPENS its bucket -> in progress
+        base = base.iloc[:opening[-1] + 1]
         raw, _ = _tf_bars(base, 2)
         comp, _ = pdz.completed_tf(base, 2)
         assert len(comp) == len(raw) - 1, "this fixture must exercise the truncation"
@@ -300,13 +316,35 @@ class TestCompletedBucketIsPointInTime:
         assert comp_s.equals(comp), "the completed read must not see the in-progress bar"
 
     def test_closed_tail_bucket_is_kept(self):
-        """The truncation is conditional, not unconditional — an EVEN-length series closes its
-        final 2B bucket, and dropping it would delay every fire by a session."""
+        """The truncation is CONDITIONAL, not unconditional — dropping a bucket that has in
+        fact closed would delay every Door R fire by a session.
+
+        RE-DERIVED under the abs-session anchor. The condition is no longer the series'
+        LENGTH parity (which is what mattered when bins were phased to the series start): a
+        bucket spans reference positions [b*n, b*n+n-1], so it closes when the last session's
+        POSITION sits on b*n+n-1. This test picks its last bar by that arithmetic, so it
+        keeps testing "a closed bucket survives" rather than a length coincidence.
+
+        It is also the regression guard for the index-semantics change: `_tf_bars` used to be
+        indexed by pandas' bin START and is now indexed by each bucket's LAST SESSION, and
+        `completed_tf` reads that index. The old "label + n-1 business days" test applied to
+        the new index drops closed buckets — this test reds on exactly that.
+        """
         from engine.confluence_tiers import _tf_bars
+        from engine.session_anchor import session_positions
         base = _wave(n=430, **R_POS)
+        # trim to a last bar that CLOSES its 2-session bucket
+        pos = session_positions(base.index)
+        closed = np.where(pos % 2 == 1)[0]
+        base = base.iloc[:closed[-1] + 1]
         raw, _ = _tf_bars(base, 2)
         comp, _ = pdz.completed_tf(base, 2)
-        assert len(comp) == len(raw)
+        assert len(comp) == len(raw), "a CLOSED tail bucket must survive the truncation"
+        # and the complement: one session earlier the bucket is still open, so it is dropped
+        open_tail = base.iloc[:-1]
+        raw_o, _ = _tf_bars(open_tail, 2)
+        comp_o, _ = pdz.completed_tf(open_tail, 2)
+        assert len(comp_o) == len(raw_o) - 1, "an OPEN tail bucket must be dropped"
 
 
 # =========================================================================== #
@@ -632,10 +670,17 @@ class TestFireInvariance:
     def _run_pair(self, tmp_path, monkeypatch):
         _patch_gate_by_prefix(monkeypatch)
         px = _mixed_universe()
+        # Six members, not five: the theme must clear THRUST_MIN_MEMBERS or the thrust feature
+        # degrades to `thin_membership` and the invariance check below goes dark.
         root = _seed_root(tmp_path, _rotation_doc(
-            {"Software": ["TAAA", "TBBB", "TCCC", "TDDD", "RAAA"]}))
+            {"Software": ["TAAA", "TBBB", "TCCC", "TDDD", "RAAA", "RBBB"]}))
         _seed_volumes(root, px.index, {"TAAA": list(range(10, 130, 10))})
         _seed_foresight(root, [("software_platforms", "Software", "RE-RATING")])
+        # Every feature source is seeded, INCLUDING the W8 ignition store: an invariance test
+        # whose features all degraded to null would pass no matter what the computer did.
+        _seed_ohlcv(root, {t: _coil_ohlc(px.index, quiet=q) for t, q in
+                           (("TAAA", 45), ("TBBB", 0), ("TCCC", 45), ("TDDD", 0),
+                            ("RAAA", 45), ("RBBB", 0))})
         on = pdz.emit(root, dry_run=True, universe=px)
         off = pdz.emit(root, dry_run=True, universe=px, features=False)
         return on, off
@@ -649,6 +694,18 @@ class TestFireInvariance:
                     == [r["ticker"] for r in off["flags"][door]]), door
         for key in ("candidates", "overflow", "deduped"):
             assert on[key] == off[key], key
+
+    def test_the_ignition_features_actually_computed_in_this_fixture(self, tmp_path, monkeypatch,
+                                                                     off_lane):
+        """Guards the invariance tests above from going dark. If the ignition store stopped
+        resolving, every W8 key would be null, both runs would still agree, and the invariance
+        claim would hold vacuously over features that never ran."""
+        on, _ = self._run_pair(tmp_path, monkeypatch)
+        rows = [r["features"] for r in on["flags"][pdz.DOOR_T]]
+        assert any(r["coil_compressed"] is not None for r in rows), "coil never computed"
+        assert any(r["coil_compressed"] is True for r in rows), "no compressed name in fixture"
+        assert any(r["coil_compressed"] is False for r in rows), "no uncompressed name in fixture"
+        assert all(r["theme_thrust_state"] is not None for r in rows), "thrust never computed"
 
     def test_features_are_purely_additive_never_an_overwrite(self, tmp_path, monkeypatch,
                                                              off_lane):
@@ -682,6 +739,14 @@ class TestFireInvariance:
         assert all(k in row for k in pdz.FEATURE_KEYS), "a failed block is still a DISCLOSED null"
         assert row["relay_count_3d"] is None and row["turnover_pctile"] is None
         assert row["foresight_covered"] is False
+        # The crash path must not manufacture a measured negative either. `foresight_covered`
+        # is the ONE deliberate False in the block (a coverage flag); every other key — the W8
+        # states included — is null, so a reader can never mistake "the computer died" for
+        # "this name is not compressed" or "this theme is quiet".
+        assert row["coil_compressed"] is None and row["coil_bars_compressed"] is None
+        assert row["theme_thrust_state"] is None and row["theme_thrust_frac"] is None
+        assert [k for k, v in row.items()
+                if k in pdz.FEATURE_KEYS and v is not None] == ["foresight_covered"]
 
 
 class TestSchemaKeys:
@@ -980,6 +1045,303 @@ class TestForesightJoin:
         assert feats["FLAG"]["foresight_covered"] is False
 
 
+# --------------------------------------------------------------------------- #
+# W8 ignition features (prereg §10 addendum, 2026-08-05)
+# --------------------------------------------------------------------------- #
+def _coil_ohlc(index: pd.DatetimeIndex, *, quiet: int, expand: int = 0) -> pd.DataFrame:
+    """close/high/low on ``index``: a loud regime, then ``quiet`` calm sessions, then
+    ``expand`` sessions of range expansion.
+
+    Deterministic (no RNG). The loud regime fills the 252-session ATR reference window with big
+    true ranges, so the calm phase ranks under p25 while steady drift keeps price above a rising
+    50dMA — both S-COIL legs hold. ``quiet=0`` never compresses; a long enough ``expand`` tail
+    lifts ATR back out of compression while the trailing 21-session count is still positive,
+    which is the compressed-THEN-EXPANDING case.
+    """
+    n = len(index)
+    loud = n - quiet - expand
+    rets = ([0.030 * (1 if i % 2 == 0 else -1) for i in range(loud)] + [0.0015] * quiet
+            + [0.045 * (1 if i % 2 == 0 else -1) for i in range(expand)])
+    close = 100.0 * np.exp(np.cumsum(rets))
+    w = np.array([0.020] * loud + [0.0004] * quiet + [0.030] * expand)
+    return pd.DataFrame({"close": close, "high": close * (1 + w), "low": close * (1 - w)},
+                        index=index)
+
+
+def _flat_ohlc(index: pd.DatetimeIndex, *, jump: bool) -> pd.DataFrame:
+    """A member flat at 100 — nobody above its own 20d high — optionally stepping up on the
+    FINAL bar, which is what carries a theme's above-20d-high fraction from 0 to 1."""
+    v = np.full(len(index), 100.0)
+    if jump:
+        v[-1] = 130.0
+    return pd.DataFrame({"close": v, "high": v, "low": v * 0.999}, index=index)
+
+
+def _seed_ohlcv(root: Path, frames: dict[str, pd.DataFrame]) -> None:
+    """Write per-ticker OHLCV parquets where `_RecordedFeatures._ohlcv` reads them."""
+    p = root / Path(*pdz.OHLCV_DIR)
+    p.mkdir(parents=True, exist_ok=True)
+    for t, d in frames.items():
+        d.to_parquet(p / f"{t}.parquet")
+
+
+class TestCoilFeature:
+    """S-COIL compression state for the flag's own name, at the flag bar."""
+
+    def _run(self, tmp_path, monkeypatch, frames, tickers=("FLAG",)):
+        from engine import signal_gate
+        monkeypatch.setattr(signal_gate, "gate", lambda t, c: _buyable())
+        px = _universe(list(tickers))
+        root = _seed_root(tmp_path, _rotation_doc({"Software": list(tickers)}))
+        _seed_ohlcv(root, {t: f(px.index) for t, f in frames.items()})
+        run = pdz.emit(root, dry_run=True, universe=px)
+        return run, {r["ticker"]: r["features"] for r in run["flags"][pdz.DOOR_T]}
+
+    def test_a_compressed_name_records_the_state_and_the_bar_count(self, tmp_path, monkeypatch,
+                                                                    off_lane):
+        _, feats = self._run(tmp_path, monkeypatch,
+                             {"FLAG": lambda i: _coil_ohlc(i, quiet=45)})
+        f = feats["FLAG"]
+        assert f["coil_compressed"] is True
+        assert f["coil_bars_compressed"] == 21
+        assert f["coil_reason"] is None
+
+    def test_a_never_compressed_name_records_a_measured_False(self, tmp_path, monkeypatch,
+                                                               off_lane):
+        """False here is a MEASUREMENT, and it is only legible as one because the uncomputable
+        cases below record null instead."""
+        _, feats = self._run(tmp_path, monkeypatch,
+                             {"FLAG": lambda i: _coil_ohlc(i, quiet=0)})
+        f = feats["FLAG"]
+        assert f["coil_compressed"] is False
+        assert f["coil_bars_compressed"] == 0
+        assert f["coil_reason"] is None
+
+    def test_a_compressed_then_expanding_name_separates_the_two_fields(self, tmp_path,
+                                                                        monkeypatch, off_lane):
+        """The state and the count are INDEPENDENT readings, and this is the case that proves
+        it in the direction the partial-run fixture cannot: range expansion has lifted the name
+        out of compression at the flag bar (`coil_compressed False`) while the trailing 21
+        sessions still hold a positive compressed count. A single boolean would have collapsed
+        these two facts into one, which is why the count is recorded rather than a threshold."""
+        _, feats = self._run(tmp_path, monkeypatch,
+                             {"FLAG": lambda i: _coil_ohlc(i, quiet=45, expand=15)})
+        f = feats["FLAG"]
+        assert f["coil_compressed"] is False
+        assert f["coil_bars_compressed"] == 18
+        assert f["coil_bars_compressed"] >= ig.COMP_MIN, (
+            "still ARMED by S-COIL's own >=10-of-21 run while no longer compressed — exactly "
+            "the state a boolean-only record would have erased")
+        assert f["coil_reason"] is None
+
+    def test_absent_store_entry_is_null_with_a_reason_never_False(self, tmp_path, monkeypatch,
+                                                                   off_lane):
+        _, feats = self._run(tmp_path, monkeypatch, {})          # nothing seeded
+        f = feats["FLAG"]
+        assert f["coil_compressed"] is None, "an unmeasurable name is NOT an uncompressed name"
+        assert f["coil_bars_compressed"] is None
+        assert f["coil_reason"] == "ohlcv_absent"
+
+    def test_short_history_is_null_with_a_reason(self, tmp_path, monkeypatch, off_lane):
+        """The floor's whole purpose: `coil_compression` is a boolean AND, so a warming-up name
+        would otherwise record a confident 'not compressed, 0 bars'."""
+        short = pdz.MIN_HISTORY + 5
+        assert short < ig.COIL_MIN_SESSIONS, "fixture must sit below the coil floor"
+        _, feats = self._run(tmp_path, monkeypatch,
+                             {"FLAG": lambda i: _coil_ohlc(i, quiet=45).tail(short)})
+        f = feats["FLAG"]
+        assert f["coil_compressed"] is None and f["coil_bars_compressed"] is None
+        assert f["coil_reason"] == "short_history"
+
+    def test_a_store_that_stops_before_the_flag_bar_is_null_never_a_stale_read(
+            self, tmp_path, monkeypatch, off_lane):
+        """Carrying the last available session forward would date-shift the feature onto a bar
+        the name did not trade — the same rule `_turnover` applies to admission-day volume."""
+        _, feats = self._run(tmp_path, monkeypatch,
+                             {"FLAG": lambda i: _coil_ohlc(i, quiet=45).iloc[:-3]})
+        f = feats["FLAG"]
+        assert f["coil_compressed"] is None
+        assert f["coil_reason"] == "no_bar_on_flag_date"
+
+    def test_an_interior_hole_does_not_manufacture_an_uncompressed_reading(
+            self, tmp_path, monkeypatch, off_lane):
+        """Holes are DROPPED, not held. Held as NaN they propagate through every rolling window
+        covering them, and because the detector is a boolean AND that lands as `False` — this
+        exact fixture reads (True, 21) when dropped and (False, 15) when held, i.e. the hole
+        would invent a measured negative for a genuinely compressed name."""
+        def _holed(index):
+            d = _coil_ohlc(index, quiet=45).copy()
+            d.iloc[-6, d.columns.get_loc("close")] = np.nan
+            return d
+
+        _, feats = self._run(tmp_path, monkeypatch, {"FLAG": _holed})
+        f = feats["FLAG"]
+        assert f["coil_compressed"] is True, "a hole must not read as 'not compressed'"
+        assert f["coil_bars_compressed"] == 21
+        assert f["coil_reason"] is None
+
+    def test_an_unreadable_parquet_is_a_disclosed_null(self, tmp_path, monkeypatch, off_lane):
+        from engine import signal_gate
+        monkeypatch.setattr(signal_gate, "gate", lambda t, c: _buyable())
+        px = _universe(["FLAG"])
+        root = _seed_root(tmp_path, _rotation_doc({"Software": ["FLAG"]}))
+        p = root / Path(*pdz.OHLCV_DIR)
+        p.mkdir(parents=True, exist_ok=True)
+        (p / "FLAG.parquet").write_bytes(b"not a parquet file")
+        run = pdz.emit(root, dry_run=True, universe=px)
+        f = run["flags"][pdz.DOOR_T][0]["features"]
+        assert f["coil_compressed"] is None
+        assert f["coil_reason"] == "read_failed"
+        assert run["feature_source"]["ignition"]["null_reasons"] == {"read_failed": 1}
+
+    def test_the_declared_reason_vocabulary_is_exactly_what_the_code_emits(
+            self, tmp_path, monkeypatch, off_lane):
+        """`COIL_REASONS` is a CONTRACT, not a comment: every slug in it must be reachable and
+        every slug the code emits must be in it. A declared-but-unreachable slug over-claims in
+        the prereg; an emitted-but-undeclared one is an undocumented null."""
+        seen = set()
+        for sub, frames in (("absent", {}),
+                            ("stale", {"FLAG": lambda i: _coil_ohlc(i, quiet=45).iloc[:-3]}),
+                            ("short", {"FLAG": lambda i: _coil_ohlc(i, quiet=45).tail(120)})):
+            _, feats = self._run(tmp_path / sub, monkeypatch, frames)
+            seen.add(feats["FLAG"]["coil_reason"])
+        seen.add("read_failed")   # exercised by the test above
+        assert seen == set(pdz.COIL_REASONS), (
+            f"declared-not-reached={set(pdz.COIL_REASONS) - seen}, "
+            f"reached-not-declared={seen - set(pdz.COIL_REASONS)}")
+
+    def test_the_run_document_discloses_what_the_store_offered(self, tmp_path, monkeypatch,
+                                                                off_lane):
+        run, _ = self._run(tmp_path, monkeypatch, {"FLAG": lambda i: _coil_ohlc(i, quiet=45)},
+                           tickers=("FLAG", "GONE"))
+        d = run["feature_source"]["ignition"]
+        assert d["consulted"] is True
+        assert d["tickers_read"] == 2 and d["tickers_ok"] == 1
+        assert d["null_reasons"] == {"ohlcv_absent": 1}, "nulls are COUNTED, not swallowed"
+        assert d["coil_min_sessions"] == ig.COIL_MIN_SESSIONS
+
+
+class TestThemeThrustFeature:
+    """S-THRUST-LAG thrust reading for the flag's own theme, at the flag bar."""
+
+    MEMBERS = [f"M{i}" for i in range(8)]
+
+    def _run(self, tmp_path, monkeypatch, *, jump: bool, seeded: int | None = None,
+             members=None):
+        from engine import signal_gate
+        monkeypatch.setattr(signal_gate, "gate", lambda t, c: _buyable())
+        members = list(members or self.MEMBERS)
+        px = _universe(members)
+        root = _seed_root(tmp_path, _rotation_doc({"Software": members}))
+        take = members if seeded is None else members[:seeded]
+        _seed_ohlcv(root, {t: _flat_ohlc(px.index, jump=jump) for t in take})
+        run = pdz.emit(root, dry_run=True, universe=px)
+        return run, {r["ticker"]: r["features"] for r in run["flags"][pdz.DOOR_T]}
+
+    def test_a_thrusting_theme_reads_thrusting(self, tmp_path, monkeypatch, off_lane):
+        _, feats = self._run(tmp_path, monkeypatch, jump=True)
+        f = feats["M0"]
+        assert f["theme_thrust_state"] == "thrusting"
+        assert f["theme_thrust_frac"] == 1.0
+        assert f["theme_thrust_reason"] is None
+
+    def test_a_quiet_theme_reads_quiet(self, tmp_path, monkeypatch, off_lane):
+        _, feats = self._run(tmp_path, monkeypatch, jump=False)
+        f = feats["M0"]
+        assert f["theme_thrust_state"] == "quiet"
+        assert f["theme_thrust_frac"] == 0.0
+        assert f["theme_thrust_reason"] is None
+
+    def test_every_flag_in_a_theme_reads_the_same_thrust(self, tmp_path, monkeypatch, off_lane):
+        """The reading belongs to the THEME, not the row — it is computed once and shared, so
+        two flags in one theme can never disagree about their theme's state."""
+        _, feats = self._run(tmp_path, monkeypatch, jump=True)
+        states = {t: (f["theme_thrust_state"], f["theme_thrust_frac"]) for t, f in feats.items()}
+        assert len(feats) >= 2 and len(set(states.values())) == 1, states
+
+    def test_thin_membership_is_null_with_a_reason_never_quiet(self, tmp_path, monkeypatch,
+                                                                off_lane):
+        """Below the stand-in's own readability floor a fraction is an artefact of its
+        denominator, so it is a disclosed null — NOT the "quiet" a real reading would print."""
+        seeded = ig.THRUST_MIN_MEMBERS - 2
+        _, feats = self._run(tmp_path, monkeypatch, jump=True, seeded=seeded)
+        f = feats["M0"]
+        assert f["theme_thrust_state"] is None
+        assert f["theme_thrust_frac"] is None
+        assert f["theme_thrust_reason"] == "thin_membership"
+
+    def test_no_covered_member_is_a_disclosed_null(self, tmp_path, monkeypatch, off_lane):
+        _, feats = self._run(tmp_path, monkeypatch, jump=True, seeded=0)
+        f = feats["M0"]
+        assert f["theme_thrust_state"] is None
+        assert f["theme_thrust_reason"] == "no_covered_member"
+
+    def test_a_name_in_no_hot_theme_records_no_theme(self, tmp_path, monkeypatch, off_lane):
+        """Door R fires on names outside every hot theme; those have no theme to read."""
+        _patch_gate_by_prefix(monkeypatch)
+        px = _mixed_universe()
+        root = _seed_root(tmp_path, _rotation_doc({"Software": ["TAAA", "TBBB"]}))
+        run = pdz.emit(root, dry_run=True, universe=px)
+        rows = [r for r in run["flags"][pdz.DOOR_R] if not r["features"].get("theme")]
+        assert rows, "fixture must produce a Door R flag outside every hot theme"
+        f = rows[0]["features"]
+        assert f["theme_thrust_state"] is None and f["theme_thrust_frac"] is None
+        assert f["theme_thrust_reason"] == "no_theme"
+        assert f["theme_thrust_reason"] in pdz.THRUST_REASONS
+
+    def test_a_universe_shorter_than_the_thrust_window_is_a_disclosed_null(self):
+        """`short_history` is NOT reachable through `emit()` — MIN_HISTORY (159) exceeds
+        THRUST_MIN_SESSIONS (27), so any tape that can produce a flag is long enough. It is a
+        defensive guard against an IndexError, reached here by driving the computer directly so
+        the declared slug is neither dead nor untested."""
+        assert pdz.MIN_HISTORY > ig.THRUST_MIN_SESSIONS, "premise of this test"
+        px = _universe(["M0"], n=ig.THRUST_MIN_SESSIONS - 1)
+        fx = pdz._RecordedFeatures(Path("."), px, {"M0": {"theme": "Software",
+                                                          "themes_hit": ["Software"]}})
+        out = fx._thrust("Software")
+        assert out["theme_thrust_state"] is None and out["theme_thrust_frac"] is None
+        assert out["theme_thrust_reason"] == "short_history"
+
+    def test_the_declared_thrust_vocabulary_is_exactly_what_the_code_emits(
+            self, tmp_path, monkeypatch, off_lane):
+        seen = set()
+        _, feats = self._run(tmp_path / "thin", monkeypatch, jump=True,
+                             seeded=ig.THRUST_MIN_MEMBERS - 2)
+        seen.add(feats["M0"]["theme_thrust_reason"])
+        _, feats = self._run(tmp_path / "none", monkeypatch, jump=True, seeded=0)
+        seen.add(feats["M0"]["theme_thrust_reason"])
+        _patch_gate_by_prefix(monkeypatch)
+        px = _mixed_universe()
+        root = _seed_root(tmp_path / "notheme", _rotation_doc({"Software": ["TAAA", "TBBB"]}))
+        run = pdz.emit(root, dry_run=True, universe=px)
+        seen |= {r["features"]["theme_thrust_reason"] for r in run["flags"][pdz.DOOR_R]
+                 if not r["features"].get("theme")}
+        seen.add("short_history")   # exercised by the test above
+        assert seen == set(pdz.THRUST_REASONS), (
+            f"declared-not-reached={set(pdz.THRUST_REASONS) - seen}, "
+            f"reached-not-declared={seen - set(pdz.THRUST_REASONS)}")
+
+    def test_a_member_with_a_hole_is_excluded_rather_than_counted_as_below(
+            self, tmp_path, monkeypatch, off_lane):
+        """Strict coverage, matching the relay feature: a hole would make the 20d-high test read
+        False and quietly deflate the fraction for a name nobody could measure."""
+        from engine import signal_gate
+        monkeypatch.setattr(signal_gate, "gate", lambda t, c: _buyable())
+        members = self.MEMBERS
+        px = _universe(members)
+        frames = {t: _flat_ohlc(px.index, jump=True) for t in members}
+        holed = frames["M7"].copy()
+        holed.iloc[-4, holed.columns.get_loc("close")] = np.nan
+        frames["M7"] = holed
+        root = _seed_root(tmp_path, _rotation_doc({"Software": members}))
+        _seed_ohlcv(root, frames)
+        run = pdz.emit(root, dry_run=True, universe=px)
+        f = {r["ticker"]: r["features"] for r in run["flags"][pdz.DOOR_T]}["M0"]
+        # 7 covered members all jump -> 7/7, not 7/8: the holed name leaves the denominator too.
+        assert f["theme_thrust_frac"] == 1.0
+        assert f["theme_thrust_state"] == "thrusting"
+
+
 class TestFeatureScopeFences:
     """Structural fences: the features are analysis-tier and stay there."""
 
@@ -1039,3 +1401,169 @@ def test_prereg_carries_the_recorded_features_addendum():
     assert "Recorded features (2026-08-04 addendum)" in doc
     for key in pdz.FEATURE_KEYS:
         assert f"`{key}`" in doc, f"{key} is recorded but not pre-registered"
+
+
+# =========================================================================== #
+# Door W — washout-turn entries, fully aligned (prereg §10)
+# =========================================================================== #
+
+class TestDoorWAlignment:
+    """door_w_aligned is a PURE recompute from price — no artifact read, definite-True only.
+
+    The pin is CONSISTENCY: on any series, each leg must equal an independent canon
+    computation (grid_series + _line_sig, line>sig on the LAST completed bar). Hardcoding a
+    True fixture is a trap — clean synthetic ramps annihilate Wilder RSI (zero-loss windows
+    go NaN), so expected values are DERIVED, never assumed. aligned=True reachability is
+    exercised through the candidates tests and was verified on live data (MCD 2/2) at build.
+    """
+
+    @staticmethod
+    def _expected_leg(px, grid):
+        from engine import stock_events as se
+        bars = se.grid_series(px, grid)
+        if bars is None or len(bars) < se.MIN_DEPTH_OBS:
+            return None
+        line, sig = se._line_sig(bars)
+        if len(line) == 0:
+            return None
+        lv, sv = float(line.iloc[-1]), float(sig.iloc[-1])
+        if lv != lv or sv != sv:
+            return None
+        return bool(lv > sv)
+
+    @pytest.mark.parametrize("shape", ["riser", "faller", "zigzag_turn", "choppy"])
+    def test_each_leg_matches_the_independent_canon_computation(self, shape):
+        idx = pd.bdate_range("2020-01-01", periods=430)
+        n = np.arange(len(idx), dtype=float)
+        series = {
+            "riser":       100.0 + 0.25 * n + 3.0 * np.sin(n / 9.0),
+            "faller":      250.0 - 0.25 * n + 3.0 * np.sin(n / 9.0),
+            "zigzag_turn": 150.0 - 0.10 * n + 2.0 * np.sin(n / 7.0)
+                           + np.cumsum(np.where(n < 360, 0.0,
+                                                np.where((n % 5) == 4, -1.5, 2.0))),
+            "choppy":      120.0 + 8.0 * np.sin(n / 23.0) + 2.0 * np.sin(n / 5.0),
+        }[shape]
+        px = pd.Series(series, index=idx)
+        out = pdz.door_w_aligned(px)
+        exp_2b = self._expected_leg(px, "2B")
+        exp_3b = self._expected_leg(px, "3B")
+        assert out["align_2b"] is exp_2b and out["align_3b"] is exp_3b
+        expected_class = sum(1 for v in (exp_2b, exp_3b) if v is True)
+        assert out["align_class"] == expected_class
+        assert out["aligned"] is (exp_2b is True and exp_3b is True)
+
+    def test_a_definite_faller_is_not_aligned(self):
+        idx = pd.bdate_range("2020-01-01", periods=430)
+        n = np.arange(len(idx), dtype=float)
+        px = pd.Series(250.0 - 0.25 * n + 3.0 * np.sin(n / 9.0), index=idx)
+        out = pdz.door_w_aligned(px)
+        assert out["aligned"] is False and out["align_class"] == 0
+
+    def test_unreadable_series_never_counts_as_aligned(self):
+        idx = pd.bdate_range("2024-01-01", periods=12)
+        px = pd.Series(np.linspace(10, 11, len(idx)), index=idx)
+        out = pdz.door_w_aligned(px)
+        assert out["align_2b"] is None and out["align_3b"] is None
+        assert out["aligned"] is False
+
+
+class TestDoorWCandidates:
+    """The three frozen legs (prereg §10.1) filter exactly as registered."""
+
+    @staticmethod
+    def _arm(monkeypatch, receipts_by_sym, aligned_by_sym=None, universe=None):
+        import engine.mtf_upturn as _mtu
+        import engine.washout_turn as _wt
+        uni = universe or {s: ["b1"] for s in receipts_by_sym}
+        idx = pd.bdate_range("2020-01-01", periods=300)
+        dummy = pd.Series(np.linspace(90, 110, len(idx)), index=idx)
+        monkeypatch.setattr(pdz, "washout_universe",
+                            lambda droot: (uni, {"ok": True, "universe_n": len(uni)}))
+        monkeypatch.setattr(_mtu, "_load_close", lambda sym, root=None: dummy.copy())
+        monkeypatch.setattr(_wt, "_deepen_close", lambda sym, close, root=None: close)
+        monkeypatch.setattr(_wt, "compute_symbol_washout",
+                            lambda close, deep=None, _m=receipts_by_sym, _c=[0]:
+                            _pop_receipt(_m, _c))
+        al = aligned_by_sym or {}
+        monkeypatch.setattr(
+            pdz, "door_w_aligned",
+            lambda close, _a=al, _c=[0]: _pop_aligned(_a, _c))
+
+    def test_fires_fresh_aligned_turn_and_sorts_deepest_first(self, tmp_path, monkeypatch):
+        rec = {"AAA": _w_receipt(depth=9.0), "BBB": _w_receipt(depth=3.0)}
+        self._arm(monkeypatch, rec)
+        got = pdz.door_w_candidates(tmp_path)
+        ticks = [t for _, t, _ in sorted(got["candidates"])]
+        assert ticks == ["BBB", "AAA"], "deepest depth_pctile must sort FIRST"
+        assert got["disclosure"]["state_turn"] == 2
+        assert got["disclosure"]["fresh"] == 2 and got["disclosure"]["aligned"] == 2
+
+    def test_stale_cross_is_filtered_by_the_freshness_leg(self, tmp_path, monkeypatch):
+        rec = {"AAA": _w_receipt(weeks=pdz.WASHOUT_FRESH_WEEKS + 1)}
+        self._arm(monkeypatch, rec)
+        got = pdz.door_w_candidates(tmp_path)
+        assert got["candidates"] == []
+        assert got["disclosure"]["state_turn"] == 1 and got["disclosure"]["fresh"] == 0
+
+    def test_non_turn_state_is_filtered(self, tmp_path, monkeypatch):
+        rec = {"AAA": None}
+        self._arm(monkeypatch, rec)
+        got = pdz.door_w_candidates(tmp_path)
+        assert got["candidates"] == [] and got["disclosure"]["state_turn"] == 0
+
+    def test_misaligned_turn_is_filtered(self, tmp_path, monkeypatch):
+        rec = {"AAA": _w_receipt()}
+        self._arm(monkeypatch, rec,
+                  aligned_by_sym={"AAA": {"align_2b": True, "align_3b": False,
+                                          "align_class": 1, "aligned": False}})
+        got = pdz.door_w_candidates(tmp_path)
+        assert got["candidates"] == []
+        assert got["disclosure"]["fresh"] == 1 and got["disclosure"]["aligned"] == 0
+
+    def test_unreadable_depth_sorts_last_never_first(self, tmp_path, monkeypatch):
+        rec = {"AAA": _w_receipt(depth=None), "BBB": _w_receipt(depth=8.0)}
+        self._arm(monkeypatch, rec)
+        got = pdz.door_w_candidates(tmp_path)
+        ticks = [t for _, t, _ in sorted(got["candidates"])]
+        assert ticks == ["BBB", "AAA"]
+
+
+def _w_receipt(depth=9.4, weeks=0):
+    return {"state": pdz.DOOR_W and "WASHOUT_TURN", "since": "2026-07-31",
+            "weeks_since_cross": weeks, "depth_pctile": depth,
+            "depth_pctile_at_cross": depth, "weekly_cb": True, "drawdown_pct": -19.7,
+            "stoch_k": 44.1, "stoch_d": 40.2, "history_weeks": 3000,
+            "history_start": "1968-01-05", "data_through": "2026-07-31"}
+
+
+def _pop_receipt(mapping, counter):
+    syms = sorted(mapping)
+    sym = syms[counter[0] % len(syms)]
+    counter[0] += 1
+    return mapping[sym]
+
+
+def _pop_aligned(mapping, counter):
+    default = {"align_2b": True, "align_3b": True, "align_class": 2, "aligned": True}
+    if not mapping:
+        return dict(default)
+    syms = sorted(mapping)
+    sym = syms[counter[0] % len(syms)]
+    counter[0] += 1
+    return mapping.get(sym, dict(default))
+
+
+class TestDoorWPrereg:
+    """The prereg and the code cannot drift apart silently."""
+
+    def test_prereg_section_10_exists_with_the_frozen_legs(self):
+        doc = (REPO / "research" / "PROPHET_DOORS_PREREG.md").read_text(encoding="utf-8")
+        assert "§10 Door W" in doc
+        assert "§10.1" in doc and "§10.6 Prospective only" in doc
+        assert "WASHOUT_FRESH_WEEKS = 2" in doc
+
+    def test_constants_match_the_registration_literals(self):
+        # Literals on purpose (a constant read back from the module is a vacuous guard).
+        assert pdz.WASHOUT_FRESH_WEEKS == 2
+        assert tuple(pdz.WASHOUT_ALIGN_GRIDS) == ("2B", "3B")
+        assert pdz.DOOR_W == "W" and pdz.DOOR_W in pdz.DOORS

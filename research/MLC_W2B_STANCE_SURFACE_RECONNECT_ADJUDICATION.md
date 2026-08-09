@@ -21,7 +21,7 @@ epistemics law (de-escalation/honesty infrastructure, never a signal origin), ha
 live consumer, and its engine-side sibling (`_apply_sector_conflict_demotion` /
 `_apply_momentum_cooling_demotion` in `engine/theme_scoring.py`) actively shapes
 `act_now` every night. No standing kill covers it (the only MLC-adjacent DNR row is
-MLC-W1's forced-call class — unrelated to this de-escalation layer).
+MLC-W1's forced-call class (DNR:KILL-FORCED-CALLS) — unrelated to this de-escalation layer).
 
 ## What was actually dead (evidence, and premise corrections)
 

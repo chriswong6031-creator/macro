@@ -11,5 +11,25 @@
       "session": "2026-08-03",
       "reason": "engine ran against a frozen store (no member bar after 2026-07-31); whether this session had real candidates is unknowable from committed data"
     }
+  ],
+  "curation_notes": [
+    {
+      "basket_id": "silver_miners",
+      "session": "2026-08-05",
+      "state": "IGNITION",
+      "note": "This row fired on the SAME DAY the silver_miners basket was curated (data/baskets/membership.json: created 2026-08-05). It is a first-observation, not a forward detection: the ledger had no prior session for this basket to turn away from, so the k=4 leg count describes the state the sleeve was already in when it was written down, not a transition the engine watched happen. Treat 2026-08-05 as the sleeve's observation start; the first gradeable silver_miners transition is whatever the ledger records AFTER it.",
+      "recorded": "2026-08-07",
+      "recorded_by": "W1-C miners-universe-parity",
+      "row_mutated": false
+    },
+    {
+      "basket_id": "silver_miners",
+      "session": "2026-08-05",
+      "state": "IGNITION",
+      "note": "Membership caveat on the same row: two of the ten members priced at curation (MAG, GATO) had already been delisted — MAG acquired by Pan American Silver, NYSE American Form 25-NSE 2025-09-04; GATO acquired by First Majestic Silver, Form 25-NSE 2025-01-16 — and carried no price series in any store, so the breadth and volume legs behind k=4 were computed over 8 members, not 10. Both are stamped `removed` in membership as of 2026-08-07. The row itself is unchanged; forward ledgers advance nightly only.",
+      "recorded": "2026-08-07",
+      "recorded_by": "W1-C miners-universe-parity",
+      "row_mutated": false
+    }
   ]
 }

@@ -6,21 +6,24 @@
     "ca_banks",
     "ca_base_metals",
     "ca_consumer",
+    "ca_gold",
     "ca_insurers",
     "ca_materials",
     "ca_oil_gas",
     "ca_pipelines",
     "ca_rails_ind",
     "ca_reits",
+    "ca_silver_royalty",
+    "ca_tech",
     "ca_utilities"
   ],
   "held": [
-    "ca_banks",
     "ca_base_metals",
-    "ca_pipelines",
-    "ca_utilities"
+    "ca_gold",
+    "ca_banks",
+    "ca_pipelines"
   ],
-  "leader": "ca_banks",
+  "leader": "ca_base_metals",
   "names": {
     "ca_asset_mgrs": "Asset Managers & Alternatives",
     "ca_banks": "Big Banks",

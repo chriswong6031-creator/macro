@@ -85,3 +85,139 @@ def test_find_bad_json_keys_clean_dict_is_empty():
             "board_track": bt, "cap_composition": {"large": 1, "mid": 0}}
     assert bcl._find_bad_json_keys(wide) == []
     json.dumps(wide, separators=(",", ":"), default=str)  # and it round-trips
+
+
+# ── Prophet board-definition pin ──────────────────────────────────────────────
+# Same failure SHAPE as the tuple-key outage above — build_china.py rejects the
+# board it was handed and serves a degraded shell instead — but from the opposite
+# direction: there the artifact was genuinely unbuildable, here it was perfect.
+#
+# 2026-08-05→08-06: #4509 moved the board to ``cn_prophet_v3``.  build_china.py
+# kept a hand-copied ``_CN_PROPHET_DEFINITION = "cn_prophet_v2"`` from #4029, so
+# _is_current_prophet_artifact rejected the LIVE board and the persisted fallback
+# alike and china_stocks.html rendered "data coverage degraded — board incomplete
+# today" over a complete same-day board (24 featured / 204 eligible).  Nothing tied
+# the renderer's pin to the engine's, so the drift was invisible to CI and surfaced
+# only when the operator read the banner.
+
+import ast  # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent
+_BUILD_CHINA = ROOT / "scripts" / "build_china.py"
+
+
+def test_renderer_accepts_the_engines_current_board_definition():
+    """The pin the renderer enforces must be the one the engine is emitting.
+
+    Non-vacuous on purpose: BOARD_DEFINITION is read from the PRODUCER and fed to
+    the CONSUMER's own predicate, so the assert crosses the module boundary that
+    actually drifted.  Re-asserting build_china's own constant would always pass.
+    """
+    from engine.china_board_rank import BOARD_DEFINITION
+    from scripts.build_china import _is_current_prophet_artifact
+
+    doc = {"schema_version": "2.0.0", "board_definition": BOARD_DEFINITION}
+    assert _is_current_prophet_artifact(doc), (
+        f"build_china rejects the engine's own current board definition "
+        f"{BOARD_DEFINITION!r}; every board would render as a data outage"
+    )
+
+
+def test_a_superseded_board_definition_is_still_rejected():
+    """The reject is load-bearing — don't 'fix' the drift by accepting everything."""
+    from engine.china_board_rank import BOARD_DEFINITION
+    from scripts.build_china import _is_current_prophet_artifact
+
+    superseded = "cn_prophet_v2"
+    assert superseded != BOARD_DEFINITION, (
+        "fixture is stale: cn_prophet_v2 is the CURRENT definition again — pick a "
+        "genuinely superseded era or this test proves nothing"
+    )
+    assert not _is_current_prophet_artifact(
+        {"schema_version": "2.0.0", "board_definition": superseded}
+    ), "a board from a superseded ranking must never render as the current one"
+
+
+def test_renderer_keeps_no_private_copy_of_the_board_definition():
+    """Structural guard: the drift class returns the moment someone re-copies it.
+
+    AST-based, not grep-based — the module header discusses ``cn_prophet_v2`` in
+    prose, and a textual scan would flag that comment while missing a slug built
+    by concatenation.  Comments carry no code, so the AST sees only real literals.
+    """
+    tree = ast.parse(_BUILD_CHINA.read_text())
+    literals = sorted({
+        node.value for node in ast.walk(tree)
+        if isinstance(node, ast.Constant)
+        and isinstance(node.value, str)
+        and node.value.startswith("cn_prophet_v")
+    })
+    assert not literals, (
+        f"scripts/build_china.py hardcodes board definition(s) {literals} — import "
+        f"BOARD_DEFINITION from engine.china_board_rank instead; a copy went stale "
+        f"once (#4509) and blanked the China Prophet board"
+    )
+
+
+# ── the outage banner must not describe a data problem that does not exist ────
+# The banner's headline was authored for W0.7, where the buy count collapsed and the
+# board really is partial. The Prophet outage shell reused it, so on 2026-08-06 a page
+# that had refused a COMPLETE 24-name board announced "data coverage degraded — board
+# incomplete today". That sentence is what sent the investigation after the China feed.
+# The shell now carries its own headline; W0.7 keeps the default.
+
+def _render_outage_banner(setups: dict) -> str:
+    """Render just the W0.7 banner block out of china.html.j2."""
+    from jinja2 import DictLoader, Environment
+    from engine import i18n
+
+    src = (ROOT / "templates" / "china.html.j2").read_text()
+    start = src.index("{# W0.7 DATA OUTAGE BANNER")
+    end = src.index("{% endif %}", start) + len("{% endif %}")
+    env = Environment(loader=DictLoader({"banner": src[start:end]}), autoescape=False)
+    env.globals.update(t=i18n.t, td=i18n.td)
+    return env.get_template("banner").render(setups=setups)
+
+
+def test_the_prophet_outage_shell_does_not_claim_degraded_coverage():
+    """The shell publishes NO board; it must not report a partial one."""
+    from scripts.build_china import _prophet_outage_shell
+
+    html = _render_outage_banner(_prophet_outage_shell())
+    assert "data coverage degraded" not in html, (
+        "the Prophet outage shell inherited W0.7's headline again — it announces a "
+        "data-coverage problem on a path where the data was never the problem"
+    )
+    assert "数据覆盖下降" not in html, "ZH half of the same false headline"
+    assert "no Prophet board today" in html
+    assert "今日暂无先知榜单" in html
+
+
+def test_the_w07_partial_board_banner_keeps_its_own_headline():
+    """Guard the default: fixing the shell must not blank the genuine coverage banner."""
+    html = _render_outage_banner({"data_outage": {
+        "flag": True, "prev_n": 110, "new_n": 42, "drop_pct": 61.8,
+        "reason": "buy-count collapsed 110→42 (62% drop, threshold 40%).",
+    }})
+    assert "data coverage degraded — board incomplete today" in html
+    assert "数据覆盖下降 — 今日看板不完整" in html
+
+
+def test_the_outage_copy_asserts_no_cause_it_did_not_check():
+    """One `else` covers four causes; a sentence true on only some of them lies.
+
+    The live build may have crashed OR built fine and been refused on its stamp, and
+    the stored board may be superseded, absent, or NEWER after an engine rollback.
+    Wording that narrates a build failure or a withheld older board was false on at
+    least one reachable branch each — including the very incident that prompted it.
+    """
+    from scripts import build_china as bc
+
+    for text in (bc._PROPHET_OUTAGE_REASON, bc._PROPHET_OUTAGE_HEADLINE):
+        low = text.lower()
+        for banned in ("could not be built", "build unavailable", "build failed",
+                       "older", "legacy", "v2", "v3"):
+            assert banned not in low, f"{banned!r} asserts an unchecked cause: {text!r}"
+    # the stance DESIGN_DOCTRINE requires, since here the banner IS the whole panel
+    assert "nothing to act on" in bc._PROPHET_OUTAGE_REASON.lower()
+    assert "无可操作" in bc._PROPHET_OUTAGE_REASON_ZH

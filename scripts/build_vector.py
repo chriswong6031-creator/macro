@@ -16,6 +16,7 @@ import os
 import re
 import sys
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -1567,28 +1568,6 @@ def _market_stocks_state(market: str) -> dict:
         return {"label": "", "n_setups": 0}
 
 
-def _regime_change_ccs(alerts: list[dict], run_date: str | None = None) -> set[str]:
-    """Return the set of market CCs (e.g. 'US') with a regime-label-change alert
-    within the past 7 days. Cross-references the home alert feed — no new detection.
-    Mapping: transition_state_change / growth_confidence_floor / inflation_confidence_floor
-    rules fire on the US macro dashboard; gex_flip_cross is also US-market-level."""
-    _US_RULES = frozenset({"transition_state_change", "growth_confidence_floor",
-                           "inflation_confidence_floor", "gex_flip_cross"})
-    ccs: set[str] = set()
-    cutoff = (pd.Timestamp(run_date) if run_date
-              else pd.Timestamp.utcnow().tz_localize(None)) - pd.Timedelta(days=7)
-    for a in alerts:
-        ts = pd.Timestamp(a.get("ts", "1970-01-01"))
-        if ts.tzinfo is not None:
-            ts = ts.tz_localize(None)
-        if ts < cutoff:
-            continue
-        rule = a.get("type", "")
-        if rule in _US_RULES:
-            ccs.add("US")
-    return ccs
-
-
 def _standout_tickers(market: str = "us") -> list[str]:
     """Return up to 3 top-ranked standout tickers from the committed factordata artifact.
     Reads site/factordata/{market}_standouts.json (display-tier, committed artifact).
@@ -1692,10 +1671,68 @@ MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
 # ---------------------------------------------------------------------------
 import re as _re
 
-def _translate_macro_detail(msg_en: str) -> str:
+# Rules whose emitter interpolated an untranslated English token into message_zh
+# before that was fixed in engine/alerts.py. Their rows are ALREADY baked into
+# data/alerts/alerts_log.parquet with e.g. "GEX：net GEX changed sign（净 +79bn…）",
+# and log_and_dedup keys on (date, rule, message) — the English message never
+# changes, so no corrected row will ever supersede them. For these rules the
+# translator below (which rebuilds zh from the canonical English) outranks the
+# stored value. Shrink this set only when the affected rows have aged out of the
+# feed; a rule that never leaked must NOT be listed, so a future emitter with
+# richer zh copy than the translator is not silently downgraded.
+_ZH_HALF_TRANSLATED_RULES = frozenset({
+    "gex_flip_cross",
+    "transition_state_change",
+    "conditions_recession_state_change",
+    "risk_state_elevated",
+    "holdings_active_change",
+    "sector_holdings_accumulation",
+})
+
+# Same treatment, but the rule id is per-tripwire ("cycle_falsifier_fired:<id>")
+# so membership is a PREFIX, not an equality. Its emitter used to interpolate the
+# author-written English `claim` into the zh body; the rows already baked with
+# that shape are healed by the rebuild below, which reads the registry's
+# authored `claim_zh`.
+_ZH_HALF_TRANSLATED_PREFIXES = ("cycle_falsifier_fired:",)
+
+
+def _zh_needs_rebuild(rule: str) -> bool:
+    """True when the persisted message_zh for `rule` is known to carry English."""
+    rule = str(rule or "")
+    return (rule in _ZH_HALF_TRANSLATED_RULES
+            or rule.startswith(_ZH_HALF_TRANSLATED_PREFIXES))
+
+
+@lru_cache(maxsize=1)
+def _falsifier_registry() -> tuple[dict, dict]:
+    """(by falsifier id, by English claim) → registry entry, for zh claim lookup.
+
+    data/cycle_ontology/falsifiers.json is hand-authored and small (24 rows);
+    read once per process.  Returns empty maps rather than raising when the file
+    is absent, so a data-less checkout still renders the English body.
+    """
+    try:
+        entries = json.loads(
+            (Path(config.ROOT) / "data" / "cycle_ontology" / "falsifiers.json")
+            .read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("falsifier registry unreadable for zh claims (%s)", exc)
+        return {}, {}
+    by_id = {str(e.get("id")): e for e in entries if e.get("id")}
+    by_claim = {str(e.get("claim")): e for e in entries if e.get("claim")}
+    return by_id, by_claim
+
+
+def _translate_macro_detail(msg_en: str, rule: str = "") -> str:
     """Attempt to translate a baked English macro alert message to Chinese.
     Returns the Chinese string if the pattern matches, or empty string to
-    signal "no match — caller should fall back to English"."""
+    signal "no match — caller should fall back to English".
+
+    `rule` is optional context: the cycle read-change branch resolves its zh
+    claim by falsifier id, which survives a re-worded claim the way matching on
+    the claim text itself does not.
+    """
     # Inflation / Growth axis confidence floor
     # EN: "Inflation axis confidence dropped below 30%: 42% -> 24%"
     # EN: "Growth axis confidence dropped below 30%: 42% -> 24%"
@@ -1723,15 +1760,31 @@ def _translate_macro_detail(msg_en: str) -> str:
 
     # Cycle read-change condition HIT (pre-#3821 logs say "Cycle falsifier FIRED";
     # both shapes translate to the sanctioned register)
-    # EN: "Cycle read-change condition HIT — credit: <claim>. Direction: ... Coverage: ..."
+    # EN: "Cycle read-change condition HIT — credit: '<claim>' (coverage: X, direction: Y)."
+    #     "Cycle read-change condition HIT — credit: <claim>. Direction: X. Coverage: Y."
     m = _re.match(r"Cycle (?:read-change condition HIT|falsifier FIRED) — ([^:]+): (.+)",
-                  msg_en)
+                  msg_en, flags=_re.DOTALL)
     if m:
-        cycle = m.group(1)
-        rest = m.group(2)
-        # strip trailing "Direction: X. Coverage: Y." suffix if present
-        rest_clean = _re.sub(r"\.\s*Direction:.*$", "", rest, flags=_re.DOTALL).strip()
-        return f"周期改判条件触发 — {cycle}：{rest_clean}。"
+        from engine.falsifier_tripwires import _CYCLE_ZH, _DIRECTION_ZH
+        cycle, rest = m.group(1), m.group(2)
+        # The claim is authored prose, so it can only be rendered by looking up
+        # the zh the author wrote — no vocabulary map can gloss it. Resolve by
+        # falsifier id (stable across a re-worded claim) and fall back to the
+        # claim text for a caller that has no rule to hand.
+        # Read the direction out of the METADATA SUFFIX, not out of `rest` as a
+        # whole — a claim is free prose and may itself contain the phrase.
+        suffix = (_re.search(r"\(coverage:[^)]*direction:\s*([^)]+)\)\.?\s*$", rest)
+                  or _re.search(r"\.\s*Direction:\s*([^.]+)\.", rest))
+        direction = "confirms" if suffix and "supports" in suffix.group(1) else "refutes"
+        rest = _re.sub(r"\s*\(coverage:[^)]*\)\.?\s*$", "", rest)
+        rest = _re.sub(r"\.\s*Direction:.*$", "", rest, flags=_re.DOTALL)
+        claim_en = rest.strip().strip("'").strip()
+        by_id, by_claim = _falsifier_registry()
+        fid = str(rule).split(":", 1)[1] if str(rule).startswith("cycle_falsifier_fired:") else ""
+        entry = by_id.get(fid) or by_claim.get(claim_en) or {}
+        claim_zh = str(entry.get("claim_zh") or "").strip()
+        return (f"周期改判条件触发 — {_CYCLE_ZH.get(cycle, cycle)}："
+                f"「{claim_zh or claim_en}」（{_DIRECTION_ZH[direction]}）。")
 
     # HY OAS widening
     # EN: "HY OAS 1-day widening +0.12pp is 2.3 sigma (level 4.56%)"
@@ -1755,7 +1808,11 @@ def _translate_macro_detail(msg_en: str) -> str:
     # EN: "Transition state STABLE -> TRANSITIONING (3 flags active)"
     m = _re.match(r"Transition state (\w+) -> (\w+) \((\d+) flags active\)", msg_en)
     if m:
-        _ts_zh = {"STABLE": "稳定", "TRANSITIONING": "转换中", "TURBULENT": "动荡"}
+        # Read the state vocabulary from the emitter rather than re-declaring it: the
+        # local copy had drifted to {STABLE, TRANSITIONING, TURBULENT} while the engine
+        # emits {STABLE, WEAKENING, TRANSITIONING, NEW_REGIME}, so TURBULENT was dead
+        # and WEAKENING/NEW_REGIME fell through to English.
+        from engine.alerts import _TS_PLAIN_ZH as _ts_zh
         return (f"转换状态 {_ts_zh.get(m.group(1), m.group(1))} -> {_ts_zh.get(m.group(2), m.group(2))}"
                 f"（{m.group(3)} 个预警激活）")
 
@@ -1850,9 +1907,12 @@ def _translate_macro_detail(msg_en: str) -> str:
             m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6), m.group(7) or "")
         verb_zh = "增持" if verb_en == "accumulating" else "减持"
         flow_zh = f"（≈{flow} 估算再平衡资金流）" if flow else ""
-        # "— cycle BUY ZONE·BUY" → " — 周期 BUY ZONE·BUY"
+        # "— cycle BUY ZONE·BUY" → " — 周期 买入区·买入" (label·action, both finite-vocab)
         cyc_m = _re.search(r" — cycle (.+)$", rest)
-        cyc_zh = f" — 周期 {cyc_m.group(1)}" if cyc_m else ""
+        cyc_zh = ""
+        if cyc_m:
+            from engine.i18n import tr as _tr_term
+            cyc_zh = " — 周期 " + "·".join(_tr_term(p) for p in cyc_m.group(1).split("·", 1))
         return (f"{fund}：{ticker} 权重较价格多变动 {change}"
                 f"{flow_zh}（{verb_zh}），{dates}{cyc_zh}")
 
@@ -1896,9 +1956,14 @@ def home_alert_feed() -> list[dict]:
             # after the zh column landed in the parquet schema), then try the
             # template-prefix translation map for backlog entries that predate the
             # column (returns "" on no-match, falling back to English).
+            # EXCEPT for the rules whose persisted zh is known to carry raw
+            # English inside the Chinese wrapper — there the translator's
+            # rebuild-from-canonical-English wins over the stored value.
+            # _zh_needs_rebuild subsumes the plain _ZH_HALF_TRANSLATED_RULES
+            # membership test and adds the per-tripwire PREFIX family.
             stored_zh = str(r.get("message_zh", "") or "").strip()
-            if not stored_zh:
-                stored_zh = _translate_macro_detail(r["message"])
+            if not stored_zh or _zh_needs_rebuild(r["rule"]):
+                stored_zh = _translate_macro_detail(r["message"], r["rule"]) or stored_zh
             detail_zh = stored_zh or r["message"]
             out.append({
                 "source": "macro", "source_label": h["macro_label"],
@@ -2191,6 +2256,18 @@ html[data-lang="zh"] .sb-tx b{letter-spacing:0}
 .ha-when{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap}
 .ha-detail{padding:0 0 12px 22px;font-size:12.5px;color:var(--text);line-height:1.55}
 .ha-detail a{font-weight:700;color:var(--link)}
+/* the opened row leads with WHAT IT MEANS (the alert's own plain-word copy), then the
+   conviction/null line, and only then the raw measurement. Mirrors the macro page's
+   ms-sig-what / ms-sig-edge stack; ordered explanation-first because on the hub this
+   row is the only place the signal is ever explained. */
+.ha-what{font-size:12.5px;color:var(--text);line-height:1.55}
+.ha-edge{font-size:12px;color:var(--muted);line-height:1.45;margin-top:6px}
+.ha-edge b{color:var(--text);font-weight:700}
+/* the measurement is a receipt, not the explanation — demote it to a mono readout,
+   but ONLY when plain words sit above it (some feeds carry no `what`, and there the
+   measurement is all the row has, so it must stay body text). */
+.ha-what ~ .ha-foot,.ha-edge ~ .ha-foot{margin-top:9px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.ha-what ~ .ha-foot .ha-read,.ha-edge ~ .ha-foot .ha-read{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
 .al-more{display:block;text-align:center;padding:11px 0 6px;font-size:12.5px;font-weight:700;color:var(--link);text-decoration:none}
 .al-more:hover{text-decoration:underline}
 .ha-toggle{display:block;width:100%;background:none;border:none;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding:9px 0;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--link);cursor:pointer;text-align:center}
@@ -2560,22 +2637,6 @@ html[data-lang="zh"] .hub-seg .l-zh{display:inline}
 }
 .go-tx{display:inline}
 
-/* ===== regime-change badge on market cards ===== */
-.regime-changed{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:700;
- background:color-mix(in srgb,var(--warn) 14%,transparent);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);
- color:var(--warn);margin-left:6px;vertical-align:middle;white-space:nowrap}
-.regime-changed .l-zh{display:none}
-html[data-lang="zh"] .regime-changed .l-en{display:none}
-html[data-lang="zh"] .regime-changed .l-zh{display:inline}
-/* regime TRAJECTORY badge — direction alongside the label; colours DON'T flip in zh
-   (amber=deteriorating, accent=improving), the ↘/↗ carries the meaning. */
-.regime-drift{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:700;margin-left:6px;vertical-align:middle;white-space:nowrap;border:1px solid transparent}
-.regime-drift.det{color:var(--warn);background:color-mix(in srgb,var(--warn) 13%,transparent);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
-.regime-drift.imp{color:var(--accent,var(--info));background:color-mix(in srgb,var(--accent,var(--info)) 12%,transparent);border-color:color-mix(in srgb,var(--accent,var(--info)) 30%,transparent)}
-.regime-drift .l-zh{display:none}
-html[data-lang="zh"] .regime-drift .l-en{display:none}
-html[data-lang="zh"] .regime-drift .l-zh{display:inline}
-
 /* ===== standout ticker chips in stock splitbtn em ===== */
 .sb-tickers{display:inline;font-family:var(--font-mono);font-size:10.5px;opacity:.8;letter-spacing:.01em}
 
@@ -2763,11 +2824,28 @@ def _regime_dynamics(cc: str, d: dict) -> dict:
         g, i, tr = tl.get("g") or [], tl.get("i") or [], tl.get("trans") or []
     except Exception:  # noqa: BLE001
         return empty
-    if len(g) < 30 or len(i) < 30:
+    # A null TIP is not a gap to compact — it is a MISSING CURRENT READING, and the two
+    # must not be conflated. Compaction alone anchors `pairs[-1]` on the last CLEAN day,
+    # so HK (whose `i` has been null since 2026-07-28) would publish an 11-day-stale
+    # endpoint AS today's direction, with nothing on the card saying so — the same lie as
+    # coercing the gap to 0.0, which renders a confident rdir="stable". No current
+    # reading, no verdict: disclose null, exactly like a market with no timeline at all
+    # (JP/KR/TW/GB/EZ already render that way). Writers route through `pd.isna`, so a gap
+    # always arrives as None, never NaN.
+    if not (g and i and g[-1] is not None and i[-1] is not None):
         return empty
-    N = min(20, len(g) - 1)                       # ~1 month of trading days
-    g_now, i_now = g[-1], i[-1]
-    dg, di = g_now - g[-1 - N], i_now - i[-1 - N]
+    # Collection gaps commit as nulls in the timeline series; a null endpoint
+    # would TypeError here and a null-holed window would misstate the drift.
+    # The trajectory math needs ALIGNED g/i readings, so keep only paired
+    # non-null days — dropping gap days just widens the calendar span of the
+    # ~1-month window, and the 30-reading coverage floor now counts clean pairs.
+    pairs = [(gv, iv) for gv, iv in zip(g, i) if gv is not None and iv is not None]
+    if len(pairs) < 30:
+        return empty
+    N = min(20, len(pairs) - 1)                   # ~1 month of trading days
+    g_now, i_now = pairs[-1]
+    g_then, i_then = pairs[-1 - N]
+    dg, di = g_now - g_then, i_now - i_then
     dQ = dg - di                                  # velocity of "quality" (growth↑ / inflation↓ = better)
     ts = (tr[-1] if tr else "STABLE") or "STABLE"
     quad = (d.get("quad") or "").upper()
@@ -2876,10 +2954,8 @@ def _g_legend(blob):
 
 
 def _g_markets(blob, us_n, cn_n, hk_n,
-               regime_changed_ccs: "set[str] | None" = None,
                standout_tickers: "dict[str, list[str]] | None" = None):
     by = {m["cc"]: m for m in blob}
-    _regime_changed = regime_changed_ccs or set()
     _tickers = standout_tickers or {}
     # Each entry: (href, ic, ten, tzh, ten_s, tzh_s, sen, szh)
     # ten_s/tzh_s = short label shown on mobile; ten/tzh = full label shown on desktop
@@ -2919,29 +2995,10 @@ def _g_markets(blob, us_n, cn_n, hk_n,
             btns.append('<a class="splitbtn" href="' + href + '"><span class="sb-ic" aria-hidden="true">' + ic + '</span>'
                         '<span class="sb-tx"><b><span class="sb-full">' + _bi(ten, tzh) + '</span><span class="sb-mini">' + _bi(ten_s, tzh_s) + '</span></b><em>' + em_html + '</em></span>'
                         '<span class="sb-go" aria-hidden="true">→</span></a>')
-        # regime-change badge on card header
-        changed_badge = (
-            '<span class="regime-changed">'
-            '<span class="l-en">changed</span>'
-            '<span class="l-zh">已切换</span>'
-            '</span>'
-        ) if cc in _regime_changed else ""
-        # regime TRAJECTORY badge — the label is never shown without its direction; a
-        # deteriorating "Goldilocks" and a firming one are opposite trades. From rdir.
-        _rd = m.get("rdir")
-        if _rd == "deteriorating":
-            drift_badge = ('<span class="regime-drift det">↘ '
-                           + _bi(m.get("rtoward_en") or "cooling", m.get("rtoward_zh") or "转弱") + '</span>')
-        elif _rd == "improving":
-            drift_badge = ('<span class="regime-drift imp">↗ '
-                           + _bi(m.get("rtoward_en") or "firming", m.get("rtoward_zh") or "转强") + '</span>')
-        else:
-            drift_badge = ""
         cards.append('<div class="glass acc card ' + cls[cc] + '">'
                      '<div class="card-top"><span class="ico" aria-hidden="true">' + m["flag"] + '</span>'
                      '<h3 class="card-h">' + _bi(*nm[cc]) + '</h3>'
-                     '<span class="pill ' + m["quad"] + ' hd">' + _bi(m["quad_name_en"], m["quad_name_zh"]) + '</span>'
-                     + changed_badge + drift_badge + '</div>'
+                     '<span class="pill ' + m["quad"] + ' hd">' + _bi(m["quad_name_en"], m["quad_name_zh"]) + '</span></div>'
                      '<div class="split">' + "".join(btns) + '</div></div>')
     return ('<div class="band"><h2>' + _bi("Markets", "市场") + '</h2><span class="ln"></span></div>'
             '<div class="nav mk reveal">' + "".join(cards) + '</div>')
@@ -3126,22 +3183,47 @@ def _g_alerts(alerts):
             head_t = str(T(a["headline"], a.get("headline_zh") or a["headline"]))
             detail = str(T(a["detail"], a.get("detail_zh") or a["detail"]))
             cta = str(T(a.get("cta", "Open →"), a.get("cta_zh") or a.get("cta", "Open →")))
+            # The plain-word explanation and the conviction/null note are carried on every
+            # feed row (`_home_alerts` fills them from engine.alerts ALERT_META /
+            # ALERT_CONVICTION) but went unrendered here until 2026-08-06, so an opened row
+            # showed only the raw measurement — "GEX: net GEX changed sign (net +79bn, spot
+            # vs flip -0.7%)" and nothing that said what that means. The hub greeter quotes
+            # the newest headline and promises "the evidence is below", so this row IS the
+            # explanation surface. Both stay optional: the vector/commodity feeds may carry
+            # neither, and the row must still render.
+            what = str(a.get("what", "") or "").strip()
+            edge = str(a.get("edge", "") or "").strip()
+            prose = ""
+            if what:
+                prose += ('<div class="ha-what">'
+                          + str(T(what, str(a.get("what_zh", "") or "").strip() or what))
+                          + '</div>')
+            if edge:
+                prose += ('<div class="ha-edge"><b>' + str(T("Conviction:", "可信度：")) + '</b> '
+                          + str(T(edge, str(a.get("edge_zh", "") or "").strip() or edge))
+                          + '</div>')
             # 2b: rows 6+ (idx>=5) go inside the hidden expander; wrap them after row 5
             if idx == 5:
                 k = len(deduped) - 5
                 out.append(
                     '<div class="ha-more-wrap" id="ha-more" style="display:none">'
                 )
-            # newest row gets a one-shot pulse; severity is carried by the dot colour
+            # newest row gets a one-shot pulse; severity is carried by the dot colour.
+            # It also opens by default: the greeter points the reader straight at it
+            # ("the evidence is below"), and a collapsed row keeps that promise empty.
             item_cls = "ha-item"
+            opened = ""
             if idx == 0:
                 item_cls += " newest"
-            out.append('<details class="' + item_cls + '"><summary>'
+                opened = " open"
+            out.append('<details class="' + item_cls + '"' + opened + '><summary>'
                        '<span class="ha-dot d-' + dot + '"></span>'
                        '<span class="ha-src ' + src_cls + '">' + src + '</span>'
                        '<span class="ha-head">' + head_t + '</span>'
                        '<span class="ha-when">' + _bi(when, when_zh) + '</span></summary>'
-                       '<div class="ha-detail">' + detail + ' <a href="' + a["link"] + '">' + cta + '</a></div></details>')
+                       '<div class="ha-detail">' + prose
+                       + '<div class="ha-foot"><span class="ha-read">' + detail + '</span> '
+                       '<a href="' + a["link"] + '">' + cta + '</a></div></div></details>')
         if len(deduped) > 5:
             # close the hidden wrapper after the last extra row
             out.append('</div>')
@@ -3273,7 +3355,6 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     legend = _g_legend(blob)
     globe_deck = _GLOBE_DECK_DOM.replace("__LEGEND__", legend)
     # --- new hub sections ---
-    regime_ccs = _regime_change_ccs(alerts)
     _tickers: dict[str, list[str]] = {}
     for _mkt, _key in (("US", "us"), ("CN", "china"), ("HK", "hk")):
         _t = _standout_tickers(_key)
@@ -3281,9 +3362,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
             _tickers[_mkt] = _t
     latest_rpt = _latest_report_data()
     # --- end new hub sections ---
-    markets = _g_markets(blob, us_n, cn_n, hk_n,
-                         regime_changed_ccs=regime_ccs,
-                         standout_tickers=_tickers)
+    markets = _g_markets(blob, us_n, cn_n, hk_n, standout_tickers=_tickers)
     vectors = _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist,
                          latest_report=latest_rpt, ipo=ipo)
     alerts_html = _g_alerts(alerts)

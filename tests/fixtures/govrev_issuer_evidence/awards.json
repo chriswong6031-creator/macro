@@ -1,0 +1,58 @@
+[
+  {
+    "base_obligation_date": "2022-09-20",
+    "generated_award_id": "CONT_AWD_70CTD022FR0000170_7012_GS35F0086U_4730",
+    "recipient_name": "PALANTIR TECHNOLOGIES INC.",
+    "recipient_uei": "FSY4LVSBGWB7",
+    "start_date": "2022-09-26",
+    "ticker": "PLTR"
+  },
+  {
+    "base_obligation_date": "2025-11-21",
+    "generated_award_id": "CONT_AWD_W9128Z26FA001_9700_W519TC25D0039_9700",
+    "recipient_name": "PALANTIR USG INC",
+    "recipient_uei": "HNN4F9JZWDY8",
+    "start_date": "2025-10-15",
+    "ticker": "PLTR"
+  },
+  {
+    "base_obligation_date": "2024-02-05",
+    "generated_award_id": "CONT_AWD_FA860124C0001_9700_-NONE-_-NONE-",
+    "recipient_name": "THE BOEING COMPANY",
+    "recipient_uei": "BAENGCMPNY11",
+    "start_date": "2024-02-01",
+    "ticker": "BA"
+  },
+  {
+    "base_obligation_date": "2024-05-01",
+    "generated_award_id": "CONT_AWD_MARSHALL0001_9700_-NONE-_-NONE-",
+    "recipient_name": "MARSHALL OF CAMBRIDGE AEROSPACE LIMITED",
+    "recipient_uei": "MARSHALLCAM1",
+    "start_date": "2024-05-01",
+    "ticker": "GE"
+  },
+  {
+    "base_obligation_date": "2024-06-01",
+    "generated_award_id": "CONT_AWD_PRESTIGE0001_9700_-NONE-_-NONE-",
+    "recipient_name": "PRESTIGE AEROSPACE LLC",
+    "recipient_uei": "PRESTGEAERZ2",
+    "start_date": "2024-06-01",
+    "ticker": "GE"
+  },
+  {
+    "base_obligation_date": "2024-01-01",
+    "generated_award_id": "CONT_AWD_IRIDIUM00001_9700_-NONE-_-NONE-",
+    "recipient_name": "IRIDIUM SATELLITE LLC",
+    "recipient_uei": "RDMSATELLT12",
+    "start_date": "2024-01-01",
+    "ticker": "IRDM"
+  },
+  {
+    "base_obligation_date": "2006-06-01",
+    "generated_award_id": "CONT_AWD_N0002406C2222_9700_-NONE-_-NONE-",
+    "recipient_name": "HUNTINGTON INGALLS INCORPORATED",
+    "recipient_uei": "C3NLZNSMU254",
+    "start_date": "2006-06-01",
+    "ticker": "HII"
+  }
+]

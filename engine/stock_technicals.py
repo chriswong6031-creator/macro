@@ -24,7 +24,9 @@ Design contract:
   Donchian position. None of these is claimed as a standalone alpha here — they feed the
   display + the *entry-timing* axis + the vol-squeeze / GEX confirmers.
 
-Everything is pure (functions of pandas Series) and unit-testable.
+Everything is pure (functions of pandas Series) and unit-testable — the one exception is
+``attach_chg_1d``, which mirrors a published field onto a caller's index row and lives here
+so the field and its mirror can never drift apart.
 """
 from __future__ import annotations
 
@@ -165,6 +167,41 @@ def _ret(close: pd.Series, lag: int) -> float | None:
     return float(a / b - 1.0) * 100.0
 
 
+def chg_1d(close: pd.Series) -> float | None:
+    """Percent change of the latest close vs the prior close — the 1-day move.
+
+    Reuses ``_ret(close, 1)``, so the shortest horizon is the SAME construction as
+    every other horizon in ``momentum_block`` (finite-guarded, prior close must be
+    > 0) and carries this module's percent rounding — 1 dp, like ``ret_1m`` and
+    ``pct_vs_50dma``.
+
+    Returns ``None`` when fewer than two VALID closes exist (or the prior close is a
+    non-positive bad print). Callers OMIT the field on ``None``: a 0 would read as
+    "flat" and a null as "measured, no move", and neither is true of a name whose
+    second bar does not exist yet.
+    """
+    c = pd.to_numeric(close, errors="coerce").astype(float).dropna()
+    return _r(_ret(c, 1), 1)
+
+
+def attach_chg_1d(index_row: dict, tech: dict | None) -> None:
+    """Mirror a tech block's ``chg_1d`` onto a compact search-index row as ``c1``.
+
+    The five per-market library builders each emit a per-ticker JSON plus a compact
+    ``index.json`` row. This COPIES the already-published tech value rather than
+    re-deriving it, so the index can never disagree with the detail page, and it
+    keeps the omit-when-unavailable contract in one place instead of five hand-written
+    guards — the same shape as ``lib.ticker_popularity.attach_latest_volume``.
+
+    Consumer note: ``0`` is a REAL reading (a flat session), and ABSENT is the only
+    "no reading" state — so read the field with a presence/null test, never a truthiness
+    test, or every flat day renders as missing data.
+    """
+    value = (tech or {}).get("chg_1d")
+    if value is not None:
+        index_row["c1"] = value
+
+
 def momentum_block(close: pd.Series) -> dict:
     """Multi-horizon return + 12-1 momentum + volatility-scaled momentum (Daniel-Moskowitz:
     the 12-1 total return divided by trailing annualized vol — the form that survives momentum
@@ -229,9 +266,15 @@ def snapshot(close: pd.Series, high: pd.Series | None = None,
     def _pct_vs(ref: float | None) -> float | None:
         return _r((px / ref - 1.0) * 100.0, 1) if (px and ref and ref > 0) else None
 
+    _c1 = chg_1d(close)
+
     out: dict = {
         # ---- existing keys (back-compat with the thin snapshot) ---------------
         "price": _r(px, 2),
+        # The 1-day move rides next to the price it was read from — same series, same
+        # bar — so the two can never disagree. OMITTED (never 0, never null) when the
+        # name has fewer than two valid closes; see chg_1d().
+        **({"chg_1d": _c1} if _c1 is not None else {}),
         "above50": (px > s50) if (px and s50) else None,
         "above200": (px > s200) if (px and s200) else None,
         "pct_vs_50dma": _pct_vs(s50),

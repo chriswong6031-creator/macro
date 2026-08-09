@@ -30,8 +30,15 @@ TWO INDEPENDENT STAMP FAMILIES, each with its OWN retry gate (merge of W-C + P2.
     gate — it is calendar-derived and non-null on essentially every valid business date,
     so counting it would permanently lock opex-only rows out of future
     GEX/skew/ivspread fills (the W-C retry-gate fix).
-  * tape-flow family (P2.2 cols): a row is retryable while ALL
-    ``TAPE_FLOW_STAMP_COLS`` are null.
+  * tape-flow family (P2.2 cols): a row is retryable while ANY
+    ``TAPE_FLOW_STAMP_COLS`` is null, and the commit is PER COLUMN, fill-null-only
+    (2026-08-04).  The family-wide commit this replaces wrote all four columns as soon
+    as one was non-null, so the first computable column (usually opt_dte_quality, which
+    needs a single store row) locked the two 20-obs-gated columns at null forever — the
+    same defect class as the W-C retry-gate fix above, one family over.  Rows frozen
+    before the fix stay honest nulls (their PIT inputs are frozen), but a store repair or
+    backfill can now heal whichever cells it actually touches.  A non-null cell is never
+    overwritten.
 
   The gates are independent so one family's coverage never locks the other out.
 
@@ -46,9 +53,16 @@ the 2026-06-15+ window (where chains/summaries exist); rows outside coverage sta
 and are re-tried on future runs (cheap; the coverage window only grows).
 
 P2.2 tape-flow columns (opt_net_signed_prem_5d_z, opt_flow_breadth_group, opt_dte_quality,
-opt_crowding_flag) will be null-heavy initially because the tape_flow store starts accruing
-from 2026-07-05 forward. This is correct behaviour — the W1.3 precedent: nullable,
-retry-as-coverage-grows.
+opt_crowding_flag) are null-heavy, and two of them will stay 0% into late 2026. Measured
+2026-08-04: the tape_flow store's first rows are 2026-07-10 (not 07-05), and per-root
+accrual is ~WEEKLY, not nightly — the T2a forward mode budget-rotates a ~360-root universe
+with resume-from-last, and the step self-skips on runner hosts without the ThetaData
+Terminal (~2/5 nights in daily.yml). ``opt_net_signed_prem_5d_z`` and ``opt_crowding_flag``
+each carry a 20-prior-observation PIT gate, so they stay null until a root has 20 store rows
+strictly before a fire's as_of — ~Oct 2026 as_of dates at the measured cadence (median 5
+rows/root over 15 sessions), vs ~4 weeks at true nightly cadence. This is correct behaviour
+— the W1.3 precedent: nullable, retry-as-coverage-grows. Full per-column coverage map and
+start dates: data/us_board_ledger/README.md.
 
 NOTE: opt_iv_rank_252 remains always-null (ruling A9). It reads data/thetadata_eod greeks,
 which is mid-backfill and has a known dedup defect (#1363). That wiring waits for the dedup
@@ -73,6 +87,19 @@ computed None NEVER overwrites an existing non-null, so running it on a machine 
 gitignored stores are absent is a no-op rather than a data loss. Run it once, where the
 stores live, after the session filter lands.
 
+REPAIR — ``--restamp-cols`` (2026-08-07, the era-scoping instrument):
+``--restamp-positional`` re-opens the ORDINARY pass, so it writes the WHOLE options family,
+not the columns the repair was authorised for.  Measured against the post-#4883 store on
+2026-08-07: scoping the run to the three chain-derived columns moves 319 cells, while the
+same run unscoped moves 1,713 across 14 columns — the other 1,394 are the ordinary pass
+riding along (retry-gate fills the nightly would make anyway, plus summary-derived columns
+that are stale for their OWN reason).  Since nightly is the sole advancer of forward
+ledgers, an era-marked repair commit must carry ONLY its own cause; ``--restamp-cols``
+restricts BOTH the row gate and the write set to the named columns and runs nothing else —
+no ordinary fill, no opex/root_class dedicated write, no tape-flow family, no vanna tercile.
+Everything it does not name is left for the nightly.  Same per-row compute path as the
+ordinary pass (``stamp_options_state``), never a parallel implementation.
+
 REPAIR — ``--backfill-ovc`` (2026-08-02, registry defect opex-vanna-charm-wovc):
 from the W-OVC build (2026-07-17) to 2026-08-02, ``opt_root_class`` had NO write path
 (excluded from ``STAMP_COVERAGE_COLS`` like ``opt_opex_days``, but without the dedicated
@@ -92,11 +119,16 @@ from __future__ import annotations
 
 import argparse
 import math
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import options_stamp  # noqa: E402
 from engine.options_stamp import (
     STAMP_COLS,
     STAMP_COVERAGE_COLS,
@@ -104,9 +136,9 @@ from engine.options_stamp import (
     _default_read_skew_snapshots,
     _default_read_ivspread_snapshots,
     stamp_options_state,
-)
-from engine.tape_flow_stamp import TAPE_FLOW_STAMP_COLS, stamp_tape_flow
-from lib import config
+)  # noqa: E402
+from engine.tape_flow_stamp import TAPE_FLOW_STAMP_COLS, stamp_tape_flow  # noqa: E402
+from lib import config  # noqa: E402
 
 LEDGER_PATH = config.data_dir() / "us_board_ledger" / "retro_grades.parquet"
 
@@ -117,11 +149,71 @@ ALL_STAMP_COLS: list[str] = STAMP_COLS + TAPE_FLOW_STAMP_COLS
 # Columns whose value comes from a POSITIONAL window over a dated store (chains files or
 # summary rows) and is therefore invalidated by a non-session entry inside that window.
 # These are the columns --restamp-positional recomputes; see module header REPAIR.
+# Cross-sectional floors for the opt_vanna_relief tercile (see the COVERAGE FLOOR block
+# in stamp_ledger).  _TERCILE_MIN_NAMES is the pre-existing "enough values to have a
+# boundary" floor; _TERCILE_MIN_COVERAGE is the share of MEASURABLE names that must
+# actually carry a 5-session basis before the tercile means anything cross-sectionally.
+_TERCILE_MIN_NAMES = 3
+_TERCILE_MIN_COVERAGE = 0.50
+
+
+def _tercile_thresholds(
+    vhd_by_asof: dict[str, list[float]],
+    measurable_by_asof: dict[str, int],
+) -> dict[str, float]:
+    """Per-as_of top-tercile boundary of vanna_hedge_5d — or NO entry when unmeasurable.
+
+    COVERAGE FLOOR (2026-08-06).  A tercile is a CROSS-SECTIONAL statement — "top third
+    of the market's vanna hedge pressure" — so it means something only when the ranked
+    names actually represent the measurable universe.  Since the 5-session basis became
+    calendar-resolved (``options_stamp._row_n_sessions_back``) it returns None on a store
+    gap, and a gap at the ONE session the basis needs is store-WIDE, not per-name: every
+    name reads the same store on the same schedule.  Measured over the committed store,
+    as_of 2026-07-13 / 07-22 / 07-24 collapse from 355–375 ranked names to exactly 5 (the
+    handful whose store happens to hold that session) while every other date ranks
+    99.7–100% of them.
+
+    A bare ``len(vals) >= 3`` still FIRES on those five, silently redefining "top tercile
+    of the market" as "top tercile of 5 coverage-selected names": the threshold moves
+    +21,153 → −850 at as_of 2026-07-22 and +15,516 → −850 at 07-24, admitting names
+    nowhere near the true top third.  That is not a null; it is a gate whose meaning
+    changed.
+
+    The survivors are worse than a biased sample — they are DEAD STORES.  The threshold
+    lands on exactly −850.1826 on all three dates because the same five names survive
+    every time (ALM, BLD, CRML, NB, PPTA), and they survive precisely because their
+    stores stopped updating on 2026-07-02: a frozen store trivially "has" the 5-back
+    session because its whole tail predates the gap.  Without this floor the market's
+    top tercile would be defined by five stores publishing a three-week-old reading.
+
+    So below the floor the date is simply not ranked and the flag stays null (nulls
+    printed).  Coverage is ranked ÷ MEASURABLE, never ÷ the whole board: a name with no
+    options history was never a candidate, and counting it would refuse to rank on
+    perfectly healthy dates.  The healthy and collapsed populations sit ~70× apart
+    (99.7% vs 1.3%), so a 50% floor is nowhere near either of them.
+    """
+    out: dict[str, float] = {}
+    for asof_k, vals in vhd_by_asof.items():
+        measurable = measurable_by_asof.get(asof_k, len(vals))
+        if len(vals) < _TERCILE_MIN_NAMES:
+            continue
+        if measurable and len(vals) < _TERCILE_MIN_COVERAGE * measurable:
+            print(f"::warning title=vanna-tercile-coverage::opt_vanna_relief not ranked "
+                  f"for as_of {asof_k}: only {len(vals)} of {measurable} measurable names "
+                  f"carry a 5-session basis ({100.0 * len(vals) / measurable:.1f}% < "
+                  f"{100.0 * _TERCILE_MIN_COVERAGE:.0f}% floor) — the polygon_gex store is "
+                  f"missing that as_of's 5-back session for the rest, so a tercile over "
+                  f"the survivors would be coverage-selected, not cross-sectional",
+                  flush=True)
+            continue
+        out[asof_k] = float(np.percentile(vals, 100.0 * 2.0 / 3.0))
+    return out
+
 _POSITIONAL_WINDOW_COLS: list[str] = [
     "opt_doi_slope_5d",        # OLS over the trailing 6 chain files
     "opt_voi_flag",            # chains usable[-1] volume vs usable[-2] OI
     "opt_front7_charm_share",  # chains usable[-1] greeks vs usable[-2] OI
-    "opt_vanna_relief",        # summary iloc[-6] iv30 + cross-sectional tercile
+    "opt_vanna_relief",        # summary 5-sessions-back iv30 (calendar-resolved) + tercile
 ]
 
 
@@ -164,8 +256,9 @@ def stamp_ledger(
         coverage-gated value.  opt_opex_days (calendar-derived) is always written when
         available but never flips the row to "stamped" — future runs can still fill the
         coverage-gated cols (W-C retry-gate fix).
-      * tape-flow family: ALL ``TAPE_FLOW_STAMP_COLS`` null → retryable.  Committed only
-        when at least one tape value is non-null.
+      * tape-flow family: ANY ``TAPE_FLOW_STAMP_COLS`` null → retryable, and each column
+        commits on its own (fill-null-only).  A computable column therefore never freezes
+        a still-null sibling, and a non-null cell is never overwritten.
 
     ``n_newly_stamped`` counts rows where at least one family committed values
     (opex-only writes do not count).
@@ -202,7 +295,9 @@ def stamp_ledger(
         opts_retry_mask = opts_retry_mask | df[pos_cols_present].notna().any(axis=1)
     tf_cols_present = [c for c in TAPE_FLOW_STAMP_COLS if c in df.columns]
     if tf_cols_present:
-        tf_retry_mask = df[tf_cols_present].isna().all(axis=1)
+        # ANY (not ALL) null → retryable: the family commits per column, so a row whose
+        # dte_quality filled must stay open for the two 20-obs-gated columns (2026-08-04).
+        tf_retry_mask = df[tf_cols_present].isna().any(axis=1)
     else:
         tf_retry_mask = pd.Series(True, index=df.index)
 
@@ -231,6 +326,8 @@ def stamp_ledger(
     _ovc_pending: dict[tuple, dict] = {}
     # Separate map for vanna_hedge_5d values (computed per-ticker for cross-sectional ranking)
     _ovc_vhd_precomputed: dict[tuple, float | None] = {}
+    # Why each null is null — feeds the tercile's coverage floor (BASIS_* in options_stamp)
+    _ovc_vhd_basis: dict[tuple, str] = {}
 
     for idx in df.index[eligible_mask]:
         as_of = df.at[idx, "as_of"]
@@ -252,10 +349,14 @@ def stamp_ledger(
             _ovc_pending[key] = stamp  # stash for cross-sectional ranking below
             # Compute vanna_hedge_5d for this (as_of, ticker) if not already done
             if key not in _ovc_vhd_precomputed:
-                from engine.options_stamp import _vanna_hedge_5d_from_summary, _default_read_summary, _as_date as _stamp_as_date
+                from engine.options_stamp import _vanna_hedge_5d_basis, _default_read_summary, _as_date as _stamp_as_date
                 _as_of_d = _stamp_as_date(as_of)
                 _sdf = _default_read_summary(ticker)
-                _ovc_vhd_precomputed[key] = _vanna_hedge_5d_from_summary(_as_of_d, _sdf) if _as_of_d else None
+                _vhd_val, _vhd_status = (
+                    _vanna_hedge_5d_basis(_as_of_d, _sdf) if _as_of_d
+                    else (None, options_stamp.BASIS_NO_HISTORY))
+                _ovc_vhd_precomputed[key] = _vhd_val
+                _ovc_vhd_basis[key] = _vhd_status
             # Always write opt_opex_days (calendar-derived; always available) even when
             # coverage-gated cols are null.  This lets us track OPEX proximity for all
             # fires without poisoning the retry gate.
@@ -295,9 +396,16 @@ def stamp_ledger(
                     group_members=group_cache[group_key],
                 )
             tf_stamp = tf_cache[key]
-            if any(v is not None for v in tf_stamp.values()):
-                for col in TAPE_FLOW_STAMP_COLS:
-                    df.at[idx, col] = tf_stamp[col]
+            # PER-COLUMN, fill-null-only (2026-08-04).  The family-wide commit this
+            # replaces wrote all four columns the moment ANY was non-null, so a row whose
+            # opt_dte_quality computed had its two 20-obs-gated siblings frozen at null
+            # forever — the W-C retry-gate defect class, one family over.  A non-null cell
+            # is never overwritten here by anything, so the pass stays idempotent.
+            for col in TAPE_FLOW_STAMP_COLS:
+                val = tf_stamp.get(col)
+                if val is None or pd.notna(df.at[idx, col]):
+                    continue
+                df.at[idx, col] = val
                 row_committed = True
 
         if row_committed:
@@ -319,10 +427,14 @@ def stamp_ledger(
         if vhd is not None and math.isfinite(vhd):
             _vhd_by_asof.setdefault(str(asof_k), []).append(vhd)
 
-    _tercile_hi: dict[str, float] = {}
-    for asof_k, vals in _vhd_by_asof.items():
-        if len(vals) >= 3:
-            _tercile_hi[asof_k] = float(np.percentile(vals, 100.0 * 2.0 / 3.0))
+    # COVERAGE FLOOR — the decision lives in _tercile_thresholds (see its docstring for
+    # the measured collapse it refuses to rank).
+    _measurable_by_asof: dict[str, int] = {}
+    for (asof_k, _tk), status in _ovc_vhd_basis.items():
+        if status in (options_stamp.BASIS_OK, options_stamp.BASIS_GAP):
+            _measurable_by_asof[str(asof_k)] = _measurable_by_asof.get(str(asof_k), 0) + 1
+
+    _tercile_hi = _tercile_thresholds(_vhd_by_asof, _measurable_by_asof)
 
     # Step 3: Compute opt_vanna_relief per eligible row and write it back.
     # Also compute iv30_5d_chg directly from the summary frame for each ticker.
@@ -365,6 +477,94 @@ def stamp_ledger(
         df.at[idx, "opt_vanna_relief"] = vanna_relief
 
     return df, newly_stamped
+
+
+# Columns --restamp-cols will accept. opt_vanna_relief is a POSITIONAL column but is
+# deliberately NOT accepted: its value is a per-as_of tercile ranked over the universe the
+# pass happens to stamp, so a narrowed pass ranks a narrower universe and returns a
+# DIFFERENT flag for reasons that have nothing to do with the store. That is a
+# re-adjudication, not a restamp — the same reason backfill_ovc refuses to touch it.
+_RESTAMP_COLS_ALLOWED: list[str] = [
+    c for c in _POSITIONAL_WINDOW_COLS if c != "opt_vanna_relief"
+]
+
+
+def restamp_columns(
+    df: pd.DataFrame, cols: list[str]
+) -> tuple[pd.DataFrame, dict[str, dict[str, int]]]:
+    """ERA-SCOPED REPAIR: recompute ONLY ``cols``, on ONLY the rows that already carry them.
+
+    The narrow sibling of ``--restamp-positional`` (module header REPAIR).  The wide flag
+    re-opens the ordinary pass, which then writes every coverage column plus opex,
+    root_class, the tape-flow family and the vanna tercile — far more than any single
+    era-repair authorises, and in a ledger whose sole advancer is the nightly.  This pass
+    writes nothing it was not asked for:
+
+      * ROW GATE: a row is eligible iff at least one requested column is already non-null.
+        A row that never carried the column is not stale — it is unstamped, and belongs to
+        the ordinary retry gate.  This pass never opens or closes that gate: it writes only
+        columns that are already non-null on the row, so a row's stamped/unstamped status
+        is identical before and after.
+      * WRITE SET: only ``cols``.  Every other key the stamp produces is discarded.
+      * NON-DESTRUCTIVE: a recomputed None never replaces an existing value, so running
+        where the gitignored stores are absent is a no-op rather than a data loss (the
+        ``--restamp-positional`` contract, kept).
+
+    Returns (df, per-column {changed, unchanged, filled, blanked}) so the caller can report
+    what actually MOVED rather than how many rows were visited.
+    """
+    bad = [c for c in cols if c not in _RESTAMP_COLS_ALLOWED]
+    if bad:
+        raise SystemExit(
+            f"--restamp-cols: {', '.join(bad)} not restampable in scoped mode; "
+            f"allowed: {', '.join(_RESTAMP_COLS_ALLOWED)}. "
+            f"opt_vanna_relief is excluded on purpose — it is a cross-sectional tercile "
+            f"over the pass's own stamp universe, so narrowing the pass re-adjudicates it "
+            f"instead of restamping it (see _RESTAMP_COLS_ALLOWED)."
+        )
+    stats = {c: {"changed": 0, "unchanged": 0, "filled": 0, "blanked": 0} for c in cols}
+    if df.empty:
+        return df, stats
+    df = _ensure_stamp_columns(df.copy())
+
+    present = [c for c in cols if c in df.columns]
+    if not present:
+        return df, stats
+    eligible = df[present].notna().any(axis=1)
+    if not eligible.any():
+        return df, stats
+
+    chain_dates = _default_chain_dates()
+    skew_df = _default_read_skew_snapshots()
+    ivspread_df = _default_read_ivspread_snapshots()
+    cache: dict[tuple, dict] = {}
+
+    for idx in df.index[eligible]:
+        as_of = df.at[idx, "as_of"]
+        ticker = df.at[idx, "ticker"]
+        key = (as_of, ticker)
+        if key not in cache:
+            cache[key] = stamp_options_state(
+                as_of, ticker,
+                chain_dates=chain_dates,
+                skew_df=skew_df,
+                ivspread_df=ivspread_df,
+            )
+        stamp = cache[key]
+        for col in present:
+            old = df.at[idx, col]
+            new = stamp.get(col)
+            if pd.isna(old):
+                continue           # row gate is per-column: never fill what was not stale
+            if new is None:
+                stats[col]["blanked"] += 1   # counted, NOT written (non-destructive)
+                continue
+            if old == new:
+                stats[col]["unchanged"] += 1
+                continue
+            df.at[idx, col] = new
+            stats[col]["changed"] += 1
+    return df, stats
 
 
 def backfill_ovc(df: pd.DataFrame) -> tuple[pd.DataFrame, int, int]:
@@ -506,13 +706,20 @@ def _get_iv30_5d_chg_from_summary(
 ) -> float | None:
     """Extract iv30_5d_chg for (as_of, ticker) from the summary parquet.
 
-    PIT: reads only rows with index date ≤ as_of. Needs ≥ 6 such rows.
-    Returns None when insufficient history or columns absent.
+    PIT: reads only rows with index date ≤ as_of. Needs ≥ 6 such rows, and a row AT
+    the session exactly 5 sessions before the latest usable row — resolved by
+    CALENDAR via ``engine.options_stamp._row_n_sessions_back``, never by position,
+    so a collection outage (e.g. 2026-08-03..08-05) yields None instead of a
+    silently widened basis.
+    Returns None when insufficient history, the 5-back session's row is absent, or
+    columns absent.
 
     We re-read the summary parquet rather than storing it in the stamp to keep
     STAMP_COLS clean (iv30_5d_chg is a transient quantity for the ranking pass).
     """
-    from engine.options_stamp import _default_read_summary, _as_date
+    from engine.options_stamp import (
+        _default_read_summary, _as_date, _row_n_sessions_back,
+    )
     import datetime as _dt_local
 
     as_of_d = _as_date(as_of)
@@ -526,9 +733,12 @@ def _get_iv30_5d_chg_from_summary(
     usable = sdf[mask]
     if len(usable) < 6:
         return None
+    prior = _row_n_sessions_back(usable, 5)
+    if prior is None:
+        return None
     try:
         iv30_latest = float(usable.iloc[-1]["iv30"])
-        iv30_prior = float(usable.iloc[-6]["iv30"])
+        iv30_prior = float(prior["iv30"])
     except (TypeError, ValueError, KeyError):
         return None
     if not (math.isfinite(iv30_latest) and math.isfinite(iv30_prior)):
@@ -548,6 +758,14 @@ def main() -> None:
                          "carry them, against the session-filtered stores. Never writes a "
                          "null over an existing value, so it is a no-op where the "
                          "gitignored stores are absent. Not part of the nightly pass.")
+    ap.add_argument("--restamp-cols", default="",
+                    help="ERA-SCOPED REPAIR (see restamp_columns docstring): comma-separated "
+                         "columns to recompute, on rows that already carry them, writing "
+                         "NOTHING else — no ordinary fill, no opex/root_class write, no "
+                         "tape-flow family, no vanna tercile. Use this, not "
+                         "--restamp-positional, when a repair commit must carry only its "
+                         f"own cause. Allowed: {', '.join(_RESTAMP_COLS_ALLOWED)}. "
+                         "Not part of the nightly pass.")
     ap.add_argument("--backfill-ovc", action="store_true",
                     help="ONE-OFF W-OVC REPAIR (2026-08-02, see backfill_ovc docstring): "
                          "fill opt_root_class wherever null and opt_front7_charm_share on "
@@ -560,6 +778,27 @@ def main() -> None:
     if not ledger.exists():
         if not args.quiet:
             print(f"[options_stamp] ledger absent ({ledger}); nothing to stamp")
+        return
+
+    if args.restamp_cols:
+        cols = [c.strip() for c in args.restamp_cols.split(",") if c.strip()]
+        df = pd.read_parquet(ledger)
+        df, stats = restamp_columns(df, cols)
+        moved = sum(s["changed"] for s in stats.values())
+        if moved:
+            df.to_parquet(ledger, index=False)
+        if not args.quiet:
+            print(f"[options_stamp] --restamp-cols {','.join(cols)}: "
+                  f"{moved} values changed (scoped mode writes nothing else)")
+            for col, s in stats.items():
+                print(f"  [{col}] changed {s['changed']}, unchanged {s['unchanged']}, "
+                      f"recomputed-null-kept {s['blanked']}")
+                if s["blanked"]:
+                    print(f"::warning title=restamp-cols-null-kept::{col}: {s['blanked']} "
+                          f"rows recomputed to null and KEPT their existing value "
+                          f"(non-destructive contract) — the store may be absent here",
+                          flush=True)
+        _twin_silent_null_guard(df)
         return
 
     if args.backfill_ovc:
@@ -635,6 +874,14 @@ def main() -> None:
                 n_col = int(df[col].notna().sum())
                 pct = round(n_col / max(n_before, 1) * 100, 1)
                 print(f"  W-OVC coverage [{col}]: {n_col}/{n_before} rows ({pct}%)")
+        # P2.2 tape-flow coverage summary — PER COLUMN, because the family commits per
+        # column: the row-level count above cannot show that the two 20-obs-gated columns
+        # are still at zero while their siblings fill (see module header).
+        for col in TAPE_FLOW_STAMP_COLS:
+            if col in df.columns:
+                n_col = int(df[col].notna().sum())
+                pct = round(n_col / max(n_before, 1) * 100, 1)
+                print(f"  P2.2 coverage [{col}]: {n_col}/{n_before} rows ({pct}%)")
 
     # Silent-permanent-null tripwire (W-OVC class): a stamp column that is 100% null
     # while its display-store twin is populated means the ledger write path is dead.

@@ -746,6 +746,33 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
   text-align: center;
 }
 
+/* Honest empty state: a market that failed to load says so here instead of
+   being silently reported as "no matches". Muted, one line, with the one
+   action that can fix it. */
+.search-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 22px 18px;
+  color: var(--muted, #8d97a8);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.search-notice button {
+  padding: 4px 11px;
+  border: 1px solid color-mix(in srgb, var(--link, #5b79ff) 40%, var(--nr-line));
+  border-radius: 999px;
+  color: var(--link, #5b79ff);
+  background: color-mix(in srgb, var(--link, #5b79ff) 9%, var(--nr-soft));
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
 .logo-dev-attribution {
   padding: 0 18px 13px;
   color: var(--muted, #8d97a8);
@@ -2112,6 +2139,50 @@ html:not([data-theme="light"]) .nav-dd-menu.mega-menu .icon-drawing.violet .soft
   letter-spacing: -.012em;
 }
 
+/* ── Tier mark ─────────────────────────────────────────────────────────────
+   The FIRST tier badge in the navigation (2026-08-07, Mastermind Bot). There
+   was no lock/tier convention here before, so this rule IS the convention.
+
+   STATIC AND UNCONDITIONAL — rendered identically for Free, Essential and Pro.
+   That is the house tier-preview pattern (docs/TIER_PREVIEW_PATTERN.md): show
+   every visitor the shell so a Free account can see what Pro buys, and let the
+   server gate the payload. No JS, no /api/me call, no conditional markup —
+   "hiding rows with CSS or a JS tier check is a marketing wall, not a gate".
+
+   HUE-STABLE ON PURPOSE. It reads the menu's one interactive hue (--mock-blue),
+   never the per-card icon accent, so a future PRO on a violet or cyan card is
+   the same mark rather than a colour that means "cyan". Quiet by construction:
+   9.5px against a 15px/650 title, hairline border, wash background, no hover
+   state of its own — it labels, the title leads. Tier names are NAMED here and
+   explained on plans.html; "PRO" is the tier's proper name in both languages
+   (plans.html.j2 writes "Pro 试用" in Chinese), so it is deliberately untranslated
+   and carries no t() twins. --mock-blue-deep is fallback-guarded for the brief
+   window on a stale page where nav_market.js has not yet added .mega-menu. */
+.nav-dd-menu.mega-menu .nm-tier {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 1px 5px;
+  border: 1px solid rgba(88, 119, 233, .30);
+  border-radius: 4px;
+  color: var(--mock-blue-deep, #425ec9);
+  background: rgba(88, 119, 233, .10);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  vertical-align: 2px;
+  white-space: nowrap;
+}
+
+/* Dark needs a warmer wash and a stronger edge: the light values sink into
+   #11151d and the pill loses its shape. Ink stays --mock-blue-deep, which the
+   dark token block already re-points to #9dafef. */
+html:not([data-theme="light"]) .nav-dd-menu.mega-menu .nm-tier {
+  border-color: rgba(121, 148, 255, .34);
+  background: rgba(121, 148, 255, .16);
+}
+
 .nav-dd-menu.mega-menu .item-desc,
 .nav-dd-menu.mega-menu .mega-item .d,
 .nav-dd-menu.mega-menu .nav-market-item .d {
@@ -2676,7 +2747,11 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
      against the themed .mega-menu surface rules without !important. */
   .site-nav .nav-dd-menu.mega-menu.nav-panel-in.nav-panel-in,
   .topbar .nav-dd-menu.mega-menu.nav-panel-in.nav-panel-in {
-    z-index: 91;
+    /* one above the nav layer (theme.css HEADER LAYER LAW, 150) so the incoming
+       panel rides over the outgoing one. Tracks the base rule — it was 91 when
+       the base was 90; leaving it at 91 would have sunk every cross-fading
+       panel back under page content for the length of the swap. */
+    z-index: 151;
     background: transparent;
     border-color: transparent;
     box-shadow: none;

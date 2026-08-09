@@ -77,6 +77,10 @@ from starlette.datastructures import MutableHeaders
 # an answer the model already produced. Pure stdlib, no app import cycle.
 from app import brain_runs
 
+# Which forwarded header actually carries the visitor (and which four are forgeable).
+# Pure stdlib, no app import cycle. Read its header before changing any identity call.
+from app import edge_client
+
 # Add repo root to sys.path so engine.neuralweb can be imported from /opt/macro
 _REPO_ROOT_FOR_IMPORT = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
 if str(_REPO_ROOT_FOR_IMPORT) not in sys.path:
@@ -233,22 +237,16 @@ def _mm_is_loggable_ip(ip: str) -> bool:
 
 
 def _mm_client_ip(request: Request) -> str:
-    # Real VISITOR IP, not the CDN edge. mastermind-x.com is behind Tencent EdgeOne. EdgeOne does NOT
-    # send a real-client-IP header by default, so X-Forwarded-For is the EdgeOne EDGE IP (e.g.
-    # "Tucumcari NM" / a Singapore PoP for China traffic), not the person. Once the operator adds the
-    # EdgeOne rule "Client IP Header" = EO-Client-IP (Network Optimization), the real IP arrives here.
-    # Precedence: the configured real-IP header first (EO-Client-IP), then the other CDN real-client
-    # headers, then XFF/x-real-ip. All of these pass through Caddy untouched. See app/deploy/SITE_GATE.md
-    # and the edgeone-real-ip-headers note.
-    h = request.headers
-    for k in ("eo-client-ip", "eo-connecting-ip", "cf-connecting-ip", "true-client-ip"):
-        v = (h.get(k) or "").strip()
-        if v:
-            return v[:64]
-    xff = h.get("x-forwarded-for")
-    if xff:
-        return xff.split(",")[0].strip()[:64]
-    return (h.get("x-real-ip") or "").strip()[:64] or "unknown"
+    """Real VISITOR IP, not the CDN edge — resolved by app/edge_client.py.
+
+    Read that module before touching the order. Until 2026-08-07 this preferred
+    ``EO-Client-IP`` and then fell through ``CF-Connecting-IP`` / ``True-Client-IP`` /
+    ``X-Forwarded-For``[0] / ``X-Real-IP`` — five headers measured to arrive carrying
+    whatever the caller forged, ahead of the one the edge actually overwrites. With ufw
+    permitting 80,443/tcp from Anywhere, that let a direct-to-origin caller name itself
+    and rotate the name per request, minting a fresh rate-limit bucket every time.
+    """
+    return edge_client.client_ip(request.headers)
 
 
 # ── Registered-visitor identity (attribute authenticated visitors to their user) ──
@@ -316,6 +314,22 @@ def _mm_verify_uid_cached(token: str) -> str | None:
     Secretless (GET /auth/v1/user with the public anon key, same idiom as require_user),
     cached by token. Invalid/expired tokens cache as None so bad tokens aren't re-checked.
     Never raises.
+
+    ONLY AN ANSWER IS CACHED (2026-08-03 logout bug). The old code caught every
+    exception into one `uid = None` and cached it for the full 10-minute TTL, so a
+    4-second timeout, a DNS blip or a Supabase 5xx was recorded as "this token is
+    invalid" — indistinguishable from Supabase actually saying 401. That is what
+    logged people out mid-session: app/regwall.py is fail-closed, so one blip during
+    a gated navigation 302'd the visitor to /?signin=1&ret=…, and because the verdict
+    was CACHED against their token, the landing's silent refresh could not clear it
+    either — every retry for the next 10 minutes hit the poisoned entry, the client's
+    45s wall-hop loop guard (templates/onboard.js) gave up, and a signed-in user with
+    a perfectly renewable session got a credentials prompt.
+
+    So: an HTTP answer that rejects the token is a VERDICT and is cached; a transport
+    failure teaches us nothing about the token and must not be remembered. Both still
+    DENY this request — fail-closed is unchanged, and no caller gets a session it
+    didn't prove. The only thing that changes is how long a non-answer haunts a user.
     """
     now = time.monotonic()
     with _MM_UID_CACHE_LOCK:
@@ -323,6 +337,7 @@ def _mm_verify_uid_cached(token: str) -> str | None:
         if hit and hit[1] > now:
             return hit[0]
     uid = None
+    remember = True
     try:
         req = urllib.request.Request(
             f"{SUPABASE_URL}/auth/v1/user",
@@ -337,12 +352,18 @@ def _mm_verify_uid_cached(token: str) -> str | None:
                 uid = u
             except (ValueError, TypeError):
                 uid = None
-    except Exception:  # noqa: BLE001 — invalid/expired token or upstream down; stay anonymous
-        uid = None
-    with _MM_UID_CACHE_LOCK:
-        if len(_MM_UID_CACHE) > 5000:   # coarse cap; never unbounded
-            _MM_UID_CACHE.clear()
-        _MM_UID_CACHE[token] = (uid, now + _MM_UID_CACHE_TTL)
+    except urllib.error.HTTPError as exc:
+        # Supabase ANSWERED. 400/401/403 is its verdict on this token (expired,
+        # revoked, malformed) — authoritative, cache it. A 5xx/429 is the service
+        # failing, not a ruling on the token, so it gets the transport treatment.
+        remember = exc.code in (400, 401, 403)
+    except Exception:  # noqa: BLE001 — timeout/DNS/TLS/reset/bad body: no verdict learned
+        remember = False
+    if remember:
+        with _MM_UID_CACHE_LOCK:
+            if len(_MM_UID_CACHE) > 5000:   # coarse cap; never unbounded
+                _MM_UID_CACHE.clear()
+            _MM_UID_CACHE[token] = (uid, now + _MM_UID_CACHE_TTL)
     return uid
 
 
@@ -1808,23 +1829,31 @@ except Exception as _government_revenue_exc:  # noqa: BLE001
 # ---------------------------------------------------------------------------
 # Research Vault serving tier (RV W2 — app/research.py)
 # /api/research/* : public catalog+search read-throughs + paid view/download gate.
-# Wrapped in try/except so this file stays green if research.py lands later.
+# The paid half is a product contract, so router wiring errors fail startup
+# loudly — the same rule the BioCatalyst block below states.  A swallowed
+# ImportError here deleted all three entitled routes (the inline PDF view, the
+# metered watermarked download, and the quota read that tells a paying
+# subscriber what is left today) at once and presented only as a 404 on a paid
+# endpoint: no startup error, no log line, nothing anybody would attribute to a
+# renamed dependency or a missing optional package on the VPS.  It also took the
+# two PUBLIC read-throughs (catalog + search) with it, so the vault page went
+# empty in the same silence.
 # ---------------------------------------------------------------------------
-try:
-    from app.research import router as research_router  # noqa: E402
-    app.include_router(research_router)
-except ImportError:
-    pass  # app/research.py not yet present — vault routes unavailable until RV W2
+from app.research import router as research_router  # noqa: E402
+app.include_router(research_router)
 
 # Earnings Wire member continuations are never static objects.  The public page
 # carries only its redacted preview; this authenticated route reads the complete
 # continuation from the existing private Research Vault bucket after enforcing
-# site_full at the API boundary.
-try:
-    from app.earnings import router as earnings_router  # noqa: E402
-    app.include_router(earnings_router)
-except ImportError:
-    pass  # additive paid route remains unavailable if its module is absent
+# site_full at the API boundary.  These are paid product contracts, so router
+# wiring errors fail startup loudly — the same rule the BioCatalyst block below
+# states.  A swallowed ImportError here deleted both entitled routes (the member
+# record read plus the private catch-all that holds malformed and encoded-slash
+# probes behind the same paywall) at once and presented only as a 404 on a paid
+# endpoint: no startup error, no log line, nothing anybody would attribute to a
+# renamed dependency or a missing optional package on the VPS.
+from app.earnings import router as earnings_router  # noqa: E402
+app.include_router(earnings_router)
 
 # Public per-ticker event context for the static dossier layer.  The router
 # delegates retrieval and immutable-receipt verification to the existing
@@ -1833,14 +1862,23 @@ except ImportError:
 from app.company_intelligence import router as company_intelligence_router  # noqa: E402
 app.include_router(company_intelligence_router)
 
+# Market Memory is a read-only product projection over two existing context
+# engines (Brain macro analogues + Signal Episode Atlas).  The router enforces
+# site-full entitlement and carries an all-false authority block on every read.
+from app.market_memory import router as market_memory_router  # noqa: E402
+app.include_router(market_memory_router)
+
 # Filing Forensics private state transport. The public page is only a shell;
 # this route enforces the same authenticated site_full entitlement as the paid
-# site before reading the private Research Vault bucket.
-try:
-    from app.forensics import router as forensics_router  # noqa: E402
-    app.include_router(forensics_router)
-except ImportError:
-    pass  # additive route remains unavailable if its module is absent
+# site before reading the private Research Vault bucket. These are paid product
+# contracts, so router wiring errors fail startup loudly — the same rule the
+# BioCatalyst block below states. A swallowed ImportError here deleted all five
+# entitled routes (/api/forensics/state plus the four attested-history receipt
+# routes) at once and presented only as a 404 on a paid endpoint: no startup
+# error, no log line, nothing anybody would attribute to a renamed dependency
+# or a missing optional package on the VPS.
+from app.forensics import router as forensics_router  # noqa: E402
+app.include_router(forensics_router)
 
 # BioCatalyst Intelligence serves only the worker's pointer-bound normalized
 # product projection. Its router performs early site_full enforcement before

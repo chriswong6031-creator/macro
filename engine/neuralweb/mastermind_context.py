@@ -70,7 +70,11 @@ from engine.government_revenue.freshness import effective_freshness
 from engine.neuralweb.options_plane import (
     options_structure_block as _options_structure_block,
 )
-from engine.seasonality.contracts import ContractError, validate_neuralweb_state
+from engine.seasonality.contracts import (
+    ContractError,
+    seasonality_state_projection,
+    validate_seasonality_state,
+)
 
 log = logging.getLogger(__name__)
 
@@ -143,6 +147,14 @@ _CYCLE_PATTERN_STANDING_LAW = (
     "Nothing here may originate, score, escalate, rank, gate, or size — "
     "board_rank / oracle_escalation / sector_central_direction_score / "
     "position_sizing are forbidden consumers."
+)
+
+_INFLATION_INTELLIGENCE_STANDING_LAW = (
+    "inflation_intelligence is DISPLAY/CONTEXT ONLY. released_state is latest-local "
+    "official CPI index history (not original-release vintage), next_release_forecast "
+    "is a Release Radar forecast, and current_month_proxy_pressure is an in-progress "
+    "model/proxy rather than an official CPI observation. Nothing here may originate, "
+    "score, rank, gate, size, escalate, or execute a signal or trade."
 )
 
 _THEMATIC_STATE_STANDING_LAW = (
@@ -830,6 +842,28 @@ def _summarize_cycle_pattern(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_inflation_intelligence(repo: Path) -> tuple[dict, str | None]:
+    """Compact released/next-print/current-pressure inflation context.
+
+    Reads only ``data/release_forecast/inflation_intelligence.json``. Forecast
+    evolution is reduced to count/first/last so the append-only path cannot grow
+    this bridge without bound. The full artifact remains available through the
+    ``read_inflation_intelligence`` cortex tool.
+    """
+    path = repo / "data" / "release_forecast" / "inflation_intelligence.json"
+    state = _read_json(path)
+    if not isinstance(state, dict) or not state:
+        return {}, "data/release_forecast/inflation_intelligence.json absent or unreadable"
+
+    # Reuse the World State projection so both shared contexts keep exactly the
+    # same bounded fields and all-false authority contract.
+    from engine.neuralweb.world_state import _compose_inflation_intelligence  # noqa: PLC0415
+
+    lobe = _compose_inflation_intelligence(root=repo)
+    lobe["standing_law"] = _INFLATION_INTELLIGENCE_STANDING_LAW
+    return lobe, None
+
+
 def _summarize_thematic_state(repo: Path) -> tuple[dict, str | None]:
     """TIL W5 NW citizenship: compact thematic-state context.
 
@@ -1438,7 +1472,7 @@ def _summarize_transmission_chains(repo: Path) -> tuple[dict, str | None]:
     engine.transmission_chains.run (scripts nightly, AFTER build_site — so the site JSON
     lags but this NW read is fresh). Absent until the first chains run → empty lobe + gap.
 
-    Standing laws (masterplan §4; DNR row 45 / TXI Article 1/2):
+    Standing laws (masterplan §4; DNR:KILL-CAUSAL-DAG-ALPHA / TXI Article 1/2):
     - 100% deterministic re-projection of already-computed display-tier state; no LLM.
     - A chain state is a WATCH item — nothing here gates, ranks, sizes, or escalates. The
       summary text carries the tier honesty ("early monitor; base rates untested") and uses
@@ -1898,6 +1932,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "macro_weather": _summarize_macro_weather,
     "claim_reliability": _summarize_claim_reliability,
     "cycle_pattern": _summarize_cycle_pattern,
+    "inflation_intelligence": _summarize_inflation_intelligence,
     "thematic_state": _summarize_thematic_state,
     "mastermind_ai": _summarize_mastermind_ai,
     "risk_radar_reliability": _summarize_risk_radar_reliability,
@@ -1925,6 +1960,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "macro_weather": ["macro-snapshots-latest"],
     "claim_reliability": ["site-qledger-track-record"],
     "cycle_pattern": ["cycle-pattern-state"],
+    "inflation_intelligence": ["inflation-intelligence"],
     "thematic_state": ["theme-state"],
     "mastermind_ai": ["mastermind-feedback-summary"],
     "risk_radar_reliability": ["site-riskdata-scorecard"],
@@ -2133,10 +2169,20 @@ def _load_seasonality_map(
 ) -> dict[str, dict]:
     """Load the Lane 6 shadow lobe into a sparse {ticker: {...}} projection.
 
+    DUAL-READ: v1 and v2 states are both accepted, dispatched on each state's
+    own declared ``schema`` by ``validate_seasonality_state``, and projected
+    through the ONE shared ``seasonality_state_projection``.  A v1 file and a
+    v2 file built from the same panel therefore produce the same block — the
+    migration renamed ``forecast`` to ``historical_up_share``, it did not
+    reinterpret anything, and ``p`` is the historical positive-year share on
+    both sides.  A calibrated estimate is deliberately NOT projected: v2 keeps
+    it in a separate typed slot precisely so that surfacing one is a later,
+    gauntleted decision rather than a side effect of this reader.
+
     Three refusals, each of which is the point of the lobe rather than a
     defensive extra:
 
-    * a state that does NOT pass ``validate_neuralweb_state`` is skipped — the
+    * a state that does NOT pass its version's contract is skipped — the
       contract is what pins the all-false authority ceiling, so a state that
       has not passed it is not a weaker context block, it is an unbounded one;
     * an EXPIRED state is skipped. Calendar context expires by design (48h);
@@ -2179,13 +2225,14 @@ def _load_seasonality_map(
             n_invalid += 1
             continue
         try:
-            state = validate_neuralweb_state(state)
+            state = validate_seasonality_state(state)
+            projection = seasonality_state_projection(state)
         except ContractError:
             n_invalid += 1
             continue
         try:
             expires = datetime.fromisoformat(
-                str(state.get("expires_at")).replace("Z", "+00:00")
+                str(projection["expires_at"]).replace("Z", "+00:00")
             )
         except ValueError:
             n_invalid += 1
@@ -2193,30 +2240,10 @@ def _load_seasonality_map(
         if expires <= reference:
             n_expired += 1
             continue
-        if (state.get("uncertainty") or {}).get("abstain"):
+        if projection["abstain"]:
             continue
 
-        clock = state.get("clock") or {}
-        forecast = state.get("forecast") or {}
-        evidence = state.get("evidence") or {}
-        block = _sparse({
-            "as_of": state.get("asof"),
-            "phase": clock.get("phase"),
-            "start_doy": clock.get("start_doy"),
-            "end_doy": clock.get("end_doy"),
-            "occurrence_end_date": clock.get("occurrence_end_date"),
-            "p": forecast.get("p"),
-            "p_baseline": forecast.get("p_baseline"),
-            "edge": forecast.get("edge"),
-            "n_years": evidence.get("n_independent"),
-            "live_n": evidence.get("live_n"),
-            # The full flag list, never a filtered one: the flags ARE the
-            # honesty of this block, and a trimmed list would read as a
-            # cleaner finding than the lobe actually has.
-            "flags": (state.get("uncertainty") or {}).get("flags") or [],
-            "expires_at": state.get("expires_at"),
-            "allowed_behavior": "annotate_only",
-        })
+        block = _sparse({**projection["block"], "allowed_behavior": "annotate_only"})
         if block:
             out[str(symbol).upper()] = block
 
@@ -2764,6 +2791,10 @@ def _build_freshness(lobes: dict, lobe_manifest: list[dict]) -> dict:
             lobes.get("claim_reliability", {}).get("as_of"),
             False,
         ),
+        "inflation_intelligence": (
+            lobes.get("inflation_intelligence", {}).get("as_of"),
+            False,
+        ),
         "government_revenue": (
             lobes.get("government_revenue", {}).get("asof"),
             False,
@@ -2858,6 +2889,7 @@ def build_context(
         "data/neuralweb/cortex/memo.json",
         "data/neuralweb/cortex/probation.json",
         "data/neuralweb/cycle_pattern_state.json",
+        "data/release_forecast/inflation_intelligence.json",
         "site/factordata/us_standouts.json",
         "site/altdata/mastermind.json",
         "site/basketdata/radar_ticker.json",

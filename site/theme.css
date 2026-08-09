@@ -230,6 +230,20 @@ html[data-theme="light"][data-lang="zh"] {
   --ink-pv-near:  color-mix(in srgb, var(--pv-near)  84%, var(--text));
   --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 62%, var(--text));
 }
+/* W-L1 provisional plane (research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md §4.1).
+   Same hue as the P1 .pv-live chip's local --plvc, and that is the point: the ◐ strip
+   and the ◐ board stamp name the SAME epistemic tier — settled by the tape, not yet by
+   the record — and a second vocabulary for one idea is a tax on the reader.
+   --prov is the FILL-grade hue (tints, rules, borders); --prov-ink is the TEXT-grade
+   one, following this file's own --ink-* convention. Dark keeps ink ≡ raw so dark
+   renders byte-identical to a single-token version; light deepens toward --text,
+   because the fill-grade blue measured 4.22:1 as type on its own 11% tint over white —
+   under AA, and invisible to anyone who only ever looked at the dark shot (doctrine
+   §5.8: light is a design target, not a translation).
+   Direction-neutral BY CONSTRUCTION so 红涨绿跌 holds: never derive it from --up/--down. */
+:root { --prov: #62a0e8; --prov-ink: var(--prov); }
+html[data-theme="light"] { --prov: #2f6fd0;
+  --prov-ink: color-mix(in srgb, var(--prov) 82%, var(--text)); }
 /* ---- Chinese mode: directional GAUGES that paint state from status tokens ----
    The status tokens --ok/--act deliberately DON'T swap (they encode health/danger, see
    above). But a few gauges are genuine market-DIRECTION reads (bullish vs bearish) that
@@ -592,7 +606,26 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
   font-size: 9px; opacity: .6; transition: transform .2s; }
 .site-nav .nav-dd:hover > a.nav-link .caret { transform: rotate(180deg); }
 .site-nav .nav-dd::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 9px; }
-.site-nav .nav-dd-menu { position: absolute; top: calc(100% + 7px); left: 0; z-index: 90;
+/* ── HEADER LAYER LAW ────────────────────────────────────────────────────────
+   An open nav menu outranks EVERY page container and page popup. The site's
+   layer ladder, low to high:
+
+     page containers ............ z-index auto (flat — they never lift)
+     lifted page content ........ 95   (#regime-radar.mx5-pop-open)
+     page popovers .............. 100  (.mx5-popover)
+     header search .............. 110  (.nav-search)
+     page hover popups .......... 120  (.mx5-flipctx-pop, .ms-alerts-pop)
+   >>> nav dropdowns / megas .... 150  (this rule + .nav-mega + .nav-panel-in 151)
+     dialogs .................... 200+ (.mx5-dlg and the modal layers above it)
+
+   This was 90, which lost to all four page layers above it. Only the Research
+   `.nav-mega` had been raised to 150 (navigation-refresh.css) — the six market
+   menus were left behind, so opening the regime popup (which lifts the hero
+   card to 95) or simply having the search box overlap made the US/China/HK/
+   Canada/International/Other-Assets panels paint UNDER page content. Fixing the
+   families one at a time is what let this regress twice; the base rule now
+   carries the whole nav family, and page content must never exceed 149. */
+.site-nav .nav-dd-menu { position: absolute; top: calc(100% + 7px); left: 0; z-index: 150;
   min-width: 218px; background: var(--glass-bg);
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-brd); border-radius: 14px;
@@ -617,7 +650,11 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-brd); border-radius: 14px; box-shadow: var(--glass-shadow); padding: 6px;
   opacity: 0; visibility: hidden; transform: translateY(-6px);
-  transition: opacity .18s ease, transform .18s ease, visibility .18s; z-index: 70; }
+  transition: opacity .18s ease, transform .18s ease, visibility .18s;
+  /* 150 = the nav layer (see HEADER LAYER LAW above). Was 70, which lost to the
+     same four page layers the .site-nav family lost to; the generic header
+     families (.topbar and friends) inherit the fix from here. */
+  z-index: 150; }
 .nav-dd:hover > .nav-dd-menu, .nav-dd:focus-within > .nav-dd-menu { opacity: 1; visibility: visible;
   transform: translateY(0); }
 .nav-dd-menu a { display: block; padding: 8px 11px; border-radius: 9px; font-size: 13px; font-weight: 500;

@@ -22,6 +22,10 @@ DISPLAY-TIER LAW: no buy/act-now verbs. Fade base rate context is provided.
 Amendment log:
   2026-07-10 U7: additive trend-state display fields (mid-trend visibility);
                cross-window construction unchanged.
+  2026-08-06: trend.d3 buckets cut on the ABSOLUTE session calendar
+              (session_anchor.session_positions // 3, market per symbol) —
+              era coiled-mtf-abs-session-2026-08-06; one-time re-draw of the
+              d3 {pos, bars_since_cross} chip, disclosed in-PR.
 """
 from __future__ import annotations
 
@@ -39,6 +43,7 @@ import pandas as pd
 
 from engine.htf_durability import _biweekly_close  # PIT-safe 2W resampler
 from engine.signal_quality import signal_frame  # house 3D MACD+StochRSI (REUSE VERBATIM)
+from engine import session_anchor as _sa        # per-market bucket calendar (R-SQ1)
 from engine.technicals import rsi  # Wilder RSI
 
 log = logging.getLogger(__name__)
@@ -55,6 +60,16 @@ AUTHORITY = {
     "may_size": False,
     "may_escalate": False,
 }
+
+#: Dated graded-population era stamp (DT-R16 family) for the one-time re-draw of the
+#: trend.d3 buckets onto the absolute session calendar. ONE era covers this module AND
+#: engine/coiled's bull_div/fire_recent grids — they ship in one PR and one graded
+#: surface family; equality with coiled.ANCHOR_ERA is pinned by
+#: tests/test_coiled_mtf_anchor_invariance.py. Emitted on the site artifacts
+#: (mtf_upturn.json / mtf_upturn_cn.json) so a grader can fence the re-draw. The
+#: forward ledger is keyed (symbol, session) and carries no trend fields, so ledger
+#: rows need no stamp (this module's own buckets touch ONLY the display trend.d3).
+ANCHOR_ERA = "coiled-mtf-abs-session-2026-08-06"
 
 DISCLOSURE = (
     "Expected-NULL forward meter. Prior sector-level standalone washout-to-turn "
@@ -295,7 +310,7 @@ def _trend_for_hist(hist: pd.Series, cross_window: int) -> dict:
     return {"pos": pos, "bars_since_cross": bars_since}
 
 
-def _build_trend_fields(close: pd.Series) -> dict:
+def _build_trend_fields(close: pd.Series, market: str = "US") -> dict:
     """Build the 'trend' object for a ticker entry (additive display field, U7).
 
     Returns:
@@ -309,6 +324,10 @@ def _build_trend_fields(close: pd.Series) -> dict:
     Computed entirely from already-used MACD series — no new data loads.
     Each field is independent; cross_window semantics match each timeframe's
     existing leg detection.
+
+    ``market`` picks the reference session calendar the d3 buckets are anchored
+    to (session_anchor R1/R3) — threaded per symbol by ``_compute_symbol``, which
+    serves both the US and CN lanes.
     """
     result: dict = {}
 
@@ -319,12 +338,25 @@ def _build_trend_fields(close: pd.Series) -> dict:
     except Exception:
         result["d"] = {"pos": False, "bars_since_cross": None}
 
-    # 3D proxy: use 3-bar rolling-close resampling, same approach as signal_frame
-    # but the pos/bars_since_cross only needs the 3D MACD histogram.
+    # 3D proxy on the ABSOLUTE session grid (era ANCHOR_ERA): bucket close = last
+    # close in each 3-session bucket of the market's reference calendar. The retired
+    # resample("3B") anchored its bin edges to the series' FIRST timestamp, so this
+    # chip flipped on 49/99 deep US names from ONE dropped leading bar (measured
+    # 2026-08-06) and re-phased build-to-build off the rolling breadth caches with
+    # zero price action. Only the histogram VALUES feed the chip (the grid index
+    # never escapes), so bucketing is the whole change.
     # signal_frame uses a different upstream (resampled 3D OHLCV); for the trend
-    # field we compute MACD on 3-bar forward-sampled closes as a representative proxy.
+    # field we compute MACD on 3-session bucket closes as a representative proxy.
     try:
-        c3 = close.resample("3B").last().dropna()
+        cd = close.dropna()
+        if not cd.index.is_monotonic_increasing:
+            cd = cd.sort_index()
+        b = _sa.session_positions(cd.index, market) // 3
+        if len(b):
+            last_in_bucket = np.r_[b[1:] != b[:-1], True]
+            c3 = pd.Series(cd.to_numpy()[last_in_bucket], index=cd.index[last_in_bucket])
+        else:
+            c3 = cd
         d3_hist = _price_macd_hist(c3).dropna()
         result["d3"] = _trend_for_hist(d3_hist, D_MACD_WINDOW)
     except Exception:
@@ -367,13 +399,18 @@ def _leg_d_macd(close: pd.Series) -> bool:
     return False
 
 
-def _leg_d3_confluence(close: pd.Series) -> bool:
+def _leg_d3_confluence(close: pd.Series, market: str = "US") -> bool:
     """3D MACD+StochRSI confluence — reuse signal_frame from signal_quality VERBATIM.
 
     Returns True if the last 3D bar shows CB (buy signal) or revBuy (reversal buy),
     matching the house definition exactly.
+
+    ``market`` is the reference session calendar the 3D buckets are anchored to
+    (signal_quality R-SQ1). This organ runs a US lane and a CN lane off the SAME
+    ``_compute_symbol``, so the calendar is inferred per symbol there rather than pinned
+    here — a CN name bucketed on NYSE sessions would be wrong invisibly.
     """
-    sf = signal_frame(close)
+    sf = signal_frame(close, market=market)
     if sf.empty:
         return False
     # CB or revBuy on last available 3D bar
@@ -489,7 +526,12 @@ def _compute_symbol(
     """
     # Compute legs
     d_macd = _leg_d_macd(close)
-    d3_conf = _leg_d3_confluence(close)
+    # 3D buckets (the d3_confluence leg AND the trend.d3 chip below) are anchored to the
+    # symbol's OWN market calendar (signal_quality R-SQ1 / era ANCHOR_ERA): this function
+    # serves both the US lane and the CN lane, and `sym` is the only place that
+    # distinction is visible.
+    mkt = _sa.market_for_ticker(sym)
+    d3_conf = _leg_d3_confluence(close, mkt)
     w_macd_status = _leg_w_macd(close)
     w_macd_cross = (w_macd_status == "cross")
     w2_macd = _leg_w2_macd(close)
@@ -506,7 +548,7 @@ def _compute_symbol(
         htf_coverage = False
 
     # U7: additive trend-state fields (display only; never counted in K)
-    trend = _build_trend_fields(close)
+    trend = _build_trend_fields(close, market=mkt)
 
     # K = count of TRUE among {d_macd, d3_confluence, w_macd cross only, w2_macd}
     # 'approaching' does NOT count
@@ -638,6 +680,7 @@ def compute(
             "cohort": {"confirmed": [], "watch": []},
             "authority": AUTHORITY,
             "tier": "display",
+            "anchor_era": ANCHOR_ERA,
             "error": str(e),
         }
 
@@ -786,10 +829,12 @@ def _compute_inner(data_root: Path | None, as_of: str | None) -> dict:
         },
         "authority": AUTHORITY,
         "tier": "display",
+        "anchor_era": ANCHOR_ERA,
         "disclosure": DISCLOSURE,
         "fade_base_rate": FADE_BASE_RATE,
         "amendments": [
             "2026-07-10 U7: additive trend-state display fields (mid-trend visibility); cross-window construction unchanged",
+            "2026-08-06: trend.d3 buckets cut on the absolute session calendar (era coiled-mtf-abs-session-2026-08-06); one-time re-draw of d3 pos/bars_since_cross",
         ],
     }
 
@@ -1104,6 +1149,7 @@ def compute_cn(
             "cohort": {"confirmed": [], "watch": []},
             "authority": AUTHORITY,
             "tier": "display",
+            "anchor_era": ANCHOR_ERA,
             "disclosure": DISCLOSURE_CN,
             "error": str(e),
         }
@@ -1238,6 +1284,7 @@ def _compute_cn_inner(
         },
         "authority": AUTHORITY,
         "tier": "display",
+        "anchor_era": ANCHOR_ERA,
         "disclosure": DISCLOSURE_CN,
     }
 

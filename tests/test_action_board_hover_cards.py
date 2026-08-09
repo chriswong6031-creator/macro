@@ -131,6 +131,11 @@ def test_decision_card_shell_is_viewport_safe_and_uses_dedicated_variant():
         emit = src
         if page == "china.html.j2":
             emit += (ROOT / "templates" / "_china_act_now_board.html.j2").read_text(encoding="utf-8")
+        elif page == "dashboard.html.j2":
+            # the US act-now board (the dc.dc_css()/dc.dc_card() consumer) was hoisted into
+            # the shared _us_act_now_board.html.j2 include (SI-central transplant, 2026-08);
+            # fold it in so the emit-check follows the markup to its new home, mirroring china.
+            emit += (ROOT / "templates" / "_us_act_now_board.html.j2").read_text(encoding="utf-8")
         assert "dc.dc_css()" in emit, f"{page} never emits the shared card CSS"
         assert "dc.dc_card(" in emit, f"{page} never renders the shared card"
 

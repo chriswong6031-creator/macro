@@ -14,6 +14,40 @@ ELIGIBILITY CRITERIA:
   1. n_eff >= N_EFF_FLOOR
   2. wilson_ci_low is not None (i.e. n_eff >= WILSON_MIN_N=12 was met)
   3. days since date_last <= STALENESS_DAYS
+  4. outcome_basis == 'signed_excess'   ← see OUTCOME BASIS GATE below
+
+OUTCOME BASIS GATE (criterion 4 — protects the promotion decision itself):
+--------------------------------------------------------------------------
+The test below is a SIGN test against H0=0.5. It is only a test of anything
+when the sign of the underlying outcome carries information.
+
+Four spine ledgers (track_record, board_hk, board_ca, board_cn) fill
+outcome_excess from a forward MAXIMUM-FAVORABLE-EXCURSION column that is
+non-negative BY CONSTRUCTION, with direction pinned to +1. On such cells
+"hits" means "MFE exceeded zero at least once in the window" — measured on the
+2026-08-05 index that is ~87% of rows, and a track_record cell carries n_eff
+in the tens of thousands. Sign-testing 0.87 against 0.5 at n_eff≈57,000 gives
+p≈0; BH-FDR cannot save a family in which the null is false by construction.
+Such a cell would be PROMOTED to behavior-changing authority on a tautology.
+
+So: only cells whose outcome_basis is exactly 'signed_excess' are eligible.
+Everything else is excluded and COUNTED — never silently dropped:
+
+  - 'unsigned_mfe_proxy'  — the trap above.
+  - 'synthetic_sign_stub' — cortex_attention's ±0.01 placeholders. The SIGN is
+    real there, so the sign test is technically defined; they are excluded
+    anyway because this batch's survivor records publish shrunken_ic and
+    wilson_ci_low as an EXCESS-based edge, and promoting on a fabricated ±0.01
+    magnitude would put a placeholder into an authority record. If a
+    sign-only promotion lane is ever wanted it needs its own pre-registration,
+    not a quiet reuse of this one.
+  - None / missing column — a parquet built before the column existed, or an
+    unmapped ledger. FAIL-CLOSED: unlabelled is not eligible. The whole column
+    is a read-time backfill in query.load_index, so a kernel parquet that lacks
+    it was built by a bypassing path and its provenance is unknown.
+
+cf. PR #4673 engine/neuralweb/edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+The first batch is due 2026-10-01; this gate lands ahead of it.
 
 P-VALUE: one-sided sign test on the count of positive signed outcomes vs H0=0.5.
   (Rational: the kernel cells store hit counts implicitly via wilson_ci_low, which
@@ -65,6 +99,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 log = logging.getLogger(__name__)
 
 
@@ -88,6 +125,14 @@ STALENESS_DAYS: int = 380
 FDR_ALPHA: float = 0.10
 TRIAL_FAMILY: str = "reliability_kernel"
 SIGN_TEST_H0: float = 0.5
+
+#: The ONLY outcome_basis value whose sign carries information (see the
+#: OUTCOME BASIS GATE section of the module docstring). Anything else — and
+#: any cell with no basis label at all — is ineligible, fail-closed.
+ELIGIBLE_OUTCOME_BASIS: str = "signed_excess"
+
+#: Exclusion reason code printed in the batch report and the artifact.
+REASON_BASIS_NOT_SIGNED: str = "outcome_basis_not_signed"
 
 # Derived: the output artifact path (relative to root)
 _DECISIONS_REL = Path("data") / "neuralweb" / "kernel_decisions.json"
@@ -340,14 +385,70 @@ def _run_batch(
         except Exception:  # noqa: BLE001
             return 99999
     mask_fresh = df["date_last"].apply(_days_since) <= STALENESS_DAYS
+    # 4. outcome_basis == 'signed_excess' — the sign test is only a test when
+    #    the sign means something. See OUTCOME BASIS GATE in the module
+    #    docstring. FAIL-CLOSED: a parquet with no outcome_basis column at all
+    #    makes EVERY cell ineligible rather than every cell eligible.
+    if "outcome_basis" in df.columns:
+        basis_series = df["outcome_basis"].astype("object")
+        mask_basis = basis_series.map(
+            lambda v: (v is not None and str(v) == ELIGIBLE_OUTCOME_BASIS)
+        ).astype(bool)
+    else:
+        log.warning(
+            "kernel_decisions: kernel_estimates.parquet carries no outcome_basis "
+            "column — every cell is ineligible (%s). Rebuild the estimates with "
+            "engine.neuralweb.kernel.write_estimates() before running the batch.",
+            REASON_BASIS_NOT_SIGNED,
+        )
+        mask_basis = pd.Series(False, index=df.index)
 
-    eligible = df[mask_n & mask_ci & mask_fresh].copy().reset_index(drop=True)
+    # Cells with real depth and recency that fail the basis gate. Counted and
+    # printed, never silently dropped (nulls printed, not hidden).
+    #
+    # mask_ci is DELIBERATELY not required here. Since the outcome_basis cure,
+    # engine/neuralweb/kernel.py already emits wilson_ci_low=None for exactly
+    # these cells, so an ineligibility count conditioned on mask_ci would
+    # always report 0 and hide the very population this line exists to
+    # surface — the reader would conclude no unsigned cell was ever in scope.
+    excluded_basis = df[mask_n & mask_fresh & ~mask_basis]
+    n_excluded_basis = int(len(excluded_basis))
+    basis_exclusions_by_value: dict[str, int] = {}
+    if n_excluded_basis:
+        if "outcome_basis" in excluded_basis.columns:
+            for val, sub in excluded_basis.groupby(
+                excluded_basis["outcome_basis"].astype("object").map(
+                    lambda v: "null" if v is None or pd.isna(v) else str(v)
+                ),
+                dropna=False,
+            ):
+                basis_exclusions_by_value[str(val)] = int(len(sub))
+        else:
+            basis_exclusions_by_value["absent_column"] = n_excluded_basis
+
+    eligible = df[mask_n & mask_ci & mask_fresh & mask_basis].copy().reset_index(drop=True)
     n_eligible = len(eligible)
 
     log.info(
-        "kernel_decisions: %d eligible cells (n_eff>=%d, ci_low not null, fresh<=%dd)",
-        n_eligible, N_EFF_FLOOR, STALENESS_DAYS,
+        "kernel_decisions: %d eligible cells (n_eff>=%d, ci_low not null, "
+        "fresh<=%dd, outcome_basis==%s)",
+        n_eligible, N_EFF_FLOOR, STALENESS_DAYS, ELIGIBLE_OUTCOME_BASIS,
     )
+    if n_excluded_basis:
+        log.info(
+            "kernel_decisions: %d cells INELIGIBLE — reason=%s; by basis: %s. "
+            "Their outcome_excess is not a signed excess, so a sign test "
+            "against H0=0.5 would be vacuous.",
+            n_excluded_basis,
+            REASON_BASIS_NOT_SIGNED,
+            ", ".join(f"{k}={v}" for k, v in sorted(basis_exclusions_by_value.items())),
+        )
+        print(
+            f"INELIGIBLE: {n_excluded_basis} cells excluded "
+            f"({REASON_BASIS_NOT_SIGNED}) — "
+            + ", ".join(f"{k}={v}" for k, v in sorted(basis_exclusions_by_value.items())),
+            file=sys.stderr,
+        )
 
     # =====================================================================
     # STEP 3: REGISTER TRIAL BUDGET — LEDGER WRITE BEFORE ANY P-VALUE
@@ -374,7 +475,9 @@ def _run_batch(
             f"quarterly kernel decision batch run_at={run_at}; "
             f"n_eligible_cells={n_eligible}; "
             f"alpha={FDR_ALPHA}; criteria=n_eff>={N_EFF_FLOOR} AND ci_low notna "
-            f"AND staleness<={STALENESS_DAYS}d"
+            f"AND staleness<={STALENESS_DAYS}d "
+            f"AND outcome_basis=={ELIGIBLE_OUTCOME_BASIS}; "
+            f"n_excluded_{REASON_BASIS_NOT_SIGNED}={n_excluded_basis}"
         ),
     )
     trial_ledger_ref = {
@@ -451,8 +554,16 @@ def _run_batch(
             "fdr_correction": "benjamini_hochberg",
             "alpha": FDR_ALPHA,
             "family_scope": "all_eligible_cells_one_family_per_batch",
+            "outcome_basis_required": ELIGIBLE_OUTCOME_BASIS,
         },
         "n_eligible": n_eligible,
+        # Nulls printed, not hidden: cells that met every other criterion and
+        # were excluded solely because their outcome is not a signed excess.
+        "n_ineligible_outcome_basis": n_excluded_basis,
+        "ineligible_outcome_basis_detail": {
+            "reason": REASON_BASIS_NOT_SIGNED,
+            "by_basis": basis_exclusions_by_value,
+        },
         "n_survivors": n_survivors,
         "survivors": survivors,
         "trial_ledger_ref": trial_ledger_ref,
@@ -509,8 +620,14 @@ def _write_seed(root: Path, *, decisions_rel: Path | None = None) -> None:
             "fdr_correction": "benjamini_hochberg",
             "alpha": FDR_ALPHA,
             "family_scope": "all_eligible_cells_one_family_per_batch",
+            "outcome_basis_required": ELIGIBLE_OUTCOME_BASIS,
         },
         "n_eligible": 0,
+        "n_ineligible_outcome_basis": 0,
+        "ineligible_outcome_basis_detail": {
+            "reason": REASON_BASIS_NOT_SIGNED,
+            "by_basis": {},
+        },
         "n_survivors": 0,
         "survivors": [],
         "trial_ledger_ref": None,
@@ -610,7 +727,9 @@ def main(argv=None) -> int:
         print(
             f"OK: {result.get('n_survivors', 0)} survivors of "
             f"{result.get('n_eligible', 0)} eligible cells "
-            f"(FDR alpha={FDR_ALPHA})"
+            f"(FDR alpha={FDR_ALPHA}; "
+            f"{result.get('n_ineligible_outcome_basis', 0)} ineligible "
+            f"— {REASON_BASIS_NOT_SIGNED})"
         )
         return 0
     except SystemExit as e:

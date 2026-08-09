@@ -1,7 +1,7 @@
 {"date": "2026-07-20", "ticker": "HYLN", "sga_score": 73, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-20", "ticker": "PM", "sga_score": 69, "gate_tier": "T2", "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5, "performance": 8.333333333333334}
 {"date": "2026-07-20", "ticker": "LKFN", "sga_score": 62, "gate_tier": "T2", "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-20", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
+{"date": "2026-06-30", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25, "session_inferred": true, "original_date": "2026-07-20", "session_source": "ticker_frame"}
 {"date": "2026-07-20", "ticker": "KEEL", "sga_score": 60, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-20", "ticker": "ZURA", "sga_score": 60, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-20", "ticker": "NWL", "sga_score": 59, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 5.0}
@@ -17,7 +17,7 @@
 {"date": "2026-07-20", "ticker": "FOXF", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 4, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 3.75}
 {"date": "2026-07-20", "ticker": "TRNS", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-20", "ticker": "BLZE", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0}
-{"date": "2026-07-20", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
+{"date": "2026-07-10", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-20", "session_source": "ticker_frame"}
 {"date": "2026-07-20", "ticker": "ONL", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-20", "ticker": "OUST", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5}
 {"date": "2026-07-20", "ticker": "PGEN", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
@@ -32,7 +32,7 @@
 {"date": "2026-07-20", "ticker": "LPRO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
 {"date": "2026-07-20", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
 {"date": "2026-07-20", "ticker": "ADV", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-20", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
+{"date": "2026-07-10", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-20", "session_source": "ticker_frame"}
 {"date": "2026-07-20", "ticker": "MSEX", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-20", "ticker": "NGNE", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-20", "ticker": "OPBK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
@@ -48,9 +48,9 @@
 {"date": "2026-07-20", "ticker": "SFBS", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0}
 {"date": "2026-07-20", "ticker": "SMHI", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-20", "ticker": "SYBT", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-20", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
+{"date": "2026-07-09", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-20", "session_source": "ticker_frame"}
 {"date": "2026-07-20", "ticker": "URI", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 10.0}
-{"date": "2026-07-20", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
+{"date": "2026-07-10", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0, "session_inferred": true, "original_date": "2026-07-20", "session_source": "ticker_frame"}
 {"date": "2026-07-20", "ticker": "ARL", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-20", "ticker": "BMRC", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-20", "ticker": "DLO", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
@@ -61,7 +61,6 @@
 {"date": "2026-07-21", "ticker": "HYLN", "sga_score": 73, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "PM", "sga_score": 69, "gate_tier": "T2", "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5, "performance": 8.333333333333334}
 {"date": "2026-07-21", "ticker": "ITGR", "sga_score": 62, "gate_tier": "T1", "weeks_in_stage": 7, "earnings_present": true, "sentiment": -0.5, "performance": 0.0}
-{"date": "2026-07-21", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
 {"date": "2026-07-21", "ticker": "KEEL", "sga_score": 60, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "ZURA", "sga_score": 60, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "NWL", "sga_score": 59, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 5.0}
@@ -78,7 +77,6 @@
 {"date": "2026-07-21", "ticker": "FOXF", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 4, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 3.75}
 {"date": "2026-07-21", "ticker": "TRNS", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "BLZE", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0}
-{"date": "2026-07-21", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "ONL", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "OUST", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5}
 {"date": "2026-07-21", "ticker": "PGEN", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
@@ -93,7 +91,6 @@
 {"date": "2026-07-21", "ticker": "LPRO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
 {"date": "2026-07-21", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
 {"date": "2026-07-21", "ticker": "ADV", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-21", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "MSEX", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "NGNE", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "OPBK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
@@ -109,9 +106,7 @@
 {"date": "2026-07-21", "ticker": "SFBS", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0}
 {"date": "2026-07-21", "ticker": "SMHI", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "SYBT", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-21", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "URI", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 10.0}
-{"date": "2026-07-21", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
 {"date": "2026-07-21", "ticker": "ARL", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "BMRC", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-21", "ticker": "DLO", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
@@ -121,7 +116,6 @@
 {"date": "2026-07-22", "ticker": "SFBS", "sga_score": 76, "gate_tier": "T2", "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0}
 {"date": "2026-07-22", "ticker": "HYLN", "sga_score": 73, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "PM", "sga_score": 69, "gate_tier": "T2", "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5, "performance": 8.333333333333334}
-{"date": "2026-07-22", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
 {"date": "2026-07-22", "ticker": "KEEL", "sga_score": 60, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "ZURA", "sga_score": 60, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "NWL", "sga_score": 59, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 5.0}
@@ -138,7 +132,6 @@
 {"date": "2026-07-22", "ticker": "FOXF", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 4, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 3.75}
 {"date": "2026-07-22", "ticker": "TRNS", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "BLZE", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0}
-{"date": "2026-07-22", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "ONL", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "OUST", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5}
 {"date": "2026-07-22", "ticker": "PGEN", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
@@ -153,7 +146,6 @@
 {"date": "2026-07-22", "ticker": "LPRO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
 {"date": "2026-07-22", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
 {"date": "2026-07-22", "ticker": "ADV", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-22", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "MSEX", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "NGNE", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "OPBK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
@@ -169,75 +161,68 @@
 {"date": "2026-07-22", "ticker": "PRTH", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "SMHI", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "SYBT", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-22", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "URI", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 10.0}
-{"date": "2026-07-22", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
 {"date": "2026-07-22", "ticker": "ARL", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "BMRC", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "DLO", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
 {"date": "2026-07-22", "ticker": "DTIL", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "FSBW", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-22", "ticker": "FTDR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0}
-{"date": "2026-07-26", "ticker": "OUST", "sga_score": 70, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5}
-{"date": "2026-07-26", "ticker": "KGEI", "sga_score": 69, "gate_tier": "T1", "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "PKG", "sga_score": 68, "gate_tier": "T1", "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 8.333333333333334}
-{"date": "2026-07-26", "ticker": "SJM", "sga_score": 67, "gate_tier": "T1", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 6.666666666666667}
-{"date": "2026-07-26", "ticker": "PGEN", "sga_score": 66, "gate_tier": "T1", "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "DTIL", "sga_score": 64, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "IOSP", "sga_score": 63, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.05555555555555555, "performance": 1.6666666666666667}
-{"date": "2026-07-26", "ticker": "WYFI", "sga_score": 63, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
-{"date": "2026-07-26", "ticker": "BSVN", "sga_score": 59, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "PAMT", "sga_score": 58, "gate_tier": "T2", "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "ADV", "sga_score": 57, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "CIX", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "WHG", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "MGRC", "sga_score": 55, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "NWL", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 5.0}
-{"date": "2026-07-26", "ticker": "AIRJ", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "ITIC", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "MOH", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 7.5}
-{"date": "2026-07-26", "ticker": "SO", "sga_score": 54, "gate_tier": "T2", "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
-{"date": "2026-07-26", "ticker": "TRNS", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "ZURA", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "ABEO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "DUK", "sga_score": 53, "gate_tier": "T2", "weeks_in_stage": 4, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
-{"date": "2026-07-26", "ticker": "EXC", "sga_score": 53, "gate_tier": "T2", "weeks_in_stage": 3, "earnings_present": true, "sentiment": 0.05555555555555555, "performance": 3.75}
-{"date": "2026-07-26", "ticker": "FELE", "sga_score": 53, "gate_tier": "T3", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 5.0}
-{"date": "2026-07-26", "ticker": "FRD", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "LPRO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
-{"date": "2026-07-26", "ticker": "NGNE", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
-{"date": "2026-07-26", "ticker": "ULCC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 7.916666666666667}
-{"date": "2026-07-26", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "LWAY", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
-{"date": "2026-07-26", "ticker": "XEL", "sga_score": 52, "gate_tier": "T1", "weeks_in_stage": 2, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
-{"date": "2026-07-26", "ticker": "EFSI", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "FTDR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0}
-{"date": "2026-07-26", "ticker": "PSNL", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
-{"date": "2026-07-26", "ticker": "SION", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
-{"date": "2026-07-26", "ticker": "ATAI", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "BANR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
-{"date": "2026-07-26", "ticker": "BLZE", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0}
-{"date": "2026-07-26", "ticker": "NUAI", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "OSUR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 7.5}
-{"date": "2026-07-26", "ticker": "RMAX", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 2.5}
-{"date": "2026-07-26", "ticker": "SMP", "sga_score": 50, "gate_tier": "T2", "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
-{"date": "2026-07-26", "ticker": "TECH", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": true, "sentiment": -0.2222222222222222, "performance": 2.5}
-{"date": "2026-07-26", "ticker": "WNC", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 6.25}
-{"date": "2026-07-26", "ticker": "AGIO", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
-{"date": "2026-07-26", "ticker": "ARL", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "BMRC", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "CHCO", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-26", "ticker": "CRNX", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
-{"date": "2026-07-26", "ticker": "DCTH", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 5.0}
-{"date": "2026-07-26", "ticker": "FFIV", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 8.75}
-{"date": "2026-07-26", "ticker": "GBCI", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 10.0}
-{"date": "2026-07-26", "ticker": "LYTS", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5}
-{"date": "2026-07-26", "ticker": "MRDN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
+{"date": "2026-07-24", "ticker": "OUST", "sga_score": 70, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "KGEI", "sga_score": 69, "gate_tier": "T1", "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "PKG", "sga_score": 68, "gate_tier": "T1", "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 8.333333333333334, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "SJM", "sga_score": 67, "gate_tier": "T1", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 6.666666666666667, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "PGEN", "sga_score": 66, "gate_tier": "T1", "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "DTIL", "sga_score": 64, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "IOSP", "sga_score": 63, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.05555555555555555, "performance": 1.6666666666666667, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "WYFI", "sga_score": 63, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "BSVN", "sga_score": 59, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "PAMT", "sga_score": 58, "gate_tier": "T2", "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "ADV", "sga_score": 57, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "CIX", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "WHG", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "MGRC", "sga_score": 55, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "NWL", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 5.0, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "AIRJ", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "ITIC", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "MOH", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 7.5, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "SO", "sga_score": 54, "gate_tier": "T2", "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "TRNS", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "ZURA", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "ABEO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "DUK", "sga_score": 53, "gate_tier": "T2", "weeks_in_stage": 4, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "EXC", "sga_score": 53, "gate_tier": "T2", "weeks_in_stage": 3, "earnings_present": true, "sentiment": 0.05555555555555555, "performance": 3.75, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "FELE", "sga_score": 53, "gate_tier": "T3", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 5.0, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "FRD", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "LPRO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 8.75, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "NGNE", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-23", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "ULCC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 7.916666666666667, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "LWAY", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "XEL", "sga_score": 52, "gate_tier": "T1", "weeks_in_stage": 2, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "EFSI", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "FTDR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "PSNL", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "SION", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "ATAI", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "BANR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "BLZE", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "NUAI", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "OSUR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 7.5, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "RMAX", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 2.5, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "SMP", "sga_score": 50, "gate_tier": "T2", "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "TECH", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": true, "sentiment": -0.2222222222222222, "performance": 2.5, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "WNC", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 6.25, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "AGIO", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "ARL", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "BMRC", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "CHCO", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "CRNX", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "DCTH", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 5.0, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "FFIV", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 8.75, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "GBCI", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 10.0, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-24", "ticker": "LYTS", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
+{"date": "2026-07-10", "ticker": "MRDN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-07-26", "session_source": "ticker_frame"}
 {"date": "2026-07-27", "ticker": "OUST", "sga_score": 70, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5}
 {"date": "2026-07-27", "ticker": "KGEI", "sga_score": 69, "gate_tier": "T1", "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-27", "ticker": "PKG", "sga_score": 68, "gate_tier": "T1", "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 8.333333333333334}
@@ -246,13 +231,11 @@
 {"date": "2026-07-27", "ticker": "DTIL", "sga_score": 64, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-27", "ticker": "IOSP", "sga_score": 63, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.05555555555555555, "performance": 1.6666666666666667}
 {"date": "2026-07-27", "ticker": "WYFI", "sga_score": 63, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-27", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
 {"date": "2026-07-27", "ticker": "BSVN", "sga_score": 59, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-27", "ticker": "PAMT", "sga_score": 58, "gate_tier": "T2", "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-27", "ticker": "ADV", "sga_score": 57, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-27", "ticker": "CIX", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-27", "ticker": "WHG", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-27", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-27", "ticker": "MGRC", "sga_score": 55, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-27", "ticker": "NWL", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 5.0}
 {"date": "2026-07-27", "ticker": "AIRJ", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
@@ -268,17 +251,13 @@
 {"date": "2026-07-27", "ticker": "FRD", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-27", "ticker": "LPRO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
 {"date": "2026-07-27", "ticker": "NGNE", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-27", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
 {"date": "2026-07-27", "ticker": "ULCC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 7.916666666666667}
-{"date": "2026-07-27", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-27", "ticker": "LWAY", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
 {"date": "2026-07-27", "ticker": "XEL", "sga_score": 52, "gate_tier": "T1", "weeks_in_stage": 2, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
 {"date": "2026-07-27", "ticker": "EFSI", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-27", "ticker": "FTDR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0}
 {"date": "2026-07-27", "ticker": "PSNL", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
 {"date": "2026-07-27", "ticker": "SION", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-27", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-27", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
 {"date": "2026-07-27", "ticker": "ATAI", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-27", "ticker": "BANR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
 {"date": "2026-07-27", "ticker": "BLZE", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0}
@@ -297,7 +276,6 @@
 {"date": "2026-07-27", "ticker": "FFIV", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 8.75}
 {"date": "2026-07-27", "ticker": "GBCI", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 10.0}
 {"date": "2026-07-27", "ticker": "LYTS", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5}
-{"date": "2026-07-27", "ticker": "MRDN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "CIX", "sga_score": 81, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "OUST", "sga_score": 70, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5}
 {"date": "2026-07-28", "ticker": "PKG", "sga_score": 68, "gate_tier": "T1", "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 8.333333333333334}
@@ -305,12 +283,10 @@
 {"date": "2026-07-28", "ticker": "DTIL", "sga_score": 64, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "IOSP", "sga_score": 63, "gate_tier": "T1", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.05555555555555555, "performance": 1.6666666666666667}
 {"date": "2026-07-28", "ticker": "WYFI", "sga_score": 63, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-28", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
 {"date": "2026-07-28", "ticker": "VRSN", "sga_score": 62, "gate_tier": "T1", "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 8.75}
 {"date": "2026-07-28", "ticker": "BSVN", "sga_score": 59, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "ADV", "sga_score": 57, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "WHG", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-28", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "LKFN", "sga_score": 55, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "MGRC", "sga_score": 55, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "NWL", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 5.0}
@@ -325,17 +301,13 @@
 {"date": "2026-07-28", "ticker": "FRD", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "LPRO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
 {"date": "2026-07-28", "ticker": "NGNE", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-28", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
 {"date": "2026-07-28", "ticker": "ULCC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 7.916666666666667}
 {"date": "2026-07-28", "ticker": "AMCR", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 2, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 5.0}
-{"date": "2026-07-28", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "LWAY", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
 {"date": "2026-07-28", "ticker": "EFSI", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "FTDR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0}
 {"date": "2026-07-28", "ticker": "PSNL", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
 {"date": "2026-07-28", "ticker": "SION", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-28", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-28", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
 {"date": "2026-07-28", "ticker": "ATAI", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "BANR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
 {"date": "2026-07-28", "ticker": "BLZE", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0}
@@ -354,7 +326,6 @@
 {"date": "2026-07-28", "ticker": "FFIV", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 8.75}
 {"date": "2026-07-28", "ticker": "GBCI", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 10.0}
 {"date": "2026-07-28", "ticker": "LYTS", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5}
-{"date": "2026-07-28", "ticker": "MRDN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-28", "ticker": "ZVRA", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
 {"date": "2026-07-28", "ticker": "CNK", "sga_score": 48, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 6.25}
 {"date": "2026-07-28", "ticker": "DRS", "sga_score": 48, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
@@ -367,7 +338,6 @@
 {"date": "2026-07-29", "ticker": "DTIL", "sga_score": 64, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-29", "ticker": "IOSP", "sga_score": 63, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.05555555555555555, "performance": 1.6666666666666667}
 {"date": "2026-07-29", "ticker": "WYFI", "sga_score": 63, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-29", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
 {"date": "2026-07-29", "ticker": "VRSN", "sga_score": 62, "gate_tier": "T1", "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 8.75}
 {"date": "2026-07-29", "ticker": "BSVN", "sga_score": 59, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-29", "ticker": "PAMT", "sga_score": 58, "gate_tier": "T2", "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
@@ -375,7 +345,6 @@
 {"date": "2026-07-29", "ticker": "CIX", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-29", "ticker": "EXR", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 7.5}
 {"date": "2026-07-29", "ticker": "WHG", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-29", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-29", "ticker": "LKFN", "sga_score": 55, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-29", "ticker": "MGRC", "sga_score": 55, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-29", "ticker": "NWL", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 5.0}
@@ -389,17 +358,13 @@
 {"date": "2026-07-29", "ticker": "FRD", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-29", "ticker": "LPRO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
 {"date": "2026-07-29", "ticker": "NGNE", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-29", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
 {"date": "2026-07-29", "ticker": "ULCC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 7.916666666666667}
-{"date": "2026-07-29", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-29", "ticker": "LWAY", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
 {"date": "2026-07-29", "ticker": "RCL", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 5.0}
 {"date": "2026-07-29", "ticker": "EFSI", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-29", "ticker": "FTDR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0}
 {"date": "2026-07-29", "ticker": "PSNL", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
 {"date": "2026-07-29", "ticker": "SION", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-29", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-29", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
 {"date": "2026-07-29", "ticker": "ATAI", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-29", "ticker": "BANR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
 {"date": "2026-07-29", "ticker": "BLZE", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0}
@@ -427,14 +392,12 @@
 {"date": "2026-07-30", "ticker": "IOSP", "sga_score": 63, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.05555555555555555, "performance": 1.6666666666666667}
 {"date": "2026-07-30", "ticker": "PRDO", "sga_score": 63, "gate_tier": "T1", "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 7.083333333333334}
 {"date": "2026-07-30", "ticker": "WYFI", "sga_score": 63, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-30", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
 {"date": "2026-07-30", "ticker": "VRSN", "sga_score": 62, "gate_tier": "T1", "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 8.75}
 {"date": "2026-07-30", "ticker": "BSVN", "sga_score": 59, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-30", "ticker": "ADV", "sga_score": 57, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-30", "ticker": "FAST", "sga_score": 57, "gate_tier": "T1", "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
 {"date": "2026-07-30", "ticker": "EXR", "sga_score": 56, "gate_tier": "T1", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 7.5}
 {"date": "2026-07-30", "ticker": "WHG", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-30", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-30", "ticker": "LKFN", "sga_score": 55, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-30", "ticker": "NWL", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 5.0}
 {"date": "2026-07-30", "ticker": "SYY", "sga_score": 55, "gate_tier": "T2", "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
@@ -446,11 +409,8 @@
 {"date": "2026-07-30", "ticker": "ZURA", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-30", "ticker": "ABEO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-30", "ticker": "FRD", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-30", "ticker": "LPRO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
 {"date": "2026-07-30", "ticker": "NGNE", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-30", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
 {"date": "2026-07-30", "ticker": "ULCC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 7.916666666666667}
-{"date": "2026-07-30", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-30", "ticker": "LWAY", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
 {"date": "2026-07-30", "ticker": "RCL", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 5.0}
 {"date": "2026-07-30", "ticker": "CI", "sga_score": 51, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 8.333333333333334}
@@ -458,8 +418,6 @@
 {"date": "2026-07-30", "ticker": "FTDR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0}
 {"date": "2026-07-30", "ticker": "PSNL", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
 {"date": "2026-07-30", "ticker": "SION", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-30", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-30", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
 {"date": "2026-07-30", "ticker": "ATAI", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-30", "ticker": "BANR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
 {"date": "2026-07-30", "ticker": "BLZE", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0}
@@ -485,12 +443,10 @@
 {"date": "2026-07-31", "ticker": "FIVN", "sga_score": 63, "gate_tier": "T1", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 10.0}
 {"date": "2026-07-31", "ticker": "IOSP", "sga_score": 63, "gate_tier": "T1", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.05555555555555555, "performance": 1.6666666666666667}
 {"date": "2026-07-31", "ticker": "WYFI", "sga_score": 63, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-31", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
 {"date": "2026-07-31", "ticker": "NET", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
 {"date": "2026-07-31", "ticker": "BSVN", "sga_score": 59, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-31", "ticker": "ADV", "sga_score": 57, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-31", "ticker": "WHG", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-31", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-31", "ticker": "NWL", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 5.0}
 {"date": "2026-07-31", "ticker": "AIRJ", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-31", "ticker": "ITIC", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null}
@@ -500,19 +456,14 @@
 {"date": "2026-07-31", "ticker": "ZURA", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-31", "ticker": "ABEO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-31", "ticker": "FRD", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-31", "ticker": "LPRO", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
 {"date": "2026-07-31", "ticker": "NGNE", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-31", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
 {"date": "2026-07-31", "ticker": "ULCC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 7.916666666666667}
-{"date": "2026-07-31", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-31", "ticker": "LWAY", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
 {"date": "2026-07-31", "ticker": "RCL", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 5.0}
 {"date": "2026-07-31", "ticker": "EFSI", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-31", "ticker": "FTDR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0}
 {"date": "2026-07-31", "ticker": "PSNL", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
 {"date": "2026-07-31", "ticker": "SION", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-31", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-31", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
 {"date": "2026-07-31", "ticker": "ATAI", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-31", "ticker": "BANR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
 {"date": "2026-07-31", "ticker": "BLZE", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 10.0}
@@ -531,140 +482,42 @@
 {"date": "2026-07-31", "ticker": "FFIV", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 8.75}
 {"date": "2026-07-31", "ticker": "GBCI", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 10.0}
 {"date": "2026-07-31", "ticker": "LYTS", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5}
-{"date": "2026-07-31", "ticker": "MRDN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-07-31", "ticker": "ZVRA", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
 {"date": "2026-07-31", "ticker": "CNK", "sga_score": 48, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 6.25}
 {"date": "2026-07-31", "ticker": "DRS", "sga_score": 48, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
 {"date": "2026-07-31", "ticker": "LYV", "sga_score": 48, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
 {"date": "2026-07-31", "ticker": "PLX", "sga_score": 48, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-07-31", "ticker": "TMCI", "sga_score": 48, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 4.166666666666667}
-{"date": "2026-08-01", "ticker": "CIX", "sga_score": 78, "gate_tier": "T2", "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "WYFI", "sga_score": 71, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "DTIL", "sga_score": 69, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "SYY", "sga_score": 66, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
-{"date": "2026-08-01", "ticker": "IMMR", "sga_score": 65, "gate_tier": "T1", "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "AMZN", "sga_score": 62, "gate_tier": "T2", "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
-{"date": "2026-08-01", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
-{"date": "2026-08-01", "ticker": "ZETA", "sga_score": 62, "gate_tier": "T1", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 7.5}
-{"date": "2026-08-01", "ticker": "CRSR", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
-{"date": "2026-08-01", "ticker": "RCL", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 5.0}
-{"date": "2026-08-01", "ticker": "AMC", "sga_score": 60, "gate_tier": "T2", "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "BSVN", "sga_score": 60, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "LWAY", "sga_score": 58, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
-{"date": "2026-08-01", "ticker": "BH", "sga_score": 57, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "FIVN", "sga_score": 57, "gate_tier": "T1", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 10.0}
-{"date": "2026-08-01", "ticker": "PGEN", "sga_score": 57, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "KEEL", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "MDLZ", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 3.75}
-{"date": "2026-08-01", "ticker": "NET", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
-{"date": "2026-08-01", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "WNC", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 6.25}
-{"date": "2026-08-01", "ticker": "HPK", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 7.5}
-{"date": "2026-08-01", "ticker": "LPRO", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
-{"date": "2026-08-01", "ticker": "TRNS", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "WRLD", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "CRNX", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
-{"date": "2026-08-01", "ticker": "FRD", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "LEGH", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "MOH", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.5, "performance": 7.5}
-{"date": "2026-08-01", "ticker": "NGNE", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
-{"date": "2026-08-01", "ticker": "ADV", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "ATAI", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "DDD", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "ITIC", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "LKFN", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "PSNL", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
-{"date": "2026-08-01", "ticker": "BHVN", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "FENC", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "HNST", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 7.5}
-{"date": "2026-08-01", "ticker": "HNVR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "NKTR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "SION", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
-{"date": "2026-08-01", "ticker": "AIRJ", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "BMRC", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "FTDR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0}
-{"date": "2026-08-01", "ticker": "MASS", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 9.166666666666668}
-{"date": "2026-08-01", "ticker": "MHK", "sga_score": 50, "gate_tier": "T1", "weeks_in_stage": 1, "earnings_present": true, "sentiment": -0.2222222222222222, "performance": 2.5}
-{"date": "2026-08-01", "ticker": "AGEN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "CHCO", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "DRS", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
-{"date": "2026-08-01", "ticker": "IART", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 8.333333333333334}
-{"date": "2026-08-01", "ticker": "MRDN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "NUAI", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-01", "ticker": "OC", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 2.5}
-{"date": "2026-08-01", "ticker": "OSUR", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 7.5}
-{"date": "2026-08-01", "ticker": "PLX", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "CIX", "sga_score": 78, "gate_tier": "T2", "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "WYFI", "sga_score": 71, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "DTIL", "sga_score": 69, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "SYY", "sga_score": 66, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
-{"date": "2026-08-02", "ticker": "IMMR", "sga_score": 65, "gate_tier": "T1", "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "AMZN", "sga_score": 62, "gate_tier": "T2", "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
-{"date": "2026-08-02", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
-{"date": "2026-08-02", "ticker": "ZETA", "sga_score": 62, "gate_tier": "T1", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 7.5}
-{"date": "2026-08-02", "ticker": "CRSR", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
-{"date": "2026-08-02", "ticker": "RCL", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 5.0}
-{"date": "2026-08-02", "ticker": "AMC", "sga_score": 60, "gate_tier": "T2", "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "BSVN", "sga_score": 60, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "LWAY", "sga_score": 58, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
-{"date": "2026-08-02", "ticker": "BH", "sga_score": 57, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "FIVN", "sga_score": 57, "gate_tier": "T1", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 10.0}
-{"date": "2026-08-02", "ticker": "PGEN", "sga_score": 57, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "KEEL", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "MDLZ", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 7.916666666666667}
-{"date": "2026-08-02", "ticker": "NET", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
-{"date": "2026-08-02", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "WNC", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 7.5}
-{"date": "2026-08-02", "ticker": "HPK", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.85, "performance": 8.5}
-{"date": "2026-08-02", "ticker": "LPRO", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
-{"date": "2026-08-02", "ticker": "TRNS", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "WRLD", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "CRNX", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
-{"date": "2026-08-02", "ticker": "FRD", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "LEGH", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "MOH", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 5.833333333333334}
-{"date": "2026-08-02", "ticker": "NGNE", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
-{"date": "2026-08-02", "ticker": "ADV", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "ATAI", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "DDD", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "ITIC", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "LKFN", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "PSNL", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
-{"date": "2026-08-02", "ticker": "BHVN", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "FENC", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "HNST", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 7.5}
-{"date": "2026-08-02", "ticker": "HNVR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "NKTR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "SION", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
-{"date": "2026-08-02", "ticker": "AIRJ", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "BMRC", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "FTDR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0}
-{"date": "2026-08-02", "ticker": "MASS", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.7, "performance": 7.0}
-{"date": "2026-08-02", "ticker": "MHK", "sga_score": 50, "gate_tier": "T1", "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.6, "performance": 8.0}
-{"date": "2026-08-02", "ticker": "AGEN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "CHCO", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "DRS", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 8.333333333333334}
-{"date": "2026-08-02", "ticker": "IART", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 5.833333333333334}
-{"date": "2026-08-02", "ticker": "MRDN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "NUAI", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-02", "ticker": "OC", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 2.5}
-{"date": "2026-08-02", "ticker": "OSUR", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 7.5}
-{"date": "2026-08-02", "ticker": "PLX", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
+{"date": "2026-07-10", "ticker": "TMCI", "sga_score": 48, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": true, "sentiment": 0.3888888888888889, "performance": 4.166666666666667, "session_inferred": true, "original_date": "2026-07-31", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "SYY", "sga_score": 66, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "IMMR", "sga_score": 65, "gate_tier": "T1", "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "AMZN", "sga_score": 62, "gate_tier": "T2", "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "ZETA", "sga_score": 62, "gate_tier": "T1", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 7.5, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "CRSR", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "AMC", "sga_score": 60, "gate_tier": "T2", "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "BH", "sga_score": 57, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "PGEN", "sga_score": 57, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "KEEL", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "HPK", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 7.5, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "WRLD", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "LEGH", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "DDD", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "LKFN", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "BHVN", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "FENC", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "HNST", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 7.5, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "HNVR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "NKTR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "MASS", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 9.166666666666668, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "MHK", "sga_score": 50, "gate_tier": "T1", "weeks_in_stage": 1, "earnings_present": true, "sentiment": -0.2222222222222222, "performance": 2.5, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "AGEN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "IART", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 8.333333333333334, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
+{"date": "2026-07-31", "ticker": "OC", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 2.5, "session_inferred": true, "original_date": "2026-08-01", "session_source": "ticker_frame"}
 {"date": "2026-08-03", "ticker": "CIX", "sga_score": 78, "gate_tier": "T2", "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "WYFI", "sga_score": 71, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "DTIL", "sga_score": 69, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "SYY", "sga_score": 66, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
 {"date": "2026-08-03", "ticker": "IMMR", "sga_score": 65, "gate_tier": "T1", "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "AMZN", "sga_score": 62, "gate_tier": "T2", "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
-{"date": "2026-08-03", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
 {"date": "2026-08-03", "ticker": "ZETA", "sga_score": 62, "gate_tier": "T1", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 7.5}
 {"date": "2026-08-03", "ticker": "CRSR", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
 {"date": "2026-08-03", "ticker": "RCL", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 5.0}
@@ -677,10 +530,8 @@
 {"date": "2026-08-03", "ticker": "KEEL", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "MDLZ", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 7.916666666666667}
 {"date": "2026-08-03", "ticker": "NET", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
-{"date": "2026-08-03", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "WNC", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 7.5}
 {"date": "2026-08-03", "ticker": "HPK", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.85, "performance": 8.5}
-{"date": "2026-08-03", "ticker": "LPRO", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
 {"date": "2026-08-03", "ticker": "TRNS", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "WRLD", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "CRNX", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
@@ -688,10 +539,8 @@
 {"date": "2026-08-03", "ticker": "LEGH", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "MOH", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 5.833333333333334}
 {"date": "2026-08-03", "ticker": "NGNE", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-03", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
 {"date": "2026-08-03", "ticker": "ADV", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "ATAI", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-03", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "DDD", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "ITIC", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "LKFN", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
@@ -702,8 +551,6 @@
 {"date": "2026-08-03", "ticker": "HNVR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "NKTR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "SION", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-03", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-03", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
 {"date": "2026-08-03", "ticker": "AIRJ", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "BMRC", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "FTDR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0}
@@ -713,7 +560,6 @@
 {"date": "2026-08-03", "ticker": "CHCO", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "DRS", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 8.333333333333334}
 {"date": "2026-08-03", "ticker": "IART", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 5.833333333333334}
-{"date": "2026-08-03", "ticker": "MRDN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "NUAI", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-03", "ticker": "OC", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 2.5}
 {"date": "2026-08-03", "ticker": "OSUR", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 7.5}
@@ -724,7 +570,6 @@
 {"date": "2026-08-04", "ticker": "SYY", "sga_score": 66, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
 {"date": "2026-08-04", "ticker": "IMMR", "sga_score": 65, "gate_tier": "T1", "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "AMZN", "sga_score": 62, "gate_tier": "T2", "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
-{"date": "2026-08-04", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
 {"date": "2026-08-04", "ticker": "ZETA", "sga_score": 62, "gate_tier": "T1", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 7.5}
 {"date": "2026-08-04", "ticker": "CRSR", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
 {"date": "2026-08-04", "ticker": "RCL", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 5.0}
@@ -737,10 +582,8 @@
 {"date": "2026-08-04", "ticker": "KEEL", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "MDLZ", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 7.916666666666667}
 {"date": "2026-08-04", "ticker": "NET", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
-{"date": "2026-08-04", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "WNC", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 7.5}
 {"date": "2026-08-04", "ticker": "HPK", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.85, "performance": 8.5}
-{"date": "2026-08-04", "ticker": "LPRO", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
 {"date": "2026-08-04", "ticker": "TRNS", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "WRLD", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "CRNX", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
@@ -748,10 +591,8 @@
 {"date": "2026-08-04", "ticker": "LEGH", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "MOH", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 5.833333333333334}
 {"date": "2026-08-04", "ticker": "NGNE", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-04", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
 {"date": "2026-08-04", "ticker": "ADV", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "ATAI", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-04", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "DDD", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "ITIC", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "LKFN", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
@@ -762,8 +603,6 @@
 {"date": "2026-08-04", "ticker": "HNVR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "NKTR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "SION", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-04", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-04", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
 {"date": "2026-08-04", "ticker": "AIRJ", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "BMRC", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "FTDR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0}
@@ -773,7 +612,6 @@
 {"date": "2026-08-04", "ticker": "CHCO", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "DRS", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 8.333333333333334}
 {"date": "2026-08-04", "ticker": "IART", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 5.833333333333334}
-{"date": "2026-08-04", "ticker": "MRDN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "NUAI", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-04", "ticker": "OC", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 2.5}
 {"date": "2026-08-04", "ticker": "OSUR", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 7.5}
@@ -784,7 +622,6 @@
 {"date": "2026-08-05", "ticker": "SYY", "sga_score": 66, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0}
 {"date": "2026-08-05", "ticker": "IMMR", "sga_score": 65, "gate_tier": "T1", "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "AMZN", "sga_score": 62, "gate_tier": "T2", "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5}
-{"date": "2026-08-05", "ticker": "SILA", "sga_score": 62, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 6.25}
 {"date": "2026-08-05", "ticker": "ZETA", "sga_score": 62, "gate_tier": "T1", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 7.5}
 {"date": "2026-08-05", "ticker": "CRSR", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 6.25}
 {"date": "2026-08-05", "ticker": "RCL", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 5.0}
@@ -796,10 +633,8 @@
 {"date": "2026-08-05", "ticker": "PGEN", "sga_score": 57, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "KEEL", "sga_score": 56, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "MDLZ", "sga_score": 56, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 7.916666666666667}
-{"date": "2026-08-05", "ticker": "EML", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "WNC", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 7.5}
 {"date": "2026-08-05", "ticker": "HPK", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.85, "performance": 8.5}
-{"date": "2026-08-05", "ticker": "LPRO", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5, "performance": 8.75}
 {"date": "2026-08-05", "ticker": "TRNS", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "WRLD", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "CRNX", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25}
@@ -807,10 +642,8 @@
 {"date": "2026-08-05", "ticker": "LEGH", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "MOH", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 5.833333333333334}
 {"date": "2026-08-05", "ticker": "NGNE", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-05", "ticker": "TMHC", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.2777777777777778, "performance": 2.5}
 {"date": "2026-08-05", "ticker": "ADV", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "ATAI", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-05", "ticker": "COOK", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "DDD", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "ITIC", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "LKFN", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null}
@@ -821,8 +654,6 @@
 {"date": "2026-08-05", "ticker": "HNVR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "NKTR", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "SION", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-05", "ticker": "TBRG", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null}
-{"date": "2026-08-05", "ticker": "AHR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0}
 {"date": "2026-08-05", "ticker": "AIRJ", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "BMRC", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "FTDR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0}
@@ -832,9 +663,64 @@
 {"date": "2026-08-05", "ticker": "CHCO", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "DRS", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 8.333333333333334}
 {"date": "2026-08-05", "ticker": "IART", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 5.833333333333334}
-{"date": "2026-08-05", "ticker": "MRDN", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "NUAI", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "OC", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 2.5}
 {"date": "2026-08-05", "ticker": "OSUR", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.4444444444444444, "performance": 7.5}
 {"date": "2026-08-05", "ticker": "PLX", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null}
 {"date": "2026-08-05", "ticker": "URI", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 8.75}
+{"date": "2026-08-05", "ticker": "ANET", "sga_score": 68, "gate_tier": "T1", "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.666666666666667, "session_source": "stage_source_asof"}
+{"date": "2026-08-05", "ticker": "GE", "sga_score": 68, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 7.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-05", "ticker": "APH", "sga_score": 67, "gate_tier": "T1", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.8888888888888888, "performance": 10.0, "session_source": "stage_source_asof"}
+{"date": "2026-08-05", "ticker": "HEI", "sga_score": 63, "gate_tier": "T2", "weeks_in_stage": 7, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 8.333333333333334, "session_source": "stage_source_asof"}
+{"date": "2026-08-05", "ticker": "ECL", "sga_score": 50, "gate_tier": "T2", "weeks_in_stage": 4, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.833333333333334, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "WYFI", "sga_score": 70, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "FLR", "sga_score": 66, "gate_tier": "T1", "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 1.6666666666666667, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "ANET", "sga_score": 65, "gate_tier": "T2", "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.85, "performance": 9.0, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "APH", "sga_score": 65, "gate_tier": "T2", "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.8888888888888888, "performance": 10.0, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "AMZN", "sga_score": 64, "gate_tier": "T2", "weeks_in_stage": 2, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "AVGO", "sga_score": 64, "gate_tier": "T1", "weeks_in_stage": 2, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 7.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "VSEC", "sga_score": 64, "gate_tier": "T2", "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.8, "performance": 8.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "APOG", "sga_score": 63, "gate_tier": "T1", "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.2222222222222222, "performance": 5.416666666666667, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "HEI", "sga_score": 61, "gate_tier": "T2", "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.8333333333333334, "performance": 8.333333333333334, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "BSVN", "sga_score": 60, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "OC", "sga_score": 59, "gate_tier": "T1", "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 2.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "HPK", "sga_score": 55, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.85, "performance": 8.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "SABR", "sga_score": 55, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.6, "performance": 7.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "UAL", "sga_score": 55, "gate_tier": "T2", "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 7.083333333333334, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "CRNX", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "HOV", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "ITIC", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "NKTR", "sga_score": 54, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "AGEN", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "ATAI", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "FRD", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "QNST", "sga_score": 53, "gate_tier": "T1", "weeks_in_stage": 4, "earnings_present": true, "sentiment": 0.86, "performance": 8.7, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "ZVRA", "sga_score": 53, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7222222222222222, "performance": 6.25, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "FELE", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 10.0, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "FSS", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 10.0, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "MNPR", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "PSNL", "sga_score": 52, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "AMLX", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "BH", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 6, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "BLZE", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.95, "performance": 9.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "DTIL", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "ENR", "sga_score": 51, "gate_tier": "T1", "weeks_in_stage": 6, "earnings_present": true, "sentiment": 0.1, "performance": 6.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "NEXN", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "WNC", "sga_score": 51, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 7.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "WOR", "sga_score": 51, "gate_tier": "T2", "weeks_in_stage": 1, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 3.75, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "ACIW", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.7777777777777778, "performance": 8.75, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "HNVR", "sga_score": 50, "gate_tier": null, "weeks_in_stage": 2, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "CHCO", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "FDMT", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "MOH", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.16666666666666666, "performance": 5.833333333333334, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "PAMT", "sga_score": 49, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "QLYS", "sga_score": 49, "gate_tier": "T1", "weeks_in_stage": 2, "earnings_present": true, "sentiment": 0.4, "performance": 5.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "PLX", "sga_score": 48, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "ALTG", "sga_score": 47, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.3333333333333333, "performance": 4.166666666666667, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "DSGR", "sga_score": 47, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "FAST", "sga_score": 47, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5555555555555556, "performance": 5.0, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "HNST", "sga_score": 47, "gate_tier": null, "weeks_in_stage": 9, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 7.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "MAN", "sga_score": 47, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 5.0, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "NUAI", "sga_score": 47, "gate_tier": null, "weeks_in_stage": 7, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "PENN", "sga_score": 47, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.7, "performance": 7.5, "session_source": "stage_source_asof"}
+{"date": "2026-08-07", "ticker": "WRLD", "sga_score": 47, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}

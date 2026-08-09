@@ -1,0 +1,54 @@
+{
+  "contract_id": "biocatalyst_seasonality_event_projection.v1",
+  "coverage_epoch_id": "epoch_synthetic_2026_08_06",
+  "fixture_only": true,
+  "generation_id": "ctgov_run_synthetic_2026_08_06",
+  "hash_scope": "canonical_payload_excluding_packet_hash",
+  "last_complete_run_ref": "ctgov_run_synthetic_2026_08_06",
+  "note": "SYNTHETIC. Hand-authored consumer-side fixture for engine/seasonality/event_clock.py. No real issuer, trial, or filing is described here, and nothing in this file may be published.",
+  "packet_hash": "15855cf6076c25c6d821c23952eeae7396f3d497653c9b2491b88fa31d3feb57",
+  "packet_id": "pkt_synthetic_month_precision",
+  "publishable": false,
+  "rows": [
+    {
+      "actual": null,
+      "canonical_content_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "certainty": null,
+      "context": {
+        "enrollment": 420,
+        "phase": "PHASE3",
+        "sponsor": "Synthetic Sponsor Inc"
+      },
+      "event_type": "pdufa_date",
+      "first_seen_at": "2025-06-02T12:30:00Z",
+      "generation_ref": "ctgov_run_synthetic_2026_08_06",
+      "knowledge_cutoff": "2025-05-01T00:00:00Z",
+      "retrieved_at": "2025-06-02T12:30:00Z",
+      "revision": {
+        "revision_id": "rev_NCT00000001_0",
+        "revision_index": 0,
+        "supersedes": null
+      },
+      "scheduled_window": null,
+      "source_attribution": {
+        "source_class": "regulatory_registry",
+        "source_url": "https://example.invalid/synthetic/NCT00000001"
+      },
+      "source_effective": {
+        "kind": "month",
+        "month": 3,
+        "original_value": "March 2026",
+        "year": 2026
+      },
+      "source_native_id": "NCT00000001",
+      "source_published": {
+        "kind": "exact_time",
+        "value": "2025-06-01T09:00:00Z"
+      },
+      "status": "scheduled",
+      "transaction_from": "2025-06-02T13:00:00Z",
+      "transaction_to": null
+    }
+  ],
+  "schema_version": "1.0.0"
+}

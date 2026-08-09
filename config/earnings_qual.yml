@@ -32,6 +32,35 @@ openai_compat:
   connect_timeout_s: 5                     # fail over quickly when the LAN host is down
   timeout_s: 120
   max_tokens: 1200
+  # NO per-rung transcript bound here on purpose — this rung inherits the global
+  # max_chars/tail_chars below, like every other rung.
+  #
+  # The rungs CAN carry different windows: adding `max_chars`/`tail_chars` to any
+  # provider block overrides the global for that rung only (see
+  # engine/earnings_qual._rung_text_bounds, and the resolved bound is logged per
+  # call).  That lever exists because an under-configured local server does not
+  # error over its window — it drops the overflow and answers the partial prompt
+  # with a markdown summary instead of JSON (HTTP 200, finish_reason "stop"),
+  # which reads downstream as invalid_json, burns the bounded retry, and falls
+  # through to a metered provider.  If that recurs, set the bound HERE rather
+  # than lowering the global; `_log_prompt_truncation` names the symptom.
+  #
+  # It does not apply today.  #4784 capped this rung at 8,000 chars because the
+  # host was running Ollama's 4,096-token default with OLLAMA_CONTEXT_LENGTH
+  # unset; the operator set OLLAMA_CONTEXT_LENGTH=32768 (User scope) and
+  # restarted the server on 2026-08-06, so the endpoint now serves a
+  # 32,768-token window.  The model itself (qwen3.5:9b, Qwen 3.5 9.7B Q4_K_M)
+  # declares qwen35.context_length = 262144, so 32,768 is the server setting,
+  # not a model ceiling.  Measured after the change, against the real
+  # _SYSTEM_PROMPT with /no_think + reasoning_effort:none, through the same
+  # http://127.0.0.1:11435/v1 bridge:
+  #    9,000 user-prompt chars ->  3,583 prompt_tokens, finish_reason stop, JSON
+  #   24,000 user-prompt chars ->  8,797 prompt_tokens, finish_reason stop, JSON
+  #   24,000 chars, token-dense (numeric segment tables, the worst real case)
+  #                           -> 14,156 prompt_tokens, finish_reason stop, JSON
+  # Before the fix, 24,000 chars pinned at prompt_tokens 2,050 and returned
+  # prose.  An 8,000-char cap now truncates transcripts to a third of what this
+  # endpoint reads, so it is removed.
 
 # --- cloud fallback model ids (routed via engine/llm_auth) -----------------------
 # Cheapest lane only — earnings scoring is off the render-critical path.
@@ -58,6 +87,10 @@ kimi:
 # four calls/name/year, with much larger earnings-season bursts. Local Qwen can
 # absorb this cheaply; a persistent queue carries overflow across runs.
 daily_cap: 64                              # max scores per score_new() invocation
+# GLOBAL transcript bound — applies to every rung that does not set its own
+# max_chars/tail_chars in its provider block above.  As of 2026-08-06 that is
+# EVERY rung, local included.  Do NOT lower it to accommodate a small local
+# context window — that is what the per-rung override exists for.
 max_chars: 24000                           # transcript is truncated to this length
 tail_chars: 8000                           # preserve Q&A tail on long calls
 retry_on_bad_json: 1                       # one retry when the model returns non-JSON

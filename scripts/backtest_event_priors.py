@@ -11,12 +11,17 @@ so the existing workflow ``git add data/special_situations`` stages them (B3 fix
 Open-question conservative defaults applied:
 - M2: sp_index_changes ships as null-print (insufficient-history) until K>=floor.
 - M1: gov-contract awards ships as null-only stub (no awardee-ticker source).
-- M4 (CORRECTED): earnings is null-printed. eps_quarterly.parquet asof_date is
-  period_end + exactly 60 calendar days for every row — a mechanical placeholder,
-  NOT a real SEC filed date or earnings-announcement date. Computing priors against
-  this synthetic date is methodologically unsound (the event window does not align
-  with the actual announcement reaction). Earnings will be re-enabled once a real
-  announcement/filing date source is wired (e.g. EDGAR 8-K filing timestamps).
+- M4 (RE-ENABLED 2026-08-05): earnings was null-printed because eps_quarterly.parquet
+  asof_date is period_end + exactly 60 calendar days for every row — a mechanical
+  placeholder, NOT a real announcement date. That gate named its own unblock ("EDGAR
+  8-K filing timestamps"), and data/edgar/earnings_8k_dates.parquet now supplies it:
+  98,975 Item-2.02 rows, 1,314 names, 2004-08..2026-07, each with the SEC acceptance
+  timestamp. asof_date is still unusable and is still not read here.
+  Day-0 comes from the acceptance time in ET (after-the-close filings are priced by
+  the NEXT session); subtypes are day-0 reaction bands, since every name reports every
+  quarter and an unconditional earnings prior is ~a market average. See
+  research/entry_stack/W4_EARNINGS_REACTION_PRIOR.md for the phase-0 measurement,
+  including the non-earnings placebo that the construction is graded against.
 - M5 (NEW): clinical halts are null-printed. last_update (ClinicalTrials.gov)
   is the latest administrative record touch — any later edit, results posting, or
   contact change — NOT the date the halt became public. The halt CAR window anchored
@@ -41,20 +46,25 @@ from __future__ import annotations
 
 import json
 import pathlib
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Iterator
 
 import numpy as np
 import pandas as pd
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.validation import (
     newey_west_tstat,
     benjamini_hochberg,
     deflated_sharpe,
     ret_moments,
-)
-from engine.trial_ledger import TrialLedger
-from lib import config
+)  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
+from lib import config  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # DSR / trial-ledger pre-declaration (m4 fix: pre-declare before any compute)
@@ -96,6 +106,49 @@ def _us_closes() -> pd.DataFrame:
     df = pd.concat(frames, axis=1, sort=False)
     df.index = pd.to_datetime(df.index)
     return df.loc[:, ~df.columns.duplicated()].sort_index()
+
+
+def _deep_closes(closes: pd.DataFrame) -> pd.DataFrame:
+    """The breadth caches UNIONED with the deep per-ticker store (data/stocks/*.parquet).
+
+    The shared `_us_closes()` panel is a rolling cache — ~2023-06 onward.  That depth is
+    fine for the rare event types (an FDA approval is studied near the event), but an
+    earnings prior computed on three years of one bull tape is an era sample, not a
+    prior: the whole point of the 2004-2026 Item-2.02 store is to span several regimes.
+    data/stocks carries split-adjusted closes back to the 1980s for ~235 names.
+
+    The deep names are a SUBSET of the breadth columns, so a column-wise append adds
+    nothing — what has to grow is the INDEX.  `combine_first` does exactly that: the
+    breadth value wins wherever it exists, and the deep store fills the earlier dates
+    (and any deep-only name).  Verified 2026-08-05: on the 345-session overlap the two
+    stores agree to 0.000000 relative error on AAPL/MSFT/JPM/XOM/NVDA — same
+    split-adjustment basis, so the splice cannot manufacture a return at the seam.
+    A mismatch there WOULD have: re-check if either store's adjustment policy changes.
+
+    Restricted to names that actually carry earnings events, so the union stays a
+    ~1.3k-column frame rather than a 2.5k one.  Absent store -> `closes` unchanged.
+    """
+    root = config.data_dir() / "stocks"
+    if not root.exists():
+        return closes
+    cols: dict[str, pd.Series] = {}
+    for f in sorted(root.glob("*.parquet")):
+        try:
+            d = pd.read_parquet(f)
+        except Exception:  # noqa: BLE001
+            continue
+        if "close" not in d.columns or d.empty:
+            continue
+        s = d["close"].astype(float)
+        s.index = pd.to_datetime(s.index)
+        cols[f.stem.upper()] = s[~s.index.duplicated(keep="last")]
+    if not cols:
+        return closes
+    deep = pd.DataFrame(cols).sort_index()
+    if closes.empty:
+        return deep
+    out = closes.combine_first(deep).sort_index()
+    return out.dropna(axis=1, how="all")
 
 
 def _fetch_event_prices(tickers: list[str], closes: pd.DataFrame,
@@ -525,21 +578,167 @@ def load_ipo_lockup() -> list[tuple[str, str, str]]:
     return events
 
 
-def load_earnings_events() -> list[tuple[str, str, str]]:
-    """Earnings event loader — GATED (null-print) until a real PIT date is available.
+# Reaction bands, in units of the name's OWN trailing daily vol (see load_earnings_events).
+# Fixed thresholds, not in-sample quantiles: a prior is only useful if the band a live
+# event falls into can be computed the same way on the night it prints.
+_REACTION_BANDS: tuple[tuple[str, float, float], ...] = (
+    ("reaction_strong_up", 2.0, float("inf")),
+    ("reaction_up", 0.5, 2.0),
+    ("reaction_flat", -0.5, 0.5),
+    ("reaction_down", -2.0, -0.5),
+    ("reaction_strong_down", float("-inf"), -2.0),
+)
+_REACTION_VOL_WIN = 60      # sessions of trailing vol used to standardise the reaction
+_REACTION_MIN_VOL = 1e-6
 
-    eps_quarterly.parquet asof_date is period_end + exactly 60 calendar days for
-    every row: a synthetic mechanical placeholder. Inspection of the 65208-row store
-    shows min=median=max=60 days offset, confirming the date is never the actual
-    SEC filed date or earnings-announcement date. Running an event study against this
-    placeholder produces a window that starts 60d after period end — a systematic
-    mis-alignment with no relationship to actual announcement reactions.
 
-    Returns [] unconditionally. compute_prior_for_type will emit insufficient=True
-    null-print. Re-enable once EDGAR 8-K filing timestamps or a vendor announcement-
-    date feed is wired into eps_quarterly (replace asof_date with that field).
+def reaction_band(r0z: float) -> str | None:
+    """Map a vol-standardised day-0 reaction to its band name. None if not finite."""
+    if r0z is None or not np.isfinite(r0z):
+        return None
+    for name, lo, hi in _REACTION_BANDS:
+        if lo <= r0z < hi:
+            return name
+    return None
+
+
+def earnings_day0(filing_date: pd.Timestamp, acceptance_dt: str,
+                  cal: pd.DatetimeIndex) -> pd.Timestamp | None:
+    """The first session that can PRICE an Item-2.02 filing.
+
+    EDGAR gives the acceptance timestamp in UTC; the market that reacts is ET.  An
+    8-K accepted at 20:15 UTC (16:15 ET) is an after-the-close release — the session
+    that prices it is the NEXT one, and anchoring the study on the filing date would
+    put the whole reaction outside the window.  Conversely a 06:45 ET release is
+    priced by the filing date's own session.
+
+    premarket  (< 09:30 ET)      -> day0 = the filing_date session
+    afterhours (>= 16:00 ET)     -> day0 = the next session
+    intraday   (09:30-16:00 ET)  -> day0 = the filing_date session (partially priced;
+                                    carried as its own subtype so it can be inspected)
+
+    Returns None when the timestamp is unusable or the calendar has no session left.
     """
-    return []
+    if not acceptance_dt or not str(acceptance_dt).strip():
+        return None
+    try:
+        acc = pd.Timestamp(acceptance_dt)
+        acc = acc.tz_localize("UTC") if acc.tzinfo is None else acc.tz_convert("UTC")
+        acc_et = acc.tz_convert("America/New_York")
+    except Exception:  # noqa: BLE001
+        return None
+    minutes = acc_et.hour * 60 + acc_et.minute
+    after_hours = minutes >= 16 * 60
+    side = "right" if after_hours else "left"
+    pos = cal.searchsorted(pd.Timestamp(filing_date).normalize(), side=side)
+    if pos >= len(cal):
+        return None
+    return cal[pos]
+
+
+def earnings_session_rule(acceptance_dt: str) -> str | None:
+    """premarket | intraday | afterhours from the ET acceptance time (None if unusable)."""
+    if not acceptance_dt or not str(acceptance_dt).strip():
+        return None
+    try:
+        acc = pd.Timestamp(acceptance_dt)
+        acc = acc.tz_localize("UTC") if acc.tzinfo is None else acc.tz_convert("UTC")
+        acc_et = acc.tz_convert("America/New_York")
+    except Exception:  # noqa: BLE001
+        return None
+    minutes = acc_et.hour * 60 + acc_et.minute
+    if minutes < 9 * 60 + 30:
+        return "premarket"
+    if minutes >= 16 * 60:
+        return "afterhours"
+    return "intraday"
+
+
+def load_earnings_events(closes: pd.DataFrame | None = None,
+                         spy: pd.Series | None = None) -> list[tuple[str, str, str]]:
+    """Earnings announcements, anchored on REAL SEC Item-2.02 acceptance timestamps.
+
+    M4 RE-ENABLED (was null-printed).  The original gate was correct and its stated
+    unblock condition is now met: ``eps_quarterly.parquet.asof_date`` is a synthetic
+    period_end + 60d placeholder and remains unusable, but
+    ``data/edgar/earnings_8k_dates.parquet`` (collectors/edgar_earnings_8k.py, 98,975
+    Item-2.02 rows / 1,314 names / 2004-08..2026-07) carries the real filing date AND
+    the acceptance timestamp.  That store did not exist when M4 was written.
+
+    SUBTYPE = the day-0 reaction band, not the event kind.  Every name reports every
+    quarter, so an unconditional "earnings prior" is close to a market average and says
+    nothing.  What carries information is the SIZE of the move the print produced,
+    measured in units of the name's own normal daily move (r0z) — the free stand-in for
+    the options-implied expected move, which this repo has for ETFs only
+    (data/options_surface/ is index/sector/industry ETFs, no single names).
+
+    NO LOOK-AHEAD: r0z is the day0 close-to-close excess return over the trailing-60d
+    vol ending day0-1, so it is fully known at the day0 close — and ``car_for_event``
+    starts its window AT the day0 close.  The conditioning variable is never inside the
+    measured return.
+
+    SURVIVORSHIP: the studiable set is whatever is in the close panel, which is current
+    membership. ``aggregate_episodes`` carries the n_imputed_zero floor for the rest.
+
+    Returns [] (-> honest null-print) when the store is absent or unreadable.
+    """
+    p = config.data_dir() / "edgar" / "earnings_8k_dates.parquet"
+    if not p.exists():
+        return []
+    try:
+        df = pd.read_parquet(p)
+    except Exception:  # noqa: BLE001
+        return []
+    need = {"ticker", "filing_date", "acceptance_datetime"}
+    if df.empty or not need <= set(df.columns):
+        return []
+    if closes is None or closes.empty:
+        return []
+
+    cal = closes.index
+    events: list[tuple[str, str, str]] = []
+    df = df[df["ticker"].notna() & df["filing_date"].notna()]
+
+    for tkr, grp in df.groupby("ticker"):
+        tkr = str(tkr).upper().strip()
+        if tkr not in closes.columns:
+            continue
+        s = closes[tkr].dropna()
+        if len(s) < _REACTION_VOL_WIN + 2:
+            continue
+        ret = s.pct_change()
+        vol = ret.rolling(_REACTION_VOL_WIN).std()
+        sret = (spy.reindex(s.index).pct_change() if spy is not None
+                else pd.Series(0.0, index=s.index))
+        exret = ret - sret.fillna(0.0)
+
+        for _, r in grp.iterrows():
+            try:
+                fd = pd.Timestamp(r["filing_date"]).normalize()
+            except Exception:  # noqa: BLE001
+                continue
+            rule = earnings_session_rule(r.get("acceptance_datetime"))
+            d0 = earnings_day0(fd, r.get("acceptance_datetime"), cal)
+            if d0 is None or rule is None:
+                continue
+            # r0z needs the name to actually have printed on day0 and to have a
+            # trailing vol ending the session BEFORE it.
+            if d0 not in exret.index:
+                continue
+            i = s.index.get_loc(d0)
+            if not isinstance(i, int) or i < 1:
+                continue
+            v = vol.iloc[i - 1]
+            r0 = exret.iloc[i]
+            if not np.isfinite(v) or v <= _REACTION_MIN_VOL or not np.isfinite(r0):
+                continue
+            band = reaction_band(float(r0) / float(v))
+            if band is None:
+                continue
+            subtype = band if rule != "intraday" else f"{band}_intraday"
+            events.append((tkr, str(d0.date()), subtype))
+
+    return events
 
 
 def _gov_contract_stub() -> dict:
@@ -714,16 +913,32 @@ def main() -> int:
     p = persist_prior(ipo_prior)
     print(f"  wrote {p}")
 
-    # --- earnings (M4: null-print — asof_date is period_end+60d placeholder, not real PIT) ---
-    print("[event_priors] earnings: null-print (asof_date=period_end+60d placeholder, not real announcement date)")
+    # --- earnings (M4 RE-ENABLED: real Item-2.02 acceptance timestamps) ---
+    print("[event_priors] loading earnings (EDGAR 8-K Item 2.02 acceptance timestamps)…")
+    earn_closes = _deep_closes(closes)
+    earn_spy = _spy_series(earn_closes)
+    earn_events = load_earnings_events(earn_closes, earn_spy)
+    print(f"  {len(earn_events)} events loaded "
+          f"(panel {earn_closes.shape[1]} tickers, "
+          f"{earn_closes.index.min().date()} → {earn_closes.index.max().date()})")
     earn_prior = compute_prior_for_type(
-        "earnings", [], closes, spy,
+        "earnings", earn_events, earn_closes, earn_spy,
         null_reason=(
-            "asof_date in eps_quarterly.parquet is period_end + exactly 60 calendar days "
-            "(verified: min=median=max=60d offset across all rows). This is a synthetic "
-            "placeholder, not a real SEC filing date or earnings-announcement date. "
-            "Re-enable once EDGAR 8-K timestamps or a vendor announcement-date feed is wired."
+            None if earn_events else
+            "data/edgar/earnings_8k_dates.parquet absent, unreadable, or joined to no "
+            "priced name. Run `python -m collectors.edgar_earnings_8k` to build it. "
+            "(eps_quarterly.parquet.asof_date remains a synthetic period_end+60d "
+            "placeholder and is NOT usable as an announcement anchor.)"
         ),
+    )
+    earn_prior["anchor"] = "edgar_8k_item_2.02_acceptance_datetime"
+    earn_prior["subtype_basis"] = (
+        "day-0 excess return vs SPY / trailing-60d daily vol ending day0-1 (r0z); "
+        "fixed bands, known at the day0 close, CAR window starts at that same close"
+    )
+    earn_prior["survivorship_note"] = (
+        "Studiable names are current index membership — every absolute level is "
+        "survivor-biased upward. Read the BAND SPREAD, not the level."
     )
     results["earnings"] = earn_prior
     p = persist_prior(earn_prior)

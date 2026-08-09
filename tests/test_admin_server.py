@@ -131,14 +131,24 @@ def test_summary_parses_large_config_once(monkeypatch):
     monkeypatch.setattr(server.system, "snapshot", lambda: {})
     monkeypatch.setattr(server.services, "status", lambda: {})
     monkeypatch.setattr(server.experiments, "alert_summary", lambda: {})
+    # key_alerts.panel() and program_watch.panel() take no cfg — they compose the
+    # landing rails from committed artifacts, so they are NOT among the shared-config
+    # consumers asserted below.
+    monkeypatch.setattr(server.key_alerts, "panel", lambda: {})
+    monkeypatch.setattr(server.program_watch, "panel", lambda: {})
 
     result = server._summary_payload()
 
     assert reads == 1
     assert consumers == [shared, shared, shared, shared]
+    # Every panel the landing renders. "key_alerts" joined the payload in #4612 and
+    # app.js reads it (renderKeyAlerts(s.key_alerts)); this suite was enumerated by no
+    # CI job until 2026-08-06, so the stale set sat red on main instead of failing #4612.
+    # "program_watch" joined it the same way (renderProgramWatch(s.program_watch)) —
+    # this assertion is the enumerated contract, so a new rail must be added here too.
     assert set(result) == {
         "meta", "flags", "brief", "health", "cost", "git", "system",
-        "services", "experiments",
+        "services", "experiments", "key_alerts", "program_watch",
     }
 
 

@@ -23,6 +23,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import confluence_latch  # noqa: E402  — PIT T2-event latch (no un-firing a fired event)
 from engine import i18n  # noqa: E402
 from engine import stock_score  # noqa: E402
 from engine import china_name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score
@@ -114,6 +115,81 @@ def _data_through() -> str | None:
     """Board-level data_through: the CSI300 benchmark's last bar (the settled-session anchor every
     excess/relative read is measured against). Additive; never renames as_of."""
     return _name_data_through(CSI300_ETF)
+
+
+def compute_board_staleness(data_through: str | None = None,
+                            now: "datetime | None" = None) -> dict:
+    """Board staleness for the China board — the CN analogue of
+    build_stock_library._compute_board_staleness (CSP-W5).
+
+    price_through is the board's own settled-session anchor: the CSI300 benchmark's last bar
+    (``_data_through()``), the same date coverage already publishes. ``delayed`` is what the
+    template gates its disclosure on, and it fires on EITHER of two independent tests:
+
+      * >= 2 A-share sessions behind ``lib.cn_calendar.expected_last_session`` — the same
+        session-count rule the US board uses, now computable because lib/cn_calendar.py
+        exists. This is the early, precise signal (~2-4 calendar days).
+      * age > cn_calendar.MAX_LEGIT_CLOSURE_DAYS — a calendar-day backstop that needs NO
+        holiday table to be right. The CN holiday table is deliberately minimal (see that
+        module's DIRECTION OF ERROR note), so this clause guarantees a genuine long freeze is
+        disclosed even if every rule in it is wrong. Without it a bad table could hide exactly
+        the six-day board freeze this disclosure exists to catch.
+
+    Returns:
+        {
+          "price_through": "2026-07-31",  # CSI300 last bar actually behind the board
+          "age_days":      6,             # calendar days to the expected session (int)
+          "delayed":       True,          # gates the template disclosure
+          "inputs": {                     # per-input reach disclosure (display-only)
+            "csi300_through":   "2026-07-31",
+            "expected_session": "2026-08-06",
+            "sessions_behind":  4,
+            "backstop_days":    11,
+          },
+        }
+
+    Fail-soft: if the anchor is unreadable or anything raises, returns
+        {"price_through": None, "age_days": None, "delayed": False}
+    so the disclosure is silently suppressed — never crashes a build.
+    """
+    from datetime import datetime as _dt, timezone as _tz
+    from lib import cn_calendar as _cn
+
+    _sentinel = {"price_through": None, "age_days": None, "delayed": False}
+    try:
+        _through_s = data_through if data_through is not None else _data_through()
+        if not _through_s:
+            return _sentinel
+        try:
+            _through = _dt.strptime(str(_through_s)[:10], "%Y-%m-%d").date()
+        except Exception:  # noqa: BLE001 — malformed anchor never breaks the badge
+            return _sentinel
+
+        _now = now or _dt.now(_tz.utc)
+        _expected = _cn.expected_last_session(_now)
+        _age_days = (_expected - _through).days
+        _sessions_behind = _cn.sessions_between(_through, _expected)
+        _delayed = bool(_sessions_behind >= 2 or _age_days > _cn.MAX_LEGIT_CLOSURE_DAYS)
+
+        log.debug(
+            "china board staleness: price_through=%s expected=%s age_days=%d "
+            "sessions_behind=%d delayed=%s",
+            _through, _expected, _age_days, _sessions_behind, _delayed,
+        )
+        return {
+            "price_through": str(_through),
+            "age_days": _age_days,
+            "delayed": _delayed,
+            "inputs": {
+                "csi300_through": str(_through),
+                "expected_session": str(_expected),
+                "sessions_behind": _sessions_behind,
+                "backstop_days": _cn.MAX_LEGIT_CLOSURE_DAYS,
+            },
+        }
+    except Exception as _e:  # noqa: BLE001 — never crashes a build
+        log.warning("compute_board_staleness: failed (%s) — suppressing disclosure", _e)
+        return _sentinel
 
 
 # ── per-ticker analyze() fan-out (mirrors build_stock_library's process pool) ──
@@ -275,7 +351,7 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     # China net-liquidity is a single market-wide regime applying to every A-share
     # name (mirrors the US build); the CN regime carries no macro_risk/VIX leg, so
     # liquidity is the only macro conviction modifier threaded into the ladder.
-    res = analyze(c, high, kind="equity", liquidity=liquidity)
+    res = analyze(c, high, kind="equity", liquidity=liquidity, market="CN")
     if not res.get("ladder"):
         return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)
@@ -915,16 +991,44 @@ def _cn_era_label(date_from: str | None, date_to: str | None) -> tuple[str, str]
     return (f"previous board definition · {en_span}", f"上一版选股口径 · {zh_span}")
 
 
-# Stamps ADJUDICATED as known labelled cohorts — measurement shelves that share the
-# standout-track store under their own board_definition so their forward grades accrue
-# separately from both era records. Shelf rows still publish through `extra_records`
-# (labelled, never pooled — same path as an unknown stamp); membership here only
-# silences the unknown-stamp Actions alarm, which would otherwise fire every night for
-# an expected state and rot into noise. A stamp NOT in this set still warns and still
-# fails the era-partition test — that tripwire is how this set gets its next entry.
-_CN_ADJUDICATED_SHELF_STAMPS = frozenset({
-    "cn_reversal_watch_v1",   # washout reversal_watch shelf (#4393), first rows 2026-08-04
-})
+#: Closed FORMER headline board definitions, OLDEST FIRST. Each one once selected the
+#: live board, so each is an ERA — not a shelf. A shelf is a parallel measurement cohort
+#: that never was the board; filing a superseded board under "shelf" mislabels the
+#: desk's own history in the artifact the reader sees.
+#:
+#: These literals are HISTORICAL FACTS, not copies of a live constant: nothing in engine/
+#: names 'cn_prophet_v2' as a board any more (china_board_rank.V2_SHADOW_DEFINITION is a
+#: DIFFERENT string, 'cn_prophet_v2_shadow'), so there is no producer to read them from.
+#: A BOARD_DEFINITION bump must append the displaced stamp here in the SAME PR — the
+#: era-partition tripwire in tests/test_cn_track_ledger_eras.py is what enforces that,
+#: and #4509 shipped without it, which is how 72 v2 rows fell out of every cohort.
+_CN_SUPERSEDED_ERA_STAMPS: tuple[str, ...] = (
+    "cn_prophet_v2",   # #4509: live 2026-07-30 → 2026-08-05, displaced by cn_prophet_v3
+)
+
+
+def _cn_known_cohort_stamps() -> frozenset[str]:
+    """Every board_definition this build holds an adjudication for.
+
+    READ FROM THE PRODUCERS at call time, never copied: the live stamp from
+    engine.china_board_rank, the parallel watch/measurement cohorts from
+    engine.china_standout_track.WATCH_DEFINITIONS. This set used to be a hand-listed
+    frozenset holding one of the three WATCH_DEFINITIONS entries, and #4509 shipped an
+    incomplete cutover precisely because consumers kept private copies of a live stamp.
+
+    The live stamp is unioned in EXPLICITLY rather than taken from the caller's
+    `board_definition` argument: emit_cn_track_ledger also runs for the reversal-watch
+    cohort with board_definition='cn_reversal_watch_v1', and in THAT call the live
+    Prophet rows are orphans — keying on the argument alone leaves a nightly alarm
+    naming cn_prophet_v3 forever.
+
+    A stamp OUTSIDE this set is unadjudicated: it still gets its own labelled
+    `extra_records` block (never pooled), it still fires the nightly ::warning, and it
+    still fails the era-partition test. That is how this registry gets its next entry.
+    """
+    return (frozenset({china_board_rank.BOARD_DEFINITION})
+            | frozenset(_CN_SUPERSEDED_ERA_STAMPS)
+            | frozenset(china_standout_track.WATCH_DEFINITIONS))
 
 
 def _cn_unknown_era_label(stamp, date_from: str | None,
@@ -1363,12 +1467,15 @@ def emit_cn_track_ledger(
                 # pooled — plus a line-start Actions annotation naming it.
                 orphan = bdf_all[~(live_mask | prior_mask)]
                 if not orphan.empty:
+                    # Resolved ONCE per call, outside the loop: it reads two producer
+                    # modules and the answer cannot change between groups.
+                    _known = _cn_known_cohort_stamps()
                     for _stamp, _grp in orphan.groupby(
                             orphan["board_definition"].astype(str), sort=True):
                         _stamp = str(_stamp)
                         unknown_slices[_stamp] = _grp.copy()
-                        if _stamp in _CN_ADJUDICATED_SHELF_STAMPS:
-                            continue   # known shelf: labelled block, no alarm
+                        if _stamp in _known:
+                            continue   # adjudicated cohort: labelled block, no alarm
                         # Bare print, NOT log.* — a logger prefixes the line and
                         # GitHub only parses '::' at column 0 (CLAUDE.md). The opening
                         # literal stays on the `print(` line on purpose: the repo guard
@@ -1512,7 +1619,7 @@ def _attach_eligible_coiled_fire(
             continue
         evaluated += 1
         try:
-            fire = coiled.fire_recent(close)
+            fire = coiled.fire_recent(close, market="CN")
         except Exception:  # noqa: BLE001 — display receipt never suppresses rank state
             continue
         if isinstance(fire, dict) and fire.get("fire"):
@@ -1938,6 +2045,16 @@ def main(alpha: dict | None = None) -> dict | None:
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
     _tick("cycles analyze fan-out")
     sig_verdict: dict[str, dict] = {}       # owner's confluence T1->T4 cascade verdict per name
+    # T2 EVENT LATCH (engine/confluence_latch): a fired confluence event may never be un-fired.
+    # The incomplete trailing 3D bucket's known-date advances every session, de-annotating the
+    # daily bar the 2D cross sits on, so the T2 conjunction un-fires on a bar that ALREADY
+    # PRINTED and the name leaves every lane at once (300363.SZ: 2026-08-05 rank 1 -> 08-06
+    # absent -> +20.02% on 08-07; 86 such events / 78 names in 12 sessions on the post-#4732
+    # engine, because the absolute-session anchor fixed bin PHASE, not bucket COMPLETION).
+    # WRITES are gated to the asia collection lane for the same reason append_board is: the
+    # render lanes discard data/ writes, and a mid-session board must never win the date.
+    _latch_lane = os.environ.get("CN_LANE", "asia")
+    _t2_latch = confluence_latch.EventLatch("CN", record=(_latch_lane == "asia")).load()
     # COILED wave-3 CN ranking bonus: per-name inputs collected in the loop; cohort_fractions
     # computed AFTER the loop (cross-sectional). CN gate: clean15 +7.33pp, stop5 −6.21pp, n=10,784.
     # HK failed its gate — touch NOTHING in HK.
@@ -1964,7 +2081,7 @@ def main(alpha: dict | None = None) -> dict | None:
         # COMBINE: the confluence T1->T4 cascade is computed alongside main's bottoming-alignment
         # gate. It NEVER changes which names are eligible (alignment stays the inclusion gate) —
         # it only adds the per-card tier badge and re-ranks WITHIN the aligned buy list (below).
-        sig_verdict[ticker] = signal_gate.gate(ticker, close)
+        sig_verdict[ticker] = signal_gate.gate(ticker, close, event_latch=_t2_latch)
         # signal_gate.asof is the label of its 3-business-day indicator bucket,
         # which can legitimately be one or two calendar sessions behind the
         # latest input. Preserve that analytical label, but add the actual daily
@@ -2009,7 +2126,9 @@ def main(alpha: dict | None = None) -> dict | None:
         try:
             _coil_d[ticker]      = coiled.weekly_d_last(close)
             _coil_wash[ticker]   = coiled.washout_ctx(close)
-            _coil_div[ticker]    = coiled.bull_div(close)
+            # CN reference calendar (session_anchor R1/R3, era coiled.ANCHOR_ERA):
+            # a CN name bucketed on NYSE sessions would be wrong invisibly.
+            _coil_div[ticker]    = coiled.bull_div(close, market="CN")
             _coil_sector[ticker] = sector or None
         except Exception:  # noqa: BLE001 — additive, never fatal
             pass
@@ -2171,6 +2290,7 @@ def main(alpha: dict | None = None) -> dict | None:
             name_en=name_en_by.get(ticker), name_zh=name_zh_by.get(ticker),
         )
         attach_latest_volume(idx, ticker, latest_volumes)
+        stock_technicals.attach_chg_1d(idx, rec.get("tech"))   # `c1` — mirrors tech.chg_1d
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)
@@ -2815,6 +2935,14 @@ def main(alpha: dict | None = None) -> dict | None:
             _wsetup_by[_t] = _w_setup_fn(_c_w)
         except Exception:  # noqa: BLE001 — additive; never fatal
             _wsetup_by[_t] = None
+    # Persist this session's T2 verdicts keep-first, so tomorrow's run restores them instead of
+    # recomputing them off a trailing bucket whose known-date has since advanced.
+    try:
+        _latch_rows = _t2_latch.flush()
+        log.info("confluence latch (CN): %d rows after merge (lane=%s)",
+                 _latch_rows, _latch_lane)
+    except Exception as _latch_exc:  # noqa: BLE001 — never fail the board on the latch
+        log.warning("confluence latch flush failed (%s) — board unaffected", _latch_exc)
     _tick("per-name detail loop + signal gates")
     log.info("W1-B w_setup: %d names scanned in %.0fs (%d non-None)",
              len(_wsetup_by), time.time() - _t0_wsetup,
@@ -3368,6 +3496,29 @@ def main(alpha: dict | None = None) -> dict | None:
             log.warning("china reversal_watch scan failed (%s) — shelf empty, build continues", _rw_e)
             _rev_watch_rows = []
 
+        # ── CONTINUATION WATCH cohort (masterplan §2.7 / §5 W-C) ──────────────
+        # The 17 never-eligible era runners (11% of the top-150 funnel, median
+        # era return +18.7%) were the SHALLOWEST charts, blocked by the
+        # counter-trend / no-200-reclaim leg — the continuation shape the
+        # detector family structurally cannot admit.  This collects tonight's
+        # equivalent cohort so a forward record can accrue before anyone
+        # proposes a door.  SHADOW ACCRUAL, ZERO DISPLAY: these rows are
+        # deliberately NOT written into `wide`/`setups` — they exist only in the
+        # board store under cn_continuation_watch_v1, which WATCH_DEFINITIONS
+        # excludes from the headline grade.  Rule frozen in the engine module.
+        _cont_watch_rows: list[dict] = []
+        try:
+            from engine import china_continuation_watch as _ccw  # noqa: PLC0415
+            _t0_ccw = time.time()
+            _cont_watch_rows = _ccw.select(
+                _scored_candidates, {t: c for (t, c, _h, _n, _s) in uni})
+            log.info("china continuation_watch: %d candidates of %d scored in %.0fs",
+                     len(_cont_watch_rows), len(_scored_candidates), time.time() - _t0_ccw)
+        except Exception as _ccw_e:  # noqa: BLE001 — a watch lane never breaks the build
+            log.warning("china continuation_watch scan failed (%s) — cohort empty, build continues",
+                        _ccw_e)
+            _cont_watch_rows = []
+
         wide = {
             "schema_version": "2.0.0",
             "as_of": as_of,
@@ -3399,6 +3550,22 @@ def main(alpha: dict | None = None) -> dict | None:
         }
         wide["track_ledger"] = None
         wide["sleeve_chip"] = {}
+        # Board staleness — the engine-driven delayed-board disclosure china.html.j2 gates on,
+        # and the ONE string scripts/freshness_sentinel.py anchors the china surface's delay
+        # budget to. Computed here with the other conservative defaults so the key always
+        # exists on the artifact; compute_board_staleness reads the CSI300 anchor directly and
+        # depends on nothing the enrichment passes below produce. Fail-soft inside, so a
+        # failure suppresses the disclosure rather than the board.
+        wide["staleness"] = compute_board_staleness()
+        log.info(
+            "china board staleness: price_through=%s age_days=%s delayed=%s "
+            "(expected_session=%s sessions_behind=%s)",
+            wide["staleness"].get("price_through"),
+            wide["staleness"].get("age_days"),
+            wide["staleness"].get("delayed"),
+            (wide["staleness"].get("inputs") or {}).get("expected_session"),
+            (wide["staleness"].get("inputs") or {}).get("sessions_behind"),
+        )
         # The renderer and both JSON artifacts now share one lossless object; later
         # enrichments cannot drift between the live page and the machine contract.
         setups = wide
@@ -3570,8 +3737,26 @@ def main(alpha: dict | None = None) -> dict | None:
                 _bn_sh = china_standout_track.append_board(
                     _v2_shadow_rows, asof=as_of, lane=_lane)
                 log.info("china v2-shadow board-track: logged %d rows", _bn_sh)
+            # CONTINUATION WATCH cohort (§2.7 / §5 W-C) — appended LAST so no
+            # other definition's append order is disturbed.  Same store, own
+            # board_definition; WATCH_DEFINITIONS keeps it out of headline-grade
+            # resolution, and append_board's keep-first key is
+            # (date, ticker, board_definition), so a name that also sits on the
+            # featured shelf keeps one row per definition rather than colliding.
+            if _cont_watch_rows:
+                # _ccw is bound whenever _cont_watch_rows is non-empty (the scan
+                # above sets the list only after its import succeeded).
+                _bn_cw = china_standout_track.append_board(
+                    _cont_watch_rows, asof=as_of, lane=_lane, top_n=_ccw.CAP)
+                log.info("china continuation_watch board-track: logged %d rows", _bn_cw)
+            _bt = china_standout_track.grade()
+            # Detach the tuple-keyed F7 map BEFORE _bt reaches wide/setups — it must
+            # never ride into the JSON artifact (see _detach_board_track_plumbing).
+            _bt, _fwd_map = _detach_board_track_plumbing(_bt)
             # W0 — loser + miss telemetry (engine/cn_prophet_audit.py). OPS-TELEMETRY
-            # tier with ZERO authority: it reads the board store we just appended to,
+            # tier with ZERO authority: it reads the board store AFTER grade() has written
+            # back the same-night spine axes (fwd_mfe_*, terminal states) — placed
+            # here so rank-effectiveness never reads a one-night-stale spine,
             # the price stores, and the PIT candidate ledger, and writes ONLY to
             # data/cn_prophet_audit/. It never touches wide["buy"], the lanes, the
             # scores or the ranks — tests/test_cn_prophet_audit.py pins that the buy
@@ -3588,10 +3773,6 @@ def main(alpha: dict | None = None) -> dict | None:
                          float(_audit.get("elapsed_seconds") or 0.0))
             except Exception as _cpa_e:  # noqa: BLE001 — telemetry never blocks the board
                 log.warning("cn_prophet_audit failed (%s) — board build continues", _cpa_e)
-            _bt = china_standout_track.grade()
-            # Detach the tuple-keyed F7 map BEFORE _bt reaches wide/setups — it must
-            # never ride into the JSON artifact (see _detach_board_track_plumbing).
-            _bt, _fwd_map = _detach_board_track_plumbing(_bt)
             if (
                 _bt.get("available")
                 and _bt.get("board_definition") == wide["board_definition"]
@@ -4102,6 +4283,9 @@ def main(alpha: dict | None = None) -> dict | None:
                 "note": "Analysis universe collapsed; no admission decision is available.",
             },
             "coverage": _zero_coverage,
+            # A zero-name collapse is exactly when the reader most needs to know how far
+            # behind the prices are — carry the same disclosure the healthy board carries.
+            "staleness": compute_board_staleness(),
             "sleeve_chip": _zero_sleeve,
             "cap_composition": {
                 "large": 0, "mid": 0, "small": 0, "unknown": 0,
@@ -4222,11 +4406,14 @@ def main(alpha: dict | None = None) -> dict | None:
                             <= pd.Timestamp(_cnpl_asof_date)
                         )
                     ]
-                    _cnpl_osc_df = _cnpl_grids(_cnpl_panel)
+                    _cnpl_osc_df = _cnpl_grids(_cnpl_panel, market="CN")
                     for _cpl_t, _cpl_row in _cnpl_osc_df.iterrows():
                         _cnpl_osc_by[str(_cpl_t)] = _cpl_row.to_dict()
             except Exception as _cnpl_osc_e:  # noqa: BLE001 — additive, never fatal
-                log.debug("china pick_lab: 1D/2D grid skipped (%s)", _cnpl_osc_e)
+                # warning, not debug: since the d2 buckets anchor on the CN session
+                # reference (data/china/000001.SS.parquet), a missing/broken reference
+                # nulls every osc column for the night — that absence must be loud.
+                log.warning("china pick_lab: 1D/2D grid skipped (%s)", _cnpl_osc_e)
 
             # ── 4. Collect tech (rsi5/rsi10 etc) from per-stock JSON files ────
             _cnpl_tech_by: dict[str, dict] = {}

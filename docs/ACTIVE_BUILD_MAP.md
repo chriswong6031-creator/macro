@@ -2,75 +2,112 @@
 
 # Active Build Map
 
-Generated: 2026-08-05T13:33:40.672316+00:00  |  Open PRs: 63  |  Merged (window): 500  |  base: `35346eac6a3c3a72f3208c3f1d5a4fd8209f37a3`
+Generated: 2026-08-09T06:30:56.715388+00:00  |  Open PRs: 100  |  Merged (window): 500  |  base: `3e8ec0ada0c79202b6a838a533cd09bb9846ff45`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #4628 | feat(us-board): "Blow-off risk" display chip on the measured S-ROC12-TERM read | `claude/blowoff-risk-chip-s12g` | 2026-08-05 | — |
-| #4627 | short-pressure spine: unblock PIT short interest (2018→now) + free borrow feed | `claude/short-pressure-crowding-engine-5bc53e` | 2026-08-05 | — |
-| #4626 | Residual momentum, trend quality and momentum crash gating — build + Phase 0 | `claude/residual-momentum-trend-quality-902b21` | 2026-08-05 | ⚠ protected:1 |
-| #4625 | research(lsr): liquidity-shock reversal classifier phase-0 — NO-GO, construction-scoped | `claude/liquidity-shock-reversal-a74d1d` | 2026-08-05 | — |
-| #4624 | event-priors: re-enable M4 earnings prior on real Item-2.02 acceptance timestamps | `claude/earnings-expectation-dislocation-c38aee` | 2026-08-05 | — |
-| #4623 | feat(options): information-dislocation layer — neutralised primitives, categorical reads | `claude/options-information-dislocation-821481` | 2026-08-05 | ⚠ protected:4 |
-| #4622 | universe: key Marsh on MRSH and Fiserv on FISV (retired-symbol migration) | `claude/pensive-shaw-9e0f07` | 2026-08-05 | ⚠ protected:1 |
-| #4621 | research(regime): adjudicate the external regime-reliability proposal — measured NULL + an estimability gate | `claude/regime-reliability-factor-crowding-78c64f` | 2026-08-05 | — |
-| #4620 | feat(darkpool): stop calling a direction it never measured — rank deviation, split ATS from retail, 16× the history | `claude/darkpool-intel-upgrade` | 2026-08-05 | ⚠ protected:2 |
-| #4619 | feat(quant-lab): Fintel QV/QVM recreation — specs, PIT legs, study harness, page | `claude/fintel-quant-models-integration-a14356` | 2026-08-05 | — |
-| #4618 | fix(nightly): survivable turn_desk skip + R2 publishes decoupled from the commit veto | `fix/nightly-2026-08-05-three-reds` | 2026-08-05 | ⚠ protected:1 |
-| #4617 | adjudication(prophet-us): reclaim-veto ruling — keep the veto; flat drop REJECTED-ON-MEASUREMENT | `claude/reclaim-veto-ruling` | 2026-08-05 | — |
-| #4616 | baskets: BLD is delisted, not stale — census honors the exit ledger (#4613 follow-up) | `claude/admiring-pasteur-c8079e` | 2026-08-05 | — |
-| #4614 | fix(us-act-now): a basket recovering off its low sits on no lane — bridge the graduation gap (W-A Amendment 1) | `claude/awesome-brahmagupta-c20daf` | 2026-08-05 | ⚠ protected:1 |
-| #4613 | fix(collect): a rename fetched by one collector and not its sibling — MMC was dark on every price rung for 7 months | `claude/friendly-murdock-006603` | 2026-08-05 | — |
-| #4612 | feat(txi+admin): rates turn-watch grammar + landing Key Alerts rail with Fable briefing nudge | `claude/txi-turn-watch-admin-alerts` | 2026-08-05 | — |
-| #4611 | ci: wire the reclaim-veto leg's two dark guards into their owning packs | `claude/optimistic-moore-5a46a7` | 2026-08-05 | ⚠ CONFLICTING / ⚠ protected:1 |
-| #4610 | fix(basket-turn): members read 399/1009 — ladder onto data/baskets/ohlcv and print the coverage (W-B, #4579's sibling) | `claude/turn-watch-member-ladder-w4b` | 2026-08-05 | — |
-| #4609 | prophet(W-E): basing shelf for BOTTOM WATCH, basket-grain miss telemetry, extras-universe grading | `claude/prophet-basing-visibility-w-e` | 2026-08-05 | ⚠ protected:1 |
-| #4605 | theme tape: a washout-turn group, new-space on the Foresight Desk, and a caution that names both baskets (W-D) | `claude/tape-washout-turn-lane-w-d` | 2026-08-05 | — |
-| #4603 | fix(commodities): stop reading the recovery signature as a top — W-C ignition honesty (display) | `claude/commodities-ignition-honesty-w-c` | 2026-08-05 | — |
-| #4601 | radar: grade the claims it actually makes — v2 IC harness, diagonal dock, honest verdict copy | `claude/radar-predictive-power-audit-d96def` | 2026-08-05 | ⚠ CONFLICTING / ⚠ protected:2 |
-| #4583 | fix(signal-gate): exhaustive gate_reasons alongside first-match gate_reason — end single-reason diagnosis ambiguity | `claude/exhaustive-gate-reasons` | 2026-08-05 | — |
-| #4582 | research(cn-prophet): reclaim-and-hold leg audit — the primary blocker, measured | `claude/cn-reclaim-hold-audit` | 2026-08-05 | — |
-| #4581 | feat(admin): Macro Thesis Ledger — thesis-grain conviction register with fixed-horizon grading, forward/retro firewall (zero authority) | `claude/macro-thesis-ledger-20260804` | 2026-08-05 | ⚠ protected:1 |
-| #4580 | fix(ledgers): stamp three forward-ledger writers from the data plane, not the calendar | `claude/eloquent-fermi-adeec8` | 2026-08-05 | ⚠ CONFLICTING / ⚠ protected:1 |
-| #4576 | research(cn-prophet): bearish-divergence veto-leg audit — does the leg that blocks 湖南黄金-class reclaims earn its keep | `claude/cn-divergence-veto-audit` | 2026-08-05 | — |
-| #4572 | fix(nav+macro+china): nav layer law, quad-map collision, China desk containers | `claude/macro-zindex-mastermind-3ccf88` | 2026-08-05 | ⚠ CONFLICTING / ⚠ protected:2 / files-truncated |
-| #4571 | research(cn-prophet): rank-feature battery + S-COIL port test — what orders the admitted pool | `claude/cn-rank-feature-battery` | 2026-08-05 | — |
-| #4570 | feat(cn-prophet): W0 rank-effectiveness block — the score grades itself nightly (multi-horizon, multi-metric, per-component) | `claude/cn-prophet-rank-effectiveness` | 2026-08-05 | — |
-| #4566 | fix(gc): un-invert _branch_merged_into_main — merge-base --is-ancestor, not empty <branch>..origin/main | `claude/confident-pare-8dca01` | 2026-08-05 | — |
-| #4565 | feat(hk): committed G1 fixture regenerator with adjustment-signature receipts | `claude/awesome-panini-283531` | 2026-08-05 | — |
-| #4564 | research: W8 Ignition Layer charter + retro stand-in battery | `claude/w8-ignition-layer-charter` | 2026-08-05 | — |
-| #4563 | ops: fleet worktree GC — report-first sweeper, measured packet, ratification-gated deletion | `claude/eloquent-bouman-b8af29` | 2026-08-05 | — |
-| #4562 | governance(registry): stable Key column for DO_NOT_REBUILD rows — citations rewritten to DNR:<KEY> | `claude/pensive-newton-83c472` | 2026-08-05 | ⚠ CONFLICTING / ⚠ protected:4 |
-| #4561 | feat(prophet-us): §4.5 scan tier — see everything, admit selectively | `claude/prophet-us-scan-tier` | 2026-08-05 | ⚠ protected:3 |
-| #4557 | board honesty: disclose true panel price reach + same-as_of buy-lane continuity guard | `claude/adoring-proskuriakova-1996c0` | 2026-08-05 | — |
-| #4556 | stocks index: fix light-mode charcoal hover + market-hub redesign mockup | `claude/stock-dashboard-redesign-25f9d9` | 2026-08-05 | ⚠ CONFLICTING |
-| #4555 | prophet-us W7: grade every ranked name — all picks, both cohorts, four horizons (charter + data half) | `prophet-us/w7-all-picks-grades` | 2026-08-05 | ⚠ protected:4 |
-| #4553 | theme tape: fix the clamped-label overlap, compact it, move it below the board | `claude/page-obstruction-formatting-ad6f1d` | 2026-08-05 | — |
-| #4550 | ledger: entry_status disclosure law — no silently-absent stamp on graded rows | `claude/quirky-meninsky-f5a7ef` | 2026-08-05 | — |
-| #4549 | lanes: normalize site/ HTML in the six publishing lanes #4492 missed | `claude/amazing-shtern-5488a6` | 2026-08-05 | ⚠ protected:7 |
-| #4545 | ci: stage the #4331-deferred prophet suites — 6 dark suites join the two #4331 packs | `claude/frosty-jang-c1b4a4` | 2026-08-05 | ⚠ protected:1 |
-| #4544 | research(prophet): CN→US handoff — method, stand-in pattern, and playbook from the China breakthrough | `claude/cn-to-us-prophet-handoff` | 2026-08-04 | — |
-| #4535 | feat(popups): rebuild every hover/info card on Sector Intelligence | `claude/popup-container-redesign-9a6528` | 2026-08-05 | — |
-| #4533 | fix(rotation): persist leg display names on closure rows | `claude/silly-feistel-3d3acc` | 2026-08-05 | — |
-| #4532 | ledger hygiene: per-column tape-flow commits, retire species_id, wire archetype, coverage map | `claude/eager-jennings-95d54f` | 2026-08-05 | ⚠ protected:2 |
-| #4525 | china_connect: retire dead northbound flow columns, heal fake-zero holdings, add column-grain dark alarms | `claude/recursing-elgamal-76391e` | 2026-08-04 | ⚠ CONFLICTING |
-| #4524 | feat(cn-prophet): W-C plumbing — PIT membership history, continuation-watch ledger, Neural Web + chat visibility | `claude/cn-prophet-wc-plumbing-20260804` | 2026-08-04 | ⚠ CONFLICTING / ⚠ protected:3 |
-| #4521 | research(cn-prophet): v3 era-retro — the stand-in race verdict while the forward shadow matures | `claude/china-prophet-v3-era-retro-08041100` | 2026-08-04 | — |
-| #4520 | research(cn-prophet): flow/positioning ex-ante battery — which unwired stores separated losers at admission | `claude/cn-flow-exante-battery` | 2026-08-04 | — |
-| #4519 | Open every page shell to anonymous visitors; footer fixes; retire the legacy auth modal | `claude/nav-ungate-auth-sheet-3d8a4e` | 2026-08-04 | ⚠ CONFLICTING |
-| #4517 | research(cn-prophet): Superintelligence Roadmap — composing the six layers, fast-track evidence doctrine, Neural Web wiring | `claude/cn-prophet-si-roadmap` | 2026-08-05 | — |
-| #4512 | fix(nav,i18n,ui): translate the market mega menus; unstick the mobile country drill; operator defect sweep | `claude/mega-menu-translations-fixes-e7daa8` | 2026-08-04 | ⚠ CONFLICTING |
-| #4509 | feat(china-prophet): V3 Relay Engine — prime-window featured, bounded theme_timing authority, relay-position chase guard (R1-R3, operator-ratified) | `claude/china-prophet-v3-relay-08040037` | 2026-08-04 | — |
-| #4507 | research(cn-prophet): CN exit-policy horse race — day-3 review family vs H=10 incumbent | `claude/cn-exit-policy-study-7a2e10` | 2026-08-04 | — |
-| #4506 | research(cn-prophet): 12-month chase×theme-ignition study — phase-0 for relay-aware admission | `claude/cn-ignition-chase-study-20260804` | 2026-08-04 | — |
-| #4498 | Light estate rollout: depth recipe in the operative soft-contrast palette + repeatable light sweep tool | `claude/light-estate-palette` | 2026-08-04 | — |
-| #4497 | sector_central: de-tint the seasonality chip in the light + zh layers | `claude/agitated-swartz-5cca97` | 2026-08-04 | ⚠ CONFLICTING |
-| #4496 | refactor(prophet-card): drop the dead verb-chip tip payload from the five board builders | `claude/eager-williamson-19151b` | 2026-08-04 | — |
-| #4493 | Light mode as a first-class design: us_stocks + subsectors redesign, emoji → monoline icons | `claude/light-mode-design-issues-e2c4c6` | 2026-08-04 | ⚠ CONFLICTING |
-| #4490 | fix: stop caching auth outages as logouts; lift ⚠ popover above sibling cards | `claude/hk-stocks-logout-bug-06fb6d` | 2026-08-04 | — |
-| #4473 | hk board: anchor the vetoed + ran move on the confirmation close | `claude/hk-vetoed-lane-honest-anchor` | 2026-08-04 | ⚠ CONFLICTING |
+| #5093 | cn-limit W2: regime-conditional calibration v2 (display tier) | `claude/cn-limit-w2-regimecal` | 2026-08-09 | — |
+| #5092 | research(china): independent SOL limit-alpha Wave 1 | `claude/cn-limit-alpha-sol-independent-20260808` | 2026-08-09 | ⚠ protected:2 |
+| #5091 | cn-limit W2: weakness-entry battery v1 — 回封 + 龙回头 (display tier) | `claude/cn-limit-w2-weakness` | 2026-08-09 | — |
+| #5090 | feat(govrev): action-rail identity under a named basis — award-level recipient with provenance, never silent widening | `claude/govrev-actionid-8fb51e` | 2026-08-09 | — |
+| #5089 | feat(prophet-live): ONE PRICE BASIS — name the adjustment at every seam, assert pack vs feed, align the ledger's percentages (W-L0 gate 3) | `claude/wl0-f3-one-price-basis` | 2026-08-09 | — |
+| #5088 | prophet-live: dormant honesty — no state asserts a verdict the pack never measured (W-L0 gate 5) | `claude/wl0-f5-dormant-honesty` | 2026-08-09 | — |
+| #5087 | fix(main-heal): #5071 debts — admin restart regex, marketing honest-dating fixtures, daily.yml staging pair | `claude/heal-pack2-prophet-regex-marketing` | 2026-08-09 | ⚠ CONFLICTING / ⚠ protected:1 |
+| #5086 | fix(govrev): admit the curator's terminal edge — the event schema rejected every issuer impact since #4255 | `claude/govrev-enum-heal-8fb51e` | 2026-08-09 | ⚠ protected:1 |
+| #5085 | feat(govrev): admit snapshot-rail obligation + contained-ceiling families — the identifier-bearing rail can finally emit | `claude/govrev-families-8fb51e` | 2026-08-09 | — |
+| #5084 | research: add authorized Oracle history replay harness | `claude/momoedge-history-replay-20260808` | 2026-08-09 | ⚠ protected:2 / files-truncated |
+| #5080 | docs(research): script import-pin burn-down — continuation handoff | `claude/script-pin-handoff` | 2026-08-09 | — |
+| #5079 | fix(signal-lab): build_scorecard must not resolve into the module registry | `claude/signal-lab-registry-mutation-b92283` | 2026-08-09 | — |
+| #5078 | cn-limit W1: board ecology regime instruments v1 (display tier; salvaged + M5 re-validated vs healed zt_pool) | `claude/cn-limit-w1-regime-salvage` | 2026-08-09 | — |
+| #5077 | cn-limit: Wave-1 adjudication, program ore ledger, W2 charter, continuation handoff | `claude/cn-limit-w1-adjudication` | 2026-08-09 | — |
+| #5076 | test(spvector): make check() gate under pytest; re-pin 4 stale split markers | `claude/charming-sutherland-1583bc` | 2026-08-09 | — |
+| #5075 | guard(scripts): pin the entry script #5071 added mid-burn-down (1 file) | `claude/script-pin-w8` | 2026-08-09 | — |
+| #5074 | fix(tests): re-pin us_standouts schema 1.8.0 — stale tripwire from the #4965 bump (unpins armed heads) | `claude/cn-limit-heal-w4pin` | 2026-08-09 | — |
+| #5073 | tests: un-dark test_earnings_w4_feed + retire the equality pin that rotted in it | `claude/register-dark-w4-feed-suite` | 2026-08-09 | — |
+| #5072 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 7/7, judgment set (34 files) | `claude/script-pin-w7` | 2026-08-09 | — |
+| #5070 | Market Memory W0: clean-room context product and PIT contract | `codex/konseki-context` | 2026-08-09 | ⚠ protected:2 |
+| #5068 | marketing W1b: the console shows the count the cap actually spends — effective attempts lead, raw kept for forensics | `claude/marketing-w1b-effective-attempts-display` | 2026-08-09 | DRAFT / ⚠ CONFLICTING |
+| #5067 | feat(options): add governed Prophet shadow foundation | `claude/options-prophet-foundation-20260808` | 2026-08-09 | ⚠ protected:3 |
+| #5063 | test(boards): fence china/canada/hk hover-card marks against an emoji revert | `claude/act-now-icon-fences-intl` | 2026-08-09 | — |
+| #5062 | test(spvector): decorative check() tallies -> real pytest assertions; re-pin four markers the pages outgrew | `claude/great-euclid-9673b9` | 2026-08-09 | — |
+| #5061 | cn-limit W1: continuation rider v1 — open-gap conditioned, fillability-honest (display tier) | `claude/cn-limit-w1-rider` | 2026-08-09 | — |
+| #5060 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 6/6 (65 files) | `claude/script-pin-w6` | 2026-08-09 | — |
+| #5059 | cn-limit W1: data-plane heals — limit_events backfill hole + zt_pool date semantics (display tier) | `claude/cn-limit-w1-dataheal` | 2026-08-09 | — |
+| #5058 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 5/6 (65 files) | `claude/script-pin-w5` | 2026-08-09 | — |
+| #5057 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 4/6 (65 files) | `claude/script-pin-w4` | 2026-08-09 | — |
+| #5056 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 3/6 (65 files) | `claude/script-pin-w3` | 2026-08-09 | — |
+| #5055 | cn-limit W1: calibrated onset model v1 + forward-ledger seed (display tier) | `claude/cn-limit-w1-onset` | 2026-08-09 | — |
+| #5054 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 2/6 (66 files) | `claude/script-pin-w2` | 2026-08-09 | — |
+| #5053 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 1/6 (66 files) | `claude/script-pin-w1` | 2026-08-09 | — |
+| #5052 | marketing(W5): day-word law + decisive desk + a reap that persists without the publisher | `claude/marketing-w5-decisive-desk-session-language` | 2026-08-09 | — |
+| #5050 | fix(regime): axis-dark days get no quad label — disclose, never classify on a null input | `claude/angry-meninsky-12fc20` | 2026-08-09 | — |
+| #5049 | test(spvector): un-vacuous check() — pytest now gates; retarget four drifted split markers | `claude/bold-bell-67889c` | 2026-08-09 | — |
+| #5047 | fix(hk-regime): degraded transient recompute can no longer ship a timeline contradicting its committed store | `claude/nostalgic-mendeleev-5eb643` | 2026-08-09 | ⚠ protected:1 |
+| #5046 | guard(scripts): pin check/ci entry scripts to their own repo root + regression teeth | `claude/sharp-hawking-bd4fd8` | 2026-08-09 | ⚠ protected:12 |
+| #5045 | feat(W3 telemetry): phase-level timing ledger for build_stock_library | `claude/stock-library-phase-telemetry` | 2026-08-09 | — |
+| #5044 | fix(forensics): dedupe the SEC source store to one manifest per (accession, content) | `claude/sharp-benz-061439` | 2026-08-09 | ⚠ protected:1 |
+| #5043 | fix(collectors): drop stale document_with_retrieval __all__ export; add repo-wide __all__ resolution guard | `claude/reverent-gould-e42ad5` | 2026-08-09 | ⚠ protected:1 |
+| #5041 | fix(signal-lab): build_scorecard stamps a per-call registry copy — module REGISTRY stays as authored | `claude/amazing-turing-f08da5` | 2026-08-09 | — |
+| #5040 | fix(govrev): candidate-ledger identity survives reviewed-graph edits — dedupe on candidate_id, order-stable graph digest | `claude/govrev-ledger-identity-8fb51e` | 2026-08-09 | — |
+| #5039 | test(admin-marketing): pin the clock in the two-approval byte-identity test | `claude/nervous-hellman-79401a` | 2026-08-09 | — |
+| #5038 | fix(govrev): grader integrity — null endpoints abstain, verdicts need real N, the log enforces its own immutability | `claude/govrev-grader-heals-8fb51e` | 2026-08-09 | — |
+| #5036 | fix(tests): harden the pack-2/3 heals + carry the pack-0 earnings-seasons date bomb | `claude/heal-pack23-2026-08-08` | 2026-08-09 | ⚠ CONFLICTING |
+| #5035 | fix(daily): DST-proof the 18:30-ET nightly anchor — cron pair + fail-open et_gate (Nov 2026 FINRA race) | `claude/optimistic-pasteur-afc2a8` | 2026-08-09 | ⚠ protected:2 |
+| #5034 | test(factor): crypto leadership by \|t\|-rank — measured replacement for the #5032 band | `claude/heal-datafed-packs-8fb51e` | 2026-08-09 | — |
+| #5033 | fix(main): heal spvector NoneType card + factor-exposure ranking fragility — unpin the armed fleet | `claude/main-heal-spvector-factor` | 2026-08-09 | ⚠ CONFLICTING |
+| #5031 | fix(ci): heal ci-pack-2/3 — nightly data moved four pinned test families fleet-wide | `claude/heal-nightly-pinned-packs` | 2026-08-09 | ⚠ CONFLICTING |
+| #5030 | design(boards): china/canada/hk hover-card marks — 🏛 → monoline icons (doctrine §5.8) | `claude/act-now-icon-sweep-intl-boards` | 2026-08-09 | — |
+| #5029 | fix(deploy): restart macro-api on its lru_cache-pinned government_revenue schemas | `claude/competent-shannon-879643` | 2026-08-09 | — |
+| #5028 | tests: de-flake capital-structure lease deadline tests with deterministic operation clocks | `claude/sleepy-moore-cf6928` | 2026-08-08 | — |
+| #5026 | feat(prophet-us): TURN WATCH desk data plane — early-surfacing deck + first-deck receipt (§6.9 R8) | `claude/anticipation-turn-watch-desk` | 2026-08-09 | DRAFT / ⚠ protected:2 |
+| #5022 | perf(ffsec): reuse the warm local archive for already-retrieved SEC filings — verbatim receipts, flag-gated | `claude/infallible-shaw-598197` | 2026-08-08 | ⚠ protected:1 |
+| #5021 | feat(government-revenue): Waves 9E + 9F — shadow cross-check packets and Prophet post-selection annotation | `claude/govrev-9ef-8fb51e` | 2026-08-09 | ⚠ protected:1 |
+| #5020 | GR3b: unlock 8-K counterparty extraction (0 -> 1,916 names; 0 -> 1,793 amounts) | `claude/gr3b-counterparty-unlock` | 2026-08-08 | — |
+| #5019 | research(forensics): rule the SEC store's nightly re-manifest non-evidence — dedupe to one manifest per (accession, content) | `claude/beautiful-lamport-126af0` | 2026-08-08 | — |
+| #5018 | fix(synapse): nightly-sec cadence + register the disclosure bundle — the #4986 offrender-lane registry heal | `claude/loving-torvalds-7d3820` | 2026-08-08 | ⚠ protected:3 |
+| #5016 | feat(intel_hub): scope the US hub universe to US-listed ∪ US-priced names (exclude-with-count) | `claude/trusting-hertz-0b5fb3` | 2026-08-09 | — |
+| #5015 | fix(tests): hermetic card-path logo resolvers — stop CDN fetch + data/marketing/logos litter under pytest | `claude/objective-rosalind-d7dc87` | 2026-08-08 | — |
+| #5014 | govrev: Wave 10 rail 1 — exact IDV child bridge into prime dossiers | `claude/govrev-idv-bridge-8fb51e` | 2026-08-09 | ⚠ protected:1 |
+| #5013 | fix(govrev): Prophet must DISCLOSE a dead award-event rail, not only act on it | `claude/govrev-audit-8fb51e` | 2026-08-09 | — |
+| #5012 | govrev: Wave 10 rail 3 — SBIR progression evidence lane | `claude/govrev-sbir-8fb51e` | 2026-08-09 | ⚠ protected:2 |
+| #5011 | design(baskets): the group read — participation, direction, arc and earnings in plain words (GR1) | `claude/gr1-basket-read` | 2026-08-08 | — |
+| #5010 | fix(hygiene): non-symbol ticker keys — shared gate, counted exclusions, hub snapshot tripwire | `claude/mystifying-napier-581cd6` | 2026-08-08 | — |
+| #5009 | govrev: publish the reviewed defense19 recipient graph (Wave 9D goes live) | `claude/govrev-9d-publish-8fb51e` | 2026-08-09 | — |
+| #5008 | feat(group-reads): GR3 filing-linked outsiders per basket — honest outside confirmation | `claude/gr3-linked-outsiders` | 2026-08-08 | — |
+| #5007 | feat(prophet-us): leader-pullback organ + 2-year replay — the above-200 early-entry lane (§6.9 R4) | `claude/anticipation-leader-pullback` | 2026-08-09 | — |
+| #5006 | feat(marketing): FOMC statement-diff desk (XG-W4b), dark-but-armed | `claude/marketing-w4b-fomc-desk` | 2026-08-09 | ⚠ protected:1 |
+| #5005 | research(massive): Advanced-tier integration masterplan + verified entitlement probe (TP-0) | `claude/massive-advanced-integration-b92283` | 2026-08-09 | — |
+| #5002 | ruling(biocatalyst): Ruling 3 admits the four subsidiary sponsor rows to their listed parents | `claude/bio-group-b-subsidiary-admission` | 2026-08-08 | — |
+| #5001 | feat(collectors): ledger-universe yahoo backfill (off-render, incremental) | `claude/intel-hub-w1pre-yahoo-backfill` | 2026-08-09 | ⚠ protected:2 |
+| #5000 | fix(cn-prophet): entry-price integrity — corrupt-bar gate, PIT-latched published entry, truthful basis provenance | `claude/cn-entry-price-integrity` | 2026-08-09 | — |
+| #4999 | research(cn-prophet): limit-move footprint v0 — event catalog, base rates, pre-registered features (§6.8f) | `claude/cn-limit-footprint-v0` | 2026-08-09 | — |
+| #4998 | docs(daily): W4 profile findings — append the corrected 242m-night attribution to the engine cap ledger | `claude/engine-cap-w4-append` | 2026-08-08 | ⚠ protected:1 |
+| #4997 | marketing W3: 30/day caps, wide ticker supply, revive receipt + congress lanes, macro fan-out primitive | `claude/marketing-w3-volume-supply` | 2026-08-09 | — |
+| #4996 | Group Reads W-GR2: per-basket earnings pulse + sympathy ledger | `claude/gr2-group-earnings` | 2026-08-08 | — |
+| #4995 | GR0 — Group Pulse: basket participation/direction/arc read plane | `claude/gr0-group-pulse` | 2026-08-08 | — |
+| #4994 | marketing W2: codex rung observability + copy-quality engine (voice pack v4) | `claude/marketing-w2-codex-copy-engine` | 2026-08-09 | ⚠ protected:1 |
+| #4993 | research(prophet-us): earnings-ignition measurement — pre-earnings confluence footprint (§6.8e) | `claude/anticipation-earnings-ignition` | 2026-08-09 | — |
+| #4992 | marketing W1: classify the Buffer plan lock, bound the rate-limit requeue, purge the outage backlog | `claude/marketing-w1-publisher-hardening` | 2026-08-09 | — |
+| #4988 | feat(prophet-us): §6.6 nightly entry-status re-measurement — the ladder's evidence loop | `claude/anticipation-status-remeasure` | 2026-08-09 | ⚠ protected:1 |
+| #4985 | fix(intel_hub): W0 measurement-integrity heals + policy-vote A7 heal | `claude/intel-hub-w0-heals` | 2026-08-09 | — |
+| #4982 | prophet-live: the armed probe APPENDS tonight's bar instead of replacing today's (W-L0 gate 1) | `claude/prophet-live-append-semantics` | 2026-08-09 | — |
+| #4979 | fix(extension): coverage-floor anchor for the extension read — a 6/3034-member last row must not blank ext_z board-wide | `claude/anticipation-ext-z-sparse-row` | 2026-08-09 | — |
+| #4978 | prophet-live: two-sided fade hysteresis on the cross path (W-L0 gate 2) | `claude/prophet-live-fade-hysteresis` | 2026-08-09 | — |
+| #4976 | feat(prophet-us): A2 patience-first entry map + featured-lane unblock (ANTICIPATION §6.2) | `claude/anticipation-a2-patience-rank` | 2026-08-09 | — |
+| #4972 | research(prophet-us): ANTICIPATION program — lateness forensic, CN/US parity anatomy, gate counterfactual, §6 ruling | `claude/rklb-prophet-missing-3d6c35` | 2026-08-09 | — |
+| #4971 | i18n(zh): native Chinese across the site — #4765 rebuilt on current main | `claude/zh-natural-rebuilt` | 2026-08-08 | ⚠ CONFLICTING / files-truncated |
+| #4958 | biocatalyst: execute the operator ruling of 2026-08-07 — Record History rights enable + 29 sponsor admissions under attestation | `claude/bio-execute-operator-ruling` | 2026-08-08 | ⚠ CONFLICTING |
+| #4957 | biocatalyst: B1S2b privileged fixed-cohort deployment lane (installable, inert) | `claude/bio-b1s2b-collection-path` | 2026-08-08 | ⚠ protected:1 |
+| #4951 | govrev: query the alias list, repair BWXT, flag zero-row queries, page at 100 | `claude/govrev-coverage-8fb51e` | 2026-08-09 | — |
+| #4950 | guard(govrev): amount classes are never conflated — and now it can go red | `claude/govrev-nonadd-8fb51e` | 2026-08-09 | ⚠ protected:2 |
+| #4945 | biocatalyst: point-in-time theme rollup adapter + honest coverage disclosure for theme_clinical | `claude/bio-theme-clinical-pit-feed` | 2026-08-08 | — |
+| #4944 | biocatalyst: BC-O1b forward ledger + M0a clock activation (opens nothing, and says why) | `claude/bio-o1b-forward-clock` | 2026-08-08 | — |
+| #4942 | feat(track-record): execute the ruled US era break — re-measure, stamp, disclose, guard | `claude/w1f-track-era-break` | 2026-08-08 | ⚠ CONFLICTING |
+| #4765 | i18n(zh) + copy: native Chinese across the site; stop explaining the method on the boards | `claude/zh-natural-translation` | 2026-08-07 | ⚠ CONFLICTING / files-truncated |
+| #4622 | universe: key Marsh on MRSH and Fiserv on FISV (retired-symbol migration) | `claude/pensive-shaw-9e0f07` | 2026-08-08 | ⚠ CONFLICTING / ⚠ protected:1 |
+| #4512 | fix(nav,i18n,ui): translate the market mega menus; unstick the mobile country drill; operator defect sweep | `claude/mega-menu-translations-fixes-e7daa8` | 2026-08-08 | ⚠ CONFLICTING |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
 
@@ -78,145 +115,712 @@ Generated: 2026-08-05T13:33:40.672316+00:00  |  Open PRs: 63  |  Merged (window)
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
-| #4535 | #4512 | 8 | `site/heatmap.js`, `site/rotation_events.js`, `site/si_workspace.js`, `site/theme.js`, `templates/heatmap.js`, `templates/rotation_events.js`, `templates/si_workspace.js`, `templates/theme.js` |
-| #4561 | #4555 | 7 ⚠ | `.github/workflows/daily.yml`, `config/dag.yml`, `config/synapse.yml`, `data/us_prophet_rank/README.md`, `engine/prophet_miss_audit.py`, `engine/us_context_vector.py`, `tests/test_prophet_miss_audit.py` |
-| #4605 | #4562 | 4 | `engine/theme_tape.py`, `scripts/build_stock_library.py`, `templates/_theme_tape.html.j2`, `tests/test_theme_tape.py` |
-| #4628 | #4609 | 3 | `engine/us_board_rank.py`, `scripts/build_stock_library.py`, `templates/dashboard.html.j2` |
-| #4625 | #4621 | 3 | `config/compiled_kill_registry.yml`, `config/signal_foundry_blocklist.yml`, `research/DO_NOT_REBUILD.md` |
-| #4625 | #4617 | 3 | `config/compiled_kill_registry.yml`, `config/signal_foundry_blocklist.yml`, `research/DO_NOT_REBUILD.md` |
-| #4622 | #4613 | 3 | `collectors/breadth.py`, `config.yml`, `lib/stooq.py` |
-| #4621 | #4617 | 3 | `config/compiled_kill_registry.yml`, `config/signal_foundry_blocklist.yml`, `research/DO_NOT_REBUILD.md` |
-| #4611 | #4545 | 3 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml`, `docs/UNRUN_TEST_CENSUS.md` |
-| #4562 | #4561 | 3 ⚠ | `config/dag.yml`, `config/synapse.yml`, `research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md` |
-| #4562 | #4555 | 3 ⚠ | `config/dag.yml`, `config/synapse.yml`, `research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` |
-| #4519 | #4512 | 3 | `site/theme.js`, `site/unsubscribe.html`, `templates/theme.js` |
-| #4628 | #4496 | 2 | `templates/_prophet_card.html.j2`, `templates/dashboard.html.j2` |
-| #4625 | #4562 | 2 | `config/compiled_kill_registry.yml`, `research/DO_NOT_REBUILD.md` |
-| #4621 | #4562 | 2 | `config/compiled_kill_registry.yml`, `research/DO_NOT_REBUILD.md` |
-| #4620 | #4562 | 2 ⚠ | `config/synapse.yml`, `engine/neuralweb/world_state.py` |
-| #4617 | #4562 | 2 | `config/compiled_kill_registry.yml`, `research/DO_NOT_REBUILD.md` |
-| #4616 | #4613 | 2 | `scripts/fetch_basket_ohlcv.py`, `tests/test_basket_ohlcv_freshness.py` |
-| #4614 | #4611 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4614 | #4601 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4614 | #4581 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4614 | #4580 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4614 | #4555 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4614 | #4545 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4612 | #4581 | 2 | `admin/server.py`, `admin/static/app.js` |
-| #4611 | #4601 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4611 | #4581 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4611 | #4580 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4611 | #4555 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4609 | #4561 | 2 | `engine/prophet_miss_audit.py`, `tests/test_prophet_miss_audit.py` |
-| #4609 | #4555 | 2 | `engine/prophet_miss_audit.py`, `tests/test_prophet_miss_audit.py` |
-| #4609 | #4509 | 2 | `engine/us_board_rank.py`, `tests/test_us_board_rank.py` |
-| #4609 | #4473 | 2 | `engine/us_board_rank.py`, `tests/fixtures/hk_board_2026_07_31.json` |
-| #4605 | #4553 | 2 | `templates/_theme_tape.html.j2`, `tests/test_theme_tape.py` |
-| #4601 | #4581 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4601 | #4580 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4601 | #4555 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4601 | #4545 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4583 | #4473 | 2 | `engine/hk_board_rank.py`, `engine/signal_quality.py` |
-| #4581 | #4580 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4581 | #4555 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4581 | #4545 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4580 | #4555 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4580 | #4545 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4572 | #4512 | 2 | `site/baskets_desk.js`, `site/navigation-refresh.css` |
-| #4565 | #4473 | 2 | `tests/fixtures/hk_board_2026_07_31.json`, `tests/test_hk_board_rank.py` |
-| #4563 | #4562 | 2 | `AGENTS.md`, `CLAUDE.md` |
-| #4562 | #4553 | 2 | `templates/_theme_tape.html.j2`, `tests/test_theme_tape.py` |
-| #4555 | #4545 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4535 | #4533 | 2 | `site/rotation_events.js`, `templates/rotation_events.js` |
-| #4535 | #4519 | 2 | `site/theme.js`, `templates/theme.js` |
-| #4535 | #4498 | 2 | `site/theme.js`, `templates/theme.js` |
-| #4533 | #4512 | 2 | `site/rotation_events.js`, `templates/rotation_events.js` |
-| #4524 | #4509 | 2 | `engine/china_standout_track.py`, `scripts/build_china_library.py` |
-| #4519 | #4498 | 2 | `site/theme.js`, `templates/theme.js` |
-| #4512 | #4498 | 2 | `site/theme.js`, `templates/theme.js` |
-| #4628 | #4605 | 1 | `scripts/build_stock_library.py` |
-| #4628 | #4562 | 1 | `scripts/build_stock_library.py` |
-| #4628 | #4557 | 1 | `scripts/build_stock_library.py` |
-| #4628 | #4553 | 1 | `templates/dashboard.html.j2` |
-| #4628 | #4550 | 1 | `scripts/build_stock_library.py` |
-| #4628 | #4509 | 1 | `engine/us_board_rank.py` |
-| #4628 | #4493 | 1 | `templates/dashboard.html.j2` |
-| #4628 | #4490 | 1 | `templates/_prophet_card.html.j2` |
-| #4628 | #4473 | 1 | `engine/us_board_rank.py` |
-| #4627 | #4620 | 1 | `scripts/collect.py` |
-| #4626 | #4622 | 1 | `config.yml` |
-| #4626 | #4613 | 1 | `config.yml` |
-| #4626 | #4605 | 1 | `config.yml` |
-| #4623 | #4618 | 1 ⚠ | `.github/workflows/daily.yml` |
-| #4623 | #4561 | 1 ⚠ | `.github/workflows/daily.yml` |
-| #4623 | #4555 | 1 ⚠ | `.github/workflows/daily.yml` |
-| #4622 | #4616 | 1 | `data/baskets/membership.json` |
-| #4622 | #4605 | 1 | `config.yml` |
-| #4620 | #4561 | 1 ⚠ | `config/synapse.yml` |
-| #4620 | #4555 | 1 ⚠ | `config/synapse.yml` |
-| #4620 | #4532 | 1 ⚠ | `config/synapse.yml` |
-| #4620 | #4524 | 1 ⚠ | `config/synapse.yml` |
-| #4618 | #4561 | 1 ⚠ | `.github/workflows/daily.yml` |
-| #4618 | #4555 | 1 ⚠ | `.github/workflows/daily.yml` |
-| #4614 | #4565 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4614 | #4512 | 1 | `templates/sector_central.html.j2` |
-| #4614 | #4497 | 1 | `templates/sector_central.html.j2` |
-| #4613 | #4605 | 1 | `config.yml` |
-| #4611 | #4565 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4609 | #4605 | 1 | `scripts/build_stock_library.py` |
-| #4609 | #4565 | 1 | `tests/fixtures/hk_board_2026_07_31.json` |
-| #4609 | #4562 | 1 | `scripts/build_stock_library.py` |
-| #4609 | #4557 | 1 | `scripts/build_stock_library.py` |
-| #4609 | #4553 | 1 | `templates/dashboard.html.j2` |
-| #4609 | #4550 | 1 | `scripts/build_stock_library.py` |
-| #4609 | #4496 | 1 | `templates/dashboard.html.j2` |
-| #4609 | #4493 | 1 | `templates/dashboard.html.j2` |
-| #4605 | #4557 | 1 | `scripts/build_stock_library.py` |
-| #4605 | #4550 | 1 | `scripts/build_stock_library.py` |
-| #4601 | #4565 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4583 | #4509 | 1 | `engine/china_board_rank.py` |
-| #4581 | #4565 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4580 | #4565 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4572 | #4519 | 1 | `site/plans.html` |
-| #4565 | #4555 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4565 | #4545 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4562 | #4557 | 1 | `scripts/build_stock_library.py` |
-| #4562 | #4550 | 1 | `scripts/build_stock_library.py` |
-| #4562 | #4549 | 1 ⚠ | `config/dag.yml` |
-| #4562 | #4532 | 1 ⚠ | `config/synapse.yml` |
-| #4562 | #4524 | 1 ⚠ | `config/synapse.yml` |
-| #4561 | #4549 | 1 ⚠ | `config/dag.yml` |
-| #4561 | #4545 | 1 | `research/CONTEXT_VECTOR_SCHEMA_CONTRACT.md` |
-| #4561 | #4532 | 1 ⚠ | `config/synapse.yml` |
-| #4561 | #4524 | 1 ⚠ | `config/synapse.yml` |
-| #4557 | #4550 | 1 | `scripts/build_stock_library.py` |
-| #4555 | #4549 | 1 ⚠ | `config/dag.yml` |
-| #4555 | #4532 | 1 ⚠ | `config/synapse.yml` |
-| #4555 | #4524 | 1 ⚠ | `config/synapse.yml` |
-| #4553 | #4496 | 1 | `templates/dashboard.html.j2` |
-| #4553 | #4493 | 1 | `templates/dashboard.html.j2` |
-| #4550 | #4532 | 1 | `scripts/grade_us_board.py` |
-| #4532 | #4524 | 1 ⚠ | `config/synapse.yml` |
-| #4512 | #4509 | 1 | `templates/china.html.j2` |
-| #4512 | #4497 | 1 | `templates/sector_central.html.j2` |
-| #4512 | #4496 | 1 | `templates/china.html.j2` |
-| #4509 | #4496 | 1 | `templates/china.html.j2` |
-| #4509 | #4473 | 1 | `engine/us_board_rank.py` |
-| #4496 | #4493 | 1 | `templates/dashboard.html.j2` |
-| #4496 | #4490 | 1 | `templates/_prophet_card.html.j2` |
-| #4496 | #4473 | 1 | `templates/hk.html.j2` |
+| #5063 | #5030 | 29 | `mockups/act-now-icon-sweep-intl/canada_sector_dark_en_card.png`, `mockups/act-now-icon-sweep-intl/canada_sector_dark_en_mark.png`, `mockups/act-now-icon-sweep-intl/canada_sector_dark_zh_card.png`, `mockups/act-now-icon-sweep-intl/canada_sector_dark_zh_mark.png`, `mockups/act-now-icon-sweep-intl/canada_sector_light_en_card.png`, `mockups/act-now-icon-sweep-intl/canada_sector_light_en_mark.png`, `mockups/act-now-icon-sweep-intl/china_sector_dark_en_card.png`, `mockups/act-now-icon-sweep-intl/china_sector_dark_en_mark.png` +21 more |
+| #4971 | #4765 | 19 | `site/about.html`, `site/account.js`, `site/blog/compound-growth-for-traders.html`, `site/blog/congress-trades-are-not-realtime-signals.html`, `site/blog/how-to-keep-a-trading-journal.html`, `site/blog/index.html`, `site/blog/the-math-of-losing-streaks.html`, `site/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html` +11 more |
+| #4971 | #4512 | 12 | `site/nav_market.js`, `site/si_workspace.js`, `site/theme.js`, `templates/basket_detail.html.j2`, `templates/baskets_china_factorwatch.html.j2`, `templates/china.html.j2`, `templates/china_intel.html.j2`, `templates/china_mechanics.html.j2` +4 more |
+| #5068 | #4992 | 10 | `admin/marketing_floor.py`, `app/deploy/update.sh`, `data/marketing/outbox/status_ledger.jsonl`, `engine/marketing/outbox.py`, `engine/marketing/social_publisher.py`, `scripts/marketing_publisher.py`, `scripts/marketing_stale_purge.py`, `tests/test_deploy_update_self_heal.py` +2 more |
+| #5070 | #4971 | 8 | `site/account.js`, `site/chat.html`, `site/nav_market.js`, `site/theme.js`, `templates/_navlinks.html.j2`, `templates/account.js`, `templates/chat.html`, `templates/nav_market.js` |
+| #5044 | #5022 | 6 ⚠ | `.github/workflows/filing-forensics-sec.yml`, `collectors/fundamental_forensics_acquisition.py`, `collectors/sec_document_spine.py`, `scripts/run_fundamental_forensics_wave2.py`, `tests/test_fundamental_forensics_acquisition.py`, `tests/test_sec_document_spine.py` |
+| #5033 | #5031 | 6 | `scripts/build_vector.py`, `tests/test_factor_exposure.py`, `tests/test_government_revenue_candidate_projection.py`, `tests/test_government_revenue_candidates.py`, `tests/test_signal_lab_vector_display.py`, `tests/test_spvector_page.py` |
+| #5002 | #4958 | 6 | `config/biocatalyst_sources.yml`, `config/biocatalyst_sponsor_ticker_map.yml`, `contracts/biocatalyst/biocatalyst_sponsor_ticker_map.v1.schema.json`, `engine/biocatalyst/sponsor_identity.py`, `tests/test_biocatalyst_record_history_enablement.py`, `tests/test_biocatalyst_sponsor_ticker_map.py` |
+| #5092 | #5059 | 5 | `collectors/china_zt_pool.py`, `data/china_microstructure/limit_events.parquet`, `data/china_microstructure/limit_tape.parquet`, `data/china_zt_pool/pool.parquet`, `scripts/build_china_microstructure.py` |
+| #5090 | #5085 | 5 | `contracts/government_revenue/government_revenue_candidate.v1.schema.json`, `engine/government_revenue/award_events.py`, `engine/government_revenue/candidates.py`, `tests/test_government_revenue_award_events.py`, `tests/test_government_revenue_candidates.py` |
+| #5089 | #5088 | 5 | `engine/prophet_live/interval.py`, `engine/prophet_live/live_states.py`, `scripts/prophet_live_evaluator.py`, `tests/test_prophet_live_evaluator.py`, `tests/test_prophet_live_reconcile.py` |
+| #5070 | #4512 | 5 | `site/nav_market.js`, `site/theme.js`, `templates/nav_market.js`, `templates/theme.js`, `tests/test_nav_hover_bridge.py` |
+| #5011 | #4512 | 4 | `site/baskets_desk.js`, `templates/basket_detail.html.j2`, `templates/baskets_desk.js`, `templates/sector_central.html.j2` |
+| #5090 | #5038 | 3 | `engine/government_revenue/candidate_grader.py`, `research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md`, `tests/test_government_revenue_candidate_grader.py` |
+| #5089 | #4982 | 3 | `engine/prophet_live/armed_pack.py`, `engine/prophet_live/interval.py`, `scripts/build_prophet_live_pack.py` |
+| #5084 | #5035 | 3 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml`, `.github/workflows/daily.yml` |
+| #5084 | #5014 | 3 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml`, `app/deploy/update.sh` |
+| #5070 | #4765 | 3 | `site/account.js`, `site/chat.html`, `site/nav_market.js` |
+| #5068 | #5052 | 3 | `data/marketing/outbox/status_ledger.jsonl`, `engine/marketing/outbox.py`, `scripts/marketing_publisher.py` |
+| #5052 | #4997 | 3 | `config/marketing.yml`, `engine/marketing/market_clock.py`, `engine/marketing/outbox.py` |
+| #5052 | #4992 | 3 | `data/marketing/outbox/status_ledger.jsonl`, `engine/marketing/outbox.py`, `scripts/marketing_publisher.py` |
+| #5036 | #5033 | 3 | `scripts/build_vector.py`, `tests/test_earnings_seasons.py`, `tests/test_factor_exposure.py` |
+| #5090 | #5040 | 2 | `engine/government_revenue/entity_resolution.py`, `tests/test_government_revenue_entity_resolution.py` |
+| #5090 | #4951 | 2 | `collectors/usaspending_awards.py`, `tests/test_usaspending_awards.py` |
+| #5089 | #5058 | 2 | `scripts/prophet_live_evaluator.py`, `scripts/reconcile_prophet_live.py` |
+| #5089 | #4978 | 2 | `engine/prophet_live/live_states.py`, `tests/test_prophet_live_evaluator.py` |
+| #5088 | #4982 | 2 | `engine/prophet_live/interval.py`, `tests/test_prophet_live_pack.py` |
+| #5088 | #4978 | 2 | `engine/prophet_live/live_states.py`, `tests/test_prophet_live_evaluator.py` |
+| #5087 | #5084 | 2 ⚠ | `.github/workflows/daily.yml`, `app/deploy/update.sh` |
+| #5087 | #4997 | 2 | `tests/test_marketing_chart_coverage.py`, `tests/test_marketing_content.py` |
+| #5087 | #4994 | 2 ⚠ | `.github/workflows/daily.yml`, `tests/test_marketing_filing_lanes.py` |
+| #5084 | #5043 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5084 | #5021 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5084 | #4957 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5084 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5079 | #5041 | 2 | `engine/signal_lab.py`, `tests/test_signal_lab_vector_display.py` |
+| #5079 | #5033 | 2 | `engine/signal_lab.py`, `tests/test_signal_lab_vector_display.py` |
+| #5068 | #5029 | 2 | `app/deploy/update.sh`, `tests/test_deploy_update_self_heal.py` |
+| #5067 | #5026 | 2 ⚠ | `.github/workflows/daily.yml`, `config/dag.yml` |
+| #5067 | #5012 | 2 ⚠ | `config/dag.yml`, `config/synapse.yml` |
+| #5067 | #5001 | 2 ⚠ | `.github/workflows/daily.yml`, `config/dag.yml` |
+| #5063 | #4971 | 2 | `templates/canada.html.j2`, `templates/hk.html.j2` |
+| #5043 | #5035 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5043 | #5021 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5043 | #5014 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5043 | #4957 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5043 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5041 | #5033 | 2 | `engine/signal_lab.py`, `tests/test_signal_lab_vector_display.py` |
+| #5036 | #5031 | 2 | `scripts/build_vector.py`, `tests/test_factor_exposure.py` |
+| #5035 | #5021 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5035 | #5014 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5035 | #4957 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5035 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5030 | #4971 | 2 | `templates/canada.html.j2`, `templates/hk.html.j2` |
+| #5029 | #4992 | 2 | `app/deploy/update.sh`, `tests/test_deploy_update_self_heal.py` |
+| #5026 | #5001 | 2 ⚠ | `.github/workflows/daily.yml`, `config/dag.yml` |
+| #5021 | #5014 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5021 | #4957 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5021 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5014 | #4957 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5014 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5011 | #4971 | 2 | `templates/basket_detail.html.j2`, `templates/sector_central.html.j2` |
+| #5008 | #4996 | 2 | `.github/ci/legacy-jobs.yml`, `scripts/build_baskets.py` |
+| #5008 | #4995 | 2 | `.github/ci/legacy-jobs.yml`, `scripts/build_baskets.py` |
+| #4997 | #4994 | 2 | `config/marketing.yml`, `engine/marketing/content_studio.py` |
+| #4996 | #4995 | 2 | `.github/ci/legacy-jobs.yml`, `scripts/build_baskets.py` |
+| #4957 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #4765 | #4512 | 2 | `site/nav_market.js`, `site/si_workspace.js` |
+| #5092 | #5067 | 1 ⚠ | `config/dag.yml` |
+| #5092 | #5026 | 1 ⚠ | `config/dag.yml` |
+| #5092 | #5012 | 1 ⚠ | `config/dag.yml` |
+| #5092 | #5001 | 1 ⚠ | `config/dag.yml` |
+| #5092 | #4988 | 1 ⚠ | `config/dag.yml` |
+| #5090 | #5086 | 1 | `contracts/government_revenue/government_procurement_event.v2.schema.json` |
+| #5090 | #5033 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5090 | #5031 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5090 | #5009 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5090 | #4950 | 1 | `collectors/usaspending_awards.py` |
+| #5089 | #5084 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5073 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5072 | 1 | `scripts/build_prophet_live_pack.py` |
+| #5089 | #5063 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5059 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5045 | 1 | `scripts/build_stock_library.py` |
+| #5089 | #5043 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5036 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5035 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5021 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5014 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5088 | #5058 | 1 | `scripts/prophet_live_evaluator.py` |
+| #5087 | #5070 | 1 | `app/deploy/update.sh` |
+| #5087 | #5068 | 1 | `app/deploy/update.sh` |
+| #5087 | #5067 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5087 | #5035 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5087 | #5029 | 1 | `app/deploy/update.sh` |
+| #5087 | #5026 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5087 | #5015 | 1 | `tests/test_marketing_content.py` |
+| #5087 | #5014 | 1 | `app/deploy/update.sh` |
+| #5087 | #5001 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5087 | #4998 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5087 | #4992 | 1 | `app/deploy/update.sh` |
+| #5086 | #5046 | 1 ⚠ | `scripts/check_government_revenue_projection.py` |
+| #5086 | #4951 | 1 | `contracts/government_revenue/government_procurement_workspace.v2.schema.json` |
+| #5085 | #5033 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5085 | #5031 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5085 | #5009 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5084 | #5073 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5070 | 1 | `app/deploy/update.sh` |
+| #5084 | #5068 | 1 | `app/deploy/update.sh` |
+| #5084 | #5067 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5084 | #5063 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5059 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5036 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5029 | 1 | `app/deploy/update.sh` |
+| #5084 | #5026 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5084 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5001 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5084 | #4998 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5084 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #4994 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5084 | #4992 | 1 | `app/deploy/update.sh` |
+| #5084 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #4622 | 1 | `data/baskets/extras.parquet` |
+| #5079 | #5031 | 1 | `tests/test_signal_lab_vector_display.py` |
+| #5076 | #5062 | 1 | `tests/test_spvector_page.py` |
+| #5076 | #5049 | 1 | `tests/test_spvector_page.py` |
+| #5076 | #5033 | 1 | `tests/test_spvector_page.py` |
+| #5076 | #5031 | 1 | `tests/test_spvector_page.py` |
+| #5074 | #5073 | 1 | `tests/test_earnings_w4_feed.py` |
+| #5073 | #5063 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5059 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5043 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5036 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5035 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5021 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5014 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5072 | #5068 | 1 | `scripts/marketing_publisher.py` |
+| #5072 | #5052 | 1 | `scripts/marketing_publisher.py` |
+| #5072 | #5044 | 1 | `scripts/run_fundamental_forensics_wave2.py` |
+| #5072 | #5040 | 1 | `scripts/build_government_revenue_candidates.py` |
+| #5072 | #5022 | 1 | `scripts/run_fundamental_forensics_wave2.py` |
+| #5072 | #4992 | 1 | `scripts/marketing_publisher.py` |
+| #5072 | #4982 | 1 | `scripts/build_prophet_live_pack.py` |
+| #5072 | #4942 | 1 | `scripts/build_track_record_page.py` |
+| #5070 | #5068 | 1 | `app/deploy/update.sh` |
+| #5070 | #5050 | 1 | `scripts/build_site.py` |
+| #5070 | #5029 | 1 | `app/deploy/update.sh` |
+| #5070 | #5014 | 1 | `app/deploy/update.sh` |
+| #5070 | #4992 | 1 | `app/deploy/update.sh` |
+| #5068 | #5039 | 1 | `tests/test_admin_marketing.py` |
+| #5068 | #5014 | 1 | `app/deploy/update.sh` |
+| #5068 | #4997 | 1 | `engine/marketing/outbox.py` |
+| #5067 | #5060 | 1 | `scripts/validate_options_entry.py` |
+| #5067 | #5035 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5067 | #5018 | 1 ⚠ | `config/synapse.yml` |
+| #5067 | #4998 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5067 | #4994 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5067 | #4988 | 1 ⚠ | `config/dag.yml` |
+| #5063 | #5059 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5043 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5036 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5035 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5021 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5014 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5062 | #5049 | 1 | `tests/test_spvector_page.py` |
+| #5062 | #5033 | 1 | `tests/test_spvector_page.py` |
+| #5062 | #5031 | 1 | `tests/test_spvector_page.py` |
+| #5059 | #5043 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5036 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5035 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5021 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5014 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5058 | #5052 | 1 | `scripts/marketing_press_wire.py` |
+| #5052 | #5006 | 1 | `config/marketing.yml` |
+| #5052 | #4994 | 1 | `config/marketing.yml` |
+| #5049 | #5033 | 1 | `tests/test_spvector_page.py` |
+| #5049 | #5031 | 1 | `tests/test_spvector_page.py` |
+| #5044 | #5043 | 1 | `collectors/sec_document_spine.py` |
+| #5044 | #5020 | 1 | `.gitignore` |
+| #5043 | #5036 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #5022 | 1 | `collectors/sec_document_spine.py` |
+| #5043 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5041 | #5031 | 1 | `tests/test_signal_lab_vector_display.py` |
+| #5040 | #5033 | 1 | `tests/test_government_revenue_candidate_projection.py` |
+| #5040 | #5031 | 1 | `tests/test_government_revenue_candidate_projection.py` |
+| #5040 | #5014 | 1 | `app/government_revenue.py` |
+| #5036 | #5035 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #5034 | 1 | `tests/test_factor_exposure.py` |
+| #5036 | #5021 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #5014 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #5026 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5035 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #5001 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5035 | #4998 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5035 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #4994 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5035 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5034 | #5033 | 1 | `tests/test_factor_exposure.py` |
+| #5034 | #5031 | 1 | `tests/test_factor_exposure.py` |
+| #5033 | #5009 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5031 | #5009 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5029 | #5014 | 1 | `app/deploy/update.sh` |
+| #5026 | #5012 | 1 ⚠ | `config/dag.yml` |
+| #5026 | #4998 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5026 | #4994 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5026 | #4988 | 1 ⚠ | `config/dag.yml` |
+| #5021 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #5013 | 1 | `engine/prophet_bridge.py` |
+| #5021 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #5014 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5018 | #5012 | 1 ⚠ | `config/synapse.yml` |
+| #5016 | #4985 | 1 | `engine/intel_hub.py` |
+| #5015 | #4997 | 1 | `tests/test_marketing_content.py` |
+| #5015 | #4994 | 1 | `tests/conftest.py` |
+| #5014 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5014 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5014 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5014 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5014 | #4992 | 1 | `app/deploy/update.sh` |
+| #5014 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5014 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5014 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5012 | #5001 | 1 ⚠ | `config/dag.yml` |
+| #5012 | #4988 | 1 ⚠ | `config/dag.yml` |
+| #5011 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5011 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5011 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5011 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5011 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5011 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5011 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5011 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5010 | #4985 | 1 | `engine/hub_track_record.py` |
+| #5010 | #4622 | 1 | `engine/altdata_models.py` |
+| #5008 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5008 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5008 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5008 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5008 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5006 | #4997 | 1 | `config/marketing.yml` |
+| #5006 | #4994 | 1 | `config/marketing.yml` |
+| #5001 | #4998 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5001 | #4994 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5001 | #4988 | 1 ⚠ | `config/dag.yml` |
+| #5000 | #4942 | 1 | `engine/track_ledger.py` |
+| #4998 | #4994 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #4997 | #4992 | 1 | `engine/marketing/outbox.py` |
+| #4996 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4996 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4996 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4996 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4996 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4995 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4995 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4995 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4995 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4995 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4985 | #4622 | 1 | `engine/ai_desk.py` |
+| #4971 | #4942 | 1 | `templates/dashboard.html.j2` |
+| #4958 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4958 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4958 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4958 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4957 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4957 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4951 | #4950 | 1 | `collectors/usaspending_awards.py` |
+| #4950 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4950 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4945 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #5082 | fix(prophet): heal date-family CI and deploy contracts | 2026-08-09 |
+| #5081 | legal: expand privacy and commercial-use policies | 2026-08-09 |
+| #5071 | fix(prophet): lossless US origination and date-safe outage recovery | 2026-08-09 |
+| #5069 | Smart Money: autonomous rolling 13F transitions | 2026-08-09 |
+| #5066 | Fix GEX artifacts to use the settled exchange session | 2026-08-09 |
+| #5065 | tests: make earnings-season fixtures hermetic in time, not just data (unblock ci-pack-0) | 2026-08-09 |
+| #5051 | cn-limit: program masterplan + wave-1 orchestration (Fable) | 2026-08-09 |
+| #5042 | fix(merge-on-green): resolve main's proof from the workflow run — the daily merge-blocked backlog | 2026-08-09 |
+| #5032 | fix(main-heal): the four base-side reds pinning the armed backlog — vector null gap, pack-order mutation, rolling-beta band, govrev rail activation | 2026-08-08 |
+| #5027 | design(wl1): provisional close-pass board — pinned spec + mockups | 2026-08-08 |
+| #5024 | docs(nightly W3): production-verify the build_site trim + void the stale stock_library profile | 2026-08-08 |
+| #5017 | fix(govrev): award-event bundle validator was dead on arrival — arg order + sys.path, wiring-pinned | 2026-08-08 |
+| #5004 | fix(hub): keep one regime label per market card | 2026-08-08 |
+| #5003 | research(live): Breathing Platform session-1 continuation handoff | 2026-08-08 |
+| #4991 | docs(group-reads): ratify basket participation + earnings co-movement masterplan | 2026-08-08 |
+| #4990 | marketing: X engine masterplan — codex quality, volume, fast lanes (audit 2026-08-08) | 2026-08-08 |
+| #4989 | fix(landing): optically center Chinese hero lines | 2026-08-08 |
+| #4986 | perf(daily): move the Filing Forensics SEC spine off the render path — engine restores a constant-cost disclosure bundle | 2026-08-08 |
+| #4983 | fix(main-heal): the forward-ledger row count was a snapshot, and it expired | 2026-08-08 |
+| #4980 | perf(daily): W4 engine profile — the 242m night was a Prophet-step wedge; belt the step (15m cap + streamed log) | 2026-08-08 |
+| #4975 | research(live): Breathing Platform masterplan — live signals during the session | 2026-08-08 |
+| #4974 | research: Intelligence Hub lobe audit + upgrade masterplan (W0-W6) | 2026-08-08 |
+| #4973 | fix(daily): heal the three failures freezing the nightly — R2 endpoint, workspace schema, engine cap | 2026-08-08 |
+| #4970 | fix(ci): a path literal is not always a read — #4843 reconciled onto current main | 2026-08-08 |
+| #4969 | seasonality program watch (admin console + engine) — #4948 and #4929 reconciled onto current main | 2026-08-08 |
+| #4968 | fix(merge-on-green): the base-inherited-red refresh never fired — nightly commits end the walk | 2026-08-08 |
+| #4967 | fix(options-hub): a wedged run can no longer serve yesterday silently; add SPCX | 2026-08-08 |
+| #4966 | docs: open-PR backlog continuation handoff (2026-08-08) | 2026-08-08 |
+| #4965 | fix(main-heal): green all four ci packs — one PR, because a pack is one check | 2026-08-08 |
+| #4964 | fix(confluence): PIT latch so a fired T2 event can never be un-fired | 2026-08-08 |
+| #4961 | forensics: detectors must not fire on absent declared evidence | 2026-08-08 |
+| #4960 | fix(us_context_vector): purge the paid Filing Forensics body from the tracked candidates store and close the committing seam | 2026-08-08 |
+| #4959 | ruling(biocatalyst): operator authorizes Record History ingest + sponsor row admission | 2026-08-07 |
+| #4956 | fix(app): read the header the edge overwrites, not the four it forwards | 2026-08-08 |
+| #4955 | fix(research-vault): restore 911 wiped excerpts and floor the anti-clobber guard | 2026-08-07 |
+| #4954 | ops(csp-w6): register the three basket-turn forward ledgers in the heartbeat manifest | 2026-08-08 |
+| #4952 | fix(bc2): re-point the third-party anti-vacuity pin off a rotated note | 2026-08-07 |
+| #4947 | biocatalyst: exact Change Tape before/after values + declared correction lineage | 2026-08-08 |
+| #4946 | biocatalyst: B1S4 recorded-denominator coverage epochs (dark) | 2026-08-08 |
+| #4943 | docs(prophet-us): EYES OPEN Wave-1 execution record + continuation handoff | 2026-08-07 |
+| #4941 | docs: GovTribe clean-room study for Government Revenue Foresight (2026-08-07) | 2026-08-07 |
+| #4940 | biocatalyst: reviewed sponsor -> ticker CANDIDATE map (W3-C) — candidates only, resolves nothing | 2026-08-08 |
+| #4939 | docs: overnight autonomous run record for 2026-08-07 | 2026-08-07 |
+| #4938 | fix(spine): delete the declared duplicate rather than test it, and unit-pin the earned collapse | 2026-08-08 |
+| #4937 | strategy(biocatalyst): the signal path — two clinical planes with complementary defects | 2026-08-07 |
+| #4935 | fix(us-basket-turn): per-basket data-plane stamp — the frozen basket that was about to manufacture a CONFIRMED (W1-E) | 2026-08-08 |
+| #4933 | fix(us-board): fail-closed freshness — majority staleness, knowable signal age, LIMITED as a printed null (W1-B) | 2026-08-07 |
+| #4932 | fix(admin): harden the edge attestation — first-hop read, /16 floor, silent inertness | 2026-08-07 |
+| #4931 | feat(universe): the silver + PGM complexes join the graded US population, with honest curation stamps (W1-C) | 2026-08-07 |
+| #4930 | fix(china): re-key the 3,184 Beijing rows a stale-checkout nightly resurrected | 2026-08-07 |
+| #4928 | test(capital-structure): stop the mutated-__new__ probe poisoning every later HTMLParser (heals 15 disclosure-diff/projection failures) | 2026-08-07 |
+| #4927 | fix(capital-structure): a pandas NaN sentinel aborted 130 manifests a night, forever (W1-A) | 2026-08-07 |
+| #4926 | fix(golden-corpus): give the two positional `duplicate_collapsed` labels the outcome their fixtures evidence | 2026-08-07 |
+| #4925 | docs(caddy): my own global-options comment went stale within the hour — #4922 fixed the defect it points at | 2026-08-07 |
+| #4924 | feat(prophet-us): US washout-lifecycle organ — the CN port that sees the turn 9 sessions before IGNITION (W1-D) | 2026-08-07 |
+| #4923 | fix(nav): the two Mastermind cards are one product no longer — stop the icon bridge stomping unknown cards | 2026-08-07 |
+| #4922 | fix(admin): un-collapse the login lockout the edge move merged into one bucket | 2026-08-07 |
+| #4921 | feat(government-revenue): grader was missing its earnings/filings outcome labels | 2026-08-07 |
+| #4920 | fix(price-basis): restore the manager_trades census row + triage the sweep's two new pairings | 2026-08-07 |
+| #4919 | research(prophet-us): EYES OPEN masterplan — Phase 2 of Missed Ignitions (unfreeze, fail-closed disclosure, early-turn parity) | 2026-08-07 |
+| #4918 | test(risk-radar): re-pin the global-breadth guard — #2188 gave 'global' a second leg, so dropping the column re-weights the scare instead of deleting it | 2026-08-07 |
+| #4917 | fix(dossier): reconcile the two basket gates — keep the row, gate the link | 2026-08-07 |
+| #4916 | fix(baseline): let the proof finish — cancel-in-progress killed every run before it reached a runner | 2026-08-07 |
+| #4915 | docs(caddy): correct the grey-cloud claim — admin is edge-proxied, and its ACME survives the hop | 2026-08-07 |
+| #4914 | alert(surface-freshness): route staleness to the ops spine — the annotation was never the gap, the reader was | 2026-08-07 |
+| #4913 | fix(nav): bump the immutable cache key — the sweep changed nav_market.js under it | 2026-08-07 |
+| #4912 | docs(wave1): amend the frozen contract — Q6, a verified byte range does not verify the speaker | 2026-08-07 |
+| #4911 | feat(earnings): Wave 1B — the EDGAR identity join and the Exhibit 99.1 release binding | 2026-08-07 |
+| #4910 | company_intelligence: issuer-keyed event/document/span spine (Wave 1A) | 2026-08-07 |
+| #4909 | fix(government-revenue): derive the candidate suites' frozen clock from the data they project | 2026-08-07 |
+| #4908 | forensics: cross-pin the four detector ids across all THREE implementations | 2026-08-07 |
+| #4907 | fix(exit-policy): the capture witness pinned a defect #4684 fixed upstream | 2026-08-07 |
+| #4906 | fix(government-revenue): EX-21 picker missed EDGAR's bare-x separator | 2026-08-07 |
+| #4905 | docs(seasonality): continuation handoff — the engines exist, the evidence does not | 2026-08-07 |
+| #4904 | fix(options): era-mark the three chain-derived ledger columns onto the session-filtered chain store | 2026-08-07 |
+| #4903 | feat(seasonality): cross-symbol research browser that refuses to become a score (W7) | 2026-08-07 |
+| #4902 | docs(caddy): correct the apex DNS/TLS comment to the real EdgeOne topology | 2026-08-07 |
+| #4901 | fix(estate): re-render the 57 free-content pages #4855 left stale (申报 → 披露) | 2026-08-07 |
+| #4900 | fix(nightly-timings): instrument us_prophet_ledgers — it shipped W2-dark | 2026-08-07 |
+| #4899 | ci: heal main's 4 trigger gaps — every open PR is red on test_main_has_no_trigger_gap | 2026-08-07 |
+| #4898 | ledger(us-board): declare 2026-08-03..06 a disclosed null era — the board published, but ranked on frozen factors | 2026-08-07 |
+| #4897 | psi: market books + position assessment desk on the watchlist page | 2026-08-07 |
+| #4896 | feat(seasonality): shadow market-response model + forward-chained calibration (W4) | 2026-08-07 |
+| #4895 | feat(seasonality): multi-clock Neural Web state v2 — the v1 field that was about to be lied to (W5) | 2026-08-07 |
+| #4894 | feat(psi): W2.5 — chg_1d in the five per-market library bakes (+index c1) | 2026-08-07 |
+| #4893 | fix(dag): declare the three collect-lane modules the sweep left undeclared | 2026-08-07 |
+| #4891 | fix(hk): HK can no longer feature anything — heal the featured reds, pin the two live defects | 2026-08-07 |
+| #4890 | fix(ci): scope the ob-mask script's warnings filter to __main__ (un-reds ci-pack-2) | 2026-08-07 |
+| #4889 | feat(hk-prophet): Ripening shelf — the CN W8-R1 port that gives the HK board a body between fresh crosses | 2026-08-07 |
+| #4888 | fix(ci): define TEMPLATES so #4758's help-tip guard can actually run (un-reds ci-pack-0) | 2026-08-07 |
+| #4887 | feat(psi): W2 — portfolio_ctx v2 per-ticker state blocks + market block + coverage counts | 2026-08-07 |
+| #4886 | fix(macro): the quad-map arrowhead outgrew its arrow, and the dial needle is white on white | 2026-08-07 |
+| #4885 | feat(seasonality): Catalyst mode — draw the boundary of the evidence, not a placeholder (W2C/W3) | 2026-08-07 |
+| #4884 | fix(cboe): the cross-fill remedy promised a stamp offset that #4807 made false | 2026-08-07 |
+| #4883 | fix(polygon-gex): finish the #4807 session re-stamp on the 91% its merge reverted | 2026-08-07 |
+| #4882 | docs(psi): Amendment A3 — market-partitioned books + pinned design spec | 2026-08-07 |
+| #4881 | ci(house-law): register check_tushare_freshness — heals main's house-law-registry red | 2026-08-07 |
+| #4880 | docs: handoff addendum — nightly died of host overload (load 79), not caps | 2026-08-07 |
+| #4879 | docs(calcbench): rewrite the wave-status table from observation, not intent | 2026-08-07 |
+| #4878 | fix(billing): correct the MM_SITE_BASE "www has broken edge TLS" claim — it is false | 2026-08-07 |
+| #4877 | research(cn-board): a published pick can be un-published by the trailing bucket — census + adjudication | 2026-08-07 |
+| #4876 | fix(research): fail startup loudly on paid vault router wiring errors | 2026-08-07 |
+| #4875 | guard(i18n): 申报 can never reach zh copy again — and register the census red pinning main | 2026-08-07 |
+| #4874 | fix(price-basis): the census went blind, not clean — restore the detector and light the dark suite | 2026-08-07 |
+| #4873 | Add Mastermind Bot to the Research menu, Pro-gated at the host | 2026-08-07 |
+| #4872 | fix(ci): close the 2 biocatalyst trigger gaps — and collect the red one already let through | 2026-08-07 |
+| #4871 | fix(ci): register /sb/* as a non-policy route — heals main's boundary red | 2026-08-07 |
+| #4870 | fix(options): era-mark the opt_vanna_relief ledger rows onto the calendar-resolved basis | 2026-08-07 |
+| #4869 | feat(seasonality): Prophet narrative/attention overlay — the plan cannot move (W6) | 2026-08-07 |
+| #4868 | feat(seasonality): event-study core — two estimands that cannot see each other (W2B) | 2026-08-07 |
+| #4867 | fix(options): era-marked restamp of opt_vanna_relief onto the calendar-resolved 5-session basis | 2026-08-07 |
+| #4866 | fix(search): Chinese ticker search finds US names, and a failed library stops reading as "no matches" | 2026-08-07 |
+| #4864 | ci(anchor): add the §7 marker-engine half to session-anchor-era, and heal main's 2 trigger gaps | 2026-08-07 |
+| #4863 | fix(price-basis): heal the guard registry both directions (base-side red, self-inflicted) | 2026-08-07 |
+| #4861 | docs(display-grid): the parity claim is not false YET — it goes false when #4738 lands | 2026-08-07 |
+| #4860 | feat(seasonality): point-in-time universe reads — say "unavailable" instead of guessing (W1A/W1C) | 2026-08-07 |
+| #4859 | ci: run the three cheap dark reds — and heal three corrupted DO_NOT_REBUILD rows | 2026-08-07 |
+| #4858 | fix(earnings): fail startup loudly on paid router wiring errors | 2026-08-07 |
+| #4857 | guard(breadth): the OHLC caches must share ONE adjustment basis — close the split no scanner can see | 2026-08-07 |
+| #4856 | docs(house-law): claim the lane first, and heal the WHOLE pack | 2026-08-07 |
+| #4855 | i18n(zh): 申报 → 披露 site-wide — filings read as tax declarations, not disclosures | 2026-08-07 |
+| #4854 | fix(sweeper): re-test a red the PR inherited from a base that has since been healed | 2026-08-07 |
+| #4853 | research: display-grid alignment adjudication — era display-grid-abs-session-2026-08-06 (DG-R1..R8) | 2026-08-07 |
+| #4852 | feat(seasonality): dark fail-closed event-clock adapter — a hostile payload gets a ledger, not a traceback (W2A) | 2026-08-07 |
+| #4851 | test(intl): pin repair_hold hysteresis to a synthetic series | 2026-08-07 |
+| #4849 | feat(government-revenue): Wave 9D — propose issuer mappings from official evidence only | 2026-08-07 |
+| #4848 | perf(build_site): W2 section timing ledger + memoize the grader price loader (−11m/night measured) | 2026-08-07 |
+| #4847 | marketing copy: stale sessions, diary voice, advertised abstention, and the same stat every night | 2026-08-07 |
+| #4845 | fix(merge-on-green): the sweeper was starving its own API budget (rebased; auto-refresh half landed as #4854) | 2026-08-07 |
+| #4844 | fix(exit-policy): pin the report's WRITER to the vintage its guard already reads | 2026-08-07 |
+| #4842 | fix(exit-policy): re-render the committed report at the frozen slice, not live caches | 2026-08-07 |
+| #4841 | fix(ci): heal main's last two reds together — FS-4 sys.modules + prophet-postmortem FN cohort (different packs, mutual block) | 2026-08-07 |
+| #4840 | fix(options): resolve every polygon_gex session lookback by calendar, not by row position | 2026-08-07 |
+| #4838 | fix(tests): let the PSS follow-on ledgers accrue (ci-pack-2 red on clean main) | 2026-08-07 |
+| #4837 | fix(ci): heal main's basing-shelf red — the witness row was artifact-dependent, not a shelf regression | 2026-08-07 |
+| #4836 | fix(forensics): fail startup loudly on paid router wiring errors | 2026-08-07 |
+| #4835 | forensics: give the anonymous preview an honest aggregate | 2026-08-07 |
+| #4834 | feat(govrev): Wave 9E — union the recipient retrievals, do not normalize | 2026-08-07 |
+| #4833 | fix(cycles): absolute session-calendar anchor for the ladder grids — era cyc-abs-session-2026-08-06 (board admission gate) | 2026-08-07 |
+| #4832 | outbox: clear the standing queue of copy that is already unlawful | 2026-08-07 |
+| #4831 | biocatalyst d0b: Trial Screen, Peer Matrix, replay-verified Change Tape, Temporal Braid | 2026-08-07 |
+| #4830 | forensics: open the paid funnel — promote page assets, split four access states | 2026-08-07 |
+| #4829 | test(intl): freeze market-state replays at an as-of date so they stop rotting | 2026-08-07 |
+| #4828 | fix(government-revenue): three wrong-candidate defects in the Wave 9C award-event collector | 2026-08-07 |
+| #4827 | fix(prophet): regenerate the stale exit-policy horse race blocking every PR | 2026-08-07 |
+| #4826 | ci: give tests/test_marketing_theme_proxy.py a lane — #4646's silent half, UNRUN since it landed | 2026-08-07 |
+| #4825 | biocatalyst: v2 successor acceptance contract + trusted browser verifier (W0-B2) | 2026-08-07 |
+| #4824 | fix(ci): un-dark tests/test_admin_server.py and teach it the key_alerts rail | 2026-08-07 |
+| #4822 | biocatalyst: W7-A operating packet producer + W7-B allowlisted Neural Web reader | 2026-08-07 |
+| #4821 | fix(ai_costs): record the rung that actually served, not the Claude subscription lane | 2026-08-07 |
+| #4820 | biocatalyst B1S2a: private bounded fixed-cohort transport (dark, gated off) | 2026-08-07 |
+| #4818 | feat(govrev): Wave 9D — exact-identifier issuer graph expansion, with its fences | 2026-08-07 |
+| #4817 | fix(ci): the publish-time proxy fixture needs the data stack — gate it, and give it a lane that has one | 2026-08-07 |
+| #4816 | fix(neuralweb): the GEX dimension never populated — context_api read a column the store has never had | 2026-08-07 |
+| #4815 | ci(government-revenue): meta-guard the unnamed-suite rot + wire the runtime contract paths | 2026-08-07 |
+| #4814 | biocatalyst: BC-O1a inert operational store + M0a outcome-family policy (contract only) | 2026-08-07 |
+| #4813 | Government Revenue Wave 9G: prospective candidate grader + first preregistered family (GRV-FA1) | 2026-08-07 |
+| #4812 | feat(china): engine-driven delayed-board disclosure + arm the freshness sentinel (china 12d) | 2026-08-07 |
+| #4811 | feat(asia): tripwire for the gated Tushare plane going quietly cold | 2026-08-07 |
+| #4810 | biocatalyst: reconcile the shared planes and name the real closed-beta denominator | 2026-08-07 |
+| #4809 | fix(options): the 5-session lookback resolves its far endpoint by calendar, not by row position | 2026-08-07 |
+| #4808 | fix(ci): catch chat.html nav drift on the PR, not on main — and stop --fix from stripping ?v=/defer | 2026-08-07 |
+| #4807 | fix(polygon-gex): stamp the SESSION the snapshot describes, not the UTC run date | 2026-08-07 |
+| #4806 | fix(forensics): the receipt API was reading the wrong bucket (Calcbench parity Wave 0A) | 2026-08-07 |
+| #4805 | feat(seasonality): biopharma.event.v2 — make fabricated precision structurally impossible (W2A0) | 2026-08-07 |
+| #4804 | feat(government-revenue): separate the collection verdict from the persistence verdict | 2026-08-07 |
+| #4802 | ollama num_ctx: measure both lanes, keep both windows, un-dark the provider suite | 2026-08-07 |
+| #4800 | ci(anchor): execute the session-anchor invariance suite — UNRUN under a published era stamp | 2026-08-07 |
+| #4799 | fix(display-grid): candles and markers share the absolute session anchor — era display-grid-abs-session-2026-08-06 (stacked on #4738) | 2026-08-07 |
+| #4798 | fix(nightly): stop the engine job restoring a stale breadth cache over the panel collect just committed | 2026-08-07 |
+| #4797 | board_ledger: fence BOTH bucketing eras; retire the dead §7 writer | 2026-08-07 |
+| #4796 | biocatalyst: D0a named adjudication + the parity ledger — two rulings the program owed itself | 2026-08-07 |
+| #4795 | fix(options-stamp): gap-aware chain readers — session-ordinal ΔOI fit, prior-session-strict vol/OI comparisons | 2026-08-07 |
+| #4794 | fix(nav): heal the chat-nav drift failing ci-pack on every PR | 2026-08-07 |
+| #4792 | earnings_qual: drop the obsolete local 8k cap, keep the per-rung lever | 2026-08-07 |
+| #4791 | fix(ci): bound the collect_tail non-fatal band with timeout-minutes + continue-on-error | 2026-08-07 |
+| #4790 | marketing: the nightly emitted two kinds that nobody could decide | 2026-08-07 |
+| #4789 | fix(merge-on-green): an absence of failure is not a pass — a head with zero CI evidence read `clean` (#4779) | 2026-08-07 |
+| #4788 | docs: Context economy standing rule — Fable burn is context × turns, not thinking | 2026-08-06 |
+| #4786 | docs(wave1): freeze the Wave 1 producer contract — the five questions R0-D exposed | 2026-08-07 |
+| #4785 | ruling: freeze the PSQ hold-tilt promotion clock — its falsifier is unreachable | 2026-08-07 |
+| #4784 | earnings_qual: bound the local rung's prompt to its own 4k context window (R0-A2) | 2026-08-06 |
+| #4783 | test(company-intelligence): freeze the R0-D golden corpus benchmark (234 events / 130 issuers) | 2026-08-07 |
+| #4782 | fix(government-revenue): repair award-event persistence broken by pandas 3 | 2026-08-07 |
+| #4781 | fix(prophet): fence the legacy earnings split-brain — the Stage tilt has been inert in production since it shipped (R0-C) | 2026-08-07 |
+| #4780 | fix(marketing-earnings): cone site/marketdata in, make a zero-emission pass attributable | 2026-08-07 |
+| #4779 | fix(chat-nav): sync_chat_nav --fix must carry ?v= stamps and defer across the re-splice | 2026-08-07 |
+| #4778 | fix(earnings): make the Qwen-first claim true and its fallback visible (R0-A) | 2026-08-07 |
+| #4777 | docs(skills): fable-mode Revision 2 — delegation cluster, testimony commitment, expanded pre-send gate | 2026-08-07 |
+| #4776 | ci(government-revenue): run the nineteen suites no pack ever executed | 2026-08-07 |
+| #4775 | fix(cn-watch): repair the hoist-blinded buy-filter pin and enrol the dark continuation-watch suite | 2026-08-07 |
+| #4774 | fix(base): heal both ci-pack-2 reds pinning main and every open PR | 2026-08-07 |
+| #4773 | docs: hand off remaining biopharma seasonality waves | 2026-08-06 |
+| #4772 | docs(biocatalyst): hand off remaining build waves | 2026-08-06 |
+| #4771 | docs: hand off remaining Deepvue clean-room waves | 2026-08-06 |
+| #4770 | docs: hand off remaining Calcbench parity waves | 2026-08-06 |
+| #4769 | docs: hand off remaining earnings and company-event waves | 2026-08-06 |
+| #4767 | fix(china): unblank the Prophet board — renderer demanded v2 after #4509 moved the engine to v3 | 2026-08-06 |
+| #4766 | docs: hand off Government Revenue remaining waves | 2026-08-06 |
+| #4764 | fix(tests): stop a sys.modules eviction poisoning unrelated files; heal the collect-checkpoint guard #4731 left red | 2026-08-06 |
+| #4763 | fix(exit-policy): pin calibration to a frozen input slice — "calibration drifted" was frontier + price VINTAGE, not drift | 2026-08-07 |
+| #4762 | feat(ops): W1 external freshness sentinel — dead-man switch outside GitHub | 2026-08-07 |
+| #4761 | fix(cboe): heal the delayed-chain session gaps — backfill 07-30 from the polygon archive, register the unrecoverable nights, harden the 429 ladder | 2026-08-07 |
+| #4760 | docs(W6): the data-source forensics findings — three outages, three different classes | 2026-08-07 |
+| #4759 | docs: ops handoff baton — 2026-08-06 emergency (account switch) | 2026-08-06 |
+| #4758 | fix(us-board): act-board help tip rendered inline on sector_central — port the .help/.tip framework into the shared include | 2026-08-07 |
+| #4757 | fix(tushare): the plane has been dark since 07-27 on vendor auth-reject 40101 — detect it, annotate it, raise it | 2026-08-07 |
+| #4756 | fix(coiled+mtf): absolute session anchor for the standout bonus/fire grids + trend.d3 chip — era coiled-mtf-abs-session-2026-08-06 | 2026-08-07 |
+| #4755 | feat(admin): Observatory map toggle — lobe dendrogram or the living synapse map | 2026-08-07 |
+| #4754 | fix(pick-lab): absolute session-calendar anchor for the d2 grid + HK 3-session site — era pl-abs-session-2026-08-06 | 2026-08-07 |
+| #4752 | fix(ci): heal ci-pack-2's four reds on main — born-red job, vendor re-pin, flag-blind parser, gappy store | 2026-08-06 |
+| #4751 | feat(nightly): W2 runtime telemetry — per-job/per-band timings ledger + >85%-of-cap tripwire | 2026-08-07 |
+| #4749 | fix(prophet-postmortem): G1 pinned a MARK as a verdict — FN's horizon closed +1.66% and the fixture called it a loss | 2026-08-07 |
+| #4748 | fix(research): gold harness silently dropped 67% of 3D bars — tf_bars rejoined to confluence's label geometry (verdict unchanged) | 2026-08-07 |
+| #4747 | fix(track-record): `_ob_mask` is causal but NOT stable — the published US record moves on zero new information | 2026-08-07 |
+| #4746 | daily: move the capital-structure chain out of collect into its own job | 2026-08-07 |
+| #4745 | fix(nightly): W3 re-measured — build_news label was stale; split the six-week-dark china wire GDELT query | 2026-08-07 |
+| #4743 | docs: nightly resilience + live-transition masterplan (2026-08-06 outage program) | 2026-08-06 |
+| #4742 | fix(r2): hoist lib.config import above _client so local runs see .env creds | 2026-08-07 |
+| #4741 | fix(nightly): raise engine timeout 200→240 (two consecutive ~205m hard-cancels = the stale-board outage) | 2026-08-06 |
+| #4740 | fix(capital-structure): the lineage pass must ask for the bytes it was told to bind | 2026-08-07 |
+| #4739 | fix(ci): heal two base-side reds pinning every open PR — KOSPI/HSI golden dates, numpy-less marketing pack | 2026-08-07 |
+| #4738 | fix(signal-quality): absolute session-calendar anchor for the §7 marker engine — era sq-abs-session-2026-08-06 (A3 follow-up) | 2026-08-07 |
+| #4736 | fix(synapse): declare build_stock_library as a consumer of sector-cycles-forward-log | 2026-08-06 |
+| #4735 | design(us-board): emoji → monoline icons across lanes, rows, shelf, legend (doctrine §5.8 sweep) | 2026-08-08 |
+| #4733 | fix(ci): wire the reclaim-veto packet's own artifacts into ci.yml's trigger paths | 2026-08-06 |
+| #4732 | fix(confluence): absolute session-calendar anchor for 2D/3D + fortnight buckets — era abs-session-2026-08-06 (audit F1+F6) | 2026-08-07 |
+| #4731 | fix(nightly): split collect's checkpoint in two so a capital-structure failure cannot cost the night's market data | 2026-08-06 |
+| #4730 | card doctrine: a card must earn its pixels, fit without clipping, and not brand the source | 2026-08-07 |
+| #4728 | fix(ci): run the two board-continuity suites — shipped 2026-08-05, named by no workflow | 2026-08-07 |
+| #4727 | board ledger: a nightly that records nothing must say so, and say why | 2026-08-07 |
+| #4726 | fix(ci): allowlist the split-factor bfill — with a guard that keeps the exemption honest | 2026-08-06 |
+| #4725 | fix(render): unwedge the render lane — link a basket page only if it was built | 2026-08-07 |
+| #4723 | feat(research): versioned FROZEN price panel — an evidence base that holds still | 2026-08-07 |
+| #4722 | fix(ci): regenerate SIGNAL_BUS.md — us-context-vector's extra writer was never filed | 2026-08-06 |
+| #4721 | heal(main): regenerate chat.html's header after #4666's nav retarget; run the suite that guards it | 2026-08-07 |
+| #4720 | fix(tests): one shared `git add` pathspec parser — sweep all three staging guards (supersedes #4707, #4714) | 2026-08-07 |
+| #4719 | fix(ci): clear three root causes that red every open PR at the base | 2026-08-07 |
+| #4718 | theme tape: fold the whole panel into one line and move it last on the page | 2026-08-07 |
+| #4716 | fix(us-si): restore the bottoming-watch lane #4642 dropped, and retarget its guards | 2026-08-07 |
+| #4715 | fix(price-basis): adjusted-first prices in grade_us_board + prophet_postmortem — the #4698 'protection' was a measurement artifact | 2026-08-07 |
+| #4713 | universe: CTRA and TPH are delistings, TCNNF is the rename (side-store symbol resolution) | 2026-08-07 |
+| #4712 | fix(i18n): write Chinese for the 24 cycle theses the alert body quotes | 2026-08-07 |
+| #4711 | fix(closes-cache): the tier merge handed index migrants their DEAD column | 2026-08-07 |
+| #4710 | ci(census): wire test_darkpool_desk + its subject into unrun-builders-render | 2026-08-07 |
+| #4709 | ci: widen all three darkness censuses beyond tests/ (3 suites, 39 tests, unrun from birth) | 2026-08-07 |
+| #4708 | fix(stocks): never-silent retention fetch — per-name reconciliation, un-skip the tip audit, light the 4 dark suites | 2026-08-07 |
+| #4706 | fix(estate): re-render the 57 free-content pages #4519's footer change left stale | 2026-08-06 |
+| #4705 | fix(alarms): the chain-family miss was mostly OUR pipeline; lbnl's "WAF" was a 404 | 2026-08-07 |
+| #4704 | fix(tests): stop test_darkpool_desk overwriting the real site/ + data/ trees | 2026-08-06 |
+| #4703 | fix(dag-conformance): re-pin gov-revenue collect around its SAM quota gate (base-side red) | 2026-08-06 |
+| #4702 | fix(ci): heal the sector_central template-test red pinning main — reconcile #4642's pins with #4666's rewrite | 2026-08-06 |
+| #4701 | prophet-us: move the program's four nightly modules off the engine job's critical path | 2026-08-07 |
+| #4700 | fix(i18n): stop macro alert emitters leaking English into message_zh | 2026-08-07 |
+| #4699 | DNR registry: file the reclaim-veto kill in §2, repair 3 shifted rows, light the dark guard | 2026-08-07 |
+| #4698 | research(prophet-us): price-adjustment audit — census, magnitude, adjusted-first ladder (no conclusion moves) | 2026-08-07 |
+| #4697 | fix(main-red-repair): two mechanical reds on main — admin restart regex + module-level warnings filter | 2026-08-06 |
+| #4696 | feat(quant-w2a): donor-pool synthetic control for event studies — engine + phase-0 with pre-registered controls | 2026-08-07 |
+| #4695 | hub: the "What changed" row now explains itself | 2026-08-07 |
+| #4694 | research(factors): charter the Russell factor-universe widening — pooled form HELD, frozen-reference recommended | 2026-08-07 |
+| #4693 | ci: run the research/-resident guard suites (dark from birth) + heal the closure-gate red on main | 2026-08-07 |
+| #4692 | research(prophet-us): post-board trajectory — are we dropping winners? (no) | 2026-08-07 |
+| #4690 | fix(edgar): dead-name registry ate a PRIOR registrant — clamp fetch to tenure, quarantine FI/ALTM splices | 2026-08-07 |
+| #4689 | fix(neuralweb): outcome_basis — the unsigned-MFE outcome_excess trap is structural, not tribal | 2026-08-07 |
+| #4688 | feat(edgar): W2-A — widen the fundamentals universe to S&P 1500 + Russell 2000 (1,457 → 835 unlabeled candidates) | 2026-08-07 |
+| #4687 | fix(heatmap): sp500 shares reference wrote all-None since day one — /v3 ticker details is a DICT, not a page list | 2026-08-07 |
+| #4686 | fix(stores): ECHO is EchoStar under a reused ticker — retire dead-key SATS, add reused-ticker zombie tripwire | 2026-08-07 |
+| #4685 | research(factor-legs): adjudicate blue-chip quality/payout z defects — KO's $8.8B dividends read $0, MCD quality = leverage z doubled | 2026-08-07 |
+| #4684 | feat(sea): Signal Episode Atlas — per-name event classes, era-split shrinkage receipts, dormant analogues lit | 2026-08-07 |
+| #4683 | fix(dossier): stop linking a basket that was never built — it froze the render | 2026-08-07 |
+| #4681 | fix(ci): 5 logger-routed GitHub annotations → bare print (base-side red pinning every PR) | 2026-08-06 |
+| #4680 | feat(auth): bring the Supabase endpoint inside the GFW perimeter (route + plumbing, off by default) | 2026-08-07 |
+| #4679 | doors: record the two surviving W8 ignition sensors (coil + theme thrust) as analysis-only features | 2026-08-07 |
+| #4678 | research: W5.1 macd_bear ratification packet — per-leg veto isolation (no gate change) | 2026-08-07 |
+| #4677 | fix(archetype): thaw the frozen PIT store — 1,625→1,457 NaN candidates, MCD labeled | 2026-08-07 |
+| #4676 | fix(flow-desk): alarm the desk that stopped advancing — 12-day silent freeze in site/flowdata/desk.json | 2026-08-07 |
+| #4675 | feat(news): rebuild the news page as a front page — paper, serif, ruled | 2026-08-07 |
+| #4674 | research(quant-w1.5): HAR-standardizer discriminator — is the vol-state cone edge information or vol-forecast correction? | 2026-08-07 |
+| #4673 | feat(quant-w2b): Neural Web edge-outcome ledger — grade what claimed linkages actually do | 2026-08-07 |
+| #4672 | fix(main-red-repair): rebuild site/unsubscribe.html — main is red on the committed page | 2026-08-06 |
+| #4671 | fix(auth): a reset link must land on the reset panel, never the signup wizard | 2026-08-07 |
+| #4670 | fix(cn-continuation-watch): pin the block strings by RUNNING the filter, not reading its bytecode | 2026-08-07 |
+| #4669 | research: US→CN Prophet handoff — score memory, full-population grading, horizon-ladder discipline | 2026-08-06 |
+| #4668 | docs(nav): correct the SEO-twin note — #4519 flipped it mid-build | 2026-08-06 |
+| #4667 | feat(china): CN Theme Tape — narrate the sector turn its names have not made yet (W-C) | 2026-08-06 |
+| #4666 | feat(us-si): Subsector Confluence as a 6th rail view — the US half of #4637 | 2026-08-06 |
+| #4665 | feat(quant-lab): register the options dislocation family as a scored model | 2026-08-06 |
+| #4664 | admin: JSON.stringify in an onclick closed the attribute — 6 dead controls | 2026-08-06 |
+| #4663 | fix(washout-turn): depth receipts read the name's FULL history — prepend-only deepening splice (W2) | 2026-08-06 |
+| #4662 | heal(main): fix chat-nav-sync + validated-claims drift left by #4637 | 2026-08-06 |
+| #4661 | fix(nav): translate the market mega menu into Chinese, and bump the key that ships it | 2026-08-06 |
+| #4660 | fix(census): signal-bus pin 594→595 + SIGNAL_BUS regen — racing-merge drift (base-side red) | 2026-08-06 |
+| #4659 | research(cn-prophet): score-iteration v3.1 adjudication record | 2026-08-06 |
+| #4658 | fix(cn-prophet): make R2's theme_timing leg gradeable + un-stale the audit's spine read | 2026-08-06 |
+| #4657 | feat(washout-turn): per-name weekly washout-turn watch lane — the MCD miss | 2026-08-06 |
+| #4656 | feat(admin): operator password reset in the Users panel | 2026-08-06 |
+| #4655 | fix(hk-g1): the frozen G1 window is per-ticker, not a count | 2026-08-06 |
+| #4654 | test(mag7): isolate notify source (g) from committed nightly artifacts | 2026-08-06 |
+| #4653 | feat(auth): self-serve password reset on the landing sign-in and the site auth modal | 2026-08-06 |
+| #4652 | fix(merge-on-green): re-prove when main has touched the PR's tested surface (#4583) | 2026-08-06 |
+| #4651 | quant-methods: adjudicate the 12-method intake + wave-1 pick-distribution phase-0 | 2026-08-06 |
+| #4650 | test(nav): fail when a nav asset ships behind its immutable release key | 2026-08-06 |
+| #4649 | ci: enforce that a guarded suite's trigger paths reach what the suite reads | 2026-08-06 |
+| #4648 | feat(quant-lab): a second shelf — external methods that do not pick names | 2026-08-07 |
+| #4647 | fix(merge-on-green): the concurrency group livelocked the sweeper to 0 sweeps in 100 runs | 2026-08-06 |
+| #4646 | feat(marketing): tag the theme's own ticker ($GDX/$GLD), and name the most-watched member — not the biggest mover | 2026-08-06 |
+| #4645 | fix(main-red-repair): bind reclaim-veto BLOCK_REASON to the engine constant #4583 split | 2026-08-06 |
+| #4644 | fix(prophet-card): popovers paint above the neighbouring card; drop four chip hover cards | 2026-08-07 |
+| #4643 | fix(stocks): side-store freshness — scan demotion for frozen feeds + never-silent collectors (CTRA/TPH/TCNNF/CWEN-A) | 2026-08-06 |
+| #4642 | feat(si): transplant the V2 five-lane action board onto US Sector Intelligence | 2026-08-06 |
+| #4641 | fix(terminal): the closed mobile overlay was still painting its own splash | 2026-08-06 |
+| #4640 | fix(capital-structure): accept the SEC submission grammar EDGAR actually emits | 2026-08-06 |
+| #4639 | charts: stop the wrong company's chart reaching a post | 2026-08-06 |
+| #4638 | fix(merge-on-green): a superseded baseline run is not a red main | 2026-08-06 |
+| #4637 | china-si: add Subsector Confluence as a 5th hash-routed rail view | 2026-08-06 |
+| #4636 | fix(daily): fetch oracle panels from R2 BEFORE oracle_nightly, not after | 2026-08-06 |
+| #4635 | test(heatmap): give #4608's blanket-white labels the palette floor they depend on | 2026-08-06 |
+| #4634 | hk washout_watch: adjudication packet — the BOTTOM WATCH cohort is dark on a dead criterion | 2026-08-06 |
+| #4633 | finnhub_altdata: name the auth/plan gate instead of counting 120 identical failures | 2026-08-05 |
+| #4632 | fix(stocks): retention fetch for top-20-exit freezes + per-name freshness audit (never fail-dark) | 2026-08-05 |
+| #4631 | prophet-hk: port the basing shelf — the HK board learns the five-bucket language (W-E.1 port) | 2026-08-05 |
+| #4630 | daily: move the capital-structure capture AFTER all five steps — it was skipped | 2026-08-05 |
 | #4629 | fix(hk): G1 fixture re-pin — 0992.HK + 1929.HK dividends (base-side red, second firing) | 2026-08-05 |
+| #4628 | feat(us-board): "Blow-off risk" display chip on the measured S-ROC12-TERM read | 2026-08-06 |
+| #4627 | short-pressure spine: unblock PIT short interest (2018→now) + free borrow feed | 2026-08-06 |
+| #4626 | Residual momentum, trend quality and momentum crash gating — build + Phase 0 | 2026-08-06 |
+| #4625 | research(lsr): liquidity-shock reversal classifier — phase-0 NO-GO + reopeners measured | 2026-08-06 |
+| #4624 | event-priors: re-enable M4 earnings prior on real Item-2.02 acceptance timestamps | 2026-08-06 |
+| #4623 | feat(options): information-dislocation layer — neutralised primitives, categorical reads | 2026-08-06 |
+| #4621 | research(regime): adjudicate the external regime-reliability proposal — measured NULL + an estimability gate | 2026-08-06 |
+| #4620 | feat(darkpool): stop calling a direction it never measured — rank deviation, split ATS from retail, 16× the history | 2026-08-06 |
+| #4619 | feat(quant-lab): Fintel QV/QVM recreation — specs, PIT legs, study harness, page | 2026-08-06 |
+| #4618 | fix(nightly): survivable turn_desk skip + R2 publishes decoupled from the commit veto | 2026-08-06 |
+| #4617 | adjudication(prophet-us): reclaim-veto ruling — keep the veto; flat drop REJECTED-ON-MEASUREMENT | 2026-08-06 |
+| #4616 | baskets: BLD is delisted, not stale — census honors the exit ledger (#4613 follow-up) | 2026-08-06 |
 | #4615 | sector-intel(china): V2 four-lane act-now board on the SI Overview | 2026-08-05 |
+| #4614 | fix(us-act-now): a basket recovering off its low sits on no lane — bridge the graduation gap (W-A Amendment 1) | 2026-08-06 |
+| #4613 | fix(collect): a rename fetched by one collector and not its sibling — MMC was dark on every price rung for 7 months | 2026-08-06 |
+| #4612 | feat(txi+admin): rates turn-watch grammar + landing Key Alerts rail with Fable briefing nudge | 2026-08-06 |
+| #4611 | ci: wire the reclaim-veto leg's two dark guards into their owning packs | 2026-08-06 |
+| #4610 | fix(basket-turn): members read 399/1009 — ladder onto data/baskets/ohlcv and print the coverage (W-B, #4579's sibling) | 2026-08-06 |
+| #4609 | prophet(W-E): basing shelf for BOTTOM WATCH, basket-grain miss telemetry, extras-universe grading | 2026-08-05 |
 | #4608 | sector-intel: white heatmap labels + open rails + China header parity | 2026-08-05 |
 | #4607 | W-H silver sleeve + W-F reclaim-veto decision packet (research; no behaviour change) | 2026-08-05 |
 | #4606 | feat(txi): ACTIVATION — easing-direction chains, first calibration light, charter | 2026-08-05 |
+| #4605 | theme tape: a washout-turn group, new-space on the Foresight Desk, and a caution that names both baskets (W-D) | 2026-08-06 |
 | #4604 | research(prophet-us): W-G ROC extremes & burst-grammar battery — the blow-off claim measured | 2026-08-05 |
+| #4603 | fix(commodities): stop reading the recovery signature as a top — W-C ignition honesty (display) | 2026-08-06 |
 | #4602 | feat(radar): plain-English Divergence Radar — fewer labels, real deep links | 2026-08-05 |
+| #4601 | radar: grade the claims it actually makes — v2 IC harness, diagonal dock, honest verdict copy | 2026-08-06 |
 | #4600 | fix(capital-structure): store the source-manifest ledger as JSONL | 2026-08-05 |
 | #4599 | feat(sector-intel): US bottoming-watch lane + FT-R1 dual read — stop burying a Trough+rising basket (W-A) | 2026-08-05 |
 | #4598 | fix(seasonality): paint the page canvas; rebuild the Calendar Clock on macro.html's type + desk language | 2026-08-05 |
@@ -234,24 +838,45 @@ Generated: 2026-08-05T13:33:40.672316+00:00  |  Open PRs: 63  |  Merged (window)
 | #4586 | docs(movers_source): cite session_date() for the finviz themes asof stamp | 2026-08-05 |
 | #4585 | fix(china): 92xxxx is Beijing, not Shanghai — stop minting dead 920xxx.SS tickers | 2026-08-05 |
 | #4584 | fix(subsector-rotation): stamp the rotation ledgers from the NYSE session, not the calendar (#4568 family) | 2026-08-05 |
+| #4583 | fix(signal-gate): exhaustive gate_reasons alongside first-match gate_reason — end single-reason diagnosis ambiguity | 2026-08-05 |
+| #4582 | research(cn-prophet): reclaim-and-hold leg audit — the primary blocker, measured | 2026-08-05 |
+| #4581 | feat(admin): Macro Thesis Ledger — thesis-grain conviction register with fixed-horizon grading, forward/retro firewall (zero authority) | 2026-08-06 |
+| #4580 | fix(ledgers): stamp three forward-ledger writers from the data plane, not the calendar | 2026-08-06 |
 | #4579 | fix(basket-turn): source the SPY benchmark from data/yahoo/ — IGNITION has been arithmetically impossible since ship | 2026-08-05 |
 | #4578 | fix(daily): raise the collect cap for a cold runner; bound the night-discarding veto set | 2026-08-05 |
 | #4577 | fix(china): CSI constituents from official CSIndex — akshare's legacy endpoint silently dropped 228 CSI 1000 members (+ pin 002716.SZ 湖南白银) | 2026-08-05 |
+| #4576 | research(cn-prophet): bearish-divergence veto-leg audit — does the leg that blocks 湖南黄金-class reclaims earn its keep | 2026-08-05 |
 | #4575 | fix(intraday-flow): spotlight cards strobed on every load — 19 grid rebuilds replayed the entrance animation | 2026-08-05 |
 | #4574 | fix(basket-turn): stamp forward-ledger sessions from the data plane, not the calendar (#4568 sibling) | 2026-08-05 |
 | #4573 | fix(market_structure): un-clip four charts — SVGs were sized by viewBox ratio, not by their wrapper | 2026-08-05 |
+| #4572 | fix(nav+macro+china): nav layer law, quad-map collision, China desk containers | 2026-08-06 |
+| #4571 | research(cn-prophet): rank-feature battery + S-COIL port test — what orders the admitted pool | 2026-08-06 |
+| #4570 | feat(cn-prophet): W0 rank-effectiveness block — the score grades itself nightly (multi-horizon, multi-metric, per-component) | 2026-08-05 |
 | #4569 | fix(ui): sync plan features to the landing, unpack the stretched vignettes | 2026-08-05 |
 | #4568 | fix(ignition): make the suspended radar's background record gradeable before first maturity | 2026-08-05 |
 | #4567 | ci: end the HK board pair's darkness — unrun-hk-board wires test_hk_board_rank + test_hk_board_ui | 2026-08-05 |
+| #4566 | fix(gc): un-invert _branch_merged_into_main — merge-base --is-ancestor, not empty <branch>..origin/main | 2026-08-06 |
+| #4564 | research: W8 Ignition Layer charter + retro stand-in battery | 2026-08-06 |
+| #4563 | ops: fleet worktree GC — report-first sweeper, measured packet, ratification-gated deletion | 2026-08-06 |
+| #4562 | governance(registry): stable Key column for DO_NOT_REBUILD rows — citations rewritten to DNR:<KEY> | 2026-08-06 |
+| #4561 | feat(prophet-us): §4.5 scan tier — see everything, admit selectively | 2026-08-06 |
 | #4560 | fix(collect): categorical per-source isolation at _run_one — escapes from run_adapter must never sever the nightly commit path | 2026-08-05 |
 | #4559 | fix(hk): re-pin G1 fixture after 2338.HK dividend adjustment — heals base-side red pinning 8 armed PRs | 2026-08-05 |
 | #4558 | feat(prophet-us): the indicator floor is the measured warmup, not 200 | 2026-08-05 |
+| #4557 | board honesty: disclose true panel price reach + same-as_of buy-lane continuity guard | 2026-08-06 |
+| #4556 | stocks index: fix light-mode charcoal hover + market-hub redesign mockup | 2026-08-06 |
+| #4555 | prophet-us W7: grade every ranked name — all picks, both cohorts, four horizons (charter + data half) | 2026-08-06 |
 | #4554 | board ledger: row-persistence law + outage continuity (the VALE class) | 2026-08-05 |
+| #4553 | theme tape: fix the clamped-label overlap, compact it, move it below the board | 2026-08-06 |
 | #4552 | fix(brain): Mastermind can see HK / China / Canada charts, technicals and fundamentals | 2026-08-05 |
 | #4551 | research: NewsImpact event-impact teardown → stock dossier + Company Intelligence | 2026-08-05 |
+| #4550 | ledger: entry_status disclosure law — no silently-absent stamp on graded rows | 2026-08-06 |
+| #4549 | lanes: normalize site/ HTML in the six publishing lanes #4492 missed | 2026-08-06 |
 | #4548 | registry(dnr): FRESH_TICKS widening kill row (third-look null, #4546/#4547) + compiled blocklist regen | 2026-08-05 |
 | #4547 | prophet-us: label-grading battery — entry-status ladder, veto-day labels, ran lane (CN→US handoff §1) | 2026-08-05 |
 | #4546 | research(prophet-us): W5.2 FRESH_TICKS-extension decision packet — the gradient does not extend, and it was board selection | 2026-08-05 |
+| #4545 | ci: stage the #4331-deferred prophet suites — 6 dark suites join the two #4331 packs | 2026-08-06 |
+| #4544 | research(prophet): CN→US handoff — method, stand-in pattern, and playbook from the China breakthrough | 2026-08-05 |
 | #4543 | refactor(cn-prophet): rename candidate-store stamp column date -> stamp_date (contract §3.1) | 2026-08-04 |
 | #4542 | engine: memoize name_score_grader close-series resolution (grade() byte-identical, ~17× faster) | 2026-08-04 |
 | #4541 | tests: fix sys.modules stub leak in test_radar_single_writer | 2026-08-04 |
@@ -260,22 +885,34 @@ Generated: 2026-08-05T13:33:40.672316+00:00  |  Open PRs: 63  |  Merged (window)
 | #4538 | theme tape: join the Foresight Desk (roadmap §4.2, display-tier) | 2026-08-04 |
 | #4537 | name_score adjudication instruments: nightly scorecard + frozen-frame P@k benchmark + intake prereg (roadmap §4.4) | 2026-08-04 |
 | #4536 | tests: scope build_theme_addons engine stubs via monkeypatch (ordering pollution) | 2026-08-04 |
+| #4535 | feat(popups): rebuild every hover/info card on Sector Intelligence | 2026-08-06 |
 | #4534 | fix(collect): duck-type-safe run_adapter — optional status protocol crashed the nightly collect job | 2026-08-04 |
+| #4533 | fix(rotation): persist leg display names on closure rows | 2026-08-06 |
+| #4532 | ledger hygiene: per-column tape-flow commits, retire species_id, wire archetype, coverage map | 2026-08-06 |
 | #4531 | tests: make collect_failfast hermetic (no network, no data writes) | 2026-08-04 |
 | #4530 | governance(metabolism): roster-cap reconciliation (66 vs 75) + wire the dark roster governor | 2026-08-04 |
 | #4529 | foresight: reconcile t1_fingerprint health leg with fingerprint-variant stages | 2026-08-04 |
 | #4528 | feat(prophet-doors): record relay/turnover/foresight features on flags — prereg addendum, zero fire-definition change | 2026-08-04 |
 | #4527 | feat(earnings): replace the dead earnings feed with a real-time SEC EDGAR wire | 2026-08-04 |
 | #4526 | research(prophet-us): Superintelligence Roadmap — composition layers, context vector, ladder + four stand-ins measured | 2026-08-04 |
+| #4525 | china_connect: retire dead northbound flow columns, heal fake-zero holdings, add column-grain dark alarms | 2026-08-06 |
+| #4524 | feat(cn-prophet): W-C plumbing — PIT membership history, continuation-watch ledger, Neural Web + chat visibility | 2026-08-06 |
 | #4523 | cn_prophet_audit: pin v1_loser_audit to GRADE_ASOF frozen replay | 2026-08-04 |
+| #4521 | research(cn-prophet): v3 era-retro — the stand-in race verdict while the forward shadow matures | 2026-08-05 |
+| #4520 | research(cn-prophet): flow/positioning ex-ante battery — which unwired stores separated losers at admission | 2026-08-05 |
+| #4519 | Open every page shell to anonymous visitors; footer fixes; retire the legacy auth modal | 2026-08-06 |
 | #4518 | macro light mode: lift 25 sub-floor text inks to clear WCAG 4.5:1 | 2026-08-04 |
+| #4517 | research(cn-prophet): Superintelligence Roadmap — composing the six layers, fast-track evidence doctrine, Neural Web wiring | 2026-08-05 |
 | #4516 | Fix the stocks dossier chrome: dead nav, overlapping cards, bespoke buttons | 2026-08-04 |
 | #4515 | china-si: adopt the US workspace shell + verdict hero, and revive the dead conviction board | 2026-08-04 |
 | #4514 | Light r3: macro.html depth recipe, china macro §5.8 audit, hub orb kill | 2026-08-04 |
 | #4513 | wire volume: remove the per-account breaking caps | 2026-08-04 |
 | #4511 | feat(wire): a cold read — can a stranger resolve this post? (ships in shadow) | 2026-08-04 |
 | #4510 | publish-time lane: guard hard-indexed lane keys against _DEFAULTS | 2026-08-04 |
+| #4509 | feat(china-prophet): V3 Relay Engine — prime-window featured, bounded theme_timing authority, relay-position chase guard (R1-R3, operator-ratified) | 2026-08-05 |
 | #4508 | fix(tests): de-bomb the codex insertion-order test — pin is_cooling, split the cooldown contract | 2026-08-04 |
+| #4507 | research(cn-prophet): CN exit-policy horse race — day-3 review family vs H=10 incumbent | 2026-08-05 |
+| #4506 | research(cn-prophet): 12-month chase×theme-ignition study — phase-0 for relay-aware admission | 2026-08-05 |
 | #4505 | fix(ship-loop): live gate asks /api/health the field that can answer for this merge | 2026-08-04 |
 | #4504 | fix(ship-guard): make the escape ladders reachable — the report was undetectable, not unfiled | 2026-08-04 |
 | #4503 | feat(cn-prophet): W0 loser+miss telemetry engine + W1 ledger hygiene (ops-tier, zero authority) | 2026-08-04 |
@@ -283,9 +920,14 @@ Generated: 2026-08-05T13:33:40.672316+00:00  |  Open PRs: 63  |  Merged (window)
 | #4501 | fix(hk): honest block copy + open the ran lane's above200 door | 2026-08-04 |
 | #4500 | research(china-prophet): V1 loser forensics + missed-winner funnel — why our buys crashed, what V2 still carries | 2026-08-04 |
 | #4499 | test(hk-board): freeze the board fixtures — 9 red + 9 dark HK gates were live-artifact drift | 2026-08-04 |
+| #4498 | Light estate rollout: depth recipe in the operative soft-contrast palette + repeatable light sweep tool | 2026-08-06 |
+| #4497 | sector_central: de-tint the seasonality chip in the light + zh layers | 2026-08-06 |
+| #4496 | refactor(prophet-card): drop the dead verb-chip tip payload from the five board builders | 2026-08-06 |
 | #4494 | links: retarget SI-consolidation redirect stubs at their real destinations | 2026-08-04 |
+| #4493 | Light mode as a first-class design: us_stocks + subsectors redesign, emoji → monoline icons | 2026-08-06 |
 | #4492 | fix(render-lanes): normalize the exact tree every site commit stages (P0 2026-08-04 outage root cause) | 2026-08-04 |
 | #4491 | hk: route 🏃 leaders row clicks to the Terminal (the #4489 defect, HK side) | 2026-08-04 |
+| #4490 | fix: stop caching auth outages as logouts; lift ⚠ popover above sibling cards | 2026-08-06 |
 | #4489 | us_stocks: route ⚡/🏃 row clicks to the Terminal; make "Risk radar →" actually pop | 2026-08-04 |
 | #4488 | feat(us-stocks+prophet): W2 Theme Tape — theme heat × member states with why-not narration (display-tier) | 2026-08-04 |
 | #4487 | feat(prophet): W3 — shadow doors T (theme-relay) + R (re-arm), prospective ledgers + prereg | 2026-08-04 |
@@ -300,6 +942,7 @@ Generated: 2026-08-05T13:33:40.672316+00:00  |  Open PRs: 63  |  Merged (window)
 | #4476 | Fix Terminal overlay browser Back behavior | 2026-08-04 |
 | #4475 | fix(capital-structure): reconcile retried R2 head writes | 2026-08-04 |
 | #4474 | feat(capital-structure): add isolated R2 CAS conformance witness | 2026-08-04 |
+| #4473 | hk board: anchor the vetoed + ran move on the confirmation close | 2026-08-06 |
 | #4472 | research(prophet-us): trend-intelligence masterplan + miss forensics — why winners don't surface | 2026-08-04 |
 | #4471 | fix(tests): de-bomb the welcome-window CLI test — assert the rule, not the month | 2026-08-04 |
 | #4470 | feat(hk-board): drop the 200-day reclaim veto for HK (hk_prophet_v2) | 2026-08-04 |
@@ -328,388 +971,6 @@ Generated: 2026-08-05T13:33:40.672316+00:00  |  Open PRs: 63  |  Merged (window)
 | #4446 | fix(seo): close the etfs anonymous leak — revert public flip until the shell bakes | 2026-08-03 |
 | #4445 | fix: isolate attested history R2 credentials | 2026-08-03 |
 | #4444 | test(marketing): align publisher runner contract | 2026-08-03 |
-| #4443 | feat(mag7): event lens + Mega-cap tape strip — why Prophet was silent through the MSFT week, and the lawful fix | 2026-08-03 |
-| #4442 | feat(biocatalyst): add atomic transcript context bundle | 2026-08-03 |
-| #4441 | fix(name_score): frozen-feed gate + echo quarantine for us_calls; ORCL flatline adjudicated not-a-defect | 2026-08-03 |
-| #4440 | fix(etfs): bilingual backdrop tile + pulse-dated rotation footer (post-#4426) | 2026-08-03 |
-| #4439 | outbox: audit the first clustered wire batch — 6 keep, 4 quarantined | 2026-08-03 |
-| #4438 | metrics poll: telemetry may not outbid posting — the cause of the silent days | 2026-08-03 |
-| #4437 | outbox: fable audits the held batch — 3 approved, 2 quarantined | 2026-08-03 |
-| #4436 | publish: move the sweep onto the idle self-hosted light lane | 2026-08-03 |
-| #4435 | desk: bounded confirmed group — keep the developing tail visible at the new floors | 2026-08-03 |
-| #4434 | feat(biocatalyst): publish replay-verified change tape | 2026-08-03 |
-| #4433 | wire: one story = one post, no line restates another, dark-desk traffic stops hitting the brand account | 2026-08-03 |
-| #4432 | feat(contracts): graduate us_standouts to 1.6.0 — us_prophet_v1 keys become required | 2026-08-03 |
-| #4431 | Fundamental Forensics: seal first AAPL issuer receipt | 2026-08-03 |
-| #4430 | Government Revenue Wave 9B: reviewed PLTR issuer path | 2026-08-03 |
-| #4429 | design(si-v2.1d): one label family, fewer labels, SF+Inter | 2026-08-03 |
-| #4428 | Fix shared SEO corporate-brand blocker | 2026-08-03 |
-| #4426 | feat(seo): W2 — etfs goes anonymous tier-preview | 2026-08-03 |
-| #4425 | design(si-v2.1): the visual language — macro.html idiom, drawn icons, ink over boxes | 2026-08-03 |
-| #4424 | fix(prophet-card): tone the featured glow down — ring + whisper aura, never a green container | 2026-08-03 |
-| #4423 | Keep US track-record filters static | 2026-08-03 |
-| #4422 | docs(seo): W2 spec — china_heatmap + etfs anonymous tier-previews | 2026-08-03 |
-| #4421 | feat(hk-board): resurrection — hk_prophet_v1 priority engine, leaders/ran/vetoed lanes, unified board UI | 2026-08-03 |
-| #4420 | BioCatalyst: add bounded trial change classification | 2026-08-03 |
-| #4419 | Fix the AI merge train: event-driven sweeps and a main-red circuit breaker | 2026-08-03 |
-| #4418 | feat(seo): W1b-redux — 301 baskets_china to its successor; conversion rides SI China V2 | 2026-08-03 |
-| #4417 | Reuse verified private earnings generations | 2026-08-03 |
-| #4416 | fix(govrev): align render budget fence | 2026-08-03 |
-| #4415 | Harden Earnings Wire publication and hosted CI | 2026-08-03 |
-| #4413 | Add third Codex OAuth account slot | 2026-08-03 |
-| #4412 | fix(nav): expose Earnings Wire across public dashboards | 2026-08-03 |
-| #4411 | feat(forensics): add zero-write history preflight | 2026-08-03 |
-| #4410 | feat(forensics): add sealed receipt control room | 2026-08-03 |
-| #4409 | Build secure earnings evidence spine | 2026-08-03 |
-| #4408 | design(theme): estate text-grade state inks + dark near-miss fixes (SI V2 W3 estate half) | 2026-08-03 |
-| #4406 | Government Revenue Wave9A: exact candidate radar foundation | 2026-08-03 |
-| #4405 | docs(tier-preview): access-state note refresh after W1a shell promotion | 2026-08-03 |
-| #4404 | docs(psi): Portfolio Superintelligence masterplan — Codex execution handoff | 2026-08-03 |
-| #4403 | feat(biocatalyst): add bounded endpoint alignment candidates | 2026-08-03 |
-| #4402 | test(sector-intelligence): prove synthetic shipping interoperability | 2026-08-03 |
-| #4401 | BioCatalyst: add facts-only sector packet compiler | 2026-08-03 |
-| #4400 | fix(heatmap): luminance-aware tile label ink — every bin ≥4.5:1 in both themes | 2026-08-03 |
-| #4399 | fix(hk): 9961.HK is Trip.com (TCOM's twin), not PDD — correct ADR bridge identity | 2026-08-03 |
-| #4398 | feat(forensics): harden attested pointer publication with CAS | 2026-08-03 |
-| #4397 | Government Revenue Wave 9: defense catalyst candidate ledger | 2026-08-03 |
-| #4396 | fix(engine): split the extension panel by calendar — crypto was deleting every equity's ext_z | 2026-08-03 |
-| #4395 | fix(brains): heal the LLM waterfall for narrative/risk/altdata desks | 2026-08-03 |
-| #4394 | ci: wire the seven #4331 prophet/board suites into the packs | 2026-08-03 |
-| #4393 | China Prophet: washout reversal_watch measurement shelf (regime-blocked bottoms) | 2026-08-03 |
-| #4392 | chore(basket_levels_persist): retire the dark __rel20 leg — no reader, never accrued | 2026-08-03 |
-| #4391 | fix(tests): un-mask btc_dat suites from the #4106 config disable + wire them into CI | 2026-08-03 |
-| #4390 | ci: wire the 5 X-growth desk suites + prophet-live surfaces; record the census pass (unrun backfill B7) | 2026-08-03 |
-| #4389 | ci: wire the 9 publish-ops/worker/live-plane suites + un-tie the checkout-bound size assertion (unrun backfill B6) | 2026-08-03 |
-| #4388 | ci: wire 11 market/release-plane suites into their owning lanes (unrun backfill B5) | 2026-08-03 |
-| #4387 | fix(china): restore the evicted legacy Prophet track ledger as a labeled cohort | 2026-08-03 |
-| #4386 | ci: wire the 11 page-guard suites — macro desk, hover cards, cold-load, stocktable, radar, reports (unrun backfill B4) | 2026-08-03 |
-| #4385 | ci: wire the 11 nav-chrome suites — one-header law, nav geometry, landing IA, Terminal portal (unrun backfill B3) | 2026-08-03 |
-| #4384 | ci: wire the 6 honesty-register suites — falsifier bans, plain-word chat, disclosure parity (unrun backfill B2) | 2026-08-03 |
-| #4383 | ci: wire the 11 Government Revenue suites — builder fence, UI contracts, federal-award collectors (unrun backfill B1) | 2026-08-03 |
-| #4382 | fix(ledgers): lane-gate thirteen more forward-ledger writers + canada's mislabeled gate | 2026-08-03 |
-| #4381 | feat(forensics): add pinned B4D materializer foundation | 2026-08-03 |
-| #4380 | fix(i18n): t() dual-span breaks inside HTML attributes on four pages | 2026-08-03 |
-| #4378 | fix(demand_ledger): id-immutability gate at append — claim-keyed ledger audit (#4362 follow-up) | 2026-08-03 |
-| #4377 | fix(nightly): make dispersion_regime + dt_contra_state degrade loudly (#4363 sibling sweep) | 2026-08-03 |
-| #4376 | fix(qledger): two-sided readiness-alert dedup — release key on ready=False | 2026-08-03 |
-| #4375 | feat(capital-structure): add authenticated share-count substrate | 2026-08-03 |
-| #4374 | ci: widen the annotation-guard byte prefilter + wire the public-dashboard-preview suite | 2026-08-03 |
-| #4373 | fix(basket_freeze): chain-link frozen levels so cross-date ratios are returns | 2026-08-03 |
-| #4372 | Sector Intelligence Workspace V2: sidebar shell, five views, per-view intelligence (operator redesign order) | 2026-08-03 |
-| #4371 | feat(biocatalyst): freeze D0a product acceptance system | 2026-08-03 |
-| #4370 | feat(seasonality): Lane 6 shadow lobe — nightly NW state emitter, forward ledger, mastermind context wiring | 2026-08-03 |
-| #4369 | fix(ledgers): lane-gate six ungated forward-ledger writers + pin them in the guard test | 2026-08-03 |
-| #4368 | feat(marketing): chart director + timeframe facts + attention selection (TrendSpider PR-C) | 2026-08-03 |
-| #4367 | feat(biocatalyst): add facts-only Trial Protocol Peer API | 2026-08-03 |
-| #4366 | fix(epistemics): withdraw three unearned authority claims found by the 2026-08-03 experiments audit | 2026-08-03 |
-| #4365 | fix(options-stamp): W-OVC silent-null repair — front7_charm_share + root_class never reached the ledger | 2026-08-03 |
-| #4364 | feat(biocatalyst): add trusted offline launch-SLO verifier | 2026-08-03 |
-| #4363 | fix(index_leadership): restore R2 sidecars in the engine job + make the skip loud | 2026-08-03 |
-| #4362 | fix(desks): run-scoped thesis ids, immutable ledger appends, placebo null beside hit-rate | 2026-08-03 |
-| #4361 | docs(seasonality): handoff §0 addendum — §3 complete, handed to Codex | 2026-08-03 |
-| #4360 | Fundamental Forensics: serve bounded attested history receipts | 2026-08-03 |
-| #4359 | fix(marketing): drop the AGGREGATOR badge word from the breaking card | 2026-08-03 |
-| #4358 | registry: 2026-08-03 experiments audit — all 29 ready results tested and adjudicated | 2026-08-03 |
-| #4357 | China / HK / Canada get the US hover decision card; SCORE caption leaves the ring; five jargon tips become plain-word LENS cards | 2026-08-03 |
-| #4356 | feat(x-growth): relax the D08 age ramp and graduate new desks fast | 2026-08-03 |
-| #4355 | fix(sectors): unwedge the render lane — restore ../ nav_prefix + asset stamps on 11 sector pages | 2026-08-03 |
-| #4354 | SI Workspace V2 — W1: shell, router, Overview reference view | 2026-08-03 |
-| #4353 | fix(test): re-pin stock_score cautions to the #4297 copy, export risk.veto structurally, wire the suite into CI | 2026-08-03 |
-| #4352 | news: unfreeze the live feed + kill the billed twitterapi.io lane (free RSS replaces it) | 2026-08-03 |
-| #4351 | fix(wire): a relay post ships ONE statement — the echo guard stops producing the doubled post it was built to stop | 2026-08-03 |
-| #4350 | perf(shadow-importance): kill the O(store²) nightly re-score — StoreIndex + register_batch | 2026-08-03 |
-| #4349 | fix(tests): pin synthetic Drugs@FDA archive timestamps — the flake was the wall clock, not test order | 2026-08-03 |
-| #4348 | Government Revenue Wave 8: IDV and DoD budget evidence rails | 2026-08-03 |
-| #4347 | feat(biocatalyst): freeze launch SLO and read adapters | 2026-08-03 |
-| #4346 | fix(levels): beats_equidistant_null becomes interval separation (no edge from a lucky null) | 2026-08-03 |
-| #4345 | fix(wire): de-handled relay, cards that earn their pixels — 1080 square, no restating, no tagging | 2026-08-03 |
-| #4344 | fix(us-stocks): prophet strip tables fit a 390px phone — demote tertiary columns at ≤680px | 2026-08-03 |
-| #4343 | fix(stage): nightly engine advances the overview parquet; freshness-gate the marketing stage feed | 2026-08-03 |
-| #4342 | Sector Intelligence Workspace V2: a workspace, not a page (operator redesign order) | 2026-08-03 |
-| #4341 | fix(earnings): unstarve the nightly sweep, single-stamp as_of, widen universe to Hot Tape names | 2026-08-03 |
-| #4340 | docs(seo): W1b design spec — baskets_china anonymous tier-preview | 2026-08-03 |
-| #4339 | feat(chart_render): TrendSpider-grade annotation grammar (PR-A) | 2026-08-03 |
-| #4338 | Widen marketing ticker supply to the liquid US market (TrendSpider PR-B) | 2026-08-03 |
-| #4337 | feat(seo): W1a — special-situations tier-preview shells go anonymous-public | 2026-08-03 |
-| #4336 | feat(levels): R2.4b — index grading lane + stronger nulls + intraday containment | 2026-08-03 |
-| #4335 | docs(seasonality): session handoff 2026-08-02 + live-verification script | 2026-08-03 |
-| #4334 | feat(oip-w1.6b): One Door — the flip. Four options pages become redirect stubs; the nav shows one door | 2026-08-03 |
-| #4333 | research(marketing): TrendSpider-grade hardening masterplan + reference pack | 2026-08-03 |
-| #4332 | perf(seo): split baskets_china_ths heavy planes into a fetched hydrate payload | 2026-08-03 |
-| #4331 | feat(prophet-board): us_prophet_v1 priority engine + unified pick surface (US+CN) | 2026-08-03 |
-| #4330 | feat(seo): MastermindX entity package — homepage identity + About page | 2026-08-03 |
-| #4329 | fix(nav): keep the wide mega/market panels anchored to the header | 2026-08-03 |
-| #4328 | fix(seo): missing_from_sitemap consults the access boundary — kill the 243-page false-positive factory | 2026-08-03 |
-| #4327 | Harden Company Intelligence launch surfaces | 2026-08-03 |
-| #4326 | fix(nav): drop retired filename from consolidation comment — heals crypto nav guard | 2026-08-03 |
-| #4325 | docs(biocatalyst): hand off full parity build | 2026-08-03 |
-| #4324 | fix(seo): resolve on-page hygiene work orders across the public estate | 2026-08-03 |
-| #4323 | fix(nav): market mega menu catches up with the Sector Intelligence consolidation | 2026-08-03 |
-| #4322 | Fix ticker dossier render DAG declarations | 2026-08-03 |
-| #4320 | docs(seo): charter the SEO Supercharge program (public tier-preview estate + entity package) | 2026-08-02 |
-| #4319 | feat(capital-structure): add authenticated candidate instrument terms | 2026-08-03 |
-| #4318 | Ship Company Intelligence dossiers in render lanes | 2026-08-02 |
-| #4316 | fix(ci): refresh signal bus registry doc | 2026-08-02 |
-| #4315 | fix(marketing): market clock + publish-time gate — no weekend "today", dead-date tenses, or fanned duplicates | 2026-08-03 |
-| #4314 | fix(x-growth): W4 — the nightly ladder stops discarding the day it publishes; the news wire arms; the breaking card becomes legible | 2026-08-03 |
-| #4313 | pages: keep <meta charset> inside the 1024-byte pre-scan window | 2026-08-03 |
-| #4312 | fix(sector-intelligence): restore the US #theme-<id> deep-link contract eaten by the consolidation stub | 2026-08-03 |
-| #4311 | feat(capital-structure): add authenticated Company Facts intake | 2026-08-02 |
-| #4310 | fix(tests): re-scope macro-desk surface pins post-#4237; restore the raced-away baskets stub | 2026-08-02 |
-| #4309 | BioCatalyst B4E: gate prospective accrual on retention proof | 2026-08-02 |
-| #4308 | Fix Earnings Wire header CTA contrast | 2026-08-02 |
-| #4307 | fix(regional-baskets): write baskets.json after the sector_pulse merge (intl/hk/canada) | 2026-08-02 |
-| #4306 | fix(sector-central): restore regime-sizing pill dropped by the baskets merge; re-aim parity guard | 2026-08-02 |
-| #4305 | Load balance a second Codex OAuth account | 2026-08-02 |
-| #4304 | fix(copy): de-register the AI scout watch line on Forming Narratives; Theme Tracker naming in plans | 2026-08-03 |
-| #4303 | tier-rename: flip write-only required_tier payload field insider -> essential | 2026-08-02 |
-| #4302 | fix(allies): derive pricing + tier names from config/plans.yml | 2026-08-02 |
-| #4301 | feat(tiers): Phase 4 — machine ids speak essential; insider stays a permanent inbound alias | 2026-08-03 |
-| #4300 | feat(sector-intelligence): forming narratives on US, Theme Tracker naming, theme↔basket crosswalk (#4237 follow-ups) | 2026-08-03 |
-| #4299 | China Sector Intelligence: one platform — baskets + subsector rotation merged into sector_central_china | 2026-08-03 |
-| #4298 | Launch the Earnings Wire and Company Intelligence teaser | 2026-08-02 |
-| #4297 | fix(ui): unclip the ⚠ caution popover, de-jargon its copy, unsqueeze the basket ring | 2026-08-02 |
-| #4296 | ads(round3.7): 7-headline A/B set on the 3-card fan + trial CTA | 2026-08-02 |
-| #4295 | Government Revenue: subaward ledger and research briefcase | 2026-08-02 |
-| #4294 | fix(merge-on-green): clear a stale base instead of parking it as merge-blocked | 2026-08-02 |
-| #4293 | BioCatalyst B4D: prospective first-seen ledger | 2026-08-02 |
-| #4292 | feat(msc): cross-root gex_state _index.json — the R3.2/R3.3 glance-tier aggregate | 2026-08-02 |
-| #4291 | ads(round3.5): landing-style fan pyramid (3+5 card A/B), new campaign line, normal tapes | 2026-08-02 |
-| #4290 | Fundamental Forensics: add attested query history overlay | 2026-08-02 |
-| #4289 | Fundamental Forensics: inject attestation clock | 2026-08-02 |
-| #4288 | Fundamental Forensics: seal filing source attestations | 2026-08-02 |
-| #4287 | Earnings: add governed story-to-Press staging ingress | 2026-08-02 |
-| #4286 | Fundamental Forensics: seal receipt-bound XBRL extraction | 2026-08-02 |
-| #4285 | feat(biocatalyst): add registry change tape | 2026-08-02 |
-| #4284 | Earnings: ship governed story packets and resilient Stage history | 2026-08-02 |
-| #4283 | fix(seo): name the SHAPE of a rejected GSC credential + keep SA identity out of public git history | 2026-08-02 |
-| #4282 | Government Revenue: receipt-bound subaward evidence rail | 2026-08-02 |
-| #4281 | docs(masterplan): Analyst OS W5/W5.1 live-verified record | 2026-08-02 |
-| #4280 | Compile receipt-bound canonical earnings story packets | 2026-08-02 |
-| #4279 | BioCatalyst: add registry milestone monitor | 2026-08-02 |
-| #4278 | feat(capital-structure): add observed share-count truth plane | 2026-08-02 |
-| #4277 | ads(round3.2-3): motto flagship + coherent rotation story — operator critique applied | 2026-08-02 |
-| #4276 | feat(forensics): seal filing package foundation | 2026-08-02 |
-| #4275 | Throttle earnings evidence backfill to 500 bodies per hour | 2026-08-02 |
-| #4274 | feat(capital-structure): add registration lifecycle truth plane | 2026-08-02 |
-| #4273 | fix(tests): repair test_analytics_exclusions mock shape drift | 2026-08-02 |
-| #4272 | feat(analytics): match Google's crawler/GCP ASNs in bot detection | 2026-08-02 |
-| #4271 | ci: refuse to publish a dispatch ref to main (19 workflows) | 2026-08-02 |
-| #4270 | feat(biocatalyst): add dark Drugs@FDA evidence substrate | 2026-08-02 |
-| #4269 | fix(seo): GSC adapter accepts double-encoded key + adds index-status diagnostics | 2026-08-02 |
-| #4268 | ads(round3): first-draft mockups — 2 flagship X creatives × 2 sizes, retail-simple copy | 2026-08-02 |
-| #4267 | Forensics: add immutable query snapshots | 2026-08-02 |
-| #4266 | retire(baskets): delete the US page's dead FTR per-card chip injector | 2026-08-02 |
-| #4265 | perf(contracts): memoize schema self-checks — BioCatalyst pack group 476s -> 38s, back inside its 8-min budget | 2026-08-02 |
-| #4264 | ads(round3): flagship X flight brief — 2 concepts, locked copy, post variants (pre-mockup) | 2026-08-02 |
-| #4262 | Add append-only verified earnings evidence catalog | 2026-08-02 |
-| #4261 | Forensics: complete Wave 3A trustworthy receipt kernel | 2026-08-02 |
-| #4259 | CI: give BioCatalyst measured runtime headroom | 2026-08-02 |
-| #4256 | baskets: disclose the withheld regime caution on all five market pages | 2026-08-02 |
-| #4255 | feat: ship procurement dossiers and exact recipient resolution | 2026-08-02 |
-| #4254 | fix(baskets): route US #theme-<id> deep links to the theme's own page | 2026-08-02 |
-| #4253 | fix(brain): W5.1 — stream the final tool round (shared _StreamGate), heal the dateless site_quotes reader | 2026-08-02 |
-| #4252 | docs(biocatalyst): record B2 merge handoff | 2026-08-02 |
-| #4251 | BioCatalyst B2: exact evidence-bound trial history | 2026-08-02 |
-| #4250 | fix(brain): serve single-stock quotes on the VPS — read the quotes_full state snapshot in the get_quote ladder | 2026-08-02 |
-| #4249 | fix(ci): rebase autoresolver also covers the hashed site/assets/js tree | 2026-08-02 |
-| #4247 | feat(options): externalize the workspace IIFE to a hashed immutable asset (−51% page gzip) | 2026-08-02 |
-| #4246 | fix(baskets): retire the US page's dead copy of the shared desk renderer | 2026-08-02 |
-| #4245 | fix: quarantine render push collisions | 2026-08-02 |
-| #4244 | feat: publish point-in-time institutional company context | 2026-08-02 |
-| #4243 | feat(capital-structure): harden SEC intake provenance | 2026-08-02 |
-| #4242 | fix(nav): chat.html takes the canonical header (the 114th product page) | 2026-08-02 |
-| #4241 | feat(baskets): reconnect MLC-W2b conflicted-view surface to the live rvx act board | 2026-08-02 |
-| #4240 | feat(capital-structure): add evidence-bound document terms | 2026-08-02 |
-| #4239 | feat(oip-w1.6a): One Door — the workspace absorbs the estate (capability half) | 2026-08-02 |
-| #4238 | Government Revenue Wave 4: receipt-bound award tape | 2026-08-02 |
-| #4237 | feat(sector-intelligence): consolidate 3 pages into one Sector Intelligence platform | 2026-08-02 |
-| #4236 | feat(seasonality): Calendar Clock — the sample is the picture, not a footnote | 2026-08-03 |
-| #4235 | feat(seasonality): stock seasonality calendar clock — panel, curve, 2645-window family, selection correction | 2026-08-02 |
-| #4233 | feat(themes): publish immutable company theme context | 2026-08-02 |
-| #4232 | remove(baskets): delete the theme-rotation bell — markup, JS, CSS, and its dead payload | 2026-08-02 |
-| #4231 | fix(market-state): stop the board and its score-path disagreeing about one session | 2026-08-02 |
-| #4230 | docs(seasonality): pin Lane 2 design spec + BioCatalyst integration seam | 2026-08-02 |
-| #4229 | Levels: the live Level Report Card (MSC R2.4 v1) | 2026-08-02 |
-| #4228 | fix(nav): one shared header for every product page (12 variants → 1) | 2026-08-02 |
-| #4227 | BioCatalyst B1b: normalized trial intelligence API and workbench | 2026-08-02 |
-| #4226 | Government Revenue Foresight: truth foundations and render fence | 2026-08-02 |
-| #4225 | reply desk: warmth register, target seeding, deck, arming contract — drafts appear, nothing sends | 2026-08-02 |
-| #4224 | feat(capital-structure): add premium observed filing desk | 2026-08-02 |
-| #4222 | ops(optionshub): weekend nightly runs — Friday's session could never publish before Monday | 2026-08-02 |
-| #4221 | feat(neuralweb): consume verified company intelligence | 2026-08-02 |
-| #4220 | feat(brain): Analyst OS W5 — true token streaming, tool-loop economics, instant-fact lane, latency instrumentation | 2026-08-02 |
-| #4219 | Options: publish the exposure profile block + retire the last cumulative-flip copy | 2026-08-02 |
-| #4218 | BioCatalyst B1: hardened ClinicalTrials.gov ingestion lane | 2026-08-02 |
-| #4217 | privacy: strip fill economics from public mastermind snapshot (RUL-CL-6b) | 2026-08-02 |
-| #4216 | Government Revenue Foresight: Wave 2 live procurement parity | 2026-08-02 |
-| #4215 | Company Intelligence: immutable producer plane | 2026-08-02 |
-| #4214 | tests: pin capital-structure compile step structurally, not by text slice | 2026-08-02 |
-| #4213 | Fix Filing Forensics bootstrap on macOS Bash 3.2 | 2026-08-02 |
-| #4212 | Capital Structure Wave 2A: observed filing-state projection | 2026-08-02 |
-| #4210 | Filing Forensics: add SEC disclosure source spine | 2026-08-01 |
-| #4209 | fix(register): strip front-facing falsifier register beyond the Policy Watch estate (incl. the four dated reports) | 2026-08-02 |
-| #4208 | fix(policy): strip front-facing falsifier register from the Policy Watch estate | 2026-08-02 |
-| #4207 | fix(options): repair the dated GEX archive — 450 snapshots carried the flip defect | 2026-08-01 |
-| #4206 | fix(options): six publisher defects an adversarial audit found in code I shipped today | 2026-08-01 |
-| #4205 | Fail closed on render dead-asset races | 2026-08-01 |
-| #4204 | fix(render): rebuild crypto before asset guard | 2026-08-01 |
-| #4203 | Fix render publish budget after cold rebase | 2026-08-01 |
-| #4202 | Wire earnings intelligence into Chronicle, Brain, Press, and X | 2026-08-01 |
-| #4201 | Keep earnings telemetry outside the ops clone | 2026-08-01 |
-| #4200 | Preserve headroom for guarded full-site renders | 2026-08-01 |
-| #4199 | feat(options+neuralweb): W3 — delta-space exposure, an honest screener, and the gamma regime on the market plane | 2026-08-01 |
-| #4198 | Fix Capital Structure daily DAG declaration | 2026-08-01 |
-| #4197 | feat(stage): repair live industry intelligence | 2026-08-01 |
-| #4196 | Capital Structure Intelligence: add SEC evidence spine | 2026-08-01 |
-| #4195 | Publish seasonality methodology contract | 2026-08-01 |
-| #4194 | feat(options): nine-year aggregate greek trend + repair a $1.1tn headline defect | 2026-08-01 |
-| #4193 | Biopharma seasonality intelligence foundation | 2026-08-01 |
-| #4192 | Automate Terminal-to-earnings intelligence intake | 2026-08-01 |
-| #4190 | policy_watch: revamp to macro.html design quality | 2026-08-01 |
-| #4189 | fix(options): gamma flip was the wrong estimator — repair all three sites | 2026-08-01 |
-| #4188 | feat(biocatalyst): freeze evidence contract foundation | 2026-08-01 |
-| #4187 | fix: contain Stage earnings filters on mobile | 2026-08-01 |
-| #4186 | hk_cbbc: light up the dark W1 freshness banner on the leverage card | 2026-08-01 |
-| #4185 | feat(tiers): Phase 2 — the catalog speaks essential; Stripe product migrates in place | 2026-08-02 |
-| #4184 | Ship Filing Forensics workbench | 2026-08-01 |
-| #4183 | engine(hk_cbbc): data-keyed staleness gate for the SLD call-levels store | 2026-08-01 |
-| #4182 | Government Revenue Foresight vertical workbench | 2026-08-01 |
-| #4181 | feat: repair earnings intelligence spine and Stage surfaces | 2026-08-01 |
-| #4180 | P0 follow-up: wire push_autostash_ok into every narrow single-path lane | 2026-08-01 |
-| #4179 | BioCatalyst Intelligence competitive teardown and build docket | 2026-08-01 |
-| #4178 | guard: start.html runtime single-instance gate in every start-writing lane | 2026-08-01 |
-| #4177 | guard(hk_cbbc_sld): surface the silent no-poppler host fault that froze SLD extraction 07-10..07-31 | 2026-08-01 |
-| #4176 | feat(tiers): Phase 1 — accept 'essential' everywhere it reads a tier, emit it nowhere | 2026-08-01 |
-| #4175 | research: capital structure intelligence teardown and build docket | 2026-08-01 |
-| #4174 | fix(research-vault): heal the 127 bodyless rows from the poppler-less-runner window + preflight gate + scan-only disclosure | 2026-08-01 |
-| #4173 | Restore optimized start-page artifact after stale render | 2026-08-01 |
-| #4172 | research: assess Calcbench forensics build | 2026-08-01 |
-| #4171 | P0: contain conflicted-autostash applies — the machinery behind d29e4dd44d | 2026-08-01 |
-| #4170 | docs(masterplan): Analyst OS W4 merged + live-verified record | 2026-08-01 |
-| #4169 | research: Jodie and Struct suite teardown | 2026-08-01 |
-| #4168 | feat(options-hub): R3 OI suite — oi_time / max_pain / oi_change + dead-man anchor | 2026-08-01 |
-| #4167 | fix(site): purge 1,704 stash-conflict-clobbered rendered pages | 2026-08-01 |
-| #4166 | guard: strip conflicted stash/rebase wreckage before every broad lane add | 2026-08-01 |
-| #4165 | design(nav): hover bridge + Attio-style cross-fade between mega menus | 2026-08-01 |
-| #4164 | design(pricing): Essential rename (display), radical card simplification, no-trial Essential | 2026-08-01 |
-| #4163 | Restore smooth single-instance start page runtime | 2026-08-01 |
-| #4162 | outbox: fable audit of the 2026-08-01 nightly slate — approvals + rejections with named reasons | 2026-08-02 |
-| #4161 | feat(brain): Analyst OS W4 — Pro full-report escalation, codex vision, Terra wire translation | 2026-08-01 |
-| #4160 | Fix Research Vault stale first paint | 2026-08-01 |
-| #4159 | feat(seo): IndexNow adapter + bare-path 301 aliases — post-outage reindex push | 2026-08-01 |
-| #4158 | Preserve mobile dashboard position after Terminal | 2026-08-01 |
-| #4157 | fix(liveflow): retry probe pulls once — transient flake must not condemn the day to full_day | 2026-08-01 |
-| #4156 | design(pricing): founding meter restored+refreshed, dollar savings, entitlement-aware CTAs | 2026-08-01 |
-| #4155 | Finalize mobile Terminal cache recovery | 2026-08-01 |
-| #4154 | x-growth: superintelligence overhaul W1 — audit-driven rebuild of the supply, quality, wire, and approval lanes | 2026-08-01 |
-| #4153 | feat(options-hub): gex_history dates.json index + bounded self-heal (R0.10) | 2026-08-01 |
-| #4152 | fix(options-plane): R0 repair & relight — seal top-up, cadence probe fix, schema v2, dead-man anchors | 2026-08-01 |
-| #4151 | Fix cached mobile Terminal lifecycle bundle | 2026-08-01 |
-| #4150 | fix(admin): analytics in Pacific time, stitch per-tab sessions into visits, hide dev + scraper traffic | 2026-08-01 |
-| #4149 | Fix mobile Terminal reopen lifecycle | 2026-08-01 |
-| #4148 | prophet: R0.7 quick wires — market overlay inputs + index whitelist expansion | 2026-08-01 |
-| #4146 | Make folded International markets click-only | 2026-07-31 |
-| #4145 | fix(access): serve public scene motion assets | 2026-07-31 |
-| #4144 | fix(china): align heat grades with published precision | 2026-07-31 |
-| #4143 | Contain long ticker labels and lighten top navigation | 2026-07-31 |
-| #4142 | Replace Macro mono market-data typography | 2026-07-31 |
-| #4141 | Restore top-level market hover; keep folded countries click-only | 2026-07-31 |
-| #4140 | design: ship narrative motion system across public product story | 2026-07-31 |
-| #4139 | Fix click-only market menus and nested drill layout | 2026-07-31 |
-| #4138 | design(macro): adopt Attio typography roles | 2026-07-31 |
-| #4137 | feat: showcase complementary indicator systems | 2026-07-31 |
-| #4136 | Landing: subtle elastic motion for existing hero grid | 2026-07-31 |
-| #4135 | fix(flow-leaders): plain words for same-day expiry, and a guard that can see the hover tier | 2026-07-31 |
-| #4133 | feat(mastermind): live in-chat charts, lane-scaled answers, richer narration (ui.mm_brain_v3) | 2026-07-31 |
-| #4132 | test(options): sweep hover + aria + script-authored copy — the tier the guard could not see | 2026-08-01 |
-| #4131 | Fix hidden mega-menu drill accessibility | 2026-07-31 |
-| #4130 | fix(gex): IV-rank band must not render through a directional token | 2026-08-01 |
-| #4129 | feat: show indicator access in pricing tiers | 2026-07-31 |
-| #4128 | Publish canonical product navigation on Start | 2026-07-31 |
-| #4127 | Refresh non-Bitcoin macro desk surfaces | 2026-07-31 |
-| #4126 | test(nav): fix the icon-set test's render premise, and light up its dark sibling | 2026-07-31 |
-| #4125 | design(options): one verdict surface — chrome keeps the caveat, drops the chip | 2026-07-31 |
-| #4124 | Align crypto dashboards with MastermindX house style | 2026-07-31 |
-| #4123 | feat(oip-w1): nav front door + Ticker workbench depth — filmstrip, search, 5 new reads | 2026-08-02 |
-| #4122 | fix(brain): plain-word projection for state enums at the chat read-tool boundary | 2026-07-31 |
-| #4121 | Fix ticker search for Chinese IME and bilingual names | 2026-07-31 |
-| #4120 | fix(billing): stop leaking the Stripe runbook in public error bodies | 2026-07-31 |
-| #4119 | fix(api): pin /api/health commit to the process's build, surface checkout drift | 2026-07-31 |
-| #4118 | Speed up regional macro dashboard cold loads | 2026-07-31 |
-| #4117 | Normalize navigation families and rank ticker search by volume | 2026-07-31 |
-| #4116 | Add precious-metals cycle timing across theme dashboards | 2026-07-31 |
-| #4115 | Prevent iOS zoom on ticker search focus | 2026-07-31 |
-| #4114 | fix(globe): keep live card quotes in sync | 2026-07-31 |
-| #4113 | Fix reports timeline layout and typography | 2026-07-31 |
-| #4112 | fix(brain): ticker-shaped tokens no longer count as English prose in _expected_lang | 2026-07-31 |
-| #4111 | perf(admin): speed up VPS page navigation | 2026-07-31 |
-| #4110 | design(oip-w1): W1 spec — nav regroup, Ticker search, S1 depth reads, session filmstrip | 2026-07-31 |
-| #4109 | Add five first-class international macro dashboards | 2026-07-31 |
-| #4108 | feat(brain): Analyst OS W3 — per-user memory, trade journal, durable preferences | 2026-07-31 |
-| #4107 | Stop mega menu hover animation flicker | 2026-07-30 |
-| #4106 | Crypto Cockpit Wave 3: governed multi-asset intelligence | 2026-07-31 |
-| #4105 | fix(ship-guard): the uncommitted gate must judge THIS checkout's work only | 2026-08-01 |
-| #4104 | Match refreshed menus to approved mockup interactions | 2026-07-30 |
-| #4103 | fix(hot-tape): a quote source GitHub cannot throttle — VPS live plane as a macro floor | 2026-07-30 |
-| #4102 | Adapt menu hover grace to responsive gap | 2026-07-30 |
-| #4101 | Fix navigation hover gap traversal | 2026-07-30 |
-| #4100 | chore(git): ignore the agent worktree roots repo-wide | 2026-07-30 |
-| #4099 | docs(access): adjudicate paywall/regwall exposure via the public git mirror + R2 public base | 2026-07-30 |
-| #4098 | china: drop dead .act-grid CSS rule from china.html.j2 | 2026-07-30 |
-| #4097 | fix(render): keep replay metadata-only | 2026-07-30 |
-| #4096 | fix(render): keep publish metadata-only | 2026-07-30 |
-| #4095 | fix(render): persist managed checkout reuse | 2026-07-30 |
-| #4094 | feat(prophet-live): the VPS lane — local quote plane, gated delivery, backstop GH cron | 2026-07-30 |
-| #4093 | fix(render): skip full refetch after checkout compaction | 2026-07-30 |
-| #4092 | Fix poisoned navigation edge cache | 2026-07-30 |
-| #4091 | research(prophet-live): rule the P1 delivery path + record the inherited git-mirror exposure | 2026-07-30 |
-| #4089 | feat(prophet-live): publish the cross/fade level on each live state | 2026-07-30 |
-| #4088 | feat(prophet-live): P1 us_stocks surfaces — "Forming today" strip + ◐ card chips | 2026-07-30 |
-| #4087 | perf(render): preserve tree while compacting checkout | 2026-07-30 |
-| #4086 | Fix mobile news hero overflow in published page | 2026-07-30 |
-| #4085 | feat(rotation): subsector TURN engine — disjoint-segment cycle turns, replayed off the PIT archive | 2026-07-30 |
-| #4084 | feat(hot-tape): run the radar as a session poller — the cadence becomes ours, not GitHub's | 2026-07-30 |
-| #4083 | redesign(intelligence-hub): strip the page back to an instrument — sun gone, copy −42%, desk scorecard folded | 2026-07-30 |
-| #4082 | fix(release-radar): the "What To Do Now" stance word was a CSS-less span | 2026-07-30 |
-| #4081 | fix(brain): W2.1 — silent max_tokens death on the fast lane + zh digest state tokens | 2026-07-30 |
-| #4080 | test(hkrv): restore banner slice scoping — act-grid sentinel died silently | 2026-07-30 |
-| #4079 | fix(macro): demote the stress-selloff readout off the macro board and say it in plain words | 2026-07-30 |
-| #4078 | Ship approved navigation mockup exactly | 2026-07-30 |
-| #4077 | feat(mastermind): reasoning ledger, drawn depth marks, one depth control (ui.mm_brain_v2) | 2026-07-30 |
-| #4076 | feat(prophet-live): per-name since_ts for the P1 SINCE column | 2026-07-30 |
-| #4075 | fix(site): clear all six pinned dead links + unblock the guard that found them | 2026-07-30 |
-| #4074 | fix(site): stop linking ticker pages that never render — 211 dead links on 3 surfaces | 2026-07-30 |
-| #4073 | fix(inputs): us3m is DGS3MO — break the silent DGS3MO/DTB3 alias collision | 2026-07-30 |
-| #4072 | perf(render): bound checkout history and reserve heavy runner | 2026-07-30 |
-| #4071 | Fix crowded mobile news hero | 2026-07-30 |
-| #4070 | fix(calculators): keep the whole anchor inside each language branch — 48 t() calls shipped href="</span>" | 2026-08-01 |
-| #4069 | fix(ops): give the ThetaData EOD store's only offsite backup a real tripwire | 2026-07-30 |
-| #4067 | feat(intelligence): wire_rank.v1 sidecar — non-public ranked wire view for the Mastermind brain | 2026-08-01 |
-| #4065 | fix(r2): size the connection pool from the worker count — a flat 64 froze the offsite manifest nightly | 2026-07-30 |
-| #4064 | fix(flow): sparkline skips null ledger rows + heal the 9 stranded cohort sessions | 2026-08-01 |
-| #4063 | docs(workflows): correct leader-radar lane provenance; restore render.yml comment blocks clobbered by #3834 | 2026-08-02 |
-| #4062 | Fix missing globe on public start page | 2026-07-30 |
-| #4060 | feat(brain): Analyst OS W2 — historical analogues, curve detail, street clusters, wire-rank reader, eval harness | 2026-07-30 |
-| #4059 | fix(hot-tape): the quote log must report the ceiling it actually applied | 2026-07-30 |
-| #4058 | ci: partial-clone hosted pack checkouts | 2026-07-30 |
-| #4057 | ops(m1): rebuild hub/theta deploy trees as git-refreshable clones | 2026-07-30 |
-| #4055 | fix(options-stamp): session-filter the chains + summary readers — non-session entries were corrupting every positional window | 2026-07-30 |
-| #4054 | Keep mobile navigation cards side by side | 2026-07-30 |
-| #4053 | ci(render): admit only owned builders to heavy queue | 2026-07-30 |
-| #4052 | Animate the landing hero as a living market field | 2026-07-30 |
-| #4051 | Bring navigation menus to approved mockup parity | 2026-07-30 |
-| #4050 | Refine the start-page greeting presentation and timing | 2026-07-30 |
-| #4049 | fix(intraday-flow): "~Net call premium" was a net TOTAL — re-source it from the call-only series | 2026-08-01 |
-| #4048 | fix(hot-tape): the P1 radar fires — delay-aware freshness, self-fetched tape, repaired writer lane, multi-pass cadence | 2026-07-30 |
-| #4047 | perf: reveal dashboard instantly when Terminal closes | 2026-07-30 |
-| #4046 | fix(macro): restore compact header glance layer | 2026-07-30 |
-| #4045 | fix(flow_desk): admit build_flow_desk to both express lanes (FD-EXP) | 2026-07-30 |
-| #4044 | ops(live-flow): restore a git-refreshable M1 deploy path + document the two-machine reality | 2026-07-30 |
-| #4043 | design(prophet-live): P1 surface spec + committed reference crops | 2026-07-30 |
-| #4042 | Restore the start-page intelligence panel stylesheet | 2026-07-30 |
-| #4041 | fix(flow): a zero-coverage cohort day publishes no tilt word — PR #4007 vintage diagnosis | 2026-08-02 |
-| #4040 | Default heavy renders to the faster Mac pool | 2026-07-30 |
 
 ---
 

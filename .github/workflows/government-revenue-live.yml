@@ -214,11 +214,32 @@ jobs:
         # collect.py contains shared health/qledger housekeeping.  This named lane
         # is not the nightly lane, so it cannot advance the guarded forward
         # graders; only the explicit government-revenue paths below may publish.
+        #
+        # SAM QUOTA GATE (2026-08-05): the free personal SAM key allows ~10
+        # requests/DAY total, shared with the nightly radar sam_gov leg
+        # (collectors/sam_gov.py — batch-first, ≤7/night, runs from daily.yml at
+        # 22:30 UTC). An ungated 30-min cadence spends the whole pool on 429s
+        # and starves the nightly. Scheduled runs therefore poll SAM only during
+        # 00-01 UTC — AFTER the nightly's spend in the same quota-day — and are
+        # quiet-skips otherwise (exit 0 = quiet poll; last-good projection still
+        # publishes below). workflow_dispatch stays ungated for operators.
+        # Lifting this gate needs a higher-tier (federal system account) key.
         continue-on-error: true
         env:
           SAM_API_KEY: ${{ secrets.SAM_API_KEY }}
           COLLECT_LANE: government-revenue-live
-        run: python -m scripts.collect --only sam_gov_opportunities --skip-quality --skip-shadow-importance
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
+            hh="$(date -u +%H)"
+            case "$hh" in
+              00|01) ;;
+              *)
+                echo "SAM quota gate: quiet-skip at ${hh}xx UTC (shared ~10/day key; radar-first allocation — see collectors/sam_gov.py)"
+                exit 0
+                ;;
+            esac
+          fi
+          python -m scripts.collect --only sam_gov_opportunities --skip-quality --skip-shadow-importance
 
       - name: gate publication on complete health or material evidence
         id: gate
@@ -418,8 +439,16 @@ jobs:
               echo "::error title=award-event receipts missing::a receipt-bound award bundle requires the committed canonical receipt ledger"
               return 1
             fi
+            # Positional contract is STATE SNAPSHOTS ACTIONS — NOT the bundle
+            # array order (snapshots, actions, state): passing the array fed the
+            # snapshots parquet to json.loads and killed the lane with
+            # "activation state is unreadable" (first surfaced 2026-08-08, the
+            # first run ever to reach this step). Wiring pinned by
+            # tests/test_government_revenue_award_validator_wiring.py.
             python scripts/ci/validate_government_revenue_award_event_bundle.py \
-              "${award_event_bundle_paths[@]}"
+              data/government_revenue/award_event_projection_state.json \
+              data/government_revenue/award_event_snapshots.parquet \
+              data/government_revenue/award_action_versions.parquet
             AWARD_EVENT_BUNDLE_PRESENT=true
           }
 

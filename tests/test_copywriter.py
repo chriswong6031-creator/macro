@@ -55,6 +55,7 @@ def _make_signal_plan(
     phase: str = "triggered_pre_t1",
     profit_plan: list | None = None,
 ) -> dict:
+    family_date = signal_date or _fresh_date()
     return {
         "id": f"{ticker}-BULL",
         "asset": ticker,
@@ -63,7 +64,10 @@ def _make_signal_plan(
         "invalidation": inv,
         "targets": [t1, t2],
         "_conviction_score": 90,
-        "_signal_date": signal_date or _fresh_date(),
+        # Preserve the frozen display alias while making the causal family explicit.
+        "_signal_date": family_date,
+        "signal_date": family_date,
+        "signal_date_basis": "tier_event_date",
         "phase": phase,
         "recommended_action": "hold",
         "management_confidence": 66.0,

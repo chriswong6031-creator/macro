@@ -28,6 +28,93 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_sector_central")
 
 
+#: Board lanes that carry the reduce-side read. The graduation-gap chip only ever
+#: belongs on these — a name the cycle organ reads as recovering while the longer
+#: trend still says reduce. Stamping it on a buy-side lane would invert its meaning.
+_REDUCE_SIDE_LANES = ("take_profits", "avoid", "hold")
+
+
+def build_bottoming_context(act_now: dict | None, action_board: dict | None) -> dict | None:
+    """Slice the bottoming-watch payload for the page and stamp the recovering chip.
+
+    Two halves of the W-A lane (#4599 + Amendment 1 #4614), both display-tier:
+
+    * the **lane** — `bottoming_watch` rows render as the watch strip under the five
+      action lanes (templates/_us_bottoming_watch.html.j2);
+    * the **graduation-gap chip** — `recovering_ids` name reduce-side rows the cycle
+      organ reads as recovering off a low but which have already LEFT the bottoming
+      lane. Those rows are on no lane, which is the whole reason the chip exists, so
+      the chip is stamped onto the board's own rows here rather than in the strip.
+
+    This is the join point on purpose: build_sector_central is the only place that
+    holds BOTH artifacts (basketdata/baskets.json and basketdata/action_board.json).
+    The board's own docstring establishes the pattern — "every per-row field is
+    pre-merged onto each item" — so the template stays a renderer.
+
+    The chip's words ship from the engine (`bottoming_authority`) so the page cannot
+    drift from the measured basis; an older artifact without them stamps nothing
+    rather than a blank chip. `action_board` is mutated in place (adding
+    `recovering_chip_*`); returns None when there is no lane payload at all.
+    """
+    if not isinstance(act_now, dict):
+        return None
+    rows = act_now.get("bottoming_watch")
+    if rows is None:
+        return None
+
+    auth = act_now.get("bottoming_authority") or {}
+    out: dict = {
+        "bottoming_watch": rows,
+        "dual_read_ids": act_now.get("dual_read_ids") or [],
+        "recovering_ids": act_now.get("recovering_ids") or [],
+        "bottoming_authority": auth,
+        "recovering_rendered": False,
+    }
+
+    chip_en = (auth.get("recovering_chip_en") or "").strip()
+    if not chip_en or not isinstance(action_board, dict) or not out["recovering_ids"]:
+        return out
+    chip_zh = (auth.get("recovering_chip_zh") or "").strip() or chip_en
+    tip_en = (auth.get("recovering_tip_en") or "").strip()
+    tip_zh = (auth.get("recovering_tip_zh") or "").strip() or tip_en
+
+    try:
+        from engine.us_act_now import canonical_id
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("sector_central: recovering chip skipped (%s)", e)
+        return out
+
+    #: Both id spellings ride recovering_ids ('b-gold_miners' AND 'gold_miners');
+    #: canonicalising collapses them so a row matches on either. Sector rows key on
+    #: the SPDR ticker, theme rows on the theme id — hence the case-fold.
+    want = {canonical_id(str(i)).lower() for i in out["recovering_ids"] if str(i).strip()}
+    stamped = 0
+    for lane in _REDUCE_SIDE_LANES:
+        for item in action_board.get(lane) or []:
+            if not isinstance(item, dict) or item.get("recovering_chip_en"):
+                continue
+            keys = {
+                canonical_id(str(item.get(k))).lower()
+                for k in ("slug", "ticker") if item.get(k)
+            }
+            if not (keys & want):
+                continue
+            item["recovering_chip_en"] = chip_en
+            item["recovering_chip_zh"] = chip_zh
+            item["recovering_tip_en"] = tip_en
+            item["recovering_tip_zh"] = tip_zh
+            stamped += 1
+    out["recovering_rendered"] = stamped > 0
+    if out["recovering_ids"] and not stamped:
+        #: The ids exist but nothing on the board matched them — the footnote would
+        #: otherwise explain a chip that is not on the page.
+        log.info(
+            "sector_central: %d recovering id(s) matched no reduce-side board row",
+            len(want),
+        )
+    return out
+
+
 def _fmt_money_mn(v: float | None) -> str:
     """$ millions -> human string: 1234 -> +$1.2B, -87 -> -$87M, None -> —."""
     import math
@@ -162,13 +249,50 @@ def main() -> int:
             ctx = json.loads(ctx_p.read_text(encoding="utf-8")) or {}
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("sector_central: theme_context handoff read failed (%s)", e)
+    # Act-Now board (reader pattern) — build_site persists the SAME 5-lane board it renders
+    # on us_stocks.html to site/basketdata/action_board.json (build_site runs earlier in the
+    # engine job); read it fail-soft so an absent/corrupt file just renders the refreshing
+    # fallback. The US board pre-merges every per-row field, so no separate lookup is needed.
+    _action_board = None
+    try:
+        _ab_p = site / "basketdata" / "action_board.json"
+        if _ab_p.exists():
+            _action_board = (json.loads(_ab_p.read_text(encoding="utf-8")) or {}).get("action_board")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("sector_central: action_board read failed (%s)", e)
+    # W-A bottoming watch (reader pattern, same shape as the board above). The lane's
+    # payload rides theme_intel.act_now in basketdata/baskets.json — written by
+    # build_baskets, which runs earlier in the engine job. Read fail-soft: an absent or
+    # older artifact renders the strip empty (or hides it), never a crash. This restores
+    # the display half that #4642 dropped when it transplanted the us_stocks board over
+    # sector_central's own five lanes; the engine and builder halves never stopped.
+    _bottoming = None
+    try:
+        _bk_p = site / "basketdata" / "baskets.json"
+        if _bk_p.exists():
+            _bk = json.loads(_bk_p.read_text(encoding="utf-8")) or {}
+            _bottoming = build_bottoming_context(
+                ((_bk.get("theme_intel") or {}).get("act_now")), _action_board
+            )
+            if _bottoming is not None:
+                log.info(
+                    "sector_central: bottoming lane — %d row(s), %d dual-read id(s), "
+                    "recovering chip %s",
+                    len(_bottoming["bottoming_watch"]),
+                    len(_bottoming["dual_read_ids"]),
+                    "rendered" if _bottoming["recovering_rendered"] else "not on page",
+                )
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("sector_central: bottoming lane read failed (%s)", e)
     try:
         html = env.get_template("sector_central.html.j2").render(
             flows_html=flows_html,
+            bottoming=_bottoming,
             theme_context=ctx.get("theme_context"),
             factor_season=ctx.get("factor_season"),
             flow=ctx.get("flow"),
             basket_member_syms=ctx.get("basket_member_syms") or [],
+            action_board=_action_board,
             generated_utc=ctx.get("generated_utc") or data.get("as_of") or "")
         write_page(site / "sector_central.html", html, encoding="utf-8")
     except Exception as e:  # noqa: BLE001 — a template error must NOT abort the daily engine job

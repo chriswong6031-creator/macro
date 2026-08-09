@@ -99,7 +99,16 @@
     commodity: '<path d="M12 10h24v28H12zM12 18h24M12 30h24"/><path class="accent" d="M19 10v28M29 10v28"/><path d="M24 4s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11Z"/>',
     reserves: '<path d="M8 38h32M11 34V18h8v16M20 34V10h8v24M29 34V22h8v12"/><path class="accent" d="M7 14h13M16 6h13M25 18h13"/><path class="ghost" d="M5 42h38"/>',
     forex: '<path d="M8 16h30M33 11l5 5-5 5M40 32H10M15 27l-5 5 5 5"/><circle class="soft-fill" cx="18" cy="16" r="5"/><circle class="soft-fill" cx="30" cy="32" r="5"/>',
-    bonds: '<path d="M7 17h34L24 6Z"/><path d="M11 20v17M19 20v17M29 20v17M37 20v17M7 40h34"/><path class="accent" d="M5 15h38M9 37h30"/><path class="ghost" d="M17 27h14"/>'
+    bonds: '<path d="M7 17h34L24 6Z"/><path d="M11 20v17M19 20v17M29 20v17M37 20v17M7 40h34"/><path class="accent" d="M5 15h38M9 37h30"/><path class="ghost" d="M17 27h14"/>',
+    /* The two Mastermind cards' own template glyphs (_navlinks.html.j2),
+       verbatim: the allocation donut (Portfolio — the user's book) and the
+       pinned processor (Bot — the AI's own paper book). They exist here so the
+       compatibility bridge can only ever normalise these cards to their REAL
+       icons — before this, both fell through to the `dashboard` default and the
+       two adjacent "Mastermind …" cards rendered byte-identical glyphs, which
+       read as one product listed twice (operator report, 2026-08-07). */
+    portfolio: '<path class="ghost" d="M25 7a17 17 0 0 1 16 16"/><circle cx="21" cy="26" r="14"/><circle class="ghost" cx="21" cy="26" r="6"/><path class="accent" d="M21 12a14 14 0 0 1 12.1 7L21 26Z"/><path d="M21 12v14l12.1-7"/><circle class="soft-fill" cx="21" cy="26" r="3.2"/><path class="accent" d="M39 41v-9M44 41v-15"/>',
+    bot: '<path d="M17 11V6M24 11V6M31 11V6M17 37v5M24 37v5M31 37v5M11 17H6M11 24H6M11 31H6M37 17h5M37 24h5M37 31h5"/><rect x="11" y="11" width="26" height="26" rx="5"/><path class="accent" d="m15 29 4-4 3.5 2.5 3.5-5.5"/><circle class="soft-fill" cx="26" cy="22" r="2.4"/><path class="ghost" d="m28 20.5 6-5"/>'
   };
   MOCKUP_ICON_PATHS.baskets = MOCKUP_ICON_PATHS.themes;
   MOCKUP_ICON_PATHS.alert = MOCKUP_ICON_PATHS.alerts;
@@ -116,6 +125,7 @@
   MOCKUP_ICON_PATHS.reports = '<path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/>';
   MOCKUP_ICON_PATHS.vault = '<path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/>';
   MOCKUP_ICON_PATHS.neural = '<path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/>';
+  MOCKUP_ICON_PATHS.market_memory = '<path class="ghost" d="M8 10h32v28H8z"/><path d="M7 8h14c5 0 8 3 8 8v24c0-5-3-8-8-8H7zM41 8H27v32c0-5 3-8 8-8h6z"/><path class="accent" d="M13 16h9M13 21h7M33 15h4M33 20h4"/><circle class="soft-fill" cx="27" cy="29" r="4"/><path d="M24 29h6"/>';
   MOCKUP_ICON_PATHS.foresight = '<path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/>';
   MOCKUP_ICON_PATHS.theme_tracker = '<path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/>';
   MOCKUP_ICON_PATHS.divergence = '<path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/>';
@@ -136,10 +146,14 @@
 
   var MOCKUP_RESEARCH_ICON_BY_FILE = {
     'intelligence_hub.html': ['intelligence_hub', ''],
+    /* fileOf() reduces the Bot card's absolute href to its host string. */
+    'watchlist.html': ['portfolio', 'violet'],
+    'bot.mastermind-x.com': ['bot', 'cyan'],
     'reports.html': ['reports', ''],
     'research_vault.html': ['vault', 'violet'],
     'earnings_wire': ['earnings_wire', 'cyan'],
     'neural_web.html': ['neural', 'cyan'],
+    'market_memory.html': ['market_memory', 'violet'],
     'foresight.html': ['foresight', ''],
     'state_of_themes.html': ['theme_tracker', 'violet'],
     'radar.html': ['divergence', 'cyan'],
@@ -162,6 +176,7 @@
     'research_vault.html': 'Search every published research note',
     'earnings_wire': 'Verified calls, weekly intelligence and company context',
     'neural_web.html': 'See how every signal votes',
+    'market_memory.html': 'Put today beside comparable episodes',
     'foresight.html': 'Themes before markets price them',
     'state_of_themes.html': 'What’s strengthening and fading now',
     'radar.html': 'Where price and reality split',
@@ -217,7 +232,7 @@
             '行业智慧', '板块、主题与轮动一页读']
         ], '市场总览'],
         ['Signals & strategy', [
-          ['Subsector Confluence', 'Entry-now subsectors, double-gated funnel', 'subsectors.html', 'confluence',
+          ['Subsector Confluence', 'Entry-now subsectors, double-gated funnel', 'sector_central.html#confluence', 'confluence',
             '子行业汇聚', '现可入场子行业 · 双重闸门选股'],
           ['Strategies', 'Tactical scorecards and positioning', 'strategies.html', 'strategy',
             '策略', '战术记分卡与仓位'],
@@ -251,7 +266,7 @@
       // entry belongs to the global nav search, which every page already carries.
       rail: [
         ['Market Heatmap', 'See the whole tape', 'sector_central.html', 'heatmap', '市场热力图'],
-        ['Subsector Confluence', 'Find aligned groups', 'subsectors.html', 'confluence', '子行业汇聚'],
+        ['Subsector Confluence', 'Find aligned groups', 'sector_central.html#confluence', 'confluence', '子行业汇聚'],
         ['Browse U.S. markets', 'All U.S. destinations', 'macro.html', 'dashboard', '浏览美国全部页面']
       ],
       note: ['Built for quick decisions', 'The most-used desks stay one click away.'],
@@ -677,13 +692,23 @@
       if (desc) desc.classList.add('item-desc');
 
       var file = fileOf(item);
-      var iconSpec = MOCKUP_RESEARCH_ICON_BY_FILE[file] || ['dashboard', ''];
+      var iconSpec = MOCKUP_RESEARCH_ICON_BY_FILE[file];
       var exactDescription = MOCKUP_RESEARCH_DESCRIPTION_BY_FILE[file];
       var englishDescription = desc && desc.querySelector('.l-en');
       if (exactDescription && englishDescription) {
         englishDescription.textContent = exactDescription;
       }
-      var oldIcon = item.querySelector('.nm-ic');
+      /* Cards this bridge does not know KEEP their server-rendered icon.
+         The old fallback substituted the default dashboard spec for every
+         unknown card, stomping each one with the same identical glyph —
+         measured live 2026-08-07: the adjacent Mastermind Portfolio and
+         Mastermind Bot cards (plus Filing Forensics and Stock Seasonality)
+         all rendered the same dashboard square, and the two Mastermind cards
+         read as one product listed twice. Every card added since the mockup
+         era already ships its real icon-drawing markup server-side, so
+         leaving it alone IS the exact normalisation; only files named in the
+         map are legacy shapes this bridge exists to rewrite. */
+      var oldIcon = iconSpec ? item.querySelector('.nm-ic') : null;
       if (oldIcon) {
         oldIcon.className = 'icon-drawing nm-ic ' + iconSpec[1];
         oldIcon.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true">' +

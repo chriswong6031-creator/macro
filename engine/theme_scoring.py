@@ -641,6 +641,13 @@ def _crowding_pen(fp: dict, lead: dict, crowd: dict | None) -> tuple[float, list
 _SIG_CACHE: dict[tuple, dict] = {}
 
 
+#: Region -> the reference session calendar its basket composites are bucketed on
+#: (engine.session_anchor, ruling R-CY3). A CN basket trades CN sessions, so its 3D
+#: grid must be cut on the CN calendar; "intl" has no single exchange calendar and
+#: routes to US openly, exactly as the intl library does.
+_REGION_MARKET = {"us": "US", "china": "CN", "hk": "HK", "canada": "CA", "intl": "US"}
+
+
 def _basket_signals(members: list[dict], level: pd.Series | None = None,
                     region: str = "us", conv_map: dict | None = None) -> dict:
     """Run MTF/tape on a consolidated member candle, with an all-region close-only fallback.
@@ -667,7 +674,7 @@ def _basket_signals(members: list[dict], level: pd.Series | None = None,
                 member_cov = n_live / n_total if n_total else 0.0
                 meta["member_coverage_pct"] = round(member_cov, 3)
                 if member_cov >= MIN_CANDLE_MEMBER_COVERAGE:
-                    mtf = basket_mtf.basket_mtf(cand)
+                    mtf = basket_mtf.basket_mtf(cand, _REGION_MARKET.get(region, "US"))
                     if mtf:
                         mtf["source"] = "member_ohlcv"
                     out = {"mtf": mtf,
@@ -684,7 +691,8 @@ def _basket_signals(members: list[dict], level: pd.Series | None = None,
         try:
             close = pd.to_numeric(level, errors="coerce").dropna()
             if len(close) >= 60:
-                mtf = basket_mtf.basket_mtf(pd.DataFrame({"close": close}))
+                mtf = basket_mtf.basket_mtf(pd.DataFrame({"close": close}),
+                                            _REGION_MARKET.get(region, "US"))
                 if mtf:
                     mtf["source"] = "equal_weight_close"
                     out = {"mtf": mtf, "tape": None,

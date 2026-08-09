@@ -48,7 +48,7 @@ _BUCKET_RE = re.compile(r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$")
 _SHA_RE = re.compile(r"^[a-f0-9]{40}$")
 _RUN_RE = re.compile(r"^[1-9][0-9]{0,19}$")
 _ACTOR_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]{0,38}$")
-_EXPECTED_REPOSITORY = "chriswong6031-creator/macro"
+_EXPECTED_REPOSITORY = "mastermindx-market-intelligence/macro"
 _WORKFLOW_NAME = "capital-share-count-r2-concurrency.yml"
 
 _NO_AUTHORITY = {

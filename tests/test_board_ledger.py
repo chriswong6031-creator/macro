@@ -13,6 +13,9 @@ Coverage:
   6. CN-port stamp columns (washout_2w / extended, nullable bool) round-trip through
      the parquet store, default to NA when omitted, and merge cleanly with prior
      frames written under the pre-stamp 10-column schema.
+  7. Bucketing-era fences (anchor_era / sq_anchor_era, R5 + R-SQ3): a new appended
+     row persists both stamps through the _SCHEMA reindex; absent stamps and rows
+     written before the columns existed read as null (the pre-fence cohort).
 """
 from __future__ import annotations
 
@@ -1085,6 +1088,64 @@ class TestGateVerStamp:
                           "edge_z": 1.0}], market="HK", asof="2026-07-16")
         row = pd.read_parquet(tmp_path / "hk_board.parquet").iloc[0]
         assert pd.isna(row["gate_ver"])
+
+
+class TestBucketingEraFences:
+    """The TWO bucketing-era fences (cascade R5 + §7 R-SQ3), beside the selection
+    fences gate_ver/board_definition. A verdict is jointly produced by two grids —
+    confluence_tiers' cascade and signal_quality's §7 stream — so a graded row must
+    place against BOTH eras. Same regression class as gate_ver: adding the columns
+    to _SCHEMA alone (row-build whitelist drops the payload) or threading the
+    payload alone (the _SCHEMA reindex silently drops unlisted columns — the
+    knife_demoted/knife_z trap) each write all-None; the passthrough test holds
+    only when both halves exist."""
+
+    def test_both_eras_pass_through_append_and_survive_the_reindex(
+            self, tmp_path, monkeypatch):
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        bl.append_board([{"ticker": "0700.HK", "group": "entry_open", "edge_z": 1.0,
+                          "gate_ver": "cascade_v1",
+                          "board_definition": "hk_prophet_v2",
+                          "anchor_era": "abs-session-2026-08-06",
+                          "sq_anchor_era": "sq-abs-session-2026-08-06"}],
+                        market="HK", asof="2026-08-06")
+        row = pd.read_parquet(tmp_path / "hk_board.parquet").iloc[0]
+        assert row["anchor_era"] == "abs-session-2026-08-06"
+        assert row["sq_anchor_era"] == "sq-abs-session-2026-08-06"
+
+    def test_absent_eras_are_null_pre_fence(self, tmp_path, monkeypatch):
+        """A caller that carries no verdict (CA watch strip, pre-era callers) must
+        read as the pre-fence cohort — null, never a defaulted era."""
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        bl.append_board([{"ticker": "SHOP.TO", "group": "watch", "edge_z": 0.5}],
+                        market="CA", asof="2026-08-06")
+        row = pd.read_parquet(tmp_path / "ca_board.parquet").iloc[0]
+        assert pd.isna(row["anchor_era"])
+        assert pd.isna(row["sq_anchor_era"])
+
+    def test_legacy_frame_merge_keeps_the_era_columns(self, tmp_path, monkeypatch):
+        """Prior rows written before the fences existed coexist with stamped rows:
+        the union reindex in append_board must keep the era columns on the merged
+        frame, stamped rows keep their values, legacy rows read null."""
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        # a pre-fence frame: same store, era keys never passed (legacy cohort)
+        bl.append_board([{"ticker": "0005.HK", "group": "entry_open", "edge_z": 0.7}],
+                        market="HK", asof="2026-08-04")
+        # a post-fence append onto the existing store
+        bl.append_board([{"ticker": "0700.HK", "group": "entry_open", "edge_z": 1.2,
+                          "anchor_era": "abs-session-2026-08-06",
+                          "sq_anchor_era": "sq-abs-session-2026-08-06"}],
+                        market="HK", asof="2026-08-06")
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        assert {"anchor_era", "sq_anchor_era"} <= set(df.columns)
+        legacy = df[df["ticker"] == "0005.HK"].iloc[0]
+        stamped = df[df["ticker"] == "0700.HK"].iloc[0]
+        assert pd.isna(legacy["anchor_era"]) and pd.isna(legacy["sq_anchor_era"])
+        assert stamped["anchor_era"] == "abs-session-2026-08-06"
+        assert stamped["sq_anchor_era"] == "sq-abs-session-2026-08-06"
 
 
 class TestBoardDefinitionEraFence:

@@ -828,11 +828,34 @@ def flow_status() -> dict:
             return 0 if df is None else int(len(df))
         except Exception:  # noqa: BLE001
             return 0
+    def _gaps(g, n):
+        """Sessions this store OWES but does not hold, since its own first row.
+
+        A forward-accruing leg reports progress as a row count, and a row count
+        cannot distinguish "38 sessions collected" from "38 rows spanning 42
+        sessions with 4 holes in them" (collectors/cboe.py KNOWN_PERMANENT_GAPS).
+        Both the maturity gate and every percentile below read the second case as
+        the first. Printing the holes is the disclosure; they are unbackfillable,
+        so this never heals on its own."""
+        try:
+            df = nyse_calendar.session_rows(store.read(g, n), label=f"{g}/{n}")
+            if df is None or not len(df):
+                return []
+            return [str(d) for d in nyse_calendar.missing_sessions(
+                df.index, df.index.min().date(), df.index.max().date())]
+        except Exception:  # noqa: BLE001
+            return []
+
     pc, gx = _rows("cboe", "putcall"), _rows("cboe", "gex")
+    pc_gaps, gx_gaps = _gaps("cboe", "putcall"), _gaps("cboe", "gex")
     return {"min_history": _FLOW_MIN_HISTORY, "putcall_rows": pc, "gex_rows": gx,
             "mature": bool(min(pc, gx) >= _FLOW_MIN_HISTORY),
+            "putcall_missing_sessions": pc_gaps, "gex_missing_sessions": gx_gaps,
             "note": ("options-flow vol legs (put/call, GEX) accrue forward — deep history is "
-                     "unavailable freely; they activate + self-validate via the Opus loop when mature")}
+                     "unavailable freely; they activate + self-validate via the Opus loop when mature"
+                     + (f"; {len(pc_gaps)} put/call and {len(gx_gaps)} GEX session(s) were never "
+                        "captured and cannot be backfilled (live-snapshot source)"
+                        if (pc_gaps or gx_gaps) else ""))}
 
 
 # --- live snapshot -----------------------------------------------------------

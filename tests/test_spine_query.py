@@ -1241,3 +1241,260 @@ def test_stamp_personality_survives_pit_date_dtype_mismatch(tmp_path):
         f"got personality_basis={row['personality_basis']!r}"
     )
     assert row["chart_primary"] == "steady_compounder"
+
+
+# ---------------------------------------------------------------------------
+# (22) [OUTCOME BASIS] outcome_excess is four quantities wearing one name
+# ---------------------------------------------------------------------------
+# track_record / board_hk / board_ca / board_cn fill outcome_excess from
+# fwd_mfe_<h> — a forward MAXIMUM-FAVORABLE-EXCURSION, non-negative BY
+# CONSTRUCTION — and pin direction=1.  Measured on the committed index
+# 2026-08-05: track_record 288,884 graded rows, 0.0% negative; board_hk 509
+# rows 0.0% negative; board_ca 330 rows 0.0% negative.  spine (41.7% negative)
+# and qledger (52.8%) are genuinely signed; cortex_attention carries ±0.01
+# sign placeholders.  Any consumer treating all of these as signed reads
+# ~87-96% "direction agreement" off a tautology.
+#
+# These tests FAIL against pre-fix code: the outcome_basis column did not exist.
+# cf. PR #4673 edge_outcomes.py dst_outcome_unsigned_mfe_proxy.
+
+
+def test_outcome_basis_track_record_is_unsigned_mfe(tmp_path):
+    """[OUTCOME BASIS] track_record rows are labelled unsigned_mfe_proxy."""
+    _make_track_record(tmp_path)
+    df, _ = Q.adapt_track_record(root=tmp_path)
+    assert not df.empty
+    assert set(df["outcome_basis"].unique()) == {"unsigned_mfe_proxy"}, (
+        "track_record outcome_excess is fwd_mfe_<h> (non-negative by "
+        f"construction) — every row must carry outcome_basis="
+        f"'unsigned_mfe_proxy'; got {sorted(set(df['outcome_basis'].unique()))}"
+    )
+    # The fixture's own values prove the point: every graded outcome is >= 0
+    # while direction is pinned to +1, so a sign test over them is vacuous.
+    graded = df[df["outcome_graded"].astype(bool)]
+    assert (graded["outcome_excess"] >= 0).all()
+    assert set(graded["direction"].unique()) == {1}
+
+
+@pytest.mark.parametrize("market,ledger", [("hk", "board_hk"), ("ca", "board_ca")])
+def test_outcome_basis_boards_are_unsigned_mfe(tmp_path, market, ledger):
+    """[OUTCOME BASIS] hk/ca board rows are labelled unsigned_mfe_proxy."""
+    _make_board(tmp_path, market)
+    df, _ = Q.adapt_board(market, root=tmp_path)
+    assert not df.empty
+    assert set(df["ledger"].unique()) == {ledger}
+    assert set(df["outcome_basis"].unique()) == {"unsigned_mfe_proxy"}, (
+        f"{ledger} outcome_excess is the same fwd_mfe proxy as track_record "
+        f"with direction pinned to 1; got "
+        f"{sorted(set(df['outcome_basis'].unique()))}"
+    )
+
+
+def test_outcome_basis_china_board_is_unsigned_mfe(tmp_path):
+    """[OUTCOME BASIS] board_cn rows are labelled unsigned_mfe_proxy.
+
+    board_cn had ZERO graded rows on the committed 2026-08-05 index, so an
+    empirical zero-negatives probe cannot see it at all — the structural
+    ledger label is the only thing that covers this ledger.
+    """
+    _make_china_board(tmp_path)
+    df, _ = Q.adapt_china_board(root=tmp_path)
+    assert not df.empty
+    assert set(df["ledger"].unique()) == {"board_cn"}
+    assert set(df["outcome_basis"].unique()) == {"unsigned_mfe_proxy"}
+
+
+def test_outcome_basis_spine_and_qledger_are_signed(tmp_path):
+    """[OUTCOME BASIS] spine + qledger carry genuinely signed excess."""
+    _make_spine(tmp_path)
+    _make_qledger(tmp_path)
+
+    spine_df, _ = Q.adapt_spine(root=tmp_path)
+    assert not spine_df.empty
+    assert set(spine_df["outcome_basis"].unique()) == {"signed_excess"}
+
+    q_df, _ = Q.adapt_qledger(root=tmp_path)
+    assert not q_df.empty
+    assert set(q_df["outcome_basis"].unique()) == {"signed_excess"}
+
+
+def test_outcome_basis_cortex_attention_is_synthetic_sign_stub(tmp_path):
+    """[OUTCOME BASIS] cortex_attention rows are synthetic_sign_stub.
+
+    The ±0.01 values are SIGN placeholders: the sign is a real hit/miss, the
+    magnitude is fabricated.  Distinct from unsigned_mfe_proxy (magnitude
+    real, sign absent) — consumers gate on them differently.
+    """
+    d = tmp_path / "data" / "reflexes" / "cortex_attention"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "firings.jsonl").write_text(
+        json.dumps({
+            "claim_id": "c1",
+            "reflex": "cortex_attention",
+            "ts": "2026-06-24T12:00:00Z",
+            "trigger_type": "cortex_attention",
+            "asof": "2026-06-24",
+            "scope_type": "entity",
+            "scope_key": "SPY",
+            "direction": 1,
+            "horizon_d": 5,
+            "claim_family": "reflex.cortex_attention",
+        }) + "\n",
+        encoding="utf-8",
+    )
+    (d / "grades.jsonl").write_text(
+        json.dumps({
+            "schema": "reflex.cortex_attention.grade.v1",
+            "claim_id": "c1",
+            "graded_at": "2026-07-04",
+            "outcome_hit": True,
+            "horizon_d": 5,
+            "asof": "2026-06-24",
+            "symbol": "SPY",
+            "direction": 1,
+        }) + "\n",
+        encoding="utf-8",
+    )
+
+    df, _ = Q.adapt_cortex_attention(root=tmp_path)
+    assert not df.empty
+    assert set(df["outcome_basis"].unique()) == {"synthetic_sign_stub"}
+    assert set(df["outcome_excess"].dropna().abs().unique()) == {0.01}, (
+        "the ±0.01 magnitude is the placeholder that makes this basis distinct"
+    )
+
+
+def test_outcome_basis_none_for_outcomeless_ledgers():
+    """[OUTCOME BASIS] ledgers with no outcome carry a null basis.
+
+    Asserted through _ensure_columns — the single choke point every adapter
+    return and every load_index() read passes through, so this pins the
+    mechanism rather than one adapter's behaviour.  An UNKNOWN ledger is null
+    too: fail-closed, because only an explicit 'signed_excess' may be read as
+    signed.
+    """
+    rows = [
+        {"ledger": ledger}
+        for ledger in ("reflexes", "options_entry", "tech_signals",
+                       "macro_context", "personality_context",
+                       "cycles_us", "cycles_china", "cycles_country",
+                       "a_ledger_that_does_not_exist_yet")
+    ]
+    out = Q._ensure_columns(pd.DataFrame(rows))
+    assert out["outcome_basis"].isna().all(), (
+        "ledgers with no outcome (and unmapped ledgers) must carry a null "
+        "outcome_basis — never a value a consumer could read as signed; got "
+        f"{out[['ledger', 'outcome_basis']].to_dict('records')}"
+    )
+
+
+def test_outcome_basis_backfilled_by_load_index(tmp_path):
+    """[OUTCOME BASIS] load_index backfills the column on a legacy parquet.
+
+    The committed data/neuralweb/spine_index.parquet predates the column.
+    Without a read-time backfill every consumer of the live artifact would see
+    the column missing (or all-null) and — under a fail-closed rule — grade
+    nothing at all.  This test writes an index with NO outcome_basis column and
+    asserts load_index returns it stamped per ledger.
+
+    FAILS pre-fix: the column did not exist in COLUMNS, so load_index never
+    produced it.
+    """
+    legacy_cols = [c for c in Q.COLUMNS if c != "outcome_basis"]
+    per_ledger = {
+        "track_record": "unsigned_mfe_proxy",
+        "board_hk": "unsigned_mfe_proxy",
+        "board_ca": "unsigned_mfe_proxy",
+        "board_cn": "unsigned_mfe_proxy",
+        "spine": "signed_excess",
+        "qledger": "signed_excess",
+        "cortex_attention": "synthetic_sign_stub",
+    }
+    rows = []
+    for i, ledger in enumerate(per_ledger):
+        row = {c: None for c in legacy_cols}
+        row.update({
+            "signal_id": f"legacy:{ledger}:{i}",
+            "ledger": ledger,
+            "engine": ledger,
+            "as_of": "2026-01-01",
+            "symbol": "AAA",
+            "horizon": 21,
+            "direction": 1,
+            "outcome_excess": 0.02,
+            "outcome_graded": True,
+        })
+        rows.append(row)
+    # A row whose ledger carries no outcome — must stay null.
+    null_row = {c: None for c in legacy_cols}
+    null_row.update({"signal_id": "legacy:reflexes:9", "ledger": "reflexes"})
+    rows.append(null_row)
+
+    out = tmp_path / "data" / "neuralweb"
+    out.mkdir(parents=True, exist_ok=True)
+    legacy = pd.DataFrame(rows)[legacy_cols]
+    assert "outcome_basis" not in legacy.columns  # guard the fixture's intent
+    legacy.to_parquet(out / "spine_index.parquet", index=False)
+
+    df = Q.load_index(root=tmp_path)
+    assert "outcome_basis" in df.columns, (
+        "load_index must backfill outcome_basis on a parquet written before "
+        "the column existed — the committed production index is exactly that"
+    )
+    got = dict(zip(df["ledger"], df["outcome_basis"]))
+    for ledger, expected in per_ledger.items():
+        assert got[ledger] == expected, (
+            f"ledger {ledger!r} backfilled as {got[ledger]!r}, expected {expected!r}"
+        )
+    assert pd.isna(got["reflexes"])
+
+
+def test_stamp_outcome_basis_is_fail_open_and_adapter_wins():
+    """[OUTCOME BASIS] stamp_outcome_basis degrades, never raises.
+
+    Empty frame, no ledger column, and an adapter-set value that must survive
+    the map fill (only NULLS are filled).
+    """
+    # Empty frame → column present, no crash.
+    empty = Q.stamp_outcome_basis(pd.DataFrame({"ledger": pd.Series(dtype=object)}))
+    assert "outcome_basis" in empty.columns
+    assert empty.empty
+
+    # No ledger column → column added, all null (nothing to key on).
+    no_ledger = Q.stamp_outcome_basis(pd.DataFrame([{"x": 1}]))
+    assert no_ledger["outcome_basis"].isna().all()
+
+    # Adapter-set value wins over the map; nulls are filled from it.
+    mixed = Q.stamp_outcome_basis(pd.DataFrame([
+        {"ledger": "track_record", "outcome_basis": "signed_excess"},
+        {"ledger": "track_record", "outcome_basis": None},
+    ]))
+    assert mixed["outcome_basis"].tolist() == ["signed_excess", "unsigned_mfe_proxy"]
+
+    # Idempotent — a second stamp changes nothing.
+    assert Q.stamp_outcome_basis(mixed)["outcome_basis"].tolist() == [
+        "signed_excess", "unsigned_mfe_proxy",
+    ]
+
+
+def test_unsigned_outcome_ledgers_covers_all_four_mfe_ledgers():
+    """[OUTCOME BASIS] the unsigned set and the map agree.
+
+    UNSIGNED_OUTCOME_LEDGERS supersedes PR #4673's single-entry frozenset
+    ({'track_record'}); the boards were covered there only by an empirical
+    zero-negatives probe, which is silent on board_cn (0 graded rows today).
+    """
+    assert Q.UNSIGNED_OUTCOME_LEDGERS == frozenset(
+        {"track_record", "board_hk", "board_ca", "board_cn"}
+    )
+    for ledger in Q.UNSIGNED_OUTCOME_LEDGERS:
+        assert Q.OUTCOME_BASIS_FOR_LEDGER[ledger] == Q.OUTCOME_BASIS_UNSIGNED_MFE
+        assert ledger in Q.LEDGER_ENUM
+    # Every ledger in the enum is explicitly mapped — a new ledger that forgets
+    # to register here resolves to None (fail-closed), but the map should stay
+    # exhaustive so the choice is deliberate.
+    for ledger in Q.LEDGER_ENUM:
+        assert ledger in Q.OUTCOME_BASIS_FOR_LEDGER, (
+            f"ledger {ledger!r} is not in OUTCOME_BASIS_FOR_LEDGER — it will "
+            f"resolve to None (not sign-safe). Register it explicitly."
+        )

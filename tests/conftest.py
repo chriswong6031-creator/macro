@@ -47,9 +47,28 @@ Known limitation: a file already dirty at session start that is modified
 detected.  Fresh checkouts (CI, new worktrees) start clean, which is the main
 protection surface.  Writes under gitignored paths are invisible to git and
 likewise not detected (they also cannot be committed).
+
+sys.modules eviction tripwire (MM_MODULE_GUARD)
+-----------------------------------------------
+A test that removes a name from sys.modules, or rebinds one to a different
+module object, and does not put the original back poisons every LATER test in
+the process.  The victim lands in an unrelated FILE, so the failure only appears
+when the collected file set happens to pair culprit and victim — the failure set
+moves as files are added, which reads as flake and gives a real regression
+somewhere to hide.  Measured 2026-08-06: a `requests` eviction in
+test_admin_live_runs.py killed test_capital_structure_share_count_materializer.py
+three files later, and both suites are green in isolation.
+
+Checked after EVERY test, in the post-yield half of the teardown hookwrapper —
+the only window where all fixture finalizers, monkeypatch.undo included, have
+already run.  Additions are ignored, and importlib.reload() keeps a module's
+identity, so the ~40 files that reload are unaffected.  Modes via the
+MM_MODULE_GUARD env var: (unset) on | off disable entirely.
+See tests/test_no_module_leak.py for the static half and the mechanism pins.
 """
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -226,6 +245,94 @@ _GUARD_MSG = (
 )
 
 
+# ---------------------------------------------------------------------------
+# sys.modules eviction tripwire (MM_MODULE_GUARD)
+# ---------------------------------------------------------------------------
+# A test that removes a name from sys.modules — or rebinds one to a DIFFERENT
+# module object — and does not put the original back poisons every later test in
+# the same pytest process.  The damage lands in an unrelated FILE, so it only
+# appears when the collected file set happens to put culprit and victim in one
+# invocation: the failure set moves as files are added, which reads as "that
+# flaky batch thing" and gives a genuine regression somewhere to hide.
+#
+# Measured instance (2026-08-06).  tests/test_admin_live_runs.py
+# ::test_probe_bot_no_requests_lib popped `requests` out of sys.modules and THEN
+# called monkeypatch.setitem(sys.modules, "requests", None).  monkeypatch
+# snapshots the mapping at CALL time, so it recorded "key absent" and its
+# teardown DELETED the key — and because monkeypatch runs after the test body it
+# silently undid the test's own finally-block restore.  The next `import
+# requests` re-executed requests/__init__.py against still-cached submodules:
+# `from .sessions import Session, session` binds the NAMES it lists, and nothing
+# re-runs the submodule loader that sets the `sessions` attribute on the fresh
+# parent.  The result is a `requests` with `.session` but no `.sessions`, and
+# tests/test_capital_structure_share_count_materializer.py died three files later
+# on `requests.sessions.Session`.
+#
+# Legitimate idioms are untouched.  monkeypatch.setitem and mock.patch.dict on
+# their own restore the original object; importlib.reload() re-executes a module
+# IN PLACE, so its entry keeps both its key and its identity.  Additions are
+# never leaks — importing a module for the first time is what tests do.
+#
+# Modes via MM_MODULE_GUARD:  (unset) on  |  off  disable entirely.
+
+_MODULE_GUARD_MSG = (
+    "A test must leave sys.modules exactly as it found it.  Use\n"
+    "monkeypatch.setitem(sys.modules, name, value) or mock.patch.dict on their\n"
+    "own — both restore the original object.  Never pop/del the key first: the\n"
+    "pop is what makes monkeypatch record 'absent' and DELETE the name at\n"
+    "teardown, after any finally-block restore has already run.\n"
+    "To make `import name` raise ImportError, setitem it to None; the key must\n"
+    "still be present for monkeypatch to restore.\n"
+    "Bypass (never in CI): MM_MODULE_GUARD=off"
+)
+
+
+def _module_guard_mode() -> str:
+    return os.environ.get("MM_MODULE_GUARD", "").strip().lower()
+
+
+def _module_identities() -> dict[str, int]:
+    """name -> id() of every currently-imported module.
+
+    list() first: an import triggered on another thread mid-iteration would
+    otherwise raise "dictionary changed size during iteration".
+    """
+    return {name: id(mod) for name, mod in list(sys.modules.items())}
+
+
+def _module_leaks(
+    before: dict[str, int],
+    after: dict[str, int],
+    inherited: set[str] | None = None,
+) -> list[str]:
+    """Names a test EVICTED or REBOUND, comparing what it inherited to what it left.
+
+    Additions are not leaks, so they are ignored.  Identity is compared by id()
+    because that is what distinguishes a restored module from a re-imported
+    twin: importlib.reload() keeps the object, a delete + re-import does not.
+
+    ``inherited`` scopes the result to names that existed when collection
+    finished — the modules the suite genuinely shares.  A name a test file
+    MINTED for itself is its own scratch space: tests/test_capital_structure
+    _share_count_r2_operator.py loads the operator script under the synthetic
+    name ``_share_count_r2_operator_test`` once per test, rebinding it every
+    time, and nothing outside that file can hold a stale reference to it.
+    Trade-off, stated rather than hidden: a module first imported mid-session
+    and evicted later is not reported.  The shared surface — everything the test
+    modules pulled in at import time, which is where a cross-file victim's
+    dependencies actually live — is covered.
+    """
+    names = set(before) - set(after)
+    names |= {n for n in set(before) & set(after) if before[n] != after[n]}
+    if inherited is not None:
+        names &= inherited
+    return sorted(
+        f"evicted  {n}" if n not in after
+        else f"rebound  {n} (a DIFFERENT module object — the original is gone)"
+        for n in names
+    )
+
+
 def pytest_sessionstart(session):
     if _data_guard_mode() == "off" or hasattr(session.config, "workerinput"):
         return
@@ -233,16 +340,46 @@ def pytest_sessionstart(session):
     session.config._mm_data_guard_hits = []
 
 
-def pytest_runtest_teardown(item, nextitem):
-    if _data_guard_mode() != "trace":
+def pytest_collection_finish(session):
+    # Baseline AFTER collection: importing the test modules is itself a large
+    # burst of additions, and additions are not what this guard measures.
+    if _module_guard_mode() == "off":
         return
+    session.config._mm_module_baseline = _module_identities()
+    # The shared surface, frozen: every module the collected test files pulled in
+    # at import time. Names minted later by a test belong to that test.
+    session.config._mm_module_inherited = set(session.config._mm_module_baseline)
+    session.config._mm_module_leaks = []
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_teardown(item, nextitem):
+    # PRE-yield keeps the data-guard trace check exactly where it was, ahead of
+    # _pytest.runner's own teardown implementation.
+    if _data_guard_mode() == "trace":
+        config = item.session.config
+        baseline = getattr(config, "_mm_data_guard_baseline", None)
+        fresh = _new_entries(baseline)
+        if fresh:
+            config._mm_data_guard_hits.append((item.nodeid, fresh))
+            # advance the baseline so each culprit is reported exactly once
+            config._mm_data_guard_baseline = _data_status()
+
+    yield
+
+    # POST-yield is the only correct window for the module check: every fixture
+    # finalizer for this test has now run, monkeypatch.undo included, so what
+    # sys.modules looks like here is exactly what the next test inherits.
     config = item.session.config
-    baseline = getattr(config, "_mm_data_guard_baseline", None)
-    fresh = _new_entries(baseline)
-    if fresh:
-        config._mm_data_guard_hits.append((item.nodeid, fresh))
-        # advance the baseline so each culprit is reported exactly once
-        config._mm_data_guard_baseline = _data_status()
+    before = getattr(config, "_mm_module_baseline", None)
+    if before is None:
+        return
+    after = _module_identities()
+    leaks = _module_leaks(before, after, getattr(config, "_mm_module_inherited", None))
+    if leaks:
+        config._mm_module_leaks.append((item.nodeid, leaks))
+    # roll the baseline forward so each culprit is reported exactly once
+    config._mm_module_baseline = after
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -256,6 +393,30 @@ def pytest_sessionfinish(session, exitstatus):
     import gc
 
     gc.collect()
+
+    module_leaks = getattr(session.config, "_mm_module_leaks", [])
+    if module_leaks:
+        body = "\n".join(
+            f"  {nodeid}\n" + "\n".join(f"    {line}" for line in lines)
+            for nodeid, lines in module_leaks
+        )
+        print(
+            f"\n{'=' * 70}\n"
+            f"MM_MODULE_GUARD: test(s) left sys.modules poisoned for every later\n"
+            f"test in this process — the victim is usually in an UNRELATED file:\n"
+            f"{body}\n{_MODULE_GUARD_MSG}\n{'=' * 70}"
+        )
+        # Same reasoning as the data-guard annotation below: on Actions this
+        # banner sits far above the green "N passed" line and the job otherwise
+        # dies as what reads as a silent exit 1.
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            nodeid, lines = module_leaks[0]
+            print(f"::error title=MM_MODULE_GUARD::{nodeid} left sys.modules "
+                  f"poisoned ({'; '.join(line.strip() for line in lines)}) — exit "
+                  f"forced to 1; see the MM_MODULE_GUARD banner above the pytest "
+                  f"summary")
+        if session.exitstatus == 0:
+            session.exitstatus = 1
 
     if _data_guard_mode() == "off" or hasattr(session.config, "workerinput"):
         return
@@ -299,11 +460,23 @@ def pytest_sessionfinish(session, exitstatus):
 # emulate it in memory: an emulated cache makes two same-prompt stubbed calls
 # inside one test serve the first reply to the second, breaking tests that
 # stub different replies per call (producer suite). The dedicated roundtrip
-# test opts out by name to exercise the real helpers under tmp_path.
+# tests opt out by name to exercise the real helpers under tmp_path.
+#
+# An opted-out test MUST isolate itself (root=tmp / absolute reply_cache_dir).
+# Keep this set in sync when a roundtrip test is added: an un-listed one reads
+# GREEN while asserting nothing (get is stubbed to always-miss, put to a no-op)
+# — test_w7_llm_determinism.py::test_master_brain_cache_hit sat that way until
+# its check() ledger was gated (2026-08-09).
 # --------------------------------------------------------------------------- #
+_REAL_MB_REPLY_CACHE_TESTS = frozenset({
+    "test_reply_cache_roundtrip_root_aware",   # tests/test_master_brain.py
+    "test_master_brain_cache_hit",             # tests/test_w7_llm_determinism.py
+})
+
+
 @pytest.fixture(autouse=True)
 def _hermetic_master_brain_reply_cache(request, monkeypatch):
-    if request.node.name == "test_reply_cache_roundtrip_root_aware":
+    if request.node.name in _REAL_MB_REPLY_CACHE_TESTS:
         yield
         return
     try:

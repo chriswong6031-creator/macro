@@ -228,6 +228,23 @@ def current_state(f: pd.DataFrame) -> dict:
                    "accommodative" if (real_pct is not None and real_pct <= 0.30) else "neutral")
     rate_dir = ("rising" if (real_chg or 0) > 0.1 else "falling" if (real_chg or 0) < -0.1 else "stable")
 
+    # TURN WATCH (display-tier). The 63d `direction` key certifies a fresh turn LAST by
+    # construction — a peak forming at a restrictive extreme still reads "rising" for weeks.
+    # This key carries the short-window read: pctile>=0.90 arms the extreme watch; a 22td
+    # fall of >=12bp flags the rolldown forming. Thresholds mirror the staged peak chains
+    # (knowledge/transmission/real_rate_peak_*.yaml: p90 / 22td / -12bp); the rolldown leg
+    # allows pctile>=0.85 because this read is STATELESS — the rolldown itself erodes the
+    # percentile the episode tracker remembers arming at. Peak side only; the trough twin
+    # ships with its chain (activation masterplan W-C). Never a call — a watch state word.
+    real_chg22 = (_last(f["us10y_real"]) - _last(f["us10y_real"].shift(22))
+                  if "us10y_real" in f and len(f["us10y_real"].dropna()) > 22 else None)
+    turn_watch = None
+    if real_pct is not None and real_chg22 is not None:
+        if real_pct >= 0.85 and real_chg22 * 100 <= -12:
+            turn_watch = "rolldown_forming"
+        elif real_pct >= 0.90:
+            turn_watch = "extreme_watch"
+
     core_pce = _last(f.get("core_pce_yoy", pd.Series(dtype=float)))
     core_pce_3m = _last(f.get("core_pce_3m_ann", pd.Series(dtype=float)))
     accel = (core_pce_3m - core_pce) if (core_pce is not None and core_pce_3m is not None) else None
@@ -252,8 +269,19 @@ def current_state(f: pd.DataFrame) -> dict:
             "curve_tp_adj": round(_last(f.get("curve_tp_adj", pd.Series(dtype=float))) or 0, 2) if "curve_tp_adj" in f else None,
             "policy_gap": round(_last(f.get("rate_expectations_proxy", pd.Series(dtype=float))) or 0, 2) if "rate_expectations_proxy" in f else None,
             "regime": rate_regime, "direction": rate_dir,
-            "label": _bil(f"Real 10y {real:.2f}% ({rate_regime}, {rate_dir})" if real is not None else "—",
-                          f"实际10年期 {real:.2f}%（{ {'restrictive':'偏紧','accommodative':'宽松','neutral':'中性'}.get(rate_regime, rate_regime) }）" if real is not None else "—"),
+            "real_10y_chg_22d_bp": round(real_chg22 * 100, 0) if real_chg22 is not None else None,
+            "turn_watch": turn_watch,
+            "label": _bil(
+                (f"Real 10y {real:.2f}% (restrictive — rolling down from the extreme)"
+                 if turn_watch == "rolldown_forming" else
+                 f"Real 10y {real:.2f}% ({rate_regime}, {rate_dir} — at a 5y extreme)"
+                 if turn_watch == "extreme_watch" else
+                 f"Real 10y {real:.2f}% ({rate_regime}, {rate_dir})") if real is not None else "—",
+                (f"实际10年期 {real:.2f}%（偏紧，自极值回落）"
+                 if turn_watch == "rolldown_forming" else
+                 f"实际10年期 {real:.2f}%（{ {'restrictive':'偏紧','accommodative':'宽松','neutral':'中性'}.get(rate_regime, rate_regime) }，处于5年极值）"
+                 if turn_watch == "extreme_watch" else
+                 f"实际10年期 {real:.2f}%（{ {'restrictive':'偏紧','accommodative':'宽松','neutral':'中性'}.get(rate_regime, rate_regime) }）") if real is not None else "—"),
         },
         "inflation": {
             "core_pce_yoy": round(core_pce, 2) if core_pce is not None else None,

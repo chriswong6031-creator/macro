@@ -24,6 +24,36 @@ in ONE pass (W0's per-ticker rescan was quadratic on the real universe). Theme l
 join from the theme_lanes.v1 side-artifact; Yahoo sector names are unified to the
 GICS-family names sector_central uses via a static rename table.
 
+PSI-W2 scope (schema `portfolio_ctx.v2`, charter
+research/PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md §5.1/§6/§9): STRICTLY
+ADDITIVE. Every v1 key keeps its exact shape and meaning (gate 7); v2 adds per-ticker
+`tech`/`msens`/`fq`/`pers`/`dossier` state blocks and ONE top-level `market` block of
+tape-context states, plus the matching `coverage` counts. Every value is copied
+VERBATIM from an existing nightly artifact — no classifier, no fusion, no threshold,
+no derived word. A block is OMITTED when its source has no data for the name.
+
+W2 field census (verify-then-build, §5.1): run against the REAL rendered artifacts
+(the public R2 mirror of site/stockdata, asof 2026-08-06, 7 names sampled). Fields the
+charter sketched that NO nightly source prints are DROPPED, not fabricated:
+  - `tech.atr_z`  — no ATR z-score anywhere (site/stockdata carries atr14 / atr_pct only)
+  - `tech.rvol63` — realized_vol_63d exists only in a research script
+                    (scripts/research/run_w4_controls_fingerprints.py), not as a
+                    nightly per-ticker artifact
+  - `tech.rs`     — no per-name RS *state word* exists. The WRI L1 lanes read the raw
+                    numbers (templates/watchlist_risk.js reads tech.rs_1m / tech.rs_3m),
+                    so `rs` carries those SAME numbers verbatim ({m1,m3,m6}); minting a
+                    word from them would be a new threshold, i.e. originating.
+  - `vol`/`gex`/`flow` (OIP) — data/live_flow_out/ is git-ignored AND
+                    scripts/build_options_hub_nightly.py is not a daily.yml step, so the
+                    options_hub artifacts are NOT on the render-path checkout. Omitted
+                    this wave; they ride W4's wiring.
+
+Sources added in W2 are read at bake time from the render workspace, NOT from git:
+site/stockdata/<T>.json and site/stockdata/washout_turn.json are git-ignored but are
+written earlier in the SAME nightly `engine` job (build_site → build_stock_library, and
+build_baskets → engine.washout_turn) before this serial step, so they are on disk here.
+A fresh worktree has neither → every v2 per-ticker block simply omits (fail-open).
+
 Usage:
     python -m scripts.build_portfolio_ctx                     # full universe (nightly)
     python -m scripts.build_portfolio_ctx --tickers NVDA,AAPL,XOM   # dev/stub subset
@@ -41,8 +71,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-SCHEMA = "portfolio_ctx.v1"
-SCHEMA_V = 1
+SCHEMA = "portfolio_ctx.v2"
+SCHEMA_V = 2
+
+# Gate 8 budgets (charter §0.8): the nightly bake stays under these. main() PRINTS both
+# measurements every run so a breach is visible in the Actions log, not discovered later.
+BUDGET_SECONDS = 60.0
+BUDGET_BYTES = 2.5 * 1024 * 1024
 
 # W0 stub universe — kept as the --tickers dev/stub fallback. W1 default (no
 # --tickers) is the full holdings-eligible universe = union of the loaded sources.
@@ -322,6 +357,114 @@ def load_chain_state(root: Path) -> dict:
     return d if isinstance(d, dict) else {}
 
 
+# ── W2 sources ───────────────────────────────────────────────────────────────
+
+class _StockdataDir:
+    """Lazy, memory-flat reader over the render-workspace site/stockdata/<T>.json blobs.
+
+    The stock library writes ~2.9k per-name blobs of ~80-105 KB each. Loading them all
+    into a dict would cost ~270 MB of resident JSON for the handful of state words this
+    bake copies, so this reader parses ONE blob at a time inside the per-ticker loop and
+    drops it immediately. It exposes only `.get()`, which is the whole surface build_ctx
+    uses — so a unit test can inject a plain {ticker: blob} dict interchangeably.
+
+    Absent file / unreadable / non-dict → None, i.e. every v2 stockdata block omits.
+    """
+
+    __slots__ = ("_dir",)
+
+    def __init__(self, directory: Path) -> None:
+        self._dir = directory
+
+    def get(self, ticker, default=None):
+        d = _read_json(self._dir / f"{ticker}.json")
+        return d if isinstance(d, dict) else default
+
+
+def load_stockdata(root: Path) -> "object":
+    """site/stockdata/ → a lazy per-ticker reader, or {} when the directory is absent.
+
+    Git-ignored render output: present in the nightly `engine` job (build_site →
+    build_stock_library runs earlier in the SAME job/workspace), absent in a fresh
+    worktree → {} → every v2 stockdata-sourced block omits (fail-open, never fabricated).
+    """
+    d = root / "site" / "stockdata"
+    return _StockdataDir(d) if d.is_dir() else {}
+
+
+def load_washout_turn(root: Path) -> dict:
+    """site/stockdata/washout_turn.json → tickers[T] (washout_turn.v1). Fail-open to {}.
+
+    Written by build_baskets (engine.washout_turn) earlier in the same nightly. DISPLAY
+    STATE ONLY (DNR:KILL-WASHOUT-TURN): the ctx copies the state WORD and never any entry
+    implication. Names not in a washout/turn-watch state are simply absent from the map.
+    """
+    d = _read_json(root / "site" / "stockdata" / "washout_turn.json")
+    tk = d.get("tickers") if isinstance(d, dict) else None
+    return tk if isinstance(tk, dict) else {}
+
+
+def load_dossier_index(root: Path) -> set:
+    """site/stocks/<T>.html → the set of tickers that HAVE a Company-Intelligence dossier.
+
+    Link-out only (§6): the ctx carries a boolean so a client can decide whether to render
+    the link, never any dossier content. Committed (~2.1k pages). Absent dir → empty set.
+    """
+    d = root / "site" / "stocks"
+    if not d.is_dir():
+        return set()
+    try:
+        return {p.stem.upper() for p in d.glob("*.html")}
+    except Exception:  # noqa: BLE001
+        return set()
+
+
+def load_regime_latest(root: Path) -> dict:
+    """data/regime/latest.json — the sole authority chain's composed state (MSP-R2).
+
+    Carries quad/cycle_tag/transition_state at top level plus the embedded `risk_radar`
+    and `vol_regime` blocks the market block reads verbatim. Fail-open to {}.
+    """
+    d = _read_json(root / "data" / "regime" / "latest.json")
+    return d if isinstance(d, dict) else {}
+
+
+def load_dispersion(root: Path) -> dict:
+    """data/dispersion/regime.json (`dispersion_regime.v1`). Fail-open to {}."""
+    d = _read_json(root / "data" / "dispersion" / "regime.json")
+    return d if isinstance(d, dict) else {}
+
+
+def load_rates_command(root: Path) -> dict:
+    """data/rates_command/latest.json (`rates_command.v1`) — deterministic stance sentence."""
+    d = _read_json(root / "data" / "rates_command" / "latest.json")
+    return d if isinstance(d, dict) else {}
+
+
+def load_group_flow(root: Path) -> dict:
+    """site/basketdata/flow.json — per-sector / per-basket flow stages (group_flow)."""
+    d = _read_json(root / "site" / "basketdata" / "flow.json")
+    return d if isinstance(d, dict) else {}
+
+
+def load_subsector_rotation(root: Path) -> dict:
+    """site/marketdata/subsector_rotation.json — RRG quadrant per sector."""
+    d = _read_json(root / "site" / "marketdata" / "subsector_rotation.json")
+    return d if isinstance(d, dict) else {}
+
+
+def load_covariance_spine(root: Path) -> dict:
+    """data/neuralweb/covariance_spine.json — market effective-bets counts (display-only)."""
+    d = _read_json(root / "data" / "neuralweb" / "covariance_spine.json")
+    return d if isinstance(d, dict) else {}
+
+
+def load_crossasset(root: Path) -> dict:
+    """data/crossasset/latest.json — cross-asset regime + absorption/correlation word."""
+    d = _read_json(root / "data" / "crossasset" / "latest.json")
+    return d if isinstance(d, dict) else {}
+
+
 def load_sources(root: Path) -> dict:
     """Load every source once. Each loader fails open; the dict is always well-formed."""
     return {
@@ -339,6 +482,17 @@ def load_sources(root: Path) -> dict:
         "basket_lanes": load_basket_lanes(root),
         "congress": load_congress(root),
         "chain_state": load_chain_state(root),
+        # ── W2 ──
+        "stockdata": load_stockdata(root),
+        "washout_turn": load_washout_turn(root),
+        "dossier_index": load_dossier_index(root),
+        "regime_latest": load_regime_latest(root),
+        "dispersion": load_dispersion(root),
+        "rates_command": load_rates_command(root),
+        "group_flow": load_group_flow(root),
+        "subsector_rotation": load_subsector_rotation(root),
+        "covariance_spine": load_covariance_spine(root),
+        "crossasset": load_crossasset(root),
     }
 
 
@@ -701,6 +855,255 @@ def _congress_iter(congress):
     return None
 
 
+# ── W2 per-ticker state blocks (§5.1) ────────────────────────────────────────
+# Every one is a VERBATIM copy out of an already-baked nightly artifact. None of them
+# thresholds, grades, rounds, renames or blends anything: the words and numbers below are
+# the source's own. A sub-key is dropped when its source field is absent and the whole
+# block is omitted when nothing resolved — absence means "no desk coverage", which is a
+# different statement from a null, and the clients render it differently.
+
+def _copy_bilingual(d) -> dict | None:
+    """{'en':…, 'zh':…} copied verbatim (missing halves dropped), else None."""
+    if not isinstance(d, dict):
+        return None
+    out = {k: d[k] for k in ("en", "zh") if d.get(k) is not None}
+    return out or None
+
+
+def _tech_block(sd: dict | None, washout_row) -> dict | None:
+    """Per-name technical state from site/stockdata/<T>.json + the washout watcher.
+
+    `ext`     ← ext.grade                (in-trend/steady/stretched/parabolic — verbatim word)
+    `ma`      ← tech.above50 / above200  (the source's own booleans)
+    `rs`      ← tech.rs_1m/rs_3m/rs_6m   (the SAME numbers the WRI L1 lanes read; the
+                                          charter asked for a state word, none exists —
+                                          see the module docstring's census)
+    `dd252`   ← tech.off_52w_high_pct    (verbatim; NOT re-rounded)
+    `washout` ← washout_turn.tickers[T].state (display state word only — DNR:KILL-WASHOUT-TURN)
+    """
+    sd = sd if isinstance(sd, dict) else {}
+    ext = sd.get("ext") if isinstance(sd.get("ext"), dict) else {}
+    tech = sd.get("tech") if isinstance(sd.get("tech"), dict) else {}
+    blk: dict = {}
+    if ext.get("grade") is not None:
+        blk["ext"] = ext["grade"]
+    ma = {dst: tech[src] for src, dst in (("above50", "m50"), ("above200", "m200"))
+          if tech.get(src) is not None}
+    if ma:
+        blk["ma"] = ma
+    rs = {dst: tech[src] for src, dst in (("rs_1m", "m1"), ("rs_3m", "m3"), ("rs_6m", "m6"))
+          if tech.get(src) is not None}
+    if rs:
+        blk["rs"] = rs
+    if tech.get("off_52w_high_pct") is not None:
+        blk["dd252"] = tech["off_52w_high_pct"]
+    state = washout_row.get("state") if isinstance(washout_row, dict) else None
+    if isinstance(state, str) and state:
+        blk["washout"] = state
+    return blk or None
+
+
+def _msens_block(sd: dict | None) -> dict | None:
+    """Macro-sensitivity chip from stockdata.macro_sensitivity — verbatim tier words (§6).
+
+    `rate_tier` ← macro_sensitivity.tier (the source's own precision tier: low/medium/high)
+    `read`      ← macro_sensitivity.regime_label {en, zh} (e.g. "rate tailwind"), bilingual
+                  because every user-facing string on both surfaces is a dual-span pair.
+    """
+    ms = sd.get("macro_sensitivity") if isinstance(sd, dict) else None
+    if not isinstance(ms, dict):
+        return None
+    blk: dict = {}
+    if ms.get("tier") is not None:
+        blk["rate_tier"] = ms["tier"]
+    read = _copy_bilingual(ms.get("regime_label"))
+    if read:
+        blk["read"] = read
+    return blk or None
+
+
+def _fq_block(sd: dict | None) -> dict | None:
+    """COUNT of fired solvency/dilution/quality flags (§5.1: `fq: {flags: 2}`).
+
+    Source: stockdata.thesis_funnel.flags — the PRD lane-5 sensors (s1_dilution,
+    s2_moat_falsifier, s3_solvency, s4_coverage), each already carrying its own `fired`
+    boolean. This tallies those booleans; it evaluates no threshold of its own and the
+    flag detail stays in stockdata for the Tier-2 list.
+
+    `{"flags": 0}` is emitted when the desk HAS coverage and nothing fired — that is a
+    measurement, not a placeholder. No flags dict at all → block omitted.
+    """
+    tf = sd.get("thesis_funnel") if isinstance(sd, dict) else None
+    flags = tf.get("flags") if isinstance(tf, dict) else None
+    if not isinstance(flags, dict) or not flags:
+        return None
+    n = sum(1 for v in flags.values() if isinstance(v, dict) and v.get("fired") is True)
+    return {"flags": n}
+
+
+def _pers_block(sd: dict | None) -> dict | None:
+    """Personality archetype key from stockdata.personality (stock_personality.v1).
+
+    Context only, never a score (PRD-R12). Verbatim key word, e.g. quality_compounder.
+    """
+    p = sd.get("personality") if isinstance(sd, dict) else None
+    base = p.get("base") if isinstance(p, dict) else None
+    arch = base.get("archetype") if isinstance(base, dict) else None
+    key = arch.get("key") if isinstance(arch, dict) else None
+    return {"arch": key} if isinstance(key, str) and key else None
+
+
+# ── W2 top-level `market` block (§9 tape context) ────────────────────────────
+# Verbatim states + their own asof stamps, one sub-key per home artifact. This composes;
+# it builds NO new regime classifier and NO parallel fusion (MSP-R2: the
+# risk_radar→market_state→regime_vector chain stays the sole authority). A sub-key whose
+# home artifact is absent is OMITTED — fail-open, never a fabricated neutral state. The
+# `market` key itself is ALWAYS present ({} when nothing resolved) so the top-level key
+# set stays fixed for the cross-repo contract, exactly like v1's `regime`/`sectors`.
+
+def _pick(src, *fields) -> dict:
+    """{dst: src[key]} for each (key, dst) — dropping absent/None values. Verbatim copy."""
+    if not isinstance(src, dict):
+        return {}
+    out: dict = {}
+    for key, dst in fields:
+        if src.get(key) is not None:
+            out[dst] = src[key]
+    return out
+
+
+def _flow_rows(rows) -> list[dict]:
+    """[{id, name, name_zh, stage}] verbatim from a group_flow sectors/baskets list."""
+    out: list[dict] = []
+    if not isinstance(rows, list):
+        return out
+    for r in rows:
+        if not isinstance(r, dict) or r.get("id") is None or r.get("stage") is None:
+            continue
+        out.append(_pick(r, ("id", "id"), ("name", "name"), ("name_zh", "name_zh"),
+                        ("stage", "stage")))
+    return out
+
+
+def _as_dict(v) -> dict:
+    """v when it is a dict, else {} — so a corrupt source can never raise here."""
+    return v if isinstance(v, dict) else {}
+
+
+def _market_block(sources: dict) -> dict:
+    """The tape-context states (§9), each copied verbatim from its home artifact."""
+    sources = _as_dict(sources)
+    regime_latest = _as_dict(sources.get("regime_latest"))
+    dispersion = _as_dict(sources.get("dispersion"))
+    rates = _as_dict(sources.get("rates_command"))
+    gflow = _as_dict(sources.get("group_flow"))
+    rot = _as_dict(sources.get("subsector_rotation"))
+    spine = _as_dict(sources.get("covariance_spine"))
+    xasset = _as_dict(sources.get("crossasset"))
+
+    out: dict = {}
+
+    # Daily regime read — quad / cycle_tag / transition_state (engine/regime.py).
+    blk = _pick(regime_latest, ("quad", "quad"), ("quad_name", "quad_name"),
+                ("cycle_tag", "cycle_tag"), ("transition_state", "transition_state"),
+                ("liquidity_overlay", "liquidity_overlay"), ("asof", "asof"))
+    if blk:
+        out["regime"] = blk
+
+    # Risk radar verdict — the SOLE stress authority (MSP-R2). State + dominant scare.
+    rr = regime_latest.get("risk_radar")
+    blk = _pick(rr, ("state", "state"), ("dominant_scare", "dominant_scare"),
+                ("dominant_label_en", "label_en"), ("dominant_label_zh", "label_zh"),
+                ("asof", "asof"))
+    if blk:
+        out["risk_radar"] = blk
+
+    # Vol regime — term-structure / VRP / fragility state words.
+    vr = regime_latest.get("vol_regime")
+    blk = _pick(vr, ("regime", "regime"), ("ts_slope_state", "ts_slope_state"),
+                ("vrp_state", "vrp_state"), ("vvix_state", "vvix_state"),
+                ("fragility_confluence", "fragility_confluence"), ("asof", "asof"))
+    if blk:
+        out["vol_regime"] = blk
+
+    # Market concentration — NO dedicated engine exists (§9 census 2026-08-03). The one
+    # committed read is the risk_radar bubble leg's cap_leadership flag; we print that
+    # single fact and nothing more. (The top-10-weight-share arithmetic is W5's.)
+    if isinstance(rr, dict) and rr.get("cap_leadership") is not None:
+        out["concentration"] = {"cap_leadership": rr["cap_leadership"]}
+
+    # Dispersion regime (`dispersion_regime.v1`) — stock-picker's tape vs one-trade tape.
+    blk = _pick(dispersion, ("state", "state"), ("label", "label_en"),
+                ("label_zh", "label_zh"), ("dispersion_pctile", "pctile"),
+                ("avg_corr", "avg_corr"), ("as_of", "asof"))
+    if blk:
+        out["dispersion"] = blk
+
+    # Market effective bets — the §9 juxtaposition input ("the market runs ~N bets").
+    blocks = spine.get("blocks")
+    if isinstance(blocks, dict):
+        blk = {}
+        blk.update(_pick(blocks.get("factors"),
+                         ("effective_factor_bets_pr", "factor_bets")))
+        blk.update(_pick(blocks.get("dispersion"),
+                         ("effective_universe_bets_pr", "universe_bets")))
+        lobes = blocks.get("lobes")
+        blk.update(_pick(lobes, ("effective_independent_lobes", "lobes")))
+        warn = lobes.get("same_bet_warning") if isinstance(lobes, dict) else None
+        if isinstance(warn, dict) and warn.get("active") is not None:
+            blk["same_bet_warning"] = warn["active"]
+        if spine.get("as_of") is not None:
+            blk["asof"] = spine["as_of"]
+        if blk:
+            out["effective_bets"] = blk
+
+    # Cross-asset backdrop (absorption/correlation words from engine/cross_asset.py).
+    blk = _pick(xasset, ("regime", "regime"), ("correlation", "correlation"),
+                ("breadth", "breadth"), ("asof", "asof"))
+    if blk:
+        out["crossasset"] = blk
+
+    # Policy / rates — the rates_command.v1 deterministic stance sentence (Tier-1 line).
+    stance = _copy_bilingual(rates.get("stance"))
+    if stance:
+        blk = {"stance": stance}
+        if rates.get("asof") is not None:
+            blk["asof"] = rates["asof"]
+        out["rates"] = blk
+
+    # Sector/theme flow tape — which sectors and baskets sit in which flow stage.
+    fblk: dict = {}
+    secs = _flow_rows(gflow.get("sectors"))
+    bskts = _flow_rows(gflow.get("baskets"))
+    if secs:
+        fblk["sectors"] = secs
+    if bskts:
+        fblk["baskets"] = bskts
+    if fblk and gflow.get("as_of") is not None:
+        fblk["asof"] = gflow["as_of"]
+    if fblk:
+        out["flow"] = fblk
+
+    # Rotation quadrant per sector (RRG). Keyed by the SOURCE's own sector ETF key + name —
+    # no rename table is invented here (the v1 GICS table maps the ctx `sectors` block's
+    # two sources onto each other; this artifact names sectors a third way and a consumer
+    # joins on the key it needs).
+    rows = rot.get("sectors")
+    if isinstance(rows, list):
+        rblk = [_pick(r, ("key", "key"), ("name", "name"), ("name_zh", "name_zh"),
+                      ("quadrant", "quadrant"))
+                for r in rows
+                if isinstance(r, dict) and r.get("quadrant") is not None]
+        rblk = [r for r in rblk if r]
+        if rblk:
+            blk = {"sectors": rblk}
+            if rot.get("asof") is not None:
+                blk["asof"] = rot["asof"]
+            out["rotation"] = blk
+
+    return out
+
+
 # ── pure core ────────────────────────────────────────────────────────────────
 
 def _universe_union(sources: dict, standouts_index: dict,
@@ -762,6 +1165,11 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
     congress_rows = _congress_iter(sources.get("congress"))
     # TXI W4 — invert the transmission chains blast lists ONCE into a per-ticker index.
     chains_index = _chains_index(sources.get("chain_state") or {})
+    # W2 per-ticker sources. `stockdata` is a lazy reader in the nightly and a plain dict
+    # in unit tests — both answer .get(ticker) and nothing else is used.
+    stockdata = sources.get("stockdata") or {}
+    washout = sources.get("washout_turn") or {}
+    dossier_index = sources.get("dossier_index") or set()
 
     # ONE pass over the congress rows → window-filtered ticker→rows index (W1 perf:
     # replaces the W0 per-ticker full scan that went quadratic on the real universe).
@@ -791,7 +1199,9 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
                      if tk is not None]
     ticker_out: dict[str, dict] = {}
     cov = {"tickers": 0, "stage": 0, "themes": 0, "earnings": 0,
-           "insider": 0, "congress": 0, "f13": 0, "entry": 0, "chains": 0}
+           "insider": 0, "congress": 0, "f13": 0, "entry": 0, "chains": 0,
+           # W2 additions — one count per new block, for the honesty chips (§5.1).
+           "tech": 0, "msens": 0, "fq": 0, "pers": 0, "dossier": 0}
 
     for t in tick_list:
         screener_row = screener.get(t)
@@ -843,18 +1253,49 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
             block["chains"] = chains
             cov["chains"] += 1
 
+        # ── W2 state blocks (§5.1). One stockdata blob is parsed per ticker and dropped
+        # immediately; all four blocks read from it, so this is ONE file read per name.
+        sd = stockdata.get(t)
+
+        tech = _tech_block(sd, washout.get(t))
+        if tech is not None:
+            block["tech"] = tech
+            cov["tech"] += 1
+
+        msens = _msens_block(sd)
+        if msens is not None:
+            block["msens"] = msens
+            cov["msens"] += 1
+
+        fq = _fq_block(sd)
+        if fq is not None:
+            block["fq"] = fq
+            cov["fq"] += 1
+
+        pers = _pers_block(sd)
+        if pers is not None:
+            block["pers"] = pers
+            cov["pers"] += 1
+
+        if t in dossier_index:
+            block["dossier"] = True
+            cov["dossier"] += 1
+
         # A ticker with zero coverage anywhere is omitted entirely (sector alone is
         # metadata, not desk coverage — require at least one desk block to include).
         desk_blocks = ("themes", "stage", "entry", "earnings", "insider",
-                       "congress", "f13", "chains")
+                       "congress", "f13", "chains",
+                       "tech", "msens", "fq", "pers", "dossier")
         if any(k in block for k in desk_blocks):
             ticker_out[t] = block
             cov["tickers"] += 1
 
     # Top-level structure is STABLE (fixed key set) so the cross-repo contract does not
-    # drift when a source is empty: `regime` and `sectors` are always-present keys
-    # ({} when their source has no data). The OMIT rule (absence = "no desk coverage")
-    # applies to per-ticker sub-blocks and zero-coverage tickers, not to top-level keys.
+    # drift when a source is empty: `regime`, `sectors` and (W2) `market` are
+    # always-present keys ({} when their source has no data). The OMIT rule (absence =
+    # "no desk coverage") applies to per-ticker sub-blocks and zero-coverage tickers, not
+    # to top-level keys. Key ORDER also keeps `market` after the v1 keys so a v1 reader
+    # diffing the head of the file sees an unchanged prefix.
     return {
         "schema": SCHEMA,
         "v": SCHEMA_V,
@@ -863,6 +1304,7 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
         "gate_go": bool(standouts.get("gate_go")) if "gate_go" in standouts else None,
         "regime": regime or {},
         "sectors": sectors or {},
+        "market": _market_block(sources),
         "coverage": cov,
         "tickers": ticker_out,
     }
@@ -900,9 +1342,29 @@ def main(argv: list[str] | None = None) -> int:
     out_path.write_text(text, encoding="utf-8")
 
     n = len(payload.get("tickers", {}))
-    size_kb = len(text.encode("utf-8")) / 1024
-    print(f"[portfolio_ctx total] {time.perf_counter()-t0:.2f}s, {n} tickers, "
-          f"{size_kb:.0f} KB", flush=True)
+    n_bytes = len(text.encode("utf-8"))
+    elapsed = time.perf_counter() - t0
+    cov = payload.get("coverage") or {}
+
+    # Gate-8 budget stamps — PRINTED every run (charter §0.8: "report both in the bake
+    # log"). Both are measurements, not assertions: a breach warns loudly and still ships
+    # the artifact, because a silently-missing portfolio_ctx is worse than a fat one.
+    print(f"[portfolio_ctx total] {elapsed:.2f}s, {n} tickers, "
+          f"{n_bytes / 1024:.0f} KB", flush=True)
+    print(f"[portfolio_ctx budget] time {elapsed:.2f}s / {BUDGET_SECONDS:.0f}s  "
+          f"size {n_bytes / 1024 / 1024:.2f} MB / {BUDGET_BYTES / 1024 / 1024:.1f} MB",
+          flush=True)
+    print("[portfolio_ctx coverage] "
+          + " ".join(f"{k}={v}" for k, v in cov.items()), flush=True)
+    # GitHub annotations must START the line and go through a bare print (house law;
+    # tests/test_gh_annotation_line_start.py) — never a logger, which would prefix them.
+    if elapsed > BUDGET_SECONDS:
+        print(f"::warning title=portfolio-ctx-budget::bake took {elapsed:.1f}s, over the "
+              f"{BUDGET_SECONDS:.0f}s gate-8 budget", flush=True)
+    if n_bytes > BUDGET_BYTES:
+        print(f"::warning title=portfolio-ctx-budget::artifact is "
+              f"{n_bytes / 1024 / 1024:.2f} MB, over the "
+              f"{BUDGET_BYTES / 1024 / 1024:.1f} MB gate-8 budget", flush=True)
     return 0
 
 

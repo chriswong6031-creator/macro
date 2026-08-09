@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-05T16:33:59Z",
-  "as_of": "2026-08-05",
+  "produced_at": "2026-08-09T10:03:28Z",
+  "as_of": "2026-08-09",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 2,
-    "passed": 2,
+    "items": 4,
+    "passed": 4,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -19,25 +19,41 @@
   "quarantined": [],
   "passed": [
     {
-      "id": "post-founder-017",
-      "account": "founder",
-      "slot": "D1-S17",
-      "type": "chart",
-      "cashtag": "$TEAM",
-      "headline": ""
+      "id": "post-theme-003",
+      "account": "flagship",
+      "slot": "D1-S3",
+      "type": "theme_list",
+      "cashtag": "$WWR",
+      "headline": "Commodities Metals ripping, +7.2% avg on Friday"
     },
     {
-      "id": "post-sophia-007",
+      "id": "post-theme-004",
+      "account": "meagan",
+      "slot": "D1-S2",
+      "type": "theme_list",
+      "cashtag": "$TEAM",
+      "headline": "Software ripping, +3.7% avg on Friday"
+    },
+    {
+      "id": "post-mover-002",
       "account": "sophia",
-      "slot": "D1-S7",
+      "slot": "D1-S6",
+      "type": "mover",
+      "cashtag": "$TEAM",
+      "headline": "$TEAM +35.3% on Friday"
+    },
+    {
+      "id": "post-kelly-026",
+      "account": "kelly",
+      "slot": "D1-S26",
       "type": "watchlist",
-      "cashtag": "$SOC",
+      "cashtag": "$TTC",
       "headline": ""
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 1,
+      "pairs_checked": 6,
       "hits": 0,
       "shared_media_hits": 0
     },
@@ -56,10 +72,7 @@
     },
     "cherry_pick": {
       "status": "run",
-      "loss_tickers_in_window": [
-        "MS",
-        "QCOM"
-      ],
+      "loss_tickers_in_window": [],
       "cherry_pick_detected": false
     },
     "stale_receipts": {
@@ -94,7 +107,7 @@
       "graduate_after_days": 21,
       "weeks_1_2_days": 5,
       "weeks_3_4_days": 10,
-      "as_of": "2026-08-05",
+      "as_of": "2026-08-09",
       "as_of_usable": true,
       "base": {
         "max_posts_per_account_per_day": null,
@@ -110,7 +123,7 @@
       "accounts": {
         "flagship": {
           "created": "2026-07-24",
-          "age_days": 12,
+          "age_days": 16,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -223,12 +236,12 @@
         },
         "founder": {
           "created": "2026-07-27",
-          "age_days": 9,
-          "tier": "weeks_3_4",
+          "age_days": 13,
+          "tier": "week_5_plus",
           "enabled": true,
           "caps": {
-            "max_posts_per_account_per_day": 18,
-            "max_media_posts_per_account_per_day": 18,
+            "max_posts_per_account_per_day": 20,
+            "max_media_posts_per_account_per_day": 20,
             "max_same_cashtag_per_account_per_day": 3,
             "max_replies_per_account_per_day": 0,
             "max_new_follows_per_account_per_day": 0,
@@ -241,12 +254,12 @@
         },
         "meagan": {
           "created": "2026-07-28",
-          "age_days": 8,
-          "tier": "weeks_3_4",
+          "age_days": 12,
+          "tier": "week_5_plus",
           "enabled": true,
           "caps": {
-            "max_posts_per_account_per_day": 18,
-            "max_media_posts_per_account_per_day": 18,
+            "max_posts_per_account_per_day": 20,
+            "max_media_posts_per_account_per_day": 20,
             "max_same_cashtag_per_account_per_day": 3,
             "max_replies_per_account_per_day": 0,
             "max_new_follows_per_account_per_day": 0,
@@ -259,12 +272,12 @@
         },
         "sophia": {
           "created": "2026-07-28",
-          "age_days": 8,
-          "tier": "weeks_3_4",
+          "age_days": 12,
+          "tier": "week_5_plus",
           "enabled": true,
           "caps": {
-            "max_posts_per_account_per_day": 18,
-            "max_media_posts_per_account_per_day": 18,
+            "max_posts_per_account_per_day": 20,
+            "max_media_posts_per_account_per_day": 20,
             "max_same_cashtag_per_account_per_day": 3,
             "max_replies_per_account_per_day": 0,
             "max_new_follows_per_account_per_day": 0,
@@ -277,12 +290,12 @@
         },
         "kelly": {
           "created": "2026-07-28",
-          "age_days": 8,
-          "tier": "weeks_3_4",
+          "age_days": 12,
+          "tier": "week_5_plus",
           "enabled": true,
           "caps": {
-            "max_posts_per_account_per_day": 18,
-            "max_media_posts_per_account_per_day": 18,
+            "max_posts_per_account_per_day": 20,
+            "max_media_posts_per_account_per_day": 20,
             "max_same_cashtag_per_account_per_day": 3,
             "max_replies_per_account_per_day": 0,
             "max_new_follows_per_account_per_day": 0,
@@ -295,12 +308,12 @@
         },
         "cici": {
           "created": "2026-07-28",
-          "age_days": 8,
-          "tier": "weeks_3_4",
+          "age_days": 12,
+          "tier": "week_5_plus",
           "enabled": true,
           "caps": {
-            "max_posts_per_account_per_day": 18,
-            "max_media_posts_per_account_per_day": 18,
+            "max_posts_per_account_per_day": 20,
+            "max_media_posts_per_account_per_day": 20,
             "max_same_cashtag_per_account_per_day": 3,
             "max_replies_per_account_per_day": 0,
             "max_new_follows_per_account_per_day": 0,
@@ -313,16 +326,16 @@
         },
         "mastermind_news": {
           "created": "2026-08-02",
-          "age_days": 3,
-          "tier": "weeks_1_2",
+          "age_days": 7,
+          "tier": "weeks_3_4",
           "enabled": true,
           "caps": {
-            "max_posts_per_account_per_day": 14,
-            "max_media_posts_per_account_per_day": 14,
+            "max_posts_per_account_per_day": 18,
+            "max_media_posts_per_account_per_day": 18,
             "max_same_cashtag_per_account_per_day": 3,
             "max_replies_per_account_per_day": 0,
             "max_new_follows_per_account_per_day": 0,
-            "max_cashtags_per_post": 2,
+            "max_cashtags_per_post": 3,
             "min_minutes_between_posts": 30,
             "links_allowed": false,
             "theme_list_allowed": true

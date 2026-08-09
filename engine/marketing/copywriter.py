@@ -29,6 +29,8 @@ import threading
 from datetime import date, datetime, timezone
 from typing import Any, Iterable
 
+from engine.prophet_integrity import effective_public_plan_date
+
 # This module had NO logger while carrying a `log.warning(...)` call in
 # write_posts_llm's armed-but-mute branch (the credential-missing path). That
 # name resolved to nothing, so the call raised NameError inside the function's
@@ -343,7 +345,7 @@ def verify_signal_live(
         return False, f"ran away +{pct:.1f}% — no longer actionable (last={last_close:.2f}, entry={entry:.2f})"
 
     today_date = _parse_date(today) if today else datetime.now(timezone.utc).date()
-    age = _signal_age_days(plan.get("_signal_date"), today_date=today_date)
+    age = _signal_age_days(effective_public_plan_date(plan), today_date=today_date)
     if age is None:
         return False, "no signal_date — cannot verify age"
     if age > _MAX_SIGNAL_AGE_DAYS:
@@ -909,7 +911,9 @@ def build_context(
         "numbers_whitelist": whitelist,
         # Slot / plan meta
         "direction": plan.get("direction") or item.get("direction", ""),
-        "signal_date": str(plan.get("_signal_date") or item.get("_signal_date") or "")[:10],
+        # Preserve the family-native public clock only. Item-level legacy aliases
+        # are not provenance and may not revive an unknown plan family.
+        "signal_date": effective_public_plan_date(plan) or "",
         # Theme/mover extras
         "theme_name": theme_data.get("theme", ""),
         "theme_direction": theme_data.get("direction", ""),
@@ -2498,6 +2502,194 @@ def no_reaction_violations(text: str) -> list[str]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# CLERICAL DIARY VOICE (operator 2026-08-06)
+#
+# "all of this I this I that... 'I write down' 'I log' sounds like a bot LLM. No
+# human says that. And no human logs or writes down shit and tells other people
+# about it. It provides zero value."
+#
+# MEASURED IN LIVE COPY:
+#   "$N's CEO opened a new 25,477-share stake at $19.6. I log the buy and leave
+#    the motive blank."
+#   "1. I write down the market's current story. / 2. I note the fact that would
+#    make me reconsider it."
+#   "Klein opened a 350,000-share position in $XIIIU. I log the filing and wait."
+#
+# NOT A DUPLICATE OF `process_list_violations`. That guard wants a NUMBERED list
+# of the author's process, and two of the three lines above carry no list at all
+# — the defect is the clerical verb itself, wherever it sits. The register is
+# what a filing lane reaches for when it has a fact and no read: describing the
+# act of recording is not a reaction, it is stage direction.
+#
+# SCOPED TO THE FIRST PERSON. "The filing was logged", "record high", "on
+# record" are all ordinary English about the world; only "I log it" narrates the
+# author's clerical work, and only that is banned.
+#
+# AND SCOPED TO A CLERICAL OBJECT (round-1 review, 2026-08-06). `record… the`
+# and a bare `keep a record` swept in two registers that are not this defect:
+# an ordinary factual report in the first-person plural ("We recorded the
+# biggest weekly gain since March.") and the TRACK-RECORD line config/marketing
+# .yml explicitly asks for ("I keep a record of every level we publish and this
+# one held."). Neither narrates a filing cabinet, and this refusal is terminal,
+# so the object has to be clerical for the verb to count: a pronoun standing in
+# for the fact just stated, or the paperwork itself.
+#: "it" and not "this"/"that": a bare `this` is a determiner far more often than
+#: a pronoun, and "We recorded this quarter as the strongest" is a fact, not a
+#: filing note.
+_CLERICAL_OBJECT = (
+    r"(?:it|the\s+(?:buy|sell|sale|trade|fill|entry|exit|filing|"
+    r"position|order)s?)")
+_DIARY_VERBS = (
+    r"log(?:ging|ged)?", r"writ(?:e|ing)\s+down", r"wrote\s+down",
+    r"not(?:e|ing|ed)\s+(?:it|that|the|this|down)", r"jot(?:ting|ted)?\s+down",
+    r"mark(?:ing|ed)?\s+it\s+down", r"fil(?:e|ing)\s+it\s+away",
+    r"record(?:ing|ed)?\s+" + _CLERICAL_OBJECT,
+    r"keep(?:ing)?\s+a\s+(?:note|log|tab)\b",
+    r"keep(?:ing)?\s+a\s+record\s+of\s+" + _CLERICAL_OBJECT,
+    r"add(?:ing)?\s+it\s+to\s+(?:my|the)\s+(?:list|notes?|log)",
+)
+_DIARY_RE = re.compile(
+    r"\b(?:i|we)(?:'?m|'?ll| am| are| will| just)?\s+(?:just\s+)?(?:"
+    + "|".join(_DIARY_VERBS) + r")\b",
+    re.IGNORECASE,
+)
+
+
+def diary_voice_violations(text: str) -> list[str]:
+    """Copy that narrates the author's own filing cabinet. [] = clean.
+
+    The fix a writer needs when this fires is never "say it differently" — it is
+    "say what the fact MEANS, or do not post". So the reason string names the
+    missing thing rather than the offending word.
+    """
+    m = _DIARY_RE.search(str(text or ""))
+    if m is None:
+        return []
+    return [
+        f"clerical diary voice '{m.group(0).strip()}': nobody wants to hear that "
+        f"you wrote it down. Say what the fact changes, or drop the post"
+    ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADVERTISED ABSTENTION (operator 2026-08-06 — the big one)
+#
+# On "I can't separate the two yet, so I passed": "We have to stop with this
+# shit. it makes us look indecisive and provides zero value. NO one wants to
+# read this. It kills authority and causes unfollows and zero engagement. Need
+# to completely wipe out this shit."
+#
+# MEASURED: 8 of 66 copy strings on one nightly plan (12.1%) were this register.
+#   "$CWK keeps failing at its long-term price line. I stayed out."
+#   "$ARES keeps holding 123. I passed early and won't chase it now."
+#   "I passed on $PI at 131. Buyers didn't."
+#   "Four red closes and $CRL is still marking up. I passed."
+#   "$NUE closed at a fresh yearly high. I passed and won't chase."
+#   "$HII just joined the movers around $326. I'm watching, not chasing."
+#
+# THE ROOT CAUSE IS THE HOUSE LAW, WHICH IS WHY A DETECTOR ALONE CANNOT FIX IT.
+# The law says "a fact plus a reaction that COSTS the author". The cheapest way
+# to make a reaction sound costly is to admit it did nothing — "I passed", "I
+# missed it", "buyers didn't". So the law written to add conviction was
+# manufacturing fake humility, and the config phrasing had to change with this
+# guard (see `config/marketing.yml` copy_laws, and the writer prompt's cost
+# menu). This module keeps the executable half.
+#
+# THE APPARENT CONFLICT WITH THE FSLR LAW, RESOLVED. There is a standing rule:
+# never issue a directional stance the engines did not compute
+# (`uncomputed_stance` above). That rule does NOT mean "advertise that you have
+# no view". It means: if the engines computed nothing, DO NOT POST. Silence is
+# the lawful no-stance shape; a shrug is not. So the two guards agree — one
+# forbids inventing a stance, the other forbids publishing the absence of one,
+# and the lawful residue between them is a post that says what the tape did and
+# what would change the desk's mind.
+#
+# RELATIONSHIP TO `_COST_FAMILIES` BELOW. That table already knows this register
+# as `outside-the-move` and CAPPED it at half a batch. A cap was the right
+# instrument while the confession was legal and merely repetitive; the operator
+# has now ruled the confession itself worthless at any share. The family stays in
+# the monoculture table (it still describes the other cost families' shape), but
+# the did-nothing forms are refused outright here.
+_ABSTENTION_PATTERNS: tuple[tuple[str, str], ...] = (
+    # 1. The did-nothing admission. First person, and the verb is the whole post.
+    ("passed on it",
+     r"\b(?:i|we)\s+(?:just\s+)?(?:passed|skipped(?: it| this)?|stayed out|"
+     r"sat (?:it |this )?out|stood aside|took a pass)\b"),
+    # The `missed the <noun>` alternation carries the SAME first-person guard as
+    # every sibling branch (round-1 finding 8, second half; round-2 m6). Without
+    # it the subject could be the market rather than the desk — "Everyone missed
+    # the move; the tape did not wait", "The Street missed the run in semis
+    # entirely", "Nobody missed the bounce off 127" — and each was a TERMINAL
+    # quarantine of copy carrying no abstention at all. The `(?:\w+\s+){0,2}`
+    # window is what lets "I completely missed the move" and "we very nearly
+    # missed the turn" still refuse.
+    ("missed it",
+     r"\b(?:i|we)\s+(?:missed|didn'?t catch|got there late|was late|were late|"
+     r"didn'?t buy|didn'?t take|talked myself out of)\b"
+     r"|\b(?:i|we)\s+(?:\w+\s+){0,2}"
+     r"missed the (?:move|run|bounce|turn|start|trade|streak|entry|easy part)\b"
+     r"|\b(?:went|ran|left|gone) (?:past me|without me|before i)\b"
+     r"|\bi'?m (?:still )?(?:outside|past it|out of position)\b"),
+    ("won't chase",
+     r"\b(?:i|we)(?:'?m| am| ?ll| will)?\s*(?:not|never|won'?t|ain'?t)\s+"
+     r"chas(?:e|ing)\b|\bwatching,? not (?:chasing|buying|touching)\b"
+     r"|\bnot chasing\b"),
+    # 2. The no-view admission. This is the line the operator quoted.
+    # `tell(?!\s+you)` is load-bearing: "If I can't tell you where I'm wrong, I
+    # don't post it" is a STANDARD the desk holds itself to, the opposite of a
+    # shrug, and a bare `tell` refused it. Only "I can't tell" — the bare
+    # admission about a name in front of us — is the defect.
+    ("no view",
+     r"\b(?:i|we)\s+(?:can'?t|cannot|couldn'?t)\s+"
+     r"(?:separate|tell(?!\s+you)|decide|call it)\b"
+     r"|\b(?:i|we)\s+(?:don'?t|do not)\s+have (?:a|any) (?:view|read|opinion|take)\b"
+     r"|\bhaven'?t made up my mind\b|\bjury'?s (?:still )?out for me\b"
+     r"|\bno (?:strong )?(?:view|read|opinion) (?:here|yet|either way)\b"),
+    # 3. The hands-in-pockets closer. A stance sentence whose entire payload is
+    #    that the desk is not participating.
+    ("not participating",
+     r"\bhands in pockets\b|\bno position, no (?:regrets|view)\b"
+     r"|\b(?:i|we)'?(?:m|re) (?:on the sidelines?|outside the move)\b"
+     r"|\bfrom the sidelines?\b|\bpatience is a position\b"
+     r"|\bdoing nothing is still a position\b"),
+)
+_ABSTENTION_RES: tuple[tuple[str, "re.Pattern[str]"], ...] = tuple(
+    (label, re.compile(pat, re.IGNORECASE)) for label, pat in _ABSTENTION_PATTERNS)
+
+
+def abstention_violations(text: str) -> list[str]:
+    """Copy whose payload is the author's own inaction or indecision. [] = clean.
+
+    WHAT MUST SURVIVE, and each of these was checked against the live corpus
+    because the failure mode of every previous cleanup here was silencing a lane:
+
+      * a real stance in the first person — "I'm not paying this price",
+        "I respect the strength", "I'd want 314 before I care". First person is
+        26% of the corpus and the voice law REQUIRES it; only the did-nothing
+        payload is refused;
+      * a plain report of what the tape did to somebody else — "buyers didn't
+        defend it", "the level went without a fight";
+      * an admission that COSTS and is not a shrug — "my read was wrong",
+        "stopped out at 198, tuition paid", "I don't have a clean explanation
+        and I'm not going to invent one". Those stay legal, and they are the
+        rotation the writer is pushed toward when this fires.
+    """
+    body = str(text or "")
+    out: list[str] = []
+    for label, rx in _ABSTENTION_RES:
+        m = rx.search(body)
+        if m is None:
+            continue
+        out.append(
+            f"advertised abstention '{m.group(0).strip()}' ({label}): a post "
+            f"whose reaction is that you did nothing has no reader. Name the "
+            f"level, the condition, or the thing that would change our mind — "
+            f"or do not post"
+        )
+    return out[:2]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # UNCOMPUTED DIRECTIONAL STANCE (defect 4, operator 2026-08-03)
 #
 # THE POST. "$FSLR, biggest move in the index today / FSLR surged +10.3% today
@@ -2845,7 +3037,12 @@ _COST_FAMILIES: tuple[tuple[str, str], ...] = (
     ("outside-the-move",
      r"\b(?:i|we)\s+(?:missed|was late|were late|didn'?t catch|got there late|"
      r"passed|didn'?t buy|didn'?t take|talked myself out of|sat (?:this |it )?out)\b"
-     r"|\bmissed the (?:move|run|bounce|turn|start|trade|streak)\b"
+     # Same first-person guard as the refusal copy of this alternation in
+     # `_ABSTENTION_PATTERNS`. The family is defined as "the admission of being
+     # outside the move", so a sentence whose subject is the market was never a
+     # member — counting it inflated the share this monoculture guard measures.
+     r"|\b(?:i|we)\s+(?:\w+\s+){0,2}"
+     r"missed the (?:move|run|bounce|turn|start|trade|streak)\b"
      r"|\bwithout me\b|\btoo clever\b"
      r"|\b(?:been|was|am)\s+early\b"
      r"|\b(?:not|never)\s+(?:in|fishing|chasing)\s+(?:it|this)\b"
@@ -2987,6 +3184,12 @@ def queued_voice_violations(text: str, kind: str = "",
     out += process_list_violations(text)
     out += number_soup_violations(text, kind=kind, shape=str(shape or ""))
     out += no_reaction_violations(text)
+    # The 2026-08-06 register bans (operator: "theres garbage piling up in
+    # outbox everyday"). Dual-wired for the reason this whole function exists —
+    # the outbox was holding hundreds of items written before these laws, and a
+    # generation-only fix ships every one of them tomorrow night regardless.
+    out += diary_voice_violations(text)
+    out += abstention_violations(text)
     out += lecture_violations(text)
     # The anchor law (2026-08-01). DUAL-WIRED for the same reason the number
     # budget is: the queue is a bypass. The three posts the operator killed were
@@ -3720,6 +3923,13 @@ def validate_copy_v2(
     violations.extend(number_soup_violations(
         text, kind=str(ctx.get("type") or ""), shape=shape))
     violations.extend(no_reaction_violations(text))
+    # The 2026-08-06 register bans. `no_reaction_violations` above catches copy
+    # that ANNOUNCES it has no take; these two catch the copy that HAS a
+    # reaction and spends it on the author's paperwork or the author's inaction.
+    # Wired here and in `queued_voice_violations`, because the queue is a bypass
+    # around every generation-time law.
+    violations.extend(diary_voice_violations(text))
+    violations.extend(abstention_violations(text))
     # Anchor law (2026-08-01): a macro/event read that names no print. Same
     # `ctx["type"]` the number budget reads, so the two gates agree on kind.
     violations.extend(anchorless_macro_violations(
@@ -4960,65 +5170,83 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # Selected when watch_reason == WATCH_RUNAWAY. The ordinary watchlist copy
     # below is proximity copy ("Near entry", "close, not triggered", "closest
     # name to triggering") and every line of it is FALSE for a name trading well
-    # above the level we flagged. This family says the true thing instead — it
-    # moved without us and we are not chasing — which is both honest and the
-    # stronger post: a desk that publicly declines to chase is worth more than
-    # one that pretends it is still early. Never claims a position, never implies
-    # we caught the move. Voice keys mirror the families below so the selector
-    # falls through identically.
+    # above the level we flagged.
+    #
+    # REWRITTEN 2026-08-06, and this family is the reason the whole abstention
+    # law exists. Every line here used to be a confession: "went without me",
+    # "missed, no position", "gone, not chasing", "ran before I got there". The
+    # argument for it was that "a desk that publicly declines to chase is worth
+    # more than one that pretends it is still early" — true, and it smuggled in
+    # a third option nobody had asked for. The operator: "it makes us look
+    # indecisive and provides zero value... It kills authority and causes
+    # unfollows." A reader gets nothing from our regret.
+    #
+    # The situation is still real and still worth posting: a level we published
+    # got cleared and the name kept going. So the payload moves from OUR feelings
+    # to THE READER'S next decision — the old level becomes the new one, and the
+    # post says what has to happen at it. Same fact, same honesty about not being
+    # in it (never claims a position, never implies we caught the move), but the
+    # sentence a reader keeps is a condition rather than a shrug.
+    #
+    # `{top_fact}` carries the level and the move; these lines carry the read.
     ("watchlist_runaway", "authoritative desk"): [
         (
-            "{cashtag} went without me",
-            "{top_fact} I flagged the level, it didn't wait. Chasing it here is a "
-            "worse trade than missing it was.",
+            "{cashtag} cleared the level and kept going",
+            "{top_fact} The level I flagged is support now, not entry. It has to "
+            "hold on the first pullback or the breakout was noise.",
         ),
         (
-            "Missed {cashtag}, saying so",
-            "{top_fact} It cleared my level and kept going. No position, no regrets "
-            "worth acting on.",
+            # NOT "turned my entry into support" — AM-R1 reads "my entry" as a
+            # first-person POSITION claim, and this desk holds none. The level
+            # was PUBLISHED, not taken.
+            "{cashtag} turned that level into support",
+            "{top_fact} A breakout that never retests is a breakout on one day's "
+            "buyers. The retest is where the setup exists again.",
         ),
         (
-            "{cashtag} is past me",
-            "{top_fact} The entry I wanted is behind the tape now. I'll wait for it "
-            "to come back to me or I'll skip it.",
+            "The {cashtag} level did its job",
+            "{top_fact} It went straight through. Nothing about that changes where "
+            "the idea fails. That number is still the number.",
         ),
     ],
     ("watchlist_runaway", "dry, receipts-forward"): [
         (
-            "{cashtag} | missed, no position",
-            "{top_fact} Gone past the level. Not chasing. Logging it as a miss.",
+            "{cashtag} | level cleared, no entry taken",
+            "{top_fact} On the record: no position. The level stands, and it is "
+            "where this stops being a breakout.",
         ),
         (
-            "{cashtag} ran, no entry taken",
-            "{top_fact} Level cleared without me. That's the record.",
+            "{cashtag} ran through the level",
+            "{top_fact} That is now the line the move has to defend. First close "
+            "back under it and the run was a squeeze.",
         ),
     ],
     ("watchlist_runaway", "specialist"): [
         (
-            "{cashtag} left the level behind",
-            "{top_fact} It's well past where the setup was worth taking. I don't pay "
-            "up for a chart that already worked.",
+            "{cashtag} is trading well above the setup",
+            "{top_fact} Paying up here buys the part of the move that already "
+            "happened. The pullback into the level is the part with a stop.",
         ),
     ],
     ("watchlist_runaway", "educational"): [
         (
-            "Why I'm not buying {cashtag} here",
-            "{top_fact} It already made the move I was waiting for. Buying after the "
-            "fact is how a good idea turns into a bad entry.",
+            "What {cashtag} costs you from here",
+            "{top_fact} Buying after a run like this puts the nearest sane stop "
+            "miles below. The distance to that stop is the whole problem.",
         ),
     ],
     ("watchlist_runaway", "fast, reactive"): [
         (
-            "{cashtag} gone, not chasing",
-            "{top_fact} Blew through the level. I'm out of position to act and "
-            "that's fine.",
+            "{cashtag} blew through the level",
+            "{top_fact} Now it defends it or it doesn't. That first retest tells "
+            "you which move this was.",
         ),
     ],
     ("watchlist_runaway", "pattern/history"): [
         (
-            "{cashtag} ran before I got there",
-            "{top_fact} The setup resolved without a pullback. Those are the ones you "
-            "let go.",
+            "{cashtag} resolved without a pullback",
+            "{top_fact} Breakouts that skip the retest tend to come back for it. "
+            "The level is where this gets interesting again.",
         ),
     ],
 
@@ -5044,14 +5272,19 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "Watching {cashtag}, not buying yet",
             "{top_fact} Interesting name, unfinished setup. The list stays honest that way.",
         ),
+        # "hands in pockets" and "patience is a position too" were the closers
+        # here until 2026-08-06. Both said only that the desk was doing nothing;
+        # the fix is not a softer way to say that, it is to spend the sentence on
+        # what the reader should watch for instead (abstention law).
         (
             "{cashtag} is close",
-            "{top_fact} Near the level I care about. When it triggers, the entry gets posted. "
-            "Until then, hands in pockets.",
+            "{top_fact} Near the level I care about. The entry gets posted when it "
+            "triggers, and the level is what has to give first.",
         ),
         (
             "Keeping {cashtag} close this week",
-            "{top_fact} Not ready for me yet. Patience is a position too.",
+            "{top_fact} The setup is unfinished. What finishes it is a close through "
+            "that level that holds into the next session.",
         ),
         (
             "Circling {cashtag}",
@@ -5065,8 +5298,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "Nothing has triggered yet. That's the update",
-            "{top_fact} The list is doing its job: filtering, not chasing. "
-            "When something goes, it gets posted here.",
+            "{top_fact} Every name on the list is waiting on the same thing: a close "
+            "through its level that survives the next open.",
         ),
         (
             "Patience week on the desk",
@@ -6082,16 +6315,18 @@ def write_posts_llm(
             + "\n\nVOICE (this is the bar; match it, don't drift formal):\n"
             "- X is casual. Contractions always. Sentence fragments are fine. Short is "
             "good, but natural-short, the way people type, not clipped telegraph style.\n"
-            "- Mix 'I' and 'we'. 'I' for takes and watching ('I'm watching for a bottom "
-            "setup', 'I don't love chasing this'); 'we' for the shop and the track record "
+            "- Mix 'I' and 'we'. 'I' for takes ('I want 314 before this is real', 'I'm "
+            "not paying this price'); 'we' for the shop and the track record "
             "('we flagged it at 41.20'). All-'we' reads pretentious. Never 'our model', "
             "'the engine', 'the system'.\n"
             "- Every post carries a level, a take, or a real question. 'Here's the chart, "
-            "thoughts?' gives nothing. Give a stance: watching, leaning, respecting, "
-            "fading, waiting, not chasing. Down movers admit you aren't trying to catch "
-            "the bottom yet; up movers respect the move without chasing it. Phrase that "
-            "stance FRESH every single time — these two are banned as written: 'strength "
-            "worth respecting, not chasing here' and 'watching for a bottom setup, not "
+            "thoughts?' gives nothing. A STANCE IS A LEVEL OR A CONDITION, never a "
+            "report that you are standing aside: name the price this has to hold, what "
+            "would change your mind, or the thing that has to happen next for the move "
+            "to be real. Down movers name the level that has to hold for the fall to be "
+            "over; up movers name what the move has to do next. Phrase that stance FRESH "
+            "every single time — these two are banned as written: 'strength worth "
+            "respecting, not chasing here' and 'watching for a bottom setup, not "
             "catching it yet'. They were house boilerplate and the reader noticed.\n"
             "- NEVER LECTURE. This is the fastest way to lose a follower. Say what YOU "
             "did and what YOU are watching. Never tell the reader what they should do, "
@@ -6100,12 +6335,14 @@ def write_posts_llm(
             "admits', 'you should', 'you need to', 'if you can't', \"you're not\".\n"
             "  Wrong: \"If you can't name what proves you wrong, you're not managing "
             "risk. You're waiting for the market to explain it with your money.\"\n"
-            "  Right: \"Turns out doing nothing is still a position. I didn't take a "
-            "trade, so there's no win or loss to dress up.\"\n"
+            "  Right: \"Sized this one off the stop instead of the conviction and it "
+            "halved what the win was worth. Right call, wrong arithmetic.\"\n"
             "- No ego. You are not the smartest person in the room and you never imply "
-            "it. Curiosity and honest uncertainty beat authority — 'I'm not sure yet' is "
-            "a real post and a strong one. A genuine question to the reader is welcome; "
-            "a rhetorical question that sets up your own superior answer is not.\n"
+            "it. But UNCERTAINTY IS NOT A POST: 'I'm not sure yet', 'I can't tell which "
+            "it is', 'I passed' say nothing a reader can use, and they read as "
+            "indecision rather than humility. If you genuinely have no read, the item "
+            "gets dropped, not hedged. A genuine question to the reader is welcome; a "
+            "rhetorical question that sets up your own superior answer is not.\n"
             "- The default humor is deadpan understatement ('Ugly.' 'Not ideal.' 'That "
             "settles that.'). Most posts carry zero jokes; when wit shows up it carries "
             "the read, it never decorates it. One dry line, never two.\n"
@@ -6207,12 +6444,12 @@ def write_posts_llm(
             # kind came back sounding like it. Education = your own working today,
             # not a rule for the reader.
             "- Education (show YOUR working on something real today, never a lesson): "
-            "\"Turns out doing nothing is still a position. I didn't take a trade, so "
-            "there's no win or loss to dress up. Cash stayed cash, which beat forcing "
-            "a setup just to feel productive.\"\n"
+            "\"Sized this one off the stop instead of the conviction and it halved what "
+            "the win was worth. Right call, wrong arithmetic. Doing that math first is "
+            "the only part I'd change.\"\n"
             "- Macro: \"Growth prints keep coming in soft while inflation sits there "
-            "being inflation. The soft-landing crowd went quiet this week. Patience "
-            "over heroics.\"\n"
+            "being inflation. The soft-landing crowd went quiet this week. It stays a "
+            "soft landing until claims break 260k.\"\n"
             "- Confluence: \"Our technical signals have resolved higher 78% of the time "
             "from this spot. $COHR is there now. Historical, not a guarantee.\"\n\n"
             "OTHER LAWS (from config, obey exactly):\n"
@@ -6220,25 +6457,36 @@ def write_posts_llm(
             + "\n- Use ONLY numbers from each item's numbers_whitelist, verbatim. "
             "Never invent or recompute a number.\n"
             "- Each item's cashtag(s) must appear. Body <= 275 chars. Headline <= 90 chars.\n"
-            "- COMMITMENT IS A COST, AND IT IS THE ONE YOU KEEP SKIPPING. Most of "
-            "these posts are about names the desk does NOT hold, so the lazy cost is "
-            "always 'I'm not in it': two live runs under this prompt produced eight "
-            "posts each in which SEVEN were some flavour of missed it / passed on it "
-            "/ been early / watched it go without me. That is as bot-written as any "
-            "repeated closer, and a desk that only ever reports being outside the "
-            "move sounds like it is never right about anything.\n"
+            "- SAYING YOU DID NOTHING IS NOT A COST. IT IS BANNED, AND A VALIDATOR "
+            "ENFORCES IT. Most of these posts are about names the desk does NOT "
+            "hold, so the lazy reaction is always 'I'm not in it': live runs "
+            "produced batches of eight in which SEVEN were some flavour of missed "
+            "it / passed on it / been early / watched it go without me, and the "
+            "operator's verdict on that register was that it 'makes us look "
+            "indecisive and provides zero value... kills authority and causes "
+            "unfollows'. These are REJECTED, whatever wording you find: 'I passed', "
+            "'I stayed out', 'I missed it', 'I was late', 'I'm watching, not "
+            "chasing', 'I won't chase', 'hands in pockets', 'patience is a "
+            "position', \"I can't separate the two yet\".\n"
             "  For a name you don't hold, the cost that works is going ON RECORD: "
             "say plainly what you would need to see, or what would make you drop it, "
             "and accept being publicly wrong. \"314 is the line. If it goes, I was "
-            "early and I'll say so.\" That costs you something and it is not regret.\n"
-            "  AT MOST ONE POST IN THREE may say you were late, passed, or missed "
-            "it. Rotate through the others instead:\n"
+            "early and I'll say so.\" That costs you something and it is not regret. "
+            "The test is whether a stranger could hold you to it next week.\n"
+            "  IF THE ONLY TRUE THING YOU HAVE ABOUT A NAME IS THAT YOU ARE NOT IN "
+            "IT, DROP THE ITEM. A short plan is fine. Silence costs the desk "
+            "nothing; a shrug costs it authority. Reach for one of these instead:\n"
+            "    * the level this now has to hold, and what it means if it doesn't\n"
+            "    * the condition that would change our mind, named out loud\n"
             "    * no clean explanation, and you won't invent one\n"
             "    * your read was flatly wrong\n"
             "    * a position hurt (tuition paid, stopped out)\n"
-            "    * you still don't know, and say so\n"
             "    * you like it and admit that makes you soft on it\n"
-            "    * you're committing to a level and can be wrong in public\n"
+            "- NEVER NARRATE YOUR OWN PAPERWORK. 'I log the buy', 'I write down the "
+            "market's story', 'I note the fact', 'I'm logging the filing and "
+            "waiting' — nobody wants to hear that you recorded something, and a "
+            "validator rejects it. On a filing or an insider post, say what the "
+            "filing CHANGES, or what it would take for it to matter.\n"
             "- NEVER write that a number proves YOU wrong. 'I'm wrong below 33.8', "
             "'30.9 proves me wrong', 'X is my trigger' are banned outright — no human "
             "talks like this. Risk belongs to the SETUP and only when it's the point: "

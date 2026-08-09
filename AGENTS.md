@@ -46,6 +46,58 @@ motion. Change the appropriate shared family and its parity tests instead.
 - Macro branches start from fresh `origin/main`; Terminal branches start from fresh
   `origin/master`. Never reuse a squash-merged branch.
 - Do not use the repo-global stash stack.
+- Session worktrees are garbage-collected by `scripts/worktree_gc.py` per
+  `research/WORKTREE_GC_POLICY.md` (report-first; deletion only while
+  `config/worktree_gc.json` is `armed:true` — an operator ratification act). The
+  sweeper honors `git worktree lock`, live process cwds, uncommitted/unpushed
+  work, open PRs, and <7-day activity. To park a checkout long-term, lock it:
+  `git worktree lock --reason "<why>" <path>`.
+
+## Kill-registry citations (DO_NOT_REBUILD.md)
+
+Rows in `research/DO_NOT_REBUILD.md` carry a stable `Key` column (`KILL-…` §1–2,
+`LAW-…` §3, `HOLD-…` §4). Cite rows as `DNR:<KEY>` — for example
+`DNR:KILL-PROPHET-POP-MERGE` — never by row or line number: numbers shift on
+every append/reflow, and row-number citations have already mis-resolved in the
+wild (2026-08-05). An adjudication that kills, forbids, or defers a topic
+appends its row inside sections 1–4 only, mints a new unique Key, and commits
+the regenerated `config/compiled_kill_registry.yml` and
+`config/signal_foundry_blocklist.yml` in the same PR (manual heal:
+`python3 scripts/check_blocklist_drift.py --fix`).
+
+## Context economy (frontier burn is CONTEXT × TURNS)
+
+Measured 2026-08-06 across 3,043 local transcripts (week of 07-30→08-06): of all
+Fable burn, **62% was cache reads, 21% cache writes, only 17% output**. Cache
+reads are the discount (0.1× fresh input), not the waste — never try to avoid
+caching. The cost driver is `context size × turn count`, and the per-turn floor
+is `0.1 × context`: ~15k units/turn at 150k context, ~80k at 800k.
+
+The worst measured session ran 3,539 turns at a median 419k context (max 879k)
+over 43h and 16 branches, costing 11.6% of the week's frontier budget on its
+own. Its turns at ≥400k context were 52% of turns but 67% of its burn. Riding
+context up to auto-compaction is the most expensive possible pattern: compaction
+fires near the ceiling, so every turn on the approach bills at the ceiling rate.
+There is no configurable compaction threshold and a session cannot compact
+itself on demand.
+
+- **Delegate execution; the orchestrator adjudicates.** 76% of that session's
+  main-loop tool calls were `Bash`/`Edit`/`Read`/`Write`, and delegation was
+  2.6%. A subagent's context is discarded on return — only its report lands — so
+  delegating keeps tool output out of the orchestrator permanently.
+- **Budget what enters context.** A tool result of size S landing at turn N is
+  re-read on every remaining turn. Prefer targeted `grep`/line-ranged reads over
+  whole files, cap command output (`head`, `--limit`, `--jq`), and keep browser
+  screenshots and full page dumps inside a subagent.
+- **One session = one task boundary.** A long program needs durable state on
+  disk, not a long session. Run it as a chain of short sessions over a
+  `research/*_CONTINUATION_HANDOFF_<date>.md`, one wave per session. Keep an
+  orchestrator under ~200k; past ~250k, checkpoint to a handoff and let the
+  operator clear rather than grinding to the ceiling.
+
+Do NOT save tokens by reducing reasoning effort — output is only 17% of burn, so
+cutting thinking degrades quality for at most a sixth of the cost. The savings
+are in where work happens and how large the context is.
 
 ## Definition of done
 
@@ -65,6 +117,32 @@ request to hold, a genuine non-spurious failing check, or a real deployment bloc
 For Macro, the `Workers Builds: macro` red X is known-spurious. Template/source
 changes must include their paired `site/` artifact when required, and “merged” is
 not “live” until the VPS/render path and live marker are verified.
+
+**Healing a red pack: claim the lane FIRST, and heal the WHOLE pack (2026-08-07,
+#4850 closed unmerged).** A fleet-wide red is being worked by the whole fleet, so
+before writing a line: identify every red job **by name** and confirm its pack
+(`python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml
+--pack-index N --pack-count 4 --validate-only`) — never trust the pack index in a
+failure report, `run_ci_pack.py` rebalances whenever any job's weight moves — then
+check `gh pr list --search "<filename>"` and `docs/ACTIVE_BUILD_MAP.md` for an open
+lane on the files you are about to touch. The "before proposing new work" rule is
+scoped to NEW work and does not cover heals, which is exactly how this was missed.
+
+**A pack is ONE check, so two partial heals DEADLOCK.** With two independent reds
+in `ci-pack-3`, the ITR-only PR stayed red from the stale report and the
+report-only PR stayed red from ITR: neither could ever go green, so neither could
+merge. One PR must carry every fix the pack needs. Cherry-pick a sibling with `-x`
+(authorship preserved) rather than rewriting it, and read its diff first — the
+sibling's version is often the better one.
+
+**Re-fetch `origin/main` and re-run the job line before pushing OR merging.** On a
+red main the tree moves in hours (five heal PRs landed mid-session here), and a
+`merge-blocked` "real content conflict" on a heal PR usually means the heal already
+landed rather than that you must resolve anything. Diff against fresh main
+(`git diff --stat origin/main HEAD -- <files>`; empty = already there) and **close
+rather than force through** — a superseded regeneration silently reverts the better
+fix that landed behind you (#4850's live-cache report would have reverted #4842's
+frozen-slice render).
 
 **Merge on CONCLUDED checks, never mid-flight (operator 2026-07-28).** A pending
 check is not a pass: an `--admin` squash-merge while the PR's packs are still
@@ -97,6 +175,44 @@ you prefer to watch it. After any accidental fast merge, the surviving PR proof 
 is the merge's evidence — watch it to conclusion. `--admin` remains only for the
 spurious Workers X, docs-only pull requests that trigger no pack checks, and
 genuine wedges — never to outrun CI.
+
+**A `merge-blocked` backlog means main is UNPROVEN, not that the pull requests are
+bad (#5037, 2026-08-08).** The sweeper's base-inherited-red refresh — the mechanism
+that drains an armed backlog once main is healed — can only tell an inherited red
+from a real one against a RECENT proof of main. `ci.yml` has no `push` trigger, so
+main is proven ONLY by a `workflow_dispatch`, while the nightly/wire lanes push ~24
+`[skip ci]` commits per 2 hours — so any commit-window heuristic ages out in ~100
+minutes. Measured 2026-08-08: main's newest proof sat **117 commits / 12 HOURS**
+back, the refresh resolved zero pack names, and 61 pull requests sat armed with 60
+of them red on `ci-pack-2`/`ci-pack-3` that main's own last run had proven green.
+Three properties now hold and must not be regressed: the proof is resolved from the
+newest completed `ci.yml`/`fences.yml` **RUN on main** (velocity-independent, and
+cheaper than the walk it replaced); a refresh additionally requires that proof to
+**POSTDATE** the pull request's failing checks (correctness — a green that predates
+your red does not excuse it — and the loop guard, because `update-branch`'s
+422-on-current-head does NOT prevent loops when main moves every few minutes); and
+the sweeper **dispatches its own main baseline** when its proof is too stale to
+answer the reds it just saw. **Diagnose a fresh backlog from the sweep log first:** a
+summary reading `0 main commit(s) classified`, or a proof set carrying no
+`ci-pack-*`, means the refresh path is closed no matter how green main is. Operator
+lever unchanged: `gh workflow run ci.yml --ref main`.
+
+**But NEVER dispatch over a live baseline (livelock, measured 2026-08-09).**
+Main-ref ci.yml dispatches share ONE concurrency group with
+`cancel-in-progress: true`, so every re-dispatch KILLS the in-flight proof: the
+11:00Z baseline died 44 min in — likely minutes from concluding — to a sibling
+session's re-dispatch, whose own run died 4 min later to the next session's. With
+several pinned sessions each firing the lever, no proof ever concludes, the
+sweeper keeps reading `0 main commit(s) classified`, and the entire fleet stays
+pinned — the escape hatch IS the lock. (fences.yml's main-push runs were dying
+the same way under main's ~1/min push cadence, closing the other proof source;
+structural fix = event-conditional cancel-in-progress, in flight 2026-08-09.)
+Preflight before the lever:
+`gh run list --workflow ci.yml --branch main --json databaseId,status,createdAt --jq '[.[]|select(.status!="completed")]'`
+— anything `queued`/`in_progress` → WATCH it (`gh run watch <id> --interval 60`)
+instead of dispatching. Dispatch only over a clear field, or over a run stuck
+`queued` >40 min with the pool otherwise moving (orphaned-run escape — your
+dispatch is then the mercy kill, not a murder).
 
 ### Waiting on CI without jamming every other session
 
@@ -208,7 +324,9 @@ on main (same check failing on ≥2 independent concurrent PR heads pre-merge, o
 green ci.yml run on a main descendant) is excluded by name rather than pinning the
 session forever; the operator lever for a healed base is
 `gh workflow run ci.yml --ref main` — one green dispatched run clears every pinned
-merge at once. Unknown or lone-sibling evidence stays `ci_failed` (fail-closed).
+merge at once, but preflight for an in-flight baseline first (see the livelock
+note above: a re-dispatch cancels the very proof every pinned session is waiting
+on). Unknown or lone-sibling evidence stays `ci_failed` (fail-closed).
 
 An IN-FLIGHT covering render DEFERS rather than blocks (operator ruling
 2026-07-27): a queued or running render whose head covers this merge satisfies the

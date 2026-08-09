@@ -1680,27 +1680,121 @@ def test_the_text_names_at_most_the_cap_while_the_card_still_lists_all_eight(
     assert named <= set(tl["media"][0]["tickers"]), (named, tl["media"][0])
 
 
-def test_the_names_we_do_say_are_the_biggest_movers(tmp_path):
-    """The three named are the top three by |move|, not the first three the
-    upstream payload happened to hand over.
+def _write_tiers(tmp: Path, advs: dict[str, float]) -> None:
+    """A cashtag_tiers.json carrying ADV20 — the lane's watchedness column."""
+    p = tmp / "data" / "marketing"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "cashtag_tiers.json").write_text(json.dumps({
+        "tickers": {t: {"tier": "T2", "proxies": {"adv20_musd": v}}
+                    for t, v in advs.items()}}), encoding="utf-8")
 
-    Mutation check: drop the sort in _theme_text_cashtags and the assertion
-    fails on any fixture whose payload order is not magnitude order — which is
-    why the tile is written in ASCENDING magnitude below.
+
+#: ADV that is the REVERSE of _EIGHT's magnitude order: the biggest mover (COHR,
+#: +9.1%) is the least-traded, the smallest mover (U, +1.4%) is the most-traded.
+#: This is not a contrived fixture — it is the shape the operator identified
+#: ("the biggest movers are almost always the smallest floats"), and it is the
+#: only shape in which the two rules give visibly different answers.
+_EIGHT_ADV = {t: float(50 * (i + 1))
+              for i, t in enumerate(sorted(_EIGHT, key=lambda k: -_EIGHT[k]))}
+
+
+def test_the_names_we_do_say_are_the_most_watched_not_the_biggest_movers(tmp_path):
+    """OPERATOR RULING 2026-08-05. Ranking by |move| ranks by SMALLNESS.
+
+        "the biggest movers are almost always the smallest floats, just due to
+        small caps moving more, this is a big problem eh? we need to use the more
+        watched ticker at all times, not the biggest mover."
+
+    The lane spent its whole 3-cashtag budget on the three least-watched names in
+    its own card — $GFI at $117M ADV led a post whose card also listed $HL at
+    $599M, and whose sector ETF trades $1,321M.
+
+    Mutation check: restore the |move| sort in _theme_text_cashtags and this fails
+    with exactly the three biggest movers, which the second assertion names so the
+    failure output shows the old rule's answer next to the new one.
     """
     _write_themes(tmp_path, [_theme_tile(
         "Virtual & Augmented Reality",
-        # ascending — insertion order is the WRONG answer
+        # ascending by move — insertion order is the WRONG answer either way
         {t: 0.0 for t in sorted(_EIGHT, key=lambda k: _EIGHT[k])})])
     _write_snapshot(tmp_path, {t: (100.0, 100.0 - p, p) for t, p in _EIGHT.items()})
+    _write_tiers(tmp_path, _EIGHT_ADV)
 
     rep = _gen(tmp_path, _cfg(), live=False)
     tls = [g for g in rep["would_generate"] if g["kind"] == "theme_list"]
     assert tls, (rep["would_generate"], rep["dropped"])
 
     named = _named_cashtags(tls[0]["text"])
-    top = set(sorted(_EIGHT, key=lambda k: -abs(_EIGHT[k]))[:len(named)])
-    assert named == top, (named, top, tls[0]["text"])
+    watched = set(sorted(_EIGHT_ADV, key=lambda k: -_EIGHT_ADV[k])[:len(named)])
+    movers = set(sorted(_EIGHT, key=lambda k: -abs(_EIGHT[k]))[:len(named)])
+    assert named == watched, (named, watched, tls[0]["text"])
+    assert named != movers, "fixture is not discriminating between the two rules"
+
+
+def test_the_named_set_cannot_widen_past_the_cards_rows(tmp_path):
+    """Watchedness re-ORDERS inside the card; it must never widen past it.
+
+    The named set stopped being a PREFIX of the rows when the ordering changed —
+    that was deliberate — but "the text names nothing the picture omits" is the
+    honesty property and it still holds.
+
+    THIS IS A DIRECT UNIT TEST ON PURPOSE, and the end-to-end version of it was
+    vacuous. `movers_source.theme_lists` defaults to n=8 and `_CARD_MAX_ROWS` is 8,
+    so a 12-member theme is already truncated to 8 before the picker ever sees it:
+    deleting the `[:_CARD_MAX_ROWS]` slice left the whole lane suite green. The
+    slice guards against an upstream `n` that no longer agrees with the card, which
+    is a condition the pipeline cannot currently produce — so it has to be fed
+    here, by hand, or it is untested code pretending to be a guard.
+    """
+    over = [{"ticker": f"N{chr(65 + i)}X", "pct": float(20 - i)} for i in range(12)]
+    tiers = {m["ticker"]: float(100 * (i + 1)) for i, m in enumerate(over)}
+    # ADV rises with the index, so the MOST-watched names are exactly the ones
+    # sitting past row 8 — the pick would reach for them if it could.
+    named = pt._theme_text_cashtags(
+        over, 3, {t: {"proxies": {"adv20_musd": v}} for t, v in tiers.items()})
+    rows = {f"${m['ticker']}" for m in over[:pt._CARD_MAX_ROWS]}
+    assert set(named) <= rows, (named, sorted(rows))
+
+
+def test_without_adv_the_pick_falls_back_to_biggest_movers(tmp_path):
+    """No tiers file → the OLD rule, not insertion order.
+
+    An unranked pick is worse than the rule it replaced, not better, so the
+    fallback is the previous behaviour exactly. This is also the test that keeps
+    the fixture-with-no-ADV suites (most of this file) honest about what they are
+    measuring: they exercise this path, not the watchedness path.
+    """
+    _write_themes(tmp_path, [_theme_tile(
+        "Virtual & Augmented Reality",
+        {t: 0.0 for t in sorted(_EIGHT, key=lambda k: _EIGHT[k])})])
+    _write_snapshot(tmp_path, {t: (100.0, 100.0 - p, p) for t, p in _EIGHT.items()})
+    # deliberately NO _write_tiers
+
+    rep = _gen(tmp_path, _cfg(), live=False)
+    tls = [g for g in rep["would_generate"] if g["kind"] == "theme_list"]
+    assert tls, (rep["would_generate"], rep["dropped"])
+    named = _named_cashtags(tls[0]["text"])
+    assert named == set(sorted(_EIGHT, key=lambda k: -abs(_EIGHT[k]))[:len(named)])
+
+
+def test_an_all_zero_adv_cohort_falls_back_too(tmp_path):
+    """A tiers file that PRICES the cohort at zero is the same as no tiers.
+
+    Sorting by a column that is zero everywhere degrades to insertion order, which
+    is the one answer neither rule wants. Mutation check: delete the
+    `any(a > 0 ...)` branch and this returns the payload's ascending order.
+    """
+    _write_themes(tmp_path, [_theme_tile(
+        "Virtual & Augmented Reality",
+        {t: 0.0 for t in sorted(_EIGHT, key=lambda k: _EIGHT[k])})])
+    _write_snapshot(tmp_path, {t: (100.0, 100.0 - p, p) for t, p in _EIGHT.items()})
+    _write_tiers(tmp_path, {t: 0.0 for t in _EIGHT})
+
+    rep = _gen(tmp_path, _cfg(), live=False)
+    tls = [g for g in rep["would_generate"] if g["kind"] == "theme_list"]
+    assert tls, (rep["would_generate"], rep["dropped"])
+    named = _named_cashtags(tls[0]["text"])
+    assert named == set(sorted(_EIGHT, key=lambda k: -abs(_EIGHT[k]))[:len(named)])
 
 
 def test_the_cap_is_config_driven(tmp_path):
@@ -1729,7 +1823,7 @@ def test_the_breadth_gate_is_no_longer_exempt_for_theme_list(tmp_path):
     """
     monkeypatch_all = pt._theme_text_cashtags
     try:
-        pt._theme_text_cashtags = lambda members, cap: [
+        pt._theme_text_cashtags = lambda members, cap, tiers=None: [
             f"${m['ticker']}" for m in members]
         _eight_name_theme(tmp_path)
         rep = _gen(tmp_path, _cfg(), live=False)
@@ -2098,3 +2192,208 @@ def test_every_hard_indexed_lane_key_has_an_in_code_default():
         "KeyError on its first sweep; the hand-written _cfg() fixture cannot "
         "see this."
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The theme's own ticker — the sector ETF / underlying asset (2026-08-05)
+#
+# Operator, on a live "Commodities Metals bid up" post that named $GFI $AEM $KGC:
+#   "for this kind of theme, shouldnt u be prioritizing tagging the underlying
+#   major ETF or even the underlying commodity/asset class ... these are much
+#   larger tickers that are able to get much more reach than the three u used"
+#
+# The gate itself is tested in tests/test_marketing_theme_proxy.py. These tests
+# cover the WIRING: that a released proxy reaches the post text, that it costs one
+# member slot rather than widening the cashtag count, that the arm is stamped on
+# both arms, and that the kill switch is a real kill switch.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_METALS = {"GFI": 10.2, "AEM": 9.0, "KGC": 8.6, "AU": 8.2,
+           "HL": 8.0, "EXK": 7.5, "CDE": 7.3, "PAAS": 7.2}
+_PROXY_THEME = "Commodities Metals"
+
+
+def _write_proxy_bars(tmp: Path, tickers, *, rho: float, seed: int = 5,
+                      n: int = 260) -> None:
+    """Correlated bars under the curated tree theme_proxy.cohesion reads first.
+
+    Gated, not bare: theme_proxy.cohesion is the one code path in this suite that
+    genuinely needs the data stack (it reads the parquet through pandas and means
+    the pairwise correlations through numpy — both LAZY inside the module, which
+    is why importing publish_time_content still costs only stdlib). The bar
+    fixture has to pay what the code under test pays. A bare `import numpy` here
+    ERRORS in the thin pytest+pyyaml lane that names this file, which is how nine
+    tests turned main red from #4646 onward. The gate makes them skip there; the
+    marketing-data lane names this file so they actually execute.
+    """
+    import math
+
+    np = pytest.importorskip("numpy")
+    pd = pytest.importorskip("pandas")
+    pytest.importorskip("pyarrow")  # DataFrame.to_parquet needs a parquet engine
+    rng = np.random.default_rng(seed)
+    d = tmp / "data" / "baskets" / "ohlcv"
+    d.mkdir(parents=True, exist_ok=True)
+    dates = pd.bdate_range("2025-01-01", periods=n)
+    factor = rng.normal(0, 0.01, n)
+    load = math.sqrt(max(0.0, min(1.0, rho)))
+    for t in tickers:
+        r = load * factor + math.sqrt(1 - load ** 2) * rng.normal(0, 0.01, n)
+        pd.DataFrame({"date": dates,
+                      "close": 100.0 * np.cumprod(1.0 + r)}).to_parquet(d / f"{t}.parquet")
+
+
+def _write_proxy_map(tmp: Path, *, fund: str = "GDX", basis: str = "holdings",
+                     holdings=None) -> None:
+    p = tmp / "data" / "marketing"
+    p.mkdir(parents=True, exist_ok=True)
+    cand: dict = {"ticker": fund, "basis": basis, "adv20_musd": 1321.0}
+    if basis == "holdings":
+        held = list(holdings if holdings is not None else _METALS)
+        cand.update({"asof": "2026-07-30", "holdings": held,
+                     "weights": {t: 5.0 for t in held}})
+    (p / "theme_proxy_map.json").write_text(json.dumps({
+        "schema": "theme_proxy_map/1",
+        "themes": {_PROXY_THEME: {"candidates": [cand]}},
+    }), encoding="utf-8")
+
+
+def _metals_theme(tmp: Path, *, rho: float = 0.85, proxy: bool = True,
+                  fund: str = "GDX", basis: str = "holdings",
+                  holdings=None) -> None:
+    """The shipped post's shape: 8 cohesive miners, a fund that out-trades them.
+
+    ADV mirrors the live numbers ($GFI $117M ... $HL $599M vs $GDX $1,321M), so
+    the reach ratio the test exercises is the one the operator was looking at.
+    """
+    _write_themes(tmp, [_theme_tile(_PROXY_THEME, {t: 0.0 for t in _METALS})])
+    _write_snapshot(tmp, {t: (100.0, 100.0 - p, p) for t, p in _METALS.items()})
+    _write_tiers(tmp, {"GFI": 117.0, "AEM": 358.0, "KGC": 176.0, "AU": 197.0,
+                       "HL": 599.0, "EXK": 46.0, "CDE": 426.0, "PAAS": 169.0,
+                       fund: 1321.0})
+    _write_proxy_bars(tmp, list(_METALS), rho=rho)
+    if proxy:
+        _write_proxy_map(tmp, fund=fund, basis=basis, holdings=holdings)
+
+
+def _only_theme(rep: dict) -> dict:
+    tls = [g for g in rep["would_generate"] if g["kind"] == "theme_list"]
+    assert tls, (rep["would_generate"], rep["dropped"])
+    return tls[0]
+
+
+def test_a_cohesive_theme_names_its_own_ticker_first(tmp_path):
+    """THE OPERATOR'S CASE, end to end.
+
+    $GDX trades 3.7x the biggest name the text would otherwise have named ($AEM
+    at $358M) and 11.3x the one it actually led with ($GFI at $117M).
+    """
+    _metals_theme(tmp_path)
+    named = _named_cashtags(_only_theme(_gen(tmp_path, _cfg(), live=False))["text"])
+    assert "GDX" in named, named
+
+
+def test_the_proxy_costs_a_member_slot_not_a_cashtag(tmp_path):
+    """THE ACCOUNT-SAFETY INVARIANT. The cap is X's spam threshold, not a budget
+    to spend on funds: adding the proxy must not make the post 4 cashtags wide.
+
+    Mutation check: append the proxy instead of prepending-and-truncating (drop the
+    `[:text_cap - 1]` slice) and the count goes to 4, which is the fingerprint
+    max_theme_cashtags_in_text exists to prevent.
+    """
+    _metals_theme(tmp_path)
+    named = _named_cashtags(_only_theme(_gen(tmp_path, _cfg(), live=False))["text"])
+    assert len(named) <= pt._DEFAULTS["max_theme_cashtags_in_text"], named
+    # ...and it is the LEAST-WATCHED member that gives up its slot, not a
+    # more-watched one: $HL/$CDE (599/426) stay, $KGC (176) goes.
+    assert "HL" in named, named
+
+
+def test_the_proxy_does_not_evict_every_name(tmp_path):
+    """A theme post that names no names is not a theme post. Exactly one slot."""
+    _metals_theme(tmp_path)
+    named = _named_cashtags(_only_theme(_gen(tmp_path, _cfg(), live=False))["text"])
+    assert len(named - {"GDX"}) >= 1, named
+
+
+def test_an_incohesive_theme_names_no_proxy(tmp_path):
+    """Same fund, same reach, same holdings — rows that do not move together.
+
+    This is the $XBI shape, and it is the difference between this feature and
+    "always tag the sector ETF". Mutation check for the whole gate being wired in
+    at all: bypass theme_proxy.resolve and this ships $GDX on an incoherent group.
+    """
+    _metals_theme(tmp_path, rho=0.02)
+    named = _named_cashtags(_only_theme(_gen(tmp_path, _cfg(), live=False))["text"])
+    assert "GDX" not in named, named
+
+
+def test_a_declared_commodity_proxy_ships_the_same_way(tmp_path):
+    """$GLD on gold miners — the bullion class the operator asked for.
+
+        "When gold goes up, its miners go up, its that simple, don't need to
+        overcomplicate and shit."
+
+    Nothing in the copy marks it as a different class; it is a tag like any other.
+    """
+    _metals_theme(tmp_path, fund="GLD", basis="declared")
+    named = _named_cashtags(_only_theme(_gen(tmp_path, _cfg(), live=False))["text"])
+    assert "GLD" in named, named
+
+
+def test_the_arm_is_stamped_on_BOTH_arms(tmp_path, monkeypatch, real_card):
+    """post_metrics needs a control group, not just a treatment group.
+
+    ADV is a proxy for X reach, not a measurement of it, so the only way this stops
+    being an unfalsifiable prior is if both arms are labelled and impressions get
+    to settle it. Mutation check: stamp `tag_arm` only when a proxy is released and
+    the members_only assertion fails — which is the shape that would leave the
+    comparison ungradeable while looking instrumented.
+    """
+    monkeypatch.setattr(real_card, "publish_card", _hosted())
+    _metals_theme(tmp_path)
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"], rep["dropped"]
+    item = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "theme_list")
+    src = item["source"]
+    assert src["tag_arm"] == "proxy_lead", src
+    assert src["tag_proxy"]["ticker"] == "GDX"
+    # The receipts travel with the post: reach ratio, cohesion, coverage.
+    r = src["tag_proxy"]["receipts"]
+    assert r["reach_ratio"] > 1.0 and r["cohesion_rho"] > 0.65
+    assert r["rows_held"] == len(_METALS)
+
+
+def test_the_control_arm_is_labelled_too(tmp_path, monkeypatch, real_card):
+    """The members_only half of the pair above — no map, so no proxy, but the item
+    still carries the arm so the two are comparable."""
+    monkeypatch.setattr(real_card, "publish_card", _hosted())
+    _metals_theme(tmp_path, proxy=False)
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"], rep["dropped"]
+    item = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "theme_list")
+    assert item["source"]["tag_arm"] == "members_only", item["source"]
+    assert "tag_proxy" not in item["source"]
+
+
+def test_the_kill_switch_restores_member_only_tagging(tmp_path):
+    """theme_proxy_enabled=false must be a clean revert, not a degraded mode."""
+    _metals_theme(tmp_path)
+    cfg = _cfg()
+    cfg["publish"]["publish_time_movers"]["theme_proxy_enabled"] = False
+    on = _named_cashtags(_only_theme(_gen(tmp_path, _cfg(), live=False))["text"])
+    off = _named_cashtags(_only_theme(_gen(tmp_path, cfg, live=False))["text"])
+    assert "GDX" in on and "GDX" not in off, (on, off)
+    # OFF is the pre-feature behaviour exactly: three members, no fund.
+    assert len(off) == pt._DEFAULTS["max_theme_cashtags_in_text"], off
+
+
+def test_a_proxy_the_card_barely_holds_is_refused_end_to_end(tmp_path):
+    """The piggyback shape, wired: a fund holding 1 of 8 rows never reaches a post.
+
+    $SMH on Industrial Automation (1/8 rows, 1.8% of the fund) was a live
+    reach-only hit in the sweep. This is its end-to-end refusal.
+    """
+    _metals_theme(tmp_path, holdings=["GFI"])
+    named = _named_cashtags(_only_theme(_gen(tmp_path, _cfg(), live=False))["text"])
+    assert "GDX" not in named, named

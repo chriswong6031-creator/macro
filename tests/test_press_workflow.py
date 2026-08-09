@@ -24,6 +24,8 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
+from tests.workflow_staging import staged_paths  # noqa: E402
+
 _WF = _REPO / ".github" / "workflows" / "press-publish.yml"
 _CI = _REPO / ".github" / "workflows" / "ci.yml"
 _LEGACY = _REPO / ".github" / "ci" / "legacy-jobs.yml"
@@ -247,10 +249,28 @@ def test_git_add_names_exactly_the_owned_paths():
     rsyncs to the box). Both are staged before cutover too — the trees are built
     dark from day one, so the first cutover is a config flip and not a
     first-ever data copy. site/sitemap.xml is still nobody's business here.
+
+    The P0 2026-08-04 follow-up (9a997e9da3f) added the two asset paths. The step
+    now runs the shim/externalize/stamp chain before staging, and externalize_css
+    lifts each article's inline CSS into a content-hashed site/assets/css/<hash>.css
+    the page then <link>s — so the asset has to ride along in the same commit or the
+    published article points at a stylesheet that was never committed. They are
+    genuinely owned here: this lane mints them, for its own pages, in this step.
     """
-    added = set(re.findall(r"^\s*git add ([^\s]+)", _commit_step(), re.MULTILINE))
+    step = _commit_step()
+    # Flags (`-f`, `--ignore-removal`) and redirections are not pathspecs; see
+    # tests/workflow_staging.py for why this is shared rather than inline.
+    added = staged_paths(step)
     assert added == {"content/seo/blog", "site/blog", "data/press/published.jsonl",
-                     "content/press", "properties"}
+                     "content/press", "properties",
+                     "site/assets/css", "site/assets/js"}
+    # The asset adds must never carry a prune DELETION onto main: this lane has no
+    # post-rebase re-externalize to re-mint an asset a sibling lane's page still
+    # links. See tests/test_asset_stamp_lane_order.py for the full contract.
+    for ln in step.splitlines():
+        if re.match(r"^\s*git add\b.*site/assets/", ln):
+            assert "--ignore-removal" in ln, (
+                f"press-publish stages site/assets/ without --ignore-removal: {ln.strip()!r}")
 
 
 def test_the_commit_step_refuses_to_stage_the_sitemap():

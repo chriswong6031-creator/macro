@@ -168,6 +168,17 @@
         return _foldLocalIntoCloud();
       })
       .then(function () {
+        // fold the anonymous local book into the user's own rows (one shot, on
+        // success only). portfolio.js already listed on wl-auth, so tell it to
+        // re-list once rows actually moved.
+        var hadLocal = pfRead().rows.length > 0;
+        return _foldLocalPortfolio().then(function () {
+          if (hadLocal && !pfRead().rows.length) {
+            try { document.dispatchEvent(new CustomEvent('pf-folded')); } catch (e) {}
+          }
+        });
+      })
+      .then(function () {
         pullDoneAt = Date.now();
         pullPending = false;
         setPill('synced');
@@ -311,18 +322,163 @@
     }
   });
 
+  // ---- local portfolio store (signed-out) ------------------------------------
+  // The anonymous visitor gets a REAL book, not a locked panel: the same
+  // WatchStore.portfolio.* API backed by localStorage. Rows never leave the device
+  // except into the user's own Supabase rows on the one-shot fold (PRD-R7/UWP-R1);
+  // nothing position-derived is ever logged.
+  var PF_KEY = 'mdash.pf.v1';
+  var pfFoldMarkerKey = 'mdash.watchstore.pf_folded.v1';
+  var pfLocalSeq = 0;
+
+  function pfRead() {
+    try {
+      var raw = localStorage.getItem(PF_KEY);
+      if (!raw) return { v: 1, rows: [] };
+      var b = JSON.parse(raw);
+      if (!b || typeof b !== 'object' || !Array.isArray(b.rows)) return { v: 1, rows: [] };
+      return { v: 1, rows: b.rows.filter(function (r) { return r && r.ticker; }) };
+    } catch (e) { return { v: 1, rows: [] }; }
+  }
+  // signature of the user-meaningful state — the same no-op discipline the watchlist
+  // blob uses, so an identical re-write never fires a pointless storage event.
+  function pfSig(rows) {
+    return JSON.stringify((rows || []).map(function (r) {
+      return [r.id, r.ticker, r.shares, r.entry_price, r.entry_date, r.notes, r.status];
+    }).sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; }));
+  }
+  function pfWrite(rows) {
+    var cur = pfRead().rows;
+    if (pfSig(cur) === pfSig(rows)) return true;   // no-op: do not re-persist
+    try { localStorage.setItem(PF_KEY, JSON.stringify({ v: 1, rows: rows })); return true; }
+    catch (e) { return false; }
+  }
+  function pfClear() {
+    if (!pfRead().rows.length) return;
+    try { localStorage.removeItem(PF_KEY); } catch (e) {}
+  }
+  function pfNumOrNull(v) {
+    if (v === '' || v === undefined || v === null) return null;
+    var n = Number(v);
+    return isNaN(n) ? null : n;
+  }
+  function pfNormalize(pos, id) {
+    return {
+      id: id,
+      ticker: pos.ticker,
+      shares: pfNumOrNull(pos.shares),
+      entry_price: pfNumOrNull(pos.entry_price),
+      entry_date: pos.entry_date || null,
+      notes: pos.notes || null,
+      status: pos.status === 'closed' ? 'closed' : 'open'
+    };
+  }
+  // dedupe identity for the fold: ticker + entry_date + shares (spec §5.5)
+  function pfKey(r) {
+    var sh = pfNumOrNull(r && r.shares);
+    return [String((r && r.ticker) || '').toUpperCase(),
+            (r && r.entry_date) || '', sh === null ? '' : String(sh)].join('|');
+  }
+  /* Which local rows still need inserting, given what the account already holds.
+     PURE — this is the part of the fold worth pinning in a test: fold twice and the
+     second pass must plan nothing, or a re-login duplicates the visitor's book. */
+  function pfFoldPlan(localRows, cloudRows) {
+    var have = {};
+    (cloudRows || []).forEach(function (r) { have[pfKey(r)] = 1; });
+    var seen = {};
+    return (localRows || []).filter(function (r) {
+      var k = pfKey(r);
+      if (have[k] || seen[k]) return false;   // also de-dupes within the local batch
+      seen[k] = 1;
+      return true;
+    });
+  }
+
+  function pfLocalList() { return Promise.resolve(pfRead().rows.slice()); }
+  function pfLocalUpsert(pos) {
+    var rows = pfRead().rows;
+    if (pos.id) {
+      for (var i = 0; i < rows.length; i++) {
+        if (String(rows[i].id) === String(pos.id)) {
+          rows[i] = pfNormalize(pos, rows[i].id);
+          return Promise.resolve(pfWrite(rows) ? rows[i] : null);
+        }
+      }
+    }
+    var row = pfNormalize(pos, 'loc-' + Date.now() + '-' + (++pfLocalSeq));
+    rows.push(row);
+    return Promise.resolve(pfWrite(rows) ? row : null);
+  }
+  function pfLocalRemove(id) {
+    var rows = pfRead().rows.filter(function (r) { return String(r.id) !== String(id); });
+    return Promise.resolve(pfWrite(rows) ? { id: id } : null);
+  }
+  function pfLocalClose(id) {
+    var rows = pfRead().rows;
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i].id) === String(id)) { rows[i].status = 'closed'; break; }
+    }
+    return Promise.resolve(pfWrite(rows) ? { id: id } : null);
+  }
+
+  // ---- one-shot fold: local rows -> the user's own Supabase rows -------------
+  // Mirrors the watchlist fold exactly: marker only on SUCCESS, so a failed fold is
+  // retried next session rather than silently dropping the visitor's book.
+  function _foldLocalPortfolio() {
+    if (!user || !sb) return Promise.resolve();
+    var already = false;
+    try { already = !!localStorage.getItem(pfFoldMarkerKey); } catch (e) {}
+    if (already) return Promise.resolve();
+    var local = pfRead().rows;
+    // Do NOT mark folded on an empty local book — that would consume the one-shot
+    // before the visitor ever built one (the watchlist fold's exact trap).
+    if (!local.length) return Promise.resolve();
+
+    return sb.from('portfolio_positions')
+      .select('ticker, entry_date, shares')
+      .eq('user_id', user.id)
+      .then(function (res) {
+        if (res.error) throw res.error;
+        var toInsert = pfFoldPlan(local, res.data || []);
+        if (!toInsert.length) { _markPfFolded(); pfClear(); return; }
+        var rows = toInsert.map(function (r) {
+          return {
+            user_id: user.id, ticker: r.ticker, shares: pfNumOrNull(r.shares),
+            entry_price: pfNumOrNull(r.entry_price), entry_date: r.entry_date || null,
+            notes: r.notes || null, status: r.status === 'closed' ? 'closed' : 'open',
+            updated_at: new Date().toISOString()
+          };
+        });
+        return sb.from('portfolio_positions').insert(rows).then(function (ins) {
+          if (ins.error) throw ins.error;
+          _markPfFolded();
+          pfClear();
+        });
+      })
+      .catch(function (err) {
+        // no marker -> retried next session. Message only; never row contents.
+        warnOnce('pf-fold', 'portfolio fold failed: ' + (err && err.message || err));
+      });
+  }
+  function _markPfFolded() {
+    try { localStorage.setItem(pfFoldMarkerKey, '1'); } catch (e) {}
+  }
+
   // ---- portfolio CRUD --------------------------------------------------------
-  // Targets portfolio_positions. All queries filter by user_id = session user.
-  // If RLS is not yet applied, errors are caught and logged; status() reports 'local'
-  // for portfolio so callers can degrade gracefully.
+  // Targets portfolio_positions when signed in; the localStorage book when signed out.
+  // All cloud queries filter by user_id = session user. If RLS is not yet applied,
+  // errors are caught and logged; status() reports 'local' so callers degrade.
 
   function _portfolioGuard() {
     if (!user || !sb) return Promise.reject(new Error('no-session'));
     if (!portfolioOk) return Promise.reject(new Error('portfolio-unavailable'));
     return Promise.resolve();
   }
+  // signed-out (or a portfolio backend that has gone unavailable) -> the local book
+  function _isLocalMode() { return !user || !sb || !portfolioOk; }
 
   function portfolioList() {
+    if (_isLocalMode()) return pfLocalList();
     return _portfolioGuard().then(function () {
       return sb.from('portfolio_positions')
         .select('*')
@@ -334,13 +490,15 @@
     }).catch(function (err) {
       portfolioOk = false;
       warnOnce('portfolio-list', 'portfolio list failed: ' + (err && err.message || err));
-      return [];
+      // backend unavailable -> fall back to the local book rather than showing nothing
+      return pfLocalList();
     });
   }
 
   function portfolioUpsert(pos) {
     // pos: { ticker, shares, entry_price, entry_date, notes, status }
     // status must be 'open' or 'closed'
+    if (_isLocalMode()) return pfLocalUpsert(pos);
     return _portfolioGuard().then(function () {
       function toNumOrNull(v) {
         if (v === '' || v === undefined || v === null) return null;
@@ -385,6 +543,7 @@
   }
 
   function portfolioClose(id) {
+    if (_isLocalMode()) return pfLocalClose(id);
     return _portfolioGuard().then(function () {
       return sb.from('portfolio_positions')
         .update({ status: 'closed', updated_at: new Date().toISOString() })
@@ -403,6 +562,24 @@
     });
   }
 
+  function portfolioRemove(id) {
+    if (_isLocalMode()) return pfLocalRemove(id);
+    return _portfolioGuard().then(function () {
+      return sb.from('portfolio_positions')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .then(function (res) {
+          if (res.error) throw res.error;
+          return { id: id };
+        });
+    }).catch(function (err) {
+      portfolioOk = false;
+      warnOnce('portfolio-remove', 'portfolio remove failed: ' + (err && err.message || err));
+      return null;
+    });
+  }
+
   // ---- public API ------------------------------------------------------------
   window.WatchStore = {
     status: status,
@@ -412,7 +589,10 @@
     portfolio: {
       list: portfolioList,
       upsert: portfolioUpsert,
-      close: portfolioClose
+      close: portfolioClose,
+      remove: portfolioRemove,
+      // 'local' = the localStorage book (signed out, or backend unavailable)
+      isLocal: _isLocalMode
     }
   };
 
@@ -505,4 +685,17 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+
+  /* Node-test surface: the local book's pure helpers plus a dependency injector for
+     the one-shot fold, so the "marker only on success" discipline can be pinned
+     without a browser. `module` is undefined in the browser, so none of this exists
+     at runtime on the site (the same guard risk_core.js / watchlist_risk.js use). */
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      pfKey: pfKey, pfFoldPlan: pfFoldPlan, pfRead: pfRead, pfWrite: pfWrite,
+      foldLocalPortfolio: _foldLocalPortfolio,
+      portfolio: window.WatchStore.portfolio,
+      _setTestSession: function (u, client) { user = u; sb = client; }
+    };
+  }
 })();

@@ -47,7 +47,10 @@ smart money, insider prints, SUE, and options/GEX are **context chips only**.
 Fail-closed rule, inherited from CN: unknown evidence never earns best-case points.
 A row with no extension reading scores 0 on ``runway`` (it is not assumed "not
 extended"); a row with an unknown entry status buckets to ``setting_up``, never to
-``live``.
+``live``; and, from 2026-08-06, a row with no extension reading is not eligible for
+``featured`` either — the veto used to pass anything it could not measure, which is
+how a board whose ``ext_z`` wiring was dark featured ten rows with the extension check
+never once firing.
 """
 from __future__ import annotations
 
@@ -72,13 +75,19 @@ RAN_TICKS_MAX = 15
 #
 # BOUNDARY CONVENTION (intended, not incidental): the SCORE leg is CLOSED at the top —
 # ``runway_value`` clips, so ext_z == 2.0 earns 0 runway (>= is the effective test).
-# The FEATURED veto is OPEN — ``featured_shortfalls`` flags "extended" only on
-# ``ext_z > EXT_Z_FULL``, so a row sitting exactly ON the parabolic line is still
-# featurable.  The asymmetry is deliberate: scoring is a continuous dial where the
+# The FEATURED veto is OPEN AT THE BOUNDARY — ``featured_shortfalls`` flags "extended"
+# only on ``ext_z > EXT_Z_FULL``, so a row sitting exactly ON the parabolic line is
+# still featurable.  The asymmetry is deliberate: scoring is a continuous dial where the
 # endpoint must saturate (2.0 and 2.5 are both "no room left"), while featuring is a
 # discrete veto, and a veto fires on evidence that is PAST the line, never on evidence
 # that merely reaches it — the same fail-open-on-the-boundary rule the tier freshness
 # window uses (``ticks <= FEATURED_MAX_TICKS`` qualifies at exactly 2).
+#
+# OPEN AT THE BOUNDARY IS NOT OPEN ON ABSENCE (B3, 2026-08-06).  A row with NO ext_z
+# reading is not "at the line", it is unmeasured, and it is now blocked from featured
+# (``ext_z_unknown``) exactly as an unknown ``ticks`` or an unknown tier already was.
+# The veto fired 0 times in 59 rows on the 07-31 board while all 10 featured names
+# carried ext_z None — a veto whose input is dark cannot be said to have passed.
 EXT_Z_FULL = 2.0
 
 # Featured freshness window (mirrors engine.confluence_tiers.FRESH_TICKS).
@@ -175,6 +184,11 @@ ZERO_SCORE_AUTHORITY = (
     "sue",
     "options_gex",
     "theme",
+    # Blow-off (terminal) risk context — engine/roc_blowoff, stamped onto rows as
+    # ``blowoff``.  A measured RISK read, never a rank input: it earns no points, vetoes
+    # no featuring and changes no stage.  tests/test_roc_blowoff.py pins byte-identity
+    # of score_rows() output with the field present vs absent.
+    "blowoff_risk",
 )
 
 SCORE_KIND = "transparent priority heuristic; not a calibrated return forecast"
@@ -543,10 +557,20 @@ def signal_age(
     fresh-only filter), so this resolver prefers the session answer and DISCLOSES the
     basis whenever it has to fall back.
 
-    * ``sessions`` — the verdict's ``fresh_bars``: the count of daily bars strictly
-      after the §7 buy marker (``engine.signal_gate._bars_since``).  It is the closes-
-      index distance, the same quantity :func:`cross_read` reports as
-      ``sessions_since`` — verified equal on real rows (AEE 29, AMGN 40, APD 23).
+    * ``sessions`` — the verdict's session count since the §7 buy marker.  Preferred
+      source is ``fresh_bars_knowable`` (``engine.signal_gate._knowable_bars``), which
+      counts from the session the marker's 3D bucket CLOSED on; ``fresh_bars`` (counted
+      from the bucket's OPEN label, ``engine.signal_gate._bars_since``) is the fallback
+      for a verdict built before the knowable field existed or where the anchor was not
+      derivable.  The two differ by up to two sessions, always in the same direction:
+      the OPEN label predates its own bucket's close, so ``fresh_bars`` reports a signal
+      as older than it was ever knowable.  Measured on the committed 2026-08-06 board:
+      APH and FCX published ``days_since_signal 4`` against a knowable age of 2, which is
+      outside ``templates/stocktable.js``'s ``FRESH_DAYS = 2`` — the fresh-only filter was
+      dropping the freshest turns on the board.  ``fresh_bars`` itself is UNCHANGED: it
+      gates eligibility and FRESH_TICKS across five boards, and re-anchoring it is a
+      semantic change owing a blast-radius report (``research/
+      SQ_BUCKET_LABEL_AS_DATE_FINDINGS_2026-08-07.md`` §4).
     * ``calendar`` — the plain date difference, used only when no marker-anchored
       session count exists.
 
@@ -565,9 +589,10 @@ def signal_age(
     question this number answers.  Returns ``(None, None)`` when neither is available —
     an unknown age is a null to print, never a zero.
     """
-    bars = _finite_int((verdict or {}).get("fresh_bars"))
-    if bars is not None and bars >= 0:
-        return bars, BASIS_SESSIONS
+    for field in ("fresh_bars_knowable", "fresh_bars"):
+        bars = _finite_int((verdict or {}).get(field))
+        if bars is not None and bars >= 0:
+            return bars, BASIS_SESSIONS
     days = days_since_signal(sig_asof, board_asof)
     if days is None:
         return None, None
@@ -631,8 +656,18 @@ def featured_shortfalls(
     if row.get("antichase_shadow_blocked") is True:
         reasons.append("antichase_blocked")
 
+    # B3 2026-08-06 — an UNKNOWN extension is not "not extended".  The veto used to
+    # fire only on a numeric ext_z above the line, so a row with no reading passed it
+    # unopposed: on the 07-31 board `extended` fired 0 times in 59 rows and all 10
+    # featured names carried ext_z None.  A veto that cannot see its own evidence is
+    # not a veto.  Fail-closed here matches the score leg's own rule (a row with no
+    # extension reading earns 0 runway — it is not assumed un-extended) and the
+    # `ticks_unknown` precedent directly above.  Display-tier only: the row keeps its
+    # place on the buy lane and its score; it just cannot be FEATURED.
     ext_z = _finite_float(row.get("ext_z"))
-    if ext_z is not None and ext_z > EXT_Z_FULL:
+    if ext_z is None:
+        reasons.append("ext_z_unknown")
+    elif ext_z > EXT_Z_FULL:
         reasons.append("extended")
 
     alpha = _finite_float((alpha_of or selection_value)(row))
@@ -882,6 +917,16 @@ def ranking_block(
         "featured_cap": max(0, int(featured_cap)),
         "sector_cap": max(0, int(sector_cap)),
         "featured_count": sum(1 for row in scored if row.get("featured")),
+        # B3 disclosure — how many rows the featured flag refused for lack of an
+        # extension reading, recomputed from the rows actually scored.  This is the
+        # number that says whether the veto is doing its job or whether the builder's
+        # ext_z wiring is dark: 0 featured with a large count here means the leg has no
+        # input on this board, which is a data fact the artifact must print rather than
+        # a reason to let unknown evidence through.
+        "featured_blocked_unknown_extension": sum(
+            1 for row in scored
+            if "ext_z_unknown" in (row.get("featured_blocked_by") or ())
+        ),
         "featured_requirements": [
             "stage is live",
             "entry status is buy_now or partial",
@@ -889,7 +934,9 @@ def ranking_block(
             f"cross no older than {FEATURED_MAX_TICKS} ticks (a same-day cross, "
             "ticks 0, qualifies)",
             "verdict not provisional",
-            "no anti-chase flag and no extension block",
+            "no anti-chase flag, and a KNOWN extension reading at or below the "
+            f"parabolic line (ext_z <= {EXT_Z_FULL}; an unknown reading does not "
+            "qualify)",
             "residual alpha at or above zero",
             "outside the earnings blackout window",
             f"at most {int(sector_cap)} per sector, {int(featured_cap)} on the board",
@@ -1129,6 +1176,12 @@ RAN_LABEL_ZH = "已启动"
 # consumer can tell an exact marker-dated age from a session-count reconstruction.
 ANCHOR_MARKER = "marker"
 ANCHOR_APPROX = "approx"
+# ...and how its MOVE was anchored, when the caller supplies a `move_read`.  The date
+# and the age stay the marker's under all three words; `confirm` says only that the
+# move was measured from the close at which the marker's label first became knowable,
+# which is the only anchor `signal_quality._buy_filter` permits a forward return to
+# use.  See :func:`build_ran_rows`.
+ANCHOR_CONFIRM = "confirm"
 RAN_THEME_LINE = "Theme just confirmed — watch for the next entry"
 RAN_THEME_LINE_ZH = "主题刚确认 — 关注下一个买点"
 
@@ -1282,6 +1335,7 @@ def build_ran_rows(
     cap: int | None = RAN_CAP,
     ticks_min: int = RAN_TICKS_MIN,
     ticks_max: int = RAN_TICKS_MAX,
+    move_read: Callable[[Any, Any], Mapping[str, Any] | None] | None = None,
     require_above200: bool = True,
 ) -> list[dict]:
     """Build the ran lane: crossed days ago, trend intact, no entry claim attached.
@@ -1314,6 +1368,21 @@ def build_ran_rows(
 
     Order: theme-confirmed rows first (their theme only just turned, so the desync is
     the point), then the freshest cross, then the largest move since it fired.
+
+    ``move_read(series, marker_date) -> {pct_since, measured_from} | None`` REPLACES
+    the move — and only the move; the date, the age and the drop rules are untouched.
+    It exists because ``cross_read``'s marker anchor is the one
+    ``signal_quality._buy_filter`` forbids for a forward return: ``marker['date']`` is
+    a 3B bucket's LEFT edge whose label reads two buckets forward, so it precedes the
+    close at which the signal was knowable by ~8 sessions and sits at the trough that
+    created it.  MEASURED on the HK ran lane, 2026-07-31: every one of the 12 displayed
+    rows overstated, mean +8.09pp, worst 3690.HK at +29.2% against +10.9% from the
+    confirmation close.  The hook rather than an unconditional change because the move
+    is also the lane's third sort key — re-anchoring after the sort would order and
+    truncate the lane by a number it no longer prints — and because the US board's
+    identical exposure has not been measured yet, so it keeps the old read and the old
+    row shape byte-for-byte until it has.  Passing it adds ``measured_from``; omitting
+    it changes nothing.  ⚠ THE US BOARD STILL CARRIES THIS DEFECT.
     """
     skip = {str(t or "").strip().upper() for t in exclude}
     meta_by = meta_by or {}
@@ -1357,6 +1426,9 @@ def build_ran_rows(
 
         theme = (theme_by or {}).get(key)
         sig_date = signal_asof(meta, verdict)
+        move = None
+        if move_read is not None and read["anchor"] == ANCHOR_MARKER:
+            move = move_read(series, marker_date)
         row: dict[str, Any] = {
             "ticker": key,
             "name": meta.get("name") or key,
@@ -1365,8 +1437,9 @@ def build_ran_rows(
             "ticks": ticks,
             "cross_date": read["cross_date"],
             "sessions_since": read["sessions_since"],
-            "pct_since": read["pct_since"],
-            "anchor": read["anchor"],
+            "pct_since": (move["pct_since"] if move else
+                          None if move_read is not None else read["pct_since"]),
+            "anchor": (ANCHOR_CONFIRM if move else read["anchor"]),
             "stage": STAGE_RAN,
             "lane": "ran",
             "label": RAN_LABEL,
@@ -1377,6 +1450,10 @@ def build_ran_rows(
         # across both arrays of the artifact.
         row["days_since_signal"], row["days_since_signal_basis"] = signal_age(
             verdict, sig_date, board_asof)
+        if move_read is not None:
+            # Only the boards that asked for a confirmation read carry the field, so
+            # the US row shape is unchanged for every consumer that did not.
+            row["measured_from"] = move["measured_from"] if move else None
         if meta.get("spark_svg"):
             row["spark_svg"] = meta["spark_svg"]
         if theme:

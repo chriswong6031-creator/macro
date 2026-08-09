@@ -44,14 +44,54 @@ concurrency:
   # Only the newest source descendant matters. A later source push supersedes
   # the proof for an older one; data-only pushes do not enter this group.
   group: integration-baseline-main
-  cancel-in-progress: true
+  # cancel-in-progress FLIPPED to false 2026-08-07. `true` cancelled the RUNNING
+  # proof, not just superseded pending ones, and under load that means NO proof ever
+  # completes: measured over ~3h on 2026-08-07, the last 60 runs were 59 cancelled +
+  # 1 running, ZERO success, with the newest success 5h stale. Source pushes land here
+  # every 1-2 minutes during a merge drain and the hosted queue sat 100-180 deep, so
+  # every run was killed before it ever acquired a runner.
+  #
+  # That is a livelock with real cost. merge_on_green's circuit breaker reads a
+  # never-concluding newest run as `pending`, and pending blocks ordinary merges — so
+  # the sweeper reported "11 baseline-blocked" against a main that was in fact green.
+  # The armed backlog cannot drain while the thing that proves main is drained is
+  # itself being cancelled by the drain's own pushes.
+  #
+  # `false` still coalesces: GitHub allows ONE pending run per group, so a newer push
+  # still supersedes an older PENDING proof. What changes is that the run which already
+  # holds a runner is allowed to finish. Progress is then guaranteed — one proof
+  # concludes, the breaker opens, and the next queued proof takes over.
+  #
+  # The cost is bounded and already handled: a concluded proof may be for a SHA one or
+  # two source pushes behind main's tip. The sweeper's ancestry check requires the proof
+  # to be an ancestor of the PR's base, which an older main SHA is, and #4638's walk
+  # already picks the newest CONCLUDED run rather than the newest run. A slightly older
+  # proof is strictly better than the permanent absence of one.
+  cancel-in-progress: false
 
 jobs:
   baseline:
     name: integration-baseline
-    runs-on: ubuntu-latest
+    # Main's circuit-breaker proof must not queue behind the hosted PR packs it
+    # gates, whether the proof was triggered by a push or dispatched manually.
+    # An off-main dispatch must never execute inside the persistent
+    # production-adjacent runner workspace.
+    runs-on: ${{ github.ref == 'refs/heads/main' && fromJSON('["self-hosted","render-linux"]') || 'ubuntu-latest' }}
     timeout-minutes: 12
     steps:
+      # A self-hosted runner reuses its workspace.  A prior sparse checkout in
+      # the same directory can leave core.sparseCheckout enabled, after which
+      # checkout@v4 may materialise only part of this repository even though
+      # this job does not request a sparse tree.  Disable it before checkout;
+      # hosted runners are fresh and must not run this cleanup.
+      - name: clear any sparse checkout left in the shared workspace
+        if: runner.environment == 'self-hosted'
+        shell: bash
+        run: |
+          if [ -d "${{ github.workspace }}/.git" ]; then
+            git -C "${{ github.workspace }}" sparse-checkout disable || true
+            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || true
+          fi
       - uses: actions/checkout@v4
         with:
           filter: blob:none

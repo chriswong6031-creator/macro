@@ -113,6 +113,9 @@
     paneBillNoTrialS: ["We show you exactly what you're charged today before you confirm — and you can cancel from your account whenever you like.", "确认前我们会明确显示今日扣款金额——你也可随时在账户中取消。"],
     paneDoneH:     ["Welcome to the desk.", "欢迎来到你的台席。"],
     paneDoneS:     ["Everything is live. Open the dashboard and pick up where the market is right now.", "一切已就绪。打开看板，从当下的市场接手。"],
+    // password recovery borrows the account stage; the copy is the only thing that changes
+    paneRecoverH:  ["Locked out? That's a two-minute fix.", "进不去？两分钟就能解决。"],
+    paneRecoverS:  ["We'll email you a link to set a new password. Your watchlists, alerts and settings are exactly where you left them.", "我们会发送重置密码的链接。你的自选、提醒与设置都原样保留。"],
 
     // ── the stage (left column): nameplate, chart, tier lattice, trial meter ──
     asmTrial:  ["7-DAY TRIAL", "7天试用"],
@@ -175,6 +178,36 @@
     toSignin:     ["Already have an account? Sign in", "已有账户？登录"],
     toSignup:     ["New to Mastermind? Create an account", "初次使用？创建账户"],
     terms:        ["By continuing you agree to our <a href='/terms.html' target='_blank' rel='noopener'>Terms</a> and <a href='/privacy.html' target='_blank' rel='noopener'>Privacy Policy</a>.", "继续即表示你同意我们的<a href='/terms.html' target='_blank' rel='noopener'>服务条款</a>与<a href='/privacy.html' target='_blank' rel='noopener'>隐私政策</a>。"],
+
+    // password recovery (the sign-in step's escape hatch, and the return leg)
+    forgotPw:     ["Forgot your password?", "忘记密码？"],
+    recoverTitle: ["Reset your password", "重置密码"],
+    recoverSub:   ["Enter the email you sign in with. We'll send a link that lets you set a new password.", "输入你的登录邮箱。我们会发送链接，让你设置新密码。"],
+    recoverSend:  ["Send reset link", "发送重置链接"],
+    recoverBack:  ["Back to sign in", "返回登录"],
+    // Anti-enumeration: the copy NEVER confirms whether the address has an account —
+    // gotrue answers /recover identically either way, and so must we.
+    sentTitle:    ["Check your inbox", "请查收邮件"],
+    sentBody:     ["If __E__ has an account, a reset link is on its way. It expires in one hour.", "如果 __E__ 已注册，重置链接正在发送中。链接一小时内有效。"],
+    // PKCE ties the link to the code_verifier stored in THIS browser (theme.js
+    // getSupabaseClient, flowType 'pkce'). Opening it elsewhere cannot exchange the
+    // code — say so up front instead of letting it fail silently on their phone.
+    sentSameBrowser: ["Open it in this browser — for security the link only works on the device that asked for it.", "请在此浏览器中打开——出于安全考虑，链接仅在发起请求的设备上有效。"],
+    sentResend:   ["Send another link", "重新发送链接"],
+    resetTitle:   ["Set a new password", "设置新密码"],
+    resetSub:     ["Choose a new password. You'll be signed in as soon as it's saved.", "设置新密码。保存后你将自动登录。"],
+    resetChecking:["Checking your link…", "正在验证链接…"],
+    newPassword:  ["New password", "新密码"],
+    confirmPw:    ["Confirm new password", "确认新密码"],
+    resetSubmit:  ["Update password", "更新密码"],
+    resetMismatch:["Both passwords must match.", "两次输入的密码不一致。"],
+    resetShort:   ["Use at least 8 characters.", "密码至少需要 8 个字符。"],
+    resetDead:    ["This link has expired, was already used, or was opened in a different browser from the one that requested it. Send yourself a fresh one.", "此链接已过期、已被使用，或在非发起请求的浏览器中打开。请重新发送一封。"],
+    // The older link shape (tokens in the URL fragment). We cannot complete it — see
+    // implicitRecoveryHash() — but the customer is HERE, so say what to do next
+    // instead of leaving them on the marketing page hunting for a button.
+    resetOldLink: ["This reset link is an older format we can't complete safely. Send yourself a fresh one — it takes a moment, and the new link works.", "此重置链接为旧格式，我们无法安全完成。请重新发送一封——很快，新链接可正常使用。"],
+    resetDone:    ["Password updated. Taking you to your desk…", "密码已更新，正在进入你的台席…"],
 
     // step 2 — preferences
     prefsTitle:   ["Set up your desk", "配置你的台席"],
@@ -433,6 +466,11 @@
     // upgrade mode (post-login monetization sheet). upStep is the upgrade lane's
     // OWN progression (plan → billing) — it never borrows the signup stepper.
     pendingUpgrade: false, upgradeOpts: null, me: null, upStep: "plan",
+    // password recovery. `recover` = ask for the email; `reset` = the return leg, where
+    // a PASSWORD_RECOVERY session from the emailed link lets updateUser() set the new
+    // one. Neither is a numbered step — both are compact single-panel modes like signin.
+    // password2 is the confirm field; NEITHER password is ever written to the stash.
+    recoverSent: false, resetReady: false, resetErr: null, password2: "",
     // the compare layer (over the plan step) + which column a phone is reading
     compare: false, compareCol: null
   };
@@ -797,7 +835,7 @@
   function stageStep() {
     // upgrade mode plays the same stage on its OWN two-step lane
     if (S.mode === "upgrade") return S.upDone ? 5 : (S.upStep === "billing" ? 4 : 3);
-    if (S.mode === "signin") return 1;
+    if (S.mode === "signin" || S.mode === "recover" || S.mode === "reset") return 1;
     return S.step;
   }
   // the tone the stage previews: the visitor's theme pick. "auto" on a
@@ -823,7 +861,9 @@
     // click") until it lands, then the Done copy
     var m = (S.mode === "upgrade")
       ? (S.upDone ? ["paneDoneH", "paneDoneS"] : billPaneKeys())
-      : (map[S.step] || map[1]);
+      : (S.mode === "recover" || S.mode === "reset")
+        ? ["paneRecoverH", "paneRecoverS"]
+        : (map[S.step] || map[1]);
     var changed = el.paneH.getAttribute("data-k") !== m[0];
     el.paneH.setAttribute("data-k", m[0]); el.paneH.innerHTML = tx(m[0]);
     el.paneS.setAttribute("data-k", m[1]); el.paneS.innerHTML = tx(m[1]);
@@ -967,8 +1007,9 @@
     syncSkin();
     destroyCompare();          // a step change always dismisses the compare layer
     renderSteps();
-    // signin + upgrade are compact single-panel variants — hide the multi-step stepper
-    var solo = (S.mode === "signin" || S.mode === "upgrade");
+    // signin + upgrade + the two recovery legs are compact single-panel variants —
+    // hide the multi-step stepper
+    var solo = (S.mode === "signin" || S.mode === "upgrade" || S.mode === "recover" || S.mode === "reset");
     el.steps.style.display = solo ? "none" : "";
     if (el.mini) el.mini.style.display = solo ? "none" : "";
     renderPane();
@@ -976,6 +1017,8 @@
     el.foot.innerHTML = "";
     var view;
     if (S.mode === "upgrade") view = viewUpgrade();       // post-login monetization sheet
+    else if (S.mode === "recover") view = viewRecover();  // "email me a reset link"
+    else if (S.mode === "reset") view = viewReset();      // the return leg from that link
     else if (S.mode === "signin") view = viewAccount();   // signin lives on step 1 only
     else if (S.step === STEP_ACCOUNT) view = viewAccount();
     else if (S.step === STEP_PREFS) view = viewPrefs();
@@ -1036,6 +1079,14 @@
     var pwWrap = field("password", "ob-pw", "password", S.password, "••••••••", signin ? "current-password" : "new-password", function (v) { S.password = v; refreshPwHint(); }, true, 8);
     form.appendChild(pwWrap);
     if (!signin) { var hint = h("p", "obm-hint", { "data-obm-hint": "" }); hint.style.display = "none"; form.appendChild(hint); }
+    // The only escape hatch out of a forgotten password. Sits under the field it is
+    // about (not in the footer) so it reads as part of the password row.
+    if (signin) {
+      var forgot = T("button", "obm-link", "forgotPw", { type: "button" });
+      forgot.style.cssText = "margin-top:8px;font-size:12.5px;align-self:flex-start";
+      forgot.addEventListener("click", enterRecover);
+      form.appendChild(forgot);
+    }
 
     var errBox = h("div", "obm-err"); errBox.style.display = "none"; errBox.setAttribute("data-obm-err", ""); form.appendChild(errBox);
 
@@ -1111,7 +1162,7 @@
       if (!sb) { setSubmitBusy(false); showErr(tx("billNotConfigured")); return; }
       if (S.mode === "signin") {
         sb.auth.signInWithPassword({ email: S.email, password: S.password }).then(function (r) {
-          if (r.error) { showErr(r.error.message); setSubmitBusy(false); return; }
+          if (r.error) { showErr(authMsg(r.error)); setSubmitBusy(false); return; }
           S.password = ""; stashClear();
           // Signin fired from the Upgrade entry: don't redirect — resolve the
           // account and continue into the upgrade panel in place.
@@ -1156,6 +1207,263 @@
       sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo } })
         .then(function (r) { if (r && r.error) showErr(r.error.message); });
     });
+  }
+
+  // ══════════════════════ PASSWORD RECOVERY (both legs) ══════════════════════
+  // Leg 1 (`recover`): POST the email to gotrue /recover, which mails a link.
+  // Leg 2 (`reset`): the link returns to /?onboard=recovery&code=… — the SDK
+  // exchanges the code for a PASSWORD_RECOVERY session and updateUser() sets the
+  // new password. The session the link mints IS a real session, so a successful
+  // reset lands the customer on the desk without a second sign-in.
+  //
+  // The redirect is the SITE ROOT on purpose: onboard.js is a real <script> tag on
+  // index.html, but only a lazy click-load on every other page — returning to the
+  // page they started on would land the customer somewhere nothing handles the code.
+  function recoveryRedirect() { return location.origin + "/?onboard=recovery"; }
+
+  function enterRecover() {
+    S.mode = "recover"; S.step = STEP_ACCOUNT;
+    S.password = ""; S.password2 = ""; S.recoverSent = false;
+    render(); stashSave();
+  }
+  function backToSignin() {
+    S.mode = "signin"; S.step = STEP_ACCOUNT; S.recoverSent = false;
+    render(); stashSave();
+  }
+
+  function viewRecover() {
+    var root = h("div", "obm-fade");
+    var head = T("h1", "obm-h1", S.recoverSent ? "sentTitle" : "recoverTitle");
+    head.setAttribute("data-ob-heading", ""); head.setAttribute("tabindex", "-1");
+    root.appendChild(head);
+
+    if (S.recoverSent) {
+      var body = h("p", "obm-sub");
+      body.textContent = escLine(LEX.sentBody, { "__E__": S.email });
+      root.appendChild(body);
+      root.appendChild(T("p", "obm-caption", "sentSameBrowser"));
+      var again = T("button", "obm-btn-out", "sentResend", { type: "button" });
+      again.style.marginTop = "18px";
+      again.addEventListener("click", function () { S.recoverSent = false; render(); });
+      root.appendChild(again);
+      var back1 = T("button", "obm-link obm-brand-link", "recoverBack", { type: "button" });
+      back1.style.cssText = "margin-top:16px;display:block";
+      back1.addEventListener("click", backToSignin);
+      root.appendChild(back1);
+      return root;
+    }
+
+    root.appendChild(T("p", "obm-sub", "recoverSub"));
+    var form = h("form", "obm-form");
+    form.appendChild(field("email", "ob-rc-email", "email", S.email, "you@example.com", "email",
+                           function (v) { S.email = v; }, true));
+    var errBox = h("div", "obm-err"); errBox.style.display = "none";
+    errBox.setAttribute("data-obm-err", ""); form.appendChild(errBox);
+    var submit = T("button", "obm-btn", "recoverSend", { type: "submit" });
+    submit.style.marginTop = "16px"; submit.setAttribute("data-obm-submit", "");
+    form.appendChild(submit);
+    form.addEventListener("submit", onRecoverSubmit);
+    root.appendChild(form);
+
+    var back = T("button", "obm-link obm-brand-link", "recoverBack", { type: "button" });
+    back.style.cssText = "margin-top:16px;display:block";
+    back.addEventListener("click", backToSignin);
+    root.appendChild(back);
+    return root;
+  }
+
+  function setBusy(busy, restKey) {
+    var b = el.body.querySelector("[data-obm-submit]"); if (!b) return;
+    b.disabled = busy;
+    if (busy) { b.removeAttribute("data-k"); b.textContent = tx("busy"); }
+    else { b.setAttribute("data-k", restKey); b.innerHTML = tx(restKey); }
+  }
+
+  function onRecoverSubmit(e) {
+    e.preventDefault();
+    showErr("");
+    S.email = String(S.email || "").trim();
+    var emailInput = document.getElementById("ob-rc-email");
+    if (!validEmail(S.email)) {
+      showErr(tx("emailInvalid"));
+      if (emailInput) { emailInput.setAttribute("aria-invalid", "true"); emailInput.focus(); }
+      return;
+    }
+    if (emailInput) emailInput.removeAttribute("aria-invalid");
+    setBusy(true, "recoverSend");
+    sbClient().then(function (sb) {
+      if (!sb) { setBusy(false, "recoverSend"); showErr(tx("billNotConfigured")); return; }
+      return sb.auth.resetPasswordForEmail(S.email, { redirectTo: recoveryRedirect() })
+        .then(function (r) {
+          // gotrue answers 200 whether or not the address exists (anti-enumeration), so
+          // an error here is a REAL failure — a per-address cooldown, a mail-transport
+          // fault, or a redirect the project has not allow-listed. Show it verbatim
+          // rather than claiming a send that did not happen.
+          if (r && r.error) { showErr(authMsg(r.error)); setBusy(false, "recoverSend"); return; }
+          S.recoverSent = true; render();
+        });
+    }).catch(function () { setBusy(false, "recoverSend"); showErr(tx("billNotConfigured")); });
+  }
+
+  // ── leg 2: the return from the emailed link ────────────────────────────────
+  // getSession() awaits the SDK's initializePromise, which is what performs the
+  // ?code= exchange — so it is the honest "did the link work" test. No session
+  // means the code was missing, spent, expired, or opened in a browser that never
+  // held the PKCE verifier.
+  // ── the three shapes a reset link can arrive in ────────────────────────────
+  // 1 ?code=…        browser-initiated PKCE (our own "Forgot your password?").
+  //                  The SDK exchanges it during _initialize; getSession() waits.
+  // 2 ?token_hash=…  a link built from {{ .TokenHash }} — what the Supabase email
+  //                  TEMPLATE should emit. verifyOtp() redeems it server-side and
+  //                  needs no code_verifier, so it completes even though the client
+  //                  is pinned to flowType:'pkce'. This is the shape that makes a
+  //                  dashboard-issued / server-issued link work here.
+  // 3 #access_token= the implicit fragment gotrue falls back to when the /recover
+  //                  that minted the link carried no code_challenge (the Supabase
+  //                  dashboard's own Reset-password button, today). theme.js refuses
+  //                  fragment tokens BY DESIGN — consuming them would let a pasted
+  //                  link seed a session for someone else's account (fixation), and
+  //                  a customer who then types a password is setting one on the
+  //                  attacker's account. We do NOT complete these; we recognise the
+  //                  shape and hand the customer a fresh-link form instead, which is
+  //                  the difference between a dead end and one extra click.
+  // gotrue speaks English. In 中文 mode its raw message is the one untranslated
+  // string left in the flow, and it lands exactly where the customer is already
+  // stuck. Map the handful we actually see; anything unmapped falls through
+  // VERBATIM — the vendor changing its wording degrades to today's behaviour, never
+  // to a wrong translation.
+  var GOTRUE_ZH = [
+    [/invalid or has expired/i,          "邮件链接无效或已过期。请重新发送一封。"],
+    [/token has expired|expired or is invalid/i, "链接已过期或无效。请重新发送一封。"],
+    [/only request this after (\d+) second/i, "出于安全考虑，请在 $1 秒后再试。"],
+    [/should be different from the old/i, "新密码不能与旧密码相同。"],
+    [/at least (\d+) characters/i,       "密码至少需要 $1 个字符。"],
+    [/weak|pwned|breach/i,               "该密码强度不足或已在数据泄露中出现，请换一个。"],
+    [/rate limit|too many requests/i,    "请求过于频繁，请稍后再试。"],
+    [/session|not authenticated|jwt/i,   "登录状态已失效，请重新发送重置链接。"]
+  ];
+  function authMsg(err) {
+    var raw = (err && err.message) ? String(err.message) : "";
+    if (!raw) return null;
+    if (lang() !== "zh") return raw;
+    for (var i = 0; i < GOTRUE_ZH.length; i++) {
+      var m = raw.match(GOTRUE_ZH[i][0]);
+      if (!m) continue;
+      // Replace the WHOLE message, not just the matched span — a partial swap
+      // leaves the English prefix stranded in front of the 中文 ("Email link is
+      // 邮件链接无效…"), which is worse than either language alone.
+      return GOTRUE_ZH[i][1].replace(/\$(\d)/g, function (_, d) { return m[+d] || ""; });
+    }
+    return raw;
+  }
+
+  var _recoveryArg = null;    // captured BEFORE the URL is scrubbed
+  function readRecoveryArg() {
+    var out = { tokenHash: null, implicit: false, present: false };
+    try {
+      var sp = new URLSearchParams(location.search);
+      var th = sp.get("token_hash");
+      var ty = sp.get("type");
+      if (th && (!ty || ty === "recovery")) { out.tokenHash = th; out.present = true; }
+      if (sp.get("onboard") === "recovery") out.present = true;
+    } catch (e) {}
+    var hash = location.hash || "";
+    if (!out.tokenHash && /[#&]access_token=/.test(hash) && /[#&]type=recovery/.test(hash)) {
+      out.implicit = true; out.present = true;
+    }
+    return out;
+  }
+  // A spent one-time token must not sit in history or in a shared screenshot.
+  function stripRecoveryParams() {
+    try {
+      var sp = new URLSearchParams(location.search);
+      ["onboard", "token_hash", "type"].forEach(function (k) { sp.delete(k); });
+      var qs = sp.toString();
+      var hash = location.hash || "";
+      if (/[#&]access_token=/.test(hash) || /[#&]type=recovery/.test(hash)) hash = "";
+      window.history.replaceState(null, "", location.pathname + (qs ? "?" + qs : "") + hash);
+    } catch (e) {}
+  }
+
+  function armReset() {
+    S.resetReady = false; S.resetErr = null;
+    // bootDeepLinks captures the arg before scrubbing the URL; fall back to reading
+    // the URL directly so an opener that did NOT come through it still redeems
+    // (the mode owns its own arming — same reason openSheet calls armReset at all).
+    var arg = _recoveryArg || readRecoveryArg();
+    _recoveryArg = null;                       // single-use; a re-render must not redeem twice
+    stripRecoveryParams();                     // idempotent — the fallback path must scrub too
+    if (arg.implicit) { S.resetErr = tx("resetOldLink"); render(); return; }
+    sbClient().then(function (sb) {
+      if (!sb) { S.resetErr = tx("billNotConfigured"); render(); return; }
+      var redeem = arg.tokenHash
+        ? sb.auth.verifyOtp({ token_hash: arg.tokenHash, type: "recovery" })
+            .then(function (r) { if (r && r.error) throw r.error; return r; })
+        : Promise.resolve(null);
+      return redeem.then(function () { return sb.auth.getSession(); }).then(function (r) {
+        var sess = r && r.data && r.data.session;
+        if (sess) { S.resetReady = true; S.resetErr = null; }
+        else { S.resetErr = tx("resetDead"); }
+        render();
+      });
+    }).catch(function (e) {
+      // gotrue's own words when it has them ("Token has expired or is invalid"),
+      // because "expired" and "already used" are different fixes for the customer.
+      S.resetErr = authMsg(e) || tx("resetDead");
+      render();
+    });
+  }
+
+  function viewReset() {
+    var root = h("div", "obm-fade");
+    var head = T("h1", "obm-h1", "resetTitle");
+    head.setAttribute("data-ob-heading", ""); head.setAttribute("tabindex", "-1");
+    root.appendChild(head);
+
+    if (!S.resetReady && !S.resetErr) { root.appendChild(T("p", "obm-sub", "resetChecking")); return root; }
+    if (S.resetErr) {
+      var err = h("div", "obm-err"); err.style.marginTop = "14px"; err.textContent = S.resetErr;
+      root.appendChild(err);
+      var retry = T("button", "obm-btn", "sentResend", { type: "button" });
+      retry.style.marginTop = "18px";
+      retry.addEventListener("click", enterRecover);
+      root.appendChild(retry);
+      return root;
+    }
+
+    root.appendChild(T("p", "obm-sub", "resetSub"));
+    var form = h("form", "obm-form");
+    form.appendChild(field("newPassword", "ob-np", "password", S.password, "••••••••", "new-password",
+                           function (v) { S.password = v; refreshPwHint(); }, true, 8));
+    var hint = h("p", "obm-hint", { "data-obm-hint": "" }); hint.style.display = "none"; form.appendChild(hint);
+    form.appendChild(field("confirmPw", "ob-np2", "password", S.password2, "••••••••", "new-password",
+                           function (v) { S.password2 = v; }, true, 8));
+    var errBox = h("div", "obm-err"); errBox.style.display = "none";
+    errBox.setAttribute("data-obm-err", ""); form.appendChild(errBox);
+    var submit = T("button", "obm-btn", "resetSubmit", { type: "submit" });
+    submit.style.marginTop = "16px"; submit.setAttribute("data-obm-submit", "");
+    form.appendChild(submit);
+    form.addEventListener("submit", onResetSubmit);
+    root.appendChild(form);
+    return root;
+  }
+
+  function onResetSubmit(e) {
+    e.preventDefault();
+    showErr("");
+    if (String(S.password || "").length < 8) { showErr(tx("resetShort")); return; }
+    if (S.password !== S.password2) { showErr(tx("resetMismatch")); return; }
+    setBusy(true, "resetSubmit");
+    sbClient().then(function (sb) {
+      if (!sb) { setBusy(false, "resetSubmit"); showErr(tx("billNotConfigured")); return; }
+      return sb.auth.updateUser({ password: S.password }).then(function (r) {
+        if (r && r.error) { showErr(authMsg(r.error)); setBusy(false, "resetSubmit"); return; }
+        S.password = ""; S.password2 = ""; stashClear();
+        var b = el.body.querySelector("[data-obm-submit]");
+        if (b) { b.removeAttribute("data-k"); b.textContent = tx("resetDone"); }
+        location.href = loginDest();
+      });
+    }).catch(function () { setBusy(false, "resetSubmit"); showErr(tx("billNotConfigured")); });
   }
 
   // ══════════════════════════ STEP 2 — PREFERENCES ═══════════════════════════
@@ -2287,6 +2595,10 @@
     if (opts && opts.resume) S.step = STEP_PREFS;
     if (S.mode === "signin") S.step = STEP_ACCOUNT;
     S.open = true; S.compare = false;
+    // The reset leg owns its own arming: viewReset renders nothing but a heading
+    // until getSession() has settled, so an opener that forgot to call armReset()
+    // would paint a dead panel. Arm here and the mode is self-contained.
+    if (S.mode === "reset") { S.password = ""; S.password2 = ""; armReset(); }
     _lastFocus = document.activeElement;
     syncSkin();
     el.scrim.style.display = "flex";
@@ -2710,6 +3022,20 @@
         stripOnboardParams(); openSheet("upgrade", {}); return;
       }
     } catch (e) {}
+    // ?onboard=recovery — the return from a password-reset email. Must be handled
+    // BEFORE parseIntent, which reads any `onboard` param as a signup intent.
+    // stripOnboardParams drops `onboard` and leaves `code` in place, so the SDK
+    // (created a moment later by openSheet's sbClient warm-up) still sees the
+    // exchange it needs.
+    try {
+      var rec = readRecoveryArg();
+      if (rec.present) {
+        _recoveryArg = rec;          // captured before the scrub; armReset consumes it
+        stripRecoveryParams();
+        openSheet("reset", {});      // openSheet arms it
+        return;
+      }
+    } catch (e) {}
     var intent = parseIntent(window.location.search.replace(/^\?/, ""));
     var resumeStash = null;
     if (intent && intent.resume) {
@@ -2746,7 +3072,12 @@
     // no deep link → restore a mid-flow per-tab stash if one exists (reload resilience)
     var st = stashLoad();
     if (st && st.open) {
-      S.mode = st.mode || "signup"; S.step = st.step || STEP_ACCOUNT;
+      // A stashed recovery mode must NOT be restored: `reset` without the one-time
+      // code in the URL is a dead form, and `recover` re-opens a sheet the customer
+      // has already been emailed about. Both fall back to the sign-in panel.
+      var stMode = st.mode || "signup";
+      if (stMode === "recover" || stMode === "reset") stMode = "signin";
+      S.mode = stMode; S.step = st.step || STEP_ACCOUNT;
       S.firstName = st.firstName || ""; S.lastName = st.lastName || ""; S.email = st.email || "";
       S.prefs = st.prefs || S.prefs; S.plan = normTier(st.plan) || S.plan; S.period = st.period || S.period;
       S.confirmPending = !!st.confirmPending; S.trialActive = !!st.trialActive; S.trialEnd = (typeof st.trialEnd === "number") ? st.trialEnd : null;

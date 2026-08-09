@@ -1,0 +1,109 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "ZWS-2026-06-30-buy",
+  "ticker": "ZWS",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "ZWS",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "ZWS",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Industrials",
+    "excess_spy": 0.028903012918472415,
+    "excess_sector": 0.04980323073986126,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CUSHIONED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "ZWS outperformed SPY and finished CUSHIONED. The supplied cause is idiosyncratic alpha, but no company event, estimate change, or peer comparison is included to establish its mechanism.",
+    "root_cause": "ZWS outperformed SPY and finished CUSHIONED. The supplied cause is idiosyncratic alpha, but no company event, estimate change, or peer comparison is included to establish its mechanism.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The company-alpha book surfaced a favorable candidate, while catalyst and peer-neutral attribution remain evidential gaps.",
+    "engines_credit": "The alpha and outcome books are provisional role models; the catalyst, rotation, and path-attribution organs need supporting records.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Company-specific strength was the stated primary source of outperformance.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "If ZWS merely matched its industry cohort, idiosyncratic alpha would not explain the result.",
+        "evidence_refs": [
+          "outcome_cause=idio_alpha",
+          "excess_spy positive"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Industrials conditions may have amplified or confounded the company-specific move.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Persistent peer-neutral outperformance would reduce the sector explanation.",
+        "evidence_refs": [
+          "sector=Industrials"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The CUSHIONED state indicates that support persisted through maturity without evidence of a clean liftoff.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A failed or deeply adverse path would contradict the supportive terminal characterization.",
+        "evidence_refs": [
+          "terminal_state=CUSHIONED"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Industrials rotation rather than firm-specific alpha may have driven the outcome.",
+      "An external re-rating may have occurred without evidence that accumulation was visible at entry."
+    ],
+    "missing_evidence": [
+      "ZWS peer-neutral return",
+      "Entry-date accumulation and momentum measures",
+      "Company news and estimate-revision chronology",
+      "Catalyst visibility as of the pick date"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "peer_neutral_alpha_persistence",
+        "feature": "Peer-neutral alpha persistence",
+        "measurement": "Measure pre-entry and post-entry residual momentum after controlling for industry and market factors.",
+        "expected_direction": "Persistent positive residual momentum should precede stronger matured relative outcomes.",
+        "falsifier": "Residual momentum does not distinguish favorable outcomes from cohort-driven moves.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-07",
+  "asof": "2026-08-07",
+  "ts": "2026-08-07T08:35:36+00:00"
+}

@@ -1,0 +1,127 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "RL-2026-06-30-watch",
+  "ticker": "RL",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "RL",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "RL",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Consumer Discretionary",
+    "excess_spy": -0.04612284812799716,
+    "excess_sector": -0.027483625622377272,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 7.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "RL was stopped and underperformed SPY under a mixed cause assignment, with no recorded process fault. Consumer Discretionary rotation, company weakness, catalyst risk, and the seven-day watch path remain unresolved.",
+    "root_cause": "RL was stopped and underperformed SPY under a mixed cause assignment, with no recorded process fault. Consumer Discretionary rotation, company weakness, catalyst risk, and the seven-day watch path remain unresolved.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The stop process is recorded as clean, while the watch, rotation, company-alpha, and catalyst books lacked enough discrimination to explain the failure.",
+    "engines_credit": "The execution and stop organs are not implicated; the Consumer Discretionary rotation and company-alpha books are provisional laggard candidates.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "market_rotation",
+        "factor": "",
+        "mechanism": "An unfavorable Consumer Discretionary rotation may have weakened demand for the setup.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Strong sector breadth and relative momentum at entry would weaken the rotation explanation.",
+        "evidence_refs": [
+          "Pick 12 sector=Consumer Discretionary",
+          "Pick 12 outcome_cause=mixed"
+        ]
+      },
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Company-specific weakness may have contributed to the adverse path.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "If RL outperformed close peers while lagging SPY, company weakness would be less persuasive.",
+        "evidence_refs": [
+          "Pick 12 terminal_state=STOPPED",
+          "Pick 12 excess_spy=-0.04612284812799716"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The adverse move reached a stop during the recorded watch tenure without a classified process fault.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "A different stop would only improve the outcome if the thesis later recovered, which cannot be determined.",
+        "evidence_refs": [
+          "Pick 12 process_fault=clean",
+          "Pick 12 board_tenure_days=7.0",
+          "Pick 12 terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "counterfactual",
+        "factor": "",
+        "mechanism": "Conditioning watch entries on sector breadth and peer-relative strength may distinguish durable setups from mixed-cause failures.",
+        "evidence_status": "unknown",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Replay comparable watch picks across sector and peer-strength cells without tightening the stop or gate.",
+        "evidence_refs": [
+          "Pick 12 lane=watch",
+          "Pick 12 process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "A company-specific external event may have caused the stop.",
+      "The loss may reflect a failed breakout rather than rotation.",
+      "SPY strength may account for part of the negative excess return."
+    ],
+    "missing_evidence": [
+      "Entry and stop prices",
+      "Consumer Discretionary and peer-relative returns",
+      "Original watch thesis",
+      "Price-volume path during the watch tenure",
+      "Company news and catalyst chronology"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "watch_sector_peer_alignment",
+        "feature": "Alignment of watch candidates with sector breadth and peer-relative strength",
+        "measurement": "Compare matured watch outcomes by entry-date sector breadth, peer momentum, and company accumulation.",
+        "expected_direction": "Aligned sector and company strength should be associated with fewer clean-process stopped outcomes.",
+        "falsifier": "Alignment measures do not distinguish stopped outcomes from clean liftoffs.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-06",
+  "asof": "2026-08-06",
+  "ts": "2026-08-06T13:34:17+00:00"
+}

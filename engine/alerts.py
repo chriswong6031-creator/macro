@@ -18,7 +18,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from lib import config, store
+from lib import config, nyse_calendar, store
 
 log = logging.getLogger(__name__)
 
@@ -29,6 +29,25 @@ class Alert:
     severity: str
     message: str
     message_zh: str = ""
+
+
+# --- bilingual vocabulary -------------------------------------------------------
+# Single home for every English token a rule interpolates into BOTH `message` and
+# `message_zh`. Dropping the English value straight into the zh f-string is what
+# shipped half-translated alert bodies to the hub feed and the dashboard's
+# ms-sig-detail — "GEX：net GEX changed sign（净 +79bn，现价相对翻转点 -0.7%）", where
+# the wrapper punctuation and the nouns around it translated but the clause did not.
+# Latin that is a NAME — ticker, fund, source slug, NFCI/GEX/Sahm — stays Latin by
+# design; only prose and finite-vocab state labels get a counterpart here.
+_TS_PLAIN_EN = {"STABLE": "steady", "WEAKENING": "weakening",
+                "TRANSITIONING": "shifting", "NEW_REGIME": "a new regime"}
+_TS_PLAIN_ZH = {"STABLE": "稳定", "WEAKENING": "走弱",
+                "TRANSITIONING": "转换中", "NEW_REGIME": "新周期"}
+_GEX_WHAT_ZH = {"spot crossed the gamma flip": "现价穿越 gamma 翻转点",
+                "net GEX changed sign": "净 GEX 转变方向"}
+_HOLDINGS_VERB_ZH = {"added": "加仓", "cut": "减仓"}
+_RECESSION_BAND_ZH = {"low": "低", "elevated": "偏高", "high": "高"}
+_RISK_STATE_ZH = {"RISK-OFF": "风险规避", "ELEVATED": "偏高"}
 
 
 def _regime_history() -> pd.DataFrame | None:
@@ -60,7 +79,8 @@ def transition_state_change(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None
         return Alert("transition_state_change", sev,
                      f"Transition state {prev['transition_state']} -> {cur['transition_state']} "
                      f"({int(cur['n_flags'])} flags active)",
-                     message_zh=f"转换状态 {prev['transition_state']} -> {cur['transition_state']}"
+                     message_zh=f"转换状态 {_TS_PLAIN_ZH.get(prev['transition_state'], prev['transition_state'])}"
+                                f" -> {_TS_PLAIN_ZH.get(cur['transition_state'], cur['transition_state'])}"
                                 f"（{int(cur['n_flags'])} 个预警激活）")
     return None
 
@@ -129,7 +149,8 @@ def holdings_active_changes(hist: pd.DataFrame, f: pd.DataFrame) -> list[Alert]:
                              f"{ticker}: manager {verb} {pos} by {row['active_chg_pct']:+.0f}% "
                              f"of position ({row['window_start']}..{row['window_end']}, "
                              f"flow-normalized)",
-                             message_zh=f"{ticker}：经理 {verb} {pos} 仓位 {row['active_chg_pct']:+.0f}%"
+                             message_zh=f"{ticker}：经理 {_HOLDINGS_VERB_ZH[verb]} {pos} "
+                                        f"仓位 {row['active_chg_pct']:+.0f}%"
                                         f"（{row['window_start']}..{row['window_end']}，"
                                         f"已按资金流标准化）"))
     return out
@@ -164,8 +185,9 @@ def sector_holdings_accumulation(hist: pd.DataFrame, f: pd.DataFrame) -> list[Al
             flow_zh = f"（≈{f_str} 估算再平衡资金流）"
         cyc = cyc_zh = ""
         if s.get("ladder"):
+            from engine.i18n import tr as _tr
             cyc = f" — cycle {s['ladder']['label']}·{s['ladder']['action']}"
-            cyc_zh = f" — 周期 {s['ladder']['label']}·{s['ladder']['action']}"
+            cyc_zh = f" — 周期 {_tr(s['ladder']['label'])}·{_tr(s['ladder']['action'])}"
         sev = "warn" if s.get("confirmed") else "info"
         out.append(Alert(
             "sector_holdings_accumulation", sev,
@@ -257,9 +279,30 @@ def gex_flip_cross(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
         ng, sf = t.get("net_gex_bn"), t.get("spot_vs_flip_pct")
         ng_s = f"{ng:+.0f}bn" if pd.notna(ng) else "n/a"
         sf_s = f"{sf:+.1f}%" if pd.notna(sf) else "n/a"
+        # HOLE DISCLOSURE (2026-08-06). iloc[-2] vs iloc[-1] are two STORE ROWS, and
+        # this alert reads as an OVERNIGHT event — "the regime flipped last night".
+        # The cboe chain store has permanent session holes (collectors/cboe.py
+        # KNOWN_PERMANENT_GAPS: 07-27, 07-30, 08-03, 08-04), so those two rows were
+        # 07-31 and 08-05 — a four-session span in which spot could have crossed and
+        # re-crossed unobserved. Firing is still right (the endpoints did change sign);
+        # implying it happened overnight is not. House law: nulls printed, never hidden.
+        # The span is only computable from real session labels. The live store is
+        # date-indexed, but a positional index (synthetic frames) carries no session
+        # information at all — compute the gap only when both endpoints are date-like
+        # rather than inventing one from row numbers.
+        gap = (nyse_calendar.sessions_strictly_between(y.name.date(), t.name.date())
+               if hasattr(y.name, "date") and hasattr(t.name, "date") else [])
+        span_en = span_zh = ""
+        if gap:
+            missed = ", ".join(str(d) for d in gap)
+            span_en = (f" — measured across {len(gap) + 1} sessions, not overnight: "
+                       f"no chain snapshot exists for {missed}, so the crossing point "
+                       f"inside that span is unobserved")
+            span_zh = (f" — 该变化跨越 {len(gap) + 1} 个交易日，并非隔夜发生："
+                       f"{missed} 无期权链快照，其间的穿越时点无法观测")
         return Alert("gex_flip_cross", "warn",
-                     f"GEX: {what} (net {ng_s}, spot vs flip {sf_s})",
-                     message_zh=f"GEX：{what}（净 {ng_s}，现价相对翻转点 {sf_s}）")
+                     f"GEX: {what} (net {ng_s}, spot vs flip {sf_s}){span_en}",
+                     message_zh=f"GEX：{_GEX_WHAT_ZH[what]}（净 {ng_s}，现价相对翻转点 {sf_s}）{span_zh}")
     return None
 
 
@@ -291,7 +334,8 @@ def conditions_recession_state_change(hist: pd.DataFrame, f: pd.DataFrame) -> Al
     sev = "act" if cur == "high" else ("warn" if rising else "info")
     return Alert("conditions_recession_state_change", sev,
                  f"Recession-risk band {prev} -> {cur} (score {s.iloc[-1]:.0f}/100)",
-                 message_zh=f"衰退风险等级 {prev} -> {cur}（评分 {s.iloc[-1]:.0f}/100）")
+                 message_zh=f"衰退风险等级 {_RECESSION_BAND_ZH.get(prev, prev)} -> "
+                            f"{_RECESSION_BAND_ZH.get(cur, cur)}（评分 {s.iloc[-1]:.0f}/100）")
 
 
 def nfci_tightening(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
@@ -412,7 +456,7 @@ def risk_state_elevated(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
                  f"Equity risk-state crossed into {'RISK-OFF' if sev == 'act' else 'ELEVATED'} "
                  f"({s.iloc[-1]:.0f}/100) — positioning/vol/breadth fragility building; "
                  f"de-gross, favor entries over chasing leaders",
-                 message_zh=f"股票风险状态进入{'risk-off' if sev == 'act' else '偏高'}区"
+                 message_zh=f"股票风险状态进入{_RISK_STATE_ZH['RISK-OFF' if sev == 'act' else 'ELEVATED']}区"
                             f"（{s.iloc[-1]:.0f}/100）— 仓位/波动/宽度脆弱性上升；降低敞口、择优入场而非追高")
 
 
@@ -1019,10 +1063,6 @@ ALERT_CONVICTION: dict[str, dict] = {
 # the raw string (build_vector's translator matches it there); only the rendered
 # view changes. Unknown state tokens fall through lowercased, never dropped.
 _TS_MSG_RE = re.compile(r"Transition state (\w+) -> (\w+) \((\d+) flags active\)")
-_TS_PLAIN_EN = {"STABLE": "steady", "WEAKENING": "weakening",
-                "TRANSITIONING": "shifting", "NEW_REGIME": "a new regime"}
-_TS_PLAIN_ZH = {"STABLE": "稳定", "WEAKENING": "走弱",
-                "TRANSITIONING": "转换中", "NEW_REGIME": "新周期"}
 
 
 def _plain_transition_msg(message: str) -> tuple[str, str] | None:

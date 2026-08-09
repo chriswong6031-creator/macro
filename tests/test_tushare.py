@@ -5,7 +5,10 @@ no-op, while the china_extras parsers read whatever parquet is on disk (so the f
 build is never affected and a committed Tushare cache still surfaces)."""
 from __future__ import annotations
 
+import types
+
 import pandas as pd
+import pytest
 
 from collectors import tushare_client as tc
 
@@ -27,6 +30,187 @@ def test_suffix_normalisation():
     assert tc.norm_ticker("430047.BJ") == "430047.BJ"   # Beijing unchanged
     assert tc.norm_ticker("BK0450.DC") == "BK0450.DC"   # Eastmoney sector code untouched
     assert tc.norm_ticker(None) is None
+
+
+# ---- vendor AUTH rejection: the dark-plane failure mode --------------------- #
+# From 2026-07-27 the vendor answered every endpoint with code 40101
+# (``您的token不对，请确认。``) — the TUSHARE_TOKEN secret was SET, but its VALUE was
+# rejected. query() degrades that to None like any empty snapshot, so every tushare_*
+# refresh() returned 0, the china_tushare heartbeat wrote 0.0 (not the -1.0 an exception
+# leaves), the adapter reported ok, and run_status / the breaker / every freshness guard
+# saw a healthy plane while data/tushare/*.parquet stayed frozen at 2026-07-24 — for ten
+# nights (last observed in run 31095457182, asia job 2026-08-06 11:39Z: trade_cal, daily,
+# daily_basic and moneyflow_dc all 40101). These pin the loud path.
+_REJECT_40101 = {"code": 40101, "msg": "您的token不对，请确认。"}
+
+
+class _Resp:
+    """requests.Response stand-in — the vendor answers HTTP 200 even when it rejects you."""
+
+    def __init__(self, body: dict, *, status_code: int = 200) -> None:
+        self._body = body
+        self.status_code = status_code
+        self.is_redirect = 300 <= status_code < 400
+        self.is_permanent_redirect = status_code in {301, 308}
+
+    def raise_for_status(self) -> None:
+        return None
+
+    def json(self) -> dict:
+        return self._body
+
+
+@pytest.fixture
+def vendor(monkeypatch):
+    """A configured token + a controllable vendor; mutate ``vendor["body"]`` to change the reply."""
+    monkeypatch.setenv("TUSHARE_TOKEN", "not-a-real-credential")
+    monkeypatch.setattr(tc, "_auth_error", None)     # no latch leaking in from another test
+    monkeypatch.setattr(tc, "_last_call", {})        # no throttle sleeps
+    box = {"body": dict(_REJECT_40101)}
+    monkeypatch.setattr(tc.requests, "post", lambda *a, **k: _Resp(box["body"]))
+    return box
+
+
+def test_paid_token_transport_is_https_and_redirects_are_disabled(vendor, monkeypatch):
+    observed = {}
+
+    def _post(url, **kwargs):
+        observed["url"] = url
+        observed["kwargs"] = kwargs
+        return _Resp({"code": 0, "data": {"fields": ["ts_code"], "items": [["600519.SH"]]}})
+
+    monkeypatch.setattr(tc.requests, "post", _post)
+    assert tc.query("daily", trade_date="20260807") is not None
+    assert observed["url"] == "https://api.tushare.pro"
+    assert observed["kwargs"]["allow_redirects"] is False
+    assert observed["kwargs"]["json"]["token"] == "not-a-real-credential"
+
+
+def test_redirect_and_vendor_message_fail_closed_without_credential_echo(vendor, monkeypatch, caplog):
+    token_text = "not-a-real-credential"
+    monkeypatch.setattr(
+        tc.requests,
+        "post",
+        lambda *a, **k: _Resp({"code": 0}, status_code=307),
+    )
+    assert tc.query("daily") is None
+    assert token_text not in caplog.text
+
+    caplog.clear()
+    vendor["body"] = {"code": 40101, "msg": f"rejected token={token_text}"}
+    monkeypatch.setattr(tc.requests, "post", lambda *a, **k: _Resp(vendor["body"]))
+    assert tc.query("daily") is None
+    assert token_text not in caplog.text
+    assert token_text not in str(tc.last_auth_error())
+
+    caplog.clear()
+
+    def _raise_with_credential(*args, **kwargs):
+        raise RuntimeError(f"request payload contained token={token_text}")
+
+    monkeypatch.setattr(tc.requests, "post", _raise_with_credential)
+    assert tc.query("daily") is None
+    assert token_text not in caplog.text
+
+
+def _adapter_with(monkeypatch, counts: dict[str, int]):
+    """ChinaTushareAdapter whose sub-modules are stubs that go through the REAL client.
+
+    Each stub's refresh() makes a genuine ``tc.query`` call (so the vendor's 40101 reaches it
+    exactly as it does nightly) and then reports the row count this test wants — the real
+    collectors would touch data/ and the network, and cannot be made to land rows without
+    writing parquet into the repo.
+    """
+    from collectors import china_tushare as ct
+
+    def _import(dotted: str):
+        name = dotted.rsplit(".", 1)[-1]
+        mod = types.ModuleType(dotted)
+        mod.refresh = lambda _n=counts.get(name, 0), _api=f"api_{name}": (
+            tc.query(_api, trade_date="20260806"), _n)[1]
+        return mod
+
+    monkeypatch.setattr(ct, "importlib", types.SimpleNamespace(import_module=_import))
+    return ct.ChinaTushareAdapter()
+
+
+def test_auth_rejection_raises_and_annotates(vendor, monkeypatch, capsys):
+    """40101 everywhere + zero rows → RuntimeError + a line-start ::error, not a healthy heartbeat."""
+    adapter = _adapter_with(monkeypatch, {})           # every module returns 0, as in the outage
+    # token present ⇒ NOT an expected_failure, so run_adapter records 'failed' and the breaker counts it
+    assert getattr(adapter, "expected_failure", None) is None
+    with pytest.raises(RuntimeError) as excinfo:
+        adapter.fetch()
+    detail = str(excinfo.value)
+    assert "40101" in detail and "TUSHARE_TOKEN" in detail and "tushare.pro" in detail
+    # the annotation must START its line — through a logger GitHub silently drops it
+    ann = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::error")]
+    assert len(ann) == 1, f"expected exactly one line-start ::error annotation, got {ann}"
+    assert "title=tushare-auth-rejected" in ann[0] and "40101" in ann[0]
+
+
+def test_partial_rows_do_not_raise(vendor, monkeypatch, capsys):
+    """A latched rejection with SOME module still landing rows is a warning, never a failed night."""
+    adapter = _adapter_with(monkeypatch, {"tushare_valuation": 4200})
+    out = adapter.fetch()                              # must not raise
+    assert tc.last_auth_error()["code"] == 40101       # the vendor did reject — still latched
+    assert out["run_log"]["tushare_valuation"].iloc[0] == 4200.0
+    assert "::error" not in capsys.readouterr().out
+
+
+def test_auth_latch_clears_on_the_next_success(vendor):
+    """query()'s return contract is unchanged; the latch records the cause and self-heals."""
+    assert tc.query("daily_basic", trade_date="20260806") is None    # still None — no caller changes
+    err = tc.last_auth_error()
+    assert err["code"] == 40101 and err["api_name"] == "daily_basic"
+    assert err["msg"] == "credential rejected by vendor"
+    assert err is not tc._auth_error, "last_auth_error() must hand back a copy, not the latch"
+    # the credential is restored (re-copied or the account healed) → the very next authenticated
+    # round-trip clears the latch, no restart. Deliberately not "regenerates": the 07-27 outage
+    # began with a secret nobody had touched since 07-02, so recovery need not involve a new token.
+    vendor["body"] = {"code": 0, "data": {"fields": ["ts_code"], "items": [["600519.SH"]]}}
+    df = tc.query("daily_basic", trade_date="20260807")
+    assert df is not None and df["ts_code"].iloc[0] == "600519.SS"
+    assert tc.last_auth_error() is None
+
+
+def test_successful_empty_response_can_be_distinguished_when_requested(vendor):
+    """Event collectors need to checkpoint a real zero-row day without treating errors as empty."""
+    vendor["body"] = {"code": 0, "data": {"fields": ["ts_code", "trade_date"], "items": []}}
+    assert tc.query("suspend_d", trade_date="20260807") is None  # legacy contract
+    empty = tc.query("suspend_d", trade_date="20260807", _return_empty=True,
+                     fields="ts_code,trade_date")
+    assert empty is not None and empty.empty
+    assert list(empty.columns) == ["ts_code", "trade_date"]
+
+
+@pytest.mark.parametrize("malformed", [
+    {"code": 0},
+    {"code": 0, "data": None},
+    {"code": 0, "data": {}},
+    {"code": 0, "data": {"fields": [], "items": []}},
+    {"code": 0, "data": {"fields": ["ts_code"]}},
+    {"code": 0, "data": {"fields": ["ts_code"], "items": None}},
+    {"code": 0, "data": {"fields": ["ts_code"], "items": [{"ts_code": "x"}]}},
+    {"code": 0, "data": {"fields": ["ts_code"], "items": [["x", "y"]]}},
+    [],
+])
+def test_return_empty_rejects_malformed_code_zero_payloads(vendor, malformed):
+    """A code-0 shell is not evidence of a real, schema-bound empty response."""
+    vendor["body"] = malformed
+    assert tc.query(
+        "suspend_d", trade_date="20260807", _return_empty=True,
+        fields="ts_code,trade_date",
+    ) is None
+
+
+def test_rate_limit_and_entitlement_are_not_auth_errors(vendor):
+    """DELIBERATELY NARROW: 40203 (throttle / above-tier) must not read as a dead credential —
+    report_rc is throttled by design every single night."""
+    vendor["body"] = {"code": 40203, "msg": "抱歉，您没有接口访问权限"}
+    assert tc.query("report_rc", start_date="20260806") is None
+    assert tc.last_auth_error() is None
+    assert tc._AUTH_CODES == frozenset({40101})
 
 
 # ---- collector gating (no-op without a token) ------------------------------ #

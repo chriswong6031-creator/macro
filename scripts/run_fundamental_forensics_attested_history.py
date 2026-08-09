@@ -12,60 +12,77 @@ only after an operator has sealed every source path and reviewed its inventory.
 from __future__ import annotations
 
 import argparse
-import base64
 from dataclasses import dataclass
 from datetime import datetime
-from hashlib import sha256
-import hmac
+# Re-exported for callers and tests that recompute a child credential's derived
+# secret against this module's namespace; the signing itself now lives in
+# engine.fundamental_forensics.attested_history_credentials.
+from hashlib import sha256  # noqa: F401
 import json
 import os
 from pathlib import Path
 import re
 import stat
 import subprocess
+import sys
 import tempfile
-import time
 from typing import Any, Callable, Mapping, Sequence
-from urllib.parse import urlsplit
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+# The R2 child-credential primitives moved into engine/ so the long-running
+# receipt API can reuse them without importing from scripts/.  They are bound
+# at module scope here so every unqualified call below still resolves, a
+# monkeypatch of this module's ``mint_r2_temporary_credentials`` still affects
+# this module's callers, and callers/tests may keep importing them from here.
+# Only the two names this module actually uses. The minting primitives moved to
+# the engine so the long-running API never imports scripts/; re-exporting the
+# other nine here would be dead surface with no consumer in the repo, and it
+# would imply a compatibility contract nothing is asking for. Import them from
+# engine.fundamental_forensics.attested_history_credentials directly.
+from engine.fundamental_forensics.attested_history_credentials import (
+    R2TemporaryCredentialError,
+    mint_r2_temporary_credentials,
+)  # noqa: E402
 from engine.fundamental_forensics.attested_history_materializer import (
     B4D_REJECTION_REASON_CODES,
     AttestedBindingReport,
     enumerate_attested_binding_candidates,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.attested_query_snapshots import (
     AttestationMaterial,
     PreparedAttestedQuerySnapshot,
     _verified_base_snapshot,
     prepare_attested_query_snapshot,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.companyfacts_ledger import (
     CompanyFactsConversionSourceBundle,
     CompanyFactsLedgerConversion,
     CompanyFactsLedgerConversionConfig,
     PinnedSubmissionsSource,
     load_companyfacts_ledger_from_pinned_source,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.filing_attestation import (
     CompanyFactsSourcePaths,
     FilingAttestation,
     PinnedSourceAuthority,
     build_filing_attestation,
     gzip_stored_byte_ceiling,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.filing_package import (
     FilingPackage,
     PinnedFilingPackageDescriptor,
     materialize_filing_package_from_pinned_source,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.ixbrl_extraction import (
     IxbrlExtraction,
     build_ixbrl_extraction,
-)
-from engine.fundamental_forensics.models import parse_utc, utc_text
-from engine.fundamental_forensics.query_snapshots import QuerySnapshot
-from engine.fundamental_forensics.source_sync import build_private_source_store
-from engine.research_vault.r2_store import R2Store, StrictBoundedReadStore
+)  # noqa: E402
+from engine.fundamental_forensics.models import parse_utc, utc_text  # noqa: E402
+from engine.fundamental_forensics.query_snapshots import QuerySnapshot  # noqa: E402
+from engine.fundamental_forensics.source_sync import build_private_source_store  # noqa: E402
+from engine.research_vault.r2_store import R2Store, StrictBoundedReadStore  # noqa: E402
 
 
 OPERATOR_SCHEMA = "fundamental_forensics.attested_history_operator/v1"
@@ -98,20 +115,6 @@ _CIK_RE = re.compile(r"^[0-9]{10}$")
 _ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
 _MANIFEST_RE = re.compile(r"^ffsec_manifest_[a-f0-9]{64}$")
 _PATH_FORBIDDEN_RE = re.compile(r"(^|/)(?:latest(?:\.json)?)(?:/|$)", re.IGNORECASE)
-R2_TEMPORARY_CREDENTIAL_MAX_TTL_SECONDS = 30 * 60
-R2_ATTESTED_HISTORY_PREFIX = "fundamental_forensics/"
-_R2_ENDPOINT_HOST_RE = re.compile(
-    r"^(?P<account_id>[a-f0-9]{32})\.r2\.cloudflarestorage\.com$"
-)
-_R2_ACCESS_KEY_RE = re.compile(r"^[A-Za-z0-9]{16,128}$")
-_R2_BUCKET_RE = re.compile(r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$")
-_R2_TEMPORARY_ACTIONS = frozenset(
-    {
-        "GetObject",
-        "HeadObject",
-        "PutObject",
-    }
-)
 
 
 class OperatorPreflightError(RuntimeError):
@@ -124,158 +127,6 @@ class ReadOnlyWriteAttempt(OperatorPreflightError):
     def __init__(self, message: str, *, write_attempts: int) -> None:
         super().__init__(message)
         self.write_attempts = write_attempts
-
-
-class R2TemporaryCredentialError(ValueError):
-    """A parent R2 credential cannot be narrowed into an admitted child."""
-
-
-@dataclass(frozen=True)
-class R2TemporaryCredentials:
-    """Short-lived R2 S3 credential derived without calling Cloudflare APIs."""
-
-    access_key_id: str
-    secret_access_key: str
-    session_token: str
-    expires_at: int
-
-
-def _base64url(value: bytes) -> str:
-    return base64.urlsafe_b64encode(value).rstrip(b"=").decode("ascii")
-
-
-def _canonical_r2_endpoint(endpoint: str) -> tuple[str, str, str]:
-    """Return the exact endpoint, host, and account ID admitted for local signing."""
-    if not isinstance(endpoint, str) or len(endpoint) > 256:
-        raise R2TemporaryCredentialError("R2 endpoint is invalid")
-    try:
-        parsed = urlsplit(endpoint)
-        port = parsed.port
-    except ValueError as exc:
-        raise R2TemporaryCredentialError("R2 endpoint is invalid") from exc
-    host = parsed.hostname
-    if (
-        parsed.scheme != "https"
-        or parsed.username is not None
-        or parsed.password is not None
-        or port is not None
-        or parsed.path not in {"", "/"}
-        or parsed.query
-        or parsed.fragment
-        or host is None
-        or endpoint not in {f"https://{host}", f"https://{host}/"}
-    ):
-        raise R2TemporaryCredentialError("R2 endpoint is invalid")
-    match = _R2_ENDPOINT_HOST_RE.fullmatch(host)
-    if match is None:
-        raise R2TemporaryCredentialError("R2 endpoint host is invalid")
-    return f"https://{host}", host, match.group("account_id")
-
-
-def mint_r2_temporary_credentials(
-    *,
-    endpoint: str,
-    parent_access_key_id: str,
-    parent_secret_access_key: str,
-    bucket: str,
-    scope: str,
-    actions: Sequence[str],
-    ttl_seconds: int = R2_TEMPORARY_CREDENTIAL_MAX_TTL_SECONDS,
-    prefix: str = R2_ATTESTED_HISTORY_PREFIX,
-    issued_at: int | None = None,
-) -> R2TemporaryCredentials:
-    """Mint one Cloudflare-documented HS256 child credential locally.
-
-    The long-lived parent may include List permission.  The session JWT is the
-    enforceable child boundary: it carries an exact action set, one bucket,
-    the single Fundamental Forensics prefix, and a maximum 30-minute lifetime.
-    Credential separation alone is not evidence that either parent has the
-    intended Cloudflare IAM policy.
-    """
-    _endpoint, host, account_id = _canonical_r2_endpoint(endpoint)
-    if not isinstance(parent_access_key_id, str) or _R2_ACCESS_KEY_RE.fullmatch(
-        parent_access_key_id
-    ) is None:
-        raise R2TemporaryCredentialError("R2 parent access key ID is invalid")
-    if (
-        not isinstance(parent_secret_access_key, str)
-        or not parent_secret_access_key
-        or len(parent_secret_access_key.encode("utf-8")) > 512
-    ):
-        raise R2TemporaryCredentialError("R2 parent secret access key is invalid")
-    if (
-        not isinstance(bucket, str)
-        or _R2_BUCKET_RE.fullmatch(bucket) is None
-        or ".." in bucket
-    ):
-        raise R2TemporaryCredentialError("R2 bucket is invalid")
-    if scope not in {"object-read-only", "object-read-write"}:
-        raise R2TemporaryCredentialError("R2 child scope is invalid")
-    if isinstance(actions, (str, bytes)):
-        raise R2TemporaryCredentialError("R2 child actions are invalid")
-    action_list = list(actions)
-    if (
-        not action_list
-        or len(action_list) != len(set(action_list))
-        or any(action not in _R2_TEMPORARY_ACTIONS for action in action_list)
-        or action_list != sorted(action_list)
-    ):
-        raise R2TemporaryCredentialError("R2 child actions are invalid")
-    allowed = (
-        ["GetObject", "HeadObject"]
-        if scope == "object-read-only"
-        else ["GetObject", "HeadObject", "PutObject"]
-    )
-    if action_list != allowed:
-        raise R2TemporaryCredentialError("R2 child actions exceed the exact role")
-    if prefix != R2_ATTESTED_HISTORY_PREFIX:
-        raise R2TemporaryCredentialError("R2 child prefix is invalid")
-    if (
-        isinstance(ttl_seconds, bool)
-        or not isinstance(ttl_seconds, int)
-        or not 60 <= ttl_seconds <= R2_TEMPORARY_CREDENTIAL_MAX_TTL_SECONDS
-    ):
-        raise R2TemporaryCredentialError("R2 child TTL is invalid")
-    observed = int(time.time()) if issued_at is None else issued_at
-    if isinstance(observed, bool) or not isinstance(observed, int) or observed < 1:
-        raise R2TemporaryCredentialError("R2 child issue clock is invalid")
-
-    header = {"alg": "HS256", "typ": "JWT"}
-    payload = {
-        "actions": action_list,
-        "aud": host,
-        "bucket": bucket,
-        "exp": observed + ttl_seconds,
-        "iat": observed,
-        "iss": parent_access_key_id,
-        "paths": {"objectPaths": [], "prefixPaths": [prefix]},
-        "scope": scope,
-        "sub": account_id,
-    }
-    unsigned = ".".join(
-        _base64url(
-            json.dumps(
-                item,
-                ensure_ascii=True,
-                allow_nan=False,
-                separators=(",", ":"),
-                sort_keys=True,
-            ).encode("utf-8")
-        )
-        for item in (header, payload)
-    )
-    signature = hmac.digest(
-        parent_secret_access_key.encode("utf-8"), unsigned.encode("ascii"), "sha256"
-    )
-    signed_jwt = f"{unsigned}.{_base64url(signature)}"
-    return R2TemporaryCredentials(
-        access_key_id=parent_access_key_id,
-        secret_access_key=sha256(signed_jwt.encode("ascii")).hexdigest(),
-        session_token=base64.b64encode(f"jwt/{signed_jwt}".encode("ascii")).decode(
-            "ascii"
-        ),
-        expires_at=observed + ttl_seconds,
-    )
 
 
 @dataclass(frozen=True)

@@ -629,6 +629,111 @@
   segment("sx-panel", function (v) { state.panel = v; });
   segment("sx-lookback", function (v) { state.lookback = +v; });
 
+  /* ── mode: Calendar clock / Catalyst ─────────────────────────────────────
+     Mode is PAGE state, not lens state, so it persists exactly the way this
+     page already persists page state: in the URL query, like ?symbol=. Nothing
+     here is written to localStorage — the symbol does not use it either, and a
+     second source of truth is how a deep link and a stored preference start
+     disagreeing.
+
+     pushState, not replaceState (the symbol's idiom), because Back must return
+     the reader to the mode they came from. The head of the document applies the
+     query on first paint; this only keeps the control, the announcement and the
+     history in step. */
+  function currentMode() {
+    return document.documentElement.getAttribute("data-sx-mode") === "catalyst"
+      ? "catalyst" : "calendar";
+  }
+
+  function paintMode(m) {
+    var doc = document.documentElement;
+    if (m === "catalyst") doc.setAttribute("data-sx-mode", "catalyst");
+    else doc.removeAttribute("data-sx-mode");
+    /* aria-pressed only. The pressed FILL is CSS keyed off html[data-sx-mode],
+       so it cannot desync from the body it labels — a ?mode=catalyst deep link
+       paints from <head>, long before this file runs. */
+    var g = $("sx-mode");
+    if (g) {
+      Array.prototype.forEach.call(g.querySelectorAll("button[data-v]"), function (b) {
+        b.setAttribute("aria-pressed", b.dataset.v === m ? "true" : "false");
+      });
+    }
+  }
+
+  /* A pressed segment is not an announcement: aria-pressed changes silently for
+     a reader who is not on the control. The live region states what the page is
+     now showing. Both language spans are written and CSS hides the inactive one,
+     so only one is ever spoken. */
+  function announceMode(m) {
+    setPair($("sx-mode-live"),
+      m === "catalyst" ? "Catalyst mode. Event coverage is not connected."
+                       : "Calendar clock mode.",
+      m === "catalyst" ? "催化剂模式。事件数据尚未接入。" : "日历时钟模式。");
+  }
+
+  /* Back returned the MODE but not the READER: at 375px, Back into catalyst from
+     a scrolled calendar left the viewport 690px below the mode's entire message,
+     on a bullet from a card that had just been replaced. A mode swap rewrites the
+     document from the masthead down, so if the reader is already past the top of
+     the surface they are now looking at, bring them to it. No scroll when they
+     are above it — that would yank a reader who is already in the right place. */
+  function revealMode(m) {
+    var el = $(m === "catalyst" ? "sx-catalyst" : "sx-verdict");
+    if (!el) return;
+    var top = el.getBoundingClientRect().top + (window.pageYOffset || 0) - 12;
+    if ((window.pageYOffset || 0) <= top) return;
+    var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    try { window.scrollTo({ top: Math.max(0, top), behavior: calm ? "auto" : "smooth" }); }
+    catch (e) { window.scrollTo(0, Math.max(0, top)); }
+  }
+
+  function setMode(m, push, reveal) {
+    if (m !== "catalyst") m = "calendar";
+    var changed = m !== currentMode();
+    paintMode(m);
+    /* The calendar's SVGs were display:none while catalyst was up; redraw so a
+       symbol switched in catalyst mode is on screen the moment it comes back.
+       Ahead of the scroll, so the reveal measures the final layout. */
+    if (m === "calendar" && (changed || !push)) render();
+    if (push && changed) {
+      try {
+        var u = new URL(window.location.href);
+        if (m === "calendar") u.searchParams.delete("mode");
+        else u.searchParams.set("mode", m);
+        history.pushState({ sxMode: m }, "", u.toString());
+      } catch (e) { /* deep link is a convenience, never a dependency */ }
+    }
+    if (changed || !push) announceMode(m);
+    if (reveal && (changed || !push)) revealMode(m);
+  }
+
+  var modeGroup = $("sx-mode");
+  if (modeGroup) {
+    modeGroup.addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-v]");
+      if (!b || b.disabled) return;
+      setMode(b.dataset.v, true, true);
+    });
+  }
+  var toCal = $("sx-to-cal");
+  if (toCal) {
+    toCal.addEventListener("click", function () {
+      /* No reveal here: the focus move below scrolls the control into view, and
+         two scrollers racing is a jump. */
+      setMode("calendar", true, false);
+      /* The button the reader pressed is now display:none, so the focus ring
+         would fall back to <body>. Hand it to the control that owns the state. */
+      var b = modeGroup && modeGroup.querySelector('button[data-v="calendar"]');
+      if (b) b.focus();
+    });
+  }
+  window.addEventListener("popstate", function () {
+    var m = "calendar";
+    try { m = new URL(window.location.href).searchParams.get("mode") || "calendar"; }
+    catch (e) { m = "calendar"; }
+    setMode(m, false, true);
+  });
+
   /* ── symbol switching (spec §6) ─────────────────────────────────────────── */
   var INDEX = null, cursor = -1, filtered = [];
   var input = $("sx-search"), pop = $("sx-results");
@@ -792,5 +897,8 @@
   } catch (e) { /* no-op */ }
 
   document.addEventListener("langchange", function () { syncPlaceholder(); render(); });
+  /* The body ships in calendar mode; the head may already have swapped the
+     document to catalyst from ?mode=. Sync the control to whatever won. */
+  paintMode(currentMode());
   render();
 })();

@@ -497,10 +497,8 @@ def _directive(body: str, name: str) -> list[str]:
 # arithmetic still balanced.
 CADDY_BOUNDARY = [
     # matcher,        directive,  what it means
-    ("reg_html",      "not path", "exempt from the registration wall"),
     ("reg_asset",     "not path", "exempt from the asset wall"),
     ("gate_html",     "path",     "inside the public funnel"),
-    ("reg_html_err",  "not path", "still exempt when the gate upstream is down"),
     ("reg_asset_err", "not path", "still exempt when the gate upstream is down"),
     ("gate_html_err", "path",     "still served when the gate upstream is down"),
 ]

@@ -18,6 +18,12 @@ from scripts.publish_earnings_r2 import _synth_manifest
 
 FIXTURE = Path(__file__).parent / "fixtures" / "stage_context_latest.json"
 
+# Fields added AFTER the committed fixture was captured (forward-ledger
+# calendar-asof audit 2026-08-05). Named explicitly so the schema guard stays
+# fail-closed: a removed field, or any other unannounced addition, still fails.
+_ADDITIVE_SINCE_FIXTURE = {"data_session"}
+_ADDITIVE_TOP_ROW_SINCE_FIXTURE = {"stage_source_asof"}
+
 
 def _write_scores_manifest(scores: Path) -> None:
     """Commit a score-only transport generation for live-store fixtures."""
@@ -167,10 +173,12 @@ def test_schema_completeness_vs_fixture(env):
     fixture = json.loads(FIXTURE.read_text())
     contract = sa.build_context_feed(root=dr, asof="2026-07-17")
 
-    # Top-level keys match the fixture exactly.
-    assert set(contract.keys()) == set(fixture.keys()), (
-        set(fixture.keys()) - set(contract.keys()),
-        set(contract.keys()) - set(fixture.keys()))
+    # Top-level keys match the fixture exactly (bar the named additive fields).
+    built_keys = set(contract.keys()) - _ADDITIVE_SINCE_FIXTURE
+    assert built_keys == set(fixture.keys()), (
+        set(fixture.keys()) - built_keys,
+        built_keys - set(fixture.keys()))
+    assert _ADDITIVE_SINCE_FIXTURE <= set(contract.keys())
 
     assert contract["schema"] == "stage_context.v1"
     assert contract["is_context_only"] is True
@@ -183,7 +191,9 @@ def test_schema_completeness_vs_fixture(env):
     # A top_stage2 row carries every field the fixture rows do.
     fx_row_keys = set(fixture["top_stage2"][0].keys())
     assert contract["top_stage2"], "expected at least one Stage-2 name"
-    assert set(contract["top_stage2"][0].keys()) == fx_row_keys
+    built_row_keys = set(contract["top_stage2"][0].keys())
+    assert built_row_keys - _ADDITIVE_TOP_ROW_SINCE_FIXTURE == fx_row_keys
+    assert _ADDITIVE_TOP_ROW_SINCE_FIXTURE <= built_row_keys
     fx_earn_keys = set(fixture["top_stage2"][0]["earnings"].keys())
     assert set(contract["top_stage2"][0]["earnings"].keys()) == fx_earn_keys
 
@@ -521,6 +531,177 @@ def test_forward_ledger_dedup(env):
     for field in ("date", "ticker", "sga_score", "gate_tier",
                   "weeks_in_stage", "earnings_present", "sentiment", "performance"):
         assert field in row
+
+
+# ---------------------------------------------------------------------------
+# 6b. Forward-ledger row dates come from the DATA PLANE, never the clock.
+#
+#     Every date below is a pinned weekday literal — the rule is evidence
+#     arithmetic and must grade identically on any run day. 2026-07-31 is a
+#     Friday; 2026-08-03 is the following Monday, i.e. exactly the UTC date a
+#     Friday-evening PT nightly stamps (the audited defect shape).
+# ---------------------------------------------------------------------------
+_FRIDAY = "2026-07-31"
+_THURSDAY = "2026-07-30"
+_UTC_DRIFTED_MONDAY = "2026-08-03"
+
+
+def _ledger_contract(rows, *, asof=_UTC_DRIFTED_MONDAY, data_session=None):
+    """A stage_context.v1 slice carrying only what append_forward_ledger reads."""
+    contract = {"schema": "stage_context.v1", "asof": asof, "top_stage2": rows}
+    if data_session is not None:
+        contract["data_session"] = data_session
+    return contract
+
+
+def _fresh_row(ticker, *, stage_source_asof=None, **over):
+    row = {
+        "ticker": ticker,
+        "fresh": True,
+        "sga_score": 71,
+        "gate_tier": "T2",
+        "weeks_in_stage": 4,
+        "earnings": {"present": True, "sentiment": 0.25, "performance": 4.0},
+    }
+    if stage_source_asof is not None:
+        row["stage_source_asof"] = stage_source_asof
+    row.update(over)
+    return row
+
+
+def _ledger_rows(dr: Path) -> list[dict]:
+    p = dr / "stage_analysis" / "forward_ledger.jsonl"
+    return [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+
+
+def test_ledger_stamps_stage_source_asof_not_the_utc_drifted_asof(tmp_path):
+    """THE DEFECT, PINNED: a contract labelled with the next calendar day (the
+    UTC date of a PT-evening run) must still stamp rows with the Friday bar the
+    stages were computed from."""
+    dr = tmp_path / "data"
+    contract = _ledger_contract(
+        [_fresh_row("NVDA", stage_source_asof=_FRIDAY),
+         _fresh_row("AVGO", stage_source_asof=_FRIDAY)],
+        asof=_UTC_DRIFTED_MONDAY)
+
+    assert sa.append_forward_ledger(contract, root=dr) == 2
+
+    rows = _ledger_rows(dr)
+    assert [r["date"] for r in rows] == [_FRIDAY, _FRIDAY]
+    assert _UTC_DRIFTED_MONDAY not in {r["date"] for r in rows}
+    assert {r["session_source"] for r in rows} == {"stage_source_asof"}
+    # Every pre-existing field survives the additive change.
+    for field in ("date", "ticker", "sga_score", "gate_tier", "weeks_in_stage",
+                  "earnings_present", "sentiment", "performance"):
+        assert field in rows[0], field
+    assert rows[0]["earnings_present"] is True
+
+
+def test_ledger_frozen_store_rerun_appends_zero(tmp_path):
+    """A re-run against the same frozen contract re-derives the same session
+    keys, so the (date,ticker) dedupe refuses every row — even though the wall
+    clock (and any later `asof` label) has moved on."""
+    dr = tmp_path / "data"
+    contract = _ledger_contract(
+        [_fresh_row("NVDA", stage_source_asof=_FRIDAY),
+         _fresh_row("AVGO", stage_source_asof=_FRIDAY)],
+        asof=_UTC_DRIFTED_MONDAY)
+    assert sa.append_forward_ledger(contract, root=dr) == 2
+
+    # Same tape, a later calendar label — the old writer would have appended 2
+    # more rows under a fresh date.
+    later = _ledger_contract(
+        [_fresh_row("NVDA", stage_source_asof=_FRIDAY),
+         _fresh_row("AVGO", stage_source_asof=_FRIDAY)],
+        asof="2026-08-05")
+    assert sa.append_forward_ledger(later, root=dr) == 0
+    assert len(_ledger_rows(dr)) == 2
+
+
+def test_ledger_session_is_per_ticker_not_shared(tmp_path):
+    """Two names whose stages were computed from DIFFERENT bars land on their
+    own sessions — the stamp is per-ticker evidence, not one board-wide date."""
+    dr = tmp_path / "data"
+    contract = _ledger_contract(
+        [_fresh_row("NVDA", stage_source_asof=_FRIDAY),
+         _fresh_row("STALE", stage_source_asof=_THURSDAY)],
+        asof=_UTC_DRIFTED_MONDAY, data_session=_FRIDAY)
+    assert sa.append_forward_ledger(contract, root=dr) == 2
+
+    by_ticker = {r["ticker"]: r for r in _ledger_rows(dr)}
+    assert by_ticker["NVDA"]["date"] == _FRIDAY
+    assert by_ticker["STALE"]["date"] == _THURSDAY
+    assert {r["session_source"] for r in by_ticker.values()} == {"stage_source_asof"}
+
+
+def test_ledger_falls_back_to_contract_data_session(tmp_path):
+    """Rung (b): a row with no per-ticker bar takes the contract's data_session
+    — still the data plane, never `asof`."""
+    dr = tmp_path / "data"
+    key_absent = _fresh_row("NVDA")
+    key_null = _fresh_row("AVGO")
+    key_null["stage_source_asof"] = None      # present but unknowable
+    contract = _ledger_contract(
+        [key_absent, key_null], asof=_UTC_DRIFTED_MONDAY, data_session=_FRIDAY)
+    assert sa.append_forward_ledger(contract, root=dr) == 2
+
+    rows = _ledger_rows(dr)
+    assert {r["date"] for r in rows} == {_FRIDAY}
+    assert {r["session_source"] for r in rows} == {"contract_data_session"}
+
+
+def test_ledger_skips_rows_with_no_data_plane_session(tmp_path, capsys):
+    """Rung (c): no per-ticker bar AND no contract data_session -> the row is
+    skipped and counted; a real GitHub annotation discloses it. The wall clock
+    and `asof` never rescue a session-less row."""
+    dr = tmp_path / "data"
+    contract = _ledger_contract(
+        [_fresh_row("NVDA"), _fresh_row("AVGO")], asof=_UTC_DRIFTED_MONDAY)
+
+    assert sa.append_forward_ledger(contract, root=dr) == 0
+    assert not (dr / "stage_analysis" / "forward_ledger.jsonl").exists()
+
+    out = capsys.readouterr().out
+    lines = [ln for ln in out.splitlines() if "no data-plane session" in ln]
+    assert lines, out
+    # GitHub only parses a workflow command when "::" STARTS the line.
+    assert lines[0].startswith("::")
+    assert lines[0].startswith("::warning title=stage-ledger-no-session::")
+    assert "2 row(s) skipped" in lines[0]
+
+
+def test_ledger_mixed_batch_writes_the_provable_rows_only(tmp_path, capsys):
+    """A session-less row is dropped without poisoning its neighbours."""
+    dr = tmp_path / "data"
+    contract = _ledger_contract(
+        [_fresh_row("NVDA", stage_source_asof=_FRIDAY), _fresh_row("GHOST")],
+        asof=_UTC_DRIFTED_MONDAY)
+
+    assert sa.append_forward_ledger(contract, root=dr) == 1
+    rows = _ledger_rows(dr)
+    assert [(r["ticker"], r["date"]) for r in rows] == [("NVDA", _FRIDAY)]
+    warn = [ln for ln in capsys.readouterr().out.splitlines()
+            if ln.startswith("::warning title=stage-ledger-no-session::")]
+    assert warn and "1 row(s) skipped" in warn[0]
+
+
+def test_contract_carries_data_session_and_leaves_asof_alone(env):
+    """build_context_feed derives data_session from the classified bars while
+    `asof` keeps its display semantics (basket-turn sibling idiom)."""
+    dr, _ = env
+    # Every stubbed rec classifies off the 2026-07-17 bar; the caller labels
+    # the build with a LATER date, the shape the UTC drift produced nightly.
+    contract = sa.build_context_feed(root=dr, asof="2026-07-20")
+
+    assert contract["asof"] == "2026-07-20"          # display label untouched
+    assert contract["data_session"] == "2026-07-17"  # the tape actually read
+    assert contract["top_stage2"], "need rows to check the projection"
+    assert all(r["stage_source_asof"] == "2026-07-17"
+               for r in contract["top_stage2"])
+
+    n = sa.append_forward_ledger(contract, root=dr)
+    assert n >= 2
+    assert {r["date"] for r in _ledger_rows(dr)} == {"2026-07-17"}
 
 
 # ---------------------------------------------------------------------------
@@ -957,3 +1138,79 @@ def test_snapshot_unreadable_existing_file_refuses_overwrite(tmp_path, capsys):
     out = capsys.readouterr().out
     warn_lines = [l for l in out.splitlines() if "refusing to overwrite" in l]
     assert warn_lines and warn_lines[0].startswith("::warning")
+
+
+# ---------------------------------------------------------------------------
+# Nightly heal wiring (forward-ledger calendar-asof audit 2026-08-05)
+# ---------------------------------------------------------------------------
+class TestNightlyHealWiring:
+    """The nightly lane is the ONLY lane allowed to repair this ledger.
+
+    `.gitignore:574` scopes a house law to this file — "nightly is the SOLE
+    advancer ... never commit from a worktree" — so the heal is invoked from
+    scripts/build_stage_analysis.py rather than run in the PR that wrote it.
+    That makes a mis-rooted call there far worse than a no-op: the repair
+    simply never happens, and the only symptom is silence. `heal()` takes the
+    REPO root while this CLI's `--root` is the DATA root, so the two differ by
+    exactly one level and a straight pass-through resolves to
+    <data>/data/stage_analysis — a path that never exists.
+    """
+
+    def _fixture_contract(self, tmp_path: Path) -> Path:
+        fx = tmp_path / "contract.json"
+        fx.write_text(json.dumps({
+            "schema": "stage_context.v1",
+            "asof": "2026-08-03",
+            "data_session": "2026-07-31",
+            "counts": {},
+            "top_stage2": [],
+        }))
+        return fx
+
+    def test_builder_hands_the_heal_a_root_it_can_resolve(self, tmp_path, monkeypatch):
+        """The root the builder passes must locate the real ledger path."""
+        import scripts.build_stage_analysis as bsa
+        import scripts.heal_stage_forward_ledger as heal_mod
+
+        ledger = tmp_path / "data" / "stage_analysis" / "forward_ledger.jsonl"
+        ledger.parent.mkdir(parents=True)
+        ledger.write_text("")
+
+        seen: dict = {}
+
+        def _spy(root, *a, **kw):
+            seen["root"] = Path(root)
+            return {"n_restamped": 0, "n_quarantined_now": 0}
+
+        monkeypatch.setattr(heal_mod, "heal", _spy)
+        rc = bsa.main(["--fixture", str(self._fixture_contract(tmp_path)),
+                       "--root", str(tmp_path / "data")])
+
+        assert rc == 0
+        assert "root" in seen, "the nightly builder never invoked the heal at all"
+        # The REPO root, not the data root — and it must actually find the ledger.
+        assert seen["root"] == tmp_path
+        assert (seen["root"] / "data" / "stage_analysis"
+                / "forward_ledger.jsonl").exists()
+
+    def test_unreachable_ledger_is_announced_not_swallowed(self, tmp_path, monkeypatch,
+                                                           capsys):
+        """A heal that cannot find its ledger is a defect, and must say so.
+
+        Before this guard the caller logged only on a non-zero restamp/quarantine
+        count, so the {"error": ...} return printed nothing at all.
+        """
+        import scripts.build_stage_analysis as bsa
+        import scripts.heal_stage_forward_ledger as heal_mod
+
+        monkeypatch.setattr(heal_mod, "heal",
+                            lambda root, *a, **kw: {"error": "no such ledger"})
+        rc = bsa.main(["--fixture", str(self._fixture_contract(tmp_path)),
+                       "--root", str(tmp_path / "data")])
+
+        assert rc == 0  # fail-open: never fatal to the nightly
+        out = capsys.readouterr().out
+        lines = [l for l in out.splitlines() if "heal did not run" in l]
+        assert lines, "an unreachable heal printed nothing — the guard is dark"
+        # GitHub only parses a workflow command when "::" STARTS the line.
+        assert lines[0].startswith("::warning")

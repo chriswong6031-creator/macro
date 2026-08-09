@@ -711,10 +711,29 @@ def _build_series_state(
 # Velocity-threshold forward ledger event
 # ---------------------------------------------------------------------------
 
+def _series_last_bar(s: pd.Series | None) -> str | None:
+    """Last usable bar date of a series, as an ISO date string (None if unusable).
+
+    Forward-ledger calendar-asof audit 2026-08-05 (basket_turn_watch #4568 pattern):
+    an event is stamped by the bar that fired it, never by the wall clock. Callers
+    that get None must SKIP the event rather than fall back to a clock date.
+    """
+    if s is None:
+        return None
+    try:
+        s = s.dropna()          # one pass per series (render budget is law)
+        if not len(s):
+            return None
+        return str(pd.Timestamp(s.index.max()).date())
+    except Exception as exc:  # noqa: BLE001 — stamp derivation is never fatal
+        log.debug("credit_momentum: _series_last_bar failed: %s", exc)
+        return None
+
+
 def _make_ledger_event(
     series_id: str,
     event_type: str,   # 'velocity_threshold', 'tag_fire'   (oscillator_cross excluded per Fix 3)
-    as_of: date,
+    as_of: date | str,
     payload: dict,
     registered_at: str | None = None,
 ) -> dict:
@@ -723,9 +742,19 @@ def _make_ledger_event(
     Fix 3 (CCW review): ledger emits ONLY velocity_threshold and tag_fire events.
     Oscillator crosses are excluded (failed episode discrimination per sanity study,
     and the 12.8k backfilled cross rows violated truth-schema).
-    registered_at stamps the run date; source='live' marks this is a current event.
+    source='live' marks this is a current event.
+
+    as_of IS THE BAR THAT FIRED THE EVENT, never the calendar (forward-ledger audit
+    2026-08-05). Because event_id is keyed on as_of, the id is session-keyed: a
+    re-run against a frozen store re-derives the SAME id and the keep-first upsert
+    no-ops. A clock-stamped as_of destroyed that property — it minted a fresh id
+    every calendar day for the same unchanged tape, re-describing old bars under a
+    new date. Callers pass the series' own last bar (str) — a `date` is still
+    accepted for callers holding a real bar date object.
     """
     import datetime as _dt
+    # registered_at is a CLOCK read on purpose: it records when this run registered
+    # the event, not what the tape said. Do NOT "fix" it to a bar date.
     _registered_at = registered_at or str(_dt.date.today())
     # Stable event_id: deterministic per (series, type, date)
     event_id = f"ccw:{event_type}:{series_id}:{as_of}"
@@ -748,31 +777,43 @@ def _make_ledger_event(
     }
 
 
-def _upsert_forward_log(new_events: list[dict], root: Path) -> int:
+def _upsert_forward_log(new_events: list[dict], root: Path, data_sessions: set[str]) -> int:
     """Append to data/corp_bonds/forward_log.jsonl, keep-FIRST per event_id.
 
     Fix 3 (CCW review):
       - Nightly-lane only: guarded by COLLECT_LANE=='nightly' env var (mirrors
         engine/ownership_ledger.py:79-82). Intraday/test runs return 0 without writing.
-      - Only emits events whose as_of == today (current-bar-only, no historical backfill).
+      - Current-bar-only, no historical backfill.
       - Oscillator crosses are NOT written here (excluded from ledger per Fix 3).
+
+    THE CURRENT BAR IS THE DATA PLANE'S, NOT THE CALENDAR'S (forward-ledger audit
+    2026-08-05). This filter used to read `as_of == date.today()`, which is the
+    coupled half of the calendar-asof defect: once events are stamped from bar
+    dates, a today-filter silently drops every one of them whenever the store lags
+    the calendar (evening run, weekend, collection outage — the normal case).
+    `data_sessions` is the set of per-series last-bar dates the caller derived, so
+    an event may still only be written on the bar it fired — the law is unchanged,
+    only its clock is honest. Empty set => nothing is writable => 0.
 
     Returns number of new rows written (0 if not in nightly lane).
     """
-    import datetime as _dt
-
     # COLLECT_LANE guard: nightly lane only
     collect_lane = os.environ.get("COLLECT_LANE", "")
     if collect_lane != "nightly":
         log.debug("credit_momentum: forward_log write skipped (COLLECT_LANE=%r, want 'nightly')", collect_lane)
         return 0
 
+    # No readable bar anywhere => no session is current => no event is writable.
+    sessions = {str(s) for s in (data_sessions or set()) if s}
+    if not sessions:
+        log.debug("credit_momentum: forward_log write skipped (no data session derived)")
+        return 0
+
     path = root / "corp_bonds" / "forward_log.jsonl"
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Filter to current-bar-only: as_of must be today
-    today_str = str(_dt.date.today())
-    current_events = [ev for ev in new_events if str(ev.get("as_of", "")) == today_str]
+    # Filter to current-bar-only: as_of must be a bar this run actually read
+    current_events = [ev for ev in new_events if str(ev.get("as_of", "")) in sessions]
 
     if not current_events:
         return 0
@@ -1156,6 +1197,11 @@ def _compute_credit_theme_stress_tag(
     bull cross ≈ +0.071 bp on HY OAS (CCW review Fix 2).
 
     as_of is used instead of pd.Timestamp.now() (Fix 2 + Fix 5 — series-time, not wall clock).
+
+    The reference bar is echoed back on the tag as an additive "as_of" key so the
+    ledger can stamp a tag_fire from the bar that fired it rather than the calendar
+    (forward-ledger audit 2026-08-05). None when no reference bar was available —
+    the caller must then SKIP the event, never clock-stamp it.
     """
     leg1 = (vel_state.get("vel21_pctile") or 0.0) >= _VEL_PCTILE_STRESS
     # Leg2: 3B BULL cross on SPREAD (bull = widening = deterioration; Fix 2)
@@ -1185,6 +1231,8 @@ def _compute_credit_theme_stress_tag(
         "theme": theme,
         "fired": fired,
         "score": score,
+        # Reference bar (tape date), additive — the ledger stamp source. Not a clock read.
+        "as_of": (str(pd.Timestamp(series_as_of).date()) if series_as_of is not None else None),
         "legs": {
             "vel21_pctile_ge85": leg1,
             # Leg 2: bull cross on spread = widening (Fix 2: inverted vs price semantics)
@@ -1790,8 +1838,20 @@ def snapshot(root: str | Path | None = None) -> dict:
     #
     # Interim TLT/IEF series NEVER emit ledger events (display only, R6 removability).
     # The COLLECT_LANE guard is enforced inside _upsert_forward_log.
+    #
+    # EVERY EVENT IS STAMPED BY THE BAR THAT FIRED IT (forward-ledger calendar-asof
+    # audit 2026-08-05, basket_turn_watch #4568 pattern). The wall clock appears
+    # nowhere in an as_of: a series with no usable bar date emits NOTHING rather
+    # than an event dated by the calendar. Because event_id is keyed on as_of, ids
+    # are session-keyed — a re-run against a frozen store regenerates the same id
+    # and the keep-first upsert no-ops instead of minting a fresh row per day.
     # -----------------------------------------------------------------------
-    today_as_of = date.today()
+    # Per-series session stamps: the last bar each ledger-eligible series read.
+    _series_sessions: dict[str, str | None] = {
+        "hy_oas":         _series_last_bar(hy_oas),
+        "quality_spread": _series_last_bar(quality_spread),
+        "ccc_bb":         _series_last_bar(ccc_bb),
+    }
 
     # (a) Velocity threshold events — deep-history spread series only
     # (NOT ladder series, NOT ETF prices, NOT interim TLT/IEF, NOT theme series)
@@ -1801,24 +1861,35 @@ def snapshot(root: str | Path | None = None) -> dict:
         ("ccc_bb", ccc_bb_vel),
     ]:
         _p = _vel.get("vel21_pctile")
+        _sess = _series_sessions.get(_sid)
+        if _sess is None:
+            continue  # no readable bar → no event (never a clock-stamped one)
         if _p is not None and _p >= _VEL_PCTILE_STRESS:
             ledger_events.append(_make_ledger_event(
-                _sid, "velocity_threshold", today_as_of,
+                _sid, "velocity_threshold", _sess,
                 {"vel21_pctile": _p, "vel21": _vel.get("vel21"),
                  "orientation": "spread",
                  "note": "spread widening stress velocity threshold (vel21_pctile >= 85)"},
             ))
 
     # (b) Tag fire events
-    if market_turn_tag.get("fired"):
+    # credit_market_turn is a K-of-N over the three spread series above, so its
+    # session is the newest bar any available leg read (basket_turn_watch's rule).
+    _turn_bars = [b for b in _series_sessions.values() if b]
+    _turn_as_of = max(_turn_bars) if _turn_bars else None   # ISO strings sort chronologically
+    if market_turn_tag.get("fired") and _turn_as_of is not None:
         ledger_events.append(_make_ledger_event(
-            "credit_market_turn", "tag_fire", today_as_of,
+            "credit_market_turn", "tag_fire", _turn_as_of,
             {"tag_score": market_turn_tag.get("score"), "legs": market_turn_tag.get("legs", {})},
         ))
     for tt in theme_tags:
         if isinstance(tt, dict) and tt.get("fired"):
+            # The theme spread series' own reference bar, echoed back by the tag.
+            _tt_as_of = tt.get("as_of")
+            if not _tt_as_of:
+                continue  # no readable bar → no event
             ledger_events.append(_make_ledger_event(
-                f"credit_theme_stress:{tt.get('theme', 'unknown')}", "tag_fire", today_as_of,
+                f"credit_theme_stress:{tt.get('theme', 'unknown')}", "tag_fire", _tt_as_of,
                 {"tag_score": tt.get("score"), "theme": tt.get("theme"),
                  "legs": tt.get("legs", {})},
             ))
@@ -1826,10 +1897,22 @@ def snapshot(root: str | Path | None = None) -> dict:
     # Oscillator crosses: NOT added to ledger (Fix 3 — excluded from truth-schema)
     # They are available in all_events for display in the JSON roster only.
 
+    # Writable sessions = every bar this run actually read on a ledger-eligible
+    # series. This is the current-bar-only law re-expressed in the data plane; a
+    # date.today() filter here would silently drop every bar-stamped event the
+    # moment the store lags the calendar.
+    _data_sessions: set[str] = {b for b in _series_sessions.values() if b}
+    _data_sessions |= {
+        str(tt.get("as_of")) for tt in theme_tags
+        if isinstance(tt, dict) and tt.get("as_of")
+    }
+    # Newest bar any ledger-eligible series read (artifact provenance, additive).
+    _data_session_max: str | None = max(_data_sessions) if _data_sessions else None
+
     # Upsert forward log
     n_new_ledger = 0
     try:
-        n_new_ledger = _upsert_forward_log(ledger_events, _root)
+        n_new_ledger = _upsert_forward_log(ledger_events, _root, _data_sessions)
     except Exception as exc:  # noqa: BLE001
         log.warning("credit_momentum: forward_log upsert failed: %s", exc)
 
@@ -1846,7 +1929,13 @@ def snapshot(root: str | Path | None = None) -> dict:
 
     payload: dict[str, Any] = {
         "organ":       "credit_momentum.v1",
+        # DISPLAY as_of — when this artifact was built. Left as a clock read on
+        # purpose (basket_turn_watch #4568 did the same); the honest tape date is
+        # data_session below. Ledger stamps never come from here.
         "as_of":       str(date.today()),
+        # Newest bar any ledger-eligible series read (null when none were readable).
+        # Additive provenance; mirrors basket_turn_watch/ignition_radar.
+        "data_session": _data_session_max,
         "authority":   dict(AUTHORITY_V1),
         "accruing":    _ACCRUING_NOTE,
         # Oscillator sanity study result (Fix 4 — verdict embedded, crosses carry 'sanity' field)

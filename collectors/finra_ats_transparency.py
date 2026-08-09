@@ -48,13 +48,27 @@ Graceful-degrade contract (same as collectors/finra_short_volume.py):
   - If the API is unreachable and we already have stored data, return a heartbeat
     so the runner marks the source 'ok/stale' rather than 'failed'.
 
+TWO ADAPTERS, ONE ENDPOINT (2026-08-05):
+  FinraAtsTransparencyAdapter → summaryTypeCode ATS_W_SMBL_FIRM → data/finra_ats/
+      registered ATS venues — "true" dark pools.
+  FinraOtcNonAtsAdapter       → summaryTypeCode OTC_W_SMBL_FIRM → data/finra_otc_nonats/
+      non-ATS OTC — wholesaler/broker internalization, predominantly retail
+      marketable flow. Off-exchange volume is ATS + non-ATS, and non-ATS is the
+      BIGGER half: measured week 2026-06-22, ATS was only 16-31% of each name's
+      off-exchange total (AAPL 31.4%, NVDA 23.5%, TSLA 26.0%, GME 24.5%, F 16.5%).
+      Holding both is what lets a consumer separate institutional block flow from
+      retail order flow instead of calling the whole blob "dark pool".
+
 Schema written to parquet:
     week_start  : pd.Timestamp     (Monday of the reporting week)
     ticker      : str               (issueSymbolIdentifier)
-    mpid        : str               (ATS market-participant ID)
+    mpid        : str               (market-participant ID: ATS venue or OTC firm)
     venue_name  : str               (marketParticipantName)
     shares      : float             (totalWeeklyShareQuantity)
     trades      : int               (totalWeeklyTradeCount)
+    notional    : float             (totalNotionalSum, USD — added 2026-08-05;
+                                     ABSENT in weeks stored before that date, so
+                                     readers must fillna rather than assume it)
     tier        : str               (T1 / T2 / OTCE; "NMS" in pre-2024 rows)
 """
 from __future__ import annotations
@@ -74,9 +88,17 @@ log = logging.getLogger(__name__)
 
 API_BASE = "https://api.finra.org/data/group/OTCMarket/name/weeklySummary"
 API_PARTITIONS = "https://api.finra.org/partitions/group/OTCMarket/name/weeklySummary"
-# summaryTypeCode for per-symbol per-firm rows (as opposed to aggregate stats)
+# summaryTypeCode for per-symbol per-firm rows (as opposed to aggregate stats).
+# ATS_W_SMBL_FIRM = registered ATS ("true" dark pools).
+# OTC_W_SMBL_FIRM = non-ATS OTC — wholesaler/broker INTERNALIZATION, which is
+#   predominantly retail marketable order flow. This is the LARGER half of
+#   off-exchange volume (measured week 2026-06-22: ATS was only 16-31% of the
+#   off-exchange total per name — AAPL 31.4%, NVDA 23.5%, TSLA 26.0%, F 16.5%),
+#   and it is what separates institutional block flow from retail order flow.
 SUMMARY_TYPE = "ATS_W_SMBL_FIRM"
+SUMMARY_TYPE_NONATS = "OTC_W_SMBL_FIRM"
 GROUP = "finra_ats"
+GROUP_NONATS = "finra_otc_nonats"
 PAGE_SIZE = 5000         # API max per page (record-max-limit header)
 SLEEP_PAGE = 0.3         # seconds between pages
 MAX_PAGES = 60           # safety cap: 60 × 5000 = 300k rows/week (weeks run ~192k)
@@ -85,16 +107,16 @@ RECENT_WINDOW_WEEKS = 8  # only look this far back for missing weeks (normal run
 MAX_WEEKS_PER_RUN = 2    # fetch at most this many missing weeks per nightly run
 
 
-def _store_dir() -> Path:
-    return config.data_dir() / GROUP
+def _store_dir(group: str = GROUP) -> Path:
+    return config.data_dir() / group
 
 
-def _week_path(week_start: date) -> Path:
-    return _store_dir() / f"{week_start.strftime('%Y%m%d')}.parquet"
+def _week_path(week_start: date, group: str = GROUP) -> Path:
+    return _store_dir(group) / f"{week_start.strftime('%Y%m%d')}.parquet"
 
 
-def _have_weeks() -> set[date]:
-    d = _store_dir()
+def _have_weeks(group: str = GROUP) -> set[date]:
+    d = _store_dir(group)
     if not d.exists():
         return set()
     out: set[date] = set()
@@ -163,8 +185,9 @@ def _complete_weeks(partitions: dict[date, set[str]]) -> list[date]:
                   reverse=True)
 
 
-def _fetch_week(session: requests.Session, week: date) -> list[dict]:
-    """Fetch ALL ATS_W_SMBL_FIRM records for one reporting week (all tiers).
+def _fetch_week(session: requests.Session, week: date,
+                summary_type: str = SUMMARY_TYPE) -> list[dict]:
+    """Fetch ALL <summary_type> records for one reporting week (all tiers).
 
     Raises on failure — the caller must then SKIP the week entirely so a
     truncated file is never written. Returns the raw list of row dicts.
@@ -177,7 +200,7 @@ def _fetch_week(session: requests.Session, week: date) -> list[dict]:
             "limit": PAGE_SIZE,
             "offset": offset,
             "compareFilters": [{"fieldName": "summaryTypeCode",
-                                "fieldValue": SUMMARY_TYPE,
+                                "fieldValue": summary_type,
                                 "compareType": "EQUAL"}],
             "dateRangeFilters": [{"fieldName": "weekStartDate",
                                   "startDate": week.isoformat(),
@@ -200,8 +223,8 @@ def _fetch_week(session: requests.Session, week: date) -> list[dict]:
     if total_expected is not None and len(rows) < total_expected:
         # MAX_PAGES cap hit — refuse the truncated week rather than storing it
         raise RuntimeError(
-            f"finra_ats: week {week} truncated at {len(rows)}/{total_expected} rows "
-            f"(MAX_PAGES={MAX_PAGES} cap) — raise the cap")
+            f"finra otc-transparency [{summary_type}]: week {week} truncated at "
+            f"{len(rows)}/{total_expected} rows (MAX_PAGES={MAX_PAGES} cap) — raise the cap")
     return rows
 
 
@@ -226,6 +249,14 @@ def _parse_rows(rows: list[dict]) -> pd.DataFrame:
             trades = int(r.get("totalWeeklyTradeCount") or 0)
         except (ValueError, TypeError):
             continue
+        # totalNotionalSum (USD) — was dropped before 2026-08-05. Dollar weighting is
+        # how desks actually rank off-exchange participation (a $3 name and a $300 name
+        # are not the same trade), and notional/shares gives an average print PRICE that
+        # cross-checks the venue mix. Older stored weeks lack it → readers must fillna.
+        try:
+            notional = float(r.get("totalNotionalSum") or 0)
+        except (ValueError, TypeError):
+            notional = 0.0
         tier_raw = r.get("tierIdentifier") or r.get("tierDescription") or ""
         records.append({
             "week_start": week_start,
@@ -234,6 +265,7 @@ def _parse_rows(rows: list[dict]) -> pd.DataFrame:
             "venue_name": venue_name,
             "shares": shares,
             "trades": trades,
+            "notional": notional,
             "tier": str(tier_raw).strip(),
         })
     if not records:
@@ -241,9 +273,9 @@ def _parse_rows(rows: list[dict]) -> pd.DataFrame:
     return pd.DataFrame(records)
 
 
-def _heartbeat(latest: date) -> dict[str, pd.DataFrame]:
+def _heartbeat(latest: date, key: str = "finra_ats__ingest") -> dict[str, pd.DataFrame]:
     hb = pd.DataFrame({"new_rows": [0]}, index=[pd.Timestamp(latest)])
-    return {"finra_ats__ingest": hb}
+    return {key: hb}
 
 
 class FinraAtsTransparencyAdapter(Adapter):
@@ -251,6 +283,9 @@ class FinraAtsTransparencyAdapter(Adapter):
 
     name = "finra_ats_transparency"
     group = GROUP
+    summary_type = SUMMARY_TYPE
+    store_group = GROUP
+    ingest_key = "finra_ats__ingest"
     # Staleness anchor math: the heartbeat is indexed at the newest COMPLETE
     # (T1+T2) week's START date. T2 publishes ~4wk after the week ENDS, so the
     # newest complete week_start is ~28-35d old in healthy steady state (observed
@@ -259,8 +294,8 @@ class FinraAtsTransparencyAdapter(Adapter):
     stale_after_days = 50
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
-        have = _have_weeks()
-        store_dir = _store_dir()
+        have = _have_weeks(self.store_group)
+        store_dir = _store_dir(self.store_group)
         store_dir.mkdir(parents=True, exist_ok=True)
 
         session = requests.Session()
@@ -273,62 +308,89 @@ class FinraAtsTransparencyAdapter(Adapter):
         except Exception as e:  # noqa: BLE001
             if _degradable(e) and have:
                 latest = max(have)
-                log.warning("finra_ats: partitions unreachable (%s); "
-                            "using stored data, latest %s", e, latest)
-                return _heartbeat(latest)
+                log.warning("%s: partitions unreachable (%s); "
+                            "using stored data, latest %s", self.name, e, latest)
+                return _heartbeat(latest, self.ingest_key)
             raise
 
         complete = _complete_weeks(partitions)
         if not complete:
             if have:
-                return _heartbeat(max(have))
-            raise RuntimeError("finra_ats: no complete weeks published and no stored history")
+                return _heartbeat(max(have), self.ingest_key)
+            raise RuntimeError(f"{self.name}: no complete weeks published and no stored history")
 
         window = complete if full_history else complete[:RECENT_WINDOW_WEEKS]
         cap = len(window) if full_history else MAX_WEEKS_PER_RUN
         missing = [w for w in window if w not in have][:cap]
         skipped = sum(1 for w in window if w not in have) - len(missing)
         if skipped:
-            log.info("finra_ats: %d missing week(s) beyond this run's cap of %d — "
-                     "will catch up on later runs", skipped, cap)
+            log.info("%s: %d missing week(s) beyond this run's cap of %d — "
+                     "will catch up on later runs", self.name, skipped, cap)
 
         if not missing:
             latest = max(have)
-            log.info("finra_ats: all recent complete weeks stored; latest %s", latest)
-            return _heartbeat(latest)
+            log.info("%s: all recent complete weeks stored; latest %s", self.name, latest)
+            return _heartbeat(latest, self.ingest_key)
 
         total_rows = 0
         written: list[date] = []
         for w in missing:
             try:
-                rows = _fetch_week(session, w)
+                rows = _fetch_week(session, w, self.summary_type)
             except Exception as e:  # noqa: BLE001
                 # Never write a partial week. If nothing succeeded this run and
                 # nothing is stored, surface the failure; otherwise degrade.
-                log.warning("finra_ats: week %s fetch failed (%s); skipping", w, e)
+                log.warning("%s: week %s fetch failed (%s); skipping", self.name, w, e)
                 if not written and not have:
                     raise
                 break
             week_df = _parse_rows(rows)
             week_df = week_df[week_df["week_start"].dt.date == w]
             if week_df.empty:
-                log.warning("finra_ats: week %s returned no per-symbol rows; skipping", w)
+                log.warning("%s: week %s returned no per-symbol rows; skipping", self.name, w)
                 continue
-            week_df.to_parquet(_week_path(w), index=False)
+            week_df.to_parquet(_week_path(w, self.store_group), index=False)
             total_rows += len(week_df)
             written.append(w)
-            log.info("finra_ats: stored week %s → %d rows, %d venues",
-                     w, len(week_df), week_df["mpid"].nunique())
+            log.info("%s: stored week %s → %d rows, %d firms",
+                     self.name, w, len(week_df), week_df["mpid"].nunique())
 
         latest = max(set(written) | have) if (written or have) else None
         if latest is None:
-            raise RuntimeError("finra_ats: no rows returned and no stored history")
-        log.info("finra_ats: %d new week(s), %d rows total, latest %s",
-                 len(written), total_rows, latest)
+            raise RuntimeError(f"{self.name}: no rows returned and no stored history")
+        log.info("%s: %d new week(s), %d rows total, latest %s",
+                 self.name, len(written), total_rows, latest)
         hb = pd.DataFrame({"new_rows": [total_rows]}, index=[pd.Timestamp(latest)])
-        return {"finra_ats__ingest": hb}
+        return {self.ingest_key: hb}
+
+
+class FinraOtcNonAtsAdapter(FinraAtsTransparencyAdapter):
+    """Weekly per-symbol NON-ATS OTC volume — wholesaler/broker internalization.
+
+    Same endpoint, same partitions, same write-once weekly contract as the ATS
+    sibling; only the summaryTypeCode and the store differ. Kept as a separate
+    store (data/finra_otc_nonats/) so the ATS files keep a stable schema and so
+    "which venue" (ATS) never silently blends with "which wholesaler" (non-ATS).
+
+    WHY THIS EXISTS: off-exchange volume is ATS + non-ATS, and the non-ATS half is
+    the BIGGER one (ATS was 16-31% of the off-exchange total per name in week
+    2026-06-22). The dark-pool desk previously attributed 100% of off-exchange
+    volume to "dark pool" while showing only the ATS venue table — so its venue
+    table could never account for its own headline number. Holding both halves is
+    what lets the desk separate institutional block flow from retail order flow.
+
+    Volume is far smaller than the ATS feed (~38k rows/week vs ~191k), so no
+    universe filter is needed to stay size-lawful.
+    """
+
+    name = "finra_otc_nonats"
+    group = GROUP_NONATS
+    summary_type = SUMMARY_TYPE_NONATS
+    store_group = GROUP_NONATS
+    ingest_key = "finra_otc_nonats__ingest"
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     FinraAtsTransparencyAdapter().fetch()
+    FinraOtcNonAtsAdapter().fetch()

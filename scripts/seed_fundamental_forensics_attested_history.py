@@ -30,41 +30,49 @@ from pathlib import Path
 import re
 import secrets
 import stat
+import sys
 from typing import Any, Callable, Mapping, Sequence
 
-from collectors.edgar_forensics import RetrievalReceipt, SecForensicsCollector
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors.edgar_forensics import RetrievalReceipt, SecForensicsCollector  # noqa: E402
 from collectors.fundamental_forensics_companyfacts import (
     acquire_companyfacts,
     read_companyfacts_manifest,
-)
+)  # noqa: E402
 from collectors.sec_document_spine import (
     ArchiveReceipt,
     SecFilingArchiveCollector,
     persist_filing_manifest,
     read_archive_document,
-)
+)  # noqa: E402
+from engine.fundamental_forensics.attested_history_credentials import (
+    R2TemporaryCredentialError,
+    mint_r2_temporary_credentials,
+)  # noqa: E402
 from engine.fundamental_forensics.attested_history_pilot import (
     prepare_attested_history_base_candidate,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.companyfacts_ledger import (
     CompanyFactsConversionSourceBundle,
     CompanyFactsLedgerConversionConfig,
     DEFAULT_MAX_OLDER_SUBMISSIONS_FILES,
     PinnedSubmissionsSource,
     load_companyfacts_ledger_from_pinned_source,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.filing_attestation import (
     CompanyFactsSourcePaths,
     PinnedSourceAuthority,
     build_filing_attestation,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.filing_package import (
     PinnedFilingPackageDescriptor,
     materialize_filing_package_from_pinned_source,
-)
-from engine.fundamental_forensics.ixbrl_extraction import build_ixbrl_extraction
-from engine.fundamental_forensics.models import canonical_json, parse_utc, utc_text
-from engine.fundamental_forensics.query_snapshots import publish_query_snapshot
+)  # noqa: E402
+from engine.fundamental_forensics.ixbrl_extraction import build_ixbrl_extraction  # noqa: E402
+from engine.fundamental_forensics.models import canonical_json, parse_utc, utc_text  # noqa: E402
+from engine.fundamental_forensics.query_snapshots import publish_query_snapshot  # noqa: E402
 from engine.fundamental_forensics.sec_document_spine import (
     archive_index_document,
     build_filing_manifests,
@@ -73,23 +81,21 @@ from engine.fundamental_forensics.sec_document_spine import (
     select_periodic_comparables,
     with_archive_documents,
     with_document_retrievals,
-)
-from engine.fundamental_forensics.source_sync import sync_source_roots
+)  # noqa: E402
+from engine.fundamental_forensics.source_sync import sync_source_roots  # noqa: E402
 from engine.research_vault.r2_store import (
     LocalStore,
     R2Store,
     StrictBoundedReadStore,
     StrictConditionalWriteStore,
-)
+)  # noqa: E402
 from scripts.run_fundamental_forensics_attested_history import (
     MAX_SPEC_BYTES as MAX_OPERATOR_PACKET_BYTES,
-    R2TemporaryCredentialError,
     build_readonly_operator_store,
-    mint_r2_temporary_credentials,
     operator_spec_from_bytes,
     run_readonly_preflight,
     write_private_receipt,
-)
+)  # noqa: E402
 
 
 AAPL_TICKER = "AAPL"
@@ -115,7 +121,7 @@ DEPENDENCY_LOCK_RELATIVE_PATH = Path(
     "requirements/attested-history-macos-arm64-py312.lock"
 )
 MAX_DEPENDENCY_LOCK_BYTES = 64 * 1024
-EXPECTED_GITHUB_REPOSITORY = "chriswong6031-creator/macro"
+EXPECTED_GITHUB_REPOSITORY = "mastermindx-market-intelligence/macro"
 EXPECTED_GITHUB_REF = "refs/heads/main"
 EXPECTED_GITHUB_ENVIRONMENT = "attested-history-seed"
 EXPECTED_GITHUB_WORKFLOW = "attested-history-aapl-seed"

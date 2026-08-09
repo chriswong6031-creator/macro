@@ -357,7 +357,10 @@ function renderRotation(){
     return `<div class="rotrow">${dot}<span class="rn"><a href="${(window.BASKET_BASE||'basket/')}${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a></span>
       <span class="rv ${cls(t.delta_5d)}">${fmtPct(t.delta_5d)}</span>
       <span class="rk ${ac}" title="5d rank change${traj?' · '+traj:''}">${ar}${t.rank_5d?Math.abs(t.rank_5d):''}${traj?`<span class="rk20"> · ${traj}</span>`:''}</span></div>`;};
-  const subtitle=`<p class="rot-sub">${L('Rank changes across themes; descriptive only.','主题排名变化；仅作描述。')}</p>`;
+  /* Operator 2026-08-04: the "Rank changes across themes; descriptive only."
+     subtitle is removed — the two column headings (Weekly climbers / Weekly
+     fallers) already say what the rows are. */
+  const subtitle='';
   const col=(en,zh,emo,arr)=>`<div class="rotcol"><h4>${emo} ${L(en,zh)}</h4>${arr.length?arr.map(row).join(''):`<div class="muted sm" style="padding:6px 0">${L('none','无')}</div>`}</div>`;
   const rotEl=document.getElementById('rotation');
   rotEl.innerHTML=subtitle+`<div class="rotwrap" style="margin-top:6px">${col('Weekly climbers','本周上升','▲',rot.climbers||[])}${col('Weekly fallers','本周下降','▽',rot.fallers||[])}</div>`;

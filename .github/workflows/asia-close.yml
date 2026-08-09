@@ -143,6 +143,20 @@ jobs:
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 165   # was 90 -> 120 -> 165. EVERY run 07-03..07-10 died at the cap: measured 07-10 (run 29089281652) collect --group asia = 68m + build_china alone = 36m, so the kill lands mid-chain — everything after build_subsector_confluence (build_hk, build_china_news ingest, all CN-SYS lobes, masterminds) had been DEAD for 8 days while the run reads "cancelled" not "failed". Last natural success 07-02 at ~86m; the lane grew ~+35m in a week as W8/CN-SYS modules landed. 165m restores the full chain; the runtime diet landed 2026-07-11 — collect-path (us_scope tail gate + pure-REST pool moves + CNInfo caps, #2199) and build-path (skip the duplicate library rebuild + [timing] section ticks in build_china_library, this PR). Target ~110m steady-state; keep 165m as headroom against CNInfo/GDELT bad days. 2026-07-14: the post-build_china builder chain went parallel (band A/B below, engine-job cluster pattern) — expected ~18-25m further off the steady state; timeout deliberately UNTOUCHED until the bands' step-summary wall-times confirm it.
     steps:
+      # W2 runtime telemetry (research/NIGHTLY_RESILIENCE_AND_LIVE_TRANSITION_MASTERPLAN_2026-08-06.md
+      # §A2), extended to this lane by W-L4 gate 1 of research/BREATHING_PLATFORM_MASTERPLAN_BY_FABLE.md.
+      # asia-close carried NO timings instrumentation at all: `collect --group asia` is 55 sources and
+      # 46.1m of adapter wall-clock (measured 2026-08-09 off data/run_status.json — china_filings alone
+      # 555.8s) sitting in no band on any job, so the ledger could not say what this lane spends its
+      # 165m cap on, and every cap raise in the job comment below happened only AFTER nights died at
+      # the cap. Stamp the job's wall-clock start BEFORE checkout (checkout alone has run 3s→14.5m on
+      # this 14k-file tree), so the ledger measures the same clock the job cap kills. The matching LAST
+      # step (scripts/ci/nightly_timings_finish.sh, if: always()) appends the per-band row to
+      # data/ops/nightly_timings/<job>.jsonl and trips a ::warning above 85% of timeout-minutes. Same
+      # two steps as every instrumented self-hosted daily.yml job (tests/test_nightly_timings.py pins
+      # the wiring + cap args across BOTH workflows).
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
       # Default ref (the branch that triggered this) — NOT a hard `ref: main`. On the
       # feat/time-shards branch this pulls the collect.py that HAS --group; on main
       # after merge it is main. `git push` (no args) then pushes the CURRENT branch to
@@ -205,12 +219,25 @@ jobs:
           if ! command -v pdftotext >/dev/null 2>&1; then
             echo "::warning title=asia-close pdftotext missing::pdftotext (poppler) missing on ${RUNNER_NAME:-unknown} — hk_cbbc_sld will fail all SLD extractions this run (call_levels store freezes, HK magnet analysis goes stale). Fix: brew install poppler on this Mac."
           fi
+      - name: timings band — collectors (W2)
+        run: python3 scripts/nightly_timings.py mark --band collectors || echo "::warning::timings band mark failed (non-fatal)"
       - name: collect China/HK data (graceful degradation — never fails on one source)
         env:
           TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}  # unfreezes the gated tushare plane (dead since 2026-06-21: collectors silently no-op without it — see CHINA_ENGINE_REASSESSMENT)
           EASTMONEY_WEB_TOKEN: ${{ secrets.EASTMONEY_WEB_TOKEN }}  # legacy-datacenter web token (collectors/china_property.py cgb); absent -> series skips (was a source literal — CXI tripwire 2026-07-18)
           EASTMONEY_UT_TOKEN: ${{ secrets.EASTMONEY_UT_TOKEN }}    # push2ex ut token (collectors/china_flows.py limit_breadth); absent -> leg skips and ~2wk-retention days are LOST — keep this secret set
         run: python -m scripts.collect --group asia
+      - name: timings band — collect-commit-push (W2)
+        run: python3 scripts/nightly_timings.py mark --band collect-commit-push || echo "::warning::timings band mark failed (non-fatal)"
+      # The collect step above cannot fail on one source, and tushare_client returns
+      # None for every failure it has (no token, endpoint error, access denied), so
+      # the gated plane can die with every signal still green. It did: flow_hist and
+      # moneyflow froze at 2026-07-24 and flow_velocity.html was still rendering that
+      # as-of on 08-06 — 13 days — while china_lhb from the same adapter list stayed
+      # current. Advisory only (exit 0): one cold gated source must not red a
+      # collection that landed every other store.
+      - name: tushare plane freshness tripwire (advisory)
+        run: python3 scripts/check_tushare_freshness.py
       - name: commit collected asia data
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
@@ -251,6 +278,8 @@ jobs:
             done
             push_lost
           fi
+      - name: timings band — build-china (W2)
+        run: python3 scripts/nightly_timings.py mark --band build-china || echo "::warning::timings band mark failed (non-fatal)"
       - name: build china a-share dashboard (spine — serial head, every CN surface reads it)
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
@@ -292,6 +321,8 @@ jobs:
             { echo "### ❌ build china a-share dashboard (build_china) failed (rc=$rc)"; echo '```'; tail -n 40 "$RUNNER_TEMP/step.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           fi
           exit 0
+      - name: timings band — builders-parallel (W2)
+        run: python3 scripts/nightly_timings.py mark --band builders-parallel || echo "::warning::timings band mark failed (non-fatal)"
       - name: CN/HK builder band A (parallelised — 5 independent clusters, barrier before cross-cluster consumers)
         # The ~30 builders after build_china used to run strictly serially (~55 min of
         # wall-clock). They split into mutually INDEPENDENT clusters (each internally
@@ -546,6 +577,8 @@ jobs:
             fi
           done
           exit 0
+      - name: timings band — tail-desks (W2)
+        run: python3 scripts/nightly_timings.py mark --band tail-desks || echo "::warning::timings band mark failed (non-fatal)"
       - name: builder fail-streak escalation (consecutive-run freeze detector — CN/HK)
         # Port of daily.yml's #2738 step. asia-close is the SOLE nightly for the CN/HK
         # pages, so this lane legitimately advances its OWN forward ledger
@@ -643,6 +676,8 @@ jobs:
           # swallowed into a green run pins returning browsers to the old bytes for a year
           # (#3617/#3624). See render.yml for the full rationale.
           python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
+      - name: timings band — commit-publish (W2)
+        run: python3 scripts/nightly_timings.py mark --band commit-publish || echo "::warning::timings band mark failed (non-fatal)"
       - name: commit engine outputs
         if: always()
         run: |
@@ -800,3 +835,18 @@ jobs:
             echo "### ❌ R2 data plane STALE/DARK — publish_r2 failed or was skipped (expired R2_* secrets?); the live site keeps serving OLD CN/HK per-ticker data. See scripts/audit_r2.py." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
+      # W2: per-band timings row + >85%-of-cap tripwire. always() so a job-cap cancel
+      # still records the night in the grace window (elapsed ≈ cap → the warning fires).
+      # LAST, deliberately — behind the R2 publish + freshness verify above, unlike
+      # daily.yml's engine job where the finish step is hoisted ahead of its tail. The
+      # engine exception is scoped to a pages-artifact upload: on run 31067383446
+      # (2026-08-06, cancelled at the 200m cap + 5m grace) steps 117-121 — including the
+      # R2 publish AND the freshness verify — all completed inside that grace, and only
+      # step 122 `upload pages artifact` burned the rest of it, stranding the finish step
+      # so it was never scheduled at all. asia has NO pages-artifact upload: its tail is
+      # exactly the two bounded R2 steps that were measured to fit, so nothing here can
+      # strand the row, and ordering the finish step last keeps the ledger's
+      # `commit-publish` band covering the whole publish tail instead of cutting it short.
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 165
