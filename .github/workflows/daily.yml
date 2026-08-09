@@ -3038,14 +3038,25 @@ jobs:
             data/prophet/origination_receipts \
             data/prophet_arena \
             data/prophet_stage_shadow
+          RESTORE_MISMATCH=false
+          if ! git diff --cached --quiet "$ACCEPTED_PROPHET_SHA" -- \
+              site/prophet data/prophet data/prophet_arena data/prophet_stage_shadow \
+            || ! git diff --quiet -- \
+              site/prophet data/prophet data/prophet_arena data/prophet_stage_shadow \
+            || [ -n "$(git ls-files --others --exclude-standard -- data/prophet)" ]; then
+            RESTORE_MISMATCH=true
+          fi
+          # Keep accepted bytes in the worktree for downstream readers, but do
+          # not leave them staged against this job's older checkout-time HEAD.
+          # This reset must follow verification: a checkpoint can legitimately
+          # add plans/receipts/Arena ledgers that do not exist in HEAD, and an
+          # earlier reset makes those accepted paths look deleted/untracked.
           git reset -q -- \
             site/prophet \
             data/prophet \
             data/prophet_arena \
             data/prophet_stage_shadow
-          if ! git diff --quiet "$ACCEPTED_PROPHET_SHA" -- \
-              site/prophet data/prophet data/prophet_arena data/prophet_stage_shadow \
-            || [ -n "$(git ls-files --others --exclude-standard -- data/prophet)" ]; then
+          if [ "$RESTORE_MISMATCH" = "true" ]; then
             echo "::error title=Prophet downstream source mismatch::engine worktree could not be made byte-equivalent to accepted main; derived ledgers withheld"
             exit 1
           fi

@@ -29,13 +29,18 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from engine import btc_signals
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import btc_signals  # noqa: E402
 from engine.validation import (
     backtest_core, deflated_sharpe, dsr_verdict, ret_moments,
     block_bootstrap_ci, _maxdd, _sharpe,
-)
-from lib import config
+)  # noqa: E402
+from lib import config  # noqa: E402
 
 TRADING_YEAR = 365  # BTC trades every day
 ANN = np.sqrt(TRADING_YEAR)
