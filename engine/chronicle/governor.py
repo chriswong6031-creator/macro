@@ -106,23 +106,65 @@ def build_and_write(
         if state_gap:
             adapter_report["state_log_capture"] = {"count": 0, "gap": state_gap}
 
-        # B1: union-merge with whatever was previously committed so a source
-        # row leaving the current snapshot RETAINS its event instead of
+        # B1: union-merge with whatever was previously committed so an ordinary
+        # source row leaving the current snapshot RETAINS its event instead of
         # silently vanishing. dropped_events is the (possibly empty) list of
         # previously-committed events the recompute no longer produces.
         events_sorted, dropped_events = spine.union_events(prev_events, raw_events)
+
+        # A correction receipt is not ordinary disappearance. Prophet's raw ledger
+        # remains append-only, but explicitly quarantined outcome claims must leave
+        # this derived effective store (and therefore its rollups/Brain context).
+        # Apply this AFTER union so a prior poisoned event cannot be resurrected by
+        # B1 retention. Strict receipt loading raises before any Chronicle write.
+        events_sorted, authority_retractions = spine.apply_authoritative_retractions(
+            repo, events_sorted
+        )
+        retracted_event_ids = {
+            event.get("id") for event in authority_retractions if event.get("id")
+        }
+        dropped_events = [
+            event for event in dropped_events
+            if event.get("id") not in retracted_event_ids
+        ]
         new_ids = {e.get("id") for e in events_sorted}
         added = len(new_ids - prev_ids)
 
         for name in adapter_report:
             adapter_report[name].setdefault("dropped_from_source", 0)
+            adapter_report[name].setdefault("retracted_by_authority", 0)
+        if authority_retractions:
+            info = adapter_report.setdefault(
+                "prophet_ledger",
+                {
+                    "count": 0,
+                    "gap": None,
+                    "dropped_from_source": 0,
+                    "retracted_by_authority": 0,
+                },
+            )
+            info["retracted_by_authority"] = len(authority_retractions)
+            note = (
+                f"{len(authority_retractions)} previously retained event(s) retracted "
+                "from the effective Chronicle by Prophet correction/quarantine authority; "
+                "raw Prophet ledger evidence remains append-only"
+            )
+            info["gap"] = f"{info['gap']}; {note}" if info.get("gap") else note
         if dropped_events:
             dropped_by_source: dict[str, int] = {}
             for e in dropped_events:
                 src = e.get("source") or "unknown"
                 dropped_by_source[src] = dropped_by_source.get(src, 0) + 1
             for src, cnt in dropped_by_source.items():
-                info = adapter_report.setdefault(src, {"count": 0, "gap": None, "dropped_from_source": 0})
+                info = adapter_report.setdefault(
+                    src,
+                    {
+                        "count": 0,
+                        "gap": None,
+                        "dropped_from_source": 0,
+                        "retracted_by_authority": 0,
+                    },
+                )
                 info["dropped_from_source"] = cnt
                 note = (f"{cnt} event(s) retained after their source row left the "
                         f"current snapshot (union-merge, never deleted)")
