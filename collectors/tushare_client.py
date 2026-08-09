@@ -7,7 +7,7 @@ and the Tushare collectors no-op, so the existing free akshare / Eastmoney stack
 CI build stay exactly as they are. The token is read from the environment ONLY and is never
 written to disk or committed.
 
-Direct HTTP to the Tushare REST endpoint (``POST http://api.tushare.pro``) — no ``tushare`` pip
+Direct HTTPS to the Tushare REST endpoint (``POST https://api.tushare.pro``) — no ``tushare`` pip
 dependency, matching this repo's direct-Eastmoney-JSON convention. Notes:
 
   * SUFFIX NORMALISATION. Tushare uses ``.SH`` for Shanghai; THIS repo uses ``.SS`` (e.g.
@@ -39,7 +39,7 @@ import requests
 
 log = logging.getLogger("tushare_client")
 
-_API_URL = "http://api.tushare.pro"
+_API_URL = "https://api.tushare.pro"
 _TIMEOUT = 30
 _ENV = "TUSHARE_TOKEN"
 
@@ -131,11 +131,24 @@ def query(api_name: str, fields: str = "", *, _retries: int = 2, **params) -> "p
     for attempt in range(_retries + 1):
         _throttle(api_name)
         try:
-            r = requests.post(_API_URL, json=payload, timeout=_TIMEOUT)
+            # The paid token lives in the JSON body.  Never send it over plaintext HTTP and
+            # never follow a vendor/proxy redirect that could move that body to a different
+            # origin.  TLS certificate verification remains requests' fail-closed default.
+            r = requests.post(
+                _API_URL,
+                json=payload,
+                timeout=_TIMEOUT,
+                allow_redirects=False,
+            )
+            if r.is_redirect or r.is_permanent_redirect or 300 <= r.status_code < 400:
+                log.warning("tushare %s refused HTTP redirect", api_name)
+                return None
             r.raise_for_status()
             d = r.json()
         except Exception as e:  # noqa: BLE001 — network/parse: one bad call never breaks a build
-            log.warning("tushare %s request failed (%s)", api_name, e)
+            # Exception text and vendor response bodies are untrusted and can echo a request.
+            # Log only the exception class so credential-bearing payload state cannot escape.
+            log.warning("tushare %s request failed (%s)", api_name, type(e).__name__)
             return None
         code = d.get("code")
         if code == 0:
@@ -152,7 +165,7 @@ def query(api_name: str, fields: str = "", *, _retries: int = 2, **params) -> "p
             if "ts_code" in df.columns:
                 df["ts_code"] = df["ts_code"].map(norm_ticker)
             return df if len(df) else None
-        msg = (d.get("msg") or "")[:120]
+        msg = str(d.get("msg") or "")
         # 频率超限 (rate-limited): pause and retry once; everything else is a hard miss. Regular
         # endpoints (500/min) clear in ~1s; only report_rc (in _THROTTLE) needs its long backoff.
         if code == 40203 and "频率" in msg and attempt < _retries:
@@ -160,9 +173,14 @@ def query(api_name: str, fields: str = "", *, _retries: int = 2, **params) -> "p
             time.sleep(max(_THROTTLE.get(api_name, _DEFAULT_THROTTLE), 1.0))
             continue
         if code in _AUTH_CODES:
-            _auth_error = {"api_name": api_name, "code": code, "msg": msg,
-                           "ts": datetime.now(timezone.utc).isoformat()}
-        log.warning("tushare %s returned code=%s msg=%s", api_name, code, msg)
+            _auth_error = {
+                "api_name": api_name,
+                "code": code,
+                "msg": "credential rejected by vendor",
+                "ts": datetime.now(timezone.utc).isoformat(),
+            }
+        # Do not log the vendor message: an upstream/proxy error can echo arbitrary input.
+        log.warning("tushare %s returned code=%s", api_name, code)
         return None
     return None
 
