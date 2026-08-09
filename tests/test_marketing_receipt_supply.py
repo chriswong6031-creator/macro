@@ -65,6 +65,10 @@ def _live_plan(ticker: str) -> dict:
         "direction": "BULL",
         "phase": "active",
         "management_confidence": 90.0,
+        # Current public freshness is family-native and fail-closed; the legacy
+        # private `_signal_date` alone is deliberately no longer sufficient.
+        "signal_date_basis": "tier_event_date",
+        "signal_date": _FRESH,
         "_signal_date": _FRESH,
         "horizon_days": 21,
     }
@@ -77,6 +81,8 @@ def _resolved_plan(ticker: str) -> dict:
         "direction": "BULL",
         "phase": "invalidated",
         "management_confidence": 90.0,
+        "signal_date_basis": "tier_event_date",
+        "signal_date": _FRESH,
         "_signal_date": _FRESH,
         "horizon_days": 21,
     }
