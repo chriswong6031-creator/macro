@@ -368,6 +368,45 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 	fi
 fi
 
+# CLOSE-PASS MIRROR lane (W-L1a). Its own block for the same reason the Prophet
+# block is separate: a widened regex would restart unrelated timers whenever this
+# unit changed. Same self-arming contract — go-live for this lane is a REPO COMMIT
+# and nothing else, so a CHANGED-only trigger would install a timer nobody ever
+# enables, and the absent-file clause self-heals a failed verify or an operator
+# removal. The live-fast guard marks the serving VPS and keeps the block inert
+# everywhere else.
+#
+# The .service is NEVER restarted — it is a oneshot, and `systemctl restart` would
+# RUN a mirror pass out of band. Only the timer is (re)armed.
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-live-closepass\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-live-closepass.timer ]; }; then
+	CLOSEPASS_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-live-closepass.service"
+		"$APP_DIR/app/deploy/macro-live-closepass.timer"
+	)
+	if systemd-analyze verify "${CLOSEPASS_UNIT_SOURCES[@]}"; then
+		CLOSEPASS_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${CLOSEPASS_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				CLOSEPASS_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$CLOSEPASS_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-live-closepass.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-live-closepass units updated"
+		fi
+		systemctl enable --now macro-live-closepass.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-live-closepass.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-live-closepass unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
 # FRESHNESS SENTINEL — the dead-man switch that must live OUTSIDE GitHub
 # (masterplan W1). Same self-arming contract as the Prophet block above and for
 # the same reason: go-live is a REPO COMMIT — the unit did not exist when

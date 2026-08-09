@@ -1,0 +1,176 @@
+name: close-pass
+# W-L1a — the evening PROVISIONAL US board, off every render critical path.
+#
+# WHY THIS IS NOT A STEP IN closing-bell.yml. That lane (Build A) already ships a
+# full provisional site from 16:05 ET, but it takes a MEASURED 109 minutes behind
+# an 81-minute spine and lands ~17:55 ET against an 18:30 SLA — 35 minutes of
+# margin. It also deliberately EXCLUDES build_prophet / grade_us_board / us_pages,
+# so the one thing it does not refresh is exactly the US Prophet picks this lane
+# is about. Bolting the board onto the end of that spine would spend the whole
+# margin to publish the thing the spine does not compute. This is a separate
+# ~10-20 minute job in its own concurrency group, publishing to the RUNTIME plane
+# (R2 → the VPS live plane) rather than through a render, so the board lands ~30
+# minutes after the close no matter what the spine is doing.
+#
+# WHAT THE SURFACE CONSUMES. The dashboard's provisional-board stamp (#5148)
+# reads an optional top-level `board_state` key on live/prophet_live.json — the
+# artifact the live strip already polls — so the page keeps one artifact, one
+# poll, one client. This lane publishes the FULL board to R2; the VPS mirror
+# (app/deploy/macro-live-closepass.*) lands both the full copy and that derived
+# key. `board_state.board.tickers` is the ordered board, and the client paints
+# nothing unless it matches the cards actually in the grid — which is what makes
+# "rel == ahead only when the rendered cards came from the evening board" a
+# property of the code rather than a promise.
+#
+# LEDGER LAW (G0.2, DNR:KILL-INTRADAY-CHRONICLE). This lane runs NO git command,
+# commits nothing, and writes no data/ path — so it needs none of closing-bell's
+# `git checkout -- .` discard contract, because it never creates the writes that
+# contract exists to discard. `contents: read` is the enforcement, not a comment.
+# COLLECT_LANE is deliberately UNSET (every engine ledger writer self-gates on
+# it; unset means non-ledger lane) and RENDER_NO_DRIP=1 is set job-wide, both in
+# the closing-bell idiom.
+#
+# SCHEDULE — DST pair, one window, no second definition of "when is the market
+# open". Both lines fire year-round and the guards self-skip the wrong-season one,
+# exactly as closing-bell.yml does:
+#   '25 20 * * 1-5'  20:25 UTC = 16:25 ET under EDT (Mar-Nov)
+#                             = 15:25 ET under EST  → PRE-CLOSE, session guard skips
+#   '25 21 * * 1-5'  21:25 UTC = 16:25 ET under EST (Nov-Mar)
+#                             = 17:25 ET under EDT  → already published, dedup skips
+# The pass fires at the START of the 16:15-17:30 ET window in BOTH regimes, never
+# at its end, and that is deliberate: under EST the window's end (17:30 ET) is
+# 22:30 UTC, which is daily.yml's cron TO THE MINUTE. Scheduling anywhere near it
+# would put this lane and the multi-hour nightly on the same two-host pool at the
+# same instant. At 21:25 UTC the pass is capped at 45 min, so it is finished by
+# 22:10 UTC — 20 minutes clear — and daily.yml's own comment plans to move to
+# 23:30 UTC at the November flip, which widens the gap rather than closing it.
+#
+# MEASURED POOL CAPACITY (2026-08-09), because the masterplan's "five hosts idle
+# through the session" is false and the minute matters:
+#   * plain `macstudio` is TWO live physical hosts (mac-builder-1/2), which also
+#     serve the `codex` and `theta-m1` labels; mac-builder-5 carries the label but
+#     is PARKED, and mac-builder-3 is the separate single-host `macstudio-light`.
+#     render.yml:225 says the same thing in its own words.
+#   * closing-bell.yml holds ONE of those two slots for the WHOLE window, every
+#     weekday (64-86 min observed across three sampled runs; ~109 min per its own
+#     header). So this lane is one slot deep, not idle.
+#   * the minute was chosen against the other macstudio/codex crons in the window:
+#     codex-research fires at :20 (same two hosts), smart-money-13f-census at :07
+#     and :37, smart-money-filings at :17, metabolism-cycle at :35 and
+#     metabolism-heartbeat at :45. :25 is the widest gap between them.
+#   * observed queue waits on this pool range 2s to 71 min. Even the worst case
+#     lands 16:25 + 71 + 20 = ~17:56 ET, still inside the 18:30 SLA — which is
+#     the whole reason this fires at the window's start rather than its end.
+#   * NOT YET OBSERVABLE: smart-money-13f-census.yml and smart-money-filings.yml
+#     both merged within 48h and have never had a weekday firing, so their real
+#     duration is unknown. If either turns out to be long, the second slot is
+#     contended and this lane's queue wait is the thing to watch first.
+# tests/test_close_pass_lane.py pins both regimes and the no-second-window rule.
+#
+# The session-day guard lives in the SCRIPT (close_pass_publish.session_date), not
+# in a shell step, so the schedule and the pass cannot disagree about what a
+# session is — and it uses is_session() rather than expected_last_session() for
+# the reason closing-bell documents: this fires before the 17:00 ET settle buffer,
+# so expected_last_session() still resolves to YESTERDAY.
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: republish even if this session's board is already up
+        type: boolean
+        default: false
+  schedule:
+    - cron: '25 20 * * 1-5'
+    - cron: '25 21 * * 1-5'
+  # The receipt job only — fires when the nightly board of record lands.
+  workflow_run:
+    workflows: [daily]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  # Own group: never shares with pipeline-daily, pipeline-closingbell or
+  # pipeline-render. cancel-in-progress false so a running pass always finishes —
+  # a cancelled pass is a missed SLA session in the sentinel's record.
+  group: pipeline-closepass-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  # ── the evening board ────────────────────────────────────────────────────────
+  publish:
+    if: github.event_name != 'workflow_run'
+    runs-on: [self-hosted, macstudio]
+    # Measured cost is the gate over the universe plus one extension panel. The
+    # cap is deliberately well inside the window rather than generous: a pass
+    # still running at 17:30 ET has already missed the point of being early.
+    timeout-minutes: 45
+    env:
+      RENDER_NO_DRIP: "1"
+      # COLLECT_LANE deliberately UNSET — see the header.
+    steps:
+      - uses: actions/checkout@v4
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+
+      # Best-effort, non-fatal: at 16:20 ET the daily bar may not be finalized
+      # yet. Names without today's close are SKIPPED and counted, never carried
+      # at yesterday's price — so a partial heal degrades coverage, never truth.
+      - name: price-store freshness prefetch (--heal, keyless, best-effort)
+        continue-on-error: true
+        run: python -m scripts.check_price_store_freshness --heal
+
+      - name: publish the provisional board (R2 only — the VPS mirrors it)
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          # No live plane on a runner: the served copy belongs to the VPS.
+          CLOSE_PASS_SERVED_PATH: ""
+        run: |
+          python -m scripts.close_pass_publish \
+            ${{ inputs.force && '--force' || '' }}
+
+      # A lane that writes no data/ path should be able to prove it on every run,
+      # not only in a unit test. This is the same evidence the guard suite asserts
+      # by AST, taken against the real working tree after the real pass.
+      - name: prove the pass wrote no data/ path
+        run: |
+          if [ -n "$(git status --porcelain -- data/)" ]; then
+            echo "::error title=close-pass::the pass modified data/ — G0.2 violation"
+            git status --porcelain -- data/
+            exit 1
+          fi
+          echo "data/ clean — the nightly remains the sole writer of record"
+
+  # ── the confirmation receipt ─────────────────────────────────────────────────
+  # Fires on daily.yml completing, which is when the board of record exists. Off
+  # the nightly's critical path (it cannot delay a build that has already
+  # finished) and off the mac pool entirely — this job reads two JSON documents.
+  reconcile:
+    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The nightly commits the board of record to main; a checkout of the
+          # workflow_run's own head would predate that commit.
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet boto3
+      - name: publish the provisional → nightly confirmation delta
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: python -m scripts.close_pass_reconcile

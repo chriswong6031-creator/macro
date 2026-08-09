@@ -1664,10 +1664,25 @@ _GOVERNMENT_REVENUE_METRICS = (
 def _government_revenue_freshness(
     payload: dict,
     reference: Any | None = None,
-) -> tuple[str, str]:
-    """Read elapsed-time-aware governed health rails."""
+) -> tuple[str, str, str]:
+    """Read elapsed-time-aware governed health rails.
+
+    The award-event rail is returned alongside the aggregate because
+    ``effective_freshness`` deliberately EXCLUDES it from the aggregate
+    (``engine/government_revenue/freshness.py`` line 171): a dead award-event
+    spine leaves ``status == "ok"``.  ``reviewed_award_change_context`` then
+    gates on that rail on its own, so dropping it here would publish an empty
+    ``award_change_events`` list with no stated cause — indistinguishable from
+    a ticker that genuinely had no award changes.  Mastermind already discloses
+    it (``engine/neuralweb/mastermind_context.py`` line 2101); this rail must
+    not be the silent sibling.
+    """
     evaluated = effective_freshness(payload, reference=reference)
-    return str(evaluated["status"]), str(evaluated["opportunities"])
+    return (
+        str(evaluated["status"]),
+        str(evaluated["opportunities"]),
+        str(evaluated.get("award_events") or "unknown"),
+    )
 
 
 def _load_government_revenue_context(
@@ -1741,7 +1756,7 @@ def _load_government_revenue_context(
         if payload_known > cutoff or payload_day > cutoff:
             return {}
 
-    overall_status, opportunity_status = _government_revenue_freshness(
+    overall_status, opportunity_status, award_event_status = _government_revenue_freshness(
         payload,
         reference=cutoff,
     )
@@ -1770,6 +1785,7 @@ def _load_government_revenue_context(
             "freshness": {
                 "status": overall_status,
                 "opportunities": opportunity_status,
+                "award_events": award_event_status,
             },
             "metrics": metrics,
             "recompete_candidates": (company.get("recompete_candidates") or [])[:3],

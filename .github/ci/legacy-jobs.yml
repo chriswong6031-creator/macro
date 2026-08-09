@@ -759,7 +759,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pyyaml jinja2 fastapi httpx
+        # app.main mounts app.market_memory, whose authenticated stock-data
+        # reader imports requests at module scope.  Keep the serving-boundary
+        # lane's isolated environment closed over that production import.
+        run: pip install pytest pyyaml jinja2 fastapi httpx requests
       - name: tier-preview split contract (no paid row in the free shell)
         run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py -q
       - name: public dashboard preview-tier contracts (anon shell allowlist + controller caps)
@@ -3607,10 +3610,10 @@ jobs:
         # loudly), and that pulls engine/earnings_narrative/__init__.py ->
         # promotion.py -> yaml. Under the swallow this job never noticed the
         # dependency because the failed import was silently discarded — the
-        # same silence that hid the dropped paid routes. This job is the only
-        # one of the 13 that import app.main whose line lacked pyyaml;
-        # verified by blocking yaml and collecting the suite.
-        run: pip install pytest fastapi pyyaml
+        # same silence that hid the dropped paid routes. app.main also mounts
+        # app.market_memory eagerly now, so this isolated lane must declare its
+        # direct requests import just like the other app.main suites.
+        run: pip install pytest fastapi pyyaml requests
       - name: identity capture unit tests
         run: python -m pytest tests/test_collect_identity.py -v
 
@@ -3673,7 +3676,8 @@ jobs:
         # HAPPY path is exercised too (the code degrades if they're absent, but CI
         # proves the real stamp path as well). pyyaml closes the Brain gateway's
         # Fundamental Forensics package import in this isolated environment.
-        run: pip install pytest fastapi httpx pypdf reportlab pyyaml
+        # requests closes app.main's eager app.market_memory import.
+        run: pip install pytest fastapi httpx pypdf reportlab pyyaml requests
       - name: research vault serving-API security tests
         run: python -m pytest tests/test_research_api.py -q
 
@@ -4571,7 +4575,9 @@ jobs:
         # config/theme_crosswalk.yml for the basket-keyed lane projection. Without it
         # build_state_of_themes.load_primary_basket_ids fail-opens to {} and the
         # projection silently collapses to empty (PR #4300 shipped red on exactly that).
-        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic pyyaml
+        # The endpoint suite imports app.main, whose eagerly mounted Market Memory
+        # router imports requests at module scope.
+        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic pyyaml requests
       - name: portfolio-ctx bake unit tests
         run: python -m pytest tests/test_build_portfolio_ctx.py tests/test_portfolio_ctx_chains.py -q
       - name: portfolio-brief composer + endpoint tests
@@ -5066,6 +5072,20 @@ jobs:
       # dependency set, so they are not repeated here.
       - name: recipient entity graph — the Wave 9D proposal tool
         run: python -m pytest tests/test_propose_government_revenue_recipient_graph.py -q
+      # Amount-class conflation gate.  The lobe's central financial-honesty rule —
+      # "obligation, outlay, ceiling, bookings, backlog, funded backlog, and GAAP
+      # revenue are never conflated" — was written twice as PROSE (the account handoff
+      # and the masterplan) and enforced by nothing: `grep -rl 'obligat.*ceiling' tests/`
+      # returned no match.  The incumbent publishes the same caution in its own public
+      # docs; the difference has to be that ours can go red.  The suite pins all four
+      # dangerous mixes (cumulative+delta, obligation+ceiling, obligation+outlay, and a
+      # figure published without its class label), and running it found one real defect
+      # on main: metrics._concentration's weight ladder fell through to
+      # current_award_amount, so a frame arriving without an obligated column produced
+      # shares, an HHI and a total computed from a CEILING and published as
+      # `covered_obligations`.  Stdlib + the job's existing pandas/pyarrow only.
+      - name: amount-class conflation gate — obligation vs ceiling vs outlay vs delta
+        run: python -m pytest tests/test_government_revenue_amount_semantics.py -q
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
@@ -6386,6 +6406,59 @@ jobs:
           python -m pytest
           tests/test_market_memory.py
           tests/test_build_market_memory_page.py -q
+
+  group-pulse:
+    # GR0 of the Group Reads program: engine/group_pulse.py, the basket-level
+    # participation / direction / arc read plane, plus the two additive extensions
+    # it landed in existing organs (engine/coiled.py's washout_ctx_detail and
+    # engine/group_flow.py's sign_agreement).
+    #
+    # Three suites, three different failure classes, deliberately in one job because
+    # they guard ONE contract and a partial heal cannot merge a pack anyway:
+    #
+    #   contract   the frozen group_pulse.v1 shape — a golden object assembled
+    #              through the real code path validates, and MUTANTS (unknown key,
+    #              a share without its n, an off-ladder arc state, a rewritten
+    #              null_disclosure) go red. It also pins washout_ctx_detail as a
+    #              pure EXTRACTION: the bool projection must equal the pre-extraction
+    #              washout_ctx on every input class, so the additive change to a
+    #              graded organ cannot drift.
+    #   episodes   the append-only episode ledger: hysteresis, <=2-session gap
+    #              joining, 3-inactive closure, persistence math, the nightly lane
+    #              gate, and the provisional-bucket law — a closed row is re-emitted
+    #              VERBATIM from the store and its recomputed twin discarded, so a
+    #              later data revision cannot rewrite a closed episode. It also pins
+    #              site/basketdata/episodes.json, the web-readable projection of the
+    #              ledger's CLOSED rows (a page cannot read parquet): the published
+    #              rows must MATCH the frozen ledger rows and must exclude the
+    #              provisional open one.
+    #   tripwire   program law R-TIL-3: no fused score / rank / heat number anywhere
+    #              in site/basketdata/pulse.json or episodes.json, at any depth, plus
+    #              the 1:1 key join the surface indexes blind. It is a SUBSTRING
+    #              scan and it carries its own seeded-mutant round trip — a scan that
+    #              comes back clean is indistinguishable from a scan that no longer
+    #              fires, so the green only means something because the synthetic
+    #              insertion goes red.
+    #
+    # `pyarrow` is in the install line because the episode ledger is a parquet store;
+    # `pyyaml` because lib/config.py reads config.yml at import. No `requests`: this
+    # plane is an assembler over committed parquet and makes no network call.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: group_pulse contract + episode ledger + no-fused-number tripwire (GR0)
+        run: >-
+          python -m pytest
+          tests/test_group_pulse_contract.py
+          tests/test_group_pulse_episodes.py
+          tests/test_group_pulse_tripwire.py -q -rs
 
   group-linked-outsiders:
     # GR3 of the Group Reads program: filing-linked outsiders per US basket.
