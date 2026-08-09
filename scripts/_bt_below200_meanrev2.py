@@ -8,9 +8,14 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from scripts._bt_below200_meanrev import enrich, vol_profile, DEFENSIVE
-from scripts._bt_sector_confluence import _load, SECTORS, BENCH
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts._bt_below200_meanrev import enrich, vol_profile, DEFENSIVE  # noqa: E402
+from scripts._bt_sector_confluence import _load, SECTORS, BENCH  # noqa: E402
 
 ERAS = [("99-07", "1999-01-01", "2007-12-31"), ("08-15", "2008-01-01", "2015-12-31"),
         ("16-20", "2016-01-01", "2020-12-31"), ("21-26", "2021-01-01", "2026-12-31")]

@@ -1,0 +1,74 @@
+schema: institutional_13f.config/v1
+
+# This plane is a market-wide ownership census.  It is deliberately separate
+# from config.yml::smart_money.funds, which remains the small, curated desk.
+authority:
+  classification: context_only
+  may_feed_neural_web: false
+  may_feed_prophet: false
+  may_auto_promote_featured_funds: false
+
+forms:
+  originals: [13F-HR]
+  amendments: [13F-HR/A]
+  notices: [13F-NT, 13F-NT/A]
+  notice_is_zero_portfolio: false
+
+discovery:
+  user_agent_env: SEC_USER_AGENT
+  requests_per_second: 8
+  latest_filings_page_size: 100
+  latest_filings_max_pages: 12
+  daily_index_lookback_days: 10
+  full_index_reconcile_days: 7
+  max_accessions_per_run: 750
+  retry_attempts: 3
+  index_not_published_grace_days: 7
+
+storage:
+  schema_prefix: smart-money/13f/evidence/v1
+  environment_prefix: INSTITUTIONAL_13F_R2
+  allow_shared_r2_fallback: false
+  immutable_object_max_bytes: 536870912
+  rolling_sec_response_max_bytes: 67108864
+  rolling_sec_run_max_bytes: 2147483648
+  bulk_zip_max_bytes: 268435456
+  pointer_max_bytes: 16384
+  retention: immutable_no_delete_v1
+  # The initial workflow maps the repository's existing public-evidence R2
+  # secrets into this dedicated runtime namespace.  Storage code never falls
+  # back; least-privilege credentials can replace that explicit binding later.
+  deployment_binding: shared_public_evidence_bucket_bootstrap
+
+catalog:
+  schema_version: institutional_13f.catalog/v1
+  holding_buckets: 64
+  json_is_authoritative: true
+  parquet_is_projection: true
+  clocks: [report_period, accepted_at, first_seen_at]
+
+public_summary:
+  schema: institutional_13f.census_public/v1
+  max_bytes: 16384
+  max_security_rows: 6
+  max_sector_rows: 6
+  minimum_mapping_coverage_pct: 20.0
+  action_share_change_threshold_pct: 5.0
+  reported_value_policy: exclude_until_unit_resolved
+  exclude_put_call_from_equity_actions: true
+  eligible_security_types: [Common Stock, Depositary Receipt, REIT, Partnership Shares]
+  corporate_action_filter: holder_discontinuity_v1
+  exclude_confidential_omissions: true
+  exclude_table_entry_mismatches: true
+  completed_quarter_only: true
+  output: data/institutional_13f/public/census_latest.json
+
+research_bench:
+  schema: institutional_13f.research_bench/v1
+  status: screened_not_promoted
+  minimum_quarters_for_scoring: 8
+  minimum_mapping_coverage_pct: 80
+  maximum_candidates: 500
+  exclude_manager_classes: [passive, quant_market_maker, custody, bank, insurer, pension]
+  current_screen_point_in_time: false
+  point_in_time_history_required_for_promotion: true

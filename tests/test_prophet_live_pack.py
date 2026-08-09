@@ -21,9 +21,19 @@ just above its own close). ``test_fixtures_are_not_vacuous`` fails if that ever 
 a future engine change cannot turn this file into a suite that passes by testing
 nothing.
 
+...BUT THE SEEDED WALKS ARE VACUOUS ON THE PROBE-SEMANTICS AXIS, measured: every one
+of them returns the same verdict whether the candidate REPLACES the last bar or is
+APPENDED as the next session's, so the whole file passed unchanged when the pack was
+answering the wrong question. That is what ``append_flip_close.csv`` is for — a frozen
+real close series that a fresh cross makes buyable under the old replace-probe and
+that tonight's gate rejects once the bar advances (``test_replace_and_append_disagree``
+and its neighbours below).
+
 NO DATE-LITERAL CLOCK. Every fixture pins its own index and every payload is built
 with an explicit ``now``; nothing here reads the wall clock, so no scheduled red can
-arrive from the calendar (the fixture-date + wall-clock-gate bomb).
+arrive from the calendar (the fixture-date + wall-clock-gate bomb). The frozen CSV is
+part of that contract: the flip is pinned to committed prices, never to whatever the
+store holds tonight.
 """
 from __future__ import annotations
 
@@ -121,16 +131,30 @@ def test_the_armed_fixture_is_actually_armed(series):
 
 
 def test_parity_at_as_of_close(pack, series):
-    """G0.1: interval membership at the as-of close == the real gate's verdict."""
+    """G0.1: interval membership at the as-of close == the gate's verdict THERE.
+
+    "The gate's verdict there" is the gate run on the probe's OWN construction — the
+    as-of close appended as the next session's bar — because that is the construction
+    every published edge was measured on. ``center_buyable`` is the other reading
+    (tonight's board membership, on the store as it stands) and is asserted separately
+    against the raw series. The two agree on these seeds; a name where they do NOT is
+    the frozen CSV fixture further down, and the pack publishes both so no consumer has
+    to guess which one it is holding.
+    """
     checked = 0
     for tkr, entry in sorted(pack["names"].items()):
         if not entry.get("probed") or entry["state"] == "irregular":
             continue
-        want = signal_gate.is_buyable(signal_gate.gate(tkr, series[tkr]))
-        got = AP.interval_contains(entry, entry["as_of_close"])
-        assert got == want, f"{tkr}: interval says {got}, real gate says {want} ({entry})"
-        # The cached anchor must not have drifted from the live re-run either.
-        assert bool(entry["center_buyable"]) == want, tkr
+        as_of = entry["as_of_close"]
+        anchor = signal_gate.is_buyable(
+            signal_gate.gate(tkr, AP.probe_series(series[tkr], as_of)))
+        got = AP.interval_contains(entry, as_of)
+        assert got == anchor, f"{tkr}: interval says {got}, real gate says {anchor} ({entry})"
+        assert bool(entry["probe_center_buyable"]) == anchor, tkr
+        assert AP.membership_anchor(entry) == (anchor, "probe_center_buyable"), tkr
+        # ...and the BOARD verdict is still the raw as-of one, unmoved by any of this.
+        assert bool(entry["center_buyable"]) == signal_gate.is_buyable(
+            signal_gate.gate(tkr, series[tkr])), tkr
         checked += 1
     assert checked == len(SEEDS)
 
@@ -356,21 +380,227 @@ def test_a_trigger_really_is_a_flip(pack, series, cfg):
     assert checked >= 3
 
 
-def test_probe_series_replaces_the_as_of_bar(series):
-    """The candidate IS today's close, not an extra bar — and the identity is exact."""
+# ─────────────────────────────────────────────────────────────────────────────
+# W-L0 gate 1 — the probe answers TONIGHT's question: the candidate is APPENDED
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_probe_series_appends_a_next_session_bar(series):
+    """One bar longer, landing on the next SESSION — never a replaced last bar.
+
+    Tonight's nightly adds a session to the store; it does not restate the last one.
+    A probe that replaced the bar froze the series length, the session-anchor bucket
+    positions and the freshness ticks at yesterday's, and never supplied the next bar
+    that a ``pending`` buy's reclaim-and-hold resolves on.
+    """
     s = series["S00"]
-    same = AP.probe_series(s, float(s.iloc[-1]))
-    assert len(same) == len(s)
-    assert same.index.equals(s.index)
-    pd.testing.assert_series_equal(same, s)
-    # Equivalent to the concat form the masterplan describes, value for value.
-    # check_freq=False: concat drops the bdate_range freq attribute, which no gate
-    # input reads — the values and the index labels are what must match.
-    concat = pd.concat([s.iloc[:-1], pd.Series([123.5], index=[s.index[-1]])])
-    pd.testing.assert_series_equal(AP.probe_series(s, 123.5), concat, check_freq=False)
-    # ... and it changes the verdict basis, not the series length.
-    moved = AP.probe_series(s, float(s.iloc[-1]) * 1.1)
-    assert len(moved) == len(s) and moved.iloc[-1] != s.iloc[-1]
+    out = AP.probe_series(s, 123.5)
+    assert len(out) == len(s) + 1
+    assert out.index[-1] > s.index[-1]
+    assert out.iloc[-1] == 123.5
+    # Everything before the new bar travels untouched — the as-of close is still the
+    # as-of close (check_freq=False: concat drops bdate_range's freq, which no gate reads).
+    pd.testing.assert_series_equal(out.iloc[:-1], s, check_freq=False)
+    # Feeding the as-of close back is NO LONGER the identity it was under replace.
+    same_px = AP.probe_series(s, float(s.iloc[-1]))
+    assert len(same_px) == len(s) + 1 and not same_px.index.equals(s.index)
+
+
+@pytest.mark.parametrize("last,expect,naive", [
+    # Fri -> Mon (the plain weekend step).
+    ("2026-08-07", "2026-08-10", "2026-08-10"),
+    # Christmas Eve -> the 26th. A business-day step lands ON Christmas.
+    ("2025-12-24", "2025-12-26", "2025-12-25"),
+    # 2026-07-04 falls on a Saturday, so Independence Day is OBSERVED on Friday the
+    # 3rd: a business-day step lands on a closed market.
+    ("2026-07-02", "2026-07-06", "2026-07-03"),
+    # Thanksgiving 2026 (Thu 11-26) -> the half session on Friday still counts.
+    ("2026-11-25", "2026-11-27", "2026-11-26"),
+    # A Saturday tip is not itself a session and must still resolve forward.
+    ("2026-08-08", "2026-08-10", "2026-08-10"),
+])
+def test_the_appended_bar_lands_on_an_nyse_session(last, expect, naive):
+    """The label comes from the repo calendar, never from weekday arithmetic.
+
+    A fabricated holiday bar is not a harmless off-by-one: every 2D/3D leg the gate
+    reads is a POSITION in the session calendar (engine.session_anchor), so one extra
+    session re-phases the whole cascade for that name.
+    """
+    got = AP.next_session_stamp(pd.Timestamp(last))
+    assert str(got.date()) == expect
+    if naive != expect:
+        assert str((pd.Timestamp(last) + pd.tseries.offsets.BDay(1)).date()) == naive, (
+            "the naive business-day step this case exists to refuse has moved")
+
+
+def test_the_appended_bar_is_where_the_probe_puts_it(series):
+    s = series["S00"]
+    assert AP.probe_series(s, 1.0).index[-1] == AP.next_session_stamp(s.index[-1])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ...and WHY it matters: two frozen real series where the two constructions give
+# OPPOSITE verdicts at the same price. Both are US names off the 2026-08-08 store,
+# last 520 closes, committed — the test reads no store and no clock.
+# ─────────────────────────────────────────────────────────────────────────────
+
+FLIP_DIR = ROOT / "tests" / "fixtures" / "prophet_live"
+
+
+def _frozen(kind: str) -> pd.Series:
+    """A committed close series. ``float_precision="round_trip"`` is load-bearing: the
+    default C parser is not correctly-rounded and shifted 57 of these 520 values in the
+    last bits, which is not a difference this file may leave to luck."""
+    df = pd.read_csv(FLIP_DIR / f"append_flip_{kind}_close.csv", parse_dates=["date"],
+                     float_precision="round_trip")
+    return pd.Series(df["close"].astype(float).values,
+                     index=pd.DatetimeIndex(df["date"]))
+
+
+def _replace_probe(close: pd.Series, candidate: float) -> pd.Series:
+    """The OLD probe_series, written out here rather than imported — this file has to
+    be able to state the defect after the defect is gone."""
+    out = close.copy()
+    out.iloc[-1] = float(candidate)
+    return out
+
+
+def test_replace_and_append_disagree_when_freshness_advances():
+    """THE DEFECT, on a frozen real series (TILE, closes through 2026-08-07).
+
+    Replacing the last bar freezes the cascade's tick count at yesterday's, so a cross
+    that is 2 ticks old stays inside the just-crossed window forever. Tonight's nightly
+    APPENDS a bar, the arrow ages to 3 ticks, and the freshness gate drops the name —
+    the pack was publishing "buyable at this price" for a price at which tonight's gate
+    says no. The assertion is on VERDICTS and the tick count, never on reason wording.
+    """
+    s = _frozen("freshness")
+    assert len(s) == 520 and str(s.index[-1].date()) == "2026-08-07"
+    px = float(s.iloc[-1])
+
+    old = signal_gate.gate("TILE", _replace_probe(s, px))
+    new = signal_gate.gate("TILE", AP.probe_series(s, px))
+    assert signal_gate.is_buyable(old) is True, (
+        "the replace-probe no longer reads buyable here — re-measure the flip set and "
+        "refreeze the fixture, or this test proves nothing")
+    assert signal_gate.is_buyable(new) is False, (
+        "the appended bar no longer flips this name — refreeze the fixture from a name "
+        "that still exercises the freshness advance")
+    # The MECHANISM, not the message: the appended session aged the arrow past the
+    # just-crossed window the gate admits on.
+    assert new["ticks"] > old["ticks"]
+    assert new.get("near_miss_reason") == "freshness_expired"
+    assert old.get("tier_cascade") and new.get("tier_cascade") is None
+
+
+def test_a_pending_buy_needs_the_next_bar_the_replace_probe_never_supplied():
+    """The other half of the defect (SKY, same store date): reclaim-and-hold.
+
+    signal_quality grades a just-fired buy ``pending`` until the NEXT bar confirms the
+    hold. A replace-series never supplies one, so the name stayed eligible-as-pending at
+    every probed price — a permanent "confirmation pending" that tonight's gate resolves
+    the moment the bar exists. Here it resolves against the name.
+    """
+    s = _frozen("pending")
+    assert len(s) == 520 and str(s.index[-1].date()) == "2026-08-07"
+    px = float(s.iloc[-1])
+
+    old = signal_gate.gate("SKY", _replace_probe(s, px))
+    new = signal_gate.gate("SKY", AP.probe_series(s, px))
+    assert old.get("sub") == "pending" and signal_gate.is_buyable(old) is True, (
+        "the fixture is no longer a pending buy under replace — refreeze it")
+    # The forward confirmation is no longer pending: the bar it waits for is there.
+    assert new.get("sub") != "pending"
+    assert signal_gate.is_buyable(new) is False
+
+
+def test_the_pack_publishes_the_flip_instead_of_withholding_the_name():
+    """The withholding decision, re-checked under append semantics (W-L0 gate 1).
+
+    The membership check compares the published interval against the verdict AT the
+    as-of close. Anchored on ``center_buyable`` — tonight's BOARD verdict — every one of
+    these flipped names reads as a mismatch and has its levels withheld, which would
+    have quietly deleted the armed board on the very night the fix started telling the
+    truth. Anchored on the probe's own measurement it is consistent, and the name ships
+    its honest levels.
+    """
+    s = _frozen("freshness")
+    p = AP.build_pack([("TILE", s)], now=NOW, cfg={"max_probe": 50, "max_seconds": 3600})
+    e = p["names"]["TILE"]
+    assert e["center_buyable"] is True          # on tonight's board, unchanged
+    assert e["probe_center_buyable"] is False   # ...but not at that price tonight
+    assert AP.interval_contains(e, e["as_of_close"]) is False
+    assert AP.membership_anchor(e) == (False, "probe_center_buyable")
+    assert AP.self_check(p["names"]) == []
+    assert p["meta"]["probe_center_flips"] == 1
+    # The old anchor is what a pack WITHOUT the field falls back to — and it would have
+    # withheld this name. This is the whole reason the field is published.
+    legacy = {t: {k: v for k, v in row.items() if k != "probe_center_buyable"}
+              for t, row in p["names"].items()}
+    assert AP.membership_anchor(legacy["TILE"]) == (True, "center_buyable")
+    assert AP.self_check(legacy), "the legacy anchor would not have flagged it — this " \
+        "test is no longer showing why the anchor moved"
+
+
+def test_a_flipped_board_name_keeps_the_levels_it_measured():
+    """The same decision on a synthetic gate, so it cannot go vacuous on a re-phase.
+
+    Shape taken from the real 2026-08-08 pack (ADAM/ALK/ANET): admitted at today's close
+    on the store as it stands, but with tomorrow's bar appended the gate only admits the
+    name over a DIFFERENT range — here one that sits ABOVE the close. The published
+    ``fade_px`` above the as-of close is not a representation bug; it is the honest
+    reading, and it must survive to the payload rather than being withheld.
+    """
+    p = AP.build_pack([("FLIP", _flat(100.0))], now=NOW,
+                      gate_fn=_flips_on_append_gate(95.0, 105.0, 101.0, 104.0, 300))
+    e = p["names"]["FLIP"]
+    assert e["center_buyable"] is True and e["probe_center_buyable"] is False
+    assert e["state"] == "buyable"
+    assert e["fade_px"] is not None and e["fade_px"] > e["as_of_close"]
+    assert e["fade_hi_px"] == pytest.approx(104.0, abs=0.05)
+    assert AP.interval_contains(e, e["as_of_close"]) is False
+    assert AP.self_check(p["names"]) == []                  # NOT withheld
+    assert p["meta"]["edge_mismatches"] == []               # the real edge check agrees
+    assert p["meta"]["probe_center_flips"] == 1
+
+
+def test_an_anchor_that_comes_back_buyable_moves_the_band_floor_off_zero():
+    """The other replace-assumption in the interval derivation, fail-closed.
+
+    A name that is NOT on tonight's board gets an UP-ONLY sweep, and its band floor is 0
+    because "below the close the centre verdict already says no". The replace probe made
+    that true by construction — its centre call WAS the census call. With the bar
+    appended it is a measurement, and it comes back TRUE for a few names (3 of 108
+    cross-class names on the 2026-08-08 store). Such a name has no lower edge inside its
+    span, so a 0 floor let ``interval_contains`` answer True at every price down to zero
+    — none of which was probed. The floor is the span low instead, and the evaluator
+    darks below it.
+    """
+    p = AP.build_pack([("UPFLIP", _flat(100.0))], now=NOW,
+                      gate_fn=_flips_on_append_gate(200.0, 300.0, 90.0, 110.0, 300))
+    e = p["names"]["UPFLIP"]
+    assert e["center_buyable"] is False and e["probe_center_buyable"] is True
+    assert e.get("trigger_px") is None and e["buyable_in_band"] is True
+    assert e["band_lo_px"] == pytest.approx(100.0, abs=1e-3)
+    assert AP.in_probed_band(e, 100.0) and not AP.in_probed_band(e, 99.0)
+    assert AP.interval_contains(e, 100.0) is True
+    assert AP.self_check(p["names"]) == []
+    # An ordinary cross candidate — anchor False — keeps the 0 floor, because down there
+    # the anchor really does answer the question.
+    q = AP.build_pack([("PLAIN", _flat(95.0))], now=NOW,
+                      gate_fn=_synth_gate(100.0, 105.0))
+    assert q["names"]["PLAIN"]["band_lo_px"] == 0.0
+    assert q["names"]["PLAIN"]["probe_center_buyable"] is False
+
+
+def test_membership_anchor_falls_back_for_a_pack_without_the_field():
+    """A pack built before the field existed had the two readings equal by construction,
+    so ``center_buyable`` is the right answer there — and a wrong one nowhere."""
+    assert AP.membership_anchor({"center_buyable": True}) == (True, "center_buyable")
+    assert AP.membership_anchor({"center_buyable": False}) == (False, "center_buyable")
+    assert AP.membership_anchor(
+        {"center_buyable": True, "probe_center_buyable": False}) == (
+            False, "probe_center_buyable")
+    assert AP.membership_anchor({}) == (False, "center_buyable")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -434,6 +664,22 @@ def _synth_gate(lo: float, hi: float):
     """A stub gate buyable exactly on [lo, hi] — for the structure cases the real
     engine will not produce on demand."""
     def g(ticker, s):
+        ok = lo <= float(s.iloc[-1]) <= hi
+        return {"eligible": ok, "tier_cascade": "T2" if ok else None, "bars_to_cross": 1}
+    return g
+
+
+def _flips_on_append_gate(now_lo: float, now_hi: float, next_lo: float, next_hi: float,
+                          n_raw: int):
+    """A stub whose admitted range MOVES once the series gains a bar.
+
+    The one property a price-only stub cannot express, and the one the whole W-L0 fix
+    turns on: the census (the store as it stands, ``n_raw`` bars) and the probe (one
+    appended bar) are different questions. Length is the tell here; in the engine it is
+    the freshness tick count and the reclaim-and-hold confirmation.
+    """
+    def g(ticker, s):
+        lo, hi = (now_lo, now_hi) if len(s) <= n_raw else (next_lo, next_hi)
         ok = lo <= float(s.iloc[-1]) <= hi
         return {"eligible": ok, "tier_cascade": "T2" if ok else None, "bars_to_cross": 1}
     return g
