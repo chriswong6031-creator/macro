@@ -1451,6 +1451,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: SA-W2 CN standout audit tests
         run: python -m pytest tests/test_cn_standout_audit.py tests/test_china_standout_track.py -v -q
+      - name: CN entry-price integrity (corrupt-bar gate, PIT latch, fail-closed lane — PR 5000)
+        run: python -m pytest tests/test_cn_entry_price_integrity.py -q
 
   workflow-yaml:
     if: ${{ false }}
