@@ -525,6 +525,10 @@ on:
       - "scripts/collect.py"
       - "collectors/**"
       - "lib/**"
+      # Canonical Market Memory contract and product-shell trigger halves.
+      - "app/market_memory.py"
+      - "tests/test_market_memory.py"
+      - "tests/test_build_market_memory_page.py"
       - "tests/test_china_news.py"
       # Wave 3B-B2: strict offline XBRL/iXBRL parsing and its receipt-bound
       # immutable extraction artifact.  Test/fixture-only changes must reach the

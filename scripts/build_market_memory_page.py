@@ -3,16 +3,23 @@
 All analytical reads remain behind the authenticated Market Memory API.  The
 builder therefore needs no market artifacts and is deterministic in CI.
 """
+
 from __future__ import annotations
 
 import argparse
 import logging
+import sys
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, Undefined
 
 log = logging.getLogger("build_market_memory_page")
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    # Direct execution sets sys.path[0] to scripts/, but render_to_site imports
+    # the repository-owned lib.pages writer. Keep documented module and direct
+    # CLI invocations equivalent.
+    sys.path.insert(0, str(_REPO_ROOT))
 
 
 def render(root: Path) -> str:
@@ -21,7 +28,8 @@ def render(root: Path) -> str:
         autoescape=True,
         undefined=Undefined,
     )
-    return env.get_template("market_memory.html.j2").render()
+    rendered = env.get_template("market_memory.html.j2").render()
+    return "\n".join(line.rstrip() for line in rendered.splitlines()) + "\n"
 
 
 def render_to_site(root: Path) -> Path:

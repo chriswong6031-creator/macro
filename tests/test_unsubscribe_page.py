@@ -708,7 +708,7 @@ PUBLIC_EXACT = frozenset({
     # Market Memory is the same public-shell/private-work split: these assets
     # contain presentation and a bounded API client only. All analytical
     # payloads remain behind the paid /api/market-memory/v1/* routes.
-    "/market_memory.css", "/market_memory.js",
+    "/market_memory.html", "/market_memory.css", "/market_memory.js",
     "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js",
     "/landing.css", "/scene-motion.css", "/scene-motion.js",
     "/chat.css",

@@ -56,6 +56,9 @@ public:
     # authenticated /api/research/view and /api/research/download routes.
     - /research_vault.html
     - /research_vault_app.js
+    # Public evidence-first product shell. All analytical reads remain behind
+    # authenticated no-store API routes; only the SEO/context shell is public.
+    - /market_memory.html
     # Tier-preview shells, promoted from free_registered to ANONYMOUS-public
     # (SEO_SUPERCHARGE_MASTERPLAN §A1/W1a). The pages themselves are preview
     # SHELLS: honest totals + methodology + a small newest-first preview slice +

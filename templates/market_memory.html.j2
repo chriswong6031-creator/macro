@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Market Memory — MastermindX</title>
 {% set seo_title = "Market Memory — Historical Market Context | MastermindX" %}
-{% set seo_desc = "Compare today's macro state and a symbol's current setup with audited historical episodes — context, not a forecast." %}
+{% set seo_desc = "Compare today's macro state and a symbol's current setup with recomputed historical episodes — context, not a forecast." %}
 {% set seo_path = "market_memory.html" %}
 {% include "_seo_head.html.j2" %}
 {% include "_interfonts.html.j2" %}
@@ -60,7 +60,7 @@
     <div class="mm-episode-list" id="mm-macro-episodes" aria-live="polite">
       <div class="mm-skeleton"></div><div class="mm-skeleton"></div><div class="mm-skeleton"></div>
     </div>
-    <p class="mm-footnote" id="mm-macro-note">{{ t('Distances retrieve dated rhymes. Forward paths are observed outcomes, not odds for today.', '距离仅用于检索历史相似片段；后续路径是已发生的结果，并非今天的概率。') }}</p>
+    <p class="mm-footnote" id="mm-macro-note">{{ t('Current release: macro states are recomputed today from later-complete/currently available history, not a requested-as-of record of what Mastermind knew then. Distances retrieve dated rhymes; forward paths are observed outcomes, not odds for today.', '当前版本：宏观状态按今日可得且事后完整的历史重新计算，并非 Mastermind 在历史时点当时已知内容的指定时点记录。距离仅用于检索历史相似片段；后续路径是已发生的结果，并非今天的概率。') }}</p>
   </section>
 
   <section class="mm-section" aria-labelledby="mm-symbol-title">
