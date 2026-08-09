@@ -73,12 +73,24 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 599, (
-        f"Expected 599 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 616, (
+        f"Expected 616 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (Filing Forensics offrender-lane heal, deferred from #4986, registered"
         " fundamental-forensics-disclosure-bundle — the scheduled SEC lane's published"
-        " render input = 598->599;"
+        " render input; current main carried 615 artifacts while this pin still said"
+        " 607, so the reconciled count is 615->616);"
+        " (Options Prophet shadow registered its display-only projection,"
+        " signing-quality context gate, and dislocation research gate = 604->607);"
+        " (Polygon intraday price cache registered the receipt-bound H+60 input"
+        " consumed by the outcome builder = 603->604);"
+        " (Polygon intraday price receipt registered the causal cache sidecar"
+        " consumed by H+60 accrual = 602->603);"
+        " (Dated live-flow PIT event stage registered as the episode builder's"
+        " critical R2 source = 601->602);"
+        " (Options signal episode durable-stage checkpoint = 600->601);"
+        " (Options signal episodes registered the immutable PIT decision ledger"
+        " and append-only H+60 outcome ledger = 598->600);"
         " (Prophet-US W1-D added us-basket-turn + us-basket-turn-ledger — the US"
         " washout-lifecycle organ, port of china_basket_turn = 595->597;"
         " Biopharma Seasonality program watch then registered"

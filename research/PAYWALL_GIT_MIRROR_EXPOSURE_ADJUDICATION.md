@@ -40,7 +40,7 @@ P0 report.
 
 ```
 $ gh repo view --json visibility
-chriswong6031-creator/macro → PUBLIC
+mastermindx-market-intelligence/macro → PUBLIC
 ```
 
 Because the repo is public, **"committed to git" is identical to "anonymously readable via

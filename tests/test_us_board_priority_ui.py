@@ -912,6 +912,15 @@ def test_featured_gate_is_called_an_absolute_floor():
     assert "优势高于本板中位" not in html
 
 
+def test_featured_shelf_does_not_misstate_the_lossless_board_depth():
+    html = _footnote(_priority_html())
+    assert "featured attention shelf, not an admission limit" in html
+    assert "Every qualifying name remains on this ranked, searchable board" in html
+    assert "US Prophet evaluates the full eligible set" in html
+    assert "绿色高亮只是精选关注层，并非准入上限" in html
+    assert "所有符合条件的股票都会保留" in html
+
+
 # --------------------------------------------------------------------------- #
 # m6 — bull_days == 0 is a theme that turned TODAY, not a missing age
 #

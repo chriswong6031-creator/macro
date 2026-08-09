@@ -1921,9 +1921,14 @@ jobs:
         # other lanes read real caps at checkout. Runs BEFORE build_site so tonight's
         # payload already sizes by market cap. The script self-gates to a weekly Polygon
         # sweep via the cache's embedded asof stamp (shares move slowly; ~1-2 min when it
-        # does sweep). Non-fatal: a failed refresh leaves the previous cache in place and
-        # build_sp500_heatmap falls back to site/stockdata caps, then to the last
-        # committed marketcap payload's sizes.
+        # does sweep). The 2026-08-06 run wedged here for 3h36m until the engine job was
+        # cancelled, so none of the downstream build/Prophet steps were scheduled. The
+        # 15m cap is deliberately >7x the legitimate refresh and, with continue-on-error,
+        # converts another provider/client wedge into a stale-cache fallback instead of a
+        # skipped nightly. A failed refresh leaves the previous cache in place and
+        # build_sp500_heatmap falls back to site/stockdata caps, then to the last committed
+        # marketcap payload's sizes.
+        timeout-minutes: 15
         continue-on-error: true
         env:
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
@@ -2126,6 +2131,11 @@ jobs:
           # Outputs are covered by the existing `git add data/ site/` commit step.
           # main() swallows all failures and returns 0, so this can NEVER break the render.
           run_py "pick lab nightly runner (build_pick_lab)" scripts.build_pick_lab
+          # Options Prophet shadow projection — immediately after Pick Lab so the
+          # artifact can expose only ledger-admitted plab_flow_leader / flow_washout
+          # fires. Reuses Flow Leaders ordering; creates no score, direction, contract,
+          # trajectory, or Macro weight. Missing inputs publish explicit not-ready gates.
+          run_py "options prophet shadow (build_options_prophet)" scripts.build_options_prophet
           # Reflexivity overlay — W4, Signal Commons. Runs AFTER build_stock_board_v2 (reads
           # us_standouts_v2.json) and AFTER build_site (reads factor_betas.json). Writes
           # site/factordata/reflexivity_overlay.json — display-only duplicate-exposure read.
@@ -2211,16 +2221,21 @@ jobs:
           exit 0
       - name: timings band — prophet (W2)
         run: python3 scripts/nightly_timings.py mark --band prophet || echo "::warning::timings band mark failed (non-fatal)"
-      - name: Prophet nightly (plan refresh + ledger advancement + R2 mirror)
+      - name: Prophet nightly (plan refresh + ledger advancement; R2 after checkpoint)
+        id: prophet_nightly
         # AFTER build_site: reads site/factordata/us_standouts.json (just written).
         # Originates new prophet.trade_plan/v1 envelopes, runs the management engine
         # for every active plan, advances the forward outcome ledger (nightly is the
-        # SOLE advancer — idempotent per plan ID), and optionally mirrors
-        # site/prophet/index.json to R2 key "prophet/index.json".
-        # Artifacts committed by "commit engine outputs" below (site/ + data/ covers
-        # site/prophet/** and data/prophet/ledger.jsonl — no extra git add needed).
+        # SOLE advancer — idempotent per plan ID). R2 publication is deliberately
+        # NOT performed here: only the post-checkpoint step may mirror the exact
+        # committed site/prophet/index.json to key "prophet/index.json".
+        # A successful run is checkpointed to main by the immediately-following
+        # step. The later broad "commit engine outputs" explicitly restores and
+        # excludes Prophet paths, so this narrow checkpoint is their sole git publisher
+        # and never waits behind the regional-builder barrier.
         # continue-on-error: true — a prophet failure must never abort the nightly deploy.
-        # R2 creds: passed when present; build_prophet skips upload gracefully when absent.
+        # R2 credentials are intentionally absent from this generation step. They
+        # exist only on the post-checkpoint publisher below.
         # Wall-time: SECONDS measured (24s on the green 2026-08-08 run, <2m every other
         # observed night) — but on 2026-08-07 this step WEDGED pre-first-write for 173m
         # on mac-builder-1 (run 31210097197: 23:07:57→02:00:56, cancelled AT the job cap,
@@ -2235,37 +2250,1134 @@ jobs:
         continue-on-error: true
         env:
           PYTHONUNBUFFERED: "1"
+        run: |
+          set +e
+          PROPHET_BASELINE="${RUNNER_TEMP}/prophet-build-${GITHUB_RUN_ID}.before.json"
+          PROPHET_DELTA="${RUNNER_TEMP}/prophet-build-${GITHUB_RUN_ID}.delta.tsv"
+          PROPHET_SOURCE_SNAPSHOT="${RUNNER_TEMP}/prophet-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}.json"
+          PROPHET_SOURCE_BLOB="${RUNNER_TEMP}/prophet-source-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}.us_standouts.json"
+          export PROPHET_BASELINE PROPHET_DELTA PROPHET_SOURCE_SNAPSHOT PROPHET_SOURCE_BLOB
+          # Snapshot exactly the builder-owned publication files before running.
+          # Correction ledgers are INPUTS, never outputs, and are deliberately
+          # absent from this closed allowlist. The exact board bytes and the full
+          # uncapped admitted ordering are also frozen before the build. A compact,
+          # immutable receipt containing only rows that actually originate is added
+          # to the same manifest after the builder returns; this preserves first-add
+          # provenance even if the giant engine tail never reaches its broad commit.
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          from engine.prophet_bridge import _make_id, _normalise_iso_date, select_candidates
+
+          root = Path(os.environ["GITHUB_WORKSPACE"])
+          board_rel = "site/factordata/us_standouts.json"
+          board_path = root / board_rel
+          board_bytes = board_path.read_bytes()
+          board_sha256 = hashlib.sha256(board_bytes).hexdigest()
+          board = json.loads(board_bytes)
+          staleness = board.get("staleness")
+          if not isinstance(staleness, dict):
+              staleness = {}
+          board_asof = str(board.get("as_of") or "")[:10] or None
+          admitted = select_candidates(board, n=None)
+          candidates: list[dict] = []
+          for rank, row in enumerate(admitted, start=1):
+              ticker = str(row.get("ticker") or "").strip().upper()
+              anchor = (row.get("hold") or {}).get("anchor")
+              formation = _normalise_iso_date(anchor if anchor else board_asof)
+              plan_id = _make_id(ticker, "BULL", formation) if ticker and formation else None
+              canonical_row = json.dumps(
+                  row, sort_keys=True, separators=(",", ":"), allow_nan=False
+              ).encode("utf-8")
+              candidates.append({
+                  "admission_rank": rank,
+                  "expected_plan_id": plan_id,
+                  "board_row_sha256": hashlib.sha256(canonical_row).hexdigest(),
+                  "board_row": row,
+              })
+          baseline_plan_ids: list[str] = []
+          for plan_path in sorted((root / "site/prophet/plans").glob("*.json")):
+              try:
+                  plan = json.loads(plan_path.read_text(encoding="utf-8"))
+              except (OSError, ValueError, TypeError):
+                  continue
+              if plan.get("id"):
+                  baseline_plan_ids.append(str(plan["id"]))
+          source_snapshot = {
+              "schema": "prophet.origination_source_snapshot/v1",
+              "source": {
+                  "path": board_rel,
+                  "sha256": board_sha256,
+                  "size_bytes": len(board_bytes),
+                  "board_asof": board_asof,
+                  # price_through is the actual ranked-price watermark; board_asof
+                  # is publication metadata and must never silently substitute for it.
+                  "source_asof": str(staleness.get("price_through") or "")[:10] or None,
+                  "price_through": str(staleness.get("price_through") or "")[:10] or None,
+                  "source_basis": staleness.get("basis"),
+                  "basis": staleness.get("basis"),
+                  "delayed": staleness.get("delayed"),
+                  "unknown": staleness.get("unknown"),
+                  "staleness": staleness,
+                  "gate_go": board.get("gate_go"),
+              },
+              "admitted_count": len(candidates),
+              "admitted_candidates": candidates,
+              "baseline_plan_ids": sorted(set(baseline_plan_ids)),
+          }
+          snapshot_bytes = json.dumps(
+              source_snapshot,
+              sort_keys=True,
+              separators=(",", ":"),
+              allow_nan=False,
+          ).encode("utf-8")
+          Path(os.environ["PROPHET_SOURCE_SNAPSHOT"]).write_bytes(snapshot_bytes)
+          Path(os.environ["PROPHET_SOURCE_BLOB"]).write_bytes(board_bytes)
+          os.chmod(os.environ["PROPHET_SOURCE_BLOB"], 0o400)
+
+          exact = {
+              "site/prophet/index.json",
+              "site/prophet/showcase.json",
+              "data/prophet/ledger.jsonl",
+              "data/prophet/ledger_quarantine.json",
+              "data/prophet_arena/scoreboard.json",
+              "data/prophet_arena/price_basis_trigger_v2/C0_champion_mirror.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C1_buy_soon_first.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C3_door_w_union.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C4_dispersion_cap.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C5_align2_gate.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C6_time_stop_21.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C7_buy_soon_admitted.jsonl",
+          }
+          globs = {
+              "site/prophet/plans": "*.json",
+              "site/prophet/states": "*.json",
+              "data/prophet/origination_receipts": "*.json",
+          }
+
+          def digest(path: Path) -> str:
+              if path.is_symlink():
+                  raise RuntimeError(f"refusing symlinked Prophet output: {path}")
+              h = hashlib.sha256()
+              with path.open("rb") as fh:
+                  for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                      h.update(chunk)
+              return f"{path.stat().st_mode & 0o7777:04o}:{h.hexdigest()}"
+
+          def snapshot() -> dict[str, str]:
+              paths = {root / rel for rel in exact}
+              for rel_dir, pattern in globs.items():
+                  directory = root / rel_dir
+                  if directory.is_dir():
+                      paths.update(directory.glob(pattern))
+              return {
+                  path.relative_to(root).as_posix(): digest(path)
+                  for path in sorted(paths)
+                  if path.is_file()
+              }
+
+          Path(os.environ["PROPHET_BASELINE"]).write_text(
+              json.dumps(snapshot(), sort_keys=True), encoding="utf-8"
+          )
+          PY
+          baseline_rc=$?
+          if [ "$baseline_rc" -ne 0 ]; then
+            echo "succeeded=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=build_prophet manifest::could not snapshot the closed Prophet output allowlist (rc=$baseline_rc); build withheld from early publication"
+            exit 0
+          fi
+
+          echo "::group::build_prophet (plan refresh + ledger advancement)"
+          python -m scripts.build_prophet 2>&1; rc=$?
+          echo "::endgroup::"
+          if [ "$rc" -eq 0 ]; then
+            # Bind every newly-created plan to the exact admitted board row that
+            # originated it. The raw board is hashed before/after the build and an
+            # immutable byte copy is independently re-hashed here. Any mismatch or
+            # unmappable new plan withholds the ENTIRE early checkpoint.
+            python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          import sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root = Path(os.environ["GITHUB_WORKSPACE"])
+          snapshot_path = Path(os.environ["PROPHET_SOURCE_SNAPSHOT"])
+          blob_path = Path(os.environ["PROPHET_SOURCE_BLOB"])
+          snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+          source = snapshot["source"]
+          expected_sha = str(source["sha256"])
+          live_bytes = (root / source["path"]).read_bytes()
+          blob_bytes = blob_path.read_bytes()
+          live_sha = hashlib.sha256(live_bytes).hexdigest()
+          blob_sha = hashlib.sha256(blob_bytes).hexdigest()
+          if live_sha != expected_sha or blob_sha != expected_sha or live_bytes != blob_bytes:
+              print(
+                  "::error title=Prophet origination source changed::"
+                  "us_standouts bytes did not remain identical across the build; "
+                  "no output from an ambiguous source snapshot will publish",
+                  flush=True,
+              )
+              raise SystemExit(2)
+
+          baseline_ids = set(snapshot.get("baseline_plan_ids") or [])
+          current_plans: dict[str, tuple[Path, dict]] = {}
+          for plan_path in sorted((root / "site/prophet/plans").glob("*.json")):
+              plan = json.loads(plan_path.read_text(encoding="utf-8"))
+              plan_id = str(plan.get("id") or "")
+              if plan_id:
+                  current_plans[plan_id] = (plan_path, plan)
+          new_ids = sorted(set(current_plans) - baseline_ids)
+          if not new_ids:
+              raise SystemExit(0)
+
+          # originate_plans is keep-first for duplicate expected IDs, so mirror
+          # that exact disposition rather than choosing a later duplicate row.
+          admitted_by_id: dict[str, dict] = {}
+          for candidate in snapshot.get("admitted_candidates") or []:
+              plan_id = candidate.get("expected_plan_id")
+              if plan_id:
+                  admitted_by_id.setdefault(str(plan_id), candidate)
+
+          originations: list[dict] = []
+          missing: list[str] = []
+          for plan_id in new_ids:
+              candidate = admitted_by_id.get(plan_id)
+              if candidate is None:
+                  missing.append(plan_id)
+                  continue
+              plan_path, plan = current_plans[plan_id]
+              plan_bytes = plan_path.read_bytes()
+              originations.append({
+                  "plan_id": plan_id,
+                  "asset": plan.get("asset"),
+                  "formation_date": plan.get("formation_date"),
+                  "plan_path": plan_path.relative_to(root).as_posix(),
+                  "plan_sha256": hashlib.sha256(plan_bytes).hexdigest(),
+                  "admission_rank": candidate["admission_rank"],
+                  "board_row_sha256": candidate["board_row_sha256"],
+                  "board_row": candidate["board_row"],
+              })
+          if missing:
+              print(
+                  "::error title=Prophet origination receipt incomplete::"
+                  "new plan(s) do not resolve to the frozen admitted board: "
+                  + ", ".join(missing),
+                  flush=True,
+              )
+              raise SystemExit(3)
+
+          run_id = str(os.environ.get("GITHUB_RUN_ID") or "unknown")
+          run_attempt = str(os.environ.get("GITHUB_RUN_ATTEMPT") or "1")
+          receipt_id = f"{run_id}-{run_attempt}-{expected_sha[:16]}"
+          receipt = {
+              "schema": "prophet.origination_receipt/v1",
+              "receipt_id": receipt_id,
+              "recorded_utc": datetime.now(timezone.utc).isoformat(),
+              "run": {
+                  "id": run_id,
+                  "attempt": run_attempt,
+                  "event": os.environ.get("GITHUB_EVENT_NAME"),
+                  "ref": os.environ.get("GITHUB_REF"),
+                  "event_sha": os.environ.get("GITHUB_SHA"),
+                  "source_checkout": subprocess.check_output(
+                      ["git", "rev-parse", "HEAD"], cwd=root, text=True
+                  ).strip(),
+              },
+              # Copy, do not merely reference, the freshness/provenance fields:
+              # chronology audits must still resolve the true source after a tail
+              # loss even when HEAD's board has already advanced.
+              "source": source,
+              "selection": {
+                  "rule": "engine.prophet_bridge.select_candidates(n=None)",
+                  "admitted_count": snapshot.get("admitted_count"),
+                  "originated_count": len(originations),
+              },
+              "originated_plan_ids": new_ids,
+              "originations": originations,
+          }
+          encoded = (
+              json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False) + "\n"
+          ).encode("utf-8")
+          receipt_dir = root / "data/prophet/origination_receipts"
+          receipt_dir.mkdir(parents=True, exist_ok=True)
+          receipt_path = receipt_dir / f"{receipt_id}.json"
+          if receipt_path.exists():
+              if receipt_path.read_bytes() != encoded:
+                  print(
+                      "::error title=Prophet immutable receipt collision::"
+                      f"{receipt_path.relative_to(root)} already exists with different bytes",
+                      flush=True,
+                  )
+                  raise SystemExit(4)
+          else:
+              try:
+                  with receipt_path.open("xb") as handle:
+                      handle.write(encoded)
+                      handle.flush()
+                      os.fsync(handle.fileno())
+              except FileExistsError:
+                  if receipt_path.read_bytes() != encoded:
+                      raise SystemExit(4)
+          print(
+              f"Prophet origination receipt: {receipt_path.relative_to(root)} "
+              f"({len(originations)} plan(s), source {expected_sha})",
+              flush=True,
+          )
+          PY
+            receipt_rc=$?
+            if [ "$receipt_rc" -ne 0 ]; then
+              echo "succeeded=false" >> "$GITHUB_OUTPUT"
+              echo "::warning title=build_prophet receipt::build returned 0 but exact origination provenance could not be frozen (rc=$receipt_rc); early publication withheld"
+              exit 0
+            fi
+            # Emit an explicit delta manifest: path, pre-build fingerprint
+            # (mode + SHA-256, or MISSING), post-build fingerprint. Deletion is
+            # not a supported Prophet
+            # operation; refusing it prevents a stale run from erasing a newer
+            # immutable plan, state, or append-only ledger publication.
+            python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          root = Path(os.environ["GITHUB_WORKSPACE"])
+          exact = {
+              "site/prophet/index.json",
+              "site/prophet/showcase.json",
+              "data/prophet/ledger.jsonl",
+              "data/prophet/ledger_quarantine.json",
+              "data/prophet_arena/scoreboard.json",
+              "data/prophet_arena/price_basis_trigger_v2/C0_champion_mirror.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C1_buy_soon_first.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C3_door_w_union.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C4_dispersion_cap.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C5_align2_gate.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C6_time_stop_21.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C7_buy_soon_admitted.jsonl",
+          }
+          globs = {
+              "site/prophet/plans": "*.json",
+              "site/prophet/states": "*.json",
+              "data/prophet/origination_receipts": "*.json",
+          }
+
+          def digest(path: Path) -> str:
+              if path.is_symlink():
+                  raise RuntimeError(f"refusing symlinked Prophet output: {path}")
+              h = hashlib.sha256()
+              with path.open("rb") as fh:
+                  for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                      h.update(chunk)
+              return f"{path.stat().st_mode & 0o7777:04o}:{h.hexdigest()}"
+
+          def snapshot() -> dict[str, str]:
+              paths = {root / rel for rel in exact}
+              for rel_dir, pattern in globs.items():
+                  directory = root / rel_dir
+                  if directory.is_dir():
+                      paths.update(directory.glob(pattern))
+              return {
+                  path.relative_to(root).as_posix(): digest(path)
+                  for path in sorted(paths)
+                  if path.is_file()
+              }
+
+          before = json.loads(
+              Path(os.environ["PROPHET_BASELINE"]).read_text(encoding="utf-8")
+          )
+          after = snapshot()
+          deleted = sorted(set(before) - set(after))
+          if deleted:
+              print(
+                  "::error title=Prophet build deleted owned output::"
+                  + ", ".join(deleted[:8])
+                  + " — early checkpoint refuses all deletions",
+                  flush=True,
+              )
+              sys.exit(2)
+          changed = sorted(path for path, sha in after.items() if before.get(path) != sha)
+          with Path(os.environ["PROPHET_DELTA"]).open("w", encoding="utf-8") as fh:
+              for path in changed:
+                  fh.write(f"{path}\t{before.get(path, 'MISSING')}\t{after[path]}\n")
+          PY
+            manifest_rc=$?
+            if [ "$manifest_rc" -eq 0 ]; then
+              echo "succeeded=true" >> "$GITHUB_OUTPUT"
+              echo "delta_manifest=$PROPHET_DELTA" >> "$GITHUB_OUTPUT"
+            else
+              echo "succeeded=false" >> "$GITHUB_OUTPUT"
+              echo "::warning title=build_prophet manifest::build returned 0 but its owned-output delta could not be proven (rc=$manifest_rc); early publication withheld"
+            fi
+          else
+            echo "succeeded=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=build_prophet::rc=$rc (non-fatal — prophet artifacts degrade gracefully)"
+          fi
+          exit 0
+      - name: checkpoint Prophet outputs to main (durable before engine tail)
+        id: prophet_checkpoint
+        if: steps.prophet_nightly.outputs.succeeded == 'true'
+        timeout-minutes: 12
+        continue-on-error: true
+        env:
+          PROPHET_DELTA_MANIFEST: ${{ steps.prophet_nightly.outputs.delta_manifest }}
+        # The engine worktree is intentionally very dirty here: build_site and
+        # the pre-Prophet builders have produced thousands of not-yet-normalized
+        # files. Publish the proven per-file delta from a clean temporary
+        # worktree instead. Correction/provenance ledgers never cross this
+        # boundary, deletions are forbidden, and any same-path change on main
+        # aborts the checkpoint rather than being conflict-resolved away.
+        run: |
+          set -euo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # SOURCE authority fence. workflow_dispatch can be invoked on any
+          # ref; only a checkout actually on local main whose commit remains in
+          # origin/main history may publish generated artifacts to main. Exact
+          # equality is intentionally not required because this multi-hour job
+          # routinely sees unrelated main commits after checkout.
+          EVENT_REF="${GITHUB_REF:-}"
+          EVENT_SHA="${GITHUB_SHA:-}"
+          SOURCE_BRANCH="$(git -C "$GITHUB_WORKSPACE" symbolic-ref --short -q HEAD || true)"
+          SOURCE_HEAD="$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)"
+          git -C "$GITHUB_WORKSPACE" fetch origin \
+            +refs/heads/main:refs/remotes/origin/main
+          if [ "$EVENT_REF" != "refs/heads/main" ] \
+            || [ -z "$EVENT_SHA" ] \
+            || [ "$SOURCE_BRANCH" != "main" ] \
+            || ! git -C "$GITHUB_WORKSPACE" merge-base --is-ancestor \
+              "$SOURCE_HEAD" origin/main; then
+            echo "::error title=Prophet checkpoint source rejected::event ref=${EVENT_REF:-unset} sha=${EVENT_SHA:-unset}; source branch=${SOURCE_BRANCH:-detached} commit=$SOURCE_HEAD — event and checkout must both be origin/main ancestry; off-main workflow_dispatch output will not publish"
+            exit 1
+          fi
+          if [ -z "${PROPHET_DELTA_MANIFEST:-}" ] \
+            || [ ! -f "$PROPHET_DELTA_MANIFEST" ]; then
+            echo "::error title=Prophet checkpoint manifest missing::successful build supplied no readable owned-output delta manifest"
+            exit 1
+          fi
+          if [ ! -s "$PROPHET_DELTA_MANIFEST" ]; then
+            echo "Prophet checkpoint: build produced no owned-output delta"
+            exit 0
+          fi
+
+          CHECKPOINT_ROOT="$(mktemp -d "${RUNNER_TEMP}/prophet-checkpoint.XXXXXX")"
+          CHECKPOINT_DIR="${CHECKPOINT_ROOT}/tree"
+          CHECKPOINT_BRANCH="_prophet_checkpoint_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT:-1}"
+          cleanup_prophet_checkpoint() {
+            cd "$GITHUB_WORKSPACE"
+            git worktree remove --force "$CHECKPOINT_DIR" 2>/dev/null || true
+            git branch -D "$CHECKPOINT_BRANCH" 2>/dev/null || true
+            rmdir "$CHECKPOINT_ROOT" 2>/dev/null || true
+          }
+          trap cleanup_prophet_checkpoint EXIT
+
+          git worktree add -b "$CHECKPOINT_BRANCH" "$CHECKPOINT_DIR" origin/main
+
+          cd "$CHECKPOINT_DIR"
+          # A correction merged while this engine was running changes the
+          # effective plan/index projection. Refuse to publish an index derived
+          # from the older correction view, even though correction ledgers are
+          # themselves excluded from the output manifest.
+          PROTECTED_PROPHET_PATHS=(
+            data/prophet/plan_corrections.jsonl
+            data/prophet/ledger_corrections.jsonl
+            data/prophet
+            data/prophet_arena
+            site/prophet
+          )
+          if ! git diff --quiet "$SOURCE_HEAD" origin/main -- \
+            "${PROTECTED_PROPHET_PATHS[@]}"; then
+            echo "::error title=Prophet checkpoint provenance race::origin/main Prophet publications or correction ledgers changed after the source checkout; preserving main and withholding the stale derived checkpoint"
+            exit 1
+          fi
+
+          while IFS=$'\t' read -r rel before_sha after_sha; do
+            [ -n "$rel" ] || continue
+            case "/$rel/" in
+              *"/../"*|*"/./"*|"//"*|*\\*)
+                echo "::error title=Prophet checkpoint path rejected::manifest path $rel is not a normalized repository-relative path"
+                exit 1
+                ;;
+            esac
+            case "$rel" in
+              site/prophet/index.json|site/prophet/showcase.json|\
+              data/prophet/ledger.jsonl|data/prophet/ledger_quarantine.json|\
+              data/prophet_arena/scoreboard.json|\
+              data/prophet/origination_receipts/*.json|\
+              data/prophet_arena/price_basis_trigger_v2/C0_champion_mirror.jsonl|\
+              data/prophet_arena/price_basis_trigger_v2/C1_buy_soon_first.jsonl|\
+              data/prophet_arena/price_basis_trigger_v2/C3_door_w_union.jsonl|\
+              data/prophet_arena/price_basis_trigger_v2/C4_dispersion_cap.jsonl|\
+              data/prophet_arena/price_basis_trigger_v2/C5_align2_gate.jsonl|\
+              data/prophet_arena/price_basis_trigger_v2/C6_time_stop_21.jsonl|\
+              data/prophet_arena/price_basis_trigger_v2/C7_buy_soon_admitted.jsonl|\
+              site/prophet/plans/*.json|site/prophet/states/*.json\
+              ) ;;
+              *)
+                echo "::error title=Prophet checkpoint path rejected::manifest path $rel is outside the closed build-owned allowlist"
+                exit 1
+                ;;
+            esac
+            if [ ! -f "$GITHUB_WORKSPACE/$rel" ]; then
+              echo "::error title=Prophet checkpoint output missing::manifest path $rel no longer exists; deletions are forbidden"
+              exit 1
+            fi
+            current_after="$(python3 -c 'import hashlib,os,sys; p=sys.argv[1]; mode=f"{os.stat(p).st_mode & 0o7777:04o}"; sha=hashlib.sha256(open(p,"rb").read()).hexdigest(); print(mode+":"+sha)' "$GITHUB_WORKSPACE/$rel")"
+            if [ "$current_after" != "$after_sha" ]; then
+              echo "::error title=Prophet checkpoint source changed::manifest path $rel changed after build completion; refusing an unproven snapshot"
+              exit 1
+            fi
+            if [ -L "$CHECKPOINT_DIR/$rel" ]; then
+              echo "::error title=Prophet checkpoint symlink rejected::origin/main path $rel is a symlink; refusing to follow it during publication"
+              exit 1
+            elif [ -f "$CHECKPOINT_DIR/$rel" ]; then
+              main_before="$(python3 -c 'import hashlib,os,sys; p=sys.argv[1]; mode=f"{os.stat(p).st_mode & 0o7777:04o}"; sha=hashlib.sha256(open(p,"rb").read()).hexdigest(); print(mode+":"+sha)' "$CHECKPOINT_DIR/$rel")"
+            else
+              main_before="MISSING"
+            fi
+            if [ "$main_before" != "$before_sha" ]; then
+              echo "::error title=Prophet checkpoint same-path race::origin/main changed $rel after this build's baseline; preserving main and withholding the checkpoint"
+              exit 1
+            fi
+            mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
+            cp -p "$GITHUB_WORKSPACE/$rel" "$CHECKPOINT_DIR/$rel"
+            git add -- "$rel"
+          done < "$PROPHET_DELTA_MANIFEST"
+
+          if git diff --cached --quiet; then
+            echo "Prophet checkpoint: no artifact changes"
+            exit 0
+          fi
+          if ! push_staged_clean; then
+            echo "::error title=Prophet checkpoint refused::conflict-marker guard rejected the narrow checkpoint"
+            exit 1
+          fi
+          git commit -m "prophet-us: durable nightly checkpoint $(date -u +%F)"
+          CHECKPOINT_PARENT="$(git rev-parse HEAD^)"
+
+          # The checkpoint worktree is clean, so no --autostash is necessary.
+          # Each retry first proves that neither a correction input nor any
+          # manifest path changed on main. Only then may this narrow commit
+          # rebase over unrelated main commits — with no strategy override.
+          PUSH_ALARM=120
+          PUSH_BUDGET_SECS=420
+          PUSH_MAX_ATTEMPTS=12
+          PUSH_MAIN_BRANCHES="$CHECKPOINT_BRANCH"
+          push_retry_init "Prophet durable checkpoint"
+          push_on_main_ok || exit 0
+          while push_attempt; do
+            if ! push_fetch_main_for_rebase; then
+              push_abort_rebase
+              push_backoff
+              continue
+            fi
+            if ! git diff --quiet "$SOURCE_HEAD" origin/main -- \
+              "${PROTECTED_PROPHET_PATHS[@]}"; then
+              echo "::error title=Prophet checkpoint provenance race::origin/main Prophet publications or correction ledgers advanced during publish; preserving main and aborting"
+              exit 1
+            fi
+            same_path=""
+            while IFS=$'\t' read -r rel _ _; do
+              [ -n "$rel" ] || continue
+              if ! git diff --quiet "$CHECKPOINT_PARENT" origin/main -- "$rel"; then
+                same_path="${same_path}${same_path:+, }${rel}"
+              fi
+            done < "$PROPHET_DELTA_MANIFEST"
+            if [ -n "$same_path" ]; then
+              echo "::error title=Prophet checkpoint same-path race::origin/main advanced build-owned path(s): $same_path; no merge strategy override is allowed, preserving main"
+              exit 1
+            fi
+            if perl -e 'alarm 180; exec @ARGV or die' -- git rebase origin/main; then
+              CHECKPOINT_PARENT="$(git rev-parse HEAD^)"
+              if push_do origin HEAD:main; then
+                echo "pushed Prophet durable checkpoint on attempt $PUSH_ATTEMPT"
+                push_won
+                # Arm R2 only after the guarded commit is confirmed in current
+                # origin/main and no newer Prophet/correction write overtook it.
+                # The publisher receives the SHA-256 proven by the build delta;
+                # it reconstructs the bytes from this exact commit, never from
+                # the dirty engine worktree.
+                CHECKPOINT_SHA="$(git rev-parse HEAD)"
+                if ! git fetch origin \
+                  +refs/heads/main:refs/remotes/origin/main; then
+                  echo "::error title=Prophet R2 arm withheld::checkpoint landed, but current origin/main could not be verified; R2 remains on its prior accepted object"
+                  exit 1
+                fi
+                if ! git merge-base --is-ancestor "$CHECKPOINT_SHA" origin/main \
+                  || ! git diff --quiet "$CHECKPOINT_SHA" origin/main -- \
+                    data/prophet \
+                    data/prophet_arena \
+                    site/prophet; then
+                  echo "::warning title=Prophet R2 arm superseded::origin/main advanced a Prophet publication or correction after checkpoint $CHECKPOINT_SHA; this older build will not write R2"
+                  exit 0
+                fi
+                INDEX_FINGERPRINT="$(awk -F '\t' '$1 == "site/prophet/index.json" { print $3 }' "$PROPHET_DELTA_MANIFEST")"
+                if [ -z "$INDEX_FINGERPRINT" ]; then
+                  echo "::notice title=Prophet R2 no-op::the accepted checkpoint did not change site/prophet/index.json; no R2 write is needed"
+                  exit 0
+                fi
+                INDEX_SHA256="${INDEX_FINGERPRINT#*:}"
+                CHECKPOINT_INDEX_SHA256="$(git show "${CHECKPOINT_SHA}:site/prophet/index.json" | python3 -c 'import hashlib,sys; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())')"
+                if [ "$CHECKPOINT_INDEX_SHA256" != "$INDEX_SHA256" ]; then
+                  echo "::error title=Prophet R2 arm hash mismatch::checkpointed index bytes do not match the proven build delta; R2 publication withheld"
+                  exit 1
+                fi
+                echo "r2_ready=true" >> "$GITHUB_OUTPUT"
+                echo "checkpoint_sha=$CHECKPOINT_SHA" >> "$GITHUB_OUTPUT"
+                echo "index_sha256=$INDEX_SHA256" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            fi
+            push_abort_rebase
+            push_backoff
+          done
+          push_lost
+          echo "::error title=Prophet checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); R2 remains on its prior accepted object, and the final engine commit is fenced from publishing this uncheckpointed Prophet tree"
+          exit 1
+      - name: publish checkpointed Prophet index to R2
+        if: steps.prophet_checkpoint.outputs.r2_ready == 'true'
+        timeout-minutes: 5
+        continue-on-error: true
+        env:
+          PROPHET_CHECKPOINT_SHA: ${{ steps.prophet_checkpoint.outputs.checkpoint_sha }}
+          PROPHET_INDEX_SHA256: ${{ steps.prophet_checkpoint.outputs.index_sha256 }}
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        # Reconstruct from the accepted Git commit, verify its content hash, then
+        # re-check current main immediately before upload. A failed/rejected Git
+        # checkpoint never sets r2_ready, and a newer Prophet/correction commit
+        # supersedes this publisher rather than being overwritten in R2.
         run: |
-          set +e
-          echo "::group::build_prophet (plan refresh + ledger advancement)"
-          python -m scripts.build_prophet --publish 2>&1; rc=$?
-          echo "::endgroup::"
-          if [ "$rc" -ne 0 ]; then echo "::warning title=build_prophet::rc=$rc (non-fatal — prophet artifacts degrade gracefully)"; fi
-          exit 0
+          set -euo pipefail
+          R2_INDEX_FILE="$(mktemp "${RUNNER_TEMP}/prophet-r2-index.XXXXXX.json")"
+          cleanup_prophet_r2() { rm -f -- "$R2_INDEX_FILE"; }
+          trap cleanup_prophet_r2 EXIT
+
+          verify_prophet_checkpoint_current() {
+            git fetch origin +refs/heads/main:refs/remotes/origin/main \
+              || return 1
+            git merge-base --is-ancestor "$PROPHET_CHECKPOINT_SHA" origin/main \
+              || return 1
+            git diff --quiet "$PROPHET_CHECKPOINT_SHA" origin/main -- \
+              data/prophet \
+              data/prophet_arena \
+              site/prophet
+          }
+
+          if ! verify_prophet_checkpoint_current; then
+            echo "::warning title=Prophet R2 publish superseded::checkpoint $PROPHET_CHECKPOINT_SHA is not the current origin/main Prophet projection; preserving the newer R2/main authority"
+            exit 0
+          fi
+          git show "${PROPHET_CHECKPOINT_SHA}:site/prophet/index.json" > "$R2_INDEX_FILE"
+          ACTUAL_SHA256="$(python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())' "$R2_INDEX_FILE")"
+          if [ "$ACTUAL_SHA256" != "$PROPHET_INDEX_SHA256" ]; then
+            echo "::error title=Prophet R2 publish hash mismatch::commit bytes do not match the checkpoint output; refusing R2 upload"
+            exit 1
+          fi
+          # Close the fetch/hash window as far as the object store permits. R2
+          # has no compare-and-swap against a Git ref, so a second main proof is
+          # the last action before the single-object upload.
+          if ! verify_prophet_checkpoint_current; then
+            echo "::warning title=Prophet R2 publish superseded::origin/main Prophet state advanced during verification; preserving the newer publication"
+            exit 0
+          fi
+          python3 - "$R2_INDEX_FILE" <<'PY'
+          import os
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          from scripts.build_prophet import R2_INDEX_KEY, _r2_client
+
+          local_path = Path(sys.argv[1])
+          client = _r2_client()
+          if client is None:
+              print(
+                  "::warning title=Prophet R2 credentials unavailable::"
+                  "guarded Git checkpoint landed; R2 remained unchanged",
+                  flush=True,
+              )
+              raise SystemExit(0)
+          from botocore.exceptions import ClientError
+
+          bucket = os.environ.get("R2_BUCKET") or "mastermindx"
+          expected_sha = os.environ["PROPHET_INDEX_SHA256"]
+          checkpoint_sha = os.environ["PROPHET_CHECKPOINT_SHA"]
+
+          # Snapshot the destination generation first. The conditional put below
+          # makes any concurrent R2 writer win rather than be overwritten.
+          try:
+              current = client.head_object(Bucket=bucket, Key=R2_INDEX_KEY)
+          except ClientError as exc:
+              response = exc.response or {}
+              status = (response.get("ResponseMetadata") or {}).get("HTTPStatusCode")
+              code = str((response.get("Error") or {}).get("Code") or "")
+              if status == 404 or code in {"404", "NoSuchKey", "NotFound"}:
+                  condition = {"IfNoneMatch": "*"}
+              else:
+                  print(
+                      "::error title=Prophet R2 preflight failed::"
+                      "could not read the current object generation; upload withheld",
+                      flush=True,
+                  )
+                  raise SystemExit(1) from exc
+          else:
+              etag = str(current.get("ETag") or "")
+              metadata = current.get("Metadata") or {}
+              if (
+                  metadata.get("git-checkpoint") == checkpoint_sha
+                  and metadata.get("sha256") == expected_sha
+              ):
+                  print(
+                      "::notice title=Prophet R2 already current::"
+                      "the guarded checkpoint hash is already published",
+                      flush=True,
+                  )
+                  raise SystemExit(0)
+              if not etag:
+                  print(
+                      "::error title=Prophet R2 preflight failed::"
+                      "current object supplied no ETag for a conditional update",
+                      flush=True,
+                  )
+                  raise SystemExit(1)
+              condition = {"IfMatch": etag}
+
+          # Re-prove Git after the R2 generation snapshot. If main or R2 moves
+          # after its respective proof, the conditional put rejects the race.
+          git_checks = (
+              ["git", "fetch", "origin", "+refs/heads/main:refs/remotes/origin/main"],
+              ["git", "merge-base", "--is-ancestor", checkpoint_sha, "origin/main"],
+              [
+                  "git", "diff", "--quiet", checkpoint_sha, "origin/main", "--",
+                  "data/prophet", "data/prophet_arena", "site/prophet",
+              ],
+          )
+          if any(subprocess.run(cmd, check=False).returncode for cmd in git_checks):
+              print(
+                  "::warning title=Prophet R2 publish superseded::"
+                  "current main changed during R2 preflight; upload withheld",
+                  flush=True,
+              )
+              raise SystemExit(0)
+
+          try:
+              client.put_object(
+                  Bucket=bucket,
+                  Key=R2_INDEX_KEY,
+                  Body=local_path.read_bytes(),
+                  ContentType="application/json",
+                  Metadata={
+                      "git-checkpoint": checkpoint_sha,
+                      "sha256": expected_sha,
+                  },
+                  **condition,
+              )
+          except ClientError as exc:
+              status = ((exc.response or {}).get("ResponseMetadata") or {}).get(
+                  "HTTPStatusCode"
+              )
+              if status == 412:
+                  print(
+                      "::warning title=Prophet R2 publish superseded::"
+                      "the R2 object advanced concurrently; preserving that writer",
+                      flush=True,
+                  )
+                  raise SystemExit(0) from exc
+              print(
+                  "::error title=Prophet R2 upload failed::"
+                  "guarded Git checkpoint landed but its verified index did not reach R2",
+                  flush=True,
+              )
+              raise SystemExit(1) from exc
+          print(
+              "::notice title=Prophet R2 published::"
+              "uploaded the hash-verified index from the guarded Git checkpoint",
+              flush=True,
+          )
+          PY
+      - name: restore accepted Prophet source for downstream derivations
+        id: prophet_accepted_source
+        if: always()
+        timeout-minutes: 3
+        continue-on-error: true
+        # Stage-shadow and later observational lanes must never read the dirty
+        # local build after its checkpoint was refused. Rehydrate every source
+        # they consume from current accepted main instead. This deliberately
+        # permits a safe no-op night: previously accepted plans may still mature
+        # and grade even when this run originated no new plan.
+        run: |
+          set -euo pipefail
+          EVENT_REF="${GITHUB_REF:-}"
+          SOURCE_BRANCH="$(git symbolic-ref --short -q HEAD || true)"
+          if [ "$EVENT_REF" != "refs/heads/main" ] \
+            || [ "$SOURCE_BRANCH" != "main" ]; then
+            echo "::warning title=Prophet downstream source withheld::off-main event/checkout cannot advance Prophet-derived ledgers"
+            exit 0
+          fi
+          git fetch origin +refs/heads/main:refs/remotes/origin/main
+          ACCEPTED_PROPHET_SHA="$(git rev-parse origin/main)"
+          git checkout "$ACCEPTED_PROPHET_SHA" -- \
+            site/prophet \
+            data/prophet \
+            data/prophet_arena \
+            data/prophet_stage_shadow
+          # checkout does not remove generated additions absent from the accepted
+          # tree. Plans/states/arena are closed builder-owned roots, so remove
+          # only those additions; data/prophet correction ledgers are never
+          # cleaned and were restored from accepted main above.
+          git clean -fd -- \
+            site/prophet \
+            data/prophet/origination_receipts \
+            data/prophet_arena \
+            data/prophet_stage_shadow
+          RESTORE_MISMATCH=false
+          if ! git diff --cached --quiet "$ACCEPTED_PROPHET_SHA" -- \
+              site/prophet data/prophet data/prophet_arena data/prophet_stage_shadow \
+            || ! git diff --quiet -- \
+              site/prophet data/prophet data/prophet_arena data/prophet_stage_shadow \
+            || [ -n "$(git ls-files --others --exclude-standard -- data/prophet)" ]; then
+            RESTORE_MISMATCH=true
+          fi
+          # Keep accepted bytes in the worktree for downstream readers, but do
+          # not leave them staged against this job's older checkout-time HEAD.
+          # This reset must follow verification: a checkpoint can legitimately
+          # add plans/receipts/Arena ledgers that do not exist in HEAD, and an
+          # earlier reset makes those accepted paths look deleted/untracked.
+          git reset -q -- \
+            site/prophet \
+            data/prophet \
+            data/prophet_arena \
+            data/prophet_stage_shadow
+          if [ "$RESTORE_MISMATCH" = "true" ]; then
+            echo "::error title=Prophet downstream source mismatch::engine worktree could not be made byte-equivalent to accepted main; derived ledgers withheld"
+            exit 1
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "accepted_sha=$ACCEPTED_PROPHET_SHA" >> "$GITHUB_OUTPUT"
       - name: Prophet × Stage forward-shadow (tag actual entries + nightly grade advance)
-        # AFTER "Prophet nightly": reads site/prophet/{index.json,plans/*.json} + data/prophet/ledger.jsonl
-        # (just refreshed). Tags every Prophet entry with its PIT stage-at-entry + last-EC (idempotent,
+        id: prophet_stage_shadow
+        if: steps.prophet_accepted_source.outputs.ready == 'true'
+        # AFTER the accepted-source restore: reads site/prophet/{index.json,plans/*.json}
+        # + data/prophet/ledger.jsonl from current origin/main. That is this run's
+        # checkpoint when it landed, or the prior/newer accepted projection when the
+        # local build was refused/superseded. Tags every Prophet entry with its PIT
+        # stage-at-entry + last-EC (idempotent,
         # PIT-fixed at entry), advances matured grades (nightly is the SOLE advancer — COLLECT_LANE=nightly
         # gate), writes data/prophet_stage_shadow/summary.json (display-only). This is the DEFINITIVE
         # on-Prophet test the fusion backtest left open (research/PROPHET_STAGE_FUSION_PREREG.md §6; the
         # win-rate-gate construction itself is KILLED — this NEVER gates/ranks/alters Prophet, forward
-        # accrual only, first 126d cohort ~Dec 2026). Ledger gitignored; summary.json committed by
-        # "commit engine outputs". Seconds; non-fatal.
+        # accrual only, first 126d cohort ~Dec 2026). Raw PIT tags, append-only
+        # revisions and the effective summary are tracked as one closed output set;
+        # the immediately-following narrow checkpoint is their sole publisher.
+        # Seconds; non-fatal to the wider engine job.
         continue-on-error: true
         env:
           COLLECT_LANE: nightly
         run: |
           set +e
+          STAGE_BASELINE="${RUNNER_TEMP}/prophet-stage-${GITHUB_RUN_ID}.before.json"
+          STAGE_DELTA="${RUNNER_TEMP}/prophet-stage-${GITHUB_RUN_ID}.delta.tsv"
+          export STAGE_BASELINE STAGE_DELTA
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["GITHUB_WORKSPACE"])
+          owned = (
+              "data/prophet_stage_shadow/ledger.jsonl",
+              "data/prophet_stage_shadow/revisions.jsonl",
+              "data/prophet_stage_shadow/summary.json",
+          )
+
+          def fingerprint(path: Path) -> str:
+              if path.is_symlink():
+                  raise RuntimeError(f"refusing symlinked Stage-shadow output: {path}")
+              return (
+                  f"{path.stat().st_mode & 0o7777:04o}:"
+                  f"{hashlib.sha256(path.read_bytes()).hexdigest()}"
+              )
+
+          before = {
+              rel: fingerprint(root / rel)
+              for rel in owned
+              if (root / rel).is_file()
+          }
+          Path(os.environ["STAGE_BASELINE"]).write_text(
+              json.dumps(before, sort_keys=True), encoding="utf-8"
+          )
+          PY
+          baseline_rc=$?
+          if [ "$baseline_rc" -ne 0 ]; then
+            echo "succeeded=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Prophet Stage manifest::could not fingerprint the accepted Stage-shadow baseline (rc=$baseline_rc); accrual checkpoint withheld"
+            exit 0
+          fi
           echo "::group::build_prophet_stage_shadow (tag + grade + summarize)"
           python -m scripts.build_prophet_stage_shadow > "$RUNNER_TEMP/prophet_stage_shadow.log" 2>&1; rc=$?
           cat "$RUNNER_TEMP/prophet_stage_shadow.log"
           echo "::endgroup::"
-          if [ "$rc" -ne 0 ]; then echo "::warning title=build_prophet_stage_shadow::rc=$rc (non-fatal)"; fi
+          if [ "$rc" -ne 0 ]; then
+            echo "succeeded=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=build_prophet_stage_shadow::rc=$rc (non-fatal; accrual checkpoint withheld)"
+            exit 0
+          fi
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          from engine import prophet_stage_shadow as shadow
+
+          root = Path(os.environ["GITHUB_WORKSPACE"])
+          data_root = root / "data"
+          site_root = root / "site"
+          owned = (
+              "data/prophet_stage_shadow/ledger.jsonl",
+              "data/prophet_stage_shadow/revisions.jsonl",
+              "data/prophet_stage_shadow/summary.json",
+          )
+
+          def fingerprint(path: Path) -> str:
+              if path.is_symlink():
+                  raise RuntimeError(f"refusing symlinked Stage-shadow output: {path}")
+              return (
+                  f"{path.stat().st_mode & 0o7777:04o}:"
+                  f"{hashlib.sha256(path.read_bytes()).hexdigest()}"
+              )
+
+          before = json.loads(
+              Path(os.environ["STAGE_BASELINE"]).read_text(encoding="utf-8")
+          )
+          after = {
+              rel: fingerprint(root / rel)
+              for rel in owned
+              if (root / rel).is_file()
+          }
+          deleted = sorted(set(before) - set(after))
+          if deleted:
+              print(
+                  "::error title=Prophet Stage output deletion::"
+                  + ", ".join(deleted)
+                  + " — append-only checkpoint refuses deletions",
+                  flush=True,
+              )
+              raise SystemExit(2)
+
+          summary_file = root / "data/prophet_stage_shadow/summary.json"
+          if not summary_file.is_file():
+              print("::error title=Prophet Stage summary missing::no effective projection was emitted", flush=True)
+              raise SystemExit(3)
+          summary = json.loads(summary_file.read_text(encoding="utf-8"))
+          projection = shadow._project_shadow_ledger(data_root)
+          expected_entries = shadow.collect_prophet_entries(site_root, data_root)
+          missing_ids, unexpected_ids = shadow.projection_membership_gaps(
+              expected_entries, projection
+          )
+          receipt = summary.get("integrity_projection") or {}
+          if (
+              summary.get("schema") != shadow.SUMMARY_SCHEMA
+              or projection.authority_error is not None
+              or receipt.get("authority_error") is not None
+              or receipt.get("raw_rows") != projection.raw_count
+              or receipt.get("revision_rows") != projection.revision_count
+              or receipt.get("effective_rows") != len(projection.rows)
+              or summary.get("n_entries") != len(projection.rows)
+              # Lossless cohort contract: collect_prophet_entries already applies
+              # current canonical quarantine. Every remaining expected plan must
+              # have exactly one effective shadow row, and no orphan row may survive.
+              or missing_ids
+              or unexpected_ids
+          ):
+              print(
+                  "::error title=Prophet Stage projection mismatch::"
+                  "raw ledger, append-only revisions and summary do not form one "
+                  "validated effective projection; checkpoint withheld",
+                  flush=True,
+              )
+              raise SystemExit(4)
+
+          changed = sorted(path for path, value in after.items() if before.get(path) != value)
+          with Path(os.environ["STAGE_DELTA"]).open("w", encoding="utf-8") as handle:
+              for rel in changed:
+                  handle.write(f"{rel}\t{before.get(rel, 'MISSING')}\t{after[rel]}\n")
+          PY
+          manifest_rc=$?
+          if [ "$manifest_rc" -eq 0 ]; then
+            echo "succeeded=true" >> "$GITHUB_OUTPUT"
+            echo "delta_manifest=$STAGE_DELTA" >> "$GITHUB_OUTPUT"
+          else
+            echo "succeeded=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Prophet Stage manifest::accrual returned 0 but its effective projection could not be proven (rc=$manifest_rc); checkpoint withheld"
+          fi
           exit 0
+      - name: checkpoint Prophet Stage-shadow accrual to main
+        id: prophet_stage_checkpoint
+        if: steps.prophet_stage_shadow.outputs.succeeded == 'true'
+        timeout-minutes: 10
+        continue-on-error: true
+        env:
+          STAGE_DELTA_MANIFEST: ${{ steps.prophet_stage_shadow.outputs.delta_manifest }}
+          ACCEPTED_PROPHET_SHA: ${{ steps.prophet_accepted_source.outputs.accepted_sha }}
+        # Raw PIT evidence, correction/grade revisions, and their summary move as
+        # one hash-verified set from a clean worktree. A newer Prophet authority
+        # projection or same-path Stage writer wins; there is no conflict override.
+        run: |
+          set -euo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          EVENT_REF="${GITHUB_REF:-}"
+          SOURCE_BRANCH="$(git -C "$GITHUB_WORKSPACE" symbolic-ref --short -q HEAD || true)"
+          if [ "$EVENT_REF" != "refs/heads/main" ] \
+            || [ "$SOURCE_BRANCH" != "main" ] \
+            || [ -z "${ACCEPTED_PROPHET_SHA:-}" ]; then
+            echo "::error title=Prophet Stage checkpoint source rejected::only an accepted main Prophet projection may advance the Stage-shadow ledger"
+            exit 1
+          fi
+          if [ ! -f "${STAGE_DELTA_MANIFEST:-}" ]; then
+            echo "::error title=Prophet Stage manifest missing::no readable closed-output delta was supplied"
+            exit 1
+          fi
+          if [ ! -s "$STAGE_DELTA_MANIFEST" ]; then
+            echo "Prophet Stage checkpoint: no accrual changes"
+            exit 0
+          fi
+
+          git -C "$GITHUB_WORKSPACE" fetch origin \
+            +refs/heads/main:refs/remotes/origin/main
+          PROPHET_AUTHORITY_PATHS=(data/prophet data/prophet_arena site/prophet)
+          if ! git -C "$GITHUB_WORKSPACE" merge-base --is-ancestor \
+              "$ACCEPTED_PROPHET_SHA" origin/main \
+            || ! git -C "$GITHUB_WORKSPACE" diff --quiet \
+              "$ACCEPTED_PROPHET_SHA" origin/main -- \
+              "${PROPHET_AUTHORITY_PATHS[@]}" \
+            || ! git -C "$GITHUB_WORKSPACE" diff --quiet \
+              "$ACCEPTED_PROPHET_SHA" origin/main -- data/prophet_stage_shadow; then
+            echo "::error title=Prophet Stage checkpoint superseded::Prophet authority or Stage-shadow history advanced after the accepted source snapshot; preserving main"
+            exit 1
+          fi
+
+          STAGE_CHECKPOINT_ROOT="$(mktemp -d "${RUNNER_TEMP}/prophet-stage-checkpoint.XXXXXX")"
+          STAGE_CHECKPOINT_DIR="${STAGE_CHECKPOINT_ROOT}/tree"
+          STAGE_CHECKPOINT_BRANCH="_prophet_stage_checkpoint_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT:-1}"
+          cleanup_stage_checkpoint() {
+            cd "$GITHUB_WORKSPACE"
+            git worktree remove --force "$STAGE_CHECKPOINT_DIR" 2>/dev/null || true
+            git branch -D "$STAGE_CHECKPOINT_BRANCH" 2>/dev/null || true
+            rmdir "$STAGE_CHECKPOINT_ROOT" 2>/dev/null || true
+          }
+          trap cleanup_stage_checkpoint EXIT
+          git worktree add -b "$STAGE_CHECKPOINT_BRANCH" \
+            "$STAGE_CHECKPOINT_DIR" origin/main
+          cd "$STAGE_CHECKPOINT_DIR"
+
+          while IFS=$'\t' read -r rel before_sha after_sha; do
+            [ -n "$rel" ] || continue
+            case "$rel" in
+              data/prophet_stage_shadow/ledger.jsonl|\
+              data/prophet_stage_shadow/revisions.jsonl|\
+              data/prophet_stage_shadow/summary.json) ;;
+              *)
+                echo "::error title=Prophet Stage path rejected::$rel is outside the closed Stage-shadow output set"
+                exit 1
+                ;;
+            esac
+            if [ ! -f "$GITHUB_WORKSPACE/$rel" ] || [ -L "$GITHUB_WORKSPACE/$rel" ]; then
+              echo "::error title=Prophet Stage output rejected::$rel is missing or symlinked; deletions are forbidden"
+              exit 1
+            fi
+            current_after="$(python3 -c 'import hashlib,os,sys; p=sys.argv[1]; print(f"{os.stat(p).st_mode & 0o7777:04o}:"+hashlib.sha256(open(p,"rb").read()).hexdigest())' "$GITHUB_WORKSPACE/$rel")"
+            if [ "$current_after" != "$after_sha" ]; then
+              echo "::error title=Prophet Stage source changed::$rel changed after its validated projection; checkpoint withheld"
+              exit 1
+            fi
+            if [ -L "$STAGE_CHECKPOINT_DIR/$rel" ]; then
+              echo "::error title=Prophet Stage main symlink rejected::$rel"
+              exit 1
+            elif [ -f "$STAGE_CHECKPOINT_DIR/$rel" ]; then
+              main_before="$(python3 -c 'import hashlib,os,sys; p=sys.argv[1]; print(f"{os.stat(p).st_mode & 0o7777:04o}:"+hashlib.sha256(open(p,"rb").read()).hexdigest())' "$STAGE_CHECKPOINT_DIR/$rel")"
+            else
+              main_before="MISSING"
+            fi
+            if [ "$main_before" != "$before_sha" ]; then
+              echo "::error title=Prophet Stage same-path race::origin/main changed $rel; preserving its append-only history"
+              exit 1
+            fi
+            mkdir -p "$(dirname "$rel")"
+            cp -p "$GITHUB_WORKSPACE/$rel" "$rel"
+            git add -- "$rel"
+          done < "$STAGE_DELTA_MANIFEST"
+
+          if git diff --cached --quiet; then
+            echo "Prophet Stage checkpoint: no staged changes"
+            exit 0
+          fi
+          push_staged_clean || exit 1
+          git commit -m "prophet-stage: durable nightly accrual $(date -u +%F)"
+          STAGE_CHECKPOINT_PARENT="$(git rev-parse HEAD^)"
+          PUSH_ALARM=120
+          PUSH_BUDGET_SECS=420
+          PUSH_MAX_ATTEMPTS=12
+          PUSH_MAIN_BRANCHES="$STAGE_CHECKPOINT_BRANCH"
+          push_retry_init "Prophet Stage-shadow durable checkpoint"
+          push_on_main_ok || exit 0
+          while push_attempt; do
+            if ! push_fetch_main_for_rebase; then
+              push_abort_rebase
+              push_backoff
+              continue
+            fi
+            if ! git merge-base --is-ancestor "$ACCEPTED_PROPHET_SHA" origin/main \
+              || ! git diff --quiet "$ACCEPTED_PROPHET_SHA" origin/main -- \
+                "${PROPHET_AUTHORITY_PATHS[@]}" \
+              || ! git diff --quiet "$ACCEPTED_PROPHET_SHA" origin/main -- \
+                data/prophet_stage_shadow; then
+              echo "::error title=Prophet Stage authority race::Prophet inputs or Stage-shadow history advanced during publish; preserving main"
+              exit 1
+            fi
+            same_path=""
+            while IFS=$'\t' read -r rel _ _; do
+              [ -n "$rel" ] || continue
+              if ! git diff --quiet "$STAGE_CHECKPOINT_PARENT" origin/main -- "$rel"; then
+                same_path="${same_path}${same_path:+, }${rel}"
+              fi
+            done < "$STAGE_DELTA_MANIFEST"
+            if [ -n "$same_path" ]; then
+              echo "::error title=Prophet Stage same-path race::origin/main advanced $same_path; no conflict override is allowed"
+              exit 1
+            fi
+            if perl -e 'alarm 180; exec @ARGV or die' -- git rebase origin/main; then
+              STAGE_CHECKPOINT_PARENT="$(git rev-parse HEAD^)"
+              if push_do origin HEAD:main; then
+                echo "pushed Prophet Stage-shadow checkpoint on attempt $PUSH_ATTEMPT"
+                push_won
+                exit 0
+              fi
+            fi
+            push_abort_rebase
+            push_backoff
+          done
+          push_lost
+          echo "::error title=Prophet Stage checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the broad engine commit is fenced from these unaccepted bytes"
+          exit 1
       - name: Prophet Live arming pass (provisional-close trigger pack -> R2)
         # AFTER build_site (same close stores the board was built from). Probes the
         # SAME close-only admission gate (engine/signal_gate.py) with candidate
@@ -2345,6 +3457,36 @@ jobs:
           cat "$RUNNER_TEMP/prophet_live_reconcile.log"
           echo "::endgroup::"
           if [ "$rc" -ne 0 ]; then echo "::warning title=reconcile_prophet_live::rc=$rc (non-fatal — the R2 spool is durable, tomorrow picks the day back up)"; fi
+          exit 0
+      - name: TURN WATCH desk (early-surfacing deck — display tier)
+        # ANTICIPATION §6.9 R8. Rebuilds site/turn_watch/turn_watch.json: every name whose
+        # earliest turn evidence fired in the last 5 sessions, with the operator's review
+        # checklist pre-computed. Reads committed stores only (data/yahoo, membership.json,
+        # site/basketdata/us_basket_turn.json); writes ONE site/ artifact and advances NO
+        # ledger, so a re-run is idempotent and a failed run costs a day's refresh — the
+        # deck keeps yesterday's committed artifact and tomorrow's run replaces it.
+        #
+        # PATH IS LOAD-BEARING — site/turn_watch/, never site/prophet/. The "commit engine
+        # outputs" step below restores site/prophet from HEAD (`git checkout HEAD --
+        # site/prophet` + scoped clean/reset, PROPHET_AUTHORITY_PATHS) before staging, so a
+        # deck written under that root is reverted on a SUCCESSFUL night too and the site
+        # would serve the seed forever. site/turn_watch/ rides that step's broad
+        # `git add data/ site/ reports/` and is touched by none of the Prophet restores.
+        #
+        # DISPLAY TIER, ZERO SCORED AUTHORITY — nothing here ranks, gates or sizes a graded
+        # position. Measured 2026-08-08: ~135s over 702 graded names; the cap below is ~4x
+        # that so a slow night annotates rather than silently eating the budget. Runs after
+        # the Prophet steps because the deck's "what the slow tier says now" column is most
+        # useful read beside the board those steps just refreshed.
+        timeout-minutes: 12
+        continue-on-error: true
+        run: |
+          set +e
+          echo "::group::build_turn_watch (early-surfacing deck)"
+          python -m scripts.build_turn_watch > "$RUNNER_TEMP/turn_watch.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/turn_watch.log"
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then echo "::warning title=build_turn_watch::rc=$rc (non-fatal — the deck keeps yesterday's artifact until tomorrow's run)"; fi
           exit 0
       - name: timings band — builders-parallel (W2)
         run: python3 scripts/nightly_timings.py mark --band builders-parallel || echo "::warning::timings band mark failed (non-fatal)"
@@ -2659,6 +3801,23 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.build_session_digest || echo "::warning::build_session_digest non-fatal failure"
+      - name: OIP PIT — durable option episodes + aligned H+60 proxy accrual
+        # Consumes only the date-keyed live_flow/events/{DATE}.jsonl raw stage,
+        # never capped/overwritten feed_current. The monotonic checkpoint and both
+        # committed JSONL ledgers advance only in COLLECT_LANE=nightly. Hourly Polygon
+        # measurements remain explicitly training-ineligible; all authority is false.
+        # Serial after session digest while the restored intraday cache is present.
+        # This is the sole nightly advancer and its independent inputs remain valid
+        # when an unrelated earlier renderer fails.
+        if: always()
+        timeout-minutes: 10
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.build_options_signal_episode
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
         # named US thematic baskets. Ported from China #2634. Reads sector_cycles
@@ -2750,6 +3909,7 @@ jobs:
           python -m scripts.mirror_flow_idx || echo "::warning::flow_idx R2 mirror failed (non-fatal)"
           python -m scripts.mirror_flow_idx --leaders || echo "::warning::flow leaders R2 mirror failed (non-fatal)"
           python -m scripts.mirror_flow_idx --radar || echo "::warning::leader radar R2 mirror failed (non-fatal)"
+          python -m scripts.mirror_flow_idx --options-prophet --strict || echo "::warning::options prophet R2 mirror failed (non-fatal)"
           python -m scripts.mirror_terminal_context_r2 || echo "::warning::terminal-context R2 mirror failed (non-fatal)"
       - name: flow-signal ledger harvest + outcome grader (FS-0)
         # FS-0 (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE §5): append-only per-event
@@ -3035,10 +4195,12 @@ jobs:
         # by the "commit engine outputs" step's `git add data/` below. Idempotent. Resilient.
         run: python -m scripts.stamp_options_state || true
       - name: Options entry-quality gate (Options Alpha W1.3; pre-registered, scored=false)
-        # Recomputes the S-IVR/S-DOI/S-WALL/S-VOI bucket counts/verdicts from the stamped ledger
-        # into data/options_entry/gate.json (ledger primitives only, A10). Cheap (seconds). No
-        # verdict until n≥30/bucket (doctrine §2.3); verdict flips require the pre-registered
-        # thresholds, never a code edit. Resilient.
+        # Reduces the horizon ledger to canonical buy-lane fires, then recomputes the registered
+        # options-entry diagnostics in data/options_entry/gate.json (ledger primitives only, A10).
+        # Descriptive maturity requires ≥30 fires, ≥30 dates in each bucket, and ≥30 shared
+        # dates. Existing observations cannot earn authority after the methodology amendment:
+        # date-cluster inference plus a frozen sequential-look plan and fresh cohort are still
+        # required. scored=false / weight=0 remain hard-frozen. Cheap and resilient.
         run: python -m scripts.validate_options_entry || true
       - name: Calibration Hub (unified self-improvement observability; display-only)
         # Consolidates every Phase-C desk's track_record + the Trial Ledger into one
@@ -3380,9 +4542,22 @@ jobs:
         # Fail-open: missing source → gaps[] + null block, always exits 0.
         # Output covered by 'git add data/' in 'commit engine outputs' below.
         run: python -m scripts.build_liquidity_plumbing || echo "::warning::build_liquidity_plumbing failed (non-fatal — last committed artifact stands)"
+      - name: Release Radar coherent-target vintage stores (truth substrate, non-fatal)
+        # Full ALFRED output_type=2 matrices let the target engine select current
+        # and prior levels from ONE release-date vintage.  They are additive to
+        # the broad output_type=4 PIT feature store and never replace it.
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        timeout-minutes: 20
+        run: python -m scripts.collect_release_target_vintages || echo "::warning::release target vintage collection failed (non-fatal — existing coherent stores stand)"
+      - name: Release Radar official-actual reconciliation (truth substrate, non-fatal)
+        # Converts verified BLS/BEA/DOL publication facts from the VPS live
+        # sidecar into keep-first, source-hashed actual receipts.  No forecast is
+        # originated here; the following producer prefers these receipts when grading.
+        run: python -m scripts.reconcile_release_actuals || echo "::warning::official release actual reconciliation failed (non-fatal — same-vintage fallback remains)"
       - name: MRI release forecast producer (display-only, non-fatal)
         # MRI PR-C: nightly projection for CPI (headline + core) and NFP.
-        # Emits data/release_forecast/latest.json (schema release_forecast.v1),
+        # Emits data/release_forecast/latest.json (schema release_forecast.v2),
         # site/macrodata/release_forecast.json (display copy),
         # data/release_forecast/forward_ledger.jsonl (append-only),
         # data/release_forecast/scoreboard.json (forward accrual only).
@@ -3390,6 +4565,13 @@ jobs:
         # display_only=True; all authority booleans False (MRI-R7). Fail-open.
         # Outputs covered by 'git add data/' and 'git add site/' below.
         run: python -m scripts.build_release_forecast || echo "::warning::build_release_forecast failed (non-fatal — last committed artifact stands)"
+      - name: Inflation intelligence lobe (context-only, non-fatal)
+        if: always()
+        # Separates the latest released CPI state, the next BLS-print forecast,
+        # and current-month proxy pressure.  It is a deterministic adapter over
+        # persisted inputs: display_only=true, authority=false, and no Prophet,
+        # ranking, gating, sizing, or trading consumer.
+        run: python -m scripts.build_inflation_intelligence || echo "::warning::build_inflation_intelligence failed (non-fatal — last committed artifact stands)"
       - name: forward path board (RIC W7 P5, display-only, non-fatal)
         if: always()   # deterministic join over committed artifacts — build whatever exists
         # RIC W7 P5: deterministic Forward Path board (rates_command.v1). Deliberately
@@ -3823,6 +5005,46 @@ jobs:
           # templates/ would abort the commit and lose the whole render rather than
           # just the stamp. Staging site/ keeps its hard-fail semantics.
           git add templates/ 2>/dev/null || true
+          # Prophet has an earlier, provenance-checked SOLE git publisher. Never
+          # let this broad commit re-stage its local tree: if the checkpoint
+          # withheld on an off-main/provenance/same-path race, a later `-X theirs`
+          # engine rebase would otherwise defeat that refusal; even without a
+          # commit, the always() Pages upload would serve the stale local index.
+          # Restore HEAD (the known main-ancestry checkout) into both index and
+          # worktree, then unstage every Prophet-owned root. Using origin/main
+          # here would leave an unstaged A->B Prophet delta when main advanced;
+          # the broad push loop's later autostash/rebase could replay that delta
+          # over a still-newer correction and a follow-up `git add site/` could
+          # accidentally commit it. HEAD is deliberately conservative: the
+          # checkpoint/VPS path carries the new publication, while the Pages
+          # mirror can serve the prior safe copy for this run. Correction ledgers
+          # under data/prophet are inputs and are unstaged but never cleaned or
+          # overwritten here.
+          if ! git checkout HEAD -- \
+            site/prophet \
+            data/prophet/ledger.jsonl \
+            data/prophet/ledger_quarantine.json \
+            data/prophet_arena \
+            data/prophet_stage_shadow; then
+            echo "::error title=Prophet safe restore failed::could not restore checkout-time Prophet publications; aborting the broad commit rather than publishing an uncheckpointed tree"
+            exit 1
+          fi
+          # New plan/state/arena files do not exist in the safe ref, so checkout
+          # cannot remove them. These roots are builder-owned and not ignored;
+          # scoped clean removes only the uncheckpointed additions.
+          git clean -fd -- \
+            site/prophet \
+            data/prophet_arena \
+            data/prophet_stage_shadow
+          git reset -q -- \
+            site/prophet \
+            data/prophet \
+            data/prophet_arena \
+            data/prophet_stage_shadow
+          # A refused receipt is build-owned and may now be untracked after the
+          # reset above. Remove only this dedicated directory; append-only
+          # correction ledgers elsewhere under data/prophet remain untouched.
+          git clean -fd -- data/prophet/origination_receipts
           # W0b (2026-07-08 stale-HK incident): US engine job must NOT commit asia-owned
           # data/ paths — asia-close.yml is the sole writer of all china*/hk* stores.
           # The GHA cache restore above (data/hk_stocks, restore-keys: hk-stocks-ohlc-)
@@ -4040,6 +5262,9 @@ jobs:
             echo "### ❌ R2 data plane STALE/DARK — publish_r2 failed or was skipped (expired R2_* secrets?); the live site keeps serving OLD per-ticker data. See scripts/audit_r2.py." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()   # DELIBERATELY AHEAD of the two delivery steps below — this is the ONLY job where the finish step is not last, and the exception is load-bearing. `if: always()` steps DO run after a timeout-cancel, but only inside the runner's ~5-minute force-termination grace, and this job's tail is the most expensive always() tail in the workflow. Evidence, run 31067383446 (2026-08-06): engine started 10:05:45Z, completed 13:30:46Z = 205.0m = the 200m cap + exactly 5m of grace; steps 117-121 (commit engine outputs → feeds → R2 publish → verify → strip) all ran post-cancel, step 122 "upload pages artifact" burned what was left and ended `failure`, and step 123 — this one — WAS NEVER SCHEDULED AT ALL (the GH jobs API step list jumps straight from 122 to the Post steps). Result: data/ops/nightly_timings/engine.jsonl carried ONE row, source `backfill-gh-api`, while all 15 sibling jobs had native rows — the 85% tripwire was structurally dark for the ONE job whose creep caused the Jul31-Aug6 outage, and dark on exactly the nights it existed to pre-announce. Ordering it here costs a healthy night nothing (both steps still run to completion) and on a cancel night trades an artifact upload that is already failing for the telemetry that explains WHY the night died. The row + the ::warning land in this step's first second; only its bounded commit/push can be cut short. Pinned by tests/test_nightly_timings.py::test_finish_step_is_not_stranded_behind_the_pages_artifact_upload — do not move it back below the upload.
+        run: bash scripts/ci/nightly_timings_finish.sh 300
       - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
         if: always()
         run: |
@@ -4049,9 +5274,6 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: site/
-      - name: timings ledger + 85% budget tripwire (W2)
-        if: always()
-        run: bash scripts/ci/nightly_timings_finish.sh 300
 
   # The factor-portfolio RETURN SERIES (factors-page chart) is a ~22-min month-end
   # walk (compute_factors x ~38 month-ends x 2 universes) — it was the real engine
