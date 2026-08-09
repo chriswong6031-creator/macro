@@ -118,6 +118,14 @@ def _write_timing_ledger() -> None:
         for lab, secs in rows:
             log.info("timing: %-34s %7.1fs", lab, secs)
         log.info("timing: %-34s %7.1fs", "TOTAL", total)
+        if "pytest" in sys.modules:
+            # Inert under test: a caller that reaches main() without redirecting
+            # lib.config would append to the REAL data/ tree, which is a new
+            # `git status` entry — what conftest's MM_DATA_GUARD fails the run for, and
+            # what rides a later `git add data/` into the repo. No such test caller
+            # exists today; this is prophylactic because 59 test files import this
+            # module. The table above still logs, so a test run keeps its timing signal.
+            return
         led = config.data_dir() / "nightly_timings"
         led.mkdir(parents=True, exist_ok=True)
         rec = {
