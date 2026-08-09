@@ -81,6 +81,40 @@ jobs:
     runs-on: ${{ github.event.inputs.runner || 'render-linux' }}
     timeout-minutes: 180
     steps:
+      # Same workspace-hygiene guard as ci.yml's pack job (#5108) — this lane's DEFAULT
+      # runner is on the very pool that broke there. A self-hosted runner REUSES its
+      # workspace between jobs, and `merge-on-green.yml` sweeps these runners every ~10
+      # minutes with a non-cone sparse checkout of three files, leaving
+      # `core.sparseCheckout=true` in the SAME directory. The next job inherits a partial
+      # tree. A pack job dies loudly on a missing script; a RENDER job builds and commits
+      # whatever it finds, so here the failure mode is a truncated publish, not a red X.
+      #
+      # DO NOT DELETE THE `config --unset-all` LINE BECAUSE CHECKOUT "ALREADY DISABLES
+      # SPARSE". It does — run 31304933108 shows checkout@v4 running
+      # `git sparse-checkout disable` itself — and the workspace was partial anyway:
+      # `disable` clears the WORKTREE-scoped flag, checkout then unsets
+      # `extensions.worktreeConfig`, and that makes the repo-scoped `core.sparseCheckout`
+      # effective again. The config unset is the half that ends the outage; the `disable`
+      # in front of it is what re-materialises the missing paths. Keep both.
+      #
+      # Hosted runners get a fresh VM per job and cannot hit this, hence the guard.
+      - name: clear any sparse checkout a sibling job left in this shared workspace
+        if: runner.environment != 'github-hosted'
+        shell: bash
+        run: |
+          if [ -d "${{ github.workspace }}/.git" ]; then
+            git -C "${{ github.workspace }}" sparse-checkout disable || echo "::warning title=sparse-clear::sparse-checkout disable failed — this workspace may still hold a partial tree"
+            # `--unset-all` exits 5 when there is nothing to unset: that is the normal
+            # clean case and must never fail the job. Exit 0 means this workspace really
+            # WAS poisoned, which is worth one line in the run summary.
+            rc=0
+            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || rc=$?
+            if [ "$rc" = 0 ]; then
+              echo "::notice title=sparse-clear::cleared an inherited core.sparseCheckout in this shared workspace"
+            elif [ "$rc" != 5 ]; then
+              echo "::warning title=sparse-clear::core.sparseCheckout unset exited $rc — this workspace may still be sparse"
+            fi
+          fi
       - uses: actions/checkout@v4
         with:
           ref: main

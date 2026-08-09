@@ -22,9 +22,17 @@ Append-only law (B1 fix): a source row can legitimately leave its snapshot
 between runs (the earnings parquet keeps only a rolling window of quarters;
 the vault catalog drops items by id) — that must never silently delete the
 event it produced. ``governor.build_and_write`` calls :func:`union_events` to
-union this run's recompute with whatever was previously committed, so a
-dropped source row RETAINS its event (flagged, never erased) rather than
-vanishing with no signal.
+union this run's recompute with whatever was previously committed, so an
+ordinary dropped source row RETAINS its event (flagged, never erased) rather
+than vanishing with no signal.
+
+An authoritative correction is different from ordinary source disappearance.
+Prophet's raw outcome ledger remains append-only, while its correction and
+quarantine receipts explicitly withdraw known-invalid record claims. Chronicle
+is a derived *effective* store, so :func:`apply_authoritative_retractions` runs
+after the ordinary union and excludes those claims without mutating any raw
+Prophet evidence. This exception is receipt-backed and source-scoped; it is not
+a general delete path.
 """
 from __future__ import annotations
 
@@ -55,6 +63,8 @@ EVENTS_REL = Path("data") / "chronicle" / "events.jsonl"
 REBUILD_SOURCES: tuple[str, ...] = (
     "data/research_vault/catalog.json",
     "data/prophet/ledger.jsonl",
+    "data/prophet/ledger_corrections.jsonl",
+    "data/prophet/ledger_quarantine.json",
     "data/release_forecast/forward_ledger.jsonl",
     "data/earnings/earnings.parquet",
     "data/risk_radar/forward_log.jsonl",
@@ -152,6 +162,41 @@ def union_events(prev_events: list[dict], recomputed_events: list[dict]) -> tupl
     dropped_events = [e for e in prev_events if e.get("id") in dropped_id_set]
     union = sort_events(recomputed_sorted + dropped_events)
     return union, dropped_events
+
+
+def apply_authoritative_retractions(
+    repo: Path,
+    events: list[dict],
+) -> tuple[list[dict], list[dict]]:
+    """Project explicit Prophet quarantines out of the effective Chronicle.
+
+    ``events.jsonl`` is regenerated context, not the immutable source of record.
+    The raw Prophet ledger and both correction receipts remain untouched and retain
+    the complete audit trail. Only events whose source is exactly
+    ``prophet_ledger`` and whose source_ref is in the canonical effective quarantine
+    set can be removed here; ordinary source rows missing from a later snapshot still
+    retain their Chronicle event through :func:`union_events`.
+
+    Authority loading is deliberately strict. A malformed correction/quarantine
+    receipt raises and leaves the previously committed Chronicle store untouched via
+    the governor's atomic top-level failure path, instead of silently rehabilitating
+    a known-invalid outcome.
+    """
+    from engine.prophet_integrity import load_effective_ledger  # noqa: PLC0415
+
+    quarantined_ids = load_effective_ledger(repo).quarantined_ids
+    if not quarantined_ids:
+        return list(events), []
+
+    kept: list[dict] = []
+    retracted: list[dict] = []
+    for event in events:
+        is_retracted = (
+            event.get("source") == "prophet_ledger"
+            and str(event.get("source_ref") or "") in quarantined_ids
+        )
+        (retracted if is_retracted else kept).append(event)
+    return kept, retracted
 
 
 def load_events_jsonl(path: Path) -> list[dict]:

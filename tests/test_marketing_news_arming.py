@@ -273,26 +273,62 @@ def test_the_cold_caps_are_the_weeks_1_2_contract(cfg):
     Links stay shut on the first tier on purpose: an outbound link from a
     days-old account is the strongest spam signal on the platform, and it now
     opens on day 5 rather than day 28.
+
+    READ FROM THE TIER ROW, NOT THE RESOLUTION (2026-08-08). These assertions used
+    to walk the resolved caps at the desk's created date, which was the same thing
+    only while no live desk carried an `account_overrides` row. The 20-30/day order
+    gave all seven one, and an override applies on top of the tier and may LOOSEN,
+    so the resolution stopped being a reading of the tier contract. The volume
+    knobs are asserted on the ROW; the permission knobs are still asserted on the
+    resolution, because those are the ones a merge can only ever tighten (the bool
+    merge is a logical AND) and reading them post-merge is strictly stronger.
     """
     created = str(_raw_entry(cfg)["created"])[:10]
     caps = _ramp_row(cfg, created)["caps"]
-    assert caps["max_posts_per_account_per_day"] == 14
-    assert caps["max_media_posts_per_account_per_day"] == 14
-    assert caps["min_minutes_between_posts"] == 30
-    assert caps["max_cashtags_per_post"] == 2
+    tier_row = ((cfg.get("sentinel") or {}).get("ramp") or {}).get("weeks_1_2") or {}
+    assert int(tier_row["max_posts_per_account_per_day"]) == 14
+    assert int(tier_row["max_media_posts_per_account_per_day"]) == 14
+    assert int(tier_row["min_minutes_between_posts"]) == 30
+    assert int(tier_row["max_cashtags_per_post"]) == 2
+    # The tier is a FLOOR on what a desk gets; an override may widen it, never
+    # narrow it. This is the half that would catch a tier row being quietly cut.
+    assert caps["max_posts_per_account_per_day"] is None or (
+        caps["max_posts_per_account_per_day"] >= 14)
     assert caps["theme_list_allowed"] is True
     assert caps["links_allowed"] is False
     assert caps["max_replies_per_account_per_day"] == 0
 
 
-def test_the_wire_desk_does_not_open_on_the_flagship_override(cfg):
-    """The flagship's 20/day account_override is per-desk and named; a wire desk
-    arriving with zero posting history must not inherit it."""
+def test_the_wire_desk_override_is_a_named_operator_decision(cfg):
+    """An `account_overrides` row must always be traceable to a named desk.
+
+    WHAT THIS TEST USED TO SAY, and why it changed. It asserted that
+    `mastermind_news` carries NO override at all, on the argument that a wire desk
+    arriving with zero posting history must not inherit the flagship's 20/day.
+    That argument was about INHERITANCE, and it is still correct: overrides are
+    per-desk and are never inherited. What changed is the operator's order of
+    2026-08-08, which set 30/day on all seven live desks BY NAME, this one
+    included. The desk is no longer cold (armed 2026-08-02, posting since), so the
+    premise the old assertion rested on has expired rather than been overruled.
+
+    The guard that survives is the one that always mattered: no desk may carry an
+    override it was not named for. Every override row must belong to a desk that
+    is actually enabled — an override on a dark or unknown desk is either a typo
+    or a cap waiting to arm itself the moment somebody flips a switch.
+    """
+    from engine.marketing.accounts import effective_accounts
+
     overrides = (((cfg.get("sentinel") or {}).get("ramp") or {})
                  .get("account_overrides") or {})
-    assert ACCOUNT not in overrides, (
-        f"{ACCOUNT} carries a ramp account_override ({overrides.get(ACCOUNT)!r}) "
-        f"— overrides may LOOSEN, so this would let a cold desk skip the ramp"
+    assert ACCOUNT in overrides, (
+        f"{ACCOUNT} lost its account_override row; the 2026-08-08 order names it"
+    )
+    assert int(overrides[ACCOUNT]["max_posts_per_account_per_day"]) == 30
+    live = {str(a.get("id")) for a in effective_accounts(cfg, ROOT) if a.get("enabled")}
+    stray = sorted(set(overrides) - live)
+    assert not stray, (
+        f"account_overrides rows for desks that are not enabled: {stray} — an "
+        f"override may LOOSEN, so one sitting on a dark desk arms itself silently"
     )
 
 
@@ -428,7 +464,10 @@ def test_the_press_wire_headroom_knob_is_present_and_outranks_the_other_home(cfg
         "breaking.flagship_top_k_per_day missing or not an int — press_lane would "
         "fall through to press_sources.yml wire.flagship_top_k_per_day"
     )
-    assert top_k == 10
+    # 10 -> 20 with the 2026-08-08 order (20-30 posts/day/account). The RELATION
+    # this test really owns is the one below; the literal is pinned so a raise is
+    # always a deliberate edit in both homes at once.
+    assert top_k == 20
 
     press = yaml.safe_load(
         (ROOT / "config" / "press_sources.yml").read_text(encoding="utf-8"))
@@ -481,7 +520,16 @@ def test_the_config_knobs_reach_their_readers(cfg):
     )
     press = yaml.safe_load(
         (ROOT / "config" / "press_sources.yml").read_text(encoding="utf-8"))
-    assert resolve(cfg.get("breaking"), press.get("wire")) == 10, (
+    assert resolve(cfg.get("breaking"), press.get("wire")) == 20, (
+        "marketing.yml breaking.flagship_top_k_per_day is not reaching the reader"
+    )
+    # PRECEDENCE, PROVEN RATHER THAN IMPLIED. The two homes carry the same number
+    # today (both 20 since 2026-08-08), so reading the shipped pair can no longer
+    # tell "marketing.yml wins" apart from "they happen to agree" — which is
+    # exactly the shape a precedence assertion must not have. Feed a disagreeing
+    # pair and require the higher-precedence home to decide.
+    assert resolve({"flagship_top_k_per_day": 20},
+                   {"flagship_top_k_per_day": 3}) == 20, (
         "marketing.yml must OUTRANK press_sources.yml for this key"
     )
 

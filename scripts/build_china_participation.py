@@ -46,6 +46,7 @@ log = logging.getLogger("build_china_participation")
 
 # Repo root (scripts/ is one level below root)
 _ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 _TAPE_PATH = _ROOT / "data" / "china_participation" / "tape.parquet"
 _JSON_PATH = _ROOT / "site" / "chinastatedata" / "participation.json"
 

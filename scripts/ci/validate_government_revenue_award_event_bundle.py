@@ -17,8 +17,7 @@ from pathlib import Path
 # explicitly. Dark until 2026-08-08: the first run to reach this script died on
 # the swapped call-site arg order before the import could even fail.
 _REPO_ROOT = str(Path(__file__).resolve().parents[2])
-if _REPO_ROOT not in sys.path:
-    sys.path.insert(0, _REPO_ROOT)
+sys.path.insert(0, _REPO_ROOT)
 
 
 def _instant(state: dict, name: str) -> datetime:

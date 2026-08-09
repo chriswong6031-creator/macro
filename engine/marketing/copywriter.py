@@ -29,6 +29,8 @@ import threading
 from datetime import date, datetime, timezone
 from typing import Any, Iterable
 
+from engine.prophet_integrity import effective_public_plan_date
+
 # This module had NO logger while carrying a `log.warning(...)` call in
 # write_posts_llm's armed-but-mute branch (the credential-missing path). That
 # name resolved to nothing, so the call raised NameError inside the function's
@@ -343,7 +345,7 @@ def verify_signal_live(
         return False, f"ran away +{pct:.1f}% — no longer actionable (last={last_close:.2f}, entry={entry:.2f})"
 
     today_date = _parse_date(today) if today else datetime.now(timezone.utc).date()
-    age = _signal_age_days(plan.get("_signal_date"), today_date=today_date)
+    age = _signal_age_days(effective_public_plan_date(plan), today_date=today_date)
     if age is None:
         return False, "no signal_date — cannot verify age"
     if age > _MAX_SIGNAL_AGE_DAYS:
@@ -593,6 +595,183 @@ def display_round_text(text: str) -> str:
         pos = m.end()
     out.append(src[pos:])
     return "".join(out)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Write-time normalizer (W2, 2026-08-08)
+#
+# NORMALIZE WHAT A MODEL CANNOT RELIABLY WITHHOLD. The system prompt has banned
+# em dashes since v2 shipped, and models keep writing them: on the 2026-08-07
+# plan the dash rule alone killed roughly seven posts a night, each one an
+# otherwise-clean post thrown away over a glyph. The ban is right (the corpus
+# does not use them) and the enforcement was in the wrong place — a validator
+# that rejects a whole post for a character that has an exact, meaning-preserving
+# replacement is spending a model call to punish typography.
+#
+# So: mechanical, meaning-preserving substitutions run BEFORE validation and the
+# validators keep their teeth for everything they cannot fix. This is not a
+# relaxation. Nothing here can invent a number, change a claim, add a stance or
+# remove a hedge; every rule is a character-class rewrite, and every downstream
+# gate still runs on the result.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Typography a model emits that the house register does not use. Straight
+#: quotes, one kind of space, ASCII ellipsis. Meaning-preserving by construction.
+_NORMALIZE_CHARS: dict[str, str] = {
+    "“": '"', "”": '"', "„": '"', "‟": '"',  # curly doubles
+    "‘": "'", "’": "'", "‚": "'", "‛": "'",  # curly singles
+    "′": "'", "″": '"',                                # prime marks
+    " ": " ", " ": " ", " ": " ", " ": " ",   # hard spaces
+    " ": " ", " ": " ", " ": " ", " ": " ",
+    "​": "", "⁠": "", "﻿": "",                    # zero-width
+    "…": "...",                                             # ellipsis
+    "−": "-",                                               # minus sign
+}
+
+#: The dashes the house bans. Kept as one class so a new one cannot be added to
+#: the validator and forgotten here (which would re-open the drop).
+_BANNED_DASHES = "—–―‒"
+
+_DASH_NUMERIC_RANGE_RE = re.compile(
+    rf"(?<=\d)\s*[{_BANNED_DASHES}]\s*(?=\d)")
+_DASH_LINE_LEAD_RE = re.compile(rf"^[ \t]*[{_BANNED_DASHES}][ \t]*", re.MULTILINE)
+_DASH_ANY_RE = re.compile(rf"[ \t]*[{_BANNED_DASHES}][ \t]*")
+
+
+def _dash_replacement(before: str, after: str) -> str:
+    """" ", ", " or ". " for one banned dash, chosen by its neighbours.
+
+    A model uses an em dash for two different jobs and one replacement cannot
+    serve both. Mid-clause ("it held 122 — barely") the dash is a comma. Between
+    independent sentences ("It held — The close was ugly") the next word is
+    capitalised and a comma would splice them. Reading the neighbouring
+    characters is the cheapest correct discriminator, and it is the one a copy
+    editor uses.
+
+    The `before` half stops the obvious second defect: a sentence that ALREADY
+    ends in punctuation ("It held. — The close was ugly") must not collect a
+    second full stop.
+    """
+    nxt = after.lstrip()[:1]
+    prev = before.rstrip()[-1:]
+    if prev in ".!?:;,":
+        return " "
+    if nxt.isupper():
+        return ". "
+    return ", "
+
+
+def normalize_model_text(text: str) -> str:
+    """House typography for one model draft. Meaning-preserving. Never raises.
+
+    Runs BEFORE every validator (see `_shape_and_check`). Fixes only things a
+    validator would reject and a human editor would silently correct:
+    banned dashes, curly quotes, hard spaces, doubled spaces, ragged line ends.
+    """
+    try:
+        out = str(text or "")
+        if not out:
+            return ""
+        for src, dst in _NORMALIZE_CHARS.items():
+            out = out.replace(src, dst)
+
+        # 1. Numeric ranges keep their meaning as a word, not a comma:
+        #    "2024 — 2025" is a span, and ", " would read as two figures.
+        out = _DASH_NUMERIC_RANGE_RE.sub(" to ", out)
+        # 2. A line that OPENS with a dash is decoration; drop it outright
+        #    rather than starting the line with a comma.
+        out = _DASH_LINE_LEAD_RE.sub("", out)
+        # 3. Everything else becomes a comma or a full stop.
+        while True:
+            m = _DASH_ANY_RE.search(out)
+            if not m:
+                break
+            out = (out[:m.start()]
+                   + _dash_replacement(out[:m.start()], out[m.end():])
+                   + out[m.end():])
+
+        # Punctuation the substitutions can strand.
+        out = re.sub(r",\s*,+", ",", out)
+        out = re.sub(r"\s+([,.;:!?])", r"\1", out)
+        out = re.sub(r"([.!?])\s*,\s*", r"\1 ", out)
+        # Doubled spaces collapse; NEWLINES DO NOT — the stack shapes are line
+        # structure and a greedy \s+ would flatten a post into one paragraph.
+        out = re.sub(r"[ \t]{2,}", " ", out)
+        out = re.sub(r"[ \t]+$", "", out, flags=re.MULTILINE)
+        out = re.sub(r"^[ \t]+", "", out, flags=re.MULTILINE)
+        out = re.sub(r"\n{3,}", "\n\n", out)
+        return out.strip()
+    except Exception as exc:  # noqa: BLE001 — a normalizer must never eat a post
+        log.warning("copywriter: normalize_model_text failed (%s: %s)",
+                    type(exc).__name__, exc)
+        return str(text or "")
+
+
+def _display_form(token: str) -> str | None:
+    """The display-law spelling of one numeric token, or None.
+
+    Percent tokens keep their sign (the mover lanes write "+2.3%"); multiplier
+    tokens are left alone entirely, because "1.8x" is a ratio and the price
+    table would pad it to "1.80x".
+    """
+    raw = str(token or "").strip()
+    if not raw:
+        return None
+    if raw.lower().endswith("x"):
+        return None
+    if raw.endswith("%"):
+        body = raw[:-1].strip()
+        return format_display_pct(body, signed=body.startswith(("+", "-")))
+    return format_display_price(raw.replace(",", ""))
+
+
+def harmonize_display_numbers(text: str, whitelist: "Iterable[str] | None") -> str:
+    """Snap a model's number to the whitelisted display form of the SAME value.
+
+    THE DROP THIS REMOVES. `build_context` hands the model a whitelist already in
+    display form ("122" for a 121.66 close) and the prompt says to quote it
+    verbatim. A model that instead writes the source precision it was reasoning
+    with ("121.66") is quoting a number that is not on the list, so the whitelist
+    gate rejects the post — for naming the RIGHT value in the WRONG spelling.
+
+    The snap is value-identity, never tolerance-in-the-loose-sense: the token is
+    rewritten only when its own display form is byte-equal to the display form of
+    a whitelisted entry. A number the whitelist does not contain stays exactly as
+    the model wrote it and is rejected downstream, which is the point.
+    """
+    try:
+        allowed = {str(w).strip() for w in (whitelist or []) if str(w).strip()}
+        if not allowed:
+            return str(text or "")
+        # Display form -> the spelling the whitelist actually licenses.
+        by_display: dict[str, str] = {}
+        for entry in allowed:
+            disp = _display_form(entry)
+            if disp:
+                by_display.setdefault(disp, entry if entry in allowed else disp)
+
+        src = str(text or "")
+        out: list[str] = []
+        pos = 0
+        for m in _NUMBER_RE.finditer(src):
+            token = m.group(0)
+            if token in allowed:
+                continue
+            disp = _display_form(token)
+            if not disp or disp == token:
+                continue
+            target = by_display.get(disp)
+            if not target or target == token:
+                continue
+            out.append(src[pos:m.start()])
+            out.append(target)
+            pos = m.end()
+        out.append(src[pos:])
+        return "".join(out)
+    except Exception as exc:  # noqa: BLE001 — never eat a post
+        log.warning("copywriter: harmonize_display_numbers failed (%s: %s)",
+                    type(exc).__name__, exc)
+        return str(text or "")
 
 
 def _display_round_fact(fact: dict) -> dict:
@@ -909,7 +1088,9 @@ def build_context(
         "numbers_whitelist": whitelist,
         # Slot / plan meta
         "direction": plan.get("direction") or item.get("direction", ""),
-        "signal_date": str(plan.get("_signal_date") or item.get("_signal_date") or "")[:10],
+        # Preserve the family-native public clock only. Item-level legacy aliases
+        # are not provenance and may not revive an unknown plan family.
+        "signal_date": effective_public_plan_date(plan) or "",
         # Theme/mover extras
         "theme_name": theme_data.get("theme", ""),
         "theme_direction": theme_data.get("direction", ""),
@@ -1880,6 +2061,17 @@ def chart_caption_violations(text: str, ctx: dict | None) -> list[str]:
         out.append(
             f"chart caption: {len(raw)} chars (max {CHART_CAPTION_MAX_CHARS}); "
             f"the corpus median for this family is 61")
+    # WITH AN IMAGE ATTACHED THE PICTURE CARRIES THE ANALYSIS (W2, 2026-08-08).
+    # Scoped to items that actually ship media: a caption is a label on a chart,
+    # and a caption long enough to restate the chart is competing with it. An
+    # item with no media keeps the character budget alone, so this can never
+    # tighten a text-only post.
+    if ctx.get("media_url") or ctx.get("has_media"):
+        words = len(raw.split())
+        if words > CHART_CAPTION_MAX_WORDS:
+            out.append(
+                f"chart caption with media: {words} words (max "
+                f"{CHART_CAPTION_MAX_WORDS}); the image carries the analysis")
     # Glyph register. A celebration/alarm/ledger glyph in a chart caption is a
     # register collision, not a taste call — the three never mix (§1.2).
     for ch in raw:
@@ -3844,6 +4036,149 @@ def invented_level_violations(text: str, ctx: dict) -> list[str]:
     return out[:3]
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Voice pack v4 register bans (W2, 2026-08-08)
+#
+# Measured against a 500-post fintwit corpus (research/marketing_dockets/
+# x_corpus_2026_08_08/): ZERO of 500 posts carry a hashtag, 496 of 500 carry no
+# exclamation mark, and none carries an engagement CTA. These are not taste
+# calls, they are the register's actual distribution, and a post that breaks
+# them reads as marketing rather than as a desk.
+#
+# Each rule below is narrow on purpose. The house doctrine on gates is that one
+# that cries wolf stops meaning anything, so where a broad reading would catch
+# ordinary market speech ("closed higher") the rule is scoped to the form that
+# is unambiguously the defect.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: A hashtag: '#' immediately followed by a LETTER. '#1' is a rank ("#1 in the
+#: group") and the corpus uses it; '#stocks' is the tell.
+_HASHTAG_RE = re.compile(r"#[A-Za-z]")
+
+#: Engagement bait. Every one of these is an ask for a metric rather than a
+#: statement about the market.
+_ENGAGEMENT_CTA_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("follow for more", r"follow (?:me |us )?for more"),
+    ("like and retweet", r"like (?:and|&) (?:retweet|rt)\b"),
+    ("link in bio", r"link in (?:my |the )?bio"),
+    ("retweet if", r"\b(?:rt|retweet) if\b"),
+    ("smash that", r"smash that\b"),
+    ("comment below", r"comment below\b"),
+    ("tag a friend", r"tag (?:a friend|someone)\b"),
+    ("drop a like", r"drop a (?:like|follow)\b"),
+    ("subscribe", r"\bsubscribe (?:to|for|now)\b"),
+)
+
+#: Hedges that weaken a stance without adding information. A desk states what it
+#: sees; "I think" is the sound of someone who has not looked.
+_HEDGE_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("I think", r"\bi think\b"),
+    ("IMO", r"\bim(?:h)?o\b"),
+    ("in my opinion", r"\bin my opinion\b"),
+    ("maybe", r"\bmaybe\b"),
+    ("I guess", r"\bi guess\b"),
+    ("sort of", r"\bsort of\b"),
+)
+
+#: An announced prequestion: a first line that tells the reader what the post is
+#: about to do instead of doing it. The corpus opens on the fact.
+_META_HEADER_RE = re.compile(
+    r"^\s*(?:what just happened|here'?s what|what it means|what changed|"
+    r"a quick (?:thread|breakdown|look)|let'?s (?:break|walk) )",
+    re.IGNORECASE,
+)
+#: The specific shape the operator named: "<clause>, and what it changes".
+_ANNOUNCED_PREQUESTION_RE = re.compile(
+    r",\s*and what it (?:changes|means|tells us)\b", re.IGNORECASE)
+
+#: Wire-desk openers. They belong to the news register and to no analytical desk.
+_WIRE_OPENER_RE = re.compile(
+    r"^\s*(BREAKING|JUST IN|ALERT|URGENT|DEVELOPING)\b\s*:?", re.IGNORECASE)
+
+#: The ONE account whose whole job is the wire (config/marketing.yml desk_network).
+WIRE_ACCOUNTS: frozenset[str] = frozenset({"mastermind_news"})
+#: Kinds that ARE the wire wherever they run.
+WIRE_KINDS: frozenset[str] = frozenset({"breaking", "press", "hot_tape", "wire"})
+
+#: An orphan superlative: "the biggest drawdown." with nothing to measure it
+#: against. DELIBERATELY NARROW — the referent words below are how the corpus
+#: anchors a superlative, so a sentence carrying any of them is left alone.
+_SUPERLATIVE_RE = re.compile(
+    r"\bthe (most|least|highest|lowest|biggest|smallest|worst|best|strongest|"
+    r"weakest|widest|narrowest)\b", re.IGNORECASE)
+_REFERENT_WORDS = (" since ", " than ", " vs ", " versus ", " in ", " of ",
+                   " among ", " on record", " ever", " all-time", " week",
+                   " month", " year", " day", " session")
+
+#: Chart captions ride under an image that is already doing the analysis.
+#: Corpus caption median is 61 characters; ten words is the same budget stated
+#: the way a writer thinks about it.
+CHART_CAPTION_MAX_WORDS = 10
+
+
+def register_v4_violations(text: str, ctx: dict | None) -> list[str]:
+    """Voice pack v4 register bans. [] = clean. Never raises.
+
+    Additive to every existing gate: it can only ADD violations, never license
+    a post another rule would refuse. Each returned string is written to be
+    echoed VERBATIM into the repair turn, so it names the defect and the fix and
+    carries no banned dash of its own (`_dashless` is the backstop, not the plan).
+    """
+    raw = str(text or "")
+    if not raw.strip():
+        return []
+    low = raw.lower()
+    cfgx = ctx if isinstance(ctx, dict) else {}
+    account = str(cfgx.get("account") or "")
+    kind = str(cfgx.get("type") or "")
+    out: list[str] = []
+
+    if _HASHTAG_RE.search(raw):
+        out.append("hashtag: zero of 500 corpus posts carry one. Delete it; "
+                   "a cashtag is the only tag this register uses")
+
+    # The dial DOWNGRADES a single exclamation on a desk that has no grant, so a
+    # survivor here is either card-granted or a second one. Two is nobody's
+    # signature, on any card.
+    if raw.count("!") >= 2:
+        out.append(f"{raw.count('!')} exclamation marks: 496 of 500 corpus "
+                   f"posts carry zero, and no desk card grants more than one")
+
+    for label, pattern in _ENGAGEMENT_CTA_PATTERNS:
+        if re.search(pattern, low):
+            out.append(f"engagement CTA '{label}': ask for nothing. The post is "
+                       f"the product")
+            break
+
+    for label, pattern in _HEDGE_PATTERNS:
+        if re.search(pattern, low):
+            out.append(f"hedge '{label}': state what you see or say what you do "
+                       f"not know. A weakened claim is not a careful one")
+            break
+
+    first_line = raw.splitlines()[0] if raw.splitlines() else raw
+    if _META_HEADER_RE.search(first_line) or _ANNOUNCED_PREQUESTION_RE.search(raw):
+        out.append("announced prequestion: the opener describes the post "
+                   "instead of being it. Open on the fact")
+
+    if (_WIRE_OPENER_RE.match(raw)
+            and account not in WIRE_ACCOUNTS and kind not in WIRE_KINDS):
+        out.append("wire opener on an analytical desk: 'BREAKING' belongs to the "
+                   "news desk. State the move, not the bulletin")
+
+    for sentence in re.split(r"(?<=[.!?])\s+|\n+", raw):
+        if not _SUPERLATIVE_RE.search(sentence):
+            continue
+        padded = f" {sentence.lower()} "
+        if any(word in padded for word in _REFERENT_WORDS):
+            continue
+        out.append("orphan superlative: name what it is the most of and over "
+                   "what window, or drop the word")
+        break
+
+    return out[:4]
+
+
 def validate_copy_v2(
     text: str,
     ctx: dict,
@@ -3897,6 +4232,8 @@ def validate_copy_v2(
     # register. Additive — it can only ADD violations, never license a post the
     # existing gates would have refused.
     violations.extend(chart_caption_violations(text, ctx))
+    # Voice pack v4 (W2, 2026-08-08): the corpus-measured register bans.
+    violations.extend(register_v4_violations(text, ctx))
     violations.extend(validate_copy(headline, body, ctx, recent=recent))
     violations.extend(fake_precision_violations(text))
     violations.extend(orphan_hedge_violations(text))
@@ -6713,6 +7050,41 @@ CORPUS_EXEMPLARS: dict[str, tuple[str, ...]] = {
         "Equalweight $RSP is up 2%+.",
         "$XLI lower, yet the Dow is up more than 1%.\n\nDon't see that everyday.",
     ),
+    # ── Structure exemplars distilled from the 2026-08-08 corpus (W2) ────────
+    # Chosen for SHAPE, never copied: each one is written here in house voice
+    # with house-legal numbers, because the job of an exemplar is to show the
+    # skeleton a real desk uses, and a verbatim lift teaches the model to
+    # reproduce another account's sentences instead of its structure.
+    "stacked list (one fact per line, every line carries its own figure)": (
+        "Percent below their all-time high\n"
+        "Semis: 4%\n"
+        "Software: 19%\n"
+        "Biotech: 31%\n"
+        "Small caps: 22%",
+        "The expansion is 74 months old.\n"
+        "Average since 1949: 67 months\n"
+        "Longest: 128 months\n"
+        "Shortest: 12 months",
+        "Three things the close said.\n"
+        "Breadth narrowed again\n"
+        "Oil did not believe the headline\n"
+        "Rate vol still is not paying attention",
+    ),
+    "quote relay (attribution first, statement flat, no commentary)": (
+        "Powell: the labour market is not a source of inflation pressure right now.",
+        "Dimon: credit is fine until it is not, and it is usually not on a Friday.",
+        "Musk: the Texas plant will be the most valuable building on Earth.",
+    ),
+    "comparison line (the figure lands against something)": (
+        "Revenue 370 million, consensus 351 million. The beat is in cloud, not seats.",
+        "12% of households earning over 250,000 say they live paycheck to paycheck.",
+        "China is 28% of world manufacturing output. The US is 17%.",
+    ),
+    "chart caption with an image attached (a label, not the analysis)": (
+        "$NET back above the November shelf 👀",
+        "Best day for the group since April.",
+        "Fourth test of 122. Still holding.",
+    ),
     "trader / setup (stance first, chart does the rest)": (
         "$SKHY Huge after hrs reversal. $118's to $138's.",
         "$TSLA down 9 of the last 10 days\n$AMZN down 8 of the last 9 days\n"
@@ -6915,7 +7287,34 @@ _V2_SYSTEM_PROMPT_BASE = (
     "48.6% are ONE dense line, 34.3% are multi-line stacks, and only 17.1% are "
     "the headline + blank line + body shape. Exactly-two-lines is the RAREST "
     "real shape at 2.8%. One dense line is the default human post. Headline + "
-    "blank + body is one shape among five, not the house style.\n\n"
+    "blank + body is one shape among five, not the house style.\n"
+    "A second, larger count (500 posts, five accounts, 2026-08-08) says the "
+    "same thing and adds the spread: the one-dense-line share runs from 14% on "
+    "the wire desk to 91% on the fastest desk, and exactly-two-lines never got "
+    "above 3.2% on any account. Shape belongs to the desk, and your item names "
+    "the one you write.\n\n"
+
+    "STRUCTURE. Line breaks are punctuation, not decoration:\n"
+    "- A break separates the CLAIM from the numbers that support it. Claim on "
+    "one line, stats under it. Never break mid-thought for rhythm.\n"
+    "- A stack is a list of facts, one per line, each carrying its own figure. "
+    "If two lines could be one sentence, they are one sentence.\n"
+    "- A quote ships flat, as `Name: statement`. No 'said', no scare quotes "
+    "wrapped around the whole thing, no commentary bolted on. The attribution "
+    "is the first word and the statement follows it.\n"
+    "- An opener like 'BREAKING' belongs to the news desk and to no other. An "
+    "analytical desk states the move; it does not announce a bulletin.\n"
+    "- When your item ships an image, the picture is doing the analysis. The "
+    "caption is a label: ten words at the outside, and it must not restate what "
+    "the reader can already see.\n\n"
+
+    "NUMBERS ARE COMPARATIVE. A figure on its own is trivia; a figure against "
+    "something is a read. Whenever your item's facts carry the comparison, "
+    "WRITE the comparison: against consensus, against the prior print, against "
+    "the same week a year ago, against the all-time high, against the group. "
+    "'Revenue 370 million, consensus 351 million' beats 'revenue 370 million' "
+    "every time, and '18% below its high' beats 'down again'. If the item gives "
+    "you no comparison, do not invent one and do not imply one.\n\n"
 
     "ANGLE. Your item names the job this post does: level_watch (where price "
     "is versus the line that matters), risk_frame (what you would lose and "
@@ -7061,7 +7460,26 @@ _V2_SYSTEM_PROMPT_BASE = (
     "lists of your own process are banned.\n"
     "- Avoid model tells: 'Here's what it means for X', 'Let's break it down', "
     "colon-as-drama openers, the repeated 'That's the [noun].' cadence, triads "
-    "everywhere, kickers like 'without the noise'.\n\n"
+    "everywhere, kickers like 'without the noise'.\n"
+    # VOICE PACK v4 (W2, 2026-08-08). Every line below is a measurement, not a
+    # preference: 500 posts across five reference accounts, counted 2026-08-08
+    # (research/marketing_dockets/x_corpus_2026_08_08/). A rule the corpus does
+    # not support has no business in a HARD BANS block, and each of these is now
+    # also enforced by `register_v4_violations` so the prompt and the gate agree.
+    "- NO hashtags. Zero of 500 corpus posts carry one, on any account. A "
+    "cashtag is the only tag this register uses.\n"
+    "- NO engagement asks: 'follow for more', 'like and retweet', 'link in "
+    "bio', 'RT if', 'tag a friend'. The post is the product. Nobody in the "
+    "corpus asks for a metric.\n"
+    "- Exclamation marks are effectively absent: 496 of 500 posts carry zero. "
+    "Only a card that registers one may use one, once.\n"
+    "- NO hedging softeners: 'I think', 'IMO', 'in my opinion', 'maybe', 'I "
+    "guess', 'sort of'. State what you see, or state plainly what you do not "
+    "know. A weakened claim is not a careful one.\n"
+    "- NO announced prequestion. 'What just happened, and what it changes' "
+    "describes the post instead of being it. Open on the fact.\n"
+    "- NO orphan superlative. 'The biggest drawdown' needs what it is the "
+    "biggest of and over what window, in the same sentence.\n\n"
 
     "EXEMPLARS (real posts from real accounts, this is the target):\n"
     + _exemplar_block() + "\n\n"
@@ -7327,6 +7745,157 @@ _V2_STATS: dict[str, int] = {k: 0 for k in _V2_STAT_KEYS}
 _V2_STATS_LOCK = threading.Lock()
 
 
+#: Per-rung outcome census for THIS process: ``{rung: {"ok": n, "<class>": n}}``.
+#: Fed from the ``attempts`` out-list `llm_auth.make_call` fills, so the nightly
+#: funnel line can say which rung actually served and why the ones above it did
+#: not, without re-reading the provider-health ledger off disk.
+_V2_RUNGS: dict[str, dict[str, int]] = {}
+
+
+def _note_rungs(rung_log: list[dict]) -> None:
+    """Fold one item's rung outcomes into the process census. Never raises."""
+    try:
+        with _V2_STATS_LOCK:
+            for row in rung_log or []:
+                rung = str(row.get("rung") or "unknown")
+                bucket = _V2_RUNGS.setdefault(rung, {})
+                if row.get("ok"):
+                    key = "ok"
+                elif row.get("skipped"):
+                    key = f"skipped_{row['skipped']}"
+                else:
+                    key = str(row.get("error_class") or "no_text")
+                bucket[key] = bucket.get(key, 0) + 1
+    except Exception:  # noqa: BLE001 — a census must never cost a post
+        pass
+
+
+def rung_stats() -> dict[str, dict[str, int]]:
+    """A copy of the per-rung outcome census for this process."""
+    with _V2_STATS_LOCK:
+        return {k: dict(v) for k, v in _V2_RUNGS.items()}
+
+
+#: The per-stage funnel for the last :func:`write_posts_llm_v2` run.
+_V2_FUNNEL: dict[str, Any] = {}
+
+#: How many characters of a drop reason identify it. Editorial reasons are whole
+#: sentences that carry the offending phrase, so two drops for the same rule read
+#: as two different reasons unless the tail is cut.
+_REASON_KEY_CHARS = 64
+
+
+def _reason_key(reason: str) -> str:
+    """A stable census key for one drop reason.
+
+    Machine labels (``unreadable_reply:deepseek+oauth[codex=usage_limit]``) key
+    on the family before the first colon, so a rung-by-rung tail does not shard
+    one fault into fifty. Editorial reasons are prose and key on their opening
+    clause.
+    """
+    raw = str(reason or "").strip()
+    if not raw:
+        return "unknown"
+    head = raw.split(":", 1)[0]
+    if head and " " not in head and len(head) <= 40:
+        return head
+    return raw[:_REASON_KEY_CHARS]
+
+
+def _record_copy_funnel(results: list[dict]) -> None:
+    """Fold one writer run into the per-stage funnel. Never raises.
+
+    THE COUNT THAT WAS NEVER PUBLISHED. The plan artifact carried `written`,
+    `dropped` and a reason histogram, and an operator reading it could not
+    answer the only question that matters on a thin night: of the posts the
+    planner selected, how many reached a model, how many died on the transport,
+    how many died on the copy laws, and how many of those a repair turn saved.
+    Those are four different owners and the artifact merged them.
+    """
+    try:
+        stats = writer_stats()
+        by_stage: dict[str, int] = {}
+        reasons: dict[str, int] = {}
+        for r in results or []:
+            if r.get("mode") != "dropped":
+                continue
+            stage = str(r.get("stage") or "?")
+            by_stage[stage] = by_stage.get(stage, 0) + 1
+            for reason in (r.get("reasons") or [])[:1]:
+                key = _reason_key(str(reason))
+                reasons[key] = reasons.get(key, 0) + 1
+        emitted = sum(1 for r in results or []
+                      if r.get("mode") in ("llm", "llm_repair"))
+        attempted = len(results or [])
+        funnel = {
+            "selected": attempted,
+            "copy_attempted": attempted,
+            "provider_failed": by_stage.get("provider", 0),
+            "validator_failed": by_stage.get("validate", 0),
+            "critic_failed": by_stage.get("critic", 0),
+            "repaired": int(stats.get("llm_repair", 0)),
+            # A post that cleared every deterministic gate. The critic sits
+            # BELOW the validators, so a critic-stage drop was validated and
+            # then condemned on a second read: it belongs in this number and
+            # not in `emitted`.
+            "validated": emitted + by_stage.get("critic", 0),
+            "emitted": emitted,
+            "top_reasons": sorted(reasons.items(), key=lambda kv: -kv[1])[:5],
+            "rungs": rung_stats(),
+        }
+        with _V2_STATS_LOCK:
+            _V2_FUNNEL.clear()
+            _V2_FUNNEL.update(funnel)
+    except Exception as exc:  # noqa: BLE001 — accounting never costs a post
+        log.warning("copywriter v2: funnel accounting failed (%s: %s)",
+                    type(exc).__name__, exc)
+
+
+def copy_funnel() -> dict:
+    """The per-stage funnel for the last writer run. A copy; {} before any run."""
+    with _V2_STATS_LOCK:
+        return dict(_V2_FUNNEL)
+
+
+def funnel_annotation() -> str:
+    """The one-line GitHub notice for the nightly copy funnel.
+
+    Returned rather than printed so a test can read it without capturing
+    stdout, and so the plan report can reuse the exact wording. The CALLER
+    prints it with a bare ``print(..., flush=True)``: a "::" behind a logger's
+    prefix is not a line start and GitHub drops the annotation silently
+    (tests/test_gh_annotation_line_start.py).
+    """
+    f = copy_funnel()
+    if not f:
+        return ("::notice title=marketing-copy-funnel::selected=0 "
+                "copy_attempted=0 provider_failed=0 validator_failed=0 "
+                "repaired=0 validated=0 emitted=0")
+    reasons = " ".join(
+        f"{name}={count}" for name, count in (f.get("top_reasons") or [])
+    )
+    rungs = " ".join(
+        f"{rung}:{outcomes.get('ok', 0)}ok/{sum(v for k, v in outcomes.items() if k != 'ok')}fail"
+        for rung, outcomes in sorted((f.get("rungs") or {}).items())
+    )
+    line = (
+        f"::notice title=marketing-copy-funnel::"
+        f"selected={f.get('selected', 0)} "
+        f"copy_attempted={f.get('copy_attempted', 0)} "
+        f"provider_failed={f.get('provider_failed', 0)} "
+        f"validator_failed={f.get('validator_failed', 0)} "
+        f"critic_failed={f.get('critic_failed', 0)} "
+        f"repaired={f.get('repaired', 0)} "
+        f"validated={f.get('validated', 0)} "
+        f"emitted={f.get('emitted', 0)}"
+    )
+    if rungs:
+        line += f" | rungs {rungs}"
+    if reasons:
+        line += f" | top {reasons}"
+    return line
+
+
 def _bump(key: str, n: int = 1) -> None:
     """Add *n* to a counter, clamped at zero.
 
@@ -7356,6 +7925,8 @@ def reset_writer_stats() -> None:
     with _V2_STATS_LOCK:
         for k in _V2_STAT_KEYS:
             _V2_STATS[k] = 0
+        _V2_RUNGS.clear()
+        _V2_FUNNEL.clear()
 
 
 #: How many whitelist entries reach the model. Contract §Writer API sends the
@@ -7694,6 +8265,18 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
                 # is about hard errors, not about that outage.)
                 "client_max_retries": _v2_client_max_retries(llm_cfg),
                 "client_timeout_s": llm_cfg.get("client_timeout_s", 60.0),
+                # AN HTTP BUDGET IS NOT A PROCESS BUDGET (2026-08-08).
+                # `build_providers` falls back to `client_timeout_s` for the
+                # Codex rung when no codex budget is named, so this lane's 60s
+                # HTTP default silently became the ceiling for a `codex exec`
+                # SUBPROCESS — which pays interpreter start, config load and
+                # harness load before the model is reached. Measured on the
+                # nightly host: 6.6s idle for one call, 12.0s wall for four
+                # concurrent (this lane runs max_workers=4), and the nightly is
+                # 4-core-bound while the render lane is live. 60s was a coin
+                # flip under load, and every loss reads as `provider_error` and
+                # walks the item down to the metered floor.
+                "codex_timeout_s": llm_cfg.get("codex_timeout_s", 150.0),
             },
             opus_model=model_id,
         )
@@ -7868,6 +8451,8 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
 
     dropped = [r for r in results if r.get("mode") == "dropped"]
     _provider_fault_alarm(results, dropped)
+    _record_copy_funnel(results)
+    print(funnel_annotation(), flush=True)
 
     # Masterplan §0 gate 5: "drop-rate >30% of a night's plan raises a
     # ::warning". Emitted HERE rather than from the plan report, because the
@@ -7995,6 +8580,46 @@ def _v2_write_one(
     # content_studio has no other way to learn which rung broke (it sees the
     # reason census and nothing else).
     fault: dict[str, Any] = {}
+
+    # PER-RUNG OUTCOMES FOR THIS ITEM. `make_call` appends one row per rung it
+    # walked; `_rung_trace` folds them into the drop label so a census can read
+    # WHY the rungs above the server said no.
+    rung_log: list[dict] = []
+
+    def _rung_trace() -> str:
+        """`[codex=usage_limit oauth=auth anthropic=absent]` or "".
+
+        THE HALF THE DROP LABEL WAS MISSING. `unreadable_reply:deepseek+oauth`
+        names the rung that answered and the rung that was asked again, and is
+        silent about the two rungs ABOVE deepseek that config puts first. On
+        2026-08-08 that silence was the whole investigation: the plan said
+        DeepSeek served every post, the config said codex leads, and no artifact
+        in the repo could say whether codex had refused, been struck off by an
+        earlier item's 429, or never been built on that host.
+
+        ONLY the rungs that FAILED appear here. A rung that answered is already
+        named by the label's own `family:a+b` half, and repeating it would say
+        nothing; the missing information was always the rungs ABOVE the one that
+        answered. So a walk where nothing failed produces "" and the label is
+        byte-identical to what it was before this trace existed — the drop-label
+        pins in tests/test_marketing_copy_v2.py are unchanged on purpose.
+
+        Deduplicated and ordered by first appearance, so an item that walked the
+        same rung twice does not double the label.
+        """
+        seen: dict[str, str] = {}
+        for row in rung_log:
+            if row.get("ok"):
+                continue
+            rung = str(row.get("rung") or "?")
+            if row.get("skipped"):
+                cls = f"skipped_{row['skipped']}"
+            else:
+                cls = str(row.get("error_class") or "") or "no_text"
+            seen.setdefault(rung, cls)
+        if not seen:
+            return ""
+        return "[" + " ".join(f"{k}={v}" for k, v in seen.items()) + "]"
 
     def _messages_create(client, model, user_msg: str, *, cap: int,
                          extra_body: dict | None):
@@ -8146,7 +8771,8 @@ def _v2_write_one(
                 raw2, _reason2, served2 = llm_auth.make_call(
                     [candidate],
                     _do_call_factory(msg, same_provider_retry=False),
-                    context="marketing_copy_v2_failover")
+                    context="marketing_copy_v2_failover",
+                    attempts=rung_log)
             except Exception as exc:  # noqa: BLE001 — the failover is best effort
                 log.warning("copywriter v2: failover provider '%s' failed "
                             "(%s: %s)", candidate.get("name"),
@@ -8164,7 +8790,7 @@ def _v2_write_one(
                     return text2
             tried.append(str(served2 or candidate.get("name") or "unknown"))
 
-        fault["reason"] = f"{family}:" + "+".join(tried)
+        fault["reason"] = f"{family}:" + "+".join(tried) + _rung_trace()
         return ""
 
     def _call(user_msg: str) -> str:
@@ -8193,17 +8819,18 @@ def _v2_write_one(
         same one bounded attempt the textless class buys.
         """
         fault.clear()
+        rung_log.clear()
         try:
             raw, reason, served = llm_auth.make_call(
                 providers, _do_call_factory(user_msg, same_provider_retry=True),
-                context="marketing_copy_v2")
+                context="marketing_copy_v2", attempts=rung_log)
         except Exception as exc:  # noqa: BLE001 — connection/5xx after a FULL walk
             # make_call re-raises the last hard error only once it has tried
             # EVERY provider, so the ladder failover for this class already
             # happened and there is nothing left to try. It is still worth its
             # own reason: "the transport broke" and "the model said nothing" send
             # an operator to different places.
-            fault["reason"] = f"provider_error:{type(exc).__name__}"
+            fault["reason"] = f"provider_error:{type(exc).__name__}" + _rung_trace()
             log.warning("copywriter v2: every provider failed hard (%s: %s)",
                         type(exc).__name__, exc)
             return ""
@@ -8231,7 +8858,7 @@ def _v2_write_one(
         if reason:
             # rate_limited_all / auth_invalid_all / no_provider — make_call
             # already walked everything. Nothing to fail over to.
-            fault["reason"] = f"provider_unavailable:{reason}"
+            fault["reason"] = f"provider_unavailable:{reason}" + _rung_trace()
             return ""
 
         # LADDER FAILOVER, ONE RUNG. Reuse the order build_providers produced
@@ -8245,6 +8872,13 @@ def _v2_write_one(
         # the only place that distinction survives.
         return _one_more_rung(user_msg, served=served, family="provider_no_text")
 
+    def _call_and_census(user_msg: str) -> str:
+        """`_call`, then fold this turn's rung outcomes into the process census."""
+        try:
+            return _call(user_msg)
+        finally:
+            _note_rungs(rung_log)
+
     def _shape_and_check(text: str) -> tuple[str, str, str, list[str]]:
         """Dial pass, then every deterministic gate. -> (text, hl, body, violations).
 
@@ -8252,7 +8886,18 @@ def _v2_write_one(
         asks for the register, the pass is what makes the whitelist binding. A
         model that invents a signature emoji gets it stripped here and the
         residue rejected below, never posted.
+
+        AND THE TYPOGRAPHY PASS RUNS BEFORE ALL OF IT (W2, 2026-08-08). A banned
+        dash, a curly quote and a non-breaking space are the three defects this
+        lane threw whole posts away for, and all three have an exact, meaning-
+        preserving replacement. Normalising is not relaxing: nothing below moves,
+        and every gate runs on the normalised text.
         """
+        text = normalize_model_text(text)
+        # ...and a number that names a whitelisted value in the source spelling
+        # is snapped to the licensed one, so the whitelist gate rejects invented
+        # numbers rather than honest ones written to the wrong precision.
+        text = harmonize_display_numbers(text, ctx.get("numbers_whitelist") or [])
         hl, bd = split_shaped_text(text, shape)
         hl, bd = _expression_dial.apply_pass(hl, bd, account=account_id, kind=kind)
         shaped = f"{hl}\n\n{bd}" if hl else bd
@@ -8270,7 +8915,7 @@ def _v2_write_one(
         checks.extend(filing_fact_lock_violations(shaped, payload, kind))
         return shaped, hl, bd, checks
 
-    text = _call(_v2_user_message(payload))
+    text = _call_and_census(_v2_user_message(payload))
     if not text:
         _bump("dropped_provider")
         # The reason `_call` recorded, never a generic string: the whole point of
@@ -8288,7 +8933,7 @@ def _v2_write_one(
     if violations:
         _bump("repairs")
         repaired = True
-        retry = _call(_v2_user_message(payload, violations=violations))
+        retry = _call_and_census(_v2_user_message(payload, violations=violations))
         if retry:
             shaped, hl, bd, violations = _shape_and_check(retry)
         elif fault.get("reason"):
@@ -8312,7 +8957,7 @@ def _v2_write_one(
     if verdict.get("verdict") == "reject":
         _bump("repairs")
         repaired = True
-        retry = _call(_v2_user_message(
+        retry = _call_and_census(_v2_user_message(
             payload, critic_reasons=list(verdict.get("reasons") or [])))
         if not retry:
             _bump("dropped_critic")

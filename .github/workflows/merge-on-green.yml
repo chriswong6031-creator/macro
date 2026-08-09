@@ -36,7 +36,26 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: read          # read integration-baseline workflow-run state
+  actions: write         # READ the integration-baseline / ci / fences workflow-run
+                         # state, and WRITE one `workflow_dispatch` of ci.yml on main.
+                         # The write half is new (2026-08-08) and is load-bearing: the
+                         # base-inherited-red refresh can only tell an inherited red
+                         # from a real one against a RECENT proof of main, ci.yml has
+                         # no `push` trigger, and the nightly/wire lanes push ~24
+                         # `[skip ci]` commits per 2 hours — so main's proof was
+                         # measured 12 HOURS stale while 48 pull requests sat armed,
+                         # waiting for a human to run `gh workflow run ci.yml --ref
+                         # main`. The sweeper now orders that baseline itself when its
+                         # proof is too old to answer the reds it just saw.
+                         #
+                         # It dispatches integration-baseline.yml on main for the same
+                         # class of reason (2026-08-08). That workflow DOES have a
+                         # `push` trigger, but its paths: filter excludes data/site
+                         # publisher commits, so only SOURCE pushes re-prove main and
+                         # only merges make source pushes — a baseline that ages past
+                         # the freshness bound therefore blocks the merges that would
+                         # have refreshed it. Both dispatches are rate-floored in
+                         # scripts/merge_on_green.py and never fail the sweep.
   contents: write        # squash-merge, delete the merged head ref, and merge
                          # main into a clean-but-stale head (update-branch)
   pull-requests: write   # add/remove merge-blocked, post the explanatory comment
@@ -100,15 +119,36 @@ jobs:
       github.event_name != 'workflow_run'
       || github.event.workflow_run.conclusion == 'success'
 
-    # DELIBERATELY GitHub-hosted, never [self-hosted, macstudio]. The mac pool is
-    # the render/nightly/engine lane and is routinely saturated; a merge sweep
-    # queued behind a 67-minute render would defeat its own purpose. This job is
-    # a handful of API calls and needs nothing from that pool. NOTE (2026-08-06):
-    # `ubuntu-latest` is now contended too — see the queue measurements above. The
-    # light self-hosted pool is NOT an alternative (it is a single runner,
-    # mac-builder-3, chartered for the live-tick lanes); choosing a different pool
-    # is an operator call, not something this file should decide unilaterally.
-    runs-on: ubuntu-latest
+    # NEVER [self-hosted, macstudio] — that pool is the render/nightly/engine lane
+    # and is routinely saturated; a merge sweep queued behind a 67-minute render
+    # would defeat its own purpose. That reasoning stands; what changed is that
+    # `ubuntu-latest` stopped satisfying it.
+    #
+    # A CONTROL-PLANE JOB MUST NEVER QUEUE BEHIND THE WORKLOAD IT ARBITRATES
+    # (2026-08-08). `ci` and `fences` are also `ubuntu-latest`, so with ~100 PRs
+    # open the sweeper waits behind the very CI it exists to act on — a priority
+    # inversion, and it self-reinforces: the longer the queue, the later merges
+    # land, the more PRs stay open. Measured: sweeps CREATED 03:46-04:00Z did not
+    # execute until 05:46-06:28Z — a ~2 HOUR queue delay on a job whose actual
+    # work is a handful of API calls and 46 seconds of runtime (the run that most
+    # recently succeeded before this change waited 25m38s for a runner and then
+    # swept in 46 s). See also the 107-minute `queued` run cited above.
+    #
+    # `render-linux` is pc-render-1..4 (also used by render.yml/engine-render.yml
+    # via dispatch input), a SEPARATE Linux pool that was 4-idle-of-4 when this was
+    # measured — so this cannot starve the render lane, whose default runner is the
+    # macstudio `render-heavy` host. The move is safe for this job specifically
+    # because it needs only `python3` and network: the steps are a sparse
+    # `actions/checkout@v4`, one `pip install pyyaml`, and one `python3` invocation,
+    # with NO `actions/setup-python` (which is what makes a hosted image load-
+    # bearing). tests/test_merge_on_green.py pins both halves of that argument, so
+    # adding a setup step here fails the pack rather than silently breaking sweeps.
+    #
+    # integration-baseline.yml now routes only main-ref proofs to this same pool and
+    # keeps off-main manual proofs on hosted runners. Its self-hosted path clears any
+    # inherited sparse-checkout state before checkout, and its setup-python contract
+    # is pinned separately in tests/test_merge_on_green.py.
+    runs-on: [self-hosted, render-linux]
     timeout-minutes: 15
 
     steps:
@@ -135,8 +175,28 @@ jobs:
       # PyYAML parses those path filters. Installed EXPLICITLY rather than assumed:
       # whether the runner image ships it is not a contract, and the failure mode of
       # guessing wrong is a sweep that aborts on every run.
+      #
+      # IMPORT-FIRST, WITH FALLBACKS, because this job now runs self-hosted. A bare
+      # `python3 -m pip install` into the system interpreter is what the hosted image
+      # tolerated; on a modern Debian/Ubuntu host (render-linux is the WSL2 PC) it dies
+      # PEP 668 `externally-managed-environment`, and this repository's other
+      # self-hosted lanes all build a venv precisely because of that. A sweeper that
+      # aborts on every run would be a worse outage than the queue delay this move
+      # repairs, so: skip when PyYAML is already importable, then try the plain
+      # install, then --user, then --break-system-packages. Nothing here writes a venv
+      # — the sweep imports only stdlib + yaml, and a per-runner venv would be state
+      # this level-triggered job otherwise has none of.
       - name: install the yaml parser
-        run: python3 -m pip install --quiet --disable-pip-version-check pyyaml
+        run: |
+          if python3 -c "import yaml" 2>/dev/null; then
+            echo "pyyaml already importable on ${RUNNER_NAME:-this runner}"
+            exit 0
+          fi
+          python3 -m pip install --quiet --disable-pip-version-check pyyaml \
+            || python3 -m pip install --quiet --disable-pip-version-check --user pyyaml \
+            || python3 -m pip install --quiet --disable-pip-version-check \
+                 --break-system-packages pyyaml
+          python3 -c "import yaml"
 
       - name: sweep merge-on-green pull requests
         env:
@@ -154,6 +214,12 @@ jobs:
           # On the fallback the merge still lands and the VPS's 3-minute pull of
           # main plus the nightly scope=all re-render still deliver it — degraded,
           # not broken, which is why the fallback is allowed to exist at all.
+          #
+          # This is also the token that dispatches the main baseline (see the
+          # `actions: write` note above), and the PAT is preferred there for the same
+          # anti-recursion reason. On the GITHUB_TOKEN fallback the dispatch degrades
+          # the same way the merge does: worst case main keeps being proven only by a
+          # human dispatch, which is exactly the status quo this repairs — never worse.
           MERGE_TOKEN: ${{ secrets.ADMIN_GH_TOKEN || secrets.GITHUB_TOKEN }}
           # The head the workflow_run that woke this sweep concluded on. The sweeper
           # now evaluates at most MAX_PULLS_PER_SWEEP pull requests per run (the

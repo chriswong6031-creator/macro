@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_forecast_record.v1.schema.json",
+  "title": "BioCatalyst Forecast Record v1 (BC-O1b)",
+  "description": "One immutable forward-window snapshot in the BC-O1b ledger, carried as the payload of a forecast_snapshot operational record. It is display tier and never promoted: it may not rank, size, escalate, or name a security, an issuer, or a sponsor, and no model may originate one without a prior model_registration. A correction is a NEW record naming its predecessor through revision_of; the original snapshot is never rewritten. The window it names must still be open when it is written, so a forecast can never be recorded about a period that has already begun to resolve.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "forecast_key", "forecast_family", "subject_ref", "model_key", "feature_snapshot_record_id", "forecast_made_at", "evidence_asof", "resolves_after", "forecast_value", "forecast_value_semantics", "authority_tier", "promotion_state", "evidence_refs", "revision_of"],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_forecast_record.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "forecast_key": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+    "forecast_family": {"$ref": "#/$defs/family_id"},
+    "subject_ref": {"$ref": "#/$defs/internal_subject_ref"},
+    "model_key": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+    "feature_snapshot_record_id": {"$ref": "#/$defs/record_id"},
+    "forecast_made_at": {"$ref": "#/$defs/utc_timestamp"},
+    "evidence_asof": {"$ref": "#/$defs/utc_timestamp"},
+    "resolves_after": {"$ref": "#/$defs/utc_timestamp"},
+    "forecast_value": {"type": "number", "minimum": 0, "maximum": 1},
+    "forecast_value_semantics": {"const": "unitless_forward_window_share_display_only"},
+    "authority_tier": {"const": "display_only_not_promoted"},
+    "promotion_state": {"const": "not_promoted"},
+    "evidence_refs": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/internal_subject_ref"}},
+    "revision_of": {"oneOf": [{"$ref": "#/$defs/record_id"}, {"type": "null"}]}
+  },
+  "$defs": {
+    "record_id": {"type": "string", "pattern": "^bcop_[a-f0-9]{32}$"},
+    "utc_timestamp": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"},
+    "internal_subject_ref": {"type": "string", "pattern": "^(?:nct:NCT[0-9]{8}|internal:[a-z0-9_.-]{1,64})$"},
+    "family_id": {
+      "enum": [
+        "trial_progression_termination",
+        "endpoint_readout",
+        "timing_slip",
+        "enrollment_site_change",
+        "regulatory_outcome",
+        "financing_dilution_event",
+        "partnership_event",
+        "market_reaction",
+        "forecast_calibration"
+      ]
+    }
+  }
+}
