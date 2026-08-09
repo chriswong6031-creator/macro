@@ -83,11 +83,11 @@ jobs:
     steps:
       # Same workspace-hygiene guard as ci.yml's pack job (#5108) — this lane's DEFAULT
       # runner is on the very pool that broke there. A self-hosted runner REUSES its
-      # workspace between jobs, and `merge-on-green.yml` sweeps these runners every ~10
-      # minutes with a non-cone sparse checkout of three files, leaving
-      # `core.sparseCheckout=true` in the SAME directory. The next job inherits a partial
-      # tree. A pack job dies loudly on a missing script; a RENDER job builds and commits
-      # whatever it finds, so here the failure mode is a truncated publish, not a red X.
+      # workspace between jobs, and `merge-on-green.yml` historically left a three-file
+      # non-cone checkout on this pool (until its hosted reroute on 2026-08-09). Existing
+      # workspaces — or any future sparse job — can therefore leave a partial tree. A pack
+      # job dies loudly on a missing script; a RENDER job builds and commits whatever it
+      # finds, so here the failure mode is a truncated publish, not a red X.
       #
       # DO NOT DELETE THE `config --unset-all` LINE BECAUSE CHECKOUT "ALREADY DISABLES
       # SPARSE". It does — run 31304933108 shows checkout@v4 running

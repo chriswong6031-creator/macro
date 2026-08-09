@@ -119,36 +119,22 @@ jobs:
       github.event_name != 'workflow_run'
       || github.event.workflow_run.conclusion == 'success'
 
-    # NEVER [self-hosted, macstudio] — that pool is the render/nightly/engine lane
-    # and is routinely saturated; a merge sweep queued behind a 67-minute render
-    # would defeat its own purpose. That reasoning stands; what changed is that
-    # `ubuntu-latest` stopped satisfying it.
+    # CONTROL PLANE, NOT RENDER WORKLOAD. Never route this job to macstudio or
+    # render-linux: a sweep queued behind a long render cannot drain the merge queue.
     #
-    # A CONTROL-PLANE JOB MUST NEVER QUEUE BEHIND THE WORKLOAD IT ARBITRATES
-    # (2026-08-08). `ci` and `fences` are also `ubuntu-latest`, so with ~100 PRs
-    # open the sweeper waits behind the very CI it exists to act on — a priority
-    # inversion, and it self-reinforces: the longer the queue, the later merges
-    # land, the more PRs stay open. Measured: sweeps CREATED 03:46-04:00Z did not
-    # execute until 05:46-06:28Z — a ~2 HOUR queue delay on a job whose actual
-    # work is a handful of API calls and 46 seconds of runtime (the run that most
-    # recently succeeded before this change waited 25m38s for a runner and then
-    # swept in 46 s). See also the 107-minute `queued` run cited above.
+    # The 2026-08-08 move away from hosted runners was correct under the old account
+    # cap: with ~100 open PRs, sweeps waited about two hours behind ci/fences. The
+    # constraint reversed after the Enterprise transfer (2026-08-09). Live capacity
+    # was 34/180 hosted jobs while all four render-linux runners were occupied and
+    # sweep runs remained queued. Keeping the control plane on render-linux therefore
+    # recreated the same priority inversion on the smaller pool.
     #
-    # `render-linux` is pc-render-1..4 (also used by render.yml/engine-render.yml
-    # via dispatch input), a SEPARATE Linux pool that was 4-idle-of-4 when this was
-    # measured — so this cannot starve the render lane, whose default runner is the
-    # macstudio `render-heavy` host. The move is safe for this job specifically
-    # because it needs only `python3` and network: the steps are a sparse
-    # `actions/checkout@v4`, one `pip install pyyaml`, and one `python3` invocation,
-    # with NO `actions/setup-python` (which is what makes a hosted image load-
-    # bearing). tests/test_merge_on_green.py pins both halves of that argument, so
-    # adding a setup step here fails the pack rather than silently breaking sweeps.
-    #
-    # integration-baseline.yml now routes only main-ref proofs to this same pool and
-    # keeps off-main manual proofs on hosted runners. Its self-hosted path clears any
-    # inherited sparse-checkout state before checkout, and its setup-python contract
-    # is pinned separately in tests/test_merge_on_green.py.
-    runs-on: [self-hosted, render-linux]
+    # `ubuntu-latest` is now the isolated, elastic route for this lightweight job. It
+    # needs only Python, network, a sparse checkout, and PyYAML; no setup-python step
+    # or persistent workspace is load-bearing. tests/test_merge_on_green.py pins the
+    # hosted route, absence of self-hosted labels, sparse checkout, and event triggers.
+    # integration-baseline.yml has a separate routing contract and is unchanged here.
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
@@ -176,16 +162,10 @@ jobs:
       # whether the runner image ships it is not a contract, and the failure mode of
       # guessing wrong is a sweep that aborts on every run.
       #
-      # IMPORT-FIRST, WITH FALLBACKS, because this job now runs self-hosted. A bare
-      # `python3 -m pip install` into the system interpreter is what the hosted image
-      # tolerated; on a modern Debian/Ubuntu host (render-linux is the WSL2 PC) it dies
-      # PEP 668 `externally-managed-environment`, and this repository's other
-      # self-hosted lanes all build a venv precisely because of that. A sweeper that
-      # aborts on every run would be a worse outage than the queue delay this move
-      # repairs, so: skip when PyYAML is already importable, then try the plain
-      # install, then --user, then --break-system-packages. Nothing here writes a venv
-      # — the sweep imports only stdlib + yaml, and a per-runner venv would be state
-      # this level-triggered job otherwise has none of.
+      # IMPORT-FIRST, WITH FALLBACKS. The hosted image normally accepts the plain
+      # install, but image contents are not a contract: skip when PyYAML is already
+      # importable, then retain user/PEP-668 fallbacks so image drift cannot turn every
+      # sweep into an outage. Nothing here writes a venv or carries runner state.
       - name: install the yaml parser
         run: |
           if python3 -c "import yaml" 2>/dev/null; then

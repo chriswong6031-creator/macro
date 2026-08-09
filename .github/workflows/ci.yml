@@ -3630,9 +3630,9 @@ jobs:
     #
     # Routing back is strictly better than leaving it:
     #   * `render-linux` is FOUR runners shared with `render.yml`, `engine-render.yml`
-    #     and `merge-on-green.yml`. Main's four packs took the entire pool, which
-    #     starved the sweeper that merges every armed pull request (60 sweeps queued,
-    #     oldest 2026-08-07). Returning the packs hands all four runners back.
+    #     and, at the time, `merge-on-green.yml`. Main's four packs took the entire
+    #     pool, starving both renders and the sweeper. The packs and sweeper now use
+    #     hosted runners; all four self-hosted slots are back with render workloads.
     #   * The `max-parallel: 2` that bounded that damage is deleted with it — on hosted
     #     runners the four packs run concurrently again, so main's proof goes back to
     #     ~26 minutes from the ~50 the throttle cost.
@@ -3646,8 +3646,8 @@ jobs:
     strategy:
       fail-fast: false
       # NO `max-parallel`. It existed only to stop main's four packs from taking all
-      # four `render-linux` runners and starving `merge-on-green.yml`, which shares
-      # that pool. With every event back on hosted runners there is no shared pool to
+      # four `render-linux` runners and starving `merge-on-green.yml`, then co-resident
+      # on that pool. With both control/proof lanes hosted there is no shared pool to
       # protect, and throttling would only make main's proof twice as slow (~26 min
       # unthrottled vs ~50 min at 2). Do not reintroduce one without a shared-pool
       # reason; the hosted ceiling is an ACCOUNT-wide limit that this key cannot help.
