@@ -190,6 +190,7 @@ def all_adapters() -> dict:
         ("usaspending_awards", "collectors.usaspending_awards", "UsaspendingAwardsAdapter"),  # keyless award/action detail + PIT snapshots -> Government Revenue Foresight
         ("usaspending_subawards", "collectors.usaspending_subawards", "UsaspendingSubawardsAdapter"),  # bounded official count + identity pages; source-only, non-additive subaward context
         ("usaspending_idv_graph", "collectors.usaspending_idv_graph", "UsaspendingIdvGraphAdapter"),  # bounded IDV discovery + exact parent/child activity receipts; identity context only
+        ("sbir_awards", "collectors.sbir_awards", "SbirAwardsAdapter"),  # append-only SBIR.gov Phase I/II observations; exact agency_tracking_number identity, 10-req/10-min paced
         # Beyond-Quiver alt-data/divergence sources (keyless except grants_gov; all degrade gracefully)
         ("edgar_8k", "collectors.edgar_8k", "Edgar8KAdapter"),     # SEC 8-K material-event velocity (theme_event radar leg) + per-ticker material_8k convergence channel
         ("symbol_directory", "collectors.symbol_directory", "SymbolDirectoryAdapter"),  # LHB-R8: daily exchange symbol-directory archival (nasdaqlisted+otherlisted) + weekly CIK map -> data/symbol_directory/
@@ -387,6 +388,7 @@ _SLOW = set(_QUIVER_KEYS) | {
     "polygon_news", "github_repos", "sam_gov", "sam_gov_opportunities", "usaspending", "usaspending_awards", "usaspending_subawards", "usaspending_idv_graph", "prediction_markets",
     "lbnl_queue", "federal_register",
     "symbol_directory",  # LHB-R8: US-lane only; nightly exchange-roster archival
+    "sbir_awards",  # GOVREV W10-R3: paced at 63s/request against a published 10-req/10-min public limit
 }
 
 

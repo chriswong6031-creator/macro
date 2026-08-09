@@ -3,8 +3,9 @@
 
 Covers:
   (a) build twice -> events.jsonl byte-identical (determinism)
-  (b) re-run adds zero duplicates (idempotency); a source row leaving the
-      snapshot RETAINS its event (union-merge, never a silent delete)
+  (b) re-run adds zero duplicates (idempotency); an ordinary source row leaving
+      the snapshot RETAINS its event, while an authoritative Prophet quarantine
+      retracts only that known-invalid claim from the derived effective store
   (c) every emitted event's keys == schema keys exactly; every fact <=200
       chars (public-safe / schema law); every adapter proves an EXACT,
       non-zero census on the seeded fixture (presence != coverage)
@@ -365,6 +366,98 @@ def test_source_row_removed_retains_event_and_records_drop(tmp_path):
     assert any("research_vault" in n and "retained" in n for n in manifest["gap_notes"]), (
         manifest["gap_notes"]
     )
+
+
+def test_prophet_quarantine_retracts_prior_event_but_preserves_raw_ledger(tmp_path):
+    """A correction receipt is not ordinary snapshot disappearance.
+
+    Seed a previously committed Prophet close event, then add the canonical
+    quarantine receipt. The next effective rebuild must remove the derived event and
+    its rollup influence while leaving the append-only source ledger byte-identical.
+    """
+    from engine.chronicle.governor import build_and_write
+    from engine.chronicle.spine import load_events_jsonl
+
+    root = _make_fixture_root(tmp_path)
+    ledger_path = root / "data" / "prophet" / "ledger.jsonl"
+    raw_ledger = ledger_path.read_bytes()
+
+    first = build_and_write(root=root, rebuild=True)
+    assert not first.get("error"), first
+    events_path = root / "data" / "chronicle" / "events.jsonl"
+    assert any(
+        event.get("source_ref") == "TST-BULL-20260601"
+        for event in load_events_jsonl(events_path)
+    )
+
+    quarantine = {
+        "schema": "prophet.ledger_quarantine/v1",
+        "quarantined_on": "2026-08-08",
+        "count": 1,
+        "quarantined": [{
+            "id": "TST-BULL-20260601",
+            "reason": "test chronology proves this outcome predates publication",
+        }],
+    }
+    (root / "data" / "prophet" / "ledger_quarantine.json").write_text(
+        json.dumps(quarantine), encoding="utf-8"
+    )
+
+    second = build_and_write(root=root, rebuild=True)
+    assert not second.get("error"), second
+    assert not any(
+        event.get("source_ref") == "TST-BULL-20260601"
+        for event in load_events_jsonl(events_path)
+    )
+    assert ledger_path.read_bytes() == raw_ledger
+    prophet_report = second["adapter_report"]["prophet_ledger"]
+    assert prophet_report["retracted_by_authority"] == 1
+    assert prophet_report["dropped_from_source"] == 0
+    manifest = json.loads(Path(second["manifest_path"]).read_text(encoding="utf-8"))
+    assert manifest["adapters"]["prophet_ledger"]["retracted_by_authority"] == 1
+    assert any(
+        "prophet_ledger" in note and "retracted" in note
+        for note in manifest["gap_notes"]
+    )
+
+
+def test_current_eleven_prophet_quarantines_are_all_retracted_from_effective_view():
+    """Pin the complete legacy poisoned-outcome cohort found by the 2026-08-08 audit."""
+    from engine.chronicle.spine import apply_authoritative_retractions
+    from engine.prophet_integrity import load_effective_ledger
+
+    expected = {
+        "AEO-BULL-20260415",
+        "AMPH-BULL-20260604",
+        "CCS-BULL-20260601",
+        "EXC-BULL-20260609",
+        "FOXF-BULL-20260526",
+        "KKR-BULL-20260318",
+        "KSS-BULL-20260522",
+        "REZI-BULL-20260703",
+        "SYK-BULL-20260518",
+        "SYY-BULL-20260731",
+        "U-BULL-20260327",
+    }
+    projection = load_effective_ledger(ROOT)
+    assert projection.quarantined_ids == expected
+
+    seeded = [
+        {
+            "id": f"seed:{plan_id}",
+            "source": "prophet_ledger",
+            "source_ref": plan_id,
+        }
+        for plan_id in sorted(expected)
+    ]
+    control = {
+        "id": "seed:control",
+        "source": "prophet_ledger",
+        "source_ref": "CONTROL-BULL-20260808",
+    }
+    kept, retracted = apply_authoritative_retractions(ROOT, seeded + [control])
+    assert kept == [control]
+    assert {event["source_ref"] for event in retracted} == expected
 
 
 # ---------------------------------------------------------------------------
@@ -1842,6 +1935,50 @@ def test_prophet_bull_close_sign_unchanged(tmp_path):
     assert "+6.1%" in events[0]["title"]
 
 
+def test_prophet_correction_quarantine_is_canonical_for_chronicle(tmp_path):
+    """A known-impossible terminal row cannot reappear through Chronicle's raw reader."""
+    from engine.chronicle.adapters import adapt_prophet_ledger
+
+    root = tmp_path
+    store = root / "data" / "prophet"
+    store.mkdir(parents=True)
+    plan_id = "BAD-BULL-20260601"
+    row = {
+        "schema": "prophet.ledger/v1",
+        "id": plan_id,
+        "asset": "BAD",
+        "direction": "BULL",
+        "signal_date": "2026-06-01",
+        "close_date": "2026-06-20",
+        "outcome": "T1_HIT",
+        "stock_result_pct": 5.0,
+        "days_held": 19,
+        "asof": "2026-06-20",
+    }
+    (store / "ledger.jsonl").write_text(json.dumps(row) + "\n", encoding="utf-8")
+    base = {
+        "schema": "prophet.ledger_correction/v1",
+        "corrects_id": plan_id,
+        "basis": "test audit",
+        "corrected_at": "2026-08-08",
+        "evidence": {"fixture": True},
+    }
+    corrections = [
+        dict(base, id=f"{plan_id}:reason", field="integrity_reason",
+             old_value=None, new_value="terminal chronology is impossible"),
+        dict(base, id=f"{plan_id}:status", field="integrity_status",
+             old_value=None, new_value="quarantined"),
+    ]
+    (store / "ledger_corrections.jsonl").write_text(
+        "".join(json.dumps(item) + "\n" for item in corrections), encoding="utf-8"
+    )
+
+    events, gap = adapt_prophet_ledger(root)
+
+    assert events == []
+    assert gap is None
+
+
 # ---------------------------------------------------------------------------
 # m7: macro_release joins the scored actual print
 # ---------------------------------------------------------------------------
@@ -2321,6 +2458,17 @@ def test_rebuild_sources_covers_every_path_the_adapters_read():
         "earnings_call_events.jsonl feeds the earnings_call adapter but is not in "
         "REBUILD_SOURCES"
     )
+    # adapt_prophet_ledger reaches these through the canonical projection helper,
+    # so the Path-literal scan above cannot discover them. They still decide both
+    # which events exist and which prior events are authoritatively retracted.
+    for rel in (
+        "data/prophet/ledger_corrections.jsonl",
+        "data/prophet/ledger_quarantine.json",
+    ):
+        assert rel in spine.REBUILD_SOURCES, (
+            f"{rel} feeds Prophet's effective Chronicle projection but is absent "
+            "from REBUILD_SOURCES"
+        )
 
 
 def test_rebuild_from_committed_sources_never_contradicts_committed_store(tmp_path):
@@ -2491,15 +2639,24 @@ def test_rebuild_from_committed_sources_reproduces_committed_store(tmp_path):
 
     committed_ids = {e["id"] for e in committed}
     rebuilt_ids = {e["id"] for e in rebuilt}
+    from engine.chronicle import spine
+
+    _, authoritative_retractions = spine.apply_authoritative_retractions(ROOT, committed)
+    retracted_ids = {
+        event["id"] for event in authoritative_retractions if event.get("id")
+    }
     missing = committed_ids - rebuilt_ids
+    unexpected_missing = missing - retracted_ids
     why = ("the manifest records no usable per-source vintage (predates the pin, absent, "
            "or unreadable)" if drifted is None else f"these sources advanced: {drifted}")
-    assert not missing, (
-        f"a rebuild LOST {len(missing)} committed event(s) — append-only violated "
+    assert not unexpected_missing, (
+        f"a rebuild LOST {len(unexpected_missing)} committed event(s) without an "
+        f"authoritative correction receipt — append-only violated "
         f"even though the rebuild was union-merge seeded (this can only be a "
         f"union_events regression or store corruption, never retention). "
         f"Byte identity was not required here because {why}, which is expected between "
-        f"regen commits; losing a committed event never is: {sorted(missing)[:5]}"
+        f"regen commits; losing an uncorrected committed event never is: "
+        f"{sorted(unexpected_missing)[:5]}"
     )
 
 

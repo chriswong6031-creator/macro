@@ -40,7 +40,7 @@ log = logging.getLogger(__name__)
 # Wikipedia asks for a descriptive UA with contact. SEC's data.sec.gov blocks
 # (403) the email-laden form but accepts the simple edgar UA already in config —
 # so SEC reuses config.edgar.user_agent, Wikipedia uses WIKI_UA.
-WIKI_UA = "macro-dashboard research (chriswong6031-creator) macro-dashboard@users.noreply.github.com"
+WIKI_UA = "macro-dashboard research (mastermindx-market-intelligence) macro-dashboard@users.noreply.github.com"
 SUBMISSIONS = "https://data.sec.gov/submissions/CIK{:010d}.json"
 WIKI_SUMMARY = "https://en.wikipedia.org/api/rest_v1/page/summary/{}"
 # limit=5 (not 1): opensearch's top hit is often a namesake (a lawsuit, a town,

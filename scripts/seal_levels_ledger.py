@@ -27,8 +27,7 @@ from datetime import date as _date, timezone, datetime
 from pathlib import Path
 
 _REPO = Path(__file__).resolve().parent.parent
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from lib.config import data_dir  # noqa: E402
 from engine.thetadata_store import resolve_thetadata_store, clear_parquet_cache  # noqa: E402
