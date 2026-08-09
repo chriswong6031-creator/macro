@@ -109,12 +109,9 @@ def build_increment(target_date: Optional[str] = None) -> dict:
     Returns a dict with status, counts, and data_gaps.
     """
     from engine.china_microstructure import (
-        LIMIT_TAPE_START_DATE,
         _board_from_ticker,
-        _detect_limit_events,
-        _infer_listing_date,
         _load_st_set,
-        _positive_volume_rows,
+        _detect_limit_events,
         aggregate_daily,
         name_packet,
     )
@@ -128,29 +125,6 @@ def build_increment(target_date: Optional[str] = None) -> dict:
         log.error("No raw stock files found in %s", RAW_DIR)
         data_gaps.append("china_stocks_raw: directory empty or missing")
         return {"status": "error", "data_gaps": data_gaps}
-
-    # A nightly increment is not a substitute for a full-universe reconstruction. Surface
-    # newly added/removed nominal files until the completeness generation is rebuilt.
-    market_session_positions = None
-    market_session_clock: dict = {
-        "status": "unavailable",
-        "missing_or_unattested_clock_behavior": "fail_closed_reset_streak",
-    }
-    try:
-        from scripts.backfill_china_limit_tape import (
-            _observed_market_session_clock,
-            validate_completeness_manifest,
-        )
-
-        for defect in validate_completeness_manifest():
-            data_gaps.append(f"china_microstructure completeness: {defect}")
-        market_session_positions, market_session_clock = _observed_market_session_clock(
-            [Path(path) for path in raw_files],
-            floor=LIMIT_TAPE_START_DATE,
-        )
-        market_session_clock["status"] = "attested"
-    except Exception as exc:  # noqa: BLE001
-        data_gaps.append(f"china_microstructure completeness check failed: {exc}")
 
     # Determine the target date (latest common date in raw store)
     if target_date:
@@ -199,23 +173,19 @@ def build_increment(target_date: Optional[str] = None) -> dict:
         if df.empty:
             continue
         df.index = pd.to_datetime(df.index)
-        listing_date = _infer_listing_date(df)
 
-        # Only positive-volume observations are executable universe/listing sessions.
-        df_recent = _positive_volume_rows(df)
-        df_recent = df_recent[df_recent.index >= lookback_start]
+        # Only scan recent sessions for nightly increment
+        df_recent = df[df.index >= lookback_start]
         if df_recent.empty:
             continue
 
         # But pass full df for context (prev_close for first bar)
-        events, ipo_excluded_dates, _ = _detect_limit_events(
+        events, ipo_excl, _ = _detect_limit_events(
             ticker=ticker,
             df=df,
             board=board,
             st_set=st_set,
             start_date=lookback_start,
-            listing_date=listing_date,
-            market_session_positions=market_session_positions,
         )
         all_events.extend(events)
 
@@ -223,9 +193,10 @@ def build_increment(target_date: Optional[str] = None) -> dict:
             d = ts.strftime("%Y-%m-%d")
             universe_n_by_date[d] = universe_n_by_date.get(d, 0) + 1
 
-        for ts in ipo_excluded_dates:
-            d = ts.strftime("%Y-%m-%d")
-            ipo_excluded_by_date[d] = ipo_excluded_by_date.get(d, 0) + 1
+        if ipo_excl > 0:
+            first_dates = [ts.strftime("%Y-%m-%d") for ts in df.index[:ipo_excl]]
+            for d in first_dates:
+                ipo_excluded_by_date[d] = ipo_excluded_by_date.get(d, 0) + 1
 
     log.info("Nightly scan: %d events in recent window", len(all_events))
 
@@ -239,7 +210,6 @@ def build_increment(target_date: Optional[str] = None) -> dict:
         events_df.assign(date=lambda x: x["date"].dt.strftime("%Y-%m-%d")) if not events_df.empty else events_df,
         universe_n_by_date,
         ipo_excluded_by_date,
-        backfill=False,
     )
     if not tape_df.empty:
         tape_df["date"] = pd.to_datetime(tape_df["date"])
@@ -297,13 +267,7 @@ def build_increment(target_date: Optional[str] = None) -> dict:
                 except Exception:  # noqa: BLE001
                     df = pd.DataFrame()
                 df, packet_asof = _packet_frame_asof(df, cutoff=scan_date)
-                pkt = name_packet(
-                    ticker=ticker,
-                    df=df,
-                    st_set=st_set,
-                    listing_date=_infer_listing_date(df),
-                    market_session_positions=market_session_positions,
-                )
+                pkt = name_packet(ticker=ticker, df=df, st_set=st_set)
                 pkt["as_of"] = packet_asof
                 name_packets.append(pkt)
         except Exception as exc:  # noqa: BLE001
@@ -327,7 +291,6 @@ def build_increment(target_date: Optional[str] = None) -> dict:
                 "Historical sealed_down counts on ST names may be understated before this date."
             ),
             "backfill_version": "W1-2026-07-08",
-            "market_session_clock": market_session_clock,
         },
     }
     SITE_DIR.mkdir(parents=True, exist_ok=True)

@@ -1955,14 +1955,6 @@ lanes:
       # build_china_library produces the CN snapshot; build_china_pick_lab reads it.
       # Runs in the library-restore step shell loop (after CN library); wired here
       # for conformance documentation only (the parser cannot extract shell loops).
-      - id: advance_cn_limit_alpha_ledger
-        module: scripts.advance_cn_limit_alpha_ledger
-        note: >
-          Context-display-only A-share limit-alpha probability and grade ledger.
-          Runs after the resilient CN/HK library refresh has populated nominal raw
-          support and before CN Pick Lab. The workflow wrapper is non-fatal, while
-          the runner itself gates every write on CN_LANE=asia and fails closed on
-          stale PIT ST membership, unattested sessions, or immutable-part conflicts.
       - id: build_china_pick_lab
         module: scripts.build_china_pick_lab
         note: >
