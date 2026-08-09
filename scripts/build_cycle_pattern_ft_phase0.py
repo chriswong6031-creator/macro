@@ -49,8 +49,7 @@ import numpy as np
 import pandas as pd
 
 _REPO = Path(__file__).parent.parent.resolve()
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 # Reuse the W4.2 harness math verbatim — import, never fork (§12 "the W4.2 harness verbatim").
 from scripts.fit_cycle_hazard import (  # noqa: E402

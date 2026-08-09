@@ -28,8 +28,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 _REPO = Path(__file__).parent.parent.resolve()
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from engine.research_factory import state as rf_state  # noqa: E402
 from engine.cycle_pattern import truths as T  # noqa: E402

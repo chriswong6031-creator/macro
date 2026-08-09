@@ -47,10 +47,10 @@ def _set_dedicated_env(monkeypatch) -> None:
 
 
 def _set_github_env(monkeypatch) -> None:
-    monkeypatch.setenv("GITHUB_REPOSITORY", "chriswong6031-creator/macro")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "mastermindx-market-intelligence/macro")
     monkeypatch.setenv(
         "GITHUB_WORKFLOW_REF",
-        "chriswong6031-creator/macro/.github/workflows/capital-share-count-r2-conformance.yml@refs/heads/main",
+        "mastermindx-market-intelligence/macro/.github/workflows/capital-share-count-r2-conformance.yml@refs/heads/main",
     )
     monkeypatch.setenv("GITHUB_RUN_ID", "123")
     monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
@@ -247,8 +247,8 @@ def test_core_receives_only_exact_fresh_key_capabilities_and_requires_a_pass_res
         capability.head_object(Bucket="bucket", Key="other")
 
     provenance = {
-        "repository": "chriswong6031-creator/macro",
-        "workflow_ref": "chriswong6031-creator/macro/.github/workflows/capital-share-count-r2-conformance.yml@refs/heads/main",
+        "repository": "mastermindx-market-intelligence/macro",
+        "workflow_ref": "mastermindx-market-intelligence/macro/.github/workflows/capital-share-count-r2-conformance.yml@refs/heads/main",
         "run_id": "1",
         "run_attempt": 1,
         "commit_sha": "a" * 40,

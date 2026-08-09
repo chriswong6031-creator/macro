@@ -55,6 +55,12 @@ STATUS_VOCAB = ("up", "stopped", "flat", "early", "beat", "lag", "onboard", "uns
 # The flag vocabulary the `fl` list is drawn from.
 FLAG_VOCAB = ("locked", "susp", "delisted")
 
+# The one ledger fenced by the era guard in atomic_write(). Duplicated from
+# engine.track_era.GUARDED_BASENAME on purpose: the fail-closed branch runs when that
+# module could not be imported, so it cannot ask the module for its own name. Pinned equal
+# by tests/test_track_ledger_era.py.
+ERA_GUARDED_LEDGER = "us_track_ledger.json"
+
 
 def pyify(obj: Any) -> Any:
     """Recursively coerce numpy scalars / NaN / pandas NA to pure-Python JSON types.
@@ -295,6 +301,22 @@ def from_board_ledger_grade(
     )
 
 
+def _read_existing(path: Path) -> dict | None:
+    """The doc currently published at `path`, or None if absent/unreadable.
+
+    Unreadable is deliberately indistinguishable from absent HERE: the era guard treats a
+    missing predecessor as "nothing has moved", which is the only honest reading when the
+    old numbers cannot be recovered to compare against.
+    """
+    try:
+        if not path.exists():
+            return None
+        obj = _json.loads(path.read_text(encoding="utf-8"))
+        return obj if isinstance(obj, dict) else None
+    except Exception:  # noqa: BLE001 — a corrupt predecessor must not break the write path
+        return None
+
+
 def atomic_write(path: Path, doc: dict) -> bool:
     """Serialize `doc` to `path` via tmp-file + os.replace (never open('w') truncation —
     house law). Returns True on success. Never raises — a failed ledger write must not
@@ -303,9 +325,37 @@ def atomic_write(path: Path, doc: dict) -> bool:
     `doc` must already be JSON-safe (build_shell guarantees this); we still pass
     default=str as a belt-and-braces guard so an unexpected type degrades instead of
     crashing the whole build.
+
+    ERA GUARD (2026-08-07, fail-closed). Every writer of a track ledger goes through this
+    function — house law forbids open('w') truncation — so it is the one place a publish
+    refusal cannot be routed around. `engine.track_era.check_publish` fences
+    `us_track_ledger.json` only: a write whose PUBLISHED headline moves beyond a small
+    tolerance without carrying the active grading construction's `meta.anchor_era` is
+    refused, the previously published file is left in place, and a line-start ::error
+    annotation says so. Returns False on refusal, exactly like an IO failure — callers
+    already treat a False as "the artifact bakes next run".
     """
     path = Path(path)
     tmp = None
+    try:
+        from engine import track_era as _era  # noqa: PLC0415 — keep import cost off cold paths
+
+        ok, _why = _era.check_publish(path, doc, _read_existing(path))
+    except Exception as e:  # noqa: BLE001 — see the two branches below
+        # A guard that could not RUN is not a guard that passed. For the fenced artifact
+        # that means refuse (the published file stays put — stale beats silently re-baked);
+        # for the other three markets, which carry no ruled era boundary, a broken US guard
+        # must not wedge their nightly, so they degrade to a warning and publish.
+        if path.name == ERA_GUARDED_LEDGER:
+            print(f"::error title=track-ledger-era::REFUSED to publish "
+                  f"{ERA_GUARDED_LEDGER}: the era guard could not run ({e}). A guard that "
+                  f"cannot run is not a pass — the previously published file is left in "
+                  f"place. See engine/track_era.py.", flush=True)
+            return False
+        log.warning("track_ledger era guard skipped for %s: %s", path, e)
+        ok = True
+    if not ok:
+        return False
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         payload = _json.dumps(doc, ensure_ascii=False, indent=1, default=str)

@@ -77,6 +77,11 @@ data/press/staging/*.json
 data/financial_news/
 # GDELT cross-process throttle stamp (runtime-only; written by engine/gdelt_client._throttle)
 data/gdelt/
+# GR3b: 8-K primary-doc + material-contract-exhibit text cache (collectors/edgar_8k).
+# Transient fetch cache that makes the counterparty backfill resumable; the extraction
+# RESULT is committed in material_8k_events.parquet, the raw filing text never is (it is
+# hundreds of MB of public EDGAR prose that re-fetches on demand).
+data/edgar/_8k_doc_cache/
 data/russell_breadth/_closes_cache.parquet
 data/china_breadth/_closes_cache.parquet
 data/hk_breadth/_closes_cache.parquet
@@ -199,6 +204,9 @@ data/edgar/company_tickers.json
 data/fundamental_forensics/raw/
 data/fundamental_forensics/archive/
 data/fundamental_forensics/private/
+# Per-run SEC observation log — cron history, deliberately outside the
+# restorable raw/archive source trees (DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY, R6)
+data/fundamental_forensics/observations/
 
 # Special Situations: fetched filing-text cache + LLM summary cache (regenerable)
 data/special_situations/doc_cache/
@@ -387,6 +395,13 @@ data/operator/
 # pre-built so the path is safe before any data ever lands here.
 data/private/
 
+# Paid TuShare add-on response partitions are private, non-redistributable pilot
+# data. Never stage them through the nightly blanket `git add data/` sweep.
+# Same rule for the minute plane (Lane B) and chip-distribution store (Lane C).
+data/tushare_addons/
+data/tushare_minutes/
+data/china_chips_distribution/
+
 # SLF-001 SEC FTD collector (feat/slf001-sec-ftd-collector-phase0).
 # panel.parquet is 184MB / 22.4M rows — R2 data-plane law: must NOT enter git.
 # Mirrors pattern: data/massive_stock_day/*.parquet above.
@@ -496,6 +511,8 @@ data/marketing/fastlane_heartbeat.txt
 # silently no-ops both and the queue evaporates on the next runner clean).
 # Only the transient advisory lock stays local.
 data/marketing/outbox/.lock
+data/options_signal_episode/checkpoint.json.lock
+data/options_signal_episode/.checkpoint.json.*.tmp
 # XG-W2 daemon spool. The fast lanes (press, earnings) now emit through the
 # canonical outbox path, and they run inside scripts/marketing_fastlane_daemon.py
 # on the VPS — whose checkout is refreshed by a 3-minute `git pull`. Appending to
@@ -606,6 +623,17 @@ data/mastermind/*.json.tmp
 # load-bearing: cumulative ledgers must never become Git objects or public site data.
 data/capital_structure/share_counts/
 
+# Universal 13F evidence is an immutable R2/warehouse data plane, not a Git data
+# plane.  Keep only bounded public summaries and small provenance receipts under
+# data/institutional_13f/public and data/institutional_13f/receipts.  Raw SEC
+# packages, accession documents, SQLite work files, and Parquet generations can
+# reach tens of millions of rows and must never be swept up by broad `git add data`.
+data/institutional_13f/*
+!data/institutional_13f/public/
+!data/institutional_13f/public/*.json
+!data/institutional_13f/receipts/
+!data/institutional_13f/receipts/*.json
+
 # Earnings Wire member continuations and exact-evidence context belong to the
 # private Research Vault object store.  The builder now refuses repository-local
 # private output, and this exact legacy path is ignored as a second containment
@@ -620,3 +648,8 @@ data/capital_structure/share_counts/
 # `git status` and tripped the ship-loop guard on work belonging to another session.
 .claude/worktrees/
 .codex-worktrees/
+
+# Private paid-vendor A-share spine. The collector defaults outside the repo;
+# this containment wall prevents an explicitly configured legacy store from
+# being swept into broad data/ staging or public Git history.
+/data/china_tushare_spine/

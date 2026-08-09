@@ -24,8 +24,12 @@ from pathlib import Path
 import re
 import stat
 import subprocess
+import sys
 import tempfile
 from typing import Any, Callable, Mapping, Sequence
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 # The R2 child-credential primitives moved into engine/ so the long-running
 # receipt API can reuse them without importing from scripts/.  They are bound
@@ -40,45 +44,45 @@ from typing import Any, Callable, Mapping, Sequence
 from engine.fundamental_forensics.attested_history_credentials import (
     R2TemporaryCredentialError,
     mint_r2_temporary_credentials,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.attested_history_materializer import (
     B4D_REJECTION_REASON_CODES,
     AttestedBindingReport,
     enumerate_attested_binding_candidates,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.attested_query_snapshots import (
     AttestationMaterial,
     PreparedAttestedQuerySnapshot,
     _verified_base_snapshot,
     prepare_attested_query_snapshot,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.companyfacts_ledger import (
     CompanyFactsConversionSourceBundle,
     CompanyFactsLedgerConversion,
     CompanyFactsLedgerConversionConfig,
     PinnedSubmissionsSource,
     load_companyfacts_ledger_from_pinned_source,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.filing_attestation import (
     CompanyFactsSourcePaths,
     FilingAttestation,
     PinnedSourceAuthority,
     build_filing_attestation,
     gzip_stored_byte_ceiling,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.filing_package import (
     FilingPackage,
     PinnedFilingPackageDescriptor,
     materialize_filing_package_from_pinned_source,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.ixbrl_extraction import (
     IxbrlExtraction,
     build_ixbrl_extraction,
-)
-from engine.fundamental_forensics.models import parse_utc, utc_text
-from engine.fundamental_forensics.query_snapshots import QuerySnapshot
-from engine.fundamental_forensics.source_sync import build_private_source_store
-from engine.research_vault.r2_store import R2Store, StrictBoundedReadStore
+)  # noqa: E402
+from engine.fundamental_forensics.models import parse_utc, utc_text  # noqa: E402
+from engine.fundamental_forensics.query_snapshots import QuerySnapshot  # noqa: E402
+from engine.fundamental_forensics.source_sync import build_private_source_store  # noqa: E402
+from engine.research_vault.r2_store import R2Store, StrictBoundedReadStore  # noqa: E402
 
 
 OPERATOR_SCHEMA = "fundamental_forensics.attested_history_operator/v1"

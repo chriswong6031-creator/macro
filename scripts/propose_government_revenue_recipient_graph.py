@@ -115,8 +115,7 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 from urllib.parse import quote, urlparse
 
 _ROOT = Path(__file__).resolve().parent.parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+sys.path.insert(0, str(_ROOT))
 
 from engine.government_revenue.entity_resolution import (  # noqa: E402
     AUTHORITY,

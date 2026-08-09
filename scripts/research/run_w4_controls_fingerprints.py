@@ -45,8 +45,7 @@ import pandas as pd
 
 # Repo root on sys.path for engine import (read-only).
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 
 from engine.winner_autopsy import (  # noqa: E402  (read-only import)
     BENCH,

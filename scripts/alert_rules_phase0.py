@@ -29,15 +29,20 @@ Run:  .venv/bin/python -m scripts.alert_rules_phase0
 from __future__ import annotations
 
 import json
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine import inputs
-from engine.conditions import conditions_frame
-from engine.validation import benjamini_hochberg, newey_west_tstat
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import inputs  # noqa: E402
+from engine.conditions import conditions_frame  # noqa: E402
+from engine.validation import benjamini_hochberg, newey_west_tstat  # noqa: E402
+from lib import config  # noqa: E402
 
 HORIZONS = [1, 5, 20, 60]
 MIN_CLUSTERS = 8           # below this, power is too low to earn a number

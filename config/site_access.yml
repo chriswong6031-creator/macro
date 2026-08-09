@@ -56,6 +56,9 @@ public:
     # authenticated /api/research/view and /api/research/download routes.
     - /research_vault.html
     - /research_vault_app.js
+    # Public evidence-first product shell. All analytical reads remain behind
+    # authenticated no-store API routes; only the SEO/context shell is public.
+    - /market_memory.html
     # Tier-preview shells, promoted from free_registered to ANONYMOUS-public
     # (SEO_SUPERCHARGE_MASTERPLAN §A1/W1a). The pages themselves are preview
     # SHELLS: honest totals + methodology + a small newest-first preview slice +
@@ -185,6 +188,10 @@ public:
     - /scene-motion.js
     - /chat.css
     - /theme.css
+    # Public Market Memory shell assets. They contain presentation/read-client
+    # logic only; every analytical payload remains behind the authenticated API.
+    - /market_memory.css
+    - /market_memory.js
     # Shared navigation layout + animated ticker search. Presentation only; the
     # protected stock libraries it reads remain behind the registration wall.
     - /navigation-refresh.css

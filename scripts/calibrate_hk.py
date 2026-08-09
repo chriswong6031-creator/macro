@@ -18,16 +18,20 @@ Writes reports/hk-calibration.md. Run offline / weekly, like scripts/recalibrate
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from collectors.hk_breadth import HkBreadthAdapter
-from engine.hk_inputs import build_features
-from engine.hk_regime import classify
-from engine.cycles import calibrate_ladder
-from lib import config, store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors.hk_breadth import HkBreadthAdapter  # noqa: E402
+from engine.hk_inputs import build_features  # noqa: E402
+from engine.hk_regime import classify  # noqa: E402
+from engine.cycles import calibrate_ladder  # noqa: E402
+from lib import config, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("calibrate_hk")
@@ -162,5 +166,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     raise SystemExit(main())

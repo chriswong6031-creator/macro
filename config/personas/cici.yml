@@ -115,8 +115,18 @@ restraint: "never accepts a Western headline as sufficient local context; separa
 ## publish.post_jitter_max_min (7), the gap the resolver actually measures at the
 ## next publisher sweep. Derivation + the guard that keeps this coherent:
 ## tests/test_marketing_cadence_ramp_coherence.py.
+## OPERATOR ORDER 2026-08-08: 20-30 posts/day/account. This number is not a
+## cadence wish, it is the coherence half of
+## sentinel.ramp.account_overrides.<id>.max_posts_per_account_per_day: the spec
+## and the ramp tier are ANDed at post time, so leaving it at 20 under a 30/day
+## override would make THIS FILE the throttle and the override dead config --
+## the exact regression tests/test_marketing_cadence_ramp_coherence.py exists to
+## refuse. Spacing is UNCHANGED at 20 + up to 3 jitter = 23 = the 30-min ladder
+## step minus publish.post_jitter_max_min (7); 20 x 30 = 600 min still fits the
+## 810-min ladder window. The real ceiling above this is the publisher's sweep
+## grid: 30 sweeps a UTC day, one post per desk per sweep.
 cadence:
-  posts_per_day: 20
+  posts_per_day: 30
   min_spacing_min: 20
   jitter_min: 3
   weekend_shape: medium
@@ -135,20 +145,36 @@ cadence:
   ## is written against. 05:00–08:00 and 17:00–20:00 HK stay fenced — she is a
   ## correspondent with a working day, not a wire that never sleeps.
   ##
-  ## outside_window_posts_per_day: 1 is the WEIGHTING, not a fence. At most one
-  ## of her daily slots may land outside the Asia/US windows, so the rest are
-  ## hers by construction — a correspondent who filed her Asia read from the
-  ## US afternoon would be a correspondent in name only. Widening the window
-  ## rather than inflating this allowance is deliberate: the allowance is what
-  ## states how much of her day may escape her territory, and it should not have
-  ## to grow to nine just because the window was drawn too narrow to reach.
+  ## outside_window_posts_per_day is the WEIGHTING, not a fence: it says how many
+  ## of her daily slots may land outside the Asia/US windows, so the rest are hers
+  ## by construction — a correspondent who filed her Asia read from the US
+  ## afternoon would be a correspondent in name only. Until 2026-08-08 this was 1,
+  ## with the note that widening the WINDOW is preferable to inflating the
+  ## allowance, because the allowance should not have to grow "just because the
+  ## window was drawn too narrow to reach".
+  ##
+  ## 1 -> 8 (operator order 2026-08-08, 20-30 posts/day/account), and the earlier
+  ## reasoning is not being overturned — it no longer decides, because the
+  ## arithmetic changed underneath it. The publisher sweeps on a 30-rung grid
+  ## (`0,30 0,1,11-23` = 30 sweeps per UTC day) and a desk takes at most one post
+  ## per sweep, so a 30/day cap and the sweep grid are now the SAME number. At
+  ## that point ANY fence at all is by definition the binding cap, however well
+  ## the windows are drawn: 22 of the 30 sweeps fall inside her two windows, so
+  ## the remaining 8 have to be spendable or her ramp override is dead config and
+  ## tests/test_marketing_cadence_ramp_coherence.py refuses the pair.
+  ##
+  ## The windows are UNCHANGED and still do the work they were drawn for: 22 of
+  ## her 30 slots are territory slots, and 05:00-08:00 / 17:00-20:00 HK stay
+  ## fenced. What is being conceded is that a full 30/day desk cannot ALSO have a
+  ## hard territory fence on this grid. Widening the grid (more publisher sweeps)
+  ## is the change that would let this go back to 1.
   ## Set to 0 to make the windows a hard fence; the resolver reads whatever is here.
   session:
     tz: Asia/Hong_Kong
     windows:
       - "08:00-17:00"   # HK cash session, pre-open read through the close
       - "20:00-05:00"   # evening leg — the whole US cash session in HK time
-    outside_window_posts_per_day: 1
+    outside_window_posts_per_day: 8
 ## Real named human on an official rail — §2 isolation checklist does not apply.
 isolation:
   profile_id: null

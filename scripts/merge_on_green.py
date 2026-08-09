@@ -195,12 +195,16 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 try:  # imported as `scripts.merge_on_green` (the test pack, and any other caller)
     from scripts.gh_path_filter import NEGATION_PREFIX, matching_patterns
@@ -1115,11 +1119,65 @@ def sweep_order(
     return [pull for _index, pull in sorted(enumerate(stable), key=rank)]
 
 
+#: How old the newest CONCLUDED baseline may be and still authorise merges. A green
+#: proof is evidence about the SHA it ran on; main keeps moving under it, so past some
+#: horizon the accumulated unproven history outweighs the proof. Six hours is one
+#: `ci-main-heartbeat` period — the cadence at which this repository already considers
+#: main's health re-checkable — and ~3x the staleness observed during the 2026-08-08
+#: incident (the newest concluded baseline was 1.75h old), so it bounds the age without
+#: re-creating the block it replaces. A stale green reports ``pending`` WITH ITS AGE and
+#: the dispatch to run, so a sweep log names this cause instead of any other non-green.
+BASELINE_MAX_AGE_HOURS = 6
+#: Number of newest integration-baseline runs examined in one API request. During
+#: the 2026-08-09 queue incident, 25 cancelled/in-flight runs sat above a fresh
+#: concluded green, so the former 20-run window falsely reported main as unproven.
+#: GitHub permits 100 here; one bounded request keeps the control-plane cost fixed
+#: while leaving enough room to reach the newest real verdict under churn.
+INTEGRATION_BASELINE_RUN_LOOKBACK = 100
+#: Minimum gap between two sweeper-ordered `integration-baseline.yml` dispatches, and
+#: the reason `ensure_integration_baseline` can be safe at all. MUCH shorter than
+#: `MAIN_BASELINE_MIN_INTERVAL_MINUTES` (30, for ci.yml) because this workflow is the
+#: cheap one: ~7 min median lifetime against ci.yml's 30-34, so 15 gives a dispatched
+#: proof two median lifetimes to conclude and open the breaker before another is
+#: considered, while still bounding the rate to 4/hour in the worst case.
+#:
+#: LOAD-BEARING, NOT POLITENESS. `integration-baseline.yml` carries
+#: `concurrency: integration-baseline-main` with `cancel-in-progress: false`, so a
+#: redundant dispatch cannot kill a RUNNING baseline — that half is safe. But GitHub
+#: keeps exactly ONE PENDING run per group and cancels the previous one on every new
+#: arrival (measured in this repository, 2026-08-06), and `pending` includes the wait
+#: for a runner, which was 75-94 minutes on the saturated hosted pool this whole repair
+#: is about. A raced dispatch therefore throws away a queued proof's accumulated queue
+#: position and sends its replacement to the back — the livelock shape, reached by
+#: trying to escape it. Hence: in-flight is refused outright, and the floor bounds what
+#: the in-flight check cannot see.
+INTEGRATION_BASELINE_MIN_INTERVAL_MINUTES = 15
+
+
+def _baseline_age_hours(run: dict[str, Any], now: dt.datetime | None = None) -> float | None:
+    """Hours since the baseline proof's commit entered the queue. None when undated.
+
+    Anchored on ``created_at`` — the moment the proved SHA was pushed — and NOT on
+    ``updated_at``, because the question is how much unproven main history has piled
+    up behind the proof, not how recently a runner finished with it. Under the queue
+    saturation this gate exists to survive those differ by over an hour, and only the
+    conservative anchor answers the question actually being asked. The fallbacks exist
+    so a single renamed field cannot re-halt the lane; `ensure_main_baseline` dates the
+    same runs the same way.
+    """
+    for field in ("created_at", "run_started_at", "updated_at"):
+        stamp = _parse_dt(run.get(field))
+        if stamp is not None:
+            when = now or dt.datetime.now(dt.timezone.utc)
+            return (when - stamp).total_seconds() / 3600.0
+    return None
+
+
 def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     """Return ``(state, detail)`` for the newest source-main baseline proof.
 
     States are ``green``, ``pending``, ``red``, or ``unproven``. Only ``green``
-    admits ordinary pull requests. The latest run's SHA must be an ancestor of
+    admits ordinary pull requests. The chosen run's SHA must be an ancestor of
     current main: a successful proof from an abandoned history is not evidence.
 
     Data/site-only commits intentionally do not trigger the baseline workflow.
@@ -1127,18 +1185,48 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     GitHub's compare endpoint confirms ancestry.
 
     A ``cancelled`` newest run is SKIPPED, not read as red. `integration-baseline.yml`
-    runs under `concurrency: integration-baseline-main` with `cancel-in-progress: true`,
-    so any push to main that lands while a baseline is in flight cancels it — a routine
-    event on a branch this repo pushes to every few minutes, and NOT evidence that main
-    is broken. Reading `per_page=1` and treating `cancelled` as a non-clean conclusion
-    latched this breaker red for 8.5h on 2026-08-05 (run 31014967682, cancelled 14:23Z)
-    and held 49 armed PRs behind it until a baseline was dispatched by hand. The walk
-    below falls through superseded runs to the newest one that actually CONCLUDED, and
-    still fails closed: a genuine `failure`/`timed_out` stops the walk and returns red,
-    and an all-cancelled window returns ``unproven`` rather than green.
+    runs under `concurrency: integration-baseline-main`, so a push to main that lands
+    while a baseline is pending supersedes it — a routine event on a branch this repo
+    pushes to every few minutes, and NOT evidence that main is broken. Reading
+    `per_page=1` and treating `cancelled` as a non-clean conclusion latched this breaker
+    red for 8.5h on 2026-08-05 (run 31014967682, cancelled 14:23Z) and held 49 armed PRs
+    behind it until a baseline was dispatched by hand.
+
+    AN IN-FLIGHT NEWEST RUN IS SKIPPED FOR THE SAME REASON (2026-08-08). This function
+    used to read `runs[0]`'s status first and return ``pending`` whenever it was not
+    `completed`, so a `queued` run OUTRANKED a concluded green underneath it. That is
+    the same category error #4638 fixed for `cancelled`: **a run that has not concluded
+    is NO INFORMATION**. A concluded green is positive evidence about a real SHA; a
+    queued run is the ABSENCE of evidence, and halting on absence is not fail-closed —
+    it is fail-blind, and it fails in the direction that stops the repository.
+
+    Measured 2026-08-08, main GREEN: the newest concluded baseline was `success` at
+    05:00:51Z, with a `queued` run from 05:31Z (waiting 75+ min on a saturated hosted
+    pool) and a `pending` one from 06:45Z stacked on top. The breaker therefore reported
+    ``pending``, and each of the last 8 successful sweeps ended
+    `25 baseline-blocked, 71 cap-deferred` — ZERO pull requests evaluated, 8 merges in
+    24h against 43 created. `integration-baseline.yml` triggers on every source push to
+    main and the wire/nightly lanes push every few minutes, so under load a baseline is
+    almost always in flight: the old rule made "almost always blocked" the steady state.
+    integration-baseline.yml's own 2026-08-07 note already named this half of the defect
+    ("the circuit breaker reads a never-concluding newest run as `pending`, and pending
+    blocks ordinary merges") when it flipped `cancel-in-progress` to false.
+
+    Every fail-closed property is kept. One bounded 100-run listing falls through to
+    the newest run that
+    actually CONCLUDED and decides on that one: a genuine `failure`/`timed_out` stops
+    the walk and returns ``red`` (an in-flight run can never launder a red, and an older
+    green is never reached past one), the ancestry check still applies to whichever run
+    is chosen, a window with nothing concluded in it returns ``unproven``, a read
+    failure still raises, and only ``green`` admits ordinary pull requests. What is new
+    is that a green must also be FRESH: past `BASELINE_MAX_AGE_HOURS` it yields
+    ``pending``, because "main was proven six hours and two hundred commits ago" is a
+    different claim from "main is proven".
     """
     workflow = urllib.parse.quote(BASELINE_WORKFLOW, safe="")
-    query = urllib.parse.urlencode({"branch": "main", "per_page": "20"})
+    query = urllib.parse.urlencode(
+        {"branch": "main", "per_page": str(INTEGRATION_BASELINE_RUN_LOOKBACK)}
+    )
     status, payload = _request(
         "GET",
         f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
@@ -1150,14 +1238,8 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     if not runs:
         return "unproven", "integration-baseline has not published a run"
 
-    # An in-flight newest run is genuinely pending; older ones cannot overrule it.
-    if str(runs[0].get("status") or "").lower() != "completed":
-        head = runs[0]
-        return "pending", (
-            f"{str(head.get('head_sha') or '')[:12] or 'unknown-sha'} "
-            f"{str(head.get('html_url') or '')}"
-        ).strip()
-
+    # Walk to the newest run that actually CONCLUDED. An in-flight run and a
+    # `cancelled` one are skipped for the same reason: neither is evidence about main.
     run = next(
         (
             candidate
@@ -1168,17 +1250,17 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
         None,
     )
     if run is None:
-        return "unproven", (
-            f"the last {len(runs)} integration-baseline runs were all cancelled "
-            "(superseded by concurrency); none concluded"
+        in_flight = sum(
+            1 for candidate in runs if str(candidate.get("status") or "").lower() != "completed"
         )
-    run_status = str(run.get("status") or "").lower()
+        return "unproven", (
+            f"none of the last {len(runs)} integration-baseline runs concluded "
+            f"({in_flight} still in flight, {len(runs) - in_flight} cancelled/superseded)"
+        )
     conclusion = str(run.get("conclusion") or "").lower()
     run_sha = str(run.get("head_sha") or "")
     run_url = str(run.get("html_url") or "")
     detail = f"{run_sha[:12] or 'unknown-sha'} {run_url}".strip()
-    if run_status != "completed":
-        return "pending", detail
 
     ref_status, ref_payload = _request(
         "GET", f"{GITHUB_API}/repos/{repo}/git/ref/heads/main", token
@@ -1201,8 +1283,155 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
             )
 
     if conclusion in CLEAN_CONCLUSIONS:
+        age = _baseline_age_hours(run)
+        if age is None:
+            return "pending", f"newest concluded baseline could not be dated ({detail})"
+        if age > BASELINE_MAX_AGE_HOURS:
+            return "pending", (
+                f"newest concluded baseline is {age:.1f}h old, past the "
+                f"{BASELINE_MAX_AGE_HOURS}h freshness bound ({detail}) — "
+                f"`gh workflow run {BASELINE_WORKFLOW} --ref main` re-proves it, and "
+                "ensure_integration_baseline orders it automatically unless the "
+                "in-flight/interval guard suppressed the dispatch"
+            )
         return "green", detail
     return "red", f"{conclusion or 'missing conclusion'} at {detail}"
+
+
+def ensure_integration_baseline(repo: str, token: str, baseline_state: str) -> str:
+    """Order a fresh source baseline when the breaker has aged its OWN proof out.
+
+    `BASELINE_MAX_AGE_HOURS` without this function is the very defect it was added
+    alongside: a gate that halts on the absence of evidence and has no way to produce
+    any. `integration-baseline.yml` does have a `push` trigger, but its `paths:` filter
+    deliberately excludes data/site publisher commits — so the only pushes that re-prove
+    main are SOURCE pushes, and the only source pushes to main are merges. A stale green
+    therefore blocks merges, which stops the pushes, which keeps it stale: a quieter
+    deadlock than the in-flight one, and one that needed a human who knew to run
+    `gh workflow run integration-baseline.yml --ref main`. The only escapes were that
+    dispatch and the single `main-red-repair` slot. So the sweeper orders it itself.
+
+    ONLY the stale-green reason dispatches, and the reason is RE-DERIVED from the runs
+    rather than parsed back out of the state's display string (the lesson
+    `failing_check_names` records: display strings are for humans, decisions are made
+    from data). Concretely, all of these must hold:
+
+      1. the breaker said ``pending`` — never ``red`` (main is broken; a new baseline
+         would faithfully re-prove the same red and change nothing), never ``unproven``
+         (nothing concluded to be stale — something is already in flight or every run
+         was superseded), never ``green``, and never a read failure, which raises out of
+         `integration_baseline_state` and aborts the sweep before this is reached;
+      2. the newest CONCLUDED run is clean and older than `BASELINE_MAX_AGE_HOURS`.
+         An UNDATABLE one does not qualify: age unknown is not age exceeded, and
+         dispatching on it would make an unparseable timestamp a dispatch loop;
+      3. the anti-stampede guard below.
+
+    (3) COPIES `ensure_main_baseline`'s SHAPE ON PURPOSE — one query for the newest run
+    at ANY status, then two refusals: a newest run that has not concluded means a proof
+    is already coming, and a newest run created inside
+    `INTEGRATION_BASELINE_MIN_INTERVAL_MINUTES` means one was ordered too recently to
+    order another. That single rule covers the `requested`/`waiting`/`pending` statuses
+    a `status=in_progress`+`status=queued` pair would miss, the read-then-write race
+    between overlapping sweeps (this workflow deliberately carries no `concurrency:`
+    block), and the window between a successful dispatch and the run becoming visible.
+    See `INTEGRATION_BASELINE_MIN_INTERVAL_MINUTES` for why a raced dispatch is
+    genuinely harmful here rather than merely wasteful. It is a BOUND, not a lock:
+    two sweeps inside the same second still see the same pre-dispatch state, and what
+    saves them is the group's `cancel-in-progress: false`, which means the loser of that
+    race is a pending run replaced by an equivalent one and never a running proof.
+    An UNREADABLE answer is treated as "something is running" — one sweep of latency
+    instead of a stampede.
+
+    NEVER FATAL. Every failure path logs and returns a short string for the sweep
+    summary; a sweep that merged pull requests correctly must not go red because it
+    could not order a baseline.
+    """
+    try:
+        if baseline_state != "pending":
+            return f"not needed (breaker is {baseline_state})"
+        workflow = urllib.parse.quote(BASELINE_WORKFLOW, safe="")
+        query = urllib.parse.urlencode(
+            {"branch": "main", "per_page": str(INTEGRATION_BASELINE_RUN_LOOKBACK)}
+        )
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
+            token,
+        )
+        if status >= 400 or not isinstance(payload, dict):
+            return f"skipped (could not read the baseline runs: HTTP {status})"
+        runs = payload.get("workflow_runs") or []
+        concluded = next(
+            (
+                candidate
+                for candidate in runs
+                if str(candidate.get("status") or "").lower() == "completed"
+                and str(candidate.get("conclusion") or "").lower() != "cancelled"
+            ),
+            None,
+        )
+        if concluded is None:
+            return "not needed (no concluded baseline to be stale)"
+        if str(concluded.get("conclusion") or "").lower() not in CLEAN_CONCLUSIONS:
+            return "not needed (the newest concluded baseline is not green)"
+        age = _baseline_age_hours(concluded)
+        if age is None:
+            return "skipped (the newest concluded baseline has no usable timestamp)"
+        if age <= BASELINE_MAX_AGE_HOURS:
+            return f"not needed (the proof is {age:.1f}h old)"
+
+        newest = next(iter(runs), None)
+        if isinstance(newest, dict):
+            state = str(newest.get("status") or "unknown").lower()
+            if state != "completed":
+                return f"skipped (a baseline is already {state})"
+            created = _parse_dt(newest.get("created_at"))
+            if created is None:
+                # Undatable here means the interval cannot be enforced, and the
+                # interval is the only bound on the dispatch rate. Refuse.
+                return "skipped (the newest baseline run has no usable created_at)"
+            minutes = (dt.datetime.now(dt.timezone.utc) - created).total_seconds() / 60
+            if minutes < INTEGRATION_BASELINE_MIN_INTERVAL_MINUTES:
+                return (
+                    f"skipped (a baseline was ordered {minutes:.0f} min ago, inside the "
+                    f"{INTEGRATION_BASELINE_MIN_INTERVAL_MINUTES} min floor)"
+                )
+
+        status, body = _request(
+            "POST",
+            f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/dispatches",
+            token,
+            {"ref": "main"},
+        )
+        if status in {201, 204}:
+            _annotate(
+                "notice",
+                "merge-on-green",
+                f"Dispatched {BASELINE_WORKFLOW} on main: the newest CONCLUDED baseline "
+                f"is {age:.1f}h old, past the {BASELINE_MAX_AGE_HOURS}h freshness bound, "
+                "so ordinary merges are paused. Only SOURCE pushes re-trigger that "
+                "workflow and only merges make source pushes, so nothing else would "
+                "have re-proven main; the next sweep reads the result. This sweep stays "
+                "paused — ordering the evidence is not the same as having it.",
+            )
+            return "dispatched"
+        _annotate(
+            "warning",
+            "merge-on-green",
+            f"Could not dispatch {BASELINE_WORKFLOW} on main (HTTP {status}"
+            + (f": {_api_message(body)}" if _api_message(body) else "")
+            + f"). The {age:.1f}h-old proof stays stale and ordinary merges stay "
+            f"paused until a source push or `gh workflow run {BASELINE_WORKFLOW} "
+            "--ref main` re-proves main; the sweep itself is unaffected.",
+        )
+        return f"dispatch failed (HTTP {status})"
+    except Exception as exc:  # noqa: BLE001 — ordering a baseline must never fail a sweep
+        _annotate(
+            "warning",
+            "merge-on-green",
+            f"Source-baseline dispatch raised {exc!r}; the sweep is otherwise unaffected.",
+        )
+        return "dispatch error"
 
 
 #: The workflows whose runs on main constitute "main is proven". `ci.yml` publishes
@@ -1215,15 +1444,17 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
 MAIN_PROOF_WORKFLOWS = ("ci.yml", "fences.yml")
 MAIN_BASELINE_WORKFLOW = MAIN_PROOF_WORKFLOWS[0]
 #: How many completed runs to look back through, per workflow, for one that CONCLUDED.
-#: `status=completed` includes `cancelled`, and `fences.yml` runs on every push to main
-#: under `concurrency: fences-<ref>` with `cancel-in-progress: true` — so on a branch
-#: taking ~24 commits per 2 hours a large minority of its runs are superseded rather
-#: than judged (measured 2026-08-08: 2 of the newest 8). A cancelled run publishes no
-#: verdict, and reading `per_page=1` would let one zero out the whole proof roughly a
-#: quarter of the time, re-creating the intermittently-inert mechanism this function
-#: exists to end. The same shape already burned this file once: `integration_baseline_state`
-#: latched the breaker red for 8.5h on a cancelled newest run. 10 is one request either
-#: way — the walk costs nothing extra.
+#: `status=completed` includes `cancelled`, and until 2026-08-09 `fences.yml` cancelled
+#: newest-wins on every push to main — ~24 commits per 2 hours meant a large minority
+#: of its runs were superseded rather than judged (2 of the newest 8 on 2026-08-08;
+#: ALL TEN during the 11:40Z push burst of 2026-08-09, which zeroed the whole fences
+#: proof and helped pin the fleet). #5136 exempts main pushes from the cancel, so a
+#: fences run on main now CONCLUDES — but the walk stays: older cancelled runs remain
+#: in the listing, operators and timeouts still cancel, and reading `per_page=1` would
+#: let any one of them zero out the whole proof, re-creating the intermittently-inert
+#: mechanism this function exists to end. The same shape already burned this file once:
+#: `integration_baseline_state` latched the breaker red for 8.5h on a cancelled newest
+#: run. 10 is one request either way — the walk costs nothing extra.
 MAIN_PROOF_RUN_WALK = 10
 #: Above this age, main's proof is too old to answer today's reds and the sweep orders a
 #: fresh one (see `ensure_main_baseline`). Three hours is chosen against the two clocks
@@ -1238,21 +1469,29 @@ MAIN_PROOF_MAX_AGE_HOURS = 3
 #: Sweeps overlap by design (merge-on-green.yml carries no `concurrency:` block, and
 #: `ci`/`fences`/`integration-baseline` completions can wake three within seconds), so
 #: "is one already running?" is a read-then-write race that all of them can win. That
-#: race is not merely wasteful here: ci.yml runs under
-#: `group: ci-${{ pull_request.number || github.ref }}` + `cancel-in-progress: true`,
-#: so a dispatch on main lands in `ci-refs/heads/main` and a SECOND dispatch CANCELS
-#: THE FIRST — discarding up to 34 minutes of a 4-job run and leaving the proof stale
-#: another full cycle. Two `cancelled` `workflow_dispatch` runs on main, 53 minutes
-#: apart, are already in the record (31148430602, 31151246743 — 2026-08-07).
+#: race used to be catastrophic rather than wasteful: ci.yml ran every ref under
+#: `cancel-in-progress: true`, so a dispatch on main landed in `ci-refs/heads/main`
+#: and a SECOND dispatch CANCELLED THE FIRST — 31148430602/31151246743 (2026-08-07,
+#: 53 minutes apart), then the 2026-08-09 cascade (31309720615 killed 44 minutes
+#: in-progress by 31311537537, itself killed while still queued by 31311693575),
+#: where armed-PR sessions pulling the documented lever faster than a 30-45 minute
+#: run can conclude meant NO main proof ever concluded at all. The operator call an
+#: earlier revision of this comment declined to make unilaterally has now been made
+#: (2026-08-09, #5136): ci.yml keeps `cancel-in-progress` FALSE for every
+#: `workflow_dispatch` (and fences.yml for everything but `pull_request` events), so
+#: a raced dispatch can no longer kill a RUNNING proof — the loser lands in the
+#: group's single pending slot, the same shape integration-baseline already has
+#: (see INTEGRATION_BASELINE_MIN_INTERVAL_MINUTES).
 #:
-#: 30 minutes is just under a run's own 30-34 minute duration, so in the normal case the
-#: newest run is still in flight and the status check answers first; the interval is what
-#: covers the two gaps that check cannot: the seconds between a dispatch and the new run
-#: becoming visible in the API, and racing sweeps that all read the pre-dispatch state.
-#: It is a rate BOUND, not a lock — three sweeps inside the same second can still all
-#: dispatch, because a stateless level-triggered reconciler has nowhere to hold a lock.
-#: Changing ci.yml's concurrency would close that fully and is an operator call with a
-#: much larger blast radius; this file does not make it unilaterally.
+#: The interval therefore remains load-bearing, but against the smaller harms: a
+#: raced dispatch overwrites the QUEUED run, discarding its accumulated queue
+#: position (the re-pinned ref SHA is at least as fresh, so correctness is
+#: unharmed), and every dispatch spends quota. 30 minutes is just under a run's own
+#: 30-34 minute duration, so in the normal case the newest run is still in flight
+#: and the status check answers first; the interval covers the two gaps that check
+#: cannot: the seconds between a dispatch and the new run becoming visible in the
+#: API, and racing sweeps that all read the pre-dispatch state. It is a rate BOUND,
+#: not a lock — a stateless level-triggered reconciler has nowhere to hold a lock.
 MAIN_BASELINE_MIN_INTERVAL_MINUTES = 30
 #: What counts as main PROVING a name, which is NOT the same question `CLEAN_CONCLUSIONS`
 #: answers. That set's own comment says membership means "did not fail" and NEVER
@@ -1617,8 +1856,10 @@ def ensure_main_baseline(
       * those two left `requested`, `waiting` and `pending` entirely unchecked;
       * they were a read-then-write race between overlapping sweeps (this workflow
         deliberately carries no `concurrency:` block, and three wake-ups can arrive
-        within seconds), and a raced dispatch does not merely waste a run — ci.yml's
-        `cancel-in-progress: true` group means the second dispatch CANCELS THE FIRST;
+        within seconds); until 2026-08-09 a raced dispatch even CANCELLED the
+        in-flight proof (ci.yml then cancelled newest-wins on every ref — #5136
+        exempts dispatches, so the racing loser merely overwrites the queued
+        pending slot);
       * they could not see the window between a successful dispatch and the new run
         becoming visible in the API.
 
@@ -2254,6 +2495,15 @@ def main() -> int:
             f"merges are paused; one `{MAIN_RED_REPAIR_LABEL}` PR may be considered.",
         )
 
+    # BEFORE the pull-request pass, deliberately — the opposite of `ensure_main_baseline`
+    # below, and for the opposite reason. That one needs to know what this sweep could
+    # not answer, which only exists after the pass. This one's input is the breaker state
+    # it already has, and its output is a workflow run whose queue wait is the whole
+    # problem, so every second spent sweeping first is a second added to the pause it is
+    # trying to end. It does NOT unblock this sweep: ordering evidence is not having it.
+    # Never fatal — it returns a string, it does not raise.
+    source_baseline = ensure_integration_baseline(repo, merge_token, baseline_state)
+
     try:
         freshness = ProofFreshness.build(repo, read_token)
     except RateLimited as exc:
@@ -2383,7 +2633,8 @@ def main() -> int:
         + f" ({freshness.commit_file_reads} main commit(s) classified, "
         + f"{budget.refreshes_used}/{MAX_REFRESHES_PER_SWEEP} refresh slot(s) used, "
         + f"~{budget.last_seen if budget.last_seen is not None else '?'} API requests left"
-        + f"; {proof.describe()}; baseline: {baseline})",
+        + f"; {proof.describe()}; baseline: {baseline}"
+        + f"; source-baseline: {source_baseline})",
         flush=True,
     )
     return 0
