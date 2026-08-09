@@ -607,7 +607,7 @@ function renderRegimeSizing(){
   const rcEn=showNote?`Caution gate: US books only (volatility-overlay drawdown study${asof?`, asof ${asof}`:''}) — no drawdown edge over plain volatility-targeting. Not tested separately for this market.`:'';
   const rcZh=showNote?`审慎档位：仅基于美国标的（波动率叠加回撤研究${asof?`，数据截至 ${asof}`:''}）——相较单纯波动率目标没有回撤优势。未针对本市场单独检验。`:'';
   const rcAttr=showNote?` data-tip-rc-en="${esc(rcEn)}" data-tip-rc-zh="${esc(rcZh)}"`:'';
-  return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}"${rcAttr}>${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
+  return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}"${rcAttr}>⚠ ${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
 }
 function renderConcentration(){
   const sec=document.getElementById('concentration-section'); if(!THEME){ if(sec) sec.style.display='none'; return; }
