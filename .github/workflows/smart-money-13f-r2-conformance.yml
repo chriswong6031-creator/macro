@@ -55,6 +55,7 @@ jobs:
             --retries 2 \
             --timeout 15 \
             -r "$lock"
+          "$venv/bin/python" -c "import boto3"
 
       - name: verify reviewed source and strict-store capability surface
         run: |

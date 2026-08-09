@@ -1127,12 +1127,19 @@ jobs:
       #                and the workflow's self-disabling backstop gate (§4.2a/§4.4a).
       #                Stdlib + pyyaml only, so it rides in this job rather than
       #                needing one of its own.
+      #   one basis    tests/test_prophet_live_basis.py — W-L0 gate 3, the CROSS-MODULE
+      #                half: the adjustment vocabulary against engine.price_ladder's,
+      #                the pack's own basis stamp, and the per-pass pack-vs-feed audit.
+      #                The lane behaviour it feeds is pinned in the evaluator and
+      #                reconciler files above. LISTED HERE ON PURPOSE — this job
+      #                enumerates its files, so an unlisted new suite never runs.
       - name: prophet-live P0 (G0.1 parity, ledger law, debounce, degradation)
         run: >
           python -m pytest
           tests/test_prophet_live_pack.py
           tests/test_prophet_live_evaluator.py
           tests/test_prophet_live_reconcile.py
+          tests/test_prophet_live_basis.py
           tests/test_prophet_live_vps_lane.py -q
 
   collector-registry:
@@ -5602,7 +5609,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: china/HK collectors and the collect.py sweeps + store-freshness tripwires
-        run: python -m pytest tests/test_action_board_lane_split.py tests/test_china_alpha_w3c_infra.py tests/test_china_fundamentals_collector.py tests/test_content_stamp_freshness.py tests/test_data_quality_audit.py tests/test_build_earnings_scores_from_history.py tests/test_earnings_qual.py tests/test_earnings_seasons.py tests/test_earnings_w5.py tests/test_hk_fundamentals_collector.py tests/test_hk_narrative.py tests/test_hk_track_record_vm.py tests/test_housing_hf.py -q
+        run: python -m pytest tests/test_action_board_lane_split.py tests/test_china_alpha_w3c_infra.py tests/test_china_fundamentals_collector.py tests/test_content_stamp_freshness.py tests/test_data_quality_audit.py tests/test_build_earnings_scores_from_history.py tests/test_earnings_qual.py tests/test_earnings_seasons.py tests/test_earnings_w4_feed.py tests/test_earnings_w5.py tests/test_hk_fundamentals_collector.py tests/test_hk_narrative.py tests/test_hk_track_record_vm.py tests/test_housing_hf.py -q
 
   unrun-russell-breadth:
     # the Russell-2000 breadth collector — the one P1 suite needing a wheel the shared set lacks.
@@ -6313,6 +6320,26 @@ jobs:
           tests/test_earnings_release_binding.py
           tests/test_edgar_earnings_8k.py
           tests/test_marketing_edgar_earnings_wire.py -q -rs
+
+  market-memory-contract:
+    # Public-safe temporal-context and product-shell contract. Partner captures,
+    # credentials, private findings, and provider-specific code are deliberately
+    # absent from the repository and this zero-network lane.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest fastapi httpx numpy pandas jinja2 pyyaml requests
+      - name: canonical Market Memory temporal and shell contracts
+        run: >-
+          python -m pytest
+          tests/test_market_memory.py
+          tests/test_build_market_memory_page.py -q
 
   group-linked-outsiders:
     # GR3 of the Group Reads program: filing-linked outsiders per US basket.

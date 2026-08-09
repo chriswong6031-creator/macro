@@ -48,7 +48,10 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from lib import nyse_calendar, options_coverage
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import nyse_calendar, options_coverage  # noqa: E402
 
 log = logging.getLogger("build_options_command")
 

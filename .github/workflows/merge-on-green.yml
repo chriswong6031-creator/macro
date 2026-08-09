@@ -144,10 +144,10 @@ jobs:
     # bearing). tests/test_merge_on_green.py pins both halves of that argument, so
     # adding a setup step here fails the pack rather than silently breaking sweeps.
     #
-    # integration-baseline.yml is deliberately NOT moved with it: that job DOES use
-    # setup-python, and its queueing no longer stalls this lane anyway — the breaker
-    # now decides on the newest CONCLUDED baseline instead of halting on an in-flight
-    # one (scripts/merge_on_green.py, `integration_baseline_state`).
+    # integration-baseline.yml now routes only main-ref proofs to this same pool and
+    # keeps off-main manual proofs on hosted runners. Its self-hosted path clears any
+    # inherited sparse-checkout state before checkout, and its setup-python contract
+    # is pinned separately in tests/test_merge_on_green.py.
     runs-on: [self-hosted, render-linux]
     timeout-minutes: 15
 

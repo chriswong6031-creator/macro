@@ -537,6 +537,10 @@ on:
       - "scripts/collect.py"
       - "collectors/**"
       - "lib/**"
+      # Canonical Market Memory contract and product-shell trigger halves.
+      - "app/market_memory.py"
+      - "tests/test_market_memory.py"
+      - "tests/test_build_market_memory_page.py"
       - "tests/test_china_news.py"
       # Wave 3B-B2: strict offline XBRL/iXBRL parsing and its receipt-bound
       # immutable extraction artifact.  Test/fixture-only changes must reach the
@@ -3447,7 +3451,9 @@ concurrency:
   # A newer commit on the same PR makes every older result obsolete.  Cancelling
   # it here prevents rapid agent pushes from leaving full packed runs in queue.
   # Manual full-CI dispatches are also deduplicated per ref; several ship-loop
-  # sessions may request the same main proof at once, but only the newest matters.
+  # sessions may request the same main proof at once, but only the newest matters
+  # — how that dedup survives WITHOUT killing a running proof is the 2026-08-09
+  # block below.
   #
   # A MERGED close is fenced into its own group (2026-07-28). The operator and
   # sessions routinely squash-merge 0-8 minutes after opening while a pack run
@@ -3460,7 +3466,41 @@ concurrency:
   # merge keeps the old behaviour — its packs are obsolete and cancelling them
   # is pure savings; only a merge's evidence is worth finishing.
   group: ci-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'closed' && github.event.pull_request.merged && '-merged' || '' }}
-  cancel-in-progress: true
+  # cancel-in-progress became EVENT-CONDITIONAL 2026-08-09, after the flat `true`
+  # livelocked main's proof path fleet-wide (12 merge-blocked + 56 cap-deferred
+  # pull requests; sweep run 31311549150 reported "0 main commit(s) classified …
+  # main proof: NO clean name at unknown-sha, undated").
+  #
+  # THE LIVELOCK. This workflow has no `push` trigger, so main is proven ONLY by
+  # a workflow_dispatch. Every main-ref dispatch lands in `ci-refs/heads/main`,
+  # and with a flat `true` each new one KILLED the proof already running: run
+  # 31309720615 (11:00:26Z) was cancelled at 11:44:49Z — 44 minutes in, near the
+  # end of a 30-34 minute-per-pack run — by dispatch 31311537537, which was
+  # itself cancelled four minutes later by 31311693575. No proof ever concludes,
+  # so merge_on_green's base-inherited-red refresh stays closed, so more sessions
+  # pin and re-fire the documented `gh workflow run ci.yml --ref main` lever, so
+  # the next proof dies too. The recovery lever WAS the disease.
+  #
+  # The fix keeps both behaviours because they belong to different events:
+  #   pull_request  -> true.  A newer push obsoletes the older packs; cancelling
+  #                    them is pure savings, and the merged-close fence above
+  #                    (2026-07-28, PR #3867) still decides which close cancels.
+  #   workflow_dispatch -> false.  A dispatch is an ORDER FOR EVIDENCE. Evidence
+  #                    that is 44 minutes old is nearly evidence; discarding it
+  #                    for an identical run that starts from zero is never right.
+  # Dedup is NOT lost: GitHub allows one PENDING run per group and replaces it
+  # regardless of this flag, so N racing dispatches still collapse to "the one
+  # running + the newest queued". Only the kill is gone. Progress is therefore
+  # guaranteed — the same argument that flipped integration-baseline.yml to
+  # `false` on 2026-08-07, and the same shape as the sweeper's own anti-stampede
+  # bound (`MAIN_BASELINE_MIN_INTERVAL_MINUTES`, scripts/merge_on_green.py).
+  #
+  # Note the group expression partitions by event type: a pull_request run always
+  # has `pull_request.number`, a dispatch never does, so `ci-refs/heads/main`
+  # holds dispatches ONLY. Every run in a given group evaluates this expression
+  # to the same value, which is why the fix does not depend on whether GitHub
+  # reads the flag from the arriving run or the in-progress one.
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   ci-pack:
