@@ -795,7 +795,7 @@ def test_manual_workflow_is_main_only_review_only_and_registered_in_dag() -> Non
     assert "raw_token" in token_scan["run"]
     assert "transport_token" in token_scan["run"]
     assert raw_cleanup["id"] == "raw_cleanup"
-    assert "steps.token_scan.outcome == 'success'" in raw_cleanup["if"]
+    assert raw_cleanup["if"] == "${{ always() }}"
     assert '/bin/rm -rf -- "$raw"' in raw_cleanup["run"]
     assert 'test ! -e "$raw"' in raw_cleanup["run"]
     assert "steps.token_scan.outcome == 'success'" in upload["if"]

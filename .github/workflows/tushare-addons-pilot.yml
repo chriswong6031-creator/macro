@@ -212,7 +212,9 @@ jobs:
 
       - name: remove isolated paid-data directory before upload
         id: raw_cleanup
-        if: ${{ always() && steps.token_scan.outcome == 'success' && steps.token_scan.outputs.passed == 'true' }}
+        # Delete paid rows immediately even when the preceding scan fails. Upload remains
+        # independently gated on both a successful scan and this proven cleanup.
+        if: ${{ always() }}
         run: |
           set -euo pipefail
           suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
