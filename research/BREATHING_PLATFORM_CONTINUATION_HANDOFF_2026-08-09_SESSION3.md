@@ -12,19 +12,26 @@ land the remaining W-L0 gates, then start W-L1.
 
 ## §0 START HERE — the first three things to do
 
-1. **Check whether the hosted-runner backlog has drained** before anything else
-   (§5). At session-3 close, `ci` + `fences` were queued fleet-wide with ~150
-   hosted jobs outstanding and near-zero pickup. Nothing merges until it drains.
+1. **Check whether GitHub-hosted runners are serving this repo again** before
+   anything else (§5). At session-3 close, every `ubuntu-latest` job was queued
+   with no observed pickup — `ci` + `fences` queued fleet-wide, oldest from
+   09:25Z — while self-hosted lanes ran normally. **Nothing can go green, so
+   nothing merges.**
    ```
    gh api "repos/{owner}/{repo}/actions/runs?per_page=100" \
      --jq '[.workflow_runs[]|.status]|group_by(.)|map("\(.[0])=\(length)")|join("  ")'
+   # then confirm at JOB level — run-level timestamps lie (§5):
+   gh api "repos/{owner}/{repo}/actions/runs/<id>/jobs" \
+     --jq '.jobs[]|"\(.name) \(.status) started=\(.started_at) labels=\(.labels|join(","))"'
    ```
-   **Do NOT re-push, re-arm, or re-dispatch to "fix" it** — every extra run makes
-   the queue longer, and a second push cancels the first run's packs.
-2. **W-L0 gates 2 (#4978) and 3 (#5089) are both armed and correct — just
-   unproven.** Verify they merged; if they did, W-L1a (§6) is unblocked and is the
-   next build. If a pack came back genuinely red, read §2 before touching
-   `live_states.py` — the fade branch now carries a union that is easy to undo.
+   **Do NOT re-push, re-arm, or re-dispatch to "fix" it** — it cannot help, and a
+   second push cancels the first run's packs. This is an operator/org-settings
+   question; §5 has the evidence and the options.
+2. **Gate 2 (#4978) is the last W-L0 gate open** — armed and correct, rebase it onto
+   the post-gate-3 main and let it merge. Gate 3 merged at 12:08Z, so **W-L1a (§6)
+   is UNBLOCKED and is the next build.** If a pack comes back genuinely red on
+   #4978, read §2 before touching `live_states.py` — the fade branch now carries a
+   union that is easy to undo by accident.
 3. **Do NOT merge mastermind-terminal #363.** Still `hold`, still unmerged,
    verified this session. Two gates, neither satisfiable by CI: an RTH
    live-session freshness measurement (impossible over the weekend) and the
@@ -41,7 +48,7 @@ land the remaining W-L0 gates, then start W-L1.
 |---|---|---|
 | 1 — append semantics | #4982 | **MERGED** 2026-08-09 (session 2). |
 | 2 — fade hysteresis | **#4978** | OPEN, armed, head `7ce6dd33efa`. **Rebased onto gate 5 this session with a real semantic conflict resolved as a UNION (§2).** 329 tests pass locally. Packs queued behind the hosted backlog. |
-| 3 — one price basis (F3) | **#5089** | OPEN, armed, head `feae810136c`. Already carried gate 5 as a parent; §2 union invariants verified intact, 343 tests pass at its own head. **Deliberately not re-pushed** — it had live queued runs and a push would have cancelled them. |
+| 3 — one price basis (F3) | **#5089** | **MERGED** 2026-08-09T12:08Z as `f5a3580aa1`. Union invariants verified intact this session (all ten `armed_pack.py` re-exports resolve, `interval.py` stdlib-only), 343 tests pass at its head. Merged BY THE OPERATOR with its packs still queued — an admin merge over the hosted-runner outage (§5), not a sweeper merge on concluded green. |
 | 4 — sentinel + engine timing rows | ~~#4981~~ | **DELIVERED via merged #5071.** Do not resurrect #4981. |
 | 5 — dormant honesty (F5) | **#5088** | **MERGED** 2026-08-09 as `d71551c124e`, mid-session. Its merge is what forced §2. |
 
@@ -172,22 +179,52 @@ At ~11:28Z #5124 returned every `ci` pack from `["self-hosted","render-linux"]` 
 = 30 queued, `fences` = 29 queued (~150 hosted jobs). Both W-L0 gates sat queued
 behind it.
 
-**Diagnosed carefully, because the obvious read is wrong.** Everything that was
-completing ran self-hosted (`merge-on-green` on `self-hosted,render-linux` succeeded
-11:51; `vector-sentinel/flash-crash` on `self-hosted,macstudio-light` succeeded
-11:53), which looks exactly like "the hosted pool is dead — revert #5124". It is
-not. **`fences.yml` has always been `ubuntu-latest` on all four jobs, and its runs
-were still STARTING at 11:41–11:44Z** — after #5124 merged. Hosted pickup works;
-the pool is saturated by the surge #5124 added (4 pack jobs × ~30 open PRs landing
-on hosted at once, on top of the existing fences load).
+**GitHub-hosted (`ubuntu-latest`) jobs are not being picked up, and it PREDATES
+#5124.** Every job observed completing ran self-hosted (`merge-on-green` on
+`self-hosted,render-linux` 12:02; `attested-history` and `vector-sentinel/flash-crash`
+on `self-hosted,macstudio-light` 12:02/11:53). No `ubuntu-latest` job was observed
+starting at all.
 
-githubstatus was all-operational throughout, so this is ours, not an incident.
+**Do not date the break to #5124.** `fences.yml` has always been `ubuntu-latest` on
+all four jobs, and its **oldest still-queued run was created 10:35Z** — roughly 90
+minutes BEFORE #5124 merged at 11:28Z. The oldest queued `ci` run is 09:25Z. So the
+hosted pool was already not serving this repo; what #5124 did was move every pack
+off the *working* self-hosted pool onto the stuck one, converting a partial outage
+into a fleet-wide stoppage.
 
-**Therefore: wait. Do not revert #5124, do not re-push, do not re-dispatch.** The
-correct move is the standing one — arm `merge-on-green` and let the sweeper merge
-when checks conclude. Both gates are armed. If the backlog is still not draining
-after a few hours, that is new evidence and worth an operator conversation about
-the org's hosted concurrency ceiling; it is not a same-session revert.
+**Beware the two weak signals that nearly produced the wrong diagnosis**, both
+recorded because they will recur:
+- A run's `run_started_at` is set when the RUN is created, not when its JOBS get a
+  runner. "fences started at 11:41" proves nothing about pickup. Only job-level
+  `started_at` + `labels` (`/actions/runs/<id>/jobs`) answers it.
+- "Things are completing" is not "hosted is working" — check the completing job's
+  `labels`. Here, everything green was self-hosted.
+
+githubstatus was all-operational throughout, so this is ours, not an incident. Note
+this repo is PUBLIC, so hosted minutes are free and billing is an unlikely cause;
+the likelier candidates are an org-level Actions runner/permissions setting after
+the MastermindX enterprise transfer, or a hosted-concurrency ceiling that is not
+what #5124's message assumed.
+
+**It recovered on its own at ~12:05–12:10Z.** Within five minutes the repo went from
+`queued=58, in_progress=0` to `queued=37, in_progress=3, completed=56` — pickup
+resumed and the backlog began draining, with no revert and no intervention. So the
+outage window was roughly **09:25Z → 12:05Z**, and the correct action during it
+(wait, change nothing) was also the one that worked.
+
+**Keep the lesson, not the alarm.** If it recurs: confirm at JOB level, check the
+completing jobs' `labels`, and wait. Only escalate to an operator if it persists
+well beyond a couple of hours — the standing lever, putting packs back on the
+self-hosted pool that demonstrably kept working, reverses a deliberate and
+well-argued decision (#5124) and is an operator call, not a session's unilateral
+one. Do NOT re-push, re-arm, or re-dispatch armed PRs while it is dark: it cannot
+help, and a second push cancels the first run's packs.
+
+**One artifact worth someone's attention:** the check list on #5089's head carried a
+literal `ci-pack-${{ matrix.pack }}` (completed/skipped) alongside the four real
+`ci-pack-N` checks — an unexpanded matrix expression surviving into a check NAME.
+It was skipped and harmless here, but a check whose name is a template is exactly
+the kind of thing that makes `merge_on_green.main_proof`'s name-matching miss.
 
 ---
 
@@ -215,6 +252,45 @@ Scope, corrected by §4:
 
 Route per §Model routing: `builder` (opus) implements; design choices stay with
 `designer`/the main loop. Acceptance gates go INLINE in the spawn prompt.
+
+### §6.1 Three masterplan assumptions a census refuted — read before scoping W-L1a
+
+1. **`closing-bell.yml` is absent from the masterplan entirely** (zero hits for
+   "closing-bell" or "Build A"), yet it fires 16:05 ET on the exact
+   `[self-hosted, macstudio]` pool §1 calls "idle through the entire US session",
+   runs 109 measured minutes, and its window (16:05–17:55 ET) almost fully covers
+   the proposed 16:15–17:30 ET close-pass. It is the closest existing precedent for
+   "provisional EOD build" — closer in spirit than `prophet_live` — and it
+   deliberately carves out exactly what W-L1 wants added.
+2. **The "idle mac pool" premise is weaker than stated.** `render.yml:224`'s own
+   comment says `macstudio` "currently represents logical agents on only **two
+   physical Macs**", not five hosts; and `smart-money-13f-census.yml`
+   (`7,37 12-23 * * 1-5`) plus `smart-money-filings.yml` (`17 13-23/2 * * 1-5`)
+   also cron-fire on `macstudio` through the session. **Measure real idle capacity
+   in the 16:15–17:30 ET window before assuming free compute.**
+3. **The freshness sentinel CANNOT yet measure the W-L1 SLA — this is an unstated
+   build item.** §0 W-L1 says the SLA is "measured by the sentinel's own stamps",
+   but `scripts/freshness_sentinel.py` overwrites both `live/staleness.json` and
+   `state.json` every 30-min pass with **no session-keyed history**, so nothing can
+   answer "on each of the last 5 sessions, when did surface X first read fresh."
+   There is also no `SURFACES` entry for a close-pass artifact — post-#5071
+   `prophet_us` watches the *nightly* store on a 1-session budget, which is a
+   staleness budget, not a clock-time SLA. **W-L1a must build the first-fresh-at
+   per-session log, or the gate is unmeasurable.** (Adjacent to, but not the same
+   as, W-L0 §0-4.)
+
+Also useful for scoping: ADMISSION is `engine/signal_gate.gate()`
+(`scripts/build_stock_library.py:3040`), all five score legs in
+`engine/us_board_rank.py` are price/close-derived (`SCORE_WEIGHTS:105-111`), and
+every non-price input (FINRA, GEX/OI, fundamentals, SUE, insider, 13F) is already
+in `ZERO_SCORE_AUTHORITY:174-192` — so the masterplan's "100% price-derived"
+close-pass claim checks out. The live-plane precedent chain is
+`engine/prophet_live/r2io.py` → `scripts/prophet_live_evaluator.py` (`SERVED_PATH`,
+atomic rename) → `app/deploy/macro-live-prophet.{service,timer}`, and
+`tests/test_prophet_live_vps_lane.py` is the richest guard set a new lane must
+replicate (it pins "writes nothing under `data/`", "the only write is the served
+path", and "public live exceptions are exactly the reviewed files" against the
+Caddyfile allow-list).
 
 ---
 
