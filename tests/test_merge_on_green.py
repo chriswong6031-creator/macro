@@ -95,13 +95,46 @@ def test_the_workflow_is_event_driven_with_a_ten_minute_recovery_schedule():
     assert workflow_run.get("types") == ["completed"]
 
 
-def test_the_sweep_is_github_hosted_and_bounded():
-    """OFF the mac pool on purpose: a merge sweep queued behind a 67-minute render
-    would defeat its own purpose."""
+def test_the_sweep_never_queues_behind_the_workload_it_arbitrates():
+    """This asserted `runs-on == ubuntu-latest` until 2026-08-08. It was rewritten,
+    not weakened: the PROPERTY it was defending — the sweep must not wait behind a
+    saturated queue — stopped being satisfied by the hosted pool once this repository's
+    own `ci`/`fences` packs contended for it.
+
+    Measured 2026-08-08 with ~100 PRs open: sweeps CREATED 03:46-04:00Z did not execute
+    until 05:46-06:28Z, a ~2 hour queue delay on a job that is a handful of API calls.
+    That is a priority inversion — the control plane queued behind the workload it
+    exists to arbitrate — and it self-reinforces, because late merges keep the backlog
+    that lengthens the queue.
+
+    The mac pool remains forbidden for the original reason (render/nightly lane, a
+    67-minute render ahead of the sweep). `render-linux` is a separate Linux pool
+    (pc-render-1..4, measured 4 idle of 4) whose default lane is the macstudio
+    `render-heavy` host, so this cannot starve rendering.
+    """
     job = _workflow()["jobs"]["sweep"]
-    assert job["runs-on"] == "ubuntu-latest"
-    assert "self-hosted" not in json.dumps(job["runs-on"])
+    labels = json.dumps(job["runs-on"])
+    assert "ubuntu-latest" not in labels, (
+        "the hosted pool is shared with this repository's own ci/fences packs — a "
+        "~2h queue delay on the merge sweeper was measured there"
+    )
+    assert "macstudio" not in labels, "never the render/nightly mac pool"
+    assert "self-hosted" in labels and "render-linux" in labels
     assert int(job["timeout-minutes"]) == 15
+
+
+def test_the_sweep_needs_nothing_a_self_hosted_runner_lacks():
+    """The runner move above is valid ONLY because this job needs `python3` and a
+    network, nothing else: a sparse checkout, one `pip install pyyaml`, one `python3`
+    invocation. `actions/setup-python` is what would make a hosted image load-bearing
+    (it is why integration-baseline.yml was deliberately left on `ubuntu-latest`), so a
+    step that adds it must fail HERE rather than silently 'no runner matching labels'
+    every sweep."""
+    steps = _workflow()["jobs"]["sweep"]["steps"]
+    used = [str(step.get("uses") or "") for step in steps]
+    assert not [entry for entry in used if entry.startswith("actions/setup-python")], (
+        f"the sweep must stay runner-agnostic; found {used}"
+    )
 
 
 def test_the_workflow_can_actually_merge_and_label():
@@ -204,13 +237,26 @@ def test_the_sweeper_sparse_checks_out_only_what_it_reads():
 def test_the_sweeper_installs_the_yaml_parser_before_it_sweeps():
     """The gate parses `on.pull_request.paths` out of the checked-out workflows. If
     PyYAML is merely ASSUMED present and the runner image drops it, every sweep
-    aborts — so the install is a step, not a hope, and it must precede the sweep."""
+    aborts — so the install is a step, not a hope, and it must precede the sweep.
+
+    Since the job moved off the hosted pool (2026-08-08) the install must also survive
+    a PEP 668 `externally-managed-environment` interpreter, which is what a bare
+    `pip install` hits on a modern Debian/Ubuntu self-hosted host — every other
+    self-hosted lane in this repository builds a venv for exactly that reason. A step
+    that aborts on every sweep would be a worse outage than the queue delay the move
+    repairs.
+    """
     steps = _workflow()["jobs"]["sweep"]["steps"]
     runs = [str(step.get("run") or "") for step in steps]
     installs = [index for index, run in enumerate(runs) if "pip install" in run and "pyyaml" in run]
     sweeps = [index for index, run in enumerate(runs) if "scripts/merge_on_green.py" in run]
     assert installs and sweeps, f"expected an install step and a sweep step, got {runs}"
     assert installs[0] < sweeps[0], "the parser must be installed before the sweep runs"
+    install = runs[installs[0]]
+    assert "import yaml" in install, "skip the install when the runner already has it"
+    assert "--break-system-packages" in install, (
+        "a PEP 668 host must not turn the install step into a permanent sweep outage"
+    )
 
 
 def test_the_main_baseline_is_fast_bounded_and_runs_the_merge_train_contract():
@@ -742,6 +788,7 @@ def test_integration_baseline_accepts_a_green_ancestor_of_data_only_main(monkeyp
                     "conclusion": "success",
                     "head_sha": baseline_sha,
                     "html_url": "https://example.test/run/1",
+                    "created_at": _baseline_stamp(0.1),
                 }]
             }
         if "/git/ref/heads/main" in url:
@@ -759,7 +806,13 @@ def test_integration_baseline_accepts_a_green_ancestor_of_data_only_main(monkeyp
 @pytest.mark.parametrize(
     ("status", "conclusion", "expected"),
     [
-        ("in_progress", None, "pending"),
+        # An in-flight run ALONE is `unproven`, not `pending`: with nothing concluded
+        # in the window there is no evidence about main in either direction. This case
+        # asserted `pending` until 2026-08-08. The rename matters because `pending` used
+        # to mean "a run is in flight, so everything halts" — the rule that produced a
+        # 100% block rate against a green main (see the in-flight tests below). Both
+        # states are non-green and both still fail closed.
+        ("in_progress", None, "unproven"),
         ("completed", "failure", "red"),
         # A lone cancelled run proves nothing either way: it is a superseded run,
         # not a broken main. Still non-green, so it still fails closed.
@@ -779,6 +832,7 @@ def test_integration_baseline_fail_closes_non_green_runs(
                     "conclusion": conclusion,
                     "head_sha": sha,
                     "html_url": "https://example.test/run/2",
+                    "created_at": _baseline_stamp(0.1),
                 }]
             }
         if "/git/ref/heads/main" in url:
@@ -804,12 +858,24 @@ def _baseline_runs(monkeypatch, runs, main_sha):
     monkeypatch.setattr(MOG, "_request", fake_request)
 
 
-def _baseline_run(conclusion, sha, status="completed"):
+def _baseline_stamp(hours_old: float) -> str:
+    """A GitHub-shaped `created_at` that many hours before now.
+
+    RELATIVE to the wall clock on purpose: `BASELINE_MAX_AGE_HOURS` is measured
+    against `datetime.now`, so a frozen literal would silently age past the bound and
+    turn every green-expecting test in this file red at some future date.
+    """
+    when = dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=hours_old)
+    return when.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _baseline_run(conclusion, sha, status="completed", hours_old: float = 0.1):
     return {
         "status": status,
         "conclusion": conclusion,
         "head_sha": sha,
         "html_url": f"https://example.test/run/{conclusion}",
+        "created_at": _baseline_stamp(hours_old),
     }
 
 
@@ -850,16 +916,167 @@ def test_an_all_cancelled_window_is_unproven_not_green(monkeypatch):
     assert "cancelled" in detail
 
 
-def test_an_in_flight_newest_run_outranks_an_older_green(monkeypatch):
-    """A baseline still running is pending — an older green cannot vouch for the
-    commit it has not finished testing."""
-    sha = "f" * 40
+@pytest.mark.parametrize(
+    "in_flight", ["queued", "in_progress", "requested", "waiting", "pending"]
+)
+def test_an_in_flight_newest_run_does_not_block_a_concluded_green(monkeypatch, in_flight):
+    """Replaces `test_an_in_flight_newest_run_outranks_an_older_green`, which asserted
+    the exact defect this pins against (2026-08-08).
+
+    The old rule read `runs[0]`'s status first and returned `pending` whenever it was
+    not `completed`. That is the same category error #4638 fixed for `cancelled`: a run
+    that has NOT CONCLUDED is no information. A concluded green is positive evidence
+    about a real SHA; a queued run is the absence of evidence, and halting on absence
+    is not fail-closed, it is fail-blind.
+
+    Measured with main GREEN: the newest concluded baseline was `success` at 05:00:51Z
+    with a `queued` run (05:31Z, waiting 75+ min on a saturated hosted pool) and a
+    `pending` one (06:45Z) stacked on top, so the breaker said `pending`. Each of the
+    last 8 successful sweeps then ended `25 baseline-blocked, 71 cap-deferred` — ZERO
+    pull requests evaluated — for 8 merges in 24h against 43 PRs created.
+    `integration-baseline.yml` fires on every source push to main and the wire/nightly
+    lanes push every few minutes, so a baseline is almost always in flight: the old rule
+    made "blocked" the steady state rather than the exception.
+    """
+    green = "a" * 40
     _baseline_runs(
         monkeypatch,
-        [_baseline_run(None, sha, status="in_progress"), _baseline_run("success", "a" * 40)],
+        [
+            _baseline_run(None, "f" * 40, status=in_flight),
+            _baseline_run("success", green),
+        ],
+        main_sha=green,
+    )
+    state, detail = MOG.integration_baseline_state("acme/widgets", "read")
+    assert state == "green", f"an in-flight ({in_flight}) run must not outrank a green"
+    assert green[:12] in detail, "the detail must name the run that was actually decided on"
+
+
+@pytest.mark.parametrize("in_flight", ["queued", "in_progress"])
+def test_an_in_flight_run_can_never_launder_a_red(monkeypatch, in_flight):
+    """Fail-closed, unchanged: falling through an unconcluded run must stop at the
+    newest run that DID conclude, even when a green sits behind it. A pending baseline
+    is not a reason to merge across a broken main."""
+    red = "b" * 40
+    _baseline_runs(
+        monkeypatch,
+        [
+            _baseline_run(None, "c" * 40, status=in_flight),
+            _baseline_run("failure", red),
+            _baseline_run("success", "d" * 40),
+        ],
+        main_sha=red,
+    )
+    state, detail = MOG.integration_baseline_state("acme/widgets", "read")
+    assert state == "red"
+    assert red[:12] in detail
+
+
+def test_a_green_older_than_the_freshness_bound_is_not_green(monkeypatch):
+    """The bound that keeps the fix above honest. Skipping in-flight runs means the
+    walk can reach arbitrarily far back, and "main was proven six hours and two hundred
+    commits ago" is a different claim from "main is proven". Past
+    `BASELINE_MAX_AGE_HOURS` the proof yields `pending` — WITH ITS AGE, so the sweep log
+    distinguishes this cause from every other non-green state."""
+    sha = "e" * 40
+    _baseline_runs(
+        monkeypatch,
+        [_baseline_run("success", sha, hours_old=MOG.BASELINE_MAX_AGE_HOURS + 0.5)],
         main_sha=sha,
     )
-    assert MOG.integration_baseline_state("acme/widgets", "read")[0] == "pending"
+    state, detail = MOG.integration_baseline_state("acme/widgets", "read")
+    assert state == "pending"
+    assert "old" in detail and str(MOG.BASELINE_MAX_AGE_HOURS) in detail, detail
+
+    _baseline_runs(
+        monkeypatch,
+        [_baseline_run("success", sha, hours_old=MOG.BASELINE_MAX_AGE_HOURS - 0.5)],
+        main_sha=sha,
+    )
+    assert MOG.integration_baseline_state("acme/widgets", "read")[0] == "green", (
+        "a proof INSIDE the bound must still merge — the bound is a staleness cap, "
+        "not a second reason to block"
+    )
+
+
+def test_an_undated_green_baseline_fails_closed(monkeypatch):
+    """A proof whose freshness cannot be established has not been shown fresh. Three
+    timestamp fields are tried before it comes to this, so reaching it means the API
+    contract changed — which must show up as a named, diagnosable pause rather than as
+    merges authorised on an unknown date."""
+    sha = "0" * 40
+    undated = _baseline_run("success", sha)
+    undated.pop("created_at")
+    _baseline_runs(monkeypatch, [undated], main_sha=sha)
+    state, detail = MOG.integration_baseline_state("acme/widgets", "read")
+    assert state == "pending"
+    assert "dated" in detail, detail
+
+
+@pytest.mark.parametrize("field", ["created_at", "run_started_at", "updated_at"])
+def test_any_of_the_three_run_stamps_can_date_a_baseline(monkeypatch, field):
+    """The fallbacks are the reason a renamed field cannot re-halt this lane."""
+    sha = "1" * 40
+    run = _baseline_run("success", sha)
+    run.pop("created_at")
+    run[field] = _baseline_stamp(0.5)
+    _baseline_runs(monkeypatch, [run], main_sha=sha)
+    assert MOG.integration_baseline_state("acme/widgets", "read")[0] == "green"
+
+
+def test_a_window_with_nothing_concluded_is_unproven_and_says_what_it_saw(monkeypatch):
+    """The in-flight fall-through must not invent a proof out of runs that have none.
+    The detail separates in-flight from cancelled because they are different diagnoses:
+    the first is a saturated queue, the second is concurrency superseding proofs."""
+    sha = "2" * 40
+    _baseline_runs(
+        monkeypatch,
+        [
+            _baseline_run(None, sha, status="queued"),
+            _baseline_run(None, "3" * 40, status="in_progress"),
+            _baseline_run("cancelled", "4" * 40),
+        ],
+        main_sha=sha,
+    )
+    state, detail = MOG.integration_baseline_state("acme/widgets", "read")
+    assert state == "unproven"
+    assert "2 still in flight" in detail and "1 cancelled" in detail, detail
+
+
+def test_an_unreadable_baseline_listing_still_raises(monkeypatch):
+    """Unchanged property: the breaker reads its own state or it says so. Being
+    permissive about in-flight runs must never become permissiveness about a listing
+    the sweeper could not read at all — `main()` turns this raise into an aborted
+    sweep, which is the fail-closed direction."""
+    monkeypatch.setattr(
+        MOG, "_request", lambda *_a, **_k: (500, {"message": "Server Error"})
+    )
+    with pytest.raises(RuntimeError, match="integration-baseline listing failed"):
+        MOG.integration_baseline_state("acme/widgets", "read")
+
+
+def test_the_ancestry_check_still_applies_to_the_run_the_walk_chose(monkeypatch):
+    """Unchanged property, re-pinned against the new walk: a green from an abandoned
+    history is not evidence about current main, and skipping in-flight runs must not
+    become a way to reach one."""
+    def fake_request(method, url, token, payload=None):
+        if "/actions/workflows/" in url:
+            return 200, {
+                "workflow_runs": [
+                    _baseline_run(None, "5" * 40, status="queued"),
+                    _baseline_run("success", "6" * 40),
+                ]
+            }
+        if "/git/ref/heads/main" in url:
+            return 200, {"object": {"sha": "7" * 40}}
+        if "/compare/" in url:
+            return 200, {"status": "diverged"}
+        raise AssertionError(url)
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    state, detail = MOG.integration_baseline_state("acme/widgets", "read")
+    assert state == "unproven"
+    assert "ancestral" in detail
 
 
 def test_one_bad_pull_request_does_not_fail_the_sweep(monkeypatch, capsys):

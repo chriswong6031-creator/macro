@@ -110,15 +110,36 @@ jobs:
       github.event_name != 'workflow_run'
       || github.event.workflow_run.conclusion == 'success'
 
-    # DELIBERATELY GitHub-hosted, never [self-hosted, macstudio]. The mac pool is
-    # the render/nightly/engine lane and is routinely saturated; a merge sweep
-    # queued behind a 67-minute render would defeat its own purpose. This job is
-    # a handful of API calls and needs nothing from that pool. NOTE (2026-08-06):
-    # `ubuntu-latest` is now contended too — see the queue measurements above. The
-    # light self-hosted pool is NOT an alternative (it is a single runner,
-    # mac-builder-3, chartered for the live-tick lanes); choosing a different pool
-    # is an operator call, not something this file should decide unilaterally.
-    runs-on: ubuntu-latest
+    # NEVER [self-hosted, macstudio] — that pool is the render/nightly/engine lane
+    # and is routinely saturated; a merge sweep queued behind a 67-minute render
+    # would defeat its own purpose. That reasoning stands; what changed is that
+    # `ubuntu-latest` stopped satisfying it.
+    #
+    # A CONTROL-PLANE JOB MUST NEVER QUEUE BEHIND THE WORKLOAD IT ARBITRATES
+    # (2026-08-08). `ci` and `fences` are also `ubuntu-latest`, so with ~100 PRs
+    # open the sweeper waits behind the very CI it exists to act on — a priority
+    # inversion, and it self-reinforces: the longer the queue, the later merges
+    # land, the more PRs stay open. Measured: sweeps CREATED 03:46-04:00Z did not
+    # execute until 05:46-06:28Z — a ~2 HOUR queue delay on a job whose actual
+    # work is a handful of API calls and 46 seconds of runtime (the run that most
+    # recently succeeded before this change waited 25m38s for a runner and then
+    # swept in 46 s). See also the 107-minute `queued` run cited above.
+    #
+    # `render-linux` is pc-render-1..4 (also used by render.yml/engine-render.yml
+    # via dispatch input), a SEPARATE Linux pool that was 4-idle-of-4 when this was
+    # measured — so this cannot starve the render lane, whose default runner is the
+    # macstudio `render-heavy` host. The move is safe for this job specifically
+    # because it needs only `python3` and network: the steps are a sparse
+    # `actions/checkout@v4`, one `pip install pyyaml`, and one `python3` invocation,
+    # with NO `actions/setup-python` (which is what makes a hosted image load-
+    # bearing). tests/test_merge_on_green.py pins both halves of that argument, so
+    # adding a setup step here fails the pack rather than silently breaking sweeps.
+    #
+    # integration-baseline.yml is deliberately NOT moved with it: that job DOES use
+    # setup-python, and its queueing no longer stalls this lane anyway — the breaker
+    # now decides on the newest CONCLUDED baseline instead of halting on an in-flight
+    # one (scripts/merge_on_green.py, `integration_baseline_state`).
+    runs-on: [self-hosted, render-linux]
     timeout-minutes: 15
 
     steps:
@@ -145,8 +166,28 @@ jobs:
       # PyYAML parses those path filters. Installed EXPLICITLY rather than assumed:
       # whether the runner image ships it is not a contract, and the failure mode of
       # guessing wrong is a sweep that aborts on every run.
+      #
+      # IMPORT-FIRST, WITH FALLBACKS, because this job now runs self-hosted. A bare
+      # `python3 -m pip install` into the system interpreter is what the hosted image
+      # tolerated; on a modern Debian/Ubuntu host (render-linux is the WSL2 PC) it dies
+      # PEP 668 `externally-managed-environment`, and this repository's other
+      # self-hosted lanes all build a venv precisely because of that. A sweeper that
+      # aborts on every run would be a worse outage than the queue delay this move
+      # repairs, so: skip when PyYAML is already importable, then try the plain
+      # install, then --user, then --break-system-packages. Nothing here writes a venv
+      # — the sweep imports only stdlib + yaml, and a per-runner venv would be state
+      # this level-triggered job otherwise has none of.
       - name: install the yaml parser
-        run: python3 -m pip install --quiet --disable-pip-version-check pyyaml
+        run: |
+          if python3 -c "import yaml" 2>/dev/null; then
+            echo "pyyaml already importable on ${RUNNER_NAME:-this runner}"
+            exit 0
+          fi
+          python3 -m pip install --quiet --disable-pip-version-check pyyaml \
+            || python3 -m pip install --quiet --disable-pip-version-check --user pyyaml \
+            || python3 -m pip install --quiet --disable-pip-version-check \
+                 --break-system-packages pyyaml
+          python3 -c "import yaml"
 
       - name: sweep merge-on-green pull requests
         env:

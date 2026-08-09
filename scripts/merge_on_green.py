@@ -1115,11 +1115,41 @@ def sweep_order(
     return [pull for _index, pull in sorted(enumerate(stable), key=rank)]
 
 
+#: How old the newest CONCLUDED baseline may be and still authorise merges. A green
+#: proof is evidence about the SHA it ran on; main keeps moving under it, so past some
+#: horizon the accumulated unproven history outweighs the proof. Six hours is one
+#: `ci-main-heartbeat` period — the cadence at which this repository already considers
+#: main's health re-checkable — and ~3x the staleness observed during the 2026-08-08
+#: incident (the newest concluded baseline was 1.75h old), so it bounds the age without
+#: re-creating the block it replaces. A stale green reports ``pending`` WITH ITS AGE and
+#: the dispatch to run, so a sweep log names this cause instead of any other non-green.
+BASELINE_MAX_AGE_HOURS = 6
+
+
+def _baseline_age_hours(run: dict[str, Any], now: dt.datetime | None = None) -> float | None:
+    """Hours since the baseline proof's commit entered the queue. None when undated.
+
+    Anchored on ``created_at`` — the moment the proved SHA was pushed — and NOT on
+    ``updated_at``, because the question is how much unproven main history has piled
+    up behind the proof, not how recently a runner finished with it. Under the queue
+    saturation this gate exists to survive those differ by over an hour, and only the
+    conservative anchor answers the question actually being asked. The fallbacks exist
+    so a single renamed field cannot re-halt the lane; `ensure_main_baseline` dates the
+    same runs the same way.
+    """
+    for field in ("created_at", "run_started_at", "updated_at"):
+        stamp = _parse_dt(run.get(field))
+        if stamp is not None:
+            when = now or dt.datetime.now(dt.timezone.utc)
+            return (when - stamp).total_seconds() / 3600.0
+    return None
+
+
 def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     """Return ``(state, detail)`` for the newest source-main baseline proof.
 
     States are ``green``, ``pending``, ``red``, or ``unproven``. Only ``green``
-    admits ordinary pull requests. The latest run's SHA must be an ancestor of
+    admits ordinary pull requests. The chosen run's SHA must be an ancestor of
     current main: a successful proof from an abandoned history is not evidence.
 
     Data/site-only commits intentionally do not trigger the baseline workflow.
@@ -1127,15 +1157,42 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     GitHub's compare endpoint confirms ancestry.
 
     A ``cancelled`` newest run is SKIPPED, not read as red. `integration-baseline.yml`
-    runs under `concurrency: integration-baseline-main` with `cancel-in-progress: true`,
-    so any push to main that lands while a baseline is in flight cancels it — a routine
-    event on a branch this repo pushes to every few minutes, and NOT evidence that main
-    is broken. Reading `per_page=1` and treating `cancelled` as a non-clean conclusion
-    latched this breaker red for 8.5h on 2026-08-05 (run 31014967682, cancelled 14:23Z)
-    and held 49 armed PRs behind it until a baseline was dispatched by hand. The walk
-    below falls through superseded runs to the newest one that actually CONCLUDED, and
-    still fails closed: a genuine `failure`/`timed_out` stops the walk and returns red,
-    and an all-cancelled window returns ``unproven`` rather than green.
+    runs under `concurrency: integration-baseline-main`, so a push to main that lands
+    while a baseline is pending supersedes it — a routine event on a branch this repo
+    pushes to every few minutes, and NOT evidence that main is broken. Reading
+    `per_page=1` and treating `cancelled` as a non-clean conclusion latched this breaker
+    red for 8.5h on 2026-08-05 (run 31014967682, cancelled 14:23Z) and held 49 armed PRs
+    behind it until a baseline was dispatched by hand.
+
+    AN IN-FLIGHT NEWEST RUN IS SKIPPED FOR THE SAME REASON (2026-08-08). This function
+    used to read `runs[0]`'s status first and return ``pending`` whenever it was not
+    `completed`, so a `queued` run OUTRANKED a concluded green underneath it. That is
+    the same category error #4638 fixed for `cancelled`: **a run that has not concluded
+    is NO INFORMATION**. A concluded green is positive evidence about a real SHA; a
+    queued run is the ABSENCE of evidence, and halting on absence is not fail-closed —
+    it is fail-blind, and it fails in the direction that stops the repository.
+
+    Measured 2026-08-08, main GREEN: the newest concluded baseline was `success` at
+    05:00:51Z, with a `queued` run from 05:31Z (waiting 75+ min on a saturated hosted
+    pool) and a `pending` one from 06:45Z stacked on top. The breaker therefore reported
+    ``pending``, and each of the last 8 successful sweeps ended
+    `25 baseline-blocked, 71 cap-deferred` — ZERO pull requests evaluated, 8 merges in
+    24h against 43 created. `integration-baseline.yml` triggers on every source push to
+    main and the wire/nightly lanes push every few minutes, so under load a baseline is
+    almost always in flight: the old rule made "almost always blocked" the steady state.
+    integration-baseline.yml's own 2026-08-07 note already named this half of the defect
+    ("the circuit breaker reads a never-concluding newest run as `pending`, and pending
+    blocks ordinary merges") when it flipped `cancel-in-progress` to false.
+
+    Every fail-closed property is kept. The walk falls through to the newest run that
+    actually CONCLUDED and decides on that one: a genuine `failure`/`timed_out` stops
+    the walk and returns ``red`` (an in-flight run can never launder a red, and an older
+    green is never reached past one), the ancestry check still applies to whichever run
+    is chosen, a window with nothing concluded in it returns ``unproven``, a read
+    failure still raises, and only ``green`` admits ordinary pull requests. What is new
+    is that a green must also be FRESH: past `BASELINE_MAX_AGE_HOURS` it yields
+    ``pending``, because "main was proven six hours and two hundred commits ago" is a
+    different claim from "main is proven".
     """
     workflow = urllib.parse.quote(BASELINE_WORKFLOW, safe="")
     query = urllib.parse.urlencode({"branch": "main", "per_page": "20"})
@@ -1150,14 +1207,8 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     if not runs:
         return "unproven", "integration-baseline has not published a run"
 
-    # An in-flight newest run is genuinely pending; older ones cannot overrule it.
-    if str(runs[0].get("status") or "").lower() != "completed":
-        head = runs[0]
-        return "pending", (
-            f"{str(head.get('head_sha') or '')[:12] or 'unknown-sha'} "
-            f"{str(head.get('html_url') or '')}"
-        ).strip()
-
+    # Walk to the newest run that actually CONCLUDED. An in-flight run and a
+    # `cancelled` one are skipped for the same reason: neither is evidence about main.
     run = next(
         (
             candidate
@@ -1168,17 +1219,17 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
         None,
     )
     if run is None:
-        return "unproven", (
-            f"the last {len(runs)} integration-baseline runs were all cancelled "
-            "(superseded by concurrency); none concluded"
+        in_flight = sum(
+            1 for candidate in runs if str(candidate.get("status") or "").lower() != "completed"
         )
-    run_status = str(run.get("status") or "").lower()
+        return "unproven", (
+            f"none of the last {len(runs)} integration-baseline runs concluded "
+            f"({in_flight} still in flight, {len(runs) - in_flight} cancelled/superseded)"
+        )
     conclusion = str(run.get("conclusion") or "").lower()
     run_sha = str(run.get("head_sha") or "")
     run_url = str(run.get("html_url") or "")
     detail = f"{run_sha[:12] or 'unknown-sha'} {run_url}".strip()
-    if run_status != "completed":
-        return "pending", detail
 
     ref_status, ref_payload = _request(
         "GET", f"{GITHUB_API}/repos/{repo}/git/ref/heads/main", token
@@ -1201,6 +1252,15 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
             )
 
     if conclusion in CLEAN_CONCLUSIONS:
+        age = _baseline_age_hours(run)
+        if age is None:
+            return "pending", f"newest concluded baseline could not be dated ({detail})"
+        if age > BASELINE_MAX_AGE_HOURS:
+            return "pending", (
+                f"newest concluded baseline is {age:.1f}h old, past the "
+                f"{BASELINE_MAX_AGE_HOURS}h freshness bound ({detail}) — dispatch "
+                f"{BASELINE_WORKFLOW} on main to re-prove it"
+            )
         return "green", detail
     return "red", f"{conclusion or 'missing conclusion'} at {detail}"
 
