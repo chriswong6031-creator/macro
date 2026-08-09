@@ -160,8 +160,8 @@ with packs still pending).
 
 **DEFAULT FINISH — hand the wait to the sweeper, do not sit on it.** After opening
 the pull request, run `gh pr edit <n> --add-label merge-on-green` and stop.
-`.github/workflows/merge-on-green.yml` (self-hosted render-linux pool, every 10 minutes,
-deliberately off the mac pool so it never queues behind a render) squash-merges the
+`.github/workflows/merge-on-green.yml` (GitHub-hosted `ubuntu-latest`, every 10 minutes,
+deliberately off every self-hosted render pool) squash-merges the
 pull request once every check has CONCLUDED clean, with the known-spurious
 `Workers Builds: macro` X excluded. A genuine red or a merge conflict gets the
 `merge-blocked` label plus ONE explanatory comment instead of a merge; the
