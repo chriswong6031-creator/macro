@@ -12,11 +12,12 @@ land the remaining W-L0 gates, then start W-L1.
 
 ## §0 START HERE — the first three things to do
 
-1. **Check whether GitHub-hosted runners are serving this repo again** before
-   anything else (§5). At session-3 close, every `ubuntu-latest` job was queued
-   with no observed pickup — `ci` + `fences` queued fleet-wide, oldest from
-   09:25Z — while self-hosted lanes ran normally. **Nothing can go green, so
-   nothing merges.**
+1. **Confirm GitHub-hosted runners are still serving this repo** (§5). For roughly
+   09:25Z→12:05Z today NO `ubuntu-latest` job was picked up — `ci` + `fences`
+   queued fleet-wide — while self-hosted lanes ran normally, so nothing could go
+   green and nothing could merge. **It recovered on its own at ~12:05–12:10Z.** If
+   it recurs, confirm at JOB level and wait; §5 has the evidence and why the
+   obvious diagnosis is wrong.
    ```
    gh api "repos/{owner}/{repo}/actions/runs?per_page=100" \
      --jq '[.workflow_runs[]|.status]|group_by(.)|map("\(.[0])=\(length)")|join("  ")'
