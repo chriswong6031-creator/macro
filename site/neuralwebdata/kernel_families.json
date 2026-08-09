@@ -696,10 +696,10 @@
       "regime_coverage": 1.0
     }
   },
-  "generated_from": "sha256:321bf0df96cf1a23a682fb13d041b1989d66d2c5dc73a3692517a916629b5762",
+  "generated_from": "sha256:c506ca4fe21892207b8b75aa224e7f868b25e96c080f14cb2e9cf2d72b343d41",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/decay.py",
-  "produced_at": "2026-08-08T16:16:04Z",
-  "inputs_hash": "sha256:8eb817803012b610c2d03a168a3cfdb26e787187ede1c948d96460b38b030060",
+  "produced_at": "2026-08-09T01:32:32Z",
+  "inputs_hash": "sha256:7717190310ef3edc299c0e6db1164ae3750b1d6b7f795dc5dc028c2cf317ca0a",
   "tier": "infrastructure"
 }

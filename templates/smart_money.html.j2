@@ -539,7 +539,7 @@ a.mem-card:hover { border-color:var(--info); }
         {% endif %}
       {% endfor %}
     </div>
-    <div class="hon-note"><span data-tip-en="13F = quarterly, ~45-day lag, reported long positions from managers with at least $100M in Section 13(f) securities. No shorts, no cash, no non-US positions." data-tip-zh="13F = 季度披露，约45天滞后；适用于持有至少1亿美元13(f)证券的经理所申报的多头持仓。不含空头、现金或非美股仓位。">{{ t('Quarterly filings, ~45-day lag — context, never a directional signal.','季度披露、约45天滞后——仅为背景参考，永远不是方向性信号。') }}</span></div>
+    <div class="hon-note"><span data-tip-en="13F = quarterly, ~45-day lag, reported long positions from managers with at least $100M in Section 13(f) securities. No shorts, no cash, no non-US positions." data-tip-zh="13F = 季度披露，约45天滞后；适用于持有至少1亿美元13(f)证券的经理所披露的多头持仓。不含空头、现金或非美股仓位。">{{ t('Quarterly filings, ~45-day lag — context, never a directional signal.','季度披露、约45天滞后——仅为背景参考，永远不是方向性信号。') }}</span></div>
   </div>
 
   {# Full-width row 2: per-axis freshness chips (long labels — never fit a 1/3 column) #}
@@ -588,13 +588,13 @@ a.mem-card:hover { border-color:var(--info); }
         <span class="neg">{{ f.action_counts.get('trim',0) }} {{ t('trims','减仓') }}</span>
         <span class="neg">{{ f.action_counts.get('exit',0) }} {{ t('exits','清仓') }}</span>
       </div>
-      {% if f.value_unit_adjusted %}<span class="fl-unit" data-tip-en="SEC reported value retained; display normalized from a detected legacy-thousands filing." data-tip-zh="保留SEC原始申报值；显示值按检测到的旧千美元单位完成标准化。">{{ t('SEC unit normalized','SEC单位已标准化') }}</span>{% endif %}
+      {% if f.value_unit_adjusted %}<span class="fl-unit" data-tip-en="SEC reported value retained; display normalized from a detected legacy-thousands filing." data-tip-zh="保留SEC原始披露值；显示值按检测到的旧千美元单位完成标准化。">{{ t('SEC unit normalized','SEC单位已标准化') }}</span>{% endif %}
     </article>
     {% endfor %}
   </div>
 
   {% if d_roll.get('notices') %}
-  <div class="fl-notices"><strong>{{ t('Notice-only filings','仅通知申报') }}:</strong>
+  <div class="fl-notices"><strong>{{ t('Notice-only filings','仅通知披露') }}:</strong>
     {% for n in d_roll.get('notices') or [] %}{{ n.name }} · {{ n.form }} · {{ n.filing_date }}{% if not loop.last %}; {% endif %}{% endfor %}.
     {{ t('No holdings book was supplied, so these managers remain outside incoming-quarter consensus and never count as exits.','未提交持仓明细，因此这些经理不进入新季度共识，也绝不会被计作清仓。') }}
   </div>

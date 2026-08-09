@@ -110,10 +110,62 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 .dots-grid i { width:10px; height:10px; border-radius:50%; border:1.5px solid var(--muted);
                display:block; }
 .dots-grid i.df { background:var(--up); border-color:var(--up); }
+.dots-grid i.dn { background:#e0a030; border-color:#e0a030; }
 .dots-grid i.dp { border-color:#e0a030; }
 .axis-rail { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
 .hon-note { margin-top:12px; font-size:11px; color:var(--muted);
             border-top:1px solid var(--line); padding-top:10px; }
+
+/* ---- rolling filing-season radar ---- */
+.filing-live { margin:14px 0 4px; padding:18px 20px; border:1px solid color-mix(in srgb,var(--info) 42%,var(--line));
+               border-radius:15px; background:linear-gradient(135deg,color-mix(in srgb,var(--info) 7%,var(--panel)),var(--panel) 48%);
+               overflow:hidden; }
+.fl-head { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(260px,.8fr); gap:22px; align-items:end; }
+.fl-kicker { display:flex; align-items:center; gap:8px; color:var(--info); font-size:11px; font-weight:700;
+             letter-spacing:.06em; text-transform:uppercase; }
+.fl-pulse { width:8px; height:8px; border-radius:50%; background:var(--info); box-shadow:0 0 0 5px color-mix(in srgb,var(--info) 15%,transparent); }
+.filing-live h2 { margin:6px 0 4px; font-size:clamp(19px,2.5vw,25px); letter-spacing:-.01em; }
+.fl-sub { max-width:700px; color:var(--muted); font-size:12.5px; line-height:1.55; }
+.fl-progress-meta { display:flex; justify-content:space-between; gap:12px; margin-bottom:7px; font-size:11px; color:var(--muted); }
+.fl-progress-meta strong { color:var(--text); font-size:13px; }
+.fl-track { height:9px; border-radius:9px; background:var(--panel2); overflow:hidden; border:1px solid var(--line); }
+.fl-track i { display:block; height:100%; min-width:4px; border-radius:9px; background:linear-gradient(90deg,var(--info),var(--up)); }
+.fl-baseline { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.fl-cohort { font-size:11px; color:var(--muted); padding:4px 8px; border:1px solid var(--line); border-radius:6px; background:var(--panel2); }
+.fl-cohort strong { color:var(--text); }
+.fl-filers { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:14px; }
+.fl-filer { min-width:0; padding:12px 13px; border:1px solid var(--line); border-radius:11px; background:color-mix(in srgb,var(--panel) 90%,transparent); }
+.fl-filer-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.fl-filer-name { font-size:12.5px; font-weight:700; line-height:1.25; }
+.fl-filer-date { margin-top:3px; font-size:10.5px; color:var(--muted); }
+.fl-filer-stats { display:flex; gap:10px; flex-wrap:wrap; margin-top:9px; font-size:11px; color:var(--muted); }
+.fl-filer-stats strong { color:var(--text); font-variant-numeric:tabular-nums; }
+.fl-actions { margin-top:9px; display:flex; gap:5px; flex-wrap:wrap; }
+.fl-actions span { font-size:10.5px; padding:2px 6px; border-radius:5px; background:var(--panel2); color:var(--muted); }
+.fl-actions .pos { color:var(--up); } .fl-actions .neg { color:var(--down); }
+.fl-unit { display:inline-block; margin-top:7px; font-size:9.5px; color:var(--info); }
+.fl-notices { margin-top:10px; padding:9px 11px; border:1px solid color-mix(in srgb,#e0a030 45%,var(--line));
+              border-radius:9px; background:color-mix(in srgb,#e0a030 7%,var(--panel));
+              color:var(--muted); font-size:11px; line-height:1.5; }
+.fl-notices strong { color:var(--text); }
+.fl-title { margin:16px 0 7px; display:flex; align-items:baseline; justify-content:space-between; gap:10px; font-size:12px; font-weight:700; }
+.fl-title span { font-size:10.5px; font-weight:500; color:var(--muted); }
+.fl-changes { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.fl-change { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:9px; min-width:0;
+             padding:8px 10px; border:1px solid var(--line); border-radius:9px; background:var(--panel); }
+.fl-change .fc-rank { width:24px; height:24px; display:grid; place-items:center; border-radius:6px; font-weight:700;
+                      font-size:10.5px; color:var(--info); background:color-mix(in srgb,var(--info) 10%,var(--panel2)); }
+.fl-change .fc-main { min-width:0; }
+.fl-change .fc-tk { font-size:12px; font-weight:750; }
+.fl-change .fc-fund { color:var(--muted); font-size:10.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fl-change .fc-metric { text-align:right; font-size:10.5px; color:var(--muted); }
+.fl-change .fc-metric strong { display:block; color:var(--text); font-size:11.5px; }
+.fl-method { margin-top:10px; color:var(--muted); font-size:10.5px; line-height:1.5; }
+@media(max-width:820px){
+  .fl-head { grid-template-columns:1fr; gap:14px; }
+  .fl-filers { grid-template-columns:1fr; }
+  .fl-changes { grid-template-columns:1fr; }
+}
 
 /* ---- section headers ---- */
 .sm-sec { margin:42px 0 10px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
@@ -255,7 +307,8 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
              border:1px solid var(--line); color:var(--muted); text-decoration:none;
              white-space:nowrap; }
 .sm-rail a:hover { color:var(--text); border-color:var(--info); }
-.sm-sec[id] { scroll-margin-top:56px; }
+.sm-sec[id], .filing-live[id] { scroll-margin-top:56px; }
+@media(max-width:620px){ .sm-sec[id], .filing-live[id] { scroll-margin-top:96px; } }
 
 /* ---- v3: ticker logos (big boards only — never wire rows / leaderboard) ---- */
 .tlogo { width:18px; height:18px; border-radius:4px; vertical-align:-4px; margin-right:6px;
