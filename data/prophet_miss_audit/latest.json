@@ -221,20 +221,19 @@
     "emerging_score": 1.045,
     "n_members": 16,
     "present_counts": {
-     "buy": 3,
+     "buy": 2,
      "ran": 0,
      "leaders": 0
     },
     "present": {
      "buy": [
       "AMZN",
-      "NVDA",
-      "RGTI"
+      "NVDA"
      ],
      "ran": [],
      "leaders": []
     },
-    "represented_n": 3,
+    "represented_n": 2,
     "days_since_top5_entry": null
    }
   ]
@@ -505,12 +504,11 @@
     "n_members": 47,
     "n_members_live": 47,
     "n_members_read": 47,
-    "n_members_on_board": 8,
+    "n_members_on_board": 7,
     "members_on_board": [
      "AMZN",
      "DRI",
      "HD",
-     "RCL",
      "RL",
      "ROST",
      "SBUX",
@@ -520,7 +518,7 @@
      "buy": 3,
      "watch": 4,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.9742,
     "pctile_n": 252,
@@ -636,14 +634,15 @@
     "n_members": 12,
     "n_members_live": 10,
     "n_members_read": 12,
-    "n_members_on_board": 3,
+    "n_members_on_board": 4,
     "members_on_board": [
      "CRWD",
      "OKTA",
-     "PANW"
+     "PANW",
+     "QLYS"
     ],
     "present_counts": {
-     "buy": 0,
+     "buy": 1,
      "watch": 0,
      "leaders": 3,
      "ran": 0
@@ -662,13 +661,12 @@
     "n_members": 11,
     "n_members_live": 11,
     "n_members_read": 11,
-    "n_members_on_board": 2,
+    "n_members_on_board": 1,
     "members_on_board": [
-     "NVDA",
-     "RGTI"
+     "NVDA"
     ],
     "present_counts": {
-     "buy": 2,
+     "buy": 1,
      "watch": 0,
      "leaders": 0,
      "ran": 0
@@ -890,17 +888,16 @@
     "n_members": 26,
     "n_members_live": 26,
     "n_members_read": 26,
-    "n_members_on_board": 3,
+    "n_members_on_board": 2,
     "members_on_board": [
      "ALB",
-     "FCX",
-     "PKG"
+     "FCX"
     ],
     "present_counts": {
      "buy": 2,
      "watch": 0,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.8036,
     "pctile_n": 252,
@@ -916,16 +913,15 @@
     "n_members": 24,
     "n_members_live": 24,
     "n_members_read": 24,
-    "n_members_on_board": 2,
+    "n_members_on_board": 1,
     "members_on_board": [
-     "RCL",
      "UAL"
     ],
     "present_counts": {
      "buy": 1,
      "watch": 0,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.7956,
     "pctile_n": 252,
@@ -1194,17 +1190,16 @@
     "n_members": 19,
     "n_members_live": 18,
     "n_members_read": 19,
-    "n_members_on_board": 3,
+    "n_members_on_board": 2,
     "members_on_board": [
      "HD",
-     "MHK",
      "TOL"
     ],
     "present_counts": {
      "buy": 1,
      "watch": 1,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.6845,
     "pctile_n": 252,
@@ -1220,14 +1215,13 @@
     "n_members": 9,
     "n_members_live": 9,
     "n_members_read": 9,
-    "n_members_on_board": 3,
+    "n_members_on_board": 2,
     "members_on_board": [
      "GEV",
-     "OKLO",
-     "SMR"
+     "OKLO"
     ],
     "present_counts": {
-     "buy": 2,
+     "buy": 1,
      "watch": 1,
      "leaders": 0,
      "ran": 0
@@ -1293,15 +1287,14 @@
     "n_members": 24,
     "n_members_live": 24,
     "n_members_read": 24,
-    "n_members_on_board": 4,
+    "n_members_on_board": 3,
     "members_on_board": [
      "FIX",
      "GEV",
-     "OKLO",
-     "SMR"
+     "OKLO"
     ],
     "present_counts": {
-     "buy": 2,
+     "buy": 1,
      "watch": 2,
      "leaders": 0,
      "ran": 0

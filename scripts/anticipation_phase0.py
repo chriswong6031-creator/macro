@@ -28,12 +28,16 @@ from __future__ import annotations
 import glob
 import json
 import os
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine import forward_dist, indicators, validation, velocity, vol_forecast
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import forward_dist, indicators, validation, velocity, vol_forecast  # noqa: E402
 
 HORIZONS = {"short": 5, "medium": 42, "long": 189}
 GAUGE_H = "short"          # protocol: drawdown gauges judged at the short horizon

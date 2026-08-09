@@ -65,6 +65,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 _TS_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
 log = logging.getLogger("marketing_recall")
@@ -87,8 +90,6 @@ def _data_root(root_arg: str | None) -> Path:
 
 def _ensure_importable() -> None:
     cr = _code_root()
-    if str(cr) not in sys.path:
-        sys.path.insert(0, str(cr))
 
 
 def _load_marketing_cfg(root: Path) -> dict:

@@ -27,7 +27,8 @@ if __name__ == "__main__":
     # collection, a sibling research harness).  walk_forward.py idiom; ratchet:
     # tests/test_no_module_level_logging_disable.py.
     warnings.filterwarnings("ignore")
-sys.path.insert(0, ".")
+_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_ROOT))
 
 import numpy as np
 import pandas as pd
