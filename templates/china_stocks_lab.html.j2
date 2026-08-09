@@ -181,7 +181,7 @@
   <div class="pl-hd">
     <p class="pl-eyebrow">{{ t('CN Pick Lab · Display-only · ACCRUING', 'CN选股实验室 · 仅展示 · 累积中') }}</p>
     <h1 class="pl-title">🧪 {{ t('A-Share Candidate Pick Engines', 'A股候选选股引擎') }}</h1>
-    <p class="pl-sub">{{ t('20 shadow books running on forward ledgers — measured against a random-control yardstick and the CSI 300. Ruler: 21-session CSI 300 excess (T+1 fill, hl2 proxy). All data is display-only; nothing here drives live selection or gating.', '20个影子书在前向账本上运行 — 与随机控制基准和沪深300对比衡量。标尺：21节沪深300超额（T+1入场，最高最低均价代理）。所有数据仅供展示；这里没有任何内容驱动实时选股或门控。') }}</p>
+    <p class="pl-sub">{{ t('20 shadow books running on forward ledgers — measured against a random-control yardstick and the CSI 300. Ruler: 21-session CSI 300 excess (T+1 fill, hl2 proxy). All data is display-only; nothing here drives live selection or gating.', '20个影子书在前向账本上运行 — 与随机控制基准和沪深300对比衡量。标尺：21节沪深300超额（T+1入场，最高最低均价代理）。所有数据仅供展示；这里没有任何内容会影响实时选股。') }}</p>
     {% if as_of %}<p class="pl-asof">{{ t('As of', '截至') }} {{ as_of }} · {{ t('Built', '生成时间') }} {{ built }}</p>{% endif %}
     <a class="pl-back" href="china_stocks.html">← {{ t('Back to A-Share Dashboard', '返回A股看板') }}</a>
   </div>
@@ -702,7 +702,7 @@
 
       <h3>{{ t('CN kill laws (CN-SYS-R3, CNPL-R7)', 'CN禁止法则（CN-SYS-R3，CNPL-R7）') }}</h3>
       <div class="kill-law">
-        <b>{{ t('NO momentum ranks. NO subsector-state gates on reversal. NO limit-up/lianban BUY conditioning. NO northbound.', '无动量排名。无反转的子行业状态门控。无涨停/连板买入条件。无北向。') }}</b>
+        <b>{{ t('NO momentum ranks. NO subsector-state gates on reversal. NO limit-up/lianban BUY conditioning. NO northbound.', '不用动量排名。反转不看子行业状态。买入不看涨停或连板。不用北向资金。') }}</b>
         {{ t('Limit data may only be used in the AVOID/veto direction. The sole limit-data book is Chase Avoid (inverse, expected negative).', '涨停数据只能用于规避/否决方向。唯一的涨停数据书是追涨规避（反向，预期为负）。') }}
       </div>
 
@@ -723,8 +723,8 @@
 
       <h3>{{ t('Candidate families', '候选族') }}</h3>
       <ul>
-        <li><b>A — {{ t('Reversion (accruing edge):', '反转（累积边缘）：') }}</b> {{ t('4 books on the flat within-sector 3m reversal construction. No confirmation/quality/reclaim gates (tested — did NOT survive). Conditioners are CN-native bonuses (washout/COILED/low-vol), not turn-confirmation.', '4本书基于平坦的行业内3月反转构造。无确认/质量/收复门控（经检验不成立）。条件是CN原生奖励（洗盘/盘绕/低波），而非转向确认。') }}</li>
-        <li><b>B — {{ t('1D Velocity CN:', '1日速度A股：') }}</b> {{ t('4 books (1D RSI-MACD + StochRSI cross-up entry timing on the fast A-share tape; phase and participation conditioning).', '4本书（在快速A股行情上的1日RSI-MACD + StochRSI交叉上穿入场时机；阶段和参与度条件）。') }}</li>
+        <li><b>A — {{ t('Reversion (accruing edge):', '反转（累积边缘）：') }}</b> {{ t('4 books on the flat within-sector 3m reversal construction. No confirmation/quality/reclaim gates (tested — did NOT survive). Conditioners are CN-native bonuses (washout/COILED/low-vol), not turn-confirmation.', '4本书基于平坦的行业内3月反转构造。不做确认、质量或收复方面的筛选（检验下来不成立）。条件是CN原生奖励（洗盘/盘绕/低波），而非转向确认。') }}</li>
+        <li><b>B — {{ t('1D Velocity CN:', '1日速度A股：') }}</b> {{ t('4 books — same-day entry timing on the fast A-share tape, conditioned on the phase of the move and how much money is participating.', '4 本书 — 在节奏很快的A股行情上做当日入场择时，并结合走势所处的阶段和资金参与度。') }}</li>
         <li><b>C — {{ t('Structure / Flow:', '结构/资金流：') }}</b> {{ t('4 books (block discount ≤−15%, LHB inst seats ≥2, policy put, theme laggard catch-up).', '4本书（大宗折价≤−15%，龙虎榜机构席位≥2，政策托底，主题落后者补涨）。') }}</li>
         <li><b>D — {{ t('Washout / Panic:', '洗盘/恐慌：') }}</b> {{ t('4 books (capitulation beta, QVIX panic, STAR/ChiNext 20cm timing, Chase Avoid INVERSE).', '4本书（出逃Beta，QVIX恐慌，科创/创业20cm择时，追涨规避反向）。') }}</li>
         <li><b>E — {{ t('Defensive + Ablations + Control:', '防御+消融+控制：') }}</b> {{ t('4 books (low-vol defensive, dividend/中特估, flagship-nogate ablation, random control yardstick).', '4本书（防御低波，分红/中特估，旗舰无门消融，随机控制基准）。') }}</li>
