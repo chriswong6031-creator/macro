@@ -1070,16 +1070,19 @@ def test_the_minute_avoids_the_other_crons_on_the_two_host_pool():
 
 
 def test_the_schedule_never_collides_with_the_nightly():
-    """Under EST the proposed window's END (17:30 ET) is 22:30 UTC — daily.yml's
-    cron to the minute. Firing there would put this lane and the multi-hour
-    nightly on the same mac pool at the same instant. Firing at the window START
-    leaves ~50 minutes of clearance, and daily.yml's own documented November move
-    to 23:30 UTC widens the gap rather than closing it."""
+    """The close pass clears the earliest member of daily's DST cron pair.
+
+    The nightly fires at 22:30 UTC under EDT and 23:30 UTC under EST.  Pin both
+    production crons, then prove the bounded close-pass lane finishes before the
+    earlier one; clearing that edge necessarily clears the later one too.
+    """
     daily = yaml.safe_load(
         (ROOT / ".github" / "workflows" / "daily.yml").read_text(encoding="utf-8"))
     nightly = [e["cron"] for e in daily[True]["schedule"]]
-    assert nightly == ["30 22 * * *"]
-    nightly_min = 22 * 60 + 30
+    assert nightly == ["30 22 * * *", "30 23 * * *"]
+    nightly_min = min(
+        int(cron.split()[1]) * 60 + int(cron.split()[0]) for cron in nightly
+    )
     for cron in _crons():
         fire = int(cron.split()[1]) * 60 + int(cron.split()[0])
         # The pass is capped at 45 minutes, so the latest it can still be running.
