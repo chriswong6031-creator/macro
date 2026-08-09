@@ -3038,14 +3038,25 @@ jobs:
             data/prophet/origination_receipts \
             data/prophet_arena \
             data/prophet_stage_shadow
+          RESTORE_MISMATCH=false
+          if ! git diff --cached --quiet "$ACCEPTED_PROPHET_SHA" -- \
+              site/prophet data/prophet data/prophet_arena data/prophet_stage_shadow \
+            || ! git diff --quiet -- \
+              site/prophet data/prophet data/prophet_arena data/prophet_stage_shadow \
+            || [ -n "$(git ls-files --others --exclude-standard -- data/prophet)" ]; then
+            RESTORE_MISMATCH=true
+          fi
+          # Keep accepted bytes in the worktree for downstream readers, but do
+          # not leave them staged against this job's older checkout-time HEAD.
+          # This reset must follow verification: a checkpoint can legitimately
+          # add plans/receipts/Arena ledgers that do not exist in HEAD, and an
+          # earlier reset makes those accepted paths look deleted/untracked.
           git reset -q -- \
             site/prophet \
             data/prophet \
             data/prophet_arena \
             data/prophet_stage_shadow
-          if ! git diff --quiet "$ACCEPTED_PROPHET_SHA" -- \
-              site/prophet data/prophet data/prophet_arena data/prophet_stage_shadow \
-            || [ -n "$(git ls-files --others --exclude-standard -- data/prophet)" ]; then
+          if [ "$RESTORE_MISMATCH" = "true" ]; then
             echo "::error title=Prophet downstream source mismatch::engine worktree could not be made byte-equivalent to accepted main; derived ledgers withheld"
             exit 1
           fi
@@ -3755,6 +3766,23 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.build_session_digest || echo "::warning::build_session_digest non-fatal failure"
+      - name: OIP PIT — durable option episodes + aligned H+60 proxy accrual
+        # Consumes only the date-keyed live_flow/events/{DATE}.jsonl raw stage,
+        # never capped/overwritten feed_current. The monotonic checkpoint and both
+        # committed JSONL ledgers advance only in COLLECT_LANE=nightly. Hourly Polygon
+        # measurements remain explicitly training-ineligible; all authority is false.
+        # Serial after session digest while the restored intraday cache is present.
+        # This is the sole nightly advancer and its independent inputs remain valid
+        # when an unrelated earlier renderer fails.
+        if: always()
+        timeout-minutes: 10
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.build_options_signal_episode
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
         # named US thematic baskets. Ported from China #2634. Reads sector_cycles

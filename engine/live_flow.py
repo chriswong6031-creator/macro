@@ -4,7 +4,7 @@ Pure function: no network calls, no clock reads — every input is injected by t
 caller (live_flow_poller.py).  Takes raw bulk_trade_quote call+put DataFrames for a
 poll batch and produces three outputs per the FEED CONTRACT v1:
 
-  events       — notable per-contract prints (premium floor or z252 gate)
+  events       — notable per-contract prints (versioned premium-floor gate)
   unusual_names — per-root running gross-premium vs EOD-252 baseline
   heat         — per-sector/group aggregates over ALL signed prints
 
@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import re
 from datetime import date, datetime, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -50,6 +51,8 @@ from engine import flow_signing
 from engine.tape_flow import _dte_bucket, _moneyness_bucket, _compute_signed_moneyness
 from engine.spotlight import GICS_TO_ETF
 from engine.group_flow import _SECTOR_ZH
+from engine.session_digest import session_window_et
+from lib import nyse_calendar
 
 log = logging.getLogger(__name__)
 
@@ -59,7 +62,7 @@ log = logging.getLogger(__name__)
 # Caveat for full_day mode: the full day is re-accumulated from zero so nothing
 # is lost.  For time_window mode, watermarks are also reset (one cycle of
 # full-day pull follows before windowed increments resume).
-DAY_STATE_VERSION = 4  # bumped: event "ts" now localizes naive stamps to ET before UTC — old day_state all_events carry ET-wall-clock-labeled-Z stamps
+DAY_STATE_VERSION = 5  # root-scope all per-contract learning state; v4 keys can contaminate another ticker
 
 # ── Exchange time ─────────────────────────────────────────────────────────────
 # ThetaData v3 trade/quote timestamps arrive as NAIVE exchange-local wall clock
@@ -174,6 +177,78 @@ def _sign_batch(df: pd.DataFrame) -> pd.DataFrame:
 
 # ── event-id helpers ─────────────────────────────────────────────────────────
 
+_MAX_EXACT_SEQUENCE = 2**53 - 1
+_CANONICAL_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_CANONICAL_TICKER_RE = re.compile(r"^[A-Z0-9.^=-]+$")
+
+
+def _canonical_sequence(value: Any) -> int | None:
+    """Return an exact safe integer source sequence, or None when untrusted."""
+    if isinstance(value, (bool, np.bool_)):
+        return None
+    if isinstance(value, (int, np.integer)):
+        sequence = int(value)
+    elif isinstance(value, (float, np.floating)):
+        numeric = float(value)
+        if not np.isfinite(numeric) or not numeric.is_integer():
+            return None
+        sequence = int(numeric)
+    elif isinstance(value, str) and value.isdigit():
+        sequence = int(value)
+    else:
+        return None
+    if sequence < 0 or sequence > _MAX_EXACT_SEQUENCE:
+        return None
+    return sequence
+
+
+def _canonical_positive_integer(value: Any) -> int | None:
+    if isinstance(value, (bool, np.bool_)):
+        return None
+    if isinstance(value, (int, np.integer)):
+        integer = int(value)
+    elif isinstance(value, (float, np.floating)):
+        numeric = float(value)
+        if not np.isfinite(numeric) or not numeric.is_integer():
+            return None
+        integer = int(numeric)
+    else:
+        return None
+    if integer <= 0 or integer > _MAX_EXACT_SEQUENCE:
+        return None
+    return integer
+
+
+def _canonical_positive_number(value: Any) -> float | None:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(
+        value, (int, float, np.integer, np.floating),
+    ):
+        return None
+    numeric = float(value)
+    return numeric if np.isfinite(numeric) and numeric > 0 else None
+
+
+def _is_canonical_date(value: Any) -> bool:
+    if type(value) is not str or _CANONICAL_DATE_RE.fullmatch(value) is None:
+        return False
+    try:
+        return date.fromisoformat(value).isoformat() == value
+    except ValueError:
+        return False
+
+
+def _source_times_et(values: pd.Series) -> pd.Series:
+    """Parse one vendor timestamp column without treating naive ET as UTC."""
+    parsed = pd.to_datetime(values, errors="coerce")
+    try:
+        timezone_value = parsed.dt.tz
+    except AttributeError:
+        return pd.Series(pd.NaT, index=values.index, dtype=f"datetime64[ns, {_ET_TZ}]")
+    if timezone_value is None:
+        return parsed.dt.tz_localize(_ET_TZ, ambiguous="NaT", nonexistent="NaT")
+    return parsed.dt.tz_convert(_ET_TZ)
+
+
 def _event_id(session_date: str, root: str, exp: str, strike: float,
               right: str, batch_seq_max: Any) -> str:
     """Stable 16-char hex event id.
@@ -182,7 +257,10 @@ def _event_id(session_date: str, root: str, exp: str, strike: float,
             right ("C"|"P"), batch_seq_max (max sequence in this batch for the
             contract — stable within a batch; ties to the specific print cluster).
     """
-    key = f"{session_date}|{root.upper()}|{exp}|{strike:.3f}|{right.upper()}|{batch_seq_max}"
+    sequence = _canonical_sequence(batch_seq_max)
+    if sequence is None:
+        raise ValueError("event identity requires an exact non-negative source sequence")
+    key = f"{session_date}|{root.upper()}|{exp}|{strike:.3f}|{right.upper()}|{sequence}"
     return hashlib.sha1(key.encode()).hexdigest()[:16]  # noqa: S324 — non-cryptographic id
 
 
@@ -219,10 +297,16 @@ def _coalesce_batch(df: pd.DataFrame, session_date: str) -> pd.DataFrame:
         premium=("_premium_row", "sum"),
         ask_prem=("_ask_prem", "sum"),
         bid_prem=("_bid_prem", "sum"),
-        avg_price=("price", "mean"),
         ts=("trade_timestamp", "max"),
         seq_max=("sequence", "max") if "sequence" in df.columns else ("price", "max"),
     ).copy()
+    # Economic per-contract average. A plain print mean materially overweights
+    # tiny lots and disagrees with the same row's premium/contracts arithmetic.
+    grp["avg_price"] = np.where(
+        grp["size"] > 0,
+        grp["premium"] / (grp["size"] * 100.0),
+        np.nan,
+    )
 
     # Compute side
     total_prem = grp["premium"].clip(lower=0)
@@ -253,7 +337,7 @@ def _enrich_contract_row(row: pd.Series, session_date: str,
                          prev_close: float | None = None) -> dict:
     """Compute dte, dte_bucket, mny_bucket, vol_gt_oi, zerodte from a coalesced row.
 
-    contract_vol : cumulative day-volume dict keyed by (exp, strike, right) —
+    contract_vol : cumulative day-volume dict keyed by (root, exp, strike, right) —
                    used for the vol_gt_oi check (FIX 1).  When None falls back
                    to the per-batch coalesced size (legacy behaviour).
     prev_close   : prior-session underlying close; used for real moneyness
@@ -305,7 +389,8 @@ def _enrich_contract_row(row: pd.Series, session_date: str,
             if not oi_match.empty and "open_interest" in oi_match.columns:
                 oi_val = float(oi_match["open_interest"].iloc[0])
                 # FIX 1: use cumulative day volume from state (not per-batch coalesced size)
-                contract_key = (exp_norm, strike_val, right_norm)
+                root_norm = str(row.get("root", "")).upper()
+                contract_key = (root_norm, exp_norm, strike_val, right_norm)
                 if contract_vol is not None and contract_key in contract_vol:
                     cum_vol = float(contract_vol[contract_key])
                 else:
@@ -326,42 +411,19 @@ def _enrich_contract_row(row: pd.Series, session_date: str,
 
 # ── notability gate ───────────────────────────────────────────────────────────
 
-def _is_notable(premium: float, root: str, baselines: dict | None,
-                etf_floor: int, name_floor: int,
-                etf_set: set[str]) -> tuple[bool, float | None, str]:
-    """Return (notable, premium_z, baseline_source).
+def _is_notable(premium: float, root: str, etf_floor: int, name_floor: int,
+                etf_set: set[str]) -> tuple[bool, None, str]:
+    """Return the honest per-contract notability decision.
 
-    Gates:
-      1. premium >= floor (always available — floor varies by ETF vs name)
-      2. OR premium_z >= 3 where root's data/tape_flow baseline is present
-    baseline_source: "z252" | "floor"
-    premium_z: float or None
-
-    Item 3 NOTE: The returned prem_z is computed against the ROOT-LEVEL day-gross EOD-252
-    baseline.  Callers that build per-contract events MUST null out prem_z when
-    baseline_source == 'floor' (scale mismatch: per-contract premium vs day-gross baseline).
-    Only unusual_names (which accumulates day-gross) may carry the day-gross z.
-    When per-contract z252 baselines exist (tape_flow z252-ready path), callers should
-    re-compute prem_z from those per-contract baselines and set baseline_source='z252'.
+    The only currently governed denominator is a ROOT-DAY gross-premium EOD-252
+    baseline. Comparing one contract cluster against that daily/root statistic is
+    a scale mismatch, so it must never gate an immutable event or emit a fake z.
+    The correctly scaled daily baseline remains available to ``_unusual_row``.
+    A future per-contract baseline requires its own versioned PIT receipt before
+    this event gate may expose ``z252`` again.
     """
     floor = etf_floor if root.upper() in etf_set else name_floor
-    prem_z: float | None = None
-    source = "floor"
-
-    if baselines and root.upper() in baselines:
-        b = baselines[root.upper()]
-        mean_val = b.get("mean")
-        std_val  = b.get("std")
-        if mean_val is not None and std_val is not None and float(std_val) > 0:
-            prem_z = (premium - float(mean_val)) / float(std_val)
-            source = "z252"
-            if prem_z >= 3.0:
-                return True, round(prem_z, 2), source
-
-    if premium >= floor:
-        return True, (round(prem_z, 2) if prem_z is not None else None), "floor"
-
-    return False, (round(prem_z, 2) if prem_z is not None else None), source
+    return premium >= floor, None, "floor"
 
 
 # ── main engine ───────────────────────────────────────────────────────────────
@@ -379,6 +441,7 @@ def process_batch(
     etf_anchors: list[str] | None = None,
     names_sectors: dict[str, tuple[str, str]] | None = None,
     prev_close: float | None = None,
+    oi_vintage: str | None = None,
 ) -> dict:
     """Process one poll batch → events, unusual_names, heat, updated state.
 
@@ -389,9 +452,9 @@ def process_batch(
     batch_ts           : ISO8601Z timestamp for this batch (injected — no clock reads).
     prior_state        : dict from a previous cycle; keys:
                            emitted_ids   : set of already-emitted event ids for today
-                           contract_vol  : {(exp,strike,right): cumulative_day_vol}
-                           notability_history : {(exp,strike,right): n_cycles_notable}
-                           seen_sequences : {(exp,strike,right): max_sequence_seen}
+                           contract_vol  : {(root,exp,strike,right): cumulative_day_vol}
+                           notability_history : {(root,exp,strike,right): n_cycles_notable}
+                           seen_sequences : {(root,exp,strike,right): max_sequence_seen}
     oi_prev            : t-1 OI frame (columns: expiration, strike, right, open_interest).
     baselines          : {ROOT: {mean, std, n_obs, computed_asof}} from build_live_flow_baselines.
     etf_floor          : minimum premium for ETF anchors.
@@ -400,11 +463,31 @@ def process_batch(
     names_sectors      : {ticker: (name, GICS_sector)} — for group labeling.
     prev_close         : prior-session underlying close for honest moneyness (FIX 3).
                          None → mny_bucket='unknown'.
+    oi_vintage         : exact YYYY-MM-DD vintage of ``oi_prev`` when known.  This is
+                         provenance only; it never changes the event gate or any metric.
 
     Returns
     -------
     dict with keys: events, unusual_names, heat, state, meta_notes
     """
+    if not _is_canonical_date(session_date):
+        raise ValueError("session_date must be exact YYYY-MM-DD")
+    session_day = date.fromisoformat(session_date)
+    if not nyse_calendar.is_session(session_day):
+        raise ValueError("session_date must be a real NYSE session")
+    if type(etf_floor) is not int or etf_floor < 0:
+        raise ValueError("etf_floor must be an exact non-negative integer")
+    if type(name_floor) is not int or name_floor < 0:
+        raise ValueError("name_floor must be an exact non-negative integer")
+    if oi_vintage is not None:
+        if (
+            not _is_canonical_date(oi_vintage)
+            or date.fromisoformat(oi_vintage) >= session_day
+            or not nyse_calendar.is_session(date.fromisoformat(oi_vintage))
+        ):
+            raise ValueError(
+                "oi_vintage must be a real NYSE session strictly before session_date"
+            )
     etf_set: set[str] = set(s.upper() for s in (etf_anchors or _ETF_ANCHORS_SET))
 
     # Merge prior state or start fresh
@@ -435,20 +518,88 @@ def process_batch(
     root_expiries: dict              = {k: dict(v) for k, v in ps.get("root_expiries", {}).items()}
     # per-root top_contracts: {root → [{right, exp, strike, premium, vol, vol_gt_oi}]}
     root_top_contracts: dict         = {k: list(v) for k, v in ps.get("root_top_contracts", {}).items()}
-    # sweep cluster tracking: {(exp, strike, right) key → [{ts_epoch, exchange}]}
+    # sweep cluster tracking: {root|exp|strike|right → [{ts_epoch, exchange}]}
     sweep_clusters: dict             = dict(ps.get("sweep_clusters", {}))
 
     # Names/sectors for group labeling
     ns = names_sectors if names_sectors is not None else _load_names_sectors()
 
     # ── 1. Combine + sign ─────────────────────────────────────────────────────
+    session_open_et, session_close_et = session_window_et(session_date)
     frames = []
+    sequence_notes: list[str] = []
     for df, right_label in ((calls_df, "C"), (puts_df, "P")):
         if df is None or (isinstance(df, pd.DataFrame) and df.empty):
             continue
         dfc = df.copy()
         if "right" not in dfc.columns:
             dfc["right"] = right_label
+        # Validate source identity and RTH membership before calls/puts
+        # concatenation or any signing/state mutation. Pandas can otherwise
+        # coerce a boolean sequence in one leg into integer ``1`` when it meets
+        # an integer-typed other leg; pre-open premium could also be coalesced
+        # with an RTH print and falsely cross the notable-event floor.
+        required_source = {
+            "root", "right", "expiration", "strike", "price", "size",
+            "trade_timestamp", "sequence",
+        }
+        if not required_source.issubset(dfc.columns):
+            missing = sorted(required_source - set(dfc.columns))
+            sequence_notes.append(
+                f"invalid_source_rows_dropped={len(dfc)}:missing={','.join(missing)}"
+            )
+            dfc = dfc.iloc[0:0].copy()
+        else:
+            canonical_sequences = dfc["sequence"].map(_canonical_sequence)
+            canonical_sizes = dfc["size"].map(_canonical_positive_integer)
+            canonical_prices = dfc["price"].map(_canonical_positive_number)
+            canonical_strikes = dfc["strike"].map(_canonical_positive_number)
+            roots_valid = dfc["root"].map(
+                lambda value: (
+                    type(value) is str
+                    and bool(value)
+                    and value == value.strip().upper()
+                    and _CANONICAL_TICKER_RE.fullmatch(value) is not None
+                )
+            )
+            rights_valid = dfc["right"].map(
+                lambda value: type(value) is str and value in ("C", "P")
+            )
+            expirations_valid = dfc["expiration"].map(
+                lambda value: (
+                    _is_canonical_date(value)
+                    and date.fromisoformat(value) >= session_day
+                )
+            )
+            trade_times_et = _source_times_et(dfc["trade_timestamp"])
+            rth_valid = (
+                trade_times_et.notna()
+                & (trade_times_et >= session_open_et)
+                & (trade_times_et < session_close_et)
+            )
+            valid_source = (
+                canonical_sequences.notna()
+                & canonical_sizes.notna()
+                & canonical_prices.notna()
+                & canonical_strikes.notna()
+                & roots_valid
+                & rights_valid
+                & expirations_valid
+                & rth_valid
+            )
+            if (~valid_source).any():
+                sequence_notes.append(
+                    f"invalid_source_rows_dropped={int((~valid_source).sum())}"
+                )
+                dfc = dfc.loc[valid_source].copy()
+                canonical_sequences = canonical_sequences.loc[valid_source]
+                canonical_sizes = canonical_sizes.loc[valid_source]
+                canonical_prices = canonical_prices.loc[valid_source]
+                canonical_strikes = canonical_strikes.loc[valid_source]
+            dfc["sequence"] = canonical_sequences.map(int).astype("int64")
+            dfc["size"] = canonical_sizes.map(int).astype("int64")
+            dfc["price"] = canonical_prices.astype(float)
+            dfc["strike"] = canonical_strikes.astype(float)
         frames.append(dfc)
 
     if not frames:
@@ -475,6 +626,10 @@ def process_batch(
         }
 
     combined = pd.concat(frames, ignore_index=True)
+    if not combined.empty:
+        roots = set(combined["root"].tolist())
+        if len(roots) != 1:
+            raise ValueError(f"process_batch requires exactly one root, got {sorted(roots)!r}")
 
     # Item 2 — root-scoped sequence dedup.
     # Key is now (root, exp, strike, right) to avoid cross-root key collisions.
@@ -510,8 +665,11 @@ def process_batch(
             surv = pd.DataFrame({"_k": keys, "_s": seq_arr.to_numpy()}).dropna(subset=["_s"])
             if not surv.empty:
                 for k, s in surv.groupby("_k")["_s"].max().items():
-                    if k not in seen_sequences or s > seen_sequences[k]:
-                        seen_sequences[k] = float(s)
+                    sequence = _canonical_sequence(s)
+                    if sequence is not None and (
+                        k not in seen_sequences or sequence > seen_sequences[k]
+                    ):
+                        seen_sequences[k] = sequence
 
     combined = _sign_batch(combined)
     if combined.empty:
@@ -534,7 +692,7 @@ def process_batch(
                 "root_top_contracts": root_top_contracts,
                 "sweep_clusters": sweep_clusters,
             },
-            "meta_notes": ["batch empty after signing filter"],
+            "meta_notes": sequence_notes + ["batch empty after signing filter"],
         }
 
     # Root
@@ -591,12 +749,13 @@ def process_batch(
                 "root_top_contracts": root_top_contracts,
                 "sweep_clusters": sweep_clusters,
             },
-            "meta_notes": [],
+            "meta_notes": sequence_notes,
         }
 
     # ── 4. Accumulate cumulative day volume per contract ──────────────────────
     for _, row in coalesced.iterrows():
         contract_key = (
+            root,
             str(row.get("expiration", "")),
             float(row.get("strike", 0)),
             str(row.get("right", "C")).upper()[:1],
@@ -630,19 +789,13 @@ def process_batch(
     new_events: list[dict] = []
     for _, row in coalesced.iterrows():
         premium = float(row.get("premium", 0.0))
+        selection_root_class = "etf_anchor" if root in etf_set else "single_name"
+        selection_floor_usd = etf_floor if root in etf_set else name_floor
         notable, prem_z, baseline_src = _is_notable(
-            premium, root, baselines, etf_floor, name_floor, etf_set
+            premium, root, etf_floor, name_floor, etf_set
         )
         if not notable:
             continue
-
-        # Item 3 — event premium_z honesty:
-        # The EOD-252 baselines are ROOT-LEVEL day-gross denominators; comparing a
-        # per-contract print against them is a scale mismatch.  Null out prem_z on
-        # events unless the notable path is z252 (per-contract baseline not yet built).
-        # The day-gross z252 stays in unusual_names where scales match.
-        if baseline_src != "z252":
-            prem_z = None
 
         exp_str  = str(row.get("expiration", ""))
         strike   = float(row.get("strike", 0))
@@ -655,7 +808,7 @@ def process_batch(
         if ev_id in emitted_ids:
             continue
 
-        contract_key = (exp_str, strike, right)
+        contract_key = (root, exp_str, strike, right)
         n_cycles = notability_hist.get(contract_key, 0) + 1
         notability_hist[contract_key] = n_cycles
         repeated = n_cycles >= 2
@@ -674,6 +827,11 @@ def process_batch(
         event: dict = {
             "id":              ev_id,
             "ts":              ts_str,
+            # Decision-time provenance for downstream point-in-time episode ledgers.
+            # ``batch_ts`` is when this event first became observable to our poller;
+            # decision/durable/publication clocks are assigned by the poller after
+            # processing and staging; they must never be collapsed into this clock.
+            "observed_at":     batch_ts,
             "root":            root,
             "group":           group_en,
             "group_zh":        group_zh,
@@ -690,7 +848,13 @@ def process_batch(
             "premium":         round(premium, 0),
             "premium_z":       prem_z,
             "baseline_source": baseline_src,
+            "selection_rule":  "premium_floor/v1",
+            "selection_floor_usd": selection_floor_usd,
+            "selection_root_class": selection_root_class,
             "vol_gt_oi":       enrich["vol_gt_oi"],
+            # Exact source vintage when the poller found a prior EOD chain.  Null is
+            # intentional: never infer a date merely because vol_gt_oi is null.
+            "oi_vintage":      oi_vintage,
             "repeated":        repeated,
             "zerodte":         enrich["zerodte"],
             "signing_source":  "tape",
@@ -734,7 +898,7 @@ def process_batch(
             "root_top_contracts": root_top_contracts,
             "sweep_clusters": sweep_clusters,
         },
-        "meta_notes": ["moneyness vs prior-session close (approx.)"],
+        "meta_notes": sequence_notes + ["moneyness vs prior-session close (approx.)"],
     }
 
 
@@ -745,13 +909,30 @@ def _unusual_row(root: str, gross_today: float, baselines: dict | None) -> dict:
     n_obs = 0
 
     if baselines and root.upper() in baselines:
-        b = baselines[root.upper()]
-        mean_val = b.get("mean")
-        std_val  = b.get("std")
-        n_obs    = int(b.get("n_obs", 0))
-        if mean_val is not None and std_val is not None and float(std_val) > 0:
-            prem_z = round((gross_today - float(mean_val)) / float(std_val), 2)
-            baseline_src = "eod252"
+        try:
+            b = baselines[root.upper()]
+            if not isinstance(b, dict):
+                raise TypeError("baseline row must be an object")
+            mean_val = b.get("mean")
+            std_val = b.get("std")
+            n_obs_raw = b.get("n_obs", 0)
+            if type(n_obs_raw) is not int or n_obs_raw < 0:
+                raise ValueError("baseline n_obs must be a non-negative integer")
+            n_obs = n_obs_raw
+            if (
+                type(mean_val) in (int, float)
+                and type(std_val) in (int, float)
+                and np.isfinite(float(mean_val))
+                and np.isfinite(float(std_val))
+                and float(std_val) > 0
+            ):
+                prem_z = round((gross_today - float(mean_val)) / float(std_val), 2)
+                baseline_src = "eod252"
+        except Exception as exc:  # noqa: BLE001 - display context cannot poison events
+            log.debug("live_flow: ignoring malformed display baseline for %s: %s", root, exc)
+            prem_z = None
+            baseline_src = "none"
+            n_obs = 0
 
     return {
         "root":                root.upper(),
@@ -1064,7 +1245,7 @@ def _accumulate_tide(
                 ts_epoch = pd.Timestamp(ts_v).timestamp()
             except Exception:  # noqa: BLE001
                 ts_epoch = 0.0
-            ckey = f"{exp_str}|{strike_v:.3f}|{right_v}"
+            ckey = f"{root}|{exp_str}|{strike_v:.3f}|{right_v}"
             cluster = sweep_clusters.setdefault(ckey, [])
             cluster.append({"ts": ts_epoch, "exchange": exch})
             # Prune entries older than 60s to bound memory
@@ -1157,7 +1338,7 @@ def _update_root_top_contracts(
         strike   = float(row.get("strike", 0))
         right    = str(row.get("right", "C")).upper()[:1]
         premium  = float(row.get("premium", 0.0))
-        ckey     = (exp_str, strike, right)
+        ckey     = (root, exp_str, strike, right)
         cum_vol  = float(contract_vol.get(ckey, row.get("size", 0)))
 
         # vol_gt_oi

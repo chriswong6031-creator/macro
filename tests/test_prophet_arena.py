@@ -68,17 +68,28 @@ def _row(
 def standouts() -> dict:
     """20 buy rows engineered so every policy resolves to a DIFFERENT, exact set.
 
-    Admission with gate_go=True is ``act_level >= 2 AND band != 'low'``.
+    Admission is the STATUS CLASS (ANTICIPATION A1, 2026-08-08): an entry status in
+    ``{bounce_wait, wait_pullback, hold, buy_now, partial}``, a tone in ``{up,
+    caution}``, and ``band != 'low'``.  It was ``act_level >= 2 AND band != 'low'``
+    before that, which is why several rows below carry an act_level that no longer
+    gates anything (it still drives C1's ORDERING leg, which is untouched).
 
       A01..A14  admitted; scores 90 down to 25 in steps of 5; act_level alternates
                 3, 2, 3, 2, ... so C1's "act_level==2 first" re-order is unambiguous.
       X03       admitted, lowest score (10) — C0 retains it; capped challengers cut it.
-      R01..R03  stage 'ran'; act_level 0/1 so the champion CANNOT admit them.
-                R03 is also band 'low', so even C2's widening must reject it.
+      R01       stage 'ran', status 'hold' — ANTICIPATION A1 (2026-08-08) admits it
+                into the champion pool on its status; it used to sit outside on
+                act_level 1.  Left as-is deliberately: a stage-ran patience row
+                entering on its own is exactly what A1 was built to do.
+      R02..R03  stage 'ran', statuses the class refuses ('extended' / 'topping');
+                R03 is also band 'low'.  The champion cannot admit them, and neither
+                can C2's widening (see the C2 test for why the widening is now inert).
       X01       band 'low' with the highest score of all — a hard exclusion no
                 policy may ever reach.
-      X02       act_level 1, band high — excluded by the act gate alone, and NOT
-                stage-ran, so C2's widening must not rescue it either.
+      X02       status 'buy_soon', band high — a hard exclusion under the STATUS
+                CLASS (A1), and NOT stage-ran, so C2's widening must not rescue it
+                either.  It was act_level 1 before A1 and excluded by the act gate;
+                the row keeps act_level 1 so C1's ordering leg is unaffected.
     """
     buy: list[dict] = []
     score = 90.0
@@ -89,7 +100,7 @@ def standouts() -> dict:
     buy.append(_row("R02", 62.0, 0, stage="ran", band="neutral", status="extended"))
     buy.append(_row("R03", 41.0, 1, stage="ran", band="low", status="topping"))
     buy.append(_row("X01", 95.0, 3, band="low"))
-    buy.append(_row("X02", 92.0, 1))
+    buy.append(_row("X02", 92.0, 1, status="buy_soon"))
     buy.append(_row("X03", 10.0, 2))
     return {
         "as_of": FIXTURE_ASOF,
@@ -144,15 +155,23 @@ def _tickers(rows: list[dict]) -> list[str]:
 # --------------------------------------------------------------------------- #
 # 1. Policy determinism — exact selections on the fixture.                     #
 # --------------------------------------------------------------------------- #
+#: The champion's admitted pool on the fixture, in champion order.  R01 (score 88,
+#: status `hold`) sits between A01 (90) and A02 (85) since ANTICIPATION A1 admitted
+#: the patience class — see the fixture docstring.
+_POOL = ["A01", "R01"] + [f"A{i:02d}" for i in range(2, 15)] + ["X03"]
+
+
 class TestPolicyDeterminism:
     def test_admitted_pool_is_the_champion_filter_uncapped(self, standouts):
         pool = pa.admitted_pool(standouts)
-        assert _tickers(pool) == [f"A{i:02d}" for i in range(1, 15)] + ["X03"]
+        assert _tickers(pool) == _POOL
 
     def test_c0_exact(self, standouts):
         rows, rec = pa.select_for_policy("C0_champion_mirror", standouts, cap=12)
-        assert _tickers(rows) == [f"A{i:02d}" for i in range(1, 15)] + ["X03"]
-        assert rec["admitted"] == 15
+        # C0 is the LOSSLESS champion mirror (#5071): it keeps the whole admitted
+        # pool, so the only thing A1 moves here is WHICH rows the pool contains.
+        assert _tickers(rows) == _POOL
+        assert rec["admitted"] == 16
         assert rec["cap"] is None
         assert rec["cap_applied"] is False
         assert rec["truncated"] == 0
@@ -161,27 +180,42 @@ class TestPolicyDeterminism:
         rows, rec = pa.select_for_policy("C1_buy_soon_first", standouts, cap=12)
         assert _tickers(rows) == [
             "A02", "A04", "A06", "A08", "A10", "A12", "A14", "X03",
-            "A01", "A03", "A05", "A07",
+            "A01", "R01", "A03", "A05",
         ]
         assert rec["act_level_2"] == 8
         assert rec["lifted"] == 8
 
-    def test_c2_lifts_stage_ran_admitted_by_widening(self, standouts):
+    def test_c2_widening_is_INERT_since_the_act_level_gate_was_removed(
+            self, standouts):
+        """C2's pool-widening lifts `act_level` to 2 — an input the champion no
+        longer reads (ANTICIPATION A1, 2026-08-08), so the widening can no longer
+        admit anything and C2 degenerates to a re-ordering policy.
+
+        Pinned as a DELIBERATE non-repair: `engine/prophet_arena.py` is owned by the
+        Arena lane, not by A1, and re-basing C2's widening onto the status class is
+        that lane's call.  This test FAILS THE MOMENT the widening starts working
+        again, which is when the expectations below should be rewritten rather than
+        re-pointed.  R01 needs no widening any more — the champion admits it on its
+        `hold` status directly, which is the outcome A1 was built for.
+        """
         rows, rec = pa.select_for_policy("C2_stage_ran_preferred", standouts, cap=12)
-        assert _tickers(rows) == ["R01", "R02"] + [f"A{i:02d}" for i in range(1, 11)]
-        assert rec["stage_ran_admitted_by_widening"] == 2
-        assert rec["stage_ran_selected"] == 2
+        assert rec["stage_ran_admitted_by_widening"] == 0, (
+            "the widening lifts act_level, which is no longer an admission input")
+        assert _tickers(rows) == ["R01"] + [
+            t for t in _POOL[:12] if t != "R01"]
+        assert rec["stage_ran_in_champion_pool"] == 1
+        assert rec["stage_ran_selected"] == 1
 
     def test_c4_and_c6_selections(self, standouts):
         six, _ = pa.select_for_policy(
             "C4_dispersion_cap", standouts, cap=12, dispersion_cap=6
         )
-        assert _tickers(six) == [f"A{i:02d}" for i in range(1, 7)]
+        assert _tickers(six) == _POOL[:6]
         c6, rec = pa.select_for_policy("C6_time_stop_21", standouts, cap=12)
         c0, _ = pa.select_for_policy("C0_champion_mirror", standouts, cap=12)
         assert _tickers(c6) == _tickers(c0)
         assert "lossless C0" in rec["selection_basis"]
-        assert len(c6) == 15
+        assert len(c6) == 16
         assert rec["cap"] is None
 
     def test_selection_is_deterministic_across_calls(self, standouts):
@@ -197,13 +231,14 @@ class TestPolicyDeterminism:
             pa.select_for_policy("C9_nope", standouts)
 
     def test_hard_exclusions_are_unreachable_by_every_policy(self, standouts):
-        """A band-'low' row and a non-ran act_level-1 row must never appear anywhere."""
+        """A band-'low' row and a refused-status row must never appear anywhere."""
         for key in pa.POLICY_KEYS:
             if key == "C5_align2_gate":
                 continue
             rows, _ = pa.select_for_policy(key, standouts, cap=12, door_rows=[])
             assert "X01" not in _tickers(rows), key   # band low
-            assert "X02" not in _tickers(rows), key   # act 1, not stage-ran
+            assert "X02" not in _tickers(rows), key   # buy_soon, not stage-ran
+            assert "R02" not in _tickers(rows), key   # stage-ran but 'extended'
             assert "R03" not in _tickers(rows), key   # stage-ran but band low
 
 
@@ -282,7 +317,9 @@ class TestOrigination:
             prices=FakePrices(),
             **HEALTHY_CLOCK,
         )
-        assert [p["asset"] for p in plans] == ["A03"]
+        # cap=3 takes A01, R01, A02 off the pool; A01 is a duplicate id and A02 has
+        # an open plan, so R01 is the only survivor.
+        assert [p["asset"] for p in plans] == ["R01"]
         assert rec["skipped_duplicate_id"] == 1
         assert rec["skipped_open_plan"] == 1
 
@@ -324,9 +361,7 @@ class TestC3Union:
             "C3_door_w_union", standouts, cap=12, door_rows=doors
         )
         # 12-cap = champion's top 8 + the 4 deepest Door W names.
-        assert _tickers(rows) == [f"A{i:02d}" for i in range(1, 9)] + [
-            "D01", "D02", "D03", "D04"
-        ]
+        assert _tickers(rows) == _POOL[:8] + ["D01", "D02", "D03", "D04"]
         assert rec["door_w_reserved_slots"] == pa.DOOR_W_RESERVED_SLOTS
         assert rec["door_w_selected"] == 4
 
@@ -433,7 +468,7 @@ class TestC4DispersionCap:
     def test_lean_in_keeps_c4s_registered_twelve_row_cap(self, tmp_path):
         _write_regime(tmp_path, {"as_of": "2026-05-01", "state": "lean_in"})
         cap, rec = pa.read_dispersion_state("2026-05-01", tmp_path)
-        assert cap == pa.DISPERSION_CAP_LEAN_IN == 12
+        assert cap == pa.DISPERSION_CAP_LEAN_IN == pb.N_CANDIDATES == 12
         assert rec["mode"] == "lean_in"
 
     def test_other_state_halves_the_cap(self, tmp_path):
@@ -509,7 +544,7 @@ class TestC5AlignGate:
         )
         assert _tickers(rows) == ["A01", "A02", "A13", "A14", "X03"]
         assert rec["passed_gate"] == 5
-        assert rec["excluded"] == 10
+        assert rec["excluded"] == 11
 
     def test_exclusion_counts_are_reported(self, standouts):
         gate = StubGate({"A01"})
@@ -517,7 +552,7 @@ class TestC5AlignGate:
             "C5_align2_gate", standouts, cap=12, atlas=gate
         )
         assert rec["align_gate"]["admitted"] == 1
-        assert rec["align_gate"]["excluded_misaligned"] == 14
+        assert rec["align_gate"]["excluded_misaligned"] == 15
 
     def test_unreadable_atlas_excludes_and_counts_separately(self, monkeypatch):
         gate = pa.AtlasGate()
@@ -1154,7 +1189,11 @@ class TestRunArena:
             lambda root=None: {"candidates": [], "disclosure": {}},
             raising=True,
         )
-        rows, _ = pa.select_for_policy("C0_champion_mirror", standouts, cap=12)
+        # run_arena caps at pb.N_CANDIDATES, so the "live" set this mirror is checked
+        # against must use the SAME cap — a hardcoded 12 here silently asserted a
+        # mismatch the moment the champion cap moved (A1: 12 -> 16).
+        rows, _ = pa.select_for_policy(
+            "C0_champion_mirror", standouts, cap=pb.N_CANDIDATES)
         live = {pb._make_id(t, "BULL", FIXTURE_ASOF) for t in _tickers(rows)}
         board = pa.run_arena(
             standouts, asof=FIXTURE_ASOF, existing_ids=set(), live_plan_ids=live,
@@ -1177,14 +1216,19 @@ class TestRunArena:
             pa.AtlasGate, "_evaluate", lambda self, t: (True, "weekly_align_class")
         )
         admitted = pa.admitted_pool(standouts)
-        assert len(admitted) == 15 > pa.REGISTERED_CHALLENGER_CAP
+        assert len(admitted) == 16 > pa.REGISTERED_CHALLENGER_CAP
         duplicate_id = pb._make_id("A01", "BULL", FIXTURE_ASOF)
         active_key = pb.plan_key("A02", "BULL")
+        # Filter by TICKER, not by position: the champion pool's ORDER is A1's to
+        # move (R01 now sorts second on its score), and a positional slice would
+        # silently start suppressing a different pair of rows than the two the
+        # duplicate-id and open-key fixtures above actually name.
         live = {
             pb._make_id(str(row["ticker"]), "BULL", FIXTURE_ASOF)
-            for row in admitted[2:]
+            for row in admitted
+            if str(row["ticker"]) not in ("A01", "A02")
         }
-        assert len(live) == 13 > pa.REGISTERED_CHALLENGER_CAP
+        assert len(live) == 14 > pa.REGISTERED_CHALLENGER_CAP
 
         board = pa.run_arena(
             standouts,
@@ -1199,8 +1243,8 @@ class TestRunArena:
 
         assert board["harness_validity"]["harness_ok"] is True
         tonight = board["tonight"]["policies"]
-        assert tonight[pa.CHAMPION_KEY]["n_plans"] == len(live) == 13
-        assert tonight["C6_time_stop_21"]["n_plans"] == 13
+        assert tonight[pa.CHAMPION_KEY]["n_plans"] == len(live) == 14
+        assert tonight["C6_time_stop_21"]["n_plans"] == 14
         assert tonight["C1_buy_soon_first"]["n_plans"] <= 12
         assert len(tonight["C1_buy_soon_first"]["selected_tickers"]) == 12
         assert tonight[pa.CHAMPION_KEY]["selection"]["cap"] is None
