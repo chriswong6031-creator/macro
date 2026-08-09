@@ -283,43 +283,34 @@ def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
     matrix = pack["strategy"]["matrix"]["pack"]
     assert matrix == list(range(len(matrix)))
     assert 2 <= len(matrix) <= 8
-    # Pull requests stay on the hosted pool; main's proof runs on the idle self-hosted
-    # Linux pool. Asserted as a CONTRACT on both branches rather than as a literal,
-    # because the point of the expression is that the two events route differently —
-    # pinning the string would have forbidden the routing outright.
+    # EVERY event runs on the hosted pool — one `runs-on`, no event-dependent routing,
+    # so main's baseline and a pull request prove the packs the SAME way.
     #
-    # Why main routes away from `ubuntu-latest` (2026-08-09): main's ci.yml proof sat
-    # `queued` 30+ minutes behind 133 queued runs while `render-linux` idled, and that
-    # one starved run blocks the whole fleet — `merge_on_green.main_proof` answers "is
-    # main green on ci-pack-N" from the newest CONCLUDED ci.yml run on main, so with no
-    # fresh proof the base-inherited-red refresh cannot fire and every pull request that
-    # inherited a since-healed red stays blocked.
+    # This replaces the 2026-08-09 self-hosted detour. Main's proof was briefly routed
+    # to `["self-hosted","render-linux"]` because it sat `queued` 30+ minutes behind 133
+    # queued runs while that pool idled, and a starved main proof blocks the whole fleet
+    # (`merge_on_green.main_proof` reads the newest CONCLUDED ci.yml run on main, so
+    # without one the base-inherited-red refresh cannot fire). The repository then moved
+    # to the MastermindX enterprise org and hosted concurrency went 40 -> 180; the queue
+    # fell from 103 runs to 7. There is nothing left to escape, and the detour cost more
+    # than it saved: `render-linux` is FOUR runners shared with render.yml,
+    # engine-render.yml and merge-on-green.yml, so main's four packs took the entire
+    # pool and starved the sweeper that merges every armed pull request.
+    assert pack["runs-on"] == "ubuntu-latest"
+    # The self-hosted pools are the render/nightly lanes and must never absorb CI packs.
     runs_on = " ".join(str(pack["runs-on"]).split())
-    assert "github.event_name == 'pull_request'" in runs_on
-    assert "'ubuntu-latest'" in runs_on
-    assert '["self-hosted","render-linux"]' in runs_on
-    # The macstudio pool is the render/nightly lane and must never absorb CI packs.
     assert "macstudio" not in runs_on
+    assert "render-linux" not in runs_on
+    assert "self-hosted" not in runs_on
     assert pack["strategy"]["fail-fast"] is False
-    # Main's proof may take at most HALF the four-runner `render-linux` pool; pull
-    # requests must stay UNTHROTTLED. `merge-on-green.yml` targets that same pool, and
-    # the sweeper is what merges every armed pull request — so an unthrottled main
-    # baseline (four packs onto exactly four runners) starved the lane that consumes
-    # its own result. Measured 2026-08-09: 60 sweeps queued, 50 of them between 04:00
-    # and 08:00 UTC, oldest 2026-08-07, while the operator merged by hand to drain the
-    # backlog; the sweep job itself takes 37 seconds. Pinned as a contract on BOTH
-    # branches for the same reason `runs-on` is — the point is that the two events
-    # throttle differently, so pinning a literal would forbid the split outright.
-    max_parallel = " ".join(str(pack["strategy"]["max-parallel"]).split())
-    assert "github.event_name == 'pull_request'" in max_parallel
-    caps = [int(n) for n in re.findall(r"\b\d+\b", max_parallel)]
-    assert len(caps) == 2, f"expected one cap per event branch, got {caps}"
-    pr_cap, main_cap = caps
-    # Hosted runners are capped by the account's concurrent-job pool, not by this
-    # matrix; throttling pull requests here would only double their wall-clock.
-    assert pr_cap == len(matrix), "pull request packs must run unthrottled"
-    assert main_cap >= 1
-    assert main_cap * 2 <= len(matrix), "main's proof must leave half the pool free"
+    # No `max-parallel`: it existed only to stop main's packs from taking all four
+    # `render-linux` runners. With no shared pool to protect, throttling would only
+    # double main's proof (~26 min -> ~50 min), and it cannot help against the hosted
+    # ceiling because that limit is ACCOUNT-wide, not per-matrix.
+    assert "max-parallel" not in pack["strategy"], (
+        "reintroducing max-parallel only slows main's proof; the hosted concurrency "
+        "ceiling is account-wide and this key cannot raise it"
+    )
     assert pack["if"] == "github.event.action != 'closed'"
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
