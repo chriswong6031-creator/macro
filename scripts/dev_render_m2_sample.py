@@ -14,6 +14,9 @@ import argparse
 import sys
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -39,8 +42,6 @@ def main() -> None:
     repo_root = Path(__file__).resolve().parent.parent
 
     # Ensure engine package is importable
-    if str(repo_root) not in sys.path:
-        sys.path.insert(0, str(repo_root))
 
     from engine.marketing.chart_render import (
         load_ohlcv,

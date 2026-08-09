@@ -1,0 +1,43 @@
+{
+  "schema": "ticker_alias_boundary_disclosures.v1",
+  "observed_on": "2026-08-09",
+  "authority": "facts_and_context_only",
+  "note": "Membership, page, filing and append-only ledger keys remain stable. Price providers may expose the same company under a different request symbol. Fetch under vendor_symbol and store/grade under stable_key through lib/ticker_aliases; never mint a second company record or rewrite historical rows.",
+  "disclosures": [
+    {
+      "stable_key": "MMC",
+      "vendor_symbol": "MRSH",
+      "company": "Marsh McLennan",
+      "cusip": "571748102",
+      "event": "NYSE symbol change on 2026-01-14; same company, CUSIP and listing",
+      "evidence": [
+        "data/symbol_directory/snapshots/ lists MRSH and not MMC",
+        "data/openfigi/cusip_ticker.parquet maps CUSIP 571748102 to MRSH",
+        "data/breadth/sp1500_pit_membership.parquet closes MMC and opens MRSH on 2026-01-14"
+      ],
+      "observed_stable_rows": {
+        "data/qledger/claims.jsonl_open_minimum": 15,
+        "data/name_score/us_calls.parquet_minimum": 36
+      }
+    },
+    {
+      "stable_key": "FI",
+      "vendor_symbol": "FISV",
+      "company": "Fiserv",
+      "event": "FISV changed to FI in 2023 and back to FISV on 2025-11-11",
+      "evidence": [
+        "data/symbol_directory/snapshots/ lists FISV and not FI",
+        "data/openfigi/cusip_ticker.parquet maps CUSIP 337738108 to FISV"
+      ],
+      "observed_stable_rows": {
+        "data/qledger/claims.jsonl_open_minimum": 22
+      }
+    }
+  ],
+  "reader_contract": "A row keyed MMC or FI remains a claim about that stable company key. engine.ai_desk first reads stable-key stores and only then may read the vendor alias; engine.altdata_models collapses provider symbols back through lib.ticker_aliases.store_key.",
+  "forbidden": [
+    "re-key append-only claims or point-in-time filings",
+    "store MRSH/FISV beside MMC/FI as duplicate current-state companies",
+    "treat the vendor alias map as a general identity or display map"
+  ]
+}

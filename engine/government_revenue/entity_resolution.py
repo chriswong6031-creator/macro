@@ -445,9 +445,49 @@ def _intervals_overlap(left: Mapping[str, Any], right: Mapping[str, Any]) -> boo
     return left_start <= right_upper and right_start <= left_upper
 
 
+def _graph_row_order_canonical(value: Any) -> Any:
+    """Return ``value`` with every row collection in one deterministic order.
+
+    A reviewed-graph collection is a *set* of rows: ``evidence``, ``companies``,
+    ``identifiers`` and their siblings carry identity in a row field, never in a
+    list index.  Lists of scalars are left exactly as written -- ``evidence_refs``
+    and ``claim_scopes`` are row data, and re-ordering row data is not this
+    function's business.
+    """
+    if isinstance(value, Mapping):
+        return {key: _graph_row_order_canonical(child) for key, child in value.items()}
+    if isinstance(value, (list, tuple)):
+        rows = [_graph_row_order_canonical(child) for child in value]
+        if rows and all(isinstance(row, dict) for row in rows):
+            rows.sort(
+                key=lambda row: json.dumps(
+                    row, sort_keys=True, default=str, separators=(",", ":")
+                )
+            )
+        return rows
+    return value
+
+
 def _graph_fingerprint(graph: Mapping[str, Any]) -> str:
-    """Hash the reviewed graph only; source-record identity is deliberately separate."""
-    encoded = json.dumps(graph, sort_keys=True, default=str, separators=(",", ":")).encode("utf-8")
+    """Hash the reviewed graph only; source-record identity is deliberately separate.
+
+    Row order is serialization, not content.  While this digest moved on it, a
+    curator re-serializing the file -- or appending a row that happens to sort
+    before an existing one -- restated every identity downstream that quotes the
+    digest, which is every candidate ``observation_id``.  That turned a null edit
+    into a whole ledger of unseen observations carrying old clocks, and the
+    append-only writer then refused to publish, permanently.
+
+    Canonicalizing row order is byte-identical for a document whose collections
+    are already in canonical order, so landing this recipe does not move any
+    digest already stored in a projection state, coverage receipt, or queue.
+    """
+    encoded = json.dumps(
+        _graph_row_order_canonical(graph),
+        sort_keys=True,
+        default=str,
+        separators=(",", ":"),
+    ).encode("utf-8")
     return sha256(encoded).hexdigest()
 
 

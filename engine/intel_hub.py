@@ -70,7 +70,23 @@ _NEG_RADAR = {"NEGATIVE_DIVERGENCE", "CONFIRMED_DOWN"}
 # desk firing while the lagging desks are still quiet — the opposite of the
 # agreement the v1 composite rewarded.
 _LEADING = ("alt", "radar")
-_LAGGING = ("news", "standout", "policy")
+_LAGGING = ("news", "standout")
+
+# ── VOTING DESKS (A7 / DNR:KILL-LLM-ORIGINATION — operator ruling 2026-08-08) ──
+# The desks whose direction may enter a SCORED aggregation. Policy is deliberately
+# ABSENT: the policy-intent desk's per-thesis direction is LLM-originated
+# (policy_intent_desk.py), and an LLM may never originate a signal that moves a rank
+# (constitution A7). Policy stays a first-class DISPLAY facet — the dossier facet,
+# `directions.policy`, the `policy_aligned` / `policy_conflict` flags, the regime string on
+# macro_context and `desks.policy.live` all keep working — it simply casts no vote in
+# net_confirm / agreement / conf_bonus (composite_conviction) or lag_up / lag_present
+# (leading-gap → opportunity_score).
+#
+# Side effect worth naming: `lean` is derived from the same vote count, so the alignment flags
+# now compare the policy lean against a genuinely INDEPENDENT desk lean. Previously policy
+# voted on the very lean it was then checked against — a name whose desks split 1-1 was tipped
+# by policy and then reported as "policy_aligned" with itself.
+_VOTING_DESKS = ("news", "alt", "radar", "standout")
 
 # radar lifecycle → how much of the move is still ahead (1 = all ahead, 0 = late)
 _LIFECYCLE_EDGE = {"emerging": 1.0, "forming": 0.82, "mature": 0.34, "fading": 0.12}
@@ -339,6 +355,9 @@ def _dirs(v: dict, policy: dict | None) -> dict:
     if v.get("standout"):
         lab = (standout.get("label") or "").upper()
         sd = -1 if ("AVOID" in lab or "DOWN" in (standout.get("state") or "").upper()) else 1
+    # policy's direction is carried for DISPLAY only (the dossier's `directions` block and the
+    # policy_aligned/policy_conflict flags) — it is NOT in _VOTING_DESKS, so it never enters a
+    # scored aggregation. See _VOTING_DESKS.
     pd = policy.get("dir") if _policy_usable(policy) else None
     return {"news": nd, "alt": ad, "radar": rd, "standout": sd, "policy": pd}
 
@@ -446,8 +465,10 @@ def _edge_remaining(v: dict, dirs: dict, vel_rec: dict, catalyst: dict | None,
 # --------------------------------------------------------------------------- #
 # LEADING-vs-LAGGING gap — the inverted agreement reward. Pays a leading desk
 # (smart-money flow / a positive divergence) firing while the lagging desks
-# (news, momentum buy-board, policy) are still quiet. gap > 0 ⇒ flow is AHEAD of
+# (news, momentum buy-board) are still quiet. gap > 0 ⇒ flow is AHEAD of
 # the crowd (pre-consensus); gap ≤ 0 ⇒ price/news already lead (late).
+# POLICY CASTS NO VOTE HERE (A7 — see _VOTING_DESKS): its lean is LLM-originated, so it
+# may not move lag_up / lag_present, and thus may not move gap_mult → opportunity_score.
 # --------------------------------------------------------------------------- #
 def _leading_gap(v: dict, dirs: dict) -> dict:
     radar = v.get("radar") or {}
@@ -457,15 +478,36 @@ def _leading_gap(v: dict, dirs: dict) -> dict:
     lead_up = radar_lead + alt_lead
     lag_up = ((1 if dirs.get("news") == 1 else 0)
               + (1 if dirs.get("standout") == 1 else 0)
-              + (1 if rstate == "CONFIRMED_UP" else 0)
-              + (1 if dirs.get("policy") == 1 else 0))
+              + (1 if rstate == "CONFIRMED_UP" else 0))
     # lagging desks that are PRESENT — a "quiet crowd" only counts when the crowd's desks
     # exist and are silent, not when their data is merely absent.
     lag_present = ((1 if v.get("news") else 0)
                    + (1 if v.get("standout") else 0)
-                   + (1 if dirs.get("policy") is not None else 0)
                    + (1 if rstate == "CONFIRMED_UP" else 0))
     return {"lead_up": lead_up, "lag_up": lag_up, "gap": lead_up - lag_up, "lag_present": lag_present}
+
+
+def _hero_reason(d: dict) -> str | None:
+    """WHY a bullish-stage name was barred from the Emerging hero strip — the verdict the
+    snapshot ledger never stored, which is exactly why "how often does the gate exclude a
+    top-ranked name?" is unanswerable from the accrued nights (D22).
+
+    MUST mirror build()'s ``_hero_ok`` rejection ORDER: the price veto outranks the gate
+    verdict, and an explicit flat_sell outranks a plain not-eligible. A reason that disagreed
+    with the gate would be worse than none — it would attribute exclusions to the wrong cause.
+    None ⇒ not barred: either it cleared the gate, or its stage was never hero-eligible."""
+    if d.get("stage") not in ("emerging", "early"):
+        return None
+    if (d.get("trajectory") or {}).get("rolling_over"):
+        return "rolling_over"
+    eg = d.get("entry_gate")
+    if not eg:
+        return "no_gate_verdict"
+    if eg.get("flat_sell"):
+        return "flat_sell"
+    if not eg.get("eligible"):
+        return "not_eligible"
+    return None
 
 
 def _stage(edge: float, gap: int, lean: int, flags: list, n_components: int, lag_present: int,
@@ -518,7 +560,10 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
     # a low-conviction policy facet must contribute NOTHING — it must not inflate
     # composite (via len(present)) nor appear in source_mix / n_facets.
     present = [k for k in ("news", "alt", "radar", "standout") if v.get(k)] + (["policy"] if _policy_usable(policy) else [])
-    nz = [d for d in dirs.values() if d not in (None, 0)]
+    # only the EVIDENCE desks vote (A7 — see _VOTING_DESKS). Reading _VOTING_DESKS by key
+    # rather than dirs.values() is what keeps the LLM-originated policy lean out of
+    # net_confirm / agreement / conf_bonus / lean — and therefore out of every score.
+    nz = [dirs.get(k) for k in _VOTING_DESKS if dirs.get(k) not in (None, 0)]
     up = sum(1 for d in nz if d > 0)
     dn = sum(1 for d in nz if d < 0)
     n_confirm = max(up, dn)                                  # desks leaning the dominant way
@@ -976,6 +1021,27 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
         "with_trajectory": n_with_trajectory,
         "without_trajectory": n_without_trajectory,
     }
+
+    # ── SNAPSHOT PROVENANCE (D22) ─────────────────────────────────────────────────────────
+    # Which SECTIONS actually surfaced a name, stamped AFTER section selection so the ledger
+    # records what the page showed — not what it could have shown. Without this, "did the
+    # Command cohort win?" and "how often does the hero gate exclude a top-ranked name?" are
+    # unanswerable from 38 accrued nights of snapshots. Display-tier bookkeeping only: no
+    # score, rank, or section membership is derived FROM these fields.
+    discovery_shown = _diversify_by_source(
+        discovery_list, 14, 5, src=lambda d: (d.get("discovery") or {}).get("source"))
+    _cohort_members: dict[str, list[str]] = {
+        "command_top5": [d["ticker"] for d in dossiers[:5]],
+        "command_30": [d["ticker"] for d in command_dossiers],
+        "emerging_panel": [d["ticker"] for d in emerging_hero[:14]],
+        "discovery_shown": [r["ticker"] for r in discovery_shown if r.get("ticker")],
+        "catalyst_shown": [d["ticker"] for d in catalysts[:12]],
+    }
+    _cohorts_by_t: dict[str, list[str]] = {}
+    for _cohort, _members in _cohort_members.items():
+        for _t in _members:
+            _cohorts_by_t.setdefault(_t, []).append(_cohort)
+
     return {
         "schema": SCHEMA, "engine_version": ENGINE_VERSION,
         "is_context_only": True, "as_of": today.isoformat(),
@@ -1007,10 +1073,12 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
         "track_rows": [{"t": d["ticker"], "opp": d["opportunity_score"],
                         "edge": d["edge_remaining"], "stage": d["stage"], "lean": d["lean"],
                         "source": (d.get("discovery") or {}).get("source"),   # feed for per-source IC (None = on-desk)
+                        "rank": i,                                   # 1-based position in the ranked list
+                        "cohorts": _cohorts_by_t.get(d["ticker"]) or [],      # sections that SHOWED it
+                        "hero_reason": _hero_reason(d),              # why the hero gate barred it (or None)
                         "engine_version": ENGINE_VERSION}
-                       for d in dossiers],
-        "discovery": _diversify_by_source(
-            discovery_list, 14, 5, src=lambda d: (d.get("discovery") or {}).get("source")),
+                       for i, d in enumerate(dossiers, start=1)],
+        "discovery": discovery_shown,
         "emerging": [_compact(d) for d in emerging_hero[:14]],
         "exhausted": [_compact(d) for d in exhausted[:12]],
         "catalysts": [_compact(d) for d in catalysts[:12]],

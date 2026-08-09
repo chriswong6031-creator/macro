@@ -50,6 +50,9 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 log = logging.getLogger(__name__)
 
 # ── paths ─────────────────────────────────────────────────────────────────────

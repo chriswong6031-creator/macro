@@ -34,7 +34,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stock analyzer — cycle & momentum</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=79f699db">
+<link rel="stylesheet" href="theme.css?v=70725c26">
 <link rel="stylesheet" href="assets/css/58fe79bc.css?v=58fe79bc">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=65bba21c">
@@ -203,6 +203,7 @@
               <a class="mega-item nm-feat" data-nav-file="earnings_wire" href="stocks/earnings/index.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 7h25l7 7v27H8z"/><path d="M6 5h25l7 7v27H6zM31 5v8h7"/><path class="accent" d="M12 29h5l3-7 5 12 4-9 3 4h3"/><path d="M12 16h14M12 20h9"/><circle class="soft-fill" cx="34" cy="29" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Earnings Wire</span><span class="l-zh">财报情报线</span></span><span class="item-desc d"><span class="l-en">Verified calls, weekly intelligence and company context</span><span class="l-zh">已核验电话会、每周情报与公司语境</span></span></span></a>
               <a class="mega-item nm-feat" href="fundamental_forensics.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M9 6h24l6 6v28H9z"/><path d="M7 4h24l6 6v23H7zM31 4v7h6"/><path d="M13 15h16M13 21h12M13 27h8"/><circle class="soft-fill" cx="31" cy="31" r="8"/><circle cx="29" cy="29" r="7"/><path class="accent" d="m34 34 7 7M25 29h8M29 25v8"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Filing Forensics</span><span class="l-zh">财报取证</span></span><span class="item-desc d"><span class="l-en">Find the accounting changes worth reviewing</span><span class="l-zh">发现值得复核的会计变化</span></span></span></a>
               <a class="mega-item nm-feat" href="neural_web.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="item-desc d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
+              <a class="mega-item nm-feat" href="market_memory.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 10h32v28H8z"/><path d="M7 8h14c5 0 8 3 8 8v24c0-5-3-8-8-8H7zM41 8H27v32c0-5 3-8 8-8h6z"/><path class="accent" d="M13 16h9M13 21h7M33 15h4M33 20h4"/><circle class="soft-fill" cx="27" cy="29" r="4"/><path d="M24 29h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Market Memory</span><span class="l-zh">市场记忆</span></span><span class="item-desc d"><span class="l-en">Put today beside comparable episodes</span><span class="l-zh">将今天与可比历史片段并排</span></span></span></a>
             </div>
           </section>
           <section class="mega-section nav-mega-section">
@@ -485,7 +486,7 @@
 
     <div class="panel" id="panel_smartmoney" style="display:none">
       <h2>🏦 <span class="l-en">Super-investors — 13F holders</span><span class="l-zh">超级投资者 — 13F 持仓</span>
-        <span class="help">?<span class="tip"><span class="l-en">Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position&#39;s share of that fund&#39;s reported US-equity book. 13F is QUARTERLY with a ~45-day lag — long-only US equity &gt;= $100M only (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.</span><span class="l-zh">哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度披露，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。</span></span></span></h2>
+        <span class="help">?<span class="tip"><span class="l-en">Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position&#39;s share of that fund&#39;s reported US-equity book. 13F is QUARTERLY with a ~45-day lag and reports long positions for managers with at least $100M in Section 13(f) securities (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.</span><span class="l-zh">哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度披露，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。</span></span></span></h2>
       <div id="r_smartmoney"></div>
     </div>
     </details>
@@ -2298,7 +2299,7 @@
     }
     el('r_smartmoney').innerHTML = head + vipline + trendLine + sinceFilingLine + '<table>' + th + rows + '</table>' +
       '<p class="srcline">' + lz(
-        '13F filed quarterly, ~45-day lag — long-only US stakes ≥ $100M only (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
+        '13F filed quarterly, ~45-day lag — reported long positions from managers with at least $100M in Section 13(f) securities (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
         '13F 季度披露、约45天滞后 —— 仅美股多头持仓（≥1亿美元，不含空头／期权／非美）。仅作「谁持有」背景，非实时信号。') + '</p>';
     show('panel_smartmoney', true);
   }
@@ -3073,7 +3074,7 @@
 })();
 </script>
 <script src="mtf.js?v=b62aea2f" defer></script>
-<script src="theme.js?v=8df4ebee" defer></script>
+<script src="theme.js?v=f8abb176" defer></script>
 <link rel="stylesheet" href="assets/css/bf806e17.css?v=bf806e17">
 <script>
 /* Anticipation panel — additive; fetches anticipationdata/<ticker>.json (watchlist/
@@ -3166,11 +3167,10 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-08-08 15:11 UTC · charts rendered in-house with
+<p class="muted" style="font-size:12px">Generated 2026-08-09 15:16 UTC · charts rendered in-house with
 Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

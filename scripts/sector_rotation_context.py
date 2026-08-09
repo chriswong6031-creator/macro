@@ -19,13 +19,18 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
-from engine import sector_cycles as sc
-from engine.inputs import yahoo_closes
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import sector_cycles as sc  # noqa: E402
+from engine.inputs import yahoo_closes  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger("sector_rotation_context")
 

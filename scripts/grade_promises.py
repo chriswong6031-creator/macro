@@ -26,7 +26,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from engine import promise_graders as pg
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import promise_graders as pg  # noqa: E402
 
 log = logging.getLogger("grade_promises")
 

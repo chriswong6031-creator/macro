@@ -111,6 +111,7 @@ def build_manifest(
                 "count": info.get("count", 0),
                 "gap": info.get("gap"),
                 "dropped_from_source": info.get("dropped_from_source", 0),
+                "retracted_by_authority": info.get("retracted_by_authority", 0),
             }
             for name, info in sorted(adapter_report.items())
         },

@@ -368,7 +368,19 @@ class TestCaptureFloorsTheMfeDenominator:
 
 
 # ===========================================================================
-# B3 — the featured extension veto fails CLOSED on an unknown reading
+# B3 → ANTICIPATION v1 — the featured extension veto fires on EVIDENCE only
+#
+# B3 (2026-08-06) made an unknown ``ext_z`` a featured veto, on the reasoning that a
+# veto whose input is dark cannot be said to have passed.  That reasoning was right
+# about the evidence and wrong about the remedy: the very next board proved it, with
+# 69 of 69 buy rows carrying no reading (the equity close panel's newest row held 6 of
+# 3,034 members and the pre-#4979 positional reader selected it) and a
+# featured lane published as 0.  ANTICIPATION v1 (2026-08-08) keeps the veto for a
+# KNOWN reading past the parabolic line and replaces the absence-veto with a
+# disclosure: ``ext_unknown`` on the row, a coverage count on the block, and a
+# ``::warning`` when the input is out on most of the board.  The score leg is
+# unchanged — an unmeasured row still earns 0 runway, because fail-closed belongs to
+# the POINTS.
 # ===========================================================================
 
 def _featurable(ticker="A", **over) -> dict:
@@ -386,10 +398,11 @@ def _featurable(ticker="A", **over) -> dict:
 
 class TestFeaturedExtensionVeto:
 
-    def test_an_unknown_extension_blocks_featured(self):
+    def test_an_unknown_extension_is_disclosed_not_blocked(self):
         row = _featurable()
         row.pop("ext_z")
-        assert ubr.featured_shortfalls(row) == ["ext_z_unknown"]
+        assert ubr.featured_shortfalls(row) == []
+        assert ubr.ext_unknown(row) is True
 
     def test_a_known_reading_below_the_line_still_qualifies(self):
         """Falsifier: the veto must not have become a blanket block."""
@@ -399,37 +412,52 @@ class TestFeaturedExtensionVeto:
 
     def test_a_nan_reading_counts_as_unknown(self):
         """The 07-31 defect delivered NaN, not a missing key — a float that is not a
-        number is not evidence."""
-        assert "ext_z_unknown" in ubr.featured_shortfalls(_featurable(ext_z=float("nan")))
+        number is not evidence.  It is disclosed as unknown, never read as 0.0."""
+        row = _featurable(ext_z=float("nan"))
+        assert ubr.ext_unknown(row) is True
+        assert ubr.featured_shortfalls(row) == []
 
     def test_the_row_stays_rankable_and_stays_on_the_board(self):
-        """Display-tier only: the veto changes a FLAG, never membership or score."""
+        """Display-tier only, in BOTH eras: the extension read changes a FLAG, never
+        membership and never score.  What moved on 2026-08-08 is which flag."""
         rows = [_featurable("KNOWN", ext_z=0.0), _featurable("UNKNOWN")]
         rows[1].pop("ext_z")
         scored = ubr.score_rows(rows, board_asof="2026-07-31")
         assert {r["ticker"] for r in scored} == {"KNOWN", "UNKNOWN"}
         by = {r["ticker"]: r for r in scored}
         assert by["UNKNOWN"]["stage"] == "live"
-        assert by["UNKNOWN"]["featured"] is False
+        assert by["UNKNOWN"]["featured"] is True
+        assert by["UNKNOWN"]["ext_unknown"] is True
         assert by["KNOWN"]["featured"] is True
+        assert by["KNOWN"]["ext_unknown"] is False
+        # The SCORE still fails closed on the unmeasured row — the runway leg pays 0,
+        # so the two rows are not scored as if the gap were a reading of "fine".
         assert by["UNKNOWN"]["prophet"]["score"] > 0
+        assert by["UNKNOWN"]["prophet"]["components"]["runway"] == 0.0
+        assert by["KNOWN"]["prophet"]["components"]["runway"] == 1.0
 
-    def test_the_block_counts_the_rows_it_refused_for_want_of_evidence(self):
-        """A board that features nothing must say whether its veto worked or its
-        input was dark. The count is recomputed, never frozen."""
+    def test_the_block_counts_the_rows_whose_evidence_is_missing(self):
+        """A board that features rows it could not measure must SAY so. The count is
+        recomputed from the rows it ships with, never frozen."""
         rows = [_featurable(f"T{i}") for i in range(3)]
         for r in rows:
             r.pop("ext_z")
         scored = ubr.score_rows(rows, board_asof="2026-07-31")
         block = ubr.ranking_block(scored)
-        assert block["featured_count"] == 0
-        assert block["featured_blocked_unknown_extension"] == 3
+        assert block["featured_count"] == 3
+        assert block["ext_unknown_coverage"] == {
+            "unknown": 3, "n": 3, "featured_with_unknown": 3}
+        # The B3 key survives, still recomputed, and now reads 0 — accurate, since
+        # nothing is refused for that reason any more.
+        assert block["featured_blocked_unknown_extension"] == 0
         # Mutation: give them readings and the disclosure must move.
         alive = ubr.score_rows([_featurable(f"T{i}", ext_z=0.0) for i in range(3)],
                                board_asof="2026-07-31")
-        assert ubr.ranking_block(alive)["featured_blocked_unknown_extension"] == 0
+        assert ubr.ranking_block(alive)["ext_unknown_coverage"] == {
+            "unknown": 0, "n": 3, "featured_with_unknown": 0}
 
     def test_the_requirement_text_names_the_unknown_case(self):
         block = ubr.ranking_block([])
         text = " ".join(block["featured_requirements"])
         assert "unknown" in text.lower()
+        assert "ext_unknown" in text

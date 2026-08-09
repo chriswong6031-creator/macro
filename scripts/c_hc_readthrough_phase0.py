@@ -57,12 +57,17 @@ Deterministic; no network. Restores no files (read-only on data/).
 from __future__ import annotations
 
 import json
+import sys
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from scipy import stats
 
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
 
 THS = "data/baskets_china_ths/membership.json"
 CN = "data/china_search/closes.parquet"
