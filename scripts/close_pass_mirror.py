@@ -48,8 +48,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT))
 
 from engine.close_pass import board as CB  # noqa: E402
 from engine.prophet_live import r2io  # noqa: E402

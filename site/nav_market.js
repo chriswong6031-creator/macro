@@ -229,11 +229,11 @@
           // Baskets + Subsector Rotation are ONE page now (the old URLs are redirect
           // stubs) — one menu row, matching the collapsed _navlinks flyout.
           ['Sector Intelligence', 'Sectors, themes & rotation in one read', 'sector_central.html', 'sectors',
-            '行业智慧', '板块、主题与轮动一页读']
+            '行业情报', '板块、主题与轮动一页读']
         ], '市场总览'],
         ['Signals & strategy', [
           ['Subsector Confluence', 'Entry-now subsectors, double-gated funnel', 'sector_central.html#confluence', 'confluence',
-            '子行业汇聚', '现可入场子行业 · 双重闸门选股'],
+            '子行业汇聚', '现可入场的子行业 · 两道确认的选股'],
           ['Strategies', 'Tactical scorecards and positioning', 'strategies.html', 'strategy',
             '策略', '战术记分卡与仓位'],
           ['Alert Center', 'Ranked market-moving alerts', 'alerts.html', 'alert',
@@ -254,10 +254,10 @@
           ['Options — the workspace', 'Daily Brief · Flow · Scanner · Ticker · Leaders',
             'options.html', 'options', '期权工作台', '每日简报 · 资金流 · 筛选 · 个股 · 领头股'],
           ['Dark Pool Desk', 'Off-exchange volume · short ratio · ATS venues',
-            'darkpool.html', 'darkpool', '场外暗池台', '场外成交量 · 融券比率 · ATS场所',
+            'darkpool.html', 'darkpool', '暗池成交', '场外成交量 · 融券比率 · ATS 交易平台',
             null, 'darkpool.html'],
           ['Market Structure', 'GEX regime · machine flows · dispersion · weekly range',
-            'market_structure.html', 'structure', '市场结构', '做市商制度 · 机器资金 · 离散度 · 周度区间']
+            'market_structure.html', 'structure', '市场结构', '做市商持仓 · 程序化资金 · 离散度 · 周内区间']
         ], '市场结构']
       ],
       // 'Stock Terminal' (stock.html with no ticker) was removed 2026-08-04 on
@@ -276,33 +276,33 @@
       title: 'China',
       titleZh: '中国',
       subtitle: 'A-shares, policy, capital flows and fast-moving themes.',
-      subtitleZh: 'A股、政策、资金流与快速轮动的主题。',
+      subtitleZh: 'A股、政策、资金流，以及轮动最快的那些题材。',
       sections: [
         ['Market overview', [
           ['Market Dashboard', 'A-share regime and breadth', 'china.html', 'dashboard',
-            '宏观仪表盘', 'A股周期与市场广度'],
+            '宏观仪表盘', 'A股市况与市场广度'],
           ['Stock Dashboard', 'Standouts, alpha and setups', 'china_stocks.html', 'stocks',
-            '股票仪表盘', '领涨股、阿尔法与布局'],
+            '股票仪表盘', '强势股、超额收益与买点'],
           ['Market Heatmap', 'Every A-share at a glance', 'china_heatmap.html', 'heatmap',
             '市场热力图', '全部A股一眼看尽'],
           ['China Intelligence', 'Signals, policy and narratives', 'china_intel.html', 'intelligence',
-            '中国情报中心', '信号、政策与叙事']
+            '中国情报中心', '信号、政策与市场叙事']
         ], '市场总览'],
         ['Themes & rotation', [
           // 2026-08 China SI consolidation: the three sector/theme/rotation pages are one now
           // (baskets_china.html / subsector_rotation_china.html are redirect stubs).
           ['Sector Intelligence', 'Gated board, cycle map and rotation in one', 'sector_central_china.html', 'sectors',
-            '行业智慧', '门控研判、周期图谱与轮动一页尽览'],
+            '行业情报', '研判、周期图谱和轮动，一页看完'],
           ['Narrative Radar', 'See which stories are running', 'narrative_radar.html', 'narrative',
-            '主题篮子雷达', '看清哪个叙事正在运行', '']
+            '题材雷达', '看清现在哪些题材在走', '']
         ], '主题与轮动'],
         ['Flows & policy', [
           ['Capital Flow Velocity', 'Where big money accelerates', 'flow_velocity.html', 'flow',
             '资金流速', '主力资金在哪里加速'],
           ['Policy Watch', 'PBoC and sector policy shifts', 'china_policy_watch.html', 'policy',
-            '政策观察', '央行与行业政策变化'],
+            '政策观察', '央行动向与行业政策'],
           ['Market Mechanics', 'Participation, limits and tape', 'china_mechanics.html', 'structure',
-            '市场结构', '参与度、涨跌停与盘面', 'violet'],
+            '盘面机制', '参与度、涨跌停与盘面', 'violet'],
           ['Special Situations', 'Unlocks, pledges and catalysts', 'china_special_situations.html', 'event',
             '特殊事件', '解禁、质押与催化事件', '']
         ], '资金与政策']
@@ -310,13 +310,13 @@
       railTitle: 'Explore',
       railTitleZh: '探索',
       rail: [
-        ['China News', 'Official sources and catalysts', 'china_news.html', 'news', '中国新闻流'],
+        ['China News', 'Official sources and catalysts', 'china_news.html', 'news', '中国新闻'],
         ['Strategies', 'Tactical China scorecards', 'china_strategies.html', 'strategy', '策略'],
         ['Alternative Data', 'Signals beyond price', 'china_altdata.html', 'research', '另类数据'],
         ['Browse China research', 'All China research', 'china_intel.html', 'intelligence', '浏览中国全部研究']
       ],
       note: ['One China system', 'Market, policy and capital context stay connected.'],
-      noteZh: ['一个中国体系', '市场、政策与资金脉络始终相连。']
+      noteZh: ['中国板块，一套系统', '市场、政策和资金脉络始终连在一起。']
     },
     hk: {
       title: 'Hong Kong',
