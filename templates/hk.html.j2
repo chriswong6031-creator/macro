@@ -3706,10 +3706,33 @@
        and filtering to Setting up reveals the shelf with the setting-up cards. #}
     {%- set _ = _sc.update({'setting_up': _sc['setting_up'] + (_hk_rip|length)}) -%}
   {%- endif -%}
+  {# THE BOARD-WIDE EXTENSION CLAUSE, same fix as the per-card chip below and for the
+     same reason: this board has no extension wiring, so "price not extended" describes
+     a check it has never run.  Since ANTICIPATION v1 those rows are featured and
+     disclosed rather than vetoed, which makes the unqualified sentence a false claim
+     about tonight's picks rather than a vacuous one about an empty shelf.  Counted off
+     the artifact's own receipt (`ranking.ext_unknown_coverage`, recomputed every build)
+     so the day an HK extension reading is wired the copy reverts itself. #}
+  {%- set _hk_xuc = ((setups.get('ranking') or {}).get('ext_unknown_coverage') or {}) -%}
+  {# Keyed on `unknown`, NOT on `featured_with_unknown`, and the difference matters on
+     this board.  This sentence describes the GATE, not tonight's members — so the
+     honest trigger is "does the board have extension evidence to test?", which is a
+     question about the input.  Keyed on the featured count instead, an HK board that
+     features nothing (the real 2026-07-31 tape features 0 — every row is held by
+     `adv_unknown`, not by extension) would print an unqualified "price not extended"
+     while describing a check this market has never once run. #}
+  {%- set _hk_xfu = _hk_xuc.get('unknown') or 0 -%}
+  {# Flat punctuation on purpose: this string is spliced INTO a parenthesised list, so
+     a nested bracket or a dashed aside reads as a break in the list rather than as one
+     of its items — in ZH especially, （…（…）…） is unreadable. Two short clauses. #}
+  {%- set _hk_ext_en = ("no extension reading on this board, so how far a name has already run goes unchecked"
+                        if _hk_xfu else "price not extended") -%}
+  {%- set _hk_ext_zh = ("本榜暂无拉伸读数，价格拉伸程度未作检查"
+                        if _hk_xfu else "价格未过度拉伸") -%}
   <div class="panel span12" id="standouts">
     <h2>⚡ {{ t('Prophet — HK stock signals', '先知 — 港股信号') }}
       <span class="note" style="text-transform:none">· {% if _hsg.any %}{{ t('Ranked by readiness — what to act on, and what to leave alone', '按就绪度排序 —— 哪些可以动手，哪些放着别碰') }}{% else %}{{ t('Bottoming names, ranked by flow, value and strength', '筑底个股，按资金、价值与强度排序') }}{% endif %}</span>
-      {% if _hsg.any %}{{ help("Every HK name we track that has a live read, in one board ordered by readiness — live entries first, then setups still forming, then names that already ran, then names an entry check is blocking. Priority 0–100 is a transparent readiness rank (" ~ _wtxt_en ~ "), used only to order the board: it is not a win probability and not a return forecast. The green cards are the picks — a separate gate on top of the order (fresh signal, entry window open, edge above zero, price not extended, capped per sector). Leader-cohort chips are context from a display-only read; they earn a name no points here. The " ~ _hk_def ~ " forward record is accruing separately.", "我们跟踪的每只有效港股都在同一张榜单上，按可操作就绪度排序 —— 先是入场窗口已打开的，然后是形态仍在形成的，接着是已经启动的，最后是被入场检查挡住的。优先级 0–100 是透明的就绪度排序（" ~ _wtxt_zh ~ "），仅用于给本榜排序：它不是胜率，也不是收益预测。发绿光的卡片是精选 —— 那是排序之上的另一道门槛（信号新鲜、入场窗口已打开、优势为正、价格未过度拉伸，并受行业名额限制）。龙头组合标签来自仅供展示的读数，不为个股加分。" ~ _hk_def ~ " 的前瞻记录将单独积累。") }}{% else %}{{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.", "显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。") }}{% endif %}
+      {% if _hsg.any %}{{ help("Every HK name we track that has a live read, in one board ordered by readiness — live entries first, then setups still forming, then names that already ran, then names an entry check is blocking. Priority 0–100 is a transparent readiness rank (" ~ _wtxt_en ~ "), used only to order the board: it is not a win probability and not a return forecast. The green cards are the picks — a separate gate on top of the order (fresh signal, entry window open, edge above zero, " ~ _hk_ext_en ~ ", capped per sector). Leader-cohort chips are context from a display-only read; they earn a name no points here. The " ~ _hk_def ~ " forward record is accruing separately.", "我们跟踪的每只有效港股都在同一张榜单上，按可操作就绪度排序 —— 先是入场窗口已打开的，然后是形态仍在形成的，接着是已经启动的，最后是被入场检查挡住的。优先级 0–100 是透明的就绪度排序（" ~ _wtxt_zh ~ "），仅用于给本榜排序：它不是胜率，也不是收益预测。发绿光的卡片是精选 —— 那是排序之上的另一道门槛（信号新鲜、入场窗口已打开、优势为正、" ~ _hk_ext_zh ~ "，并受行业名额限制）。龙头组合标签来自仅供展示的读数，不为个股加分。" ~ _hk_def ~ " 的前瞻记录将单独积累。") }}{% else %}{{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.", "显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。") }}{% endif %}
       {# W8-G: grid/table view toggle #}
       <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
         <button id="st-btn-grid" aria-selected="true" onclick="StockTable._setView('grid')">⊞ <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>
@@ -3858,9 +3881,26 @@
       {% set _isnew = n.get('new') if n.get('new') is not none else (_dss is not none and _dss <= 2) %}
       {% set _mk = namespace(rows=[]) %}
       {% if _hsg.any %}
+        {# THE EXTENSION CLAUSE IS CONDITIONAL, and on HK it currently never resolves to
+           the claim — which is the point.  This board has no extension wiring at all:
+           nothing sets `ext_z` in scripts/build_hk_library.py or engine/hk_board_rank.py,
+           and no committed HK artifact carries one, so every HK row scores `ext_unknown`.
+           Until 2026-08-08 the shared US module VETOED those rows out of featured, which
+           made the sentence vacuously true by making the shelf empty; ANTICIPATION v1
+           lit the shelf again and the sentence became a verification HK has never once
+           performed.  Plain-word printed null instead (DESIGN_DOCTRINE Law 5), read off
+           the engine's own per-row flag rather than hard-coded to "HK", so the day an HK
+           extension reading IS wired the copy follows the data with no edit here.
+
+           NOT CURRENTLY RENDERED, and fixed anyway — same as the US board's twin of
+           this chip. `_prophet_card.html.j2` carries `_MK_NOTIP = ('feat', 'new')`
+           (operator 2026-08-05), so this tip is built and dropped; the sentence a
+           reader gets is the board-note above, which is fixed too. Kept correct so it
+           cannot come back wrong; not to be read as a shipped surface. #}
+        {% set _xu = n.get('ext_unknown') %}
         {% if _feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
-          'tip_en':'One of today’s picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor, not a rank against the rest of the board) and price is not extended. Capped per sector and per board, so fewer can show. Priority order, not a return forecast.',
-          'tip_zh':'今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸。每个行业与全板均有名额上限，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
+          'tip_en':'One of today’s picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor, not a rank against the rest of the board)' ~ ('. How far this name has already run is unknown — this board carries no extension reading, so that check was not scored.' if _xu else ' and price is not extended.') ~ ' Capped per sector and per board, so fewer can show. Priority order, not a return forecast.',
+          'tip_zh':'今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）' ~ ('。价格拉伸程度暂无读数 —— 本榜没有拉伸数据，这一条未参与判定。' if _xu else '、价格未过度拉伸。') ~ '每个行业与全板均有名额上限，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
         {% if _isnew %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
           'tip_en':'This signal fired in the last two sessions — the name was not on the board before that.',
           'tip_zh':'该信号在最近两个交易日内触发 —— 在此之前不在榜上。'}] %}{% endif %}

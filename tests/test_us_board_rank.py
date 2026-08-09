@@ -215,26 +215,48 @@ class TestEntryLeg:
         downstream chip cutoff — sees the confirmation class silently deflated under
         it.  At the 0.75 this briefly carried, `buy_now` lost 6.25 points and
         `partial` 3.75 against the pre-era map; both are pinned below as zero-or-lift.
+
+        THE FENCE COVERS EVERY STATUS, NOT ONLY THE ADMISSIBLE FIVE (orchestrator
+        ruling 2026-08-09).  It used to loop over `ENTRY_NEUTRAL_STATUSES` and then
+        assert that `buy_soon` had gone DOWN — which excluded from the "nothing
+        deflates" claim the one status that deflated, by construction.  A guard that
+        exempts the case it exists to catch is not a guard.  `buy_soon` 0.8 -> 0.35 was
+        CN-derived (CN's table puts it near the bottom) and this module's whole
+        argument is that CN's status VALUES do not transfer to the US tape — the §6.6
+        re-measurement refuted the transfer at H=5/H=10.  It is also outside the five
+        statuses §6.6 ranges over, so it sits under "refused-class values unchanged".
+        Restored to 0.8, and the fence now ranges over the WHOLE map: no status, in any
+        class, may score below its pre-era value without its own US measurement.
         """
         ceiling = sum(
             ubr.SCORE_WEIGHTS[leg] * (ubr.ENTRY_NEUTRAL_VALUE if leg == "entry" else 1.0)
             for leg in ubr.SCORE_WEIGHTS)
         assert ceiling == pytest.approx(100.0)
 
-        # No ADMISSIBLE status may score below what the pre-era trend-tape map paid it
-        # — the leg-level constant must not move a row across a threshold it cannot
-        # see.  These are the pre-era values, quoted so the comparison is a fact in
-        # this file rather than an appeal to git history.
+        # NO status may score below what the pre-era trend-tape map paid it — the
+        # leg-level constant must not move a row across a threshold it cannot see, and
+        # a refused-class row's score is as visible to a downstream floor as an
+        # admissible one's.  These are the pre-era values, quoted so the comparison is a
+        # fact in this file rather than an appeal to git history.
         pre_era = {"buy_now": 1.0, "partial": 0.9, "buy_soon": 0.8, "hold": 0.65,
-                   "wait_pullback": 0.55, "bounce_wait": 0.35}
-        for status in ubr.ENTRY_NEUTRAL_STATUSES:
-            assert ubr._ENTRY_VALUE[status] >= pre_era[status], status
+                   "wait_pullback": 0.55, "later": 0.55, "await": 0.45,
+                   "await_confluence": 0.45, "watch": 0.4, "bounce_wait": 0.35,
+                   "extended": 0.0, "topping": 0.0, "blocked": 0.0, "exit": 0.0,
+                   "avoid": 0.0}
+        assert set(pre_era) == set(ubr._ENTRY_VALUE), (
+            "a status was added or removed — decide its pre-era baseline explicitly "
+            "rather than letting it fall outside this fence")
+        for status, was in pre_era.items():
+            assert ubr._ENTRY_VALUE[status] >= was, (
+                f"{status} deflated {was} -> {ubr._ENTRY_VALUE[status]}; the §6.6 "
+                "ruling moves the five admissible statuses UP and moves nothing down")
         # `buy_now` specifically holds station: byte-identical, so a row that was on a
         # floor before is still exactly on it.
         assert ubr._ENTRY_VALUE["buy_now"] == pre_era["buy_now"]
-        # The one deliberate deflation is OUTSIDE the admissible set and outside this
-        # ruling — stated here so "nothing deflates" is not read wider than it is.
-        assert ubr._ENTRY_VALUE["buy_soon"] < pre_era["buy_soon"]
+        # ... and so does `buy_soon`, the one this fence used to exempt.  Named
+        # explicitly so a re-attempted CN-derived demotion fails on the ruling rather
+        # than on an anonymous loop iteration.
+        assert ubr._ENTRY_VALUE["buy_soon"] == pre_era["buy_soon"] == 0.8
 
     def test_the_values_are_the_v1_constants(self):
         """The VALUES, pinned separately from the flatness — the revision rule may
@@ -250,7 +272,7 @@ class TestEntryLeg:
             "await": 0.45,
             "await_confluence": 0.45,
             "watch": 0.4,
-            "buy_soon": 0.35,
+            "buy_soon": 0.8,
             "extended": 0.0,
             "topping": 0.0,
             "blocked": 0.0,
@@ -279,7 +301,7 @@ class TestEntryLeg:
     @pytest.mark.parametrize("status,expected", [
         ("bounce_wait", 1.0), ("wait_pullback", 1.0), ("hold", 1.0),
         ("buy_now", 1.0), ("partial", 1.0), ("await_confluence", 0.45),
-        ("watch", 0.4), ("buy_soon", 0.35),
+        ("watch", 0.4), ("buy_soon", 0.8),
         ("extended", 0.0), ("topping", 0.0), ("blocked", 0.0), ("avoid", 0.0),
     ])
     def test_values(self, status, expected):
@@ -977,6 +999,36 @@ class TestExtensionUnknownIsDisclosed:
         """Exactly half unknown is not a majority — the boundary is open."""
         assert ubr.EXT_UNKNOWN_ALARM_FRACTION == 0.5
 
+    def test_a_board_with_no_extension_panel_is_not_alarmed_every_night(self, capsys):
+        """An OUTAGE alarm on a market that has no input is a permanent false alarm.
+
+        `engine.hk_board_rank` delegates `score_rows` here, and HK has no `ext_z`
+        wiring anywhere — so unscoped, this alarm fired at 100% on every single HK
+        build, telling the reader that HK is HK, in remediation words naming a US
+        equity close panel HK does not build.  An annotation that is always on trains
+        people to skip the annotation, including on the night the US panel really is
+        dark.  Scoped to `EXTENSION_PANEL_MARKETS`.
+        """
+        assert ubr.BOARD_DEFINITION in ubr.EXTENSION_PANEL_MARKETS
+        assert "hk_prophet_v2" not in ubr.EXTENSION_PANEL_MARKETS
+        ubr.score_rows([_row(f"T{i}") for i in range(4)],
+                       board_asof="2026-07-31", definition="hk_prophet_v2")
+        assert "featured-ext-z-unknown" not in capsys.readouterr().out
+
+    def test_the_scoping_silences_only_the_alarm_never_the_disclosure(self, capsys):
+        """Falsifier for the test above: scoping must not become a way to HIDE the gap.
+
+        The artifact-side receipt is what a no-panel market owes its reader, and it is
+        computed identically on every board — only the Actions annotation is scoped.
+        """
+        scored = ubr.score_rows([_row(f"T{i}") for i in range(4)],
+                                board_asof="2026-07-31", definition="hk_prophet_v2")
+        capsys.readouterr()
+        assert all(r["ext_unknown"] is True for r in scored)
+        block = ubr.ranking_block(scored, definition="hk_prophet_v2")
+        assert block["ext_unknown_coverage"] == {
+            "unknown": 4, "n": 4, "featured_with_unknown": block["featured_count"]}
+
     def test_fewer_than_the_cap_is_honest_emptiness(self):
         scored = ubr.score_rows([_row("A", status="extended")],
                                 board_asof="2026-07-31")
@@ -1138,6 +1190,51 @@ class TestRankingBlock:
         assert "0-100" in entry["basis"]
         for status in ubr.ENTRY_NEUTRAL_STATUSES:
             assert status in entry["basis"], status
+
+    def test_a_sibling_market_inherits_the_ladder_but_never_the_measurement(self):
+        """The receipt is SHARED code; the evidence behind it is not shared evidence.
+
+        `engine.hk_board_rank.ranking_block` delegates straight to this function, so
+        whatever this string says about WHY the entry leg is flat is published on the
+        HK board too.  Written as one sentence it told an HK reader that the HK leg is
+        flat because a US re-measurement over US board episodes read adverse — a
+        measurement that has never been run on an HK episode.  The ladder really is
+        inherited; the claim to have measured it is not inheritable.
+
+        Both halves are pinned: the US board still states its own basis, and a sibling
+        states inheritance and says out loud that its own market is unmeasured.
+        """
+        basis_of = lambda block: [p for p in block["formula_points"]  # noqa: E731
+                                  if p["component"] == "entry"][0]["basis"]
+        own = basis_of(ubr.ranking_block([]))
+        inherited = basis_of(ubr.ranking_block([], definition="hk_prophet_v2"))
+        assert own != inherited
+
+        # The shared FACT survives on both — a sibling reader still learns what the leg
+        # does, which is the half that IS transferable.
+        for text in (own, inherited):
+            assert "flat value" in text
+            assert ubr.SELECTION_ERA in text
+            assert "vocabulary shared with the China board" in text
+
+        # The US board keeps the direct attribution ...
+        assert "the §6.6 US re-measurement read ADVERSE" in own
+        assert "INHERITS" not in own
+        # ... and the sibling gets the honest one: structural inheritance, plus the
+        # explicit null that its own market has not been measured.
+        assert "INHERITS it structurally" in inherited
+        assert "no equivalent re-measurement has been run on this market's own " \
+               "episodes" in inherited
+
+    def test_the_entry_basis_prints_the_restored_buy_soon_value(self):
+        """The receipt must agree with the map it describes.  `buy_soon` reads 0.8
+        (restored 2026-08-09 — the CN-derived demotion was withdrawn), and a printed
+        0.35 would be a wrong number on a user-reachable artifact."""
+        entry = [p for p in ubr.ranking_block([])["formula_points"]
+                 if p["component"] == "entry"][0]
+        assert "buy_soon 0.8" in entry["basis"]
+        assert "buy_soon 0.35" not in entry["basis"]
+        assert ubr._ENTRY_VALUE["buy_soon"] == 0.8
 
     def test_block_discloses_the_formula_and_the_scoreless_inputs(self):
         # ext_z=0.0: a KNOWN un-extended reading, so the `extended` veto is provably

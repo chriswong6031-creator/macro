@@ -111,6 +111,23 @@ EXT_Z_FULL = 2.0
 # outage is visible in the Actions summary instead of only inside the artifact.
 EXT_UNKNOWN_ALARM_FRACTION = 0.5
 
+# WHICH BOARDS CAN HAVE AN EXTENSION OUTAGE AT ALL.  The alarm above asks "did tonight's
+# extension input go out?", and only a market that HAS one can answer it.  This module
+# is shared: ``engine.hk_board_rank`` delegates ``score_rows``/``ranking_block`` here,
+# and HK has never had an ``ext_z`` wiring — nothing sets it in
+# ``scripts/build_hk_library.py`` or ``engine/hk_board_rank.py``, and no row of any
+# committed HK artifact carries one.  Unscoped, the alarm therefore fired on HK at
+# 100% every single night, with remediation text naming a US equity close panel HK does
+# not build.  A warning that is always on is not a warning; it teaches readers to skip
+# the annotation that matters on the night the US panel really does go dark.
+#
+# HK's gap is not thereby hidden — it is DISCLOSED, which is the honest form for a
+# permanent known absence rather than an outage: ``ext_unknown`` on every row,
+# ``ext_unknown_coverage`` on the ranking block, and the featured copy on the board
+# saying so (``tests/test_hk_board_ui.py`` pins all three).  Add a market to this set
+# when it WIRES an extension reading, never merely because it renders a board.
+EXTENSION_PANEL_MARKETS = frozenset((BOARD_DEFINITION,))
+
 # Featured freshness window (mirrors engine.confluence_tiers.FRESH_TICKS).
 FEATURED_MAX_TICKS = 2
 
@@ -131,11 +148,26 @@ SCORE_WEIGHTS = {
     "quality": 10.0,
 }
 
-# The selection era this module's SELECTION constants belong to — the entry-value
-# ladder and the featured entry set below.  Stamped into every ``ranking`` block so a
-# forward ledger row can be read against the rule that produced it instead of against
-# whatever the constants say the day someone opens the artifact.  Bump it whenever the
-# ladder or the featured set moves: two eras are two different products.
+# THE SELECTION REGIME this board is running — NOT a version stamp on the constants
+# below.  Stamped into every ``ranking`` block so a forward-ledger row can be read
+# against the regime that produced it instead of against whatever the constants say the
+# day someone opens the artifact.
+#
+# WHAT BUMPS IT, AND WHY THE ANSWER IS NOT "ANY EDIT" (orchestrator ruling 2026-08-09).
+# An earlier draft said to bump this "whenever the ladder or the featured set moves".
+# That made the revision rule below UNSATISFIABLE, and the trap is worth naming because
+# it is easy to re-introduce: the rule asks for n >= 50 graded marks per cell at H=63
+# on episodes stamped with THIS era, and H=63 needs ~3 months to mature — so if the era
+# resets every time the map is touched, the episode pool resets with it and the count
+# can never reach 50.  A pre-registration whose own clock is restarted by the act of
+# revising is not a gate, it is a permanent no.
+#
+# So: this names WHAT THE BOARD IS SELECTING FOR — the population and the admission
+# gate that decide which names become episodes — and it survives a revision of how
+# those names are VALUED or ORDERED.  Re-valuing the entry ladder, or widening the
+# featured entry set (both of which this era did), leaves the episodes comparable and
+# the stamp unchanged.  Bump it only when the selected population itself changes:
+# a new admission gate, a different universe, a different lane definition.
 SELECTION_ERA = "anticipation-v1-2026-08-08"
 
 # Frozen definition inputs, not fitted coefficients.  The tier cascade and
@@ -149,9 +181,15 @@ SELECTION_ERA = "anticipation-v1-2026-08-08"
 # on the strength of the parity anatomy — CN's live board is 24/24 patience statuses
 # where the US admitted set was 27/27 action statuses, and the US board already carries
 # the bounce_wait cohort.  That ordering never reached main.  The §6.6 US
-# re-measurement's first run
-# (``research/prophet_us_audit/US_STATUS_REMEASUREMENT_2026-08-08.md``) came back
-# ADVERSE to it, on the US board's own graded episodes:
+# re-measurement's first run came back ADVERSE to it, on the US board's own graded
+# episodes.
+#
+# THE NUMBERS ARE QUOTED IN FULL BELOW, ON PURPOSE.  The write-up lands in a SEPARATE
+# PR (``research/prophet_us_audit/US_STATUS_REMEASUREMENT_2026-08-08.md``, #4988, which
+# merges BEFORE this one), so on this branch that path does not resolve.  A map whose
+# only stated reason is a pointer to a file the reader cannot open is an unevidenced
+# map; these five lines are the load-bearing result, and they are here so this change
+# can be judged on its own:
 #
 #   * buy lane, H=5, both cells above the 20-mark floor: ``bounce_wait`` 54.9% loser
 #     (n=153, median excess −0.96%) vs ``buy_now`` 39.0% (n=95, +1.05%).  That is CN's
@@ -172,14 +210,22 @@ SELECTION_ERA = "anticipation-v1-2026-08-08"
 # still separates admissible from non-admissible, and says nothing whatever about the
 # order among them.  A flat leg cannot mis-rank.
 #
-# THE PRE-REGISTERED REVISION RULE.  A status ORDERING may be re-introduced among these
-# five only when all three hold:
+# THE PRE-REGISTERED REVISION RULE (§6.6's chartered form).  A status ORDERING may be
+# re-introduced among these five only when all three hold:
 #   1. measured at the status's CHARTERED HORIZON (H=21/H=63 for the patience statuses,
 #      not the 5-session ruler that is mostly reading the tape);
 #   2. n >= 50 graded marks per cell;
-#   3. sign-stable across two half-splits of the window, on episodes stamped
-#      ``selection_era: anticipation-v1-2026-08-08`` — one selection regime, not two.
+#   3. sign-stable across two half-splits of the window, on episodes drawn from ONE
+#      selection regime — ``selection_era: anticipation-v1-2026-08-08`` — so the split
+#      is a split of time and not of two different boards.
 # Anything less re-opens the same argument with the same absent data.
+#
+# THE ERA IS THE REGIME, NOT THE MAP VERSION, and clause 3 depends on that: see the WHY
+# block on :data:`SELECTION_ERA`.  A revision that passes this rule changes these VALUES
+# and does NOT bump the era, so the episodes it was measured on stay in the pool and the
+# next revision can be measured against a longer window rather than a reset one.  Read
+# the other way round — era bumped on every map edit — clause 2 could never be reached
+# at H=63 and this rule would be a permanent refusal wearing a gate's clothes.
 # ``tests/test_us_board_rank.py::TestEntryLeg`` pins the flatness, so a re-introduced
 # ordering has to go through this rule rather than through an edit.
 #
@@ -205,14 +251,23 @@ SELECTION_ERA = "anticipation-v1-2026-08-08"
 #   · hold 0.65 -> 1.0 = +8.75 · wait_pullback 0.55 -> 1.0 = +11.25 · bounce_wait
 #   0.35 -> 1.0 = +16.25.
 # So no admissible row's score FALLS: the confirmation class holds station and only the
-# previously-underranked patience rows lift to meet it.  (The one real deflation is
-# ``buy_soon`` 0.8 -> 0.35 = −11.25, which is OUTSIDE this ruling — it is not in the
-# admissible set, and both the CN and US tables put it at the bottom.)
+# previously-underranked patience rows lift to meet it.  AND NOTHING DEFLATES EITHER —
+# not one status, admissible or not.
 #
-# The non-admissible values are unchanged from the trend-tape era and are NOT part of
-# this ruling: ``later`` 0.55, ``await``/``await_confluence`` 0.45, ``watch`` 0.4,
-# ``buy_soon`` 0.35, and the zeros.  ``extended`` stays 0.0 where CN keeps 0.3 — the US
-# ``ran`` shelf owns that state and re-valuing it is its own ruling.
+# NO REFUSED-CLASS VALUE MOVES (orchestrator ruling 2026-08-09).  A draft of this
+# change also cut ``buy_soon`` 0.8 -> 0.35, on the ground that CN's table puts it at
+# the bottom.  That was withdrawn, for the reason this whole module argues: CN's status
+# VALUES are CN-measured and the §6.6 US re-measurement refuted their transfer at H=5
+# and H=10.  A US demotion cannot borrow authority from the one ledger that refused it.
+# ``buy_soon`` is also not among the five statuses §6.6 ranges over, so it falls under
+# that ruling's "refused-class values unchanged" clause and keeps its trend-tape 0.8.
+# Moving it would need its own US measurement, through the revision rule above.
+#
+# The non-admissible values are therefore ALL unchanged from the trend-tape era and are
+# NOT part of this ruling: ``buy_soon`` 0.8, ``later`` 0.55, ``await``/
+# ``await_confluence`` 0.45, ``watch`` 0.4, and the zeros.  ``extended`` stays 0.0
+# where CN keeps 0.3 — the US ``ran`` shelf owns that state and re-valuing it is its
+# own ruling.
 _SIGNAL_BASE = {"T2": 1.0, "T1": 0.9, "T3": 0.7}
 
 # The one value every admissible status carries.  Named so the flatness is a fact the
@@ -236,11 +291,11 @@ _ENTRY_VALUE = {
     "buy_now": ENTRY_NEUTRAL_VALUE,
     "partial": ENTRY_NEUTRAL_VALUE,
     # --- not admissible: unchanged, and not part of the §6.6 ruling -----------
+    "buy_soon": 0.8,
     "later": 0.55,
     "await": 0.45,
     "await_confluence": 0.45,
     "watch": 0.4,
-    "buy_soon": 0.35,
     "extended": 0.0,
     "topping": 0.0,
     "blocked": 0.0,
@@ -1009,7 +1064,14 @@ def _warn_on_dark_extension(
     lane going empty is no longer the alarm it used to be — this is.  Fired from the
     scoring pass so it lands in the builder's own Actions step, and phrased with the
     numbers rather than a hedge.
+
+    OUTAGE, NOT ABSENCE.  Scoped to :data:`EXTENSION_PANEL_MARKETS`: a board that has no
+    extension wiring cannot have an extension outage, and firing here on every HK build
+    said only that HK is HK, in US remediation words.  See that constant for why the
+    honest treatment of a permanent absence is the artifact disclosure instead.
     """
+    if definition not in EXTENSION_PANEL_MARKETS:
+        return
     total = len(rows)
     if not total:
         return
@@ -1071,6 +1133,29 @@ def stage_counts(rows: Iterable[Mapping[str, Any]]) -> dict[str, int]:
 
 EDGE_READS_US = "residual alpha percentile inside this buy pool"
 
+# The entry leg's PROVENANCE, and it is not the same sentence on every board.
+#
+# WHOSE MEASUREMENT IS THIS (audit finding, 2026-08-09).  `engine.hk_board_rank`
+# delegates both `score_rows` and `ranking_block` here, so HK ships this module's entry
+# map and this module's receipt verbatim.  Written as one string, that receipt told an
+# HK reader that the HK entry leg is flat because a US re-measurement over US episodes
+# read adverse — attributing to the HK board a measurement that was never run on it.
+# The ladder really is inherited; what must not be inherited is the CLAIM to have
+# measured it.  So the shared FACT (what the leg does) is one string and the
+# ATTRIBUTION (whose evidence set it) is another, chosen by `definition`.
+_ENTRY_BASIS_PROVENANCE_OWN = (
+    f"{SELECTION_ERA}: the §6.6 US re-measurement read ADVERSE to the CN ordering at "
+    "H=5 and H=10 and has no marks at all at H=21/H=63, so no ordering is claimed in "
+    "either direction."
+)
+_ENTRY_BASIS_PROVENANCE_INHERITED = (
+    f"{SELECTION_ERA}: this ladder is the US board's, flattened by the §6.6 US "
+    "re-measurement (ADVERSE to the CN ordering at H=5 and H=10; no marks at all at "
+    "H=21/H=63). This board INHERITS it structurally, by sharing the ranking module — "
+    "no equivalent re-measurement has been run on this market's own episodes, and none "
+    "is claimed here."
+)
+
 
 def ranking_block(
     rows: Iterable[Mapping[str, Any]],
@@ -1097,6 +1182,12 @@ def ranking_block(
     """
     scored = list(rows)
     counts = stage_counts(scored)
+    # The ladder is shared; the evidence that set it is not.  A sibling market gets the
+    # inherited-structurally wording, never the US re-measurement as its own basis.
+    entry_provenance = (
+        _ENTRY_BASIS_PROVENANCE_OWN if definition == BOARD_DEFINITION
+        else _ENTRY_BASIS_PROVENANCE_INHERITED
+    )
     return {
         "definition": definition,
         # Which SELECTION rule produced this board — the entry ladder and the featured
@@ -1113,21 +1204,21 @@ def ranking_block(
             {"component": "entry", "points": SCORE_WEIGHTS["entry"],
              "reads": "entry_signal.status",
              # Was "frozen status map, shared with the China board" — untrue since the
-             # 2026-08-04 fork.  The VOCABULARY is shared; the VALUES are this board's
-             # own, and what they now say is that the order is UNKNOWN.
+             # 2026-08-04 fork.  The VOCABULARY is shared; the VALUES are the US
+             # board's own, and what they now say is that the order is UNKNOWN.  The
+             # provenance clause is market-scoped (see above the function): a sibling
+             # board inherits the ladder, never the measurement.
              "basis": "admissible statuses share one flat value ("
                       + " = ".join(ENTRY_NEUTRAL_STATUSES)
                       + f" = {ENTRY_NEUTRAL_VALUE}); the leg separates admissible from "
-                      "non-admissible (later 0.55 · await 0.45 · watch 0.4 · buy_soon "
-                      "0.35 · extended/topping/blocked/exit/avoid 0.0) and orders "
+                      "non-admissible (buy_soon 0.8 · later 0.55 · await 0.45 · watch "
+                      "0.4 · extended/topping/blocked/exit/avoid 0.0) and orders "
                       "nothing within the admissible set. Status vocabulary shared "
-                      "with the China board, values are this board's own. "
-                      f"{SELECTION_ERA}: the §6.6 US re-measurement read ADVERSE to "
-                      "the CN ordering at H=5 and H=10 and has no marks at all at "
-                      "H=21/H=63, so no ordering is claimed in either direction. The "
-                      "flat level is 1.0, which keeps the attainable range at 0-100 "
-                      "and leaves confirmation-class scores unchanged against the "
-                      "pre-era map; only the previously-underranked patience rows "
+                      "with the China board, values are the US board's own. "
+                      + entry_provenance
+                      + " The flat level is 1.0, which keeps the attainable range at "
+                      "0-100 and leaves confirmation-class scores unchanged against "
+                      "the pre-era map; only the previously-underranked patience rows "
                       "lift"},
             {"component": "edge", "points": SCORE_WEIGHTS["edge"],
              "reads": edge_reads,

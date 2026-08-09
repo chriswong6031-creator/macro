@@ -14,8 +14,13 @@ Three receipts:
 2. **The map re-order.**  The current committed board, ranked under both maps, old
    rank -> new rank.  HEAD's map is FLAT across the five admissible statuses
    (ANTICIPATION v1 amendment, after the §6.6 first run read adverse to the CN
-   ordering), so the movement here is the ``buy_soon`` demotion and the collapse of
-   the trend-tape ordering among admissible rows — not a patience-first lift.
+   ordering), so the movement here is the collapse of the trend-tape ordering AMONG
+   admissible rows — not a patience-first lift, and not a demotion of anything.
+   NOTHING SCORES LOWER under HEAD: the five admissible statuses all pay 1.0 and every
+   refused-class value is untouched (``buy_soon`` was briefly cut to 0.35 on CN's
+   table and restored to its trend-tape 0.8 by orchestrator ruling 2026-08-09 — the
+   ``buy_soon`` rows in PROOF 2 print identical old and new scores, which is that
+   restoration's receipt).
 3. **What the stage bucket still hides.**  The sort key is
    ``(stage_rank, -score, ticker)``, so a ``setting_up`` row cannot outrank a ``live``
    row however high it scores.  Even under the flat map some ``bounce_wait`` rows
@@ -26,10 +31,20 @@ Three receipts:
 Usage (from the repo root)::
 
     TZ=UTC python3 research/prophet_us_audit/a2_ladder_replay.py
+    TZ=UTC python3 research/prophet_us_audit/a2_ladder_replay.py --base <sha>
+
+Every input is PINNED to a commit, including the "before" side.  An earlier draft read
+the base module from ``origin/main``, which is a MOVING ref: main takes ~24 nightly
+commits a day here, so re-running the same script a day later silently measured a
+different baseline and printed the same headings over it — a receipt nobody can
+reproduce is not a receipt.  ``--base`` names the commit explicitly and
+:data:`BASE_SHA` records the one these committed numbers were produced against.
 """
 from __future__ import annotations
 
+import argparse
 import copy
+import datetime as _dt
 import importlib.util
 import io
 import json
@@ -43,16 +58,29 @@ REPO = Path(__file__).resolve().parents[2]
 
 # The 2026-08-06 board — the 0/69 featured blackout the parity anatomy measured.
 DARK_BOARD_SHA = "3cbef39a6ea"
+
+#: The "before" side, PINNED.  This is the ``origin/main`` tip this receipt's committed
+#: numbers were measured against — not a symbolic ref, so a re-run reproduces them.
+#: Override with ``--base`` to re-measure against a newer main; if you do, update this
+#: constant in the same commit as the numbers, or the two disagree.
+BASE_SHA = "fd9751d580db48d03eaaa108a8b5cf21534fad59"
+
 LIVE_BOARD = REPO / "site" / "factordata" / "us_standouts.json"
+
+#: Results land beside the script, ``<script>_results.json`` — the convention every
+#: other study in this directory follows (``ignition_standins_results.json``,
+#: ``label_grading_battery_results.json``, ...).  Printed output is for reading; this
+#: is what a later session diffs against.
+RESULTS_PATH = Path(__file__).with_name("a2_ladder_replay_results.json")
 
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
 
-def _load_base_module():
-    """Import origin/main's us_board_rank under its own name, not shadowing HEAD's."""
+def _load_base_module(sha: str):
+    """Import the BASE commit's us_board_rank under its own name, not shadowing HEAD's."""
     src = subprocess.run(
-        ["git", "show", "origin/main:engine/us_board_rank.py"],
+        ["git", "show", f"{sha}:engine/us_board_rank.py"],
         cwd=REPO, capture_output=True, text=True, check=True).stdout
     path = Path(tempfile.mkdtemp()) / "_base_us_board_rank.py"
     path.write_text(src, encoding="utf-8")
@@ -92,7 +120,7 @@ def _first_warning(text: str) -> str:
     return next((ln for ln in text.splitlines() if ln.startswith("::warning")), "NONE")
 
 
-def proof_ext_z(base, head) -> None:
+def proof_ext_z(base, head) -> dict:
     print("=" * 78)
     print(f"PROOF 1 — ext_z blackout: committed 2026-08-06 board ({DARK_BOARD_SHA})")
     print("=" * 78)
@@ -100,9 +128,13 @@ def proof_ext_z(base, head) -> None:
     _b_rows, b_block, _ = _replay(base, dark)
     h_rows, h_block, h_out = _replay(head, dark)
     n = len(dark["buy"])
+    # The engine's OWN predicate, not `is None`.  The 2026-07-31 defect delivered NaN
+    # rather than a missing key, and `r.get("ext_z") is None` reads a NaN as a reading —
+    # so a hand-rolled check here would have UNDERCOUNTED the very outage this proof
+    # exists to measure, while the module it is auditing counted it correctly.
+    unknown = sum(1 for r in dark["buy"] if head.ext_unknown(r))
     print(f"board as_of      : {dark['as_of']}   buy rows: {n}")
-    print(f"ext_z unknown    : "
-          f"{sum(1 for r in dark['buy'] if r.get('ext_z') is None)}/{n}")
+    print(f"ext_z unknown    : {unknown}/{n}")
     print(f"featured BEFORE  : {b_block['featured_count']}  "
           f"(blocked_unknown_extension="
           f"{b_block['featured_blocked_unknown_extension']})")
@@ -114,9 +146,23 @@ def proof_ext_z(base, head) -> None:
     print(f"committed artifact says: featured_count="
           f"{dark['ranking']['featured_count']}  blocked_unknown_extension="
           f"{dark['ranking']['featured_blocked_unknown_extension']}")
+    return {
+        "board_sha": DARK_BOARD_SHA,
+        "board_asof": dark["as_of"],
+        "buy_rows": n,
+        "ext_unknown": unknown,
+        "featured_before": b_block["featured_count"],
+        "featured_after": h_block["featured_count"],
+        "ext_unknown_coverage_after": h_block["ext_unknown_coverage"],
+        "featured_cohort_after": [
+            {"ticker": r["ticker"], "status": _status(r)}
+            for r in h_rows if r["featured"]],
+        "annotation": _first_warning(h_out),
+        "committed_featured_count": dark["ranking"]["featured_count"],
+    }
 
 
-def proof_ladder(base, head) -> list[dict]:
+def proof_ladder(base, head) -> tuple[list[dict], dict]:
     print()
     print("=" * 78)
     print("PROOF 2 — ladder re-order on the current committed board")
@@ -139,10 +185,23 @@ def proof_ladder(base, head) -> list[dict]:
     print(f"rows whose rank moved: {moved}/{len(lh_rows)}")
     print("selection_era    : " + lh_block["selection_era"])
     print("annotation       : " + _first_warning(lh_out))
-    return lh_rows
+    return lh_rows, {
+        "board_asof": live["as_of"],
+        "buy_rows": len(live["buy"]),
+        "featured_before": lb_block["featured_count"],
+        "featured_after": lh_block["featured_count"],
+        "rows_whose_rank_moved": moved,
+        "selection_era": lh_block["selection_era"],
+        "top10": [
+            {"new_rank": r["score_rank"], "old_rank": old_rank.get(r["ticker"]),
+             "ticker": r["ticker"], "status": _status(r), "stage": r["stage"],
+             "old_score": round(old_score.get(r["ticker"], 0.0), 1),
+             "new_score": round(r["prophet"]["score"], 1)}
+            for r in lh_rows[:10]],
+    }
 
 
-def proof_stage_gate(head, rows: list[dict]) -> None:
+def proof_stage_gate(head, rows: list[dict]) -> dict:
     print()
     print("=" * 78)
     print("PROOF 3 — what the STAGE bucket still hides")
@@ -163,15 +222,55 @@ def proof_stage_gate(head, rows: list[dict]) -> None:
     outscoring = [r for r in patience if r["prophet"]["score"] > top_live]
     print(f"patience-status rows on the board: {len(patience)}")
     print(f"  ... outscoring the best `live` row ({top_live:.1f}): {len(outscoring)}")
+    return {
+        "top_live_score": round(top_live, 1),
+        "patience_rows": len(patience),
+        "patience_rows_outscoring_best_live": len(outscoring),
+        "by_score_top10": [
+            {"score_rank": i, "board_rank": r["score_rank"], "ticker": r["ticker"],
+             "status": _status(r), "stage": r["stage"],
+             "score": round(r["prophet"]["score"], 1)}
+            for i, r in enumerate(by_score[:10], start=1)],
+    }
 
 
-def main() -> None:
-    base = _load_base_module()
+def main(argv: list[str] | None = None) -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--base", default=BASE_SHA,
+                    help="commit whose engine/us_board_rank.py is the 'before' side "
+                         f"(default: the pinned {BASE_SHA[:11]})")
+    ap.add_argument("--out", default=str(RESULTS_PATH),
+                    help="results JSON path (default: beside this script)")
+    args = ap.parse_args(argv)
+
+    base = _load_base_module(args.base)
     from engine import us_board_rank as head  # noqa: PLC0415 — after sys.path setup
 
-    proof_ext_z(base, head)
-    rows = proof_ladder(base, head)
-    proof_stage_gate(head, rows)
+    print(f"base commit      : {args.base}")
+    p1 = proof_ext_z(base, head)
+    rows, p2 = proof_ladder(base, head)
+    p3 = proof_stage_gate(head, rows)
+
+    results = {
+        # Which code produced these numbers, on both sides.  A results file that does
+        # not name its own baseline cannot be compared to the next one.
+        "generated_utc": _dt.datetime.now(_dt.timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"),
+        "base_sha": args.base,
+        "head_sha": subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=REPO,
+            capture_output=True, text=True, check=True).stdout.strip(),
+        "head_selection_era": head.SELECTION_ERA,
+        "head_entry_value": dict(head._ENTRY_VALUE),
+        "proof_1_ext_z_blackout": p1,
+        "proof_2_ladder_reorder": p2,
+        "proof_3_stage_gate": p3,
+    }
+    out = Path(args.out)
+    out.write_text(json.dumps(results, indent=2, sort_keys=False) + "\n",
+                   encoding="utf-8")
+    print()
+    print(f"results written  : {out.relative_to(REPO)}")
 
 
 if __name__ == "__main__":
