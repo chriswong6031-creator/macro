@@ -425,7 +425,7 @@ LOBE_DESCRIPTIONS = {
     "release-forecast-latest": {
         "short": "Before each major data release, this feed shows our projection alongside several reference benchmarks and the current Fed policy backdrop — display only, never conditions any trade.",
         "full": "Each night before CPI and jobs report releases, this feed publishes our quantitative projection (point estimate plus a confidence band) for the upcoming print, compares it against reference benchmarks including the Cleveland Fed nowcast, and attaches the current Fed policy context: stance, the market-versus-Fed-dots gap in basis points, implied cuts over the next twelve months, and the next meeting date. The surprise-skew field shows which direction our projection leans relative to the benchmark set, in units of historical forecast error. A running scoreboard accumulates actual versus projected accuracy as prints land. Everything here is display-only and horizon-agnostic context — it never gates alerts, conditions entries, or changes any score. Forward accrual began in July 2026.",
-        "src_fp": "18153b17f4e42daf",
+        "src_fp": "9decda4e741a13c2",
     },
     "research-queue": {
         "short": "Advisory ranked research candidate list — dormant and unwired, never produced on a schedule.",
