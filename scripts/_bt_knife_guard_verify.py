@@ -23,8 +23,13 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from scripts._bt_sector_confluence import _load, _to_3b, _signals_3b, SECTORS, BENCH
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts._bt_sector_confluence import _load, _to_3b, _signals_3b, SECTORS, BENCH  # noqa: E402
 
 DEFENSIVE = {"XLU", "XLP", "XLV", "XLRE"}
 DEEP_CYC = ["XLE", "XLF", "XLC", "XLK"]          # the prompt's deep cyclicals

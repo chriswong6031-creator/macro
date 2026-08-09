@@ -35,9 +35,12 @@ identical: **the membership in force at date D is the newest snapshot ≤ D.**
 LANE DISCIPLINE
 ---------------
 House law (CLAUDE.md): nightly/asia is the sole advancer of ledgers; render
-lanes discard ``data/`` writes.  Every writer here takes the same explicit
-``lane`` gate as ``engine.china_standout_track.append_board`` — a lane that is
-passed and is not ``asia`` is refused before any write.
+lanes discard ``data/`` writes.  Every writer here goes through ``_lane_ok``,
+which is FAIL-CLOSED: ``lane == 'asia'`` writes and everything else — an
+unrecognised lane, or no lane at all — is refused before any write.  It does
+NOT mirror ``engine.china_standout_track.append_board``'s permissive
+``lane is not None`` form; see ``_lane_ok`` for why keep-FIRST makes that
+default unsafe here.
 
 TWO SIDE-CAR SHAPES (and why the store says which one it used)
 --------------------------------------------------------------
@@ -306,11 +309,33 @@ def _latest_sha(df: pd.DataFrame) -> tuple[str | None, str | None]:
 # ---------------------------------------------------------------------------
 
 def _lane_ok(lane: str | None, what: str) -> bool:
-    """Explicit asia-lane gate — mirrors china_standout_track.append_board."""
-    if lane is not None and lane != "asia":
-        log.info("basket_membership_pit: %s gated (lane=%s, not asia)", what, lane)
-        return False
-    return True
+    """The asia-lane gate for every writer here — FAIL-CLOSED.
+
+    ``lane == 'asia'`` writes.  EVERYTHING else refuses: an unrecognised lane, and —
+    the case that matters — no lane at all.  This deliberately does NOT mirror
+    ``china_standout_track.append_board``'s permissive ``lane is not None`` form.
+    append_board can afford that default because a board row is re-derivable and a
+    second lane rewriting it changes nothing.  This store cannot: it is append-only
+    and keep-FIRST on ``(snapshot_date, basket_id, ticker)`` (masterplan §5 W-C), and
+    it is content-deduped, so the FIRST lane to stamp a date owns that snapshot
+    FOREVER — a later lane's view of the same day is silently discarded, and the
+    published PIT answer for every date from then on is whatever the first writer saw.
+
+    Which is why the permissive form was not merely loose but dead: the one production
+    caller resolved its lane as ``os.environ.get("CN_LANE", "asia")``, so every context
+    that leaves ``CN_LANE`` unset — a hand-run, a future render-lane adopter — arrived
+    here as the asia lane itself and the gate never fired.
+
+    Only ``.github/workflows/asia-close.yml`` (band A, step "CN/HK builder band A")
+    sets ``CN_LANE: asia``; the resolver that reads it is
+    ``scripts.build_baskets_china_ths._membership_pit_lane``, which has no default, so
+    every other context resolves None and lands on the refusal below.
+    """
+    if lane == "asia":
+        return True
+    log.info("basket_membership_pit: %s REFUSED (lane=%r, not 'asia') — the asia "
+             "collection lane is the sole advancer of the PIT store", what, lane)
+    return False
 
 
 def _append_rows(suite: str, rows: list[dict]) -> int:
@@ -440,7 +465,11 @@ def backfill_from_json_snapshots(suite: str, *, lane: str | None = None) -> dict
 
 
 def append_all(*, asof: str | None = None, lane: str | None = None) -> dict:
-    """Backfill + stamp BOTH CN suites. The single nightly entry point."""
+    """Backfill + stamp BOTH CN suites. The single nightly entry point.
+
+    ``lane`` is threaded straight through to both writers and is FAIL-CLOSED there
+    (see ``_lane_ok``): omit it and nothing is written, in either suite.
+    """
     out: dict = {}
     for suite in SUITES:
         try:

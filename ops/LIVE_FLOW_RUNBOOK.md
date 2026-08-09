@@ -2,7 +2,7 @@
 
 ## Architecture overview
 
-The live-flow poller (`scripts/live_flow_poller.py`) runs on the Mac Studio
+The live-flow poller (`scripts/live_flow_poller.py`) runs on the M1 ops host
 during Regular Trading Hours (RTH: 09:25–16:05 ET, weekdays).  It fetches
 options tape data per root, runs the flow engine, and publishes JSON artifacts
 to Cloudflare R2.  The FastAPI app (`app/main.py`) serves those R2 objects to
@@ -22,9 +22,151 @@ the Terminal UI with a 30s TTL cache.
 | `live_flow/dte_tide/{DATE}.json` | `live_flow.dte_tide/v1` | Dated archive of dte_tide_current |
 | `live_flow/tide/dates.json` | `live_flow.archive_dates/v1` | Sessions index for the tide archive |
 | `live_flow/dte_tide/dates.json` | `live_flow.archive_dates/v1` | Sessions index for the dte archive |
+| `live_flow/events/{DATE}.jsonl` | `live_flow.event_stage/v1` | Append-only PIT decision + availability receipts |
+| `live_flow/events/dates.json` | `live_flow.event_dates/v1` | Newest 64 event-stage sessions available to nightly replay |
 
 Local copies land in `data/live_flow_out/` (gitignored).
 Day state is persisted at `data/live_flow_state/day_state_{date}.json`.
+
+### Point-in-time raw event stage (OIP PIT)
+
+The learning source is the date-keyed raw stage, **never** the capped and
+overwritten `live_flow/feed_current.json` display artifact:
+
+| Layer | Event ledger | Publication proof / sessions index |
+|---|---|---|
+| M1 local | `data/live_flow_state/events/{DATE}.jsonl` | `published.json` (remote byte/SHA receipts) + `dates.json` |
+| R2 | `live_flow/events/{DATE}.jsonl` | `live_flow/events/dates.json` |
+
+`LIVE_FLOW_EVENT_STAGE_DIR` may redirect the local directory for an isolated
+test, but production uses the paths above. The poller is the sole writer of the
+raw stage. For each new source event it performs this ordered durability
+protocol while holding an exclusive file lock:
+
+1. append the immutable `kind=decision` receipt and `fsync` it;
+2. only after that succeeds, observe `available_at`;
+3. require that clock to be at or after the stored decision clock; and
+4. append the separate `kind=availability` receipt and `fsync` it.
+
+The durable `available_at` receipt is therefore the learning horizon anchor. It
+does not mean fetch completion, sequential processing completion, R2 publication,
+or the time a UI happened to render the event. R2 publication does not rewrite
+either decision-time receipt and `published_at` remains null unless a future,
+separate publication receipt can prove it.
+
+The R2 write order is equally load-bearing. The publisher retries every local
+session that has never been proven remote or has a valid append-only extension.
+It rejects shrinkage, same-size rewrites, and growth whose prior byte prefix no
+longer matches the last receipt. Each PUT reads a unique fsynced immutable
+snapshot of the bytes already parsed—not the concurrently mutable stage path.
+Only a successful snapshot PUT may atomically add/update that session in local
+`published.json`, bound to its exact raw byte count and raw-byte SHA-256.
+Closed, already-proven sessions whose file size is unchanged take a metadata
+fast path; the current, never-proven, or extended file is fully parsed and hashed. Local
+`dates.json` is then derived from those proofs—not from the directory listing—and
+its newest **64** proven sessions are uploaded to `live_flow/events/dates.json`.
+A failed first PUT can therefore never advertise a missing object on a later
+day. A failed same-day extension retains the already-proven remote prefix in the
+index and remains eligible for retry because its local byte/SHA no longer match
+the publication receipt. Display artifacts may continue fail-soft, but the
+learning consumer must not advance over an unproven or changed prefix.
+
+After that dates-index PUT succeeds, the M1 normally keeps only the newest **64
+proven** stage files and publication receipts. An older file is pruned only when
+its exact current bytes equal the successful remote receipt. Never-proven,
+rejected, failed-extension, or otherwise mismatched files remain locally with
+their prior prefix receipt even outside the window; losing that receipt would
+weaken the append-only fence on retry. R2 remains the longer-lived/offline replay
+archive. This bounds healthy-state disk/parse cost without silently discarding a
+decision ledger during an outage or integrity fault.
+
+The stage fails closed on malformed JSON, a conflicting duplicate decision or
+availability receipt, a session/date mismatch, or a file whose final line is
+torn. Never truncate a torn stage, synthesize `available_at`, or rebuild it from
+`feed_current`. Preserve/quarantine the bytes for diagnosis and restore a
+known-good complete prefix or replay the original source event. A crash between
+the two receipt writes is recoverable: the next occurrence reuses the first
+durable decision clocks, verifies that its causal payload did not drift, and
+appends only the missing availability receipt.
+
+#### Nightly consumer and replay ownership
+
+The `OIP PIT — durable option episodes + aligned H+60 proxy accrual` step in
+`.github/workflows/daily.yml` runs `scripts/build_options_signal_episode.py`
+after the session digest. It is the sole advancer of these committed artifacts:
+
+- `data/options_signal_episode/episodes.jsonl` — immutable decision-time watch
+  episodes;
+- `data/options_signal_episode/outcomes_h60.jsonl` — later H+60 aligned-bar
+  proxy measurements, containing only complete and terminal-incomplete rows;
+  pending attempts are not persisted and are retried on a later nightly; and
+- `data/options_signal_episode/checkpoint.json` — per-session record count and
+  canonical-record append-prefix SHA-256 (not the raw-byte publication digest).
+
+The builder discovers at most the newest **64** retained sessions, using a
+credentialed R2 listing when available and the public 64-session dates index as
+fallback. It processes sessions oldest-first, so a missed nightly catches up
+without skipping earlier retained stages. Before advancing a checkpoint it
+verifies that the stage did not shrink and that the previously consumed prefix
+is canonically unchanged. `COLLECT_LANE=nightly` owns committed ledger
+advancement; dry runs and other lanes may derive a report but cannot append.
+
+Replay older than the 64-session live catch-up window belongs to an explicit
+offline/research restore job. It must consume preserved date-keyed raw stages,
+write separate replay outputs, and never mutate the live R2 keys, the live
+checkpoint, or `feed_current`. Coarse/delayed H+60 proxies stay labeled
+training-ineligible, and every episode retains zero trade, pick, ranking, sizing,
+gating, escalation, and Prophet-training authority.
+
+#### Receipt-bound Polygon price evidence
+
+Price-dependent H+60 accrual consumes a pair restored together by the Actions
+cache under `data/intraday/`:
+
+- `<TICKER>.parquet` — the mutable, overlap-corrected adjusted bar cache; and
+- `<TICKER>.parquet.receipt.json` — its
+  `polygon.intraday_price_receipt/v1` causal sidecar.
+
+`scripts/build_polygon_intraday.py` fsyncs and atomically installs the exact
+parquet bytes first, then writes the adjacent receipt with their SHA-256,
+`source_available_at`, cadence, vendor delay, adjusted-price basis, timestamp
+basis, row count, and coverage endpoints. The `data/intraday` cache path must
+carry both files between the hourly collector and nightly engine jobs.
+
+A legacy parquet with no receipt is never consumed: that ticker remains
+explicitly pending as `missing_price_receipt` until a receipt-aware collector
+refreshes it, while other tickers and the raw-stage checkpoint can advance. A
+present receipt with no source, torn/duplicate-key JSON, a changed receipt, or a
+source digest/basis mismatch is an integrity stop for any price-dependent
+episode. Session-close terminal outcomes are resolved before cache acquisition
+and therefore remain invariant to all cache states. Every complete outcome
+retains the exact canonical `[entry, exit)` OHLC observations plus the exit open,
+row count, and digest inline, so a later cache correction cannot rewrite it.
+
+Offline diagnosis reads files only; it must not invoke the live poller:
+
+```bash
+export PIT_PRICE_TICKER=SPY
+python - <<'PY'
+import hashlib, json, os
+from pathlib import Path
+
+root = Path("data/intraday")
+ticker = os.environ["PIT_PRICE_TICKER"]
+source = root / f"{ticker}.parquet"
+receipt_path = root / f"{ticker}.parquet.receipt.json"
+print({"source_exists": source.exists(), "receipt_exists": receipt_path.exists()})
+if receipt_path.exists():
+    receipt = json.loads(receipt_path.read_text())
+    print({
+        "schema": receipt.get("schema"),
+        "source_available_at": receipt.get("source_available_at"),
+        "recorded_sha256": receipt.get("source_file_sha256"),
+        "actual_sha256": hashlib.sha256(source.read_bytes()).hexdigest()
+            if source.exists() else None,
+    })
+PY
+```
 
 ### Dated tide/dte archives (OIP W0 T-lane)
 
@@ -157,32 +299,81 @@ Constraints that shaped the shape:
   2026-07-30:
   1. the repo-scoped SSH **deploy key** `~/.ssh/macro_dashboard_deploy`
      (`ssh -i ~/.ssh/macro_dashboard_deploy -T git@github.com` →
-     `Hi chriswong6031-creator/macro!`).  There is no `~/.ssh/config` on the M1,
+     `Hi mastermindx-market-intelligence/macro!`).  There is no `~/.ssh/config` on the M1,
      so the key is pinned in the clone's own `core.sshCommand`.
      Note `macro_dashboard_deploy_v2` does **not** authenticate — use the v1 key.
   2. anonymous **HTTPS** — the repo is public, so `git ls-remote
-     https://github.com/chriswong6031-creator/macro.git` needs no credentials.
+     https://github.com/mastermindx-market-intelligence/macro.git` needs no credentials.
      Fallback if the key is ever revoked.
 
 Rebuild, while the poller is idle (it self-exits 16:05 ET, so any weekday
-evening/overnight works — check `launchctl list | grep liveflow` shows PID `-`):
+evening/overnight works — check `launchctl list | grep liveflow` shows PID `-`).
+This is also the mandatory deployment path when the existing tree is dirty,
+hand-patched, stale, or otherwise cannot prove it equals its current commit.
+As observed 2026-08-08, the live M1 tree is both dirty and substantially behind
+`origin/main`: **do not run a blind reset in that tree.** Clone beside it, carry
+only the three runtime paths named below, and keep the complete old tree as the
+timestamped rollback:
 
 ```bash
+set -euo pipefail
 OLD=/Users/chriswong/liveflow-ops-wt
 NEW=/Users/chriswong/liveflow-ops-wt.new
+STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+ROLLBACK="${OLD}.orphaned-${STAMP}"
+EXPECTED_MERGE="${EXPECTED_MERGE:?export the reviewed main merge SHA first}"
+
+test -d "$OLD/.git"
+test ! -e "$NEW"                      # never reuse a stale failed-clone target
+test ! -e "$ROLLBACK"
 
 # 1. clone BESIDE the live path, never over it
 git clone --depth 1 --single-branch --branch main \
   --config "core.sshCommand=ssh -i /Users/chriswong/.ssh/macro_dashboard_deploy -o IdentitiesOnly=yes" \
-  git@github.com:chriswong6031-creator/macro.git "$NEW"
+  git@github.com:mastermindx-market-intelligence/macro.git "$NEW"
+LOCAL=$(git -C "$NEW" rev-parse HEAD)
+REMOTE=$(git -C "$NEW" ls-remote origin refs/heads/main | awk '{print $1}')
+test -n "$REMOTE"
+test "$LOCAL" = "$REMOTE"             # clone is exact current origin/main
+if test "$LOCAL" != "$EXPECTED_MERGE"; then
+  git -C "$NEW" fetch --deepen 256 origin main
+  git -C "$NEW" merge-base --is-ancestor "$EXPECTED_MERGE" "$LOCAL"
+fi
 
 # 2. carry over what git can never provide (all gitignored)
 rsync -a "$OLD/.env" "$NEW/.env"                                  # keeps 0600
 rsync -a "$OLD/data/live_flow_state" "$OLD/data/live_flow_out" "$NEW/data/"
 
+# prove the external interpreter can import the new tree before exposure
+PYTHON=/Users/chriswong/miniconda3/envs/plane/bin/python
+test -x "$PYTHON"
+PYTHONPATH="$NEW" "$PYTHON" -c 'import scripts.live_flow_poller'
+PYTHONPATH="$NEW" "$PYTHON" -m scripts.live_flow_poller --help >/dev/null
+
 # 3. swap, keeping a timestamped rollback; launchd paths never change
-mv "$OLD" "${OLD}.orphaned-$(date +%Y%m%dT%H%M%S)"
-mv "$NEW" "$OLD"
+SWAPPED=0
+restore_on_error() {
+  rc=$?
+  if test "$rc" -ne 0 && test "$SWAPPED" -eq 1; then
+    mv "$OLD" "${OLD}.failed-${STAMP}"
+    mv "$ROLLBACK" "$OLD"
+  fi
+  exit "$rc"
+}
+trap restore_on_error EXIT
+mv "$OLD" "$ROLLBACK"
+if ! mv "$NEW" "$OLD"; then
+  mv "$ROLLBACK" "$OLD"             # restore the live path on a failed swap
+  exit 1
+fi
+SWAPPED=1
+test "$(git -C "$OLD" rev-parse HEAD)" = "$LOCAL"
+test -z "$(git -C "$OLD" status --porcelain)"
+test "$(stat -f '%Lp' "$OLD/.env")" = 600
+PYTHONPATH="$OLD" "$PYTHON" -c 'import scripts.live_flow_poller'
+PYTHONPATH="$OLD" "$PYTHON" -m scripts.live_flow_poller --help >/dev/null
+SWAPPED=0
+trap - EXIT
 ```
 
 Copy **only** those gitignored paths.  Anything else the old tree has that
@@ -192,10 +383,15 @@ deleted; copying it back re-creates the drift the rebuild exists to remove.
 Verify (no live cycle — see the warning below):
 
 ```bash
+set -euo pipefail
 cd /Users/chriswong/liveflow-ops-wt
+LOCAL=$(git rev-parse HEAD)
+REMOTE=$(git ls-remote origin refs/heads/main | awk '{print $1}')
+test -n "$REMOTE"
+test "$LOCAL" = "$REMOTE"
+test -z "$(git status --porcelain)"
+test "$(stat -f '%Lp' .env)" = 600
 git log -1 --format='%H %ci %s'
-git status --porcelain -uno | wc -l         # must be 0
-ls -l .env                                  # must still be -rw-------
 ls data/live_flow_state/                    # day_state_*.json must be present
 launchctl list | grep mastermind.liveflow   # PID '-', last status 0, while idle
 PYTHONPATH=/Users/chriswong/liveflow-ops-wt \
@@ -203,18 +399,53 @@ PYTHONPATH=/Users/chriswong/liveflow-ops-wt \
   -m scripts.live_flow_poller --help >/dev/null && echo "poller entrypoint OK"
 ```
 
-> **Do not verify by running a real cycle.**  A bare `--once` publishes to the
+This release changes the launchd restart contract, so refreshing the clone is
+not sufficient. While the host is idle and outside RTH, reinstall and reload the
+reviewed plist, then prove the installed copy and loaded label:
+
+```bash
+set -euo pipefail
+INSTALLED="$HOME/Library/LaunchAgents/com.mastermind.liveflow.plist"
+DOMAIN="gui/$(id -u)"
+launchctl bootout "$DOMAIN" "$INSTALLED" 2>/dev/null || true
+install -m 644 \
+  /Users/chriswong/liveflow-ops-wt/ops/launchd/com.mastermind.liveflow.plist \
+  "$INSTALLED"
+plutil -lint "$INSTALLED"
+test "$(plutil -extract KeepAlive.SuccessfulExit raw -o - "$INSTALLED")" = false
+launchctl bootstrap "$DOMAIN" "$INSTALLED"
+launchctl print "$DOMAIN/com.mastermind.liveflow" >/dev/null
+```
+
+`SuccessfulExit=false` restarts crashes and Theta-unavailable exits after the
+60-second throttle, but a clean outside-RTH/post-close exit remains stopped until
+the next calendar trigger. Do not reload this plist during RTH merely to test it.
+
+> **Do not verify this deployment by running a real cycle.** Do not run
+> `--once`, with or without `--date`: a bare `--once` publishes to the
 > live R2 *current* keys, and `--once --date <past>` overwrites that date's
 > flow-surface replay (see the smoke warning above).  The import + `--help`
 > check covers the `ModuleNotFoundError` class of failure that this doctrine
-> exists to prevent; the real proof is the next 09:25 ET session in
-> **`/tmp/liveflow.stderr.log`**.
+> exists to prevent. Keep the rollback through the next RTH proof: after the
+> next 09:25 ET start, confirm in **`/tmp/liveflow.stderr.log`** that cycles ran,
+> the date-keyed event stage uploaded before its dates index, local
+> `events/published.json` matches the uploaded byte count/SHA, and no torn-stage,
+> checkpoint, or R2 error occurred. Then verify that
+> `live_flow/events/{DATE}.jsonl` and the same date in
+> `live_flow/events/dates.json` are publicly readable. Only that scheduled run
+> proves the PIT writer in production; deleting the rollback remains an operator
+> decision after this proof.
 
-Refresh thereafter — this is now an ordinary git operation, which was the whole
-point:
+Refresh thereafter with the in-place operation below **only when the standalone
+clone begins clean and current enough that its diff has been reviewed**. If
+`git status --porcelain` is non-empty, HEAD is unexpectedly stale, or any path
+has been hand-patched, use the clone-beside/swap procedure above instead; never
+erase an unexplained dirty tree to make deployment look clean.
 
 ```bash
+set -euo pipefail
 cd /Users/chriswong/liveflow-ops-wt
+test -z "$(git status --porcelain)"
 git fetch --depth 1 origin main && git reset --hard FETCH_HEAD
 ```
 
@@ -466,57 +697,22 @@ Never echo these values — they persist in shell history and logs.
 
 ## Manual single-cycle smoke
 
-> **`--date` disables the dated tide/dte ARCHIVE lane — by design.** This recipe polls a
-> handful of roots, so its tide payload is a valid-looking *partial* of that past session, and
-> the archive key is derived from `session_date`. An ungated smoke would therefore overwrite
-> the settled `live_flow/tide/<that date>.json` with a fragment, undetectably (schema valid,
-> date correct — `roots_polled` lives only in `meta.json`, which the archive does not carry).
-> So whenever `--date` is passed, dated **tide/dte_tide** archive writes and their retention
-> sweep are both off and the poller logs it at WARNING. That lane is also dark on any
-> non-session (market holidays — launchd fires anyway). To exercise it, run the unit suite:
-> `pytest tests/test_flow_archive.py`.
->
-> **⚠️ The dated FLOW-SURFACE store has no such gate — a backdated smoke DOES overwrite it.**
-> `session_date` flows unconditionally into `build_and_stage_surfaces`
-> (`live_flow_poller.py:1717`), so a `--date` run rewrites
-> `live_flow/surface/{ROOT}/<that date>/idx.json` + `{HHMM}.json` with a partial few-root,
-> single-stamp frame, and its retention sweep still runs. Pre-existing M-XP behavior, not
-> changed here. **Do not run a backdated smoke against a session whose surface replay you
-> still care about** — pick a date outside the 10-session surface retention window, or accept
-> that that session's replay is clobbered until the next live session ages it out.
+There is no safe production CLI single-cycle smoke for this combined poller.
+Do **not** run bare `--once` or `--once --date <past>`: both can mutate live R2
+current/replay surfaces, and a historical date cannot satisfy the exact
+same-exchange-date observation/decision/availability contract for new events.
+
+Use isolated, non-network contract fixtures and the import/entrypoint proof:
 
 ```bash
-# Wipe stale state first
-rm -f data/live_flow_state/day_state_2026-07-02.json
-
-# Run one cycle against historical date (uses full_day mode automatically)
-set -a; source .env; set +a
-python -m scripts.live_flow_poller \
-  --once \
-  --date 2026-07-02 \
-  --retention-hours 96 \
-  --roots SPY QQQ KRE NVDA XLF
-
-# Verify outputs
-ls -lh data/live_flow_out/
-ls -lh data/live_flow_out/tickers/
-python -c "import json; d=json.load(open('data/live_flow_out/tide_current.json')); \
-  print('minutes:', len(d['minutes']), 'sectors:', len(d['sectors']), \
-  'top_net:', len(d['top_net_impact']))"
-python -c "import json; d=json.load(open('data/live_flow_out/dte_tide_current.json')); \
-  print('buckets:', list(d['buckets'].keys()))"
-python -c "import json; d=json.load(open('data/live_flow_out/tickers/SPY.json')); \
-  print('minutes:', len(d['minutes']), 'strikes:', len(d['strikes']))"
+python -m scripts.live_flow_poller --help
+python -m pytest -q -p no:cacheprovider \
+  tests/test_options_signal_episode.py tests/test_live_flow.py
 ```
 
-Expected for SPY 2026-07-02 with --roots SPY QQQ KRE NVDA XLF:
-- `tide_current.json` minutes_n ~ 390 (one per trading minute 09:30–16:00)
-- `dte_tide_current.json` buckets == ['0d', '1_7d', '8_30d', '31_90d', '90p']
-- `tickers/SPY.json` minutes > 0, strikes > 0
+## Scheduled R2 public verification
 
-## R2 public verification
-
-After a smoke run, verify R2 public GET:
+After the next normal launchd RTH cycle—not after a manual invocation—verify R2 public GET:
 ```bash
 R2_BASE=$(python -c "import yaml; c=yaml.safe_load(open('config.yml')); \
   print(c['r2_data_plane']['public_base'])")
@@ -525,16 +721,39 @@ curl -s "$R2_BASE/live_flow/tide_current.json" | python -m json.tool | head -20
 
 ## State wipe / retention reset
 
-To force a clean accumulator state (e.g. after a state corruption):
+Never delete, truncate, or quarantine the current session's `day_state` alone.
+It is the transaction partner of `events/{DATE}.jsonl`: it carries exact engine
+dedup state and may own a post-cycle `pending_learning_events` WAL that has not
+reached the stage yet. A missing/corrupt state beside a nonempty stage correctly
+fails closed; rebuilding from empty would double-count prints and change IDs.
+
+On an integrity stop, leave launchd unloaded and make a recoverable forensic copy:
+
 ```bash
-rm -f data/live_flow_state/day_state_YYYY-MM-DD.json
+set -euo pipefail
+cd /Users/chriswong/liveflow-ops-wt
+SESSION=YYYY-MM-DD
+CASE="/Users/chriswong/liveflow-recovery-${SESSION}-$(date -u +%Y%m%dT%H%M%SZ)"
+mkdir -m 700 "$CASE"
+cp -p "data/live_flow_state/day_state_${SESSION}.json" "$CASE/" 2>/dev/null || true
+cp -p "data/live_flow_state/events/${SESSION}.jsonl" "$CASE/" 2>/dev/null || true
+shasum -a 256 "$CASE"/* >"$CASE/SHA256SUMS" 2>/dev/null || true
 ```
 
-To run with a shorter retention window (keeps events for N hours instead of
-the config default):
-```bash
-python -m scripts.live_flow_poller --once --date ... --retention-hours 96
-```
+Then inspect `pending_learning_events` without editing either original. If it is
+the current exchange date, reload the reviewed plist normally: startup drains
+the exact WAL before the RTH gate and before probing Theta. If it is a prior
+date, the availability clock can no longer be stamped honestly. Record the
+incident, preserve the case directory, and move only the prior `day_state` into
+`data/live_flow_state/quarantine/` after explicit operator review; never backdate
+or synthesize availability. The already-complete decision/availability pairs in
+the dated stage remain append-only evidence. A corrupt current-session state
+cannot be auto-rebuilt: stop for that session and resume on a new session only
+after the same reviewed quarantine procedure.
+
+Automatic retention already prunes old, proven day states. There is no generic
+manual state-wipe command, and neither bare `--once` nor historical `--date` is a
+valid recovery or smoke test.
 
 ## Day-state size guard
 

@@ -18,8 +18,8 @@ BUCKET = "capital-structure-conformance"
 KEY = "capital_structure/share_counts/conformance/v1/0123456789abcdef0123456789abcdef.json"
 HOST = "0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com"
 PROVENANCE = {
-    "repository": "chriswong6031-creator/macro",
-    "workflow_ref": "chriswong6031-creator/macro/.github/workflows/capital-share-count-r2-conformance.yml@refs/heads/main",
+    "repository": "mastermindx-market-intelligence/macro",
+    "workflow_ref": "mastermindx-market-intelligence/macro/.github/workflows/capital-share-count-r2-conformance.yml@refs/heads/main",
     "run_id": "123456789",
     "run_attempt": 1,
     "commit_sha": "a" * 40,

@@ -1,8 +1,6 @@
 {
-  "ok": false,
-  "fail_reasons": [
-    "news: CONTENT FROZEN — as_of advanced 2026-08-07→2026-08-08 but signal values are byte-identical to the prior vintage (builder did not recompute)"
-  ],
+  "ok": true,
+  "fail_reasons": [],
   "warnings": [],
   "surfaces": {
     "standouts": {
@@ -15,26 +13,26 @@
       "n": 79,
       "coverage": 79,
       "row": {
-        "run_date": "2026-08-08",
+        "run_date": "2026-08-09",
         "surface": "standouts",
         "as_of": "2026-08-07",
         "n_records": 79,
         "coverage": 79,
-        "fingerprint": "4c8e97d646cb4188",
+        "fingerprint": "e1e2362850ec4fff",
         "scores": {
           "conviction.composite_z": {
             "n_sub": 79,
             "pop": 79,
-            "uniq": 76,
-            "mean": -0.05920253164556963,
-            "std": 0.4631960893712086
+            "uniq": 77,
+            "mean": -0.06730379746835444,
+            "std": 0.46255507655449934
           },
           "alpha": {
             "n_sub": 79,
             "pop": 79,
-            "uniq": 67,
-            "mean": 0.12924050632911394,
-            "std": 0.8387042026990565
+            "uniq": 66,
+            "mean": 0.12430379746835443,
+            "std": 0.8335188235583438
           }
         }
       }
@@ -49,7 +47,7 @@
       "n": 25,
       "coverage": 25,
       "row": {
-        "run_date": "2026-08-08",
+        "run_date": "2026-08-09",
         "surface": "briefing",
         "as_of": "2026-08-08",
         "n_records": 25,
@@ -83,7 +81,7 @@
       "n": 250,
       "coverage": 250,
       "row": {
-        "run_date": "2026-08-08",
+        "run_date": "2026-08-09",
         "surface": "radar",
         "as_of": "2026-08-08",
         "n_records": 250,
@@ -110,7 +108,7 @@
       "n": 30,
       "coverage": 30,
       "row": {
-        "run_date": "2026-08-08",
+        "run_date": "2026-08-09",
         "surface": "altdata",
         "as_of": "2026-08-08",
         "n_records": 30,
@@ -137,35 +135,33 @@
     "news": {
       "key": "news",
       "label": "news flow",
-      "ok": false,
-      "fails": [
-        "news: CONTENT FROZEN — as_of advanced 2026-08-07→2026-08-08 but signal values are byte-identical to the prior vintage (builder did not recompute)"
-      ],
+      "ok": true,
+      "fails": [],
       "warns": [],
       "as_of": "2026-08-08",
-      "n": 700,
-      "coverage": 471,
+      "n": 620,
+      "coverage": 375,
       "row": {
-        "run_date": "2026-08-08",
+        "run_date": "2026-08-09",
         "surface": "news",
         "as_of": "2026-08-08",
-        "n_records": 700,
-        "coverage": 471,
-        "fingerprint": "ecedb295a54e92e8",
+        "n_records": 620,
+        "coverage": 375,
+        "fingerprint": "57952ee3bd66be11",
         "scores": {
           "n_recent": {
-            "n_sub": 471,
-            "pop": 471,
+            "n_sub": 375,
+            "pop": 375,
             "uniq": 6,
-            "mean": 1.615711252653928,
-            "std": 1.2307487724262787
+            "mean": 1.6213333333333333,
+            "std": 1.10058085673985
           },
           "sentiment_score": {
-            "n_sub": 471,
-            "pop": 471,
-            "uniq": 6,
-            "mean": 0.2622717622080679,
-            "std": 0.7916100248564049
+            "n_sub": 375,
+            "pop": 375,
+            "uniq": 4,
+            "mean": 0.20666666666666667,
+            "std": 0.7732758599332812
           }
         }
       }
@@ -180,7 +176,7 @@
       "n": 30,
       "coverage": 30,
       "row": {
-        "run_date": "2026-08-08",
+        "run_date": "2026-08-09",
         "surface": "intel_hub",
         "as_of": "2026-08-08",
         "n_records": 30,
@@ -221,5 +217,5 @@
     "intel_hub"
   ],
   "missing": [],
-  "evaluated_at": "2026-08-08T16:21:20.681148+00:00"
+  "evaluated_at": "2026-08-09T01:32:38.368469+00:00"
 }

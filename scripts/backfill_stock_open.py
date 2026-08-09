@@ -31,8 +31,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from lib import config, store
-from collectors import _stock_ohlc
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config, store  # noqa: E402
+from collectors import _stock_ohlc  # noqa: E402
 
 log = logging.getLogger("backfill_stock_open")
 

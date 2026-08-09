@@ -705,6 +705,10 @@ PUBLIC_EXACT = frozenset({
     # behind require_site_full_user (401 signed out, 403 unentitled). This changes
     # who can read the WORKBENCH, never who can read the WORK.
     "/fundamental_forensics.css", "/fundamental_forensics.js",
+    # Market Memory is the same public-shell/private-work split: these assets
+    # contain presentation and a bounded API client only. All analytical
+    # payloads remain behind the paid /api/market-memory/v1/* routes.
+    "/market_memory.html", "/market_memory.css", "/market_memory.js",
     "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js",
     "/landing.css", "/scene-motion.css", "/scene-motion.js",
     "/chat.css",

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/institutional_13f_catalog_manifest.v1.schema.json",
+  "title": "Institutional 13F catalog generation manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "generation_id", "producer_version", "clocks", "counts", "artifacts"],
+  "properties": {
+    "schema": {"const": "institutional_13f.catalog_generation_manifest/v1"},
+    "generation_id": {"type": "string", "pattern": "^i13fgen_[a-f0-9]{64}$"},
+    "producer_version": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:/-]{0,127}$"},
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["report_period", "source_cutoff_at", "published_at"],
+      "properties": {
+        "report_period": {"type": "string", "format": "date"},
+        "source_cutoff_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+        "published_at": {"type": "string", "format": "date-time", "pattern": "Z$"}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filing_rows", "holding_rows", "manager_relationship_rows", "source_receipts"],
+      "properties": {
+        "filing_rows": {"type": "integer", "minimum": 0},
+        "holding_rows": {"type": "integer", "minimum": 0},
+        "manager_relationship_rows": {"type": "integer", "minimum": 0},
+        "source_receipts": {"type": "integer", "minimum": 0}
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 68,
+      "maxItems": 68,
+      "uniqueItems": true,
+      "items": {
+        "oneOf": [
+          {"$ref": "#/$defs/filings"},
+          {"$ref": "#/$defs/holdingsBucket"},
+          {"$ref": "#/$defs/managers"},
+          {"$ref": "#/$defs/sourceReceipts"},
+          {"$ref": "#/$defs/coverage"}
+        ]
+      },
+      "allOf": [
+        {"contains": {"$ref": "#/$defs/filings"}, "minContains": 1, "maxContains": 1},
+        {"contains": {"$ref": "#/$defs/holdingsBucket"}, "minContains": 64, "maxContains": 64},
+        {"contains": {"$ref": "#/$defs/managers"}, "minContains": 1, "maxContains": 1},
+        {"contains": {"$ref": "#/$defs/sourceReceipts"}, "minContains": 1, "maxContains": 1},
+        {"contains": {"$ref": "#/$defs/coverage"}, "minContains": 1, "maxContains": 1}
+      ]
+    }
+  },
+  "$defs": {
+    "baseObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "object_key", "sha256", "byte_length", "content_type", "row_count"],
+      "properties": {
+        "role": {"type": "string"},
+        "object_key": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": "integer", "minimum": 0, "maximum": 536870912},
+        "content_type": {"type": "string"},
+        "row_count": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "filings": {
+      "allOf": [
+        {"$ref": "#/$defs/baseObject"},
+        {"properties": {
+          "role": {"const": "filings_parquet"},
+          "object_key": {"pattern": "^smart-money/13f/evidence/v1/objects/sha256/[a-f0-9]{2}/[a-f0-9]{64}\\.parquet$"},
+          "content_type": {"const": "application/vnd.apache.parquet"},
+          "row_count": {"type": "integer", "minimum": 0}
+        }}
+      ]
+    },
+    "holdingsBucket": {
+      "allOf": [
+        {"$ref": "#/$defs/baseObject"},
+        {"properties": {
+          "role": {"pattern": "^holdings_bucket_(0[0-9]|[1-5][0-9]|6[0-3])_parquet$"},
+          "object_key": {"pattern": "^smart-money/13f/evidence/v1/objects/sha256/[a-f0-9]{2}/[a-f0-9]{64}\\.parquet$"},
+          "content_type": {"const": "application/vnd.apache.parquet"},
+          "row_count": {"type": "integer", "minimum": 0}
+        }}
+      ]
+    },
+    "managers": {
+      "allOf": [
+        {"$ref": "#/$defs/baseObject"},
+        {"properties": {
+          "role": {"const": "manager_relationships_parquet"},
+          "object_key": {"pattern": "^smart-money/13f/evidence/v1/objects/sha256/[a-f0-9]{2}/[a-f0-9]{64}\\.parquet$"},
+          "content_type": {"const": "application/vnd.apache.parquet"},
+          "row_count": {"type": "integer", "minimum": 0}
+        }}
+      ]
+    },
+    "sourceReceipts": {
+      "allOf": [
+        {"$ref": "#/$defs/baseObject"},
+        {"properties": {
+          "role": {"const": "source_receipts_json"},
+          "object_key": {"pattern": "^smart-money/13f/evidence/v1/objects/sha256/[a-f0-9]{2}/[a-f0-9]{64}\\.json$"},
+          "content_type": {"const": "application/json"},
+          "row_count": {"type": "integer", "minimum": 0}
+        }}
+      ]
+    },
+    "coverage": {
+      "allOf": [
+        {"$ref": "#/$defs/baseObject"},
+        {"properties": {
+          "role": {"const": "coverage_json"},
+          "object_key": {"pattern": "^smart-money/13f/evidence/v1/objects/sha256/[a-f0-9]{2}/[a-f0-9]{64}\\.json$"},
+          "content_type": {"const": "application/json"},
+          "row_count": {"type": "null"}
+        }}
+      ]
+    }
+  }
+}
