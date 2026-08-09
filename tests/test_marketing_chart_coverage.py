@@ -104,6 +104,8 @@ def _plan(asset: str, *, entry: float, signal_date: str) -> dict:
         "entry": entry, "invalidation": entry * 0.85,
         "targets": [entry * 1.15, entry * 1.3], "trigger": entry,
         "_conviction_score": 88, "_signal_date": signal_date,
+        "signal_date_basis": "tier_event_date", "signal_tier": "T1",
+        "signal_date": signal_date,
         "phase": "triggered_pre_t1", "recommended_action": "hold",
         "management_confidence": 65.0, "what_to_do_now": [],
     }
