@@ -58,7 +58,7 @@ set -u
 
 REPO="/Users/chriswong/flow-ops-wt"
 PUSH_REPO="/Users/chriswong/indexgex-push-repo"
-REMOTE_URL="https://github.com/chriswong6031-creator/macro.git"
+REMOTE_URL="https://github.com/mastermindx-market-intelligence/macro.git"
 PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
 ART_DIR="data/index_gex_history"
 
