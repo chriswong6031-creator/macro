@@ -263,7 +263,11 @@ def test_company_intelligence_rate_limits_one_client_and_errors_are_not_cached(c
         "_read_company_intelligence",
         lambda _params: _success_projection(),
     )
-    headers = {"EO-Client-IP": "203.0.113.7"}
+    # EO-Connecting-IP, not EO-Client-IP: the resolver reads only the header the edge
+    # overwrites (app/edge_client.py). With the old header this test would still pass —
+    # every request would silently key on TestClient's socket host instead — so it would
+    # have stopped exercising per-client keying without ever going red.
+    headers = {"EO-Connecting-IP": "203.0.113.7"}
 
     for _ in range(company_intelligence_api._RATE_LIMIT_REQUESTS):
         response = client.get("/api/company-intelligence/AAPL", headers=headers)
@@ -279,9 +283,12 @@ def test_company_intelligence_rate_limits_one_client_and_errors_are_not_cached(c
 def test_company_intelligence_peer_backstop_stops_rotating_claimed_edge_ips(client, monkeypatch) -> None:
     """The X-MM-Peer value below represents Caddy's overwritten upstream header.
 
-    A client can fabricate a fresh EO-Client-IP at the origin, but Caddy
-    replaces any inbound X-MM-Peer with the TCP peer before the app sees it.
-    The app may therefore trust this one header as a looser shared backstop.
+    A client that reaches the origin DIRECTLY can fabricate a fresh EO-Connecting-IP
+    per request — ufw permits 80,443/tcp from Anywhere, and no header check can tell
+    that value apart from the edge's. Caddy replaces any inbound X-MM-Peer with the TCP
+    peer before the app sees it, which for such a caller is their own address. The app
+    may therefore trust this one header as a looser shared backstop, and that backstop
+    is the ONLY thing bounding a direct-to-origin rotator.
     """
     monkeypatch.setattr(company_intelligence_api, "_PEER_RATE_LIMIT_REQUESTS", 3)
     monkeypatch.setattr(
@@ -293,15 +300,15 @@ def test_company_intelligence_peer_backstop_stops_rotating_claimed_edge_ips(clie
 
     for suffix in range(3):
         response = client.get("/api/company-intelligence/AAPL", headers={
-            # Each claimed IP is intentionally different, simulating a forged
-            # EO/CF header at origin.  The post-Caddy peer is unchanged.
-            "EO-Client-IP": f"203.0.113.{suffix + 1}",
+            # Each claimed IP is intentionally different, simulating a direct-to-origin
+            # caller forging a fresh real-client header.  The post-Caddy peer is unchanged.
+            "EO-Connecting-IP": f"203.0.113.{suffix + 1}",
             "X-MM-Peer": trusted_peer,
         })
         assert response.status_code == 200, response.text
 
     blocked = client.get("/api/company-intelligence/AAPL", headers={
-        "EO-Client-IP": "203.0.113.250",
+        "EO-Connecting-IP": "203.0.113.250",
         "X-MM-Peer": trusted_peer,
     })
     assert blocked.status_code == 429

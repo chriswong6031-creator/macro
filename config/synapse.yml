@@ -75,7 +75,7 @@ artifacts:
     producer: scripts/run_fundamental_forensics_wave2.py
     known_extra_writers: []
     owner_program: fundamental-forensics
-    cadence: daily-engine
+    cadence: nightly-sec
     storage: r2
     asof_field: snapshot_at
     freshness_sla_hours: 30
@@ -96,6 +96,40 @@ artifacts:
       and object read-back. It is never copied to git, the public site, or a public
       bucket; it is an evidence/provenance rail with no score, rank, gate, or trade
       authority.
+
+  fundamental-forensics-disclosure-bundle:
+    path: fundamental_forensics/disclosures/v1/latest.json
+    format: json
+    producer: scripts/fundamental_forensics_disclosure_bundle.py
+    known_extra_writers: []
+    owner_program: fundamental-forensics
+    cadence: nightly-sec
+    storage: r2
+    asof_field: published_at
+    freshness_sla_hours: 30
+    schema: fundamental_forensics.disclosure_projection_bundle_latest/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/fundamental_forensics_disclosure_bundle.py
+      - scripts/build_fundamental_forensics.py
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: >
+      Immutable content-addressed disclosure-projection bundle plus this CAS
+      latest pointer (implementation: engine/fundamental_forensics/disclosure_bundle.py),
+      published by the scheduled filing-forensics-sec lane (02:30 UTC,
+      .github/workflows/filing-forensics-sec.yml) after restore -> strict
+      acquire -> projections -> incremental sync, then byte-verified through the
+      same restore path the engine runs. daily.yml's engine job restores ONLY
+      this bundle before the broad build (one bounded pointer GET + one bundle
+      GET — constant cost as the SEC source store grows); a red lane publishes
+      nothing, leaving the pointer at the last COMPLETE bundle, so the render is
+      stale-but-complete (restore warns beyond 3 days, refuses beyond 21).
+      Private Research R2 only — never git, the public site, or a public bucket;
+      an evidence/context rail with no score, rank, gate, or trade authority.
 
   fundamental-forensics-private-state:
     path: fundamental_forensics/state.json.gz
@@ -3249,9 +3283,16 @@ artifacts:
       NULL (Oracle P8 P-W1/S-W3; DNR:KILL-WASHOUT-TURN, which closed the 2W
       operator-seed SCORED entry trigger) — this is a different construction shipped
       display-tier as an expected-NULL forward meter. A TURNING print is a state
-      disclosure, never a bottom call. Member coverage (members_read/members_total)
-      is carried per basket and a hole under 60% prints a ::warning (W-B law).
-      may_rank/gate/size/escalate=false.
+      disclosure, never a bottom call — and NOT an earliness claim: replayed on
+      gold_miners this organ's first CONFIRMED is 2026-08-05, the same session
+      basket_turn_watch printed IGNITION, so it carries no confirmed-state lead over
+      the incumbent. Member coverage (members_read/members_total) is carried per
+      basket and a hole under 60% prints a ::warning (W-B law); members_read counts
+      members with a bar ON the basket's own stamped session, members_with_store
+      keeps the file-level count. Each basket carries its OWN data_session; the
+      artifact-level as_of/data_session is a universe-wide freshness header only and
+      stamps no ledger row. A basket behind the universe session prints a
+      ::warning too. may_rank/gate/size/escalate=false.
 
   # W1-D — US basket turn forward ledger (PIT, append-only, nightly-lane gated)
   us-basket-turn-ledger:
@@ -3278,9 +3319,21 @@ artifacts:
       ret_5d, evidence, days_in_state and the member-coverage counts. Append-only,
       keep-first on re-runs. Gated on COLLECT_LANE=nightly (house law: nightly is the
       sole advancer of data/ ledgers). The `date` stamp is derived from the DATA
-      PLANE — the newest member bar the organ actually read — not the wall clock, so
-      a run against a frozen store re-derives the session it already logged instead
-      of re-describing old tape under a fresh calendar date (#4568 pattern).
+      PLANE — PER BASKET: the newest bar in THAT basket's own equal-weight level
+      series, never the wall clock and never the newest bar in the estate. Baskets
+      here do not share a date axis (each is aggregated from its own member
+      parquets), so one nightly run legitimately writes rows carrying different
+      dates. A basket whose tape did not advance re-derives the session it already
+      logged, keep-first refuses the row, and days_in_state does not move (#4568
+      pattern); a basket with no readable level series gets no row at all.
+      days_in_state is counted only across ADJACENT sessions — a prior row that is
+      not on the basket's immediately preceding available session resets the run
+      rather than counting across a nightly outage. members_read counts members with
+      a bar ON the row's date (members_with_store keeps the file-level count).
+      AMENDED 2026-08-07 (post-merge review of #4924): v1 stamped every basket with
+      a universe-wide max(), so a basket frozen at 2026-07-31 accrued fresh-dated
+      rows with identical metrics and self-promoted to CONFIRMED on calendar
+      repetition of one stale bar; no production row was written under the defect.
       Starts at ship date; any earlier state is descriptive replay, never ledger
       evidence. Expected-NULL forward meter (FT-R9).
 
@@ -6113,22 +6166,80 @@ artifacts:
     storage: git
     asof_field: generated_at
     freshness_sla_hours: 30
-    schema: options_entry.gate.v1
+    schema: options_entry.gate.v3
     tier: shadow
     horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/mastermind_context.py
+      - scripts/build_options_prophet.py
     external_consumers:
       - mastermind:context
     notes: >
-      Pre-registered options-entry quality gate (W1.3 machinery). Currently:
-      scored=false, status=building_history (n << 30 per bucket; all gates building).
-      Buckets: S-VOI, S-WALL, S-TOP_RISK (pre-registered; verdicts at n>=30 ~Q4-26).
-      Gate logic: conditioned-vs-unconditioned delta with bootstrap CI on A10 primitives
-      (post_cushion_breach, terminal_state_clean8_21, fwd_mfe_5/21, fwd_ret_5) from
-      us_board_ledger/retro_grades.parquet. Tier=shadow until validation_gate.validated==true.
+      Pre-registered options-entry quality gate. v3 first collapses the horizon
+      ledger to canonical (as_of,lane,ticker) fires and declares the buy lane before
+      masks or terciles. A descriptive cell requires its own conditioned/base
+      outcomes to reach n>=30 fires, >=30 dates per side, and >=30 overlapping dates;
+      family-level or repeated-horizon counts cannot mature it. The 36-cell family
+      reports two-sided permutation diagnostics, 95% IID bootstrap intervals and
+      BH-FDR at alpha=0.10, but those statistics have no promotion authority. A
+      frozen date-cluster/block estimator, sequential-look plan/alpha budget and
+      fresh post-amendment cohort are still required. scored=false and weight=0 are
+      hard-frozen, so this artifact grants no rank/gate/size/Macro authority.
+
+  options-flow-signing-gate:
+    path: data/options_flow/signing_gate.json
+    format: json
+    producer: scripts/calibrate_flow_signing.py
+    known_extra_writers:
+      - "scripts/calibrate_thetadata_tape_sessions.py — updates only the thetadata_tape sub-key"
+    owner_program: options-flow
+    cadence: on-demand
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: null
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_flow.py
+      - scripts/build_options_prophet.py
+    external_consumers: []
+    notes: >
+      Source-specific trade-signing calibration. Root direction_reliable governs
+      bar/minute sources and remains false; the thetadata_tape sub-gate requires its
+      own direction_reliable_tape plus production_ready decision. Magnitude and
+      assumption-free positioning are not disabled by a failed direction gate. This
+      gate measures signing quality only and creates no directional-alpha authority.
+
+  options-dislocation-gate:
+    path: data/options_dislocation/validation_gate.json
+    format: json
+    producer: scripts/validate_options_dislocation.py
+    known_extra_writers: []
+    owner_program: options-dislocation
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: null
+    schema: options_dislocation.gate.v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_dislocation.py
+      - scripts/build_options_prophet.py
+    external_consumers: []
+    notes: >
+      Pre-registered cross-sectional options-dislocation research gate. The current
+      artifact is scored=false with no scored_primitives and insufficient date
+      history; individual in-sample/FDR-looking cells inside the short single regime
+      do not confer authority. Options Prophet relays this status as positioning
+      context only, with enforced weight=0.
 
   options-skew-snapshots:
     path: data/options_skew/snapshots.parquet
@@ -8222,7 +8333,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_options_prophet.py
     external_consumers: []
     notes: >
       NEXT3 W-OC (PR-β) — options entry feature coverage audit (RUL-U5).
@@ -9186,7 +9298,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_program_watch.py
+      - scripts/build_measurement.py
     external_consumers: []
     notes: >
       Append-only forward outcome ledger for the Lane 6 shadow lobe: one register
@@ -9199,6 +9313,61 @@ artifacts:
       NIGHTLY IS THE SOLE ADVANCER — intraday lanes discard data/ writes.
       RUL-P10 path b. Expected-NULL at birth: the first grades land a horizon
       after the first registrations.
+      TWO READERS as of 2026-08-07, neither on a scored path:
+      scripts/build_program_watch.py (private operator tripwire) and
+      scripts/build_measurement.py, which renders DERIVED COUNTS ONLY — registered
+      windows, scored windows, and the earliest open close date — into the
+      site/measurement.html hero. Both read through
+      engine.seasonality.program_watch.read_ledger_counts, so both agree on what
+      "scored" means: only rows with grade_status == "graded". An
+      ungradable_missing_prices close-out is a closed window with no outcome and
+      is NOT evidence — the same exclusion engine.seasonality.state.live_n_by_symbol
+      applies to the forward sample. The public reader additionally refuses to
+      publish a count at all when any line fails to parse, because a partial parse
+      yields an undercount indistinguishable from a true low count.
+
+  data-seasonality-program-watch:
+    path: data/seasonality/program_watch.json
+    format: json
+    producer: scripts/build_program_watch.py
+    known_extra_writers: []
+    owner_program: biopharma-seasonality-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: seasonality.program_watch.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Operator-facing program watch for the biopharma seasonality lane: four
+      tripwires evaluated against real repo state (the BioCatalyst
+      event-projection contract's existence, the first graded row on
+      data/seasonality/nw_forward_ledger.jsonl, the sx-mode/sx-catalyst marker
+      divergence between templates/stock_seasonality.html.j2 and
+      site/stock_seasonality.html, and three quiet deferrals), each carrying the
+      exact prompt to paste back and the handoff doc that prompt references.
+      Infrastructure tier and PRIVATE-CHANNEL: it carries no score, rank, gate,
+      or size, nothing reads it on any scored path, and its prompts, doc paths,
+      module names, and blocker keys must never render into a site/ page —
+      site/measurement.html serves only ONE derived fact from the same ledger
+      read (windows registered, windows graded) in plain words. Zero consumers is
+      the intended terminal state, not a gap. Every tripwire distinguishes
+      "checked, not yet" (waiting) from "could not check" (unavailable): a
+      missing or unreadable input never reports as waiting, because the two are
+      indistinguishable to a reader and the second one would be waited on
+      forever. The engine (engine/seasonality/program_watch.py) is pure stdlib
+      and reads NO wall clock — asof is always an explicit argument — so two runs
+      over identical inputs produce byte-identical JSON; the builder writes it
+      tmp + os.replace. RUL-P10 path b (git-committed, single writer = the
+      producer, staged by the nightly blanket git add data/). Runs LAST in the
+      seasonality run of daily.yml cl_misc, after build_stock_seasonality and
+      build_seasonality_shadow_state, so it reads the night's own ledger rather
+      than the previous night's.
 
   data-stock-seasonality-selection-cache:
     path: data/seasonality/selection/<SYM>.json
@@ -11589,6 +11758,57 @@ artifacts:
       Tickers LIVE VERIFIED 2026-07-07: KXCPI (CPI MoM % SA), KXPAYROLLS
       (NFP k jobs), KXJOBLESSCLAIMS (initial claims level).
 
+  # --- shadow: coherent full-vintage target-store manifest ---
+  release-target-vintage-manifest:
+    path: data/fred_vintage/release_targets/manifest.json
+    format: json
+    producer: scripts/collect_release_target_vintages.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: collected_at
+    freshness_sla_hours: 30
+    schema: release_target_vintage_collection.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_release_forecast.py
+      - engine/release_target_truth.py
+    notes: >
+      Manifest for seven ALFRED output_type=2 full-vintage parquet stores:
+      CPIAUCSL, CPILFESL, PCEPI, PCEPILFE, PPIFIS, PPIFES, and PAYEMS.
+      Canonical target reconstruction selects T and T-1 from one exact
+      release-date vintage and fails closed if either level is unavailable.
+      These stores are target truth only; they do not silently replace the
+      historical cross-vintage model epoch or rewrite old forward rows.
+
+  # --- shadow: official first-print actual receipts ---
+  release-official-actuals:
+    path: data/release_forecast/official_actuals.jsonl
+    format: jsonl
+    producer: scripts/reconcile_release_actuals.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 30
+    schema: release_actual.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_release_forecast.py
+    notes: >
+      Append-only, keep-first receipts normalized from verified BLS, BEA, and
+      DOL publication facts. Each receipt freezes target identity, first-seen
+      time, official URL, content SHA-256, parser version, unit, and print.
+      Later differing documents remain non-scoring correction candidates.
+
   # --- display: release forecast latest snapshot ---
   release-forecast-latest:
     path: data/release_forecast/latest.json
@@ -11600,7 +11820,7 @@ artifacts:
     storage: git
     asof_field: asof
     freshness_sla_hours: 30
-    schema: release_forecast.v1
+    schema: release_forecast.v2
     tier: display
     horizon_role: context
     weights: none
@@ -11608,11 +11828,12 @@ artifacts:
     consumers:
       - engine/master_brain.py
       - engine/forward_calendar_context.py
+      - engine/inflation_intelligence.py
     external_consumers:
       - mastermind:context
     notes: >
       MRI PR-C: nightly pre-print projection for CPI (headline and core)
-      and NFP, schema release_forecast.v1. Contains the upcoming-releases
+      and NFP, schema release_forecast.v2. Contains the upcoming-releases
       block with quantile projections, Cleveland nowcast benchmark
       enrichment, policy_backdrop join (fed_stance, gap_bp,
       implied_cuts_12m, next_fomc, guidance_direction — all read from
@@ -11643,13 +11864,16 @@ artifacts:
     consumers:
       - scripts/build_release_forecast.py
       - engine/chronicle/adapters.py
+      - engine/inflation_intelligence.py
     notes: >
       MRI PR-C: append-only forward ledger for release projections and
       scored actuals. Row types: projection (nightly frozen snapshot) and
-      scored (actual vs frozen T-1 projection, emitted on release day after
-      ALFRED initial print is available). Keyed (release, period, row_type,
+      shadow_projection, and scored (actual vs frozen T-1 projection, emitted
+      after an official published metric or same-release-vintage fallback is
+      available). Keyed (release, period, row_type,
       asof_night) for idempotency — re-running the same night appends zero
-      duplicate rows. The nightly lane is the sole advancer (MRI-R8); no
+      duplicate rows. New rows freeze model_epoch, target_epoch, code_receipt,
+      and input receipts. The nightly lane is the sole advancer (MRI-R8); no
       intraday or backtest lane writes here. Scored rows carry our MAE,
       benchmark MAEs, interval coverage hit, and skew-direction hit.
 
@@ -11671,11 +11895,14 @@ artifacts:
     scored_path_surfaces: []
     consumers: []
     notes: >
-      MRI PR-C: scoreboard recomputed each night from scored ledger rows
-      only. Reports per release type: n, MAE ours vs each benchmark
+      MRI PR-C: scoreboard recomputed each night from scored ledger rows.
+      Primary by_release/by_shadow metrics include only defect-eligible,
+      comparable target epochs; all_forward retains the full immutable record
+      and reports excluded counts. Reports per release type: n, MAE vs each benchmark
       (naive_prior, trailing_3m, ar_model, cleveland_nowcast), p10-p90
       interval coverage rate, skew direction hit-rate with Wilson 95% CI.
-      With n=0 prints zeros and nulls honestly alongside a
+      Known defect windows are classified rather than deleted. With clean n=0
+      prints zeros and nulls honestly alongside a
       forward_accrual_began date. No backtest numbers ever enter this
       scoreboard (MRI-R8). The gateway to a graduated badge is defined in
       the masterplan section 7 (n >= 12, MAE < naive, skew Wilson LB > 0.5).
@@ -11691,7 +11918,7 @@ artifacts:
     storage: git
     asof_field: asof
     freshness_sla_hours: 30
-    schema: release_forecast.v1
+    schema: release_forecast.v2
     tier: display
     horizon_role: context
     weights: none
@@ -11705,6 +11932,38 @@ artifacts:
       Release Radar UI section on macro.html (PR-D). display_only=True;
       authority booleans all False. No additional logic beyond mirroring the
       data artifact.
+
+  # --- display/context: persistent inflation intelligence lobe ---
+  inflation-intelligence:
+    path: data/release_forecast/inflation_intelligence.json
+    format: json
+    producer: scripts/build_inflation_intelligence.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: inflation_intelligence.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+      - engine/neuralweb/mastermind_context.py
+      - engine/neuralweb/cortex.py
+      - engine/neuralweb/ask_brain.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      Persistent ECONOMY-INFLATION context lobe. It keeps three clocks
+      separate: latest released CPI state, next BLS-print forecast, and
+      current-month high-frequency proxy pressure. Carries exact 3m/6m
+      annualization, acceleration, revision basis, source freshness/coverage,
+      component availability, and append-only forecast evolution. This is
+      display/context only: authority=false and every rank, score, gate, size,
+      escalation, and trading action is explicitly disabled.
 
   # --- 1 consumer (NW context feed — DARK) ---
   # DARK: registered + plumbed but NOT consumed by any scored/Article-2 surface.
@@ -12661,6 +12920,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/pick_lab/render.py
+      - scripts/build_options_prophet.py
     external_consumers: []
     notes: >
       Pick Lab entry-books site artifact (horizon_role=tactical_entry — the entry
@@ -12669,8 +12929,46 @@ artifacts:
       (on_the_run_stocks / take_profits_stocks), and regime summary scalar.
       All rows carry authority='display_only' (PL-R1/PL-R10). Status ACCRUING
       until n≥25 fires / ≥3 months / ≥6 distinct fire dates (PL-R4 floor).
-      plab_random_ctrl pinned as yardstick row. Consumed only by render.py →
-      site/us_stocks_lab.html. Fully firewalled from hold_thesis surfaces (PL-R6).
+      plab_random_ctrl pinned as yardstick row. Consumed by render.py →
+      site/us_stocks_lab.html and by the display-only Options Prophet projection.
+      Fully firewalled from hold_thesis surfaces (PL-R6).
+
+  options-prophet-shadow:
+    path: site/options_prophet/index.json
+    format: json
+    producer: scripts/build_options_prophet.py
+    known_extra_writers: []
+    owner_program: options-prophet-shadow
+    cadence: daily-engine
+    storage: git+r2
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: options.prophet_shadow/v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/mirror_flow_idx.py
+    external_consumers:
+      - terminal:options-prophet
+    notes: >
+      Honest display-only projection over existing Flow Leaders and Pick Lab
+      outputs. `opportunities` contains only actual same-session fires from the
+      plab_flow_leader/plab_flow_washout books; `watchlist` preserves Board A then
+      Board B source order and creates no composite. Information readiness fails
+      closed with the source-specific signing gate. Positioning distinguishes
+      available context from promotion readiness and relays the options-entry and
+      dislocation gates at zero rank/gate/size/Macro authority. Execution is
+      explicitly not ready because no executable contract/quote/fill/lifecycle/mark
+      ledger exists. Trajectory is withheld; macro_feedback.enabled=false and
+      weight=0 until a paired incremental-attribution gate earns authority. Mirrored
+      non-fatally to R2 key options_prophet/index.json. Additive v1 receipts pin
+      nullable exact decision_at plus exact available_at, separate immutable-event
+      accrual from 1h/EOD/1d/3d/5d/10d/expiry outcome accrual, and reserve an optional
+      konseki.market_memory/v1 consumer seam at context_only/weight=0. A research fire
+      is explicitly not an issued model-portfolio position; portfolio construction is
+      a separate future artifact and ledger.
 
   pick-lab-longhold-ledger:
     path: site/labdata/pick_lab_longhold.json
@@ -14374,6 +14672,176 @@ artifacts:
       retains legs as confluence inputs per house law.
       authority.may_rank/gate/size/escalate=false.
 
+  live-flow-event-stage-dated:
+    path: live_flow/events/<DATE>.jsonl
+    format: jsonl
+    producer: scripts/live_flow_poller.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: intraday
+    storage: r2
+    asof_field: available_at
+    freshness_sla_hours: 1
+    schema: live_flow.event_stage/v1
+    tier: infrastructure
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_options_signal_episode.py
+    external_consumers: []
+    notes: >
+      Append-only date-keyed point-in-time source for options signal episodes.
+      Each upstream event is written as an immutable decision receipt followed
+      only after fsync by its durable availability receipt; the capped
+      feed_current display object is never a learning source. Publication is
+      monotonic-prefix fenced and uploads the exact validated byte snapshot before
+      advertising the session in live_flow/events/dates.json (latest 64 sessions
+      in the discovery index; R2 remains the longer-lived archive). Missing,
+      reordered, torn, rewritten, or non-finite receipts fail closed. This raw
+      infrastructure grants no originate, rank, gate, size, trade, training, or
+      Prophet authority; the nightly builder is its only registered consumer.
+
+  polygon-intraday-price-receipt:
+    path: data/intraday/<TICKER>.parquet.receipt.json
+    format: json
+    producer: scripts/build_polygon_intraday.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: gitignored-local
+    asof_field: source_available_at
+    freshness_sla_hours: 30
+    schema: polygon.intraday_price_receipt/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_options_signal_episode.py
+    external_consumers: []
+    notes: >
+      Causal sidecar for the mutable Polygon intraday parquet cache. It binds the
+      exact parquet filename and SHA-256 to a post-fsync source-availability clock,
+      cadence, vendor delay, split-adjusted price basis, timestamp basis, row count
+      and coverage endpoints. The H+60 builder reads receipt-before, the exact
+      parquet bytes, then receipt-after and fails visibly on any claimed-receipt
+      mismatch. An absent receipt, including a legacy cache not yet refreshed by
+      the receipt-aware collector, remains a per-ticker retryable source gap.
+      Complete outcome rows retain the
+      exact consumed OHLC path plus exit open inline, so later cache correction or
+      eviction cannot rewrite an immutable label. This receipt carries no signal,
+      training, rank, gate, size, trade, publication, or Prophet authority.
+
+  polygon-intraday-price-cache:
+    path: data/intraday/<TICKER>.parquet
+    format: parquet
+    producer: scripts/build_polygon_intraday.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: gitignored-local
+    asof_field: ts
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_options_signal_episode.py
+    external_consumers: []
+    notes: >
+      Mutable, overlap-corrected split-adjusted Polygon aggregate cache used for
+      underlying H+60 measurement. The builder may consume a byte version only
+      when the adjacent polygon.intraday_price_receipt/v1 sidecar binds that exact
+      file digest, cadence, delay, bases, availability clock and coverage. Complete
+      outcomes retain their exact consumed path inline; the cache alone is never
+      immutable evidence and carries no model, training, rank, gate, size, trade,
+      publication, or Prophet authority.
+
+  options-signal-episodes:
+    path: data/options_signal_episode/episodes.jsonl
+    format: jsonl
+    producer: scripts/build_options_signal_episode.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: available_at
+    freshness_sla_hours: 30
+    schema: options.signal_episode/v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_options_signal_episode.py
+    external_consumers: []
+    notes: >
+      Immutable point-in-time option-flow decision episodes. Event, observation,
+      availability, source-event, contract, prior-OI-vintage, frozen-feature and
+      quality receipts are captured before any outcome can accrue. Live-flow
+      events without exact event-level availability are rejected rather than
+      reconstructed from a later cumulative feed. Current notable events are
+      watch observations, not picks; authority to originate, rank, gate, size or
+      escalate is false. Only the nightly lane may append committed rows.
+
+  options-signal-episode-h60-outcomes:
+    path: data/options_signal_episode/outcomes_h60.jsonl
+    format: jsonl
+    producer: scripts/build_options_signal_episode.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: computed_at
+    freshness_sla_hours: 30
+    schema: options.signal_episode_outcome/v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_options_signal_episode.py
+    external_consumers: []
+    notes: >
+      Append-only H+60 research outcomes keyed to immutable option-flow episodes.
+      Desired event H+60 remains separate from the actual aligned-hourly-bar
+      measurement window. Return, MFE and MAE describe only actual entry-to-exit;
+      measurement kind/version, alignment, both observation delays, bar resolution,
+      source delay and true completion time remain explicit. Every complete row
+      retains the exact canonical [entry,exit) OHLC path plus the exit open, count
+      and digest, and binds the immutable Polygon source receipt used to derive it.
+      Hourly/delayed proxies are training_eligible=false. Missing or unmatured bars remain retryable and
+      terminal session-boundary gaps are recorded incomplete. Option PnL stays
+      unavailable until an executable bid/ask quote path exists. All decision
+      authority remains false and only the nightly lane may append rows.
+
+  options-signal-episode-checkpoint:
+    path: data/options_signal_episode/checkpoint.json
+    format: json
+    producer: scripts/build_options_signal_episode.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: options.signal_episode_checkpoint/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_options_signal_episode.py
+    external_consumers: []
+    notes: >
+      Monotonic date-keyed raw-stage consumption checkpoint. Pins record count and
+      prefix SHA-256 per session so a truncated or overwritten live_flow event stage
+      fails closed. It grants no rank, gate, size, trade, publication, training or
+      Prophet authority and advances only in the nightly lane.
+
   site-flow-leaders:
     path: site/flowleaders/leaders.json
     format: json
@@ -14392,6 +14860,7 @@ artifacts:
     consumers:
       - templates/options.html.j2
       - engine/pick_lab/candidates.py
+      - scripts/build_options_prophet.py
     external_consumers: []
     notes: >
       FL W2. Flow Leaders nightly artifact: Board A (recurring net-impact leadership),
@@ -16175,6 +16644,145 @@ artifacts:
       Date-indexed health receipt emitted by direct CLI and standard Adapter runs after a
       complete bounded subaward collection. It carries no subaward economics, company
       mapping, score, rank, gate, candidate, or Prophet authority.
+
+  government-revenue-sbir-award-observations:
+    path: data/government_revenue/sbir_award_observations.parquet
+    format: parquet
+    producer: collectors/sbir_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: known_at
+    freshness_sla_hours: 168
+    schema: government_revenue.sbir_award_observation.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sbir_awards.py, engine/government_revenue/sbir_progression.py]
+    external_consumers: []
+    notes: >
+      Append-only bounded SBIR.gov Phase I/II award observations, identified by the exact
+      source-native agency_tracking_number (unique across all of TECH-Net per the official
+      Award data dictionary); a row without it is counted and refused, never given a
+      synthesized key. A re-run appends a semantic version and never rewrites or deletes
+      accrued history, retaining an A-B-A reversion. Source, effective, observed, and
+      known-at clocks are separate and knowledge is observation-bound: SBIR.gov publishes no
+      record-publication timestamp, so known_at is never backdated to the award date.
+      Point-of-contact and principal-investigator names, phones, and emails, plus street
+      address, city, and ZIP, are never persisted, and neither is the abstract. Award amounts
+      are program award values, never revenue, backlog, funded backlog, bookings,
+      obligations, or outlays. Issuer links require an exact UEI against the reviewed
+      recipient graph; a matching firm name is mapping-backlog context and never attribution.
+      The freshness SLA is deliberately weekly, not the 30 hours its USAspending siblings
+      declare: the public tier publishes a 10-requests-per-10-minutes limit and the endpoint
+      is intermittently in maintenance, so a daily freshness promise would be false.
+
+  government-revenue-sbir-collection-receipts:
+    path: data/government_revenue/sbir_collection_receipts.jsonl
+    format: jsonl
+    producer: collectors/sbir_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 168
+    schema: government_revenue.sbir_collection_receipt.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sbir_awards.py, engine/government_revenue/sbir_progression.py]
+    external_consumers: []
+    notes: >
+      Append-only hash-only receipts binding every offset page of the official SBIR.gov
+      awards endpoint that informed a published observation. Raw requests, responses,
+      headers, credentials, and any contact-shaped field are refused rather than persisted.
+      A page that succeeded before a later failure remains immutable evidence even when the
+      run publishes no ledger, so a source outage cannot erase what was already retrieved. A
+      receipt ID bound to conflicting evidence, and a corrupt existing ledger, both fail
+      closed rather than being overwritten. Retrieval provenance only, never an authority,
+      score, rank, size, gate, or investment signal.
+
+  government-revenue-sbir-projection-state:
+    path: data/government_revenue/sbir_projection_state.json
+    format: json
+    producer: collectors/sbir_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 168
+    schema: government_revenue.sbir_projection_state.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sbir_awards.py, engine/government_revenue/sbir_progression.py]
+    external_consumers: []
+    notes: >
+      Collector-owned activation state bound to the declared coverage manifest and to an
+      order-independent semantic generation over the whole observation ledger. A state whose
+      binding no longer describes the ledger on disk is refused rather than rebound, so a
+      torn generation can never be blessed by a later partial run, and the projection
+      refuses to read it. It records first_baseline, history_synthesized: false, and
+      emits_forward_events: false explicitly, so one knowledge generation is never presented
+      as a graded forward record. asof_field is observed_at because that is the clock this
+      artifact actually carries.
+
+  government-revenue-sbir-ingest-status:
+    path: data/government_revenue/sbir_ingest_status.json
+    format: json
+    producer: collectors/sbir_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 168
+    schema: government_revenue.sbir_ingest_status.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/sbir_progression.py]
+    external_consumers: []
+    notes: >
+      Operational receipt for the declared agency/year query cells, per-run request budget,
+      page caps, truncation, and refused-without-identity counts. The upstream endpoint
+      publishes no pagination metadata and no total, so source exhaustion is claimed only
+      on a short page and a fully retrieved page cap is recorded as a complete bounded
+      sample rather than corpus completion (full_sbir_corpus: false,
+      pagination_metadata_available: false). Written by the collector but never read back by
+      it, so it is a write-only artifact in the DAG contract. Descriptive infrastructure,
+      never alpha or authority.
+
+  government-revenue-sbir-collector-heartbeat:
+    path: data/government_revenue/sbir_collector_heartbeat.parquet
+    format: parquet
+    producer: collectors/sbir_awards.py
+    known_extra_writers:
+      - scripts/collect.py — standard Adapter runner persists the returned heartbeat frame
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 168
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [scripts/collect.py]
+    external_consumers: []
+    notes: >
+      Date-indexed health receipt emitted by direct CLI and standard Adapter runs only after
+      a complete bounded SBIR collection; a failed or partial run raises rather than
+      publishing one. It carries no award economics, phase progression, company mapping,
+      score, rank, gate, candidate, or Prophet authority.
 
   government-revenue-sam-opportunities:
     path: data/government_revenue/opportunities.parquet

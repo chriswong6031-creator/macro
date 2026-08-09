@@ -948,9 +948,17 @@ def test_this_pr_writes_nothing_under_data():
     assert "MACRO_LIVE_DIR" not in source
     ledger = REPO_ROOT / "data" / "seasonality" / "nw_forward_ledger.jsonl"
     assert ledger.exists()
-    # 28 registrations, ZERO matured grades — shadow status is binding.
+    # ZERO matured grades — shadow status is binding. That, and every row carrying
+    # tier="shadow", are the claims; the ROW COUNT is not one of them.
+    #
+    # This pinned `== 28`, the count on the day it was written. The nightly registers
+    # forward rows as new windows open, so the pin expired on its own and took main
+    # red with it (28 -> 43 by 2026-08-08) while nothing it actually guards had moved:
+    # all 43 rows are shadow and none is a grade. A floor keeps the real failure the
+    # exact count was standing in for — a truncation, a reset, or a writer that
+    # forgets to append — while letting registrations accrue.
     rows = [json.loads(x) for x in ledger.read_text(encoding="utf-8").splitlines() if x.strip()]
-    assert len(rows) == 28
+    assert len(rows) >= 28, f"forward ledger shrank to {len(rows)} — rows are append-only"
     assert all(r["tier"] == "shadow" for r in rows)
     assert not [r for r in rows if r.get("row_type") == "grade"]
 

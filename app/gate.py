@@ -30,6 +30,22 @@ _DEFAULT_PAGE_PATH = "site/coming-soon.html"
 
 _COUNTRY_HEADER_FALLBACKS = ["EO-Client-Country", "CF-IPCountry"]
 
+# MEASURED on www 2026-08-07 (probe through the live edge, headers captured off the
+# loopback hop): the edge sets a country header whose name reaches the origin with NO
+# `EO` prefix — literally `-Client-IPCountry` — and it REPLACES a forged copy of that
+# name with the true country. It does NOT set `EO-Client-IPCountry`, the name this
+# module has always asked for, so THAT header arrives carrying whatever the caller sent
+# even through the edge. Country blocking therefore read an attacker-chosen value and
+# was blind to the real one; the gate ships disabled, so this was latent rather than
+# live, and it would have become live the moment an operator switched it on.
+#
+# Checked BEFORE the configured name, not after — checking after is what makes the
+# forgery work, because a forged `EO-Client-IPCountry` would win over the edge's true
+# value. The missing prefix looks like a console-rule quirk that may be corrected
+# upstream at any time, and this order stays correct if it is: the header simply goes
+# absent and the configured name (now genuinely edge-set) answers on the next rung.
+_EDGE_COUNTRY_HEADER = "-Client-IPCountry"
+
 
 def _state_path() -> Path:
     return Path(os.environ.get("SITE_GATE_STATE", _DEFAULT_STATE_PATH))
@@ -222,12 +238,14 @@ def _get_geoip_reader():
 def _resolve_country_header(headers: dict) -> tuple[str | None, str | None]:
     """Cheap country resolution from CDN headers (dict lookup only).
 
-    Tries the configured header then known fallbacks. Header keys arrive
-    lowercased in production (Starlette normalises ASGI header names), so we
-    check both the configured casing and its lowercase form.
+    Tries the header the edge actually sets, then the configured header, then known
+    fallbacks — see _EDGE_COUNTRY_HEADER for why the edge's own name goes first and
+    why every rung below it is caller-suppliable. Header keys arrive lowercased in
+    production (Starlette normalises ASGI header names), so we check both the
+    configured casing and its lowercase form.
     Returns (ISO-alpha-2 upper, "header:<name>") or (None, None).
     """
-    for hname in [_country_header_name()] + _COUNTRY_HEADER_FALLBACKS:
+    for hname in [_EDGE_COUNTRY_HEADER, _country_header_name()] + _COUNTRY_HEADER_FALLBACKS:
         val = (headers.get(hname) or headers.get(hname.lower()) or "").strip().upper()
         if len(val) == 2 and val.isalpha():
             return val, f"header:{hname}"

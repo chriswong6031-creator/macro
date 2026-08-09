@@ -43,6 +43,7 @@ from engine.moat_falsifiers import (  # noqa: E402
     great_company_trap,
     _SENSOR_FNS,
     _HORIZON_ROLE,
+    _sensor_cols,
 )
 
 
@@ -644,3 +645,93 @@ class TestPointInTimeGate:
         rates = compute_base_rates(df, asof_date="2026-07-05")
         mc = rates["margin_compression_despite_revenue_growth"]
         assert 2026 not in mc, f"not-yet-filed FY2026 leaked into base rate: {mc}"
+
+
+# ---------------------------------------------------------------------------
+# F. Declared evidence gates the verdict (2026-08-07)
+# ---------------------------------------------------------------------------
+
+class TestDeclaredEvidenceGatesTheVerdict:
+    """A sensor must not publish `fired` on an input it DECLARES it requires.
+
+    ``_sensor_cols()`` is this module's own statement of what each sensor needs.
+    Publishing ``fired=True`` while one of those inputs is absent is the module
+    contradicting itself, and it did exactly that until 2026-08-07:
+    ``_sensor_capex_intensity`` read a MISSING ``op_income`` as licence to take
+    the revenue-only fallback — a branch that exists only for a NON-POSITIVE
+    operating income — and fired on 62 of the 336 live ``capital_intensity_rising``
+    fires in ``data/edgar/statements.parquet`` (18%), while ``_assess_coverage``
+    recorded those very rows as ``"partial"``.
+
+    The coverage flag is not a safety net. ``engine/thesis_funnel.py`` reads
+    ``sv.get("fired")`` and never reads ``sv.get("coverage")``, so the module's
+    own "our evidence is incomplete" annotation is dropped before the signal
+    reaches ``site/stock.html``. The VERDICT itself has to carry the refusal,
+    which is why these tests assert on ``fired`` and not on ``coverage``.
+    """
+
+    @staticmethod
+    def _pair(**current_overrides) -> pd.DataFrame:
+        """Two adjacent FYs where capex growth clears every threshold by a mile.
+
+        Capex +100% against revenue +3% is far outside the 10pp band, so any
+        sensor that reaches a verdict at all will FIRE. That makes "did not
+        fire" unambiguous evidence of a refusal rather than of a near miss.
+        """
+        current = {
+            "ticker": "EVD", "fy": 2026, "period_end": "2026-12-31",
+            "revenue": 1030.0, "gross_profit": 400.0, "receivables": 100.0,
+            "inventory": 100.0, "capex": 200.0, "op_income": 210.0,
+        }
+        current.update(current_overrides)
+        return _make_statements([
+            {"ticker": "EVD", "fy": 2025, "period_end": "2025-12-31",
+             "revenue": 1000.0, "gross_profit": 400.0, "receivables": 100.0,
+             "inventory": 100.0, "capex": 100.0, "op_income": 200.0},
+            current,
+        ])
+
+    def test_control_fires_so_the_refusals_below_mean_something(self) -> None:
+        """Non-vacuity anchor: with every input present this pair DOES fire."""
+        res = compute_moat_falsifiers("EVD", self._pair(), asof_date="2027-06-01")
+        assert res["sensors"]["capital_intensity_rising"]["fired"] is True, (
+            "the control pair no longer fires capital_intensity_rising, so the "
+            "not-evaluable assertions below would pass for the wrong reason — "
+            "they would be measuring a harness that never reaches the sensor."
+        )
+
+    @pytest.mark.parametrize("missing", ["op_income", "capex", "revenue"])
+    def test_absent_declared_input_publishes_not_evaluable_never_a_fire(self, missing) -> None:
+        """Absence must reach the published dict as None, not as a verdict."""
+        res = compute_moat_falsifiers(
+            "EVD", self._pair(**{missing: np.nan}), asof_date="2027-06-01"
+        )
+        sensor = res["sensors"]["capital_intensity_rising"]
+        assert sensor["fired"] is not True, (
+            f"capital_intensity_rising published fired={sensor['fired']!r} while "
+            f"its declared-required input {missing!r} was absent "
+            f"(_sensor_cols() -> {_sensor_cols()['capital_intensity_rising']}). "
+            f"A signal computed on evidence the module does not have reaches "
+            f"site/stock.html with no trace of what was missing, because "
+            f"engine/thesis_funnel.py forwards `fired` and drops `coverage`."
+        )
+
+    def test_nonpositive_operating_income_keeps_its_disclosed_fallback(self) -> None:
+        """The revenue-only branch is deliberate and must NOT be gated away.
+
+        A loss-making filer has no interpretable operating-income growth, so the
+        capex-vs-revenue leg alone decides. This is published to users
+        bilingually by scripts/build_fundamental_forensics.py ("revenue-only when
+        operating income is non-positive") and taken by the registry kernel too.
+        De-escalating the ABSENT case must not collaterally kill this one — that
+        would drop findings two live surfaces already show.
+        """
+        res = compute_moat_falsifiers(
+            "EVD", self._pair(op_income=-50.0), asof_date="2027-06-01"
+        )
+        assert res["sensors"]["capital_intensity_rising"]["fired"] is True, (
+            "the documented non-positive-operating-income fallback stopped "
+            "firing. Unknown is not non-positive: the fix for absent evidence "
+            "must key on whether the CURRENT value is known, not on whether the "
+            "growth term happens to be computable."
+        )

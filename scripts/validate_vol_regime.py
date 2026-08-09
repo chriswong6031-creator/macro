@@ -33,16 +33,21 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from datetime import date, datetime, timezone
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine import vol_regime
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import vol_regime  # noqa: E402
 from engine.validation import (clark_west, deflated_sharpe, newey_west_tstat,
-                               oos_r2, purged_folds, ret_moments)
-from engine.vol_forecast import realized_vol
-from lib import config, store
+                               oos_r2, purged_folds, ret_moments)  # noqa: E402
+from engine.vol_forecast import realized_vol  # noqa: E402
+from lib import config, store  # noqa: E402
 
 log = logging.getLogger(__name__)
 

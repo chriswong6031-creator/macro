@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,8 +31,11 @@ from typing import Optional
 
 import pandas as pd
 
-from lib import config
-from lib.closes_panel import disclose_merge, merge_close_caches
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
+from lib.closes_panel import disclose_merge, merge_close_caches  # noqa: E402
 
 log = logging.getLogger("build_pick_lab")
 

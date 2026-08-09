@@ -1,5 +1,5 @@
 {
- "asof": "2026-08-07",
+ "asof": "2026-08-09",
  "audit": "stocks",
  "config": {
   "price_max_gap_days": 4,
@@ -22,7 +22,7 @@
  "n": 3018,
  "n_failed": 0,
  "fail_pct": 0.0,
- "n_flags": 142,
+ "n_flags": 140,
  "universes": [
   {
    "name": "stocks",
@@ -37,7 +37,7 @@
     {
      "name": "EA",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-06) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-08-07) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "ECHO",
@@ -51,7 +51,7 @@
    "n": 2779,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 140,
+   "n_flags": 138,
    "skipped": false,
    "note": "",
    "failed": [],
@@ -264,7 +264,7 @@
     {
      "name": "EA",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-06) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-08-07) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "EBS",
@@ -354,7 +354,7 @@
     {
      "name": "HVT",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9908) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "ILPT",
@@ -379,12 +379,12 @@
     {
      "name": "IRWD",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9999) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "IVR",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9796) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "JACK",
@@ -394,7 +394,7 @@
     {
      "name": "JRVR",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9997) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "JYNT",
@@ -404,7 +404,7 @@
     {
      "name": "KELYA",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9998) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "KREF",
@@ -414,17 +414,17 @@
     {
      "name": "LOCO",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9673) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "MATV",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9987) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "MCS",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9993) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "MED",
@@ -617,11 +617,6 @@
      "detail": "same instrument as its dead-registry rows (corr 0.5382) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
-     "name": "SKYT",
-     "kind": "delisted_printing",
-     "detail": "fresh bars (2026-07-31) but no current NASDAQ/NYSE listing"
-    },
-    {
      "name": "SLP",
      "kind": "registry_mismatch",
      "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
@@ -680,11 +675,6 @@
      "name": "THRY",
      "kind": "registry_mismatch",
      "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
-    },
-    {
-     "name": "TOI",
-     "kind": "delisted_printing",
-     "detail": "fresh bars (2026-07-31) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "TREE",
@@ -765,7 +755,7 @@
   "zombie": 5,
   "rebirth": 3,
   "registry_mismatch": 127,
-  "delisted_printing": 7
+  "delisted_printing": 5
  },
  "stores": [
   {
@@ -793,7 +783,7 @@
    "delisted_printing": [
     {
      "ticker": "EA",
-     "store_tip": "2026-08-06",
+     "store_tip": "2026-08-07",
      "acked": false
     }
    ]
@@ -1520,11 +1510,11 @@
     },
     {
      "ticker": "GDOT",
-     "registry_last": "2025-03-24",
+     "registry_last": "2025-05-22",
      "store_tip": "2026-08-07",
-     "days_past_death": 501,
+     "days_past_death": 442,
      "overlap": {
-      "n_overlap": 934,
+      "n_overlap": 1869,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -1533,11 +1523,11 @@
     },
     {
      "ticker": "GPRE",
-     "registry_last": "2025-03-24",
+     "registry_last": "2025-05-22",
      "store_tip": "2026-08-07",
-     "days_past_death": 501,
+     "days_past_death": 442,
      "overlap": {
-      "n_overlap": 934,
+      "n_overlap": 1640,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -1546,11 +1536,11 @@
     },
     {
      "ticker": "HAIN",
-     "registry_last": "2025-03-24",
+     "registry_last": "2025-05-22",
      "store_tip": "2026-07-21",
-     "days_past_death": 484,
+     "days_past_death": 425,
      "overlap": {
-      "n_overlap": 934,
+      "n_overlap": 2865,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -1585,14 +1575,14 @@
     },
     {
      "ticker": "HVT",
-     "registry_last": "2024-09-23",
+     "registry_last": "2024-11-21",
      "store_tip": "2026-08-07",
-     "days_past_death": 683,
+     "days_past_death": 624,
      "overlap": {
-      "n_overlap": 810,
-      "ret_corr_full": 0.9908,
-      "ret_corr_recent": 0.9986,
-      "min_ret_corr": 0.9908
+      "n_overlap": 1517,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
@@ -1611,11 +1601,11 @@
     },
     {
      "ticker": "INGN",
-     "registry_last": "2023-06-16",
+     "registry_last": "2023-08-17",
      "store_tip": "2026-08-07",
-     "days_past_death": 1148,
+     "days_past_death": 1086,
      "overlap": {
-      "n_overlap": 492,
+      "n_overlap": 2393,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -1637,27 +1627,27 @@
     },
     {
      "ticker": "IRWD",
-     "registry_last": "2025-02-10",
+     "registry_last": "2025-04-10",
      "store_tip": "2026-08-07",
-     "days_past_death": 543,
+     "days_past_death": 484,
      "overlap": {
-      "n_overlap": 905,
-      "ret_corr_full": 0.9999,
+      "n_overlap": 981,
+      "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
-      "min_ret_corr": 0.9999
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
     {
      "ticker": "IVR",
-     "registry_last": "2023-12-18",
+     "registry_last": "2024-02-15",
      "store_tip": "2026-08-07",
-     "days_past_death": 963,
+     "days_past_death": 904,
      "overlap": {
-      "n_overlap": 619,
-      "ret_corr_full": 0.9832,
-      "ret_corr_recent": 0.9796,
-      "min_ret_corr": 0.9796
+      "n_overlap": 1323,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
@@ -1676,24 +1666,24 @@
     },
     {
      "ticker": "JRVR",
-     "registry_last": "2023-12-18",
+     "registry_last": "2024-02-15",
      "store_tip": "2026-08-07",
-     "days_past_death": 963,
+     "days_past_death": 904,
      "overlap": {
-      "n_overlap": 619,
-      "ret_corr_full": 0.9997,
-      "ret_corr_recent": 0.9999,
-      "min_ret_corr": 0.9997
+      "n_overlap": 1323,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
     {
      "ticker": "JYNT",
-     "registry_last": "2023-01-05",
+     "registry_last": "2023-03-03",
      "store_tip": "2026-07-10",
-     "days_past_death": 1282,
+     "days_past_death": 1225,
      "overlap": {
-      "n_overlap": 380,
+      "n_overlap": 722,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -1702,14 +1692,14 @@
     },
     {
      "ticker": "KELYA",
-     "registry_last": "2024-12-23",
+     "registry_last": "2025-02-20",
      "store_tip": "2026-08-07",
-     "days_past_death": 592,
+     "days_past_death": 533,
      "overlap": {
-      "n_overlap": 874,
-      "ret_corr_full": 0.9998,
-      "ret_corr_recent": 0.9998,
-      "min_ret_corr": 0.9998
+      "n_overlap": 1576,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
@@ -1728,40 +1718,40 @@
     },
     {
      "ticker": "LOCO",
-     "registry_last": "2023-07-03",
+     "registry_last": "2023-08-31",
      "store_tip": "2026-08-07",
-     "days_past_death": 1131,
+     "days_past_death": 1072,
      "overlap": {
-      "n_overlap": 502,
-      "ret_corr_full": 0.9673,
+      "n_overlap": 1208,
+      "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
-      "min_ret_corr": 0.9673
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
     {
      "ticker": "MATV",
-     "registry_last": "2025-03-24",
+     "registry_last": "2025-05-22",
      "store_tip": "2026-08-07",
-     "days_past_death": 501,
+     "days_past_death": 442,
      "overlap": {
-      "n_overlap": 682,
-      "ret_corr_full": 0.999,
-      "ret_corr_recent": 0.9987,
-      "min_ret_corr": 0.9987
+      "n_overlap": 1640,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
     {
      "ticker": "MCS",
-     "registry_last": "2024-06-24",
+     "registry_last": "2024-08-22",
      "store_tip": "2026-08-07",
-     "days_past_death": 774,
+     "days_past_death": 715,
      "overlap": {
-      "n_overlap": 747,
-      "ret_corr_full": 0.9997,
-      "ret_corr_recent": 0.9993,
-      "min_ret_corr": 0.9993
+      "n_overlap": 1453,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
@@ -2541,7 +2531,7 @@
     },
     {
      "ticker": "EA",
-     "store_tip": "2026-08-06",
+     "store_tip": "2026-08-07",
      "acked": false
     },
     {
@@ -2553,16 +2543,6 @@
      "ticker": "RHHBY",
      "store_tip": "2026-08-07",
      "acked": true
-    },
-    {
-     "ticker": "SKYT",
-     "store_tip": "2026-07-31",
-     "acked": false
-    },
-    {
-     "ticker": "TOI",
-     "store_tip": "2026-07-31",
-     "acked": false
     }
    ]
   }
@@ -2582,8 +2562,6 @@
   "stocks/EA",
   "baskets/ohlcv/ANGPY",
   "baskets/ohlcv/EA",
-  "baskets/ohlcv/IMPUY",
-  "baskets/ohlcv/SKYT",
-  "baskets/ohlcv/TOI"
+  "baskets/ohlcv/IMPUY"
  ]
 }

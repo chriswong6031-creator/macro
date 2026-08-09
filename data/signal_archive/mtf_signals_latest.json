@@ -12,7 +12,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 318.0794,
+   "trail_stop": 318.1116,
    "early_now": false,
    "last": {
     "date": "2026-06-12",
@@ -26,7 +26,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 247.814,
+   "trail_stop": 247.904,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -40,7 +40,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 153.2474,
+   "trail_stop": 153.5807,
    "early_now": false,
    "last": {
     "date": "2026-06-17",
@@ -56,7 +56,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 101.8768,
+   "trail_stop": 101.9212,
    "early_now": false,
    "last": {
     "date": "2026-05-21",
@@ -72,7 +72,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 384.592,
+   "trail_stop": 384.8043,
    "early_now": false,
    "last": {
     "date": "2026-06-04",
@@ -86,7 +86,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 80.3112,
+   "trail_stop": 80.3599,
    "early_now": false,
    "last": {
     "date": "2026-06-09",
@@ -100,7 +100,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 256.4924,
+   "trail_stop": 256.4935,
    "early_now": false,
    "last": {
     "date": "2026-03-05",
@@ -116,7 +116,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 110.3936,
+   "trail_stop": 110.3269,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -130,7 +130,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 130.1134,
+   "trail_stop": 130.0201,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -144,7 +144,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 545.6382,
+   "trail_stop": 545.8782,
    "early_now": false,
    "last": {
     "date": "2026-07-07",
@@ -158,7 +158,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 45.1926,
+   "trail_stop": 45.2048,
    "early_now": false,
    "last": {
     "date": "2026-03-05",
@@ -172,7 +172,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 508.0141,
+   "trail_stop": 508.8496,
    "early_now": false,
    "last": {
     "date": "2026-06-12",
@@ -186,7 +186,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 381.8046,
+   "trail_stop": 381.7735,
    "early_now": false,
    "last": {
     "date": "2026-06-01",
@@ -202,7 +202,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 171.662,
+   "trail_stop": 171.4954,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -222,7 +222,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 254.4763,
+   "trail_stop": 254.4474,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -242,7 +242,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 178.9452,
+   "trail_stop": 178.963,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -258,7 +258,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 296.8625,
+   "trail_stop": 296.9092,
    "early_now": false,
    "last": {
     "date": "2026-05-05",
@@ -272,7 +272,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 162.0046,
+   "trail_stop": 162.1913,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -288,7 +288,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 417.3916,
+   "trail_stop": 417.6661,
    "early_now": false,
    "last": {
     "date": "2026-07-10",
@@ -302,7 +302,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 174.2859,
+   "trail_stop": 174.0193,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -316,7 +316,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 188.3776,
+   "trail_stop": 188.4754,
    "early_now": false,
    "last": {
     "date": "2026-06-12",
@@ -330,7 +330,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 401.4537,
+   "trail_stop": 401.8612,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -346,7 +346,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 342.6078,
+   "trail_stop": 342.5834,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -360,7 +360,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 3052.8152,
+   "trail_stop": 3055.9997,
    "early_now": false,
    "last": {
     "date": "2026-06-26",
@@ -376,7 +376,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 224.6848,
+   "trail_stop": 224.5136,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -392,7 +392,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 61.4219,
+   "trail_stop": 61.4186,
    "early_now": false,
    "last": {
     "date": "2026-04-06",
@@ -408,7 +408,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 191.2475,
+   "trail_stop": 191.2264,
    "early_now": false,
    "last": {
     "date": "2026-05-27",
@@ -424,7 +424,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 59.8155,
+   "trail_stop": 59.5932,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -440,7 +440,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 1085.8523,
+   "trail_stop": 1085.0567,
    "early_now": false,
    "last": {
     "date": "2026-06-23",
@@ -454,7 +454,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 62.2767,
+   "trail_stop": 62.3222,
    "early_now": false,
    "last": {
     "date": "2026-03-05",
@@ -468,7 +468,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 155.1968,
+   "trail_stop": 155.1401,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -482,7 +482,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 505.6053,
+   "trail_stop": 505.8331,
    "early_now": false,
    "last": {
     "date": "2026-05-08",
@@ -498,7 +498,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 129.3337,
+   "trail_stop": 129.3603,
    "early_now": false,
    "last": {
     "date": "2026-06-09",
@@ -514,7 +514,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 134.4684,
+   "trail_stop": 134.4762,
    "early_now": false,
    "last": {
     "date": "2026-07-10",
@@ -528,7 +528,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 844.3116,
+   "trail_stop": 843.7847,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -542,7 +542,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 879.6618,
+   "trail_stop": 879.1973,
    "early_now": false,
    "last": {
     "date": "2026-07-07",
@@ -556,7 +556,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 348.1072,
+   "trail_stop": 348.005,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -570,7 +570,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 144.3911,
+   "trail_stop": 144.2378,
    "early_now": false,
    "last": {
     "date": "2026-06-09",
@@ -586,7 +586,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 77.3678,
+   "trail_stop": 77.3378,
    "early_now": false,
    "last": {
     "date": "2026-06-12",
@@ -600,7 +600,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 264.9739,
+   "trail_stop": 265.3827,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -616,7 +616,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 118.3771,
+   "trail_stop": 118.2782,
    "early_now": false,
    "last": {
     "date": "2026-07-10",
@@ -632,7 +632,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 141.9901,
+   "trail_stop": 141.939,
    "early_now": false,
    "last": {
     "date": "2026-06-26",
@@ -648,7 +648,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 284.1945,
+   "trail_stop": 284.0833,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -662,7 +662,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 91.9662,
+   "trail_stop": 91.9084,
    "early_now": false,
    "last": {
     "date": "2026-06-09",
@@ -678,7 +678,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 24.1218,
+   "trail_stop": 24.1118,
    "early_now": false,
    "last": {
     "date": "2026-06-26",
@@ -694,7 +694,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 256.2872,
+   "trail_stop": 256.2249,
    "early_now": false,
    "last": {
     "date": "2026-07-10",
@@ -710,7 +710,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 654.0874,
+   "trail_stop": 654.0052,
    "early_now": false,
    "last": {
     "date": "2026-05-27",
@@ -724,7 +724,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 42.4243,
+   "trail_stop": 42.3932,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -738,7 +738,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 210.3586,
+   "trail_stop": 210.4186,
    "early_now": false,
    "last": {
     "date": "2026-04-06",
@@ -754,7 +754,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 115.7509,
+   "trail_stop": 115.8132,
    "early_now": false,
    "last": {
     "date": "2026-07-15",
@@ -770,7 +770,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 945.2944,
+   "trail_stop": 945.5411,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -786,7 +786,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 101.3881,
+   "trail_stop": 101.3483,
    "early_now": false,
    "last": {
     "date": "2026-07-15",
@@ -800,7 +800,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 197.4188,
+   "trail_stop": 197.8366,
    "early_now": false,
    "last": {
     "date": "2026-06-26",
@@ -816,7 +816,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 117.3413,
+   "trail_stop": 117.4116,
    "early_now": false,
    "last": {
     "date": "2026-06-17",
@@ -830,7 +830,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 50.1066,
+   "trail_stop": 50.09,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -844,7 +844,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 82.8823,
+   "trail_stop": 82.7868,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -858,7 +858,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 66.996,
+   "trail_stop": 66.9993,
    "early_now": false,
    "last": {
     "date": "2026-06-17",
@@ -872,7 +872,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 102.5492,
+   "trail_stop": 102.5538,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -886,7 +886,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 186.658,
+   "trail_stop": 186.7202,
    "early_now": false,
    "last": {
     "date": "2026-07-15",
@@ -902,7 +902,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 69.2357,
+   "trail_stop": 69.1791,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -916,7 +916,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 195.6299,
+   "trail_stop": 194.8943,
    "early_now": false,
    "last": {
     "date": "2026-03-02",
@@ -932,7 +932,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 140.2325,
+   "trail_stop": 140.1881,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -948,7 +948,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 610.8599,
+   "trail_stop": 610.4073,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -968,7 +968,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 123.4346,
+   "trail_stop": 123.3735,
    "early_now": false,
    "last": {
     "date": "2026-06-01",
@@ -984,7 +984,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 195.7656,
+   "trail_stop": 195.7334,
    "early_now": false,
    "last": {
     "date": "2026-05-21",
@@ -1000,7 +1000,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 98.9158,
+   "trail_stop": 98.9136,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -1016,7 +1016,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 188.5815,
+   "trail_stop": 188.5915,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -1032,7 +1032,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 29.9803,
+   "trail_stop": 29.9392,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -1045,10 +1045,10 @@
    "ticker": "DTE",
    "asof": "2026-08-05",
    "state": "short-bias",
-   "above200": true,
+   "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 144.5449,
+   "trail_stop": 144.4004,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -1062,7 +1062,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 125.858,
+   "trail_stop": 125.7624,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -1076,7 +1076,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 43.4659,
+   "trail_stop": 43.5137,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -1108,7 +1108,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 111.8323,
+   "trail_stop": 111.8145,
    "early_now": false,
    "last": {
     "date": "2026-07-10",
@@ -1122,7 +1122,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 92.6784,
+   "trail_stop": 92.8128,
    "early_now": false,
    "last": {
     "date": "2026-06-01",
@@ -1136,7 +1136,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 277.2636,
+   "trail_stop": 277.417,
    "early_now": false,
    "last": {
     "date": "2026-06-01",
@@ -1152,7 +1152,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 109.781,
+   "trail_stop": 109.6854,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -1166,7 +1166,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 74.0027,
+   "trail_stop": 74.0193,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -1180,7 +1180,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 388.4603,
+   "trail_stop": 388.2536,
    "early_now": true,
    "last": {
     "date": "2026-06-17",
@@ -1194,7 +1194,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 138.9464,
+   "trail_stop": 139.0264,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -1207,8 +1207,8 @@
    "state": "mixed",
    "above200": true,
    "weekly_bull": false,
-   "trail_breach": false,
-   "trail_stop": 1043.9143,
+   "trail_breach": true,
+   "trail_stop": 1043.2826,
    "early_now": false,
    "last": {
     "date": "2026-05-05",
@@ -1222,7 +1222,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 67.5016,
+   "trail_stop": 67.5105,
    "early_now": false,
    "last": {
     "date": "2026-07-01",
@@ -1238,7 +1238,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 51.9788,
+   "trail_stop": 51.9643,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -1254,7 +1254,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 73.2323,
+   "trail_stop": 73.1434,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -1267,8 +1267,8 @@
    "state": "mixed",
    "above200": true,
    "weekly_bull": true,
-   "trail_breach": true,
-   "trail_stop": 288.0016,
+   "trail_breach": false,
+   "trail_stop": 288.0783,
    "early_now": false,
    "last": {
     "date": "2026-07-15",
@@ -1282,7 +1282,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 420.0795,
+   "trail_stop": 419.404,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -1298,7 +1298,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 110.7793,
+   "trail_stop": 110.706,
    "early_now": false,
    "last": {
     "date": "2026-06-23",
@@ -1311,10 +1311,10 @@
    "ticker": "EXC",
    "asof": "2026-08-05",
    "state": "short-bias",
-   "above200": true,
+   "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 46.1404,
+   "trail_stop": 46.1137,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -1328,7 +1328,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 91.6041,
+   "trail_stop": 91.5574,
    "early_now": false,
    "last": {
     "date": "2026-07-01",
@@ -1344,7 +1344,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 147.7504,
+   "trail_stop": 147.7993,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -1364,7 +1364,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 14.2925,
+   "trail_stop": 14.2781,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -1378,7 +1378,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 191.9811,
+   "trail_stop": 192.2367,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -1426,7 +1426,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 58.8151,
+   "trail_stop": 58.7706,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -1442,7 +1442,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 379.2121,
+   "trail_stop": 379.4207,
    "early_now": false,
    "last": {
     "date": "2026-05-05",
@@ -1458,7 +1458,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 361.3916,
+   "trail_stop": 361.2961,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -1474,7 +1474,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 1016.8227,
+   "trail_stop": 1017.556,
    "early_now": true,
    "last": {
     "date": "2026-07-10",
@@ -1488,7 +1488,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 132.1702,
+   "trail_stop": 131.998,
    "early_now": false,
    "last": {
     "date": "2026-07-01",
@@ -1504,7 +1504,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 84.5638,
+   "trail_stop": 84.5138,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -1520,7 +1520,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 351.514,
+   "trail_stop": 351.3851,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -1536,7 +1536,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 352.6588,
+   "trail_stop": 352.5344,
    "early_now": false,
    "last": {
     "date": "2026-06-01",
@@ -1550,7 +1550,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 276.3416,
+   "trail_stop": 276.0705,
    "early_now": false,
    "last": {
     "date": "2026-04-06",
@@ -1562,11 +1562,11 @@
   {
    "ticker": "GS",
    "asof": "2026-08-05",
-   "state": "mixed",
+   "state": "short-bias",
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 1053.4485,
+   "trail_stop": 1053.1485,
    "early_now": false,
    "last": {
     "date": "2026-06-26",
@@ -1580,7 +1580,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 33.068,
+   "trail_stop": 33.0802,
    "early_now": false,
    "last": {
     "date": "2026-05-05",
@@ -1594,7 +1594,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 342.0496,
+   "trail_stop": 342.2007,
    "early_now": false,
    "last": {
     "date": "2026-04-27",
@@ -1608,7 +1608,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 323.4568,
+   "trail_stop": 323.1435,
    "early_now": false,
    "last": {
     "date": "2026-04-30",
@@ -1622,7 +1622,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 239.8184,
+   "trail_stop": 239.834,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -1638,7 +1638,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 96.6165,
+   "trail_stop": 96.5831,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -1652,7 +1652,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 178.1365,
+   "trail_stop": 177.9554,
    "early_now": false,
    "last": {
     "date": "2026-06-01",
@@ -1666,7 +1666,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 280.272,
+   "trail_stop": 279.998,
    "early_now": false,
    "last": {
     "date": "2026-06-12",
@@ -1682,7 +1682,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 234.5426,
+   "trail_stop": 234.6914,
    "early_now": false,
    "last": {
     "date": "2026-05-18",
@@ -1698,7 +1698,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 79.9206,
+   "trail_stop": 80.0351,
    "early_now": false,
    "last": {
     "date": "2026-06-09",
@@ -1714,7 +1714,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 102.429,
+   "trail_stop": 102.5579,
    "early_now": false,
    "last": {
     "date": "2026-05-27",
@@ -1728,7 +1728,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 29.9641,
+   "trail_stop": 29.9474,
    "early_now": false,
    "last": {
     "date": "2026-07-07",
@@ -1742,7 +1742,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 40.4224,
+   "trail_stop": 40.3857,
    "early_now": false,
    "last": {
     "date": "2026-05-27",
@@ -1758,7 +1758,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 123.9501,
+   "trail_stop": 123.9323,
    "early_now": false,
    "last": {
     "date": "2026-06-04",
@@ -1772,7 +1772,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 372.0789,
+   "trail_stop": 372.2633,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -1788,7 +1788,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 147.102,
+   "trail_stop": 147.0053,
    "early_now": false,
    "last": {
     "date": "2026-05-05",
@@ -1802,7 +1802,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 255.2935,
+   "trail_stop": 255.6313,
    "early_now": false,
    "last": {
     "date": "2026-06-04",
@@ -1818,7 +1818,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 348.9297,
+   "trail_stop": 348.6895,
    "early_now": false,
    "last": {
     "date": "2026-06-04",
@@ -1834,7 +1834,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 30.7324,
+   "trail_stop": 30.7069,
    "early_now": false,
    "last": {
     "date": "2026-07-07",
@@ -1848,7 +1848,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 25.2583,
+   "trail_stop": 25.2505,
    "early_now": false,
    "last": {
     "date": "2026-03-18",
@@ -1862,7 +1862,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 206.9351,
+   "trail_stop": 207.1195,
    "early_now": false,
    "last": {
     "date": "2026-07-01",
@@ -1876,7 +1876,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 109.4223,
+   "trail_stop": 109.3934,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -1890,7 +1890,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 31.4905,
+   "trail_stop": 31.485,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -1904,7 +1904,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 84.9215,
+   "trail_stop": 84.9004,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -1920,7 +1920,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 57.996,
+   "trail_stop": 58.0015,
    "early_now": false,
    "last": {
     "date": "2026-07-15",
@@ -1936,7 +1936,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 19.1872,
+   "trail_stop": 19.1794,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -1950,7 +1950,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 503.5577,
+   "trail_stop": 503.3266,
    "early_now": false,
    "last": {
     "date": "2026-07-10",
@@ -1964,7 +1964,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 1161.8168,
+   "trail_stop": 1161.8124,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -1978,7 +1978,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 559.1742,
+   "trail_stop": 559.3453,
    "early_now": false,
    "last": {
     "date": "2026-06-09",
@@ -1994,7 +1994,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 215.0039,
+   "trail_stop": 214.9917,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -2010,7 +2010,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 320.2134,
+   "trail_stop": 320.594,
    "early_now": false,
    "last": {
     "date": "2026-07-01",
@@ -2023,8 +2023,8 @@
    "state": "short-bias",
    "above200": true,
    "weekly_bull": true,
-   "trail_breach": true,
-   "trail_stop": 180.4723,
+   "trail_breach": false,
+   "trail_stop": 180.5512,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -2038,7 +2038,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 550.8459,
+   "trail_stop": 550.6026,
    "early_now": false,
    "last": {
     "date": "2026-06-12",
@@ -2054,7 +2054,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 365.492,
+   "trail_stop": 365.0053,
    "early_now": false,
    "last": {
     "date": "2026-06-23",
@@ -2068,7 +2068,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 270.7489,
+   "trail_stop": 270.8833,
    "early_now": false,
    "last": {
     "date": "2026-06-09",
@@ -2084,7 +2084,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 835.9344,
+   "trail_stop": 834.155,
    "early_now": false,
    "last": {
     "date": "2026-06-09",
@@ -2100,7 +2100,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 61.4561,
+   "trail_stop": 61.4139,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -2116,7 +2116,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 84.1698,
+   "trail_stop": 84.2487,
    "early_now": false,
    "last": {
     "date": "2026-06-01",
@@ -2132,7 +2132,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 594.4072,
+   "trail_stop": 594.4039,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -2146,7 +2146,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 560.3012,
+   "trail_stop": 560.4234,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -2160,7 +2160,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 173.3613,
+   "trail_stop": 173.3035,
    "early_now": false,
    "last": {
     "date": "2026-04-09",
@@ -2176,7 +2176,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 94.5397,
+   "trail_stop": 94.4042,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -2190,7 +2190,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 69.9839,
+   "trail_stop": 69.9827,
    "early_now": false,
    "last": {
     "date": "2026-03-18",
@@ -2204,7 +2204,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 300.5041,
+   "trail_stop": 300.8385,
    "early_now": false,
    "last": {
     "date": "2026-04-09",
@@ -2218,7 +2218,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 127.3079,
+   "trail_stop": 127.289,
    "early_now": false,
    "last": {
     "date": "2026-06-23",
@@ -2234,7 +2234,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 215.437,
+   "trail_stop": 215.917,
    "early_now": false,
    "last": {
     "date": "2026-06-23",
@@ -2248,7 +2248,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 215.3617,
+   "trail_stop": 215.4417,
    "early_now": false,
    "last": {
     "date": "2026-06-26",
@@ -2262,7 +2262,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 439.956,
+   "trail_stop": 439.6226,
    "early_now": false,
    "last": {
     "date": "2026-07-15",
@@ -2278,7 +2278,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 917.6495,
+   "trail_stop": 918.7285,
    "early_now": false,
    "last": {
     "date": "2026-07-01",
@@ -2292,7 +2292,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 87.3677,
+   "trail_stop": 87.2854,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -2306,7 +2306,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 99.7602,
+   "trail_stop": 99.8202,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -2322,7 +2322,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 73.2001,
+   "trail_stop": 73.1409,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -2338,7 +2338,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 42.2837,
+   "trail_stop": 42.247,
    "early_now": false,
    "last": {
     "date": "2026-05-05",
@@ -2354,7 +2354,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 129.0162,
+   "trail_stop": 128.8962,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -2368,7 +2368,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 254.3372,
+   "trail_stop": 254.4116,
    "early_now": false,
    "last": {
     "date": "2026-06-17",
@@ -2382,7 +2382,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 208.2651,
+   "trail_stop": 208.5895,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -2402,7 +2402,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 27.7923,
+   "trail_stop": 27.7868,
    "early_now": false,
    "last": {
     "date": "2026-07-07",
@@ -2418,7 +2418,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 63.4023,
+   "trail_stop": 63.3801,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -2432,7 +2432,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 88.1157,
+   "trail_stop": 88.1001,
    "early_now": false,
    "last": {
     "date": "2026-03-31",
@@ -2446,7 +2446,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 81.1379,
+   "trail_stop": 81.1535,
    "early_now": false,
    "last": {
     "date": "2026-03-18",
@@ -2460,7 +2460,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 139.694,
+   "trail_stop": 140.0141,
    "early_now": false,
    "last": {
     "date": "2026-06-12",
@@ -2474,7 +2474,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 89.735,
+   "trail_stop": 89.6372,
    "early_now": false,
    "last": {
     "date": "2026-07-15",
@@ -2490,7 +2490,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 55.0563,
+   "trail_stop": 55.0352,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -2506,7 +2506,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 341.7894,
+   "trail_stop": 342.0204,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -2520,7 +2520,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 17.4601,
+   "trail_stop": 17.4514,
    "early_now": false,
    "last": {
     "date": "2026-06-09",
@@ -2540,7 +2540,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 77.9442,
+   "trail_stop": 77.9307,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -2553,8 +2553,8 @@
    "state": "long-bias",
    "above200": false,
    "weekly_bull": false,
-   "trail_breach": false,
-   "trail_stop": 139.1323,
+   "trail_breach": true,
+   "trail_stop": 139.0345,
    "early_now": false,
    "last": {
     "date": "2026-07-15",
@@ -2574,7 +2574,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 25.1247,
+   "trail_stop": 25.1459,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -2590,7 +2590,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 146.6192,
+   "trail_stop": 146.6359,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -2604,7 +2604,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 213.7475,
+   "trail_stop": 213.752,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -2618,7 +2618,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 993.8458,
+   "trail_stop": 992.4925,
    "early_now": false,
    "last": {
     "date": "2026-06-09",
@@ -2634,7 +2634,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 244.935,
+   "trail_stop": 244.8528,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -2650,7 +2650,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 142.6728,
+   "trail_stop": 142.7684,
    "early_now": false,
    "last": {
     "date": "2026-07-15",
@@ -2670,7 +2670,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 143.2692,
+   "trail_stop": 143.5358,
    "early_now": false,
    "last": {
     "date": "2026-07-01",
@@ -2686,7 +2686,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 188.327,
+   "trail_stop": 188.3282,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -2700,7 +2700,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 249.6015,
+   "trail_stop": 249.556,
    "early_now": false,
    "last": {
     "date": "2026-05-21",
@@ -2716,7 +2716,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 117.448,
+   "trail_stop": 117.3924,
    "early_now": false,
    "last": {
     "date": "2026-07-10",
@@ -2730,7 +2730,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 321.6613,
+   "trail_stop": 321.7413,
    "early_now": false,
    "last": {
     "date": "2026-07-15",
@@ -2744,7 +2744,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 201.5882,
+   "trail_stop": 201.6793,
    "early_now": false,
    "last": {
     "date": "2026-07-07",
@@ -2760,7 +2760,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 666.7956,
+   "trail_stop": 667.1758,
    "early_now": false,
    "last": {
     "date": "2026-05-21",
@@ -2771,10 +2771,10 @@
    "ticker": "QCOM",
    "asof": "2026-08-05",
    "state": "mixed",
-   "above200": false,
+   "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 171.6882,
+   "trail_stop": 171.926,
    "early_now": false,
    "last": {
     "date": "2026-06-12",
@@ -2788,7 +2788,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 309.3596,
+   "trail_stop": 308.8841,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -2804,7 +2804,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 712.6861,
+   "trail_stop": 713.0138,
    "early_now": false,
    "last": {
     "date": "2026-07-01",
@@ -2820,7 +2820,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 242.753,
+   "trail_stop": 242.6507,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -2836,7 +2836,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 209.0872,
+   "trail_stop": 209.0983,
    "early_now": false,
    "last": {
     "date": "2026-06-04",
@@ -2852,7 +2852,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 183.4604,
+   "trail_stop": 183.5115,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -2868,7 +2868,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 104.9483,
+   "trail_stop": 104.6817,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -2882,7 +2882,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 103.1106,
+   "trail_stop": 103.1395,
    "early_now": false,
    "last": {
     "date": "2026-06-09",
@@ -2898,7 +2898,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 345.2421,
+   "trail_stop": 345.2377,
    "early_now": false,
    "last": {
     "date": "2026-04-27",
@@ -2912,7 +2912,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 49.6012,
+   "trail_stop": 49.6346,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -2928,7 +2928,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 1456.9438,
+   "trail_stop": 1456.6082,
    "early_now": false,
    "last": {
     "date": "2026-07-01",
@@ -2942,7 +2942,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 94.4235,
+   "trail_stop": 94.3235,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -2956,7 +2956,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 224.9346,
+   "trail_stop": 225.0224,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -2970,7 +2970,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 419.1069,
+   "trail_stop": 419.2113,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -2984,7 +2984,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 89.3016,
+   "trail_stop": 89.115,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -2998,7 +2998,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 251.0962,
+   "trail_stop": 251.3489,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -3014,7 +3014,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 854.9086,
+   "trail_stop": 852.4553,
    "early_now": false,
    "last": {
     "date": "2026-06-23",
@@ -3028,7 +3028,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 46.8541,
+   "trail_stop": 46.8574,
    "early_now": false,
    "last": {
     "date": "2026-03-05",
@@ -3042,7 +3042,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 330.5644,
+   "trail_stop": 330.5078,
    "early_now": false,
    "last": {
     "date": "2026-05-18",
@@ -3058,7 +3058,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 82.9223,
+   "trail_stop": 82.9834,
    "early_now": false,
    "last": {
     "date": "2026-03-10",
@@ -3072,7 +3072,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 23.0409,
+   "trail_stop": 23.0286,
    "early_now": false,
    "last": {
     "date": "2026-07-15",
@@ -3088,7 +3088,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 141.8826,
+   "trail_stop": 142.0315,
    "early_now": false,
    "last": {
     "date": "2026-03-10",
@@ -3102,7 +3102,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 157.5757,
+   "trail_stop": 157.4123,
    "early_now": false,
    "last": {
     "date": "2026-06-26",
@@ -3115,8 +3115,8 @@
    "state": "mixed",
    "above200": false,
    "weekly_bull": false,
-   "trail_breach": true,
-   "trail_stop": 186.3553,
+   "trail_breach": false,
+   "trail_stop": 186.5192,
    "early_now": false,
    "last": {
     "date": "2026-07-07",
@@ -3130,7 +3130,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 553.2262,
+   "trail_stop": 554.1834,
    "early_now": false,
    "last": {
     "date": "2026-05-08",
@@ -3144,7 +3144,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 179.911,
+   "trail_stop": 179.871,
    "early_now": false,
    "last": {
     "date": "2026-07-07",
@@ -3160,7 +3160,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 389.9456,
+   "trail_stop": 388.6655,
    "early_now": false,
    "last": {
     "date": "2026-06-26",
@@ -3176,7 +3176,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 266.5737,
+   "trail_stop": 266.6671,
    "early_now": false,
    "last": {
     "date": "2026-03-18",
@@ -3190,7 +3190,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 347.4791,
+   "trail_stop": 347.7847,
    "early_now": false,
    "last": {
     "date": "2026-07-10",
@@ -3204,7 +3204,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 473.0372,
+   "trail_stop": 473.1617,
    "early_now": false,
    "last": {
     "date": "2026-05-13",
@@ -3214,17 +3214,15 @@
   {
    "ticker": "TTD",
    "asof": "2026-08-05",
-   "state": "mixed",
+   "state": "short-bias",
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 17.6047,
+   "trail_stop": 17.5825,
    "early_now": false,
    "last": {
-    "date": "2026-07-01",
-    "type": "buy",
-    "quality": "take",
-    "reason": "held confirmation"
+    "date": "2026-08-05",
+    "type": "sell"
    }
   },
   {
@@ -3234,7 +3232,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 241.6526,
+   "trail_stop": 242.0771,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -3248,7 +3246,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 287.6084,
+   "trail_stop": 287.9084,
    "early_now": false,
    "last": {
     "date": "2026-06-04",
@@ -3262,7 +3260,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 72.0435,
+   "trail_stop": 72.0502,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -3278,7 +3276,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 415.466,
+   "trail_stop": 415.0137,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -3292,7 +3290,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 290.8679,
+   "trail_stop": 290.7234,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -3306,7 +3304,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 62.9755,
+   "trail_stop": 62.9667,
    "early_now": false,
    "last": {
     "date": "2026-05-08",
@@ -3320,7 +3318,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 358.9136,
+   "trail_stop": 358.7891,
    "early_now": false,
    "last": {
     "date": "2026-06-12",
@@ -3336,7 +3334,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 26.6111,
+   "trail_stop": 26.6189,
    "early_now": false,
    "last": {
     "date": "2026-06-01",
@@ -3349,8 +3347,8 @@
    "state": "mixed",
    "above200": true,
    "weekly_bull": true,
-   "trail_breach": true,
-   "trail_stop": 297.1342,
+   "trail_breach": false,
+   "trail_stop": 297.5398,
    "early_now": false,
    "last": {
     "date": "2026-04-06",
@@ -3363,8 +3361,8 @@
    "state": "mixed",
    "above200": false,
    "weekly_bull": true,
-   "trail_breach": true,
-   "trail_stop": 284.5251,
+   "trail_breach": false,
+   "trail_stop": 284.6485,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -3378,7 +3376,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 281.3802,
+   "trail_stop": 281.3824,
    "early_now": false,
    "last": {
     "date": "2026-03-26",
@@ -3392,7 +3390,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 483.602,
+   "trail_stop": 483.5087,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -3406,7 +3404,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 150.9545,
+   "trail_stop": 150.8323,
    "early_now": false,
    "last": {
     "date": "2026-07-28",
@@ -3420,7 +3418,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 92.8097,
+   "trail_stop": 92.9142,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -3434,7 +3432,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 45.6253,
+   "trail_stop": 45.6386,
    "early_now": false,
    "last": {
     "date": "2026-07-23",
@@ -3450,7 +3448,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 26.2312,
+   "trail_stop": 26.2223,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -3466,7 +3464,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 522.0676,
+   "trail_stop": 521.632,
    "early_now": false,
    "last": {
     "date": "2026-06-23",
@@ -3480,7 +3478,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 111.4454,
+   "trail_stop": 111.3232,
    "early_now": false,
    "last": {
     "date": "2026-07-20",
@@ -3494,7 +3492,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 235.5102,
+   "trail_stop": 235.5458,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -3508,7 +3506,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 86.5442,
+   "trail_stop": 86.1399,
    "early_now": false,
    "last": {
     "date": "2026-04-06",
@@ -3524,7 +3522,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 229.2753,
+   "trail_stop": 229.2575,
    "early_now": false,
    "last": {
     "date": "2026-08-05",
@@ -3538,7 +3536,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 72.1722,
+   "trail_stop": 72.1344,
    "early_now": false,
    "last": {
     "date": "2026-06-26",
@@ -3552,7 +3550,7 @@
    "above200": false,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 112.3495,
+   "trail_stop": 112.3595,
    "early_now": false,
    "last": {
     "date": "2026-07-31",
@@ -3568,7 +3566,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 24.5882,
+   "trail_stop": 24.5627,
    "early_now": false,
    "last": {
     "date": "2026-07-01",
@@ -3582,7 +3580,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 78.8578,
+   "trail_stop": 78.8789,
    "early_now": false,
    "last": {
     "date": "2026-06-23",
@@ -3602,7 +3600,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 150.9791,
+   "trail_stop": 151.0947,
    "early_now": false,
    "last": {
     "date": "2026-07-15",

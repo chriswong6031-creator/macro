@@ -64,6 +64,7 @@ from typing import Any
 import pandas as pd
 
 from engine import ledger_lane
+from engine import us_board_rank
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -744,6 +745,18 @@ def build_records(
             "score_rank": _finite(board.get("score_rank")),
             "display_rank": _finite(board.get("display_rank")),
             "featured": _bool(board.get("featured")),
+            # WHAT `featured` MEANT ON THE NIGHT IT WAS WRITTEN.  This is an
+            # append-only forward store, so a column whose MEANING moves without a
+            # stamp silently pools two different quantities under one name — and
+            # `featured` moved twice in three days: #4684 (2026-08-06) made an unknown
+            # extension reading a VETO, and ANTICIPATION v1 (2026-08-08) replaced that
+            # veto with a disclosure AND widened the admissible entry statuses.  Rows
+            # from either side of those edits are not interchangeable, and nothing in
+            # the store said so.  Stamped exactly the way `board_definition` and
+            # `anchor_era` already are: the module constant, read in the same process
+            # that scored the rows this record is built from, so it labels the run that
+            # produced the flag rather than whatever the constants say at read time.
+            "selection_era": us_board_rank.SELECTION_ERA,
             # ── theme ─────────────────────────────────────────────────────
             # A count of 0 is a MEASURED fact ("in no curated basket") only when
             # the membership source actually loaded.  If it did not, every name
@@ -813,6 +826,46 @@ CONTEXT_DIMENSIONS = (
 )
 
 
+#: Entitlement-gated payload columns that must NEVER reach the committed
+#: candidates store. These are paid product bodies, not telemetry: the compact
+#: finding structs (id/detector/priority/topic/title/summary/periods) and the
+#: accession-level disclosure projection that /api/forensics/state serves only
+#: to require_site_full_user holders.
+#:
+#: The scalar forensics fields are deliberately KEPT — action, latest_period,
+#: latest_filed, as_of, basis, absent, authority, display_only. They are
+#: zero-authority telemetry: they say a read exists and how stale it is, without
+#: reproducing what the reader paid for.
+STAMP_FORBIDDEN_COLUMNS = frozenset({
+    "forensics__findings",
+    "forensics__disclosure_changes",
+})
+
+#: Non-scalar columns this store carries ON PURPOSE. Every list/dict-valued
+#: column in the stamped frame must appear in exactly one of these two sets —
+#: tests/test_us_context_vector_payload_containment.py fails on any that is in
+#: neither. That is the durable half of this guard: the flatten in
+#: context_api.context_frame is generic, so the NEXT dimension to grow a paid
+#: body would otherwise leak in silently, exactly as forensics did.
+#:
+#: These two are carried unchanged by this change and are NOT a claim that they
+#: are safe to publish — neither is the Filing Forensics paid product, and
+#: reclassifying them is a separate reviewed decision.
+STAMP_REVIEWED_NONSCALAR_COLUMNS = frozenset({
+    "spine__records",
+    "options__skew",
+    # 2026-08-07: the guard did its job — this one appeared in the 2026-08 part
+    # while this PR was open and failed the sweep as unclassified, which is
+    # exactly the recurrence path forensics took. Classified REVIEWED, not
+    # forbidden, on evidence rather than on its sibling's name: it is derived
+    # options-market structure (spot, net_gex_bn, gamma_regime, magnets, iv30)
+    # read from data/polygon_gex/, a store ALREADY tracked in this public repo
+    # (433 files), and no app/ route gates gex or skew behind an entitlement
+    # dependency. Nothing here is served only to require_site_full_user holders.
+    "options__gex",
+})
+
+
 def context_dimension_frame(
     tickers: list[str],
     asof: str,
@@ -846,7 +899,25 @@ def context_dimension_frame(
     if frame is None or frame.empty:
         return pd.DataFrame()
     # ``date`` duplicates our own stamp_date; drop it rather than ship two.
-    return frame.drop(columns=[c for c in ("date",) if c in frame.columns])
+    frame = frame.drop(columns=[c for c in ("date",) if c in frame.columns])
+    # This function is the ONE seam where a Context Snapshot dimension becomes a
+    # COMMITTED artifact: the caller merges the result into the candidates store
+    # under data/us_prophet_rank/, which is tracked in a PUBLIC repository.
+    #
+    # context_api.context_frame flattens a dimension's whole ``value`` dict with
+    # no allowlist, so any paid body a dimension carries arrives here as a
+    # column. That is how entitlement-gated Filing Forensics findings — the same
+    # rows /api/forensics/state serves only behind require_site_full_user — came
+    # to sit in a tracked parquet for 722 tickers. `git clone` bypassed the
+    # paywall entirely.
+    #
+    # Drop them at the boundary rather than in context_api: context_frame is a
+    # general reader whose other (non-committing) callers may legitimately want
+    # the full payload. Only the committed path has to be narrow.
+    dropped = [c for c in frame.columns if c in STAMP_FORBIDDEN_COLUMNS]
+    if dropped:
+        frame = frame.drop(columns=dropped)
+    return frame
 
 
 # --------------------------------------------------------------------------- #

@@ -46,18 +46,28 @@
 	# origin-pull), so it is deliberately UNTRUSTED: {remote_host}, {client_ip} and
 	# the access log all resolve to the EDGE, not the client. That default is the safe
 	# one, because ufw lets anyone reach this box directly: a caller can forge ANY
-	# forwarding header. #4922 probed the live host through the edge and found it
-	# overwrites exactly ONE of them — `EO-Connecting-IP`. `EO-Client-IP`,
-	# `True-Client-IP`, `X-Real-IP` and `CF-Connecting-IP` all arrive carrying
-	# whatever the caller sent, and a clean edge request carries no `EO-Client-IP` at
-	# all. (#4915 wrote this paragraph listing EO-Client-IP among the headers "the
-	# edge forwards". It does not forward it — corrected here 2026-08-07.)
+	# forwarding header. `EO-Connecting-IP` is the ONLY one the edge overwrites on
+	# EVERY zone this box serves; `True-Client-IP`, `X-Real-IP` and `CF-Connecting-IP`
+	# arrive carrying whatever the caller sent, everywhere.
+	#
+	# `EO-Client-IP` IS ZONE-DEPENDENT — do not read a claim about it as estate-wide.
+	# #4922 probed admin.* and found it absent from a clean request and forwarded
+	# verbatim when forged (the EdgeOne "Client IP Header" rule is not active there).
+	# Re-probing www.* on 2026-08-07 found the OPPOSITE: the rule IS active, a clean
+	# request carries it, and a forged copy arrives overwritten with the true client.
+	# Both measurements are real; they describe different zones. A resolver that reads
+	# it is correct on one host and silently forgeable on the other, which is why
+	# `app/edge_client.py` reads only the header that holds on both.
 	#
 	# Consequence before you key anything on a peer IP: per-client keying off
 	# {remote_host} buckets ALL edge-borne traffic into one. That bit the admin login
 	# lockout, and it is FIXED in `admin/edge_trust.py` (resolve behind an ATTESTED
 	# edge peer, fall back to the peer otherwise) — NOT by reading a header here.
-	# Read that module before adding a `header_up` anywhere in this file.
+	# The public app needs no such attestation, because on www the edge does write a
+	# true per-visitor `EO-Connecting-IP`; `app/edge_client.py` explains why routing
+	# www through `from_edge` would RE-CREATE the admin lockout DoS rather than fix
+	# anything. Read whichever of the two modules serves the host you are editing
+	# before adding a `header_up` anywhere in this file.
 	servers {
 		trusted_proxies static private_ranges
 	}
@@ -122,13 +132,24 @@
 		# The eo-*/cf-* headers are deliberately NOT scrubbed: EdgeOne sets them for
 		# real in CN routing and other consumers (analytics geo, the site gate) read
 		# them. This adds a trustworthy signal rather than removing untrusted ones.
+		# WHICH of them the app may believe is decided in app/edge_client.py — probing
+		# www through the live edge on 2026-08-07 found EO-Connecting-IP overwritten
+		# with the true client while True-Client-IP, X-Real-IP and CF-Connecting-IP
+		# arrived carrying the forged values a caller sent. Read that module before
+		# adding a consumer of any eo-*/cf-* header.
 		header_up X-MM-Peer {remote_host}
 	}
 
 	# Live Tape websocket — same-origin relay to macro-api (app/tape.py).
 	# China-reachable (same-origin, like the /sb Supabase proxy). Placed with
 	# the /api/* proxy so a ws upgrade never reaches the HTML gate matchers.
-	reverse_proxy /ws/tape 127.0.0.1:8000
+	reverse_proxy /ws/tape 127.0.0.1:8000 {
+		# Same trusted peer as /api/*, for the same reason: app/tape.py caps
+		# concurrent sockets per client, and without this header its resolver has no
+		# unspoofable rung between the edge's EO-Connecting-IP and the 127.0.0.1
+		# socket peer — which is Caddy for every visitor, i.e. one shared bucket.
+		header_up X-MM-Peer {remote_host}
+	}
 
 	# ── Supabase auth/REST proxy — the GFW hole ───────────────────────────────
 	# *.supabase.co is fronted by CLOUDFLARE (verified: `server: cloudflare`,
@@ -314,7 +335,7 @@
 	# original leak: direct JSON/JS/model-output URLs no longer bypass auth.
 	# PUBLIC-BOUNDARY-START
 	@reg_asset {
-		not path /api/* /sb/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/staleness.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /fundamental_forensics.css /fundamental_forensics.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+		not path /api/* /sb/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /market_memory.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /market_memory.css /market_memory.js /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/staleness.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /fundamental_forensics.css /fundamental_forensics.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 	}
 	# PUBLIC-BOUNDARY-END
 	handle @reg_asset {
@@ -352,7 +373,7 @@
 
 	@gate_html {
 		# Public funnel only — IP gate retains its fail-open availability contract.
-		path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
+		path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /market_memory.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
 	}
 
 	handle @gate_html {
@@ -440,7 +461,7 @@
 		# tests/test_regwall_json_gate.py), so content is still only ever served
 		# from inside `handle @reg_asset` after the gate returns 2xx.
 		@reg_asset_err {
-			not path /api/* /sb/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/wires.json /live/intelligence.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /fundamental_forensics.css /fundamental_forensics.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+			not path /api/* /sb/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /market_memory.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /market_memory.css /market_memory.js /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/wires.json /live/intelligence.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /fundamental_forensics.css /fundamental_forensics.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 		}
 		handle @reg_asset_err {
 			header Cache-Control "private, no-store"
@@ -451,7 +472,7 @@
 
 		# Public funnel only: retain fail-open availability if the IP gate is down.
 		@gate_html_err {
-			path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
+			path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /market_memory.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
 		}
 		handle @gate_html_err {
 			header Cache-Control "no-store"
@@ -484,7 +505,7 @@
 	# extension matcher here would override a protected response's no-store and
 	# turn the CDN into an authentication bypass.
 	@public_static {
-		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /product-nav-icons.css /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /research_vault_app.js /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /stock_seasonality.css /stock_seasonality.js /assets/css/* /assets/js/* /assets/landing/* /fonts/*
+		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /market_memory.css /market_memory.js /product-nav-icons.css /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /research_vault_app.js /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /stock_seasonality.css /stock_seasonality.js /assets/css/* /assets/js/* /assets/landing/* /fonts/*
 		not query v=*
 	}
 	header @public_static Cache-Control "public, max-age=300, must-revalidate"
@@ -504,7 +525,7 @@
 	# re-revalidated on every page navigation — the dominant mobile cost. Refs
 	# WITHOUT ?v= (e.g. a page rendered before the sweep) keep the short TTL above.
 	@public_versioned {
-		path /onboard.css /onboard.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /product-nav-icons.css /theme.js /release_publications_live.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /assets/css/* /assets/js/* /assets/landing/*
+		path /onboard.css /onboard.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /market_memory.css /market_memory.js /product-nav-icons.css /theme.js /release_publications_live.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /assets/css/* /assets/js/* /assets/landing/*
 		query v=*
 	}
 	header @public_versioned Cache-Control "public, max-age=31536000, immutable"
@@ -815,13 +836,18 @@ admin.mastermind-x.com {
 			# an ATTESTED edge peer and falls back to this peer otherwise, so nothing in
 			# this block had to change.
 			#
-			# READ THAT MODULE BEFORE ADDING A header_up HERE. Probing the live host
+			# READ THAT MODULE BEFORE ADDING A header_up HERE. Probing THIS host
 			# through the edge on 2026-08-07 (headers captured off the :8787 loopback hop)
 			# found EO-Connecting-IP is the ONLY header the edge overwrites; EO-Client-IP,
 			# True-Client-IP, X-Real-IP and CF-Connecting-IP all arrived carrying the
 			# forged values a caller sent, and a clean edge request carries no
 			# EO-Client-IP at all. Forwarding any of those as identity would reopen the
 			# hole in the other direction — unlimited bucket rotation.
+			#
+			# The EO-Client-IP half of that is TRUE HERE AND FALSE ON www, where the
+			# EdgeOne "Client IP Header" rule is active and the edge overwrites it (see
+			# the global options block). Do not copy this paragraph to another vhost —
+			# re-probe the zone you are actually editing.
 			header_up X-Admin-Client-IP {remote_host}
 		}
 	}

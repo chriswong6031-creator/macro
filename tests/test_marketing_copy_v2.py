@@ -2337,7 +2337,8 @@ class TestTheReceiptsDeskCanActuallyProduce:
         y, m, d = (int(x) for x in today.split("-"))
         sig = (date(y, m, d) - timedelta(days=days_ago)).isoformat()
         plan = {"asset": ticker, "entry": 100.0, "invalidation": 85.0,
-                "targets": [115.0], "_signal_date": sig, "phase": "triggered_pre_t1",
+                "targets": [115.0], "_signal_date": sig, "signal_date": sig,
+                "signal_date_basis": "tier_event_date", "phase": "triggered_pre_t1",
                 "profit_plan": [{"status": "PENDING", "price": 115.0}]}
         if resolved:
             plan["profit_plan"] = [{"status": "DONE", "price": 115.0}]

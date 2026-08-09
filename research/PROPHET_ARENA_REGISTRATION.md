@@ -1,9 +1,9 @@
 # Prophet Arena — policy registration
 
-**Status:** registered, accruing. **Tier:** display / shadow. **Authority:** none.
-**Engine:** `engine/prophet_arena.py` · **Tests:** `tests/test_prophet_arena.py`
-**Ledgers:** `data/prophet_arena/<policy>.jsonl` · **Scoreboard:** `data/prophet_arena/scoreboard.json`, `site/stockdata/prophet_arena.json`
-**Registered:** 2026-08-06 (ledgers start empty on this date; there is no backfill).
+**Status:** registered, accruing. **Tier:** display / shadow. **Authority:** none. C2 retired 2026-08-09 → C7 (§C2, §C7).
+**Engine:** `engine/prophet_arena.py` · **Tests:** `tests/test_prophet_arena*.py`
+**Active ledgers:** `data/prophet_arena/price_basis_trigger_v2/<policy>.jsonl` · **Scoreboard:** `data/prophet_arena/scoreboard.json`, `site/stockdata/prophet_arena.json`
+**Registered:** 2026-08-06. **Temporal v2 boundary:** 2026-08-08; v2 starts empty and has no backfill. The top-level v1 ledgers are sealed audit evidence and are excluded from every active grade and summary.
 
 ---
 
@@ -60,17 +60,17 @@ with the line each one mirrors:
 | # | Convention | Champion line |
 |---|---|---|
 | 1 | **Close-based, never touch-based.** An intraday spike through T1 that closes below it does not close the plan. | L519 ("conservative (may miss intraday crosses)") |
-| 2 | **Strictly after `signal_date`** — the signal day's own close is excluded. | L541 |
+| 2 | **Strictly after `price_basis_date`** — the close whose price became `entry` is excluded. `signal_date` remains causal event provenance, not the grading clock. | live `plan_clock_date` |
 | 3 | **Same-day precedence is worst-case-first**: invalidation → T2 → T1. A bar both below invalidation and above T2 records INVALIDATED. | L566-581 |
 | 4 | **First-trigger-closes.** T1 then later T2 is recorded T1_HIT forever. | L502-506 |
-| 5 | **Expiry checked last within the bar, on CALENDAR days**: `(ts - sig_ts).days >= horizon_days`. Not sessions. | L599 |
-| 6 | `stock_result_pct = (close_price / entry - 1) * 100`, rounded to 4. | L611-612 |
-| 7 | `days_held = close_date - signal_date`, calendar days. | L621 |
-| 8 | A frame ending before `signal_date + horizon` leaves the plan **open**. Correct behaviour, not a missed expiry. | L509-511 |
+| 5 | **No position before entry trigger confirmation.** If the horizon arrives without confirmation, the outcome is `NO_ENTRY` with null P&L. | live P2 contract |
+| 6 | **Expiry checked last within the bar, on CALENDAR days**: `(ts - clock_ts).days >= horizon_days`. Not sessions. | live P1 contract |
+| 7 | `stock_result_pct = (close_price / entry - 1) * 100`, rounded to 4. | live ruler |
+| 8 | `days_held = close_date - price_basis_date`, calendar days. A frame ending before that clock plus the horizon remains **open**. | live P1 contract |
 
 **Pin 9 is the one convention with no champion line to mirror** (C6 only): the 21-session
 time stop is evaluated **after** the three price triggers and **before** the calendar
-expiry check. "21st session" counts post-signal **bars** in the frame the replay walks
+expiry check. "21st session" counts post-entry-clock **bars** in the frame the replay walks
 (1-based), not calendar days — the rule is about how long dead money is held, and sessions
 are the unit a holder experiences. On a bar that is both the 21st session and past the
 calendar horizon, `time_stopped` records; by construction that collision is rare (21
@@ -89,7 +89,7 @@ in one record.
 
 Every policy inherits the champion's admission filter, sort key, geometry, and plan id by
 **calling `engine.prophet_bridge` with modified inputs** (`select_candidates(standouts,
-n=len(buy))` yields the admitted population in champion order with the cap made a no-op).
+n=None)` yields the complete admitted population in champion order).
 Nothing is re-implemented.
 
 **Frozen keys.** These strings are the ledger filenames and the scoreboard's policy ids.
@@ -100,16 +100,18 @@ new key.
 |---|---|---|
 | `C0_champion_mirror` | selection | nothing — it *is* the champion (control + validity pin) |
 | `C1_buy_soon_first` | selection | ordering: `act_level == 2` lifted above `act_level == 3` |
-| `C2_stage_ran_preferred` | selection | admission (one leg relaxed) + ordering |
+| `C2_stage_ran_preferred` | selection | **RETIRED 2026-08-09 → C7** (act-level widening; see §C2) |
 | `C3_door_w_union` | selection | the candidate pool (Door W union, 4 reserved slots) |
 | `C4_dispersion_cap` | selection | the nightly cap (12 or 6, by dispersion state) |
 | `C5_align2_gate` | selection | admission (restricted to fully-aligned names) |
 | `C6_time_stop_21` | **closure** | the exit rule only — the plan set equals C0's |
+| `C7_buy_soon_admitted` | selection | admission (one leg relaxed: the status class) |
 
 ### C0 `champion_mirror` — CONTROL and validity pin
 
 Exactly the live `select_candidates` on the night's artifact, with the same duplicate-id
-and open-plan suppression the live path applies.
+and open-plan suppression the live path applies. C0 and C6 consume the full lossless
+population; they have no positional or sector cap.
 
 **Also the harness-validity pin.** C0's plan ids must match the live origination's ids
 exactly. A mismatch means the harness is reading a different world than the champion did;
@@ -170,6 +172,26 @@ and the gate_go mode remain the champion's own code. The rows carried forward ar
 original, unpatched dicts. On the 2026-07-31 artifact this admits 5 names (TJX, STRA, DLB,
 BCPC, VIRT — all band neutral/constructive) and displaces the champion's tail 5.
 
+> **RETIRED 2026-08-09 — superseded by the champion it was probing.** ANTICIPATION A1
+> (#5105) replaced the champion's act-level gate with status-class admission
+> (`{bounce_wait, wait_pullback, hold, buy_now, partial}`), which retires this
+> construction twice over. Mechanically: the frozen widening lifts `act_level`, an input
+> admission no longer reads, so it can no longer admit anything — the #5105 test suite
+> pinned that inertness on merge day, and a frozen key must not quietly go on accruing
+> as a different de-facto rule (re-ordering only) under an admission-widening charter.
+> On the evidence: the battery's per-status split
+> (`section_3_ran_lane.a_stage_ran_from_ledger.H10.per_status`) puts 47 of the shelf's
+> 55 rows on `hold` — which A1 now admits champion-side, absorbing the bulk of the
+> thesis this policy existed to test. The residue it cannot reach (`extended` n=8, a
+> thin directional read the artifact itself flags; `topping` n=0) is too thin to
+> re-register today. That residue stays OPEN as ore, not killed: if the extended/topping
+> cells fatten, an admission probe for them is a legitimate future registration under a
+> new key. The v2 ledger file is sealed in place exactly like the v1 era — kept on
+> disk and in the scoreboard's `retired_policies` disclosure with its accrued open
+> stamps (5 as of retirement day, none ever graded), never advanced again. Successor:
+> §C7, which carries the one-leg-relaxation idiom to the status leg and the
+> best-measured cell the new gate refuses.
+
 ### C3 `door_w_union` — REGISTERED CONSTRUCTION CHOICE
 
 Candidate pool = champion admitted pool **∪** Door W candidates
@@ -210,10 +232,11 @@ with no invalidation is a ticker, not a plan.
 
 ### C4 `dispersion_cap`
 
-Champion selection and champion order; the nightly cap is **12** when
+Champion selection and champion order, re-sliced into C4's frozen challenger book: the
+challenger cap is **12** when
 `data/dispersion/regime.json` reads state `lean_in`, else **6** (the pre-2026-07-28 cap).
 
-**Fail-open to the champion cap** when the artifact is absent, unreadable, undatable,
+**Fail-open to C4's registered 12-row cap** when the artifact is absent, unreadable, undatable,
 null-stated, or **staler than 5 sessions**; the mode that fired is always recorded, so "the
 cap was 12" is never ambiguous between "lean_in fired" and "the dial was missing".
 
@@ -239,8 +262,8 @@ can see how often the arm was actually live.
 ### C5 `align2_gate`
 
 Champion selection restricted to names whose event-atlas weekly alignment reads **fully
-aligned**, then champion sort, then cap. Because a restriction frees cap slots, C5 can also
-reach rows the champion's cap cut.
+aligned**, then champion sort, then C5's registered challenger cap. The gate is measured
+inside the full lossless champion population; C0 itself is not capped.
 
 **The two alignment measures are not interchangeable, and the gate must not treat them as
 one.** `event_atlas.live_state` returns:
@@ -275,7 +298,7 @@ misalignment a negative marker against a pooled washout edge of **+0.23pp (13w e
 ### C6 `time_stop_21` — CLOSURE grain
 
 The **same plan set as C0 by construction**, with one added closure rule: a shadow plan
-still **below its entry** at the close of its **21st post-signal session** closes there with
+still **below its entry** at the close of its **21st post-entry-clock session** closes there with
 outcome `time_stopped`. Everything else — T1, T2, invalidation, expiry — is identical to the
 champion (Pin 9 governs ordering).
 
@@ -297,11 +320,55 @@ better/worse/same counts.
 **Validity pin:** C6's selection must equal C0's selection. It is a closure experiment; any
 selection difference is a harness bug.
 
+### C7 `buy_soon_admitted` — SUCCESSOR to C2 (registered 2026-08-09)
+
+The champion's admitted pool WITH `buy_soon` rows admitted — champion order, C7's
+registered 12-row cap. The probe relaxes exactly ONE admission leg, the way C2 did
+against the act-level gate: a copy of the artifact is built in which only the
+`buy_soon` rows' entry status is lifted to an admitted value, `select_candidates`
+judges the copy, and the rows carried forward are the original, unpatched dicts. Tone,
+band, tier-cascade, entry-signal presence and the champion's own sort stay the
+champion's code. Admission-only by design: no preference lift, so a `buy_soon` row
+must EARN its slot under the champion's own ranking, and the record measures admission
+rather than admission-plus-reordering.
+
+**The probe value is mechanically irrelevant, and that claim is pinned.** Selection
+never reads status beyond the admission class, and class feeds receipts only; the
+probe patches to `hold` and a test asserts the selection is identical under a
+`buy_now` probe — so a future class-dependent selection change re-opens this
+registration loudly instead of silently bending it.
+
+**Rationale (measured, both sides stated).** A1 refuses `buy_soon` deliberately,
+citing the CN loser ledger — CN entry statuses graded worst-first: `buy_soon` 46.7%
+loser rate, `partial` 41.4%, `buy_now` 30.0%
+(`research/CHINA_PROPHET_LOSER_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` §measured; quoted
+by the A1 constants block: "it graded WORST of the CN entry statuses; admitting it
+imports the chase without the evidence"). The US battery reads the same cell the other
+way: `buy_soon` is the BEST non-thin US cell — +3.19pp per-name median excess at H=10,
+n=31, 9.7% loser rate, #1 in `ranked_non_thin_by_per_name_median`
+(`label_grading_battery_results.json`, the same artifact C1 was registered on). Two
+retrospective reads, one cell, opposite verdicts, and the live rule now enforces the
+CN side on the US board. C7 accrues the prospective US record that can adjudicate it.
+Promotion stays §5: the Arena never flips anything.
+
+**Relation to C1.** C1 tests where `buy_soon`-urgency rows RANK inside the pool; C7
+tests whether `buy_soon`-status rows should be IN the pool at all. Under A1 the two
+questions decoupled: `buy_soon` status can no longer enter the pool, so C1's lift leg
+is expected near-empty (its nightly `act_level_2` receipt is the dial — see §7) while C7
+carries the admission question. Same cell, different grains; neither substitutes for
+the other.
+
+**Expected shape of the null.** On a night with no `buy_soon` row clearing the other
+champion legs, or none scoring into the cap, C7's book equals C0's and the receipts
+say so (`buy_soon_admitted_by_widening`, `buy_soon_selected`); like C4's lean_in
+nights, an equal-book night is a recorded null, not a silent one.
+
 ---
 
 ## §4 Ledgers
 
-`data/prophet_arena/<policy>.jsonl` — one file per policy, **append-only, keep-first**,
+`data/prophet_arena/price_basis_trigger_v2/<policy>.jsonl` — one file per policy,
+schema `prophet_arena.ledger/v2`, **append-only, keep-first**,
 **nightly is the sole advancer** (`engine.ledger_lane.nightly_advance_enabled()`,
 `COLLECT_LANE=nightly`). A non-nightly run computes everything and writes nothing.
 
@@ -310,13 +377,21 @@ origination stamp and at most one closure row per shadow plan per policy. Keying
 `(policy, plan_id)` alone would make a closure unrecordable, since the origination row
 already holds that key; within each kind the dedup is exactly `(policy, plan_id)`.
 
-**NO BACKFILL.** The ledgers start empty on the registration date and fill one night at a
-time, exactly as the champion's did. A small `n` means *young*, not *weak*, and the
-scoreboard says so.
+**NO BACKFILL.** The v2 ledgers start empty at the temporal-contract boundary and fill one
+night at a time. Each open stamp persists formation/event/confirmation/observation dates,
+`price_basis_date`, `entry_date`, `recorded_at`, and `trigger`. The 125 top-level v1 opens
+and their 30 closes lack that evidence; those files remain byte-for-byte audit-visible but
+are sealed and never advanced, graded, or summarized. A small active `n` means *young*,
+not *weak*, and the scoreboard discloses both eras.
+
+`price_basis_date` is accepted only from `staleness.price_through` when
+`staleness.basis == "panel_majority"`, `delayed == false`, `unknown == false`, and the
+panel is not mixed-vintage. A current wrapper `as_of` or `basis == "board_asof"` cannot
+launder an older or unproven ranked-price source; all policies fail closed together.
 
 Shadow plans carry **no option contract and no thesis prose**. The live forward ledger's
 `option_result_pct` is null on all 16 closed rows — options are not part of the ruler — and
-thesis strings cannot change an outcome. Resolving either for 7 policies × 12 plans would
+thesis strings cannot change an outcome. Resolving either for every policy plan would
 spend render budget on fields the measurement never reads.
 
 ---
@@ -366,6 +441,11 @@ is constructed.
 
 - **C4 is dormant on `lean_in` nights** (§C4). Its record equals C0's until a non-`lean_in`
   night occurs.
+- **C1's lift leg is expected near-empty under A1.** act_level 2 maps to urgency
+  "imminent", whose status (`buy_soon`) the status class refuses — so the rows C1 exists to
+  lift can rarely (via transformed statuses) or never be in the pool. Its nightly
+  `act_level_2` receipt is the dormancy dial; its reckoning is a separate ruling once that
+  receipt has a record.
 - **C3 ⊃ C0 in part** — C3 keeps the champion's top 8, so its record partly overlaps C0's.
   The Door W increment is separately countable (`door_w_selected`) and is the arm's real
   signal.

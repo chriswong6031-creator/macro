@@ -32,7 +32,10 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 # Path setup so `engine` and `lib` are importable
 # ---------------------------------------------------------------------------
-ROOT = Path("/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/zen-volhard-77003f")
+# Derived from __file__, not hardcoded: this pointed at a worktree that no
+# longer exists, so the pin resolved nothing and the outputs below had nowhere
+# to land.
+ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from engine import btc_signals  # noqa: E402

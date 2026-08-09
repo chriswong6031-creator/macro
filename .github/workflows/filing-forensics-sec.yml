@@ -1,0 +1,190 @@
+name: filing-forensics-sec
+# Filing Forensics SEC source lane — restore -> strict acquire -> projections ->
+# incremental sync -> publish the disclosure-projection bundle the render reads.
+#
+# WHY THIS LANE EXISTS. Until 2026-08-08 this ran INSIDE daily.yml's engine job as
+# "restore, acquire, project, and snapshot Filing Forensics SEC sources (hard gate)".
+# That step grew 7.4m -> 11.4m -> 15.2m -> 23.3m -> 23.8m across the 08-05..08-08
+# engine executions while SEC bytes stayed flat (127.96MB -> 127.93MB): the cost is
+# the immutable source store, not the download. The store mints ~121-165 files/night
+# on a FIXED 12-ticker universe (nightly-unique acquisition-run receipts, nightly-unique
+# filing manifests, near-daily content-addressed submissions objects), restore does one
+# sequential R2 GET per manifest entry, sync one conditional PUT + readback per file, and
+# actions/checkout clean:true wipes the gitignored store every run (measured
+# current_files: 0 every night) so it was always a COLD full restore. 561 -> 1883 restored
+# files and 729 -> 2048 synced files in three days, all on the render's critical path.
+# House law: heavy compute goes off the render path.
+#
+# ORDERING CONTRACT. Two invocations, same fixed order as before: restore + strict
+# acquire first (refusing partial target coverage), then projections + sync with
+# computed_at sampled only after every retained SEC receipt exists. The bundle is
+# published after both, then read back byte-for-byte through the exact code path
+# tomorrow's engine will run.
+#
+# FAILURE SEMANTICS. A red lane publishes nothing, so the R2 pointer stays at the last
+# COMPLETE bundle and the engine renders stale-but-complete (its restore warns beyond
+# 3 days and refuses beyond 21). That is strictly better blast radius than the old
+# arrangement, where one partial SEC acquisition killed the entire nightly render.
+on:
+  schedule:
+    # 02:30 UTC — after EDGAR's 22:00 ET / ~02:00 UTC same-day acceptance close, and
+    # hours before daily.yml's engine job (which starts ~05:00-06:30 UTC after the
+    # 22:30 UTC trigger + collect). The 02:30 -> 06:00Z gap carries essentially no
+    # acceptances, so the bundle's as_of loses nothing against the old inline ~06:00Z one.
+    - cron: "30 2 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  # Never cancel a mid-sync evidence writer. Immutable creates + CAS pointers make an
+  # interruption safe to retry, but a half-written snapshot has no value — let writes
+  # conclude and let the next scheduled run catch up.
+  group: filing-forensics-sec
+  cancel-in-progress: false
+
+jobs:
+  acquire_project_sync:
+    runs-on: [self-hosted, macstudio-light]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      # The projection builder imports scripts.build_fundamental_forensics._metadata,
+      # so this lane needs the full stack, not the light research-ingest subset.
+      - run: pip install -r requirements.txt
+      - name: restore, acquire, project, and sync Filing Forensics SEC sources (hard gate)
+        # Hard gate: a restore, strict-acquisition, projection, or source-sync failure
+        # stops this lane before the bundle is published, so the engine keeps reading the
+        # last COMPLETE bundle instead of a shallow or partial one.
+        #
+        # The first call is restore -> acquire and refuses partial target coverage. The
+        # second is projection -> sync, with computed_at sampled only after source
+        # retrieval so its explicit clock cannot precede a receipt. Neither call renders
+        # the public shell nor publishes private browser state.
+        env:
+          R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+        run: |
+          set -euo pipefail
+          utc_now() { python -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"))'; }
+          as_of="$(utc_now)"          # SEC acceptance-time cutoff, fixed before network I/O.
+          recorded_at="$(utc_now)"    # explicit snapshot/receipt recording clock.
+
+          # Warm store roots OUTSIDE the checkout. actions/checkout clean:true wipes the
+          # gitignored source trees on every run (measured current_files: 0 nightly), which
+          # forced a full cold restore of the whole growing store; a warm root reduces the
+          # restore to local hash verification (--verify-local-restore).
+          #
+          # --reuse-local-archive extends that warm root to the ACQUIRE leg. The ~128MB of
+          # 10-K/10-Q primary documents re-downloaded nightly is already retained here
+          # (127.96MB -> 127.93MB across 08-05..08-08, zero new filings), so a sha256-verified
+          # local hit reuses the ORIGINAL retrieval receipt instead of re-fetching identical
+          # bytes — SEC fair-access courtesy, and no cache hit ever mints a fresh clock. A cold,
+          # ambiguous, or unverifiable archive silently falls back to fetching; Submissions are
+          # always fetched fresh, which is how a new filing is discovered.
+          RAW="$HOME/.cache/mm-ffsec/raw"
+          ARCHIVE="$HOME/.cache/mm-ffsec/archive"
+          # The per-run observation log ("we looked, nothing changed") is a SIBLING of the
+          # two synced trees, never a child: restore/sync carry exactly raw + archive, and
+          # our cron history is not a replay input (R6 of the 2026-08-08 mint adjudication,
+          # DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY). MUST be passed explicitly: the CLI's own
+          # default is inside the checkout, which clean:true wipes every run, so an implicit
+          # default would destroy the log nightly. The warm $HOME root is what makes it
+          # survive. NOT replicated to R2 — SOURCE_KINDS stays (raw, archive); a durable
+          # off-host copy would need its own prefix and publisher (deferred rider).
+          OBS="$HOME/.cache/mm-ffsec/observations"
+          mkdir -p "$RAW" "$ARCHIVE" "$OBS"
+
+          python -m scripts.run_fundamental_forensics_wave2 \
+            --targets-file config/fundamental_forensics/wave2_targets.v1.json \
+            --raw-root "$RAW" --archive-root "$ARCHIVE" --observation-root "$OBS" \
+            --restore --verify-local-restore --acquire --reuse-local-archive --require-complete-acquisition \
+            --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$recorded_at"
+
+          computed_at="$(utc_now)"   # sampled after all retained SEC receipts exist.
+          python -m scripts.run_fundamental_forensics_wave2 \
+            --targets-file config/fundamental_forensics/wave2_targets.v1.json \
+            --raw-root "$RAW" --archive-root "$ARCHIVE" --observation-root "$OBS" \
+            --build-projections --sync --incremental-sync \
+            --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$computed_at"
+      - name: publish disclosure-projection bundle (the engine's render input)
+        # One immutable content-addressed object plus a CAS latest pointer. A missing or
+        # invalid local projection refuses the whole publication — a partial bundle would
+        # silently shrink the coverage the workbench attaches.
+        env:
+          R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+        run: |
+          set -euo pipefail
+          utc_now() { python -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"))'; }
+          python -m scripts.fundamental_forensics_disclosure_bundle \
+            --publish --targets-file config/fundamental_forensics/wave2_targets.v1.json \
+            --published-at "$(utc_now)"
+      - name: restore self-check (byte-verified roundtrip of the published bundle)
+        # Proves the EXACT code path tonight's engine gate runs, against prod R2, in the
+        # same run that published: restore into a scratch root and byte-compare every
+        # ticker against the projection this lane just built. A green publish with an
+        # unreadable bundle would otherwise only be discovered by a red nightly render.
+        env:
+          R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+        run: |
+          set -euo pipefail
+          utc_now() { python -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"))'; }
+          SELFCHECK_ROOT="$RUNNER_TEMP/ffdisc-selfcheck-${GITHUB_RUN_ID}"
+          mkdir -p "$SELFCHECK_ROOT"
+          python -m scripts.fundamental_forensics_disclosure_bundle \
+            --restore --targets-file config/fundamental_forensics/wave2_targets.v1.json \
+            --root "$SELFCHECK_ROOT" --now "$(utc_now)"
+          SELFCHECK_ROOT="$SELFCHECK_ROOT" python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          RELATIVE = Path("data/fundamental_forensics/private/disclosures")
+          scratch = Path(os.environ["SELFCHECK_ROOT"]) / RELATIVE
+          checkout = Path(".") / RELATIVE
+          targets = json.loads(
+              Path("config/fundamental_forensics/wave2_targets.v1.json").read_text(encoding="utf-8")
+          )["targets"]
+
+          failures: list[str] = []
+          for entry in targets:
+              name = f"{entry['ticker']}.json"
+              restored = scratch / name
+              original = checkout / name
+              if not restored.is_file():
+                  failures.append(f"{name}: absent from the restored bundle")
+                  continue
+              if not original.is_file():
+                  failures.append(f"{name}: absent from the lane's own projection output")
+                  continue
+              if restored.read_bytes() != original.read_bytes():
+                  failures.append(f"{name}: restored bytes differ from the published projection")
+          if failures:
+              print(
+                  "::error title=filing-forensics-sec::published bundle failed its restore "
+                  "self-check — " + "; ".join(failures),
+                  flush=True,
+              )
+              sys.exit(1)
+          print(f"restore self-check OK: {len(targets)} projections byte-identical", flush=True)
+          PY

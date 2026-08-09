@@ -70,7 +70,23 @@ _NEG_RADAR = {"NEGATIVE_DIVERGENCE", "CONFIRMED_DOWN"}
 # desk firing while the lagging desks are still quiet — the opposite of the
 # agreement the v1 composite rewarded.
 _LEADING = ("alt", "radar")
-_LAGGING = ("news", "standout", "policy")
+_LAGGING = ("news", "standout")
+
+# ── VOTING DESKS (A7 / DNR:KILL-LLM-ORIGINATION — operator ruling 2026-08-08) ──
+# The desks whose direction may enter a SCORED aggregation. Policy is deliberately
+# ABSENT: the policy-intent desk's per-thesis direction is LLM-originated
+# (policy_intent_desk.py), and an LLM may never originate a signal that moves a rank
+# (constitution A7). Policy stays a first-class DISPLAY facet — the dossier facet,
+# `directions.policy`, the `policy_aligned` / `policy_conflict` flags, the regime string on
+# macro_context and `desks.policy.live` all keep working — it simply casts no vote in
+# net_confirm / agreement / conf_bonus (composite_conviction) or lag_up / lag_present
+# (leading-gap → opportunity_score).
+#
+# Side effect worth naming: `lean` is derived from the same vote count, so the alignment flags
+# now compare the policy lean against a genuinely INDEPENDENT desk lean. Previously policy
+# voted on the very lean it was then checked against — a name whose desks split 1-1 was tipped
+# by policy and then reported as "policy_aligned" with itself.
+_VOTING_DESKS = ("news", "alt", "radar", "standout")
 
 # radar lifecycle → how much of the move is still ahead (1 = all ahead, 0 = late)
 _LIFECYCLE_EDGE = {"emerging": 1.0, "forming": 0.82, "mature": 0.34, "fading": 0.12}
@@ -100,6 +116,122 @@ def _f(x):
         return float(x)
     except (TypeError, ValueError):
         return None
+
+
+# --------------------------------------------------------------------------- #
+# US UNIVERSE SCOPE — membership decided ONCE, at ingestion.
+#
+# The hub inherits whatever the intelligence bundle carries, and the altdata feeder
+# (special_situations especially) delivers FOREIGN listings symbol-shaped: ANANTRAJ
+# (NSE), BULTEN (Stockholm), CEMARGOS (feed ticker CEMARGOS.BO, suffix stripped at
+# keying), German/Korean/SIX/LSE codes, unpriced OTC ordinaries (AKZOF) and warrants
+# (ACHR.WS). Nothing downstream can ever grade those: the forward track record is
+# SPY-relative off the US price layer, so such a name accrues a ledger row every
+# night that can never mature. Measured 2026-08-08, pre-gate: 1,045 of 3,083 names
+# (34%) were neither US-listed nor US-priceable, and they were 78,105 of 170,676
+# ledger rows (46%) — permanently ungradeable volume.
+#
+# MEMBERSHIP = the US-exchange roster (latest data/symbol_directory snapshot, test
+# issues dropped) UNION the hub's OWN US price spine (a per-ticker data/yahoo parquet
+# or a data/breadth close-cache column). Everything else is excluded WITH A COUNT —
+# annotated in hub.json and one log line, never silently. Normalization is the ./-
+# swap ONLY (BRK.B ↔ BRK-B); an exchange prefix/suffix is NEVER stripped or mapped,
+# because aliasing a foreign issuer onto a US key is the exact corruption this
+# prevents. The China parquet fallback inside ai_desk._close_series confers NO
+# membership — this spine is US-only. FAIL-OPEN: an unreadable roster, an empty glob, a
+# roster below the sanity floor, or a verdict that would exclude the WHOLE universe (a
+# broken roster/universe pairing, not a scoping result) stamps applied:false with a reason
+# and leaves the universe untouched — a broken store degrades to the pre-gate behaviour
+# rather than emptying the hub.
+# --------------------------------------------------------------------------- #
+_ROSTER_SANITY_FLOOR = 8_000      # real roster ≈ 13.1k; under this the snapshot is broken
+
+
+def _dot_dash(t: str) -> set[str]:
+    """{ticker, ./- swapped both ways} — the ONLY normalization (BRK.B ↔ BRK-B)."""
+    t = (t or "").strip()
+    return {t, t.replace("-", "."), t.replace(".", "-")}
+
+
+def _load_us_roster(root) -> tuple[set | None, dict]:
+    """(US-listed symbols, meta) from the LATEST symbol_directory snapshot.
+    (None, {"reason": ...}) whenever the roster cannot be trusted — the fail-open path."""
+    try:
+        from pathlib import Path
+        import pandas as pd
+        snaps = sorted((Path(root) / "data" / "symbol_directory" / "snapshots").glob("*.parquet"),
+                       key=lambda p: p.name)
+        if not snaps:
+            return None, {"reason": "no symbol_directory snapshot found"}
+        latest = snaps[-1]
+        df = pd.read_parquet(latest)
+        if "test_issue" in df.columns:
+            df = df[~df["test_issue"].fillna(False).astype(bool)]
+        syms = {str(s).strip().upper() for s in df["symbol"].dropna()}
+        syms.discard("")
+        if len(syms) < _ROSTER_SANITY_FLOOR:
+            return None, {"reason": f"roster {latest.stem} has {len(syms)} symbols, "
+                                    f"below the sanity floor of {_ROSTER_SANITY_FLOOR}"}
+        return syms, {"roster_date": latest.stem, "roster_n": len(syms)}
+    except Exception as e:  # noqa: BLE001 — a broken roster must fail open, never raise
+        return None, {"reason": f"roster read failed ({e})"}
+
+
+def _spine_covered(t: str, root) -> bool:
+    """True when the hub's own US price layer can resolve the name — a per-ticker
+    data/yahoo parquet (./- variants) or a data/breadth close-cache column. The China
+    parquet fallback inside ai_desk._close_series is deliberately NOT consulted."""
+    from pathlib import Path
+    ydir = Path(root) / "data" / "yahoo"
+    for v in _dot_dash(t):
+        if v and (ydir / f"{v}.parquet").exists():
+            return True
+    try:
+        from engine import ai_desk
+        bf = ai_desk._breadth_frame(root)      # memoized per root in ai_desk — cheap after #1
+        return bool(bf is not None and t in getattr(bf, "columns", []))
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _scope_universe(tickers: dict, root) -> tuple[dict, dict, callable]:
+    """(kept_tickers, scope_annotation, member_fn) — the US membership gate. Never raises."""
+    def _off(reason: str):
+        log.warning("hub universe scope OFF (fail-open): %s", reason)
+        return tickers, {"applied": False, "reason": reason,
+                         "n_in": len(tickers), "n_excluded": 0}, (lambda t: True)
+
+    roster, meta = _load_us_roster(root)
+    if roster is None:
+        return _off(meta.get("reason") or "roster unavailable")
+
+    def _member(t: str) -> bool:
+        t = (t or "").strip().upper()
+        if not t:
+            return False
+        return bool(_dot_dash(t) & roster) or _spine_covered(t, root)
+
+    kept = {t: v for t, v in tickers.items() if _member(t)}     # insertion order preserved
+    if tickers and not kept:
+        # LAST RUNG of the fail-open ladder: a gate that empties the universe is reporting a
+        # broken PAIRING, not a scoping result — a changed roster keying convention (every
+        # symbol prefixed), the wrong store, or a caller whose universe simply is not the
+        # ingested nightly bundle. An empty hub is strictly worse than the pre-gate behaviour,
+        # so pass the universe through and say so.
+        return _off(f"gate would exclude all {len(tickers)} names against roster "
+                    f"{meta.get('roster_date')} (n={meta.get('roster_n')})")
+    excluded = sorted(t for t in tickers if t not in kept)
+    log.info("hub universe scope: %d US names kept, %d excluded (roster %s, n=%d); e.g. %s",
+             len(kept), len(excluded), meta.get("roster_date"), meta.get("roster_n") or 0,
+             ", ".join(excluded[:4]) or "none")
+    return kept, {
+        "applied": True,
+        "policy": ("Members are US-exchange-listed or resolvable by the hub's own US price "
+                   "spine; excluded names are counted here, never silently dropped."),
+        "n_in": len(kept), "n_excluded": len(excluded),
+        "excluded_sample": excluded[:12],
+        "roster_date": meta.get("roster_date"), "roster_n": meta.get("roster_n"),
+    }, _member
 
 
 # --------------------------------------------------------------------------- #
@@ -223,6 +355,9 @@ def _dirs(v: dict, policy: dict | None) -> dict:
     if v.get("standout"):
         lab = (standout.get("label") or "").upper()
         sd = -1 if ("AVOID" in lab or "DOWN" in (standout.get("state") or "").upper()) else 1
+    # policy's direction is carried for DISPLAY only (the dossier's `directions` block and the
+    # policy_aligned/policy_conflict flags) — it is NOT in _VOTING_DESKS, so it never enters a
+    # scored aggregation. See _VOTING_DESKS.
     pd = policy.get("dir") if _policy_usable(policy) else None
     return {"news": nd, "alt": ad, "radar": rd, "standout": sd, "policy": pd}
 
@@ -330,8 +465,10 @@ def _edge_remaining(v: dict, dirs: dict, vel_rec: dict, catalyst: dict | None,
 # --------------------------------------------------------------------------- #
 # LEADING-vs-LAGGING gap — the inverted agreement reward. Pays a leading desk
 # (smart-money flow / a positive divergence) firing while the lagging desks
-# (news, momentum buy-board, policy) are still quiet. gap > 0 ⇒ flow is AHEAD of
+# (news, momentum buy-board) are still quiet. gap > 0 ⇒ flow is AHEAD of
 # the crowd (pre-consensus); gap ≤ 0 ⇒ price/news already lead (late).
+# POLICY CASTS NO VOTE HERE (A7 — see _VOTING_DESKS): its lean is LLM-originated, so it
+# may not move lag_up / lag_present, and thus may not move gap_mult → opportunity_score.
 # --------------------------------------------------------------------------- #
 def _leading_gap(v: dict, dirs: dict) -> dict:
     radar = v.get("radar") or {}
@@ -341,15 +478,36 @@ def _leading_gap(v: dict, dirs: dict) -> dict:
     lead_up = radar_lead + alt_lead
     lag_up = ((1 if dirs.get("news") == 1 else 0)
               + (1 if dirs.get("standout") == 1 else 0)
-              + (1 if rstate == "CONFIRMED_UP" else 0)
-              + (1 if dirs.get("policy") == 1 else 0))
+              + (1 if rstate == "CONFIRMED_UP" else 0))
     # lagging desks that are PRESENT — a "quiet crowd" only counts when the crowd's desks
     # exist and are silent, not when their data is merely absent.
     lag_present = ((1 if v.get("news") else 0)
                    + (1 if v.get("standout") else 0)
-                   + (1 if dirs.get("policy") is not None else 0)
                    + (1 if rstate == "CONFIRMED_UP" else 0))
     return {"lead_up": lead_up, "lag_up": lag_up, "gap": lead_up - lag_up, "lag_present": lag_present}
+
+
+def _hero_reason(d: dict) -> str | None:
+    """WHY a bullish-stage name was barred from the Emerging hero strip — the verdict the
+    snapshot ledger never stored, which is exactly why "how often does the gate exclude a
+    top-ranked name?" is unanswerable from the accrued nights (D22).
+
+    MUST mirror build()'s ``_hero_ok`` rejection ORDER: the price veto outranks the gate
+    verdict, and an explicit flat_sell outranks a plain not-eligible. A reason that disagreed
+    with the gate would be worse than none — it would attribute exclusions to the wrong cause.
+    None ⇒ not barred: either it cleared the gate, or its stage was never hero-eligible."""
+    if d.get("stage") not in ("emerging", "early"):
+        return None
+    if (d.get("trajectory") or {}).get("rolling_over"):
+        return "rolling_over"
+    eg = d.get("entry_gate")
+    if not eg:
+        return "no_gate_verdict"
+    if eg.get("flat_sell"):
+        return "flat_sell"
+    if not eg.get("eligible"):
+        return "not_eligible"
+    return None
 
 
 def _stage(edge: float, gap: int, lean: int, flags: list, n_components: int, lag_present: int,
@@ -402,7 +560,10 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
     # a low-conviction policy facet must contribute NOTHING — it must not inflate
     # composite (via len(present)) nor appear in source_mix / n_facets.
     present = [k for k in ("news", "alt", "radar", "standout") if v.get(k)] + (["policy"] if _policy_usable(policy) else [])
-    nz = [d for d in dirs.values() if d not in (None, 0)]
+    # only the EVIDENCE desks vote (A7 — see _VOTING_DESKS). Reading _VOTING_DESKS by key
+    # rather than dirs.values() is what keeps the LLM-originated policy lean out of
+    # net_confirm / agreement / conf_bonus / lean — and therefore out of every score.
+    nz = [dirs.get(k) for k in _VOTING_DESKS if dirs.get(k) not in (None, 0)]
     up = sum(1 for d in nz if d > 0)
     dn = sum(1 for d in nz if d < 0)
     n_confirm = max(up, dn)                                  # desks leaning the dominant way
@@ -745,6 +906,7 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     touches a ledger). Never raises."""
     today = today or date.today()
     tickers = (bundle or {}).get("tickers") or {}
+    tickers, universe_scope, _member = _scope_universe(tickers, config.ROOT)   # US membership gate
     pidx = build_policy_index(policy)
     vel = load_velocity(tickers, today)
     cidx = _catalyst_index(special, today)
@@ -776,7 +938,10 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     # confirmer feed (e.g. insider clusters) can't flood the ranked command list; the rest still
     # live in the Discovery section via the candidate feed.
     off = [c for c in ((discovery or {}).get("off_desk") or [])
-           if (c.get("ticker") or "").upper() not in tickers][:_OFF_DESK_INJECT]
+           if (c.get("ticker") or "").upper() not in tickers]
+    _off_us = [c for c in off if _member((c.get("ticker") or "").upper())]  # scope BEFORE the cap
+    universe_scope["n_excluded_off_desk"] = len(off) - len(_off_us)
+    off = _off_us[:_OFF_DESK_INJECT]
     # Extend _pr with off-desk tickers so the discovery dossier gets trajectory + entry_gate.
     for c in off:
         ot = (c.get("ticker") or "").upper()
@@ -817,9 +982,13 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     # command-injection cap; only the command LIST is bounded (above), never this section.
     _dossier_by_t = {d["ticker"]: d for d in dossiers}
     discovery_cands = (discovery or {}).get("candidates") or []
+    _disc_us = [c for c in discovery_cands
+                if c.get("ticker") and _member(str(c.get("ticker")).upper())]
+    universe_scope["n_excluded_discovery"] = sum(
+        1 for c in discovery_cands if c.get("ticker")) - len(_disc_us)
     discovery_list = [{"ticker": c.get("ticker"), "discovery": c,
                        "stage": (_dossier_by_t.get(c.get("ticker"), {}).get("stage") or "discovery")}
-                      for c in discovery_cands if c.get("ticker")]
+                      for c in _disc_us]
     n_discovery_total = (discovery or {}).get("n", len(discovery_list))
     early = [d for d in dossiers if {"early_edge", "stealth_accumulation"} & set(d["flags"])]
     crowded = [d for d in dossiers if "crowded_top" in d["flags"]]
@@ -852,6 +1021,27 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
         "with_trajectory": n_with_trajectory,
         "without_trajectory": n_without_trajectory,
     }
+
+    # ── SNAPSHOT PROVENANCE (D22) ─────────────────────────────────────────────────────────
+    # Which SECTIONS actually surfaced a name, stamped AFTER section selection so the ledger
+    # records what the page showed — not what it could have shown. Without this, "did the
+    # Command cohort win?" and "how often does the hero gate exclude a top-ranked name?" are
+    # unanswerable from 38 accrued nights of snapshots. Display-tier bookkeeping only: no
+    # score, rank, or section membership is derived FROM these fields.
+    discovery_shown = _diversify_by_source(
+        discovery_list, 14, 5, src=lambda d: (d.get("discovery") or {}).get("source"))
+    _cohort_members: dict[str, list[str]] = {
+        "command_top5": [d["ticker"] for d in dossiers[:5]],
+        "command_30": [d["ticker"] for d in command_dossiers],
+        "emerging_panel": [d["ticker"] for d in emerging_hero[:14]],
+        "discovery_shown": [r["ticker"] for r in discovery_shown if r.get("ticker")],
+        "catalyst_shown": [d["ticker"] for d in catalysts[:12]],
+    }
+    _cohorts_by_t: dict[str, list[str]] = {}
+    for _cohort, _members in _cohort_members.items():
+        for _t in _members:
+            _cohorts_by_t.setdefault(_t, []).append(_cohort)
+
     return {
         "schema": SCHEMA, "engine_version": ENGINE_VERSION,
         "is_context_only": True, "as_of": today.isoformat(),
@@ -868,6 +1058,7 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
         "n_universe": len(dossiers), "n_actionable": n_actionable, "n_emerging": n_emerging,
         "n_discovery": n_discovery_total,
         "coverage": _coverage,
+        "universe_scope": universe_scope,
         "counts": {"emerging": n_emerging, "early": n_early, "exhausted": len(exhausted),
                    "catalyst": len(catalysts), "discovery": n_discovery_total,
                    "discovery_off_desk": (discovery or {}).get("n_off_desk", 0),
@@ -882,10 +1073,12 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
         "track_rows": [{"t": d["ticker"], "opp": d["opportunity_score"],
                         "edge": d["edge_remaining"], "stage": d["stage"], "lean": d["lean"],
                         "source": (d.get("discovery") or {}).get("source"),   # feed for per-source IC (None = on-desk)
+                        "rank": i,                                   # 1-based position in the ranked list
+                        "cohorts": _cohorts_by_t.get(d["ticker"]) or [],      # sections that SHOWED it
+                        "hero_reason": _hero_reason(d),              # why the hero gate barred it (or None)
                         "engine_version": ENGINE_VERSION}
-                       for d in dossiers],
-        "discovery": _diversify_by_source(
-            discovery_list, 14, 5, src=lambda d: (d.get("discovery") or {}).get("source")),
+                       for i, d in enumerate(dossiers, start=1)],
+        "discovery": discovery_shown,
         "emerging": [_compact(d) for d in emerging_hero[:14]],
         "exhausted": [_compact(d) for d in exhausted[:12]],
         "catalysts": [_compact(d) for d in catalysts[:12]],
