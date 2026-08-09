@@ -909,6 +909,10 @@ on:
       # Same idiom as the line above: tests/test_biocatalyst_acceptance_v2.py reads this
       # adjudication by path literal, so an edit to it alone must start the contracts pack.
       - "research/BIOCATALYST_D0A_DESIGN_ADJUDICATION_2026-08-06.md"
+      # The operator ruling tests/test_biocatalyst_fixed_cohort_deployment.py reads by
+      # path literal. Without it a PR touching only the ruling never starts
+      # biocatalyst-contracts, the job that runs the suite (#3488 shape).
+      - "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md"
       - "templates/biocatalyst.*"
       - "templates/_navlinks.html.j2"
       - "templates/_site_nav.html.j2"
