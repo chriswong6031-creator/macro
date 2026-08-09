@@ -1448,7 +1448,12 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        # markupsafe: the integrity step below imports scripts.build_china_library, whose
+        # module graph reaches engine/i18n.py -> markupsafe. Absent, pytest dies COLLECTING
+        # (exit 2) — locally invisible because dev envs carry it, and the sibling jobs that
+        # import the builder (e.g. unrun-picks-boards) get it transitively via jinja2. With
+        # it added, every suite in this job passes in a from-scratch minimal venv.
+        run: pip install pytest pandas numpy pyarrow pyyaml markupsafe
       - name: SA-W2 CN standout audit tests
         run: python -m pytest tests/test_cn_standout_audit.py tests/test_china_standout_track.py -v -q
       - name: CN entry-price integrity (corrupt-bar gate, PIT latch, fail-closed lane — PR 5000)
