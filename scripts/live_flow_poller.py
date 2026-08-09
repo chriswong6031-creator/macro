@@ -54,8 +54,11 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from engine.session_digest import session_window_et
-from lib import config, nyse_calendar
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.session_digest import session_window_et  # noqa: E402
+from lib import config, nyse_calendar  # noqa: E402
 
 log = logging.getLogger(__name__)
 

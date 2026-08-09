@@ -73,8 +73,8 @@ def test_every_family_clock_is_closed_and_no_entry_gate_is_satisfied(
         assert gate["satisfied"] is False, name
         assert gate["unsatisfied_preconditions"], name
         assert gate["blockers"], name
-        # Every family still requires the O1b writer; m0a.2 discharged that one
-        # precondition, and nothing else.
+        # Every family still requires the O1b writer; m0a.3 retains that
+        # discharge while distinguishing rights permission from activation.
         assert "o1b_outcome_writer" in gate["required_preconditions"], name
         assert "o1b_outcome_writer" not in gate["unsatisfied_preconditions"], name
         assert "o1b_outcome_writer_absent" not in gate["blockers"], name
@@ -100,7 +100,7 @@ def test_the_clock_state_of_record_is_the_receipt_and_never_this_file(
     assert activation["backfill"] == "forbidden_no_history_recorded"
     assert activation["model_may_open_a_clock"] is False
     assert activation["source_eligibility_rule"] == (
-        "required_source_ids_must_all_be_production_ingest_allowed"
+        "required_source_ids_must_be_rights_allowed_and_any_runtime_universe_controls_armed"
     )
     assert activation["activation_record_contract"] in ContractRegistry(ROOT).contract_ids
     assert activation["activation_record_kind"] in RECORD_KINDS

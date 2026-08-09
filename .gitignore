@@ -199,6 +199,9 @@ data/edgar/company_tickers.json
 data/fundamental_forensics/raw/
 data/fundamental_forensics/archive/
 data/fundamental_forensics/private/
+# Per-run SEC observation log — cron history, deliberately outside the
+# restorable raw/archive source trees (DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY, R6)
+data/fundamental_forensics/observations/
 
 # Special Situations: fetched filing-text cache + LLM summary cache (regenerable)
 data/special_situations/doc_cache/

@@ -49,6 +49,9 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 log = logging.getLogger("metabolism_gc")
 
 _WATCHED_PATTERNS = ("wf_*", "metabolism-*", "claude/loop-*", "metabolism/*")
