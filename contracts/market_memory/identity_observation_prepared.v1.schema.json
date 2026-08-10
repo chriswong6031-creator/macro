@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/identity_observation_prepared.v1.schema.json",
+  "title": "Market Memory identity observation prepared record v1",
+  "description": "Create-once private record that freezes the first post-read Market Memory observation clock before any later capture write can fault.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "source_observation_id",
+    "first_observed_at",
+    "listing_object_id",
+    "source_artifact_sha256",
+    "completion_receipt_id",
+    "observation",
+    "evidence_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.identity_observation_prepared.v1"},
+    "source_observation_id": {"type": "string", "pattern": "^mmidobs_[a-f0-9]{64}$"},
+    "first_observed_at": {"$ref": "#/$defs/utc"},
+    "listing_object_id": {"type": "string", "pattern": "^mmidobj_[a-f0-9]{64}$"},
+    "source_artifact_sha256": {"$ref": "#/$defs/sha256"},
+    "completion_receipt_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^sdreceipt_[a-f0-9]{64}$"}
+      ]
+    },
+    "observation": {"$ref": "https://mastermind-x.com/contracts/market_memory/spy_listing_observation.v1.schema.json"},
+    "evidence_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first_market_memory_clock_persisted", "completion_receipt_authenticated", "training_eligible", "promotion_eligible", "role"],
+      "properties": {
+        "first_market_memory_clock_persisted": {"const": true},
+        "completion_receipt_authenticated": {"type": "boolean"},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false},
+        "role": {"const": "context_only"}
+      }
+    },
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["observation"],
+        "properties": {
+          "observation": {
+            "required": ["operational"],
+            "properties": {"operational": {"const": true}}
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "completion_receipt_id": {"type": "string"},
+          "evidence_policy": {
+            "properties": {"completion_receipt_authenticated": {"const": true}}
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "completion_receipt_id": {"type": "null"},
+          "evidence_policy": {
+            "properties": {"completion_receipt_authenticated": {"const": false}}
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "utc": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"},
+    "authority": {
+      "const": {
+        "tier": "display",
+        "horizon_role": "context",
+        "context_only": true,
+        "proposal_weight": 0,
+        "may_rank": false,
+        "may_gate": false,
+        "may_size": false,
+        "may_escalate": false,
+        "may_trade": false,
+        "may_originate": false,
+        "may_select_options_candidate": false,
+        "may_execute": false,
+        "may_write_options_episode": false,
+        "may_append_outcome": false,
+        "may_train_prophet": false
+      }
+    }
+  }
+}
