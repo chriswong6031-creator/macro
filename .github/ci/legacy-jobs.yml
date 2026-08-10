@@ -884,6 +884,8 @@ jobs:
         run: python -m pytest tests/test_options_focused_quote.py -q
       - name: live-flow PIT producer (RTH admission, stable source IDs, root-scoped state, cycle WAL)
         run: python -m pytest tests/test_live_flow.py -q
+      - name: ThetaData PIT store (narrow OI projection, exact-date filter, cache bypass)
+        run: python -m pytest tests/test_thetadata_store.py -q
       - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)
         run: python -m pytest tests/test_intraday_greeks.py -q
       # OEU M-XP(b)+(c): the two payloads the Terminal / Options workspace fetch. Both are

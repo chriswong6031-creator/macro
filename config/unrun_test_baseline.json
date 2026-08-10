@@ -887,7 +887,6 @@
   "tests/test_thesis_monitor.py",
   "tests/test_thetadata.py",
   "tests/test_thetadata_dedup.py",
-  "tests/test_thetadata_store.py",
   "tests/test_ticker_alerts.py",
   "tests/test_ticker_alias_propagation.py",
   "tests/test_ticker_popularity.py",

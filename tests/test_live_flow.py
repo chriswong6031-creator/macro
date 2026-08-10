@@ -25,7 +25,9 @@ Exercises:
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
+import logging
 import stat
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -532,21 +534,108 @@ class TestEventIdIdempotency:
 
         calls: list[str] = []
 
-        def fake_chain(session_date: str, root: str, *, store):
+        def fake_oi_for_date(session_date: str, root: str, *, store):
             calls.append(session_date)
             if session_date == "2026-09-03":
                 return pd.DataFrame({
-                    "expiration": ["2026-09-18"], "strike": [100.0],
-                    "right": ["C"], "open_interest": [50],
+                    "root": [root], "expiration": ["2026-09-18"],
+                    "strike": [100.0], "right": ["C"],
+                    "date": [session_date], "open_interest": [50],
                 })
             return pd.DataFrame()
 
         monkeypatch.setattr(poller, "_oi_store", lambda: object())
-        monkeypatch.setattr(theta_store, "chain", fake_chain)
+        monkeypatch.setattr(theta_store, "oi_for_date", fake_oi_for_date)
+        monkeypatch.setattr(
+            theta_store, "chain",
+            lambda *args, **kwargs: pytest.fail("live OI lookup must not call chain()"),
+        )
         loaded = poller._load_oi_prev("TEST", "2026-09-08")
         assert calls == ["2026-09-04", "2026-09-03"]
         assert loaded is not None
+        assert list(loaded.columns) == [
+            "expiration", "strike", "right", "open_interest",
+        ]
         assert loaded.attrs["oi_vintage"] == "2026-09-03"
+
+    def test_oi_loader_returns_none_after_five_prior_sessions(self, monkeypatch) -> None:
+        from engine import thetadata_store as theta_store
+        from scripts import live_flow_poller as poller
+
+        calls: list[str] = []
+
+        def empty_oi(session_date: str, root: str, *, store):
+            calls.append(session_date)
+            return pd.DataFrame()
+
+        monkeypatch.setattr(poller, "_oi_store", lambda: object())
+        monkeypatch.setattr(theta_store, "oi_for_date", empty_oi)
+        assert poller._load_oi_prev("TEST", "2026-09-08") is None
+        assert calls == [
+            "2026-09-04", "2026-09-03", "2026-09-02", "2026-09-01",
+            "2026-08-31",
+        ]
+
+    def test_rss_phase_log_is_machine_readable_and_fail_soft(
+        self, monkeypatch, caplog,
+    ) -> None:
+        from scripts import live_flow_poller as poller
+
+        monkeypatch.setattr(poller, "_current_rss_bytes", lambda: 1234)
+        monkeypatch.setattr(poller, "_peak_rss_bytes", lambda: 5678)
+        with caplog.at_level(logging.INFO):
+            assert poller._log_rss_phase("post_fetch", cycle_n=7) == (1234, 5678)
+        assert (
+            "rss phase=post_fetch cycle=7 current_rss_bytes=1234 "
+            "peak_rss_bytes=5678"
+        ) in caplog.text
+
+        monkeypatch.setattr(
+            poller, "_current_rss_bytes", lambda: (_ for _ in ()).throw(OSError("no rss")),
+        )
+        assert poller._log_rss_phase("post_gc") == (None, None)
+
+    def test_run_cycle_emits_only_the_four_bounded_processing_rss_phases(
+        self, monkeypatch,
+    ) -> None:
+        from scripts import live_flow_poller as poller
+
+        phases: list[tuple[str, int | None]] = []
+
+        def record_phase(phase: str, *, cycle_n=None):
+            phases.append((phase, cycle_n))
+            return 0, 0
+
+        monkeypatch.setattr(poller, "_log_rss_phase", record_phase)
+        poller.run_cycle(
+            roots=[],
+            session_date=SESSION_DATE,
+            delta_mode="full_day",
+            day_state={},
+            baselines={},
+            cfg={
+                "max_concurrent": 2,
+                "etf_anchors": ["SPY"],
+                "etf_floor": 1_000_000,
+                "name_floor": 250_000,
+            },
+            cycle_watermarks={},
+            cycle_n=7,
+        )
+        assert phases == [
+            ("pre_fetch", 7), ("post_fetch", 7),
+            ("post_oi_process", 7), ("post_gc", 7),
+        ]
+
+    def test_main_brackets_publication_with_two_rss_samples(self) -> None:
+        from scripts import live_flow_poller as poller
+
+        source = inspect.getsource(poller.main)
+        pre = source.index('"pre_publication"')
+        publish = source.index("_publish_event_stage")
+        post = source.index('"post_publication"')
+        assert pre < publish < post
+        assert source.count("_log_rss_phase(") == 2
 
     def test_early_close_boundary_is_excluded(self):
         before_close = _calls({

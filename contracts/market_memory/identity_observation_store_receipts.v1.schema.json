@@ -74,7 +74,12 @@
       "allOf": [
         {
           "if": {"properties": {"operational": {"const": true}}},
-          "then": {"properties": {"pit_basis": {"const": "live_captured"}}}
+          "then": {
+            "properties": {
+              "listing_state": {"const": "present_in_snapshot"},
+              "pit_basis": {"const": "live_captured"}
+            }
+          }
         },
         {
           "if": {"properties": {"operational": {"const": false}}},
