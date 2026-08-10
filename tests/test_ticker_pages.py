@@ -1729,6 +1729,189 @@ class TestTemplateRender:
 
 
 # ---------------------------------------------------------------------------
+# Pressure Watch band — context build + page render
+# ---------------------------------------------------------------------------
+
+class TestPressureWatchBand:
+    """The band's two shipping states and the honesty its markup has to carry.
+
+    The engine that writes `data/price_pressure/latest.json` ships in a separate
+    PR, so on the day this surface lands the artifact is ABSENT. The warm-up
+    render is therefore not an edge case — it is the live page.
+    """
+
+    _FIXTURE = _TEMPLATES_DIR.parent / "tests" / "fixtures" / "price_pressure_latest.json"
+
+    def _render(self, band):
+        from engine import stocks_hub
+
+        rows = [
+            {"ticker": "AAPL", "name": "Apple Inc.", "sector": "Technology",
+             "state_chip": "Uptrend", "state_chip_zh": "上涨", "stance_class": "pos"},
+        ]
+        return _jinja_env().get_template("ticker_index.html.j2").render(
+            rows=rows, n_total=1, generated_utc="2026-07-02T04:00:00Z",
+            canonical_url="https://mastermind-x.com/stocks/index.html",
+            hub={"search": stocks_hub.search_index(rows),
+                 "directory": stocks_hub.directory(rows),
+                 "sector_keys": [], "themes": [], "pressure": band})
+
+    def _band(self, **kw):
+        from engine import stocks_hub
+
+        payload = json.loads(self._FIXTURE.read_text(encoding="utf-8"))
+        for k, v in kw.items():
+            payload[k] = v
+        return stocks_hub.pressure_band(payload, board_asof="2026-07-02")
+
+    @staticmethod
+    def _section(html: str) -> str:
+        """Just the band. Asserting over the whole page counts the site chrome —
+        the page footer carries the build stamp, so a document-wide search for
+        one as-of date finds five."""
+        m = re.search(r'<section id="pressure".*?^</section>', html, re.S | re.M)
+        assert m, "the pressure section never rendered"
+        return m.group(0)
+
+    def test_fixture_renders_the_band_in_the_mandated_order(self):
+        """Record first, closed episodes second, today's names LAST.
+
+        The order is the point of the section (a movers board directly above
+        already makes the "what is cheap now" claim), so it is asserted on the
+        rendered document rather than on the context dict — a template that
+        reordered the strata would pass a context-only check.
+        """
+        html = self._render(self._band())
+        assert 'id="pressure"' in html
+        assert 'class="section-anchor"' in html
+
+        for phrase in ("What usually happens", "Recently resolved",
+                       "Currently tracked"):
+            assert phrase in html, f"{phrase} missing"
+        assert (html.index("What usually happens") < html.index("Recently resolved")
+                < html.index("Currently tracked")), "the band's strata are out of order"
+        # And the whole band still sits between the movers boards and the themes.
+        assert html.index('id="today-movers"') < html.index('id="pressure"')
+
+    def test_the_tracked_list_renders_most_recent_first(self):
+        """Recency, not magnitude — asserted on the emitted HTML.
+
+        VKTX carries the fixture's largest move and largest deviation and is its
+        oldest event. If it ever renders first, something has started ranking.
+        """
+        html = self._render(self._band())
+        tracked = html[html.index("Currently tracked"):]
+        order = re.findall(r'<span class="pw-t">([A-Z]+)</span>', tracked)
+        assert order == ["CDE", "ARQT", "IONQ", "VKTX"]
+
+    def test_artifact_absent_renders_the_warm_up_state(self):
+        """The loader hands warm-up copy through; the section still renders."""
+        from engine import stocks_hub
+
+        band = self._section(self._render(stocks_hub.pressure_band(None)))
+        assert "Still building this record" in band
+        assert "记录仍在建立中" in band
+        assert "Nothing to act on yet." in band
+        # Nothing that needs a record renders without one.
+        assert "pw-stratum" not in band
+        assert "pw-bar" not in band
+        assert "pw-foot" not in band, "a footnote qualifying rows that are absent"
+        assert 'class="lens-q"' not in band, "an empty help card is worse than none"
+
+    def test_the_band_carries_a_stance_and_one_as_of_stamp(self):
+        """Law 1 and Law 4 — a stance always, and exactly one visible timestamp.
+
+        Counted over the GLANCE tier only. Every string ships twice (the l-en /
+        l-zh pair, one of which is always hidden) and the help card legitimately
+        restates the record's span, so a raw count over the section reads four
+        where a reader sees one.
+        """
+        band = self._section(self._render(self._band()))
+        assert "Watch — don&#39;t chase." in band or "Watch — don't chase." in band
+        assert band.count('class="pw-foot"') == 1, "footnotes must be merged, not stacked"
+
+        glance = re.sub(r'<span class="lens-q".*?</h2>', "</h2>", band, flags=re.S)
+        glance = re.sub(r'<span class="l-zh">.*?</span>', "", glance, flags=re.S)
+        assert glance.count("2026-07-02") == 1, "more than one as-of on the glance tier"
+        assert glance.count('class="pw-asof"') == 1
+
+    def test_no_cjk_or_interpolation_reaches_a_title_attribute(self):
+        """`title=` cannot carry the dual-span mechanism (check_title_i18n.py).
+
+        Chinese in a native tooltip shows both languages at once whatever the
+        toggle says, so the band's hover text goes through data-tip-en/zh.
+        """
+        html = self._render(self._band())
+        band = self._section(html)
+        for attr in re.findall(r'title="([^"]*)"', band):
+            assert not any("一" <= c <= "鿿" for c in attr), attr
+            assert "<span" not in attr, attr
+        assert 'data-tip-zh="' in band, "the zh hover tier never rendered"
+
+    def test_the_band_never_says_validated(self):
+        """House-law word, CI-guarded elsewhere — pinned on this surface too."""
+        for band in (self._band(), self._band(day={"banner": True})):
+            assert "validated" not in self._render(band).lower()
+
+    def test_directional_colour_never_reaches_the_markup_as_a_literal(self):
+        """zh 红涨绿跌 flips --up/--down site-wide; a hex would not follow.
+
+        The whole band's chroma lives in four segment classes, so the check is
+        that those classes carry it and no inline style paints a colour.
+        """
+        band = self._section(self._render(self._band()))
+        for style in re.findall(r'style="([^"]*)"', band):
+            assert "#" not in style, f"literal colour in {style!r}"
+            assert "rgb" not in style and "green" not in style and "red" not in style
+        for cls in ("pw-s-gone", "pw-s-low", "pw-s-mid", "pw-s-back"):
+            assert cls in band, f"{cls} never rendered"
+
+    def test_hub_context_is_fail_soft_when_the_artifact_is_missing(self, tmp_path):
+        """A missing artifact costs the band its rows, never the page."""
+        B = _builder_module()
+        site = tmp_path / "site"
+        (site / "marketdata").mkdir(parents=True)
+        rows = [{"ticker": "AAPL", "name": "Apple", "sector": "Technology",
+                 "chg": 1.0, "asof": "2026-07-02"}]
+        ctx = B._build_hub_context(site, rows)
+        assert ctx["hub"] is not None
+        assert ctx["hub"]["pressure"]["mode"] == "warmup"
+        assert ctx["hub"]["pressure"]["title_en"]
+
+    def test_hub_context_reads_the_artifact_when_it_is_present(self, tmp_path):
+        """And the wiring actually points at data/price_pressure/latest.json."""
+        B = _builder_module()
+        site = tmp_path / "site"
+        (site / "marketdata").mkdir(parents=True)
+        art = tmp_path / "data" / "price_pressure"
+        art.mkdir(parents=True)
+        (art / "latest.json").write_text(self._FIXTURE.read_text(encoding="utf-8"),
+                                         encoding="utf-8")
+        rows = [{"ticker": "AAPL", "name": "Apple", "sector": "Technology",
+                 "chg": 1.0, "asof": "2026-07-02"}]
+        band = B._build_hub_context(site, rows)["hub"]["pressure"]
+        assert band["mode"] == "live"
+        assert [e["t"] for e in band["open"]] == ["CDE", "ARQT", "IONQ", "VKTX"]
+
+    def test_a_corrupt_artifact_degrades_to_warm_up_without_raising(self, tmp_path):
+        B = _builder_module()
+        site = tmp_path / "site"
+        (site / "marketdata").mkdir(parents=True)
+        art = tmp_path / "data" / "price_pressure"
+        art.mkdir(parents=True)
+        (art / "latest.json").write_text("{ this is not json", encoding="utf-8")
+        rows = [{"ticker": "AAPL", "name": "Apple", "sector": "Technology",
+                 "chg": 1.0, "asof": "2026-07-02"}]
+        band = B._build_hub_context(site, rows)["hub"]["pressure"]
+        assert band["mode"] == "warmup"
+
+
+def _builder_module():
+    from scripts import build_ticker_pages as B
+    return B
+
+
+# ---------------------------------------------------------------------------
 # New tests for dossier v2 review fixes
 # ---------------------------------------------------------------------------
 
