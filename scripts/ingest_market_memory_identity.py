@@ -15,11 +15,6 @@ from typing import Any
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
-from engine.neuralweb import (
-    market_memory_identity_observation,
-    market_memory_identity_store,
-)
-
 _COMMIT = re.compile(r"[a-f0-9]{40,64}\Z")
 _SNAPSHOT_KEY = re.compile(
     r"data/symbol_directory/snapshots/(\d{4}-\d{2}-\d{2})\.parquet\Z"
@@ -123,11 +118,24 @@ def ingest_identity_observations(
     root = Path(repository_root).expanduser().resolve()
     if not root.is_dir():
         raise IdentityIngestError("repository root is unavailable")
+
+    # Pin the deployed checkout before importing the engine implementation. The
+    # hourly timer can otherwise start while macro-update is replacing the
+    # worktree and run old imported validators against a newly pinned commit.
+    deployed_commit = _repository_commit(root)
+    from engine.neuralweb import (
+        market_memory_identity_observation,
+        market_memory_identity_store,
+    )
+
+    if _repository_commit(root) != deployed_commit:
+        raise IdentityIngestError(
+            "deployed checkout changed during identity intake module loading"
+        )
     store = (
         store_root
         or market_memory_identity_store.default_identity_observation_store_root(root)
     )
-    deployed_commit = _repository_commit(root)
     keys = _tracked_snapshot_keys(root, deployed_commit)
     receipt_keys = _tracked_listing_receipt_keys(root, deployed_commit)
     expected_receipt_keys = frozenset(

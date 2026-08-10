@@ -292,7 +292,11 @@ def test_entry_script_pins_the_repository_before_importing_engine_modules() -> N
     source = (ROOT / "scripts" / "ingest_market_memory_identity.py").read_text(
         encoding="utf-8"
     )
-    pin = source.index("_ROOT = Path(__file__).resolve().parent.parent")
-    insert = source.index("sys.path.insert(0, str(_ROOT))")
-    engine_import = source.index("from engine.neuralweb import")
-    assert pin < insert < engine_import
+    function = source.index("def ingest_identity_observations(")
+    pin = source.index("deployed_commit = _repository_commit(root)", function)
+    engine_import = source.index("from engine.neuralweb import", function)
+    post_import_check = source.index(
+        "if _repository_commit(root) != deployed_commit:", engine_import
+    )
+    assert "from engine.neuralweb import" not in source[:function]
+    assert pin < engine_import < post_import_check
