@@ -162,12 +162,20 @@ _CORRECTED_REASONS = {
 }
 
 
-def _first_match_only(i, sig, bear, n, *, reclaim_veto=True):
+def _first_match_only(i, sig, bear, n, *, reclaim_veto=True, waiver=None):
     """`_buy_filter_full` with the exhaustive account removed — production's own first-match
     path, so patching it in isolates EXACTLY the `reasons` addition.  (The separate question,
     whether production's first match still matches the pre-change engine, is what the frozen
-    `legacy_buy_filter` differential answers; mixing the two would blur which claim failed.)"""
-    take, reason = sq._buy_filter(i, sig, bear, n, reclaim_veto=reclaim_veto)
+    `legacy_buy_filter` differential answers; mixing the two would blur which claim failed.)
+
+    ``waiver`` MUST be accepted and MUST be forwarded (`us_prophet_v2`, 2026-08-10).  A stub
+    that drops a keyword the production function grew does not "ignore" it — `analyze` calls
+    this with `waiver=`, the call raises TypeError, `gate()` swallows it into `res = None`,
+    and all three byte-identity tests above then compare real verdicts against a wall of
+    'insufficient history'.  Forwarding (rather than merely absorbing) is the load-bearing
+    half: this stub is the BASE of a differential that must isolate `reasons` alone, so it
+    has to make the same admission decisions production makes."""
+    take, reason = sq._buy_filter(i, sig, bear, n, reclaim_veto=reclaim_veto, waiver=waiver)
     return take, reason, [reason]
 
 
@@ -470,12 +478,26 @@ class TestEveryEmittedReasonStaysBilingual:
                     out.add(sq._buy_filter(0, f, False, 2)[1])          # pending: i+2 >= n
         for closes in (up, down):                                      # reclaim actually happens
             out.add(sq._buy_filter(0, frame(False, False, closes, flip=True), False, 4)[1])
+        # The ratified reclaim waiver (`us_prophet_v2`, 2026-08-10) emits a reason that no
+        # other call above can reach: it needs a resolved waiver, which production only
+        # builds from the nightly washout artifact.  Driving it with a hand-made receipt is
+        # what keeps this inventory EXHAUSTIVE — otherwise the newest user-facing string in
+        # the filter would be the one string this guard cannot see, and a zh reader would
+        # get raw English on it with nothing reporting the gap.
+        _w = sq.ReclaimWaiver("gold_miners", "basket", -0.27, "2026-08-07", "20", 1)
+        for closes in (up, down):
+            for a200 in (True, False):
+                for wb in (True, False):
+                    out.add(sq._buy_filter(0, frame(a200, wb, closes), False, 4, waiver=_w)[1])
         return out
 
     def test_the_inventory_is_not_vacuous(self):
         reasons = self._every_reason_the_engine_emits()
         assert len(reasons) >= 8, sorted(reasons)
         assert sq.HOLD_FAIL in reasons and sq.CT_HOLD_FAIL in reasons
+        assert sq.RECLAIM_WAIVED in reasons, (
+            "the waiver branch is no longer reachable from this inventory — the guard below "
+            "would stop covering the reason it was extended for")
 
     def test_every_reason_the_engine_emits_has_a_chinese_row(self):
         missing = sorted(self._every_reason_the_engine_emits() - self._chart_reason_keys())
