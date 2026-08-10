@@ -162,6 +162,26 @@ def card_row(row: Mapping[str, Any],
     this pass covers 40, so publishing it beside a card would read as the
     nightly's score and would not be it. The client gets the two legs that ARE
     computed, on their own [0,1] scale, and derives its own words from them.
+
+    `spark` SHIPS NULL, AND THE REASON IS THE POLL, NOT THE PIXEL (ruling
+    2026-08-09). Measured at the real board width of 131 rows, the `board_state`
+    key is 37,757 B raw / 6,351 B gzip without sparklines and 265,173 B /
+    39,142 B with them: ~1,700 B of SVG per card against ~281 B for all twelve
+    other fields combined, so charts are 86% of the payload. That payload rides
+    an artifact the dashboard polls every 120 s to detect a key that changes
+    ONCE A DAY — ~1.16 MB/hour/reader to notice a daily event. And the evening
+    chart is the weakest card element, not the strongest: its buy-zone band
+    derives from the omitted `entry` leg, so it renders bandless. Paying 86% of
+    the payload for a visibly degraded copy of the morning chart inverts the
+    cost/benefit.
+
+    IF CHARTS ARE EVER WANTED HERE, THE ANSWER IS NOT A TOP-N CAP. It is a
+    separate one-shot artifact fetched only when the stamp qualifies: 265 KB
+    once beats 39 KB × 30/hour for any session over ~15 minutes. A new `/live/*`
+    file inherits the `@reg_asset` paywall automatically, but it needs VPS
+    mirror work, so it is its own PR rather than a rider on this one. It also
+    preserves "one artifact, one poll, one client" — a conditional one-shot
+    fetch is not a second poll.
     """
     d = display or {}
     ticker = row["ticker"]

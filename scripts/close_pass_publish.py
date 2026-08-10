@@ -56,11 +56,6 @@ SERVED_PATH = "/var/lib/macro-live/public/live/us_board_provisional.json"
 #: one would mean a Prophet Live rehearsal silently darks the evening board too.
 NO_PUBLISH_ENV = "CLOSE_PASS_NO_PUBLISH"
 
-#: Bars in a card sparkline. The nightly's own window (`close.tail(64)` at
-#: build_stock_library's spark_svg call site) so the two boards draw the same
-#: chart over the same history, not two different-looking ones.
-SPARK_BARS = 64
-
 _TAG = "close-pass"
 
 
@@ -101,25 +96,17 @@ def collect(session: str) -> dict[str, Any]:
     Imports are function-scoped: ``build_stock_library`` is a 5,900-line module
     whose import cost belongs to the pass that needs it, not to ``--help``.
     """
-    from collectors.us_names_zh import load_names_zh, lookup as name_zh  # noqa: PLC0415
     from engine import signal_gate  # noqa: PLC0415
     from engine.extension import extension_signals  # noqa: PLC0415
     from engine.i18n import tr  # noqa: PLC0415
     from lib import delisted_symbols  # noqa: PLC0415
     from scripts.build_stock_library import (  # noqa: PLC0415
-        # `_spark_svg` is private and IMPORTED ANYWAY. Every other market lane
-        # carries its own copy of these ~15 lines, which is exactly the drift
-        # this module's header refuses for the scoring functions: two spark
-        # generators means the evening card and the morning card stop matching
-        # the first time either is retuned. This lane already pays the module's
-        # import cost for `universe`, so the import is free as well as correct.
-        _spark_svg, extension_panels, universe, universe_price_adjustment,
+        extension_panels, universe, universe_price_adjustment,
     )
     import pandas as pd  # noqa: PLC0415
 
     uni = universe()
     adjustment_by = universe_price_adjustment()
-    names_zh = load_names_zh()
 
     verdicts: dict[str, dict] = {}
     closes: dict[str, Any] = {}
@@ -154,34 +141,41 @@ def collect(session: str) -> dict[str, Any]:
 
         # Display facts, gathered ONLY for names the gate admits — the same
         # `is_buyable` call build_board ranks on, so the two sets agree. The
-        # universe is ~1,660 names and the board is ~130: drawing a sparkline
-        # for every evaluated name would be ~1,530 SVGs built to be discarded,
-        # on a lane that has ~30 minutes of the SLA to spend.
+        # universe is ~1,660 names and the board is ~130, so this skips ~1,530
+        # lookups on a lane with ~30 minutes of the 18:30 SLA to spend.
         if signal_gate.is_buyable(verdict):
             px = close.iloc[-1]
             display[ticker] = {
                 "name": name,
-                # Committed static map (config/us_names_zh.json, ~1,580 US
-                # tickers), never derived: a name absent from it stays None and
-                # the card falls back to the English name, which is what the
-                # nightly's US cards show today.
-                "name_zh": name_zh(names_zh, ticker),
+                # NULL BY RULING, not by reachability (2026-08-09). A committed
+                # 1,583-ticker map exists (config/us_names_zh.json) and this
+                # lane could read it — but the nightly's US cards pass no
+                # `name_zh` at all, so filling it here would flip a company's
+                # NAME between languages overnight: 苹果 in the evening, Apple
+                # Inc in the morning. This whole surface exists to answer "which
+                # board am I looking at"; a name that changes language attacks
+                # that question, and it would land on exactly the readers the
+                # stamp is for. Evening/morning consistency outranks evening-only
+                # zh quality. Wiring the map into the NIGHTLY is the real fix —
+                # it changes every US card, so it needs its own PR and its own
+                # visual proof, not a side effect of the evening board.
+                "name_zh": None,
                 # A sector LABEL, which is a mapping. NOT the sector-neutralised
                 # `edge` leg, which needs a full-universe cross-section and stays
                 # in OMITTED_LEGS — the two are different objects that share a
-                # word.
+                # word. `tr` is the same call the nightly template makes, so this
+                # one carries no evening/morning inconsistency.
                 "sec": sector,
                 "sec_zh": tr(sector) if sector else None,
                 # NaN never reaches the payload: json.dumps(allow_nan=False)
                 # would raise on it and take the whole publish down, and "$nan"
                 # would render on the card if it did not.
                 "price": None if pd.isna(px) else float(px),
-                # DEFAULT color and NO buy-zone band: the nightly passes both
-                # from `ladder.dir` and `entry_signal.buy_zone`, and both are
-                # downstream of the entry leg this pass omits. Deriving them
-                # would be exactly the imputation the omission exists to refuse,
-                # so the evening spark is the function's own band-less render.
-                "spark": _spark_svg(list(close.tail(SPARK_BARS).values)),
+                # NULL BY RULING (2026-08-09), on measured cost/benefit — see
+                # `card_row`'s note. Not a TODO and not a cap: if the design
+                # later needs charts, the move is a SEPARATE one-shot artifact
+                # fetched only when the stamp qualifies, never a fatter poll.
+                "spark": None,
             }
 
     # Equities and 24/7 crypto are read on their OWN calendars. One mixed panel

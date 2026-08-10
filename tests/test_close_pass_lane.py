@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import ast
 import configparser
+import gzip
 import json
 import re
 import sys
@@ -540,10 +541,16 @@ def test_behind_without_a_date_is_impossible_to_emit():
 # The card rows (W-L1d) — the payload ships FACTS, the client ships WORDS
 # ─────────────────────────────────────────────────────────────────────────────
 def display(tickers=("AAA", "BBB"), **over) -> dict:
-    """Per-name display facts, in the shape close_pass_publish.collect gathers."""
-    return {t: dict({"name": f"{t} Corp", "name_zh": f"{t}公司",
+    """Per-name display facts, exactly as close_pass_publish.collect gathers them.
+
+    `name_zh` and `spark` are None because THE LANE ships them None (2026-08-09
+    rulings — see test_the_lane_publishes_no_sparkline_and_no_chinese_company_
+    name). This fixture tracks the lane rather than the schema, so a test using
+    it sees what a reader sees.
+    """
+    return {t: dict({"name": f"{t} Corp", "name_zh": None,
                      "sec": "Technology", "sec_zh": "科技",
-                     "price": 187.456, "spark": f"<svg data-{t}></svg>"},
+                     "price": 187.456, "spark": None},
                     **over.get(t, {})) for t in tickers}
 
 
@@ -664,11 +671,10 @@ def test_a_row_that_cannot_fill_a_required_field_leaves_the_board_entirely():
 
 def test_an_optional_field_is_null_and_never_guessed():
     """A null with a reason is the correct outcome; an imputed value is the
-    failure. A name absent from the committed zh map, or a series too short to
-    draw, yields None — and the card still ships, because the card macro guards
-    every one of these with .get()."""
-    payload = _carded(("AAA",), AAA={"name_zh": None, "sec": None,
-                                     "sec_zh": None, "spark": ""})
+    failure. An unclassified name, or an empty string where a value was
+    expected, yields None — and the card still ships, because the card macro
+    guards every one of these with .get()."""
+    payload = _carded(("AAA",), AAA={"sec": None, "sec_zh": "  "})
     card = CB.board_state(payload)["board"]["cards"][0]
     assert card["name_zh"] is None and card["sec"] is None
     assert card["sec_zh"] is None and card["spark"] is None
@@ -700,18 +706,98 @@ def test_a_board_with_no_display_inputs_publishes_no_cards_at_all():
 
 
 def test_the_lane_gathers_display_facts_only_for_names_the_gate_admits():
-    """~1,660 names in the universe, ~130 on the board. Drawing a sparkline for
-    every evaluated name would build ~1,530 SVGs to discard them, on a lane with
-    ~30 minutes of the 18:30 SLA to spend."""
+    """~1,660 names in the universe, ~130 on the board. Gathering display facts
+    for every evaluated name would be ~1,530 lookups built to be discarded, on a
+    lane with ~30 minutes of the 18:30 SLA to spend."""
     src = (ROOT / "scripts" / "close_pass_publish.py").read_text(encoding="utf-8")
     body = src.split("def collect(")[1].split("\ndef ")[0]
     assert "if signal_gate.is_buyable(verdict):" in body
     guard = body.index("if signal_gate.is_buyable(verdict):")
-    assert body.index('"spark": _spark_svg(') > guard
-    # The nightly's own window, so the two boards draw the same history.
-    assert P.SPARK_BARS == 64
-    assert "close.tail(64)" in (ROOT / "scripts" / "build_stock_library.py").read_text(
-        encoding="utf-8")
+    assert body.index("display[ticker] = {") > guard
+
+
+def test_the_lane_publishes_no_sparkline_and_no_chinese_company_name():
+    """Both are REACHABLE and both ship null, by ruling rather than by accident
+    — so both are pinned here, because "we could easily fill this" is exactly
+    the argument that would refill them.
+
+    spark: charts are 86% of the payload (~1,700 B/card against ~281 B for the
+    twelve other fields combined) on an artifact polled every 120 s to detect a
+    key that changes once a day — and the evening chart renders BANDLESS,
+    because its buy-zone band comes from the omitted `entry` leg. Paying 86% of
+    the payload for a degraded copy of the morning chart inverts the trade.
+
+    name_zh: a committed 1,583-ticker map exists and this lane could read it,
+    but the nightly's US cards pass no `name_zh`, so filling it here would flip
+    a company's NAME between languages overnight. A surface whose whole job is
+    "which board am I looking at" cannot also change what things are called.
+    """
+    body = (ROOT / "scripts" / "close_pass_publish.py").read_text(
+        encoding="utf-8").split("def collect(")[1].split("\ndef ")[0]
+    assert '"spark": None,' in body and '"name_zh": None,' in body
+    # Nothing is imported to build either one — a live import beside a nulled
+    # field is how a ruling quietly decays into a one-line revert. Checked
+    # against the CODE only: the comments naming both sources are the record of
+    # why they are null, and must stay free to say so.
+    code = "\n".join(ln for ln in body.splitlines()
+                     if not ln.lstrip().startswith("#"))
+    assert "_spark_svg" not in code and "us_names_zh" not in code
+    # sec_zh is NOT nulled: it is the same `tr` call the nightly template makes,
+    # so it carries no evening/morning inconsistency.
+    assert '"sec_zh": tr(sector) if sector else None,' in body
+
+    card = CB.board_state(_carded())["board"]["cards"][0]
+    assert card["spark"] is None and card["name_zh"] is None
+    assert set(card) == set(CB.CARD_FIELDS)    # present-but-null, never absent
+
+    # The null is the LANE's ruling, not an engine limitation: handed the
+    # values, `card_row` carries them. Stated so a future reader knows the
+    # decision lives in `collect`, and so "the engine can't do it" never
+    # becomes the remembered reason.
+    fed = CB.card_row({"ticker": "AAA", "signal_asof": SESSION,
+                       "legs": {"signal": 0.5, "runway": 0.5}},
+                      {"name": "AAA Corp", "name_zh": "苹果", "price": 1.0,
+                       "spark": "<svg/>"})
+    assert fed["name_zh"] == "苹果" and fed["spark"] == "<svg/>"
+
+
+def test_the_board_state_key_stays_small_enough_for_a_120s_poll():
+    """The SCHEMA-width size guard, at the real board width.
+
+    This key rides prophet_live.json, which every dashboard reader polls every
+    120 s, and it changes ONCE A DAY. Measured at 131 rows: 33,358 B raw /
+    4,432 B gzip as shipped, against 260,774 / 36,746 with per-card sparklines.
+    The ceilings sit between, so any per-row field fat enough to matter — an SVG,
+    a tip string, an embedded chart — fails here rather than in production.
+
+    WHAT THIS DOES *NOT* CATCH, deliberately: this test supplies its own display
+    facts, so it cannot see the lane re-enabling sparklines in `collect`. That is
+    `test_the_lane_publishes_no_sparkline_and_no_chinese_company_name`'s job.
+    Two different defects, two guards; neither is the other's backstop.
+
+    RAW IS THE BINDING BOUND. These synthetic rows repeat one sector and a
+    sequential ticker, so they gzip far better than real ones (2,993 B here vs
+    4,432 B measured on real names); the gzip assertion is a loose backstop and
+    the raw ceiling is what actually bites.
+    """
+    n = 131                                    # the lane's measured board width
+    tickers = tuple(f"T{i:03d}" for i in range(n))
+    display_by = {t: {"name": f"{t} Holdings Incorporated", "name_zh": None,
+                      "sec": "Consumer Discretionary", "sec_zh": "非必需消费品",
+                      "price": 187.456 + i, "spark": None}
+                  for i, t in enumerate(tickers)}
+    payload = CB.build_board(
+        {t: verdict() for t in tickers},
+        {t: {"ext_z": 1.8 - i * 0.02} for i, t in enumerate(tickers)},
+        session=SESSION, built_at=NOW,
+        adjustment_by={t: "split_and_dividend_adjusted" for t in tickers},
+        display_by=display_by)
+    state = CB.board_state(payload)
+    assert len(state["board"]["cards"]) == n
+
+    raw = json.dumps(state, separators=(",", ":"), allow_nan=False).encode()
+    assert len(raw) < 60_000, f"{len(raw)} B raw — did per-card SVG come back?"
+    assert len(gzip.compress(raw, 6)) < 12_000, "gzip ceiling breached"
 
 
 def test_the_mirror_annotates_the_live_strip_with_only_that_one_key(tmp_path):
