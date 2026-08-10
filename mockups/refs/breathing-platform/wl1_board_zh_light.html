@@ -160,7 +160,13 @@ html[data-theme="light"][data-lang="zh"] {
 
    Shape: --ink-mix-* holds the share of the STATE hue kept in the ink; the rest
    is --text. Dark keeps 100% (ink ≡ raw token → dark renders byte-identical —
-   measured raw dark inks pass 4.5:1 on every estate surface). Light percentages
+   the raw dark inks were measured at 4.5:1+ against --bg/--panel/--panel2, the
+   flat surfaces the estate prints state text on. That measurement does NOT cover
+   a surface tinted with the hue's OWN colour: a color-mix(<hue> 13%, --panel)
+   chip is DARKER than --panel, so a dark hue printed on its own tint is a
+   strictly harder pair than anything in the pass above. The prophet cards do
+   exactly that, and #e06464 failed there — see the verb-ink block below, which is
+   why that block no longer inherits a blanket dark pass-through). Light percentages
    are keyed to HUE, not token name — green sits high in luminance and needs far
    more darkening than red — and are adopted verbatim from the W3 calibration so
    the estate and the SI workspace speak one vocabulary: measured on the worst
@@ -198,10 +204,38 @@ html[data-theme="light"][data-lang="zh"] {
   --ink-info:   color-mix(in srgb, var(--info)   var(--ink-mix-info),   var(--text));
 }
 /* prophet-card verb inks. English keeps the original hue calibration; the light+zh
-   twin below re-keys the percentages after bullish becomes red and bearish green. */
+   twin below re-keys the percentages after bullish becomes red and bearish green.
+
+   This :root block IS the dark plane. It is deliberately NOT written as
+   html[data-theme="dark"]: every page's pre-paint head script is
+   `var t=localStorage.getItem('theme'); if(t) setAttribute('data-theme',t)`, so a
+   first-time visitor renders dark with NO data-theme attribute at all and a
+   [data-theme="dark"] rule would match nothing for them. Light overrides these on
+   specificity (html[data-theme="light"] is (0,1,1) vs :root's (0,1,0)), which is
+   the only mechanism that needs to hold. Both ink harnesses set the attribute
+   explicitly, so a dark rule keyed the wrong way measures GREEN in each of them
+   while shipping dead on the site — do not "tidy" this into an attribute selector.
+
+   --ink-pv-avoid is mixed rather than passed through because the pass-through
+   FAILED: .pv-chip prints the verb on color-mix(--pvh 13%, --panel), a tint of the
+   hue itself and therefore DARKER than --panel, and the raw dark #e06464 measured
+   4.33:1 there — under AA for 10px/800 text. 88% lands it at 4.77 on the chip and
+   5.04 on the thinner 9% target pill, the same margin band the light rungs sit in;
+   94% is the bare minimum that clears 4.5 and was rejected as a hairline that the
+   next palette nudge re-breaks. Hue drift is small by design: #e06464 -> #df7273.
+
+   Systematic note, so a future palette edit does not re-open this: what is weak in
+   dark is the HUE #e06464, not the verb. zh binds that same red to --pv-buy (红涨),
+   where it measures 4.57 on .pv-trg — passing, so it is deliberately left alone
+   rather than re-keyed, but it is now the thinnest margin on the dark plane. Both
+   are pinned by tests/test_prophet_verb_ink_contrast.py, which measures all 5 verbs
+   x 4 consumers x 4 theme/lang combos, so neither can drift silently.
+   .pv-hold has no rung here at all: it binds --pvh-ink straight to --pv-hold in
+   _prophet_card.html.j2 (4.58 light / 4.61 dark — passing on every consumer). */
 :root {
   --ink-pv-buy: var(--pv-buy); --ink-pv-near: var(--pv-near);
-  --ink-pv-wait: var(--pv-wait); --ink-pv-avoid: var(--pv-avoid);
+  --ink-pv-wait: var(--pv-wait);
+  --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 88%, var(--text));
 }
 html[data-theme="light"] {
   --ink-pv-buy:   color-mix(in srgb, var(--pv-buy)   62%, var(--text));
@@ -211,7 +245,22 @@ html[data-theme="light"] {
 }
 html[data-theme="light"][data-lang="zh"] {
   --ink-pv-buy:   color-mix(in srgb, var(--pv-buy)   84%, var(--text));
-  --ink-pv-near:  color-mix(in srgb, var(--pv-near)  84%, var(--text));
+  /* 70%, NOT buy's 84%: --pv-near is not the plain red. It is that red already
+     pushed 82% toward white (the zh block above), so the red rung over-states how
+     much hue this token can afford to keep. At 84% the ink measured 3.90:1 on the
+     chip tint, 4.00 on --panel2, 4.09 on the target pill and 4.41 on the zone
+     label — under AA on the Near card of EVERY prophet board (us_stocks, china,
+     hk, canada, international), which is ~a third of the cards on a normal board.
+     The EN twin already makes this compensation in the same direction (buy 62% ->
+     near 56%) for the same reason: its near hue is likewise the lighter one.
+     70% is the joint optimum of the two live constraints — it clears 4.5:1 on all
+     four ink consumers (chip 4.83 · edn 4.95 · znl 5.46 · trg 5.06) while staying
+     LIGHTER than --ink-pv-buy, which is what keeps Near reading softer than Buy.
+     Below 68% that ordering INVERTS and Near starts reading as the stronger call —
+     so the obvious "just match EN's 56%" is a legibility fix that breaks the
+     semantics. Re-measure with mockups/refs/prophet_verb_ink/probe_pv_ink.py;
+     tests/test_prophet_verb_ink_contrast.py pins the floor. */
+  --ink-pv-near:  color-mix(in srgb, var(--pv-near)  70%, var(--text));
   --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 62%, var(--text));
 }
 /* W-L1 provisional plane (research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md §4.1).
@@ -304,7 +353,15 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
    light / 2.51:1 dark at 10px/800 (the worst white-on-hue chip in the estate
    audit); panel-on-ink clears 4.5 in both themes and keeps the solid identity. */
 .pv-buy .pv-chip{background:var(--pvh-ink,var(--pvh));color:var(--panel);border-color:transparent}
-.pvcard .nb-px.pv-px{background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;margin:0}
+.pvcard .pv-quote{display:inline-flex;align-items:baseline;gap:6px;background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px;white-space:nowrap}
+.pvcard .nb-px.pv-px,.pvcard .nb-chg.pv-chg{font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.35;white-space:nowrap;margin:0}
+.pvcard .nb-px.pv-px{color:var(--text)}
+.pvcard .pv-ovr>.nb-px.pv-px{background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px}
+.pvcard .pv-quote .pv-chg{color:var(--muted)}
+
+.pvcard .pv-quote .pv-chg.up{color:var(--ink-up,var(--up))}
+.pvcard .pv-quote .pv-chg.down{color:var(--ink-down,var(--down))}
+.pvcard .pv-quote .pv-chg.stale{color:var(--muted);font-weight:700}
 .pv-bd{padding:8px 11px 9px;display:flex;flex-direction:column;min-width:0;flex:1}
 .pv-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}
 .pv-idw{display:flex;align-items:baseline;gap:6px;min-width:0;overflow:hidden}
@@ -347,6 +404,9 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
   color:color-mix(in srgb,var(--prov-ink) 42%,var(--muted));
   background:color-mix(in srgb,var(--prov) 7%,transparent);
   border-color:color-mix(in srgb,var(--prov) 30%,transparent)}
+
+.pv-mk-nck{background:transparent;color:var(--muted);
+  border-style:dashed;border-color:color-mix(in srgb,var(--muted) 42%,transparent)}
 
 .pv-mk-i[data-tip-en]{cursor:help}
 .pv-stp{display:flex;align-items:center;margin:7px 1px 0}
