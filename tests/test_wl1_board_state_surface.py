@@ -718,6 +718,7 @@ const out = job.cases.map(c => {
   if (c.fn === 'cards')  return _pvcCards(c.board) === null ? null : 'ok';
   if (c.fn === 'room')   return [_pvcRoom(c.runway), _pvcVerb(_pvcRoom(c.runway))];
   if (c.fn === 'wanted') return _pvcWanted(c.state, c.now, c.refused || '') ? 'ok' : null;
+  if (c.fn === 'id')     return _pvcId(c.state, _pvcCards(c.state.board));
   if (c.fn === 'html')   return _pvcGridHTML(_pvcCards(c.board), !!c.chg);
   if (c.fn === 'mount') {
     /* the injected env IS the seam the real DOM plugs into: `read` returns whatever the
@@ -879,12 +880,37 @@ def test_cards_without_a_stamp_are_refused_exactly_like_a_stamp_without_cards():
         {"fn": "wanted", "state": st(generated_at=_iso(_NOW - 200 * _HOUR),
                                      valid_until=_iso(_NOW + 9000 * _HOUR)),
          "now": _NOW},                                                           # 4 too old
-        # a payload whose mount already failed once is never retried
+        # a board whose mount already failed once is never retried — keyed on the board's
+        # own identity (as-of + ordered tickers), the same key the mount is keyed on
         {"fn": "wanted", "state": st(), "now": _NOW,
-         "refused": _iso(_NOW - _HOUR)},                                         # 5
+         "refused": "2026-08-10#TK0|TK1|TK2"},                                   # 5
     ])
     assert got[0] == "ok"
     assert got[1:] == [None] * 5
+
+
+def test_a_republished_but_unchanged_board_is_not_remounted():
+    """`board_state` rides an artifact the live producer rewrites every ~5 minutes. Keying
+    the mount on a WRITE timestamp would tear the grid down and rebuild it on every poll —
+    a flicker under a reader, their "show more" expansion reset each time, and a leaked
+    resize listener per rebuild. The board is the same board while its as-of and its
+    ordered tickers are, so the mount is keyed on that and nothing else."""
+    fresh = {"generated_at": _iso(_NOW - _HOUR), "valid_until": _iso(_NOW + _HOUR)}
+    same_board_later_write = dict(fresh, rel="ahead", note="ahead", board=_board())
+    same_board_later_write["generated_at"] = _iso(_NOW - 60000)
+    got = _pvc([
+        {"fn": "id", "state": dict(fresh, rel="ahead", note="ahead", board=_board())},
+        {"fn": "id", "state": same_board_later_write},
+        # a genuinely different board — one name swapped — must NOT share the identity
+        {"fn": "id", "state": dict(fresh, rel="ahead", note="ahead",
+                                   board=_board(("TK0", "TK1", "TK9")))},
+        # nor must a different session's board carrying the same names
+        {"fn": "id", "state": dict(fresh, rel="ahead", note="ahead",
+                                   board=_board(as_of="2026-08-11"))},
+    ])
+    assert got[0] == got[1], "a rewrite with no board change must not remount"
+    assert got[0] != got[2] and got[0] != got[3]
+    assert "2026-08-10" in got[0] and "TK0|TK1|TK2" in got[0]
 
 
 def test_the_card_markup_degrades_rather_than_breaks_on_a_null_field():

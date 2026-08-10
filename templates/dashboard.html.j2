@@ -18674,10 +18674,19 @@ function _pvcWanted(s, now, refused){
   if(!s||typeof s!=='object') return null;
   var cards=_pvcCards(s.board);
   if(!cards) return null;
-  if(refused&&String(s.generated_at||'')===refused) return null;
+  if(refused&&_pvcId(s, cards)===refused) return null;
   var q=_bsQualify(s, _pvcKey(cards), now);
   if(!q||q.rel!=='ahead') return null;
   return cards;
+}
+/* WHICH BOARD IS MOUNTED — the board's own identity, deliberately NOT `generated_at`.
+   `board_state` rides an artifact the live producer rewrites every ~5 minutes, so keying
+   the mount on a write timestamp would tear the grid down and rebuild it on every poll:
+   a flicker under a reader, their "show more" expansion reset each time, and a leaked
+   resize listener per rebuild. The board is the same board while its as-of and its ordered
+   tickers are the same, and a board that has not changed has nothing to re-paint. */
+function _pvcId(s, cards){
+  return String((s.board&&s.board.as_of)||'')+'#'+_pvcKey(cards);
 }
 /* WL1-PROVCARD-CONTRACT-END */
 
@@ -18831,12 +18840,12 @@ function _bsRender(){
      way out, and the stamp would land over the board that replaced it. */
   var cards=_pvcWanted(s, now, _pvcRefused);
   if(cards){
-    born=String(s.generated_at||'');
+    born=_pvcId(s, cards);
     if(!(_pvcOn&&_pvcStamp===born)){
-      if(_pvcOn) _pvcTeardown();               /* a new payload replaces as a unit */
+      if(_pvcOn) _pvcTeardown();               /* a DIFFERENT board replaces as a unit */
       if(_pvcMount(_pvcEnv(), cards)){ _pvcOn=true; _pvcStamp=born; }
-      /* a payload that could not be painted correctly is not tried again — retrying it
-         every 120s would flicker the board between two states forever */
+      /* a board that could not be painted correctly is not tried again — retrying it
+         every 120s would flicker the grid between two states forever */
       else _pvcRefused=born;
     }
   }else if(_pvcOn){ _pvcTeardown(); }
