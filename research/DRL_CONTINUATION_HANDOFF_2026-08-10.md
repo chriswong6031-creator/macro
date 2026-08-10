@@ -1,0 +1,52 @@
+# DRL continuation handoff — 2026-08-10 (session 1)
+
+Program: Dislocation & Recovery (`research/DISLOCATION_RECOVERY_LOBE_MASTERPLAN_BY_FABLE.md`,
+v2 with §12 red-team log). Engine namespace `engine/price_pressure/`; surface = Pressure
+Watch band on the stocks hub. This doc is the session-chain state; update, don't duplicate.
+
+## Shipped this session
+
+- Masterplan v1→v2 (census-complete, red-team adjudicated: 4 BLOCKERs + 10 findings folded).
+- W1: `engine/price_pressure/` (LSR-imported fence, PIT ledger `data/price_pressure/events.parquet`,
+  frozen `base_rates.json`, display `latest.json`, nightly tail-desks step, synapse rows,
+  market_packet block, analyst-doctrine scope sentence, tests) — PR [TODO-PR1].
+- Backfill run on the 2021-07-06..2026-07-02 store snapshot (R2-canonical; local caches lag) —
+  events/base-rates committed; MU April-2025 printed as measured non-fire (worst z −2.44).
+- W2: Pressure Watch band (resolved-first inversion, both sides, recency ordering,
+  coverage-honest chips, fail-soft warm-up) — PR [TODO-PR2], armed after schema-parity check.
+
+## Next session queue (in order)
+
+1. **Verify the gap-era catch-up did its job**: after the first nightly advance post-merge,
+   confirm `data/price_pressure/events.parquet` contains the July-03→Aug sessions with
+   `era="gap"`, that CDE's 2026-08 earnings shock appears (family `filing-coverage-unknown`,
+   basket framing vs the precious-metals basket), and the band + market-packet block render it.
+   Then update masterplan §6 exemplars with the actual readout.
+2. **Live verification debt** (if any left unchecked at session end): [TODO — list].
+3. **§8 leg 1 — R4 VIX-gradient prereg**: fresh doc, frozen breakpoints, direct difference
+   test, forward-ledger graded, gradient-not-level gate per §7. Entry condition: none — can
+   start any session.
+4. **§8 leg 4 — XBRL transitory-decomposition context** (CDE PPA case): deterministic only,
+   `data/edgar/statements.parquet` + `dilution_events.parquet`; context fields, never scores.
+5. **§8 legs 2/3/5/6** are clock- or dependency-blocked (revisions ≈2028+, tape via tick-plane
+   TP-1+, winners-program linkage, FINRA HOLD lift) — do not start; check clocks each session.
+
+## Standing cautions (bite here specifically)
+
+- The fence, thresholds, horizons, and peer basis are **LSR-pinned; re-tuning any of them is
+  DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER territory** — display taxonomy may change,
+  the construction may not.
+- Base rates are span-bound to the rolling store; a re-freeze silently drops the oldest era —
+  stamp and state the span every time.
+- `era ∈ {backfill, gap}` rows are NEVER promotion evidence; §7 needs forward-era only,
+  ≥200 episodes across ≥40 distinct dates, level-vs-gradient gate split.
+- Ordering anywhere user-visible: recency then ticker — never |z|/|resid| (ranking authority).
+- The worktree harness creates SPARSE checkouts — `git sparse-checkout add data site tests
+  templates` before building/testing, or failures are fake.
+- Store freshness: R2 is canonical; every local checkout's `data/massive_stock_day` is a
+  stale cache (manifest is tracked and tells the truth; parquets don't).
+
+## Session-2 entry point
+
+Read this doc + masterplan §12 + memory `dislocation-recovery-price-pressure-program`,
+then start at queue item 1.
