@@ -288,6 +288,76 @@ class TestLatchSemantics:
         assert res2[0].state == "ARMED"
         assert len(newly2) == 0
 
+    def test_fired_legs_recorded_and_preserved(self, tmp_path, monkeypatch):
+        """State records WHICH leg fired an any-combinator, preserved while latched.
+
+        An `any` can mix confirm-direction and capitulation legs under one
+        `direction` (the pgms shape) — the at-fire receipt is the only way a
+        latched FIRED can still say which story fired it."""
+        from engine import falsifier_tripwires as ft
+        monkeypatch.setattr("engine.falsifier_tripwires._STATE_JSON",
+                            tmp_path / "tripwire_state.json")
+        monkeypatch.setattr("engine.falsifier_tripwires._FALSIFIERS_JSON",
+                            tmp_path / "falsifiers.json")
+
+        entry = {
+            "id": "pgms.test.v1", "cycle": "pgms", "version": 1,
+            "direction": "refutes",
+            "claim": "any-combinator mixing confirm and capitulation legs",
+            "expires": "2030-01-01", "coverage": "full",
+            "dsl": {"any": [
+                {"series": "yahoo:UP", "op": "gt", "value": 1900},
+                {"series": "yahoo:DOWN", "op": "lt", "value": 1300},
+            ]},
+            "manual": None,
+        }
+        (tmp_path / "falsifiers.json").write_text(json.dumps([entry]), encoding="utf-8")
+
+        frames = {"UP": _make_series([2000.0] * 10), "DOWN": _make_series([1500.0] * 10)}
+
+        def _read(g, t):
+            s = frames.get(t)
+            return s.rename("close").to_frame() if (g == "yahoo" and s is not None) else None
+
+        asof = _asof(frames["UP"])
+        with patch("lib.store.read", side_effect=_read):
+            results = ft.evaluate_all(asof=asof)
+        newly = ft.persist(results)
+        assert len(newly) == 1
+
+        state = json.loads((tmp_path / "tripwire_state.json").read_text(encoding="utf-8"))
+        legs = state["pgms.test.v1"]["fired_legs"]
+        assert len(legs) == 1               # only the leg that was True at fire time
+        assert legs[0]["series"] == "yahoo:UP"
+        assert legs[0]["op"] == "gt"
+        assert legs[0]["value_now"] == 2000.0
+
+        # build 2: UP recovers — latched FIRED keeps the at-fire receipt verbatim
+        frames["UP"] = _make_series([1500.0] * 10)
+        with patch("lib.store.read", side_effect=_read):
+            results2 = ft.evaluate_all(asof=asof)
+        ft.persist(results2)
+        state2 = json.loads((tmp_path / "tripwire_state.json").read_text(encoding="utf-8"))
+        assert state2["pgms.test.v1"]["fired_legs"] == legs
+        assert state2["pgms.test.v1"]["current_leg"] is False
+
+    def test_armed_entry_carries_no_fired_legs(self, tmp_path, monkeypatch):
+        from engine import falsifier_tripwires as ft
+        monkeypatch.setattr("engine.falsifier_tripwires._STATE_JSON",
+                            tmp_path / "tripwire_state.json")
+        monkeypatch.setattr("engine.falsifier_tripwires._FALSIFIERS_JSON",
+                            tmp_path / "falsifiers.json")
+        (tmp_path / "falsifiers.json").write_text(
+            json.dumps([self._oil_entry()]), encoding="utf-8")
+
+        s_calm = _make_series([80.0] * 10)   # never < 55 → ARMED
+        with _patch_read("fred:DCOILWTICO", s_calm):
+            results = ft.evaluate_all(asof=_asof(s_calm))
+        ft.persist(results)
+        state = json.loads((tmp_path / "tripwire_state.json").read_text(encoding="utf-8"))
+        assert results[0].state == "ARMED"
+        assert "fired_legs" not in state["oil.test.v1"]
+
 
 # ── (3) TTL / OVERDUE ────────────────────────────────────────────────────────
 class TestManualTTL:
