@@ -111,9 +111,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 370 |
+| display | 369 |
 | infrastructure | 155 |
-| scored | 4 |
+| scored | 5 |
 | shadow | 92 |
 
 ### Artifacts by storage
@@ -164,8 +164,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| site-basket-washout-state | `site/factordata/basket_washout_state.json` | json | daily-engine | scored | 1 | 1 |
 | site-basket-washout-history | `site/factordata/basket_washout_history.json` | json | daily-engine | display | 0 | 1 |
-| site-basket-washout-state | `site/factordata/basket_washout_state.json` | json | daily-engine | display | 0 | 1 |
 
 ### btc-vector
 
