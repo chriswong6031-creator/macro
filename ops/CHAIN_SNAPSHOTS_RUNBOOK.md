@@ -25,12 +25,30 @@ This is the Interval Map / Volatility Drift data plane
 | `{ROOT}/{YYYY-MM-DD}.parquet` | greeks rows; dedup key = (root, expiration, strike, right, snapshot_bucket) |
 | `{ROOT}/{YYYY-MM-DD}_oi.parquet` | one OI snapshot per root per day (first sweep only — OI timing law: the ~06:30 ET stamp holds EOD t-1 positions and never moves intraday) |
 | `_bucket_receipts/{YYYY-MM-DD}.jsonl` | authoritative, append-only producer receipt state for each live bucket (`chain_snapshots.bucket_completion/v1`) |
-| `_bucket_receipts/.writer.lock` | sole-producer advisory lock; held across receipt reconciliation, the full source sweep, completion, availability, and any injected future hook |
+| `_bucket_receipts/.writer.lock` | sole-producer advisory lock; held across receipt reconciliation, the full source sweep, completion, availability, and the configured Light U-CHAIN hook |
 | `_meta.json` | non-authoritative per-cycle observability (sweep count, rows, latency, errors, quarantined, receipt/hook status) |
 | `{ROOT}/{date}.corrupt-{ts}.parquet` | quarantine: an existing day frame that failed to read is renamed aside (bytes preserved), never overwritten — check `_meta.json` `quarantined` and recover/inspect manually |
 
 Forward volume ≈ 0.4–1 GB/day (program doc §5) — watch disk alongside the
 tape-lane hot window.
+
+The derivative Light U-CHAIN mirror, when enabled, writes local-only delivery
+acknowledgements at
+`data/options_structure_intraday_r2/options_structure/msc_intraday/_publication_receipts/{SESSION}/{HHMM}.json`.
+Each has a sibling `{HHMM}.index.json` preserving the exact committed global
+index bytes after the mutable pointer advances. Together they prove a verified
+R2 commit plus successful local-mirror commit; they are not
+source receipts and confer no signal, selector, or trade authority.
+The same private directory also contains `cursor.json`, the activation-bound
+contiguous delivery cursor, and `scan_cursor.json`, a bounded forward-ledger
+checkpoint. `cursor.json` binds its exact acknowledgement bytes and advances
+one bucket at a time, resetting its prefix to one only at a new session.
+`scan_cursor.json` may cross a terminal session only when it binds that exact
+source ledger SHA-256, terminal complete count/prefix, and last delivered ack
+(or an explicit zero-complete proof). Its cumulative ack-prefix hash requires
+every acknowledgement in that sealed session, not only the tail, to remain
+present and canonical. Both use canonical bytes and the same
+temp-write/file-fsync/atomic-replace/parent-fsync law as acknowledgements.
 
 ### Preserve producer state across checkout refreshes
 
@@ -49,6 +67,19 @@ Never copy or restore this state after the producer starts. Copying a live
 directory can combine ledger and Parquet moments that never coexisted under the
 writer lock. Only after the pre/post manifest matches may the launchd install
 sequence below start the producer in the refreshed checkout.
+
+When the projection is enabled, preserve
+`data/options_structure_intraday_r2/` in the same stopped clone-swap window and
+give it its own exact pre/post path-size-SHA manifest. The directory is
+gitignored and must never be copied into `site/` or another public tree. Losing
+an acknowledgement or either cursor before it is written is safely retryable.
+The manifest must preserve all ack/index siblings plus `cursor.json` and
+`scan_cursor.json`; never reconstruct either cursor from `_meta.json`. Losing or
+corrupting an older acknowledgement after a newer global index has advanced is
+an operator-reconciliation STOP: do not delete/rewrite it or regress the index.
+Verify the saved immutable index receipt, local immutable packets, and remote R2
+objects/current index, then restore exact backup bytes or perform a separately
+reviewed repair.
 
 ## Producer completion contract (W0a-B)
 
@@ -99,12 +130,45 @@ The durability order is load-bearing:
 6. Reconfirm that decision prefix, capture `availability_at` only afterward,
    append the availability bound to both prior receipts, and file-`fsync` it.
    Only this terminal is complete.
-7. A future completion hook may be injected in-process for later Light U-CHAIN
-   work. It is disabled/default-off today (no import, config, R2 path, credential,
-   or publication). If injected later, it runs synchronously under the same
-   writer lock only after durable availability. Its error is loud and appears in
-   `_meta.json`, but cannot roll back or recast a successful source sweep. A
-   completed-bucket retry may invoke it again for idempotent repair.
+7. The config-gated Light U-CHAIN hook runs synchronously under the same writer
+   lock only after durable availability. It transports the exact three-record
+   completion packet over stdin to the existing
+   `scripts.build_options_structure_intraday` CLI, which publishes the governed
+   `options.contract_eligibility/v1` R2 family. Before any R2 mutation, the
+   builder compares each exact target-bucket row count/content digest and stable
+   OI row count/file digest to the producer decision receipt. After verified R2
+   and local-mirror success it writes the deterministic local delivery
+   acknowledgement and immutable index receipt above. A 120-second subprocess
+   ceiling, exception, missing
+   credential, or nonzero exit is loud in `_meta.json` but cannot roll back or
+   recast a successful source sweep. The direct hook explicitly abstains from
+   every completion packet dated before `activation_session`.
+8. Missing delivery acknowledgements remain retryable. Enabling requires an
+   exact immutable `activation_session`; receipts before it are explicitly out
+   of scope, and any later config drift from the activation bound into
+   `cursor.json` fails closed. Under the same writer lock, each catch-up pass
+   decodes only the sealed checkpoint ledger, the scan-floor session and its
+   immediate next ledger, plus at most one distinct delivery-cursor ledger
+   (four ledger decodes/pass worst case, independent of retained history),
+   attempts at most one
+   missing acknowledgement, and advances across a terminal/no-complete session
+   by one source-hash-bound scan checkpoint. This covers crash after
+   availability, ack-written/cursor-not-advanced restart, transient R2 failure,
+   empty sessions, and normal/early-close recovery without another scheduler or
+   raw store. A derivative cursor error suppresses projection and is surfaced;
+   it never recasts source truth. Catch-up is synchronous and can delay source
+   start by its bounded scan and publisher timeout, so rollout must gate total
+   writer-lock hold on M1. Older unacknowledged projection suppresses newer
+   projection until ordered catch-up clears it. At clean close, remaining
+   backlog returns nonzero so launchd retries.
+
+Code defaults off when the config block is absent. Canonical config remains
+`enabled: false` with `activation_session: null` until the actual M1
+full-universe dependency/credential check, one real-volume runtime/RSS baseline,
+a safe multi-run latency series, and accumulated-ledger writer-lock timing pass.
+Promotion must set one exact current/future NYSE activation session before the
+first enabled launch; that value is immutable for the lifetime of the cursor
+tree.
 
 The intent freezes the exact roots, cadence, and whether target-bucket rows
 already existed before intent. A fresh intent that finds such orphan rows is
@@ -171,7 +235,12 @@ availability/incomplete terminal.
 exits so durable intent/decision recovery can occur in-session; a clean exit 0
 stays down until the next calendar fire.
 ThetaTerminalApp must be running on port 25503 before the fire (Login Items
-recommended).  No R2 creds are required — this lane writes local parquet only.
+recommended). Canonical config keeps the projection disabled pending its M1
+rollout gates. When `chain_snapshots.options_structure_r2.enabled: true`, the
+standard `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and
+`R2_BUCKET` variables must be present in the sourced deploy-worktree `.env`.
+Missing credentials fail only the projection hook; local source completion stays
+truthful and retryable.
 
 ## Safe verification (no historical/manual live collection)
 
@@ -188,7 +257,8 @@ tool. Outside a real current NYSE bucket it creates no new intent/source and
 exits before universe resolution or a ThetaData probe; existing durable receipt
 tails may still reconcile as described above. Do not invoke it for historical,
 weekend, holiday, post-close, or market-closed verification. W0a-B intentionally
-adds no historical replay and no Light U-CHAIN R2 publisher.
+adds no historical replay; the bounded completion consumer never synthesizes an
+elapsed source bucket.
 
 When diagnosing state, copy the ledger before reading it and validate the copy;
 do not edit the live file. A terminal `incomplete` is evidence, not a queue to

@@ -62,6 +62,21 @@ SPEC for the exact-plane event rebuild (their §7 integer-cent taxonomy + stk_li
 (d) final event authority = the TuShare exact-cent plane, post-backfill. Exploratory delta
 work (which repair classes move which W1–W3 numbers) is sanctioned as display-tier ore.
 
+**AMENDED 2026-08-10 — the invalidation is ENFORCED (STOP-SHIP compliance).** The later
+`research/CN_LIMIT_ALPHA_SOL_ADJUSTED_PRICE_STOP_SHIP_2026-08-09.md` withdrew the
+adjusted-plane rebuild artifacts in BOTH vintages. #5059 was deliberately pared before
+merge (squash `dbf7454f314` landed the independent zt_pool heal only), but #5198 then
+mistakenly treated four content-empty safety merges as permission to re-land 14 withdrawn
+artifacts. Byte-exact transport did not cure the invalid substrate. This reconciliation
+removes those 14 paths, their direct W2/W3 executable/result descendants, and the #5205
+forward-ledger page from the current tree; Git history retains them for archaeology only.
+The two continuation handoffs are tombstoned and the historical masterplan is visibly
+superseded. Ruling (a) is VOID — there is no healed working tape. Ruling (b) survives only
+as qualitative design input for a fresh exact-plane preregistration; (c)/(d) stand. No
+withdrawn tape, receipt, model, result, forward seed, reproducer, reader, or rendered surface
+may be restored or used as numerical evidence. Registry row:
+`DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT`.
+
 ## §4 Universe truth — F3 upgraded from threat to measured fact
 
 Codex quantified what my receipts only stamped: the 1,842-name store covers **35.37%** of
@@ -73,29 +88,29 @@ among many: it is the gate between everything measured so far and any promotion 
 display tier. Their small-cap note is adopted as stated: a sampling-gap prior, NOT proven
 alpha; PIT-cap strata by board, never current-cap.
 
-## §5 Exact-limit taxonomy — adopted with a grading carve-out
+## §5 Exact-limit taxonomy — future exact-plane work only
 
-The handoff §7 integer-cent taxonomy (sealed close_cents == up_limit_cents; exact touch;
-炸板; near-limit progress; quarantine classes) is ADOPTED for all exact-plane work, with
-their entry/exit clock discipline (pre-auction vs post-auction rider split; queue-required
-opens; T+1; locked-exit single-session carry) — my W1–W3 books already satisfy the clock
-rules in Claude form. Carve-out: the live forward ledger's tolerant grade (close ≥
-limit×0.998) is PRE-REGISTERED and cannot change mid-ledger; it grades as registered, with
-the exact-cent grade recorded BESIDE it once the exact plane lands (never blended — §11.2).
+The handoff §7 integer-cent taxonomy (sealed `close_cents == up_limit_cents`; exact touch;
+炸板; near-limit progress; quarantine classes) remains design input for a fresh exact-plane
+construction, together with its entry/exit clock discipline. The earlier tolerant-grade
+carve-out is VOID: its adjusted-price forward ledger was withdrawn and is removed from the
+current tree, so it must not be graded now or beside a future exact-cent ledger. Any future
+ledger requires a fresh preregistration bound to authorized TuShare `daily` plus same-key
+`stk_limit`, the complete PIT universe, exchange half-up validation, and a new provenance
+receipt. Historical W1–W3 grades are archaeology, not authority.
 
 ## §6 Two forward ledgers, one Monday
 
-Both stacks seeded live predictions for entry session **2026-08-10**: Claude 100 rows
-(onset_v1, #5055, tolerant-grade contract) and Codex **5,352 rows** (three model versions,
-preserved seed, hash-attested). Ruling: grade BOTH Monday night, separately, per their own
-registered contracts. The advancer: **adopt the Codex engine**
-(`engine/cn_limit_alpha_ledger.py` + `scripts/advance_cn_limit_alpha_ledger.py`, preserved
-branch — it already implements stable prediction identity, exact-session grading, no-fill
-semantics, keep-first contradiction detection) with their two mandated fixes (attested
-exchange calendar, monthly Parquet partitions — not monolithic JSONL) and my §8.6 relocation
-adjudication (ledger home `data/cn_limit_lab/`), reconciling both ledgers' paths in one
-integration lane. This supersedes "wire a new advancer" — the build exists; the work is
-adoption + reconciliation.
+Both stacks historically seeded predictions for entry session **2026-08-10**: Claude 100
+rows (`onset_v1`) and Codex 5,352 rows. **AMENDED 2026-08-10 (STOP-SHIP compliance): grade
+NEITHER ledger.** Both depend on the withdrawn adjusted-price construction. #5198's
+mistaken re-land of the Claude model and 2,100-row ledger is removed here; the Codex seed
+remains history-only. Neither may be advanced, reconciled, copied into a new ledger, or
+written into the program record. The preserved Codex engine may inform requirements such
+as stable identity, keep-first contradiction detection, and exact-session accounting, but
+it is not adopted executable authority. A future advancer must be implemented and
+pre-registered against the authorized exact plane, with no imported rows or grades from
+either withdrawn seed.
 
 ## §7 Protocol adoptions
 
@@ -123,7 +138,8 @@ adoption + reconciliation.
    fillability, weakness, windows) re-run full-universe, integer-cent, eligibility-gated.
    THE program gate to anything beyond display tier.
 5. **Minute/auction/chip planes** — wiring lanes A/B/C (running; Lane C shipped #5162).
-6. **Advancer integration** (§6 above) + grade both ledgers every session.
+6. **Fresh exact-plane ledger + advancer** (§6 above), only after the substrate and a new
+   preregistration exist; never grade or import either withdrawn ledger.
 7. **Band-progress packet run** on the exact substrate (their merged, frozen construction).
 8. Then per masterplan §8: intraday battery against the foresight premium, C11/C15,
    v0-corrections (post-#4999), theme-relay (blocked on THS).
