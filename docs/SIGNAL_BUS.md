@@ -972,9 +972,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| us-basket-turn | `site/basketdata/us_basket_turn.json` | json | daily-engine | display | 2 | 0 |
+| us-basket-turn | `site/basketdata/us_basket_turn.json` | json | daily-engine | display | 5 | 0 |
+| us-basket-turn-ledger | `data/us_basket_turn/ledger.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | us-track-history | `site/factordata/us_track_history.json` | json | daily-engine | display | 1 | 0 |
-| us-basket-turn-ledger | `data/us_basket_turn/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
 ### qualitative-intelligence
 
