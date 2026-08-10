@@ -125,6 +125,40 @@ alongside pooled) PLUS episode-clustered CI>0 (per §6 adjudication). Third look
 gated on the round-1 red-team resolving the gap-through-stop fill and CN limit-fill questions —
 any confirmed sim flaw is repaired first and round 3 runs on the repaired instrument.**
 
+**A1b-dead — measured survivorship arm (required in round 3; census 2026-08-10):** union the panel
+with `data/edgar/dead_name_prices.parquet` (424 delisted names, closes-only, sp1500-PIT-scoped —
+290 absent from the live panel; provenance `data/edgar/_dead_name_price_coverage.json`; honor the
+`data/quarantine/dead_name_prices_spliced.json` quarantine and treat ticker-reuse collisions like
+BBBY as distinct identities, excluding ambiguous ones). Replay the signal path on closes (the
+indicators are close-based); grade dead-name blocked fires with the close-trigger stop rule using
+a close-derived stop proxy, and separately under the conservative floor (terminal delisting value;
+bankruptcy-imputed closes count as total loss). Report the measured correction to every §6/§7
+promotion-bearing cell as `level_with_dead` alongside `level_survivor`, with the sp1500 scope
+disclosed (non-index micro-cap deaths remain unmeasured — the correction is a floor, not a PIT
+repair). The FIX-2 union pattern (`engine/prophet_stage_fusion.py:19-31`) is the house precedent.
+
+**§7 RED-TEAM RESOLUTION (2026-08-10 ~09:1xZ — the §7 run-gate is now satisfied; findings
+CONFIRMED with receipts, all computed):** fills are honest (no −1R clamp; stopped-trade mean
+−1.28R at realized closes), CN arm fillable (0.46% locked days), PIT clean, cohort==production —
+the instrument's core stands. But: **F1** the round-1 sysA star cell was ONE macro episode
+(COVID 2020 = 77% of cell R; leave-COVID-out premium −0.06R/+0.11R ≈ zero) — the post-hoc sysA
+rule is STATISTICALLY DEAD on top of its altitude death; **F2** 63.1% of fires overlap a prior
+same-name fire's 252d horizon (uncounted dependence); **F3** the round-1 "blocked−taken −0.148R"
+claim was an R-DENOMINATOR ARTIFACT — per equal notional the gap is −0.0001 (the veto adds ~nothing
+per dollar on average); **F4** raw-R means are tail-dominated (top 1% of trades = 21-30% of R;
++10R cap: star cell +1.447→+1.212, ex-COVID +0.365); **F5** censored-unstopped 2025-26 rows mark
++3.49R unrealized = 12% of pooled R (excluding: +0.827→+0.749); **F6** the m-sweep criterion has
+no interior optimum anywhere (argmax = no stop) — the m degree of freedom was vacuous; **F7**
+close-stop headline vs intrabar −0.07R. Net pooled honest read ≈ **+0.55-0.65R vs placebo ≈ 0** —
+the signal is real; every round-1/2 LEVEL was overstated.
+
+**Round-3 methodology (frozen, supersedes prior aggregation choices):** m FIXED at 0.5 (stops are
+the operator's risk-bound, not a return-max device — F6); primary aggregate = R capped at +10 AND
+winsor-99 shown together; censored-unstopped rows EXCLUDED from levels (reported separately);
+intrabar fills PRIMARY; equal-notional mean return alongside every R read; clustering = episode ×
+name (F2); **leave-COVID-out (and leave-one-episode-out) REQUIRED for every promotion-bearing
+cell** — a cell whose premium dies ex-COVID is dead (F1). Gates for A1b unchanged otherwise.
+
 ## §5 Ratification log
 
 - **2026-08-10 ~06:4xZ — ADJUDICATED** (results:
