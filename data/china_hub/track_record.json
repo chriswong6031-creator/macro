@@ -1,27 +1,27 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-08-08",
-  "generated_at": "2026-08-09T06:57:50.944287+00:00",
+  "as_of": "2026-08-10",
+  "generated_at": "2026-08-10T09:40:05.213241+00:00",
   "is_context_only": true,
-  "n_snapshots": 2856,
+  "n_snapshots": 2953,
   "horizons": {
     "5": {
-      "n_matured": 357,
-      "opportunity_ic_pooled": 0.1866,
+      "n_matured": 394,
+      "opportunity_ic_pooled": 0.1911,
       "opportunity_ic_daily": {
-        "mean_ic": 0.0905,
-        "ic_vol": 0.3945,
-        "ic_ir": 0.229,
-        "ic_ir_ann": 0.725,
-        "t_hac": 0.835,
-        "p_hac": 0.4035,
-        "hit": 0.524,
-        "n": 21,
+        "mean_ic": 0.0919,
+        "ic_vol": 0.3685,
+        "ic_ir": 0.249,
+        "ic_ir_ann": 0.789,
+        "t_hac": 0.972,
+        "p_hac": 0.3313,
+        "hit": 0.583,
+        "n": 24,
         "hac_lags": 5,
         "hac_lags_requested": 5
       },
-      "opportunity_ic": 0.0905,
-      "edge_ic_pooled": 0.1092,
+      "opportunity_ic": 0.0919,
+      "edge_ic_pooled": 0.1139,
       "by_stage": {
         "consensus": {
           "n": 10,
@@ -29,14 +29,14 @@
           "hit_rate": null
         },
         "distribution": {
-          "n": 115,
-          "mean_fwd_rel": -0.0085,
-          "hit_rate": 0.574
+          "n": 134,
+          "mean_fwd_rel": -0.0116,
+          "hit_rate": 0.604
         },
         "exhausted": {
-          "n": 40,
-          "mean_fwd_rel": -0.0056,
-          "hit_rate": 0.475
+          "n": 41,
+          "mean_fwd_rel": -0.0066,
+          "hit_rate": 0.488
         },
         "faltering": {
           "n": 25,
@@ -44,9 +44,9 @@
           "hit_rate": null
         },
         "early": {
-          "n": 151,
-          "mean_fwd_rel": -0.0023,
-          "hit_rate": 0.53
+          "n": 168,
+          "mean_fwd_rel": -0.0049,
+          "hit_rate": 0.506
         },
         "quiet": {
           "n": 16,
@@ -55,25 +55,31 @@
         }
       },
       "by_source": {},
-      "by_regime": {}
+      "by_regime": {},
+      "coverage": {
+        "n_eligible": 2570,
+        "n_matured": 394,
+        "coverage_pct": 15.33,
+        "below_floor": true
+      }
     },
     "10": {
-      "n_matured": 290,
-      "opportunity_ic_pooled": 0.4202,
+      "n_matured": 329,
+      "opportunity_ic_pooled": 0.4156,
       "opportunity_ic_daily": {
-        "mean_ic": 0.3121,
-        "ic_vol": 0.3165,
-        "ic_ir": 0.986,
-        "ic_ir_ann": 4.41,
-        "t_hac": 3.253,
-        "p_hac": 0.0011,
-        "hit": 0.824,
-        "n": 17,
+        "mean_ic": 0.3286,
+        "ic_vol": 0.3074,
+        "ic_ir": 1.069,
+        "ic_ir_ann": 4.78,
+        "t_hac": 4.309,
+        "p_hac": 0.0,
+        "hit": 0.842,
+        "n": 19,
         "hac_lags": 10,
         "hac_lags_requested": 10
       },
-      "opportunity_ic": 0.3121,
-      "edge_ic_pooled": 0.3131,
+      "opportunity_ic": 0.3286,
+      "edge_ic_pooled": 0.3052,
       "by_stage": {
         "consensus": {
           "n": 10,
@@ -81,51 +87,57 @@
           "hit_rate": null
         },
         "distribution": {
-          "n": 94,
-          "mean_fwd_rel": -0.0178,
-          "hit_rate": 0.585
+          "n": 107,
+          "mean_fwd_rel": -0.022,
+          "hit_rate": 0.636
         },
         "exhausted": {
-          "n": 27,
-          "mean_fwd_rel": -0.0738,
-          "hit_rate": 0.778
+          "n": 32,
+          "mean_fwd_rel": -0.0533,
+          "hit_rate": 0.688
         },
         "faltering": {
-          "n": 19,
-          "mean_fwd_rel": 0.01,
+          "n": 21,
+          "mean_fwd_rel": 0.0139,
           "hit_rate": null
         },
         "early": {
-          "n": 130,
-          "mean_fwd_rel": 0.0032,
-          "hit_rate": 0.654
+          "n": 145,
+          "mean_fwd_rel": 0.0013,
+          "hit_rate": 0.634
         },
         "quiet": {
-          "n": 10,
-          "mean_fwd_rel": 0.0019,
+          "n": 14,
+          "mean_fwd_rel": -0.0198,
           "hit_rate": null
         }
       },
       "by_source": {},
-      "by_regime": {}
+      "by_regime": {},
+      "coverage": {
+        "n_eligible": 2122,
+        "n_matured": 329,
+        "coverage_pct": 15.5,
+        "below_floor": true
+      }
     },
     "21": {
-      "n_matured": 141,
-      "opportunity_ic_pooled": 0.601,
+      "n_matured": 188,
+      "opportunity_ic_pooled": 0.5769,
       "opportunity_ic_daily": {
-        "mean_ic": 0.4761,
-        "ic_vol": 0.3341,
-        "ic_ir": 1.425,
-        "ic_ir_ann": 9.236,
-        "t_hac": null,
-        "p_hac": null,
-        "hit": 0.857,
-        "n": 7,
-        "hac_lags": 6,
+        "mean_ic": 0.4488,
+        "ic_vol": 0.2844,
+        "ic_ir": 1.578,
+        "ic_ir_ann": 10.228,
+        "t_hac": 8.271,
+        "p_hac": 0.0,
+        "hit": 0.9,
+        "n": 10,
+        "hac_lags": 9,
         "hac_lags_requested": 21
       },
-      "opportunity_ic": 0.4761,
-      "edge_ic_pooled": 0.5685,
+      "opportunity_ic": 0.4488,
+      "edge_ic_pooled": 0.5208,
       "by_stage": {
         "consensus": {
           "n": 7,
@@ -133,28 +145,34 @@
           "hit_rate": null
         },
         "distribution": {
-          "n": 36,
-          "mean_fwd_rel": -0.1201,
-          "hit_rate": 0.889
+          "n": 60,
+          "mean_fwd_rel": -0.0869,
+          "hit_rate": 0.833
         },
         "exhausted": {
-          "n": 9,
-          "mean_fwd_rel": -0.1108,
-          "hit_rate": 0.889
+          "n": 15,
+          "mean_fwd_rel": -0.0845,
+          "hit_rate": 0.867
         },
         "faltering": {
-          "n": 11,
-          "mean_fwd_rel": 0.0911,
+          "n": 12,
+          "mean_fwd_rel": 0.0918,
           "hit_rate": null
         },
         "early": {
-          "n": 78,
-          "mean_fwd_rel": 0.0342,
-          "hit_rate": 0.731
+          "n": 94,
+          "mean_fwd_rel": 0.0274,
+          "hit_rate": 0.67
         }
       },
       "by_source": {},
-      "by_regime": {}
+      "by_regime": {},
+      "coverage": {
+        "n_eligible": 1190,
+        "n_matured": 188,
+        "coverage_pct": 15.8,
+        "below_floor": true
+      }
     },
     "63": {
       "n_matured": 0,
@@ -166,19 +184,64 @@
       "edge_ic_pooled": null,
       "by_stage": {},
       "by_source": {},
-      "by_regime": {}
+      "by_regime": {},
+      "coverage": {
+        "n_eligible": 0,
+        "n_matured": 0,
+        "coverage_pct": null,
+        "below_floor": false
+      }
     }
   },
-  "lead_time_d": 10,
-  "peak_opportunity_ic": 0.3121,
+  "lead_time_d": 21,
+  "peak_opportunity_ic": 0.4488,
   "proven": {
     "5": false,
     "10": true,
-    "21": false,
+    "21": true,
     "63": false
   },
   "any_matured": true,
-  "note": "Opportunity IC peaks at the 10d horizon (measured). Context-only.",
+  "note": "Opportunity IC peaks at the 21d horizon (measured). Context-only.",
   "benchmark": "CSI300",
+  "accrual_gaps": {
+    "approximate": true,
+    "window_days": 30,
+    "n_expected": 21,
+    "n_present": 20,
+    "missing_dates": [
+      "2026-07-22"
+    ],
+    "n_missing": 1,
+    "note": "Expected dates are pandas business days \u2014 NYSE market holidays inside the window are counted as gaps, so this over-reports rather than under-reports.",
+    "first_snapshot": "2026-07-07",
+    "last_snapshot": "2026-08-10"
+  },
+  "coverage_pct": {
+    "5": {
+      "n_eligible": 2570,
+      "n_matured": 394,
+      "coverage_pct": 15.33,
+      "below_floor": true
+    },
+    "10": {
+      "n_eligible": 2122,
+      "n_matured": 329,
+      "coverage_pct": 15.5,
+      "below_floor": true
+    },
+    "21": {
+      "n_eligible": 1190,
+      "n_matured": 188,
+      "coverage_pct": 15.8,
+      "below_floor": true
+    },
+    "63": {
+      "n_eligible": 0,
+      "n_matured": 0,
+      "coverage_pct": null,
+      "below_floor": false
+    }
+  },
   "disclaimer": "An accountable scorecard of the hub's own claims \u2014 opportunity rank and lifecycle stage graded against realized CSI300-relative forward returns. Until a signal matures and clears a Newey-West significance bar it is 'measuring', never trusted. Nothing here sizes a position."
 }
