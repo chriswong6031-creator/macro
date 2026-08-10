@@ -567,6 +567,32 @@ def test_wire_filter_hidden_state_wins_over_card_layout() -> None:
     assert ".ew-card[hidden]{display:none!important}" in committed_css
 
 
+def test_wire_index_uses_a_contained_weekly_panel_and_ui_typography() -> None:
+    """The weekly bridge must have intentional edges and localized copy must stay UI text."""
+    repo = Path(__file__).resolve().parents[1]
+    source_css = (repo / "templates" / "earnings_wire" / "earnings-wire.css").read_text(
+        encoding="utf-8"
+    )
+    committed_css = (
+        repo / "site" / "stocks" / "earnings" / "assets" / "earnings-wire.css"
+    ).read_text(encoding="utf-8")
+    index = (repo / "templates" / "earnings_wire" / "earnings_wire_index.html.j2").read_text(
+        encoding="utf-8"
+    )
+
+    assert source_css == committed_css
+    assert ".ew-weekly-bridge{padding-block:20px;background:transparent}" in source_css
+    assert ".ew-weekly-bridge .ew-wrap{" in source_css
+    assert "border-radius:16px" in source_css
+    assert ".ew-weekly-bridge .ew-wrap::before{" in source_css
+    assert not re.search(r"\.ew-weekly-bridge\{[^}]*gradient", source_css)
+    assert index.count('class="ew-eyebrow"') >= 2
+    assert ".ew-section-head span" not in source_css
+    assert ".ew-protocol span" not in source_css
+    assert ".earnings-wire-index{--num:var(--ew-ui)}" in source_css
+    assert ".ew-tags span" in source_css and "font:700 9px var(--ew-ui)" in source_css
+
+
 def test_member_gate_never_flashes_at_a_signed_in_reader() -> None:
     """The gate must not paint while the entitlement answer is still in flight.
 

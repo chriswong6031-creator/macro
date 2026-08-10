@@ -72,7 +72,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 8 |
 | options-dislocation | 1 |
 | options-flow | 1 |
-| options-intelligence-program | 12 |
+| options-intelligence-program | 14 |
 | options-nw-entry-intelligence | 3 |
 | options-prophet-shadow | 1 |
 | oracle | 29 |
@@ -111,7 +111,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 368 |
-| infrastructure | 153 |
+| infrastructure | 155 |
 | scored | 4 |
 | shadow | 91 |
 
@@ -121,7 +121,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|
 | git | 579 |
 | git+r2 | 3 |
-| gitignored-local | 17 |
+| gitignored-local | 19 |
 | r2 | 17 |
 
 ## Artifacts by owner_program
@@ -875,6 +875,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | live-flow-dte-tide-dated | `live_flow/dte_tide/<DATE>.json` | json | intraday | display | 1 | 1 |
 | live-flow-surface-dated | `live_flow/surface/<ROOT>/<DATE>/idx.json` | json | intraday | display | 1 | 1 |
 | live-flow-tide-dated | `live_flow/tide/<DATE>.json` | json | intraday | display | 1 | 1 |
+| options-issue-desk-private-decisions | `runtime-private/options_issue_desk/decisions.jsonl` | jsonl | on-demand | infrastructure | 1 | 1 |
+| options-issue-desk-private-proposals | `runtime-private/options_issue_desk/proposals.jsonl` | jsonl | on-demand | infrastructure | 1 | 1 |
 | live-flow-event-stage-dated | `live_flow/events/<DATE>.jsonl` | jsonl | intraday | infrastructure | 1 | 0 |
 | options-session-ledger | `data/options_session/ledger.parquet` | parquet | daily-engine | display | 1 | 0 |
 | options-signal-episode-checkpoint | `data/options_signal_episode/checkpoint.json` | json | daily-engine | infrastructure | 1 | 0 |
@@ -972,9 +974,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| us-basket-turn | `site/basketdata/us_basket_turn.json` | json | daily-engine | display | 1 | 0 |
+| us-basket-turn | `site/basketdata/us_basket_turn.json` | json | daily-engine | display | 5 | 0 |
+| us-basket-turn-ledger | `data/us_basket_turn/ledger.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | us-track-history | `site/factordata/us_track_history.json` | json | daily-engine | display | 1 | 0 |
-| us-basket-turn-ledger | `data/us_basket_turn/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
 ### qualitative-intelligence
 
@@ -1062,7 +1064,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| baskets-membership | `data/baskets/membership.json` | json | weekly | infrastructure | 17 | 0 |
+| baskets-membership | `data/baskets/membership.json` | json | weekly | infrastructure | 18 | 0 |
 | site-baskets-json | `site/basketdata/baskets.json` | json | daily-engine | display | 9 | 1 |
 | site-sector-pulse | `site/basketdata/sector_pulse.json` | json | daily-engine | display | 3 | 2 |
 
@@ -1248,7 +1250,7 @@ flowchart LR
     C_engine_financial_news_py["engine/financial_news.py"]
     C_engine_froth_fragility_py["engine/froth_fragility.py"]
     C_engine_news_common_py["engine/news_common.py"]
-    OVF_baskets_membership["...+13 more"]
+    OVF_baskets_membership["...+14 more"]
     P_scripts_build_stock_library_py(("scripts/build_stock_library.py"))
     A_site_us_standouts["site-us-standouts"]
     C_engine_intelligence_py["engine/intelligence.py"]

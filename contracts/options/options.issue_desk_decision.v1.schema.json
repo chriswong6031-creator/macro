@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:mastermind:options:issue-desk-decision:v1",
+  "title": "Immutable Options Issue Desk decision v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "decision_id", "proposal_id", "proposal_revision", "action",
+    "previous_state", "next_state", "reviewer", "decision_at", "available_at",
+    "decision_session", "reason_codes", "idempotency_key", "request_sha256",
+    "proposal_sha256", "proposal_symbol", "capacity", "portfolio_state_before",
+    "portfolio_state_after", "issue_receipt", "event", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "options.issue_desk_decision/v1"},
+    "decision_id": {"type": "string", "pattern": "^oidd_[a-f0-9]{24}$"},
+    "proposal_id": {"type": "string", "pattern": "^oidp_[a-f0-9]{24}$"},
+    "proposal_revision": {"type": "integer", "minimum": 1},
+    "action": {"enum": ["approve", "reject"]},
+    "previous_state": {"const": "PENDING_REVIEW"},
+    "next_state": {"enum": ["ISSUED", "REJECTED"]},
+    "reviewer": {"type": "string", "minLength": 1, "maxLength": 128},
+    "decision_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "available_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "decision_session": {"type": "string", "format": "date"},
+    "reason_codes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "PORTFOLIO_FIT", "REGIME_ALIGNED", "EXECUTION_VERIFIED", "DIVERSIFICATION_FIT",
+          "ABSTAIN", "REGIME_MISMATCH", "CORRELATION_CAP", "COOLDOWN", "EVENT_RISK",
+          "EXECUTION_MISSING", "LIQUIDITY", "NO_EDGE"
+        ]
+      }
+    },
+    "idempotency_key": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{16,128}$"},
+    "request_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "proposal_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "proposal_symbol": {"type": "string", "pattern": "^[A-Z0-9._-]{1,16}$"},
+    "capacity": {"$ref": "#/$defs/capacity"},
+    "portfolio_state_before": {"$ref": "#/$defs/portfolioState"},
+    "portfolio_state_after": {"$ref": "#/$defs/portfolioState"},
+    "issue_receipt": {"oneOf": [{"$ref": "urn:mastermind:options:issue-receipt:v1"}, {"type": "null"}]},
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_type", "post_issue_mutation"],
+      "properties": {
+        "event_type": {"enum": ["ISSUED", "REJECTED"]},
+        "post_issue_mutation": {"const": false}
+      }
+    },
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"action": {"const": "approve"}}},
+      "then": {
+        "properties": {
+          "next_state": {"const": "ISSUED"},
+          "reason_codes": {
+            "items": {
+              "enum": ["PORTFOLIO_FIT", "REGIME_ALIGNED", "EXECUTION_VERIFIED", "DIVERSIFICATION_FIT"]
+            }
+          },
+          "issue_receipt": {"$ref": "urn:mastermind:options:issue-receipt:v1"},
+          "event": {"properties": {"event_type": {"const": "ISSUED"}}}
+        }
+      },
+      "else": {
+        "properties": {
+          "next_state": {"const": "REJECTED"},
+          "reason_codes": {
+            "items": {
+              "enum": ["ABSTAIN", "REGIME_MISMATCH", "CORRELATION_CAP", "COOLDOWN", "EVENT_RISK", "EXECUTION_MISSING", "LIQUIDITY", "NO_EDGE"]
+            }
+          },
+          "issue_receipt": {"type": "null"},
+          "event": {"properties": {"event_type": {"const": "REJECTED"}}}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["may_trade", "may_rank", "may_gate", "may_size", "may_automatic"],
+      "properties": {
+        "may_trade": {"const": false},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_automatic": {"const": false}
+      }
+    },
+    "capacity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_new_issues", "rolling_sessions", "issued_in_window", "remaining"],
+      "properties": {
+        "max_new_issues": {"const": 4},
+        "rolling_sessions": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {"type": "string", "format": "date"}
+        },
+        "issued_in_window": {"type": "integer", "minimum": 0, "maximum": 4},
+        "remaining": {"type": "integer", "minimum": 0, "maximum": 4}
+      }
+    },
+    "portfolioState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allocation_weight", "cash_weight", "active_position_count"],
+      "properties": {
+        "allocation_weight": {"type": "number", "minimum": 0, "maximum": 1},
+        "cash_weight": {"type": "number", "minimum": 0, "maximum": 1},
+        "active_position_count": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

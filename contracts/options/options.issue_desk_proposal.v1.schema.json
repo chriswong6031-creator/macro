@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:mastermind:options:issue-desk-proposal:v1",
+  "title": "Options Issue Desk folded proposal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "proposal_id", "proposal_revision", "state", "created_at",
+    "available_at", "assigned_reviewer", "source_rank", "macro_candidate",
+    "source", "context_receipts", "execution_readiness", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "options.issue_desk_proposal/v1"},
+    "proposal_id": {"type": "string", "pattern": "^oidp_[a-f0-9]{24}$"},
+    "proposal_revision": {"type": "integer", "minimum": 1},
+    "state": {"enum": ["PENDING_REVIEW", "ISSUED", "REJECTED"]},
+    "created_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "available_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "assigned_reviewer": {"type": "string", "minLength": 1, "maxLength": 128},
+    "source_rank": {"type": "integer", "minimum": 1, "maximum": 12},
+    "macro_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "asset", "direction", "entry", "trigger", "invalidation",
+        "targets", "option_contract", "entry_zone", "plan_asof", "recorded_at",
+        "phase", "closed", "horizon_days", "signal_date", "price_basis_date"
+      ],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "asset": {"type": "string", "pattern": "^[A-Z0-9._-]{1,16}$"},
+        "direction": {"const": "BULL"},
+        "entry": {"type": ["number", "null"]},
+        "trigger": {"type": ["number", "null"]},
+        "invalidation": {"type": ["number", "null"]},
+        "targets": {"type": ["array", "null"], "items": {"type": "number"}},
+        "option_contract": {"type": ["object", "array", "string", "null"]},
+        "entry_zone": {"type": ["object", "array", "string", "number", "null"]},
+        "plan_asof": {"type": ["string", "null"]},
+        "recorded_at": {"type": ["string", "null"]},
+        "phase": {"type": ["string", "null"]},
+        "closed": {"type": ["boolean", "null"]},
+        "horizon_days": {"type": ["integer", "null"], "minimum": 1},
+        "signal_date": {"type": ["string", "null"]},
+        "price_basis_date": {"type": ["string", "null"]}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "schema", "sha256", "as_of", "available_at", "available_at_status"],
+      "properties": {
+        "path": {"const": "site/prophet/index.json"},
+        "schema": {"const": "prophet.index/v1"},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "as_of": {"type": ["string", "null"]},
+        "available_at": {"type": "null"},
+        "available_at_status": {"const": "not_available_in_current_macro_contract"}
+      }
+    },
+    "context_receipts": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "allOf": [
+        {"contains": {"type": "object", "properties": {"kind": {"const": "options_shadow"}}, "required": ["kind"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"kind": {"const": "vol_regime"}}, "required": ["kind"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"kind": {"const": "gex_state"}}, "required": ["kind"]}, "minContains": 1, "maxContains": 1}
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "source", "authority", "evidence", "gap"],
+        "properties": {
+          "kind": {"enum": ["options_shadow", "vol_regime", "gex_state"]},
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "path", "status", "schema", "sha256", "as_of", "available_at"],
+            "properties": {
+              "kind": {"enum": ["options_shadow", "vol_regime", "gex_state"]},
+              "path": {"type": "string", "minLength": 1},
+              "status": {"enum": ["available", "missing", "unreadable", "root_not_object", "availability_missing", "availability_invalid", "future_unusable"]},
+              "schema": {"type": ["string", "null"]},
+              "sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+              "as_of": {"type": ["string", "null"]},
+              "available_at": {"type": ["string", "null"], "format": "date-time", "pattern": "Z$"}
+            }
+          },
+          "authority": {"enum": ["display_only", "display_context", "unknown"]},
+          "evidence": {"type": ["object", "null"]},
+          "gap": {"type": ["string", "null"]}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"kind": {"const": "options_shadow"}}},
+            "then": {"properties": {"authority": {"enum": ["display_only", "unknown"]}}},
+            "else": {"properties": {"authority": {"const": "display_context"}}}
+          },
+          {
+            "if": {"properties": {"kind": {"const": "options_shadow"}}, "required": ["kind"]},
+            "then": {
+              "properties": {"source": {"properties": {"kind": {"const": "options_shadow"}}}},
+              "allOf": [
+                {
+                  "if": {"properties": {"evidence": {"type": "object"}}, "required": ["evidence"]},
+                  "then": {
+                    "properties": {
+                      "evidence": {
+                        "required": ["symbol", "available_at"],
+                        "properties": {
+                          "symbol": {"type": "string", "pattern": "^[A-Z0-9._-]{1,16}$"},
+                          "available_at": {"type": "string", "format": "date-time", "pattern": "Z$"}
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "if": {"properties": {"kind": {"const": "vol_regime"}}, "required": ["kind"]},
+            "then": {"properties": {"source": {"properties": {"kind": {"const": "vol_regime"}}}}}
+          },
+          {
+            "if": {"properties": {"kind": {"const": "gex_state"}}, "required": ["kind"]},
+            "then": {"properties": {"source": {"properties": {"kind": {"const": "gex_state"}}}}}
+          },
+          {
+            "if": {
+              "properties": {
+                "source": {
+                  "properties": {"status": {"const": "available"}},
+                  "required": ["status"]
+                }
+              },
+              "required": ["source"]
+            },
+            "then": {
+              "properties": {
+                "source": {
+                  "properties": {
+                    "schema": {"type": "string", "minLength": 1},
+                    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+                    "available_at": {"type": "string", "format": "date-time", "pattern": "Z$"}
+                  }
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "source": {"properties": {"available_at": {"type": "null"}}},
+                "evidence": {"type": "null"},
+                "gap": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        ]
+      }
+    },
+    "execution_readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ready", "reason"],
+      "properties": {
+        "ready": {"const": false},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    },
+    "decision_id": {"type": "string", "pattern": "^oidd_[a-f0-9]{24}$"},
+    "decision_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"state": {"const": "PENDING_REVIEW"}}},
+      "then": {"not": {"anyOf": [{"required": ["decision_id"]}, {"required": ["decision_at"]}]}},
+      "else": {"required": ["decision_id", "decision_at"]}
+    }
+  ],
+  "$defs": {
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["may_trade", "may_rank", "may_gate", "may_size", "may_automatic"],
+      "properties": {
+        "may_trade": {"const": false},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_automatic": {"const": false}
+      }
+    }
+  }
+}
