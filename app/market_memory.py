@@ -20,10 +20,12 @@ from typing import Any
 import yaml
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from fastapi import Path as ApiPath
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 
-from engine.neuralweb import market_memory
+from engine.neuralweb import market_memory, market_memory_pit
 
 _DEFAULT_ROOT = Path(__file__).resolve().parent.parent
 _PRIVATE_HEADERS = {
@@ -76,6 +78,12 @@ class _PrivateMarketMemoryRoute(APIRoute):
         async def private_handler(request: Request) -> Response:
             try:
                 response = await original(request)
+            except RequestValidationError as exc:
+                return JSONResponse(
+                    {"detail": jsonable_encoder(exc.errors())},
+                    status_code=422,
+                    headers=_PRIVATE_HEADERS,
+                )
             except HTTPException as exc:
                 headers = dict(exc.headers or {})
                 headers.update(_PRIVATE_HEADERS)
@@ -110,8 +118,50 @@ def _repo_root() -> Path:
     return Path(os.environ.get("MACRO_REPO", str(_DEFAULT_ROOT))).resolve()
 
 
-def _response(payload: dict[str, Any], *, status_code: int = 200) -> JSONResponse:
-    return JSONResponse(payload, status_code=status_code, headers=_PRIVATE_HEADERS)
+def _response(
+    payload: dict[str, Any],
+    *,
+    status_code: int = 200,
+    headers: Mapping[str, str] | None = None,
+) -> JSONResponse:
+    private_headers = {**_PRIVATE_HEADERS, **dict(headers or {})}
+    return JSONResponse(payload, status_code=status_code, headers=private_headers)
+
+
+def _pit_reader() -> market_memory_pit.FileAsKnownAtReader:
+    root = market_memory_pit.default_store_root(_repo_root())
+    return market_memory_pit.FileAsKnownAtReader(root)
+
+
+def _stored_context_response(
+    stored: market_memory_pit.StoredMarketMemoryContext,
+) -> JSONResponse:
+    receipt = stored.capture_receipt
+    return _response(
+        stored.response_payload(),
+        headers={
+            "ETag": f'"{receipt["packet_sha256"]}"',
+            "X-Market-Memory-Capture-Id": receipt["capture_id"],
+            "X-Market-Memory-Query-Id": receipt["query_id"],
+        },
+    )
+
+
+def _exact_pit_query(request: Request) -> dict[str, str]:
+    expected = {
+        "subject_id",
+        "instrument_id",
+        "event_time",
+        "as_known_at",
+        "mode",
+    }
+    items = list(request.query_params.multi_items())
+    keys = [key for key, _value in items]
+    if set(keys) != expected or len(keys) != len(expected):
+        raise market_memory_pit.MarketMemoryQueryError(
+            "exact PIT query requires subject_id, instrument_id, event_time, as_known_at, and mode once each"
+        )
+    return {key: value for key, value in items}
 
 
 class _SymbolDataError(RuntimeError):
@@ -484,6 +534,86 @@ def _reset_symbol_rate_limit_for_tests() -> None:
         _symbol_negative_cache.clear()
     with _symbol_base_lock:
         _symbol_base_cache.clear()
+
+
+@router.get("/as-known-at")
+def as_known_at(
+    request: Request,
+    _user: dict = Depends(require_site_full_user),  # noqa: B008 - FastAPI injection
+) -> JSONResponse:
+    """Read one exact, previously captured operational PIT packet.
+
+    W1A deliberately has no nearest-date, latest-state, reconstruction, or
+    on-request materialization fallback.  Missing exact captures return 404.
+    """
+
+    if not _allow_symbol_request(request, _user):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many Market Memory context requests. Please retry shortly.",
+            headers={"Retry-After": str(int(_SYMBOL_RATE_WINDOW_SECONDS))},
+        )
+    try:
+        params = _exact_pit_query(request)
+        reader = _pit_reader()
+        if params["mode"] != reader.mode:
+            raise market_memory_pit.MarketMemoryQueryError(
+                "W1A supports operational_pit mode only"
+            )
+        stored = reader.read_stored_as_known_at(
+            subject={
+                "subject_id": params["subject_id"],
+                "instrument_id": params["instrument_id"],
+            },
+            event_time=params["event_time"],
+            as_known_at=params["as_known_at"],
+        )
+    except market_memory_pit.MarketMemoryQueryError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except market_memory_pit.MarketMemoryContextNotFound as exc:
+        raise HTTPException(
+            status_code=404,
+            detail="No exact Market Memory operational capture exists.",
+        ) from exc
+    except market_memory_pit.MarketMemoryStoreError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Market Memory PIT storage is temporarily unavailable.",
+            headers={"Retry-After": str(_SYMBOL_FETCH_BUSY_RETRY_SECONDS)},
+        ) from exc
+    return _stored_context_response(stored)
+
+
+@router.get("/context/{context_id}")
+def context_by_id(
+    request: Request,
+    context_id: str,
+    _user: dict = Depends(require_site_full_user),  # noqa: B008 - FastAPI injection
+) -> JSONResponse:
+    """Read one published immutable capture by its W0 context identifier."""
+
+    if not _allow_symbol_request(request, _user):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many Market Memory context requests. Please retry shortly.",
+            headers={"Retry-After": str(int(_SYMBOL_RATE_WINDOW_SECONDS))},
+        )
+    try:
+        stored = _pit_reader().read_stored_context_id(context_id)
+    except market_memory_pit.MarketMemoryQueryError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except market_memory_pit.MarketMemoryContextNotFound as exc:
+        raise HTTPException(
+            status_code=404,
+            detail="No published Market Memory context exists for this identifier.",
+        ) from exc
+    except market_memory_pit.MarketMemoryStoreError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Market Memory PIT storage is temporarily unavailable.",
+            headers={"Retry-After": str(_SYMBOL_FETCH_BUSY_RETRY_SECONDS)},
+        ) from exc
+    return _stored_context_response(stored)
 
 
 @router.get("/macro")

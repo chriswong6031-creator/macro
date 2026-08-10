@@ -1,0 +1,1848 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/as_known_at.v1.schema.json",
+  "title": "Market Memory As-Known-At Context v1",
+  "description": "Strict structural schema for the immutable, label-free market_memory.as_known_at.v1 packet. Cross-record clock ordering, content hashes, registry dependencies, derived quality, identity binding, and context-id recomputation remain enforced by engine.neuralweb.market_memory.validate_as_known_at_context.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "context_id",
+    "mode",
+    "feature_registry_version",
+    "source_registry_version",
+    "subject",
+    "clocks",
+    "identity_receipt",
+    "state_snapshot_ref",
+    "source_receipts",
+    "feature_receipts",
+    "required_domains",
+    "domain_coverage",
+    "availability_policy",
+    "label_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.as_known_at.v1"},
+    "context_id": {"$ref": "#/$defs/contextId"},
+    "mode": {"enum": ["operational_pit", "public_reconstruction"]},
+    "feature_registry_version": {
+      "const": "market_memory.feature_registry.2026-08-09.v1"
+    },
+    "source_registry_version": {
+      "const": "market_memory.source_registry.2026-08-09.v1"
+    },
+    "subject": {"$ref": "#/$defs/subject"},
+    "clocks": {"$ref": "#/$defs/clocks"},
+    "identity_receipt": {"$ref": "#/$defs/identityReceipt"},
+    "state_snapshot_ref": {"type": "null"},
+    "source_receipts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sourceReceipt"}
+    },
+    "feature_receipts": {
+      "type": "array",
+      "minItems": 18,
+      "maxItems": 18,
+      "prefixItems": [
+        {"$ref": "#/$defs/featureAltData"},
+        {"$ref": "#/$defs/featureBreadthFactors"},
+        {"$ref": "#/$defs/featureDarkPool"},
+        {"$ref": "#/$defs/featureEarnings"},
+        {"$ref": "#/$defs/featureFundamentals"},
+        {"$ref": "#/$defs/featureIntradayMicrostructure"},
+        {"$ref": "#/$defs/featureMacroRegime"},
+        {"$ref": "#/$defs/featureNewsNarrative"},
+        {"$ref": "#/$defs/featureOptionsChainSurface"},
+        {"$ref": "#/$defs/featureOptionsFlowCampaign"},
+        {"$ref": "#/$defs/featureOptionsGexVolatility"},
+        {"$ref": "#/$defs/featureOptionsOpenInterest"},
+        {"$ref": "#/$defs/featurePositioningFlows"},
+        {"$ref": "#/$defs/featurePriceReturn20d"},
+        {"$ref": "#/$defs/featureProphetContext"},
+        {"$ref": "#/$defs/featureRatesCredit"},
+        {"$ref": "#/$defs/featureSystemHealth"},
+        {"$ref": "#/$defs/featureTechnicals"}
+      ],
+      "items": false
+    },
+    "required_domains": {
+      "type": "array",
+      "minItems": 14,
+      "maxItems": 14,
+      "prefixItems": [
+        {"const": "macro"},
+        {"const": "rates_credit"},
+        {"const": "breadth_factors"},
+        {"const": "technicals"},
+        {"const": "options"},
+        {"const": "positioning_flows"},
+        {"const": "dark_pool"},
+        {"const": "intraday_microstructure"},
+        {"const": "fundamentals"},
+        {"const": "earnings"},
+        {"const": "news_narrative"},
+        {"const": "alt_data"},
+        {"const": "prophet_context"},
+        {"const": "system_health"}
+      ],
+      "items": false
+    },
+    "domain_coverage": {
+      "type": "array",
+      "minItems": 14,
+      "maxItems": 14,
+      "prefixItems": [
+        {"$ref": "#/$defs/coverageMacro"},
+        {"$ref": "#/$defs/coverageRatesCredit"},
+        {"$ref": "#/$defs/coverageBreadthFactors"},
+        {"$ref": "#/$defs/coverageTechnicals"},
+        {"$ref": "#/$defs/coverageOptions"},
+        {"$ref": "#/$defs/coveragePositioningFlows"},
+        {"$ref": "#/$defs/coverageDarkPool"},
+        {"$ref": "#/$defs/coverageIntradayMicrostructure"},
+        {"$ref": "#/$defs/coverageFundamentals"},
+        {"$ref": "#/$defs/coverageEarnings"},
+        {"$ref": "#/$defs/coverageNewsNarrative"},
+        {"$ref": "#/$defs/coverageAltData"},
+        {"$ref": "#/$defs/coverageProphetContext"},
+        {"$ref": "#/$defs/coverageSystemHealth"}
+      ],
+      "items": false
+    },
+    "availability_policy": {"$ref": "#/$defs/availabilityPolicy"},
+    "label_policy": {"$ref": "#/$defs/labelPolicy"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"mode": {"const": "operational_pit"}},
+        "required": ["mode"]
+      },
+      "then": {
+        "properties": {
+          "source_receipts": {
+            "items": {
+              "properties": {
+                "pit_basis": {"enum": ["live_captured", "source_vintage"]}
+              }
+            }
+          },
+          "identity_receipt": {
+            "properties": {
+              "pit_basis": {"enum": ["live_captured", "source_vintage"]}
+            }
+          },
+          "feature_receipts": {
+            "items": {
+              "if": {
+                "properties": {"status": {"const": "observed"}},
+                "required": ["status"]
+              },
+              "then": {
+                "properties": {
+                  "pit_basis": {"enum": ["live_captured", "source_vintage"]}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "maxLength": 27,
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"
+    },
+    "sha256": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "contextId": {
+      "type": "string",
+      "minLength": 70,
+      "maxLength": 70,
+      "pattern": "^mmctx_[a-f0-9]{64}$"
+    },
+    "sourceReceiptId": {
+      "type": "string",
+      "minLength": 70,
+      "maxLength": 70,
+      "pattern": "^mmsrc_[a-f0-9]{64}$"
+    },
+    "identityReceiptId": {
+      "type": "string",
+      "minLength": 75,
+      "maxLength": 75,
+      "pattern": "^mmidentity_[a-f0-9]{64}$"
+    },
+    "securityId": {
+      "type": "string",
+      "minLength": 75,
+      "maxLength": 75,
+      "pattern": "^mmsecurity_[a-f0-9]{64}$"
+    },
+    "identityVersionId": {
+      "type": "string",
+      "minLength": 76,
+      "maxLength": 76,
+      "pattern": "^mmidentityv_[a-f0-9]{64}$"
+    },
+    "universeId": {
+      "type": "string",
+      "minLength": 75,
+      "maxLength": 75,
+      "pattern": "^mmuniverse_[a-f0-9]{64}$"
+    },
+    "calendarId": {
+      "type": "string",
+      "minLength": 75,
+      "maxLength": 75,
+      "pattern": "^mmcalendar_[a-f0-9]{64}$"
+    },
+    "vintageId": {
+      "type": "string",
+      "minLength": 68,
+      "maxLength": 68,
+      "pattern": "^mmv_[a-f0-9]{64}$"
+    },
+    "revisionId": {
+      "type": "string",
+      "minLength": 68,
+      "maxLength": 68,
+      "pattern": "^mmr_[a-f0-9]{64}$"
+    },
+    "snapshotId": {
+      "type": "string",
+      "minLength": 71,
+      "maxLength": 71,
+      "pattern": "^mmsnap_[a-f0-9]{64}$"
+    },
+    "pitBasis": {
+      "enum": [
+        "live_captured",
+        "source_vintage",
+        "public_reconstructed",
+        "recomputed_history",
+        "current_snapshot_backfill",
+        "unknown"
+      ]
+    },
+    "observedPitBasis": {
+      "enum": [
+        "live_captured",
+        "source_vintage",
+        "public_reconstructed",
+        "recomputed_history",
+        "current_snapshot_backfill"
+      ]
+    },
+    "domain": {
+      "enum": [
+        "macro",
+        "rates_credit",
+        "breadth_factors",
+        "technicals",
+        "options",
+        "positioning_flows",
+        "dark_pool",
+        "intraday_microstructure",
+        "fundamentals",
+        "earnings",
+        "news_narrative",
+        "alt_data",
+        "prophet_context",
+        "system_health"
+      ]
+    },
+    "qualityFlag": {
+      "enum": [
+        "identity_gap",
+        "imputed_value",
+        "late_arrival",
+        "not_captured",
+        "partial_coverage",
+        "provider_degraded",
+        "source_gap",
+        "vendor_gap"
+      ]
+    },
+    "qualityFlags": {
+      "type": "array",
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/qualityFlag"}
+    },
+    "observedQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "flags", "staleness_seconds", "imputed"],
+      "properties": {
+        "status": {"enum": ["ok", "degraded"]},
+        "flags": {"$ref": "#/$defs/qualityFlags"},
+        "staleness_seconds": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "imputed": {"type": "boolean"}
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "status": {"const": "ok"},
+            "flags": {"maxItems": 0},
+            "staleness_seconds": {"type": "number", "minimum": 0},
+            "imputed": {"const": false}
+          }
+        },
+        {
+          "properties": {
+            "status": {"const": "degraded"},
+            "flags": {"minItems": 1}
+          }
+        }
+      ]
+    },
+    "missingQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "flags", "staleness_seconds", "imputed"],
+      "properties": {
+        "status": {"const": "missing"},
+        "flags": {"$ref": "#/$defs/qualityFlags"},
+        "staleness_seconds": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "imputed": {"const": false}
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_id", "instrument_id"],
+      "properties": {
+        "subject_id": {"$ref": "#/$defs/securityId"},
+        "instrument_id": {"$ref": "#/$defs/securityId"}
+      }
+    },
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_time", "as_known_at", "knowledge_cutoff"],
+      "properties": {
+        "event_time": {"$ref": "#/$defs/timestamp"},
+        "as_known_at": {"$ref": "#/$defs/timestamp"},
+        "knowledge_cutoff": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+    "membershipBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "subject_id",
+        "instrument_id",
+        "identity_version",
+        "universe_id",
+        "membership_status",
+        "content_sha256"
+      ],
+      "properties": {
+        "schema": {"const": "market_memory.security_membership_binding.v1"},
+        "subject_id": {"$ref": "#/$defs/securityId"},
+        "instrument_id": {"$ref": "#/$defs/securityId"},
+        "identity_version": {"$ref": "#/$defs/identityVersionId"},
+        "universe_id": {"$ref": "#/$defs/universeId"},
+        "membership_status": {
+          "enum": ["member", "not_member", "market_scope"]
+        },
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "calendarBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "calendar_id", "market_session", "content_sha256"],
+      "properties": {
+        "schema": {"const": "market_memory.market_calendar_binding.v1"},
+        "calendar_id": {"$ref": "#/$defs/calendarId"},
+        "market_session": {
+          "enum": ["GLOBAL_24H", "US_EXTENDED", "US_REGULAR", "XNYS_REGULAR"]
+        },
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "sourceReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt_id",
+        "source_id",
+        "source_role",
+        "source_schema",
+        "artifact_sha256",
+        "event_time",
+        "measurement_end",
+        "available_at",
+        "observed_at",
+        "vintage_id",
+        "revision_id",
+        "pit_basis",
+        "availability_class",
+        "availability_rule",
+        "market_session",
+        "valid_from",
+        "valid_through",
+        "identity_binding",
+        "quality",
+        "age_at_cutoff_seconds"
+      ],
+      "properties": {
+        "receipt_id": {"$ref": "#/$defs/sourceReceiptId"},
+        "source_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "source_role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "source_schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "event_time": {"$ref": "#/$defs/timestamp"},
+        "measurement_end": {"$ref": "#/$defs/timestamp"},
+        "available_at": {"$ref": "#/$defs/timestamp"},
+        "observed_at": {"$ref": "#/$defs/timestamp"},
+        "vintage_id": {"$ref": "#/$defs/vintageId"},
+        "revision_id": {"$ref": "#/$defs/revisionId"},
+        "pit_basis": {"$ref": "#/$defs/observedPitBasis"},
+        "availability_class": {
+          "enum": [
+            "intraday",
+            "session_close",
+            "eod_vendor_snapshot",
+            "open_interest_eod",
+            "scheduled_release",
+            "filing",
+            "news_publication",
+            "revision",
+            "reconstructed_snapshot"
+          ]
+        },
+        "availability_rule": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "market_session": {
+          "enum": ["GLOBAL_24H", "US_EXTENDED", "US_REGULAR", "XNYS_REGULAR"]
+        },
+        "valid_from": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/timestamp"}]
+        },
+        "valid_through": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/timestamp"}]
+        },
+        "identity_binding": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/membershipBinding"},
+            {"$ref": "#/$defs/calendarBinding"}
+          ]
+        },
+        "quality": {"$ref": "#/$defs/observedQuality"},
+        "age_at_cutoff_seconds": {"type": "number", "minimum": 0}
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "valid_from": {"type": "null"},
+                "valid_through": {"type": "null"}
+              }
+            },
+            {
+              "properties": {
+                "valid_from": {"$ref": "#/$defs/timestamp"},
+                "valid_through": {"$ref": "#/$defs/timestamp"}
+              }
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "source_id": {"const": "licensed_ohlcv"},
+                "source_role": {"const": "market_price"},
+                "source_schema": {"const": "market_memory.source.ohlcv.v1"},
+                "availability_class": {
+                  "enum": ["session_close", "eod_vendor_snapshot", "reconstructed_snapshot"]
+                },
+                "availability_rule": {"const": "session_close_or_vendor_receipt.v1"},
+                "identity_binding": {"type": "null"}
+              }
+            },
+            {
+              "properties": {
+                "source_id": {"const": "security_master_membership"},
+                "source_role": {"const": "security_identity_membership"},
+                "source_schema": {"const": "market_memory.source.security_membership.v1"},
+                "availability_class": {
+                  "enum": ["session_close", "scheduled_release", "revision"]
+                },
+                "availability_rule": {"const": "membership_publication_receipt.v1"},
+                "valid_from": {"$ref": "#/$defs/timestamp"},
+                "valid_through": {"$ref": "#/$defs/timestamp"},
+                "identity_binding": {"$ref": "#/$defs/membershipBinding"}
+              }
+            },
+            {
+              "properties": {
+                "source_id": {"const": "market_calendar"},
+                "source_role": {"const": "market_calendar"},
+                "source_schema": {"const": "market_memory.source.market_calendar.v1"},
+                "availability_class": {"enum": ["scheduled_release", "revision"]},
+                "availability_rule": {"const": "calendar_publication_receipt.v1"},
+                "valid_from": {"$ref": "#/$defs/timestamp"},
+                "valid_through": {"$ref": "#/$defs/timestamp"},
+                "identity_binding": {"$ref": "#/$defs/calendarBinding"}
+              }
+            },
+            {
+              "$ref": "#/$defs/sourceMarketRegime"
+            },
+            {
+              "$ref": "#/$defs/sourceRatesCredit"
+            },
+            {
+              "$ref": "#/$defs/sourceBreadthFactors"
+            },
+            {
+              "$ref": "#/$defs/sourceTechnicals"
+            },
+            {
+              "$ref": "#/$defs/sourceOptionsChainSurface"
+            },
+            {
+              "properties": {
+                "source_id": {"const": "licensed_options_oi"},
+                "source_role": {"const": "options_open_interest_eod"},
+                "source_schema": {"const": "market_memory.source.options_open_interest_eod.v1"},
+                "availability_class": {"const": "open_interest_eod"},
+                "availability_rule": {"const": "open_interest_eod_release_or_ingest_receipt.v1"},
+                "identity_binding": {"type": "null"}
+              }
+            },
+            {
+              "$ref": "#/$defs/sourceOptionsFlowCampaign"
+            },
+            {
+              "$ref": "#/$defs/sourceOptionsGexVolatility"
+            },
+            {
+              "$ref": "#/$defs/sourcePositioningFlows"
+            },
+            {
+              "$ref": "#/$defs/sourceDarkPool"
+            },
+            {
+              "$ref": "#/$defs/sourceIntradayMicrostructure"
+            },
+            {
+              "$ref": "#/$defs/sourceFundamentals"
+            },
+            {
+              "$ref": "#/$defs/sourceEarnings"
+            },
+            {
+              "$ref": "#/$defs/sourceNewsNarrative"
+            },
+            {
+              "$ref": "#/$defs/sourceAltData"
+            },
+            {
+              "$ref": "#/$defs/sourceProphetContext"
+            },
+            {
+              "$ref": "#/$defs/sourceSystemHealth"
+            }
+          ]
+        }
+      ]
+    },
+    "registeredSourceBase": {
+      "type": "object",
+      "properties": {
+        "availability_rule": {"const": "registered_adapter_receipt.v1"},
+        "identity_binding": {"type": "null"}
+      }
+    },
+    "sourceMarketRegime": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "market_regime_store"},
+            "source_role": {"const": "macro_regime"},
+            "source_schema": {"const": "market_memory.source.macro_regime.v1"},
+            "availability_class": {
+              "enum": ["intraday", "session_close", "scheduled_release", "revision"]
+            }
+          }
+        }
+      ]
+    },
+    "sourceRatesCredit": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "rates_credit_store"},
+            "source_role": {"const": "rates_credit"},
+            "source_schema": {"const": "market_memory.source.rates_credit.v1"},
+            "availability_class": {
+              "enum": ["intraday", "session_close", "scheduled_release", "revision"]
+            }
+          }
+        }
+      ]
+    },
+    "sourceBreadthFactors": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "breadth_factors_store"},
+            "source_role": {"const": "breadth_factors"},
+            "source_schema": {"const": "market_memory.source.breadth_factors.v1"},
+            "availability_class": {
+              "enum": ["intraday", "session_close", "eod_vendor_snapshot"]
+            }
+          }
+        }
+      ]
+    },
+    "sourceTechnicals": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "technicals_store"},
+            "source_role": {"const": "technicals"},
+            "source_schema": {"const": "market_memory.source.technicals.v1"},
+            "availability_class": {
+              "enum": ["intraday", "session_close", "eod_vendor_snapshot"]
+            }
+          }
+        }
+      ]
+    },
+    "sourceOptionsChainSurface": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "options_chain_surface_store"},
+            "source_role": {"const": "options_chain_surface"},
+            "source_schema": {"const": "market_memory.source.options_chain_surface.v1"},
+            "availability_class": {"enum": ["intraday", "eod_vendor_snapshot"]}
+          }
+        }
+      ]
+    },
+    "sourceOptionsFlowCampaign": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "options_flow_campaign_store"},
+            "source_role": {"const": "options_flow_campaign"},
+            "source_schema": {"const": "market_memory.source.options_flow_campaign.v1"},
+            "availability_class": {"enum": ["intraday", "eod_vendor_snapshot"]}
+          }
+        }
+      ]
+    },
+    "sourceOptionsGexVolatility": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "options_gex_volatility_store"},
+            "source_role": {"const": "options_gex_volatility"},
+            "source_schema": {"const": "market_memory.source.options_gex_volatility.v1"},
+            "availability_class": {"enum": ["intraday", "eod_vendor_snapshot"]}
+          }
+        }
+      ]
+    },
+    "sourcePositioningFlows": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "positioning_flows_store"},
+            "source_role": {"const": "positioning_flows"},
+            "source_schema": {"const": "market_memory.source.positioning_flows.v1"},
+            "availability_class": {
+              "enum": ["intraday", "session_close", "eod_vendor_snapshot"]
+            }
+          }
+        }
+      ]
+    },
+    "sourceDarkPool": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "dark_pool_store"},
+            "source_role": {"const": "dark_pool"},
+            "source_schema": {"const": "market_memory.source.dark_pool.v1"},
+            "availability_class": {"enum": ["intraday", "eod_vendor_snapshot"]}
+          }
+        }
+      ]
+    },
+    "sourceIntradayMicrostructure": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "intraday_microstructure_store"},
+            "source_role": {"const": "intraday_microstructure"},
+            "source_schema": {"const": "market_memory.source.intraday_microstructure.v1"},
+            "availability_class": {"enum": ["intraday", "session_close"]}
+          }
+        }
+      ]
+    },
+    "sourceFundamentals": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "fundamentals_pit_store"},
+            "source_role": {"const": "fundamentals"},
+            "source_schema": {"const": "market_memory.source.fundamentals.v1"},
+            "availability_class": {"enum": ["filing", "revision"]}
+          }
+        }
+      ]
+    },
+    "sourceEarnings": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "earnings_pit_store"},
+            "source_role": {"const": "earnings"},
+            "source_schema": {"const": "market_memory.source.earnings.v1"},
+            "availability_class": {
+              "enum": ["scheduled_release", "news_publication", "revision"]
+            }
+          }
+        }
+      ]
+    },
+    "sourceNewsNarrative": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "news_narrative_store"},
+            "source_role": {"const": "news_narrative"},
+            "source_schema": {"const": "market_memory.source.news_narrative.v1"},
+            "availability_class": {"const": "news_publication"}
+          }
+        }
+      ]
+    },
+    "sourceAltData": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "alt_data_pit_store"},
+            "source_role": {"const": "alt_data"},
+            "source_schema": {"const": "market_memory.source.alt_data.v1"},
+            "availability_class": {"enum": ["intraday", "eod_vendor_snapshot", "revision"]}
+          }
+        }
+      ]
+    },
+    "sourceProphetContext": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "prophet_context_store"},
+            "source_role": {"const": "prophet_context"},
+            "source_schema": {"const": "market_memory.source.prophet_context.v1"},
+            "availability_class": {"enum": ["intraday", "session_close"]}
+          }
+        }
+      ]
+    },
+    "sourceSystemHealth": {
+      "allOf": [
+        {"$ref": "#/$defs/registeredSourceBase"},
+        {
+          "properties": {
+            "source_id": {"const": "system_health_store"},
+            "source_role": {"const": "system_health"},
+            "source_schema": {"const": "market_memory.source.system_health.v1"},
+            "availability_class": {"enum": ["intraday", "session_close"]}
+          }
+        }
+      ]
+    },
+    "identityReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt_id",
+        "subject_id",
+        "instrument_id",
+        "identity_version",
+        "universe_id",
+        "membership_vintage_id",
+        "membership_revision_id",
+        "membership_source_receipt_id",
+        "membership_valid_from",
+        "membership_valid_through",
+        "calendar_id",
+        "calendar_version",
+        "calendar_revision_id",
+        "calendar_source_receipt_id",
+        "calendar_valid_from",
+        "calendar_valid_through",
+        "membership_status",
+        "effective_at",
+        "available_at",
+        "observed_at",
+        "pit_basis",
+        "source_receipt_ids",
+        "quality"
+      ],
+      "properties": {
+        "receipt_id": {"$ref": "#/$defs/identityReceiptId"},
+        "subject_id": {"$ref": "#/$defs/securityId"},
+        "instrument_id": {"$ref": "#/$defs/securityId"},
+        "identity_version": {"$ref": "#/$defs/identityVersionId"},
+        "universe_id": {"$ref": "#/$defs/universeId"},
+        "membership_vintage_id": {"$ref": "#/$defs/vintageId"},
+        "membership_revision_id": {"$ref": "#/$defs/revisionId"},
+        "membership_source_receipt_id": {"$ref": "#/$defs/sourceReceiptId"},
+        "membership_valid_from": {"$ref": "#/$defs/timestamp"},
+        "membership_valid_through": {"$ref": "#/$defs/timestamp"},
+        "calendar_id": {"$ref": "#/$defs/calendarId"},
+        "calendar_version": {"$ref": "#/$defs/vintageId"},
+        "calendar_revision_id": {"$ref": "#/$defs/revisionId"},
+        "calendar_source_receipt_id": {"$ref": "#/$defs/sourceReceiptId"},
+        "calendar_valid_from": {"$ref": "#/$defs/timestamp"},
+        "calendar_valid_through": {"$ref": "#/$defs/timestamp"},
+        "membership_status": {"enum": ["member", "not_member", "market_scope"]},
+        "effective_at": {"$ref": "#/$defs/timestamp"},
+        "available_at": {"$ref": "#/$defs/timestamp"},
+        "observed_at": {"$ref": "#/$defs/timestamp"},
+        "pit_basis": {"$ref": "#/$defs/observedPitBasis"},
+        "source_receipt_ids": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sourceReceiptId"}
+        },
+        "quality": {"$ref": "#/$defs/observedQuality"}
+      }
+    },
+    "snapshotReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot_id", "schema", "content_sha256", "as_of"],
+      "properties": {
+        "snapshot_id": {"$ref": "#/$defs/snapshotId"},
+        "schema": {"type": "string", "minLength": 1, "maxLength": 240},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "as_of": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+    "missingReason": {
+      "enum": [
+        "adapter_not_implemented",
+        "no_point_in_time_vintage",
+        "not_applicable",
+        "outside_source_coverage",
+        "source_unavailable_at_cutoff",
+        "upstream_gap"
+      ]
+    },
+    "featureReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature_id",
+        "feature_role",
+        "domain",
+        "status",
+        "value",
+        "unit",
+        "observed_at",
+        "pit_basis",
+        "transform_version",
+        "source_receipt_ids",
+        "missing_reason",
+        "quality"
+      ],
+      "properties": {
+        "feature_id": {
+          "enum": [
+            "macro.regime_state",
+            "rates_credit.curve_state",
+            "breadth_factors.market_state",
+            "technicals.point_in_time_state",
+            "price.ret_20d",
+            "options.chain_surface_state",
+            "options.open_interest_eod_state",
+            "options.flow_campaign_state",
+            "options.gex_volatility_state",
+            "positioning_flows.aggregate_state",
+            "dark_pool.aggregate_state",
+            "intraday_microstructure.aggregate_state",
+            "fundamentals.point_in_time_state",
+            "earnings.point_in_time_state",
+            "news_narrative.publication_state",
+            "alt_data.point_in_time_state",
+            "prophet_context.signal_state",
+            "system_health.capture_state"
+          ]
+        },
+        "feature_role": {"const": "decision_time_context"},
+        "domain": {"$ref": "#/$defs/domain"},
+        "status": {"enum": ["observed", "missing"]},
+        "value": {},
+        "unit": {"enum": ["snapshot_ref", "decimal_return"]},
+        "observed_at": {"$ref": "#/$defs/timestamp"},
+        "pit_basis": {"$ref": "#/$defs/pitBasis"},
+        "transform_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "source_receipt_ids": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sourceReceiptId"}
+        },
+        "missing_reason": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/missingReason"}]
+        },
+        "quality": {}
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "status": {"const": "missing"},
+            "value": {"type": "null"},
+            "pit_basis": {"const": "unknown"},
+            "transform_version": {"const": "market_memory.missing.v1"},
+            "source_receipt_ids": {"maxItems": 0},
+            "missing_reason": {"$ref": "#/$defs/missingReason"},
+            "quality": {"$ref": "#/$defs/missingQuality"}
+          }
+        },
+        {
+          "properties": {
+            "status": {"const": "observed"},
+            "pit_basis": {"$ref": "#/$defs/observedPitBasis"},
+            "source_receipt_ids": {"minItems": 1},
+            "missing_reason": {"type": "null"},
+            "quality": {"$ref": "#/$defs/observedQuality"}
+          }
+        }
+      ]
+    },
+    "featureAltData": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "alt_data.point_in_time_state"},
+        "domain": {"const": "alt_data"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [
+        {
+          "$ref": "#/$defs/observedSnapshotAltData"
+        }
+      ]
+    },
+    "featureBreadthFactors": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "breadth_factors.market_state"},
+        "domain": {"const": "breadth_factors"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotBreadthFactors"}]
+    },
+    "featureDarkPool": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "dark_pool.aggregate_state"},
+        "domain": {"const": "dark_pool"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotDarkPool"}]
+    },
+    "featureEarnings": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "earnings.point_in_time_state"},
+        "domain": {"const": "earnings"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotEarnings"}]
+    },
+    "featureFundamentals": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "fundamentals.point_in_time_state"},
+        "domain": {"const": "fundamentals"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotFundamentals"}]
+    },
+    "featureIntradayMicrostructure": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "intraday_microstructure.aggregate_state"},
+        "domain": {"const": "intraday_microstructure"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotIntradayMicrostructure"}]
+    },
+    "featureMacroRegime": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "macro.regime_state"},
+        "domain": {"const": "macro"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotMacroRegime"}]
+    },
+    "featureNewsNarrative": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "news_narrative.publication_state"},
+        "domain": {"const": "news_narrative"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotNewsNarrative"}]
+    },
+    "featureOptionsChainSurface": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "options.chain_surface_state"},
+        "domain": {"const": "options"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotOptionsChainSurface"}]
+    },
+    "featureOptionsFlowCampaign": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "options.flow_campaign_state"},
+        "domain": {"const": "options"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotOptionsFlowCampaign"}]
+    },
+    "featureOptionsGexVolatility": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "options.gex_volatility_state"},
+        "domain": {"const": "options"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotOptionsGexVolatility"}]
+    },
+    "featureOptionsOpenInterest": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "options.open_interest_eod_state"},
+        "domain": {"const": "options"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotOptionsOpenInterest"}]
+    },
+    "featurePositioningFlows": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "positioning_flows.aggregate_state"},
+        "domain": {"const": "positioning_flows"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotPositioningFlows"}]
+    },
+    "featurePriceReturn20d": {
+      "$ref": "#/$defs/featureReceipt",
+      "properties": {
+        "feature_id": {"const": "price.ret_20d"},
+        "domain": {"const": "technicals"},
+        "unit": {"const": "decimal_return"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"status": {"const": "observed"}},
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.return_20d_transform.v1"},
+              "value": {"type": "number", "minimum": -1, "maximum": 100}
+            }
+          }
+        }
+      ]
+    },
+    "featureProphetContext": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "prophet_context.signal_state"},
+        "domain": {"const": "prophet_context"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotProphetContext"}]
+    },
+    "featureRatesCredit": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "rates_credit.curve_state"},
+        "domain": {"const": "rates_credit"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotRatesCredit"}]
+    },
+    "featureSystemHealth": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "system_health.capture_state"},
+        "domain": {"const": "system_health"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotSystemHealth"}]
+    },
+    "featureTechnicals": {
+      "$ref": "#/$defs/snapshotFeature",
+      "properties": {
+        "feature_id": {"const": "technicals.point_in_time_state"},
+        "domain": {"const": "technicals"},
+        "unit": {"const": "snapshot_ref"}
+      },
+      "allOf": [{"$ref": "#/$defs/observedSnapshotTechnicals"}]
+    },
+    "snapshotFeature": {
+      "$ref": "#/$defs/featureReceipt"
+    },
+    "observedSnapshotAltData": {
+      "$ref": "#/$defs/observedSnapshotConstraint",
+      "$comment": "market_memory.alt_data_snapshot.v1 / market_memory.alt_data_transform.v1",
+      "properties": {},
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.alt_data_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.alt_data_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotBreadthFactors": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.breadth_factors_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.breadth_factors_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotDarkPool": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.dark_pool_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.dark_pool_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotEarnings": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.earnings_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.earnings_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotFundamentals": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.fundamentals_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.fundamentals_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotIntradayMicrostructure": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.intraday_microstructure_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.intraday_microstructure_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotMacroRegime": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.macro_regime_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.macro_regime_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotNewsNarrative": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.news_narrative_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.news_narrative_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotOptionsChainSurface": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.options_chain_surface_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.options_chain_surface_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotOptionsFlowCampaign": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.options_flow_campaign_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.options_flow_campaign_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotOptionsGexVolatility": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.options_gex_volatility_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.options_gex_volatility_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotOptionsOpenInterest": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.options_open_interest_eod_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.options_open_interest_eod_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotPositioningFlows": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.positioning_flows_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.positioning_flows_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotProphetContext": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.prophet_context_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.prophet_context_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotRatesCredit": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.rates_credit_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.rates_credit_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotSystemHealth": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.system_health_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.system_health_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotTechnicals": {
+      "allOf": [
+        {"$ref": "#/$defs/observedSnapshotConstraint"},
+        {
+          "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "transform_version": {"const": "market_memory.technicals_transform.v1"},
+              "value": {
+                "allOf": [
+                  {"$ref": "#/$defs/snapshotReference"},
+                  {"properties": {"schema": {"const": "market_memory.technicals_snapshot.v1"}}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observedSnapshotConstraint": {
+      "type": "object"
+    },
+    "domainCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain",
+        "status",
+        "n_observed",
+        "n_missing",
+        "n_degraded",
+        "n_imputed",
+        "missing_feature_ids"
+      ],
+      "properties": {
+        "domain": {"$ref": "#/$defs/domain"},
+        "status": {"enum": ["missing", "partial", "degraded", "observed"]},
+        "n_observed": {"type": "integer", "minimum": 0},
+        "n_missing": {"type": "integer", "minimum": 0},
+        "n_degraded": {"type": "integer", "minimum": 0},
+        "n_imputed": {"type": "integer", "minimum": 0},
+        "missing_feature_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          }
+        }
+      }
+    },
+    "coverageMacro": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "macro"},
+        "n_observed": {"maximum": 1},
+        "n_missing": {"maximum": 1},
+        "n_degraded": {"maximum": 1},
+        "n_imputed": {"maximum": 1},
+        "missing_feature_ids": {
+          "maxItems": 1,
+          "items": {"const": "macro.regime_state"}
+        }
+      }
+    },
+    "coverageRatesCredit": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "rates_credit"},
+        "n_observed": {"maximum": 1},
+        "n_missing": {"maximum": 1},
+        "n_degraded": {"maximum": 1},
+        "n_imputed": {"maximum": 1},
+        "missing_feature_ids": {
+          "maxItems": 1,
+          "items": {"const": "rates_credit.curve_state"}
+        }
+      }
+    },
+    "coverageBreadthFactors": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "breadth_factors"},
+        "n_observed": {"maximum": 1},
+        "n_missing": {"maximum": 1},
+        "n_degraded": {"maximum": 1},
+        "n_imputed": {"maximum": 1},
+        "missing_feature_ids": {
+          "maxItems": 1,
+          "items": {"const": "breadth_factors.market_state"}
+        }
+      }
+    },
+    "coverageTechnicals": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "technicals"},
+        "n_observed": {"maximum": 2},
+        "n_missing": {"maximum": 2},
+        "n_degraded": {"maximum": 2},
+        "n_imputed": {"maximum": 2},
+        "missing_feature_ids": {
+          "maxItems": 2,
+          "items": {
+            "enum": ["price.ret_20d", "technicals.point_in_time_state"]
+          }
+        }
+      }
+    },
+    "coverageOptions": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "options"},
+        "n_observed": {"maximum": 4},
+        "n_missing": {"maximum": 4},
+        "n_degraded": {"maximum": 4},
+        "n_imputed": {"maximum": 4},
+        "missing_feature_ids": {
+          "maxItems": 4,
+          "items": {
+            "enum": [
+              "options.chain_surface_state",
+              "options.flow_campaign_state",
+              "options.gex_volatility_state",
+              "options.open_interest_eod_state"
+            ]
+          }
+        }
+      }
+    },
+    "coveragePositioningFlows": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "positioning_flows"},
+        "n_observed": {"maximum": 1},
+        "n_missing": {"maximum": 1},
+        "n_degraded": {"maximum": 1},
+        "n_imputed": {"maximum": 1},
+        "missing_feature_ids": {
+          "maxItems": 1,
+          "items": {"const": "positioning_flows.aggregate_state"}
+        }
+      }
+    },
+    "coverageDarkPool": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "dark_pool"},
+        "n_observed": {"maximum": 1},
+        "n_missing": {"maximum": 1},
+        "n_degraded": {"maximum": 1},
+        "n_imputed": {"maximum": 1},
+        "missing_feature_ids": {
+          "maxItems": 1,
+          "items": {"const": "dark_pool.aggregate_state"}
+        }
+      }
+    },
+    "coverageIntradayMicrostructure": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "intraday_microstructure"},
+        "n_observed": {"maximum": 1},
+        "n_missing": {"maximum": 1},
+        "n_degraded": {"maximum": 1},
+        "n_imputed": {"maximum": 1},
+        "missing_feature_ids": {
+          "maxItems": 1,
+          "items": {"const": "intraday_microstructure.aggregate_state"}
+        }
+      }
+    },
+    "coverageFundamentals": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "fundamentals"},
+        "n_observed": {"maximum": 1},
+        "n_missing": {"maximum": 1},
+        "n_degraded": {"maximum": 1},
+        "n_imputed": {"maximum": 1},
+        "missing_feature_ids": {
+          "maxItems": 1,
+          "items": {"const": "fundamentals.point_in_time_state"}
+        }
+      }
+    },
+    "coverageEarnings": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "earnings"},
+        "n_observed": {"maximum": 1},
+        "n_missing": {"maximum": 1},
+        "n_degraded": {"maximum": 1},
+        "n_imputed": {"maximum": 1},
+        "missing_feature_ids": {
+          "maxItems": 1,
+          "items": {"const": "earnings.point_in_time_state"}
+        }
+      }
+    },
+    "coverageNewsNarrative": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "news_narrative"},
+        "n_observed": {"maximum": 1},
+        "n_missing": {"maximum": 1},
+        "n_degraded": {"maximum": 1},
+        "n_imputed": {"maximum": 1},
+        "missing_feature_ids": {
+          "maxItems": 1,
+          "items": {"const": "news_narrative.publication_state"}
+        }
+      }
+    },
+    "coverageAltData": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "alt_data"},
+        "n_observed": {"maximum": 1},
+        "n_missing": {"maximum": 1},
+        "n_degraded": {"maximum": 1},
+        "n_imputed": {"maximum": 1},
+        "missing_feature_ids": {
+          "maxItems": 1,
+          "items": {"const": "alt_data.point_in_time_state"}
+        }
+      }
+    },
+    "coverageProphetContext": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "prophet_context"},
+        "n_observed": {"maximum": 1},
+        "n_missing": {"maximum": 1},
+        "n_degraded": {"maximum": 1},
+        "n_imputed": {"maximum": 1},
+        "missing_feature_ids": {
+          "maxItems": 1,
+          "items": {"const": "prophet_context.signal_state"}
+        }
+      }
+    },
+    "coverageSystemHealth": {
+      "$ref": "#/$defs/domainCoverage",
+      "properties": {
+        "domain": {"const": "system_health"},
+        "n_observed": {"maximum": 1},
+        "n_missing": {"maximum": 1},
+        "n_degraded": {"maximum": 1},
+        "n_imputed": {"maximum": 1},
+        "missing_feature_ids": {
+          "maxItems": 1,
+          "items": {"const": "system_health.capture_state"}
+        }
+      }
+    },
+    "availabilityPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_cutoff",
+        "source_rule",
+        "operational_rule",
+        "open_interest_eod_rule",
+        "availability_clock_authority",
+        "future_eod_values_forbidden",
+        "feature_basis_rule",
+        "feature_dependency_rule",
+        "opaque_provenance_rule",
+        "snapshot_clock_rule",
+        "scalar_clock_rule",
+        "missingness_clock_rule",
+        "staleness_clock_rule",
+        "identity_rule"
+      ],
+      "properties": {
+        "decision_cutoff": {"const": "clocks.as_known_at"},
+        "source_rule": {
+          "const": "measurement_end <= event_time and available_at <= as_known_at"
+        },
+        "operational_rule": {
+          "const": "available_at <= observed_at <= as_known_at"
+        },
+        "open_interest_eod_rule": {
+          "const": "not admissible before its source available_at"
+        },
+        "availability_clock_authority": {
+          "const": "trusted registered adapter receipt; materializer retains the external integrity anchor"
+        },
+        "future_eod_values_forbidden": {"const": true},
+        "feature_basis_rule": {
+          "const": "feature pit_basis cannot outrank weakest source"
+        },
+        "feature_dependency_rule": {
+          "const": "source role, availability class, transform, missing reason, and quality flags match versioned registries"
+        },
+        "opaque_provenance_rule": {
+          "const": "source vintage and revision IDs are SHA-256 handles; receipt_id hashes immutable source evidence while age_at_cutoff_seconds is a deterministic context projection"
+        },
+        "snapshot_clock_rule": {
+          "const": "snapshot as_of covers every cited source measurement_end"
+        },
+        "scalar_clock_rule": {
+          "const": "scalar observed_at follows every cited source observed_at"
+        },
+        "missingness_clock_rule": {
+          "const": "missingness is checked at or after event_time; operational observations also stop at as_known_at"
+        },
+        "staleness_clock_rule": {
+          "const": "source quality staleness is fixed at observation; age_at_cutoff_seconds equals as_known_at minus measurement_end"
+        },
+        "identity_rule": {
+          "const": "frozen identity, membership validity, and market calendar receipts required"
+        }
+      }
+    },
+    "labelPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "labels_in_context",
+        "append_only_after_declared_horizon",
+        "horizon_anchor",
+        "label_join",
+        "outcome_owner"
+      ],
+      "properties": {
+        "labels_in_context": {"const": false},
+        "append_only_after_declared_horizon": {"const": true},
+        "horizon_anchor": {"const": "clocks.as_known_at"},
+        "label_join": {"const": "reference_only_by_context_id"},
+        "outcome_owner": {"const": "consumer_program"}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "horizon_role",
+        "context_only",
+        "proposal_weight",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_escalate",
+        "may_trade",
+        "may_originate",
+        "may_select_options_candidate",
+        "may_execute",
+        "may_write_options_episode",
+        "may_append_outcome",
+        "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}
