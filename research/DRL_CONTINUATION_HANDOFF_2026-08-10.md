@@ -9,11 +9,11 @@ Watch band on the stocks hub. This doc is the session-chain state; update, don't
 - Masterplan v1→v2 (census-complete, red-team adjudicated: 4 BLOCKERs + 10 findings folded).
 - W1: `engine/price_pressure/` (LSR-imported fence, PIT ledger `data/price_pressure/events.parquet`,
   frozen `base_rates.json`, display `latest.json`, nightly tail-desks step, synapse rows,
-  market_packet block, analyst-doctrine scope sentence, tests) — PR [TODO-PR1].
+  market_packet block, analyst-doctrine scope sentence, tests) — PR #5269.
 - Backfill run on the 2021-07-06..2026-07-02 store snapshot (R2-canonical; local caches lag) —
   events/base-rates committed; MU April-2025 printed as measured non-fire (worst z −2.44).
 - W2: Pressure Watch band (resolved-first inversion, both sides, recency ordering,
-  coverage-honest chips, fail-soft warm-up) — PR [TODO-PR2], armed after schema-parity check.
+  coverage-honest chips, fail-soft warm-up) — PR #5266 (parity verified against the emitted artifact: day.banner, ret, h21_share_partial, basket_zh all present).
 
 ## Next session queue (in order)
 
@@ -22,7 +22,7 @@ Watch band on the stocks hub. This doc is the session-chain state; update, don't
    `era="gap"`, that CDE's 2026-08 earnings shock appears (family `filing-coverage-unknown`,
    basket framing vs the precious-metals basket), and the band + market-packet block render it.
    Then update masterplan §6 exemplars with the actual readout.
-2. **Live verification debt** (if any left unchecked at session end): [TODO — list].
+2. **Live verification debt**: (a) after both merges + a covering render, confirm the band renders on /stocks/ (warm state until first nightly, then populated); (b) after the first nightly, confirm gap-era rows + CDE episode + market-packet PRESSURE section; (c) decide events.parquet storage (10.8 MB nightly rewrite ≈ 4 GB/yr git growth) — move to R2 with restore/publish pair in the nightly step, or accept; decide BEFORE many nights accrue.
 3. **§8 leg 1 — R4 VIX-gradient prereg**: fresh doc, frozen breakpoints, direct difference
    test, forward-ledger graded, gradient-not-level gate per §7. Entry condition: none — can
    start any session.
