@@ -6661,6 +6661,9 @@ jobs:
           tests/test_market_memory_identity_store.py
           tests/test_market_memory_identity_observation_deploy.py
           tests/test_ingest_market_memory_identity.py
+          tests/test_market_memory_breadth_observation.py
+          tests/test_market_memory_breadth_store.py
+          tests/test_market_memory_breadth_deploy.py
           tests/test_market_memory_projection.py
           tests/test_market_memory_trusted.py
           tests/test_market_memory_context_deploy.py

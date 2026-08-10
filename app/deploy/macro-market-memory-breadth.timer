@@ -1,0 +1,13 @@
+[Unit]
+Description=Retry private Market Memory breadth capture each hour
+
+[Timer]
+OnBootSec=17min
+OnCalendar=*-*-* *:43:00 UTC
+AccuracySec=1min
+RandomizedDelaySec=120s
+Persistent=true
+Unit=macro-market-memory-breadth.service
+
+[Install]
+WantedBy=timers.target
