@@ -1,7 +1,7 @@
 {
   "schema": "theme_clinical.v1",
-  "as_of": "2026-08-09",
-  "generated_at": "2026-08-09T06:31:35.068068+00:00",
+  "as_of": "2026-08-10",
+  "generated_at": "2026-08-10T02:07:04.999069+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -21,6 +21,39 @@
     "total_studies_stored": 2496,
     "parquet_absent": false
   },
+  "pit_coverage": {
+    "rollup_plane_mode": "legacy",
+    "pit_plane_available": false,
+    "pit_rollup_id": null,
+    "pit_rollup_as_of": null,
+    "pit_rows_available": 0,
+    "pit_rows_consumed": 0,
+    "themes": {
+      "diagnostics_lifesci": {
+        "n_studies_pit": 0,
+        "n_studies_legacy": 1839,
+        "n_studies_total": 1839,
+        "pit_backed_fraction": 0.0,
+        "provenance": "legacy_theme_store"
+      },
+      "glp1_obesity": {
+        "n_studies_pit": 0,
+        "n_studies_legacy": 536,
+        "n_studies_total": 536,
+        "pit_backed_fraction": 0.0,
+        "provenance": "legacy_theme_store"
+      },
+      "medical_devices": {
+        "n_studies_pit": 0,
+        "n_studies_legacy": 121,
+        "n_studies_total": 121,
+        "pit_backed_fraction": 0.0,
+        "provenance": "legacy_theme_store"
+      }
+    },
+    "disclosure": "Point-in-time coverage disclosure. pit_backed_fraction is the share of each theme's rollup that came from BioCatalyst's point-in-time evidence plane; the remainder came from the legacy theme store, whose membership was selected with hindsight before 2019 and whose phase is recorded as of ingest rather than as of registration. Fractions are computed from real counts and floored, never rounded up. A zero means the theme has no point-in-time backing today — BioCatalyst's live reach is a bounded fixed cohort and its transport is not running, so zero is the expected reading and it is printed rather than hidden. This changes nothing about authority: the layer stays display/context tier and is never scored.",
+    "disclosure_zh": "时点口径覆盖披露。pit_backed_fraction 表示每个主题的汇总中来自 BioCatalyst 时点证据面的比例；其余来自旧主题库——该库的成员在2019年之前是以事后视角选取的，且期别按入库时点而非注册时点记录。比例由真实计数得出并向下取整，绝不向上取整。为零即表示该主题目前没有时点口径支撑——BioCatalyst 的实际覆盖仍是一个有限的固定队列，其传输尚未启用，因此零是预期读数，我们如实列出而不隐藏。权限不变：该层仅供展示与背景参考，永不计入评分。"
+  },
   "themes": {
     "diagnostics_lifesci": {
       "theme_id": "diagnostics_lifesci",
@@ -32,6 +65,10 @@
       "theme_registration_velocity_read": "accelerating",
       "theme_registration_magnitude_band": "moderate",
       "n_phase3_trailing12m": 30,
+      "n_studies_pit": 0,
+      "n_studies_legacy": 1839,
+      "pit_backed_fraction": 0.0,
+      "provenance": "legacy_theme_store",
       "modalities": {
         "liquid_biopsy": {
           "modality_id": "liquid_biopsy",
@@ -46,6 +83,10 @@
           "phase_distribution_read": "early_stage",
           "phase_distribution_share_phase2plus_recent": 0.0625,
           "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
+          "n_studies_pit": 0,
+          "n_studies_legacy": 90,
+          "pit_backed_fraction": 0.0,
+          "provenance": "legacy_theme_store",
           "coverage_note": "90 INDUSTRY-sponsored studies; most recent registration: 2026-05; 60 months of registration data",
           "coverage_note_zh": "共90个行业赞助研究；最近注册月份：2026-05；60个月的注册数据",
           "expected_read": "rising registrations = diagnostics capital commitment"
@@ -63,6 +104,10 @@
           "phase_distribution_read": "mixed",
           "phase_distribution_share_phase2plus_recent": 0.2683,
           "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
+          "n_studies_pit": 0,
+          "n_studies_legacy": 144,
+          "pit_backed_fraction": 0.0,
+          "provenance": "legacy_theme_store",
           "coverage_note": "144 INDUSTRY-sponsored studies; most recent registration: 2026-07; 70 months of registration data",
           "coverage_note_zh": "共144个行业赞助研究；最近注册月份：2026-07；70个月的注册数据",
           "expected_read": "phase migration = late-stage commitment"
@@ -80,6 +125,10 @@
           "phase_distribution_read": "high_late_stage",
           "phase_distribution_share_phase2plus_recent": 0.4,
           "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
+          "n_studies_pit": 0,
+          "n_studies_legacy": 92,
+          "pit_backed_fraction": 0.0,
+          "provenance": "legacy_theme_store",
           "coverage_note": "92 INDUSTRY-sponsored studies; most recent registration: 2026-08; 56 months of registration data",
           "coverage_note_zh": "共92个行业赞助研究；最近注册月份：2026-08；56个月的注册数据",
           "expected_read": "rising phase-2/3 = commercial-scale commitment"
@@ -97,6 +146,10 @@
           "phase_distribution_read": "high_late_stage",
           "phase_distribution_share_phase2plus_recent": 0.573,
           "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
+          "n_studies_pit": 0,
+          "n_studies_legacy": 426,
+          "pit_backed_fraction": 0.0,
+          "provenance": "legacy_theme_store",
           "coverage_note": "426 INDUSTRY-sponsored studies; most recent registration: 2026-08; 98 months of registration data",
           "coverage_note_zh": "共426个行业赞助研究；最近注册月份：2026-08；98个月的注册数据",
           "expected_read": "rising phase-3 = nearing monetization"
@@ -114,6 +167,10 @@
           "phase_distribution_read": "mixed",
           "phase_distribution_share_phase2plus_recent": 0.3675,
           "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
+          "n_studies_pit": 0,
+          "n_studies_legacy": 722,
+          "pit_backed_fraction": 0.0,
+          "provenance": "legacy_theme_store",
           "coverage_note": "722 INDUSTRY-sponsored studies; most recent registration: 2026-08; 103 months of registration data",
           "coverage_note_zh": "共722个行业赞助研究；最近注册月份：2026-08；103个月的注册数据",
           "expected_read": "phase-2/3 migration = development cost commitment"
@@ -131,6 +188,10 @@
           "phase_distribution_read": "high_late_stage",
           "phase_distribution_share_phase2plus_recent": 0.6,
           "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
+          "n_studies_pit": 0,
+          "n_studies_legacy": 365,
+          "pit_backed_fraction": 0.0,
+          "provenance": "legacy_theme_store",
           "coverage_note": "365 INDUSTRY-sponsored studies; most recent registration: 2026-08; 88 months of registration data",
           "coverage_note_zh": "共365个行业赞助研究；最近注册月份：2026-08；88个月的注册数据",
           "expected_read": "rising registrations = mRNA platform capital commitment"
@@ -149,6 +210,10 @@
       "theme_registration_velocity_read": "accelerating",
       "theme_registration_magnitude_band": "moderate",
       "n_phase3_trailing12m": 31,
+      "n_studies_pit": 0,
+      "n_studies_legacy": 536,
+      "pit_backed_fraction": 0.0,
+      "provenance": "legacy_theme_store",
       "modalities": {
         "glp1_named_agents": {
           "modality_id": "glp1_named_agents",
@@ -163,6 +228,10 @@
           "phase_distribution_read": "high_late_stage",
           "phase_distribution_share_phase2plus_recent": 0.597,
           "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
+          "n_studies_pit": 0,
+          "n_studies_legacy": 442,
+          "pit_backed_fraction": 0.0,
+          "provenance": "legacy_theme_store",
           "coverage_note": "442 INDUSTRY-sponsored studies; most recent registration: 2026-08; 99 months of registration data",
           "coverage_note_zh": "共442个行业赞助研究；最近注册月份：2026-08；99个月的注册数据",
           "expected_read": "rising registrations = capital commitment"
@@ -180,6 +249,10 @@
           "phase_distribution_read": "high_late_stage",
           "phase_distribution_share_phase2plus_recent": 0.5429,
           "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
+          "n_studies_pit": 0,
+          "n_studies_legacy": 94,
+          "pit_backed_fraction": 0.0,
+          "provenance": "legacy_theme_store",
           "coverage_note": "94 INDUSTRY-sponsored studies; most recent registration: 2026-08; 55 months of registration data",
           "coverage_note_zh": "共94个行业赞助研究；最近注册月份：2026-08；55个月的注册数据",
           "expected_read": "rising registrations = capital commitment"
@@ -198,6 +271,10 @@
       "theme_registration_velocity_read": "decelerating",
       "theme_registration_magnitude_band": "moderate",
       "n_phase3_trailing12m": 4,
+      "n_studies_pit": 0,
+      "n_studies_legacy": 121,
+      "pit_backed_fraction": 0.0,
+      "provenance": "legacy_theme_store",
       "modalities": {
         "obesity_device": {
           "modality_id": "obesity_device",
@@ -212,6 +289,10 @@
           "phase_distribution_read": "mixed",
           "phase_distribution_share_phase2plus_recent": 0.1905,
           "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
+          "n_studies_pit": 0,
+          "n_studies_legacy": 121,
+          "pit_backed_fraction": 0.0,
+          "provenance": "legacy_theme_store",
           "coverage_note": "121 INDUSTRY-sponsored studies; most recent registration: 2026-08; 71 months of registration data",
           "coverage_note_zh": "共121个行业赞助研究；最近注册月份：2026-08；71个月的注册数据",
           "expected_read": "rising registrations = adjacency to GLP-1 boom"

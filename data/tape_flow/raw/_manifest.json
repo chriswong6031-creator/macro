@@ -11958,52 +11958,107 @@
     {
       "date": "2026-07-10",
       "rows": 1374284,
-      "bytes_approx": 324567145
+      "bytes_approx": 383666554
+    },
+    {
+      "date": "2026-07-13",
+      "rows": 1560264,
+      "bytes_approx": 435578423
+    },
+    {
+      "date": "2026-07-14",
+      "rows": 1398008,
+      "bytes_approx": 390208862
+    },
+    {
+      "date": "2026-07-15",
+      "rows": 1592107,
+      "bytes_approx": 444482311
     },
     {
       "date": "2026-07-16",
       "rows": 1696971,
-      "bytes_approx": 281415593
+      "bytes_approx": 473693367
     },
     {
       "date": "2026-07-17",
       "rows": 1758838,
-      "bytes_approx": 291654723
+      "bytes_approx": 490873384
+    },
+    {
+      "date": "2026-07-20",
+      "rows": 1666322,
+      "bytes_approx": 465074096
+    },
+    {
+      "date": "2026-07-21",
+      "rows": 1387150,
+      "bytes_approx": 387048963
+    },
+    {
+      "date": "2026-07-22",
+      "rows": 1278111,
+      "bytes_approx": 356669321
+    },
+    {
+      "date": "2026-07-23",
+      "rows": 1768527,
+      "bytes_approx": 493552727
     },
     {
       "date": "2026-07-24",
       "rows": 1717913,
-      "bytes_approx": 284877271
+      "bytes_approx": 479534848
+    },
+    {
+      "date": "2026-07-27",
+      "rows": 1751846,
+      "bytes_approx": 488918577
+    },
+    {
+      "date": "2026-07-28",
+      "rows": 1583403,
+      "bytes_approx": 441915802
+    },
+    {
+      "date": "2026-07-29",
+      "rows": 1848018,
+      "bytes_approx": 515906170
+    },
+    {
+      "date": "2026-07-30",
+      "rows": 1682444,
+      "bytes_approx": 469775614
     },
     {
       "date": "2026-07-31",
       "rows": 1886339,
-      "bytes_approx": 445550589
+      "bytes_approx": 526740666
     },
     {
       "date": "2026-08-03",
       "rows": 1583809,
-      "bytes_approx": 374098205
+      "bytes_approx": 442095139
     },
     {
       "date": "2026-08-04",
       "rows": 2042996,
-      "bytes_approx": 482542245
+      "bytes_approx": 570298040
     },
     {
       "date": "2026-08-05",
       "rows": 1689909,
-      "bytes_approx": 399135919
+      "bytes_approx": 471665750
     },
     {
       "date": "2026-08-06",
       "rows": 1597365,
-      "bytes_approx": 377290219
+      "bytes_approx": 445991514
     },
     {
       "date": "2026-08-07",
       "rows": 1450479,
-      "bytes_approx": 342591805
+      "bytes_approx": 404763812
     }
   ],
   "DIA": [
@@ -12267,6 +12322,4156 @@
     }
   ],
   "QQQ": [
+    {
+      "date": "2017-01-03",
+      "rows": 13424,
+      "bytes_approx": 3742230
+    },
+    {
+      "date": "2017-01-04",
+      "rows": 11956,
+      "bytes_approx": 3333922
+    },
+    {
+      "date": "2017-01-05",
+      "rows": 12510,
+      "bytes_approx": 3488385
+    },
+    {
+      "date": "2017-01-06",
+      "rows": 21838,
+      "bytes_approx": 6093796
+    },
+    {
+      "date": "2017-01-09",
+      "rows": 12985,
+      "bytes_approx": 3622249
+    },
+    {
+      "date": "2017-01-10",
+      "rows": 13384,
+      "bytes_approx": 3732499
+    },
+    {
+      "date": "2017-01-11",
+      "rows": 14147,
+      "bytes_approx": 3946616
+    },
+    {
+      "date": "2017-01-12",
+      "rows": 16448,
+      "bytes_approx": 4589436
+    },
+    {
+      "date": "2017-01-13",
+      "rows": 14827,
+      "bytes_approx": 4136348
+    },
+    {
+      "date": "2017-01-17",
+      "rows": 12320,
+      "bytes_approx": 3436903
+    },
+    {
+      "date": "2017-01-18",
+      "rows": 9890,
+      "bytes_approx": 2757083
+    },
+    {
+      "date": "2017-01-19",
+      "rows": 16376,
+      "bytes_approx": 4565772
+    },
+    {
+      "date": "2017-01-20",
+      "rows": 18101,
+      "bytes_approx": 5045217
+    },
+    {
+      "date": "2017-01-23",
+      "rows": 11581,
+      "bytes_approx": 3230056
+    },
+    {
+      "date": "2017-01-24",
+      "rows": 13383,
+      "bytes_approx": 3731186
+    },
+    {
+      "date": "2017-01-25",
+      "rows": 18789,
+      "bytes_approx": 5238246
+    },
+    {
+      "date": "2017-01-26",
+      "rows": 15023,
+      "bytes_approx": 4189215
+    },
+    {
+      "date": "2017-01-27",
+      "rows": 14833,
+      "bytes_approx": 4135132
+    },
+    {
+      "date": "2017-01-30",
+      "rows": 17867,
+      "bytes_approx": 4983283
+    },
+    {
+      "date": "2017-01-31",
+      "rows": 14294,
+      "bytes_approx": 3987851
+    },
+    {
+      "date": "2017-02-01",
+      "rows": 17303,
+      "bytes_approx": 4825781
+    },
+    {
+      "date": "2017-02-02",
+      "rows": 11050,
+      "bytes_approx": 3081985
+    },
+    {
+      "date": "2017-02-03",
+      "rows": 14379,
+      "bytes_approx": 4007879
+    },
+    {
+      "date": "2017-02-06",
+      "rows": 7587,
+      "bytes_approx": 2115200
+    },
+    {
+      "date": "2017-02-07",
+      "rows": 13108,
+      "bytes_approx": 3655000
+    },
+    {
+      "date": "2017-02-08",
+      "rows": 11211,
+      "bytes_approx": 3126447
+    },
+    {
+      "date": "2017-02-09",
+      "rows": 14150,
+      "bytes_approx": 3946412
+    },
+    {
+      "date": "2017-02-10",
+      "rows": 14600,
+      "bytes_approx": 4070309
+    },
+    {
+      "date": "2017-02-13",
+      "rows": 13547,
+      "bytes_approx": 3776405
+    },
+    {
+      "date": "2017-02-14",
+      "rows": 13258,
+      "bytes_approx": 3695913
+    },
+    {
+      "date": "2017-02-15",
+      "rows": 16862,
+      "bytes_approx": 4698972
+    },
+    {
+      "date": "2017-02-16",
+      "rows": 16301,
+      "bytes_approx": 4545051
+    },
+    {
+      "date": "2017-02-17",
+      "rows": 15136,
+      "bytes_approx": 4220233
+    },
+    {
+      "date": "2017-02-21",
+      "rows": 14542,
+      "bytes_approx": 4054255
+    },
+    {
+      "date": "2017-02-22",
+      "rows": 10604,
+      "bytes_approx": 2959054
+    },
+    {
+      "date": "2017-02-23",
+      "rows": 16541,
+      "bytes_approx": 4614012
+    },
+    {
+      "date": "2017-02-24",
+      "rows": 17757,
+      "bytes_approx": 4953351
+    },
+    {
+      "date": "2017-02-27",
+      "rows": 9514,
+      "bytes_approx": 2654846
+    },
+    {
+      "date": "2017-02-28",
+      "rows": 16362,
+      "bytes_approx": 4563575
+    },
+    {
+      "date": "2017-03-01",
+      "rows": 20584,
+      "bytes_approx": 5740762
+    },
+    {
+      "date": "2017-03-02",
+      "rows": 14241,
+      "bytes_approx": 3970742
+    },
+    {
+      "date": "2017-03-03",
+      "rows": 13512,
+      "bytes_approx": 3767867
+    },
+    {
+      "date": "2017-03-06",
+      "rows": 11707,
+      "bytes_approx": 3264641
+    },
+    {
+      "date": "2017-03-07",
+      "rows": 11532,
+      "bytes_approx": 3215211
+    },
+    {
+      "date": "2017-03-08",
+      "rows": 13350,
+      "bytes_approx": 3721367
+    },
+    {
+      "date": "2017-03-09",
+      "rows": 12224,
+      "bytes_approx": 3410461
+    },
+    {
+      "date": "2017-03-10",
+      "rows": 17277,
+      "bytes_approx": 4819355
+    },
+    {
+      "date": "2017-03-13",
+      "rows": 10932,
+      "bytes_approx": 3047517
+    },
+    {
+      "date": "2017-03-14",
+      "rows": 12708,
+      "bytes_approx": 3542466
+    },
+    {
+      "date": "2017-03-15",
+      "rows": 17262,
+      "bytes_approx": 4813168
+    },
+    {
+      "date": "2017-03-16",
+      "rows": 16865,
+      "bytes_approx": 4700811
+    },
+    {
+      "date": "2017-03-17",
+      "rows": 13936,
+      "bytes_approx": 3885785
+    },
+    {
+      "date": "2017-03-20",
+      "rows": 10340,
+      "bytes_approx": 2885315
+    },
+    {
+      "date": "2017-03-21",
+      "rows": 31810,
+      "bytes_approx": 8872028
+    },
+    {
+      "date": "2017-03-22",
+      "rows": 21995,
+      "bytes_approx": 6133816
+    },
+    {
+      "date": "2017-03-23",
+      "rows": 16530,
+      "bytes_approx": 4609623
+    },
+    {
+      "date": "2017-03-24",
+      "rows": 20742,
+      "bytes_approx": 5782448
+    },
+    {
+      "date": "2017-03-27",
+      "rows": 18175,
+      "bytes_approx": 5070894
+    },
+    {
+      "date": "2017-03-28",
+      "rows": 14138,
+      "bytes_approx": 3944455
+    },
+    {
+      "date": "2017-03-29",
+      "rows": 11443,
+      "bytes_approx": 3191996
+    },
+    {
+      "date": "2017-03-30",
+      "rows": 14453,
+      "bytes_approx": 4030728
+    },
+    {
+      "date": "2017-03-31",
+      "rows": 13953,
+      "bytes_approx": 3891323
+    },
+    {
+      "date": "2017-04-03",
+      "rows": 16000,
+      "bytes_approx": 4460978
+    },
+    {
+      "date": "2017-04-04",
+      "rows": 12378,
+      "bytes_approx": 3450494
+    },
+    {
+      "date": "2017-04-05",
+      "rows": 30743,
+      "bytes_approx": 8570431
+    },
+    {
+      "date": "2017-04-06",
+      "rows": 17421,
+      "bytes_approx": 4856194
+    },
+    {
+      "date": "2017-04-07",
+      "rows": 18282,
+      "bytes_approx": 5097959
+    },
+    {
+      "date": "2017-04-10",
+      "rows": 13207,
+      "bytes_approx": 3684105
+    },
+    {
+      "date": "2017-04-11",
+      "rows": 27924,
+      "bytes_approx": 7785473
+    },
+    {
+      "date": "2017-04-12",
+      "rows": 14063,
+      "bytes_approx": 3923379
+    },
+    {
+      "date": "2017-04-13",
+      "rows": 20844,
+      "bytes_approx": 5814446
+    },
+    {
+      "date": "2017-04-17",
+      "rows": 11918,
+      "bytes_approx": 3323992
+    },
+    {
+      "date": "2017-04-18",
+      "rows": 12573,
+      "bytes_approx": 3507392
+    },
+    {
+      "date": "2017-04-19",
+      "rows": 15445,
+      "bytes_approx": 4308046
+    },
+    {
+      "date": "2017-04-20",
+      "rows": 20295,
+      "bytes_approx": 5659850
+    },
+    {
+      "date": "2017-04-21",
+      "rows": 18820,
+      "bytes_approx": 5249284
+    },
+    {
+      "date": "2017-04-24",
+      "rows": 24094,
+      "bytes_approx": 6717185
+    },
+    {
+      "date": "2017-04-25",
+      "rows": 20535,
+      "bytes_approx": 5727952
+    },
+    {
+      "date": "2017-04-26",
+      "rows": 23649,
+      "bytes_approx": 6590070
+    },
+    {
+      "date": "2017-04-27",
+      "rows": 21441,
+      "bytes_approx": 5976788
+    },
+    {
+      "date": "2017-04-28",
+      "rows": 21363,
+      "bytes_approx": 5955628
+    },
+    {
+      "date": "2017-05-01",
+      "rows": 24692,
+      "bytes_approx": 6884996
+    },
+    {
+      "date": "2017-05-02",
+      "rows": 16991,
+      "bytes_approx": 4736158
+    },
+    {
+      "date": "2017-05-03",
+      "rows": 15048,
+      "bytes_approx": 4195941
+    },
+    {
+      "date": "2017-05-04",
+      "rows": 13119,
+      "bytes_approx": 3658954
+    },
+    {
+      "date": "2017-05-05",
+      "rows": 14912,
+      "bytes_approx": 4158319
+    },
+    {
+      "date": "2017-05-08",
+      "rows": 12782,
+      "bytes_approx": 3563742
+    },
+    {
+      "date": "2017-05-09",
+      "rows": 18825,
+      "bytes_approx": 5248232
+    },
+    {
+      "date": "2017-05-10",
+      "rows": 11342,
+      "bytes_approx": 3162896
+    },
+    {
+      "date": "2017-05-11",
+      "rows": 21657,
+      "bytes_approx": 6040059
+    },
+    {
+      "date": "2017-05-12",
+      "rows": 19303,
+      "bytes_approx": 5385697
+    },
+    {
+      "date": "2017-05-15",
+      "rows": 14268,
+      "bytes_approx": 3980254
+    },
+    {
+      "date": "2017-05-16",
+      "rows": 15268,
+      "bytes_approx": 4258562
+    },
+    {
+      "date": "2017-05-17",
+      "rows": 43254,
+      "bytes_approx": 12060878
+    },
+    {
+      "date": "2017-05-18",
+      "rows": 35018,
+      "bytes_approx": 9763938
+    },
+    {
+      "date": "2017-05-19",
+      "rows": 25617,
+      "bytes_approx": 7142911
+    },
+    {
+      "date": "2017-05-22",
+      "rows": 14419,
+      "bytes_approx": 4022171
+    },
+    {
+      "date": "2017-05-23",
+      "rows": 13840,
+      "bytes_approx": 3859074
+    },
+    {
+      "date": "2017-05-24",
+      "rows": 14083,
+      "bytes_approx": 3928237
+    },
+    {
+      "date": "2017-05-25",
+      "rows": 27690,
+      "bytes_approx": 7719787
+    },
+    {
+      "date": "2017-05-26",
+      "rows": 16903,
+      "bytes_approx": 4711982
+    },
+    {
+      "date": "2017-05-30",
+      "rows": 14807,
+      "bytes_approx": 4129212
+    },
+    {
+      "date": "2017-05-31",
+      "rows": 21887,
+      "bytes_approx": 6101555
+    },
+    {
+      "date": "2017-06-01",
+      "rows": 17601,
+      "bytes_approx": 4907919
+    },
+    {
+      "date": "2017-06-02",
+      "rows": 27549,
+      "bytes_approx": 7680272
+    },
+    {
+      "date": "2017-06-05",
+      "rows": 14798,
+      "bytes_approx": 4125183
+    },
+    {
+      "date": "2017-06-06",
+      "rows": 21446,
+      "bytes_approx": 5978581
+    },
+    {
+      "date": "2017-06-07",
+      "rows": 17881,
+      "bytes_approx": 4985928
+    },
+    {
+      "date": "2017-06-08",
+      "rows": 18067,
+      "bytes_approx": 5037393
+    },
+    {
+      "date": "2017-06-09",
+      "rows": 72454,
+      "bytes_approx": 20194604
+    },
+    {
+      "date": "2017-06-12",
+      "rows": 64261,
+      "bytes_approx": 17903792
+    },
+    {
+      "date": "2017-06-13",
+      "rows": 29640,
+      "bytes_approx": 8262973
+    },
+    {
+      "date": "2017-06-14",
+      "rows": 30463,
+      "bytes_approx": 8489983
+    },
+    {
+      "date": "2017-06-15",
+      "rows": 45533,
+      "bytes_approx": 12690370
+    },
+    {
+      "date": "2017-06-16",
+      "rows": 31940,
+      "bytes_approx": 8903135
+    },
+    {
+      "date": "2017-06-19",
+      "rows": 28140,
+      "bytes_approx": 7844477
+    },
+    {
+      "date": "2017-06-20",
+      "rows": 20524,
+      "bytes_approx": 5722359
+    },
+    {
+      "date": "2017-06-21",
+      "rows": 19058,
+      "bytes_approx": 5315043
+    },
+    {
+      "date": "2017-06-22",
+      "rows": 15289,
+      "bytes_approx": 4263969
+    },
+    {
+      "date": "2017-06-23",
+      "rows": 18676,
+      "bytes_approx": 5209300
+    },
+    {
+      "date": "2017-06-26",
+      "rows": 27438,
+      "bytes_approx": 7646727
+    },
+    {
+      "date": "2017-06-27",
+      "rows": 40307,
+      "bytes_approx": 11228100
+    },
+    {
+      "date": "2017-06-28",
+      "rows": 36728,
+      "bytes_approx": 10234510
+    },
+    {
+      "date": "2017-06-29",
+      "rows": 62507,
+      "bytes_approx": 17422324
+    },
+    {
+      "date": "2017-06-30",
+      "rows": 36785,
+      "bytes_approx": 10252790
+    },
+    {
+      "date": "2017-07-03",
+      "rows": 23982,
+      "bytes_approx": 6683304
+    },
+    {
+      "date": "2017-07-05",
+      "rows": 30235,
+      "bytes_approx": 8425974
+    },
+    {
+      "date": "2017-07-06",
+      "rows": 37663,
+      "bytes_approx": 10493130
+    },
+    {
+      "date": "2017-07-07",
+      "rows": 32261,
+      "bytes_approx": 8992280
+    },
+    {
+      "date": "2017-07-10",
+      "rows": 21116,
+      "bytes_approx": 5883883
+    },
+    {
+      "date": "2017-07-11",
+      "rows": 20077,
+      "bytes_approx": 5597128
+    },
+    {
+      "date": "2017-07-12",
+      "rows": 29535,
+      "bytes_approx": 8232638
+    },
+    {
+      "date": "2017-07-13",
+      "rows": 23449,
+      "bytes_approx": 6536232
+    },
+    {
+      "date": "2017-07-14",
+      "rows": 30995,
+      "bytes_approx": 8638205
+    },
+    {
+      "date": "2017-07-17",
+      "rows": 22363,
+      "bytes_approx": 6233067
+    },
+    {
+      "date": "2017-07-18",
+      "rows": 23321,
+      "bytes_approx": 6500796
+    },
+    {
+      "date": "2017-07-19",
+      "rows": 28813,
+      "bytes_approx": 8032007
+    },
+    {
+      "date": "2017-07-20",
+      "rows": 25879,
+      "bytes_approx": 7213760
+    },
+    {
+      "date": "2017-07-21",
+      "rows": 25289,
+      "bytes_approx": 7047679
+    },
+    {
+      "date": "2017-07-24",
+      "rows": 19142,
+      "bytes_approx": 5335626
+    },
+    {
+      "date": "2017-07-25",
+      "rows": 20246,
+      "bytes_approx": 5641831
+    },
+    {
+      "date": "2017-07-26",
+      "rows": 15020,
+      "bytes_approx": 4185231
+    },
+    {
+      "date": "2017-07-27",
+      "rows": 57063,
+      "bytes_approx": 15898732
+    },
+    {
+      "date": "2017-07-28",
+      "rows": 32554,
+      "bytes_approx": 9077836
+    },
+    {
+      "date": "2017-07-31",
+      "rows": 24266,
+      "bytes_approx": 6768628
+    },
+    {
+      "date": "2017-08-01",
+      "rows": 18023,
+      "bytes_approx": 5028089
+    },
+    {
+      "date": "2017-08-02",
+      "rows": 35014,
+      "bytes_approx": 9760723
+    },
+    {
+      "date": "2017-08-03",
+      "rows": 24089,
+      "bytes_approx": 6716387
+    },
+    {
+      "date": "2017-08-04",
+      "rows": 25096,
+      "bytes_approx": 6997367
+    },
+    {
+      "date": "2017-08-07",
+      "rows": 17805,
+      "bytes_approx": 4965072
+    },
+    {
+      "date": "2017-08-08",
+      "rows": 26384,
+      "bytes_approx": 7353818
+    },
+    {
+      "date": "2017-08-09",
+      "rows": 26311,
+      "bytes_approx": 7331138
+    },
+    {
+      "date": "2017-08-10",
+      "rows": 56882,
+      "bytes_approx": 15851191
+    },
+    {
+      "date": "2017-08-11",
+      "rows": 38140,
+      "bytes_approx": 10627912
+    },
+    {
+      "date": "2017-08-14",
+      "rows": 38430,
+      "bytes_approx": 10704145
+    },
+    {
+      "date": "2017-08-15",
+      "rows": 17828,
+      "bytes_approx": 4970002
+    },
+    {
+      "date": "2017-08-16",
+      "rows": 24140,
+      "bytes_approx": 6731035
+    },
+    {
+      "date": "2017-08-17",
+      "rows": 51463,
+      "bytes_approx": 14338820
+    },
+    {
+      "date": "2017-08-18",
+      "rows": 41494,
+      "bytes_approx": 11567173
+    },
+    {
+      "date": "2017-08-21",
+      "rows": 29180,
+      "bytes_approx": 8137948
+    },
+    {
+      "date": "2017-08-22",
+      "rows": 27503,
+      "bytes_approx": 7668011
+    },
+    {
+      "date": "2017-08-23",
+      "rows": 20962,
+      "bytes_approx": 5844975
+    },
+    {
+      "date": "2017-08-24",
+      "rows": 25359,
+      "bytes_approx": 7069598
+    },
+    {
+      "date": "2017-08-25",
+      "rows": 32346,
+      "bytes_approx": 9015357
+    },
+    {
+      "date": "2017-08-28",
+      "rows": 20666,
+      "bytes_approx": 5763302
+    },
+    {
+      "date": "2017-08-29",
+      "rows": 24487,
+      "bytes_approx": 6823681
+    },
+    {
+      "date": "2017-08-30",
+      "rows": 31132,
+      "bytes_approx": 8677206
+    },
+    {
+      "date": "2017-08-31",
+      "rows": 37980,
+      "bytes_approx": 10587739
+    },
+    {
+      "date": "2017-09-01",
+      "rows": 25791,
+      "bytes_approx": 7189459
+    },
+    {
+      "date": "2017-09-05",
+      "rows": 38905,
+      "bytes_approx": 10845184
+    },
+    {
+      "date": "2017-09-06",
+      "rows": 21278,
+      "bytes_approx": 5932542
+    },
+    {
+      "date": "2017-09-07",
+      "rows": 17835,
+      "bytes_approx": 4972349
+    },
+    {
+      "date": "2017-09-08",
+      "rows": 25799,
+      "bytes_approx": 7192135
+    },
+    {
+      "date": "2017-09-11",
+      "rows": 23317,
+      "bytes_approx": 6497273
+    },
+    {
+      "date": "2017-09-12",
+      "rows": 21567,
+      "bytes_approx": 6010838
+    },
+    {
+      "date": "2017-09-13",
+      "rows": 17836,
+      "bytes_approx": 4973079
+    },
+    {
+      "date": "2017-09-14",
+      "rows": 26263,
+      "bytes_approx": 7316590
+    },
+    {
+      "date": "2017-09-15",
+      "rows": 25014,
+      "bytes_approx": 6969915
+    },
+    {
+      "date": "2017-09-18",
+      "rows": 20361,
+      "bytes_approx": 5675534
+    },
+    {
+      "date": "2017-09-19",
+      "rows": 12907,
+      "bytes_approx": 3599186
+    },
+    {
+      "date": "2017-09-20",
+      "rows": 29767,
+      "bytes_approx": 8295238
+    },
+    {
+      "date": "2017-09-21",
+      "rows": 24796,
+      "bytes_approx": 6912659
+    },
+    {
+      "date": "2017-09-22",
+      "rows": 22955,
+      "bytes_approx": 6400164
+    },
+    {
+      "date": "2017-09-25",
+      "rows": 41979,
+      "bytes_approx": 11695816
+    },
+    {
+      "date": "2017-09-26",
+      "rows": 22906,
+      "bytes_approx": 6384304
+    },
+    {
+      "date": "2017-09-27",
+      "rows": 28455,
+      "bytes_approx": 7932152
+    },
+    {
+      "date": "2017-09-28",
+      "rows": 16922,
+      "bytes_approx": 4716506
+    },
+    {
+      "date": "2017-09-29",
+      "rows": 32253,
+      "bytes_approx": 8990606
+    },
+    {
+      "date": "2017-10-02",
+      "rows": 22098,
+      "bytes_approx": 6162138
+    },
+    {
+      "date": "2017-10-03",
+      "rows": 16996,
+      "bytes_approx": 4737374
+    },
+    {
+      "date": "2017-10-04",
+      "rows": 20621,
+      "bytes_approx": 5746909
+    },
+    {
+      "date": "2017-10-05",
+      "rows": 29676,
+      "bytes_approx": 8270081
+    },
+    {
+      "date": "2017-10-06",
+      "rows": 22670,
+      "bytes_approx": 6318420
+    },
+    {
+      "date": "2017-10-09",
+      "rows": 16301,
+      "bytes_approx": 4543225
+    },
+    {
+      "date": "2017-10-10",
+      "rows": 14524,
+      "bytes_approx": 4047246
+    },
+    {
+      "date": "2017-10-11",
+      "rows": 11404,
+      "bytes_approx": 3178432
+    },
+    {
+      "date": "2017-10-12",
+      "rows": 22967,
+      "bytes_approx": 6402296
+    },
+    {
+      "date": "2017-10-13",
+      "rows": 15653,
+      "bytes_approx": 4361900
+    },
+    {
+      "date": "2017-10-16",
+      "rows": 16110,
+      "bytes_approx": 4486850
+    },
+    {
+      "date": "2017-10-17",
+      "rows": 13120,
+      "bytes_approx": 3654418
+    },
+    {
+      "date": "2017-10-18",
+      "rows": 14457,
+      "bytes_approx": 4027722
+    },
+    {
+      "date": "2017-10-19",
+      "rows": 31735,
+      "bytes_approx": 8840327
+    },
+    {
+      "date": "2017-10-20",
+      "rows": 23352,
+      "bytes_approx": 6507562
+    },
+    {
+      "date": "2017-10-23",
+      "rows": 24209,
+      "bytes_approx": 6744160
+    },
+    {
+      "date": "2017-10-24",
+      "rows": 17713,
+      "bytes_approx": 4937395
+    },
+    {
+      "date": "2017-10-25",
+      "rows": 34439,
+      "bytes_approx": 9599301
+    },
+    {
+      "date": "2017-10-26",
+      "rows": 23374,
+      "bytes_approx": 6514034
+    },
+    {
+      "date": "2017-10-27",
+      "rows": 53254,
+      "bytes_approx": 14837396
+    },
+    {
+      "date": "2017-10-30",
+      "rows": 24412,
+      "bytes_approx": 6804201
+    },
+    {
+      "date": "2017-10-31",
+      "rows": 18592,
+      "bytes_approx": 5181701
+    },
+    {
+      "date": "2017-11-01",
+      "rows": 23654,
+      "bytes_approx": 6594277
+    },
+    {
+      "date": "2017-11-02",
+      "rows": 23982,
+      "bytes_approx": 6685234
+    },
+    {
+      "date": "2017-11-03",
+      "rows": 29116,
+      "bytes_approx": 8119599
+    },
+    {
+      "date": "2017-11-06",
+      "rows": 17175,
+      "bytes_approx": 4787891
+    },
+    {
+      "date": "2017-11-07",
+      "rows": 19026,
+      "bytes_approx": 5305142
+    },
+    {
+      "date": "2017-11-08",
+      "rows": 16582,
+      "bytes_approx": 4621845
+    },
+    {
+      "date": "2017-11-09",
+      "rows": 39470,
+      "bytes_approx": 11002529
+    },
+    {
+      "date": "2017-11-10",
+      "rows": 23370,
+      "bytes_approx": 6516587
+    },
+    {
+      "date": "2017-11-13",
+      "rows": 15448,
+      "bytes_approx": 4306366
+    },
+    {
+      "date": "2017-11-14",
+      "rows": 20266,
+      "bytes_approx": 5648375
+    },
+    {
+      "date": "2017-11-15",
+      "rows": 24615,
+      "bytes_approx": 6860165
+    },
+    {
+      "date": "2017-11-16",
+      "rows": 25575,
+      "bytes_approx": 7128124
+    },
+    {
+      "date": "2017-11-17",
+      "rows": 20729,
+      "bytes_approx": 5775812
+    },
+    {
+      "date": "2017-11-20",
+      "rows": 13963,
+      "bytes_approx": 3891628
+    },
+    {
+      "date": "2017-11-21",
+      "rows": 22167,
+      "bytes_approx": 6176623
+    },
+    {
+      "date": "2017-11-22",
+      "rows": 13885,
+      "bytes_approx": 3872179
+    },
+    {
+      "date": "2017-11-24",
+      "rows": 15156,
+      "bytes_approx": 4224965
+    },
+    {
+      "date": "2017-11-27",
+      "rows": 21461,
+      "bytes_approx": 5982631
+    },
+    {
+      "date": "2017-11-28",
+      "rows": 21099,
+      "bytes_approx": 5882132
+    },
+    {
+      "date": "2017-11-29",
+      "rows": 67606,
+      "bytes_approx": 18841846
+    },
+    {
+      "date": "2017-11-30",
+      "rows": 39475,
+      "bytes_approx": 11002226
+    },
+    {
+      "date": "2017-12-01",
+      "rows": 45558,
+      "bytes_approx": 12694459
+    },
+    {
+      "date": "2017-12-04",
+      "rows": 44201,
+      "bytes_approx": 12319674
+    },
+    {
+      "date": "2017-12-05",
+      "rows": 34735,
+      "bytes_approx": 9682162
+    },
+    {
+      "date": "2017-12-06",
+      "rows": 27428,
+      "bytes_approx": 7645428
+    },
+    {
+      "date": "2017-12-07",
+      "rows": 22024,
+      "bytes_approx": 6139896
+    },
+    {
+      "date": "2017-12-08",
+      "rows": 29546,
+      "bytes_approx": 8234362
+    },
+    {
+      "date": "2017-12-11",
+      "rows": 21519,
+      "bytes_approx": 5998872
+    },
+    {
+      "date": "2017-12-12",
+      "rows": 20887,
+      "bytes_approx": 5818296
+    },
+    {
+      "date": "2017-12-13",
+      "rows": 18478,
+      "bytes_approx": 5148172
+    },
+    {
+      "date": "2017-12-14",
+      "rows": 21332,
+      "bytes_approx": 5944978
+    },
+    {
+      "date": "2017-12-15",
+      "rows": 34647,
+      "bytes_approx": 9654008
+    },
+    {
+      "date": "2017-12-18",
+      "rows": 25139,
+      "bytes_approx": 7005583
+    },
+    {
+      "date": "2017-12-19",
+      "rows": 23389,
+      "bytes_approx": 6517268
+    },
+    {
+      "date": "2017-12-20",
+      "rows": 20128,
+      "bytes_approx": 5607855
+    },
+    {
+      "date": "2017-12-21",
+      "rows": 21056,
+      "bytes_approx": 5864692
+    },
+    {
+      "date": "2017-12-22",
+      "rows": 18849,
+      "bytes_approx": 5250355
+    },
+    {
+      "date": "2017-12-26",
+      "rows": 15759,
+      "bytes_approx": 4386221
+    },
+    {
+      "date": "2017-12-27",
+      "rows": 16146,
+      "bytes_approx": 4495667
+    },
+    {
+      "date": "2017-12-28",
+      "rows": 13925,
+      "bytes_approx": 3879424
+    },
+    {
+      "date": "2017-12-29",
+      "rows": 28421,
+      "bytes_approx": 7918957
+    },
+    {
+      "date": "2018-01-02",
+      "rows": 28772,
+      "bytes_approx": 8017574
+    },
+    {
+      "date": "2018-01-03",
+      "rows": 30524,
+      "bytes_approx": 8506936
+    },
+    {
+      "date": "2018-01-04",
+      "rows": 34259,
+      "bytes_approx": 9543880
+    },
+    {
+      "date": "2018-01-05",
+      "rows": 35133,
+      "bytes_approx": 9790036
+    },
+    {
+      "date": "2018-01-08",
+      "rows": 21437,
+      "bytes_approx": 5975260
+    },
+    {
+      "date": "2018-01-09",
+      "rows": 25492,
+      "bytes_approx": 7104848
+    },
+    {
+      "date": "2018-01-10",
+      "rows": 29591,
+      "bytes_approx": 8247608
+    },
+    {
+      "date": "2018-01-11",
+      "rows": 19363,
+      "bytes_approx": 5396996
+    },
+    {
+      "date": "2018-01-12",
+      "rows": 35311,
+      "bytes_approx": 9838756
+    },
+    {
+      "date": "2018-01-16",
+      "rows": 52423,
+      "bytes_approx": 14602259
+    },
+    {
+      "date": "2018-01-17",
+      "rows": 29556,
+      "bytes_approx": 8236079
+    },
+    {
+      "date": "2018-01-18",
+      "rows": 30529,
+      "bytes_approx": 8507786
+    },
+    {
+      "date": "2018-01-19",
+      "rows": 26570,
+      "bytes_approx": 7402838
+    },
+    {
+      "date": "2018-01-22",
+      "rows": 31380,
+      "bytes_approx": 8741213
+    },
+    {
+      "date": "2018-01-23",
+      "rows": 37898,
+      "bytes_approx": 10557982
+    },
+    {
+      "date": "2018-01-24",
+      "rows": 51292,
+      "bytes_approx": 14288596
+    },
+    {
+      "date": "2018-01-25",
+      "rows": 37533,
+      "bytes_approx": 10459001
+    },
+    {
+      "date": "2018-01-26",
+      "rows": 40961,
+      "bytes_approx": 11410363
+    },
+    {
+      "date": "2018-01-29",
+      "rows": 37682,
+      "bytes_approx": 10498237
+    },
+    {
+      "date": "2018-01-30",
+      "rows": 45687,
+      "bytes_approx": 12731336
+    },
+    {
+      "date": "2018-01-31",
+      "rows": 33822,
+      "bytes_approx": 9424222
+    },
+    {
+      "date": "2018-02-01",
+      "rows": 36529,
+      "bytes_approx": 10177154
+    },
+    {
+      "date": "2018-02-02",
+      "rows": 72931,
+      "bytes_approx": 20318402
+    },
+    {
+      "date": "2018-02-05",
+      "rows": 81968,
+      "bytes_approx": 22821677
+    },
+    {
+      "date": "2018-02-06",
+      "rows": 68082,
+      "bytes_approx": 18940739
+    },
+    {
+      "date": "2018-02-07",
+      "rows": 60081,
+      "bytes_approx": 16728200
+    },
+    {
+      "date": "2018-02-08",
+      "rows": 72573,
+      "bytes_approx": 20214997
+    },
+    {
+      "date": "2018-02-09",
+      "rows": 96335,
+      "bytes_approx": 26818539
+    },
+    {
+      "date": "2018-02-12",
+      "rows": 54636,
+      "bytes_approx": 15216540
+    },
+    {
+      "date": "2018-02-13",
+      "rows": 42240,
+      "bytes_approx": 11760945
+    },
+    {
+      "date": "2018-02-14",
+      "rows": 54820,
+      "bytes_approx": 15268010
+    },
+    {
+      "date": "2018-02-15",
+      "rows": 59443,
+      "bytes_approx": 16557730
+    },
+    {
+      "date": "2018-02-16",
+      "rows": 65184,
+      "bytes_approx": 18154002
+    },
+    {
+      "date": "2018-02-20",
+      "rows": 46452,
+      "bytes_approx": 12944358
+    },
+    {
+      "date": "2018-02-21",
+      "rows": 41599,
+      "bytes_approx": 11592092
+    },
+    {
+      "date": "2018-02-22",
+      "rows": 43717,
+      "bytes_approx": 12182241
+    },
+    {
+      "date": "2018-02-23",
+      "rows": 46313,
+      "bytes_approx": 12903216
+    },
+    {
+      "date": "2018-02-26",
+      "rows": 46401,
+      "bytes_approx": 12928355
+    },
+    {
+      "date": "2018-02-27",
+      "rows": 46789,
+      "bytes_approx": 13040565
+    },
+    {
+      "date": "2018-02-28",
+      "rows": 42366,
+      "bytes_approx": 11804592
+    },
+    {
+      "date": "2018-03-01",
+      "rows": 76474,
+      "bytes_approx": 21298385
+    },
+    {
+      "date": "2018-03-02",
+      "rows": 60688,
+      "bytes_approx": 16906932
+    },
+    {
+      "date": "2018-03-05",
+      "rows": 42124,
+      "bytes_approx": 11736044
+    },
+    {
+      "date": "2018-03-06",
+      "rows": 38983,
+      "bytes_approx": 10860315
+    },
+    {
+      "date": "2018-03-07",
+      "rows": 35661,
+      "bytes_approx": 9933902
+    },
+    {
+      "date": "2018-03-08",
+      "rows": 36777,
+      "bytes_approx": 10246135
+    },
+    {
+      "date": "2018-03-09",
+      "rows": 52269,
+      "bytes_approx": 14556847
+    },
+    {
+      "date": "2018-03-12",
+      "rows": 38329,
+      "bytes_approx": 10676908
+    },
+    {
+      "date": "2018-03-13",
+      "rows": 52535,
+      "bytes_approx": 14631599
+    },
+    {
+      "date": "2018-03-14",
+      "rows": 37299,
+      "bytes_approx": 10391761
+    },
+    {
+      "date": "2018-03-15",
+      "rows": 29710,
+      "bytes_approx": 8278478
+    },
+    {
+      "date": "2018-03-16",
+      "rows": 33915,
+      "bytes_approx": 9443808
+    },
+    {
+      "date": "2018-03-19",
+      "rows": 70069,
+      "bytes_approx": 19526286
+    },
+    {
+      "date": "2018-03-20",
+      "rows": 33679,
+      "bytes_approx": 9388051
+    },
+    {
+      "date": "2018-03-21",
+      "rows": 36484,
+      "bytes_approx": 10166764
+    },
+    {
+      "date": "2018-03-22",
+      "rows": 67464,
+      "bytes_approx": 18795224
+    },
+    {
+      "date": "2018-03-23",
+      "rows": 80441,
+      "bytes_approx": 22409268
+    },
+    {
+      "date": "2018-03-26",
+      "rows": 57826,
+      "bytes_approx": 16112970
+    },
+    {
+      "date": "2018-03-27",
+      "rows": 63161,
+      "bytes_approx": 17592542
+    },
+    {
+      "date": "2018-03-28",
+      "rows": 89165,
+      "bytes_approx": 24827860
+    },
+    {
+      "date": "2018-03-29",
+      "rows": 66078,
+      "bytes_approx": 18400725
+    },
+    {
+      "date": "2018-04-02",
+      "rows": 77337,
+      "bytes_approx": 21540093
+    },
+    {
+      "date": "2018-04-03",
+      "rows": 53915,
+      "bytes_approx": 15014674
+    },
+    {
+      "date": "2018-04-04",
+      "rows": 56146,
+      "bytes_approx": 15638791
+    },
+    {
+      "date": "2018-04-05",
+      "rows": 41742,
+      "bytes_approx": 11621848
+    },
+    {
+      "date": "2018-04-06",
+      "rows": 59833,
+      "bytes_approx": 16664926
+    },
+    {
+      "date": "2018-04-09",
+      "rows": 40282,
+      "bytes_approx": 11216351
+    },
+    {
+      "date": "2018-04-10",
+      "rows": 42956,
+      "bytes_approx": 11967312
+    },
+    {
+      "date": "2018-04-11",
+      "rows": 31186,
+      "bytes_approx": 8689621
+    },
+    {
+      "date": "2018-04-12",
+      "rows": 38124,
+      "bytes_approx": 10619444
+    },
+    {
+      "date": "2018-04-13",
+      "rows": 46953,
+      "bytes_approx": 13079588
+    },
+    {
+      "date": "2018-04-16",
+      "rows": 29393,
+      "bytes_approx": 8189141
+    },
+    {
+      "date": "2018-04-17",
+      "rows": 42266,
+      "bytes_approx": 11776445
+    },
+    {
+      "date": "2018-04-18",
+      "rows": 30654,
+      "bytes_approx": 8538300
+    },
+    {
+      "date": "2018-04-19",
+      "rows": 37042,
+      "bytes_approx": 10316536
+    },
+    {
+      "date": "2018-04-20",
+      "rows": 57525,
+      "bytes_approx": 16023139
+    },
+    {
+      "date": "2018-04-23",
+      "rows": 42870,
+      "bytes_approx": 11947153
+    },
+    {
+      "date": "2018-04-24",
+      "rows": 73389,
+      "bytes_approx": 20434820
+    },
+    {
+      "date": "2018-04-25",
+      "rows": 47624,
+      "bytes_approx": 13265774
+    },
+    {
+      "date": "2018-04-26",
+      "rows": 50411,
+      "bytes_approx": 14050107
+    },
+    {
+      "date": "2018-04-27",
+      "rows": 50560,
+      "bytes_approx": 14088489
+    },
+    {
+      "date": "2018-04-30",
+      "rows": 33730,
+      "bytes_approx": 9402503
+    },
+    {
+      "date": "2018-05-01",
+      "rows": 35043,
+      "bytes_approx": 9768363
+    },
+    {
+      "date": "2018-05-02",
+      "rows": 31219,
+      "bytes_approx": 8706187
+    },
+    {
+      "date": "2018-05-03",
+      "rows": 43678,
+      "bytes_approx": 12169031
+    },
+    {
+      "date": "2018-05-04",
+      "rows": 57205,
+      "bytes_approx": 15941304
+    },
+    {
+      "date": "2018-05-07",
+      "rows": 37719,
+      "bytes_approx": 10511753
+    },
+    {
+      "date": "2018-05-08",
+      "rows": 24699,
+      "bytes_approx": 6883571
+    },
+    {
+      "date": "2018-05-09",
+      "rows": 32879,
+      "bytes_approx": 9166636
+    },
+    {
+      "date": "2018-05-10",
+      "rows": 36376,
+      "bytes_approx": 10141434
+    },
+    {
+      "date": "2018-05-11",
+      "rows": 36551,
+      "bytes_approx": 10189628
+    },
+    {
+      "date": "2018-05-14",
+      "rows": 29086,
+      "bytes_approx": 8107218
+    },
+    {
+      "date": "2018-05-15",
+      "rows": 35069,
+      "bytes_approx": 9770294
+    },
+    {
+      "date": "2018-05-16",
+      "rows": 22456,
+      "bytes_approx": 6262388
+    },
+    {
+      "date": "2018-05-17",
+      "rows": 30550,
+      "bytes_approx": 8515745
+    },
+    {
+      "date": "2018-05-18",
+      "rows": 29524,
+      "bytes_approx": 8229859
+    },
+    {
+      "date": "2018-05-21",
+      "rows": 33209,
+      "bytes_approx": 9262188
+    },
+    {
+      "date": "2018-05-22",
+      "rows": 27946,
+      "bytes_approx": 7790342
+    },
+    {
+      "date": "2018-05-23",
+      "rows": 30110,
+      "bytes_approx": 8393731
+    },
+    {
+      "date": "2018-05-24",
+      "rows": 31694,
+      "bytes_approx": 8833877
+    },
+    {
+      "date": "2018-05-25",
+      "rows": 36326,
+      "bytes_approx": 10126884
+    },
+    {
+      "date": "2018-05-29",
+      "rows": 40710,
+      "bytes_approx": 11343649
+    },
+    {
+      "date": "2018-05-30",
+      "rows": 26633,
+      "bytes_approx": 7428822
+    },
+    {
+      "date": "2018-05-31",
+      "rows": 31829,
+      "bytes_approx": 8871151
+    },
+    {
+      "date": "2018-06-01",
+      "rows": 42561,
+      "bytes_approx": 11866800
+    },
+    {
+      "date": "2018-06-04",
+      "rows": 35814,
+      "bytes_approx": 9983742
+    },
+    {
+      "date": "2018-06-05",
+      "rows": 28052,
+      "bytes_approx": 7822818
+    },
+    {
+      "date": "2018-06-06",
+      "rows": 31248,
+      "bytes_approx": 8713660
+    },
+    {
+      "date": "2018-06-07",
+      "rows": 40998,
+      "bytes_approx": 11434375
+    },
+    {
+      "date": "2018-06-08",
+      "rows": 31706,
+      "bytes_approx": 8844076
+    },
+    {
+      "date": "2018-06-11",
+      "rows": 28915,
+      "bytes_approx": 8061980
+    },
+    {
+      "date": "2018-06-12",
+      "rows": 24606,
+      "bytes_approx": 6863590
+    },
+    {
+      "date": "2018-06-13",
+      "rows": 37752,
+      "bytes_approx": 10525338
+    },
+    {
+      "date": "2018-06-14",
+      "rows": 38973,
+      "bytes_approx": 10862820
+    },
+    {
+      "date": "2018-06-15",
+      "rows": 42011,
+      "bytes_approx": 11712797
+    },
+    {
+      "date": "2018-06-18",
+      "rows": 24966,
+      "bytes_approx": 6961917
+    },
+    {
+      "date": "2018-06-19",
+      "rows": 34433,
+      "bytes_approx": 9602253
+    },
+    {
+      "date": "2018-06-20",
+      "rows": 31367,
+      "bytes_approx": 8749418
+    },
+    {
+      "date": "2018-06-21",
+      "rows": 39732,
+      "bytes_approx": 11082696
+    },
+    {
+      "date": "2018-06-22",
+      "rows": 32965,
+      "bytes_approx": 9193678
+    },
+    {
+      "date": "2018-06-25",
+      "rows": 66023,
+      "bytes_approx": 18413465
+    },
+    {
+      "date": "2018-06-26",
+      "rows": 27163,
+      "bytes_approx": 7579418
+    },
+    {
+      "date": "2018-06-27",
+      "rows": 44036,
+      "bytes_approx": 12282048
+    },
+    {
+      "date": "2018-06-28",
+      "rows": 36716,
+      "bytes_approx": 10240774
+    },
+    {
+      "date": "2018-06-29",
+      "rows": 34200,
+      "bytes_approx": 9539472
+    },
+    {
+      "date": "2018-07-02",
+      "rows": 29363,
+      "bytes_approx": 8189757
+    },
+    {
+      "date": "2018-07-03",
+      "rows": 21091,
+      "bytes_approx": 5880941
+    },
+    {
+      "date": "2018-07-05",
+      "rows": 30990,
+      "bytes_approx": 8644033
+    },
+    {
+      "date": "2018-07-06",
+      "rows": 41492,
+      "bytes_approx": 11571196
+    },
+    {
+      "date": "2018-07-09",
+      "rows": 30173,
+      "bytes_approx": 8416437
+    },
+    {
+      "date": "2018-07-10",
+      "rows": 28806,
+      "bytes_approx": 8036246
+    },
+    {
+      "date": "2018-07-11",
+      "rows": 27805,
+      "bytes_approx": 7757854
+    },
+    {
+      "date": "2018-07-12",
+      "rows": 42091,
+      "bytes_approx": 11740415
+    },
+    {
+      "date": "2018-07-13",
+      "rows": 36454,
+      "bytes_approx": 10168118
+    },
+    {
+      "date": "2018-07-16",
+      "rows": 24574,
+      "bytes_approx": 6855830
+    },
+    {
+      "date": "2018-07-17",
+      "rows": 37008,
+      "bytes_approx": 10325941
+    },
+    {
+      "date": "2018-07-18",
+      "rows": 23922,
+      "bytes_approx": 6671682
+    },
+    {
+      "date": "2018-07-19",
+      "rows": 33166,
+      "bytes_approx": 9253339
+    },
+    {
+      "date": "2018-07-20",
+      "rows": 33379,
+      "bytes_approx": 9310346
+    },
+    {
+      "date": "2018-07-23",
+      "rows": 26142,
+      "bytes_approx": 7292300
+    },
+    {
+      "date": "2018-07-24",
+      "rows": 44401,
+      "bytes_approx": 12385131
+    },
+    {
+      "date": "2018-07-25",
+      "rows": 32176,
+      "bytes_approx": 8974564
+    },
+    {
+      "date": "2018-07-26",
+      "rows": 38287,
+      "bytes_approx": 10681013
+    },
+    {
+      "date": "2018-07-27",
+      "rows": 66478,
+      "bytes_approx": 18530720
+    },
+    {
+      "date": "2018-07-30",
+      "rows": 61135,
+      "bytes_approx": 17038388
+    },
+    {
+      "date": "2018-07-31",
+      "rows": 40882,
+      "bytes_approx": 11401032
+    },
+    {
+      "date": "2018-08-01",
+      "rows": 36845,
+      "bytes_approx": 10274461
+    },
+    {
+      "date": "2018-08-02",
+      "rows": 50388,
+      "bytes_approx": 14049259
+    },
+    {
+      "date": "2018-08-03",
+      "rows": 35801,
+      "bytes_approx": 9981956
+    },
+    {
+      "date": "2018-08-06",
+      "rows": 31904,
+      "bytes_approx": 8898286
+    },
+    {
+      "date": "2018-08-07",
+      "rows": 29193,
+      "bytes_approx": 8139065
+    },
+    {
+      "date": "2018-08-08",
+      "rows": 21938,
+      "bytes_approx": 6117021
+    },
+    {
+      "date": "2018-08-09",
+      "rows": 22696,
+      "bytes_approx": 6327222
+    },
+    {
+      "date": "2018-08-10",
+      "rows": 40313,
+      "bytes_approx": 11235224
+    },
+    {
+      "date": "2018-08-13",
+      "rows": 30732,
+      "bytes_approx": 8566699
+    },
+    {
+      "date": "2018-08-14",
+      "rows": 23501,
+      "bytes_approx": 6550083
+    },
+    {
+      "date": "2018-08-15",
+      "rows": 57768,
+      "bytes_approx": 16100948
+    },
+    {
+      "date": "2018-08-16",
+      "rows": 30964,
+      "bytes_approx": 8632474
+    },
+    {
+      "date": "2018-08-17",
+      "rows": 41751,
+      "bytes_approx": 11638427
+    },
+    {
+      "date": "2018-08-20",
+      "rows": 21945,
+      "bytes_approx": 6115723
+    },
+    {
+      "date": "2018-08-21",
+      "rows": 26778,
+      "bytes_approx": 7463237
+    },
+    {
+      "date": "2018-08-22",
+      "rows": 21576,
+      "bytes_approx": 6014071
+    },
+    {
+      "date": "2018-08-23",
+      "rows": 28133,
+      "bytes_approx": 7842849
+    },
+    {
+      "date": "2018-08-24",
+      "rows": 36869,
+      "bytes_approx": 10277542
+    },
+    {
+      "date": "2018-08-27",
+      "rows": 33733,
+      "bytes_approx": 9405179
+    },
+    {
+      "date": "2018-08-28",
+      "rows": 24024,
+      "bytes_approx": 6696238
+    },
+    {
+      "date": "2018-08-29",
+      "rows": 40480,
+      "bytes_approx": 11283000
+    },
+    {
+      "date": "2018-08-30",
+      "rows": 43237,
+      "bytes_approx": 12053246
+    },
+    {
+      "date": "2018-08-31",
+      "rows": 32478,
+      "bytes_approx": 9053629
+    },
+    {
+      "date": "2018-09-04",
+      "rows": 29216,
+      "bytes_approx": 8141196
+    },
+    {
+      "date": "2018-09-05",
+      "rows": 48075,
+      "bytes_approx": 13399363
+    },
+    {
+      "date": "2018-09-06",
+      "rows": 59354,
+      "bytes_approx": 16539885
+    },
+    {
+      "date": "2018-09-07",
+      "rows": 48816,
+      "bytes_approx": 13604500
+    },
+    {
+      "date": "2018-09-10",
+      "rows": 25748,
+      "bytes_approx": 7177440
+    },
+    {
+      "date": "2018-09-11",
+      "rows": 35005,
+      "bytes_approx": 9757180
+    },
+    {
+      "date": "2018-09-12",
+      "rows": 35545,
+      "bytes_approx": 9906961
+    },
+    {
+      "date": "2018-09-13",
+      "rows": 36459,
+      "bytes_approx": 10159881
+    },
+    {
+      "date": "2018-09-14",
+      "rows": 32340,
+      "bytes_approx": 9015371
+    },
+    {
+      "date": "2018-09-17",
+      "rows": 38877,
+      "bytes_approx": 10837721
+    },
+    {
+      "date": "2018-09-18",
+      "rows": 28528,
+      "bytes_approx": 7951134
+    },
+    {
+      "date": "2018-09-19",
+      "rows": 26852,
+      "bytes_approx": 7485013
+    },
+    {
+      "date": "2018-09-20",
+      "rows": 33670,
+      "bytes_approx": 9387152
+    },
+    {
+      "date": "2018-09-21",
+      "rows": 36530,
+      "bytes_approx": 10180881
+    },
+    {
+      "date": "2018-09-24",
+      "rows": 29236,
+      "bytes_approx": 8147332
+    },
+    {
+      "date": "2018-09-25",
+      "rows": 22206,
+      "bytes_approx": 6189217
+    },
+    {
+      "date": "2018-09-26",
+      "rows": 44587,
+      "bytes_approx": 12423683
+    },
+    {
+      "date": "2018-09-27",
+      "rows": 38913,
+      "bytes_approx": 10850964
+    },
+    {
+      "date": "2018-09-28",
+      "rows": 32700,
+      "bytes_approx": 9117054
+    },
+    {
+      "date": "2018-10-01",
+      "rows": 32624,
+      "bytes_approx": 9092841
+    },
+    {
+      "date": "2018-10-02",
+      "rows": 30112,
+      "bytes_approx": 8396133
+    },
+    {
+      "date": "2018-10-03",
+      "rows": 27677,
+      "bytes_approx": 7716231
+    },
+    {
+      "date": "2018-10-04",
+      "rows": 80086,
+      "bytes_approx": 22316691
+    },
+    {
+      "date": "2018-10-05",
+      "rows": 88534,
+      "bytes_approx": 24676076
+    },
+    {
+      "date": "2018-10-08",
+      "rows": 58298,
+      "bytes_approx": 16250440
+    },
+    {
+      "date": "2018-10-09",
+      "rows": 40336,
+      "bytes_approx": 11245323
+    },
+    {
+      "date": "2018-10-10",
+      "rows": 102014,
+      "bytes_approx": 28422480
+    },
+    {
+      "date": "2018-10-11",
+      "rows": 101702,
+      "bytes_approx": 28341683
+    },
+    {
+      "date": "2018-10-12",
+      "rows": 78161,
+      "bytes_approx": 21777410
+    },
+    {
+      "date": "2018-10-15",
+      "rows": 40901,
+      "bytes_approx": 11401169
+    },
+    {
+      "date": "2018-10-16",
+      "rows": 53851,
+      "bytes_approx": 15018949
+    },
+    {
+      "date": "2018-10-17",
+      "rows": 49396,
+      "bytes_approx": 13775942
+    },
+    {
+      "date": "2018-10-18",
+      "rows": 70946,
+      "bytes_approx": 19777622
+    },
+    {
+      "date": "2018-10-19",
+      "rows": 65095,
+      "bytes_approx": 18147011
+    },
+    {
+      "date": "2018-10-22",
+      "rows": 42295,
+      "bytes_approx": 11794635
+    },
+    {
+      "date": "2018-10-23",
+      "rows": 66657,
+      "bytes_approx": 18578435
+    },
+    {
+      "date": "2018-10-24",
+      "rows": 75265,
+      "bytes_approx": 20980038
+    },
+    {
+      "date": "2018-10-25",
+      "rows": 75355,
+      "bytes_approx": 21010045
+    },
+    {
+      "date": "2018-10-26",
+      "rows": 106655,
+      "bytes_approx": 29722931
+    },
+    {
+      "date": "2018-10-29",
+      "rows": 78639,
+      "bytes_approx": 21915918
+    },
+    {
+      "date": "2018-10-30",
+      "rows": 69653,
+      "bytes_approx": 19412031
+    },
+    {
+      "date": "2018-10-31",
+      "rows": 78316,
+      "bytes_approx": 21834978
+    },
+    {
+      "date": "2018-11-01",
+      "rows": 56930,
+      "bytes_approx": 15873914
+    },
+    {
+      "date": "2018-11-02",
+      "rows": 81779,
+      "bytes_approx": 22787033
+    },
+    {
+      "date": "2018-11-05",
+      "rows": 45176,
+      "bytes_approx": 12593579
+    },
+    {
+      "date": "2018-11-06",
+      "rows": 41056,
+      "bytes_approx": 11443000
+    },
+    {
+      "date": "2018-11-07",
+      "rows": 64798,
+      "bytes_approx": 18062169
+    },
+    {
+      "date": "2018-11-08",
+      "rows": 44118,
+      "bytes_approx": 12298096
+    },
+    {
+      "date": "2018-11-09",
+      "rows": 66335,
+      "bytes_approx": 18492770
+    },
+    {
+      "date": "2018-11-12",
+      "rows": 72015,
+      "bytes_approx": 20067361
+    },
+    {
+      "date": "2018-11-13",
+      "rows": 62293,
+      "bytes_approx": 17362039
+    },
+    {
+      "date": "2018-11-14",
+      "rows": 71208,
+      "bytes_approx": 19851301
+    },
+    {
+      "date": "2018-11-15",
+      "rows": 74606,
+      "bytes_approx": 20792158
+    },
+    {
+      "date": "2018-11-16",
+      "rows": 62303,
+      "bytes_approx": 17369362
+    },
+    {
+      "date": "2018-11-19",
+      "rows": 89194,
+      "bytes_approx": 24850928
+    },
+    {
+      "date": "2018-11-20",
+      "rows": 91748,
+      "bytes_approx": 25566979
+    },
+    {
+      "date": "2018-11-21",
+      "rows": 45787,
+      "bytes_approx": 12764648
+    },
+    {
+      "date": "2018-11-23",
+      "rows": 30825,
+      "bytes_approx": 8593773
+    },
+    {
+      "date": "2018-11-26",
+      "rows": 48777,
+      "bytes_approx": 13598771
+    },
+    {
+      "date": "2018-11-27",
+      "rows": 39240,
+      "bytes_approx": 10936722
+    },
+    {
+      "date": "2018-11-28",
+      "rows": 59885,
+      "bytes_approx": 16685101
+    },
+    {
+      "date": "2018-11-29",
+      "rows": 42257,
+      "bytes_approx": 11780708
+    },
+    {
+      "date": "2018-11-30",
+      "rows": 43287,
+      "bytes_approx": 12064959
+    },
+    {
+      "date": "2018-12-03",
+      "rows": 55421,
+      "bytes_approx": 15448264
+    },
+    {
+      "date": "2018-12-04",
+      "rows": 66188,
+      "bytes_approx": 18444492
+    },
+    {
+      "date": "2018-12-06",
+      "rows": 73645,
+      "bytes_approx": 20523407
+    },
+    {
+      "date": "2018-12-07",
+      "rows": 74252,
+      "bytes_approx": 20693477
+    },
+    {
+      "date": "2018-12-10",
+      "rows": 57506,
+      "bytes_approx": 16022812
+    },
+    {
+      "date": "2018-12-11",
+      "rows": 49493,
+      "bytes_approx": 13795585
+    },
+    {
+      "date": "2018-12-12",
+      "rows": 45408,
+      "bytes_approx": 12660705
+    },
+    {
+      "date": "2018-12-13",
+      "rows": 37126,
+      "bytes_approx": 10352027
+    },
+    {
+      "date": "2018-12-14",
+      "rows": 55471,
+      "bytes_approx": 15461131
+    },
+    {
+      "date": "2018-12-17",
+      "rows": 67857,
+      "bytes_approx": 18909588
+    },
+    {
+      "date": "2018-12-18",
+      "rows": 53308,
+      "bytes_approx": 14855865
+    },
+    {
+      "date": "2018-12-19",
+      "rows": 69444,
+      "bytes_approx": 19346043
+    },
+    {
+      "date": "2018-12-20",
+      "rows": 85131,
+      "bytes_approx": 23720438
+    },
+    {
+      "date": "2018-12-21",
+      "rows": 87701,
+      "bytes_approx": 24435942
+    },
+    {
+      "date": "2018-12-24",
+      "rows": 49631,
+      "bytes_approx": 13825708
+    },
+    {
+      "date": "2018-12-26",
+      "rows": 71101,
+      "bytes_approx": 19811895
+    },
+    {
+      "date": "2018-12-27",
+      "rows": 68857,
+      "bytes_approx": 19189324
+    },
+    {
+      "date": "2018-12-28",
+      "rows": 72584,
+      "bytes_approx": 20218961
+    },
+    {
+      "date": "2018-12-31",
+      "rows": 47578,
+      "bytes_approx": 13257789
+    },
+    {
+      "date": "2019-01-02",
+      "rows": 42765,
+      "bytes_approx": 11920150
+    },
+    {
+      "date": "2019-01-03",
+      "rows": 53627,
+      "bytes_approx": 14948956
+    },
+    {
+      "date": "2019-01-04",
+      "rows": 66781,
+      "bytes_approx": 18613109
+    },
+    {
+      "date": "2019-01-07",
+      "rows": 40174,
+      "bytes_approx": 11198207
+    },
+    {
+      "date": "2019-01-08",
+      "rows": 42228,
+      "bytes_approx": 11772938
+    },
+    {
+      "date": "2019-01-09",
+      "rows": 45617,
+      "bytes_approx": 12716957
+    },
+    {
+      "date": "2019-01-10",
+      "rows": 38308,
+      "bytes_approx": 10682383
+    },
+    {
+      "date": "2019-01-11",
+      "rows": 32348,
+      "bytes_approx": 9021441
+    },
+    {
+      "date": "2019-01-14",
+      "rows": 29072,
+      "bytes_approx": 8105257
+    },
+    {
+      "date": "2019-01-15",
+      "rows": 43224,
+      "bytes_approx": 12049144
+    },
+    {
+      "date": "2019-01-16",
+      "rows": 36982,
+      "bytes_approx": 10311959
+    },
+    {
+      "date": "2019-01-17",
+      "rows": 42646,
+      "bytes_approx": 11889223
+    },
+    {
+      "date": "2019-01-18",
+      "rows": 54529,
+      "bytes_approx": 15202389
+    },
+    {
+      "date": "2019-01-22",
+      "rows": 45591,
+      "bytes_approx": 12710080
+    },
+    {
+      "date": "2019-01-23",
+      "rows": 37910,
+      "bytes_approx": 10573186
+    },
+    {
+      "date": "2019-01-24",
+      "rows": 28457,
+      "bytes_approx": 7935945
+    },
+    {
+      "date": "2019-01-25",
+      "rows": 42392,
+      "bytes_approx": 11821652
+    },
+    {
+      "date": "2019-01-28",
+      "rows": 34127,
+      "bytes_approx": 9512155
+    },
+    {
+      "date": "2019-01-29",
+      "rows": 27788,
+      "bytes_approx": 7747685
+    },
+    {
+      "date": "2019-01-30",
+      "rows": 41372,
+      "bytes_approx": 11538215
+    },
+    {
+      "date": "2019-01-31",
+      "rows": 55127,
+      "bytes_approx": 15369973
+    },
+    {
+      "date": "2019-02-01",
+      "rows": 38335,
+      "bytes_approx": 10690036
+    },
+    {
+      "date": "2019-02-04",
+      "rows": 27649,
+      "bytes_approx": 7709989
+    },
+    {
+      "date": "2019-02-05",
+      "rows": 37370,
+      "bytes_approx": 10421452
+    },
+    {
+      "date": "2019-02-06",
+      "rows": 25578,
+      "bytes_approx": 7133165
+    },
+    {
+      "date": "2019-02-07",
+      "rows": 44555,
+      "bytes_approx": 12423915
+    },
+    {
+      "date": "2019-02-08",
+      "rows": 38556,
+      "bytes_approx": 10751150
+    },
+    {
+      "date": "2019-02-11",
+      "rows": 22489,
+      "bytes_approx": 6272169
+    },
+    {
+      "date": "2019-02-12",
+      "rows": 32017,
+      "bytes_approx": 8927653
+    },
+    {
+      "date": "2019-02-13",
+      "rows": 28623,
+      "bytes_approx": 7980791
+    },
+    {
+      "date": "2019-02-14",
+      "rows": 28361,
+      "bytes_approx": 7904303
+    },
+    {
+      "date": "2019-02-15",
+      "rows": 37029,
+      "bytes_approx": 10322479
+    },
+    {
+      "date": "2019-02-19",
+      "rows": 21530,
+      "bytes_approx": 6002783
+    },
+    {
+      "date": "2019-02-20",
+      "rows": 27987,
+      "bytes_approx": 7803843
+    },
+    {
+      "date": "2019-02-21",
+      "rows": 29644,
+      "bytes_approx": 8265367
+    },
+    {
+      "date": "2019-02-22",
+      "rows": 29808,
+      "bytes_approx": 8312335
+    },
+    {
+      "date": "2019-02-25",
+      "rows": 34803,
+      "bytes_approx": 9702976
+    },
+    {
+      "date": "2019-02-26",
+      "rows": 19815,
+      "bytes_approx": 5526484
+    },
+    {
+      "date": "2019-02-27",
+      "rows": 25380,
+      "bytes_approx": 7077859
+    },
+    {
+      "date": "2019-02-28",
+      "rows": 22353,
+      "bytes_approx": 6231391
+    },
+    {
+      "date": "2019-03-01",
+      "rows": 33736,
+      "bytes_approx": 9401822
+    },
+    {
+      "date": "2019-03-04",
+      "rows": 44235,
+      "bytes_approx": 12325140
+    },
+    {
+      "date": "2019-03-05",
+      "rows": 23287,
+      "bytes_approx": 6487676
+    },
+    {
+      "date": "2019-03-06",
+      "rows": 29929,
+      "bytes_approx": 8334711
+    },
+    {
+      "date": "2019-03-07",
+      "rows": 50756,
+      "bytes_approx": 14133262
+    },
+    {
+      "date": "2019-03-08",
+      "rows": 52355,
+      "bytes_approx": 14576512
+    },
+    {
+      "date": "2019-03-11",
+      "rows": 38060,
+      "bytes_approx": 10604425
+    },
+    {
+      "date": "2019-03-12",
+      "rows": 30952,
+      "bytes_approx": 8623717
+    },
+    {
+      "date": "2019-03-13",
+      "rows": 38937,
+      "bytes_approx": 10843365
+    },
+    {
+      "date": "2019-03-14",
+      "rows": 24247,
+      "bytes_approx": 6752751
+    },
+    {
+      "date": "2019-03-15",
+      "rows": 43234,
+      "bytes_approx": 12041416
+    },
+    {
+      "date": "2019-03-18",
+      "rows": 30500,
+      "bytes_approx": 8495209
+    },
+    {
+      "date": "2019-03-19",
+      "rows": 31481,
+      "bytes_approx": 8770706
+    },
+    {
+      "date": "2019-03-20",
+      "rows": 36239,
+      "bytes_approx": 10091590
+    },
+    {
+      "date": "2019-03-21",
+      "rows": 43444,
+      "bytes_approx": 12097975
+    },
+    {
+      "date": "2019-03-22",
+      "rows": 56195,
+      "bytes_approx": 15645778
+    },
+    {
+      "date": "2019-03-25",
+      "rows": 35710,
+      "bytes_approx": 9943639
+    },
+    {
+      "date": "2019-03-26",
+      "rows": 45636,
+      "bytes_approx": 12712653
+    },
+    {
+      "date": "2019-03-27",
+      "rows": 36015,
+      "bytes_approx": 10032521
+    },
+    {
+      "date": "2019-03-28",
+      "rows": 31720,
+      "bytes_approx": 8840127
+    },
+    {
+      "date": "2019-03-29",
+      "rows": 33617,
+      "bytes_approx": 9363763
+    },
+    {
+      "date": "2019-04-01",
+      "rows": 30845,
+      "bytes_approx": 8595617
+    },
+    {
+      "date": "2019-04-02",
+      "rows": 22395,
+      "bytes_approx": 6240267
+    },
+    {
+      "date": "2019-04-03",
+      "rows": 37219,
+      "bytes_approx": 10371021
+    },
+    {
+      "date": "2019-04-04",
+      "rows": 28543,
+      "bytes_approx": 7953944
+    },
+    {
+      "date": "2019-04-05",
+      "rows": 26409,
+      "bytes_approx": 7357316
+    },
+    {
+      "date": "2019-04-08",
+      "rows": 20330,
+      "bytes_approx": 5661707
+    },
+    {
+      "date": "2019-04-09",
+      "rows": 24062,
+      "bytes_approx": 6702425
+    },
+    {
+      "date": "2019-04-10",
+      "rows": 17318,
+      "bytes_approx": 4824704
+    },
+    {
+      "date": "2019-04-11",
+      "rows": 19700,
+      "bytes_approx": 5488878
+    },
+    {
+      "date": "2019-04-12",
+      "rows": 27605,
+      "bytes_approx": 7688674
+    },
+    {
+      "date": "2019-04-15",
+      "rows": 20645,
+      "bytes_approx": 5752032
+    },
+    {
+      "date": "2019-04-16",
+      "rows": 24555,
+      "bytes_approx": 6840572
+    },
+    {
+      "date": "2019-04-17",
+      "rows": 28852,
+      "bytes_approx": 8036354
+    },
+    {
+      "date": "2019-04-18",
+      "rows": 28972,
+      "bytes_approx": 8071281
+    },
+    {
+      "date": "2019-04-22",
+      "rows": 19920,
+      "bytes_approx": 5548947
+    },
+    {
+      "date": "2019-04-23",
+      "rows": 38298,
+      "bytes_approx": 10661891
+    },
+    {
+      "date": "2019-04-24",
+      "rows": 25314,
+      "bytes_approx": 7048853
+    },
+    {
+      "date": "2019-04-25",
+      "rows": 30426,
+      "bytes_approx": 8468454
+    },
+    {
+      "date": "2019-04-26",
+      "rows": 35900,
+      "bytes_approx": 9991653
+    },
+    {
+      "date": "2019-04-29",
+      "rows": 18836,
+      "bytes_approx": 5243824
+    },
+    {
+      "date": "2019-04-30",
+      "rows": 28546,
+      "bytes_approx": 7942440
+    },
+    {
+      "date": "2019-05-01",
+      "rows": 34935,
+      "bytes_approx": 9724950
+    },
+    {
+      "date": "2019-05-02",
+      "rows": 40353,
+      "bytes_approx": 11237791
+    },
+    {
+      "date": "2019-05-03",
+      "rows": 41784,
+      "bytes_approx": 11633373
+    },
+    {
+      "date": "2019-05-06",
+      "rows": 45707,
+      "bytes_approx": 12731503
+    },
+    {
+      "date": "2019-05-07",
+      "rows": 74305,
+      "bytes_approx": 20684838
+    },
+    {
+      "date": "2019-05-08",
+      "rows": 33486,
+      "bytes_approx": 9318611
+    },
+    {
+      "date": "2019-05-09",
+      "rows": 66420,
+      "bytes_approx": 18487149
+    },
+    {
+      "date": "2019-05-10",
+      "rows": 71121,
+      "bytes_approx": 19804231
+    },
+    {
+      "date": "2019-05-13",
+      "rows": 60567,
+      "bytes_approx": 16860151
+    },
+    {
+      "date": "2019-05-14",
+      "rows": 42494,
+      "bytes_approx": 11831128
+    },
+    {
+      "date": "2019-05-15",
+      "rows": 39958,
+      "bytes_approx": 11129125
+    },
+    {
+      "date": "2019-05-16",
+      "rows": 48191,
+      "bytes_approx": 13423099
+    },
+    {
+      "date": "2019-05-17",
+      "rows": 47981,
+      "bytes_approx": 13361675
+    },
+    {
+      "date": "2019-05-20",
+      "rows": 48252,
+      "bytes_approx": 13430789
+    },
+    {
+      "date": "2019-05-21",
+      "rows": 26869,
+      "bytes_approx": 7482104
+    },
+    {
+      "date": "2019-05-22",
+      "rows": 23912,
+      "bytes_approx": 6658079
+    },
+    {
+      "date": "2019-05-23",
+      "rows": 58713,
+      "bytes_approx": 16347485
+    },
+    {
+      "date": "2019-05-24",
+      "rows": 38238,
+      "bytes_approx": 10648928
+    },
+    {
+      "date": "2019-05-28",
+      "rows": 32037,
+      "bytes_approx": 8918672
+    },
+    {
+      "date": "2019-05-29",
+      "rows": 51716,
+      "bytes_approx": 14397338
+    },
+    {
+      "date": "2019-05-30",
+      "rows": 31193,
+      "bytes_approx": 8687403
+    },
+    {
+      "date": "2019-05-31",
+      "rows": 51464,
+      "bytes_approx": 14333252
+    },
+    {
+      "date": "2019-06-03",
+      "rows": 77997,
+      "bytes_approx": 21718106
+    },
+    {
+      "date": "2019-06-04",
+      "rows": 49890,
+      "bytes_approx": 13890460
+    },
+    {
+      "date": "2019-06-05",
+      "rows": 38517,
+      "bytes_approx": 10725148
+    },
+    {
+      "date": "2019-06-06",
+      "rows": 32623,
+      "bytes_approx": 9087279
+    },
+    {
+      "date": "2019-06-07",
+      "rows": 57292,
+      "bytes_approx": 15957277
+    },
+    {
+      "date": "2019-06-10",
+      "rows": 46711,
+      "bytes_approx": 13011007
+    },
+    {
+      "date": "2019-06-11",
+      "rows": 35954,
+      "bytes_approx": 10012744
+    },
+    {
+      "date": "2019-06-12",
+      "rows": 26207,
+      "bytes_approx": 7301505
+    },
+    {
+      "date": "2019-06-13",
+      "rows": 21779,
+      "bytes_approx": 6068273
+    },
+    {
+      "date": "2019-06-14",
+      "rows": 26372,
+      "bytes_approx": 7346777
+    },
+    {
+      "date": "2019-06-17",
+      "rows": 21867,
+      "bytes_approx": 6094444
+    },
+    {
+      "date": "2019-06-18",
+      "rows": 44071,
+      "bytes_approx": 12271450
+    },
+    {
+      "date": "2019-06-19",
+      "rows": 32597,
+      "bytes_approx": 9079433
+    },
+    {
+      "date": "2019-06-20",
+      "rows": 48053,
+      "bytes_approx": 13379847
+    },
+    {
+      "date": "2019-06-21",
+      "rows": 37120,
+      "bytes_approx": 10336130
+    },
+    {
+      "date": "2019-06-24",
+      "rows": 21395,
+      "bytes_approx": 5960634
+    },
+    {
+      "date": "2019-06-25",
+      "rows": 38760,
+      "bytes_approx": 10792306
+    },
+    {
+      "date": "2019-06-26",
+      "rows": 23895,
+      "bytes_approx": 6654604
+    },
+    {
+      "date": "2019-06-27",
+      "rows": 22624,
+      "bytes_approx": 6301503
+    },
+    {
+      "date": "2019-06-28",
+      "rows": 30345,
+      "bytes_approx": 8452302
+    },
+    {
+      "date": "2019-07-01",
+      "rows": 39252,
+      "bytes_approx": 10931980
+    },
+    {
+      "date": "2019-07-02",
+      "rows": 23073,
+      "bytes_approx": 6425346
+    },
+    {
+      "date": "2019-07-03",
+      "rows": 20559,
+      "bytes_approx": 5724071
+    },
+    {
+      "date": "2019-07-05",
+      "rows": 30744,
+      "bytes_approx": 8560536
+    },
+    {
+      "date": "2019-07-08",
+      "rows": 27349,
+      "bytes_approx": 7616530
+    },
+    {
+      "date": "2019-07-09",
+      "rows": 20561,
+      "bytes_approx": 5727443
+    },
+    {
+      "date": "2019-07-10",
+      "rows": 35006,
+      "bytes_approx": 9747453
+    },
+    {
+      "date": "2019-07-11",
+      "rows": 32176,
+      "bytes_approx": 8961512
+    },
+    {
+      "date": "2019-07-12",
+      "rows": 29438,
+      "bytes_approx": 8198955
+    },
+    {
+      "date": "2019-07-15",
+      "rows": 20741,
+      "bytes_approx": 5775751
+    },
+    {
+      "date": "2019-07-16",
+      "rows": 23088,
+      "bytes_approx": 6428251
+    },
+    {
+      "date": "2019-07-17",
+      "rows": 22360,
+      "bytes_approx": 6226016
+    },
+    {
+      "date": "2019-07-18",
+      "rows": 34564,
+      "bytes_approx": 9628228
+    },
+    {
+      "date": "2019-07-19",
+      "rows": 39009,
+      "bytes_approx": 10867371
+    },
+    {
+      "date": "2019-07-22",
+      "rows": 28530,
+      "bytes_approx": 7945394
+    },
+    {
+      "date": "2019-07-23",
+      "rows": 21970,
+      "bytes_approx": 6119474
+    },
+    {
+      "date": "2019-07-24",
+      "rows": 26130,
+      "bytes_approx": 7276799
+    },
+    {
+      "date": "2019-07-25",
+      "rows": 31747,
+      "bytes_approx": 8842994
+    },
+    {
+      "date": "2019-07-26",
+      "rows": 32122,
+      "bytes_approx": 8948035
+    },
+    {
+      "date": "2019-07-29",
+      "rows": 22421,
+      "bytes_approx": 6245178
+    },
+    {
+      "date": "2019-07-30",
+      "rows": 22279,
+      "bytes_approx": 6204750
+    },
+    {
+      "date": "2019-07-31",
+      "rows": 43172,
+      "bytes_approx": 12028729
+    },
+    {
+      "date": "2019-08-01",
+      "rows": 70628,
+      "bytes_approx": 19678934
+    },
+    {
+      "date": "2019-08-02",
+      "rows": 83770,
+      "bytes_approx": 23344779
+    },
+    {
+      "date": "2019-08-05",
+      "rows": 88116,
+      "bytes_approx": 24559076
+    },
+    {
+      "date": "2019-08-06",
+      "rows": 51175,
+      "bytes_approx": 14261301
+    },
+    {
+      "date": "2019-08-07",
+      "rows": 61520,
+      "bytes_approx": 17143727
+    },
+    {
+      "date": "2019-08-08",
+      "rows": 49301,
+      "bytes_approx": 13739629
+    },
+    {
+      "date": "2019-08-09",
+      "rows": 53883,
+      "bytes_approx": 15018332
+    },
+    {
+      "date": "2019-08-12",
+      "rows": 37054,
+      "bytes_approx": 10327081
+    },
+    {
+      "date": "2019-08-13",
+      "rows": 55992,
+      "bytes_approx": 15604919
+    },
+    {
+      "date": "2019-08-14",
+      "rows": 69227,
+      "bytes_approx": 19290905
+    },
+    {
+      "date": "2019-08-15",
+      "rows": 55693,
+      "bytes_approx": 15517462
+    },
+    {
+      "date": "2019-08-16",
+      "rows": 47510,
+      "bytes_approx": 13242454
+    },
+    {
+      "date": "2019-08-19",
+      "rows": 34389,
+      "bytes_approx": 9583199
+    },
+    {
+      "date": "2019-08-20",
+      "rows": 33001,
+      "bytes_approx": 9198739
+    },
+    {
+      "date": "2019-08-21",
+      "rows": 27144,
+      "bytes_approx": 7565136
+    },
+    {
+      "date": "2019-08-22",
+      "rows": 38760,
+      "bytes_approx": 10800650
+    },
+    {
+      "date": "2019-08-23",
+      "rows": 88369,
+      "bytes_approx": 24621304
+    },
+    {
+      "date": "2019-08-26",
+      "rows": 35513,
+      "bytes_approx": 9897212
+    },
+    {
+      "date": "2019-08-27",
+      "rows": 34025,
+      "bytes_approx": 9484289
+    },
+    {
+      "date": "2019-08-28",
+      "rows": 28410,
+      "bytes_approx": 7918450
+    },
+    {
+      "date": "2019-08-29",
+      "rows": 41201,
+      "bytes_approx": 11482695
+    },
+    {
+      "date": "2019-08-30",
+      "rows": 38842,
+      "bytes_approx": 10825345
+    },
+    {
+      "date": "2019-09-03",
+      "rows": 32703,
+      "bytes_approx": 9110660
+    },
+    {
+      "date": "2019-09-04",
+      "rows": 27186,
+      "bytes_approx": 7574447
+    },
+    {
+      "date": "2019-09-05",
+      "rows": 43941,
+      "bytes_approx": 12239811
+    },
+    {
+      "date": "2019-09-06",
+      "rows": 27935,
+      "bytes_approx": 7783910
+    },
+    {
+      "date": "2019-09-09",
+      "rows": 34651,
+      "bytes_approx": 9653173
+    },
+    {
+      "date": "2019-09-10",
+      "rows": 33264,
+      "bytes_approx": 9267510
+    },
+    {
+      "date": "2019-09-11",
+      "rows": 28320,
+      "bytes_approx": 7890735
+    },
+    {
+      "date": "2019-09-12",
+      "rows": 36377,
+      "bytes_approx": 10136924
+    },
+    {
+      "date": "2019-09-13",
+      "rows": 30665,
+      "bytes_approx": 8545508
+    },
+    {
+      "date": "2019-09-16",
+      "rows": 21164,
+      "bytes_approx": 5893859
+    },
+    {
+      "date": "2019-09-17",
+      "rows": 20292,
+      "bytes_approx": 5651370
+    },
+    {
+      "date": "2019-09-18",
+      "rows": 32868,
+      "bytes_approx": 9155689
+    },
+    {
+      "date": "2019-09-19",
+      "rows": 35767,
+      "bytes_approx": 9962235
+    },
+    {
+      "date": "2019-09-20",
+      "rows": 42863,
+      "bytes_approx": 11942472
+    },
+    {
+      "date": "2019-09-23",
+      "rows": 24970,
+      "bytes_approx": 6958200
+    },
+    {
+      "date": "2019-09-24",
+      "rows": 54512,
+      "bytes_approx": 15190226
+    },
+    {
+      "date": "2019-09-25",
+      "rows": 43043,
+      "bytes_approx": 11994923
+    },
+    {
+      "date": "2019-09-26",
+      "rows": 31261,
+      "bytes_approx": 8712833
+    },
+    {
+      "date": "2019-09-27",
+      "rows": 62811,
+      "bytes_approx": 17505221
+    },
+    {
+      "date": "2019-09-30",
+      "rows": 29150,
+      "bytes_approx": 8121434
+    },
+    {
+      "date": "2019-10-01",
+      "rows": 35529,
+      "bytes_approx": 9898613
+    },
+    {
+      "date": "2019-10-02",
+      "rows": 61751,
+      "bytes_approx": 17203697
+    },
+    {
+      "date": "2019-10-03",
+      "rows": 47821,
+      "bytes_approx": 13325970
+    },
+    {
+      "date": "2019-10-04",
+      "rows": 40276,
+      "bytes_approx": 11221676
+    },
+    {
+      "date": "2019-10-07",
+      "rows": 27526,
+      "bytes_approx": 7671150
+    },
+    {
+      "date": "2019-10-08",
+      "rows": 44994,
+      "bytes_approx": 12539783
+    },
+    {
+      "date": "2019-10-09",
+      "rows": 29182,
+      "bytes_approx": 8134489
+    },
+    {
+      "date": "2019-10-10",
+      "rows": 32286,
+      "bytes_approx": 8998347
+    },
+    {
+      "date": "2019-10-11",
+      "rows": 60135,
+      "bytes_approx": 16762083
+    },
+    {
+      "date": "2019-10-14",
+      "rows": 20521,
+      "bytes_approx": 5720194
+    },
+    {
+      "date": "2019-10-15",
+      "rows": 38094,
+      "bytes_approx": 10620030
+    },
+    {
+      "date": "2019-10-16",
+      "rows": 24767,
+      "bytes_approx": 6905420
+    },
+    {
+      "date": "2019-10-17",
+      "rows": 30813,
+      "bytes_approx": 8592545
+    },
+    {
+      "date": "2019-10-18",
+      "rows": 44186,
+      "bytes_approx": 12318375
+    },
+    {
+      "date": "2019-10-21",
+      "rows": 21878,
+      "bytes_approx": 6100479
+    },
+    {
+      "date": "2019-10-22",
+      "rows": 27352,
+      "bytes_approx": 7627330
+    },
+    {
+      "date": "2019-10-23",
+      "rows": 22217,
+      "bytes_approx": 6195492
+    },
+    {
+      "date": "2019-10-24",
+      "rows": 30502,
+      "bytes_approx": 8503869
+    },
+    {
+      "date": "2019-10-25",
+      "rows": 48823,
+      "bytes_approx": 13609032
+    },
+    {
+      "date": "2019-10-28",
+      "rows": 33469,
+      "bytes_approx": 9328321
+    },
+    {
+      "date": "2019-10-29",
+      "rows": 26190,
+      "bytes_approx": 7302090
+    },
+    {
+      "date": "2019-10-30",
+      "rows": 28706,
+      "bytes_approx": 8000915
+    },
+    {
+      "date": "2019-10-31",
+      "rows": 33625,
+      "bytes_approx": 9374634
+    },
+    {
+      "date": "2019-11-01",
+      "rows": 42017,
+      "bytes_approx": 11711639
+    },
+    {
+      "date": "2019-11-04",
+      "rows": 31813,
+      "bytes_approx": 8882795
+    },
+    {
+      "date": "2019-11-05",
+      "rows": 20548,
+      "bytes_approx": 5739010
+    },
+    {
+      "date": "2019-11-06",
+      "rows": 23761,
+      "bytes_approx": 6635025
+    },
+    {
+      "date": "2019-11-07",
+      "rows": 34017,
+      "bytes_approx": 9499011
+    },
+    {
+      "date": "2019-11-08",
+      "rows": 26666,
+      "bytes_approx": 7446122
+    },
+    {
+      "date": "2019-11-11",
+      "rows": 15921,
+      "bytes_approx": 4446963
+    },
+    {
+      "date": "2019-11-12",
+      "rows": 25137,
+      "bytes_approx": 7018813
+    },
+    {
+      "date": "2019-11-13",
+      "rows": 21721,
+      "bytes_approx": 6066536
+    },
+    {
+      "date": "2019-11-14",
+      "rows": 23572,
+      "bytes_approx": 6582553
+    },
+    {
+      "date": "2019-11-15",
+      "rows": 28947,
+      "bytes_approx": 8084149
+    },
+    {
+      "date": "2019-11-18",
+      "rows": 22922,
+      "bytes_approx": 6398025
+    },
+    {
+      "date": "2019-11-19",
+      "rows": 22613,
+      "bytes_approx": 6311089
+    },
+    {
+      "date": "2019-11-20",
+      "rows": 35337,
+      "bytes_approx": 9869312
+    },
+    {
+      "date": "2019-11-21",
+      "rows": 24282,
+      "bytes_approx": 6784389
+    },
+    {
+      "date": "2019-11-22",
+      "rows": 30193,
+      "bytes_approx": 8435261
+    },
+    {
+      "date": "2019-11-25",
+      "rows": 27029,
+      "bytes_approx": 7551819
+    },
+    {
+      "date": "2019-11-26",
+      "rows": 22104,
+      "bytes_approx": 6173158
+    },
+    {
+      "date": "2019-11-27",
+      "rows": 28732,
+      "bytes_approx": 8025741
+    },
+    {
+      "date": "2019-11-29",
+      "rows": 18263,
+      "bytes_approx": 5104076
+    },
+    {
+      "date": "2019-12-02",
+      "rows": 36724,
+      "bytes_approx": 10255745
+    },
+    {
+      "date": "2019-12-03",
+      "rows": 38990,
+      "bytes_approx": 10894892
+    },
+    {
+      "date": "2019-12-04",
+      "rows": 23736,
+      "bytes_approx": 6630151
+    },
+    {
+      "date": "2019-12-05",
+      "rows": 19918,
+      "bytes_approx": 5562556
+    },
+    {
+      "date": "2019-12-06",
+      "rows": 29749,
+      "bytes_approx": 8311832
+    },
+    {
+      "date": "2019-12-09",
+      "rows": 18439,
+      "bytes_approx": 5152275
+    },
+    {
+      "date": "2019-12-10",
+      "rows": 17670,
+      "bytes_approx": 4936137
+    },
+    {
+      "date": "2019-12-11",
+      "rows": 16496,
+      "bytes_approx": 4608379
+    },
+    {
+      "date": "2019-12-12",
+      "rows": 40515,
+      "bytes_approx": 11312113
+    },
+    {
+      "date": "2019-12-13",
+      "rows": 35724,
+      "bytes_approx": 9976121
+    },
+    {
+      "date": "2019-12-16",
+      "rows": 37274,
+      "bytes_approx": 10412096
+    },
+    {
+      "date": "2019-12-17",
+      "rows": 21647,
+      "bytes_approx": 6045416
+    },
+    {
+      "date": "2019-12-18",
+      "rows": 25838,
+      "bytes_approx": 7212829
+    },
+    {
+      "date": "2019-12-19",
+      "rows": 27172,
+      "bytes_approx": 7587510
+    },
+    {
+      "date": "2019-12-20",
+      "rows": 39672,
+      "bytes_approx": 11077788
+    },
+    {
+      "date": "2019-12-23",
+      "rows": 20006,
+      "bytes_approx": 5587454
+    },
+    {
+      "date": "2019-12-24",
+      "rows": 9708,
+      "bytes_approx": 2711380
+    },
+    {
+      "date": "2019-12-26",
+      "rows": 27930,
+      "bytes_approx": 7802629
+    },
+    {
+      "date": "2019-12-27",
+      "rows": 39721,
+      "bytes_approx": 11089929
+    },
+    {
+      "date": "2019-12-30",
+      "rows": 33680,
+      "bytes_approx": 9393426
+    },
+    {
+      "date": "2019-12-31",
+      "rows": 23930,
+      "bytes_approx": 6677054
+    },
+    {
+      "date": "2020-01-02",
+      "rows": 39069,
+      "bytes_approx": 10898738
+    },
+    {
+      "date": "2020-01-03",
+      "rows": 40288,
+      "bytes_approx": 11235201
+    },
+    {
+      "date": "2020-01-06",
+      "rows": 28225,
+      "bytes_approx": 7872494
+    },
+    {
+      "date": "2020-01-07",
+      "rows": 25651,
+      "bytes_approx": 7153454
+    },
+    {
+      "date": "2020-01-08",
+      "rows": 42194,
+      "bytes_approx": 11769092
+    },
+    {
+      "date": "2020-01-09",
+      "rows": 43659,
+      "bytes_approx": 12179308
+    },
+    {
+      "date": "2020-01-10",
+      "rows": 48098,
+      "bytes_approx": 13418980
+    },
+    {
+      "date": "2020-01-13",
+      "rows": 34918,
+      "bytes_approx": 9740464
+    },
+    {
+      "date": "2020-01-14",
+      "rows": 38280,
+      "bytes_approx": 10671900
+    },
+    {
+      "date": "2020-01-15",
+      "rows": 30466,
+      "bytes_approx": 8497000
+    },
+    {
+      "date": "2020-01-16",
+      "rows": 36840,
+      "bytes_approx": 10276737
+    },
+    {
+      "date": "2020-01-17",
+      "rows": 41391,
+      "bytes_approx": 11547206
+    },
+    {
+      "date": "2020-01-21",
+      "rows": 32545,
+      "bytes_approx": 9075523
+    },
+    {
+      "date": "2020-01-22",
+      "rows": 34350,
+      "bytes_approx": 9583764
+    },
+    {
+      "date": "2020-01-23",
+      "rows": 33827,
+      "bytes_approx": 9433457
+    },
+    {
+      "date": "2020-01-24",
+      "rows": 59710,
+      "bytes_approx": 16647545
+    },
+    {
+      "date": "2020-01-27",
+      "rows": 58804,
+      "bytes_approx": 16400577
+    },
+    {
+      "date": "2020-01-28",
+      "rows": 47196,
+      "bytes_approx": 13173085
+    },
+    {
+      "date": "2020-01-29",
+      "rows": 38705,
+      "bytes_approx": 10799691
+    },
+    {
+      "date": "2020-01-30",
+      "rows": 51192,
+      "bytes_approx": 14284821
+    },
+    {
+      "date": "2020-01-31",
+      "rows": 81920,
+      "bytes_approx": 22857201
+    },
+    {
+      "date": "2020-02-03",
+      "rows": 42110,
+      "bytes_approx": 11749202
+    },
+    {
+      "date": "2020-02-04",
+      "rows": 58865,
+      "bytes_approx": 16426480
+    },
+    {
+      "date": "2020-02-05",
+      "rows": 44800,
+      "bytes_approx": 12506605
+    },
+    {
+      "date": "2020-02-06",
+      "rows": 43981,
+      "bytes_approx": 12279031
+    },
+    {
+      "date": "2020-02-07",
+      "rows": 47273,
+      "bytes_approx": 13199507
+    },
+    {
+      "date": "2020-02-10",
+      "rows": 35874,
+      "bytes_approx": 10020283
+    },
+    {
+      "date": "2020-02-11",
+      "rows": 53563,
+      "bytes_approx": 14959954
+    },
+    {
+      "date": "2020-02-12",
+      "rows": 42075,
+      "bytes_approx": 11751694
+    },
+    {
+      "date": "2020-02-13",
+      "rows": 43002,
+      "bytes_approx": 12009713
+    },
+    {
+      "date": "2020-02-14",
+      "rows": 40969,
+      "bytes_approx": 11445543
+    },
+    {
+      "date": "2020-02-18",
+      "rows": 37019,
+      "bytes_approx": 10341144
+    },
+    {
+      "date": "2020-02-19",
+      "rows": 43053,
+      "bytes_approx": 12028121
+    },
+    {
+      "date": "2020-02-20",
+      "rows": 72975,
+      "bytes_approx": 20372229
+    },
+    {
+      "date": "2020-02-21",
+      "rows": 95664,
+      "bytes_approx": 26710260
+    },
+    {
+      "date": "2020-02-24",
+      "rows": 105090,
+      "bytes_approx": 29328072
+    },
+    {
+      "date": "2020-02-25",
+      "rows": 111307,
+      "bytes_approx": 31073410
+    },
+    {
+      "date": "2020-02-26",
+      "rows": 86183,
+      "bytes_approx": 24057321
+    },
+    {
+      "date": "2020-02-27",
+      "rows": 119412,
+      "bytes_approx": 33314597
+    },
+    {
+      "date": "2020-02-28",
+      "rows": 116902,
+      "bytes_approx": 32597718
+    },
+    {
+      "date": "2020-03-02",
+      "rows": 72483,
+      "bytes_approx": 20215411
+    },
+    {
+      "date": "2020-03-03",
+      "rows": 87191,
+      "bytes_approx": 24311890
+    },
+    {
+      "date": "2020-03-04",
+      "rows": 68952,
+      "bytes_approx": 19235702
+    },
+    {
+      "date": "2020-03-05",
+      "rows": 70154,
+      "bytes_approx": 19564885
+    },
+    {
+      "date": "2020-03-06",
+      "rows": 81720,
+      "bytes_approx": 22796256
+    },
+    {
+      "date": "2020-03-09",
+      "rows": 70742,
+      "bytes_approx": 19737862
+    },
+    {
+      "date": "2020-03-10",
+      "rows": 66211,
+      "bytes_approx": 18473241
+    },
+    {
+      "date": "2020-03-11",
+      "rows": 67792,
+      "bytes_approx": 18915938
+    },
+    {
+      "date": "2020-03-12",
+      "rows": 104336,
+      "bytes_approx": 29083514
+    },
+    {
+      "date": "2020-03-13",
+      "rows": 98705,
+      "bytes_approx": 27538897
+    },
+    {
+      "date": "2020-03-16",
+      "rows": 71294,
+      "bytes_approx": 19886491
+    },
+    {
+      "date": "2020-03-17",
+      "rows": 68615,
+      "bytes_approx": 19144568
+    },
+    {
+      "date": "2020-03-18",
+      "rows": 69390,
+      "bytes_approx": 19352066
+    },
+    {
+      "date": "2020-03-19",
+      "rows": 65287,
+      "bytes_approx": 18209409
+    },
+    {
+      "date": "2020-03-20",
+      "rows": 70396,
+      "bytes_approx": 19638279
+    },
+    {
+      "date": "2020-03-23",
+      "rows": 61227,
+      "bytes_approx": 17085916
+    },
+    {
+      "date": "2020-03-24",
+      "rows": 71833,
+      "bytes_approx": 20049299
+    },
+    {
+      "date": "2020-03-25",
+      "rows": 67478,
+      "bytes_approx": 18830736
+    },
+    {
+      "date": "2020-03-26",
+      "rows": 59224,
+      "bytes_approx": 16534816
+    },
+    {
+      "date": "2020-03-27",
+      "rows": 57258,
+      "bytes_approx": 15980749
+    },
+    {
+      "date": "2020-03-30",
+      "rows": 49925,
+      "bytes_approx": 13939611
+    },
+    {
+      "date": "2020-03-31",
+      "rows": 57968,
+      "bytes_approx": 16184456
+    },
+    {
+      "date": "2020-04-01",
+      "rows": 63241,
+      "bytes_approx": 17652833
+    },
+    {
+      "date": "2020-04-02",
+      "rows": 47544,
+      "bytes_approx": 13271513
+    },
+    {
+      "date": "2020-04-03",
+      "rows": 55408,
+      "bytes_approx": 15471109
+    },
+    {
+      "date": "2020-04-06",
+      "rows": 66587,
+      "bytes_approx": 18587734
+    },
+    {
+      "date": "2020-04-07",
+      "rows": 68404,
+      "bytes_approx": 19095736
+    },
+    {
+      "date": "2020-04-08",
+      "rows": 49055,
+      "bytes_approx": 13697609
+    },
+    {
+      "date": "2020-04-09",
+      "rows": 66345,
+      "bytes_approx": 18520432
+    },
+    {
+      "date": "2020-04-13",
+      "rows": 45067,
+      "bytes_approx": 12584578
+    },
+    {
+      "date": "2020-04-14",
+      "rows": 82079,
+      "bytes_approx": 22924702
+    },
+    {
+      "date": "2020-04-15",
+      "rows": 50965,
+      "bytes_approx": 14235921
+    },
+    {
+      "date": "2020-04-16",
+      "rows": 68043,
+      "bytes_approx": 19003673
+    },
+    {
+      "date": "2020-04-17",
+      "rows": 79962,
+      "bytes_approx": 22329501
+    },
+    {
+      "date": "2020-04-20",
+      "rows": 47241,
+      "bytes_approx": 13197996
+    },
+    {
+      "date": "2020-04-21",
+      "rows": 83442,
+      "bytes_approx": 23303881
+    },
     {
       "date": "2026-07-10",
       "rows": 972743,
