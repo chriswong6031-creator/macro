@@ -1,0 +1,916 @@
+{
+  "schema": "price_pressure.base_rates.v1",
+  "engine_version": "price_pressure.v1",
+  "generated_utc": "2026-08-10T13:43:07+00:00",
+  "display_only": true,
+  "authority": {
+    "can_rank": false,
+    "can_size": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_escalate": false
+  },
+  "null_contrast_statement": "Family-level differences in forward outcomes were measured and are null (0/10 contrasts) — DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER; families are shown as context, not separation.",
+  "headline_horizons": [
+    5,
+    21
+  ],
+  "graded_horizons": [
+    1,
+    3,
+    5,
+    10,
+    21,
+    60
+  ],
+  "terminal_windows": {
+    "primary_d": 21,
+    "secondary_d": 60,
+    "note": "t+60 is graded identically to t+21 but sits BEYOND the measured record (LSR-P0 measured 1..21 sessions)."
+  },
+  "design": {
+    "z_trigger": 3.0,
+    "vol_trigger": 2.0,
+    "min_price_usd": 5.0,
+    "min_adv_event_usd": 5000000.0,
+    "base_window_d": 60,
+    "news_window_calendar_days": 1,
+    "residual_basis": "equal-weighted same-sector ex-self peer return (LSR-P0)",
+    "source": "scripts/research_liquidity_shock_reversal.py (imported, not copied)"
+  },
+  "coverage": {
+    "panel_names": 4281,
+    "panel_span": [
+      "2021-07-06",
+      "2026-07-02"
+    ],
+    "span_note": "Rolling store: a later re-run drops the oldest era, so these rates are span-bound and stamped. Five years of history, not twenty.",
+    "events_total": 35677,
+    "events_down": 17511,
+    "events_up": 18166,
+    "edgar_covered_share": 0.4573,
+    "revisions_covered_share": 0.5302,
+    "family_counts": {
+      "filing-coverage-unknown": 19363,
+      "earnings-filing": 9396,
+      "no-filing": 6468,
+      "other-filing": 450
+    },
+    "peer_basis_shares": {
+      "sector": 0.5255,
+      "market": 0.4745
+    },
+    "basket_context_share": 0.1712,
+    "truncated_share": 0.0084,
+    "dead_tape_share": 0.0076,
+    "sector_covered_share": 0.3434
+  },
+  "day_facts": {
+    "panel_shock_count_p50": 19.0,
+    "panel_shock_count_p90": 60.0,
+    "panel_shock_count_p99": 139.82000000000016,
+    "panel_share_z2_p90": 0.10462665042494504,
+    "sessions": 1254,
+    "label": "A session at or above the P90 shock count is described as market-wide pressure rather than single-name pressure. This is a count threshold, not a classification of the day."
+  },
+  "tables": {
+    "down": {
+      "5": {
+        "earnings-filing": {
+          "n_events": 4673,
+          "episode_n": 4533,
+          "n_graded": 4525,
+          "n_dates": 804,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": -0.014656931972450236,
+              "lo": -0.049996094888353625,
+              "hi": 0.021149365379461098,
+              "n": 804
+            },
+            "q25": -0.34509048897489897,
+            "median": -0.04346102153518119,
+            "q75": 0.27167331907848974
+          },
+          "share_retraced_33pct": {
+            "point": 0.2186,
+            "ci": {
+              "mean": 0.22471786121776074,
+              "lo": 0.20255866275712903,
+              "hi": 0.24677102217053004,
+              "n": 804
+            }
+          },
+          "share_retraced_80pct": 0.0723,
+          "share_still_lower": 0.5386,
+          "terminal_shares": {
+            "ACCEPTED_LOWER_21D": 0.7038,
+            "RECOVERED_21D": 0.1492,
+            "PARTIAL_21D": 0.147
+          },
+          "n_terminal_graded": 4645,
+          "n_open": 28,
+          "share_truncated": 0.0,
+          "share_delisted_or_halted": 0.0
+        },
+        "other-filing": {
+          "n_events": 254,
+          "episode_n": 240,
+          "n_graded": 234,
+          "n_dates": 196,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": -0.04049811732752952,
+              "lo": -0.12445092395648895,
+              "hi": 0.0494269989984383,
+              "n": 196
+            },
+            "q25": -0.4618492339571829,
+            "median": -0.019645282424175438,
+            "q75": 0.32983588117799534
+          },
+          "share_retraced_33pct": {
+            "point": 0.2521,
+            "ci": {
+              "mean": 0.25255102040816324,
+              "lo": 0.19387755102040816,
+              "hi": 0.31547619047619047,
+              "n": 196
+            }
+          },
+          "share_retraced_80pct": 0.0684,
+          "share_still_lower": 0.5085,
+          "terminal_shares": {
+            "ACCEPTED_LOWER_21D": 0.6707,
+            "RECOVERED_21D": 0.1789,
+            "PARTIAL_21D": 0.1504
+          },
+          "n_terminal_graded": 246,
+          "n_open": 8,
+          "share_truncated": 0.0,
+          "share_delisted_or_halted": 0.0
+        },
+        "no-filing": {
+          "n_events": 3285,
+          "episode_n": 3044,
+          "n_graded": 3009,
+          "n_dates": 951,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": -0.024298463146547565,
+              "lo": -0.06045795482108729,
+              "hi": 0.010914810170337654,
+              "n": 951
+            },
+            "q25": -0.39453909248123253,
+            "median": 0.014180053770965293,
+            "q75": 0.4342493795224011
+          },
+          "share_retraced_33pct": {
+            "point": 0.3011,
+            "ci": {
+              "mean": 0.26319745807460565,
+              "lo": 0.24196898908197353,
+              "hi": 0.28464926163324117,
+              "n": 951
+            }
+          },
+          "share_retraced_80pct": 0.11,
+          "share_still_lower": 0.4909,
+          "terminal_shares": {
+            "ACCEPTED_LOWER_21D": 0.6161,
+            "RECOVERED_21D": 0.2449,
+            "PARTIAL_21D": 0.139
+          },
+          "n_terminal_graded": 3201,
+          "n_open": 84,
+          "share_truncated": 0.0006,
+          "share_delisted_or_halted": 0.0
+        },
+        "filing-coverage-unknown": {
+          "n_events": 9299,
+          "episode_n": 8800,
+          "n_graded": 8583,
+          "n_dates": 1147,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": -0.024857795095292134,
+              "lo": -0.05055553610859464,
+              "hi": 0.0017105717169286242,
+              "n": 1147
+            },
+            "q25": -0.37352747972443057,
+            "median": 0.007186938661646702,
+            "q75": 0.3439957200408015
+          },
+          "share_retraced_33pct": {
+            "point": 0.257,
+            "ci": {
+              "mean": 0.25526048274316576,
+              "lo": 0.23975013413329352,
+              "hi": 0.2704803018871882,
+              "n": 1147
+            }
+          },
+          "share_retraced_80pct": 0.0936,
+          "share_still_lower": 0.4952,
+          "terminal_shares": {
+            "ACCEPTED_LOWER_21D": 0.6604,
+            "RECOVERED_21D": 0.1983,
+            "PARTIAL_21D": 0.1369,
+            "DELISTED_OR_HALTED": 0.0045
+          },
+          "n_terminal_graded": 8983,
+          "n_open": 316,
+          "share_truncated": 0.0099,
+          "share_delisted_or_halted": 0.0045
+        },
+        "ALL": {
+          "n_events": 17511,
+          "episode_n": 16617,
+          "n_graded": 16351,
+          "n_dates": 1186,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": -0.025847865547837866,
+              "lo": -0.04697706706446906,
+              "hi": -0.004818370068963089,
+              "n": 1186
+            },
+            "q25": -0.37080789756413746,
+            "median": -0.008395850422737874,
+            "q75": 0.3387980331507101
+          },
+          "share_retraced_33pct": {
+            "point": 0.2544,
+            "ci": {
+              "mean": 0.25385251712568385,
+              "lo": 0.24211303344615207,
+              "hi": 0.26634520564975867,
+              "n": 1186
+            }
+          },
+          "share_retraced_80pct": 0.0903,
+          "share_still_lower": 0.5066,
+          "terminal_shares": {
+            "ACCEPTED_LOWER_21D": 0.664,
+            "RECOVERED_21D": 0.1934,
+            "PARTIAL_21D": 0.1403,
+            "DELISTED_OR_HALTED": 0.0023
+          },
+          "n_terminal_graded": 17075,
+          "n_open": 436,
+          "share_truncated": 0.0054,
+          "share_delisted_or_halted": 0.0023
+        }
+      },
+      "21": {
+        "earnings-filing": {
+          "n_events": 4673,
+          "episode_n": 4377,
+          "n_graded": 4351,
+          "n_dates": 790,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": -0.07753836280012438,
+              "lo": -0.1333866490422931,
+              "hi": -0.019610734854006388,
+              "n": 790
+            },
+            "q25": -0.6298901507462571,
+            "median": -0.07894975597879289,
+            "q75": 0.435444043430299
+          },
+          "share_retraced_33pct": {
+            "point": 0.2935,
+            "ci": {
+              "mean": 0.293721726174179,
+              "lo": 0.2716692386944311,
+              "hi": 0.31698702967331405,
+              "n": 790
+            }
+          },
+          "share_retraced_80pct": 0.1476,
+          "share_still_lower": 0.539,
+          "terminal_shares": {
+            "ACCEPTED_LOWER_21D": 0.7038,
+            "RECOVERED_21D": 0.1492,
+            "PARTIAL_21D": 0.147
+          },
+          "n_terminal_graded": 4645,
+          "n_open": 28,
+          "share_truncated": 0.0,
+          "share_delisted_or_halted": 0.0
+        },
+        "other-filing": {
+          "n_events": 254,
+          "episode_n": 222,
+          "n_graded": 214,
+          "n_dates": 180,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": -0.12428827076231452,
+              "lo": -0.3154965794775987,
+              "hi": 0.07168816742762826,
+              "n": 180
+            },
+            "q25": -0.6902679408470775,
+            "median": 0.042277457301349325,
+            "q75": 0.59221030412916
+          },
+          "share_retraced_33pct": {
+            "point": 0.3411,
+            "ci": {
+              "mean": 0.3275925925925926,
+              "lo": 0.25610185185185186,
+              "hi": 0.40185185185185185,
+              "n": 180
+            }
+          },
+          "share_retraced_80pct": 0.1822,
+          "share_still_lower": 0.4673,
+          "terminal_shares": {
+            "ACCEPTED_LOWER_21D": 0.6707,
+            "RECOVERED_21D": 0.1789,
+            "PARTIAL_21D": 0.1504
+          },
+          "n_terminal_graded": 246,
+          "n_open": 8,
+          "share_truncated": 0.0,
+          "share_delisted_or_halted": 0.0
+        },
+        "no-filing": {
+          "n_events": 3285,
+          "episode_n": 2819,
+          "n_graded": 2740,
+          "n_dates": 915,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": -0.07266494999530342,
+              "lo": -0.14192898886753894,
+              "hi": -0.0006921632198206369,
+              "n": 915
+            },
+            "q25": -0.7661841334493925,
+            "median": 0.02781463256650593,
+            "q75": 0.7635310910617159
+          },
+          "share_retraced_33pct": {
+            "point": 0.3828,
+            "ci": {
+              "mean": 0.35670236421125867,
+              "lo": 0.3353333297911771,
+              "hi": 0.37944501007833814,
+              "n": 915
+            }
+          },
+          "share_retraced_80pct": 0.2438,
+          "share_still_lower": 0.488,
+          "terminal_shares": {
+            "ACCEPTED_LOWER_21D": 0.6161,
+            "RECOVERED_21D": 0.2449,
+            "PARTIAL_21D": 0.139
+          },
+          "n_terminal_graded": 3201,
+          "n_open": 84,
+          "share_truncated": 0.0006,
+          "share_delisted_or_halted": 0.0
+        },
+        "filing-coverage-unknown": {
+          "n_events": 9299,
+          "episode_n": 8359,
+          "n_graded": 8021,
+          "n_dates": 1126,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": -0.10483224014336288,
+              "lo": -0.15325637747979773,
+              "hi": -0.05719020376105518,
+              "n": 1126
+            },
+            "q25": -0.7803265782282491,
+            "median": -0.11029751753439021,
+            "q75": 0.5862118182779713
+          },
+          "share_retraced_33pct": {
+            "point": 0.329,
+            "ci": {
+              "mean": 0.33215434187740733,
+              "lo": 0.31513476524061423,
+              "hi": 0.3494274052724113,
+              "n": 1126
+            }
+          },
+          "share_retraced_80pct": 0.1941,
+          "share_still_lower": 0.5462,
+          "terminal_shares": {
+            "ACCEPTED_LOWER_21D": 0.6604,
+            "RECOVERED_21D": 0.1983,
+            "PARTIAL_21D": 0.1369,
+            "DELISTED_OR_HALTED": 0.0045
+          },
+          "n_terminal_graded": 8983,
+          "n_open": 316,
+          "share_truncated": 0.0099,
+          "share_delisted_or_halted": 0.0045
+        },
+        "ALL": {
+          "n_events": 17511,
+          "episode_n": 15777,
+          "n_graded": 15326,
+          "n_dates": 1170,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": -0.08610882579898509,
+              "lo": -0.12368823105468155,
+              "hi": -0.049527715034271946,
+              "n": 1170
+            },
+            "q25": -0.738967287851826,
+            "median": -0.07346927253574002,
+            "q75": 0.5713211164181651
+          },
+          "share_retraced_33pct": {
+            "point": 0.3287,
+            "ci": {
+              "mean": 0.33291968171586966,
+              "lo": 0.3195026857822685,
+              "hi": 0.34653253974470705,
+              "n": 1170
+            }
+          },
+          "share_retraced_80pct": 0.1896,
+          "share_still_lower": 0.5326,
+          "terminal_shares": {
+            "ACCEPTED_LOWER_21D": 0.664,
+            "RECOVERED_21D": 0.1934,
+            "PARTIAL_21D": 0.1403,
+            "DELISTED_OR_HALTED": 0.0023
+          },
+          "n_terminal_graded": 17075,
+          "n_open": 436,
+          "share_truncated": 0.0054,
+          "share_delisted_or_halted": 0.0023
+        }
+      }
+    },
+    "up": {
+      "5": {
+        "earnings-filing": {
+          "n_events": 4723,
+          "episode_n": 4600,
+          "n_graded": 4591,
+          "n_dates": 787,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": 0.030522403897344196,
+              "lo": -0.0013471555737083819,
+              "hi": 0.06201143320276845,
+              "n": 787
+            },
+            "q25": -0.32135148075271047,
+            "median": 0.007291771733432275,
+            "q75": 0.3329607040464595
+          },
+          "share_retraced_33pct": {
+            "point": 0.2514,
+            "ci": {
+              "mean": 0.25102487359671866,
+              "lo": 0.22837780722218262,
+              "hi": 0.2730482913381448,
+              "n": 787
+            }
+          },
+          "share_retraced_80pct": 0.0817,
+          "share_still_lower": 0.4936,
+          "terminal_shares": {
+            "KEPT_21D": 0.6322,
+            "GAVE_BACK_21D": 0.1983,
+            "PARTIAL_21D": 0.1694
+          },
+          "n_terminal_graded": 4704,
+          "n_open": 19,
+          "share_truncated": 0.0,
+          "share_delisted_or_halted": 0.0
+        },
+        "other-filing": {
+          "n_events": 196,
+          "episode_n": 182,
+          "n_graded": 178,
+          "n_dates": 152,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": 0.04108793379401988,
+              "lo": -0.05462538936360379,
+              "hi": 0.14261016186053552,
+              "n": 152
+            },
+            "q25": -0.3499756829770861,
+            "median": 0.08389523170946517,
+            "q75": 0.3781158160385746
+          },
+          "share_retraced_33pct": {
+            "point": 0.3202,
+            "ci": {
+              "mean": 0.3092105263157895,
+              "lo": 0.23793859649122806,
+              "hi": 0.3859649122807018,
+              "n": 152
+            }
+          },
+          "share_retraced_80pct": 0.1011,
+          "share_still_lower": 0.4551,
+          "terminal_shares": {
+            "KEPT_21D": 0.6073,
+            "GAVE_BACK_21D": 0.2304,
+            "PARTIAL_21D": 0.1623
+          },
+          "n_terminal_graded": 191,
+          "n_open": 5,
+          "share_truncated": 0.0,
+          "share_delisted_or_halted": 0.0
+        },
+        "no-filing": {
+          "n_events": 3183,
+          "episode_n": 2945,
+          "n_graded": 2917,
+          "n_dates": 965,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": 0.02698944581555025,
+              "lo": -0.011086165705236021,
+              "hi": 0.06669747012566402,
+              "n": 965
+            },
+            "q25": -0.3516529548751292,
+            "median": 0.08243962247784317,
+            "q75": 0.5060701316097964
+          },
+          "share_retraced_33pct": {
+            "point": 0.3418,
+            "ci": {
+              "mean": 0.32388491317665624,
+              "lo": 0.300771406045749,
+              "hi": 0.3477397775220473,
+              "n": 965
+            }
+          },
+          "share_retraced_80pct": 0.1395,
+          "share_still_lower": 0.4487,
+          "terminal_shares": {
+            "KEPT_21D": 0.5787,
+            "GAVE_BACK_21D": 0.2841,
+            "PARTIAL_21D": 0.1372
+          },
+          "n_terminal_graded": 3126,
+          "n_open": 57,
+          "share_truncated": 0.0013,
+          "share_delisted_or_halted": 0.0
+        },
+        "filing-coverage-unknown": {
+          "n_events": 10064,
+          "episode_n": 9383,
+          "n_graded": 9212,
+          "n_dates": 1176,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": 0.01168568671413878,
+              "lo": -0.011642737548612425,
+              "hi": 0.03617592736981237,
+              "n": 1176
+            },
+            "q25": -0.3713027128218673,
+            "median": 0.04100572665488475,
+            "q75": 0.467950723651911
+          },
+          "share_retraced_33pct": {
+            "point": 0.3246,
+            "ci": {
+              "mean": 0.3012116167012307,
+              "lo": 0.2870152074110139,
+              "hi": 0.31517958651807115,
+              "n": 1176
+            }
+          },
+          "share_retraced_80pct": 0.1209,
+          "share_still_lower": 0.4709,
+          "terminal_shares": {
+            "KEPT_21D": 0.5519,
+            "GAVE_BACK_21D": 0.2987,
+            "PARTIAL_21D": 0.1438,
+            "DELISTED_OR_HALTED": 0.0056
+          },
+          "n_terminal_graded": 9817,
+          "n_open": 247,
+          "share_truncated": 0.02,
+          "share_delisted_or_halted": 0.0056
+        },
+        "ALL": {
+          "n_events": 18166,
+          "episode_n": 17110,
+          "n_graded": 16898,
+          "n_dates": 1198,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": 0.021675415549454537,
+              "lo": 0.002397389198528607,
+              "hi": 0.04109973972748102,
+              "n": 1198
+            },
+            "q25": -0.3548145533128,
+            "median": 0.03569751531756055,
+            "q75": 0.43594764130508395
+          },
+          "share_retraced_33pct": {
+            "point": 0.3076,
+            "ci": {
+              "mean": 0.2991519109355332,
+              "lo": 0.2881888800554692,
+              "hi": 0.31047184545952033,
+              "n": 1198
+            }
+          },
+          "share_retraced_80pct": 0.1133,
+          "share_still_lower": 0.4731,
+          "terminal_shares": {
+            "KEPT_21D": 0.5784,
+            "GAVE_BACK_21D": 0.2689,
+            "PARTIAL_21D": 0.1496,
+            "DELISTED_OR_HALTED": 0.0031
+          },
+          "n_terminal_graded": 17838,
+          "n_open": 328,
+          "share_truncated": 0.0113,
+          "share_delisted_or_halted": 0.0031
+        }
+      },
+      "21": {
+        "earnings-filing": {
+          "n_events": 4723,
+          "episode_n": 4462,
+          "n_graded": 4444,
+          "n_dates": 770,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": 0.09410227084849428,
+              "lo": 0.04248858901823075,
+              "hi": 0.14464076804259055,
+              "n": 770
+            },
+            "q25": -0.5164797779424465,
+            "median": 0.043915399566828675,
+            "q75": 0.6181433031642718
+          },
+          "share_retraced_33pct": {
+            "point": 0.3657,
+            "ci": {
+              "mean": 0.37746105051424655,
+              "lo": 0.35320465871530954,
+              "hi": 0.4011242164806266,
+              "n": 770
+            }
+          },
+          "share_retraced_80pct": 0.1971,
+          "share_still_lower": 0.4759,
+          "terminal_shares": {
+            "KEPT_21D": 0.6322,
+            "GAVE_BACK_21D": 0.1983,
+            "PARTIAL_21D": 0.1694
+          },
+          "n_terminal_graded": 4704,
+          "n_open": 19,
+          "share_truncated": 0.0,
+          "share_delisted_or_halted": 0.0
+        },
+        "other-filing": {
+          "n_events": 196,
+          "episode_n": 164,
+          "n_graded": 159,
+          "n_dates": 134,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": 0.011002960322179829,
+              "lo": -0.17504255573454405,
+              "hi": 0.19390978310081272,
+              "n": 134
+            },
+            "q25": -0.6526315081166449,
+            "median": 0.09343099205322795,
+            "q75": 0.6992353810471021
+          },
+          "share_retraced_33pct": {
+            "point": 0.3836,
+            "ci": {
+              "mean": 0.38681592039801,
+              "lo": 0.30970149253731344,
+              "hi": 0.4664490049751245,
+              "n": 134
+            }
+          },
+          "share_retraced_80pct": 0.2138,
+          "share_still_lower": 0.4591,
+          "terminal_shares": {
+            "KEPT_21D": 0.6073,
+            "GAVE_BACK_21D": 0.2304,
+            "PARTIAL_21D": 0.1623
+          },
+          "n_terminal_graded": 191,
+          "n_open": 5,
+          "share_truncated": 0.0,
+          "share_delisted_or_halted": 0.0
+        },
+        "no-filing": {
+          "n_events": 3183,
+          "episode_n": 2687,
+          "n_graded": 2634,
+          "n_dates": 920,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": 0.05926055387465313,
+              "lo": -0.020535854986477625,
+              "hi": 0.1416730208992698,
+              "n": 920
+            },
+            "q25": -0.7563399089425501,
+            "median": 0.0800758083276534,
+            "q75": 0.9211266755296348
+          },
+          "share_retraced_33pct": {
+            "point": 0.4172,
+            "ci": {
+              "mean": 0.4076294282829204,
+              "lo": 0.3833052291723066,
+              "hi": 0.43296378241205785,
+              "n": 920
+            }
+          },
+          "share_retraced_80pct": 0.2828,
+          "share_still_lower": 0.4749,
+          "terminal_shares": {
+            "KEPT_21D": 0.5787,
+            "GAVE_BACK_21D": 0.2841,
+            "PARTIAL_21D": 0.1372
+          },
+          "n_terminal_graded": 3126,
+          "n_open": 57,
+          "share_truncated": 0.0013,
+          "share_delisted_or_halted": 0.0
+        },
+        "filing-coverage-unknown": {
+          "n_events": 10064,
+          "episode_n": 8765,
+          "n_graded": 8493,
+          "n_dates": 1153,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": 0.12708049535271115,
+              "lo": 0.07500248415636132,
+              "hi": 0.1792713780667281,
+              "n": 1153
+            },
+            "q25": -0.5836812582809044,
+            "median": 0.15342294814592702,
+            "q75": 0.9422248922855302
+          },
+          "share_retraced_33pct": {
+            "point": 0.434,
+            "ci": {
+              "mean": 0.41139616859964806,
+              "lo": 0.3938844354355344,
+              "hi": 0.42826072769290563,
+              "n": 1153
+            }
+          },
+          "share_retraced_80pct": 0.2872,
+          "share_still_lower": 0.4381,
+          "terminal_shares": {
+            "KEPT_21D": 0.5519,
+            "GAVE_BACK_21D": 0.2987,
+            "PARTIAL_21D": 0.1438,
+            "DELISTED_OR_HALTED": 0.0056
+          },
+          "n_terminal_graded": 9817,
+          "n_open": 247,
+          "share_truncated": 0.02,
+          "share_delisted_or_halted": 0.0056
+        },
+        "ALL": {
+          "n_events": 18166,
+          "episode_n": 16078,
+          "n_graded": 15730,
+          "n_dates": 1182,
+          "retrace_frac": {
+            "mean_ci": {
+              "mean": 0.1144331921206618,
+              "lo": 0.07613338155093695,
+              "hi": 0.1539948081659254,
+              "n": 1182
+            },
+            "q25": -0.5791781133702187,
+            "median": 0.10983513138023139,
+            "q75": 0.8389816233895092
+          },
+          "share_retraced_33pct": {
+            "point": 0.4114,
+            "ci": {
+              "mean": 0.4059994233653995,
+              "lo": 0.39349660273957293,
+              "hi": 0.4194670326212627,
+              "n": 1182
+            }
+          },
+          "share_retraced_80pct": 0.2603,
+          "share_still_lower": 0.4552,
+          "terminal_shares": {
+            "KEPT_21D": 0.5784,
+            "GAVE_BACK_21D": 0.2689,
+            "PARTIAL_21D": 0.1496,
+            "DELISTED_OR_HALTED": 0.0031
+          },
+          "n_terminal_graded": 17838,
+          "n_open": 328,
+          "share_truncated": 0.0113,
+          "share_delisted_or_halted": 0.0031
+        }
+      }
+    }
+  },
+  "survivorship": [
+    "Prices come from an UNADJUSTED vendor store; splits are repaired with the yahoo-verified detector and every repaired bar is stamped ineligible, so a genuine one-day crash on a split day is excluded rather than mislabelled.",
+    "Dividends are not adjusted: a ~0.5% ex-date drop is noise against a 3-sigma trigger, but it is a small downward bias in every forward window.",
+    "Names that stop trading keep their rows and grade DELISTED_OR_HALTED inside the terminal shares. Rows whose window has not elapsed are counted as open.",
+    "The sector map covers 1,516 GICS names; the LSR peer helper backfills every other name with the whole-universe mean, so most rows residualize against the market, not sector peers. The peer_basis split is printed above.",
+    "EDGAR covers 1,314 tickers. Outside that set the filing family is filing-coverage-unknown, which is not the same statement as no filing."
+  ],
+  "provenance": {
+    "study": "LSR-P0 — reports/liquidity-shock-reversal-phase0.md",
+    "registry_key": "DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER",
+    "measured": [
+      "Information separation 0/10 contrasts: every no-news-minus-news interval spans zero.",
+      "No-news down-shocks CONTINUE: −0.33% residual at 5d, interval excludes zero.",
+      "Microstructure features 3/36 vs 1.8 expected by chance; none survives two horizons.",
+      "Veto stand-in 0/6 gaps exclude zero.",
+      "The real unconditional 5d reversal (+0.284% liquid decile spread) breaks even at 14.2 bp/leg."
+    ],
+    "reading": "Continuation is the modal outcome and the recovery that exists is sub-cost. This lobe displays that record; it does not re-litigate it."
+  },
+  "exemplars": {
+    "MU_2025_04": {
+      "ticker": "MU",
+      "window": [
+        "2025-04-01",
+        "2025-04-30"
+      ],
+      "expectation": "expected NOT to fire the single-name fence: on the tariff-shock days the whole semi complex fell together, so the sector-ex-self residual stays modest",
+      "in_panel": true,
+      "fence_fires": 0,
+      "z_trigger": 3.0,
+      "worst_resid_z": -2.442078456113275,
+      "worst_resid_z_date": "2025-04-04",
+      "path": [
+        {
+          "date": "2025-04-03",
+          "ret": -0.1609,
+          "resid": -0.0687,
+          "resid_z": -2.28
+        },
+        {
+          "date": "2025-04-04",
+          "ret": -0.1294,
+          "resid": -0.0714,
+          "resid_z": -2.44
+        },
+        {
+          "date": "2025-04-07",
+          "ret": 0.0564,
+          "resid": 0.0502,
+          "resid_z": 1.66
+        },
+        {
+          "date": "2025-04-09",
+          "ret": 0.1881,
+          "resid": 0.0517,
+          "resid_z": 1.68
+        },
+        {
+          "date": "2025-04-10",
+          "ret": -0.1004,
+          "resid": -0.0403,
+          "resid_z": -1.3
+        }
+      ],
+      "reading": "The fence separates single-name pressure from a market-wide washout. A MU-type secular washout is a different family and belongs to the winners-program linkage, not to this fence."
+    },
+    "CDE_2026_08": {
+      "ticker": "CDE",
+      "in_panel": true,
+      "edgar_covered": false,
+      "family_if_no_filing_found": "filing-coverage-unknown",
+      "family_label": "filings not tracked for this name",
+      "gics_sector": "Materials",
+      "thematic_basket": "silver_miners",
+      "events_in_this_seed": 5,
+      "note": "The 2026-08 episode postdates this store snapshot, so it arrives on the first nightly with era=\"gap\" via the self-healing catch-up. Two traps the design answers: EDGAR does not track this ticker, so its chip reads \"filings not tracked for this name\" and never \"no filing\"; and its GICS peer set is the whole Materials sector (chemicals and steel), so a \"peers implied\" line would be economically false — the thematic basket residual carries the honest comparison."
+    }
+  }
+}

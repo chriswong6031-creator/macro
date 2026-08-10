@@ -1542,3 +1542,112 @@ def test_cn_board_is_droppable_under_budget_but_the_tape_is_not(tmp_path):
     tight = mp.render_digest(mp.build_packet(root), char_budget=200)
     assert "CN BOARD" not in tight
     assert "TAPE" in tight
+
+
+# ---------------------------------------------------------------------------
+# PRESSURE — the Price Pressure lobe's display block (DRL W1)
+# ---------------------------------------------------------------------------
+
+def pressure_payload(**over: object) -> dict:
+    """A price_pressure.v1 display artifact, in producer order (recency, ticker)."""
+    payload = {
+        "schema": "price_pressure.v1",
+        "asof": "2026-08-07",
+        "display_only": True,
+        "authority": {"can_rank": False, "can_size": False, "can_gate": False,
+                      "can_originate_signal": False, "can_escalate": False},
+        "scope": "These states describe the tracked window only — context, not a pick list.",
+        "day": {"asof": "2026-08-07", "panel_shock_count": 41.0,
+                "broad_selloff": False},
+        "open_events_meta": {"total": {"down": 14, "up": 6},
+                             "more": {"down": 2, "up": 0}, "cap_per_side": 12},
+        "open_events": [
+            {"ticker": "AAA", "side": "down", "ret": -0.098, "vol_multiple": 6.1,
+             "comparison": "sector peers", "family_label": "earnings filing",
+             "state": "SLIDING", "peer_basis": "sector"},
+            {"ticker": "MMM", "side": "down", "ret": -0.071, "vol_multiple": 3.4,
+             "comparison": "the market",
+             "family_label": "filings not tracked for this name",
+             "state": "RETRACING", "retrace_frac": 0.42, "peer_basis": "market"},
+            {"ticker": "UPP", "side": "up", "ret": 0.12, "vol_multiple": 4.0,
+             "comparison": "the market", "family_label": "other filing",
+             "state": "EXTENDING", "peer_basis": "market"},
+            {"ticker": "ZZZ", "side": "down", "ret": -0.064, "vol_multiple": 2.2,
+             "comparison": "the market", "family_label": "no filing on record",
+             "state": "HOLDING", "peer_basis": "market"},
+            {"ticker": "QQQQ", "side": "down", "ret": -0.20, "vol_multiple": 9.9,
+             "comparison": "the market", "family_label": "no filing on record",
+             "state": "SLIDING", "peer_basis": "market"},
+        ],
+        "base_rates": {"terminal_horizon_d": 21,
+                       "down": {"h21_share_still_lower": 0.62},
+                       "up": {"h21_share_still_lower": 0.45}},
+    }
+    payload.update(over)
+    return payload
+
+
+def _with_pressure(tmp_path: Path, payload: object = None) -> Path:
+    root = make_root(tmp_path)
+    _write(root / "data" / "price_pressure" / "latest.json",
+           pressure_payload() if payload is None else payload)
+    return root
+
+
+def test_pressure_block_renders_recency_order_and_plain_state_words(tmp_path):
+    text = mp.digest(_with_pressure(tmp_path))
+    head = _line(text, "PRESSURE (")
+    assert "14 down" in head and "6 up" in head
+    body = text.split("PRESSURE (", 1)[1]
+    # The producer's order is kept verbatim — the biggest move (QQQQ −20%) is
+    # NOT promoted, because ordering by size would be a ranking.
+    assert body.index("AAA ") < body.index("MMM ") < body.index("ZZZ ")
+    assert "QQQQ" not in body
+    # No ALL-CAPS machine state token reaches the prose (protocol HONESTY).
+    for token in ("SLIDING", "RETRACING", "HOLDING", "EXTENDING", "FADING"):
+        assert token not in body
+    assert "still sliding" in body and "retracing 42%" in body
+    assert "Past shocks like these: 62% still below at 21 sessions." in body
+    assert "not a pick list" in body
+
+
+def test_pressure_block_is_last_so_the_budget_drops_it_first(tmp_path):
+    assert mp._SECTION_ORDER[-1] == "PRESSURE"
+    assert "PRESSURE" not in mp._NEVER_DROP
+    root = _with_pressure(tmp_path)
+    full = mp.digest(root)
+    assert "PRESSURE (" in full
+    tight = mp.digest(root, char_budget=len(full) - 120)
+    assert "PRESSURE (" not in tight
+    assert _line(tight, "TAPE (")          # neighbours survive
+
+
+def test_pressure_block_absent_or_corrupt_degrades_to_a_gap(tmp_path):
+    root = make_root(tmp_path)
+    packet = mp.build_packet(root)
+    assert "pressure" not in packet
+    assert any("price_pressure" in g for g in packet["gaps"])
+    assert "PRESSURE" not in mp.digest(root)
+
+    (root / "data" / "price_pressure").mkdir(parents=True, exist_ok=True)
+    (root / "data" / "price_pressure" / "latest.json").write_text("{not json",
+                                                                  encoding="utf-8")
+    mp._CACHE.clear()
+    packet = mp.build_packet(root)
+    assert "pressure" not in packet
+    assert any("price_pressure: unreadable" in g for g in packet["gaps"])
+
+
+def test_pressure_block_with_no_events_is_dropped_not_rendered_empty(tmp_path):
+    payload = pressure_payload()
+    payload["open_events"] = []
+    root = _with_pressure(tmp_path, payload)
+    assert "pressure" not in mp.build_packet(root)
+
+
+def test_pressure_render_stays_tiny(tmp_path):
+    """~350 chars is the design budget; this pins it against silent growth."""
+    packet = mp.build_packet(_with_pressure(tmp_path))
+    text = mp._render_pressure(packet)
+    assert len(text) <= 420, (len(text), text)
+    assert len(text.split("\n")) <= 6

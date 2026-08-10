@@ -1618,6 +1618,7 @@ def _build_hub_context(site: Path, rows: list[dict]) -> dict:
             "themes": [], "themes_asof": None,
             "sectors": [], "treemap": None, "top": None, "bot": None,
             "best": None, "worst": None, "map_asof": None,
+            "pressure": _hub.pressure_band(None),
         }
         ctx["hub"] = hub
 
@@ -1635,6 +1636,29 @@ def _build_hub_context(site: Path, rows: list[dict]) -> dict:
         except Exception as e:  # noqa: BLE001
             print(f"::warning title=stocks_hub::theme ribbons unavailable: {e}",
                   flush=True)
+
+        # The board session, taken from the bars themselves rather than the wall
+        # clock: these are SETTLED DAILY CLOSES from the nightly build, not an
+        # intraday feed, and the page must not imply otherwise. Read before the
+        # breadth gate below because the Pressure Watch band dates itself against
+        # this stamp and must survive a day when no name carries a change.
+        sessions = [r["asof"] for r in rows if r.get("asof")]
+        board_asof = max(sessions) if sessions else None
+
+        # Pressure Watch — single-name price-pressure events. Fail-soft in the
+        # strong sense: a missing, unreadable or stale artifact yields the band's
+        # warm-up copy, never an exception and never a silently absent section.
+        # This surface ships ahead of the engine that writes the artifact, so the
+        # absent path is the one users see first and it has to be presentable.
+        try:
+            hub["pressure"] = _hub.pressure_band(
+                _load_json(site.parent / "data" / "price_pressure" / "latest.json"),
+                board_asof=board_asof,
+            )
+        except Exception as e:  # noqa: BLE001
+            print(f"::warning title=stocks_hub::pressure band unavailable: {e}",
+                  flush=True)
+            hub["pressure"] = _hub.pressure_band(None)
 
         rets = [r["chg"] for r in rows if r.get("chg") is not None]
         br = _hub.breadth(rets)
@@ -1655,11 +1679,6 @@ def _build_hub_context(site: Path, rows: list[dict]) -> dict:
 
         n_vol = sum(1 for r in rows if r.get("dvol"))
         n_52 = sum(1 for r in rows if r.get("pos52") is not None)
-        # The board session, taken from the bars themselves rather than the wall
-        # clock: these are SETTLED DAILY CLOSES from the nightly build, not an
-        # intraday feed, and the page must not imply otherwise.
-        sessions = [r["asof"] for r in rows if r.get("asof")]
-        board_asof = max(sessions) if sessions else None
         log.info("[stocks_hub] %d names, %d with volume, %d with 52w range, "
                  "session=%s, heatmap=%s", len(rows), n_vol, n_52,
                  board_asof or "unknown", "yes" if payload else "no")

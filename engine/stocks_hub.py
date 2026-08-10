@@ -29,7 +29,7 @@ from engine.market_heatmap import _ADV_BAND
 
 __all__ = [
     "breadth", "day_shape", "boards", "theme_ribbons", "sector_ledger",
-    "treemap", "search_index", "directory", "squarify",
+    "treemap", "search_index", "directory", "squarify", "pressure_band",
 ]
 
 # ── "the day's shape" geometry ──────────────────────────────────────────────
@@ -520,3 +520,631 @@ def directory(rows: Sequence[Mapping]) -> list[dict]:
         groups.setdefault(head if head.isalpha() else "#", []).append(t)
     return [{"letter": k, "tickers": sorted(v)}
             for k, v in sorted(groups.items())]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Pressure Watch — the resolved-first price-pressure band
+# ═══════════════════════════════════════════════════════════════════════════
+# The band's primary object is the RESOLVED ledger, not today's dips: "here is
+# what usually happens" is a different claim from "here is what is cheap now",
+# and the movers boards directly above already make the second one. So the copy
+# this function shapes runs base rates -> resolved episodes -> open events, and
+# the open list is ordered by RECENCY ONLY. Ordering it by move size or by how
+# unusual the move was would be ranking authority the artifact explicitly
+# denies itself, which is why `_recency_order` exists as its own named step and
+# is pinned by a test rather than living inline in a sort call.
+#
+# Every string ships as an {en, zh} twin because no user-facing text on this
+# page may reach the template as a single language, and CJK can never travel in
+# a `title=` attribute (`scripts/check_title_i18n.py`) — the template spends
+# these on `data-tip-en`/`data-tip-zh` instead.
+
+PW_MAX_OPEN = 6            # a band, not a feed
+PW_MAX_RESOLVED = 4
+PW_MAX_STALE_SESSIONS = 5  # weekdays between the artifact and the page's own bars
+
+_PW_MONTHS_EN = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+_PW_CN_NUM = "〇一二三四五六七八九十"
+
+# Filing families. "no filing on record" is defined ONLY inside the covered
+# panel; the ~half of the panel EDGAR does not track gets its own chip, because
+# "we did not look" and "we looked and found nothing" are different facts and
+# conflating them would invent evidence out of ignorance.
+_PW_FAMILY = {
+    "earnings-filing": {
+        "en": "earnings filing", "zh": "财报公告",
+        "tip_en": "An earnings filing landed around this move.",
+        "tip_zh": "此次波动前后有财报公告落地。",
+    },
+    "other-filing": {
+        "en": "other filing", "zh": "其他公告",
+        "tip_en": "A filing that was not an earnings report landed around this move.",
+        "tip_zh": "此次波动前后有非财报类公告落地。",
+    },
+    "no-filing": {
+        "en": "no filing on record", "zh": "无公告记录",
+        "tip_en": "We track filings for this name and found none around this move.",
+        "tip_zh": "我们追踪该股公告，此次波动前后没有找到公告。",
+    },
+    "filing-coverage-unknown": {
+        "en": "filings not tracked", "zh": "未追踪该股公告",
+        "tip_en": ("We do not track filings for this name, so this is not a claim "
+                   "that none exist."),
+        "tip_zh": "我们没有追踪该股的公告，这并不代表它没有发布公告。",
+    },
+}
+
+# Display states (§5.1) in plain words. Down and up sides are separate tables:
+# the same underlying fraction means "recovered" on one side and "unwound" on
+# the other, and one shared table would have to name it in machine terms.
+_PW_STATE = {
+    "down": {
+        "SHOCK": ("new today", "今日新发生"),
+        "SLIDING": ("still falling", "仍在下探"),
+        "HOLDING": ("holding", "暂时企稳"),
+        "RETRACING": ("{p}% recovered", "已收复 {p}%"),
+    },
+    "up": {
+        "SHOCK": ("new today", "今日新发生"),
+        "EXTENDING": ("still climbing", "仍在走高"),
+        "HOLDING": ("holding", "维持涨幅"),
+        "FADING": ("{p}% unwound", "已回落 {p}%"),
+    },
+}
+
+# Window-end grades. Keys are matched on their leading token so the up-side
+# mirror can ship either its own vocabulary or the shared one.
+_PW_TERMINAL = {
+    "RECOVERED": ("fully back within a month", "一个月内基本收复"),
+    "KEPT": ("kept the gain", "涨幅得以保持"),
+    "PARTIAL": ("partly back", "部分收复"),
+    "ACCEPTED": ("kept the lower price", "维持在更低价位"),
+    "GAVE": ("back to where it started", "回到起点"),
+    "DELISTED": ("stopped trading", "已停止交易"),
+}
+
+# The outcome bar, worst -> best. `delisted` sits FIRST on purpose: names that
+# stopped trading are inside the denominator, and putting them at the head of
+# the bar is the difference between disclosing that and burying it.
+_PW_OUTCOMES = (
+    ("delisted", "gone", "stopped trading", "已停止交易"),
+    ("accepted_lower", "low", "kept the lower price", "维持在更低价位"),
+    ("partial", "mid", "partly back", "部分收复"),
+    ("recovered", "back", "fully back", "基本收复"),
+)
+
+
+def _pw_pretty(v: Any) -> str:
+    """Machine slug -> display name. Raw slugs never reach the glance tier."""
+    s = str(v or "").strip()
+    if not s:
+        return ""
+    if "-" in s or "_" in s:
+        s = s.replace("-", " ").replace("_", " ").strip()
+        return s[:1].upper() + s[1:]
+    return s
+
+
+def _pw_day(iso: Any, lang: str = "en") -> str:
+    """'2026-07-01' -> 'Jul 1' / '7月1日'. Returns the input on anything odd."""
+    s = str(iso or "")
+    parts = s.split("-")
+    if len(parts) != 3:
+        return s
+    try:
+        mo, dy = int(parts[1]), int(parts[2])
+    except ValueError:
+        return s
+    if not (1 <= mo <= 12):
+        return s
+    return f"{mo}月{dy}日" if lang == "zh" else f"{_PW_MONTHS_EN[mo - 1]} {dy}"
+
+
+def _pw_cn_tenths(n: int) -> str:
+    return "十" if n >= 10 else _PW_CN_NUM[n]
+
+
+def _pw_in_ten(share: float) -> tuple[str, str]:
+    """A share as a plain sentence fragment, never a bare percentage.
+
+    Law 3 of the design doctrine: a number on the glance tier arrives with its
+    interpretation. "0.58" is a statistic; "about 6 in 10" is information, and
+    the exact figure is one hover away on the bar itself.
+    """
+    if share >= 0.95:
+        return "almost all", "几乎全部"
+    if share <= 0.05:
+        return "almost none", "极少数"
+    n = min(9, max(1, round(share * 10)))
+    return f"about {n} in 10", f"约{_pw_cn_tenths(n)}成"
+
+
+def _pw_pc(v: float | None, *, dp: int = 1, signed: bool = False) -> str:
+    """Percent with a typographic minus — the band never prints a hyphen-minus."""
+    if v is None:
+        return "—"
+    s = f"{v * 100:+.{dp}f}%" if signed else f"{abs(v) * 100:.{dp}f}%"
+    return s.replace("-", "−")
+
+
+def _pw_weekdays_between(a: str, b: str) -> int | None:
+    """Weekday count between two ISO dates — a session proxy with no clock.
+
+    Staleness is judged against the page's OWN bar session rather than the wall
+    clock so the function stays pure and so a band can never claim to be fresher
+    than the boards printed beside it. Holidays count as sessions, which errs
+    toward showing the warm-up state early — the safe direction.
+    """
+    from datetime import date as _date
+
+    try:
+        y1, m1, d1 = (int(x) for x in str(a).split("-"))
+        y2, m2, d2 = (int(x) for x in str(b).split("-"))
+        d_a, d_b = _date(y1, m1, d1), _date(y2, m2, d2)
+    except (ValueError, TypeError):
+        return None
+    if d_b <= d_a:
+        return 0
+    days = (d_b - d_a).days
+    full, rest = divmod(days, 7)
+    n = full * 5
+    wd = d_a.weekday()
+    for i in range(1, rest + 1):
+        if (wd + i) % 7 < 5:
+            n += 1
+    return n
+
+
+def _pw_recency_order(rows: Sequence[Mapping]) -> list[dict]:
+    """Most recent first, then ticker A-Z. The ONLY ordering this band has.
+
+    Named and tested as its own step because the tempting sort — biggest move,
+    or most unusual move, first — is exactly the ranking authority the artifact
+    denies itself. A board that puts the worst-hit name at the top is telling
+    the reader it is the most interesting one, and nothing here measured that.
+    """
+    out = [dict(r) for r in rows if r and r.get("ticker")]
+    out.sort(key=lambda r: str(r.get("ticker") or ""))
+    out.sort(key=lambda r: str(r.get("date") or ""), reverse=True)
+    return out
+
+
+def _pw_move_words(row: Mapping) -> tuple[str, str]:
+    """The row's one-line move phrase, in whichever form the data supports.
+
+    `ret` is the raw session move and `resid` is the part of it the market or
+    the peer group did not explain. When the artifact ships `ret` the line reads
+    as a price move; when it does not, the line says "more than peers" rather
+    than quietly relabelling a residual as a price change.
+    """
+    side = "up" if str(row.get("side")) == "up" else "down"
+    ret = _f(row.get("ret"))
+    resid = _f(row.get("resid"))
+    vol = _f(row.get("vol_multiple"))
+    vol_en = f" on {vol:.1f}× volume" if vol else ""
+    vol_zh = f"，成交量为常态的 {vol:.1f} 倍" if vol else ""
+
+    if ret is not None:
+        verb_en, verb_zh = ("rose", "上涨") if side == "up" else ("fell", "下跌")
+        return (f"{verb_en} {_pw_pc(ret)}{vol_en}",
+                f"{verb_zh} {_pw_pc(ret)}{vol_zh}")
+    if resid is not None:
+        verb_en, verb_zh = ("rose", "涨幅") if side == "up" else ("fell", "跌幅")
+        more_en = "more than the rest of the market"
+        return (f"{verb_en} {_pw_pc(resid)} {more_en}{vol_en}",
+                f"{verb_zh}比大盘多 {_pw_pc(resid)}{vol_zh}")
+    return ("moved sharply", "出现大幅波动")
+
+
+def _pw_compare_words(row: Mapping) -> tuple[str, str]:
+    """The honest comparison clause, basis-aware.
+
+    Three shapes, and which one prints is a correctness question rather than a
+    stylistic one:
+
+    * the peer helper falls back to a whole-universe mean for names it cannot
+      label, so the word "peers" NEVER prints on a market-basis row;
+    * where a thematic basket moved with the name, the basket leads — a silver
+      miner's sector bucket is chemicals and steel, so "peers implied" would be
+      economically false on exactly the day it matters most;
+    * with neither, the clause is omitted rather than invented.
+    """
+    # The producer carries both the stable basket key and a curated display
+    # label. Prefer the label when present: prettifying `us_sector_materials`
+    # loses the economically useful "Materials (Equal-Weight)" wording.
+    basket = (str(row.get("basket_en") or "").strip()
+              or _pw_pretty(row.get("basket")))
+    b_ret = _f(row.get("basket_ret"))
+    side_down = str(row.get("side")) != "up"
+
+    if basket and b_ret is not None and ((b_ret < 0) == side_down) and abs(b_ret) > 0.001:
+        b_zh = str(row.get("basket_zh") or basket)
+        verb_en, verb_zh = ("fell", "下跌") if b_ret < 0 else ("rose", "上涨")
+        return (f"its {basket} basket {verb_en} {_pw_pc(b_ret)} too",
+                f"同期「{b_zh}」板块也{verb_zh} {_pw_pc(b_ret)}")
+
+    peer = _f(row.get("peer_ret"))
+    if peer is None:
+        return "", ""
+    if str(row.get("peer_basis")) == "sector":
+        return (f"peers moved {_pw_pc(peer, signed=True)}",
+                f"同业当日 {_pw_pc(peer, signed=True)}")
+    return (f"the market moved {_pw_pc(peer, signed=True)}",
+            f"大盘当日 {_pw_pc(peer, signed=True)}")
+
+
+def _pw_state_chip(row: Mapping) -> dict | None:
+    side = "up" if str(row.get("side")) == "up" else "down"
+    key = str(row.get("state") or "").upper()
+    pair = _PW_STATE[side].get(key)
+    if not pair:
+        return None
+    frac = _f(row.get("retrace_frac"))
+    pct = max(0, min(100, round(abs(frac or 0.0) * 100)))
+    return {"en": pair[0].format(p=pct), "zh": pair[1].format(p=pct)}
+
+
+def _pw_terminal_words(row: Mapping) -> tuple[str, str]:
+    key = str(row.get("terminal_state_21d") or "").upper()
+    head = key.split("_")[0]
+    pair = _PW_TERMINAL.get(head)
+    if not pair:
+        return "outcome on file", "结果已记录"
+    return pair
+
+
+def _pw_terminal_cls(row: Mapping) -> str:
+    """Which end of the outcome bar this closed episode landed on.
+
+    Shares the four segment classes so a resolved row and the bar above it are
+    visibly the same vocabulary rather than two colour schemes for one fact.
+    """
+    head = str(row.get("terminal_state_21d") or "").upper().split("_")[0]
+    if head == "DELISTED":
+        return "gone"
+    if head in ("RECOVERED", "KEPT"):
+        return "back"
+    if head in ("ACCEPTED", "GAVE"):
+        return "low"
+    return "mid"
+
+
+def _pw_row_tip(row: Mapping) -> tuple[str, str]:
+    """Tier 2: the mechanics, as label-value pairs rather than prose.
+
+    Everything the glance tier deliberately does not say lives here — how far
+    beyond its own history the move was, what it was compared against, how long
+    it has been open, and whether a state change is waiting on a second close.
+    """
+    bits_en: list[str] = []
+    bits_zh: list[str] = []
+    z = _f(row.get("resid_z"))
+    if z is not None:
+        bits_en.append(f"Beyond its own history: {abs(z):.1f} standard deviations")
+        bits_zh.append(f"超出自身历史波动：{abs(z):.1f} 个标准差")
+    resid = _f(row.get("resid"))
+    if resid is not None:
+        bits_en.append(f"Move left unexplained: {_pw_pc(resid, signed=True)}")
+        bits_zh.append(f"未被解释的部分：{_pw_pc(resid, signed=True)}")
+    vol = _f(row.get("vol_multiple"))
+    if vol:
+        bits_en.append(f"Volume: {vol:.1f}× its own normal")
+        bits_zh.append(f"成交量：常态的 {vol:.1f} 倍")
+    basis = str(row.get("peer_basis") or "")
+    if basis:
+        bits_en.append("Compared against: "
+                       + ("its sector" if basis == "sector" else "the whole market"))
+        bits_zh.append("对比基准：" + ("所属行业" if basis == "sector" else "全市场"))
+    days = _f(row.get("days_open"))
+    if days is not None:
+        bits_en.append(f"Tracked for {int(days)} session(s)")
+        bits_zh.append(f"已跟踪 {int(days)} 个交易日")
+    pending = str(row.get("state_pending") or "")
+    if pending:
+        bits_en.append("A change of state is waiting on a second close")
+        bits_zh.append("状态变化需再收一根确认")
+    return " · ".join(bits_en), " · ".join(bits_zh)
+
+
+def _pw_base(base: Mapping | None) -> dict | None:
+    """The frozen five-year record, as a headline plus one proportional bar.
+
+    The bar IS the number: the sentence above it says what usually happened,
+    the segments say in what proportion, and the exact shares stay on hover.
+    Any outcome with a real share gets at least a visible sliver, and an outcome
+    with none renders nothing at all rather than a decorative stub.
+    """
+    if not base:
+        return None
+    down = base.get("down") or {}
+    n_ev = _f(down.get("n_events"))
+    rec = _f(down.get("h21_share_recovered"))
+    acc = _f(down.get("h21_share_accepted_lower"))
+    dead = _f(down.get("h21_share_delisted"))
+    if acc is None or rec is None:
+        return None
+    dead = dead or 0.0
+    part = _f(down.get("h21_share_partial"))
+    if part is None:
+        part = max(0.0, 1.0 - rec - acc - dead)
+
+    shares = {"recovered": rec, "accepted_lower": acc,
+              "partial": part, "delisted": dead}
+    total = sum(shares.values()) or 1.0
+    segs = []
+    for key, cls, lab_en, lab_zh in _PW_OUTCOMES:
+        share = shares.get(key) or 0.0
+        if share <= 0:
+            continue
+        pc = share / total
+        segs.append({
+            "key": key, "cls": cls, "en": lab_en, "zh": lab_zh,
+            "w": round(max(0.6, pc * 100.0), 2),
+            "pc": f"{round(pc * 100)}%",
+            "tip_en": f"{lab_en} — {round(pc * 100)}% of past shocks, one month on.",
+            "tip_zh": f"{lab_zh} —— 一个月后，{round(pc * 100)}% 的历史案例落在这一档。",
+        })
+    if not segs:
+        return None
+
+    en, zh = _pw_in_ten(acc)
+    span = list(base.get("span") or [])
+    span_txt = f"{span[0]} – {span[1]}" if len(span) == 2 else ""
+    # The bar is the DOWN side (the record's primary half), while the tracked
+    # list below carries both. The headline says "a drop like this" so the two
+    # can never be read as one population.
+    return {
+        "headline_en": f"After a drop like this, {en} were still down a month later.",
+        "headline_zh": f"出现这样的下跌之后，{zh}在一个月后仍未收复。",
+        "null_en": "What kind of filing sat behind the move made no measurable difference.",
+        "null_zh": "背后是哪类公告，对结果没有可测出的差别。",
+        "segments": segs,
+        "span": span_txt,
+        "n_events": int(n_ev) if n_ev else None,
+    }
+
+
+def _pw_help(payload: Mapping, base: Mapping | None) -> dict:
+    """The `?` card on the band heading — the sanctioned home for the mechanics.
+
+    Carries the four things the glance tier is not allowed to carry: what counts
+    as an event, how big and how old the record is, the measured family null
+    with its source, and the scope sentence that keeps a display state from
+    reading as a forecast.
+    """
+    cov = payload.get("coverage") or {}
+    base = base or {}
+    down = (base.get("down") or {}) if base else {}
+    n_ev = _f(down.get("n_events"))
+    span = list(base.get("span") or []) if base else []
+    span_txt = f"{span[0]} – {span[1]}" if len(span) == 2 else ""
+    names = _f(cov.get("panel_names"))
+    sector_share = _f(cov.get("sector_basis_share"))
+    edgar = _f(cov.get("edgar_covered_share"))
+    prov = payload.get("provenance") or {}
+    study = str(prov.get("study_title") or "").strip() or _pw_pretty(
+        str(prov.get("study") or "").rsplit("/", 1)[-1].rsplit(".", 1)[0])
+
+    rows = [{
+        "k_en": "What counts", "k_zh": "什么算一次",
+        "v_en": ("A one-day move far beyond what the market or the name's sector "
+                 "explains, on heavy volume."),
+        "v_zh": "单日波动远超大盘或所属行业能解释的幅度，且伴随明显放量。",
+    }]
+    # Both horizons under one label. §6 publishes family x horizon cells, but the
+    # family contrast is measured NULL and the surface is required never to
+    # contrast families — a grid invites exactly the comparison the record says
+    # cannot be made, so the second horizon ships as a sentence instead.
+    h5 = _f(down.get("h5_median_retrace"))
+    if n_ev and span_txt:
+        h5_en = h5_zh = ""
+        if h5 is not None:
+            h5_en = (f" Five days in, half had recovered less than "
+                     f"{round(abs(h5) * 100)}% of the drop.")
+            h5_zh = f"第五天时，一半个股收复的幅度不到跌幅的 {round(abs(h5) * 100)}%。"
+        rows.append({
+            "k_en": "The record", "k_zh": "记录范围",
+            "v_en": f"{int(n_ev):,} past moves, {span_txt} — five years, not twenty.{h5_en}",
+            "v_zh": f"{int(n_ev):,} 次历史案例，{span_txt}，是五年而非二十年。{h5_zh}",
+        })
+    if names or sector_share is not None or edgar is not None:
+        cov_en, cov_zh = [], []
+        if names:
+            cov_en.append(f"{int(names):,} names watched")
+            cov_zh.append(f"监测 {int(names):,} 只个股")
+        if sector_share is not None:
+            cov_en.append(f"{round(sector_share * 100)}% compared against a sector, "
+                          "the rest against the whole market")
+            cov_zh.append(f"其中 {round(sector_share * 100)}% 以所属行业为基准，"
+                          "其余以全市场为基准")
+        if edgar is not None:
+            cov_en.append(f"filings tracked for {round(edgar * 100)}% of them")
+            cov_zh.append(f"{round(edgar * 100)}% 的个股有公告追踪")
+        rows.append({"k_en": "Coverage", "k_zh": "覆盖范围",
+                     "v_en": " · ".join(cov_en), "v_zh": " · ".join(cov_zh)})
+    rows.append({
+        "k_en": "By filing type", "k_zh": "按公告类型",
+        "v_en": ("Measured — no difference showed up in any of the ten "
+                 "comparisons. Labels are context, not a reason to expect a "
+                 "different ending."),
+        "v_zh": "已做测量，十组对比均未显示差异。标签仅作背景，不代表结局会有所不同。",
+    })
+    rows.append({
+        "k_en": "Scope", "k_zh": "适用范围",
+        "v_en": ("These states describe the tracked window only, and are read off "
+                 "prices that already happened."),
+        "v_zh": "这些状态只描述被跟踪的时间窗口，全部依据已经发生的价格得出。",
+    })
+    up_n = _f((base.get("up") or {}).get("n_events")) if base else None
+    if up_n:
+        rows.append({
+            "k_en": "Sharp gains", "k_zh": "急涨一侧",
+            "v_en": (f"Recorded the same way ({int(up_n):,} moves). The bar above "
+                     "shows the down side."),
+            "v_zh": f"以同样方式记录（{int(up_n):,} 次）。上方条形图展示的是下跌一侧。",
+        })
+    # The artifact's own sentence about its record, surfaced verbatim but on the
+    # tier that can carry it: whatever caveats the freeze wrote down belong in
+    # front of the reader, and never in the four-word headline above.
+    note_en = str((base or {}).get("note_en") or "").strip()
+    if note_en:
+        rows.append({
+            "k_en": "From the record", "k_zh": "记录附注",
+            "v_en": note_en,
+            "v_zh": str((base or {}).get("note_zh") or "").strip() or note_en,
+        })
+    return {
+        "kick_en": "PRESSURE WATCH", "kick_zh": "个股承压",
+        "title_en": "How this is measured", "title_zh": "如何测量",
+        "rows": rows,
+        "receipt_en": ("display context · not a signal"
+                       + (f" · source: {study}" if study else "")),
+        "receipt_zh": ("展示背景 · 非交易信号"
+                       + (f" · 来源：{study}" if study else "")),
+    }
+
+
+def pressure_band(payload: Mapping | None, *, board_asof: str | None = None,
+                  max_open: int = PW_MAX_OPEN,
+                  max_resolved: int = PW_MAX_RESOLVED) -> dict:
+    """Shape the Pressure Watch band. Pure — no I/O, no clock, no network.
+
+    Always returns a renderable dict. A missing, unreadable or stale artifact
+    yields the warm-up mode rather than an absent band or an exception, because
+    the surface ships ahead of the engine that feeds it and an empty section is
+    a design decision, not an error path.
+
+    `board_asof` is the session the rest of the page is printing. The band goes
+    back to warm-up when the artifact trails it by more than a working week, so
+    the band can never quietly present month-old events beside today's boards.
+    """
+    warm = {
+        "mode": "warmup",
+        "title_en": "Pressure Watch", "title_zh": "个股承压",
+        # Deliberately NOT "what usually happens" — that is the first stratum's
+        # own label, and reading it twice in two lines spends the reader's
+        # attention on the same four words instead of on the record.
+        "sub_en": ("How one-day moves far beyond what the market explains have "
+                   "actually ended."),
+        "sub_zh": "单日波动远超大盘可解释的幅度时，这些个股最后是怎么收场的。",
+        "warm_en": "Still building this record — nothing to show yet.",
+        "warm_zh": "记录仍在建立中 —— 暂无可展示的内容。",
+        "stance_en": "Nothing to act on yet.", "stance_zh": "暂时无需操作。",
+        "asof": None, "banner": None, "demoted": False,
+        "base": None, "resolved": [], "open": [], "open_n": 0,
+        "count_en": "most recent first", "count_zh": "按时间先后排列",
+        "help": None, "gaps": [],
+        "foot_en": ("A record of what happened next, not a call on what will "
+                    "— nothing here ranks or recommends a name."),
+        "foot_zh": "这里记录的是历史结果，而非对后市的判断；不构成任何排名或推荐。",
+    }
+    if not payload or not isinstance(payload, Mapping):
+        return warm
+
+    asof = str(payload.get("asof") or "") or None
+    if asof and board_asof:
+        gap = _pw_weekdays_between(asof, str(board_asof))
+        if gap is not None and gap > PW_MAX_STALE_SESSIONS:
+            return warm
+
+    base = _pw_base(payload.get("base_rates"))
+    resolved_src = list(payload.get("recently_resolved") or [])
+    open_src = list(payload.get("open_events") or [])
+    if not base and not resolved_src and not open_src:
+        return warm
+
+    day = payload.get("day") or {}
+    raw_banner = day.get("banner")
+    banner = None
+    if raw_banner:
+        shock_n = _f(day.get("panel_shock_count"))
+        tip_en = tip_zh = ""
+        if shock_n:
+            tip_en = (f"{int(shock_n)} covered names took a move this size today, "
+                      "so the single-name reads below carry less weight than usual.")
+            tip_zh = (f"今日有 {int(shock_n)} 只覆盖个股出现同等级别的波动，"
+                      "因此下方的个股解读比平时更弱。")
+        if isinstance(raw_banner, Mapping) and raw_banner.get("en"):
+            banner = {"en": str(raw_banner["en"]),
+                      "zh": str(raw_banner.get("zh") or raw_banner["en"]),
+                      "tip_en": tip_en, "tip_zh": tip_zh}
+        else:
+            banner = {
+                "en": "Most of today's pressure is market-wide, not single-name.",
+                "zh": "今天的压力多数来自大盘，而非个股自身。",
+                "tip_en": tip_en, "tip_zh": tip_zh,
+            }
+
+    resolved: list[dict] = []
+    for r in _pw_recency_order(resolved_src)[:max_resolved]:
+        mv_en, mv_zh = _pw_move_words(r)
+        end_en, end_zh = _pw_terminal_words(r)
+        fam = _PW_FAMILY.get(str(r.get("family") or ""))
+        resolved.append({
+            "t": str(r["ticker"]).upper(),
+            "side": "up" if str(r.get("side")) == "up" else "down",
+            "when_en": _pw_day(r.get("date")), "when_zh": _pw_day(r.get("date"), "zh"),
+            "move_en": mv_en, "move_zh": mv_zh,
+            "end_en": end_en, "end_zh": end_zh,
+            "end_cls": _pw_terminal_cls(r),
+            "fam_en": (fam or {}).get("en", ""), "fam_zh": (fam or {}).get("zh", ""),
+        })
+
+    events: list[dict] = []
+    for r in _pw_recency_order(open_src)[:max_open]:
+        mv_en, mv_zh = _pw_move_words(r)
+        cmp_en, cmp_zh = _pw_compare_words(r)
+        tip_en, tip_zh = _pw_row_tip(r)
+        fam = _PW_FAMILY.get(str(r.get("family") or ""))
+        chip = _pw_state_chip(r)
+        events.append({
+            "t": str(r["ticker"]).upper(),
+            "side": "up" if str(r.get("side")) == "up" else "down",
+            "when_en": _pw_day(r.get("date")), "when_zh": _pw_day(r.get("date"), "zh"),
+            "move_en": mv_en, "move_zh": mv_zh,
+            "cmp_en": cmp_en, "cmp_zh": cmp_zh,
+            "fam_en": (fam or {}).get("en", ""), "fam_zh": (fam or {}).get("zh", ""),
+            "fam_tip_en": (fam or {}).get("tip_en", ""),
+            "fam_tip_zh": (fam or {}).get("tip_zh", ""),
+            "state_en": (chip or {}).get("en", ""), "state_zh": (chip or {}).get("zh", ""),
+            "tip_en": tip_en, "tip_zh": tip_zh,
+        })
+
+    # Rows that carry no ticker cannot be rendered — they were dropped above, so
+    # re-check emptiness AFTER shaping rather than before it. A payload full of
+    # unusable rows is indistinguishable from no payload, and an empty live band
+    # states "we are tracking nothing" where the truth is "we cannot read this".
+    if not base and not resolved and not events:
+        return warm
+
+    gaps: list[dict] = []
+    for g in payload.get("gaps") or []:
+        if isinstance(g, Mapping) and g.get("en"):
+            gaps.append({"en": str(g["en"]), "zh": str(g.get("zh") or g["en"])})
+        elif isinstance(g, str) and g.strip():
+            gaps.append({"en": g.strip(), "zh": g.strip()})
+
+    return {
+        **warm,
+        "mode": "live",
+        "asof": asof,
+        "banner": banner,
+        "demoted": bool(banner),
+        "base": base,
+        "resolved": resolved,
+        "open": events,
+        "open_n": len(open_src),
+        # The cap is disclosed rather than silent: a list that quietly stops at
+        # six looks like a complete list, and "there are five more" is the kind
+        # of fact a reader is entitled to without opening anything.
+        "count_en": (f"showing {len(events)} of {len(open_src)} · most recent first"
+                     if len(open_src) > len(events) else "most recent first"),
+        "count_zh": (f"显示 {len(open_src)} 条中的 {len(events)} 条 · 按时间先后排列"
+                     if len(open_src) > len(events) else "按时间先后排列"),
+        "help": _pw_help(payload, payload.get("base_rates")),
+        "gaps": gaps,
+        "stance_en": "Watch — don't chase.",
+        "stance_zh": "观察为主，不急于跟进。",
+        "warm_en": None, "warm_zh": None,
+    }
