@@ -1,65 +1,35 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-09T01:41:41+00:00",
-  "summary": "Context-only committee read: the macro state is mixed and transitioning, with US Q2 reflation confidence low (0.20), contracting liquidity, restrictive/rising real yields, but healthy breadth, tight credit, and no recession signal. The risk radar is at caution because of a rising bubble/blow-off scare (71.2), yet its broad-tape context gate is unmet and the measured 21-day >=5% SPY pullback rate is 16.0% versus a 17.8% base rate. This makes the radar an early attention condition, not an established edge. Factor intelligence is not mature: only 10 panel dates, history floor unmet, Pair G dormant, zero graded factor-attention events, and the composite is non-tradeable. The graded spine sample returned was dominated by context-only Canadian-board unsigned MFE proxies and should not be interpreted as directional validation. Kernel review shows no engine is armed; notably the US board loses out of sample in Q2 at five days, radar has negative 21-day signed excess in the available Q1 history, and thematic/stock desks have negative 63-day signed excess. No new hypothesis was staked because the available evidence did not justify spending the limited metabolism budget.",
-  "what_fired": [
-    "Risk-radar caution: bubble/blow-off scare 71.2 and rising, while the context gate remains unmet.",
-    "Global breadth watch: JPY-carry leg confirmed and accruing, but era robustness is absent.",
-    "Orderly liquidity drain: net liquidity down $211.4B over 20 days, with an active $84.5B TGA rebuild and no confirming funding or credit stress.",
-    "Cross-asset confirmation diverges from the equity-regime label.",
-    "Four shadow attention records were written with pre-committed falsifiers."
-  ],
-  "contradictions_review": "Six current contradiction edges were reviewed. The core macro tension is Q2 reflation versus a caution risk radar dominated by bubble risk; this is a label tension rather than proof of impending drawdown because breadth is healthy and the radar state's measured pullback rate is below base. Bonds and FX contradict the Q2 equity regime, while the cross-asset layer reports divergence. Thirty-two ticker-level demand-versus-supply divergences remain display-only. Rising put skew contradicts nine buy-lane names, but the stated prior says bullish skew deceleration is unsupported; this can only de-escalate existing conviction. Pair G has no records because the factor panel has not reached 60 dates. Open master-brain theses requiring attention include the overdue China-equities overweight, overdue long-Treasuries overweight, and near-due US-equities underweight; each conflicts with at least part of the current contradiction set or its own falsifier conditions.",
-  "decaying_families": [
-    "Risk radar: 12 graded states, zero alerts and zero realized >=5% pullbacks in the graded caution/watch rows; still too early for precision estimates, but no demonstrated alert edge.",
-    "US board: five-day Q2 signed excess is negative and pooled weighting loses out of sample; unarmed.",
-    "Radar: available 21-day signed excess is negative; unarmed.",
-    "Thematic desk: negative 63-day signed excess in Q1, Q2, and pooled samples; unarmed.",
-    "Stock desk and AI desk: negative 63-day signed excess; unarmed.",
-    "Policy and White House families: negative signed excess with thin samples; unarmed.",
-    "Factor composite: negative IC legs include investment, low-volatility, low-beta, and composite; composite is non-tradeable."
-  ],
-  "deserves_operator": [
-    "Risk-radar caution versus benign broad tape \u2014 resolve if SPY stays above its 200-day average, breadth stays above 60% over the 50-day average, and no >=5% pullback occurs within 21 trading days; retain only if the context gate breaks or the pullback occurs. Attention claim 485c767be896597f.",
-    "China-equities overweight thesis mb-2026-07-09-1 is overdue and conflicts with China Q3 stagflation, contracting liquidity, and divergent cross-asset confirmation. Resolve only if China exits Q3/contracting liquidity and FXI beats SPY by at least 5% over a fresh 20-day window. Attention claim 8e552322843cc65d.",
-    "Long-Treasuries overweight thesis mb-2026-07-01-1 is overdue; real 10-year yield is 2.43%, near its 2.50% falsifier, and the curve is labeled bear steepener. Close the conflict if real yield exceeds 2.50% with bear steepening or TLT trails SPY by at least 5% over 20 trading days. Attention claim 6332ccd66b5ad436.",
-    "US-equities underweight thesis mb-2026-06-29-1 is near its check date while HY OAS is 2.71%, credit health is 85/100, breadth is healthy, and the radar pullback rate is below base. Resolve as falsified if HY OAS stays at or below 2.70% and SPY gains at least 5% from entry by 2026-08-10. Attention claim 4e6f7f921d11844d.",
-    "Operational data health: 148 stale series and failures in international-universe, HKMA, China Tushare, China e-interaction, and Quiver sources constrain confidence in cross-border interpretation."
-  ],
+  "as_of": "2026-08-10T03:53:07+00:00",
+  "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
+  "what_fired": [],
+  "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
+  "decaying_families": [],
+  "deserves_operator": [],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-08",
+    "as_of": "2026-08-09",
     "granted": false,
     "tier": "A0/A1 shadow",
-    "reason": "insufficient-n: n=5 < min_n=25",
+    "reason": "insufficient-n: n=8 < min_n=25",
     "lift_lb": null,
     "wilson_lb": null,
     "lapses_at": null,
-    "evidence_asof": "2026-08-08",
+    "evidence_asof": "2026-08-09",
     "attention_track_record": {
-      "n": 5,
+      "n": 8,
       "hits": 0,
       "base_rate": 0.5
     },
     "is_context_only": true
   },
-  "tool_call_census": {
-    "read_world_state": 1,
-    "read_factor_state": 1,
-    "query_spine": 1,
-    "read_contradictions": 1,
-    "list_factor_contradictions": 1,
-    "read_kernel": 1,
-    "read_master_brain_theses": 1,
-    "flag_attention": 1,
-    "write_memo": 1
-  },
+  "tool_call_census": {},
   "is_context_only": true,
   "run_status": {
-    "status": "ok",
-    "degraded": false,
-    "degradation_reason": null,
-    "model_used": "claude-opus-4-8",
+    "status": "degraded",
+    "degraded": true,
+    "degradation_reason": "model_unavailable",
+    "model_used": "claude-sonnet-4-6",
     "provider_attempts": [
       {
         "provider": "oauth",
@@ -67,7 +37,7 @@
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdrKmfn5EbZLD1C6wXri9'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtPbr3uM2rTzazuQnDkg'}"
       },
       {
         "provider": "oauth",
@@ -75,7 +45,7 @@
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdrKnz3T4vP3ine8Gxb6x'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtPdAbPhfiNBnaGvKZA1'}"
       },
       {
         "provider": "oauth",
@@ -83,7 +53,7 @@
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdrKsbnPECXGpiT2YGGaW'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtPhuNVkmcfHktbzNVVa'}"
       },
       {
         "provider": "oauth",
@@ -91,53 +61,77 @@
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdrL73eVVkqTde25zvUim'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtPwPX2ES6vwpHwsuVke'}"
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "429 Codex usage limit reached"
       },
       {
-        "provider": "codex",
-        "model": "gpt-5.6-sol",
+        "provider": "oauth",
+        "model": "claude-sonnet-4-6",
         "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtQ276Sjb6Efynnosutb'}"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-sonnet-4-6",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtQ2GnMTHWXtKNLTSbcR'}"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-sonnet-4-6",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtQ2SwHsFZSjKaoGTtUs'}"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-sonnet-4-6",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtQ2cqrbkawUdATfBRC7'}"
       }
     ],
-    "tool_call_batches": 4,
-    "individual_tool_calls": 9,
+    "tool_call_batches": 0,
+    "individual_tool_calls": 0,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-09T01:32:52Z"
+    "context_as_of": "2026-08-10T03:34:40Z"
   }
 }

@@ -1637,3 +1637,4 @@
 {"id":"ob-2026-08-08-a244f723bc","from":"queued","to":"quarantined","at":"2026-08-09T23:05:42Z","actor":"press_wire_reap","note":"expired: superseded by tonight's plan","receipt":null}
 {"id":"ob-2026-08-09-31f80d671c","from":"queued","to":"quarantined","at":"2026-08-10T00:37:06Z","actor":"press_wire_reap","note":"expired_stale_wire: breaking sat untouched 3.7h (ttl 3h) — the moment it was written about is gone","receipt":null}
 {"id":"ob-2026-08-08-8afe1e7e80","from":"queued","to":"quarantined","at":"2026-08-10T02:57:32Z","actor":"press_wire_reap","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-08-46beb84c36","from":"queued","to":"quarantined","at":"2026-08-10T03:51:31Z","actor":"nightly_expiry","note":"expired: superseded by tonight's plan","receipt":null}
