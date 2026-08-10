@@ -984,19 +984,22 @@ def validate_event_time_uncertainty(
     coverage = payload["sensitivity_coverage"]
     if coverage not in allowed_coverage:
         _fail("event uncertainty sensitivity coverage is inconsistent")
-    if window is not None:
-        expected_coverage = _sensitivity_coverage(
-            precision=precision,
-            replay_scope=replay_scope,
-            window=window,
-        )
-        if coverage != expected_coverage:
-            _fail("event uncertainty coverage differs from its session receipt")
-        if precision == "session" and (
+    expected_coverage = _sensitivity_coverage(
+        precision=precision,
+        replay_scope=replay_scope,
+        window=window,
+    )
+    if coverage != expected_coverage:
+        _fail("event uncertainty coverage differs from its session receipt")
+    if (
+        window is not None
+        and precision == "session"
+        and (
             _format_utc(lower) != window["session_open"]
             or _format_utc(upper) != window["session_close_exclusive"]
-        ):
-            _fail("session uncertainty bounds differ from its session receipt")
+        )
+    ):
+        _fail("session uncertainty bounds differ from its session receipt")
     if not _exact_json_equal(
         payload["limitations"],
         _uncertainty_limitations(),

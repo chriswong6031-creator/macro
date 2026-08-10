@@ -342,6 +342,14 @@ def test_exact_fail_closed_date_session_mapping() -> None:
     assert missing["sensitivity_coverage"] == "none_session_window_unresolved"
     assert _plan(missing)["abstention_reason"] == "session_window_unresolved"
 
+    # A self-hashed artifact cannot claim non-session or partial-session
+    # coverage without the exact reviewed window that proves that disposition.
+    for forged_coverage in ("none_non_session", "partial_session_sensitivity"):
+        forged = copy.deepcopy(missing)
+        forged["sensitivity_coverage"] = forged_coverage
+        _rehash(forged, id_field="uncertainty_id", prefix="mmuncertainty_")
+        _assert_contract_error(replay.validate_event_time_uncertainty, forged)
+
     for state, day, coverage, reason in (
         ("non_session", "2026-08-08", "none_non_session", "non_session"),
     ):
