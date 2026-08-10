@@ -3,37 +3,59 @@
 # Installs /usr/local/bin/terminal-data — the nightly staging/atomic-swap refresh of the
 # full multi-market terminal universe (~8.7k symbols): flagship rebuild + OHLC refresh +
 # universe expansion + confluence slices, with flock + shrink-guards so the live manifest
-# is never reduced mid-run. The script itself is VENDORED in this repo as
-# app/deploy/terminal-refresh.sh (mirroring how update.sh ships /usr/local/bin/macro-update)
-# — edit it THERE, never by hand on the box. An earlier version of this provisioner wrote
-# the wrapper from an inline heredoc that had rotted to the original 34-symbol flagship
-# builder; re-running it clobbered the evolved live wrapper and silently shrank the
-# terminal universe back to ~34-37 symbols. Installing from the vendored file keeps the
-# provisioner idempotent against the repo, not against a snapshot frozen in a heredoc.
+# is never reduced mid-run.
+#
+# THE WRAPPER BODY IS NOT OURS. It is the charting-app's `ops/terminal-data`, installed
+# here VERBATIM from the terminal checkout on the box (/opt/terminal/ops/terminal-data).
+# This repo ships no copy of it. Reason — research/GOLDEN_ORACLE_REGIME_BLOCK_FORENSIC_2026-08-10.md
+# §5.4, "Deploy last-writer-wins wrapper": TWO installers wrote /usr/local/bin/terminal-data
+# and the last one to run won. /opt/terminal/terminal-build.sh reinstalls the charting-app
+# copy on EVERY deploy, while this script wrote a vendored macro copy whenever someone ran
+# it — so a pass added to only one copy silently disappeared at the next run of the other.
+# Measured casualties of exactly that race: the macro rows vanishing from the nightly
+# (2026-07-27), the crypto OHLC pass (2026-07-28), and — had this not been fixed — the
+# weekly `gen_seasonal_outlook.py` step plus the new `ingest/pull_macro_washout.py` pull
+# (charting-app #375), both of which the vendored macro copy never carried.
+# There is now exactly ONE wrapper source of truth: the charting-app repo. Any change to
+# the nightly goes THERE, and reaches this box through terminal-build.sh.
 #
 # Deploy model: the charting-app lives on GitHub
 # (https://github.com/chriswong6031-creator/mastermind-terminal.git) and deploys are
 # git-gated — merge to master, then /opt/terminal/terminal-build.sh on the VPS runs
 # `git fetch && git reset --hard origin/master` in /opt/terminal/.gitsrc and
-# overlay-syncs the runtime code (ingest/signal_layer/contracts) from that checkout.
-# This script installs the wrapper + cron. Requires /opt/terminal/.env with
+# overlay-syncs the runtime code (ingest/signal_layer/contracts/ops) from that checkout.
+# This script installs that wrapper + cron. Requires /opt/terminal/.env with
 # POLYGON_API_KEY (transferred out-of-band, never committed).
 set -euo pipefail
 VENV="/opt/macro/.venv"   # reuse the engine venv (pandas/numpy/pyarrow) + jsonschema for contracts
+# The charting-app checkout is the ONE source of the wrapper body (forensic §5.4, header above).
+OPS_WRAPPER="${TERMINAL_OPS_WRAPPER:-/opt/terminal/ops/terminal-data}"
 log() { echo "[terminal-data] $*"; }
 
+# [1/3] stays macro-side on purpose: the wrapper's interpreter is OUR venv
+# (`PY=/opt/macro/.venv/bin/python` inside ops/terminal-data), and its
+# `ingest/artifact_conformance` pass needs jsonschema there. Everything else the wrapper
+# needs it exports itself (MACRO_REPO, MACRO_STOCKDATA, TERMINAL_MANIFEST), so this script
+# has no wrapper env of its own to preserve.
 log "[1/3] ensure jsonschema in the engine venv"
 "$VENV/bin/pip" install -q jsonschema
 
-log "[2/3] install the nightly refresh wrapper from the vendored repo copy"
-SRC="$(cd "$(dirname "${BASH_SOURCE[0]:-}")" 2>/dev/null && pwd || true)/terminal-refresh.sh"
-[ -f "$SRC" ] || SRC="/opt/macro/app/deploy/terminal-refresh.sh"   # curl|bash fallback: the checkout
-bash -n "$SRC"   # never install a syntax-broken wrapper
-if [ -f /usr/local/bin/terminal-data ] && ! cmp -s "$SRC" /usr/local/bin/terminal-data; then
-  log "WARN: live /usr/local/bin/terminal-data differs from the repo copy — replacing it. Diff (live vs repo):"
-  diff /usr/local/bin/terminal-data "$SRC" || true
+log "[2/3] install the nightly refresh wrapper from the charting-app checkout"
+if [ ! -f "$OPS_WRAPPER" ]; then
+  log "FATAL: $OPS_WRAPPER is missing."
+  log "  That file is the ONLY source of /usr/local/bin/terminal-data — this repo deliberately"
+  log "  ships no copy of it (forensic §5.4: two copies = last-writer-wins, and the loser's"
+  log "  passes vanish silently). Deploy the terminal first (/opt/terminal/terminal-build.sh),"
+  log "  then re-run this script. Do NOT hand-write the wrapper: the wrapper cd's to"
+  log "  /opt/terminal anyway, so a box without that checkout has nothing for it to drive."
+  exit 1
 fi
-install -m 0755 "$SRC" /usr/local/bin/terminal-data
+bash -n "$OPS_WRAPPER"   # never install a syntax-broken wrapper
+if [ -f /usr/local/bin/terminal-data ] && ! cmp -s "$OPS_WRAPPER" /usr/local/bin/terminal-data; then
+  log "live /usr/local/bin/terminal-data differs from $OPS_WRAPPER — replacing it. Diff (live vs source):"
+  diff /usr/local/bin/terminal-data "$OPS_WRAPPER" || true
+fi
+install -m 0755 "$OPS_WRAPPER" /usr/local/bin/terminal-data
 
 log "[3/3] cron: daily 21:30 UTC (after US close; crypto refreshes on weekends too)"
 # Low-priority scope: the nightly marathon (~2-4h of gen_slices_all over ~8.7k symbols)
