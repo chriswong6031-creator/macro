@@ -9,9 +9,14 @@ MM_LEGACY_API_DROPIN=$MM_LEGACY_API_DROPIN_DIR/ollama.conf
 MM_LEGACY_API_DROPIN_SHA256=872c37b9280aa4ab129139c021144242dd62c05c4a736f5541e8b20caec90f91
 
 mm_remove_exact_legacy_api_ollama_dropin() {
+	local source_unit=${1:-/opt/macro/app/deploy/macro-api.service}
+	local installed_unit=${2:-/etc/systemd/system/macro-api.service}
 	local directory_metadata dropin_metadata dropin_sha256 entry
 	local -a entries
 
+	mm_reviewed_unit_file_ready "$source_unit" "$installed_unit" || return 1
+	grep -Fxq 'EnvironmentFile=-/etc/macro-ollama.env' "$source_unit" || return 1
+	grep -Fxq 'EnvironmentFile=-/etc/macro-ollama.env' "$installed_unit" || return 1
 	[ -d "$MM_LEGACY_API_DROPIN_DIR" ] && \
 		[ ! -L "$MM_LEGACY_API_DROPIN_DIR" ] || return 1
 	directory_metadata=$(stat -c '%U:%G:%a' "$MM_LEGACY_API_DROPIN_DIR") || return 1
