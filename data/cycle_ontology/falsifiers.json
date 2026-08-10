@@ -198,30 +198,25 @@
     "source_prose": "Gold futures sustained below $3,300 for 21 days refutes the secular bull thesis and signals a structural break in the 2024-2026 upcycle"
   },
   {
-    "id": "bitcoin.cycle_position.v1",
+    "id": "bitcoin.cycle_position.v2",
     "cycle": "bitcoin",
-    "version": 1,
+    "version": 2,
     "direction": "refutes",
-    "claim": "Bitcoin is in a post-halving bull cycle; on-chain and price structure confirm",
-    "claim_zh": "比特币还在减半后的牛市周期里；链上数据和价格结构互相印证",
-    "expires": "2027-06-30",
-    "coverage": "full",
+    "claim": "Bitcoin's mid-cycle washout is complete and a new upcycle begins, with strength into year end",
+    "claim_zh": "比特币中周期洗盘已结束，新一轮上行周期开启，年底前走强",
+    "expires": "2027-03-31",
+    "coverage": "partial",
     "dsl": {
-      "any": [
-        {
-          "series": "yahoo:BTC-USD",
-          "op": "gt",
-          "value": 126000
-        },
-        {
-          "series": "yahoo:BTC-USD",
-          "op": "lt",
-          "value": 64000
-        }
-      ]
+      "series": "yahoo:BTC-USD",
+      "op": "lt",
+      "value": 48000
     },
-    "manual": null,
-    "source_prose": "BTC above $126,000 (blow-off top signal) or below $64,000 (bull-cycle invalidation) each refute the mid-bull cycle positioning thesis"
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-08-10",
+      "note": "Ungraded residuals, disclosed: (a) death-by-drift — BTC ranging above 48,000 leaves every clause ungraded until expiry, and EXPIRED drops out of both forward counters silently; (b) the 'strength into year end' clause has no DSL leg; (c) the real-rate driver is deliberately NOT a leg — in the 2022-10 exemplar DFII10 rose 100bp from the FTX low to its 2.52 peak (2023-10-25) while BTC rallied +180%, so a rate-high leg false-kills the motivating episode; the mechanism is tracked by transmission chain real_rate_peak_crypto_rerate rev 1, whose own falsifier fails the chain on a fresh real-rate high"
+    },
+    "source_prose": "BTC closing below $48,000 refutes the completed-washout thesis: -18.0% below the 2026-06-30 basing low (close 58,559), one point deeper than the closest motivating exemplar's post-rate-peak retest (2022: June base close 19,018 -> FTX low close 15,787 = -17.0%, before the +180% rally), so an exemplar-shaped washout survives while a deeper break kills the claim; 2018's -43% capitulation (5,648 -> 3,237) rightly refuses it — that path contradicts 'washout complete'. v2 re-author 2026-08-10: v1's post-halving bull claim was refuted 2026-07-02 (fired leg lt 64000; close 61,485) and its latched state row stays as history; v2 registers the operator's successor thesis. Evidence base thin and printed as such: 2 clean analog episodes (2018-12, 2022-10; 2020 QE-contaminated, excluded). Leg unfired at registration (close 65,035 on 2026-08-09): the v2 entry ARMS fresh"
   },
   {
     "id": "credit.spread_regime.v1",
