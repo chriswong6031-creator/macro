@@ -1490,7 +1490,7 @@ def _validate_baselines(value: object) -> list[dict[str, Any]]:
     return clean
 
 
-def _validate_splits(value: object) -> dict[str, Any]:
+def _validate_splits(value: object, *, registered_at: datetime) -> dict[str, Any]:
     payload = _require_fields(value, _SPLIT_FIELDS, field="splits")
     fields = (
         "development_start",
@@ -1502,6 +1502,8 @@ def _validate_splits(value: object) -> dict[str, Any]:
     parsed = [_exact_utc(payload[field], field=f"splits.{field}") for field in fields]
     if not parsed[0] < parsed[1] <= parsed[2] < parsed[3] <= parsed[4]:
         _fail("development, test, and live-forward splits overlap or reverse")
+    if registered_at >= parsed[4]:
+        _fail("trial registration must precede the live-forward split")
     return {field: _format_utc(item) for field, item in zip(fields, parsed)}
 
 
@@ -1596,11 +1598,15 @@ def _validate_abstention(value: object, *, minimum_domains: int) -> dict[str, An
     }
 
 
-def _validate_expiry(value: object, *, registered_at: datetime) -> dict[str, Any]:
+def _validate_expiry(
+    value: object, *, registered_at: datetime, live_forward_start: datetime
+) -> dict[str, Any]:
     payload = _require_fields(value, _EXPIRY_FIELDS, field="expiry")
     expires = _exact_utc(payload["expires_at"], field="expiry.expires_at")
     if expires <= registered_at:
         _fail("trial expiry must follow registration")
+    if expires <= live_forward_start:
+        _fail("trial expiry must leave a non-empty live-forward window")
     if payload["action"] != "abstain":
         _fail("expired trial action must be abstain")
     return {"expires_at": _format_utc(expires), "action": "abstain"}
@@ -1728,7 +1734,7 @@ def validate_trial_registration(value: Mapping[str, Any]) -> dict[str, Any]:
         payload["proper_score"], distribution_kind=distribution["kind"]
     )
     baselines = _validate_baselines(payload["baselines"])
-    splits = _validate_splits(payload["splits"])
+    splits = _validate_splits(payload["splits"], registered_at=registered)
     purge = _validate_purge(
         payload["purge"], horizon_end_seconds=horizon["end_offset_seconds"]
     )
@@ -1739,7 +1745,13 @@ def validate_trial_registration(value: Mapping[str, Any]) -> dict[str, Any]:
         payload["abstention"],
         minimum_domains=state_requirements["minimum_observed_domains"],
     )
-    expiry = _validate_expiry(payload["expiry"], registered_at=registered)
+    expiry = _validate_expiry(
+        payload["expiry"],
+        registered_at=registered,
+        live_forward_start=_exact_utc(
+            splits["live_forward_start"], field="splits.live_forward_start"
+        ),
+    )
     demotion = _validate_demotion(payload["demotion"])
     implementation = _validate_implementation(payload["implementation"])
     if payload["emission_enabled"] is not False:
@@ -2077,8 +2089,13 @@ def _validate_forecast_trial_join(
     registered = _exact_utc(trial["registered_at"], field="registered_at")
     if registered > decision:
         _fail("trial was not registered by the forecast decision cutoff")
+    live_forward_start = _exact_utc(
+        trial["splits"]["live_forward_start"], field="live_forward_start"
+    )
+    if decision < live_forward_start:
+        _fail("forecast decision precedes the preregistered live-forward split")
     sealed = _exact_utc(clean["sealed_at"], field="sealed_at")
-    expired = sealed > _exact_utc(trial["expiry"]["expires_at"], field="expires_at")
+    expired = sealed >= _exact_utc(trial["expiry"]["expires_at"], field="expires_at")
     if expired and not (
         clean["disposition"] == "abstained"
         and clean["abstention_reason"] == "policy_expired"

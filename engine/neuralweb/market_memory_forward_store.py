@@ -1193,13 +1193,18 @@ def _validate_stored_joins(
                 trial["registered_at"], field="stored trial registered_at"
             )
             > decision
+            or decision
+            < _parse_exact_utc(
+                trial["splits"]["live_forward_start"],
+                field="stored trial live_forward_start",
+            )
         ):
             raise MarketMemoryForwardStoreError(
                 "stored forward forecast temporal join drifted"
             )
         expired = _parse_exact_utc(
             record["sealed_at"], field="stored forecast sealed_at"
-        ) > _parse_exact_utc(
+        ) >= _parse_exact_utc(
             trial["expiry"]["expires_at"], field="stored trial expires_at"
         )
         if expired != (

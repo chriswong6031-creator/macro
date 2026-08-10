@@ -1139,6 +1139,10 @@ demotion, and exact model/code/config implementation hashes. A separate
 `outcome_definition_sha256` binds the target, input and outcome marks, horizon,
 and evaluation rule. Forecast keys transitively bind that definition, so two
 trials with different measurement marks cannot share an outcome event.
+Registration must precede the frozen live-forward split, that split must leave
+a non-empty pre-expiry window, and forecasts before it are rejected. The
+expiry instant itself is inactive and therefore permits only the preregistered
+`policy_expired` abstention.
 
 Each admitted forecast record is sealed as either `issued` or `abstained`.
 That is a per-record disposition guarantee only: W2A has no opportunity

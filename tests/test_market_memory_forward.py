@@ -96,6 +96,8 @@ def _trial(
     *,
     trial_key: str = "synthetic.spy.close.v1",
     outcome_mark: str = "close",
+    live_forward_start: str = "2026-08-02T00:00:00.000000Z",
+    expires_at: str = "2027-01-01T00:00:00.000000Z",
     distribution: dict[str, Any] | None = None,
     proper_score: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -144,7 +146,7 @@ def _trial(
             "development_end": "2022-01-01T00:00:00.000000Z",
             "test_start": "2022-01-01T00:00:00.000000Z",
             "test_end": "2024-01-01T00:00:00.000000Z",
-            "live_forward_start": "2024-01-01T00:00:00.000000Z",
+            "live_forward_start": live_forward_start,
         },
         purge={"enabled": True, "before_seconds": 172_800, "after_seconds": 0},
         embargo={"enabled": True, "duration_seconds": 172_800},
@@ -167,7 +169,7 @@ def _trial(
                 "required_domain_missing",
             ],
         },
-        expiry={"expires_at": "2027-01-01T00:00:00.000000Z", "action": "abstain"},
+        expiry={"expires_at": expires_at, "action": "abstain"},
         demotion={
             "enabled": True,
             "triggers": [
@@ -499,6 +501,16 @@ def test_trial_required_domains_accept_canonical_not_lexical_order() -> None:
     assert forward.validate_trial_registration(trial) == trial
 
 
+def test_trial_rejects_retroactive_or_empty_live_forward_window() -> None:
+    with pytest.raises(forward.MarketMemoryForwardContractError, match="precede"):
+        _trial(live_forward_start="2026-08-01T12:00:00.000000Z")
+    with pytest.raises(forward.MarketMemoryForwardContractError, match="non-empty"):
+        _trial(
+            live_forward_start="2026-08-02T00:00:00.000000Z",
+            expires_at="2026-08-02T00:00:00.000000Z",
+        )
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [
@@ -557,6 +569,36 @@ def test_forecast_is_deterministic_sealed_join_and_has_no_postevent_fields() -> 
         )
         == first
     )
+
+
+def test_forecast_rejects_pre_live_split_and_expires_at_the_frozen_boundary() -> None:
+    exact = _context_bytes()
+    state = _state(context_bytes=exact)
+    with pytest.raises(
+        forward.MarketMemoryForwardContractError, match="live-forward split"
+    ):
+        _forecast(
+            state=state,
+            trial=_trial(live_forward_start="2026-08-08T00:00:00.000000Z"),
+            context_bytes=exact,
+        )
+
+    expired = _trial(expires_at="2026-08-07T20:05:30.000000Z")
+    with pytest.raises(forward.MarketMemoryForwardContractError, match="expired"):
+        _forecast(state=state, trial=expired, context_bytes=exact)
+    abstained = forward.build_forecast_record(
+        trial_registration=expired,
+        state_snapshot=state,
+        exact_context_bytes=exact,
+        sealed_at="2026-08-07T20:05:30.000000Z",
+        disposition="abstained",
+        abstention_reason="policy_expired",
+        model_sha256="5" * 64,
+        code_sha256="6" * 64,
+        config_sha256="7" * 64,
+        predictive_distribution=None,
+    )
+    assert abstained["abstention_reason"] == "policy_expired"
 
 
 def test_outcome_event_identity_binds_frozen_marks_across_trials() -> None:

@@ -62,6 +62,7 @@ def _trial(
     trial_key: str = "synthetic.spy.close.v1",
     baseline_config: str = "4" * 64,
     outcome_mark: str = "close",
+    live_forward_start: str = "2026-08-02T00:00:00.000000Z",
 ) -> dict[str, object]:
     return forward.build_trial_registration(
         trial_key=trial_key,
@@ -106,7 +107,7 @@ def _trial(
             "development_end": "2022-01-01T00:00:00.000000Z",
             "test_start": "2022-01-01T00:00:00.000000Z",
             "test_end": "2024-01-01T00:00:00.000000Z",
-            "live_forward_start": "2024-01-01T00:00:00.000000Z",
+            "live_forward_start": live_forward_start,
         },
         purge={"enabled": True, "before_seconds": 172_800, "after_seconds": 0},
         embargo={"enabled": True, "duration_seconds": 172_800},
