@@ -100,6 +100,28 @@ fresh checks decide on a later sweep. If it has not, the existing green still
 means what it said. That is the operator's chosen option — NOT strict
 up-to-date-with-main, which would serialise a 60-PR queue into days.
 
+A MERGED PULL REQUEST CAN DELIVER NOTHING (measured 2026-08-09). Every gate above
+judges the head's CHECKS; none of them ever asked whether the head still contains
+the pull request's WORK. Five armed pull requests (#5055 #5061 #5074 #5078 #5091)
+sat through a day of update-branch/refresh cycles and came out with their branch
+heads clobbered to content-identical-with-main — #5055's head at merge time,
+6f9a7f63bfb, contained none of its files. Their checks were honestly green (they
+tested what was effectively main's own content), the freshness gate was satisfied,
+and the sweeper squash-merged EMPTY diffs: `git diff-tree` on the merge commits
+prints nothing, the PRs read MERGED, and zero files landed. That is the worst
+outcome this lane can produce, because it READS as success — the loss surfaced
+only when a human verified the files on main by content afterwards.
+
+So `sweep_pull` now runs a CLOBBERED-HEAD INVARIANT immediately before the
+irreversible step: one live `base...head` compare. A clobbered head's live diff is
+EMPTY while GitHub's materialised PR view still names the files, and that
+disagreement is the signature — the merge is refused, labeled `merge-blocked`, and
+explained once, naming the head SHA so the owner can find the good pre-clobber
+commit. A pull request whose files list is ALSO empty is telling the truth about
+being empty — nobody is deceived — and keeps the existing behaviour. See
+`live_diff_file_count` for the mechanism and `update_branch` for the likely
+clobber source.
+
 THE SWEEPER CAN STARVE ITSELF (measured 2026-08-07). Everything above spends API
 calls without ever asking how many are left. `READ_TOKEN` is the job's own
 `GITHUB_TOKEN`, whose Actions quota is **1,000 requests per hour PER REPOSITORY**
@@ -258,13 +280,15 @@ MAX_PULLS_PER_SWEEP = 25
 # last fifth of the bucket to the OTHER lanes that read main with GITHUB_TOKEN —
 # a merge sweeper starving render.yml would just move the outage.
 RATE_LIMIT_FLOOR = 200
-# Stop MID-sweep below this. Covers the in-flight pull request's remaining writes
-# (merge, label, comment, delete-ref) plus the calls that can be spent between two
-# budget polls, so the stop is clean rather than a 403 half-way through.
+# Stop MID-sweep below this. Covers the in-flight pull request's remaining reads
+# and writes (the pre-merge live-compare read, merge, label, comment, delete-ref)
+# plus the calls that can be spent between two budget polls, so the stop is clean
+# rather than a 403 half-way through.
 RATE_LIMIT_RESERVE = 60
 # Poll `GET /rate_limit` every N evaluated pull requests rather than every one. It
-# costs no core budget but it is still a round trip; at <=5 calls per pull request
-# the reserve above comfortably covers the at-most-25 calls spent between polls.
+# costs no core budget but it is still a round trip; at <=6 calls per pull request
+# (the clobbered-head compare read is the sixth) the reserve above comfortably
+# covers the at-most-30 calls spent between polls.
 BUDGET_RECHECK_EVERY = 5
 # Each `update-branch` is a write AND a fresh CI run on a saturated pool (36-91
 # minutes, 8 self-hosted runners). The base-inherited-red path makes most of a red
@@ -2015,6 +2039,50 @@ def delete_head_ref(repo: str, pull: dict[str, Any], token: str) -> None:
     )
 
 
+def live_diff_file_count(repo: str, pull: dict[str, Any], token: str) -> int | None:
+    """File count of the LIVE three-dot compare `base...head`. None when unreadable.
+
+    Deliberately a SECOND, independent answer to "what would this merge change",
+    never a re-read of the pull request's own `files` view. GitHub materialises a
+    pull request's file list (and its `changed_files` count) lazily, against a
+    cached merge base, so after a head is force-moved the PR view can keep naming
+    files the live head no longer changes — which is how the 2026-08-09 phantom
+    merges looked mergeable. `/compare/{base}...{head}` is computed from the refs
+    as they stand NOW, and it is exactly the diff a squash merge would apply.
+    Disagreement between the two views is the clobbered-head signature
+    `sweep_pull` refuses on.
+
+    Cost: one READ_TOKEN GET per pull request that reaches the merge step, inside
+    RATE_LIMIT_RESERVE's headroom. `per_page=1` bounds the commits array; `files`
+    rides the first page, and only its EMPTINESS is consulted, so GitHub's
+    300-file truncation cannot flip the answer (truncation needs >=300 files, and
+    any answer above zero already means "proceed").
+
+    The head side is the exact SHA this sweep judged, not the branch name: the
+    checks and the freshness gate were both computed for that SHA, and a branch
+    that moved since is a different question (the next sweep's). The base side
+    falls back to "main" when the listing payload carried no base ref — every
+    armed pull request here targets main, and a wrong-base compare can only make
+    the diff LARGER, which reads "proceed", i.e. the pre-invariant behaviour.
+    """
+    head_sha = str((pull.get("head") or {}).get("sha") or "")
+    if not head_sha:
+        return None
+    base_ref = str((pull.get("base") or {}).get("ref") or "main")
+    basehead = f"{urllib.parse.quote(base_ref, safe='/')}...{head_sha}"
+    status, payload = _request(
+        "GET",
+        f"{GITHUB_API}/repos/{repo}/compare/{basehead}?per_page=1",
+        token,
+    )
+    if status >= 400 or not isinstance(payload, dict):
+        return None
+    files = payload.get("files")
+    if not isinstance(files, list):
+        return None
+    return len(files)
+
+
 def already_settled(repo: str, number: Any, token: str) -> tuple[bool, str]:
     """Did this pull request already merge (or close) out from under this sweep?
 
@@ -2078,6 +2146,29 @@ def update_branch(repo: str, pull: dict[str, Any], token: str) -> bool:
     three-day-old one. Nothing here weakens the merge gate — an updated head is
     unproven until its fresh checks conclude, and the next sweep judges it on
     those.
+
+    NOT the clobber vector, for the record (the 2026-08-09 phantom merges). When
+    five armed heads were found clobbered to content-identical-with-main after a
+    day of refresh cycles, this call was the obvious suspect — it is the thing
+    that keeps touching armed heads. It is exonerated by its own failure mode:
+    GitHub's server-side update-branch NEVER auto-resolves a conflict, it answers
+    422 and the caller falls through to `merge-blocked`, so it can add merge
+    commits but cannot invent a resolution that takes main's side. The likely
+    source is the fleet's LOCAL refresh work between sweeps — a session resolves
+    a refresh/rebase conflict in a worktree and force-pushes — where two known
+    mechanisms produce exactly this shape: (a) bulk conflict auto-resolution
+    taking main wholesale (`-X theirs` / `checkout --theirs`-style) during
+    backlog drains, and/or (b) `git rerere` replaying a SIBLING pull request's
+    "take main's version" resolution onto a different conflict in the same file,
+    marker-free and status-clean (measured 2026-08-07 on #4821/#4822;
+    `rerere.enabled` is false at repo level now, but the shared `.git/rr-cache` —
+    worktrees share `.git` — still carries those recorded resolutions, and any
+    worktree or `-c` override that re-enables it replays them). Either way the
+    head ends content-identical with main, its checks go green on main's own
+    content, and only the live compare can tell — which is why the
+    clobbered-head invariant in `sweep_pull` sits at the merge itself, not here.
+    The clobber mechanism is deliberately NOT fixed in this file: it lives in the
+    fleet's local tooling, and the invariant makes it non-catastrophic.
     """
     number = pull.get("number")
     status, body = _request(
@@ -2362,6 +2453,93 @@ def sweep_pull(
     if stale:
         return reprove(repo, pull, reason, read_token, merge_token, budget)
     print(f"PR #{number}: proof still current — {reason}.", flush=True)
+
+    # THE CLOBBERED-HEAD INVARIANT (the 2026-08-09 phantom merges: #5055 #5061
+    # #5074 #5078 #5091 — module docstring). Everything above judged the head's
+    # CHECKS; nothing asked whether the head still CONTAINS the pull request's
+    # work. A head clobbered to content-identical-with-main during refresh cycles
+    # is green for free — its checks tested main's own content — and squash-
+    # merging it creates an empty commit that reads MERGED while zero files land.
+    # The signature is a disagreement between GitHub's two answers to "what does
+    # this pull request change": the LIVE base...head compare (empty) versus the
+    # materialised PR files view (still naming the files). Ask both, after every
+    # cheaper gate has passed and immediately before the irreversible step, and
+    # refuse on the mismatch. Likely clobber source: `update_branch`'s docstring.
+    live_files = live_diff_file_count(repo, pull, read_token)
+    if live_files is None:
+        # Fail closed WITHOUT accusing: a broken read must never become
+        # permission to merge, but a blip is not evidence of a clobber either —
+        # and `mark_blocked`'s comment is one-shot, so a false accusation would
+        # be the one that sticks. Armed, unlabeled, retried next sweep.
+        _annotate(
+            "warning",
+            "merge-on-green",
+            f"PR #{number}: the live base...head compare could not be read, so "
+            "the clobbered-head invariant cannot run — not merging on partial "
+            "information. Left armed for the next sweep.",
+        )
+        return "error"
+    if live_files == 0:
+        expected = freshness.pull_files(number)
+        if expected is None:
+            _annotate(
+                "warning",
+                "merge-on-green",
+                f"PR #{number}: the live base...head compare is EMPTY and the "
+                "pull request's own files list is unreadable, so a clobbered "
+                "head cannot be told apart from a legitimately empty one — not "
+                "merging. Left armed for the next sweep.",
+            )
+            return "error"
+        if expected:
+            added = mark_blocked(
+                repo,
+                pull,
+                (
+                    "`merge-on-green` sweeper: **not merging.** Every check "
+                    "concluded clean, but the live `base...head` compare for "
+                    "this pull request is EMPTY while its files list still names "
+                    f"{len(expected)} file(s). The head has been CLOBBERED to "
+                    "content-identical-with-main — squash-merging it would "
+                    "create an empty commit that reads MERGED while none of this "
+                    "pull request's files land, which is exactly the 2026-08-09 "
+                    "phantom merges (#5055 #5061 #5074 #5078 #5091).\n\n"
+                    f"Head at refusal time: `{head_sha}`. The good content "
+                    "survives at this branch's PRE-CLOBBER commits — walk the "
+                    "branch's `git log`/reflog (or a parked worktree) for the "
+                    "last head whose `base...head` diff matches this pull "
+                    "request's intent, force-push the branch back to it, and the "
+                    "next sweep judges the restored head on its fresh checks "
+                    "(the label stays armed). Likely clobber source: a "
+                    "refresh-cycle conflict resolution that took main wholesale, "
+                    "and/or a `git rerere` replay of a sibling's resolution. "
+                    "(If instead every historical head shows this same diff and "
+                    "main already contains the change, nothing was clobbered — "
+                    "the pull request was SUPERSEDED by a sibling landing the "
+                    "same content; close it rather than force it through.)"
+                ),
+                merge_token,
+            )
+            _annotate(
+                "warning",
+                "merge-on-green",
+                f"PR #{number}: live base...head diff is empty but the pull "
+                f"request still names {len(expected)} changed file(s) — head "
+                f"{head_sha[:12]} is clobbered to content-identical-with-main; "
+                "merge refused. "
+                + ("Labeled merge-blocked." if added else "Already labeled merge-blocked."),
+            )
+            return "clobbered-head"
+        # Both views agree the pull request is empty: the PR page itself shows 0
+        # files, nobody is deceived, and inventing a new behaviour for that shape
+        # is scope this invariant does not have. The merge call decides, exactly
+        # as it did before the invariant existed.
+        print(
+            f"PR #{number}: live base...head compare and the pull request's own "
+            "files list are BOTH empty — a legitimately empty pull request; "
+            "proceeding to the merge call as before.",
+            flush=True,
+        )
 
     status, body = _request(
         "PUT",

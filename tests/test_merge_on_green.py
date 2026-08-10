@@ -473,6 +473,8 @@ def _fake_api(
     pull_payload=None,
     main_commits=((BEFORE_THE_PROOF, ["data/nightly.json"]),),
     pr_files=("engine/signal_quality.py",),
+    compare_files=None,
+    compare_status=200,
 ):
     """Route every `_request` call by method+URL and record what was sent.
 
@@ -489,6 +491,12 @@ def _fake_api(
     `pull_files` are exercised rather than stubbed. The defaults describe a main
     that moved only before the proof — no re-prove — so a test that is not about
     staleness keeps its old outcome.
+
+    `compare_files` / `compare_status` answer the pre-merge live `base...head`
+    compare (the clobbered-head invariant). The default MIRRORS `pr_files` — a
+    live diff that agrees with the pull request's own files view — so every test
+    that is not about the invariant keeps its old outcome; a clobber is staged by
+    passing `compare_files=()` while leaving `pr_files` non-empty.
     """
     calls: list[tuple[str, str, dict | None]] = []
     shas = [f"{index:040d}" for index, _ in enumerate(main_commits)]
@@ -498,6 +506,11 @@ def _fake_api(
         if "/check-runs" in url:
             page = int(url.rsplit("page=", 1)[1].split("&")[0])
             return 200, check_pages.get(page, {"total_count": 0, "check_runs": []})
+        if "/compare/" in url:
+            if compare_status >= 400:
+                return compare_status, {"message": "Server Error"}
+            names = pr_files if compare_files is None else compare_files
+            return 200, {"files": [{"filename": name} for name in names]}
         if "/commits?" in url:
             return 200, [
                 {"sha": sha, "commit": {"committer": {"date": iso}}}
@@ -665,6 +678,10 @@ def test_the_concurrent_sweep_guard_fails_closed_on_an_unreadable_pull_request(
                 "total_count": 1,
                 "check_runs": [_run("ci-pack-1", conclusion="success")],
             }
+        if "/compare/" in url:
+            # A live diff that agrees with the PR view, so the clobbered-head
+            # invariant passes and the test stays about the settled-guard read.
+            return 200, {"files": [{"filename": "engine/signal_quality.py"}]}
         if url.endswith("/merge"):
             return 409, {"message": "Pull Request is not mergeable"}
         if url.endswith("/update-branch"):
@@ -723,6 +740,112 @@ def test_an_updated_branch_clears_a_stale_merge_blocked_label(monkeypatch, capsy
     assert any(
         call[0] == "DELETE" and "labels/merge-blocked" in call[1] for call in calls
     ), "the stale merge-blocked label must be dropped once the branch moves again"
+
+
+def test_a_clobbered_head_is_refused_labeled_and_named_not_merged(monkeypatch, capsys):
+    """The 2026-08-09 phantom merges (#5055 #5061 #5074 #5078 #5091), pinned.
+
+    Five armed heads sat through a day of update-branch/refresh cycles and came
+    out clobbered to content-identical-with-main (#5055's head at merge,
+    6f9a7f63bfb, contained none of its files). Their checks were honestly green —
+    they tested main's own content — so the sweeper squash-merged EMPTY diffs and
+    the PRs read MERGED while zero files landed. The clobber's signature is the
+    disagreement the invariant asks about immediately before the merge: live
+    base...head compare EMPTY, PR files list still non-empty. Refuse, label,
+    explain once — never merge.
+    """
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}}
+    staged = dict(
+        check_pages=pages,
+        compare_files=(),
+        pr_files=("engine/cn_limit_alpha.py", "tests/test_cn_limit_alpha.py"),
+    )
+    calls = _fake_api(monkeypatch, **staged)
+    verdict = MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness())
+    assert verdict == "clobbered-head"
+    assert not any(call[0] == "PUT" and call[1].endswith("/merge") for call in calls), (
+        "the squash merge must never be issued on a clobbered head — an empty "
+        "merge that reads MERGED is the incident itself, not a near miss"
+    )
+    posts = [call for call in calls if call[0] == "POST"]
+    assert any(call[1].endswith("/labels") for call in posts), "must label merge-blocked"
+    comments = [call for call in posts if call[1].endswith("/comments")]
+    assert len(comments) == 1
+    body = comments[0][2]["body"]
+    assert "a" * 40 in body, (
+        "the comment must name the clobbered head SHA — it is how the owner finds "
+        "the good pre-clobber commit to restore"
+    )
+    assert "CLOBBERED" in body and "not merging" in body
+    assert "2 file(s)" in body, "and say how many files the PR view still claims"
+
+    # Second pass over the still-clobbered head: the label is already worn, so the
+    # one-shot comment must not repeat (the sweep runs every ~10 minutes; a
+    # re-comment per pass is ~144 comments a day).
+    calls = _fake_api(monkeypatch, **staged)
+    already = _pull(labels=("merge-on-green", "merge-blocked"))
+    assert (
+        MOG.sweep_pull("acme/widgets", already, "read", "write", _freshness())
+        == "clobbered-head"
+    )
+    assert [call for call in calls if call[0] == "POST"] == [], "must never re-comment"
+
+
+def test_a_legitimately_empty_pull_request_keeps_the_existing_path(monkeypatch, capsys):
+    """The boundary the invariant must not cross.
+
+    A pull request whose OWN files list is also empty is telling the truth about
+    being empty — its PR page shows 0 files, nobody is deceived — and the
+    invariant must not invent a new behaviour for it. The merge call decides,
+    exactly as it did before the invariant existed.
+    """
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}},
+        compare_files=(),
+        pr_files=(),
+    )
+    assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness()) == "merged"
+    merges = [call for call in calls if call[0] == "PUT" and call[1].endswith("/merge")]
+    assert len(merges) == 1, "existing behaviour: the merge call is still issued"
+    posts = [call for call in calls if call[0] == "POST"]
+    assert posts == [], "no label, no comment — nothing is wrong with this pull request"
+    assert "BOTH empty" in capsys.readouterr().out
+
+
+def test_an_unreadable_live_compare_fails_closed_without_accusing(monkeypatch, capsys):
+    """A broken read must never become permission to merge — but a blip is not
+    evidence of a clobber either, and `mark_blocked`'s comment is one-shot, so a
+    false accusation would be the one that sticks. Armed, unlabeled, retried."""
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}},
+        compare_status=502,
+    )
+    assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness()) == "error"
+    assert not any(call[0] == "PUT" and call[1].endswith("/merge") for call in calls), (
+        "no merge on partial information"
+    )
+    assert [call for call in calls if call[0] == "POST"] == [], "and no accusation"
+    assert any(
+        line.startswith("::warning") and "clobbered-head invariant cannot run" in line
+        for line in capsys.readouterr().out.splitlines()
+    )
+
+
+def test_an_empty_live_diff_with_an_unreadable_files_list_fails_closed(monkeypatch):
+    """An empty live diff plus an unreadable files list cannot tell a clobbered
+    head from a legitimately empty one. Not knowing is never a merge — and never
+    an accusation either."""
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}},
+        compare_files=(),
+    )
+    freshness = _freshness(pull_files={4242: None})
+    assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write", freshness) == "error"
+    assert not any(call[0] == "PUT" and call[1].endswith("/merge") for call in calls)
+    assert [call for call in calls if call[0] == "POST"] == []
 
 
 def test_the_check_listing_pages_past_the_first_hundred(monkeypatch, capsys):
@@ -2103,7 +2226,10 @@ def test_the_budget_floor_can_actually_fund_a_capped_sweep():
         "main_proof + ensure_main_baseline must stay inside the fixed overhead this "
         "floor was sized for"
     )
-    worst_case = fixed + MOG.MAX_PULLS_PER_SWEEP * 5 + MOG.MAX_REFRESHES_PER_SWEEP
+    # 6 per pull request = check runs + files + the pre-merge live compare (the
+    # clobbered-head invariant) + merge + settled + update-branch — the
+    # clean-but-refused worst case.
+    worst_case = fixed + MOG.MAX_PULLS_PER_SWEEP * 6 + MOG.MAX_REFRESHES_PER_SWEEP
     assert MOG.RATE_LIMIT_FLOOR >= worst_case * 0.9, (
         f"floor {MOG.RATE_LIMIT_FLOOR} cannot fund a {MOG.MAX_PULLS_PER_SWEEP}-PR pass"
     )
