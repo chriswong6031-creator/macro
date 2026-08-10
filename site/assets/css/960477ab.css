@@ -772,6 +772,9 @@ details[open] summary::before{transform:rotate(90deg)}
 .src-pboc{background:rgba(91,155,240,0.15);color:var(--info)}
 .src-politburo{background:rgba(224,160,48,0.12);color:var(--warn)}
 .src-cewc{background:rgba(224,139,69,0.12);color:var(--orange)}
+/* CJK has no case and no ascender/descender rhythm: the chip's 9.5px + tracking
+   is set for uppercase latin and reads as noise in Chinese. Bump the zh twin. */
+.event-source-chip .l-zh{font-size:10.5px;letter-spacing:0}
 .event-title{color:var(--text);line-height:1.5}
 .event-sectors{
   margin-top:3px;
