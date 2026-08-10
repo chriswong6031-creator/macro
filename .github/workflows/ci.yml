@@ -3661,7 +3661,7 @@ jobs:
     # Skipping here cancels the obsolete pack without allocating a replacement.
     if: github.event.action != 'closed'
     # The logical jobs in .github/ci/legacy-jobs.yml remain the reviewable
-    # source of truth, but GitHub sees only this matrix. Four pack runners
+    # source of truth, but GitHub sees only this matrix. Twelve pack runners
     # execute every legacy run step against a clean working tree, sharing one
     # checkout and reusing only identical dependency sets instead of
     # provisioning more than one hundred separate VMs/check records.
@@ -3672,7 +3672,12 @@ jobs:
     # partition balances 4x619 weight against 2x1238 (run_ci_pack.py
     # --validate-only), so wall-clock to green roughly halves; GitHub-hosted
     # pickup is 2-3 s per job, so two more runners cost queue nothing. These
-    # names are the intended required-checks set (ci-pack-0..3) for branch
+    # Twelve, up from four (operator 2026-08-10): paid Enterprise capacity now
+    # starts the whole hosted matrix within seconds, while four full packs still
+    # took 40-55 minutes. Twelve keeps every legacy job gated and cuts the
+    # measured balanced critical-path weight roughly in half; the remaining
+    # floor is one deliberately indivisible render-guard lane. These names are
+    # the intended required-checks set (ci-pack-0..11) for any future branch
     # protection; renaming or renumbering them must update that setting too.
     name: ci-pack-${{ matrix.pack }}
     # EVERY event runs on the hosted pool. The self-hosted detour is retired.
@@ -3686,11 +3691,11 @@ jobs:
     # armed pull request that inherited a since-healed red stays blocked.
     #
     # That fix was correct for its constraint, and the constraint is now GONE. The
-    # repository moved to the MastermindX enterprise organization on 2026-08-09 and the
-    # hosted concurrency ceiling went from 40 to 180 concurrent jobs. The measured
-    # backlog that caused the starvation was ~195 hosted jobs; at 180 it drains in one
-    # wave, and the observed queue fell from 103 runs to 7 within minutes of the
-    # transfer. Hosted pickup is 2-3 s per job. There is no longer anything to escape.
+    # repository moved to the MastermindX enterprise organization on 2026-08-09 and its
+    # paid Enterprise plan now carries GitHub's 500-standard-hosted-job ceiling instead
+    # of the 20-job Free ceiling. The measured backlog that caused the starvation was
+    # ~195 hosted jobs, so it now fits inside one wave; observed four-pack jobs begin
+    # within the same second. There is no longer anything to escape.
     #
     # Routing back is strictly better than leaving it:
     #   * `render-linux` is FOUR runners shared with `render.yml`, `engine-render.yml`
@@ -3698,8 +3703,9 @@ jobs:
     #     pool, starving both renders and the sweeper. The packs and sweeper now use
     #     hosted runners; all four self-hosted slots are back with render workloads.
     #   * The `max-parallel: 2` that bounded that damage is deleted with it — on hosted
-    #     runners the four packs run concurrently again, so main's proof goes back to
-    #     ~26 minutes from the ~50 the throttle cost.
+    #     runners the hosted packs run concurrently again. With paid Enterprise
+    #     capacity, twelve balanced packs reduce the measured 40-55 minute
+    #     four-pack tail without competing with render workers.
     #   * One `runs-on` for every event removes the event-dependent routing entirely,
     #     so main's baseline and a pull request now prove the packs the SAME way.
     #
@@ -3716,7 +3722,7 @@ jobs:
       # unthrottled vs ~50 min at 2). Do not reintroduce one without a shared-pool
       # reason; the hosted ceiling is an ACCOUNT-wide limit that this key cannot help.
       matrix:
-        pack: [0, 1, 2, 3]
+        pack: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     steps:
       # A self-hosted runner REUSES its workspace between jobs, and a sibling job that
       # checked out sparsely leaves `core.sparseCheckout=true` behind in the SAME
@@ -3809,6 +3815,6 @@ jobs:
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
           --pack-index ${{ matrix.pack }}
-          --pack-count 4
+          --pack-count 12
           $CI_SCOPE_ARG
           --execute

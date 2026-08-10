@@ -522,18 +522,18 @@ def test_pack_command_folds_to_exactly_one_shell_command() -> None:
         assert command.rstrip().endswith("--execute")
 
 
-def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
+def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     workflow = _yaml(WORKFLOW)
     assert set(workflow["jobs"]) == {"ci-pack"}
     pack = workflow["jobs"]["ci-pack"]
-    # The pack COUNT tunes (2 -> 4 on 2026-07-28 to halve time-to-green); the
+    # The pack COUNT tunes (2 -> 4 -> 12 as hosted capacity increased); the
     # SHAPE is the contract: a small ordered matrix of balanced packs on hosted
     # runners, never one job per legacy suite (86 VMs), and the matrix must
     # agree with the --pack-count handed to the runner or some packs' jobs
     # would execute nowhere.
     matrix = pack["strategy"]["matrix"]["pack"]
     assert matrix == list(range(len(matrix)))
-    assert 2 <= len(matrix) <= 8
+    assert len(matrix) == 12
     # EVERY event runs on the hosted pool — one `runs-on`, no event-dependent routing,
     # so main's baseline and a pull request prove the packs the SAME way.
     #
@@ -542,11 +542,11 @@ def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
     # queued runs while that pool idled, and a starved main proof blocks the whole fleet
     # (`merge_on_green.main_proof` reads the newest CONCLUDED ci.yml run on main, so
     # without one the base-inherited-red refresh cannot fire). The repository then moved
-    # to the MastermindX enterprise org and hosted concurrency went 40 -> 180; the queue
-    # fell from 103 runs to 7. There is nothing left to escape, and the detour cost more
-    # than it saved: `render-linux` is FOUR runners shared with render.yml,
-    # engine-render.yml and merge-on-green.yml, so main's four packs took the entire
-    # pool and starved the sweeper that merges every armed pull request.
+    # to the MastermindX enterprise org and hosted capacity became large enough to start
+    # all twelve packs together. There is nothing left to escape, and the detour cost
+    # more than it saved: `render-linux` is FOUR runners shared with render.yml,
+    # engine-render.yml and merge-on-green.yml, so even four packs took the entire pool
+    # and starved the sweeper that merges every armed pull request.
     assert pack["runs-on"] == "ubuntu-latest"
     # The self-hosted pools are the render/nightly lanes and must never absorb CI packs.
     runs_on = " ".join(str(pack["runs-on"]).split())

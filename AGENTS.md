@@ -122,7 +122,7 @@ not “live” until the VPS/render path and live marker are verified.
 #4850 closed unmerged).** A fleet-wide red is being worked by the whole fleet, so
 before writing a line: identify every red job **by name** and confirm its pack
 (`python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml
---pack-index N --pack-count 4 --validate-only`) — never trust the pack index in a
+--pack-index N --pack-count 12 --validate-only`) — never trust the pack index in a
 failure report, `run_ci_pack.py` rebalances whenever any job's weight moves — then
 check `gh pr list --search "<filename>"` and `docs/ACTIVE_BUILD_MAP.md` for an open
 lane on the files you are about to touch. The "before proposing new work" rule is
