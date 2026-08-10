@@ -72,6 +72,156 @@ signal-era fence (`signal_layer` emission version bump, mirroring `hk_prophet_v2
 `BOARD_DEFINITION` pattern) so pre/post events never pool; slice `schema` field carries the version.
 Prophet-side reclaim-veto conditional: separate prereg, `us_prophet_v1→v2`, per packet §9.
 
+## §6 AMENDMENT 1 — local-systemic altitude (frozen 2026-08-10 ~07:1xZ, before round-2 results)
+
+**Operator objection (2026-08-10, accepted):** the SPY-drawdown gate is the wrong altitude in a
+rotational tape — the index sits at highs while names/baskets crash, so the §2-discovered sysA rule
+would refuse all six live exemplars. SPY-systemic is DEMOTED to a disclosed venue. Round-2 axes,
+index-free, gates frozen before any round-2 number is viewed (second look, labeled; A1/A2 are the
+only promotion-bearing tests of this amendment):
+
+- **A1 — local (sector/complex) systemic:** blocked fires where the same-sector peer-median
+  drawdown from the 252d high exceeds 20% (threshold and the sector-label source tunable/selectable
+  on the design era only; sector coverage % reported with a ≥60% floor, unmapped names excluded not
+  defaulted). Gates (held-out 2019+, date-clustered B=2000 CIs): expectancy R CI > 0 AND
+  (local-systemic − complement) difference CI > 0.
+- **A2 — washout breadth:** same-date blocked-fire count at or above the design-era 80th percentile
+  (panel-size-normalized). Same two gates.
+- **A3 (descriptive, no gate):** coverage — would A1∪A2 have admitted the six live exemplars'
+  fire dates (to local-tape edge), and what share of held-out blocked fires each axis admits.
+- Composite scores remain forbidden (DNR:KILL-REGIME-SCORECARD) — A1 and A2 are two plain
+  measures adjudicated separately; no fusion, no weights.
+
+**§6 ADJUDICATION (2026-08-10 ~08:3xZ; round-2 receipts in session scratchpad
+`blocked_entry_study_r2/`, run from the committed instrument @83230a70d9d):** **A1 PASS** on both
+registered gates, both weightings (held-out cell +1.675R [1.294,2.088]; diff vs complement +1.228R
+[0.821,1.620]; equal-date diff +0.535 [0.134,0.914]; 11 episodes; episode-clustered CI
+[0.520,3.689] — ~3× wider, still >0). **A2 SPLIT → NOT promoted** (equal-date diff CI crosses 0:
+[−0.028,1.067]); keeps accruing. **sysA re-scored at 6 episodes — episode-thin; stays demoted.**
+Floor ruling: the §6 coverage floor is read FIRE-WEIGHTED (61.6% PASS — the floor's purpose is
+coverage of the adjudicated events); name-weighted 59.7% and the mapping-selection effect
+(unmapped non-index micro-caps are a weaker cohort, 0.722 vs 0.843 meanR) are disclosed — A1's
+verdict claims mapped-universe validity only. **COVERAGE-GATE FINDING (why A1-as-constructed does
+NOT ship):** at the design-selected 25% threshold A1 admits 1 of 3 computable live exemplar fires
+(UEC refused — GICS "Energy" peers dilute the uranium complex); 20% admits 2 of 3; today's
+membership is threshold-critical (25% → IT only; 30% → none). Sector is the right ALTITUDE, wrong
+PEER SET. **Survivorship: panel confirmed survivor-only**; the delisted store (199 names,
+closes-only, 83.4% absent from the panel) cannot repair a stop-based study; bias bound
+Δ ≈ −2.675p (p=20% → −0.54R); A1's episode-CI floor approximately survives; all LEVELS read
+optimistic, CONTRASTS are the more robust quantity. **Episode-clustered CIs supersede
+date-clustered for every promotion-bearing read from this point.**
+
+## §7 AMENDMENT 2 — thematic-basket peer set (frozen 2026-08-10 ~08:4xZ, before round-3 results)
+
+**A1b — basket-local systemic:** identical construction to A1 with the peer set replaced by the
+repo's own thematic-basket membership (candidates-parquet `theme_membership_ids` /
+`site/basketdata` definitions; a name's peers = its primary basket's members; names in no basket
+fall back to GICS sector; both coverages reported, fire-weighted ≥60% floor on the union).
+Threshold grid {15,20,25,30}% peer-median drawdown from 252d highs, design-era-selected by
+absolute separation as before; **exemplar admission per threshold is REPORTED, and the shipped
+threshold is an explicit operator aggressiveness choice at ratification — not a statistical
+claim.** Gates identical to A1 (held-out cell CI>0 AND diff-vs-complement CI>0, equal-date read
+alongside pooled) PLUS episode-clustered CI>0 (per §6 adjudication). Third look, labeled. **Run
+gated on the round-1 red-team resolving the gap-through-stop fill and CN limit-fill questions —
+any confirmed sim flaw is repaired first and round 3 runs on the repaired instrument.**
+
+**A1b-dead — measured survivorship arm (required in round 3; census 2026-08-10):** union the panel
+with `data/edgar/dead_name_prices.parquet` (424 delisted names, closes-only, sp1500-PIT-scoped —
+290 absent from the live panel; provenance `data/edgar/_dead_name_price_coverage.json`; honor the
+`data/quarantine/dead_name_prices_spliced.json` quarantine and treat ticker-reuse collisions like
+BBBY as distinct identities, excluding ambiguous ones). Replay the signal path on closes (the
+indicators are close-based); grade dead-name blocked fires with the close-trigger stop rule using
+a close-derived stop proxy, and separately under the conservative floor (terminal delisting value;
+bankruptcy-imputed closes count as total loss). Report the measured correction to every §6/§7
+promotion-bearing cell as `level_with_dead` alongside `level_survivor`, with the sp1500 scope
+disclosed (non-index micro-cap deaths remain unmeasured — the correction is a floor, not a PIT
+repair). The FIX-2 union pattern (`engine/prophet_stage_fusion.py:19-31`) is the house precedent.
+
+**§7 RED-TEAM RESOLUTION (2026-08-10 ~09:1xZ — the §7 run-gate is now satisfied; findings
+CONFIRMED with receipts, all computed):** fills are honest (no −1R clamp; stopped-trade mean
+−1.28R at realized closes), CN arm fillable (0.46% locked days), PIT clean, cohort==production —
+the instrument's core stands. But: **F1** the round-1 sysA star cell was ONE macro episode
+(COVID 2020 = 77% of cell R; leave-COVID-out premium −0.06R/+0.11R ≈ zero) — the post-hoc sysA
+rule is STATISTICALLY DEAD on top of its altitude death; **F2** 63.1% of fires overlap a prior
+same-name fire's 252d horizon (uncounted dependence); **F3** the round-1 "blocked−taken −0.148R"
+claim was an R-DENOMINATOR ARTIFACT — per equal notional the gap is −0.0001 (the veto adds ~nothing
+per dollar on average); **F4** raw-R means are tail-dominated (top 1% of trades = 21-30% of R;
++10R cap: star cell +1.447→+1.212, ex-COVID +0.365); **F5** censored-unstopped 2025-26 rows mark
++3.49R unrealized = 12% of pooled R (excluding: +0.827→+0.749); **F6** the m-sweep criterion has
+no interior optimum anywhere (argmax = no stop) — the m degree of freedom was vacuous; **F7**
+close-stop headline vs intrabar −0.07R. Net pooled honest read ≈ **+0.55-0.65R vs placebo ≈ 0** —
+the signal is real; every round-1/2 LEVEL was overstated.
+
+**§7 ADJUDICATION (2026-08-10 ~09:5xZ; receipts `research/blocked_entry_study/r3_results.json` +
+`r3_axes.py`):** **A1b PASS at 20/25/30%** — all four frozen gates, both clustering units, and the
+F1 test sysA failed: ex-COVID premium POSITIVE across the grid (+0.60/+0.73/+0.92), LOO-min
+positive, equal-notional premium economic (+18/+23/+31pp — not an F3 denominator artifact; cell
++26.5% vs complement +3.45% @25%). 15% EPISODE-THIN (3) — excluded from the shipping menu. All
+three computable US exemplar fires (UEC 08-03 via `uranium_miners` −38.8%, HL 06-16/06-25 via
+`silver_miners`) admit at EVERY threshold — the coverage gate that killed A1 is satisfied; the
+threshold is a pure aggressiveness dial. Disclosures binding on any ratification: episode
+honest-N 8@25%/14@30% with episode-CI ~3× wide; 53.4% of cell statistics arrive via the GICS
+fallback (both arms pass independently — checked); dead-arm correction −0.048R is a WEAK floor
+(acquisition-dominated store, price→0 tail unrepresented, non-index deaths unmeasured) so levels
+stay optimistic, contrasts robust; CN/HK not computable — own construction required before any
+CN/HK change. **Ratification menu + remaining gates: `research/
+BLOCKED_ENTRY_RATIFICATION_PACKET_2026-08-10.md` — awaiting the operator's threshold word
+(20/25/30) or hold; production-feed re-grade + signal-era fence stand between ratification and
+any live `enter`-mask change.**
+
+**Round-3 methodology (frozen, supersedes prior aggregation choices):** m FIXED at 0.5 (stops are
+the operator's risk-bound, not a return-max device — F6); primary aggregate = R capped at +10 AND
+winsor-99 shown together; censored-unstopped rows EXCLUDED from levels (reported separately);
+intrabar fills PRIMARY; equal-notional mean return alongside every R read; clustering = episode ×
+name (F2); **leave-COVID-out (and leave-one-episode-out) REQUIRED for every promotion-bearing
+cell** — a cell whose premium dies ex-COVID is dead (F1). Gates for A1b unchanged otherwise.
+
 ## §5 Ratification log
 
-- *(empty at freeze)*
+- **2026-08-10 — RATIFIED (operator: "go ahead").** Threshold = **25%** (the design-era-selected
+  default; the operator named no notch — 20/30 remain one word away, and a change before the live
+  flip is a config edit, after it is an era event). Staged execution per the packet §4:
+  (1) production-feed re-grade (gate B) launched; (2) macro-side nightly `basket_washout_state`
+  artifact + forward ledger accrual launched (display-tier, off render-critical path); (3) Terminal
+  display promotion queued behind the charting-app collision check (active sibling lanes on the
+  blocked-entry surface); (4) live `enter`-mask conditional remains gated on the re-grade passing +
+  the signal-era fence; (5) CN/HK excluded pending their own construction. LLM originates nothing:
+  this entry records an operator decision on a gauntleted packet.
+
+- **2026-08-10 — GATE B PASSED** (receipts `research/blocked_entry_study/regrade_receipts.json` +
+  `exemplars.json`): A1b reproduces on the PRODUCTION feed at 20/25/30% — every gate, both
+  clustering units, ex-COVID and LOO included (25%: cell +1.113 prod vs +1.134 local; diff +1.008
+  [0.88,1.14]; equal-date +0.495 [0.31,0.68]; 9 episodes) — on the phase-correct full-history
+  basis (local 2014-truncated tapes mis-phase 1,263 of 2,454 names; production is authoritative).
+  Coverage floor 76.0% PASS; identical 12 qualifying groups today on both bases. **Correction of
+  record:** HL 06-16/06-25 are keeper-`block` (reclaim-veto family) on BOTH feeds — never
+  `bear_block` ⊘ — so in-cohort exemplar coverage is UEC 1/1 and the packet's "3 of 3" is
+  withdrawn (packet §2 corrected). Disclosure: the design-era selector picks 30% on the
+  production basis (25% locally); the notch remains the operator's pre-declared choice and 25%
+  passes every gate on both bases. **The live `enter`-mask change is now unblocked on evidence —
+  remaining preconditions are implementation (riding `basket_washout_state`) + the signal-era
+  fence.**
+
+- **2026-08-10 — ARTIFACT FIDELITY RULINGS (PR #5237, `basket_washout_state.v1`):** (a) the
+  `names` map must use **LEAVE-ONE-OUT** peer medians, matching the gauntleted `r3_axes.py`
+  construction — the builder's first cut used non-LOO, which is systematically more permissive for
+  the fired name; ruled and ordered fixed pre-merge (UEC −0.333 LOO vs −0.387 non-LOO, both clear
+  25%). (b) **Roster-drift disclosure:** the canonical `data/baskets/membership.json` rosters
+  differ from the study's parsed cohorts for some groups (uranium 10 vs 8 members → deeper;
+  robotics 12 vs cohort → shallower; four baskets the study's parser never formed now exist). The
+  canonical roster implements the RATIFIED construction ("primary basket's members") more
+  faithfully than the study's approximation, so it governs — and the forward ledger grades the
+  AS-SHIPPED rule, which is the binding test from night one. (c) Unrelated inherited red
+  (`check_synapse_reads` Article-2, `species-registry` undeclared on main) claimed as its own
+  minimal heal PR to unblock the lane.
+
+- **2026-08-10 ~06:4xZ — ADJUDICATED** (results:
+  `research/BLOCKED_ENTRY_CONDITIONAL_RESULTS_2026-08-10.md`): H1 **PASS, CONTEXT-ONLY**
+  (held-out +0.572R [+0.384,+0.785]; vs placebo +0.580R [+0.390,+0.777]; registered equal-date
+  reads +0.492R and +0.419R with CIs excluding 0); H2 **FAIL-INVERTED** (washT−washF −1.003R
+  [−1.729,−0.367] — the wait-for-turn precondition is harmful, construction closed). Post-hoc
+  discovered rule (systemic-bear immediate entry, +1.45..+1.79R, CIs exclude 0, only
+  positive-median cell) is the promotion candidate — **awaiting operator ratification** of that
+  specific rule plus the production-feed re-grade (results §3.2) before any live `enter`-mask
+  change. Display promotion is not automatic either; it awaits the same ratification/re-grade and
+  the §4 era fence. No live or reader-facing behavior changed by this entry.

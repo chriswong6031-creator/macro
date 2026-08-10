@@ -408,6 +408,18 @@ live), a 12:34Z mass-cancel killed ~30 runs incl. the live proof (recovered by r
 the afternoon mega-drain's cross-PR interactions redded all four packs at 18:46Z, healed
 atomically by #5188 (20:19Z) — post-#5188 baseline dispatched 22:52Z as this record closes.
 
+**R6 addendum (2026-08-10):** first post-#5105 bake (nightly 31343218391, run-level SUCCESS)
+verified live: era-stamped index + zones publishing, leader-pullback regenerated (952 states),
+turn_watch riding site/turn_watch/ with weekend-honest as_of 08-07, legacy shadow accruing
+(30 rows). ONE wedge: all 30 eligible candidates refused at clock_provenance because the panel
+reach summary counted six weekend-calendar members at Sunday 2026-08-09 against the equity
+majority's Friday — mixed_vintage true on every Sunday/holiday bake by construction. Healed
+producer-side (session-clamped reach dates; raw max reach still disclosed; off-modal members
+now named in the receipt); the #5071 gate itself is unchanged. Shadow parquet was runner-local
+only — now registered in the prophet checkpoint manifest. First-issuance cost: ~2 days (the 25
+clean candidates originate on the next clean bake); 5 candidates remain correctly refused on
+per-candidate formation/tier chronology.
+
 **RESUME STATE 2026-08-08 13:05Z (session limit hit, resets 15:20Z):** R4 DONE (#5007 armed —
 RESET_TURN null standalone/confluence-input, ZONE proven 7.26%→2.29% entry-vs-low; NVDA/AVGO/
 ADAM missed under v0 with leg-timing causes + 3 pre-registered v1 candidates; NEW v1 candidate

@@ -100,23 +100,79 @@ def _provisional(as_of: str | None = PROPHET_CURRENT_ASOF, *,
     )
 
 
+#: The path the READER's browser polls. The dashboard never fetches
+#: us_board_provisional.json — it paints from the ``board_state`` key on this
+#: artifact (templates/dashboard.html.j2 ``_plvData.board_state``), which a
+#: separate, later step merges in and which fails dark on its own.
+CLIENT_PATH = "/live/prophet_live.json"
+
+
+def _paintable_state(as_of: str,
+                     observed_at: datetime = NOW) -> dict:
+    """One W-L1d payload that the real client contract accepts and can paint."""
+    tickers = ["AAPL", "MSFT"]
+    cards = [
+        {"tk": tk, "sym": tk, "mkt": "us", "href": f"stock.html#{tk}",
+         "date": as_of, "name": f"{tk} Corp", "price_txt": "$100.00",
+         "signal": 0.8, "runway": 0.6}
+        for tk in tickers
+    ]
+    return {
+        "rel": "ahead",
+        "note": "ahead",
+        "generated_at": (observed_at - timedelta(minutes=5)).isoformat(),
+        "valid_until": (observed_at + timedelta(hours=4)).isoformat(),
+        "board": {"as_of": as_of, "lane": "closepass",
+                  "card_complete": True, "tickers": tickers, "cards": cards},
+    }
+
+
+def _live_strip(as_of: str | None = PROPHET_CURRENT_ASOF, *,
+                key: str = "board_state",
+                observed_at: datetime = NOW) -> fs.FetchResult:
+    """One live-plane read of prophet_live.json — the artifact the client polls.
+
+    ``as_of=None`` is the shape that matters most: the evaluator's artifact
+    present and healthy with NO ``board_state`` on it at all. That is what the
+    plane looks like for most of every day (the evaluator rewrites the file
+    whole every five minutes and carries no board_state of its own) and it is
+    what the plane looks like all evening when annotate_live_strip fails dark.
+    """
+    doc: dict = {"schema": "prophet_live/v1", "status": "live", "states": []}
+    if as_of is not None:
+        doc[key] = _paintable_state(as_of, observed_at)
+    return fs.FetchResult(
+        status=200, last_modified=NOW - timedelta(hours=12), body=json.dumps(doc),
+    )
+
+
 #: What read_served returns for a file that is simply not there — the ordinary
 #: pre-publication state of the close-pass artifact for most of every day.
 ABSENT = fs.FetchResult(error="served read failed: FileNotFoundError: [Errno 2] …")
 
 
-def _served(result: fs.FetchResult, live: fs.FetchResult | None = None):
+def _served(result: fs.FetchResult, live: fs.FetchResult | None = None,
+            strip: fs.FetchResult | None = None):
     """A served_reader stand-in.
 
-    PATH-AWARE, because one reader now answers two different roots: the
-    git-rsynced site.served tree (``/prophet/index.json``) and the
-    daemon-written live plane (``/live/…``, the close-pass board). A stub that
-    answered both with the same body would hand the prophet payload to a surface
-    judged on a different field and manufacture a breach that has nothing to do
-    with the case under test.
+    PATH-AWARE, because one reader now answers three different artifacts: the
+    git-rsynced site.served tree (``/prophet/index.json``), the daemon-written
+    close-pass board (``/live/us_board_provisional.json``) and the client
+    artifact the SLA is measured against (``/live/prophet_live.json``). A stub
+    that answered them with the same body would hand one surface's payload to a
+    surface judged on a different field and manufacture a breach that has
+    nothing to do with the case under test — and, for the strip specifically,
+    would let a board payload with no ``board_state`` masquerade as a reader who
+    can see something.
     """
     fallback = _provisional() if live is None else live
-    return lambda root, path: (fallback if path.startswith("/live/") else result)
+    strip = _live_strip() if strip is None else strip
+
+    def _read(root, path):
+        if path == CLIENT_PATH:
+            return strip
+        return fallback if path.startswith("/live/") else result
+    return _read
 
 
 def _fresh_results() -> dict[str, fs.FetchResult]:
@@ -128,6 +184,13 @@ def _fresh_results() -> dict[str, fs.FetchResult]:
         "prophet_us": _prophet(),
         "us_board_provisional": _provisional(),
     }
+
+
+def _client_reads(as_of: str | None = PROPHET_CURRENT_ASOF,
+                  observed_at: datetime = NOW, **kw
+                  ) -> dict[str, fs.FetchResult]:
+    """The reader-side reads evaluate() folds into the SLA surfaces."""
+    return {CLIENT_PATH: _live_strip(as_of, observed_at=observed_at, **kw)}
 
 
 # --------------------------------------------------------------------------- #
@@ -742,6 +805,8 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
 
     def spy_served(served_dir, path):
         reads.append((str(served_dir), path))
+        if path == CLIENT_PATH:
+            return _live_strip()
         return _provisional() if path.startswith("/live/") else _prophet()
 
     rc = fs.run(
@@ -760,12 +825,19 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
     )
     # The close-pass board is walled for the same reason (#3391 — the real board
     # is not free content) and is read off the LIVE PLANE root, not the
-    # site.served tree and not over HTTP. Two roots, one reader, zero HTTP.
+    # site.served tree and not over HTTP. The client artifact the SLA is
+    # measured against is walled harder still — /live/prophet_live.json names
+    # which tickers are armed (research/PAYWALL_GIT_MIRROR_EXPOSURE_ADJUDICATION
+    # .md) and is deliberately NOT in the public /live/ allowlist — so the
+    # reader-side read goes to the same live-plane root as the board and never
+    # over HTTP either. Two roots, one reader, zero HTTP.
     assert reads == [
         ("/opt/macro/site.served", "/prophet/index.json"),
         (str(tmp_path / "public"), "/live/us_board_provisional.json"),
+        (str(tmp_path / "public"), CLIENT_PATH),
     ]
     assert not [u for u in urls if "us_board_provisional" in u], urls
+    assert not [u for u in urls if "prophet_live" in u], urls
 
 
 def test_read_served_round_trips_and_maps_a_missing_file_to_indeterminate(tmp_path):
@@ -826,7 +898,7 @@ def test_sentinel_is_stdlib_only():
     src = (ROOT / "scripts" / "freshness_sentinel.py").read_text()
     tree = ast.parse(src)
     stdlib_ok = {
-        "__future__", "argparse", "json", "os", "re", "sys", "tempfile", "urllib",
+            "__future__", "argparse", "json", "math", "os", "re", "sys", "tempfile", "urllib",
         "urllib.error", "urllib.request", "dataclasses", "datetime",
         "email.utils", "pathlib",
     }
@@ -960,10 +1032,25 @@ LATE = datetime(2026, 8, 8, 1, 30, tzinfo=timezone.utc)
 NEXT_MORNING = NOW
 
 
-def _ok_report(session: str = "2026-08-07", now: datetime = ON_TIME) -> dict:
+#: "not passed" — distinct from an explicit None, which MEANS "the reader sees
+#: nothing" and is the whole point of the divergence tests below.
+_UNSET = object()
+
+
+def _ok_report(session: str = "2026-08-07", now: datetime = ON_TIME,
+               client=_UNSET) -> dict:
+    """A pass on which the board is fresh AND the reader can see that session.
+
+    ``client`` defaults to agreeing with the board, which is the healthy case
+    every pre-existing test here was written against. Pass it explicitly to
+    build the divergence: ``client=None`` is a fresh board with a dark surface,
+    a date is a reader looking at some OTHER session.
+    """
     results = _fresh_results()
     results["us_board_provisional"] = _provisional(session)
-    return fs.evaluate(results, now)
+    reads = _client_reads(session if client is _UNSET else client,
+                          observed_at=now)
+    return fs.evaluate(results, now, client_reads=reads)
 
 
 def test_the_sla_record_stamps_the_first_fresh_read_and_never_rewrites_it():
@@ -1195,9 +1282,290 @@ def test_a_dry_run_reads_the_record_without_stamping_it(tmp_path, monkeypatch, c
 def test_no_tzdata_reports_unknown_rather_than_a_utc_verdict(monkeypatch):
     """A box without a timezone database must not answer in UTC: 20:47Z would
     read as "missed the 18:30 deadline" on a session the board made with 100
-    minutes to spare. Unknown, never a wrong verdict."""
+    minutes to spare. Unknown, never a wrong verdict.
+
+    This also proves the reader condition did not fork the clock: _ok_report now
+    carries a matching client read, so the stamp reaches the ET comparison, and
+    stubbing the ONE ``_et`` still governs the whole verdict."""
     monkeypatch.setattr(fs, "_et", lambda stamp: None)
     entry = fs.record_first_fresh({}, _ok_report(), ON_TIME)[
         "sessions"]["2026-08-07"]["us_board_provisional"]
     assert entry["met"] is None and entry["first_fresh_et"] is None
     assert entry["first_fresh_at"] == ON_TIME.isoformat()   # the raw fact survives
+
+
+# --------------------------------------------------------------------------- #
+# W-L1 — the SLA measures the READER, not the artifact
+#
+# The gate is "fresh US picks live on the site by 18:30 ET". The sentinel budgets
+# live/us_board_provisional.json, and NO reader's browser fetches that file: the
+# dashboard polls live/prophet_live.json and paints from its top-level
+# `board_state` key (templates/dashboard.html.j2, `_plvData.board_state`).
+#
+# The two are written by the same 5-minute timer seconds apart, which is exactly
+# why the divergence hides: scripts/close_pass_mirror.run() publishes the full
+# board FIRST and unconditionally, then calls annotate_live_strip(), which
+# returns False WITHOUT WRITING whenever the evaluator's artifact is absent or
+# unparseable — and run() discards that return and exits 0. Board perfect, page
+# dark, sentinel green. These pin that the SLA can no longer score such a
+# session as a pass.
+# --------------------------------------------------------------------------- #
+def test_a_fresh_on_time_board_the_reader_cannot_see_is_not_a_met_sla():
+    """THE DEFECT. The board is fresh, on time, on its own ET day — every
+    condition the old SLA checked — and the client-visible key is simply not
+    there, which is what annotate_live_strip failing dark leaves behind. The old
+    record stamped met=True here and the gate counted it toward five green
+    sessions while no reader saw anything."""
+    report = _ok_report(client=None)
+    c = report["surfaces"]["us_board_provisional"]
+    # Everything the artifact-side check can see still reads perfect...
+    assert c["status"] == "ok" and c["asof"] == "2026-08-07"
+    assert report["stale_surfaces"] == [] and report["indeterminate_surfaces"] == []
+    # ...and the SLA refuses to stamp, because the reader saw nothing.
+    assert c["client_session"] is None
+    rec = fs.record_first_fresh({}, report, ON_TIME)
+    assert rec.get("sessions") in (None, {})
+
+    # A withheld stamp is not a silent hole: the calendar walk reads it MISSED,
+    # which is what breaks the five-session streak the gate is measured on.
+    _, rows = fs.sla_streak(rec, "us_board_provisional", NOW, cap=1)
+    assert rows == [{"session": "2026-08-07", "first_fresh_et": None, "met": False}]
+
+
+def test_a_reader_looking_at_another_session_is_not_a_met_sla():
+    """The stale-key twin of the absent-key case. prophet_live.json is rewritten
+    whole by the Prophet evaluator and re-annotated by the mirror, so a surviving
+    key from a previous evening is a real state — and a page showing YESTERDAY's
+    board is not tonight's picks being live."""
+    report = _ok_report("2026-08-07", client="2026-08-06")
+    assert report["surfaces"]["us_board_provisional"]["client_session"] == "2026-08-06"
+    assert fs.record_first_fresh({}, report, ON_TIME).get("sessions") in (None, {})
+
+    # And the agreeing case still stamps — the condition is "same session", not
+    # "no client key ever qualifies".
+    rec = fs.record_first_fresh({}, _ok_report("2026-08-07"), ON_TIME)
+    assert rec["sessions"]["2026-08-07"]["us_board_provisional"]["met"] is True
+
+
+def test_a_board_date_without_a_renderer_paintable_payload_cannot_meet_the_sla():
+    """The post-W-L1d boundary. #5222 stopped an absent ``board_state`` from
+    passing, but still treated ``board.as_of`` as proof that the browser showed
+    a board. The renderer does not: its `_pvcWanted` gate requires a fresh
+    ``ahead`` state and a complete parallel card projection. Pin the exact
+    timestamp-only false positive end to end — board artifact green, date
+    present, browser dark, no SLA stamp.
+    """
+    date_only = fs.FetchResult(
+        status=200,
+        body=json.dumps({
+            "schema": "prophet_live/v1",
+            "board_state": {"rel": "ahead", "board": {"as_of": "2026-08-07"}},
+        }),
+    )
+    report = fs.evaluate(
+        _fresh_results(), ON_TIME, client_reads={CLIENT_PATH: date_only}
+    )
+    c = report["surfaces"]["us_board_provisional"]
+    assert c["status"] == "ok" and c["asof"] == "2026-08-07"
+    assert c["client_session"] is None
+    assert fs.record_first_fresh({}, report, ON_TIME).get("sessions") in (None, {})
+
+    # A payload satisfying that same renderer contract still stamps normally.
+    visible = _ok_report("2026-08-07", ON_TIME)
+    assert visible["surfaces"]["us_board_provisional"]["client_session"] == "2026-08-07"
+    assert fs.record_first_fresh({}, visible, ON_TIME)["sessions"]["2026-08-07"][
+        "us_board_provisional"
+    ]["met"] is True
+
+
+def test_the_sla_validator_refuses_every_payload_shape_the_renderer_refuses():
+    """Parity fence for `_pvcWanted` / `_pvcCards` in dashboard.html.j2.
+
+    The client contract's executable tests own the JavaScript side. These are
+    the same refusal families at the SLA boundary, so a future simplification
+    cannot quietly turn "the JSON names tonight" back into "tonight painted".
+    """
+    sla = next(s["sla"] for s in fs.SURFACES if s["id"] == "us_board_provisional")
+    good = _paintable_state("2026-08-07", ON_TIME)
+
+    def clone() -> dict:
+        return json.loads(json.dumps(good))
+
+    bad: list[tuple[str, dict]] = []
+    state = clone(); state["rel"] = "behind"; bad.append(("wrong rel", state))
+    state = clone(); state["valid_until"] = (ON_TIME - timedelta(seconds=1)).isoformat()
+    bad.append(("expired", state))
+    state = clone(); state["generated_at"] = (ON_TIME - timedelta(hours=97)).isoformat()
+    bad.append(("older than the 96h backstop", state))
+    state = clone(); state["board"]["card_complete"] = False
+    bad.append(("not card-complete", state))
+    state = clone(); state["board"].pop("cards")
+    bad.append(("no cards", state))
+    state = clone(); state["board"]["cards"].pop()
+    bad.append(("card count differs from tickers", state))
+    state = clone(); state["board"]["cards"].reverse()
+    bad.append(("card order differs from tickers", state))
+    state = clone(); state["board"]["cards"][0]["signal"] = None
+    bad.append(("non-numeric signal", state))
+    state = clone(); state["board"]["cards"][0]["signal"] = True
+    bad.append(("boolean is not a JavaScript number", state))
+    state = clone(); state["board"]["cards"][0]["signal"] = 10 ** 1000
+    bad.append(("unrepresentable numeric magnitude", state))
+    state = clone(); state["board"]["cards"][0]["runway"] = "lots"
+    bad.append(("non-numeric runway", state))
+    state = clone(); state["board"]["cards"][0]["edge"] = 40
+    bad.append(("forbidden partial score", state))
+    state = clone(); state["board"]["cards"][0]["href"] = "https://evil.example/x"
+    bad.append(("off-site href", state))
+
+    def read(state: dict) -> fs.FetchResult:
+        return fs.FetchResult(status=200, body=json.dumps({"board_state": state}))
+
+    assert fs.client_visible_session(read(good), sla, ON_TIME) == "2026-08-07"
+    for label, state in bad:
+        assert fs.client_visible_session(read(state), sla, ON_TIME) is None, label
+
+
+def test_a_key_that_lands_after_the_deadline_is_stamped_late_not_dropped():
+    """The honest middle case: the board was on time, the surface was dark until
+    21:30 ET. The SLA measures when the READER could see it, so the stamp records
+    the late time and scores MISSED — not a pass (the board was on time) and not
+    a hole (something did eventually publish)."""
+    rec = fs.record_first_fresh({}, _ok_report(client=None), ON_TIME)
+    assert rec.get("sessions") in (None, {})           # 16:47 ET: nothing to see
+
+    rec = fs.record_first_fresh(rec, _ok_report(now=LATE), LATE)
+    entry = rec["sessions"]["2026-08-07"]["us_board_provisional"]
+    assert entry["first_fresh_et"] == "21:30" and entry["met"] is False
+
+
+def test_the_streak_breaks_on_a_session_the_reader_never_saw():
+    """End to end on the gate's own unit. Five clean Mon-Fri sessions, all with a
+    fresh on-time board, one of them dark to the reader: the gate must read 2,
+    not 5. This is the whole point — the old code returned 5 here."""
+    rec: dict = {}
+    for session, dark in (("2026-08-03", False), ("2026-08-04", False),
+                          ("2026-08-05", True), ("2026-08-06", False),
+                          ("2026-08-07", False)):
+        stamp = datetime.fromisoformat(f"{session}T20:40:00+00:00")
+        rec = fs.record_first_fresh(
+            rec, _ok_report(session, stamp, client=None if dark else _UNSET), stamp)
+
+    streak, rows = fs.sla_streak(rec, "us_board_provisional", NOW, cap=5)
+    assert [r["met"] for r in rows] == [True, True, False, True, True]
+    assert streak == 2
+    assert fs.sla_summary(rec, NOW)["us_board_provisional"]["consecutive_met"] == 2
+
+
+@pytest.mark.parametrize("read,label", [
+    (ABSENT, "no file at all"),
+    (fs.FetchResult(status=200, body="<html>login</html>"), "unparseable body"),
+    (fs.FetchResult(status=200, body='{"status":"dark","reason":"no_pack"}'),
+     "healthy artifact, no board_state key"),
+    (fs.FetchResult(status=200, body='{"board_state":{"rel":"ahead"}}'),
+     "board_state present but naming no session"),
+    (fs.FetchResult(error="served read failed: PermissionError"), "unreadable"),
+])
+def test_a_dark_reader_never_breaches_never_blinds_and_never_pages(read, label):
+    """THE FALSE-POSITIVE GATE. ``board_state`` is legitimately absent for most of
+    every day — the evaluator rewrites prophet_live.json whole every five minutes
+    and carries no board_state of its own, so the key exists only between the
+    evening annotate and the next morning's first evaluator pass. A reader-side
+    read that could breach would page daily by construction, which is the
+    factory this module's falsifier law forbids.
+
+    Structural, not conditional: the client artifact is NOT a surface. It cannot
+    reach stale_surfaces, indeterminate_surfaces or the blindness counters at
+    all — the only thing it can do is withhold a stamp."""
+    results = _fresh_results()
+    report = fs.evaluate(results, NOW, client_reads={CLIENT_PATH: read})
+
+    assert report["ok"] is True, label
+    assert report["stale_surfaces"] == [] and report["indeterminate_surfaces"] == []
+    assert CLIENT_PATH not in report["surfaces"], label
+    assert not [k for k in report["surfaces"] if "prophet_live" in k], label
+    assert report["surfaces"]["us_board_provisional"]["client_session"] is None, label
+
+    state: dict = {}
+    for i in range(fs.BLIND_AFTER + 4):
+        alerts, state = fs.decide_alerts(report, state, NOW + timedelta(minutes=30 * i))
+        assert alerts == [], (label, alerts)
+    assert state.get("blind_counts") == {}, label
+
+
+def test_the_reader_condition_cannot_manufacture_a_breach_on_the_board_itself():
+    """The board surface's own verdict is untouched by the reader read: a dark
+    surface must not turn a healthy board stale, and a visible one must not
+    launder a stale board fresh."""
+    results = _fresh_results()
+    for read in (ABSENT, _live_strip(), _live_strip(None)):
+        c = fs.evaluate(results, NOW, client_reads={CLIENT_PATH: read}
+                        )["surfaces"]["us_board_provisional"]
+        assert c["status"] == "ok"
+
+    results["us_board_provisional"] = _provisional("2026-08-05")   # 2 behind
+    c = fs.evaluate(results, NOW, client_reads=_client_reads("2026-08-05")
+                    )["surfaces"]["us_board_provisional"]
+    assert c["status"] == "stale"
+    assert fs.record_first_fresh({}, fs.evaluate(
+        results, NOW, client_reads=_client_reads("2026-08-05")),
+        NOW).get("sessions") in (None, {})
+
+
+def test_the_et_boundary_protections_survive_the_reader_condition():
+    """Both clock traps this module already defeats, re-run with the reader
+    condition in the path — a second comparison bolted on beside the first is
+    how one of them silently comes back.
+
+      * 20:47Z is 16:47 EDT: MET. Read as UTC it is 20:47 > 18:30 and would
+        score MISSED on a session made with 100 minutes to spare.
+      * 01:00 EDT the next morning reads "01:00 <= 18:30" on the clock alone and
+        would score a comfortable pass on a session missed by seven hours; the
+        DATE half of the comparison is what stops it.
+    """
+    on_time = fs.record_first_fresh({}, _ok_report(), ON_TIME)[
+        "sessions"]["2026-08-07"]["us_board_provisional"]
+    assert on_time["first_fresh_et"] == "16:47" and on_time["met"] is True
+
+    morning = fs.record_first_fresh({}, _ok_report(now=NEXT_MORNING), NEXT_MORNING)[
+        "sessions"]["2026-08-07"]["us_board_provisional"]
+    assert morning["first_fresh_et"] == "01:00" and morning["met"] is False
+
+
+def test_the_deadline_comparison_is_reused_never_duplicated():
+    """One clock comparison in the module, executed by every path. A second one
+    would drift — and the two traps above are exactly what drift restores."""
+    src = Path(fs.__file__).read_text(encoding="utf-8")
+    assert src.count('<= sla["by_et"]') == 1, (
+        "the 18:30 deadline must be compared in exactly one place"
+    )
+
+
+def test_a_dark_reader_is_diagnosable_from_the_operator_line_and_the_report(
+        tmp_path, monkeypatch, capsys):
+    """A condition that silently never stamps is indistinguishable from a broken
+    sentinel, and this one is meant to be read by a human deciding whether the
+    W-L1 gate has passed. The pass must SAY which half is dark."""
+    for var in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "DISCORD_WEBHOOK_URL",
+                "DISCORD_WEBHOOK_WATCHLIST", "MAIL_SENTINEL_TO", "MAIL_SUPPORT_TO"):
+        monkeypatch.delenv(var, raising=False)
+
+    def fresh_fetcher(url, *, want_body):
+        return fs.FetchResult(status=200, last_modified=ON_TIME - timedelta(hours=10),
+                              body=HEALTHY_BODY if want_body else None)
+
+    assert fs.run(now=ON_TIME, base="https://example.invalid",
+                  r2_base="https://example.invalid",
+                  public_dir=tmp_path / "public", state_dir=tmp_path / "state",
+                  fetcher=fresh_fetcher,
+                  served_reader=_served(_prophet(), strip=_live_strip(None))) == 0
+
+    out = capsys.readouterr().out
+    assert "us_board_provisional: ok" in out and "reader DARK" in out
+    served = json.loads((tmp_path / "public" / "live" / "staleness.json").read_text())
+    assert served["surfaces"]["us_board_provisional"]["client_session"] is None
+    assert served["ok"] is True                       # dark reader never pages
+    # The SLA is the only thing that noticed, which is the design.
+    assert json.loads(
+        (tmp_path / "state" / "first_fresh.json").read_text()).get("sessions") in (
+            None, {})

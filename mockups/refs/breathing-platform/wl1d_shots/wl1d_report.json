@@ -1,0 +1,754 @@
+{
+  "contrast": {
+    "full_en_dark_390:verb_chip": {
+      "text": "NEAR",
+      "ratio": 6.36
+    },
+    "full_en_dark_390:room_val": {
+      "text": "Ample",
+      "ratio": 6.14
+    },
+    "full_en_dark_390:room_lab": {
+      "text": "ROOM",
+      "ratio": 6.14
+    },
+    "full_en_dark_680:verb_chip": {
+      "text": "NEAR",
+      "ratio": 6.36
+    },
+    "full_en_dark_680:room_val": {
+      "text": "Ample",
+      "ratio": 6.14
+    },
+    "full_en_dark_680:room_lab": {
+      "text": "ROOM",
+      "ratio": 6.14
+    },
+    "full_en_dark_1280:verb_chip": {
+      "text": "NEAR",
+      "ratio": 6.36
+    },
+    "full_en_dark_1280:room_val": {
+      "text": "Ample",
+      "ratio": 6.14
+    },
+    "full_en_dark_1280:room_lab": {
+      "text": "ROOM",
+      "ratio": 6.14
+    },
+    "full_en_light_390:verb_chip": {
+      "text": "NEAR",
+      "ratio": 4.51
+    },
+    "full_en_light_390:room_val": {
+      "text": "Ample",
+      "ratio": 5.89
+    },
+    "full_en_light_390:room_lab": {
+      "text": "ROOM",
+      "ratio": 5.89
+    },
+    "full_en_light_680:verb_chip": {
+      "text": "NEAR",
+      "ratio": 4.51
+    },
+    "full_en_light_680:room_val": {
+      "text": "Ample",
+      "ratio": 5.89
+    },
+    "full_en_light_680:room_lab": {
+      "text": "ROOM",
+      "ratio": 5.89
+    },
+    "full_en_light_1280:verb_chip": {
+      "text": "NEAR",
+      "ratio": 4.51
+    },
+    "full_en_light_1280:room_val": {
+      "text": "Ample",
+      "ratio": 5.89
+    },
+    "full_en_light_1280:room_lab": {
+      "text": "ROOM",
+      "ratio": 5.89
+    },
+    "full_zh_dark_390:verb_chip": {
+      "text": "临近",
+      "ratio": 5.4
+    },
+    "full_zh_dark_390:room_val": {
+      "text": "充足",
+      "ratio": 6.14
+    },
+    "full_zh_dark_390:room_lab": {
+      "text": "空间",
+      "ratio": 6.14
+    },
+    "full_zh_dark_680:verb_chip": {
+      "text": "临近",
+      "ratio": 5.4
+    },
+    "full_zh_dark_680:room_val": {
+      "text": "充足",
+      "ratio": 6.14
+    },
+    "full_zh_dark_680:room_lab": {
+      "text": "空间",
+      "ratio": 6.14
+    },
+    "full_zh_dark_1280:verb_chip": {
+      "text": "临近",
+      "ratio": 5.4
+    },
+    "full_zh_dark_1280:room_val": {
+      "text": "充足",
+      "ratio": 6.14
+    },
+    "full_zh_dark_1280:room_lab": {
+      "text": "空间",
+      "ratio": 6.14
+    },
+    "full_zh_light_390:verb_chip": {
+      "text": "临近",
+      "ratio": 3.74
+    },
+    "full_zh_light_390:room_val": {
+      "text": "充足",
+      "ratio": 5.89
+    },
+    "full_zh_light_390:room_lab": {
+      "text": "空间",
+      "ratio": 5.89
+    },
+    "full_zh_light_680:verb_chip": {
+      "text": "临近",
+      "ratio": 3.74
+    },
+    "full_zh_light_680:room_val": {
+      "text": "充足",
+      "ratio": 5.89
+    },
+    "full_zh_light_680:room_lab": {
+      "text": "空间",
+      "ratio": 5.89
+    },
+    "full_zh_light_1280:verb_chip": {
+      "text": "临近",
+      "ratio": 3.74
+    },
+    "full_zh_light_1280:room_val": {
+      "text": "充足",
+      "ratio": 5.89
+    },
+    "full_zh_light_1280:room_lab": {
+      "text": "空间",
+      "ratio": 5.89
+    },
+    "degraded_en_dark_390:verb_chip": {
+      "text": "NEAR",
+      "ratio": 6.36
+    },
+    "degraded_en_dark_390:room_val": {
+      "text": "Ample",
+      "ratio": 6.14
+    },
+    "degraded_en_dark_390:room_lab": {
+      "text": "ROOM",
+      "ratio": 6.14
+    },
+    "degraded_en_dark_680:verb_chip": {
+      "text": "NEAR",
+      "ratio": 6.36
+    },
+    "degraded_en_dark_680:room_val": {
+      "text": "Ample",
+      "ratio": 6.14
+    },
+    "degraded_en_dark_680:room_lab": {
+      "text": "ROOM",
+      "ratio": 6.14
+    },
+    "degraded_en_dark_1280:verb_chip": {
+      "text": "NEAR",
+      "ratio": 6.36
+    },
+    "degraded_en_dark_1280:room_val": {
+      "text": "Ample",
+      "ratio": 6.14
+    },
+    "degraded_en_dark_1280:room_lab": {
+      "text": "ROOM",
+      "ratio": 6.14
+    },
+    "degraded_en_light_390:verb_chip": {
+      "text": "NEAR",
+      "ratio": 4.51
+    },
+    "degraded_en_light_390:room_val": {
+      "text": "Ample",
+      "ratio": 5.89
+    },
+    "degraded_en_light_390:room_lab": {
+      "text": "ROOM",
+      "ratio": 5.89
+    },
+    "degraded_en_light_680:verb_chip": {
+      "text": "NEAR",
+      "ratio": 4.51
+    },
+    "degraded_en_light_680:room_val": {
+      "text": "Ample",
+      "ratio": 5.89
+    },
+    "degraded_en_light_680:room_lab": {
+      "text": "ROOM",
+      "ratio": 5.89
+    },
+    "degraded_en_light_1280:verb_chip": {
+      "text": "NEAR",
+      "ratio": 4.51
+    },
+    "degraded_en_light_1280:room_val": {
+      "text": "Ample",
+      "ratio": 5.89
+    },
+    "degraded_en_light_1280:room_lab": {
+      "text": "ROOM",
+      "ratio": 5.89
+    },
+    "degraded_zh_dark_390:verb_chip": {
+      "text": "临近",
+      "ratio": 5.4
+    },
+    "degraded_zh_dark_390:room_val": {
+      "text": "充足",
+      "ratio": 6.14
+    },
+    "degraded_zh_dark_390:room_lab": {
+      "text": "空间",
+      "ratio": 6.14
+    },
+    "degraded_zh_dark_680:verb_chip": {
+      "text": "临近",
+      "ratio": 5.4
+    },
+    "degraded_zh_dark_680:room_val": {
+      "text": "充足",
+      "ratio": 6.14
+    },
+    "degraded_zh_dark_680:room_lab": {
+      "text": "空间",
+      "ratio": 6.14
+    },
+    "degraded_zh_dark_1280:verb_chip": {
+      "text": "临近",
+      "ratio": 5.4
+    },
+    "degraded_zh_dark_1280:room_val": {
+      "text": "充足",
+      "ratio": 6.14
+    },
+    "degraded_zh_dark_1280:room_lab": {
+      "text": "空间",
+      "ratio": 6.14
+    },
+    "degraded_zh_light_390:verb_chip": {
+      "text": "临近",
+      "ratio": 3.74
+    },
+    "degraded_zh_light_390:room_val": {
+      "text": "充足",
+      "ratio": 5.89
+    },
+    "degraded_zh_light_390:room_lab": {
+      "text": "空间",
+      "ratio": 5.89
+    },
+    "degraded_zh_light_680:verb_chip": {
+      "text": "临近",
+      "ratio": 3.74
+    },
+    "degraded_zh_light_680:room_val": {
+      "text": "充足",
+      "ratio": 5.89
+    },
+    "degraded_zh_light_680:room_lab": {
+      "text": "空间",
+      "ratio": 5.89
+    },
+    "degraded_zh_light_1280:verb_chip": {
+      "text": "临近",
+      "ratio": 3.74
+    },
+    "degraded_zh_light_1280:room_val": {
+      "text": "充足",
+      "ratio": 5.89
+    },
+    "degraded_zh_light_1280:room_lab": {
+      "text": "空间",
+      "ratio": 5.89
+    }
+  },
+  "heights": {
+    "full_en_dark_390": {
+      "nightly_grid_offset": 117.31,
+      "prov_grid_offset": 117.31,
+      "card_h": 134.75
+    },
+    "full_en_dark_680": {
+      "nightly_grid_offset": 74.31,
+      "prov_grid_offset": 74.31,
+      "card_h": 134.75
+    },
+    "full_en_dark_1280": {
+      "nightly_grid_offset": 75.45,
+      "prov_grid_offset": 75.45,
+      "card_h": 118.75
+    },
+    "full_en_light_390": {
+      "nightly_grid_offset": 117.31,
+      "prov_grid_offset": 117.31,
+      "card_h": 134.75
+    },
+    "full_en_light_680": {
+      "nightly_grid_offset": 74.31,
+      "prov_grid_offset": 74.31,
+      "card_h": 134.75
+    },
+    "full_en_light_1280": {
+      "nightly_grid_offset": 75.45,
+      "prov_grid_offset": 75.45,
+      "card_h": 118.75
+    },
+    "full_zh_dark_390": {
+      "nightly_grid_offset": 74.31,
+      "prov_grid_offset": 74.31,
+      "card_h": 134.75
+    },
+    "full_zh_dark_680": {
+      "nightly_grid_offset": 74.31,
+      "prov_grid_offset": 74.31,
+      "card_h": 134.75
+    },
+    "full_zh_dark_1280": {
+      "nightly_grid_offset": 75.45,
+      "prov_grid_offset": 75.45,
+      "card_h": 118.75
+    },
+    "full_zh_light_390": {
+      "nightly_grid_offset": 74.31,
+      "prov_grid_offset": 74.31,
+      "card_h": 134.75
+    },
+    "full_zh_light_680": {
+      "nightly_grid_offset": 74.31,
+      "prov_grid_offset": 74.31,
+      "card_h": 134.75
+    },
+    "full_zh_light_1280": {
+      "nightly_grid_offset": 75.45,
+      "prov_grid_offset": 75.45,
+      "card_h": 118.75
+    },
+    "degraded_en_dark_390": {
+      "nightly_grid_offset": 117.31,
+      "prov_grid_offset": 117.31,
+      "card_h": 101.25
+    },
+    "degraded_en_dark_680": {
+      "nightly_grid_offset": 74.31,
+      "prov_grid_offset": 74.31,
+      "card_h": 101.25
+    },
+    "degraded_en_dark_1280": {
+      "nightly_grid_offset": 75.45,
+      "prov_grid_offset": 75.45,
+      "card_h": 102
+    },
+    "degraded_en_light_390": {
+      "nightly_grid_offset": 117.31,
+      "prov_grid_offset": 117.31,
+      "card_h": 101.25
+    },
+    "degraded_en_light_680": {
+      "nightly_grid_offset": 74.31,
+      "prov_grid_offset": 74.31,
+      "card_h": 101.25
+    },
+    "degraded_en_light_1280": {
+      "nightly_grid_offset": 75.45,
+      "prov_grid_offset": 75.45,
+      "card_h": 102
+    },
+    "degraded_zh_dark_390": {
+      "nightly_grid_offset": 74.31,
+      "prov_grid_offset": 74.31,
+      "card_h": 101.25
+    },
+    "degraded_zh_dark_680": {
+      "nightly_grid_offset": 74.31,
+      "prov_grid_offset": 74.31,
+      "card_h": 101.25
+    },
+    "degraded_zh_dark_1280": {
+      "nightly_grid_offset": 75.45,
+      "prov_grid_offset": 75.45,
+      "card_h": 102
+    },
+    "degraded_zh_light_390": {
+      "nightly_grid_offset": 74.31,
+      "prov_grid_offset": 74.31,
+      "card_h": 101.25
+    },
+    "degraded_zh_light_680": {
+      "nightly_grid_offset": 74.31,
+      "prov_grid_offset": 74.31,
+      "card_h": 101.25
+    },
+    "degraded_zh_light_1280": {
+      "nightly_grid_offset": 75.45,
+      "prov_grid_offset": 75.45,
+      "card_h": 102
+    }
+  },
+  "checks": [],
+  "distribution": {
+    "full_en_dark_390": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "Ample": 3,
+        "Some": 2,
+        "Not checked": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "full_en_dark_680": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "Ample": 3,
+        "Some": 2,
+        "Not checked": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "full_en_dark_1280": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "Ample": 3,
+        "Some": 3,
+        "Not checked": 1,
+        "Thin": 5
+      }
+    },
+    "full_en_light_390": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "Ample": 3,
+        "Some": 2,
+        "Not checked": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "full_en_light_680": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "Ample": 3,
+        "Some": 2,
+        "Not checked": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "full_en_light_1280": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "Ample": 3,
+        "Some": 3,
+        "Not checked": 1,
+        "Thin": 5
+      }
+    },
+    "full_zh_dark_390": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "充足": 3,
+        "适中": 2,
+        "未检查": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "full_zh_dark_680": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "充足": 3,
+        "适中": 2,
+        "未检查": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "full_zh_dark_1280": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "充足": 3,
+        "适中": 3,
+        "未检查": 1,
+        "有限": 5
+      }
+    },
+    "full_zh_light_390": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "充足": 3,
+        "适中": 2,
+        "未检查": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "full_zh_light_680": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "充足": 3,
+        "适中": 2,
+        "未检查": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "full_zh_light_1280": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "充足": 3,
+        "适中": 3,
+        "未检查": 1,
+        "有限": 5
+      }
+    },
+    "degraded_en_dark_390": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "Ample": 3,
+        "Some": 2,
+        "Not checked": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "degraded_en_dark_680": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "Ample": 3,
+        "Some": 2,
+        "Not checked": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "degraded_en_dark_1280": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "Ample": 3,
+        "Some": 3,
+        "Not checked": 1,
+        "Thin": 5
+      }
+    },
+    "degraded_en_light_390": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "Ample": 3,
+        "Some": 2,
+        "Not checked": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "degraded_en_light_680": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "Ample": 3,
+        "Some": 2,
+        "Not checked": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "degraded_en_light_1280": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "Ample": 3,
+        "Some": 3,
+        "Not checked": 1,
+        "Thin": 5
+      }
+    },
+    "degraded_zh_dark_390": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "充足": 3,
+        "适中": 2,
+        "未检查": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "degraded_zh_dark_680": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "充足": 3,
+        "适中": 2,
+        "未检查": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "degraded_zh_dark_1280": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "充足": 3,
+        "适中": 3,
+        "未检查": 1,
+        "有限": 5
+      }
+    },
+    "degraded_zh_light_390": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "充足": 3,
+        "适中": 2,
+        "未检查": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "degraded_zh_light_680": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "充足": 3,
+        "适中": 2,
+        "未检查": 1,
+        "Some适中": 1,
+        "Thin有限": 5
+      }
+    },
+    "degraded_zh_light_1280": {
+      "verbs": {
+        "near": 6,
+        "wait": 6
+      },
+      "rooms": {
+        "充足": 3,
+        "适中": 3,
+        "未检查": 1,
+        "有限": 5
+      }
+    }
+  },
+  "lifecycle": {
+    "mounted_first": true,
+    "cards_first": 12,
+    "restored": {
+      "prov_gone": true,
+      "night_back": true,
+      "stamp_gone": true,
+      "filter_back": true,
+      "toggle_back": true,
+      "sub_back": true,
+      "fn_back": true,
+      "one_bar": true,
+      "n_bars": 1,
+      "track_toggle": true,
+      "stagef": null,
+      "night_tickers": "NB0|NB1|NB2|NB3|NB4|NB5|NB6|NB7|NB8"
+    }
+  },
+  "no_payload": {
+    "prov_gone": true,
+    "night_back": true,
+    "stamp_gone": true,
+    "filter_back": true,
+    "toggle_back": true,
+    "sub_back": true,
+    "fn_back": true,
+    "one_bar": true,
+    "n_bars": 1,
+    "track_toggle": true,
+    "stagef": null,
+    "night_tickers": "NB0|NB1|NB2|NB3|NB4|NB5|NB6|NB7|NB8",
+    "page_errors": []
+  }
+}

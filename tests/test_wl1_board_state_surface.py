@@ -125,11 +125,26 @@ def _visible_text(fragment: str) -> str:
     return re.sub(r"<[^>]+>", " ", no_tips)
 
 
-def _js_contract() -> str:
-    """The pure client decision, lifted verbatim between its two markers."""
-    a = DASH.index("/* WL1-BOARDSTATE-CONTRACT-BEGIN")
-    b = DASH.index("/* WL1-BOARDSTATE-CONTRACT-END */")
+def _slice(begin: str, end: str) -> str:
+    a = DASH.index(begin)
+    b = DASH.index(end)
+    assert a < b, f"{begin} must precede {end}"
     return DASH[a:b]
+
+
+def _js_contract() -> str:
+    """The pure client decisions, lifted verbatim between their markers.
+
+    TWO slices now, concatenated: the board-state gate (W-L1) and the provisional card
+    renderer (W-L1d). `_bsQualify` and `_pvcWanted` call into each other, and JS function
+    declarations hoist, so concatenation order does not matter — but BOTH have to be here
+    or the half that is missing goes dark while the suite still reports green.
+    """
+    return (_slice("/* WL1-BOARDSTATE-CONTRACT-BEGIN",
+                   "/* WL1-BOARDSTATE-CONTRACT-END */")
+            + "\n"
+            + _slice("/* WL1-PROVCARD-CONTRACT-BEGIN",
+                     "/* WL1-PROVCARD-CONTRACT-END */"))
 
 
 # --------------------------------------------------------------------------- #
@@ -590,30 +605,100 @@ def _bs_js() -> str:
 
 
 def test_the_client_writes_only_to_the_slots_the_server_reserved():
+    """The fence MOVED with W-L1d (spec §10) rather than being quietly stretched, so this
+    pins where it is now — which is still a short, closed list.
+
+    The board-state half is unchanged: it writes four reserved slots and emits no markup.
+    The card half writes markup, but into exactly ONE element, which it created itself and
+    which it owns for the life of the mount. Everything that could reorder, re-rank or
+    re-admit a row is still absent (A7): the order painted is the order the payload named.
+    """
     js = _nc(_bs_js())
-    writes = re.findall(r"\.(setAttribute|removeAttribute|textContent|hidden|innerHTML)\b", js)
-    assert "innerHTML" not in writes, "the surface emits no markup of its own"
-    targets = re.findall(r"querySelectorAll?\('([^']+)'\)", js)
-    assert set(targets) <= {".nbgrid .pvcard[data-ticker]", ".pbs[data-bs]",
-                            ".pbs-nv[data-bs-note]", ".pbs-nv:not([hidden])",
-                            ".pbs-dt", ".l-en", ".l-zh"}, targets
-    # nothing that could reorder, re-rank or re-admit a card
-    for forbidden in ("appendChild", "insertBefore", "remove()", "sort(", "pv-chip",
-                      "pv-edn", "pv-stp", "pv-zn", "nbgrid.append"):
+    # innerHTML is now permitted — but only into the client's OWN grid, never into a node
+    # the server rendered. One assignment, one target.
+    inner = re.findall(r"(\w+)\.innerHTML\s*=", js)
+    assert inner == ["g"], inner
+    assert re.search(r"g\s*=\s*document\.createElement\('div'\)", js), \
+        "the only innerHTML target must be an element this code created"
+    # `querySelectorAll?` reads as "All optional" but the `?` binds to the final `l`, so
+    # the pattern this started as matched querySelectorAl(l) and NEVER the singular
+    # querySelector( — it was inspecting 3 of 10 call sites and reporting green on the
+    # rest (which is why the allowed set below used to name selectors, like `.pbs-dt`,
+    # that it could not actually see). Both forms, explicitly.
+    targets = re.findall(r"querySelector(?:All)?\('([^']+)'\)", js)
+    assert len(targets) >= 10, f"the selector census went blind again: {targets}"
+    assert set(targets) <= {
+        # board-state half — the four reserved slots, unchanged
+        ".pbs[data-bs]", ".pbs-nv[data-bs-note]", ".pbs-nv:not([hidden])",
+        ".pbs-dt", ".l-en", ".l-zh",
+        # the board the reader is actually looking at
+        ".nbgrid:not([hidden]) .pvcard[data-ticker]",
+        # W-L1d — what the mount displaces, and the shape it copies from the nightly cards
+        ".nbgrid[data-showmore-rows]:not([data-provboard])", ".pb-fn",
+        ".nbgrid .pvcard .nb-chg[data-sym]",
+    }, targets
+    # Nothing that could reorder, re-rank, re-admit or drop a ROW. Scoped to row
+    # operations on purpose — `s.slice(0,4)` on a sparkline string is not a re-ranking,
+    # and a blanket ban on the word would only teach the next reader to weaken the test.
+    for forbidden in (".sort(", ".reverse(", "cards.filter(", "cards.slice(",
+                      "cards.splice(", "Math.random", "localeCompare"):
         assert forbidden not in js, forbidden
+    # the cards array is walked forward, by index, and nothing else touches its order
+    walks = re.findall(r"for\s*\(\s*i\s*=\s*0\s*;\s*i\s*<\s*(\w+)\.length\s*;\s*i\+\+\s*\)", js)
+    assert set(walks) <= {"cards", "cs", "t", "st", "nv", "els", "out"}, walks
+    # the grid is replaced as a unit and restored, never mutated in place: the only nodes
+    # removed are ones this code inserted (its grid and that grid's own show-more bar)
+    # `grid` is the provisional grid this code created; `nb` is that grid's own show-more
+    # bar. Nothing the SERVER rendered is ever removed — the nightly grid is hidden and
+    # kept, so a teardown restores it by flipping one attribute back.
+    removes = re.findall(r"(\w+)\.parentNode\.removeChild\(", js)
+    assert set(removes) <= {"nb", "grid"}, removes
+    assert re.search(r"\bnight\.hidden\s*=\s*true", js), "the nightly grid is hidden…"
+    assert re.search(r"sv\.night\.hidden\s*=\s*false", js), "…and restored, never rebuilt"
 
 
-def test_the_surface_emits_no_copy_of_its_own():
-    """Every string is SSR-baked in both languages; the client only chooses which one is
-    unhidden. A string born in JS is a string that ships in one language."""
+def test_the_copy_the_client_emits_is_pinned_in_one_place():
+    """W-L1 baked every string server-side; W-L1d cannot, because the cards do not exist
+    until the client makes them. So the rule changes from "emit no copy" to "emit only
+    copy that is declared, bilingual, and in one table" — which is the property that
+    actually protects a reader from a card that ships in one language.
+
+    The board-state half's own strings stay SSR-only: §5.2's copy must never appear here.
+    """
     js = _nc(_bs_js())
-    # not one CJK codepoint: a client that can write ZH is a client that can also forget to
-    assert not re.search(r"[一-鿿]", js), "the client must emit no Chinese of its own"
     for key, (en, zh) in COPY.items():
-        assert en not in js and zh not in js, key
-    # the only text this code writes is the DATE, and it comes from the payload
+        assert en not in js and zh not in js, f"{key} is SSR-baked and must stay there"
+    # every CJK string in the client lives in a declared PVC_* copy table
+    tables = re.findall(r"var (PVC_\w+)\s*=\s*(.+?);\n", js, flags=re.S)
+    assert tables, "the copy tables must be declared in the lifted slice"
+    declared = "".join(body for _, body in tables)
+    for cjk in re.findall(r"[一-鿿]+", js):
+        assert cjk in declared, f"{cjk!r} is emitted outside the pinned copy tables"
+    # and every entry of a COPY table is a PAIR — an entry with one language is the defect
+    # this whole test exists to stop. A table with no Chinese in it at all is not copy
+    # (PVC_MONTHS is a date format, mirroring the card macro's own _MN), so it is checked
+    # for the opposite property instead: it must never grow a translated string.
+    for name, body in tables:
+        entries = re.findall(r"\[([^\]]*)\]", body)
+        if not re.search(r"[一-鿿]", body):
+            assert name == "PVC_MONTHS", f"{name} declares no Chinese twin for its copy"
+            continue
+        assert entries, f"{name} declares no entries"
+        for pair in entries:
+            parts = [p for p in pair.split(",") if p.strip()]
+            assert len(parts) == 2, f"{name} entry {pair!r} is not an EN/ZH pair"
+            assert re.search(r"[一-鿿]", parts[1]), \
+                f"{name} entry {pair!r} has no Chinese twin"
+    # the only DOM text this code assigns is the stamp DATE, and it comes from the payload
     for assign in re.findall(r"\.textContent\s*=\s*([^;]+);", js):
         assert assign.strip() in ("label.en", "label.zh"), assign
+
+
+def test_no_translated_text_reaches_a_title_attribute():
+    """House law, CI-guarded elsewhere; asserted here for the markup this client emits
+    because that markup never passes through the template linters."""
+    js = _nc(_bs_js())
+    assert "title=" not in js, "bilingual text belongs in l-en/l-zh, never in title="
 
 
 def test_there_is_no_second_hydration_path():
@@ -631,3 +716,514 @@ def test_no_data_writes_on_this_path():
     src = Path(board_state.__file__).read_text()
     for forbidden in ("open(", "write_text", "Path(", "requests", "urllib"):
         assert forbidden not in src, forbidden
+
+
+# --------------------------------------------------------------------------- #
+# W-L1d — the provisional CARD renderer, executed (spec §10)
+# --------------------------------------------------------------------------- #
+
+_PVC_HARNESS = r"""
+%(contract)s
+const job = JSON.parse(process.argv[2]);
+const out = job.cases.map(c => {
+  if (c.fn === 'cards')  return _pvcCards(c.board) === null ? null : 'ok';
+  if (c.fn === 'room')   return [_pvcRoom(c.runway), _pvcVerb(_pvcRoom(c.runway))];
+  if (c.fn === 'wanted') return _pvcWanted(c.state, c.now, c.refused || '') ? 'ok' : null;
+  if (c.fn === 'id')     return _pvcId(c.state, _pvcCards(c.state.board));
+  if (c.fn === 'html')   return _pvcGridHTML(_pvcCards(c.board), !!c.chg);
+  if (c.fn === 'mount') {
+    /* the injected env IS the seam the real DOM plugs into: `read` returns whatever the
+       painted grid would report, so a case can simulate a card that failed to paint. */
+    const log = {painted: null, restored: 0};
+    const env = {
+      chg: !!c.chg,
+      paint: html => { log.painted = html; },
+      read: () => (c.readback === undefined
+                   ? (c.board.tickers || []).join('|') : c.readback),
+      restore: () => { log.restored += 1; }
+    };
+    const ok = _pvcMount(env, _pvcCards(c.board));
+    return {ok: ok, restored: log.restored,
+            tickers: (log.painted || '').match(/data-ticker="([^"]*)"/g) || []};
+  }
+  return 'unknown';
+});
+console.log(JSON.stringify(out));
+"""
+
+
+def _pvc(cases: list) -> list:
+    node = shutil.which("node")
+    if node is None:
+        if os.environ.get("CI"):
+            raise AssertionError(
+                "node is required to execute the W-L1d card contract, and CI installs it "
+                "via actions/setup-node@v4 — its absence would leave the post-mount "
+                "identity re-verification (spec §10.5) unproven."
+            )
+        pytest.skip("node not available to execute the client contract (local only)")
+    src = _PVC_HARNESS % {"contract": _js_contract()}
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "wl1d_contract.mjs"
+        path.write_text(src)
+        run = subprocess.run([node, str(path), json.dumps({"cases": cases})],
+                             capture_output=True, text=True, check=False)
+    assert run.returncode == 0, run.stdout + run.stderr
+    return json.loads(run.stdout)
+
+
+def _card(tk, **over):
+    c = {"tk": tk, "sym": tk, "mkt": "us", "href": f"stocks/{tk}.html",
+         "date": "2026-08-10", "price_txt": "$10.00", "name": f"{tk} Corp",
+         "sec": "Technology", "sec_zh": "科技", "signal": 0.9, "runway": 0.8}
+    c.update(over)
+    return c
+
+
+def _board(tickers=("TK0", "TK1", "TK2"), **over):
+    b = {"as_of": "2026-08-10", "lane": "closepass", "tickers": list(tickers),
+         "card_complete": True, "cards": [_card(t) for t in tickers]}
+    b.update(over)
+    return b
+
+
+def test_the_payload_must_prove_its_two_halves_agree():
+    """THE REPLACEMENT for "payload vs. DOM" (spec §10.5). While the client is the thing
+    putting cards in the DOM, comparing the payload to the DOM it just wrote proves
+    nothing — so the payload's own `cards` must be exactly parallel to its own `tickers`
+    before a single one is painted."""
+    got = _pvc([
+        {"fn": "cards", "board": _board()},                                    # 0 happy
+        {"fn": "cards", "board": _board(card_complete=False)},                 # 1 not complete
+        {"fn": "cards", "board": _board(cards=[_card("TK0"), _card("TK1")])},  # 2 short
+        {"fn": "cards", "board": _board(                                       # 3 out of order
+            cards=[_card("TK1"), _card("TK0"), _card("TK2")])},
+        {"fn": "cards", "board": _board(tickers=[])},                          # 4 empty
+        {"fn": "cards", "board": _board(                                       # 5 legs missing
+            cards=[_card("TK0", signal=None), _card("TK1"), _card("TK2")])},
+        {"fn": "cards", "board": _board(                                       # 6 runway junk
+            cards=[_card("TK0", runway="lots"), _card("TK1"), _card("TK2")])},
+        {"fn": "cards", "board": _board(                                       # 7 offsite link
+            cards=[_card("TK0", href="https://evil.example/x"),
+                   _card("TK1"), _card("TK2")])},
+        {"fn": "cards", "board": None},                                        # 8 no board
+        # `runway: null` is the ONE permitted null among the two legs — "not measured",
+        # which the card says in words rather than binning as "already run"
+        {"fn": "cards", "board": _board(                                       # 9 accepted
+            cards=[_card("TK0", runway=None), _card("TK1"), _card("TK2")])},
+    ])
+    assert got[0] == "ok"
+    assert got[1:9] == [None] * 8
+    assert got[9] == "ok", "a null runway is a supported state, not a malformed payload"
+
+
+def test_a_score_that_arrives_is_refused_rather_than_ignored():
+    """Spec §10.2 — the evening lane scores 40 of 100 weight points, so a number must never
+    reach the slot a reader has learned to read on the 100 scale. A producer that starts
+    sending one has drifted, and the board refuses instead of quietly dropping the field."""
+    got = _pvc([
+        {"fn": "cards", "board": _board(
+            cards=[_card("TK0", edge=40), _card("TK1"), _card("TK2")])},
+        {"fn": "cards", "board": _board(
+            cards=[_card("TK0", edge=0), _card("TK1"), _card("TK2")])},
+        # an explicit null is the contract and must still pass
+        {"fn": "cards", "board": _board(
+            cards=[_card("TK0", edge=None), _card("TK1"), _card("TK2")])},
+    ])
+    assert got == [None, None, "ok"]
+
+
+def test_the_verb_is_never_a_constant_and_comes_only_from_runway():
+    """Spec §10.4-2/3. `runway` = 1 - clip01(ext_z/2), so the bands sit at ext_z <= 0.5 and
+    <= 1.0; the verb splits at one full sigma of extension. `buy` is not in the vocabulary
+    at all — a card may not out-claim the board it sits on, and the board says "Get
+    ready"."""
+    got = _pvc([{"fn": "room", "runway": r}
+                for r in (1.0, 0.9, 0.75, 0.74, 0.6, 0.5, 0.49, 0.2, 0.0, -3, 7)])
+    assert got == [
+        ["ample", "near"], ["ample", "near"], ["ample", "near"],
+        ["some", "near"], ["some", "near"], ["some", "near"],
+        ["thin", "wait"], ["thin", "wait"], ["thin", "wait"],
+        ["thin", "wait"],          # clamped below 0
+        ["ample", "near"],         # clamped above 1
+    ]
+    assert {b for b, _ in got} == {"ample", "some", "thin"}
+    assert {v for _, v in got} == {"near", "wait"}, "buy/hold/avoid are out of scope here"
+
+
+def test_an_unmeasured_name_is_not_binned_as_one_that_has_already_run():
+    """The engine's ranking leg scores an unmeasured extension as 0.0 — fail-closed, and
+    right for ORDERING — but 0.0 is also what a name two full sigma out scores. Binning
+    both as "Thin" would tell a reader "this one has run" about a name nobody measured,
+    which is a claim rather than a caution. It gets its own words, and routes to the
+    cautious verb (the ratified rule for unknown states, #2206).
+
+    ~5 of 79 rows on the live artifact are this case, so it is not a corner."""
+    got = _pvc([{"fn": "room", "runway": r} for r in (None, 0.0)])
+    assert got[0] == ["unknown", "wait"]
+    assert got[1] == ["thin", "wait"], "a MEASURED zero still reads as thin"
+    assert got[0][0] != got[1][0], "unmeasured must not collapse into measured-extreme"
+    # and the words differ on the card, not just in the band name
+    html = _pvc([{"fn": "html", "board": _board(
+        cards=[_card("TK0", runway=None), _card("TK1", runway=0.0), _card("TK2")])}])[0]
+    first = html[:html.index('data-ticker="TK1"')]
+    second = html[html.index('data-ticker="TK1"'):html.index('data-ticker="TK2"')]
+    assert "Not checked" in first and "未检查" in first
+    assert "Thin" in second and "有限" in second
+    assert "Not checked" not in second
+
+
+def test_the_mount_tears_the_board_down_when_the_paint_does_not_verify():
+    """SPEC §10.5, AND THE POINT OF THIS WHOLE FILE. Once the client renders the cards the
+    identity gate would be trivially true — so the mount reads the painted ticker order
+    straight back and restores if it is not what was asked for.
+
+    Delete the `env.read() !== want` check in `_pvcMount` and cases 1-4 return ok=true with
+    restored=0, and this test fails. That is the whole design: a board that cannot prove it
+    painted correctly never stays up long enough to be stamped.
+    """
+    b = _board()
+    got = _pvc([
+        {"fn": "mount", "board": b},                                   # 0 paints correctly
+        {"fn": "mount", "board": b, "readback": "TK0|TK1"},            # 1 a card went missing
+        {"fn": "mount", "board": b, "readback": "TK1|TK0|TK2"},        # 2 order came out wrong
+        {"fn": "mount", "board": b, "readback": ""},                   # 3 nothing painted
+        {"fn": "mount", "board": b, "readback": "TK0|TK1|TK2|TK9"},    # 4 something extra
+    ])
+    assert got[0]["ok"] is True and got[0]["restored"] == 0
+    assert got[0]["tickers"] == ['data-ticker="TK0"', 'data-ticker="TK1"',
+                                 'data-ticker="TK2"']
+    for i in (1, 2, 3, 4):
+        assert got[i]["ok"] is False, f"case {i} mounted a board it could not verify"
+        assert got[i]["restored"] == 1, f"case {i} did not restore the nightly board"
+
+
+def test_cards_without_a_stamp_are_refused_exactly_like_a_stamp_without_cards():
+    """Both directions are the same lie. `_pvcWanted` asks the UNCHANGED board-state gate
+    whether a page showing exactly these cards would earn the `ahead` stamp; if it would
+    not, the cards are not painted either."""
+    fresh = {"generated_at": _iso(_NOW - _HOUR), "valid_until": _iso(_NOW + _HOUR)}
+    base = dict(rel="ahead", note="ahead", board=_board(), **fresh)
+
+    def st(**over):
+        s = dict(base)
+        s.update(over)
+        return s
+
+    got = _pvc([
+        {"fn": "wanted", "state": st(), "now": _NOW},                            # 0 happy
+        {"fn": "wanted", "state": st(valid_until=_iso(_NOW - 1)), "now": _NOW},  # 1 expired
+        {"fn": "wanted", "state": st(rel="behind"), "now": _NOW},                # 2 wrong rel
+        {"fn": "wanted", "state": st(rel=None, note="confirmed"), "now": _NOW},  # 3 receipt
+        {"fn": "wanted", "state": st(generated_at=_iso(_NOW - 200 * _HOUR),
+                                     valid_until=_iso(_NOW + 9000 * _HOUR)),
+         "now": _NOW},                                                           # 4 too old
+        # a board whose mount already failed once is never retried — keyed on the board's
+        # own identity (as-of + ordered tickers), the same key the mount is keyed on
+        {"fn": "wanted", "state": st(), "now": _NOW,
+         "refused": "2026-08-10#TK0|TK1|TK2"},                                   # 5
+    ])
+    assert got[0] == "ok"
+    assert got[1:] == [None] * 5
+
+
+def test_the_link_shape_the_nightly_board_already_uses_is_accepted():
+    """The US nightly card links `stock.html#AAPL`, china `china_lookup.html#…`, hk
+    `hk_lookup.html#…`. Refusing a trailing fragment would hard-refuse the whole evening
+    board over a link shape the morning board already ships — while everything that could
+    leave the site still has to be refused."""
+    ok = ["stock.html#AAPL", "stocks/AAPL.html", "china_lookup.html#600519.SS",
+          "hk_lookup.html#0700.HK", "stock.html"]
+    bad = ["https://evil.example/x", "//evil.example/x", "/absolute", "../../etc/passwd",
+           "javascript:alert(1)", "stock.html#a b", "stock.html?x=1",
+           'stock.html"onmouseover="alert(1)']
+    got = _pvc([{"fn": "cards",
+                 "board": _board(cards=[_card("TK0", href=h), _card("TK1"), _card("TK2")])}
+                for h in ok + bad])
+    assert got[:len(ok)] == ["ok"] * len(ok), list(zip(ok, got))
+    assert got[len(ok):] == [None] * len(bad), list(zip(bad, got[len(ok):]))
+    # and the accepted one lands in the markup unmangled
+    html = _pvc([{"fn": "html", "board": _board(
+        cards=[_card("TK0", href="stock.html#TK0"), _card("TK1"), _card("TK2")])}])[0]
+    assert 'href="stock.html#TK0"' in html
+
+
+def test_a_republished_but_unchanged_board_is_not_remounted():
+    """`board_state` rides an artifact the live producer rewrites every ~5 minutes. Keying
+    the mount on a WRITE timestamp would tear the grid down and rebuild it on every poll —
+    a flicker under a reader, their "show more" expansion reset each time, and a leaked
+    resize listener per rebuild. The board is the same board while its as-of and its
+    ordered tickers are, so the mount is keyed on that and nothing else."""
+    fresh = {"generated_at": _iso(_NOW - _HOUR), "valid_until": _iso(_NOW + _HOUR)}
+    same_board_later_write = dict(fresh, rel="ahead", note="ahead", board=_board())
+    same_board_later_write["generated_at"] = _iso(_NOW - 60000)
+    got = _pvc([
+        {"fn": "id", "state": dict(fresh, rel="ahead", note="ahead", board=_board())},
+        {"fn": "id", "state": same_board_later_write},
+        # a genuinely different board — one name swapped — must NOT share the identity
+        {"fn": "id", "state": dict(fresh, rel="ahead", note="ahead",
+                                   board=_board(("TK0", "TK1", "TK9")))},
+        # nor must a different session's board carrying the same names
+        {"fn": "id", "state": dict(fresh, rel="ahead", note="ahead",
+                                   board=_board(as_of="2026-08-11"))},
+    ])
+    assert got[0] == got[1], "a rewrite with no board change must not remount"
+    assert got[0] != got[2] and got[0] != got[3]
+    assert "2026-08-10" in got[0] and "TK0|TK1|TK2" in got[0]
+
+
+def test_the_card_markup_degrades_rather_than_breaks_on_a_null_field():
+    """The producer emits null rather than guessing, and every optional field is genuinely
+    optional: no name, no sector, no sparkline, no price. A missing line is omitted, never
+    rendered empty — the grid row stretches and .pv-zn's margin-top:auto keeps every zone
+    row on one baseline, so a degraded card costs alignment nothing."""
+    bare = _board(cards=[_card("TK0", name=None, name_zh=None, sec=None, sec_zh=None,
+                               spark=None, price_txt=None),
+                         _card("TK1"), _card("TK2")])
+    html = _pvc([{"fn": "html", "board": bare}])[0]
+    first = html[:html.index('data-ticker="TK1"')]
+    assert "pv-nm" not in first and "pv-ind" not in first, "empty lines must be omitted"
+    assert "pv-nochart" in first, "no spark still reserves the chip rail"
+    assert "nb-px" not in first, "no price means no pill at all"
+    for required in ('class="pvcard pv-near"', 'data-ticker="TK0"', "pv-chip",
+                     "pv-edl", "pv-edn pv-edna", "pv-znm", "pv-dt"):
+        assert required in first, required
+    # and the slots §10.3 omits are absent from EVERY card
+    for banned in ("pv-stp", "pv-stl", "pv-mk", "pv-live", "pv-trg", "pv-cau",
+                   "data-stage", "pv-featured", "pv-triage"):
+        assert banned not in html, banned
+
+
+def test_the_quote_pill_mirrors_whatever_the_nightly_cards_use():
+    """A live-change sibling is a per-board opt-in that may or may not have shipped; the
+    evening card has to look like the morning card either way round, so the shape is
+    measured off the page rather than assumed."""
+    plain, withchg = _pvc([{"fn": "html", "board": _board()},
+                           {"fn": "html", "board": _board(), "chg": True}])
+    assert '<span class="pv-ov pv-ovr"><span class="nb-px pv-px"' in plain
+    assert "nb-chg" not in plain
+    assert '<span class="pv-quote"><span class="nb-px pv-px"' in withchg
+    # live.js replaces the price node's textContent, so the percentage must be a SIBLING
+    assert re.search(r'<span class="nb-px pv-px"[^>]*>[^<]*</span>'
+                     r'<span class="nb-chg pv-chg"', withchg)
+
+
+def test_a_sparkline_that_is_not_a_drawing_is_dropped_not_rendered():
+    """The artifact is same-origin and auth-gated, which is a reason to be calm and not a
+    reason to skip the check: innerHTML does not run <script>, but it does run an SVG
+    event handler. A dropped spark is an already-supported state."""
+    evil = [
+        '<svg onload="alert(1)"><path d="M0 0"/></svg>',
+        # `/` is a valid attribute separator inside a start tag, so these parse exactly as
+        # `<svg onload=…>`. A \s-anchored pattern waved them straight through.
+        '<svg/onload=alert(1)></svg>',
+        '<svg//onload=alert(1)><path d="M0 0"/></svg>',
+        '<svg\tonload=alert(1)></svg>',
+        '<svg><script>alert(1)</script></svg>',
+        '<svg><animate onbegin="alert(1)"/></svg>',
+        # `set`/`animate` write an attribute onto another element — including a handler
+        '<svg><set attributeName="onload" to="alert(1)"/></svg>',
+        '<svg><animateTransform attributeName="onload" to="alert(1)"/></svg>',
+        '<svg><style>@import url(//evil.example/x)</style></svg>',
+        '<svg><foreignObject><b>x</b></foreignObject></svg>',
+        '<svg><image href="javascript:alert(1)"/></svg>',
+        '<svg><a href="vbscript:alert(1)"><path d="M0 0"/></a></svg>',
+        '<img src=x onerror="alert(1)">',
+    ]
+    boards = [_board(cards=[_card("TK0", spark=s), _card("TK1"), _card("TK2")])
+              for s in evil]
+    good = _board(cards=[
+        _card("TK0", spark='<svg viewBox="0 0 2 2"><path d="M0 0L2 2"/></svg>'),
+        _card("TK1"), _card("TK2")])
+    got = _pvc([{"fn": "html", "board": b} for b in boards]
+               + [{"fn": "html", "board": good}])
+    for html, src in zip(got[:-1], evil):
+        low = html.lower()
+        for token in ("onload", "onerror", "onbegin", "<script", "foreignobject",
+                      "javascript:", "vbscript:", "@import", "<set", "<animate"):
+            assert token not in low, f"{src!r} leaked {token!r}"
+        assert html.count("pv-nochart") == 3, f"{src!r} should have fallen back"
+    assert "<path" in got[-1] and got[-1].count("pv-nochart") == 2, "a real drawing survives"
+# ─────────────────────────────────────────────────────────────────────────────
+# THE HOP — the receipt reaching the board it describes
+#
+# Everything above proves the SURFACE: given a board-state payload, the panel
+# paints the right thing, or nothing. This section proves the payload arrives.
+# It did not, for the whole life of #5148: `scripts.close_pass_reconcile`
+# published the receipt to R2 and nothing read that key, while `build_site` read
+# a `doc["board_state"]` nothing wrote — two correct halves with no hop between
+# them, so spec State 2 had never rendered once.
+#
+# THE HOP CANNOT BE A FETCH. The receipt for session N can only exist once
+# session N's board of record has landed, which is after the render that would
+# show it — so a render that READ a published receipt could only ever print
+# session N-1's arithmetic under session N's cards. The nightly therefore
+# computes its own, from the board dict it is about to render, at the one moment
+# both halves are in hand. These tests run that real chain: R2 stub →
+# confirmation_receipt → board_state_payload → build_site's attach →
+# board_state_view → rendered HTML. The only thing replaced is the network hop.
+# ─────────────────────────────────────────────────────────────────────────────
+HOP_SESSION = "2026-08-08"
+
+
+def _nightly_doc(tiers: dict, as_of: str = HOP_SESSION) -> dict:
+    """A us_standouts board of record, in the shape build_site holds it."""
+    from tests.test_dashboard_template_render import _board_row
+
+    return {
+        "as_of": as_of,
+        "eligible": len(tiers),
+        "buy": [_board_row(ticker=tk, name=f"Name {tk}", stage="live",
+                           lane="bottoming", score_rank=i + 1, display_rank=i + 1,
+                           prophet={"version": "us_prophet_v1", "score": 70 - i},
+                           signal={"tier_cascade": tier})
+                for i, (tk, tier) in enumerate(sorted(tiers.items()))],
+    }
+
+
+def _evening_board(tiers: dict, as_of: str = HOP_SESSION) -> dict:
+    """The provisional board as it has sat on R2 since ~16:25 ET."""
+    return {"as_of": as_of, "built_at": f"{as_of}T20:30:00Z",
+            "names": [{"ticker": tk, "tier_cascade": tier}
+                      for tk, tier in sorted(tiers.items())]}
+
+
+def _attach(monkeypatch, tmp_path, doc, provisional):
+    """Run build_site's real board attach with only the R2 GET replaced.
+
+    build_site is imported inside the test the way
+    tests/test_basket_integration.py imports it — a real import in this pack,
+    never a skip that would report green while proving nothing.
+    """
+    from engine.prophet_live import r2io
+
+    seen = []
+
+    def _fake_get(key, **kw):
+        seen.append(key)
+        return provisional
+
+    monkeypatch.setattr(r2io, "get_json", _fake_get)
+    import scripts.build_site as bs
+
+    return bs._attach_board_display_chips(tmp_path, doc), seen
+
+
+def _rendered_panel(doc):
+    from tests.test_dashboard_template_render import _base_vm, _env
+
+    vm = _base_vm()
+    vm["us_standouts"] = doc
+    return _panel(_env().get_template("dashboard.html.j2").render(
+        **vm, mode="stocks"))
+
+
+def test_the_nightly_computes_its_own_receipt_and_it_reaches_the_page(
+        monkeypatch, tmp_path):
+    """THE GATE (masterplan §0): the confirmation delta is published per name —
+    computed in the nightly, and rendered by the SAME build. AAA holds its tier
+    (confirmed), BBB moves tier (adjusted), CCC is gone (dropped), and DDD is a
+    nightly addition that rides beside the identity, never inside it."""
+    doc = _nightly_doc({"AAA": "T2", "BBB": "T3", "DDD": "T1"})
+    prov = _evening_board({"AAA": "T2", "BBB": "T1", "CCC": "T2"})
+    out, seen = _attach(monkeypatch, tmp_path, doc, prov)
+
+    assert seen, "the evening board was never fetched — no hop happened"
+    view = out["board_state_view"]
+    assert view["note"] == "confirmed"
+    # The arithmetic is over the PROVISIONAL population, so DDD is not in it.
+    assert (view["n_total"], view["n_confirmed"], view["n_adjusted"],
+            view["n_dropped"]) == (3, 1, 1, 1)
+    assert view["n_confirmed"] + view["n_adjusted"] + view["n_dropped"] \
+        == view["n_total"]
+    assert view["dropped"] == ["CCC"]
+
+    # …and it renders. Not "the payload is well-formed" — the reader's own line.
+    # Asserted on the classes, never on the words "Adjusted"/"已调整": both appear
+    # in the receipt line's OWN tooltip, which explains what adjusted means, so a
+    # word-match here would pass with the per-card marks entirely absent.
+    panel = _rendered_panel(out)
+    assert 'class="pbs-nv" data-bs-note="confirmed"' in panel
+    assert "confirmed overnight" in panel and "隔夜确认" in panel
+    assert panel.count("pv-mk-adj") == 1, "exactly the one name that moved"
+    assert 'data-ticker="BBB"' in panel
+
+
+def test_the_per_card_marks_ship_with_the_line_they_belong_to(monkeypatch,
+                                                              tmp_path):
+    """Spec §7 publish-together, in the DATA as well as in the template's fence.
+    Only the name the receipt calls adjusted is stamped; the confirmed name and
+    the nightly addition are left alone."""
+    doc = _nightly_doc({"AAA": "T2", "BBB": "T3", "DDD": "T1"})
+    out, _ = _attach(monkeypatch, tmp_path, doc,
+                     _evening_board({"AAA": "T2", "BBB": "T1", "CCC": "T2"}))
+    marks = {r["ticker"]: r.get("adjusted") for r in out["buy"]}
+    assert marks["BBB"] is True
+    assert not marks["AAA"] and not marks["DDD"]
+
+
+@pytest.mark.parametrize("provisional,why", [
+    (None, "a `behind` night — no evening board was published to grade"),
+    ({"as_of": "2026-08-07", "built_at": "2026-08-07T20:30:00Z",
+      "names": [{"ticker": "AAA", "tier_cascade": "T2"}]},
+     "a stale pairing — yesterday's evening board against tonight's record"),
+    ({"as_of": HOP_SESSION, "built_at": f"{HOP_SESSION}T20:30:00Z",
+      "names": [{"ticker": "AAA", "tier_cascade": "T2"},
+                {"ticker": "AAA", "tier_cascade": "T3"}]},
+     "a duplicate ticker — every count over it would be wrong"),
+])
+def test_a_pairing_the_build_cannot_vouch_for_paints_nothing(
+        monkeypatch, tmp_path, provisional, why):
+    """No receipt is better than a wrong one (spec §7). A pairing the build
+    cannot vouch for must emit NOTHING rather than figures describing a board
+    that is not on the screen — including the `behind` case, where
+    `note='confirmed'` is impossible because there was no evening board for this
+    session to confirm anything against."""
+    doc = _nightly_doc({"AAA": "T2", "BBB": "T3"})
+    out, _ = _attach(monkeypatch, tmp_path, doc, provisional)
+    assert "board_state_view" not in out, why
+    assert not any(r.get("adjusted") for r in out["buy"]), why
+
+    panel = _rendered_panel(out)
+    assert 'class="pbs-nv" data-bs-note="confirmed"' not in panel, why
+    assert "confirmed overnight" not in panel, why
+    assert "pv-mk-adj" not in panel, why
+
+
+def test_the_first_pass_board_never_wears_tonights_receipt(monkeypatch, tmp_path):
+    """build_site's FIRST pass reads the PRIOR build's us_standouts (the
+    one-build lag); only the post-build_stock_library re-render holds tonight's.
+    Both reach the page through this one attach, so the ordering safety cannot
+    be left as a comment: last night's cards carry no receipt, because the two
+    documents name different sessions."""
+    out, _ = _attach(monkeypatch, tmp_path,
+                     _nightly_doc({"AAA": "T2", "BBB": "T3"}, as_of="2026-08-07"),
+                     _evening_board({"AAA": "T2", "BBB": "T1"}))
+    assert "board_state_view" not in out
+
+    out2, _ = _attach(monkeypatch, tmp_path,
+                      _nightly_doc({"AAA": "T2", "BBB": "T3"}),
+                      _evening_board({"AAA": "T2", "BBB": "T1"}))
+    assert out2["board_state_view"]["n_total"] == 2
+
+
+def test_the_render_computes_the_receipt_and_never_fetches_a_published_one():
+    """The one-night-stale design, fenced. A render that read
+    live_flow/us_board_confirmation.json would be reading a key that cannot yet
+    exist for this session, and would paint the PREVIOUS session's figures under
+    tonight's cards. The receipt key must never appear on the render path."""
+    src = (ROOT / "scripts" / "build_site.py").read_text()
+    assert "us_board_confirmation" not in src
+    assert "board_state_for" in src, "the hop must be a computation, not a fetch"
+
+
+def test_the_delta_has_exactly_one_definition():
+    """Two producers of one receipt is how two surfaces end up disagreeing about
+    a night. The render and the published artifact both route through
+    engine.close_pass.reconcile.confirmation_receipt; neither reimplements it."""
+    import scripts.close_pass_reconcile as rc
+    from engine.close_pass import reconcile as cr
+
+    assert rc.confirmation_receipt is cr.confirmation_receipt
+    for rel in ("scripts/close_pass_reconcile.py", "scripts/build_site.py"):
+        assert "def confirmation_receipt" not in (ROOT / rel).read_text(), rel

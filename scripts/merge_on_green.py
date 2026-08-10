@@ -354,8 +354,12 @@ MAIN_TIMELINE_PAGE = 100
 # than this many commits classified is re-proven without spending any of them.
 MAIN_COMMIT_FILE_CAP = 50
 # GitHub truncates a commit's `files` array at 300. A truncated list could hide the
-# one source file that makes a commit not-a-bake, so a truncated commit is treated as
-# touching everything.
+# one source file that makes a commit not-a-bake.  The classifier therefore fails
+# closed unless the commit and its first parent have identical TOP-LEVEL Git-tree
+# entries everywhere except `data/` and `site/`.  Comparing root tree object IDs is
+# complete even for a 10,000-file bake: a change anywhere below a root changes that
+# root's tree ID, while an unchanged source root is cryptographic proof that none of
+# its descendants moved.
 COMMIT_FILES_TRUNCATED_AT = 300
 # `/pulls/{n}/files` pages, 100 each. A pull request bigger than this has a footprint
 # we cannot fully see, and an UNDER-read footprint under-detects, so it is re-proven.
@@ -795,6 +799,8 @@ class ProofFreshness:
         # Newest first, as GitHub returns them.
         self.commits = commits
         self._commit_files: dict[str, tuple[list[str], bool]] = {}
+        self._commit_tree_shas: dict[str, str] = {}
+        self._root_trees: dict[str, dict[str, tuple[str, str, str]]] = {}
         self._pr_files: dict[Any, list[str] | None] = {}
         self.commit_file_reads = 0
 
@@ -833,6 +839,100 @@ class ProofFreshness:
 
     # -- reads ----------------------------------------------------------------
 
+    def _root_tree(self, tree_sha: str) -> dict[str, tuple[str, str, str]]:
+        """Complete top-level tree entries keyed by path, cached by tree object ID.
+
+        This deliberately does NOT request ``recursive=1``.  The proof only needs
+        to know which top-level subtrees changed, and the non-recursive response is
+        small enough that GitHub's recursive-tree truncation limit is irrelevant.
+        """
+        cached = self._root_trees.get(tree_sha)
+        if cached is not None:
+            return cached
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{self.repo}/git/trees/{tree_sha}",
+            self.token,
+        )
+        if status >= 400 or not isinstance(payload, dict):
+            raise _read_failed(status, payload, f"root tree {tree_sha[:12]} unreadable")
+        if payload.get("truncated") is True:
+            raise RuntimeError(f"root tree {tree_sha[:12]} was truncated")
+        entries: dict[str, tuple[str, str, str]] = {}
+        for raw in payload.get("tree") or []:
+            entry = raw or {}
+            path = str(entry.get("path") or "")
+            if not path:
+                continue
+            entries[path] = (
+                str(entry.get("type") or ""),
+                str(entry.get("mode") or ""),
+                str(entry.get("sha") or ""),
+            )
+        if not entries:
+            raise RuntimeError(f"root tree {tree_sha[:12]} had no usable entries")
+        self._root_trees[tree_sha] = entries
+        return entries
+
+    def _commit_tree_sha(self, commit_sha: str) -> str:
+        cached = self._commit_tree_shas.get(commit_sha)
+        if cached:
+            return cached
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{self.repo}/git/commits/{commit_sha}",
+            self.token,
+        )
+        if status >= 400 or not isinstance(payload, dict):
+            raise _read_failed(
+                status, payload, f"git commit {commit_sha[:12]} unreadable"
+            )
+        tree_sha = str(((payload.get("tree") or {}).get("sha")) or "")
+        if not tree_sha:
+            raise RuntimeError(f"git commit {commit_sha[:12]} has no root tree")
+        self._commit_tree_shas[commit_sha] = tree_sha
+        return tree_sha
+
+    def _truncated_pipeline_paths(
+        self, sha: str, payload: dict[str, Any]
+    ) -> list[str] | None:
+        """Prove a truncated commit changed only complete pipeline subtrees.
+
+        ``None`` means the proof could not be made and the caller must keep the
+        commit truncated/fail-closed.  Synthetic paths are sufficient downstream:
+        their only role is to enter the existing all-in-PIPELINE_TREES branch.
+        """
+        current_tree = str(
+            ((((payload.get("commit") or {}).get("tree")) or {}).get("sha")) or ""
+        )
+        parents = payload.get("parents") or []
+        parent_sha = str(((parents[0] if parents else {}) or {}).get("sha") or "")
+        if not current_tree or not parent_sha:
+            return None
+        self._commit_tree_shas[sha] = current_tree
+        try:
+            parent_tree = self._commit_tree_sha(parent_sha)
+            current_entries = self._root_tree(current_tree)
+            parent_entries = self._root_tree(parent_tree)
+        except RuntimeError:
+            return None
+
+        changed_roots = {
+            path
+            for path in current_entries.keys() | parent_entries.keys()
+            if current_entries.get(path) != parent_entries.get(path)
+        }
+        pipeline_roots = {prefix.rstrip("/") for prefix in PIPELINE_TREES}
+        if not changed_roots or not changed_roots <= pipeline_roots:
+            return None
+        # A pipeline root may be added/deleted, but whenever it exists it must still
+        # be a tree. A tree-to-blob replacement named `data` is not `data/**`.
+        for root in changed_roots:
+            for entry in (parent_entries.get(root), current_entries.get(root)):
+                if entry is not None and entry[0] != "tree":
+                    return None
+        return [f"{root}/__bulk_pipeline_tree__" for root in sorted(changed_roots)]
+
     def files_of(self, sha: str) -> tuple[list[str], bool]:
         """``(files, truncated)`` for one main commit. Cached for the whole sweep."""
         cached = self._commit_files.get(sha)
@@ -847,7 +947,14 @@ class ProofFreshness:
         files = [
             str((entry or {}).get("filename") or "") for entry in (payload.get("files") or [])
         ]
-        answer = ([name for name in files if name], len(files) >= COMMIT_FILES_TRUNCATED_AT)
+        names = [name for name in files if name]
+        truncated = len(files) >= COMMIT_FILES_TRUNCATED_AT
+        if truncated:
+            proven_pipeline_paths = self._truncated_pipeline_paths(sha, payload)
+            if proven_pipeline_paths is not None:
+                names = proven_pipeline_paths
+                truncated = False
+        answer = (names, truncated)
         self._commit_files[sha] = answer
         return answer
 

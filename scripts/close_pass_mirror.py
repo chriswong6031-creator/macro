@@ -23,12 +23,16 @@ TWO WRITERS ON prophet_live.json, AND WHY THAT IS SAFE. The Prophet Live
 evaluator owns that file and rewrites it whole every five minutes, so this lane
 read-modify-writes a key into someone else's artifact. Three things make that
 sound rather than lucky:
-  * the evaluator's window ENDS 16:15 ET and this board publishes ~16:25 ET, so
-    in the ordinary case the two never write in the same period at all — the
-    handoff between the lanes is a seam, not an overlap;
-  * if the evaluator does win a race, the only consequence is that the key is
-    missing until this timer's next tick five minutes later, and a missing key
-    means the surface paints NOTHING. The failure direction is dark, never wrong;
+  * ``annotate_live_strip`` COMPARE-AND-SWAPS: it re-reads the file immediately
+    before writing and skips the write if the bytes moved, so a lost race costs
+    this lane its own key for one tick instead of costing the evaluator its
+    whole document. The disjoint-windows argument this lane originally shipped
+    on (evaluator ends 16:15 ET, board publishes ~16:25 ET) is TRUE IN THE
+    ORDINARY CASE AND NOT LOAD-BEARING — measured queue waits reach 71 minutes,
+    which is enough to push this pass into a period the evaluator owns;
+  * every remaining failure — absent file, unparseable file, skipped swap — ends
+    with no key, and a missing key means the surface paints NOTHING. The failure
+    direction is dark, never wrong;
   * the payload carries ``valid_until``, and the client refuses to paint past
     it, so a key that survives longer than it should expires itself.
 This lane NEVER creates prophet_live.json and never writes any other key in it:
@@ -43,6 +47,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -66,12 +71,27 @@ STATE_KEY = "board_state"
 _TAG = "close-pass"
 
 
-def _read_json(path: Path) -> dict | None:
+def _read_doc(path: Path) -> tuple[dict | None, str | None]:
+    """``(doc, fingerprint)`` — the parsed object and a digest of its BYTES.
+
+    The fingerprint is taken over the raw bytes rather than the parsed object
+    because it has to answer "did this file change", and two different byte
+    strings can parse to equal dicts (key order, spacing, float formatting). A
+    digest over the bytes is the honest question; a digest over the parse is a
+    weaker one that would call a real rewrite "unchanged".
+    """
     try:
-        doc = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
-    return doc if isinstance(doc, dict) else None
+        raw = path.read_bytes()
+        doc = json.loads(raw.decode("utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        return None, None
+    if not isinstance(doc, dict):
+        return None, None
+    return doc, hashlib.sha256(raw).hexdigest()
+
+
+def _read_json(path: Path) -> dict | None:
+    return _read_doc(path)[0]
 
 
 def served_as_of(path: Path) -> str | None:
@@ -82,12 +102,31 @@ def served_as_of(path: Path) -> str | None:
 def annotate_live_strip(path: Path, payload: dict, *, dry_run: bool = False) -> bool:
     """Merge ``board_state`` into the served prophet_live.json. Never creates it.
 
-    Read-modify-write on an artifact another lane owns, which is only sound
-    because every failure direction is DARK: an absent file, an unparseable one
-    and a lost race all end with no key, and no key means the surface paints
-    nothing rather than something wrong. See the module docstring.
+    Read-modify-write on an artifact another lane owns, guarded by a
+    COMPARE-AND-SWAP: the file is re-read immediately before the write and the
+    write is SKIPPED if its bytes moved under us.
+
+    WHY THE DISJOINT-WINDOWS ARGUMENT WAS NOT ENOUGH. This lane was accepted on
+    the reasoning that the evaluator's window ends 16:15 ET and the board
+    publishes ~16:25 ET, so the two never write in the same period. The lane's
+    own measurement undercuts it: observed queue waits of up to 71 minutes move
+    this pass an hour or more past its nominal slot, straight into a period the
+    evaluator owns. Without the swap the loser of that race does not lose its
+    own key — it clobbers the WINNER'S whole document with a stale copy plus one
+    key, and the evaluator's fresh live data is gone until its next pass.
+
+    The swap narrows the window to (re-read → serialise → rename); it does not
+    close it, because a rename cannot be conditioned on a digest without a lock
+    the evaluator does not take. That residual is stated, not papered over. It
+    is also the acceptable direction: a skipped write costs one tick, which is
+    the failure this lane was already designed to absorb.
+
+    Every failure direction stays DARK — an absent file, an unparseable one, a
+    lost race and a skipped swap all end with no key, and no key means the
+    surface paints nothing rather than something wrong. Idempotent as before:
+    an already-correct key writes nothing at all.
     """
-    doc = _read_json(path)
+    doc, seen = _read_doc(path)
     if doc is None:
         # Before the first evaluator pass of the day, or on a host with no live
         # plane. Creating the file would hand the surface a prophet artifact
@@ -99,6 +138,13 @@ def annotate_live_strip(path: Path, payload: dict, *, dry_run: bool = False) -> 
     if dry_run:
         print(f"dry-run: would annotate {path} with {state['rel']} "
               f"({len(state['board']['tickers'])} tickers)", flush=True)
+        return False
+    # COMPARE-AND-SWAP. Re-read LAST, so the evaluator's rewrite is detected
+    # here rather than overwritten below.
+    if _read_doc(path)[1] != seen:
+        print(f"::notice title={_TAG}::{path.name} was rewritten while this "
+              "pass was building its key — skipping rather than clobbering the "
+              "newer document (the next tick re-annotates)", flush=True)
         return False
     doc[STATE_KEY] = state
     return publish_served(path, doc)

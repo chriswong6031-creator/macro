@@ -26,7 +26,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from engine.close_pass.reconcile import confirmation_receipt  # noqa: E402
+from engine.close_pass.reconcile import (  # noqa: E402
+    board_state_payload,
+    confirmation_receipt,
+)
 from engine.prophet_live import r2io  # noqa: E402
 from scripts.close_pass_publish import BOARD_KEY  # noqa: E402
 
@@ -47,6 +50,44 @@ def load_nightly(root: Path) -> dict | None:
         print(f"::warning title={_TAG}::nightly board unreadable ({exc}) — "
               "no receipt", flush=True)
         return None
+
+
+def board_state_for(nightly: dict | None, *, now: datetime | None = None,
+                    fetch=None) -> dict | None:
+    """The ``board_state`` contract for a board doc IN HAND, or None.
+
+    THE SAME-BUILD HOP. ``run()`` below grades the board as it exists ON DISK,
+    which is the right shape for an artifact but the wrong shape for a render:
+    the receipt for session N can only be published after session N's board
+    lands, so a render that READ the published receipt would forever be showing
+    session N-1's figures under session N's cards — last night's arithmetic
+    under tonight's names. So the render does not read the receipt; it computes
+    one, here, from the board dict it is about to render, at the moment both
+    halves exist (the evening board has been on R2 since ~16:25 ET, and the
+    nightly board of record has just been built).
+
+    NOT A SECOND DEFINITION. ``confirmation_receipt`` is imported, never
+    reimplemented, and both call sites feed it the same two immutable documents
+    — the evening board's R2 object, and tonight's ``us_standouts`` — so the
+    rendered receipt and the published artifact cannot disagree about a night.
+
+    Every ordering hazard is answered by ONE property already inside
+    ``confirmation_receipt``: the two boards must name the same session. A
+    caller holding LAST night's board (the nightly's first pass reads the prior
+    build's file), or a night with no evening board at all (``behind``), or an
+    edge-cached provisional from a previous session — all present as an ``as_of``
+    disagreement, and all get None. No pairing this cannot vouch for renders.
+
+    ``fetch`` resolves at CALL time, not at def time: the render reaches this
+    through an import inside ``build_site``, so a default bound at import would
+    make the one network hop in the chain unreplaceable and force the render
+    test to stub the hop itself — proving the stub rather than the wiring.
+    """
+    if not nightly:
+        return None
+    get = fetch or r2io.get_json
+    return board_state_payload(
+        confirmation_receipt(get(BOARD_KEY), nightly, built_at=now))
 
 
 def run(root: Path, *, now: datetime, dry_run: bool = False,

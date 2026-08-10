@@ -84,6 +84,42 @@ OMITTED_LEGS: dict[str, str] = {
 WEIGHT_COVERED = sum(us_board_rank.SCORE_WEIGHTS[k] for k in CLOSE_DERIVED_LEGS)
 
 
+#: Every key a card row may carry, and NOTHING else (W-L1d).
+#:
+#: THE PAYLOAD SHIPS FACTS, THE CLIENT SHIPS WORDS. `verb`, the edge/priority
+#: figure and its label, every tip, chip and bilingual sentence are DERIVED
+#: client-side from `signal`/`runway` through the client's own lexicon. Two
+#: reasons, both load-bearing: a rendered word makes the payload
+#: language-specific (this artifact is polled by EN and ZH readers alike, and
+#: shipping both copies doubles a poll that every dashboard reader pays every
+#: 120s), and it would stand up a second owner of a vocabulary that already has
+#: one. A word in here is a bug even when the word is right.
+CARD_FIELDS = (
+    "tk", "sym", "mkt", "href", "date",
+    "name", "name_zh", "sec", "sec_zh",
+    "price_txt", "spark", "signal", "runway",
+)
+#: The subset a card cannot be RENDERED without. A row that cannot fill all of
+#: them leaves the board projection entirely rather than shipping half-filled
+#: under a `card_complete: true` flag — see `build_board`'s ruling.
+#:
+#: `runway` IS DELIBERATELY NOT HERE. A null runway is a legitimate display
+#: value meaning "not checked", which the client renders as such; requiring it
+#: would delete ~5 of 79 live rows from the board over a fact the card is able
+#: to state plainly. `signal` is required because it has no unmeasured case —
+#: `signal_value` reads the verdict this pass just computed.
+CARD_REQUIRED = ("tk", "sym", "mkt", "href", "name", "price_txt", "signal")
+
+#: The nightly's OWN ticker-page URL, read out of `templates/dashboard.html.j2`'s
+#: pv_card call site (`'href': 'stock.html#' ~ n.ticker`) rather than invented. A
+#: second URL convention would send the evening board's cards somewhere the
+#: morning board's cards do not go, and the reader would find the difference
+#: before we did.
+TICKER_PAGE = "stock.html"
+#: The card's market suffix, as that same call site passes it (`'mkt': 'us'`).
+MARKET = "us"
+
+
 #: When the nightly board of record is expected to be live, as a UTC wall time.
 #: daily.yml fires 22:30 UTC and runs for hours; the board of record has been
 #: landing by ~05:00-06:00 UTC. This is the BACKSTOP on how long "ahead of the
@@ -100,6 +136,88 @@ def valid_until(built_at: datetime) -> datetime:
                          minute=NIGHTLY_EXPECTED_BY_UTC.minute,
                          second=0, microsecond=0)
     return edge if edge > stamp else edge + timedelta(days=1)
+
+
+def _text(value: Any) -> str | None:
+    """A display string, or None. Empty and whitespace are NOT display values.
+
+    `_spark_svg` returns ``""`` for a series too short to draw and the universe
+    carries the odd blank name, so without this an empty string would sail
+    through the required-field check and render as a hole on the card.
+    """
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def card_row(row: Mapping[str, Any],
+             display: Mapping[str, Any] | None) -> dict | None:
+    """One admitted row + its display facts → a card row, or None if unfillable.
+
+    Returns None rather than a partial dict: a row that cannot fill
+    `CARD_REQUIRED` is dropped from the projection by `board_state`, which is
+    what keeps `card_complete: true` an honest claim about every row that ships
+    (W-L1d gate 3). Every `CARD_FIELDS` key is always PRESENT so the shape does
+    not vary row to row; the optional ones may be null.
+
+    `edge` IS NEVER EMITTED, and no 100-scale number appears here at all. The
+    board's edge leg is sector-neutralised and this pass cannot compute it
+    (OMITTED_LEGS); `points` is a figure on the real 100-point weights of which
+    this pass covers 40, so publishing it beside a card would read as the
+    nightly's score and would not be it. The client gets the two legs that ARE
+    computed, on their own [0,1] scale, and derives its own words from them.
+
+    `runway` may be NULL — meaning no extension reading existed, which the
+    client renders as "not checked" rather than as thin room. `close_legs` owns
+    that distinction and explains why it is not `0.0`.
+
+    `spark` SHIPS NULL, AND THE REASON IS THE POLL, NOT THE PIXEL (ruling
+    2026-08-09). Measured at the real board width of 131 rows, the `board_state`
+    key is 37,757 B raw / 6,351 B gzip without sparklines and 265,173 B /
+    39,142 B with them: ~1,700 B of SVG per card against ~281 B for all twelve
+    other fields combined, so charts are 86% of the payload. That payload rides
+    an artifact the dashboard polls every 120 s to detect a key that changes
+    ONCE A DAY — ~1.16 MB/hour/reader to notice a daily event. And the evening
+    chart is the weakest card element, not the strongest: its buy-zone band
+    derives from the omitted `entry` leg, so it renders bandless. Paying 86% of
+    the payload for a visibly degraded copy of the morning chart inverts the
+    cost/benefit.
+
+    IF CHARTS ARE EVER WANTED HERE, THE ANSWER IS NOT A TOP-N CAP. It is a
+    separate one-shot artifact fetched only when the stamp qualifies: 265 KB
+    once beats 39 KB × 30/hour for any session over ~15 minutes. A new `/live/*`
+    file inherits the `@reg_asset` paywall automatically, but it needs VPS
+    mirror work, so it is its own PR rather than a rider on this one. It also
+    preserves "one artifact, one poll, one client" — a conditional one-shot
+    fetch is not a second poll.
+    """
+    d = display or {}
+    ticker = row["ticker"]
+    price = d.get("price")
+    legs = row.get("legs") or {}
+    card = {
+        "tk": ticker,
+        # The nightly's US call site passes no `sym` and the card macro falls
+        # back to `tk`; they are the same string for a US name. Stated rather
+        # than left to the fallback so the live-quote overlay's `data-sym` is
+        # populated from data on both boards.
+        "sym": ticker,
+        "mkt": MARKET,
+        "href": f"{TICKER_PAGE}#{ticker}",
+        "date": _text(row.get("signal_asof")),
+        "name": _text(d.get("name")),
+        "name_zh": _text(d.get("name_zh")),
+        "sec": _text(d.get("sec")),
+        "sec_zh": _text(d.get("sec_zh")),
+        "price_txt": None if price is None else f"${float(price):.2f}",
+        "spark": _text(d.get("spark")),
+        "signal": legs.get("signal"),
+        "runway": legs.get("runway"),
+    }
+    if any(card[k] is None for k in CARD_REQUIRED):
+        return None
+    return card
 
 
 def board_state(payload: Mapping[str, Any], *, rel: str = "ahead") -> dict:
@@ -131,46 +249,94 @@ def board_state(payload: Mapping[str, Any], *, rel: str = "ahead") -> dict:
     if rel not in ("ahead", "behind"):
         raise ValueError(f"rel must be 'ahead' or 'behind', not {rel!r}")
     built = datetime.fromisoformat(payload["built_at"].replace("Z", "+00:00"))
+    complete = bool((payload.get("consumer_contract") or {}).get("card_complete"))
+    # PARALLEL BY CONSTRUCTION, never by convention. `tickers` and `cards` are
+    # taken from ONE filtered list in ONE pass, so there is no second traversal
+    # that could drift and no order to keep in sync by hand. When the board is
+    # not card-complete the projection degrades to exactly what it published
+    # before W-L1d — the full ticker list and no `cards` key at all, which is
+    # the shape the client already refuses to render cards from.
+    rendered = ([row for row in payload["names"] if row.get("card")] if complete
+                else list(payload["names"]))
+    board = {
+        "as_of": payload["as_of"],
+        "lane": payload["lane"],
+        "card_complete": complete,
+        "tickers": [row["ticker"] for row in rendered],
+    }
+    if complete:
+        board["cards"] = [row["card"] for row in rendered]
     return {
         "rel": rel,
         "note": rel,
         "generated_at": payload["built_at"],
         "valid_until": valid_until(built).isoformat().replace("+00:00", "Z"),
-        "board": {
-            "as_of": payload["as_of"],
-            "lane": payload["lane"],
-            "tickers": [row["ticker"] for row in payload["names"]],
-        },
+        "board": board,
     }
 
 
 def close_legs(verdict: Mapping[str, Any] | None,
-               ext: Mapping[str, Any] | None) -> dict[str, float]:
+               ext: Mapping[str, Any] | None) -> dict[str, float | None]:
     """The close-derived legs, scored by the board's OWN leg functions.
 
     ``ext`` is one ``engine.extension.extension_signals`` row; its ``ext_z`` and
     the antichase flag derived from it are the whole of ``runway``'s input.
+
+    ``runway`` IS NULL WHEN NOTHING MEASURED IT, AND THAT IS NOT THE SAME AS 0.
+    ``us_board_rank.runway_value`` returns ``0.0`` for three different facts —
+    no extension reading at all, an antichase-blocked row, and a genuinely
+    extended one. For a SCORE that collapse is exactly right: zero points is
+    zero points, and the fail-closed rule is deliberate. For a DISPLAY it is a
+    false statement, because the client reads a low runway as "thin room" and
+    would tell a reader a name is stretched when nobody measured it.
+
+    So the unmeasured case is separated back out HERE rather than in
+    ``runway_value``: ``0.0`` remains the correct score for all three, and
+    changing that function would move the nightly's own arithmetic across every
+    US board row. The split costs the score nothing — see ``_points``.
+
+    THE ANTICHASE CASE IS NOT A THIRD FACT IN THIS LANE, so it needs no third
+    answer: the flag is not read from an upstream pass, it is DERIVED two lines
+    below as ``ext_z > EXT_Z_FULL`` — true exactly when the name is genuinely
+    extended, which is the case that honestly means "no room left". It scores
+    and displays ``0.0``. If a real upstream antichase signal is ever fed into
+    this lane, it becomes a genuinely third fact and must be re-decided here.
     """
     ext = ext or {}
+    # ONE predicate for "is there an extension reading at all", borrowed from
+    # the scorer rather than restated, so `unmeasured` cannot come to mean one
+    # thing here and another there. It rejects None, NaN, inf, bools and
+    # non-numeric garbage alike — the last of which the previous `float(...)`
+    # call would have raised on.
+    ext_z = us_board_rank._finite_float(ext.get("ext_z"))
     row = {
-        "ext_z": ext.get("ext_z"),
+        "ext_z": ext_z,
         # Derived here rather than read: the builder stamps this field far
         # downstream, and a close-pass row has not been through that pass. Same
         # threshold, named from the same constant, so the two cannot drift.
         "antichase_shadow_blocked": (
-            None if ext.get("ext_z") is None
-            else bool(float(ext["ext_z"]) > us_board_rank.EXT_Z_FULL)
+            None if ext_z is None else bool(ext_z > us_board_rank.EXT_Z_FULL)
         ),
     }
     return {
         "signal": round(us_board_rank.signal_value(verdict), 6),
-        "runway": round(us_board_rank.runway_value(row), 6),
+        # A measured 0.0 (fully extended) still ships 0.0 — the fix separates
+        # "unmeasured" from "no room", it does not null everything that is low.
+        "runway": (None if ext_z is None
+                   else round(us_board_rank.runway_value(row), 6)),
     }
 
 
-def _points(legs: Mapping[str, float]) -> float:
-    """Legs in [0,1] → points, on the board's real weights (never renormalised)."""
-    return round(sum(us_board_rank.SCORE_WEIGHTS[k] * float(v)
+def _points(legs: Mapping[str, float | None]) -> float:
+    """Legs in [0,1] → points, on the board's real weights (never renormalised).
+
+    A NULL DISPLAY LEG STILL SCORES 0.0, so this returns exactly what it
+    returned before `close_legs` learned to say "unmeasured": the ordering,
+    `points` and `provisional_rank` are unchanged by that distinction. The
+    display fact and the score leg are different questions that happen to share
+    a number, and only the display one moved.
+    """
+    return round(sum(us_board_rank.SCORE_WEIGHTS[k] * (0.0 if v is None else float(v))
                      for k, v in legs.items()), 4)
 
 
@@ -182,6 +348,7 @@ def build_board(
     built_at: datetime,
     adjustment_by: Mapping[str, str] | None = None,
     price_through: Mapping[str, str] | None = None,
+    display_by: Mapping[str, Mapping[str, Any]] | None = None,
     universe_n: int | None = None,
     skipped: Mapping[str, int] | None = None,
 ) -> dict:
@@ -190,6 +357,14 @@ def build_board(
     Pure: no I/O, no clock read, no ``data/`` path. Every caller (the lane, the
     tests, a replay) gets the same payload for the same inputs, which is what
     makes the confirmation delta a measurement rather than an opinion.
+
+    ``display_by`` carries the per-name DISPLAY FACTS a card needs and this
+    module deliberately cannot fetch: name, sector, last price, sparkline. It is
+    an argument rather than a lookup because everything here stays pure — the
+    lane that already opens the price store gathers them in the same pass
+    (``scripts.close_pass_publish.collect``) and hands them in. Omit it entirely
+    and the payload is honestly NOT card-complete, which is what every caller
+    that only wants membership and legs (the reconciler, a replay) still gets.
 
     ``adjustment_by`` names each name's PRICE BASIS (W-L0 gate 3 — name the
     adjustment at every seam). It is per-name and not a single lane-wide string
@@ -235,6 +410,25 @@ def build_board(
     admitted.sort(key=lambda r: (-r["points"], r["ticker"]))
     for i, row in enumerate(admitted, start=1):
         row["provisional_rank"] = i
+        if display_by is not None:
+            # Cards are built for ADMITTED rows only. An evaluated-but-not-
+            # admitted row is a diagnostic record, never a rendered card, so
+            # building one would be work whose only consumer is the file size.
+            card = card_row(row, display_by.get(row["ticker"]))
+            if card is not None:
+                row["card"] = card
+
+    # `card_complete` IS A CLAIM ABOUT EVERY ROW THAT SHIPS, so it is computed
+    # from the cards actually built and never asserted from the fact that
+    # display inputs arrived. A row that could not fill a required field is
+    # dropped from the projection (board_state) and counted here rather than
+    # shipped half-filled under a true flag — the alternative the W-L1d ruling
+    # allows, darkening the WHOLE board over one blank name, would throw away
+    # ~130 good cards to disclose one bad one. Membership of record is
+    # untouched: the row keeps its place in `names` and `evaluated`, so the
+    # reconciler still grades it. Only the client's grid is short.
+    cards_n = sum(1 for r in admitted if r.get("card"))
+    card_complete = display_by is not None and cards_n > 0
 
     bases = sorted({r["price_basis"] for r in rows})
     return {
@@ -266,7 +460,13 @@ def build_board(
         # populate a card must not license a stamp claiming the cards are
         # tonight's. Flag it in the data rather than in a comment nobody reads.
         "consumer_contract": {
-            "card_complete": False,
+            "card_complete": card_complete,
+            "card_fields": list(CARD_FIELDS),
+            "card_required": list(CARD_REQUIRED),
+            "cards_n": cards_n,
+            # Disclosed, not silent: the count of admitted names the client will
+            # NOT show because a required display fact was missing.
+            "cards_dropped_n": len(admitted) - cards_n,
             "row_fields": sorted(rows[0]) if rows else [],
         },
         "names": admitted,

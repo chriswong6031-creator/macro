@@ -98,6 +98,7 @@ def collect(session: str) -> dict[str, Any]:
     """
     from engine import signal_gate  # noqa: PLC0415
     from engine.extension import extension_signals  # noqa: PLC0415
+    from engine.i18n import tr  # noqa: PLC0415
     from lib import delisted_symbols  # noqa: PLC0415
     from scripts.build_stock_library import (  # noqa: PLC0415
         extension_panels, universe, universe_price_adjustment,
@@ -110,8 +111,9 @@ def collect(session: str) -> dict[str, Any]:
     verdicts: dict[str, dict] = {}
     closes: dict[str, Any] = {}
     through: dict[str, str] = {}
+    display: dict[str, dict] = {}
     skipped: dict[str, int] = {}
-    for ticker, close, _high, _name, _sector in uni:
+    for ticker, close, _high, name, sector in uni:
         # The nightly's B1 guard (_authority_admits): a delisted name must never
         # enter a scoring-authority collection. The demote-map half of that guard
         # is not reachable here — it is derived from the per-name analyze pass
@@ -133,8 +135,48 @@ def collect(session: str) -> dict[str, Any]:
         if through[ticker] != session:
             skipped["no_todays_bar"] = skipped.get("no_todays_bar", 0) + 1
             continue
-        verdicts[ticker] = signal_gate.gate(ticker, close)
+        verdict = signal_gate.gate(ticker, close)
+        verdicts[ticker] = verdict
         closes[ticker] = close
+
+        # Display facts, gathered ONLY for names the gate admits — the same
+        # `is_buyable` call build_board ranks on, so the two sets agree. The
+        # universe is ~1,660 names and the board is ~130, so this skips ~1,530
+        # lookups on a lane with ~30 minutes of the 18:30 SLA to spend.
+        if signal_gate.is_buyable(verdict):
+            px = close.iloc[-1]
+            display[ticker] = {
+                "name": name,
+                # NULL BY RULING, not by reachability (2026-08-09). A committed
+                # 1,583-ticker map exists (config/us_names_zh.json) and this
+                # lane could read it — but the nightly's US cards pass no
+                # `name_zh` at all, so filling it here would flip a company's
+                # NAME between languages overnight: 苹果 in the evening, Apple
+                # Inc in the morning. This whole surface exists to answer "which
+                # board am I looking at"; a name that changes language attacks
+                # that question, and it would land on exactly the readers the
+                # stamp is for. Evening/morning consistency outranks evening-only
+                # zh quality. Wiring the map into the NIGHTLY is the real fix —
+                # it changes every US card, so it needs its own PR and its own
+                # visual proof, not a side effect of the evening board.
+                "name_zh": None,
+                # A sector LABEL, which is a mapping. NOT the sector-neutralised
+                # `edge` leg, which needs a full-universe cross-section and stays
+                # in OMITTED_LEGS — the two are different objects that share a
+                # word. `tr` is the same call the nightly template makes, so this
+                # one carries no evening/morning inconsistency.
+                "sec": sector,
+                "sec_zh": tr(sector) if sector else None,
+                # NaN never reaches the payload: json.dumps(allow_nan=False)
+                # would raise on it and take the whole publish down, and "$nan"
+                # would render on the card if it did not.
+                "price": None if pd.isna(px) else float(px),
+                # NULL BY RULING (2026-08-09), on measured cost/benefit — see
+                # `card_row`'s note. Not a TODO and not a cap: if the design
+                # later needs charts, the move is a SEPARATE one-shot artifact
+                # fetched only when the stamp qualifies, never a fatter poll.
+                "spark": None,
+            }
 
     # Equities and 24/7 crypto are read on their OWN calendars. One mixed panel
     # takes a single global .iloc[-1] and drops every ticker whose latest cell is
@@ -149,7 +191,8 @@ def collect(session: str) -> dict[str, Any]:
             ext_by.update(extension_signals(cx))
 
     return {"verdicts": verdicts, "ext_by": ext_by, "adjustment_by": adjustment_by,
-            "price_through": through, "universe_n": len(uni), "skipped": skipped}
+            "price_through": through, "display_by": display,
+            "universe_n": len(uni), "skipped": skipped}
 
 
 def build_payload(session: str, now: datetime, inputs: dict[str, Any]) -> dict:
@@ -158,6 +201,9 @@ def build_payload(session: str, now: datetime, inputs: dict[str, Any]) -> dict:
         session=session, built_at=now,
         adjustment_by=inputs["adjustment_by"],
         price_through=inputs["price_through"],
+        # Absent (a collector that predates W-L1d, a replay) → the payload is
+        # honestly not card-complete rather than card-complete-with-holes.
+        display_by=inputs.get("display_by"),
         universe_n=inputs["universe_n"],
         skipped=inputs["skipped"],
     )
@@ -246,9 +292,17 @@ def run(*, now: datetime, dry_run: bool = False, force: bool = False,
     inputs = collector(session)
     payload = build_payload(session, now, inputs)
     meta = payload["meta"]
+    contract = payload["consumer_contract"]
     print(f"{_TAG} {session}: {meta['admitted_n']} admitted of "
           f"{meta['evaluated_n']} evaluated (universe {meta['universe_n']}); "
-          f"skipped {meta['skipped'] or '{}'}", flush=True)
+          f"skipped {meta['skipped'] or '{}'}; cards {contract['cards_n']} "
+          f"complete={contract['card_complete']}", flush=True)
+    # An admitted name the reader will not see is a fact the operator should
+    # learn from the run, not from a support ticket.
+    if contract["cards_dropped_n"]:
+        _warn(f"{contract['cards_dropped_n']} admitted name(s) carry no card "
+              "(a required display field was missing) — they are on the board "
+              "of record but not in the client's grid")
 
     if not meta["evaluated_n"]:
         # Zero evaluable names is a broken store, not an empty market. Publishing
