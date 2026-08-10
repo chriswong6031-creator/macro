@@ -72,6 +72,26 @@ signal-era fence (`signal_layer` emission version bump, mirroring `hk_prophet_v2
 `BOARD_DEFINITION` pattern) so pre/post events never pool; slice `schema` field carries the version.
 Prophet-side reclaim-veto conditional: separate prereg, `us_prophet_v1→v2`, per packet §9.
 
+## §6 AMENDMENT 1 — local-systemic altitude (frozen 2026-08-10 ~07:1xZ, before round-2 results)
+
+**Operator objection (2026-08-10, accepted):** the SPY-drawdown gate is the wrong altitude in a
+rotational tape — the index sits at highs while names/baskets crash, so the §2-discovered sysA rule
+would refuse all six live exemplars. SPY-systemic is DEMOTED to a disclosed venue. Round-2 axes,
+index-free, gates frozen before any round-2 number is viewed (second look, labeled; A1/A2 are the
+only promotion-bearing tests of this amendment):
+
+- **A1 — local (sector/complex) systemic:** blocked fires where the same-sector peer-median
+  drawdown from the 252d high exceeds 20% (threshold and the sector-label source tunable/selectable
+  on the design era only; sector coverage % reported with a ≥60% floor, unmapped names excluded not
+  defaulted). Gates (held-out 2019+, date-clustered B=2000 CIs): expectancy R CI > 0 AND
+  (local-systemic − complement) difference CI > 0.
+- **A2 — washout breadth:** same-date blocked-fire count at or above the design-era 80th percentile
+  (panel-size-normalized). Same two gates.
+- **A3 (descriptive, no gate):** coverage — would A1∪A2 have admitted the six live exemplars'
+  fire dates (to local-tape edge), and what share of held-out blocked fires each axis admits.
+- Composite scores remain forbidden (DNR:KILL-REGIME-SCORECARD) — A1 and A2 are two plain
+  measures adjudicated separately; no fusion, no weights.
+
 ## §5 Ratification log
 
 - **2026-08-10 ~06:4xZ — ADJUDICATED** (results:
