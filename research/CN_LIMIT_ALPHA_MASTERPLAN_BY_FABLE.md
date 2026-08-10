@@ -563,3 +563,40 @@ ChiNext/STAR a 20% board IS the blast-off; on main the scorer likely wants the W
 integration into Prophet's LIVE scoring passes the gauntlet (pre-registered gates on the
 pick universe, both forward ledgers' live grading, and the standing law that the LLM/scorer
 may only de-escalate calibrated keys — signals originate from measured artifacts only).
+
+### §10.1 CONSTRUCTION SHARPENED (operator, 2026-08-10 — the thesis stated in full; this
+subsection outranks §10's lane list where they differ)
+
+**The operator's clarification, binding:** continuation is NOT the thesis — riding an
+active ladder is the RETAIL side of the trade (limit-down reversal risk; "Russian
+roulette"), and the program's own §6.1/§6.4 numbers are the measurement of that fleecing
+(anti-monotone expectancy; hot regimes lose more). The ledger keeps accruing as a
+calibration scoreboard — display-tier, zero marginal cost, never a promotion candidate.
+
+**The thesis construction — pre-first-board onset from washout/basing states:**
+- **Outcome class:** the FIRST board (ladder N: 0→1), and beside it the blast-off WINDOW
+  class (W3-A rerating windows) — per board, never pooled (W3-A target-class law).
+- **Conditioning states (the ore map; "sky is the limit" exploratory latitude applies):**
+  (i) Golden-Oracle-style momentum confluence — MACD-RSI + Stoch-RSI on 2D/3D bars, using
+  the Terminal repo's OWN indicator definitions (extract from charting-app; never reinvent
+  — testing THEIR construction is the point); variants and relaxations explicitly in scope;
+  (ii) washout states — drawdown depth/duration from rolling highs, sessions under the
+  200MA, base length, SECTOR-WIDE washout breadth; (iii) washout-maturity per the existing
+  `engine/china_basket_turn.py` lifecycle machinery; (iv) **accumulation footprints** —
+  vol-z during the base, cyq_perf win-rate trajectory, and (as history accrues) the
+  cyq_chips 筹码分布 concentration shifts — the direct instrument for the operator's
+  insider-accumulation mechanism; (v) combinations (confluence × washout depth ×
+  accumulation), because the mechanism story is conjunctive.
+- **Mechanism hypothesis recorded (two-fold, operator's words distilled):** (a) sector-wide
+  washout reversion; (b) deliberate hammer-down during negative sentiment → insider/
+  institutional accumulation below intrinsic value → news release → rapid repricing. The
+  accumulation phase leaves footprints in volume/momentum/chip structure BEFORE the board —
+  finding those footprints IS the program.
+- **The Prophet-shaped deliverable:** among names IN a conditioning state, which features
+  rank the eventual boarders (day-weighted top-K precision on the state universe) — the
+  scorer-uplift preview that P-A then re-measures on the actual Prophet pick panel.
+- **Status honesty (recorded so no session re-litigates):** as of 2026-08-10 this study has
+  NEVER been run and NEVER failed — every prior kill was an ENTRY family on post-ignition
+  cohorts; the shipped onset model is ladder-conditioned (N≥1). W-P0 (washout/confluence-
+  conditional first-board study) is the program's #1 measurement item, ahead of every
+  continuation refinement.
