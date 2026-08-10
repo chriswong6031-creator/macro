@@ -406,6 +406,15 @@ on:
       - "tests/test_chain_snapshot_poller.py"
       - "ops/CHAIN_SNAPSHOTS_RUNBOOK.md"
       - "ops/launchd/com.mastermind.chainsnapshots.plist"
+      # W0b focused vendor-snapshot quote: explicit W0a-B completion proof,
+      # immutable semantic attempt/receipt, private CAS, and hostile no-repoll.
+      - "collectors/thetadata.py"
+      - "engine/options_focused_quote.py"
+      - "scripts/build_options_focused_quote.py"
+      - "contracts/options/options.focused_quote_attempt.v1.schema.json"
+      - "contracts/options/options.contract_eligibility.index.v1.schema.json"
+      - "tests/test_options_focused_quote.py"
+      - "research/options_estate/OPTIONS_FOCUSED_QUOTE_R2_RUNBOOK.md"
       # OIP PIT decision/outcome ledger: both the durable R2 source and the
       # nightly consumer/contracts must trigger the exact adversarial suite.
       - "engine/options_signal_episode.py"
