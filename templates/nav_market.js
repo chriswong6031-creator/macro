@@ -214,13 +214,9 @@
             '宏观仪表盘', '当前周期、增长与通胀'],
           ['Stock Dashboard', 'Standouts, sectors and flows', 'us_stocks.html', 'stocks',
             '股票仪表盘', '领涨股、板块与资金流'],
-          // OIP W1 §1.3: Daily Movers sits beside the Stock Dashboard (stock-level
-          // content), verbatim copy from _navlinks.html.j2's own relocated row.
-          ['Daily Movers', 'Free · biggest gainers & losers today · themes moving together',
-            'movers.html', 'stocks', '每日异动', '免费 · 今日涨跌最大 · 联动主题'],
           // OIP W1.6-B: Intraday Flow Tracker moves OUT of the options section to
-          // sit beside Daily Movers, mirroring _navlinks.html.j2's own relocation —
-          // it is a live session board, not an options page. The 8th element is
+          // sit beside the Stock Dashboard, mirroring _navlinks.html.j2 — it is a
+          // live session board, not an options page. The 8th element is
           // still its href gate, so it stays as conditional here as in the template.
           ['Intraday Flow Tracker', 'Live session board — volume, tape and stance lanes · ≈15-min delayed',
             'intraday_flow.html', 'dashboard', '盘中资金流追踪', '盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟',

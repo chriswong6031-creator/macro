@@ -6538,14 +6538,6 @@ def main() -> int:
     except Exception as _mmp_e:  # noqa: BLE001 — additive; never break main build
         log.warning("market_memory.html render failed (%s); page skipped", _mmp_e)
 
-    # D10 — free daily movers page + og:image card
-    # Must run AFTER sp500_heatmap.json and themes_heatmap.json are written above.
-    try:
-        import scripts.build_movers_page as _mvp
-        _mvp.render(config.ROOT)
-    except Exception as e:  # noqa: BLE001
-        print(f"::warning title=movers_page::movers page render failed: {e}")
-
     # SEO — regenerate core sitemap entries (non-/stocks/) with full page coverage
     # and www-canonical URLs. Runs after all pages are written so discovery is
     # complete. build_ticker_pages.build_sitemap() preserves non-/stocks/ entries

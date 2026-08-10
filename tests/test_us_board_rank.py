@@ -94,7 +94,31 @@ class TestFrozenConstants:
         assert sum(ubr.SCORE_WEIGHTS.values()) == 100.0
 
     def test_definition_string(self):
-        assert ubr.BOARD_DEFINITION == "us_prophet_v1"
+        """The ERA FENCE.  Bumped v1 -> v2 on 2026-08-10 with the ratified counter-trend
+        reclaim waiver (`research/RECLAIM_VETO_CONDITIONAL_PREREG.md` §4 Arm P / §5, notch
+        20; fence pre-specified by `research/prophet_us_audit/RECLAIM_VETO_PACKET_
+        2026-08-05.md` §7).  An ADMISSION change makes v1 and v2 different products, so this
+        string is what keeps their forward ledgers from pooling — the same move HK made at
+        `hk_prophet_v2` (#4470).  Do not update this assertion to match the constant without
+        a ratified admission change to point at."""
+        assert ubr.BOARD_DEFINITION == "us_prophet_v2"
+
+    def test_the_displaced_era_stamp_was_appended_in_the_same_pr(self):
+        """A bump that forgets the displaced stamp orphans every row already written under
+        it: #4509 did exactly that on the CN board and 72 rows fell out of every cohort
+        (`scripts/build_china_library._CN_SUPERSEDED_ERA_STAMPS` carries that scar).  The
+        live stamp must never appear in the superseded list, and the list must never be
+        empty once a bump has happened."""
+        assert "us_prophet_v1" in ubr.SUPERSEDED_ERA_STAMPS
+        assert ubr.BOARD_DEFINITION not in ubr.SUPERSEDED_ERA_STAMPS
+        assert len(set(ubr.SUPERSEDED_ERA_STAMPS)) == len(ubr.SUPERSEDED_ERA_STAMPS)
+
+    def test_the_waiver_that_earned_the_bump_is_wired_to_the_ratified_notch(self):
+        """The fence and the admission change are one act — a stamp bump with no waiver
+        behind it (or a waiver at an unratified notch) is a fence around nothing."""
+        from engine import signal_quality as sq
+        assert sq.WASHOUT_NOTCH == "20"
+        assert sq.RECLAIM_WAIVED and sq.RECLAIM_WAIVED != sq.CT_RECLAIM_FAIL
 
     def test_caps(self):
         assert (ubr.FEATURED_CAP, ubr.SECTOR_CAP, ubr.RAN_CAP) == (12, 4, 12)
@@ -1295,7 +1319,10 @@ class TestRankingBlock:
         # not what lets this row through; featured_count == 1 either way now.
         scored = ubr.score_rows([_row("A", ext_z=0.0)], board_asof="2026-07-31")
         block = ubr.ranking_block(scored)
-        assert block["definition"] == "us_prophet_v1"
+        # Read from the PRODUCER, not a literal: this assertion exists to prove the block
+        # carries the live era stamp, and a hand-copied string turns that into a test of
+        # the copy (the exact drift `tests/test_china_standouts_serialization.py` documents).
+        assert block["definition"] == ubr.BOARD_DEFINITION == "us_prophet_v2"
         assert block["score_kind"] == ubr.SCORE_KIND
         assert {p["component"] for p in block["formula_points"]} == set(
             ubr.SCORE_WEIGHTS)
@@ -2581,7 +2608,11 @@ class TestCommittedArtifactIntegration:
             for key in ("stage", "featured", "new", "score_rank", "display_rank",
                         "prophet", "days_since_signal", "days_since_signal_basis"):
                 assert key in r, key
-            assert r["prophet"]["version"] == "us_prophet_v1"
+            # Read from the PRODUCER: `score_rows` stamps this from BOARD_DEFINITION, so a
+            # hand-copied literal here turns an era-stamp test into a test of the copy —
+            # and would have gone red on the us_prophet_v1 -> v2 bump (2026-08-10) for a
+            # reason that had nothing to do with the display contract this test is about.
+            assert r["prophet"]["version"] == ubr.BOARD_DEFINITION
             assert isinstance(r["featured"], bool) and isinstance(r["new"], bool)
             assert r["days_since_signal_basis"] in ("sessions", "calendar", None)
         assert [r["display_rank"] for r in rows] == list(range(1, len(rows) + 1))

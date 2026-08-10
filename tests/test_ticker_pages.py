@@ -1674,6 +1674,15 @@ class TestTemplateRender:
                 "search": stocks_hub.search_index(rows),
                 "directory": stocks_hub.directory(rows),
                 "sector_keys": [],
+                "themes_asof": "2026-08-07",
+                "themes": [{
+                    "name": "Artificial Intelligence", "tone": "up",
+                    "avg_pc": "+3.25%", "asof": "2026-08-07",
+                    "members": [
+                        {"t": "AAPL", "pc": "+2.50%", "tone": "up"},
+                        {"t": "MSFT", "pc": "+4.00%", "tone": "up"},
+                    ],
+                }],
             },
         )
         assert html
@@ -1691,6 +1700,13 @@ class TestTemplateRender:
         assert 'data-placeholder-zh="搜索 2 只个股"' in html
         assert "Search 2 dossiers / 搜索" not in html
         assert 'document.addEventListener("langchange", syncSearchPlaceholder);' in html
+        assert 'id="today-movers"' in html
+        assert 'id="themes"' in html
+        assert "Themes moving together" in html
+        assert "Artificial Intelligence" in html
+        assert "2026-08-07" in html
+        for ticker in ("AAPL", "MSFT"):
+            assert f'class="th-chip" href="{ticker}.html"' in html
 
     def test_index_template_no_validated_word(self):
         """'validated' must not appear in index page."""

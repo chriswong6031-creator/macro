@@ -28,8 +28,8 @@ from typing import Any
 from engine.market_heatmap import _ADV_BAND
 
 __all__ = [
-    "breadth", "day_shape", "boards", "sector_ledger", "treemap",
-    "search_index", "directory", "squarify",
+    "breadth", "day_shape", "boards", "theme_ribbons", "sector_ledger",
+    "treemap", "search_index", "directory", "squarify",
 ]
 
 # ── "the day's shape" geometry ──────────────────────────────────────────────
@@ -247,6 +247,67 @@ def boards(rows: Sequence[Mapping], *, n: int = 8,
                  metric=(_f(r.get("chg")) or 0.0), mx=mx)
             for r in sel
         ]
+    return out
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Themes moving together
+# ═══════════════════════════════════════════════════════════════════════════
+def theme_ribbons(data: Mapping | None, *, linkable: frozenset[str],
+                  n_themes: int = 6, n_members: int = 8) -> list[dict]:
+    """Shape the marketing theme tape for the consolidated stock hub.
+
+    ``engine.marketing.movers_source`` remains the one authority for grouping,
+    direction, ranking, deduplication and session provenance.  This adapter only
+    makes that output safe for ``/stocks/``: every displayed member must have a
+    dossier in the same render, so the retired stand-alone page's inert chips can
+    never return as dead links.
+
+    A ribbon needs at least two linkable members.  The source has already required
+    four names to move in the same direction; after applying the dossier boundary,
+    one surviving name would no longer communicate a group moving together.
+    """
+    if not data or not linkable:
+        return []
+
+    from engine.marketing.movers_source import theme_lists
+
+    allowed = frozenset(str(t).upper() for t in linkable)
+    raw = theme_lists(dict(data), tf="1D", n=n_members)
+    out: list[dict] = []
+    for item in raw:
+        members: list[dict] = []
+        member_pcts: list[float] = []
+        for member in item.get("members") or []:
+            ticker = str(member.get("ticker") or "").upper()
+            pct = _f(member.get("pct"))
+            if not ticker or ticker not in allowed or pct is None:
+                continue
+            member_pcts.append(pct)
+            members.append({
+                "t": ticker,
+                "pc": f"{pct:+.2f}%",
+                "tone": "up" if pct >= 0 else "dn",
+            })
+
+        if len(members) < 2:
+            continue
+        # The source aggregate spans the complete upstream theme membership.
+        # This page shows a dossier-bounded subset, so label the average of the
+        # names the reader can actually see rather than borrowing a hidden set's
+        # number (Commodities, for example, can differ by several percentage
+        # points after the linkability boundary).
+        agg = sum(member_pcts) / len(member_pcts)
+        direction = "up" if str(item.get("direction")) == "up" else "dn"
+        out.append({
+            "name": str(item.get("theme") or ""),
+            "tone": direction,
+            "avg_pc": f"{agg:+.2f}%" if agg is not None else "—",
+            "members": members,
+            "asof": item.get("asof"),
+        })
+        if len(out) >= n_themes:
+            break
     return out
 
 

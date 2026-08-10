@@ -48,6 +48,42 @@ _SECTION_RE = re.compile(r"^##\s+(\d+)\.")
 _SEPARATOR_RE = re.compile(r"^[-:]+$")
 
 
+_CN_ADJUSTED_TAPE_WITHDRAWN_PATHS = (
+    # The exact 14 artifacts mistakenly restored by #5198 after #5092 withdrew them.
+    "research/cn_prophet_audit/BOARD_ECOLOGY_REGIME_V1_2026-08-08.json",
+    "research/cn_prophet_audit/BOARD_ECOLOGY_REGIME_V1_2026-08-08.md",
+    "research/cn_prophet_audit/CONTINUATION_RIDER_V1_2026-08-08.json",
+    "research/cn_prophet_audit/CONTINUATION_RIDER_V1_2026-08-08.md",
+    "research/cn_prophet_audit/ONSET_CALIBRATION_V1_2026-08-08.json",
+    "research/cn_prophet_audit/ONSET_CALIBRATION_V1_2026-08-08.md",
+    "research/cn_prophet_audit/WEAKNESS_ENTRY_BATTERY_V1_2026-08-09.json",
+    "research/cn_prophet_audit/WEAKNESS_ENTRY_BATTERY_V1_2026-08-09.md",
+    "research/cn_prophet_audit/board_ecology_regime_v1.py",
+    "research/cn_prophet_audit/board_ecology_series_v1.parquet",
+    "research/cn_prophet_audit/continuation_rider_v1.py",
+    "research/cn_prophet_audit/onset_calibration_v1.py",
+    "research/cn_prophet_audit/onset_forward_ledger.jsonl",
+    "research/cn_prophet_audit/weakness_entry_battery_v1.py",
+    # Direct executable/result descendants that cannot exist without those artifacts.
+    "research/cn_prophet_audit/CONTINUATION_REGIME_MERGE_V1_2026-08-09.json",
+    "research/cn_prophet_audit/CONTINUATION_REGIME_MERGE_V1_2026-08-09.md",
+    "research/cn_prophet_audit/continuation_regime_merge_v1.py",
+    "research/cn_prophet_audit/ONSET_FILLABILITY_RESTATEMENT_V1_2026-08-09.json",
+    "research/cn_prophet_audit/ONSET_FILLABILITY_RESTATEMENT_V1_2026-08-09.md",
+    "research/cn_prophet_audit/onset_fillability_restatement_v1.py",
+    "research/cn_prophet_audit/REGIME_CALIBRATION_V2_2026-08-09.json",
+    "research/cn_prophet_audit/REGIME_CALIBRATION_V2_2026-08-09.md",
+    "research/cn_prophet_audit/regime_calibration_v2.py",
+    "research/cn_prophet_audit/WINDOW_TARGET_BATTERY_V1_2026-08-09.json",
+    "research/cn_prophet_audit/WINDOW_TARGET_BATTERY_V1_2026-08-09.md",
+    "research/cn_prophet_audit/window_target_battery_v1.py",
+    # The page introduced after the withdrawal read the withdrawn forward ledger.
+    "scripts/build_cn_limit_picks.py",
+    "templates/cn_limit_picks.html.j2",
+    "site/cn_limit_picks.html",
+)
+
+
 _CELL_BOUNDARY_RE = re.compile(r"(?<!\\)\|")
 
 
@@ -146,6 +182,70 @@ class TestRealRegistryKeys:
             "zip() truncates the overflow and shifts every column left, so this ships "
             f"as a well-formed-looking entry: {bad}"
         )
+
+
+class TestCnAdjustedTapeStopShip:
+    """The #5092 withdrawal is a tree invariant, not a prose-only warning.
+
+    #5198 later restored byte-exact copies of the withdrawn artifacts and #5205
+    built a user-facing page from their forward ledger.  Keeping the kill row while
+    leaving those executable/results paths in-tree made the ruling self-contradictory.
+    These checks force a future recovery to reopen the authorized exact-price plane
+    instead of silently restoring adjusted-price archaeology.
+    """
+
+    def test_withdrawn_artifacts_and_direct_descendants_stay_absent(self):
+        root = _repo_root()
+        restored = [path for path in _CN_ADJUSTED_TAPE_WITHDRAWN_PATHS if (root / path).exists()]
+        assert not restored, (
+            "adjusted-price CN limit-alpha artifacts restored despite "
+            "DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT: " + ", ".join(restored)
+        )
+
+    def test_registry_binds_the_erroneous_recovery_and_exact_reopen_plane(self):
+        compiler = _load_compiler()
+        md = (_repo_root() / "research" / "DO_NOT_REBUILD.md").read_text(encoding="utf-8")
+        matches = [
+            entry
+            for entry in compiler.parse_do_not_rebuild(md)
+            if entry.get("key") == "KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT"
+        ]
+        assert len(matches) == 1
+        contract = " ".join(str(value) for value in matches[0].values()).lower()
+        assert "#5198" in contract
+        assert "14 artifacts" in contract
+        assert "unadjusted tushare" in contract
+        assert "stk_limit" in contract
+        assert "integer-cent equality" in contract
+        assert "nothing from either adjusted-price vintage" in contract
+        assert "may be graded, ranked, gated, sized, alerted, traded, promoted" in contract
+
+    def test_handoffs_are_tombstones_and_masterplan_is_visibly_superseded(self):
+        root = _repo_root()
+        docs = (
+            "research/CN_LIMIT_ALPHA_CONTINUATION_HANDOFF_2026-08-09.md",
+            "research/CN_LIMIT_ALPHA_CONTINUATION_HANDOFF_2026-08-09B.md",
+        )
+        for path in docs:
+            text = (root / path).read_text(encoding="utf-8")
+            assert "Status: **superseded; STOP-SHIP**" in text
+            assert "Authority: `none_research_display_only`" in text
+            assert "no longer carries executable instructions" in text
+            assert len(text.splitlines()) < 30, f"{path} regained an executable handoff body"
+
+        masterplan_head = "\n".join(
+            (root / "research" / "CN_LIMIT_ALPHA_MASTERPLAN_BY_FABLE.md")
+            .read_text(encoding="utf-8")
+            .splitlines()[:24]
+        )
+        assert "Status: **superseded; STOP-SHIP (2026-08-10)**" in masterplan_head
+        assert "DO NOT EXECUTE THE HISTORICAL WAVE MAP OR CITE ITS NUMBERS" in masterplan_head
+
+        ledger = (
+            root / "research" / "CN_LIMIT_ALPHA_RECONCILIATION_LEDGER_2026-08-09.md"
+        ).read_text(encoding="utf-8")
+        assert "grade NEITHER ledger" in re.sub(r"\s+", " ", ledger)
+        assert "grade the CLAUDE ledger only" not in ledger
 
 
 class TestRegistryRowShape:
