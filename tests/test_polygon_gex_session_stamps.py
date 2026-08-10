@@ -3,7 +3,7 @@
 THE DEFECT.  ``scripts/build_polygon_gex.accrue`` stamped
 ``datetime.now(timezone.utc).date()``.  A nightly run landing at 01:24 UTC carries the
 PREVIOUS ET session's closing chain, so the entire store sat one session forward of the
-market it measures — measured against the independent Cboe-derived sibling
+market it measures — measured against the independent ThetaData-reconstructed sibling
 ``data/index_gex_history/SPY.parquet``, only 3 of 42 polygon rows matched their own
 stamped session while 30 matched the PREVIOUS one.
 
@@ -39,6 +39,7 @@ sys.path.insert(0, str(ROOT))
 from lib import config, nyse_calendar  # noqa: E402
 
 import scripts.build_polygon_gex as bpg  # noqa: E402
+import scripts.build_index_gex_history as big  # noqa: E402
 import scripts.complete_polygon_gex_session_stamps as comp  # noqa: E402
 import scripts.migrate_polygon_gex_session_stamps as mig  # noqa: E402
 
@@ -524,14 +525,23 @@ class TestTheManifestIsCommittedProvenance:
 
 # ═══════════════ 6. the independent second verifier ═════════════════════════════
 
-def test_the_migrated_spots_match_the_cboe_sibling_on_the_SAME_session():
-    """``data/index_gex_history/SPY.parquet`` is the Cboe-derived GEX history — a fully
-    independent pipeline that never had this defect (1 non-session stamp since 2016).
+def test_the_migrated_spots_match_the_independent_sibling_on_the_SAME_session():
+    """``data/index_gex_history/SPY.parquet`` is the ThetaData-reconstructed GEX
+    history — a fully independent pipeline that never had this defect (1 non-session
+    stamp since 2016).
 
     Measured 2026-08-06 on the committed store: BEFORE the migration only 3 of 42 polygon
-    rows matched their own stamped session's Cboe spot while 30 matched the PREVIOUS
-    session — the off-by-one, seen without yahoo. After, every overlapping row matches on
-    its own date.
+    rows matched their own stamped session's reconstructed spot while 30 matched the
+    PREVIOUS session — the off-by-one, seen without yahoo. After, every overlapping row
+    matches on its own date.
+
+    "Matches" uses the builder's committed 0.5% cross-vendor spot boundary, not
+    two-cent identity. The 2026-08-07 Polygon snapshot is 770.289 while the official
+    same-session close is 773.26 (0.384%); both are valid same-session vendor snapshots.
+    Exact equality turned that expected basis difference into a repo-wide red even
+    though ``build_index_gex_history.audit_overlap`` already classifies it as same-spot.
+    The historical one-session shift remains well outside this boundary on enough rows
+    to fire the migration gate.
     """
     poly = config.data_dir() / "polygon_gex" / "summary_SPY.parquet"
     cboe = config.data_dir() / "index_gex_history" / "SPY.parquet"
@@ -541,12 +551,21 @@ def test_the_migrated_spots_match_the_cboe_sibling_on_the_SAME_session():
     shared = [t for t in p.index if t in c.index]
     if len(shared) < 5:
         pytest.skip("too little overlap to be a meaningful check")
-    mismatched = [(str(t.date()), round(float(p.loc[t, "spot"]), 2),
-                   round(float(c.loc[t, "spot"]), 2)) for t in shared
-                  if abs(float(p.loc[t, "spot"]) - float(c.loc[t, "spot"])) > 0.02]
+    mismatched = [
+        (
+            str(t.date()),
+            round(float(p.loc[t, "spot"]), 3),
+            round(float(c.loc[t, "spot"]), 3),
+        )
+        for t in shared
+        if abs(float(p.loc[t, "spot"]) - float(c.loc[t, "spot"]))
+        / max(abs(float(c.loc[t, "spot"])), 1e-6)
+        >= big._SPOT_TOL_FRAC
+    ]
     assert not mismatched, (
-        f"{len(mismatched)} of {len(shared)} polygon rows disagree with the Cboe "
-        f"sibling on their OWN session: {mismatched[:5]} — the store is shifted again")
+        f"{len(mismatched)} of {len(shared)} polygon rows exceed the "
+        f"{100 * big._SPOT_TOL_FRAC:.1f}% cross-vendor same-session boundary: "
+        f"{mismatched[:5]} — the store is shifted again")
 
 
 def test_the_committed_chains_files_are_the_ones_the_adjudications_kept():
