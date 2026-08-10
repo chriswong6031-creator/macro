@@ -368,6 +368,46 @@ same PR as the patience-admission port (one coherent intake change); R2 stage-ga
 on whatever us_board_rank looks like post-audit; R5, R6. The CN limit-alpha Fable session
 runs independently (Wave 1 PRs #5059/#5061) — do not collide with its lanes.
 
+**§6.9 EXECUTION RECORD — 2026-08-09 EOD (RESUME v2 discharged; blocks below are historical).**
+The run order completed through R5 with R2 in flight and R6 pending tonight's bake:
+**R1/armed cascade** — the full set landed 08-09: #5105 (09:25Z, the A1+R3 coherent port:
+status-class admission, `selection_era`/`admission_class` stamps, legacy shadow ledger,
+zones on every plan with wait_reset clamp + zone-expiry→starter, EARLY-TURN starter; live
+proof 79 buys → 54 admitted (31 patience) → 47 plans vs 29 legacy), then post-livelock-heal
+the rest drained 16:43–18:07Z: #4972 #4976 #4979 #4988 #4993 #4999 #5000 #5109.
+**R3** shipped inside #5105 (one coherent intake change, per RESUME v2's instruction).
+**R4** — organ #5007 + seam heal #5117 + the production publisher #5146 (task #8): per-run
+PIT `site/anticipationdata/us_leader_pullback.json` (680 states/39s, dag-wired before
+build_prophet), leader half now EVALUATES in production (26/54 board candidates stated,
+honest-zero admissions on day one); killed a latent raw-token leak (`RESET_TURN`
+interpolated into entry-zone copy) mutation-checked. **Minted:** STORE_LADDER coverage
+widening (28/54 uncovered incl. ADAM, the §6.8b acceptance name) = a JOINT §6.6
+re-measurement with the TURN WATCH desk — restates the pre-registered RS_TOP_PCT quartile
+(697→2,994); parameter test-pinned, never widen unilaterally. `context_sources` computed
+but unpublished (minor debt).
+**R5** — #5143: per-name `refusal_receipts` through #5105's own `entry_status()`/
+`admission_class()` helpers (the #5071-era `intake_stats` was AGGREGATE-only — the
+"disclose per-candidate" claim in earlier notes was wrong; partition test-pinned
+54+25=79); glance-tier EN/ZH, era stamp plain-worded at Tier 1 + literal on hover.
+**Rider debt:** a future Terminal receipts rider must headline `declined` (build_prophet
+56/23 vs build_site 25/48 count basis) or the surfaces disagree.
+**R6** — GATED correctly: no nightly checked out post-#5105 until tonight's 22:30Z cron
+(running as of this record); verification chip armed. W7 grades darkness reclassified
+NOT-A-BUG: grader alive (`candidates=7465 dates=4 pending=29860 new=0`, H=10/21/42/63),
+first possible grade ~08-18 — do not spawn a heal before then.
+**R2** — builder in flight this evening (stage-gate veto after status check, sort respects
+score within admissible stages, `reversal_member` binary channel from `us_basket_turn` +
+subsector cohorts, era-stamped; carries the #4976 riders: `ext_unknown` carrier +
+don't-chase-at-P100 deviation).
+**R7** — session-chain handoffs on main (`research/ANTICIPATION_CONTINUATION_HANDOFF_2026-08-09B.md`) + program memory current.
+**R8** — #5026 merged (TURN WATCH data plane; real-organ PIT adapter took leader fires
+28→7); the page ships under the design lane in a later session.
+**Fleet context that shaped the day** (details in the handoff + memory): baseline-dispatch
+livelock diagnosed and healed (#5133 law + #5136 event-conditional cancel fence, verified
+live), a 12:34Z mass-cancel killed ~30 runs incl. the live proof (recovered by rerun),
+the afternoon mega-drain's cross-PR interactions redded all four packs at 18:46Z, healed
+atomically by #5188 (20:19Z) — post-#5188 baseline dispatched 22:52Z as this record closes.
+
 **RESUME STATE 2026-08-08 13:05Z (session limit hit, resets 15:20Z):** R4 DONE (#5007 armed —
 RESET_TURN null standalone/confluence-input, ZONE proven 7.26%→2.29% entry-vs-low; NVDA/AVGO/
 ADAM missed under v0 with leg-timing causes + 3 pre-registered v1 candidates; NEW v1 candidate
