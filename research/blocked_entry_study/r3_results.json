@@ -1,0 +1,600 @@
+{
+ "meta": {
+  "prereg": "\u00a77 AMENDMENT 2",
+  "instrument_commit": "2ad6db7712b",
+  "signal_sha256": "30c12a90448579d689e2a9ed405055f6c44462cf0f69347940e619d020c7384d",
+  "m_fixed": "m0.5",
+  "aggregate": "mean R capped +10R, censored-unstopped excluded, intrabar fill primary",
+  "B": 2000,
+  "seed": 20260810,
+  "cluster_unit": "episode x name",
+  "cap": 10.0,
+  "covid_window": [
+   "2020-02-15",
+   "2020-06-30"
+  ]
+ },
+ "coverage": {
+  "basket_names_pct": 0.1248650593738755,
+  "gics_names_pct": 0.5966174883051457,
+  "union_names_pct": 0.6002159050017992,
+  "fire_weighted_union": 0.6938457219501544,
+  "fire_weighted_basket": 0.16026700770454474,
+  "fire_weighted_sector": 0.5335787142456097,
+  "floor": 0.6,
+  "passes_fire_weighted_floor": true
+ },
+ "grid": {
+  "0.15": {
+   "design_abs_separation": 0.19092050541194516,
+   "n_design_cell": 4601,
+   "cell_level": {
+    "n": 7548,
+    "n_names": 1602,
+    "mean_R_capped10": 0.7164087134981644,
+    "mean_R_winsor99": 0.840832158195984,
+    "mean_R_raw": 0.9422598528424195,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.16114061931253582,
+    "median_ret": -0.07481260394388689,
+    "win_rate": 0.3248382411197676,
+    "n_censored_excluded": 322,
+    "censored_mark_mean_R": 4.366986292737298
+   },
+   "complement_level": {
+    "n": 3279,
+    "n_names": 1241,
+    "mean_R_capped10": -0.18728379086701386,
+    "mean_R_winsor99": -0.1273771660740844,
+    "mean_R_raw": -0.024035988021284364,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.011041638657275156,
+    "median_ret": -0.07386020261915727,
+    "win_rate": 0.16098600121728546,
+    "n_censored_excluded": 215,
+    "censored_mark_mean_R": 2.9982512097910003
+   },
+   "cell_boot_cluster": {
+    "point": 0.7164087134981644,
+    "ci_lo": 0.6421153597722614,
+    "ci_hi": 0.7915236609890698,
+    "n_clusters": 2636,
+    "n_fires": 7548
+   },
+   "cell_boot_episode": {
+    "point": 0.7164087134981644,
+    "ci_lo": 0.32516699258359133,
+    "ci_hi": 5.545903556526284,
+    "n_clusters": 3,
+    "n_fires": 7548
+   },
+   "cell_equal_date": {
+    "point": 0.3012314603782636,
+    "ci_lo": 0.17198410674161912,
+    "ci_hi": 0.43741079622311674,
+    "n_dates": 1118
+   },
+   "diff_vs_complement": {
+    "point": 0.9036925043651782,
+    "ci_lo": 0.7926059352007128,
+    "ci_hi": 1.0173119470478955,
+    "n_clusters": 2849
+   },
+   "loco_loo": {
+    "full": 0.7164087134981644,
+    "n_full": 7548,
+    "ex_covid": 0.46003032497319835,
+    "n_ex_covid": 6816,
+    "n_covid": 732,
+    "covid_share_of_fires": 0.09697933227344992,
+    "covid_share_of_R": 0.42013981208671636,
+    "loo_episode_min": 0.32611192227842245,
+    "loo_episode_max": 1.7842047937017724,
+    "loo_worst_episode": 0,
+    "n_episodes": 3
+   },
+   "admit_share_of_mapped_heldout": 0.6927869427869427
+  },
+  "0.20": {
+   "design_abs_separation": 0.24918397662441305,
+   "n_design_cell": 2931,
+   "cell_level": {
+    "n": 5569,
+    "n_names": 1499,
+    "mean_R_capped10": 0.9141540334787339,
+    "mean_R_winsor99": 1.0528352460056654,
+    "mean_R_raw": 1.1639982367240054,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.20396416323426236,
+    "median_ret": -0.07302865315847606,
+    "win_rate": 0.35972769616624867,
+    "n_censored_excluded": 145,
+    "censored_mark_mean_R": 3.9494835689323
+   },
+   "complement_level": {
+    "n": 5258,
+    "n_names": 1467,
+    "mean_R_capped10": -0.05659459741572133,
+    "mean_R_winsor99": 0.012310741694460791,
+    "mean_R_raw": 0.10480357250224526,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.02237498114610334,
+    "median_ret": -0.07546940235405453,
+    "win_rate": 0.18590108015918136,
+    "n_censored_excluded": 392,
+    "censored_mark_mean_R": 3.7707104052839076
+   },
+   "cell_boot_cluster": {
+    "point": 0.9141540334787339,
+    "ci_lo": 0.8275906078762709,
+    "ci_hi": 1.0034847833514662,
+    "n_clusters": 2891,
+    "n_fires": 5569
+   },
+   "cell_boot_episode": {
+    "point": 0.9141540334787339,
+    "ci_lo": 0.228080879465602,
+    "ci_hi": 2.1220903568322558,
+    "n_clusters": 6,
+    "n_fires": 5569
+   },
+   "cell_equal_date": {
+    "point": 0.4514654286857097,
+    "ci_lo": 0.291783364785482,
+    "ci_hi": 0.6065069829847177,
+    "n_dates": 861
+   },
+   "diff_vs_complement": {
+    "point": 0.9707486308944553,
+    "ci_lo": 0.859568596579252,
+    "ci_hi": 1.0854924649335982,
+    "n_clusters": 3484
+   },
+   "loco_loo": {
+    "full": 0.9141540334787339,
+    "n_full": 5569,
+    "ex_covid": 0.598054694629832,
+    "n_ex_covid": 4879,
+    "n_covid": 690,
+    "covid_share_of_fires": 0.12390016160890645,
+    "covid_share_of_R": 0.42684098945517657,
+    "loo_episode_min": 0.4264390504888561,
+    "loo_episode_max": 1.6748828302057472,
+    "loo_worst_episode": 0,
+    "n_episodes": 6
+   },
+   "admit_share_of_mapped_heldout": 0.5025447525447525
+  },
+  "0.25": {
+   "design_abs_separation": 0.2805600290164042,
+   "n_design_cell": 1679,
+   "cell_level": {
+    "n": 3816,
+    "n_names": 1343,
+    "mean_R_capped10": 1.1340649974265042,
+    "mean_R_winsor99": 1.2902454852477332,
+    "mean_R_raw": 1.4211771024349613,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.26515388658888606,
+    "median_ret": -0.06898515912898173,
+    "win_rate": 0.3950326797385621,
+    "n_censored_excluded": 35,
+    "censored_mark_mean_R": 3.490568566929
+   },
+   "complement_level": {
+    "n": 7011,
+    "n_names": 1571,
+    "mean_R_capped10": 0.06643237613060413,
+    "mean_R_winsor99": 0.14157175456494855,
+    "mean_R_raw": 0.22966075333632563,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.03445935719066686,
+    "median_ret": -0.07621766432761284,
+    "win_rate": 0.2101222632925789,
+    "n_censored_excluded": 502,
+    "censored_mark_mean_R": 3.841879873553705
+   },
+   "cell_boot_cluster": {
+    "point": 1.1340649974265042,
+    "ci_lo": 1.0244859792299854,
+    "ci_hi": 1.2514224332534287,
+    "n_clusters": 2290,
+    "n_fires": 3816
+   },
+   "cell_boot_episode": {
+    "point": 1.1340649974265042,
+    "ci_lo": 0.3053436765413051,
+    "ci_hi": 2.1961132876034846,
+    "n_clusters": 8,
+    "n_fires": 3816
+   },
+   "cell_equal_date": {
+    "point": 0.5241364370550685,
+    "ci_lo": 0.3303370929884264,
+    "ci_hi": 0.7185220357527282,
+    "n_dates": 647
+   },
+   "diff_vs_complement": {
+    "point": 1.0676326212959002,
+    "ci_lo": 0.936860891720966,
+    "ci_hi": 1.2036639312906063,
+    "n_clusters": 3125
+   },
+   "loco_loo": {
+    "full": 1.1340649974265042,
+    "n_full": 3816,
+    "ex_covid": 0.724883166663919,
+    "n_ex_covid": 3185,
+    "n_covid": 631,
+    "covid_share_of_fires": 0.16535639412997905,
+    "covid_share_of_R": 0.46650403510221894,
+    "loo_episode_min": 0.6435825566514528,
+    "loo_episode_max": 1.9976274387363926,
+    "loo_worst_episode": 0,
+    "n_episodes": 8
+   },
+   "admit_share_of_mapped_heldout": 0.3387153387153387
+  },
+  "0.30": {
+   "design_abs_separation": 0.2469943800289861,
+   "n_design_cell": 1027,
+   "cell_level": {
+    "n": 2316,
+    "n_names": 1065,
+    "mean_R_capped10": 1.4348832402558513,
+    "mean_R_winsor99": 1.6552124534146035,
+    "mean_R_raw": 1.8226036908051406,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.3556565336948554,
+    "median_ret": -0.06266857609298881,
+    "win_rate": 0.4412397761515282,
+    "n_censored_excluded": 19,
+    "censored_mark_mean_R": 3.8099971590549258
+   },
+   "complement_level": {
+    "n": 8511,
+    "n_names": 1602,
+    "mean_R_capped10": 0.1727364392901721,
+    "mean_R_winsor99": 0.24989954334688275,
+    "mean_R_raw": 0.3304210100608725,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.05042298581402188,
+    "median_ret": -0.07609880242012595,
+    "win_rate": 0.23008434864104968,
+    "n_censored_excluded": 518,
+    "censored_mark_mean_R": 3.819312066301991
+   },
+   "cell_boot_cluster": {
+    "point": 1.4348832402558513,
+    "ci_lo": 1.2821341405568019,
+    "ci_hi": 1.5778664842403725,
+    "n_clusters": 1625,
+    "n_fires": 2316
+   },
+   "cell_boot_episode": {
+    "point": 1.4348832402558513,
+    "ci_lo": 0.2906466755171333,
+    "ci_hi": 2.5761548145810145,
+    "n_clusters": 14,
+    "n_fires": 2316
+   },
+   "cell_equal_date": {
+    "point": 0.7027133855685221,
+    "ci_lo": 0.4741408945773658,
+    "ci_hi": 0.93411614691779,
+    "n_dates": 482
+   },
+   "diff_vs_complement": {
+    "point": 1.2621468009656793,
+    "ci_lo": 1.104942092711187,
+    "ci_hi": 1.4158953792401006,
+    "n_clusters": 3177
+   },
+   "loco_loo": {
+    "full": 1.4348832402558513,
+    "n_full": 2316,
+    "ex_covid": 0.923524790776289,
+    "n_ex_covid": 1770,
+    "n_covid": 546,
+    "covid_share_of_fires": 0.23575129533678757,
+    "covid_share_of_R": 0.5081114579404434,
+    "loo_episode_min": 0.8975370197535093,
+    "loo_episode_max": 2.282353178031894,
+    "loo_worst_episode": 1,
+    "n_episodes": 14
+   },
+   "admit_share_of_mapped_heldout": 0.20551070551070552
+  }
+ },
+ "design_selected_threshold": "0.25",
+ "dead_arm": {
+  "meta": {
+   "n_dead_tickers": 424,
+   "n_quarantined": 2,
+   "quarantined": [
+    "ALTM",
+    "FI"
+   ],
+   "n_ticker_reuse_collisions": 134,
+   "collision_examples": [
+    "AAOI",
+    "ADTN",
+    "AHRT",
+    "AMCX",
+    "ANGI",
+    "ANGO",
+    "APEI",
+    "APPS",
+    "ASIX",
+    "ATNI",
+    "AVD",
+    "BBBY",
+    "BDN",
+    "BELFB",
+    "BGS",
+    "BLMN",
+    "BNED",
+    "BOOM",
+    "CAL",
+    "CAMP"
+   ],
+   "n_used": 289,
+   "coverage_json": {
+    "n_dead_universe": 1083,
+    "n_with_prices": 424,
+    "price_coverage_frac": 0.3915,
+    "delisting_reason": {
+     "bankruptcy": 14,
+     "acquisition": 103,
+     "unknown": 42,
+     "n_classified": 159
+    },
+    "n_imputed_bankruptcies": 3,
+    "universe_basis": {
+     "basis": "sp1500_pit_membership.end_date NOT NULL (INDEX EXIT, not death)",
+     "measured": true,
+     "n_universe": 1083,
+     "n_still_trading": 172,
+     "still_trading_frac": 0.1588,
+     "n_still_trading_with_prices": 134,
+     "caveat": "172 of 1083 names in this 'dead' universe (15.9%) still have a live advancing price store: they were REMOVED FROM THE INDEX, not delisted. Their recovered rows are their own genuine prices (bounded by the fetch window, not by a death), so they must NOT be trimmed to a 'death date' \u2014 but neither do they correct survivorship. Any study calling this panel de-biased should partition index-exit-alive from truly-delisted before claiming a survivorship fix."
+    }
+   },
+   "imputed_bankruptcy_rows": 3,
+   "imputed_bankruptcy_names": [
+    "BBBY",
+    "EBIX",
+    "ENDP"
+   ]
+  },
+  "n_dead_blocked_fires": 714,
+  "n_heldout": 677,
+  "reason_mix": {
+   "stop": 555,
+   "time252": 93,
+   "delisted": 66
+  },
+  "n_bankrupt_names": 3,
+  "pooled_level_with_dead_primary": {
+   "n": 11504,
+   "n_names": 1825,
+   "mean_R_capped10": 0.3946677867255995,
+   "mean_R_winsor99": 0.49976925665091027,
+   "mean_R_raw": 0.5958239918861606,
+   "median_R": -1.0,
+   "equal_notional_mean_ret": 0.10815926182591991,
+   "median_ret": -0.07438814481643358,
+   "win_rate": 0.2701976421636616,
+   "n_censored_excluded": 537,
+   "censored_mark_mean_R": 3.8189824885781656
+  },
+  "dead_only_level_primary": {
+   "n": 677,
+   "n_names": 185,
+   "mean_R_capped10": -0.3738422462923343,
+   "mean_R_winsor99": -0.35179950647671004,
+   "mean_R_raw": -0.2644079200508113,
+   "median_R": -1.1116189544365456,
+   "equal_notional_mean_ret": -0.013110029922936056,
+   "median_ret": -0.07520372526193253,
+   "win_rate": 0.18906942392909898,
+   "n_censored_excluded": 0,
+   "censored_mark_mean_R": null
+  },
+  "pooled_level_with_dead_floor": {
+   "n": 11504,
+   "n_names": 1825,
+   "mean_R_capped10": 0.3946677867255995,
+   "mean_R_winsor99": 0.49976925665091027,
+   "mean_R_raw": 0.5958239918861606,
+   "median_R": -1.0,
+   "equal_notional_mean_ret": 0.10815926182591991,
+   "median_ret": -0.07438814481643358,
+   "win_rate": 0.2701976421636616,
+   "n_censored_excluded": 537,
+   "censored_mark_mean_R": 3.8189824885781656
+  },
+  "dead_only_level_floor": {
+   "n": 677,
+   "n_names": 185,
+   "mean_R_capped10": -0.3738422462923343,
+   "mean_R_winsor99": -0.35179950647671004,
+   "mean_R_raw": -0.2644079200508113,
+   "median_R": -1.1116189544365456,
+   "equal_notional_mean_ret": -0.013110029922936056,
+   "median_ret": -0.07520372526193253,
+   "win_rate": 0.18906942392909898,
+   "n_censored_excluded": 0,
+   "censored_mark_mean_R": null
+  },
+  "pooled_level_survivor": {
+   "n": 10827,
+   "n_names": 1640,
+   "mean_R_capped10": 0.4427218453155266,
+   "mean_R_winsor99": 0.550204666704903,
+   "mean_R_raw": 0.6496133152796519,
+   "median_R": -1.0,
+   "equal_notional_mean_ret": 0.11571974718497466,
+   "median_ret": -0.07437331152477644,
+   "win_rate": 0.275255548393038,
+   "n_censored_excluded": 537,
+   "censored_mark_mean_R": 3.8189824885781656
+  }
+ },
+ "exemplars": {
+  "tape_end": "2026-08-07",
+  "rows": [
+   {
+    "sym": "UEC",
+    "fire_date": "2026-08-03",
+    "peer_src": "basket",
+    "peer_group": "uranium_miners",
+    "n_peers": 8,
+    "postdates_tape": false,
+    "peer_dd": -0.3877289295196533,
+    "admitted": {
+     "15%": true,
+     "20%": true,
+     "25%": true,
+     "30%": true
+    }
+   },
+   {
+    "sym": "HL",
+    "fire_date": "2026-06-16",
+    "peer_src": "basket",
+    "peer_group": "silver_miners",
+    "n_peers": 6,
+    "postdates_tape": false,
+    "peer_dd": -0.3159946799278259,
+    "admitted": {
+     "15%": true,
+     "20%": true,
+     "25%": true,
+     "30%": true
+    }
+   },
+   {
+    "sym": "HL",
+    "fire_date": "2026-06-25",
+    "peer_src": "basket",
+    "peer_group": "silver_miners",
+    "n_peers": 6,
+    "postdates_tape": false,
+    "peer_dd": -0.4074643552303314,
+    "admitted": {
+     "15%": true,
+     "20%": true,
+     "25%": true,
+     "30%": true
+    }
+   },
+   {
+    "sym": "9988.HK",
+    "fire_date": null,
+    "peer_src": null,
+    "note": "non-US: no basket/GICS peer set in this panel \u2014 A1b not computable"
+   },
+   {
+    "sym": "600547.SS",
+    "fire_date": null,
+    "peer_src": null,
+    "note": "non-US: no basket/GICS peer set in this panel \u2014 A1b not computable"
+   },
+   {
+    "sym": "002716.SZ",
+    "fire_date": null,
+    "peer_src": null,
+    "note": "non-US: no basket/GICS peer set in this panel \u2014 A1b not computable"
+   }
+  ]
+ },
+ "current_membership": {
+  "as_of": "2026-08-07",
+  "by_threshold": {
+   "15%": {
+    "n_qualifying": 18,
+    "groups": [
+     "basket:ai_infra|ai_semiconductors",
+     "basket:ai_neoclouds",
+     "basket:ai_software|non_ai_software",
+     "basket:critical_minerals",
+     "basket:gold_miners",
+     "basket:non_ai_software",
+     "basket:nuclear_power|power_grid",
+     "basket:obesity_glp1",
+     "basket:payments_fintech",
+     "basket:robotics_automation",
+     "basket:semicap_equipment",
+     "basket:silver_miners",
+     "basket:space_economy",
+     "basket:uranium_miners",
+     "sector:Communication Services",
+     "sector:Energy",
+     "sector:Information Technology",
+     "sector:Materials"
+    ]
+   },
+   "20%": {
+    "n_qualifying": 14,
+    "groups": [
+     "basket:ai_infra|ai_semiconductors",
+     "basket:ai_neoclouds",
+     "basket:ai_software|non_ai_software",
+     "basket:critical_minerals",
+     "basket:gold_miners",
+     "basket:non_ai_software",
+     "basket:nuclear_power|power_grid",
+     "basket:robotics_automation",
+     "basket:semicap_equipment",
+     "basket:silver_miners",
+     "basket:space_economy",
+     "basket:uranium_miners",
+     "sector:Information Technology",
+     "sector:Materials"
+    ]
+   },
+   "25%": {
+    "n_qualifying": 12,
+    "groups": [
+     "basket:ai_neoclouds",
+     "basket:ai_software|non_ai_software",
+     "basket:critical_minerals",
+     "basket:gold_miners",
+     "basket:non_ai_software",
+     "basket:nuclear_power|power_grid",
+     "basket:robotics_automation",
+     "basket:semicap_equipment",
+     "basket:silver_miners",
+     "basket:space_economy",
+     "basket:uranium_miners",
+     "sector:Information Technology"
+    ]
+   },
+   "30%": {
+    "n_qualifying": 5,
+    "groups": [
+     "basket:ai_neoclouds",
+     "basket:critical_minerals",
+     "basket:nuclear_power|power_grid",
+     "basket:space_economy",
+     "basket:uranium_miners"
+    ]
+   }
+  },
+  "deepest_groups": {
+   "basket:critical_minerals": -0.5095373392105103,
+   "basket:space_economy": -0.4806615114212036,
+   "basket:ai_neoclouds": -0.41093429923057556,
+   "basket:nuclear_power|power_grid": -0.3521682620048523,
+   "basket:uranium_miners": -0.3035150170326233,
+   "basket:semicap_equipment": -0.29942816495895386,
+   "basket:silver_miners": -0.297379732131958,
+   "basket:robotics_automation": -0.2954895496368408,
+   "basket:non_ai_software": -0.2831658124923706,
+   "basket:ai_software|non_ai_software": -0.2747385799884796,
+   "basket:gold_miners": -0.26322007179260254,
+   "sector:Information Technology": -0.25439217686653137
+  }
+ }
+}

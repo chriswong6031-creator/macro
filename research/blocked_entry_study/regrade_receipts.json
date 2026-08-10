@@ -1,0 +1,1779 @@
+{
+ "runs": {
+  "r3_committed": {
+   "ohlc_basis": null,
+   "panel_mode": null,
+   "n_panel": null,
+   "n_panel_local_stems": null,
+   "design_selected_threshold": "0.25"
+  },
+  "A_local_fullpanel": {
+   "ohlc_basis": "local",
+   "panel_mode": "local",
+   "n_panel": 2779,
+   "n_panel_local_stems": 2779,
+   "design_selected_threshold": "0.25"
+  },
+  "B_PROD": {
+   "ohlc_basis": "prod",
+   "panel_mode": "prod",
+   "n_panel": 2454,
+   "n_panel_local_stems": 2779,
+   "design_selected_threshold": "0.30"
+  },
+  "C_local_prodpanel": {
+   "ohlc_basis": "local",
+   "panel_mode": "prod",
+   "n_panel": 2454,
+   "n_panel_local_stems": 2779,
+   "design_selected_threshold": "0.25"
+  }
+ },
+ "gate_table": {
+  "0.20": {
+   "r3_committed": {
+    "cell_R_capped10": 0.9141540334787339,
+    "cell_cluster_CI": [
+     0.8275906078762709,
+     1.0034847833514662
+    ],
+    "cell_episode_CI": [
+     0.228080879465602,
+     2.1220903568322558
+    ],
+    "equal_date": 0.4514654286857097,
+    "equal_date_CI": [
+     0.291783364785482,
+     0.6065069829847177
+    ],
+    "diff_vs_complement": 0.9707486308944553,
+    "diff_CI": [
+     0.859568596579252,
+     1.0854924649335982
+    ],
+    "ex_covid": 0.598054694629832,
+    "loo_episode_min": 0.4264390504888561,
+    "n_episodes": 6,
+    "n_fires": 5569,
+    "n_names": 1499,
+    "n_clusters": 2891,
+    "eq_notional_cell": 0.20396416323426236,
+    "eq_notional_complement": 0.02237498114610334,
+    "admit_share_of_mapped_heldout": 0.5025447525447525,
+    "checks": {
+     "G1_cell_cluster_CI_gt0": true,
+     "G2_diff_vs_complement_CI_gt0": true,
+     "G3_equal_date_positive": true,
+     "G4_cell_episode_CI_gt0": true,
+     "F1_ex_covid_positive": true,
+     "F1_loo_episode_min_positive": true
+    },
+    "verdict": "PASS"
+   },
+   "A_local_fullpanel": {
+    "cell_R_capped10": 0.9141540334787339,
+    "cell_cluster_CI": [
+     0.8275906078762709,
+     1.0034847833514662
+    ],
+    "cell_episode_CI": [
+     0.228080879465602,
+     2.1220903568322558
+    ],
+    "equal_date": 0.4514654286857097,
+    "equal_date_CI": [
+     0.291783364785482,
+     0.6065069829847177
+    ],
+    "diff_vs_complement": 0.9707486308944553,
+    "diff_CI": [
+     0.859568596579252,
+     1.0854924649335982
+    ],
+    "ex_covid": 0.598054694629832,
+    "loo_episode_min": 0.4264390504888561,
+    "n_episodes": 6,
+    "n_fires": 5569,
+    "n_names": 1499,
+    "n_clusters": 2891,
+    "eq_notional_cell": 0.20396416323426236,
+    "eq_notional_complement": 0.02237498114610334,
+    "admit_share_of_mapped_heldout": 0.5025447525447525,
+    "checks": {
+     "G1_cell_cluster_CI_gt0": true,
+     "G2_diff_vs_complement_CI_gt0": true,
+     "G3_equal_date_positive": true,
+     "G4_cell_episode_CI_gt0": true,
+     "F1_ex_covid_positive": true,
+     "F1_loo_episode_min_positive": true
+    },
+    "verdict": "PASS"
+   },
+   "B_PROD": {
+    "cell_R_capped10": 0.9183418394400942,
+    "cell_cluster_CI": [
+     0.8270956141372323,
+     1.0106428317912464
+    ],
+    "cell_episode_CI": [
+     0.2440770694902642,
+     2.1253220937811528
+    ],
+    "equal_date": 0.39700896663123353,
+    "equal_date_CI": [
+     0.25824680869008415,
+     0.549981390279337
+    ],
+    "diff_vs_complement": 0.9618514465226928,
+    "diff_CI": [
+     0.8388079290680427,
+     1.089990072899602
+    ],
+    "ex_covid": 0.598587005214333,
+    "loo_episode_min": 0.4347274824133735,
+    "n_episodes": 7,
+    "n_fires": 5278,
+    "n_names": 1429,
+    "n_clusters": 2759,
+    "eq_notional_cell": 0.21973926619508433,
+    "eq_notional_complement": 0.030499141041116336,
+    "admit_share_of_mapped_heldout": 0.5007392348918869,
+    "checks": {
+     "G1_cell_cluster_CI_gt0": true,
+     "G2_diff_vs_complement_CI_gt0": true,
+     "G3_equal_date_positive": true,
+     "G4_cell_episode_CI_gt0": true,
+     "F1_ex_covid_positive": true,
+     "F1_loo_episode_min_positive": true
+    },
+    "verdict": "PASS"
+   },
+   "C_local_prodpanel": {
+    "cell_R_capped10": 0.9313324550114134,
+    "cell_cluster_CI": [
+     0.8421476011469027,
+     1.0250969973728064
+    ],
+    "cell_episode_CI": [
+     0.23796380660893,
+     2.189547461453781
+    ],
+    "equal_date": 0.4443441586146891,
+    "equal_date_CI": [
+     0.2829541040281684,
+     0.6135149485520224
+    ],
+    "diff_vs_complement": 0.9622861898382362,
+    "diff_CI": [
+     0.8344207436200408,
+     1.085592587092198
+    ],
+    "ex_covid": 0.6083092719073309,
+    "loo_episode_min": 0.42782034483564885,
+    "n_episodes": 6,
+    "n_fires": 5289,
+    "n_names": 1425,
+    "n_clusters": 2751,
+    "eq_notional_cell": 0.2084144664289992,
+    "eq_notional_complement": 0.02621507465242774,
+    "admit_share_of_mapped_heldout": 0.5013382556529765,
+    "checks": {
+     "G1_cell_cluster_CI_gt0": true,
+     "G2_diff_vs_complement_CI_gt0": true,
+     "G3_equal_date_positive": true,
+     "G4_cell_episode_CI_gt0": true,
+     "F1_ex_covid_positive": true,
+     "F1_loo_episode_min_positive": true
+    },
+    "verdict": "PASS"
+   }
+  },
+  "0.25": {
+   "r3_committed": {
+    "cell_R_capped10": 1.1340649974265042,
+    "cell_cluster_CI": [
+     1.0244859792299854,
+     1.2514224332534287
+    ],
+    "cell_episode_CI": [
+     0.3053436765413051,
+     2.1961132876034846
+    ],
+    "equal_date": 0.5241364370550685,
+    "equal_date_CI": [
+     0.3303370929884264,
+     0.7185220357527282
+    ],
+    "diff_vs_complement": 1.0676326212959002,
+    "diff_CI": [
+     0.936860891720966,
+     1.2036639312906063
+    ],
+    "ex_covid": 0.724883166663919,
+    "loo_episode_min": 0.6435825566514528,
+    "n_episodes": 8,
+    "n_fires": 3816,
+    "n_names": 1343,
+    "n_clusters": 2290,
+    "eq_notional_cell": 0.26515388658888606,
+    "eq_notional_complement": 0.03445935719066686,
+    "admit_share_of_mapped_heldout": 0.3387153387153387,
+    "checks": {
+     "G1_cell_cluster_CI_gt0": true,
+     "G2_diff_vs_complement_CI_gt0": true,
+     "G3_equal_date_positive": true,
+     "G4_cell_episode_CI_gt0": true,
+     "F1_ex_covid_positive": true,
+     "F1_loo_episode_min_positive": true
+    },
+    "verdict": "PASS"
+   },
+   "A_local_fullpanel": {
+    "cell_R_capped10": 1.1340649974265042,
+    "cell_cluster_CI": [
+     1.0244859792299854,
+     1.2514224332534287
+    ],
+    "cell_episode_CI": [
+     0.3053436765413051,
+     2.1961132876034846
+    ],
+    "equal_date": 0.5241364370550685,
+    "equal_date_CI": [
+     0.3303370929884264,
+     0.7185220357527282
+    ],
+    "diff_vs_complement": 1.0676326212959002,
+    "diff_CI": [
+     0.936860891720966,
+     1.2036639312906063
+    ],
+    "ex_covid": 0.724883166663919,
+    "loo_episode_min": 0.6435825566514528,
+    "n_episodes": 8,
+    "n_fires": 3816,
+    "n_names": 1343,
+    "n_clusters": 2290,
+    "eq_notional_cell": 0.26515388658888606,
+    "eq_notional_complement": 0.03445935719066686,
+    "admit_share_of_mapped_heldout": 0.3387153387153387,
+    "checks": {
+     "G1_cell_cluster_CI_gt0": true,
+     "G2_diff_vs_complement_CI_gt0": true,
+     "G3_equal_date_positive": true,
+     "G4_cell_episode_CI_gt0": true,
+     "F1_ex_covid_positive": true,
+     "F1_loo_episode_min_positive": true
+    },
+    "verdict": "PASS"
+   },
+   "B_PROD": {
+    "cell_R_capped10": 1.1131585354221856,
+    "cell_cluster_CI": [
+     1.003214501638125,
+     1.2260039355531285
+    ],
+    "cell_episode_CI": [
+     0.31071960398642007,
+     2.167923414339379
+    ],
+    "equal_date": 0.4950443115398125,
+    "equal_date_CI": [
+     0.3084200174183623,
+     0.6820812006926185
+    ],
+    "diff_vs_complement": 1.0079239343584987,
+    "diff_CI": [
+     0.8770219939377626,
+     1.1427331738175381
+    ],
+    "ex_covid": 0.6884568939758686,
+    "loo_episode_min": 0.6218512330049991,
+    "n_episodes": 9,
+    "n_fires": 3521,
+    "n_names": 1262,
+    "n_clusters": 2196,
+    "eq_notional_cell": 0.2874519733717756,
+    "eq_notional_complement": 0.04442759242432557,
+    "admit_share_of_mapped_heldout": 0.3292367399741268,
+    "checks": {
+     "G1_cell_cluster_CI_gt0": true,
+     "G2_diff_vs_complement_CI_gt0": true,
+     "G3_equal_date_positive": true,
+     "G4_cell_episode_CI_gt0": true,
+     "F1_ex_covid_positive": true,
+     "F1_loo_episode_min_positive": true
+    },
+    "verdict": "PASS"
+   },
+   "C_local_prodpanel": {
+    "cell_R_capped10": 1.1544257771339161,
+    "cell_cluster_CI": [
+     1.0385835930864544,
+     1.2685719462233287
+    ],
+    "cell_episode_CI": [
+     0.3346233604195432,
+     2.242998360036845
+    ],
+    "equal_date": 0.5261196911147189,
+    "equal_date_CI": [
+     0.32133464206327456,
+     0.7359854057753221
+    ],
+    "diff_vs_complement": 1.0579179910020138,
+    "diff_CI": [
+     0.9210747190182437,
+     1.1931265418177737
+    ],
+    "ex_covid": 0.7305775921915242,
+    "loo_episode_min": 0.650365583661731,
+    "n_episodes": 9,
+    "n_fires": 3571,
+    "n_names": 1276,
+    "n_clusters": 2209,
+    "eq_notional_cell": 0.27144219399963115,
+    "eq_notional_complement": 0.0392240748638921,
+    "admit_share_of_mapped_heldout": 0.3334563913244116,
+    "checks": {
+     "G1_cell_cluster_CI_gt0": true,
+     "G2_diff_vs_complement_CI_gt0": true,
+     "G3_equal_date_positive": true,
+     "G4_cell_episode_CI_gt0": true,
+     "F1_ex_covid_positive": true,
+     "F1_loo_episode_min_positive": true
+    },
+    "verdict": "PASS"
+   }
+  },
+  "0.30": {
+   "r3_committed": {
+    "cell_R_capped10": 1.4348832402558513,
+    "cell_cluster_CI": [
+     1.2821341405568019,
+     1.5778664842403725
+    ],
+    "cell_episode_CI": [
+     0.2906466755171333,
+     2.5761548145810145
+    ],
+    "equal_date": 0.7027133855685221,
+    "equal_date_CI": [
+     0.4741408945773658,
+     0.93411614691779
+    ],
+    "diff_vs_complement": 1.2621468009656793,
+    "diff_CI": [
+     1.104942092711187,
+     1.4158953792401006
+    ],
+    "ex_covid": 0.923524790776289,
+    "loo_episode_min": 0.8975370197535093,
+    "n_episodes": 14,
+    "n_fires": 2316,
+    "n_names": 1065,
+    "n_clusters": 1625,
+    "eq_notional_cell": 0.3556565336948554,
+    "eq_notional_complement": 0.05042298581402188,
+    "admit_share_of_mapped_heldout": 0.20551070551070552,
+    "checks": {
+     "G1_cell_cluster_CI_gt0": true,
+     "G2_diff_vs_complement_CI_gt0": true,
+     "G3_equal_date_positive": true,
+     "G4_cell_episode_CI_gt0": true,
+     "F1_ex_covid_positive": true,
+     "F1_loo_episode_min_positive": true
+    },
+    "verdict": "PASS"
+   },
+   "A_local_fullpanel": {
+    "cell_R_capped10": 1.4348832402558513,
+    "cell_cluster_CI": [
+     1.2821341405568019,
+     1.5778664842403725
+    ],
+    "cell_episode_CI": [
+     0.2906466755171333,
+     2.5761548145810145
+    ],
+    "equal_date": 0.7027133855685221,
+    "equal_date_CI": [
+     0.4741408945773658,
+     0.93411614691779
+    ],
+    "diff_vs_complement": 1.2621468009656793,
+    "diff_CI": [
+     1.104942092711187,
+     1.4158953792401006
+    ],
+    "ex_covid": 0.923524790776289,
+    "loo_episode_min": 0.8975370197535093,
+    "n_episodes": 14,
+    "n_fires": 2316,
+    "n_names": 1065,
+    "n_clusters": 1625,
+    "eq_notional_cell": 0.3556565336948554,
+    "eq_notional_complement": 0.05042298581402188,
+    "admit_share_of_mapped_heldout": 0.20551070551070552,
+    "checks": {
+     "G1_cell_cluster_CI_gt0": true,
+     "G2_diff_vs_complement_CI_gt0": true,
+     "G3_equal_date_positive": true,
+     "G4_cell_episode_CI_gt0": true,
+     "F1_ex_covid_positive": true,
+     "F1_loo_episode_min_positive": true
+    },
+    "verdict": "PASS"
+   },
+   "B_PROD": {
+    "cell_R_capped10": 1.3932570478405306,
+    "cell_cluster_CI": [
+     1.253760950232977,
+     1.5492500400009714
+    ],
+    "cell_episode_CI": [
+     0.28242597316942636,
+     2.497756151593225
+    ],
+    "equal_date": 0.660487382825215,
+    "equal_date_CI": [
+     0.43545435966157714,
+     0.8862370557115515
+    ],
+    "diff_vs_complement": 1.195551238479522,
+    "diff_CI": [
+     1.0305483286159607,
+     1.3531113703465147
+    ],
+    "ex_covid": 0.8772188338858259,
+    "loo_episode_min": 0.8513602089645155,
+    "n_episodes": 14,
+    "n_fires": 2174,
+    "n_names": 1013,
+    "n_clusters": 1542,
+    "eq_notional_cell": 0.3569889596459594,
+    "eq_notional_complement": 0.0661636779194504,
+    "admit_share_of_mapped_heldout": 0.20245795601552394,
+    "checks": {
+     "G1_cell_cluster_CI_gt0": true,
+     "G2_diff_vs_complement_CI_gt0": true,
+     "G3_equal_date_positive": true,
+     "G4_cell_episode_CI_gt0": true,
+     "F1_ex_covid_positive": true,
+     "F1_loo_episode_min_positive": true
+    },
+    "verdict": "PASS"
+   },
+   "C_local_prodpanel": {
+    "cell_R_capped10": 1.47325094034075,
+    "cell_cluster_CI": [
+     1.3209226630642585,
+     1.6227632822617544
+    ],
+    "cell_episode_CI": [
+     0.29134261543296514,
+     2.6546619643069094
+    ],
+    "equal_date": 0.7283546565706851,
+    "equal_date_CI": [
+     0.4904685230402544,
+     0.9913237116299216
+    ],
+    "diff_vs_complement": 1.2865575351776946,
+    "diff_CI": [
+     1.113501596578961,
+     1.453396785299456
+    ],
+    "ex_covid": 0.9659272821069353,
+    "loo_episode_min": 0.9351663004472285,
+    "n_episodes": 14,
+    "n_fires": 2215,
+    "n_names": 1026,
+    "n_clusters": 1558,
+    "eq_notional_cell": 0.36322253325204207,
+    "eq_notional_complement": 0.05300954345095375,
+    "admit_share_of_mapped_heldout": 0.2067374250115367,
+    "checks": {
+     "G1_cell_cluster_CI_gt0": true,
+     "G2_diff_vs_complement_CI_gt0": true,
+     "G3_equal_date_positive": true,
+     "G4_cell_episode_CI_gt0": true,
+     "F1_ex_covid_positive": true,
+     "F1_loo_episode_min_positive": true
+    },
+    "verdict": "PASS"
+   }
+  }
+ },
+ "coverage": {
+  "r3_committed": {
+   "fire_weighted_union": 0.6938457219501544,
+   "fire_weighted_basket": 0.16026700770454474,
+   "fire_weighted_sector": 0.5335787142456097,
+   "basket_names_pct": 0.1248650593738755,
+   "gics_names_pct": 0.5966174883051457,
+   "passes_fire_weighted_floor": true
+  },
+  "A_local_fullpanel": {
+   "fire_weighted_union": 0.6938457219501544,
+   "fire_weighted_basket": 0.16026700770454474,
+   "fire_weighted_sector": 0.5335787142456097,
+   "basket_names_pct": 0.1248650593738755,
+   "gics_names_pct": 0.5966174883051457,
+   "passes_fire_weighted_floor": true
+  },
+  "B_PROD": {
+   "fire_weighted_union": 0.759893526316884,
+   "fire_weighted_basket": 0.16663547320481628,
+   "fire_weighted_sector": 0.5932580531120677,
+   "basket_names_pct": 0.14099429502852487,
+   "gics_names_pct": 0.6438467807660961,
+   "passes_fire_weighted_floor": true
+  },
+  "C_local_prodpanel": {
+   "fire_weighted_union": 0.7396858277231141,
+   "fire_weighted_basket": 0.1767305368548248,
+   "fire_weighted_sector": 0.5629552908682893,
+   "basket_names_pct": 0.14099429502852487,
+   "gics_names_pct": 0.6438467807660961,
+   "passes_fire_weighted_floor": true
+  }
+ },
+ "divergence": {
+  "all": {
+   "n_blocked_local_tape": 29011,
+   "n_blocked_prod_tape": 48125,
+   "n_exact_shared": 17905,
+   "n_appearing_on_prod_only": 30220,
+   "n_disappearing_local_only": 11106,
+   "n_prod_only_within_one_3d_bar_of_a_local_fire": 6090,
+   "n_local_only_within_one_3d_bar_of_a_prod_fire": 6088,
+   "n_names_local": 2367,
+   "n_names_prod": 2367,
+   "n_names_prod_only": 0,
+   "n_names_local_only": 0
+  },
+  "verdict_2019plus": {
+   "n_blocked_local_tape": 16275,
+   "n_blocked_prod_tape": 16163,
+   "n_exact_shared": 9953,
+   "n_appearing_on_prod_only": 6210,
+   "n_disappearing_local_only": 6322,
+   "n_prod_only_within_one_3d_bar_of_a_local_fire": 3916,
+   "n_local_only_within_one_3d_bar_of_a_prod_fire": 3914,
+   "n_names_local": 2364,
+   "n_names_prod": 2362,
+   "n_names_prod_only": 0,
+   "n_names_local_only": 2
+  },
+  "verdict_per_name": {
+   "n_names_identical_count": 1579,
+   "n_names_more_on_prod": 370,
+   "n_names_fewer_on_prod": 415,
+   "top_gainers": {
+    "QUBT": 8,
+    "UAMY": 7,
+    "IRWD": 6,
+    "SLNH": 6,
+    "MVIS": 6,
+    "BXP": 6,
+    "WRLD": 5,
+    "TSSI": 5
+   },
+   "top_losers": {
+    "SLS": -9,
+    "FET": -8,
+    "GALT": -7,
+    "KOS": -7,
+    "HURN": -6,
+    "PLPC": -6,
+    "ACHV": -5,
+    "GORO": -5
+   }
+  },
+  "note": "local baskets/ohlcv tapes start 2014-01-02 for most names; the production bar files run to IPO, so the anchor=0 3D grid phase and the pre-2014 design era both differ by construction",
+  "phase_vs_feed": {
+   "n_names_identical_tape_start": 1101,
+   "n_names_longer_history_on_prod": 1263,
+   "identical_tape_start_names": {
+    "n_names": 1101,
+    "n_local": 6950,
+    "n_prod": 6946,
+    "n_exact_shared": 6943,
+    "n_prod_only": 3,
+    "n_local_only": 7,
+    "exact_agreement_pct": 0.9986
+   },
+   "longer_prod_history_names": {
+    "n_names": 1263,
+    "n_local": 9303,
+    "n_prod": 9198,
+    "n_exact_shared": 2995,
+    "n_prod_only": 6203,
+    "n_local_only": 6308,
+    "exact_agreement_pct": 0.1932
+   },
+   "interpretation": "anchor=0 counts 3D bars from the FIRST ROW OF THE PASSED SERIES, so a name whose production tape reaches further back is graded on a different 3D grid phase; names whose tapes start on the same session isolate real feed disagreement"
+  },
+  "residual_feed_disagreements_same_tape_start": {
+   "prod_only": [
+    [
+     "ALIT",
+     "2026-04-16"
+    ],
+    [
+     "WM",
+     "2026-06-12"
+    ],
+    [
+     "XPEV",
+     "2026-05-28"
+    ]
+   ],
+   "local_only": [
+    [
+     "ALIT",
+     "2025-02-26"
+    ],
+    [
+     "ALIT",
+     "2025-05-01"
+    ],
+    [
+     "ALIT",
+     "2025-10-27"
+    ],
+    [
+     "ALIT",
+     "2026-02-02"
+    ],
+    [
+     "ALIT",
+     "2026-03-04"
+    ],
+    [
+     "ALIT",
+     "2026-04-13"
+    ],
+    [
+     "TARA",
+     "2026-07-06"
+    ]
+   ]
+  }
+ },
+ "reproduction_mismatches_vs_committed_r3": {
+  "0.20": {},
+  "0.25": {},
+  "0.30": {}
+ },
+ "tape_start_examples": {
+  "UEC": {
+   "local": "2014-01-02",
+   "prod": "2007-04-05"
+  },
+  "HL": {
+   "local": "2014-01-02",
+   "prod": "1980-03-17"
+  },
+  "NEM": {
+   "local": "1980-03-17",
+   "prod": "1980-03-17"
+  },
+  "FCX": {
+   "local": "1995-07-10",
+   "prod": "1995-07-10"
+  },
+  "CCJ": {
+   "local": "2014-01-02",
+   "prod": "1996-03-14"
+  },
+  "PAAS": {
+   "local": "2014-01-02",
+   "prod": "1995-06-12"
+  }
+ },
+ "exemplars": {
+  "regrade_signal_scan": {
+   "local": {
+    "UEC": {
+     "loaded": true,
+     "n_bars_daily": 3168,
+     "first_session": "2014-01-02",
+     "last_session": "2026-08-07",
+     "last_close": 11.260000228881836,
+     "n_3d_rows": 1026,
+     "fires_2026": [
+      {
+       "bar_open": "2026-01-05",
+       "known_ts": "2026-01-07",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": true,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      },
+      {
+       "bar_open": "2026-04-15",
+       "known_ts": "2026-04-17",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": true,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      },
+      {
+       "bar_open": "2026-08-03",
+       "known_ts": "2026-08-05",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": true,
+       "mo_bull": false,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "BLOCKED"
+      }
+     ],
+     "cited": [
+      {
+       "cited_date": "2026-08-03",
+       "matched_fire": [
+        {
+         "bar_open": "2026-08-03",
+         "known_ts": "2026-08-05",
+         "CB": true,
+         "revBuy": false,
+         "bear_block": true,
+         "mo_bull": false,
+         "above200": false,
+         "w2_bull": false,
+         "w_bull": false,
+         "verdict": "BLOCKED"
+        }
+       ],
+       "containing_bar": {
+        "bar_open": "2026-08-03",
+        "known_ts": "2026-08-05",
+        "CB": true,
+        "revBuy": false,
+        "bear_block": true,
+        "mo_bull": false,
+        "above200": false,
+        "w2_bull": false,
+        "w_bull": false,
+        "raw_fire": true
+       }
+      }
+     ]
+    },
+    "HL": {
+     "loaded": true,
+     "n_bars_daily": 3168,
+     "first_session": "2014-01-02",
+     "last_session": "2026-08-07",
+     "last_close": 16.850000381469727,
+     "n_3d_rows": 1026,
+     "fires_2026": [
+      {
+       "bar_open": "2026-06-24",
+       "known_ts": "2026-06-26",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      }
+     ],
+     "cited": [
+      {
+       "cited_date": "2026-06-16",
+       "matched_fire": null,
+       "containing_bar": {
+        "bar_open": "2026-06-15",
+        "known_ts": "2026-06-17",
+        "CB": false,
+        "revBuy": false,
+        "bear_block": false,
+        "mo_bull": true,
+        "above200": false,
+        "w2_bull": false,
+        "w_bull": false,
+        "raw_fire": false
+       }
+      },
+      {
+       "cited_date": "2026-06-25",
+       "matched_fire": null,
+       "containing_bar": {
+        "bar_open": "2026-06-24",
+        "known_ts": "2026-06-26",
+        "CB": true,
+        "revBuy": false,
+        "bear_block": false,
+        "mo_bull": true,
+        "above200": false,
+        "w2_bull": false,
+        "w_bull": false,
+        "raw_fire": true
+       }
+      }
+     ]
+    },
+    "NEM": {
+     "loaded": true,
+     "n_bars_daily": 11693,
+     "first_session": "1980-03-17",
+     "last_session": "2026-08-07",
+     "last_close": 112.9800033569336,
+     "n_3d_rows": 3868,
+     "fires_2026": [],
+     "cited": []
+    },
+    "9988.HK": {
+     "loaded": true,
+     "n_bars_daily": 1646,
+     "first_session": "2019-11-26",
+     "last_session": "2026-08-07",
+     "last_close": 123.80000305175781,
+     "n_3d_rows": 519,
+     "fires_2026": [
+      {
+       "bar_open": "2026-01-13",
+       "known_ts": "2026-01-15",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": true,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      },
+      {
+       "bar_open": "2026-04-15",
+       "known_ts": "2026-04-17",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      },
+      {
+       "bar_open": "2026-07-09",
+       "known_ts": "2026-07-13",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": true,
+       "mo_bull": false,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "BLOCKED"
+      }
+     ],
+     "cited": []
+    },
+    "600547.SS": {
+     "loaded": true,
+     "n_bars_daily": 5616,
+     "first_session": "2003-08-28",
+     "last_session": "2026-08-07",
+     "last_close": 30.479999542236328,
+     "n_3d_rows": 1842,
+     "fires_2026": [
+      {
+       "bar_open": "2026-07-03",
+       "known_ts": "2026-07-07",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": true,
+       "mo_bull": false,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "BLOCKED"
+      }
+     ],
+     "cited": []
+    },
+    "002716.SZ": {
+     "loaded": true,
+     "n_bars_daily": 3043,
+     "first_session": "2014-01-28",
+     "last_session": "2026-08-07",
+     "last_close": 9.09000015258789,
+     "n_3d_rows": 984,
+     "fires_2026": [
+      {
+       "bar_open": "2026-07-23",
+       "known_ts": "2026-07-27",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": true,
+       "mo_bull": false,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "BLOCKED"
+      }
+     ],
+     "cited": []
+    }
+   },
+   "prod": {
+    "UEC": {
+     "loaded": true,
+     "n_bars_daily": 4866,
+     "first_session": "2007-04-05",
+     "last_session": "2026-08-07",
+     "last_close": 11.26,
+     "n_3d_rows": 1592,
+     "fires_2026": [
+      {
+       "bar_open": "2026-01-05",
+       "known_ts": "2026-01-07",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": true,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      },
+      {
+       "bar_open": "2026-04-15",
+       "known_ts": "2026-04-17",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": true,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      },
+      {
+       "bar_open": "2026-08-03",
+       "known_ts": "2026-08-05",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": true,
+       "mo_bull": false,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "BLOCKED"
+      }
+     ],
+     "cited": [
+      {
+       "cited_date": "2026-08-03",
+       "matched_fire": [
+        {
+         "bar_open": "2026-08-03",
+         "known_ts": "2026-08-05",
+         "CB": true,
+         "revBuy": false,
+         "bear_block": true,
+         "mo_bull": false,
+         "above200": false,
+         "w2_bull": false,
+         "w_bull": false,
+         "verdict": "BLOCKED"
+        }
+       ],
+       "containing_bar": {
+        "bar_open": "2026-08-03",
+        "known_ts": "2026-08-05",
+        "CB": true,
+        "revBuy": false,
+        "bear_block": true,
+        "mo_bull": false,
+        "above200": false,
+        "w2_bull": false,
+        "w_bull": false,
+        "raw_fire": true
+       }
+      }
+     ]
+    },
+    "HL": {
+     "loaded": true,
+     "n_bars_daily": 11693,
+     "first_session": "1980-03-17",
+     "last_session": "2026-08-07",
+     "last_close": 16.85,
+     "n_3d_rows": 3868,
+     "fires_2026": [
+      {
+       "bar_open": "2026-05-07",
+       "known_ts": "2026-05-11",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": true,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      },
+      {
+       "bar_open": "2026-05-26",
+       "known_ts": "2026-05-28",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": true,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      },
+      {
+       "bar_open": "2026-06-16",
+       "known_ts": "2026-06-18",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      },
+      {
+       "bar_open": "2026-06-25",
+       "known_ts": "2026-06-29",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      }
+     ],
+     "cited": [
+      {
+       "cited_date": "2026-06-16",
+       "matched_fire": [
+        {
+         "bar_open": "2026-06-16",
+         "known_ts": "2026-06-18",
+         "CB": true,
+         "revBuy": false,
+         "bear_block": false,
+         "mo_bull": true,
+         "above200": false,
+         "w2_bull": false,
+         "w_bull": false,
+         "verdict": "TAKEN"
+        }
+       ],
+       "containing_bar": {
+        "bar_open": "2026-06-16",
+        "known_ts": "2026-06-18",
+        "CB": true,
+        "revBuy": false,
+        "bear_block": false,
+        "mo_bull": true,
+        "above200": false,
+        "w2_bull": false,
+        "w_bull": false,
+        "raw_fire": true
+       }
+      },
+      {
+       "cited_date": "2026-06-25",
+       "matched_fire": [
+        {
+         "bar_open": "2026-06-25",
+         "known_ts": "2026-06-29",
+         "CB": true,
+         "revBuy": false,
+         "bear_block": false,
+         "mo_bull": true,
+         "above200": false,
+         "w2_bull": false,
+         "w_bull": false,
+         "verdict": "TAKEN"
+        }
+       ],
+       "containing_bar": {
+        "bar_open": "2026-06-25",
+        "known_ts": "2026-06-29",
+        "CB": true,
+        "revBuy": false,
+        "bear_block": false,
+        "mo_bull": true,
+        "above200": false,
+        "w2_bull": false,
+        "w_bull": false,
+        "raw_fire": true
+       }
+      }
+     ]
+    },
+    "NEM": {
+     "loaded": true,
+     "n_bars_daily": 11693,
+     "first_session": "1980-03-17",
+     "last_session": "2026-08-07",
+     "last_close": 112.98,
+     "n_3d_rows": 3868,
+     "fires_2026": [],
+     "cited": []
+    },
+    "9988.HK": {
+     "loaded": true,
+     "n_bars_daily": 1646,
+     "first_session": "2019-11-26",
+     "last_session": "2026-08-07",
+     "last_close": 123.8,
+     "n_3d_rows": 519,
+     "fires_2026": [
+      {
+       "bar_open": "2026-01-13",
+       "known_ts": "2026-01-15",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": true,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      },
+      {
+       "bar_open": "2026-04-15",
+       "known_ts": "2026-04-17",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": false,
+       "mo_bull": true,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "TAKEN"
+      },
+      {
+       "bar_open": "2026-07-09",
+       "known_ts": "2026-07-13",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": true,
+       "mo_bull": false,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "BLOCKED"
+      }
+     ],
+     "cited": []
+    },
+    "600547.SS": {
+     "loaded": true,
+     "n_bars_daily": 3900,
+     "first_session": "2010-07-15",
+     "last_session": "2026-08-07",
+     "last_close": 30.48,
+     "n_3d_rows": 1253,
+     "fires_2026": [
+      {
+       "bar_open": "2026-07-03",
+       "known_ts": "2026-07-07",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": true,
+       "mo_bull": false,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "BLOCKED"
+      }
+     ],
+     "cited": []
+    },
+    "002716.SZ": {
+     "loaded": true,
+     "n_bars_daily": 3043,
+     "first_session": "2014-01-28",
+     "last_session": "2026-08-07",
+     "last_close": 9.09,
+     "n_3d_rows": 974,
+     "fires_2026": [
+      {
+       "bar_open": "2026-07-23",
+       "known_ts": "2026-07-27",
+       "CB": true,
+       "revBuy": false,
+       "bear_block": true,
+       "mo_bull": false,
+       "above200": false,
+       "w2_bull": false,
+       "w_bull": false,
+       "verdict": "BLOCKED"
+      }
+     ],
+     "cited": []
+    }
+   }
+  },
+  "production_slice_truth": {
+   "UEC": {
+    "as_of": "2026-08-06",
+    "engine": "python:signal_layer.confluence_v2@v2",
+    "source_hash": "sha256:f27a407bea861a2217477beb98c398abc62845d2bcc38d331d4963c06471986d",
+    "rows_2026": [
+     {
+      "ts": "2026-01-05",
+      "known_ts": "2026-01-07",
+      "bar_index": 1573,
+      "type": "BUY",
+      "strength": 0.725,
+      "price": 14.42,
+      "reasons": [
+       "macd_bull_cross",
+       "recent_b1",
+       "confirm_bull",
+       "rsi<65"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": true,
+       "monthlyBull": true
+      },
+      "quality": "take",
+      "quality_reason": "held confirmation",
+      "tier": "base",
+      "score": 20
+     },
+     {
+      "ts": "2026-01-30",
+      "known_ts": "2026-01-30",
+      "bar_index": 1579,
+      "type": "SELL",
+      "basis": "structure_stop",
+      "strength": 0.863,
+      "price": 17.24,
+      "stop_level": 18.35,
+      "reasons": [
+       "distribution_confirmed",
+       "structure_break"
+      ],
+      "regime": {
+       "weeklyBull": true,
+       "above200": true,
+       "monthlyBull": true
+      }
+     },
+     {
+      "ts": "2026-02-05",
+      "known_ts": "2026-02-05",
+      "bar_index": 1580,
+      "type": "SELL",
+      "basis": "structure_stop",
+      "strength": 0.863,
+      "price": 15.04,
+      "stop_level": 18.35,
+      "reasons": [
+       "distribution_confirmed",
+       "structure_break"
+      ],
+      "regime": {
+       "weeklyBull": true,
+       "above200": true,
+       "monthlyBull": true
+      }
+     },
+     {
+      "ts": "2026-04-15",
+      "known_ts": "2026-04-17",
+      "bar_index": 1596,
+      "type": "BUY",
+      "strength": 0.725,
+      "price": 14.97,
+      "reasons": [
+       "macd_bull_cross",
+       "recent_b1",
+       "confirm_bull",
+       "rsi<65"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": true,
+       "monthlyBull": true
+      },
+      "quality": "take",
+      "quality_reason": "held confirmation",
+      "tier": "base",
+      "score": 35
+     },
+     {
+      "ts": "2026-05-15",
+      "known_ts": "2026-05-15",
+      "bar_index": 1603,
+      "type": "SELL",
+      "basis": "structure_stop",
+      "strength": 0.588,
+      "price": 13.65,
+      "stop_level": 14.5,
+      "reasons": [
+       "distribution_confirmed",
+       "structure_break"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": false,
+       "monthlyBull": true
+      }
+     },
+     {
+      "ts": "2026-05-18",
+      "known_ts": "2026-05-18",
+      "bar_index": 1603,
+      "type": "SELL",
+      "basis": "structure_stop",
+      "strength": 0.588,
+      "price": 13.2,
+      "stop_level": 14.5,
+      "reasons": [
+       "distribution_confirmed",
+       "structure_break"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": false,
+       "monthlyBull": true
+      }
+     },
+     {
+      "ts": "2026-08-03",
+      "known_ts": "2026-08-05",
+      "bar_index": 1621,
+      "type": "BUY",
+      "strength": 0.45,
+      "price": 10.72,
+      "reasons": [
+       "macd_bull_cross",
+       "recent_b1",
+       "confirm_bull",
+       "rsi<65"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": false,
+       "monthlyBull": false
+      },
+      "quality": "regime_blocked",
+      "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+      "tier": null,
+      "score": null,
+      "blocked": true
+     }
+    ]
+   },
+   "HL": {
+    "as_of": "2026-08-07",
+    "engine": "python:signal_layer.confluence_v2@v2",
+    "source_hash": "sha256:f27a407bea861a2217477beb98c398abc62845d2bcc38d331d4963c06471986d",
+    "rows_2026": [
+     {
+      "ts": "2026-02-12",
+      "known_ts": "2026-02-12",
+      "bar_index": 3857,
+      "type": "SELL",
+      "basis": "structure_stop",
+      "strength": 0.863,
+      "price": 20.8811,
+      "stop_level": 21.3009,
+      "reasons": [
+       "distribution_confirmed",
+       "structure_break"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": true,
+       "monthlyBull": true
+      }
+     },
+     {
+      "ts": "2026-05-07",
+      "known_ts": "2026-05-11",
+      "bar_index": 3877,
+      "type": "BUY",
+      "strength": 0.725,
+      "price": 20.6652,
+      "reasons": [
+       "macd_bull_cross",
+       "recent_b1",
+       "confirm_bull",
+       "rsi<65"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": true,
+       "monthlyBull": true
+      },
+      "quality": "block",
+      "quality_reason": "failed reclaim-and-hold",
+      "tier": "base",
+      "score": 70
+     },
+     {
+      "ts": "2026-05-26",
+      "known_ts": "2026-05-28",
+      "bar_index": 3881,
+      "type": "BUY",
+      "strength": 0.725,
+      "price": 17.59,
+      "reasons": [
+       "macd_bull_cross",
+       "recent_b1",
+       "confirm_bull",
+       "rsi<65"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": true,
+       "monthlyBull": true
+      },
+      "quality": "take",
+      "quality_reason": "held confirmation",
+      "tier": "quality",
+      "score": 65
+     },
+     {
+      "ts": "2026-06-16",
+      "known_ts": "2026-06-18",
+      "bar_index": 3886,
+      "type": "BUY",
+      "strength": 0.588,
+      "price": 15.96,
+      "reasons": [
+       "macd_bull_cross",
+       "recent_b1",
+       "confirm_bull",
+       "rsi<65"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": false,
+       "monthlyBull": true
+      },
+      "quality": "block",
+      "quality_reason": "counter-trend, no 200-reclaim/hold",
+      "tier": "base",
+      "score": 45
+     },
+     {
+      "ts": "2026-06-25",
+      "known_ts": "2026-06-29",
+      "bar_index": 3888,
+      "type": "BUY",
+      "strength": 0.588,
+      "price": 15.4,
+      "reasons": [
+       "macd_bull_cross",
+       "recent_b1",
+       "confirm_bull",
+       "rsi<65"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": false,
+       "monthlyBull": true
+      },
+      "quality": "block",
+      "quality_reason": "counter-trend, no 200-reclaim/hold",
+      "tier": "base",
+      "score": 75
+     },
+     {
+      "ts": "2026-07-31",
+      "known_ts": "2026-07-31",
+      "bar_index": 3896,
+      "type": "SELL",
+      "basis": "structure_stop",
+      "strength": 0.45,
+      "price": 14.12,
+      "stop_level": 14.29,
+      "reasons": [
+       "distribution_confirmed",
+       "structure_break"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": false,
+       "monthlyBull": false
+      }
+     }
+    ]
+   },
+   "NEM": {
+    "as_of": "2026-08-07",
+    "engine": "python:signal_layer.confluence_v2@v2",
+    "source_hash": "sha256:f27a407bea861a2217477beb98c398abc62845d2bcc38d331d4963c06471986d",
+    "rows_2026": [
+     {
+      "ts": "2026-01-30",
+      "known_ts": "2026-01-30",
+      "bar_index": 3854,
+      "type": "SELL",
+      "basis": "structure_stop",
+      "strength": 1.0,
+      "price": 111.8619,
+      "stop_level": 113.6242,
+      "reasons": [
+       "distribution_confirmed",
+       "structure_break"
+      ],
+      "regime": {
+       "weeklyBull": true,
+       "above200": true,
+       "monthlyBull": true
+      }
+     }
+    ]
+   },
+   "9988.HK": {
+    "as_of": "2026-08-07",
+    "engine": "python:signal_layer.confluence_v2@v2",
+    "source_hash": "sha256:f27a407bea861a2217477beb98c398abc62845d2bcc38d331d4963c06471986d",
+    "rows_2026": [
+     {
+      "ts": "2026-01-13",
+      "known_ts": "2026-01-15",
+      "bar_index": 503,
+      "type": "BUY",
+      "strength": 0.725,
+      "price": 164.4155,
+      "reasons": [
+       "macd_bull_cross",
+       "recent_b1",
+       "confirm_bull",
+       "rsi<65"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": true,
+       "monthlyBull": true
+      },
+      "quality": "block",
+      "quality_reason": "failed reclaim-and-hold",
+      "tier": "base",
+      "score": 45
+     },
+     {
+      "ts": "2026-02-04",
+      "known_ts": "2026-02-04",
+      "bar_index": 508,
+      "type": "SELL",
+      "basis": "structure_stop",
+      "strength": 0.863,
+      "price": 159.3212,
+      "stop_level": 159.521,
+      "reasons": [
+       "distribution_confirmed",
+       "structure_break"
+      ],
+      "regime": {
+       "weeklyBull": true,
+       "above200": true,
+       "monthlyBull": true
+      }
+     },
+     {
+      "ts": "2026-04-15",
+      "known_ts": "2026-04-17",
+      "bar_index": 523,
+      "type": "BUY",
+      "strength": 0.588,
+      "price": 136.2471,
+      "reasons": [
+       "macd_bull_cross",
+       "recent_b1",
+       "confirm_bull",
+       "rsi<65"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": false,
+       "monthlyBull": true
+      },
+      "quality": "block",
+      "quality_reason": "veto: bearish divergence",
+      "tier": "base",
+      "score": 60
+     },
+     {
+      "ts": "2026-05-27",
+      "known_ts": "2026-05-27",
+      "bar_index": 532,
+      "type": "SELL",
+      "basis": "structure_stop",
+      "strength": 0.588,
+      "price": 124.1607,
+      "stop_level": 125.8588,
+      "reasons": [
+       "distribution_confirmed",
+       "structure_break"
+      ],
+      "regime": {
+       "weeklyBull": true,
+       "above200": false,
+       "monthlyBull": false
+      }
+     },
+     {
+      "ts": "2026-07-09",
+      "known_ts": "2026-07-13",
+      "bar_index": 542,
+      "type": "BUY",
+      "strength": 0.45,
+      "price": 110.7,
+      "reasons": [
+       "macd_bull_cross",
+       "recent_b1",
+       "confirm_bull",
+       "rsi<65"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": false,
+       "monthlyBull": false
+      },
+      "quality": "regime_blocked",
+      "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+      "tier": null,
+      "score": null,
+      "blocked": true
+     }
+    ]
+   },
+   "600547.SS": {
+    "as_of": "2026-08-06",
+    "engine": "python:signal_layer.confluence_v2@v2",
+    "source_hash": "sha256:f27a407bea861a2217477beb98c398abc62845d2bcc38d331d4963c06471986d",
+    "rows_2026": [
+     {
+      "ts": "2026-02-05",
+      "known_ts": "2026-02-05",
+      "bar_index": 1260,
+      "type": "SELL",
+      "basis": "structure_stop",
+      "strength": 1.0,
+      "price": 45.82,
+      "stop_level": 45.94,
+      "reasons": [
+       "distribution_confirmed",
+       "structure_break"
+      ],
+      "regime": {
+       "weeklyBull": true,
+       "above200": true,
+       "monthlyBull": true
+      }
+     },
+     {
+      "ts": "2026-07-03",
+      "known_ts": "2026-07-07",
+      "bar_index": 1292,
+      "type": "BUY",
+      "strength": 0.45,
+      "price": 24.5891,
+      "reasons": [
+       "macd_bull_cross",
+       "recent_b1",
+       "confirm_bull",
+       "rsi<65"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": false,
+       "monthlyBull": false
+      },
+      "quality": "regime_blocked",
+      "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+      "tier": null,
+      "score": null,
+      "blocked": true
+     }
+    ]
+   },
+   "002716.SZ": {
+    "as_of": "2026-08-05",
+    "engine": "python:signal_layer.confluence_v2@v2",
+    "source_hash": "sha256:f27a407bea861a2217477beb98c398abc62845d2bcc38d331d4963c06471986d",
+    "rows_2026": [
+     {
+      "ts": "2026-07-23",
+      "known_ts": "2026-07-27",
+      "bar_index": 1011,
+      "type": "BUY",
+      "strength": 0.45,
+      "price": 7.69,
+      "reasons": [
+       "macd_bull_cross",
+       "recent_b1",
+       "confirm_bull",
+       "rsi<65"
+      ],
+      "regime": {
+       "weeklyBull": false,
+       "above200": false,
+       "monthlyBull": false
+      },
+      "quality": "regime_blocked",
+      "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+      "tier": null,
+      "score": null,
+      "blocked": true
+     }
+    ]
+   }
+  }
+ },
+ "verdict": {
+  "gate": "B \u2014 production-feed re-grade (prereg \u00a75 ratification item 1; packet \u00a74.2a)",
+  "basis": "/opt/terminal/terminal/public/data/<SYM>.json bar files, 2,458 pulled in ONE tar-over-ssh (208MB gz), all compute local",
+  "instrument_fidelity": "run A (local basis, 2,779 panel) reproduces committed r3_results.json EXACTLY on every promotion-bearing number",
+  "A1b_production_basis": {
+   "0.20": "PASS",
+   "0.25": "PASS",
+   "0.30": "PASS"
+  },
+  "ratified_threshold_25pct": "PASS \u2014 all four frozen gates + ex-COVID + LOO-min, both clustering units",
+  "coverage_floor": "76.0% fire-weighted union vs 60% floor (r3: 69.4%) \u2014 PASS",
+  "exemplars": {
+   "UEC 2026-08-03": "REPRODUCES \u2014 production slice quality=regime_blocked, mo=0/a200=0/w2=0; re-grade identical bar_open+known_ts+legs",
+   "HL 2026-06-16": "NOT a bear_block fire on EITHER basis \u2014 production slice says quality=block (keeper: counter-trend, no 200-reclaim/hold) with monthlyBull=TRUE -> bear_block=False",
+   "HL 2026-06-25": "same as 06-16 \u2014 keeper block, not regime_blocked",
+   "NEM": "no 2026 BUY fire at all on either basis (production slice: one SELL 2026-01-30) \u2014 no-fire confirmed",
+   "9988.HK 2026-07-09": "genuine regime_blocked, reproduces exactly; out of A1b scope (no US peer set)",
+   "600547.SS 2026-07-03": "genuine regime_blocked, reproduces exactly; out of A1b scope",
+   "002716.SZ 2026-07-23": "genuine regime_blocked, reproduces exactly; out of A1b scope"
+  },
+  "flags": [
+   "design-era threshold selector picks 30% on the production basis vs 25% locally (abs-separation criterion); 25% still passes every gate \u2014 \u00a77 already declared the notch an operator choice",
+   "packet \u00a72 coverage-gate claim \"all three computable US exemplar fires admit at every threshold\" counts two fires (HL 06-16/06-25) that are NOT in the bear_block cohort; the honest in-cohort count is 1 of 1 (UEC)",
+   "committed r3 graded 1,263 of 2,454 names on a truncated-feed 3D grid phase (anchor=0 on a 2014-01-02 local tape); production runs the full-IPO tape, which is the phase confluence._resample_3d documents as correct",
+   "15% notch is 2 episodes on the production basis (3 locally) \u2014 stays excluded"
+  ]
+ }
+}
