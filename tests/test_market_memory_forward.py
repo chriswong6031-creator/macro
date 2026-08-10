@@ -27,6 +27,17 @@ from tests.test_market_memory_pit import _packet as _w1_packet
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "contracts" / "market_memory"
+W2A_CI_PATHS = (
+    "engine/neuralweb/market_memory_forward.py",
+    "engine/neuralweb/market_memory_forward_store.py",
+    "contracts/market_memory/state_snapshot.v1.schema.json",
+    "contracts/market_memory/trial_registration.v1.schema.json",
+    "contracts/market_memory/forecast_record.v1.schema.json",
+    "contracts/market_memory/outcome_record.v1.schema.json",
+    "tests/test_market_memory_forward.py",
+    "tests/test_market_memory_forward_store.py",
+    "research/KONSEKI_CLEAN_ROOM_MARKET_MEMORY_AND_COGNITIVE_ARCHITECTURE_FOR_FABLE_2026-08-08.md",
+)
 
 
 def _synthetic_w1_packet(*, observed_count: int = 2) -> dict[str, Any]:
@@ -902,3 +913,14 @@ def test_public_api_is_frozen_and_module_is_pure_contract_code() -> None:
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
     }
     assert not ({"now", "utcnow", "time", "open", "write_text", "write_bytes"} & calls)
+
+
+def test_w2a_contract_store_and_tests_share_the_market_memory_ci_gate() -> None:
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    jobs = (ROOT / ".github/ci/legacy-jobs.yml").read_text(encoding="utf-8")
+    lane = jobs.split("  market-memory-contract:", 1)[1].split("\n  group-pulse:", 1)[0]
+
+    for path in W2A_CI_PATHS:
+        assert f'      - "{path}"' in workflow, f"missing W2A CI trigger: {path}"
+    assert "tests/test_market_memory_forward.py" in lane
+    assert "tests/test_market_memory_forward_store.py" in lane

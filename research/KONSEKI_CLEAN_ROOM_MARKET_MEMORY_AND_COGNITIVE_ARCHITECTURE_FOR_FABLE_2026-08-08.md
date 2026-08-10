@@ -1122,6 +1122,42 @@ contract join, deliverable lineage, and independently supportable point-in-time
 options/OI plane remain W3 work; a stable or repeated first page cannot prove
 vendor-wide atomic completeness.
 
+### 11.0.7 W2A private sealed forward-evaluation grammar
+
+W2A is the inert grammar for forward evaluation, not a forecasting lane. A
+state snapshot is derived from exact W1 context bytes and reproduces the
+feature-receipt plane domain by domain. An observed state must join to the
+exact W1 source receipt and clocks; a missing W1 plane cannot be rewritten as
+observed by the W2 projection. The snapshot binds its W1 context, store,
+generation, and complete fourteen-domain missingness without adding a learned
+embedding or a reconstructed value.
+
+The trial registration freezes the target formula and marks, horizon,
+distribution and proper score, issued-at-forecast baselines, time splits,
+purge and embargo, dependence clusters, trial budget, abstention, expiry,
+demotion, and exact model/code/config implementation hashes. A separate
+`outcome_definition_sha256` binds the target, input and outcome marks, horizon,
+and evaluation rule. Forecast keys transitively bind that definition, so two
+trials with different measurement marks cannot share an outcome event.
+
+Each admitted forecast record is sealed as either `issued` or `abstained`.
+That is a per-record disposition guarantee only: W2A has no opportunity
+schedule, completeness receipt, production writer, or claim that every market
+opportunity was recorded. Outcome records are separate, maturity-gated facts
+with explicit effective, available, known, observed, and recorded clocks.
+Corrections append as sequential active revisions and cannot rewrite a state,
+trial, or forecast.
+
+The companion store accepts only a caller-supplied private temporary root. It
+uses four disjoint content-addressed namespaces, create-once atomic publication,
+exact dependency joins, cumulative generations, and HEAD-last replacement;
+interrupted writes recover without accepting partial final objects. There is no
+default production path, environment override, API route, systemd unit,
+scheduler, evaluator result, or public output. Every action-authority bit is
+false, `context_only=true`, and training and promotion remain false. A real
+opportunity writer, completeness receipt, proper-score evaluator, and any use
+of these records remain later evidence-gated work.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1247,6 +1283,21 @@ W1B.3B technical actual-output additions:
 - `tests/test_{market_memory_technical_observation,market_memory_technical_store,capture_market_memory_technicals,market_memory_technicals_deploy}.py`
   — transport, ETag/body, frozen-source, resource, session, price-basis,
   freshness, crash, tamper, private-root, deploy, CI, and zero-authority guards.
+
+W2A private forward-contract additions:
+
+- `engine/neuralweb/market_memory_forward.py` and the strict
+  `state_snapshot`, `trial_registration`, `forecast_record`, and
+  `outcome_record` v1 contracts — exact W1 projection, frozen preregistration,
+  mark-bound outcome identity, sealed issued-or-abstained records, explicit
+  outcome clocks/revisions, and zero-authority validation;
+- `engine/neuralweb/market_memory_forward_store.py` — caller-root-only private
+  CAS with exact dependency joins, atomic no-replace publication, bounded crash
+  recovery, cumulative generations, and no production callsite;
+- `tests/test_market_memory_forward.py` and
+  `tests/test_market_memory_forward_store.py` — schema/runtime parity, W1
+  provenance, preregistration, mark separation, tamper, crash, replay, CI
+  ownership, and absence-of-authority fixtures.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 
