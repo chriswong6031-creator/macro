@@ -66,7 +66,16 @@ Six dimensions, from the operator's §7 grading axes. Scale per dimension per co
 
 ## §D Verdict matrix
 
-*(the deliverable: dimensions × competitors grid + per-competitor written verdicts answering the operator's question, home-turf and moats graded separately)*
+Grades are **us vs them** on each rubric dimension (BEAT = we are materially better / PARITY / BEHIND / N/A = they don't play the axis). Per-competitor verdicts below the grid answer the operator's question in two parts: home turf, then moats.
+
+| Dim | vs Jodie.ai | vs Struct | vs Quartr | vs EarningsCall.ai | vs EquityDesk |
+|---|---|---|---|---|---|
+| R1 read assembly | *(pending §C)* | — | — | — | — |
+| R2 membership hygiene | — | — | — | — | — |
+| R3 arc answers | — | — | — | — | — |
+| R4 earnings integration | — | — | — | — | — |
+| R5 honest nulls | — | — | — | — | — |
+| R6 bilingual reach | — | — | — | — | — |
 
 ## §E Gaps → waves
 
