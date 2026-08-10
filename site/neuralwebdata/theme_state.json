@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_state.v1",
-  "as_of": "2026-08-09",
-  "generated_at": "2026-08-09T01:33:22Z",
+  "as_of": "2026-08-10",
+  "generated_at": "2026-08-10T03:35:14Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -63,10 +63,10 @@
       "radar": [
         {
           "basket_id": "ai_semiconductors",
-          "state": "QUIET",
-          "lifecycle": "quiet",
-          "divergence": -0.535,
-          "salience": 0.535,
+          "state": "CONFIRMED_UP",
+          "lifecycle": "confirming",
+          "divergence": -0.514,
+          "salience": 0.514,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
@@ -162,8 +162,8 @@
           "basket_id": "memory_storage",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 0.092,
-          "salience": 0.092,
+          "divergence": 0.105,
+          "salience": 0.105,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -233,11 +233,19 @@
       "radar": [
         {
           "basket_id": "semicap_equipment",
-          "state": "CONFIRMED_DOWN",
-          "lifecycle": "fading",
-          "divergence": 1.313,
-          "salience": 1.313,
+          "state": "POSITIVE_DIVERGENCE",
+          "lifecycle": "emerging",
+          "divergence": 1.656,
+          "salience": 1.656,
           "source": "site/basketdata/radar_enriched.json"
+        },
+        {
+          "basket_id": "semicap_equipment",
+          "lean": "positive_divergence",
+          "horizon_d": 63,
+          "check_by": "2026-11-06",
+          "thesis_snippet": "Real activity (congress net-buy, lobbying ramp, 8-k material events) on AEIS, AMAT, ENTG, ICHR… is accelerating (~1.4× Y",
+          "source": "site/basketdata/radar.json"
         }
       ],
       "narrative": null,
@@ -320,8 +328,8 @@
           "basket_id": "data_center_power",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 2.303,
-          "salience": 2.303,
+          "divergence": 2.309,
+          "salience": 2.309,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
@@ -414,8 +422,8 @@
           "basket_id": "nuclear_power",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 2.136,
-          "salience": 2.136,
+          "divergence": 2.132,
+          "salience": 2.132,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
@@ -489,8 +497,8 @@
           "basket_id": "power_grid",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 1.739,
-          "salience": 1.739,
+          "divergence": 1.757,
+          "salience": 1.757,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -555,8 +563,8 @@
           "basket_id": "cybersecurity",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -2.749,
-          "salience": 2.749,
+          "divergence": -2.745,
+          "salience": 2.745,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -628,8 +636,8 @@
           "basket_id": "defense",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -0.272,
-          "salience": 0.272,
+          "divergence": -0.216,
+          "salience": 0.216,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -701,8 +709,8 @@
           "basket_id": "robotics_automation",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -0.282,
-          "salience": 0.282,
+          "divergence": -0.262,
+          "salience": 0.262,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -804,8 +812,8 @@
           "basket_id": "obesity_glp1",
           "state": "NEGATIVE_DIVERGENCE",
           "lifecycle": "fading",
-          "divergence": -1.072,
-          "salience": 1.072,
+          "divergence": -1.159,
+          "salience": 1.159,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -950,8 +958,8 @@
           "basket_id": "space_economy",
           "state": "POSITIVE_DIVERGENCE",
           "lifecycle": "emerging",
-          "divergence": 2.067,
-          "salience": 2.067,
+          "divergence": 2.003,
+          "salience": 2.003,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
@@ -959,7 +967,7 @@
           "lean": "positive_divergence",
           "horizon_d": 63,
           "check_by": "2026-11-06",
-          "thesis_snippet": "Real activity (federal contracts, congress net-buy, lobbying ramp) on RDW, KTOS, BKSY, KRMN… is accelerating (~1.4× YoY)",
+          "thesis_snippet": "Real activity (federal contracts, congress net-buy, lobbying ramp) on RDW, KTOS, BKSY, KRMN… is accelerating (~1.8× YoY)",
           "source": "site/basketdata/radar.json"
         }
       ],
@@ -1031,8 +1039,8 @@
           "basket_id": "critical_minerals",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 3.021,
-          "salience": 3.021,
+          "divergence": 2.703,
+          "salience": 2.703,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1097,8 +1105,8 @@
           "basket_id": "reshoring",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -0.134,
-          "salience": 0.134,
+          "divergence": -0.126,
+          "salience": 0.126,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1146,7 +1154,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 43.4,
+        "score": 44.7,
         "entry_ready": false,
         "bottleneck_band": "LOOSE",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1355,8 +1363,12 @@
     }
   ],
   "stale_legs": [
+    "divergence_log[cybersecurity]: stale (as_of=2026-08-05)",
+    "divergence_log[ai_semiconductors]: stale (as_of=2026-08-05)",
     "divergence_log[glp1_obesity]: stale (as_of=2026-08-04)",
+    "divergence_log[semicap_equipment]: stale (as_of=2026-08-05)",
     "divergence_log[fintech_payments]: stale (as_of=2026-08-04)",
+    "divergence_log[memory_storage]: stale (as_of=2026-08-05)",
     "divergence_log[diagnostics_lifesci]: stale (as_of=2026-07-27)",
     "divergence_log[copper_steel_electrify]: stale (as_of=2026-08-02)"
   ],
@@ -1372,7 +1384,7 @@
   },
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-09T01:33:23Z",
-  "inputs_hash": "sha256:5282271e899335ee58a89cfceddf3558689ac7807b440e82782b1e288e9497b8",
+  "produced_at": "2026-08-10T03:35:15Z",
+  "inputs_hash": "sha256:6be37911193fe8dc842db7e560e61a09c862b918d01051019e199a6c8cc280c8",
   "tier": "display"
 }

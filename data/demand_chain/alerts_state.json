@@ -1,6 +1,7 @@
 {
+  "A": "ahead_of_consensus",
   "ACLS": "ahead_of_consensus",
-  "APP": "consensus_at_risk",
+  "AEP": "ahead_of_consensus",
   "ATI": "consensus_at_risk",
   "AVAV": "ahead_of_consensus",
   "BA": "ahead_of_consensus",
@@ -20,6 +21,7 @@
   "MAS": "consensus_at_risk",
   "MDT": "ahead_of_consensus",
   "MTRN": "consensus_at_risk",
+  "NOW": "ahead_of_consensus",
   "NRG": "ahead_of_consensus",
   "NXT": "ahead_of_consensus",
   "ORA": "ahead_of_consensus",
