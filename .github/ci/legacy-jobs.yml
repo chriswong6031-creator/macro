@@ -5250,11 +5250,10 @@ jobs:
         run: python -m pytest tests/test_sbir_awards.py -q
 
   unrun-government-revenue-candidate-projection:
-    # The candidate API/projection fixtures exercise the full contract and are
-    # intentionally isolated from the broad ownership lane above.  They were
-    # the long pole in the old eight-minute job; a separate bounded lane keeps
-    # both failure domains visible instead of masking every Government Revenue
-    # suite behind one timeout.
+    # The projection matrix is the slower half of the candidate contract. It
+    # reached 42/44 tests when it shared one sequential 15-minute lane with the
+    # API suite. Keep projection isolated; the shorter API suite runs with the
+    # existing candidate-grader owner below so both retain bounded runner margin.
     if: ${{ false }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -5264,9 +5263,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install candidate contract dependencies
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
-      - name: candidate API + projection contract fixtures
-        run: python -m pytest tests/test_government_revenue_candidate_api.py tests/test_government_revenue_candidate_projection.py -q
+        run: pip install pytest pytest-xdist pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
+      - name: candidate projection contract fixtures
+        run: python -m pytest -n 2 --dist load --max-worker-restart=0 tests/test_government_revenue_candidate_projection.py -q
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
@@ -5286,11 +5285,6 @@ jobs:
         run: python -m pytest tests/test_no_lookahead.py -q
       - name: study + trial lanes (OOS, divergence, drift, fingerprints, gauntlets)
         run: python -m pytest tests/test_a2_oos_analysis.py tests/test_construction_divergence_study.py tests/test_expect_drift_panel.py tests/test_f_hz1_study.py tests/test_falsosc_trial_v1.py tests/test_grade_breadth_divergence.py tests/test_intraday_large_cap_tech_leader_study.py tests/test_long_hold_gap_guard.py tests/test_macro_fire_context.py tests/test_options_history_gauntlet.py tests/test_per_fire_sector_benchmark.py tests/test_run_w1_sev.py tests/test_run_w2_slq.py tests/test_thesis_funnel_history.py tests/test_w3_fingerprint_stats.py -q
-      # Wired 2026-08-10 after #5267: both suites landed without any workflow
-      # owner. They pin the point-in-time research engine and the inert,
-      # display-only Winner Health template contract built from that program.
-      - name: top-anatomy truth engine + winner-health design freeze
-        run: python -m pytest tests/test_top_anatomy.py tests/test_winner_health_design_freeze.py -q
       # Pick-conditional forward distributions, waves 1 + 1.5 (wired 2026-08-06).
       # Both suites are fixture-only (CI carries no massive_stock_day parquets).
       # Wave-1's suite was named by NO run: step anywhere when it merged, so its PIT
@@ -6503,13 +6497,10 @@ jobs:
   unrun-government-revenue-grader:
     # Wave 9G prospective candidate grader — the instrument that is allowed to
     # tell us the Government Revenue lobe has no predictive value.  It ships as
-    # its OWN job rather than as a step inside unrun-government-revenue for two
-    # reasons: PR #4776 is concurrently rewriting that job's step list (the
-    # nineteen-suite darkness backfill), and this suite needs none of that job's
-    # extra wheels — the grader imports stdlib only, on purpose, so a cohort can
-    # be graded in a minimal environment.  The install line below is repeated
-    # BYTE-FOR-BYTE from the shared unrun-* set, which is what keeps this job
-    # inside that set's single venv instead of buying another one.
+    # its OWN job rather than as a step inside unrun-government-revenue. The
+    # candidate API contract shares this owner because both exercise the same
+    # broad GovRev dependency closure and together remain well inside one bounded
+    # lane; projection keeps its independent 15-minute lane above.
     #
     # Every assertion in the suite is paired with a mutation that proves it can
     # see the defect it guards (widened read window, resolution-conditioned
@@ -6517,7 +6508,7 @@ jobs:
     # own tests are dark is worse than no grader, which is the whole reason this
     # job exists on the day the module lands rather than in a later backfill.
     if: ${{ false }}
-    timeout-minutes: 3
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -6525,9 +6516,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
       - name: prospective candidate grader — issuance log, no-leakage, denominators, coverage
         run: python -m pytest tests/test_government_revenue_candidate_grader.py -q
+      - name: candidate API contract fixtures — cache invalidation, quarantine, audit history
+        run: python -m pytest tests/test_government_revenue_candidate_api.py -q
 
   research-price-panel:
     if: ${{ false }}
@@ -6870,62 +6863,50 @@ jobs:
     # The stateful cycle-ontology falsifier engine was triggerable but its focused
     # regression suite was named by no CI command (#5194).  Keep this as a small
     # first-class owner so path-aware selection can remove unrelated packs without
-    # making the exact changed behavior dark.
-    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
-    paths:
-      - data/cycle_ontology/falsifiers.json
-      - data/cycle_ontology/falsifiers_retired.json
-      - data/cycle_ontology/tripwire_state.json
-      - engine/falsifier_tripwires.py
-      - tests/test_falsifier_tripwires.py
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: install falsifier test dependencies
-        run: python -m pip install pytest pandas numpy pyyaml
-      - name: falsifier tripwire state and v2 gate contracts
-        run: python -m pytest tests/test_falsifier_tripwires.py -q
-
-  alert-zh-completeness:
-    # The zh half of every macro alert body must be fully Chinese.  Six rules
-    # interpolated an English-valued token straight into message_zh (#4700), and
-    # the cycle-falsifier body quoted a curator-written English thesis (#4712).
-    # The suite pins: no English prose in an emitted message_zh; the emitter and
-    # build_vector's backlog translator produce the SAME Chinese for the same
-    # alert; already-baked half-translated alerts_log.parquet rows still render
-    # fully Chinese through the hub's resolution.  A baselined unrun suite
-    # (config/unrun_test_baseline.json) with local-only proof until this job.
-    # TZ=UTC is inline on the run line, not a step env: — the suite has
-    # date-sensitive fixtures and `env` is not an allowed step key in the packed
-    # manifest (run_ci_pack.py ALLOWED_STEP_KEYS).
+    # making the exact changed behavior dark.  The alert-ZH completeness contract
+    # shares the same falsifier engine and ontology inputs, so it stays in this
+    # owner as a distinct step instead of adding a second overlapping job that
+    # defeats the representative-diff scope ceiling. Price-pressure's inferred
+    # ownership closure overlaps this owner too, so its focused suite is a third
+    # distinct step here rather than another always-selected logical job.  TOP
+    # ANATOMY's point-in-time research engine and the inert Winner Health design
+    # freeze are likewise folded in as attributable steps: the dependency install
+    # is already a strict superset, and keeping one selected owner preserves the
+    # representative-diff job ceiling without leaving either suite dark.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
     paths:
       - data/alerts/alerts_log.parquet
       - data/cycle_ontology/falsifiers.json
       - data/cycle_ontology/falsifiers_retired.json
+      - data/cycle_ontology/tripwire_state.json
       - engine/alerts.py
       - engine/falsifier_tripwires.py
       - engine/i18n.py
       - scripts/build_vector.py
       - tests/test_alert_zh_completeness.py
-    timeout-minutes: 10
+      - tests/test_falsifier_tripwires.py
+      - tests/test_price_pressure.py
+      - tests/test_top_anatomy.py
+      - tests/test_winner_health_design_freeze.py
+      - templates/winner_health.html.j2
+    timeout-minutes: 12
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: install alert-zh test dependencies (build_vector import closure)
+      - name: install falsifier, alert-zh, and price-pressure test dependencies
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
+      - name: falsifier tripwire state and v2 gate contracts
+        run: python -m pytest tests/test_falsifier_tripwires.py -q
+      # The zh half of every macro alert body must be fully Chinese. Six rules
+      # interpolated an English-valued token straight into message_zh (#4700), and
+      # the cycle-falsifier body quoted a curator-written English thesis (#4712).
+      # TZ=UTC is inline because env is not an allowed packed-manifest step key.
       - name: zh alert bodies fully Chinese — emitter vs backlog translator vs baked rows
         run: TZ=UTC python -m pytest tests/test_alert_zh_completeness.py -q
-
-  price-pressure:
-    # W1 of the Dislocation & Recovery program (DRL): engine/price_pressure/, the
+      # W1 of the Dislocation & Recovery program (DRL): engine/price_pressure/, the
     # single-name residual-shock detector and its point-in-time event ledger, plus
     # the display artifact and the market-packet block that read them.
     #
@@ -6953,18 +6934,20 @@ jobs:
     #
     # `pyarrow` is in the install line because the ledger is a parquet store;
     # `pyyaml` because lib/config.py reads config.yml at import. No `requests`:
-    # this lobe is an assembler over committed stores and makes no network call.
-    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+      # this lobe is an assembler over committed stores and makes no network call.
+      # The shared install is a strict superset of those wheels and this owner's
+      # 12-minute ceiling preserves the former standalone suite's 10-minute bound.
       - name: price-pressure detector, PIT ledger, base rates and artifact (DRL W1)
         run: >-
           python -m pytest
           tests/test_price_pressure.py -q -rs
+      # Synthetic-only research guard: labels may look forward, but every feature
+      # is point-in-time and all frozen thresholds remain tied to the preregistered
+      # Phase-0 contract.  The derived scope follows its engine/script/read closure.
+      - name: TOP ANATOMY point-in-time engine and preregistration contracts
+        run: python -m pytest tests/test_top_anatomy.py -q
+      # Source-template render only; templates/winner_health.html.j2 is declared
+      # above because Jinja's runtime template lookup is intentionally not inferred
+      # as a Python import edge.
+      - name: Winner Health inert surface design freeze
+        run: python -m pytest tests/test_winner_health_design_freeze.py -q
