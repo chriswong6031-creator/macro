@@ -66,6 +66,31 @@ def _synthetic_w1_packet(*, observed_count: int = 2) -> dict[str, Any]:
     )
 
 
+def _packet_with_observed_feature(feature_id: str) -> dict[str, Any]:
+    packet = _w0_packet()
+    if feature_id == "price.ret_20d":
+        return packet
+    sources = copy.deepcopy(packet["source_receipts"])
+    features = copy.deepcopy(packet["feature_receipts"])
+    source = _source_for_feature(feature_id)
+    logical_receipt_id = "mmsrc_" + "d" * 64
+    source.update(
+        {
+            "receipt_id": logical_receipt_id,
+            "artifact_sha256": "d" * 64,
+            "vintage_id": "mmv_" + "d" * 64,
+            "revision_id": "mmr_" + "d" * 64,
+        }
+    )
+    sources.append(source)
+    _observe_snapshot(features, feature_id, logical_receipt_id)
+    return _w0_packet(
+        source_receipts=sources,
+        identity_receipt=copy.deepcopy(packet["identity_receipt"]),
+        feature_receipts=features,
+    )
+
+
 def _context_bytes(*, observed_count: int = 2) -> bytes:
     return forward.canonical_json_bytes(
         _synthetic_w1_packet(observed_count=observed_count)
@@ -385,6 +410,94 @@ def test_state_coverage_is_derived_and_multi_domain_requires_two_observed_planes
         forward.validate_state_snapshot_record(forged)
 
 
+@pytest.mark.parametrize("feature_id", sorted(mm.CANONICAL_FEATURE_REGISTRY))
+def test_state_projection_accepts_every_owner_valid_w1_feature_id(
+    feature_id: str,
+) -> None:
+    packet = _packet_with_observed_feature(feature_id)
+    assert mm.validate_as_known_at_context(packet) == packet
+    states = forward._project_w1_domain_states(packet)
+    domain = mm.CANONICAL_FEATURE_REGISTRY[feature_id].domain
+    projected = next(row for row in states if row["domain"] == domain)
+    assert feature_id in {
+        observation["feature_id"] for observation in projected["observations"]
+    }
+
+
+def test_state_projection_rejects_imputed_w1_value_without_rejecting_context() -> None:
+    packet = _w0_packet()
+    sources = copy.deepcopy(packet["source_receipts"])
+    features = copy.deepcopy(packet["feature_receipts"])
+    price = next(row for row in features if row["feature_id"] == "price.ret_20d")
+    source_id = price["source_receipt_ids"][0]
+    source = next(row for row in sources if row["receipt_id"] == source_id)
+    degraded = {
+        "status": "degraded",
+        "flags": ["vendor_gap"],
+        "staleness_seconds": 300,
+        "imputed": True,
+    }
+    source["quality"] = {**degraded, "staleness_seconds": 3}
+    price["quality"] = degraded
+    imputed_packet = _w0_packet(
+        source_receipts=sources,
+        identity_receipt=copy.deepcopy(packet["identity_receipt"]),
+        feature_receipts=features,
+    )
+    assert mm.validate_as_known_at_context(imputed_packet) == imputed_packet
+
+    exact = forward.canonical_json_bytes(imputed_packet)
+    projected_states = forward._project_w1_domain_states(imputed_packet)
+    technicals = next(row for row in projected_states if row["domain"] == "technicals")
+    assert technicals == {
+        "domain": "technicals",
+        "status": "missing",
+        "observations": [],
+        "missing_reason": "quality_rejected",
+    }
+    state = forward.build_state_snapshot(
+        exact_context_bytes=exact,
+        store_id="mmstore_" + "1" * 64,
+        generation_id="mmgeneration_" + "2" * 64,
+        generation_sha256="3" * 64,
+        domain_states=projected_states,
+    )
+    assert state["coverage"]["n_missing_domains"] == len(forward.CANONICAL_DOMAINS)
+    assert forward.validate_state_snapshot(state, exact_context_bytes=exact) == state
+
+    mixed_sources = copy.deepcopy(imputed_packet["source_receipts"])
+    mixed_features = copy.deepcopy(imputed_packet["feature_receipts"])
+    technical_source = _source_for_feature("technicals.point_in_time_state")
+    technical_receipt_id = "mmsrc_" + "e" * 64
+    technical_source.update(
+        {
+            "receipt_id": technical_receipt_id,
+            "artifact_sha256": "e" * 64,
+            "vintage_id": "mmv_" + "e" * 64,
+            "revision_id": "mmr_" + "e" * 64,
+        }
+    )
+    mixed_sources.append(technical_source)
+    _observe_snapshot(
+        mixed_features, "technicals.point_in_time_state", technical_receipt_id
+    )
+    mixed_packet = _w0_packet(
+        source_receipts=mixed_sources,
+        identity_receipt=copy.deepcopy(imputed_packet["identity_receipt"]),
+        feature_receipts=mixed_features,
+    )
+    mixed_technicals = next(
+        row
+        for row in forward._project_w1_domain_states(mixed_packet)
+        if row["domain"] == "technicals"
+    )
+    assert mixed_technicals["status"] == "partial"
+    assert mixed_technicals["missing_reason"] == "quality_rejected"
+    assert [row["feature_id"] for row in mixed_technicals["observations"]] == [
+        "technicals.point_in_time_state"
+    ]
+
+
 def test_state_cannot_upgrade_w1_missing_features_with_unrelated_receipts() -> None:
     exact = forward.canonical_json_bytes(_w1_packet())
     state = forward.build_state_snapshot(
@@ -441,7 +554,15 @@ def test_state_cannot_upgrade_w1_missing_features_with_unrelated_receipts() -> N
         "tradePermission",
         "trading",
         "sizing",
+        "gate",
+        "gates",
+        "gated",
         "gating",
+        "ungated",
+        "gatekeeper",
+        "gatekeepers",
+        "gatekeeping",
+        "riskGatekeeper",
         "executing",
     ],
 )
