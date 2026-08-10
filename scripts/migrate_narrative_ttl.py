@@ -21,7 +21,6 @@ Archetype mappings (where a DSL falsifier can act as mechanism-check):
   - Sector 'energy' (xle, b-energy, b-oil): archetype_check → "oil.regime_shift.v1"
   - Sector 'copper/materials' (xlb, b-copper): archetype_check → "copper.trough_in.v1"
   - Basket 'gold' (b-gold): archetype_check → "gold.bull_intact.v1"
-  - Basket 'bitcoin' (b-btc*): archetype_check → "bitcoin.cycle_position.v1"
   - Basket 'credit' (b-credit*, b-bonds*): archetype_check → "credit.spread_regime.v1"
   - Country 'shipping' (b-shipping): archetype_check → "shipping.bdi_cycle.v1"
 
