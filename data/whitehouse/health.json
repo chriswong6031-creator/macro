@@ -1,29 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-10T21:02:36.850158+00:00",
-  "posts_seen": 12,
-  "seen_total": 103,
-  "evaluated": 3,
-  "activated": 3,
+  "as_of": "2026-08-10T21:57:41.882143+00:00",
+  "posts_seen": 8,
+  "seen_total": 104,
+  "evaluated": 1,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
   "gate_scores": [
     {
-      "id": "wh-2026-08-10-fact-sheet-president-donald-j-trump-delivers-gold-standard-childhood-vaccine-rec",
-      "importance": 72,
-      "activated": true,
+      "id": "wh-2026-08-10-presidential-message-on-national-shooting-sports-month-4561",
+      "importance": 10,
+      "activated": false,
       "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-08-10-delivering-gold-standard-childhood-vaccine-recommendations-for-americans",
-      "importance": 65,
-      "activated": true,
-      "degraded_reason": null
-    },
-    {
-      "id": "tw-2026-07-20-tga-build",
-      "importance": 70,
-      "activated": true,
-      "degraded_reason": null
     }
   ]
 }
