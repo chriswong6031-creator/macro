@@ -333,8 +333,11 @@ class TestPanelPriceReach:
 
     @staticmethod
     def _member(ticker: str, last: date, periods: int = 10,
-                nan_tail: int = 0) -> tuple:
-        idx = pd.date_range(end=last, periods=periods, freq="B")
+                nan_tail: int = 0, freq: str = "B") -> tuple:
+        # freq="D" for 24/7- and 6-day-calendar members, whose bars land on
+        # weekends. freq="B" would silently roll `last` back to the preceding
+        # Friday, which is the very thing under test.
+        idx = pd.date_range(end=last, periods=periods, freq=freq)
         vals = [100.0] * periods
         for i in range(nan_tail):
             vals[-(i + 1)] = float("nan")
@@ -412,6 +415,68 @@ class TestPanelPriceReach:
         assert reach["members_total"] == 3
         assert reach["mixed_vintage"] is False
 
+    def test_weekend_riders_do_not_tear_the_panel(self, tmp_path):
+        """R6 REGRESSION PIN — the 2026-08-09 (Sunday) nightly, exactly.
+
+        1,758 members: the equity majority last-valid Friday 2026-08-07, six
+        weekend-calendar members carrying Sunday 08-09 bars past the three-coin
+        crypto exclusion. Before the session clamp this read through=08-09 vs
+        majority=08-07 → mixed_vintage TRUE, and prophet_bridge refused ALL 30
+        eligible candidates at clock_provenance ("mixed-vintage boards cannot
+        originate plans"): zero plans originated, deterministically, on every
+        Sunday and holiday-Monday bake.
+
+        A Sunday bar is not a session, so it counts as the session it followed.
+        The board is NOT torn: mixed_vintage False, nobody off-majority — and
+        the raw Sunday reach stays disclosed, in `through_raw` here and in
+        `max_through` on the staleness block.
+        """
+        uni = [self._member(t, date(2026, 8, 7)) for t in ("A", "B", "C", "D")] + [
+            self._member(t, date(2026, 8, 9), freq="D")
+            for t in ("RIDE1-USD", "RIDE2")]
+        reach = _panel_price_reach(uni, exclude=frozenset())
+
+        assert reach["mixed_vintage"] is False
+        assert reach["majority_through"] == "2026-08-07"
+        assert reach["through"] == "2026-08-07"
+        assert reach["off_majority_tickers"] == []
+        # Clamped judgment, undeleted facts.
+        assert reach["through_raw"] == "2026-08-09"
+        assert reach["members_total"] == 6
+        assert reach["members_at_through"] == 6
+
+        # The staleness block keeps publishing the RAW freshest reach.
+        result = _compute_board_staleness(
+            ohlcv_dir=tmp_path / "absent", panel_reach=reach,
+            now=datetime(2026, 8, 9, 23, 58, tzinfo=timezone.utc))
+        assert result["price_through"] == "2026-08-07"
+        assert result["max_through"] == "2026-08-09"
+        assert result["basis"] == "panel_majority"
+        assert result["delayed"] is False and result["unknown"] is False
+
+    def test_same_calendar_tear_still_flags_and_names_the_minority(self):
+        """A GENUINE tear — two SESSION dates in one panel — still flags, and
+        the receipt now names the off-majority members instead of leaving the
+        diagnosis to artifact archaeology."""
+        uni = [self._member(t, date(2026, 8, 5)) for t in ("A", "B", "C", "D")] + [
+            self._member(t, date(2026, 8, 7)) for t in ("FRESH2", "FRESH1")]
+        reach = _panel_price_reach(uni, exclude=frozenset())
+
+        assert reach["mixed_vintage"] is True
+        assert reach["majority_through"] == "2026-08-05"
+        assert reach["through"] == "2026-08-07"
+        assert reach["through_raw"] == "2026-08-07"
+        assert reach["off_majority_tickers"] == ["FRESH1", "FRESH2"]
+
+    def test_off_majority_list_is_capped(self):
+        """Diagnosability, not a dump: the name list stays bounded at 10."""
+        uni = [self._member(f"OLD{i}", date(2026, 8, 5)) for i in range(20)] + [
+            self._member(f"NEW{i:02d}", date(2026, 8, 7)) for i in range(15)]
+        reach = _panel_price_reach(uni, exclude=frozenset())
+        assert reach["mixed_vintage"] is True
+        assert len(reach["off_majority_tickers"]) == 10
+        assert reach["off_majority_tickers"] == sorted(reach["off_majority_tickers"])
+
     def test_default_exclusion_is_config_crypto_set(self, monkeypatch):
         """exclude=None wires to _crypto_tickers() — the same config block
         universe() sources crypto from (never a hardcoded coin list)."""
@@ -427,6 +492,65 @@ class TestPanelPriceReach:
         reach_all = _panel_price_reach(uni, exclude=frozenset())
         assert reach_all["through"] == "2026-07-16"
         assert reach_all["members_total"] == 2
+
+
+# ---------------------------------------------------------------------------
+# Producer → consumer seam: the panel receipt that gates plan origination
+# ---------------------------------------------------------------------------
+
+class TestPanelReachReachesTheOriginationGate:
+    """R6: the clamp is producer-side ONLY — the #5071 gate is byte-identical.
+
+    engine.prophet_bridge._resolve_origination_clocks refuses EVERY candidate
+    when staleness.inputs.panel.mixed_vintage is true. That refusal is correct
+    and stays: what changed is that a weekend bar no longer counts as a torn
+    panel. Both halves are pinned here, on the real 2026-08-09 shapes.
+    """
+
+    _RECORDED_ASOF = "2026-08-09"   # the nightly's own run date (Sunday)
+    _NOW = datetime(2026, 8, 9, 23, 58, tzinfo=timezone.utc)
+
+    def _tonight(self, tmp_path) -> dict:
+        """The 2026-08-09 panel, end to end through the real producer."""
+        uni = [TestPanelPriceReach._member(t, date(2026, 8, 7))
+               for t in ("A", "B", "C", "D")] + [
+            TestPanelPriceReach._member(t, date(2026, 8, 9), freq="D")
+            for t in ("RIDE1-USD", "RIDE2")]
+        return _compute_board_staleness(
+            ohlcv_dir=tmp_path / "absent",
+            panel_reach=_panel_price_reach(uni, exclude=frozenset()),
+            now=self._NOW)
+
+    @staticmethod
+    def _clocks(staleness: dict):
+        """Read the staleness block exactly as prophet_bridge does."""
+        from engine.prophet_bridge import _resolve_origination_clocks
+        panel = (staleness.get("inputs") or {}).get("panel") or {}
+        return _resolve_origination_clocks(
+            price_through=staleness.get("price_through"),
+            recorded_asof=TestPanelReachReachesTheOriginationGate._RECORDED_ASOF,
+            panel_mixed_vintage=bool(panel.get("mixed_vintage")),
+            source_delayed=staleness.get("delayed"),
+            source_unknown=staleness.get("unknown"),
+            source_basis=staleness.get("basis"),
+        )
+
+    def test_healed_sunday_board_originates(self, tmp_path):
+        """AFTER the fix: tonight's board clears the gate with zero errors."""
+        staleness = self._tonight(tmp_path)
+        recorded_at, price_basis_date, errors = self._clocks(staleness)
+        assert errors == []
+        assert recorded_at == "2026-08-09"
+        assert price_basis_date == "2026-08-07"
+
+    def test_gate_still_refuses_a_genuinely_mixed_board(self, tmp_path):
+        """The RAW 2026-08-09 shape (mixed_vintage true, as the artifact
+        actually published it) is STILL refused — the gate is untouched."""
+        staleness = self._tonight(tmp_path)
+        staleness["inputs"]["panel"]["mixed_vintage"] = True
+        _, _, errors = self._clocks(staleness)
+        assert any("mixed-vintage boards cannot originate plans" in e
+                   for e in errors)
 
 
 # ---------------------------------------------------------------------------
