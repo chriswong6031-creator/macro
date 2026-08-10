@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/source_artifact_receipt.v1.schema.json",
+  "title": "Market Memory immutable source artifact receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "store_id",
+    "receipt_id",
+    "capture_id",
+    "source_id",
+    "source_schema",
+    "source_system",
+    "series_id",
+    "source_output_type",
+    "vintage_id",
+    "revision_id",
+    "artifact_sha256",
+    "object_key",
+    "clocks",
+    "availability_evidence",
+    "provenance",
+    "quality",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.source_artifact_receipt.v1"},
+    "store_id": {"pattern": "^mmsstore_[a-f0-9]{64}$", "type": "string"},
+    "receipt_id": {"pattern": "^mmsrc_[a-f0-9]{64}$", "type": "string"},
+    "capture_id": {"pattern": "^mmscapture_[a-f0-9]{64}$", "type": "string"},
+    "source_id": {"const": "fred_alfred:CPIAUCSL"},
+    "source_schema": {"const": "market_memory.source.alfred_cpiaucsl.v1"},
+    "source_system": {"const": "FRED/ALFRED"},
+    "series_id": {"const": "CPIAUCSL"},
+    "source_output_type": {"const": 2},
+    "vintage_id": {"pattern": "^mmsvintage_[a-f0-9]{64}$", "type": "string"},
+    "revision_id": {"pattern": "^mmsrevision_[a-f0-9]{64}$", "type": "string"},
+    "artifact_sha256": {"$ref": "#/$defs/sha256"},
+    "object_key": {
+      "pattern": "^source_objects/[a-f0-9]{2}/[a-f0-9]{64}\\.json$",
+      "type": "string"
+    },
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_date",
+        "availability_lower_bound",
+        "availability_upper_bound",
+        "available_at",
+        "observed_at",
+        "collector_started_at",
+        "collector_completed_at"
+      ],
+      "properties": {
+        "source_date": {"$ref": "#/$defs/date"},
+        "availability_lower_bound": {"$ref": "#/$defs/utcTimestamp"},
+        "availability_upper_bound": {"$ref": "#/$defs/utcTimestamp"},
+        "available_at": {"$ref": "#/$defs/utcTimestamp"},
+        "observed_at": {"$ref": "#/$defs/utcTimestamp"},
+        "collector_started_at": {"$ref": "#/$defs/utcTimestamp"},
+        "collector_completed_at": {
+          "oneOf": [
+            {"$ref": "#/$defs/utcTimestamp"},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "availability_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "precision",
+        "timestamp_inferred",
+        "rule",
+        "operational_cutoff_uses"
+      ],
+      "properties": {
+        "precision": {"const": "date"},
+        "timestamp_inferred": {"const": false},
+        "rule": {"const": "source_date_upper_bound.v1"},
+        "operational_cutoff_uses": {"const": "observed_at"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_basis",
+        "integrity_profile",
+        "manifest_sha256",
+        "manifest_bytes",
+        "upstream_artifact_sha256",
+        "upstream_artifact_bytes",
+        "matrix_rows",
+        "matrix_periods",
+        "matrix_release_dates",
+        "object_rows"
+      ],
+      "properties": {
+        "evidence_basis": {
+          "enum": ["public_reconstruction", "live_captured_source_vintage"]
+        },
+        "integrity_profile": {
+          "enum": [
+            "legacy_unbound_manifest.v1",
+            "release_target_artifact_sha256_bytes.v1"
+          ]
+        },
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "manifest_bytes": {"minimum": 1, "maximum": 524288, "type": "integer"},
+        "upstream_artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "upstream_artifact_bytes": {
+          "minimum": 1,
+          "maximum": 33554432,
+          "type": "integer"
+        },
+        "matrix_rows": {"minimum": 1, "type": "integer"},
+        "matrix_periods": {"minimum": 1, "type": "integer"},
+        "matrix_release_dates": {"minimum": 1, "type": "integer"},
+        "object_rows": {"minimum": 1, "maximum": 4096, "type": "integer"}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reconstruction_only",
+        "source_evidence_eligible",
+        "feature_projection_eligible",
+        "training_eligible",
+        "promotion_eligible"
+      ],
+      "properties": {
+        "status": {"const": "complete"},
+        "reconstruction_only": {"type": "boolean"},
+        "source_evidence_eligible": {"type": "boolean"},
+        "feature_projection_eligible": {"const": false},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false}
+      }
+    },
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "provenance": {
+            "properties": {
+              "evidence_basis": {"const": "public_reconstruction"}
+            },
+            "required": ["evidence_basis"]
+          }
+        },
+        "required": ["provenance"]
+      },
+      "then": {
+        "properties": {
+          "clocks": {
+            "properties": {"collector_completed_at": {"type": "null"}}
+          },
+          "provenance": {
+            "properties": {
+              "integrity_profile": {"const": "legacy_unbound_manifest.v1"}
+            }
+          },
+          "quality": {
+            "properties": {
+              "reconstruction_only": {"const": true},
+              "source_evidence_eligible": {"const": false}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provenance": {
+            "properties": {
+              "evidence_basis": {"const": "live_captured_source_vintage"}
+            },
+            "required": ["evidence_basis"]
+          }
+        },
+        "required": ["provenance"]
+      },
+      "then": {
+        "properties": {
+          "clocks": {
+            "properties": {
+              "collector_completed_at": {"$ref": "#/$defs/utcTimestamp"}
+            }
+          },
+          "provenance": {
+            "properties": {
+              "integrity_profile": {
+                "const": "release_target_artifact_sha256_bytes.v1"
+              }
+            }
+          },
+          "quality": {
+            "properties": {
+              "reconstruction_only": {"const": false},
+              "source_evidence_eligible": {"const": true}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"pattern": "^[a-f0-9]{64}$", "type": "string"},
+    "date": {
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "type": "string"
+    },
+    "utcTimestamp": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?(?:Z|\\+00:00)$",
+      "type": "string"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "horizon_role",
+        "context_only",
+        "proposal_weight",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_escalate",
+        "may_trade",
+        "may_originate",
+        "may_select_options_candidate",
+        "may_execute",
+        "may_write_options_episode",
+        "may_append_outcome",
+        "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}
