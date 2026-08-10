@@ -87,6 +87,7 @@ on:
       - "collectors/dod_budget.py"
       - "engine/government_revenue/**"
       - "config/government_revenue/budget_program_reviewed_edges.v1.json"
+      - "config/government_revenue/candidate_historical_suppressions.v1.json"
       - "config/government_revenue/idv_discovery.v1.json"
       - "lib/pages.py"
       - "scripts/ci/validate_government_revenue_award_event_bundle.py"
@@ -414,6 +415,7 @@ jobs:
             data/government_revenue/dod_budget_projection_state.json
           )
           recipient_graph_path=data/government_revenue/recipient_entity_graph.json
+          historical_suppression_path=config/government_revenue/candidate_historical_suppressions.v1.json
 
           assert_award_event_bundle() {
             local present=0 tracked=0 path
@@ -676,6 +678,20 @@ jobs:
             fi
           }
 
+          assert_historical_suppression_source_clean() {
+            # This is an operator-reviewed exact non-issuance decision.  The
+            # projection builder validates and binds it, but must never author,
+            # mutate, stage, or silently omit it.
+            if [ ! -f "$historical_suppression_path" ] || ! git ls-files --error-unmatch -- "$historical_suppression_path" >/dev/null 2>&1; then
+              echo "::error title=historical suppression missing::the reviewed candidate suppression manifest must be committed before publication"
+              return 1
+            fi
+            if ! git diff --quiet -- "$historical_suppression_path" || ! git diff --cached --quiet -- "$historical_suppression_path"; then
+              echo "::error title=historical suppression mutation::collectors and projection builders cannot write or stage the reviewed suppression manifest"
+              return 1
+            fi
+          }
+
           assert_award_event_bundle
           assert_award_event_source_clean
           assert_subaward_bundle
@@ -685,6 +701,7 @@ jobs:
           assert_dod_budget_bundle
           assert_dod_budget_source_clean
           assert_recipient_graph_source_clean
+          assert_historical_suppression_source_clean
           assert_idv_dossier_twins
           assert_candidate_twins
           assert_optional_budget_graph_twins
@@ -779,7 +796,9 @@ jobs:
               assert_dod_budget_bundle
               assert_dod_budget_source_clean
               assert_recipient_graph_source_clean
+              assert_historical_suppression_source_clean
               python -m scripts.build_government_revenue --live-materialization
+              assert_historical_suppression_source_clean
               assert_idv_dossier_twins
               assert_candidate_twins
               assert_optional_budget_graph_twins

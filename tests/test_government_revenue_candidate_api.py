@@ -20,6 +20,12 @@ from tests.government_revenue_candidate_fixture import (
     canonical_fixture_root,
 )
 from tests.test_government_revenue_candidates import _award_event, _graph, _payload
+from tests.test_government_revenue_candidate_projection import (
+    BEFORE_FROZEN_AT,
+    NEXT_RUN_AT,
+    _candidate_projection_with_one_candidate,
+    _install_historical_suppression_manifest,
+)
 
 
 # Derived from the canonical inputs `_fixture_root` copies, never hand-typed --
@@ -108,6 +114,13 @@ def _materialize(
 
 def _wire_api(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     paths = _artifact_paths(root)
+    monkeypatch.setattr(api, "_CANDIDATE_REPO_ROOT", root)
+    monkeypatch.setattr(
+        api,
+        "_CANDIDATE_SUPPRESSION_MANIFEST_PATH",
+        root / "config/government_revenue/candidate_historical_suppressions.v1.json",
+    )
+    monkeypatch.setattr(api, "_CANDIDATE_SUPPRESSION_REQUIRED", False)
     monkeypatch.setattr(api, "_CANDIDATE_QUEUE_PATHS", (paths["queue"], paths["public"]))
     monkeypatch.setattr(api, "_CANDIDATE_LEDGER_PATH", paths["ledger"])
     monkeypatch.setattr(api, "_CANDIDATE_STATE_PATH", paths["state"])
@@ -160,6 +173,54 @@ def test_zero_candidate_generation_is_a_successful_empty_envelope_with_mapping_b
     assert len(backlog["items"]) == 2
     assert backlog["next_cursor"]
     assert all(row["issuer_attribution"] == "not_asserted" for row in backlog["items"])
+
+
+def test_api_serves_bound_withheld_receipt_and_manifest_change_or_removal_invalidates_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _fixture_root(tmp_path)
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    _candidate_projection_with_one_candidate(
+        monkeypatch,
+        root,
+        known_at=BEFORE_FROZEN_AT,
+    )
+    rows = projection.build_candidate_observations(
+        None,
+        None,
+        generated_at=NEXT_RUN_AT,
+    )
+    _install_historical_suppression_manifest(root, rows)
+    projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
+    _wire_api(root, monkeypatch)
+    monkeypatch.setattr(api, "_CANDIDATE_SUPPRESSION_REQUIRED", True)
+    monkeypatch.setattr(
+        api,
+        "build_candidate_observations",
+        lambda *_args, **_kwargs: deepcopy(rows),
+    )
+
+    first = _list(limit=1)
+    receipt = first["coverage"]["historical_candidate_suppression"]
+    assert first["total"] == 0
+    assert first["freshness"]["exact_candidate_availability"] == "withheld_historical"
+    assert receipt["matched_count"] == 1
+    assert receipt["inactive_count"] == 0
+
+    manifest_path = api._CANDIDATE_SUPPRESSION_MANIFEST_PATH
+    original = manifest_path.read_bytes()
+    manifest = json.loads(original)
+    manifest["limitations"].append("A changed review must mint a new bound queue receipt.")
+    manifest_path.write_text(
+        projection._canonical_json(manifest) + "\n",
+        encoding="utf-8",
+    )
+    _assert_http_error(lambda: _list(limit=1), 503)
+
+    manifest_path.write_bytes(original)
+    assert _list(limit=1)["total"] == 0
+    manifest_path.unlink()
+    _assert_http_error(lambda: _list(limit=1), 503)
 
 
 def test_candidate_list_detail_history_company_and_mapping_backlog_page_against_one_exact_identity(
