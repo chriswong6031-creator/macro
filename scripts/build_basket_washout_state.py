@@ -1,4 +1,4 @@
-"""Nightly basket-washout state -> site/factordata/basket_washout_state.json.
+"""Nightly basket-washout state + history -> site/factordata/basket_washout_{state,history}.json.
 
 Display-tier support artifact for the RATIFIED blocked-entry override (construction A1b,
 threshold 25%): `research/BLOCKED_ENTRY_CONDITIONAL_PREREG.md` §5 ratification log +
@@ -40,11 +40,27 @@ Basket membership comes from the curated store `data/baskets/membership.json` (t
 source `scripts/build_baskets.py` and the prophet candidates' `theme_membership_ids`
 descend from); members carrying a `removed` date are dropped.
 
+SECOND ARTIFACT -- `basket_washout_history.v1` (operator directive 2026-08-10, "historical
+fires must be re-markable under the as-shipped rule"): per name, the date-INTERVALS during
+which it qualified, over its full available history, on the same leave-one-out read and the
+same group the state artifact gives it.  `intervals` is keyed PER NOTCH ({"20": [...],
+"25": [...], "30": [...]}), so moving the live dial -- 20 as of 2026-08-10 -- is a
+consumer-side change that never needs this artifact rebuilt.  Interval ends are inclusive;
+a null end means the run reaches `as_of`.  Crossings are printed RAW -- no smoothing, no
+minimum length -- because the shipped rule is evaluated per fire date, so a one-session
+qualifying window really does admit a fire that lands in it.
+IT IS A RETRO-APPLIED LENS, NOT A RECORD OF CALLS MADE: today's rosters are applied to the
+whole past (see HISTORY_NOTES, which ships inside the artifact).
+
 COST: reads only the names it needs (basket members + GICS-mapped names), one close column
-each, ~2-5s wall on the full US panel.  It is a nightly display artifact and must stay off
+each, ~2-5s wall on the full US panel; the history pass adds ~4s (one argsort per group
+rather than a per-date median sweep -- see loo_median_matrix).  Measured end-to-end at ~9s,
+so it is a full recompute every night: no incremental store, nothing to go stale, and still
+an order of magnitude inside the budget.  It is a nightly display artifact and must stay off
 the render-critical path.
 
 Usage: python -m scripts.build_basket_washout_state [--data-root DIR] [--out FILE]
+                                                    [--history-out FILE] [--no-history]
 """
 from __future__ import annotations
 
@@ -52,6 +68,7 @@ import argparse
 import json
 import logging
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -65,11 +82,31 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_basket_washout_state")
 
 SCHEMA = "basket_washout_state.v1"
-THRESHOLDS = (20, 25, 30)          # published menu (packet §2); 25 is the ratified default
+SCHEMA_HISTORY = "basket_washout_history.v1"
+THRESHOLDS = (20, 25, 30)          # published menu (packet §2); the live dial moves inside it
 WINDOW = 252                       # trading-day high water mark
 MIN_PERIODS = 60                   # a name needs a quarter of history before it has a high
 MIN_PEERS = 5                      # a group thinner than this states nothing
 ROUND = 6
+
+HISTORY_NOTES = (
+    "Qualifying date-intervals on the same leave-one-out peer read as "
+    "basket_washout_state.v1's names map. KEYED PER NOTCH: `intervals` is a map "
+    "{\"20\": [...], \"25\": [...], \"30\": [...]} over the whole published menu, so moving "
+    "the live dial is a consumer-side change and never needs this artifact rebuilt. All "
+    "three keys are always present; an empty list means the name never qualified at that "
+    "notch. RETRO-APPLIED, NOT LIVE CALLS: intervals are computed with TODAY's basket "
+    "rosters and TODAY's GICS map over each name's full available history, so a name is "
+    "scored against peers it may not have had at the time and against members curated "
+    "later. Anything a consumer derives from this artifact must be labelled retro-applied "
+    "— it is a re-marking lens for historical fires, never a record of calls that were "
+    "made. Interval ends are INCLUSIVE (the last date the name qualified); a null end "
+    "means the run reaches as_of and is still open. Crossings are RAW: no smoothing and no "
+    "minimum length, because the shipped rule is evaluated per fire date, so a one-session "
+    "window really does admit a fire that lands in it. A name's domain is the dates its own "
+    "252d drawdown is defined AND its group had at least 5 members printing, so a gap in "
+    "either breaks a run. Names with no interval at any notch are omitted."
+)
 
 GICS = (
     "Communication Services", "Consumer Discretionary", "Consumer Staples", "Energy",
@@ -300,6 +337,130 @@ def build_state(defs: dict[str, dict], sectors: dict[str, str],
     return payload
 
 
+# -------------------------------------------------------------------- history --
+def loo_median_matrix(V: np.ndarray) -> np.ndarray:
+    """Leave-one-out median for EVERY cell of a (dates x members) drawdown matrix.
+
+    `V[t, j]` is member j's drawdown on date t, NaN where it did not print.  Returns an
+    array of the same shape whose `[t, j]` is the median of row t's finite values with
+    column j removed -- the same quantity `leave_one_out_median()` computes one name at a
+    time, and the identity is pinned by a test.  Cells where j did not print, and whole
+    rows under MIN_PEERS, come back NaN.
+
+    Done by ranking instead of by looping: removing ANY element equal to v leaves the same
+    sorted remainder, so a member's leave-one-out median is a fixed offset into the row's
+    sorted values, decided only by its rank.  With k finite values in the row and the
+    member at rank r (0-based, ascending):
+        k even (k=2m): one value remains at the middle -- sorted[m] if r <= m-1 else sorted[m-1]
+        k odd  (k=2m+1): two do -- (m, m+1) if r < m; (m-1, m+1) if r == m; (m-1, m) if r > m
+    That turns an O(T*k) median sweep into one argsort per group.
+    """
+    if V.ndim != 2 or V.shape[1] == 0:
+        return np.full(V.shape, np.nan)
+    T, k = V.shape
+    finite = np.isfinite(V)
+    cnt = finite.sum(axis=1)
+
+    order = np.argsort(np.where(finite, V, np.inf), axis=1, kind="stable")
+    S = np.take_along_axis(V, order, axis=1)                 # finite ascending, NaN last
+    ranks = np.empty((T, k), dtype=np.int64)
+    np.put_along_axis(ranks, order, np.broadcast_to(np.arange(k), (T, k)), axis=1)
+
+    out = np.full((T, k), np.nan)
+    usable = cnt >= MIN_PEERS
+    if not usable.any():
+        return out
+
+    even = usable & (cnt % 2 == 0)
+    odd = usable & (cnt % 2 == 1)
+
+    if even.any():
+        m = (cnt[even] // 2)[:, None]
+        r = ranks[even]
+        idx = np.where(r <= m - 1, m, m - 1)
+        out[even] = np.take_along_axis(S[even], idx, axis=1)
+    if odd.any():
+        m = ((cnt[odd] - 1) // 2)[:, None]
+        r = ranks[odd]
+        lo = np.where(r < m, m, m - 1)
+        hi = np.where(r <= m, m + 1, m)
+        So = S[odd]
+        out[odd] = (np.take_along_axis(So, lo, axis=1)
+                    + np.take_along_axis(So, hi, axis=1)) / 2.0
+
+    out[~finite] = np.nan          # a name that did not print has no reading that session
+    return out
+
+
+def _runs_to_intervals(index: np.ndarray, mask: np.ndarray, as_of: pd.Timestamp) -> list:
+    """Contiguous True runs of `mask` over `index` -> [[start, end], ...], end INCLUSIVE and
+    null when the run reaches `as_of`."""
+    if not mask.any():
+        return []
+    padded = np.concatenate(([False], mask, [False]))
+    edges = np.flatnonzero(padded[1:] != padded[:-1])
+    out = []
+    for a, b in zip(edges[0::2], edges[1::2]):
+        start = pd.Timestamp(index[a])
+        end = pd.Timestamp(index[b - 1])
+        out.append([str(start.date()), None if end >= as_of else str(end.date())])
+    return out
+
+
+def build_history(dd: dict[str, pd.Series], defs: dict[str, dict], sectors: dict[str, str],
+                  state: dict) -> dict:
+    """Per-name qualifying intervals at the ratified notch, over full available history.
+
+    Group membership and each name's basis/group_id are taken STRAIGHT from the state
+    payload, so the two artifacts can never disagree about which peers a name reads.
+    """
+    as_of_str = state.get("as_of")
+    payload: dict = {
+        "schema": SCHEMA_HISTORY,
+        "as_of": as_of_str,
+        "notches": list(THRESHOLDS),
+        "notes": HISTORY_NOTES,
+        "names": {},
+    }
+    if not as_of_str or not state.get("names"):
+        return payload
+    as_of = pd.Timestamp(as_of_str)
+
+    sector_members: dict[str, list[str]] = {}
+    for t, s in sectors.items():
+        sector_members.setdefault(s, []).append(t)
+
+    by_group: dict[tuple[str, str], list[str]] = {}
+    for t, e in state["names"].items():
+        by_group.setdefault((e["basis"], e["group_id"]), []).append(t)
+
+    for (basis, gid), names in sorted(by_group.items()):
+        members = defs[gid]["members"] if basis == "basket" else sector_members.get(gid, [])
+        cols = [m for m in sorted(set(members)) if m in dd]
+        if len(cols) < MIN_PEERS:
+            continue
+        frame = pd.DataFrame({m: dd[m] for m in cols}).sort_index()
+        frame = frame[frame.index <= as_of]
+        if frame.empty:
+            continue
+        idx = frame.index.to_numpy()
+        loo = np.round(loo_median_matrix(frame.to_numpy(dtype="float64")), ROUND)
+        pos = {c: i for i, c in enumerate(frame.columns)}
+        for t in sorted(names):
+            j = pos.get(t)
+            if j is None:                       # mapped to the group but never priced
+                continue
+            col = loo[:, j]
+            live = np.isfinite(col)
+            per_notch = {str(n): _runs_to_intervals(idx, live & (col <= -n / 100.0), as_of)
+                         for n in THRESHOLDS}
+            if any(per_notch.values()):
+                payload["names"][t] = {
+                    "basis": basis, "group_id": gid, "intervals": per_notch,
+                }
+    return payload
+
+
 def write_state(payload: dict, out: Path) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(out.suffix + ".tmp")
@@ -311,10 +472,15 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Build site/factordata/basket_washout_state.json")
     ap.add_argument("--data-root", default=None, help="override the data/ root")
     ap.add_argument("--out", default=None, help="override the output JSON path")
+    ap.add_argument("--history-out", default=None, help="override the history JSON path")
+    ap.add_argument("--no-history", action="store_true",
+                    help="skip the interval pass (state artifact only)")
     a = ap.parse_args(argv)
 
     data_root = Path(a.data_root) if a.data_root else config.data_dir()
     out = Path(a.out) if a.out else config.site_dir() / "factordata" / "basket_washout_state.json"
+    hist_out = (Path(a.history_out) if a.history_out
+                else out.with_name("basket_washout_history.json"))
 
     defs = load_basket_defs(data_root)
     sectors = load_sector_map(data_root)
@@ -334,6 +500,24 @@ def main(argv: list[str] | None = None) -> int:
     q25 = sum(1 for b in payload["baskets"].values() if b["qualifies"]["25"])
     log.info("basket_washout_state as_of=%s baskets=%d (%d qualify @25%%) names=%d -> %s",
              payload["as_of"], len(payload["baskets"]), q25, len(payload["names"]), out)
+
+    if not a.no_history:
+        t0 = time.monotonic()
+        hist = build_history(dd, defs, sectors, payload)
+        if hist["names"]:
+            write_state(hist, hist_out)
+            per = {n: (sum(len(v["intervals"][str(n)]) for v in hist["names"].values()),
+                       sum(1 for v in hist["names"].values()
+                           if v["intervals"][str(n)] and v["intervals"][str(n)][-1][1] is None))
+                   for n in THRESHOLDS}
+            log.info("basket_washout_history names=%d %s (%.1fs) -> %s",
+                     len(hist["names"]),
+                     " ".join(f"{n}%:{s}iv/{o}open" for n, (s, o) in per.items()),
+                     time.monotonic() - t0, hist_out)
+        else:
+            print("::warning title=basket-washout-history-empty::no name produced a "
+                  "qualifying interval - leaving the previous history artifact in place",
+                  flush=True)
     return 0
 
 
