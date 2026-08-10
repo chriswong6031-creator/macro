@@ -56,6 +56,11 @@ SERVED_PATH = "/var/lib/macro-live/public/live/us_board_provisional.json"
 #: one would mean a Prophet Live rehearsal silently darks the evening board too.
 NO_PUBLISH_ENV = "CLOSE_PASS_NO_PUBLISH"
 
+#: Bars in a card sparkline. The nightly's own window (`close.tail(64)` at
+#: build_stock_library's spark_svg call site) so the two boards draw the same
+#: chart over the same history, not two different-looking ones.
+SPARK_BARS = 64
+
 _TAG = "close-pass"
 
 
@@ -96,22 +101,32 @@ def collect(session: str) -> dict[str, Any]:
     Imports are function-scoped: ``build_stock_library`` is a 5,900-line module
     whose import cost belongs to the pass that needs it, not to ``--help``.
     """
+    from collectors.us_names_zh import load_names_zh, lookup as name_zh  # noqa: PLC0415
     from engine import signal_gate  # noqa: PLC0415
     from engine.extension import extension_signals  # noqa: PLC0415
+    from engine.i18n import tr  # noqa: PLC0415
     from lib import delisted_symbols  # noqa: PLC0415
     from scripts.build_stock_library import (  # noqa: PLC0415
-        extension_panels, universe, universe_price_adjustment,
+        # `_spark_svg` is private and IMPORTED ANYWAY. Every other market lane
+        # carries its own copy of these ~15 lines, which is exactly the drift
+        # this module's header refuses for the scoring functions: two spark
+        # generators means the evening card and the morning card stop matching
+        # the first time either is retuned. This lane already pays the module's
+        # import cost for `universe`, so the import is free as well as correct.
+        _spark_svg, extension_panels, universe, universe_price_adjustment,
     )
     import pandas as pd  # noqa: PLC0415
 
     uni = universe()
     adjustment_by = universe_price_adjustment()
+    names_zh = load_names_zh()
 
     verdicts: dict[str, dict] = {}
     closes: dict[str, Any] = {}
     through: dict[str, str] = {}
+    display: dict[str, dict] = {}
     skipped: dict[str, int] = {}
-    for ticker, close, _high, _name, _sector in uni:
+    for ticker, close, _high, name, sector in uni:
         # The nightly's B1 guard (_authority_admits): a delisted name must never
         # enter a scoring-authority collection. The demote-map half of that guard
         # is not reachable here — it is derived from the per-name analyze pass
@@ -133,8 +148,41 @@ def collect(session: str) -> dict[str, Any]:
         if through[ticker] != session:
             skipped["no_todays_bar"] = skipped.get("no_todays_bar", 0) + 1
             continue
-        verdicts[ticker] = signal_gate.gate(ticker, close)
+        verdict = signal_gate.gate(ticker, close)
+        verdicts[ticker] = verdict
         closes[ticker] = close
+
+        # Display facts, gathered ONLY for names the gate admits — the same
+        # `is_buyable` call build_board ranks on, so the two sets agree. The
+        # universe is ~1,660 names and the board is ~130: drawing a sparkline
+        # for every evaluated name would be ~1,530 SVGs built to be discarded,
+        # on a lane that has ~30 minutes of the SLA to spend.
+        if signal_gate.is_buyable(verdict):
+            px = close.iloc[-1]
+            display[ticker] = {
+                "name": name,
+                # Committed static map (config/us_names_zh.json, ~1,580 US
+                # tickers), never derived: a name absent from it stays None and
+                # the card falls back to the English name, which is what the
+                # nightly's US cards show today.
+                "name_zh": name_zh(names_zh, ticker),
+                # A sector LABEL, which is a mapping. NOT the sector-neutralised
+                # `edge` leg, which needs a full-universe cross-section and stays
+                # in OMITTED_LEGS — the two are different objects that share a
+                # word.
+                "sec": sector,
+                "sec_zh": tr(sector) if sector else None,
+                # NaN never reaches the payload: json.dumps(allow_nan=False)
+                # would raise on it and take the whole publish down, and "$nan"
+                # would render on the card if it did not.
+                "price": None if pd.isna(px) else float(px),
+                # DEFAULT color and NO buy-zone band: the nightly passes both
+                # from `ladder.dir` and `entry_signal.buy_zone`, and both are
+                # downstream of the entry leg this pass omits. Deriving them
+                # would be exactly the imputation the omission exists to refuse,
+                # so the evening spark is the function's own band-less render.
+                "spark": _spark_svg(list(close.tail(SPARK_BARS).values)),
+            }
 
     # Equities and 24/7 crypto are read on their OWN calendars. One mixed panel
     # takes a single global .iloc[-1] and drops every ticker whose latest cell is
@@ -149,7 +197,8 @@ def collect(session: str) -> dict[str, Any]:
             ext_by.update(extension_signals(cx))
 
     return {"verdicts": verdicts, "ext_by": ext_by, "adjustment_by": adjustment_by,
-            "price_through": through, "universe_n": len(uni), "skipped": skipped}
+            "price_through": through, "display_by": display,
+            "universe_n": len(uni), "skipped": skipped}
 
 
 def build_payload(session: str, now: datetime, inputs: dict[str, Any]) -> dict:
@@ -158,6 +207,9 @@ def build_payload(session: str, now: datetime, inputs: dict[str, Any]) -> dict:
         session=session, built_at=now,
         adjustment_by=inputs["adjustment_by"],
         price_through=inputs["price_through"],
+        # Absent (a collector that predates W-L1d, a replay) → the payload is
+        # honestly not card-complete rather than card-complete-with-holes.
+        display_by=inputs.get("display_by"),
         universe_n=inputs["universe_n"],
         skipped=inputs["skipped"],
     )
@@ -246,9 +298,17 @@ def run(*, now: datetime, dry_run: bool = False, force: bool = False,
     inputs = collector(session)
     payload = build_payload(session, now, inputs)
     meta = payload["meta"]
+    contract = payload["consumer_contract"]
     print(f"{_TAG} {session}: {meta['admitted_n']} admitted of "
           f"{meta['evaluated_n']} evaluated (universe {meta['universe_n']}); "
-          f"skipped {meta['skipped'] or '{}'}", flush=True)
+          f"skipped {meta['skipped'] or '{}'}; cards {contract['cards_n']} "
+          f"complete={contract['card_complete']}", flush=True)
+    # An admitted name the reader will not see is a fact the operator should
+    # learn from the run, not from a support ticket.
+    if contract["cards_dropped_n"]:
+        _warn(f"{contract['cards_dropped_n']} admitted name(s) carry no card "
+              "(a required display field was missing) — they are on the board "
+              "of record but not in the client's grid")
 
     if not meta["evaluated_n"]:
         # Zero evaluable names is a broken store, not an empty market. Publishing

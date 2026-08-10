@@ -536,6 +536,184 @@ def test_behind_without_a_date_is_impossible_to_emit():
     assert "confirmed_label" not in state
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# The card rows (W-L1d) — the payload ships FACTS, the client ships WORDS
+# ─────────────────────────────────────────────────────────────────────────────
+def display(tickers=("AAA", "BBB"), **over) -> dict:
+    """Per-name display facts, in the shape close_pass_publish.collect gathers."""
+    return {t: dict({"name": f"{t} Corp", "name_zh": f"{t}公司",
+                     "sec": "Technology", "sec_zh": "科技",
+                     "price": 187.456, "spark": f"<svg data-{t}></svg>"},
+                    **over.get(t, {})) for t in tickers}
+
+
+def _carded(tickers=("AAA", "BBB"), **over) -> dict:
+    """A card-complete board whose RANKED order is the reverse of the alphabet.
+
+    Extension is handed out descending, so the runway leg rises as the ticker
+    falls: any projection that quietly sorted `cards` or `tickers` would come
+    out alphabetical and fail the parallelism tests instead of passing them by
+    coincidence. Same technique as test_the_ticker_list_is_the_boards_own_
+    display_order, for the same reason.
+    """
+    return CB.build_board({t: verdict() for t in tickers},
+                          {t: {"ext_z": 1.8 - i * 0.8}
+                           for i, t in enumerate(tickers)},
+                          session=SESSION, built_at=NOW,
+                          adjustment_by={t: "split_and_dividend_adjusted"
+                                         for t in tickers},
+                          display_by=display(tickers, **over))
+
+
+def test_the_cards_and_the_tickers_are_one_list_projected_twice():
+    """THE parallelism gate. The client walks `cards` and `tickers` by INDEX —
+    `tickers` arms the identity check and `cards[i]` paints the card it admitted
+    — so a length or order drift between them does not degrade the board, it
+    mislabels it: every card from the drift point on would carry another name's
+    ticker. Pinned at three properties (length, per-index ticker, and that the
+    order is the board's own ranked order rather than the alphabet) so a change
+    to either producer has to break this test to ship."""
+    state = CB.board_state(_carded(("AAA", "BBB", "CCC")))["board"]
+    assert state["card_complete"] is True
+    assert len(state["cards"]) == len(state["tickers"]) == 3
+    assert [c["tk"] for c in state["cards"]] == state["tickers"]
+    # Not incidentally equal because both happen to be sorted: extension falls
+    # with the alphabet in this fixture, so the ranked order is the reverse of
+    # it. A projection that sorted either list would fail here.
+    assert state["tickers"] == ["CCC", "BBB", "AAA"] != sorted(state["tickers"])
+
+
+def test_no_hundred_scale_number_reaches_a_card_row():
+    """`edge` is never emitted and neither is any figure on the board's 100-point
+    scale. This pass covers 40 of those points; a number beside a card would read
+    as the nightly's score and would not be it — and renormalising the 40 up to
+    100 would redefine what a point means to make the number look finished."""
+    card = CB.board_state(_carded())["board"]["cards"][0]
+    assert set(card) == set(CB.CARD_FIELDS)
+    for banned in ("edge", "points", "score", "provisional_rank", "rank",
+                   "weight_covered", "legs"):
+        assert banned not in card
+    # Every NUMBER in a card row is a [0,1] leg. price_txt is a formatted price,
+    # not a score, so the sweep is over numeric values rather than over strings.
+    numbers = {k: v for k, v in card.items() if isinstance(v, (int, float))}
+    assert set(numbers) == {"signal", "runway"}
+    assert all(0.0 <= v <= 1.0 for v in numbers.values()), numbers
+
+
+def test_the_weights_are_still_not_renormalised_now_that_cards_ship():
+    """The pinned invariant, re-asserted on the card-carrying payload: shipping
+    a renderable card is not a reason to make the covered 40 points look like
+    100."""
+    payload = _carded()
+    assert payload["scoring"]["renormalised"] is False
+    assert payload["scoring"]["weight_covered"] == 40
+    assert payload["scoring"]["weight_total"] == 100
+    assert set(payload["scoring"]["legs_omitted"]) == {"entry", "edge", "quality"}
+
+
+def test_a_card_row_carries_no_words_of_its_own():
+    """The split is load-bearing. `verb`, the edge label, every tip and every
+    bilingual sentence are DERIVED client-side from signal/runway through the
+    client's lexicon. A rendered word here makes a language-neutral payload
+    language-specific and stands up a second owner of one vocabulary."""
+    card = CB.board_state(_carded())["board"]["cards"][0]
+    for word_field in ("verb", "edge_txt", "edge_label_en", "edge_label_zh",
+                       "edge_tip_en", "edge_tip_zh", "flag", "flags", "marks",
+                       "stage", "stage_key", "trigger", "triage", "featured",
+                       "zone_kind", "zone_lo", "zone_hi", "tip_en", "tip_zh"):
+        assert word_field not in card, word_field
+
+
+def test_the_card_href_is_the_nightlys_own_ticker_page_url():
+    """Read out of the nightly's pv_card call site, never invented. A second URL
+    convention would send the evening board's cards somewhere the morning
+    board's cards do not go, and the reader would find it before we did."""
+    call_site = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
+    assert "'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us'," in call_site
+    card = CB.board_state(_carded())["board"]["cards"][0]
+    assert card["href"] == f"stock.html#{card['tk']}"
+    assert card["mkt"] == "us" and card["sym"] == card["tk"]
+
+
+def test_the_price_is_formatted_as_the_nightly_formats_it():
+    call_site = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
+    assert "'price_txt': ('$' ~ ('%.2f'|format(n.price)))" in call_site
+    assert CB.board_state(_carded())["board"]["cards"][0]["price_txt"] == "$187.46"
+
+
+def test_a_row_that_cannot_fill_a_required_field_leaves_the_board_entirely():
+    """W-L1d gate 3 — `card_complete` is a claim about EVERY row that ships, so a
+    row missing a required fact is dropped from `cards` AND `tickers` together
+    rather than shipped half-filled under a true flag. Parallelism survives the
+    drop, which is the property that makes dropping the safe half of the ruling.
+
+    Membership of record is untouched: the name keeps its place in `names`, so
+    the reconciler still grades it. Only the client's grid is short, and the
+    count says so."""
+    payload = _carded(("AAA", "BBB", "CCC"), BBB={"name": "   "})
+    contract = payload["consumer_contract"]
+    assert contract["card_complete"] is True     # every row that SHIPS is whole
+    assert contract["cards_n"] == 2 and contract["cards_dropped_n"] == 1
+
+    state = CB.board_state(payload)["board"]
+    assert state["tickers"] == ["CCC", "AAA"]    # BBB is gone from BOTH lists
+    assert [c["tk"] for c in state["cards"]] == state["tickers"]
+    # ...but not from the board of record.
+    assert "BBB" in [r["ticker"] for r in payload["names"]]
+
+
+def test_an_optional_field_is_null_and_never_guessed():
+    """A null with a reason is the correct outcome; an imputed value is the
+    failure. A name absent from the committed zh map, or a series too short to
+    draw, yields None — and the card still ships, because the card macro guards
+    every one of these with .get()."""
+    payload = _carded(("AAA",), AAA={"name_zh": None, "sec": None,
+                                     "sec_zh": None, "spark": ""})
+    card = CB.board_state(payload)["board"]["cards"][0]
+    assert card["name_zh"] is None and card["sec"] is None
+    assert card["sec_zh"] is None and card["spark"] is None
+    # Present-but-null, never absent: a missing KEY would make the row's shape
+    # vary and force the client to branch on shape instead of on value.
+    assert set(card) == set(CB.CARD_FIELDS)
+    assert payload["consumer_contract"]["card_complete"] is True
+
+
+def test_every_required_field_is_one_the_row_actually_carries():
+    assert set(CB.CARD_REQUIRED) <= set(CB.CARD_FIELDS)
+    assert set(CB.CARD_FIELDS) == {
+        "tk", "sym", "mkt", "href", "date", "name", "name_zh", "sec", "sec_zh",
+        "price_txt", "spark", "signal", "runway"}
+
+
+def test_a_board_with_no_display_inputs_publishes_no_cards_at_all():
+    """The degraded shape is the OLD shape: full ticker list, no `cards` key,
+    card_complete false — which is exactly what the client already refuses to
+    render cards from. A caller that only wants membership and legs (the
+    reconciler, a replay) is unaffected by W-L1d."""
+    payload = _payload(("AAA", "BBB"))
+    state = CB.board_state(payload)["board"]
+    assert state["card_complete"] is False
+    assert "cards" not in state
+    # The FULL admitted list, unfiltered — no card can drop a name when no card
+    # was built in the first place.
+    assert state["tickers"] == [r["ticker"] for r in payload["names"]]
+
+
+def test_the_lane_gathers_display_facts_only_for_names_the_gate_admits():
+    """~1,660 names in the universe, ~130 on the board. Drawing a sparkline for
+    every evaluated name would build ~1,530 SVGs to discard them, on a lane with
+    ~30 minutes of the 18:30 SLA to spend."""
+    src = (ROOT / "scripts" / "close_pass_publish.py").read_text(encoding="utf-8")
+    body = src.split("def collect(")[1].split("\ndef ")[0]
+    assert "if signal_gate.is_buyable(verdict):" in body
+    guard = body.index("if signal_gate.is_buyable(verdict):")
+    assert body.index('"spark": _spark_svg(') > guard
+    # The nightly's own window, so the two boards draw the same history.
+    assert P.SPARK_BARS == 64
+    assert "close.tail(64)" in (ROOT / "scripts" / "build_stock_library.py").read_text(
+        encoding="utf-8")
+
+
 def test_the_mirror_annotates_the_live_strip_with_only_that_one_key(tmp_path):
     """"One artifact, one poll, one client" — but this lane does not own that
     artifact, so it writes exactly one key into it and nothing else."""
@@ -593,6 +771,74 @@ def test_a_lost_race_with_the_evaluator_goes_dark_and_self_heals(tmp_path):
     assert M.STATE_KEY not in json.loads(plv.read_text())
     assert M.annotate_live_strip(plv, payload) is True
     assert json.loads(plv.read_text())[M.STATE_KEY] == CB.board_state(payload)
+
+
+def test_a_concurrent_rewrite_skips_the_write_instead_of_clobbering(tmp_path,
+                                                                    monkeypatch):
+    """THE compare-and-swap gate.
+
+    This lane read-modify-writes a key into an artifact the Prophet Live
+    evaluator owns and rewrites whole. It shipped on a disjoint-windows argument
+    — evaluator ends 16:15 ET, board publishes ~16:25 ET — that the lane's own
+    measurement undercuts: observed queue waits reach 71 minutes, which is
+    enough to land this pass inside a period the evaluator owns.
+
+    Without the swap the loser of that race does not merely lose its own key: it
+    writes back the document it read MINUTES ago plus one key, and the
+    evaluator's fresh live states are gone until the evaluator's next pass. The
+    swap re-reads immediately before the write and skips on a byte change, so
+    the cost of losing is one tick of this lane's own key.
+
+    The concurrent write is injected where it really happens — while
+    `board_state` is building the key, between the two reads.
+    """
+    plv = tmp_path / "prophet_live.json"
+    stale = {"schema": "prophet_live.states/v1", "states": {"AAA": {"state": "forming"}}}
+    plv.write_text(json.dumps(stale))
+    fresh = {"schema": "prophet_live.states/v1",
+             "states": {"AAA": {"state": "buyable"}, "ZZZ": {"state": "forming"}},
+             "meta": {"delay_min": 15}}
+
+    real = CB.board_state
+    def evaluator_wins(payload, **kw):
+        plv.write_text(json.dumps(fresh))        # the evaluator's whole rewrite
+        return real(payload, **kw)
+    monkeypatch.setattr(M.CB, "board_state", evaluator_wins)
+
+    payload = _payload()
+    assert M.annotate_live_strip(plv, payload) is False
+    # The evaluator's document is intact — not the stale one this pass had read.
+    landed = json.loads(plv.read_text())
+    assert landed == fresh
+    assert M.STATE_KEY not in landed
+
+    # And it self-heals: the next tick, with no concurrent write, annotates the
+    # NEW document rather than resurrecting the stale one.
+    monkeypatch.setattr(M.CB, "board_state", real)
+    assert M.annotate_live_strip(plv, payload) is True
+    healed = json.loads(plv.read_text())
+    assert healed[M.STATE_KEY] == CB.board_state(payload)
+    assert {k: v for k, v in healed.items() if k != M.STATE_KEY} == fresh
+
+
+def test_the_swap_compares_bytes_rather_than_the_parsed_object(tmp_path,
+                                                               monkeypatch):
+    """A digest over the parse would call a real rewrite "unchanged" whenever the
+    evaluator re-emitted equal data with different spacing or key order — the
+    exact case where the stale document this pass holds is still wrong."""
+    plv = tmp_path / "prophet_live.json"
+    doc = {"states": {"AAA": {"state": "forming"}}, "schema": "x"}
+    plv.write_text(json.dumps(doc, separators=(",", ":")))
+
+    real = CB.board_state
+    def reserialise(payload, **kw):
+        # Same object, different bytes: indented, keys in the other order.
+        plv.write_text(json.dumps(dict(reversed(list(doc.items()))), indent=2))
+        return real(payload, **kw)
+    monkeypatch.setattr(M.CB, "board_state", reserialise)
+
+    assert M.annotate_live_strip(plv, _payload()) is False
+    assert M.STATE_KEY not in json.loads(plv.read_text())
 
 
 def test_the_strip_annotation_is_independent_of_the_full_board_copy(tmp_path,
@@ -840,18 +1086,31 @@ def test_the_ordering_never_re_admits_or_drops_a_name():
     assert {r["ticker"] for r in payload["evaluated"]} == set(verdicts)
 
 
-def test_the_payload_declares_that_it_cannot_populate_a_card():
+def test_the_payload_declares_whether_it_can_populate_a_card():
     """Spec §7's invariant is "rel == 'ahead' ONLY when the rendered cards came
-    from the evening board". This payload carries board identity and price legs,
-    not the ~25-field card contract (sparkline SVG, bilingual name, sector,
-    verb, zone), so a consumer must not light the stamp on its arrival alone.
-    Declared in the DATA because a comment cannot be checked by a consumer."""
-    payload = CB.build_board(inputs()["verdicts"], inputs()["ext_by"],
-                             session=SESSION, built_at=NOW,
-                             adjustment_by=inputs()["adjustment_by"])
-    assert payload["consumer_contract"]["card_complete"] is False
-    assert "ticker" in payload["consumer_contract"]["row_fields"]
-    assert payload["provisional"] is True and payload["lane"] == "closepass"
+    from the evening board", so the payload declares in the DATA whether it can
+    populate one — a comment cannot be checked by a consumer.
+
+    The flag is COMPUTED, never asserted, and W-L1d changed the fact rather than
+    the standard: given display inputs the pass now fills the card contract and
+    says so; without them it still carries board identity and the two close-only
+    legs and nothing that could paint a card, and still says so. What must never
+    happen is the third case — a true flag over rows that cannot render, which
+    `test_a_row_that_cannot_fill_a_required_field_leaves_the_board_entirely`
+    pins from the other side."""
+    bare = CB.build_board(inputs()["verdicts"], inputs()["ext_by"],
+                          session=SESSION, built_at=NOW,
+                          adjustment_by=inputs()["adjustment_by"])
+    assert bare["consumer_contract"]["card_complete"] is False
+    assert bare["consumer_contract"]["cards_n"] == 0
+    assert not any("card" in r for r in bare["names"])
+    assert "ticker" in bare["consumer_contract"]["row_fields"]
+    assert bare["provisional"] is True and bare["lane"] == "closepass"
+
+    carded = _carded(("AAA", "BBB"))
+    assert carded["consumer_contract"]["card_complete"] is True
+    assert carded["consumer_contract"]["cards_n"] == len(carded["names"])
+    assert carded["provisional"] is True and carded["lane"] == "closepass"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -84,6 +84,37 @@ OMITTED_LEGS: dict[str, str] = {
 WEIGHT_COVERED = sum(us_board_rank.SCORE_WEIGHTS[k] for k in CLOSE_DERIVED_LEGS)
 
 
+#: Every key a card row may carry, and NOTHING else (W-L1d).
+#:
+#: THE PAYLOAD SHIPS FACTS, THE CLIENT SHIPS WORDS. `verb`, the edge/priority
+#: figure and its label, every tip, chip and bilingual sentence are DERIVED
+#: client-side from `signal`/`runway` through the client's own lexicon. Two
+#: reasons, both load-bearing: a rendered word makes the payload
+#: language-specific (this artifact is polled by EN and ZH readers alike, and
+#: shipping both copies doubles a poll that every dashboard reader pays every
+#: 120s), and it would stand up a second owner of a vocabulary that already has
+#: one. A word in here is a bug even when the word is right.
+CARD_FIELDS = (
+    "tk", "sym", "mkt", "href", "date",
+    "name", "name_zh", "sec", "sec_zh",
+    "price_txt", "spark", "signal", "runway",
+)
+#: The subset a card cannot be RENDERED without. A row that cannot fill all of
+#: them leaves the board projection entirely rather than shipping half-filled
+#: under a `card_complete: true` flag — see `build_board`'s ruling.
+CARD_REQUIRED = ("tk", "sym", "mkt", "href", "name", "price_txt",
+                 "signal", "runway")
+
+#: The nightly's OWN ticker-page URL, read out of `templates/dashboard.html.j2`'s
+#: pv_card call site (`'href': 'stock.html#' ~ n.ticker`) rather than invented. A
+#: second URL convention would send the evening board's cards somewhere the
+#: morning board's cards do not go, and the reader would find the difference
+#: before we did.
+TICKER_PAGE = "stock.html"
+#: The card's market suffix, as that same call site passes it (`'mkt': 'us'`).
+MARKET = "us"
+
+
 #: When the nightly board of record is expected to be live, as a UTC wall time.
 #: daily.yml fires 22:30 UTC and runs for hours; the board of record has been
 #: landing by ~05:00-06:00 UTC. This is the BACKSTOP on how long "ahead of the
@@ -100,6 +131,64 @@ def valid_until(built_at: datetime) -> datetime:
                          minute=NIGHTLY_EXPECTED_BY_UTC.minute,
                          second=0, microsecond=0)
     return edge if edge > stamp else edge + timedelta(days=1)
+
+
+def _text(value: Any) -> str | None:
+    """A display string, or None. Empty and whitespace are NOT display values.
+
+    `_spark_svg` returns ``""`` for a series too short to draw and the universe
+    carries the odd blank name, so without this an empty string would sail
+    through the required-field check and render as a hole on the card.
+    """
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def card_row(row: Mapping[str, Any],
+             display: Mapping[str, Any] | None) -> dict | None:
+    """One admitted row + its display facts → a card row, or None if unfillable.
+
+    Returns None rather than a partial dict: a row that cannot fill
+    `CARD_REQUIRED` is dropped from the projection by `board_state`, which is
+    what keeps `card_complete: true` an honest claim about every row that ships
+    (W-L1d gate 3). Every `CARD_FIELDS` key is always PRESENT so the shape does
+    not vary row to row; the optional ones may be null.
+
+    `edge` IS NEVER EMITTED, and no 100-scale number appears here at all. The
+    board's edge leg is sector-neutralised and this pass cannot compute it
+    (OMITTED_LEGS); `points` is a figure on the real 100-point weights of which
+    this pass covers 40, so publishing it beside a card would read as the
+    nightly's score and would not be it. The client gets the two legs that ARE
+    computed, on their own [0,1] scale, and derives its own words from them.
+    """
+    d = display or {}
+    ticker = row["ticker"]
+    price = d.get("price")
+    legs = row.get("legs") or {}
+    card = {
+        "tk": ticker,
+        # The nightly's US call site passes no `sym` and the card macro falls
+        # back to `tk`; they are the same string for a US name. Stated rather
+        # than left to the fallback so the live-quote overlay's `data-sym` is
+        # populated from data on both boards.
+        "sym": ticker,
+        "mkt": MARKET,
+        "href": f"{TICKER_PAGE}#{ticker}",
+        "date": _text(row.get("signal_asof")),
+        "name": _text(d.get("name")),
+        "name_zh": _text(d.get("name_zh")),
+        "sec": _text(d.get("sec")),
+        "sec_zh": _text(d.get("sec_zh")),
+        "price_txt": None if price is None else f"${float(price):.2f}",
+        "spark": _text(d.get("spark")),
+        "signal": legs.get("signal"),
+        "runway": legs.get("runway"),
+    }
+    if any(card[k] is None for k in CARD_REQUIRED):
+        return None
+    return card
 
 
 def board_state(payload: Mapping[str, Any], *, rel: str = "ahead") -> dict:
@@ -131,16 +220,29 @@ def board_state(payload: Mapping[str, Any], *, rel: str = "ahead") -> dict:
     if rel not in ("ahead", "behind"):
         raise ValueError(f"rel must be 'ahead' or 'behind', not {rel!r}")
     built = datetime.fromisoformat(payload["built_at"].replace("Z", "+00:00"))
+    complete = bool((payload.get("consumer_contract") or {}).get("card_complete"))
+    # PARALLEL BY CONSTRUCTION, never by convention. `tickers` and `cards` are
+    # taken from ONE filtered list in ONE pass, so there is no second traversal
+    # that could drift and no order to keep in sync by hand. When the board is
+    # not card-complete the projection degrades to exactly what it published
+    # before W-L1d — the full ticker list and no `cards` key at all, which is
+    # the shape the client already refuses to render cards from.
+    rendered = ([row for row in payload["names"] if row.get("card")] if complete
+                else list(payload["names"]))
+    board = {
+        "as_of": payload["as_of"],
+        "lane": payload["lane"],
+        "card_complete": complete,
+        "tickers": [row["ticker"] for row in rendered],
+    }
+    if complete:
+        board["cards"] = [row["card"] for row in rendered]
     return {
         "rel": rel,
         "note": rel,
         "generated_at": payload["built_at"],
         "valid_until": valid_until(built).isoformat().replace("+00:00", "Z"),
-        "board": {
-            "as_of": payload["as_of"],
-            "lane": payload["lane"],
-            "tickers": [row["ticker"] for row in payload["names"]],
-        },
+        "board": board,
     }
 
 
@@ -182,6 +284,7 @@ def build_board(
     built_at: datetime,
     adjustment_by: Mapping[str, str] | None = None,
     price_through: Mapping[str, str] | None = None,
+    display_by: Mapping[str, Mapping[str, Any]] | None = None,
     universe_n: int | None = None,
     skipped: Mapping[str, int] | None = None,
 ) -> dict:
@@ -190,6 +293,14 @@ def build_board(
     Pure: no I/O, no clock read, no ``data/`` path. Every caller (the lane, the
     tests, a replay) gets the same payload for the same inputs, which is what
     makes the confirmation delta a measurement rather than an opinion.
+
+    ``display_by`` carries the per-name DISPLAY FACTS a card needs and this
+    module deliberately cannot fetch: name, sector, last price, sparkline. It is
+    an argument rather than a lookup because everything here stays pure — the
+    lane that already opens the price store gathers them in the same pass
+    (``scripts.close_pass_publish.collect``) and hands them in. Omit it entirely
+    and the payload is honestly NOT card-complete, which is what every caller
+    that only wants membership and legs (the reconciler, a replay) still gets.
 
     ``adjustment_by`` names each name's PRICE BASIS (W-L0 gate 3 — name the
     adjustment at every seam). It is per-name and not a single lane-wide string
@@ -235,6 +346,25 @@ def build_board(
     admitted.sort(key=lambda r: (-r["points"], r["ticker"]))
     for i, row in enumerate(admitted, start=1):
         row["provisional_rank"] = i
+        if display_by is not None:
+            # Cards are built for ADMITTED rows only. An evaluated-but-not-
+            # admitted row is a diagnostic record, never a rendered card, so
+            # building one would be work whose only consumer is the file size.
+            card = card_row(row, display_by.get(row["ticker"]))
+            if card is not None:
+                row["card"] = card
+
+    # `card_complete` IS A CLAIM ABOUT EVERY ROW THAT SHIPS, so it is computed
+    # from the cards actually built and never asserted from the fact that
+    # display inputs arrived. A row that could not fill a required field is
+    # dropped from the projection (board_state) and counted here rather than
+    # shipped half-filled under a true flag — the alternative the W-L1d ruling
+    # allows, darkening the WHOLE board over one blank name, would throw away
+    # ~130 good cards to disclose one bad one. Membership of record is
+    # untouched: the row keeps its place in `names` and `evaluated`, so the
+    # reconciler still grades it. Only the client's grid is short.
+    cards_n = sum(1 for r in admitted if r.get("card"))
+    card_complete = display_by is not None and cards_n > 0
 
     bases = sorted({r["price_basis"] for r in rows})
     return {
@@ -266,7 +396,13 @@ def build_board(
         # populate a card must not license a stamp claiming the cards are
         # tonight's. Flag it in the data rather than in a comment nobody reads.
         "consumer_contract": {
-            "card_complete": False,
+            "card_complete": card_complete,
+            "card_fields": list(CARD_FIELDS),
+            "card_required": list(CARD_REQUIRED),
+            "cards_n": cards_n,
+            # Disclosed, not silent: the count of admitted names the client will
+            # NOT show because a required display fact was missing.
+            "cards_dropped_n": len(admitted) - cards_n,
             "row_fields": sorted(rows[0]) if rows else [],
         },
         "names": admitted,
