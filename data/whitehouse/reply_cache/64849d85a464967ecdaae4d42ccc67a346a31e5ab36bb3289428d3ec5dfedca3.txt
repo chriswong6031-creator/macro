@@ -1,0 +1,56 @@
+{
+  "activate": true,
+  "importance": 65,
+  "banner_days": 3,
+  "tone": "mixed",
+  "banner_title": "Trump pushes single-dose vaccines, parental opt-outs — vaccine makers face margin, liability shifts",
+  "banner_title_zh": "特朗普推动单剂疫苗及父母选择退出机制——疫苗制造商面临利润率和责任风险变化",
+  "summary": "A new executive order promotes splitting combination childhood vaccines into single-disease shots and strengthens parental opt-outs, directly threatening the high-margin franchise of major vaccine manufacturers while potentially opening a market for new entrants.",
+  "summary_zh": "一项新行政命令推动将儿童联合疫苗拆分为单病种注射剂，并加强父母选择退出权，这直接威胁到主要疫苗制造商的高利润业务，同时可能为新进入者打开市场。",
+  "analysis": "The executive order fundamentally alters the commercial landscape for US childhood vaccines by endorsing single-disease shots (starting with MMR) over combination vaccines, and by directing the DOJ to challenge state vaccine mandates while linking federal funds to religious and medical exemptions. This shifts the policy framework from maximizing uptake through streamlined combination shots to maximizing perceived safety and parental choice, even if it complicates immunization logistics.\n\nFor established vaccine makers like Merck (MMR), GSK, Sanofi, and Pfizer, combination vaccines are high-margin, patent-protected products with strong bundling economics. Mandating or incentivizing a shift to single-antigen shots forces these companies to either cannibalize their own portfolio, invest in manufacturing older, less profitable formulations, or face competition from generic or new entrants who can more easily produce single-antigen vaccines.\n\nThe order also introduces long-term demand uncertainty. By threatening to withhold federal education or health funding from states that do not broadly provide religious and medical exemptions, it could lower childhood vaccination coverage rates over time, reducing the total addressable market for all pediatric vaccines. This is a multi-year structural risk, not a one-day headline, as it ties federal grants to a loosening of state mandates.\n\nThe key uncertainty is implementation: development of single-dose shots requires FDA approval and manufacturing capacity, taking 2-4 years at minimum. Moreover, litigation over state mandates will be slow. However, the policy signal is strong and creates an immediate overhang on the vaccine group, rewarding niche manufacturers of single-antigen shots or adjuvants and punishing the incumbents most reliant on the pediatric combination franchise.",
+  "sectors": [
+    {
+      "name": "Biotechnology/Pharmaceuticals (Vaccine Makers)",
+      "impact": "headwind",
+      "rationale": "Splitting combination vaccines into single shots threatens high-margin bundled products and elevates competition risk."
+    },
+    {
+      "name": "Healthcare Services (Immunization Providers)",
+      "impact": "headwind",
+      "rationale": "Administering vaccines at separate visits adds administrative cost and reduces patient throughput for pediatricians and clinics."
+    },
+    {
+      "name": "Pharmaceutical Supply/Adjuvants",
+      "impact": "tailwind",
+      "rationale": "Directives to develop alternatives to aluminum adjuvants and single-antigen shots could benefit specialty raw material and contract manufacturing firms."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "MRK",
+      "direction": "hurt",
+      "rationale": "Merck's blockbuster MMR/Varivax franchise faces direct mandate to unbundle into lower-margin single shots."
+    },
+    {
+      "symbol": "GSK",
+      "direction": "hurt",
+      "rationale": "Major pediatric combination vaccine supplier (Pediarix, Rotarix) exposed to margin erosion from single-dose push and rotavirus reclassification."
+    },
+    {
+      "symbol": "PFE",
+      "direction": "hurt",
+      "rationale": "Prevnar pneumococcal franchise at risk if single-antigen dynamics reduce bundling advantages or uptake softens on mandate erosion."
+    },
+    {
+      "symbol": "SNY",
+      "direction": "hurt",
+      "rationale": "Sanofi Pasteur's combination pediatric portfolio (Pentacel, Vaxelis) caught directly in the unbundling policy shift."
+    },
+    {
+      "symbol": "BAVA.CO",
+      "direction": "benefit",
+      "rationale": "Specialist in single-disease and travel vaccines could gain market share if US policy pivots away from incumbent combination portfolios."
+    }
+  ],
+  "confidence": "medium"
+}

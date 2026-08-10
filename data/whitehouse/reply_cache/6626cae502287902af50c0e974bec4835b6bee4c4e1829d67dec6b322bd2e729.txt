@@ -1,0 +1,61 @@
+{
+  "activate": true,
+  "importance": 72,
+  "banner_days": 4,
+  "tone": "mixed",
+  "banner_title": "Trump narrows childhood vaccine schedule — MMR split, fewer mandates roil pharma",
+  "banner_title_zh": "特朗普缩小儿童疫苗清单——拆分麻腮风疫苗、减少强制令搅动制药板块",
+  "summary": "A new Executive Order reduces the routine childhood immunization list from 18 to 11 diseases, recommends splitting the MMR shot into three separate doses, and advises states to ease school mandates. The policy directly threatens the volume and pricing power of pediatric vaccine franchises while benefiting manufacturers of the remaining 11 priority vaccines.",
+  "summary_zh": "最新行政令将常规儿童免疫清单从18种减至11种，建议将麻腮风疫苗拆分为三种单独注射，并建议各州放宽入学强制要求。该政策直接威胁儿科疫苗组合产品的销量与定价权，利好仍保留的11种优先疫苗的生产商。",
+  "analysis": "The Executive Order reshapes the U.S. childhood vaccine landscape by formally endorsing a 'Gold Standard' schedule of only 11 routine immunizations, down from the 18 diseases previously recommended by the CDC. Crucially, it recommends splitting the combined measles-mumps-rubella (MMR) shot into three separate single-disease injections administered over multiple visits. This undermines the commercial logic of one of the most widely used pediatric combination vaccines globally.\n\nThe transmission mechanism for markets is volume compression and pricing uncertainty. Reducing the number of routine doses directly lowers guaranteed demand through the Vaccines for Children program and private payers. Advising states to reconsider school mandates introduces a risk that some states will weaken enforcement, further eroding uptake rates for the de-prioritized vaccines. The MMR split is a particularly acute blow to Merck's blockbuster MMR-II franchise, as it fragments a single high-margin product into three potentially lower-utilization, less convenient separate shots.\n\nThere are clear winners. Manufacturers whose portfolios are concentrated on the 11 preserved diseases—such as diphtheria, tetanus, pertussis, polio, and hepatitis B—face a more protected demand moat. This shifts the competitive advantage toward companies with broader portfolios in those specific antigens, while punishing those heavily reliant on the excluded vaccines like rotavirus, HPV, and influenza for children, or the combined MMR.\n\nThe key uncertainty is state-level implementation. If many blue states ignore the advisory and maintain existing mandates, the actual volume impact could be muted. However, the signal from the federal government is a significant headwind for public confidence in the de-emphasized vaccines, potentially accelerating a decline in private-market uptake regardless of state mandates.",
+  "sectors": [
+    {
+      "name": "Pharmaceuticals — Vaccine Manufacturers",
+      "impact": "headwind",
+      "rationale": "Reduced routine recommendation list and MMR split directly cut guaranteed revenue streams for pediatric vaccines excluded from the new priority list."
+    },
+    {
+      "name": "Pharmaceuticals — Core Antigen Producers",
+      "impact": "tailwind",
+      "rationale": "Companies with dominant positions in the 11 remaining diseases (DTaP, Polio, Hep B, etc.) see their franchise moat widen as alternatives are de-emphasized."
+    },
+    {
+      "name": "Managed Care / Health Insurers",
+      "impact": "mixed",
+      "rationale": "Lower vaccine utilization reduces near-term medical costs, but declining childhood vaccination rates could raise long-term actuarial risk from outbreaks."
+    },
+    {
+      "name": "Diagnostics & Lab Services",
+      "impact": "tailwind",
+      "rationale": "A shift toward individualized 'shared clinical decision-making' and separate MMR dosing increases pre-vaccination titer testing and doctor visits."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "MRK",
+      "direction": "hurt",
+      "rationale": "Directly exposed via MMR-II (measles, mumps, rubella) franchise facing split recommendation and reduced school mandate support."
+    },
+    {
+      "symbol": "GSK",
+      "direction": "hurt",
+      "rationale": "Pediatric portfolio includes rotavirus and other vaccines potentially excluded from the de-prioritized routine list, impacting volume outlook."
+    },
+    {
+      "symbol": "PFE",
+      "direction": "hurt",
+      "rationale": "Prevnar (pneumococcal) remains a priority disease, but the advisory to separate visits and pause blanket COVID-19 shots for kids clouds Prevnar's combination-dosing convenience advantage."
+    },
+    {
+      "symbol": "SNY",
+      "direction": "benefit",
+      "rationale": "Strong position in DTaP, polio, and Hib vaccines—all core antigens likely among the 11 diseases recommended, insulating its U.S. pediatric business."
+    },
+    {
+      "symbol": "UNH",
+      "direction": "mixed",
+      "rationale": "Near-term medical-loss ratio benefit from fewer vaccine claims offset by long-term pandemic risk from lower immunization coverage."
+    }
+  ],
+  "confidence": "medium"
+}
