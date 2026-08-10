@@ -923,6 +923,10 @@ def _validate_observation(
     operational = clean.get("operational")
     if type(operational) is not bool:
         raise MarketMemoryIdentityObservationError("operational must be boolean")
+    if operational and clean.get("listing_state") != "present_in_snapshot":
+        raise MarketMemoryIdentityObservationError(
+            "operational observation requires an authenticated SPY presence"
+        )
     expected_policy = _observation_policy(operational=operational)
     if clean.get("evidence_policy") != expected_policy:
         raise MarketMemoryIdentityObservationError("observation evidence policy drift")

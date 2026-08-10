@@ -620,6 +620,10 @@ def _validate_generation(value: Mapping[str, Any], *, store_id: str) -> dict[str
             raise MarketMemoryIdentityStoreError(
                 "identity generation operational provenance disagrees"
             )
+        if row["operational"] and row["listing_state"] != "present_in_snapshot":
+            raise MarketMemoryIdentityStoreError(
+                "identity generation operational entry requires SPY presence"
+            )
         dates.append(date_partition)
         observation_ids.append(observation_id)
         capture_ids.append(capture_id)

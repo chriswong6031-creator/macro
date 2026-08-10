@@ -73,6 +73,16 @@ def _import_module():
     return m
 
 
+def _disable_snapshot_floors(adapter) -> None:
+    """Let deliberately tiny parser fixtures exercise non-volume behavior."""
+
+    adapter._SNAPSHOT_MIN_ROWS = 0
+    adapter._SOURCE_ARTIFACT_MIN_ROWS = {
+        "nasdaqlisted": 0,
+        "otherlisted": 0,
+    }
+
+
 # ---------------------------------------------------------------------------
 # A. Parse fixture blobs
 # ---------------------------------------------------------------------------
@@ -209,7 +219,7 @@ class TestSnapshotIdempotency:
 
             adapter = m.SymbolDirectoryAdapter()
             # Bypass the row-count floor so small fixtures don't suppress the write.
-            adapter._SNAPSHOT_MIN_ROWS = 0
+            _disable_snapshot_floors(adapter)
             result = adapter.fetch()
 
         snap_path = tmp_path / "symbol_directory" / "snapshots" / f"{today_str}.parquet"
@@ -274,7 +284,7 @@ class TestCikMapIdempotency:
             mock_sec.return_value = _SEC_TICKERS_JSON
 
             adapter = m.SymbolDirectoryAdapter()
-            adapter._SNAPSHOT_MIN_ROWS = 0
+            _disable_snapshot_floors(adapter)
             result = adapter.fetch()
 
         cik_path = tmp_path / "symbol_directory" / "cik_map" / f"{today_str}.parquet"
@@ -306,7 +316,7 @@ class TestCikMapIdempotency:
             mock_sec.return_value = _SEC_TICKERS_JSON
 
             adapter = m.SymbolDirectoryAdapter()
-            adapter._SNAPSHOT_MIN_ROWS = 0
+            _disable_snapshot_floors(adapter)
             result = adapter.fetch()
 
         assert result["symbol_directory__ingest"].iloc[0]["cik_written"] == 0
@@ -337,7 +347,7 @@ class TestCikMapIdempotency:
             mock_sec.return_value = _SEC_TICKERS_JSON
 
             adapter = m.SymbolDirectoryAdapter()
-            adapter._SNAPSHOT_MIN_ROWS = 0
+            _disable_snapshot_floors(adapter)
             result = adapter.fetch()
 
         assert result["symbol_directory__ingest"].iloc[0]["cik_written"] == 1
@@ -361,7 +371,7 @@ class TestManifest:
             mock_sec.return_value = _SEC_TICKERS_JSON
 
             adapter = m.SymbolDirectoryAdapter()
-            adapter._SNAPSHOT_MIN_ROWS = 0
+            _disable_snapshot_floors(adapter)
             adapter.fetch()
 
         manifest_path = tmp_path / "symbol_directory" / "manifest.json"
@@ -390,7 +400,7 @@ class TestManifest:
             mock_sec.return_value = _SEC_TICKERS_JSON
 
             adapter = m.SymbolDirectoryAdapter()
-            adapter._SNAPSHOT_MIN_ROWS = 0
+            _disable_snapshot_floors(adapter)
             adapter.fetch()
 
         manifest = json.loads(
@@ -412,7 +422,7 @@ class TestManifest:
             mock_sec.return_value = _SEC_TICKERS_JSON
 
             adapter = m.SymbolDirectoryAdapter()
-            adapter._SNAPSHOT_MIN_ROWS = 0
+            _disable_snapshot_floors(adapter)
             adapter.fetch()
 
         manifest = json.loads(
@@ -536,7 +546,7 @@ class TestSnapshotGuards:
             mock_sec.return_value = _SEC_TICKERS_JSON
 
             adapter = m.SymbolDirectoryAdapter()
-            adapter._SNAPSHOT_MIN_ROWS = 0  # floor is not the blocker here
+            _disable_snapshot_floors(adapter)  # floors are not the blocker here
             result = adapter.fetch()
 
         snap_path = tmp_path / "symbol_directory" / "snapshots" / f"{today_str}.parquet"
