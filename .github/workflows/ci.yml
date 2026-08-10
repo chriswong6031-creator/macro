@@ -453,6 +453,16 @@ on:
       - "contracts/options/polygon.intraday_price_receipt.v1.schema.json"
       - "tests/test_options_signal_episode.py"
       - "tests/test_polygon_intraday.py"
+      # R6.2 private operator-reviewed Options Issue Desk. engine/** and
+      # scripts/*.py cover the engine/builder halves; these exact entries close
+      # the API, contract, and test-only trigger seams without widening app/**.
+      - "app/options_issue_desk.py"
+      - "contracts/options/options.issue_desk.v1.schema.json"
+      - "contracts/options/options.issue_desk_proposal.v1.schema.json"
+      - "contracts/options/options.issue_desk_decision.v1.schema.json"
+      - "contracts/options/options.issue_receipt.v1.schema.json"
+      - "tests/test_options_issue_desk.py"
+      - "tests/test_options_issue_desk_api.py"
       # OEU M-XP: date-keyed surface retention + the Terminal EOD-context R2 mirror +
       # the Scanner-mode screener rows export. All three feed the Terminal/Options
       # workspace, so a silent contract change here shows up as a 404 over there.

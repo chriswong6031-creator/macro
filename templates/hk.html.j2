@@ -3742,6 +3742,25 @@
                         if _hk_xfu else "price not extended") -%}
   {%- set _hk_ext_zh = ("本榜暂无拉伸读数，价格拉伸程度未作检查"
                         if _hk_xfu else "价格未过度拉伸") -%}
+  {# ── IS THE MISSING READING BOARD-WIDE? (ANTICIPATION v1 per-row carrier, 2026-08-09)
+     The identical rule the US board runs, in the identical words, because it is one
+     rule keyed on data and not two keyed on market: the per-row "Extended? Not checked"
+     mark identifies WHICH featured names the chase-risk check could not score, and that
+     is worth a chip only while the answer is *some of them*. On this board it is all of
+     them — nothing sets `ext_z` anywhere in the HK lane — so the mark suppresses itself
+     and the board note above carries the whole story once, which is what DESIGN_DOCTRINE
+     Law 4 requires of a constant. HK is not special-cased to get that outcome; it just
+     happens to be the market where the condition holds tonight. Wire an HK extension
+     reading for some names and the marks appear here with no edit, the same way the
+     board note's clause reverts itself.
+     Counted off the RENDERED rows, not the receipt (§ the chip-counts rule above): a
+     display decision must agree with what the reader can see, and a missing `ranking`
+     block must fail toward disclosure rather than toward silence. #}
+  {%- set _hk_xu_c = namespace(feat=0, feat_unknown=0) -%}
+  {%- for _n in _hkb -%}{%- if _n.get('featured') and _n.get('stage') == 'live' -%}{%- set _hk_xu_c.feat = _hk_xu_c.feat + 1 -%}
+    {%- if _n.get('ext_unknown') -%}{%- set _hk_xu_c.feat_unknown = _hk_xu_c.feat_unknown + 1 -%}{%- endif -%}
+  {%- endif -%}{%- endfor -%}
+  {%- set _hk_xu_allfeat = (_hk_xu_c.feat > 0 and _hk_xu_c.feat_unknown == _hk_xu_c.feat) -%}
   <div class="panel span12" id="standouts">
     <h2>⚡ {{ t('Prophet — HK stock signals', 'Prophet — 港股信号') }}
       <span class="note" style="text-transform:none">· {% if _hsg.any %}{{ t('Ranked by readiness — what to act on, and what to leave alone', '按就绪度排序 —— 哪些可以动手，哪些放着别碰') }}{% else %}{{ t('Bottoming names, ranked by flow, value and strength', '筑底个股，按资金、价值与强度排序') }}{% endif %}</span>
@@ -3905,15 +3924,28 @@
            the engine's own per-row flag rather than hard-coded to "HK", so the day an HK
            extension reading IS wired the copy follows the data with no edit here.
 
-           NOT CURRENTLY RENDERED, and fixed anyway — same as the US board's twin of
-           this chip. `_prophet_card.html.j2` carries `_MK_NOTIP = ('feat', 'new')`
-           (operator 2026-08-05), so this tip is built and dropped; the sentence a
-           reader gets is the board-note above, which is fixed too. Kept correct so it
-           cannot come back wrong; not to be read as a shipped surface. #}
+           THIS TIP IS STILL NOT RENDERED — same as the US board's twin of this chip.
+           `_prophet_card.html.j2` carries `_MK_NOTIP = ('feat', 'new')` (operator
+           2026-08-05), so the string is built and dropped. Kept correct so it cannot
+           come back wrong; not to be read as a shipped surface. The visible carrier
+           is the `nck` chip below, which on this board is suppressed by the
+           all-unknown rule — the board note above is what the reader gets. #}
         {% set _xu = n.get('ext_unknown') %}
         {% if _feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
           'tip_en':'One of today’s picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor, not a rank against the rest of the board)' ~ ('. How far this name has already run is unknown — this board carries no extension reading, so that check was not scored.' if _xu else ' and price is not extended.') ~ ' Capped per sector and per board, so fewer can show. Priority order, not a return forecast.',
           'tip_zh':'今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）' ~ ('。价格拉伸程度暂无读数 —— 本榜没有拉伸数据，这一条未参与判定。' if _xu else '、价格未过度拉伸。') ~ '每个行业与全板均有名额上限，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
+        {# THE PER-ROW CARRIER, wired exactly as on the US board and gated by the same
+           data rule (`_hk_xu_allfeat`, computed above) — so today it renders on NO HK
+           card, because HK's shelf is unknown end to end and the board note says so
+           once. It is wired anyway rather than left out: the day a partial HK extension
+           reading lands, the copy and the carrier both follow the data with no edit
+           here, which is the property the board-note clause was already built for. See
+           dashboard.html.j2 for the full rationale on featured-only scope and the
+           "Extended?" wording. Sits second in the row, so if the [:3] cap bites it is
+           cohort MEMBERSHIP that goes (this file's own rule, the leader-chip note). #}
+        {% if _feat and _xu and not _hk_xu_allfeat %}{% set _mk.rows = _mk.rows + [{'k':'nck','en':'Extended? Not checked','zh':'涨过头？未检查',
+          'tip_en':'One of the checks behind ★ Featured did not run for this name: whether price has already run too far to be worth buying here. No reading came through, so nothing was scored — an absence, not a finding that it has. Everything else the shelf tests was scored and passed: fresh signal, entry window open, edge above zero. Judge the run-up off the chart above yourself.',
+          'tip_zh':'「★ 精选」背后有一项检查没能对这只股票完成：价格是不是已经涨过头、现在买不划算。没取到读数，这一条就没参与判定 —— 是「没查」，不是「查出来涨过头了」。其余几项都已判定并通过：信号新鲜、入场窗口已打开、优势为正。这一项请自己看上面的走势图判断。'}] %}{% endif %}
         {% if _isnew %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
           'tip_en':'This signal fired in the last two sessions — the name was not on the board before that.',
           'tip_zh':'该信号在最近两个交易日内触发 —— 在此之前不在榜上。'}] %}{% endif %}

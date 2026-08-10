@@ -3225,6 +3225,30 @@ divergences:
 # ---------------------------------------------------------------------------
 modules:
 
+  # R6.2-A is deliberately request-driven, not a nightly build step.  The
+  # private API takes the same process lock for snapshot and review operations;
+  # registering it as a workflow lane would create public artifacts and violate
+  # its operator-only, append-only authority boundary.
+  - module: scripts.build_options_issue_desk
+    reads:
+      - site/prophet/index.json
+      - site/options_prophet/index.json
+      - site/vol/regime.json
+      - site/options_structure/gex_state/<SYMBOL>.json
+    writes:
+      - runtime-private/options_issue_desk/proposals.jsonl
+      - runtime-private/options_issue_desk/decisions.jsonl
+    impure: true
+    needs_secrets: false
+    event_driven: true
+    note: >
+      Private offline projection tool plus authenticated Issue Desk API module,
+      intentionally absent from all GitHub Actions workflows and all public R2/site
+      publication lanes. Explicit paths require output to remain below the private
+      state directory. GET may snapshot current BULL Macro plans; POST appends only
+      immutable operator decisions. No overnight automation, rank, gate, size,
+      trade or post-issue mutation authority.
+
   - module: engine.run
     reads:
       - data/macro/*.parquet

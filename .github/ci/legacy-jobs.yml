@@ -891,6 +891,8 @@ jobs:
       # pyyaml is already on the install line.
       - name: governed options Prophet shadow foundation (#5067)
         run: python -m pytest tests/test_build_options_prophet.py -q
+      - name: private operator-reviewed Options Issue Desk (R6.2-A)
+        run: python -m pytest tests/test_options_issue_desk.py tests/test_options_issue_desk_api.py -q
 
   cycle-grading-stats:
     if: ${{ false }}

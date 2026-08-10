@@ -2003,6 +2003,22 @@ except Exception as _prefs_exc:  # noqa: BLE001
     _logging.getLogger("macro.api").warning("account prefs router not mounted: %r", _prefs_exc)
 
 # ---------------------------------------------------------------------------
+# Private Options Issue Desk (R6.2-A): bearer-authenticated operator review only.
+# Its state lives under MACRO_API_STATE_DIR, never in the public R2 data plane.
+# This mount is after require_user so the router can lazily reuse the canonical
+# Supabase bearer verifier without an import cycle.
+# ---------------------------------------------------------------------------
+try:
+    from app.options_issue_desk import router as options_issue_desk_router  # noqa: E402
+    app.include_router(options_issue_desk_router)
+except Exception as _options_issue_desk_exc:  # noqa: BLE001
+    import logging as _logging  # noqa: PLC0415
+    _logging.getLogger("macro.api").warning(
+        "options issue desk router not mounted (private desk unavailable): %r",
+        _options_issue_desk_exc,
+    )
+
+# ---------------------------------------------------------------------------
 # Lifecycle mail sweeper (SEE W3 — app/billing_emails.py): the behaviour-triggered
 # trial-ending T-2 reminder. DEFAULT OFF — register_lifecycle is a no-op unless the
 # operator sets MAIL_LIFECYCLE_ENABLED (docs/ops/email-support-setup.md §5b), so this is

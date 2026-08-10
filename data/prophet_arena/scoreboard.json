@@ -32,11 +32,6 @@
           "close": 4,
           "other": 0
         },
-        "C2_stage_ran_preferred": {
-          "open": 17,
-          "close": 4,
-          "other": 0
-        },
         "C3_door_w_union": {
           "open": 38,
           "close": 10,
@@ -56,6 +51,16 @@
           "open": 14,
           "close": 4,
           "other": 0
+        },
+        "C7_buy_soon_admitted": {
+          "open": 0,
+          "close": 0,
+          "other": 0
+        },
+        "C2_stage_ran_preferred": {
+          "open": 17,
+          "close": 4,
+          "other": 0
         }
       },
       "status": "sealed_read_only_excluded"
@@ -66,14 +71,8 @@
   "standing_line_zh": "\u5f71\u5b50\u8bb0\u5f55 \u2014 \u5b9e\u76d8\u7b56\u7565\u4ec5\u5728\u64cd\u4f5c\u8005\u6279\u51c6\u540e\u624d\u4f1a\u66f4\u6539",
   "headline_min_closed": 20,
   "harness_validity": {
-    "c0_plan_ids": [
-      "FCX-BULL-20260731",
-      "MDB-BULL-20260731"
-    ],
-    "live_plan_ids": [
-      "FCX-BULL-20260731",
-      "MDB-BULL-20260731"
-    ],
+    "c0_plan_ids": [],
+    "live_plan_ids": [],
     "c0_mismatch_count": 0,
     "missing_from_mirror": [],
     "extra_in_mirror": [],
@@ -112,32 +111,6 @@
       "time_stopped_share_pct": null,
       "outcomes": {},
       "nights_recorded": 0,
-      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 0",
-      "readable": false,
-      "vs_champion": {
-        "shared_nights": 0,
-        "n_policy": 0,
-        "n_champion": 0,
-        "avg_pct": null,
-        "champion_avg_pct": null,
-        "diff_pp": null
-      },
-      "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
-    },
-    {
-      "policy": "C2_stage_ran_preferred",
-      "label": "already-moving names first",
-      "label_zh": "\u4f18\u5148\u5df2\u542f\u52a8\u4e2a\u80a1",
-      "grain": "selection",
-      "n_open": 5,
-      "n_closed": 0,
-      "win_rate_pct": null,
-      "avg_pct": null,
-      "median_pct": null,
-      "expired_share_pct": null,
-      "time_stopped_share_pct": null,
-      "outcomes": {},
-      "nights_recorded": 1,
       "reading": "too early to read \u2014 needs 20 closed shadow plans, has 0",
       "readable": false,
       "vs_champion": {
@@ -254,6 +227,47 @@
         "unpaired_plans": 0
       },
       "vs_champion_basis": "per-plan paired \u2014 same plan ids and entries as the live rule, different exits"
+    },
+    {
+      "policy": "C7_buy_soon_admitted",
+      "label": "almost-ready entries admitted",
+      "label_zh": "\u7eb3\u5165\u300c\u5373\u5c06\u4e70\u5165\u300d\u6863",
+      "grain": "selection",
+      "n_open": 0,
+      "n_closed": 0,
+      "win_rate_pct": null,
+      "avg_pct": null,
+      "median_pct": null,
+      "expired_share_pct": null,
+      "time_stopped_share_pct": null,
+      "outcomes": {},
+      "nights_recorded": 0,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 0",
+      "readable": false,
+      "vs_champion": {
+        "shared_nights": 0,
+        "n_policy": 0,
+        "n_champion": 0,
+        "avg_pct": null,
+        "champion_avg_pct": null,
+        "diff_pp": null
+      },
+      "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
+    }
+  ],
+  "retired_policies": [
+    {
+      "policy": "C2_stage_ran_preferred",
+      "label": "already-moving names first",
+      "label_zh": "\u4f18\u5148\u5df2\u542f\u52a8\u4e2a\u80a1",
+      "retired": "2026-08-09",
+      "reason": "the champion's admission moved from an act-level threshold to a status class (ANTICIPATION A1, 2026-08-09), which makes this policy's frozen widening \u2014 patching act_level, an input admission no longer reads \u2014 unable to admit anything; the status class itself now admits hold, the status that carried 47 of the 55 rows behind this policy's evidence, so the champion absorbed the bulk of the thesis and the leftover cells (extended n=8, topping n=0) are too thin to re-register today",
+      "successor": "C7_buy_soon_admitted",
+      "sealed": true,
+      "ledger_path": "data/prophet_arena/price_basis_trigger_v2/C2_stage_ran_preferred.jsonl",
+      "ledger_present": true,
+      "opens": 5,
+      "closes": 0
     }
   ],
   "tonight": {
@@ -263,7 +277,7 @@
     "source_delayed": false,
     "source_unknown": false,
     "source_basis": "panel_majority",
-    "panel_mixed_vintage": false,
+    "panel_mixed_vintage": true,
     "gate_go": false,
     "dispersion": {
       "mode": "lean_in",
@@ -299,377 +313,1216 @@
           "2B",
           "3B"
         ],
-        "runtime_s": 15.4
+        "runtime_s": 17.1
       }
     },
     "policies": {
       "C0_champion_mirror": {
         "selected_tickers": [
+          "BHP",
           "GPCR",
-          "VSEC",
-          "ROIV",
+          "WBD",
+          "RIO",
+          "FN",
+          "UUUU",
+          "HP",
+          "DAN",
           "ADAM",
-          "XPEL",
-          "WT",
+          "RGTI",
           "BIDU",
-          "NVDA",
           "NGVT",
           "FCX",
+          "GNL",
+          "XPEL",
+          "WT",
           "MDB",
+          "BIIB",
+          "HASI",
+          "NVDA",
+          "VAL",
           "CTS",
           "UEC",
+          "CCJ",
+          "STZ",
+          "URG",
           "UAL",
+          "OKLO",
+          "HAYW",
+          "APG",
           "TTC",
+          "SHEN",
+          "AGNT",
+          "EU",
+          "FBRT",
           "FUL",
           "AVGO",
-          "HD",
-          "SOFI",
+          "HRMY",
           "CMC",
           "WS",
+          "WFRD",
+          "HD",
+          "ISRG",
+          "RES",
+          "SBAC",
+          "MRNA",
+          "LECO",
           "SMR",
           "APO",
-          "ALG",
           "AMZN",
           "AYI",
           "ENR",
-          "FSS",
           "RH",
-          "GTES"
+          "DRI"
         ],
-        "plan_ids": [
-          "FCX-BULL-20260731",
-          "MDB-BULL-20260731"
-        ],
-        "n_plans": 2,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 30,
+          "admitted": 54,
           "cap": null,
           "cap_applied": false,
           "selection_basis": "lossless live champion mirror",
           "truncated": 0
         },
         "origination": {
-          "offered": 30,
-          "skipped_duplicate_id": 27,
-          "skipped_open_plan": 1,
-          "skipped_clock_provenance": 0,
-          "skipped_no_spot": 0,
-          "skipped_door_w_no_geometry": 0,
-          "skipped_door_w_tickers": [],
-          "recorded_at": "2026-08-09",
-          "price_basis_date": "2026-08-07",
-          "clock_errors": [],
-          "validation_failures": [],
-          "originated": 2,
-          "validation_failed": 0
-        },
-        "ledger_rows_appended": 2,
-        "ledger_closures_appended": 0
-      },
-      "C1_buy_soon_first": {
-        "selected_tickers": [
-          "VSEC",
-          "ROIV",
-          "SOFI",
-          "ALG",
-          "FSS",
-          "GTES",
-          "GPCR",
-          "ADAM",
-          "XPEL",
-          "WT",
-          "BIDU",
-          "NVDA"
-        ],
-        "plan_ids": [],
-        "n_plans": 0,
-        "selection": {
-          "admitted": 30,
-          "cap": 12,
-          "cap_applied": true,
-          "act_level_2": 6,
-          "lifted": 6
-        },
-        "origination": {
-          "offered": 12,
-          "skipped_duplicate_id": 11,
-          "skipped_open_plan": 1,
-          "skipped_clock_provenance": 0,
-          "skipped_no_spot": 0,
-          "skipped_door_w_no_geometry": 0,
-          "skipped_door_w_tickers": [],
-          "recorded_at": "2026-08-09",
-          "price_basis_date": "2026-08-07",
-          "clock_errors": [],
-          "validation_failures": [],
-          "originated": 0,
-          "validation_failed": 0
-        },
-        "ledger_rows_appended": 0,
-        "ledger_closures_appended": 0
-      },
-      "C2_stage_ran_preferred": {
-        "selected_tickers": [
-          "HAYW",
-          "SHEN",
-          "HRMY",
-          "WFRD",
-          "LECO",
-          "DRI",
-          "GPCR",
-          "VSEC",
-          "ROIV",
-          "ADAM",
-          "XPEL",
-          "WT"
-        ],
-        "plan_ids": [
-          "DRI-BULL-20260731",
-          "HAYW-BULL-20260731",
-          "HRMY-BULL-20260731",
-          "LECO-BULL-20260731",
-          "WFRD-BULL-20260731"
-        ],
-        "n_plans": 5,
-        "selection": {
-          "admitted": 30,
-          "cap": 12,
-          "cap_applied": true,
-          "stage_ran_in_champion_pool": 0,
-          "stage_ran_admitted_by_widening": 6,
-          "stage_ran_selected": 6,
-          "widening": "the act_level gate is relaxed for stage-ran rows only; band, direction, entry-signal presence and the gate mode stay the champion's"
-        },
-        "origination": {
-          "offered": 12,
-          "skipped_duplicate_id": 6,
+          "offered": 54,
+          "skipped_duplicate_id": 24,
           "skipped_open_plan": 0,
-          "skipped_clock_provenance": 1,
+          "skipped_clock_provenance": 30,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
           "recorded_at": "2026-08-09",
           "price_basis_date": "2026-08-07",
-          "clock_errors": [],
+          "clock_errors": [
+            "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+          ],
           "validation_failures": [
+            {
+              "ticker": "BHP",
+              "id": "BHP-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "WBD",
+              "id": "WBD-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RIO",
+              "id": "RIO-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "FN",
+              "id": "FN-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "UUUU",
+              "id": "UUUU-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "HP",
+              "id": "HP-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "DAN",
+              "id": "DAN-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RGTI",
+              "id": "RGTI-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "GNL",
+              "id": "GNL-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "BIIB",
+              "id": "BIIB-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "HASI",
+              "id": "HASI-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "VAL",
+              "id": "VAL-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "CCJ",
+              "id": "CCJ-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "STZ",
+              "id": "STZ-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "URG",
+              "id": "URG-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "OKLO",
+              "id": "OKLO-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "HAYW",
+              "id": "HAYW-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "APG",
+              "id": "APG-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
             {
               "ticker": "SHEN",
               "id": "SHEN-BULL-20260805",
               "stage": "clock_provenance",
               "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
                 "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "AGNT",
+              "id": "AGNT-BULL-20260406",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "EU",
+              "id": "EU-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "FBRT",
+              "id": "FBRT-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "HRMY",
+              "id": "HRMY-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "WFRD",
+              "id": "WFRD-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "ISRG",
+              "id": "ISRG-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RES",
+              "id": "RES-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "SBAC",
+              "id": "SBAC-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "MRNA",
+              "id": "MRNA-BULL-20260616",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "LECO",
+              "id": "LECO-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "DRI",
+              "id": "DRI-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
               ]
             }
           ],
-          "originated": 5,
-          "validation_failed": 1
+          "originated": 0,
+          "validation_failed": 30
         },
-        "ledger_rows_appended": 5,
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
+      },
+      "C1_buy_soon_first": {
+        "selected_tickers": [
+          "BHP",
+          "GPCR",
+          "WBD",
+          "RIO",
+          "FN",
+          "UUUU",
+          "HP",
+          "DAN",
+          "ADAM",
+          "RGTI",
+          "BIDU",
+          "NGVT"
+        ],
+        "plan_ids": [],
+        "n_plans": 0,
+        "selection": {
+          "admitted": 54,
+          "cap": 12,
+          "cap_applied": true,
+          "act_level_2": 0,
+          "lifted": 0
+        },
+        "origination": {
+          "offered": 12,
+          "skipped_duplicate_id": 4,
+          "skipped_open_plan": 0,
+          "skipped_clock_provenance": 8,
+          "skipped_no_spot": 0,
+          "skipped_door_w_no_geometry": 0,
+          "skipped_door_w_tickers": [],
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "clock_errors": [
+            "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+          ],
+          "validation_failures": [
+            {
+              "ticker": "BHP",
+              "id": "BHP-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "WBD",
+              "id": "WBD-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RIO",
+              "id": "RIO-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "FN",
+              "id": "FN-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "UUUU",
+              "id": "UUUU-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "HP",
+              "id": "HP-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "DAN",
+              "id": "DAN-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RGTI",
+              "id": "RGTI-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            }
+          ],
+          "originated": 0,
+          "validation_failed": 8
+        },
+        "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       },
       "C3_door_w_union": {
         "selected_tickers": [
+          "BHP",
           "GPCR",
-          "VSEC",
-          "ROIV",
-          "ADAM",
-          "XPEL",
-          "WT",
-          "BIDU",
-          "NVDA",
+          "WBD",
+          "RIO",
+          "FN",
+          "UUUU",
+          "HP",
+          "DAN",
           "AEM",
           "KGC",
           "HII",
           "HL"
         ],
-        "plan_ids": [
-          "AEM-BULL-20260807",
-          "HII-BULL-20260807",
-          "HL-BULL-20260807",
-          "KGC-BULL-20260807"
-        ],
-        "n_plans": 4,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 30,
+          "admitted": 54,
           "cap": 12,
           "cap_applied": true,
           "door_w_offered": 43,
-          "door_w_already_in_champion_pool": 0,
+          "door_w_already_in_champion_pool": 2,
           "door_w_reserved_slots": 4,
           "door_w_selected": 4,
           "champion_rows_displaced": 4
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 8,
+          "skipped_duplicate_id": 1,
           "skipped_open_plan": 0,
-          "skipped_clock_provenance": 0,
+          "skipped_clock_provenance": 11,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
           "recorded_at": "2026-08-09",
           "price_basis_date": "2026-08-07",
-          "clock_errors": [],
-          "validation_failures": [],
-          "originated": 4,
-          "validation_failed": 0
+          "clock_errors": [
+            "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+          ],
+          "validation_failures": [
+            {
+              "ticker": "BHP",
+              "id": "BHP-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "WBD",
+              "id": "WBD-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RIO",
+              "id": "RIO-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "FN",
+              "id": "FN-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "UUUU",
+              "id": "UUUU-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "HP",
+              "id": "HP-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "DAN",
+              "id": "DAN-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "AEM",
+              "id": "AEM-BULL-20260807",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "KGC",
+              "id": "KGC-BULL-20260807",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "HII",
+              "id": "HII-BULL-20260807",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "HL",
+              "id": "HL-BULL-20260807",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            }
+          ],
+          "originated": 0,
+          "validation_failed": 11
         },
-        "ledger_rows_appended": 4,
+        "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       },
       "C4_dispersion_cap": {
         "selected_tickers": [
+          "BHP",
           "GPCR",
-          "VSEC",
-          "ROIV",
+          "WBD",
+          "RIO",
+          "FN",
+          "UUUU",
+          "HP",
+          "DAN",
           "ADAM",
-          "XPEL",
-          "WT",
+          "RGTI",
           "BIDU",
-          "NVDA",
-          "NGVT",
-          "FCX",
-          "MDB",
-          "CTS"
+          "NGVT"
         ],
-        "plan_ids": [
-          "FCX-BULL-20260731",
-          "MDB-BULL-20260731"
-        ],
-        "n_plans": 2,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 30,
+          "admitted": 54,
           "cap": 12,
           "cap_applied": true
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 10,
+          "skipped_duplicate_id": 4,
           "skipped_open_plan": 0,
-          "skipped_clock_provenance": 0,
+          "skipped_clock_provenance": 8,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
           "recorded_at": "2026-08-09",
           "price_basis_date": "2026-08-07",
-          "clock_errors": [],
-          "validation_failures": [],
-          "originated": 2,
-          "validation_failed": 0
+          "clock_errors": [
+            "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+          ],
+          "validation_failures": [
+            {
+              "ticker": "BHP",
+              "id": "BHP-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "WBD",
+              "id": "WBD-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RIO",
+              "id": "RIO-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "FN",
+              "id": "FN-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "UUUU",
+              "id": "UUUU-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "HP",
+              "id": "HP-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "DAN",
+              "id": "DAN-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RGTI",
+              "id": "RGTI-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            }
+          ],
+          "originated": 0,
+          "validation_failed": 8
         },
-        "ledger_rows_appended": 2,
+        "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       },
       "C5_align2_gate": {
         "selected_tickers": [
           "GPCR",
-          "VSEC",
           "XPEL",
           "WT",
           "NVDA",
           "UEC",
           "UAL",
-          "HD",
-          "SOFI",
+          "AGNT",
+          "EU",
           "CMC",
-          "SMR",
-          "APO"
+          "HD",
+          "ISRG",
+          "SMR"
         ],
         "plan_ids": [],
         "n_plans": 0,
         "selection": {
-          "admitted": 30,
+          "admitted": 54,
           "cap": 12,
           "cap_applied": true,
           "align_gate": {
             "admitted": 16,
-            "admitted_via_fallback": 7,
-            "excluded_misaligned": 10,
-            "excluded_unreadable": 4,
+            "admitted_via_fallback": 5,
+            "excluded_misaligned": 33,
+            "excluded_unreadable": 5,
             "basis": "event_atlas weekly align_class == 2 (its full value), falling back to align_now == 3 (its full value) when the name has no weekly event on record; a name the atlas cannot read is excluded, never admitted"
           },
           "passed_gate": 16,
-          "excluded": 14
+          "excluded": 38
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 11,
-          "skipped_open_plan": 1,
-          "skipped_clock_provenance": 0,
+          "skipped_duplicate_id": 9,
+          "skipped_open_plan": 0,
+          "skipped_clock_provenance": 3,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
           "recorded_at": "2026-08-09",
           "price_basis_date": "2026-08-07",
-          "clock_errors": [],
-          "validation_failures": [],
+          "clock_errors": [
+            "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+          ],
+          "validation_failures": [
+            {
+              "ticker": "AGNT",
+              "id": "AGNT-BULL-20260406",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "EU",
+              "id": "EU-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "ISRG",
+              "id": "ISRG-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            }
+          ],
           "originated": 0,
-          "validation_failed": 0
+          "validation_failed": 3
         },
         "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       },
       "C6_time_stop_21": {
         "selected_tickers": [
+          "BHP",
           "GPCR",
-          "VSEC",
-          "ROIV",
+          "WBD",
+          "RIO",
+          "FN",
+          "UUUU",
+          "HP",
+          "DAN",
           "ADAM",
-          "XPEL",
-          "WT",
+          "RGTI",
           "BIDU",
-          "NVDA",
           "NGVT",
           "FCX",
+          "GNL",
+          "XPEL",
+          "WT",
           "MDB",
+          "BIIB",
+          "HASI",
+          "NVDA",
+          "VAL",
           "CTS",
           "UEC",
+          "CCJ",
+          "STZ",
+          "URG",
           "UAL",
+          "OKLO",
+          "HAYW",
+          "APG",
           "TTC",
+          "SHEN",
+          "AGNT",
+          "EU",
+          "FBRT",
           "FUL",
           "AVGO",
-          "HD",
-          "SOFI",
+          "HRMY",
           "CMC",
           "WS",
+          "WFRD",
+          "HD",
+          "ISRG",
+          "RES",
+          "SBAC",
+          "MRNA",
+          "LECO",
           "SMR",
           "APO",
-          "ALG",
           "AMZN",
           "AYI",
           "ENR",
-          "FSS",
           "RH",
-          "GTES"
+          "DRI"
         ],
-        "plan_ids": [
-          "FCX-BULL-20260731",
-          "MDB-BULL-20260731"
-        ],
-        "n_plans": 2,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 30,
+          "admitted": 54,
           "cap": null,
           "cap_applied": false,
           "selection_basis": "identical to lossless C0 by construction",
           "truncated": 0
         },
         "origination": {
-          "offered": 30,
-          "skipped_duplicate_id": 27,
-          "skipped_open_plan": 1,
-          "skipped_clock_provenance": 0,
+          "offered": 54,
+          "skipped_duplicate_id": 24,
+          "skipped_open_plan": 0,
+          "skipped_clock_provenance": 30,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
           "recorded_at": "2026-08-09",
           "price_basis_date": "2026-08-07",
-          "clock_errors": [],
-          "validation_failures": [],
-          "originated": 2,
-          "validation_failed": 0
+          "clock_errors": [
+            "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+          ],
+          "validation_failures": [
+            {
+              "ticker": "BHP",
+              "id": "BHP-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "WBD",
+              "id": "WBD-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RIO",
+              "id": "RIO-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "FN",
+              "id": "FN-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "UUUU",
+              "id": "UUUU-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "HP",
+              "id": "HP-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "DAN",
+              "id": "DAN-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RGTI",
+              "id": "RGTI-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "GNL",
+              "id": "GNL-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "BIIB",
+              "id": "BIIB-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "HASI",
+              "id": "HASI-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "VAL",
+              "id": "VAL-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "CCJ",
+              "id": "CCJ-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "STZ",
+              "id": "STZ-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "URG",
+              "id": "URG-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "OKLO",
+              "id": "OKLO-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "HAYW",
+              "id": "HAYW-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "APG",
+              "id": "APG-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "SHEN",
+              "id": "SHEN-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "AGNT",
+              "id": "AGNT-BULL-20260406",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "EU",
+              "id": "EU-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "FBRT",
+              "id": "FBRT-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "HRMY",
+              "id": "HRMY-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "WFRD",
+              "id": "WFRD-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "ISRG",
+              "id": "ISRG-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RES",
+              "id": "RES-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "SBAC",
+              "id": "SBAC-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "MRNA",
+              "id": "MRNA-BULL-20260616",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "LECO",
+              "id": "LECO-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "DRI",
+              "id": "DRI-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            }
+          ],
+          "originated": 0,
+          "validation_failed": 30
         },
-        "ledger_rows_appended": 2,
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
+      },
+      "C7_buy_soon_admitted": {
+        "selected_tickers": [
+          "BHP",
+          "GPCR",
+          "WBD",
+          "RIO",
+          "FN",
+          "UUUU",
+          "VSEC",
+          "ROIV",
+          "HP",
+          "DAN",
+          "ADAM",
+          "RGTI"
+        ],
+        "plan_ids": [],
+        "n_plans": 0,
+        "selection": {
+          "admitted": 54,
+          "cap": 12,
+          "cap_applied": true,
+          "admitted_with_widening": 60,
+          "buy_soon_in_board": 6,
+          "buy_soon_admitted_by_widening": 6,
+          "buy_soon_selected": 2,
+          "widening": "the status-class gate is relaxed for buy_soon rows only; tone, band, tier, entry-signal presence and the champion's own ordering stay the champion's"
+        },
+        "origination": {
+          "offered": 12,
+          "skipped_duplicate_id": 4,
+          "skipped_open_plan": 0,
+          "skipped_clock_provenance": 8,
+          "skipped_no_spot": 0,
+          "skipped_door_w_no_geometry": 0,
+          "skipped_door_w_tickers": [],
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "clock_errors": [
+            "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+          ],
+          "validation_failures": [
+            {
+              "ticker": "BHP",
+              "id": "BHP-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "WBD",
+              "id": "WBD-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RIO",
+              "id": "RIO-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "FN",
+              "id": "FN-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "UUUU",
+              "id": "UUUU-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            },
+            {
+              "ticker": "HP",
+              "id": "HP-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "DAN",
+              "id": "DAN-BULL-20260731",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            },
+            {
+              "ticker": "RGTI",
+              "id": "RGTI-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+              ]
+            }
+          ],
+          "originated": 0,
+          "validation_failed": 8
+        },
+        "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       }
     }
