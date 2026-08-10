@@ -94,6 +94,17 @@ def _contract_validator(name: str) -> Draft202012Validator:
     return Draft202012Validator(schemas[name], registry=registry, format_checker=FormatChecker())
 
 
+def test_registered_private_runtime_path_is_gitignored() -> None:
+    root = Path(__file__).resolve().parents[1]
+    candidate = "runtime-private/options_issue_desk/proposals.jsonl"
+    result = subprocess.run(
+        ["git", "check-ignore", "--quiet", candidate],
+        cwd=root,
+        check=False,
+    )
+    assert result.returncode == 0, f"private Issue Desk ledger is stageable: {candidate}"
+
+
 def test_snapshot_is_idempotent_and_freezes_display_context(tmp_path: Path) -> None:
     repo, state = _repo(tmp_path), tmp_path / "state"
     (repo / "site/options_prophet/index.json").write_text(json.dumps({
