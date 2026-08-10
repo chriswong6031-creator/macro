@@ -24,6 +24,9 @@ from scripts.grade_us_board import (  # noqa: E402
     _backfill_archetype,
     _archetype_pit,
     _excess_close_path_mae,
+    _hit_stats,
+    _live_definition,
+    _norm_definition,
     build_track,
     grade_boards,
     RETRO_PARQUET,
@@ -32,6 +35,7 @@ from scripts.grade_us_board import (  # noqa: E402
     _REGIME_STAMP_COLS,
     _RETIRED_LEDGER_COLS,
 )
+from engine import us_board_rank as ubr  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -1122,3 +1126,140 @@ def test_the_disclosed_window_is_still_absent_from_the_ledger():
     dates = _snapshot_dates()
     assert len(dates) >= 17, f"snapshots.jsonl shrank to {len(dates)} dates — read it before trusting the gap assertions"
     assert "2026-07-31" in dates, "the pre-gap anchor date is missing; the ledger changed shape"
+
+
+# ---------------------------------------------------------------------------
+# ERA PARTITION — us_prophet_v1 -> v2 (2026-08-10)
+# ---------------------------------------------------------------------------
+class TestErasAreNeverPooled:
+    """`build_track` must never sum two board_definitions into one headline aggregate.
+
+    WHY THIS IS A TEST AND NOT A CONVENTION.  The reclaim-veto conditional waiver
+    (research/RECLAIM_VETO_CONDITIONAL_PREREG.md §4 Arm P, ratified 2026-08-10) changed
+    what the US board ADMITS, so `engine.us_board_rank.BOARD_DEFINITION` moved
+    us_prophet_v1 -> us_prophet_v2 and the two are different products.  The stamp already
+    rode on every graded row as `rank_by`, and the old aggregates DISCLOSED the mixture
+    (`rank_by_of_matured_boards`) without undoing it — a footnote, not a fence.  The
+    prereg's sentence "their forward ledgers never pool" has to be true in code at ship
+    time; these assertions are that.
+
+    THE FIXTURE IS BUILT TO MAKE POOLING VISIBLE: every v1 row is a winner and every v2 row
+    is a loser, so a pooled headline reads 0.6 on this frame while neither era does.  A
+    reimplementation that narrows or drops the partition cannot pass these by accident.
+    """
+
+    _V1, _V2 = "us_prophet_v1", "us_prophet_v2"
+    _V2_DATE = "2026-07-15"
+
+    @classmethod
+    def _mixed(cls, n_v1=6, n_v2=4):
+        """One graded frame carrying two eras: v1 all winners, v2 all losers."""
+        v1 = _minimal_grade_df(as_of=_IN_ERA, n=n_v1, lane="buy")
+        v1["rank_by"] = cls._V1
+        v1["excess_spy"] = 0.05                        # every v1 row beats SPY
+        v1["excess_sector"] = 0.04
+        v2 = _minimal_grade_df(as_of=cls._V2_DATE, n=n_v2, lane="buy")
+        v2["rank_by"] = cls._V2
+        v2["excess_spy"] = -0.05                       # every v2 row loses to SPY
+        v2["excess_sector"] = -0.04
+        return pd.concat([v1, v2], ignore_index=True)
+
+    @classmethod
+    def _track(cls, **kw):
+        return build_track(cls._mixed(**kw),
+                           _boards_stub(_IN_ERA, cls._V2_DATE), _names_stub())
+
+    # -- the partition exists and is complete --------------------------------
+    def test_two_eras_produce_two_independent_aggregate_blocks(self):
+        track = self._track()
+        got = [d["board_definition"] for d in track["definitions"]]
+        assert got == [self._V1, self._V2], (
+            f"expected both eras, ordered by first graded date: {got}")
+        by_def = {d["board_definition"]: d for d in track["definitions"]}
+        assert by_def[self._V1]["graded_rows_total"] == 6
+        assert by_def[self._V2]["graded_rows_total"] == 4
+        assert by_def[self._V1]["graded_dates"] == [_IN_ERA]
+        assert by_def[self._V2]["graded_dates"] == [self._V2_DATE]
+
+    def test_each_eras_hit_rate_is_its_own(self):
+        """The fixture's whole point: 1.0 and 0.0, never the 0.6 a pool would report."""
+        by_def = {d["board_definition"]: d for d in self._track()["definitions"]}
+        v1 = by_def[self._V1]["per_horizon"]["h5"]["buy_lane"]["vs_spy"]
+        v2 = by_def[self._V2]["per_horizon"]["h5"]["buy_lane"]["vs_spy"]
+        assert (v1["hit_rate"], v1["n"]) == (1.0, 6)
+        assert (v2["hit_rate"], v2["n"]) == (0.0, 4)
+        assert v1["hit_rate"] != v2["hit_rate"], "fixture no longer separates the eras"
+
+    def test_every_block_discloses_only_its_own_stamp(self):
+        """`rank_by_of_matured_boards` inside an era block must name exactly that era — a
+        block listing both stamps is a pooled block wearing a partition's label."""
+        for d in self._track()["definitions"]:
+            listed = d["per_horizon"]["h5"]["buy_lane"]["rank_by_of_matured_boards"]
+            assert listed == [d["board_definition"]], (d["board_definition"], listed)
+
+    # -- the headline is ONE era, and provably not the pool -------------------
+    def test_the_headline_is_the_live_era_not_a_pool(self):
+        track = self._track()
+        assert track["era_scope"]["board_definition"] == ubr.BOARD_DEFINITION
+        assert track["era_scope"]["pooled"] is False
+        assert track["era_scope"]["headline_is_superseded"] is False
+        assert track["era_scope"]["definitions_present"] == [self._V1, self._V2]
+        live = next(d for d in track["definitions"]
+                    if d["board_definition"] == ubr.BOARD_DEFINITION)
+        assert track["per_horizon"] == live["per_horizon"], (
+            "the top-level block must BE one era's block, not a recomputation over both")
+
+    def test_narrowing_the_partition_would_red_this(self):
+        """THE MUTATION PIN.  Compute what a pooled headline WOULD say and require the
+        published one to differ, in both `n` and `hit_rate`.  Widen the headline slice back
+        to the whole frame — the pre-2026-08-10 behaviour — and this fails immediately,
+        which is the only way a "never pool" rule survives the next refactor."""
+        df = self._mixed()
+        track = build_track(df, _boards_stub(_IN_ERA, self._V2_DATE), _names_stub())
+        published = track["per_horizon"]["h5"]["buy_lane"]["vs_spy"]
+        pooled = _hit_stats(df[(df["horizon"] == 5) & (df["lane"] == "buy")], "excess_spy")
+        assert (pooled["n"], pooled["hit_rate"]) == (10, 0.6), (
+            f"the pooled counterfactual stopped being distinguishable: {pooled}")
+        assert published["n"] != pooled["n"], (
+            f"the headline counts {published['n']} rows and a pool counts {pooled['n']} — "
+            "they must not be the same number, or the eras are being summed")
+        assert published["hit_rate"] != pooled["hit_rate"], (
+            f"headline hit_rate {published['hit_rate']} equals the pooled "
+            f"{pooled['hit_rate']} — the partition is not doing anything")
+        assert (published["n"], published["hit_rate"]) == (4, 0.0)
+
+    def test_the_era_row_counts_are_a_true_partition(self):
+        """Every graded row lands in exactly one block: no double-counting, no orphans."""
+        track = self._track()
+        assert sum(d["graded_rows_total"] for d in track["definitions"]) == \
+            track["graded_rows_total"] == 10
+        assert all(d["graded_rows_total"] < track["graded_rows_total"]
+                   for d in track["definitions"]), "an era block swallowed the whole frame"
+
+    # -- the awkward states, stated rather than papered over ------------------
+    def test_a_pre_bump_frame_publishes_the_superseded_era_and_says_so(self):
+        """The nights between an era bump and its first matured row: the live block does
+        not exist yet, so the headline is the newest era PRESENT — labelled superseded,
+        never silently passed off as the current board's record."""
+        df = _minimal_grade_df(as_of=_IN_ERA, n=5, lane="buy")
+        df["rank_by"] = self._V1
+        track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
+        assert track["era_scope"]["board_definition"] == self._V1
+        assert track["era_scope"]["live_board_definition"] == ubr.BOARD_DEFINITION
+        assert track["era_scope"]["headline_is_superseded"] is True
+        assert track["era_scope"]["pooled"] is False
+
+    def test_a_null_stamp_does_not_open_a_phantom_era(self):
+        """A null/NaN/'None' `rank_by` IS the legacy era.  Left unnormalised it opens its
+        own 'nan' block and splits one era's sample in two — the exact defect
+        engine.cn_prophet_audit.norm_definition exists to prevent."""
+        for raw in (None, float("nan"), "", "None", "nan", "legacy"):
+            assert _norm_definition(raw) == "legacy", raw
+        assert _norm_definition("us_prophet_v1") == "us_prophet_v1"
+        assert _norm_definition("alpha") == "alpha", (
+            "'alpha' is the US board's real pre-ranker stamp, not a null spelling")
+
+    def test_the_live_stamp_is_read_from_the_producer(self):
+        """A hand-copied literal here would point the headline at a dead era the day the
+        constant next moves — the #4509 shape."""
+        assert _live_definition() == ubr.BOARD_DEFINITION

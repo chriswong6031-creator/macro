@@ -409,6 +409,20 @@ jobs:
       # one leg — if that drifts, a research file starts overstating the veto's cost.
       - name: W-F reclaim-veto flip-isolation construction
         run: python -m pytest tests/test_us_reclaim_veto_packet.py -q
+      # The RATIFIED sibling of the packet above (us_prophet_v2, 2026-08-10): the
+      # counter-trend reclaim WAIVER, its PIT/staleness rules, its fail-closed fallbacks,
+      # and the era fence us_prophet_v1 -> us_prophet_v2. Registered HERE deliberately: the
+      # suite is hermetic (it writes its own washout artifact to tmp_path and points the
+      # loader at it, because riding the committed site/factordata artifact would be a
+      # SCHEDULED red — the waiver's PIT window is five sessions wide around a stamp that
+      # moves every night), so it needs no caches, exactly like the job's other steps. Deps
+      # are covered by the install line above: pandas/numpy for the frames, pyyaml for
+      # lib.config AND for the synapse-registry assertion; engine.us_board_rank is pure
+      # stdlib. Cost ~2s. It is also the ONLY registered guard on the new reason string's
+      # Chinese row — tests/test_gate_reasons_exhaustive.py owns the general bilingual
+      # completeness check but is itself named by no run: step in any workflow.
+      - name: reclaim-veto conditional waiver — Arm P @20 + the us_prophet_v2 era fence
+        run: python -m pytest tests/test_us_reclaim_waiver_prophet_v2.py -q
       # The two research/-RESIDENT suites, wired 2026-08-06 — UNRUN from birth: named by
       # no run: step in any workflow, so nothing ever executed them in CI. (They were
       # triggerable — research/**/*.py in ci.yml starts this workflow — which is the
