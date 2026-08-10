@@ -66,8 +66,11 @@ NAMES = [
 ]
 TICKERS = ["AAPL", "VRTX", "FCX", "LNG", "BLDR", "ANET", "COR", "TRGP",
            "STLD", "IBKR", "AXON", "RCL"]
-# runway spread chosen to exercise all three bands and both verbs
-RUNWAY = [0.91, 0.83, 0.78, 0.71, 0.64, 0.55, 0.52, 0.44, 0.36, 0.22, 0.08, 0.00]
+# runway spread chosen to exercise all three measured bands, both verbs, AND the null:
+# `None` is "the extension reading did not arrive for this name", which must read
+# differently from the measured 0.00 two slots along
+# the null sits at index 4 so it is inside the 6 cards a 390px viewport shows
+RUNWAY = [0.91, 0.83, 0.78, 0.71, None, 0.55, 0.52, 0.44, 0.36, 0.22, 0.08, 0.00]
 PRICES = ["$228.14", "$471.02", "$44.87", "$213.60", "$168.29", "$402.55",
           "$247.31", "$176.44", "$131.08", "$228.90", "$742.16", "$258.73"]
 
@@ -366,6 +369,34 @@ def _lifecycle(tmp: Path, port: int, page_html: str, now_ms: int, report: dict) 
         report["checks"].append("lifecycle: the nightly grid did not come back intact")
 
 
+def _no_payload(port: int, report: dict) -> None:
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        br = p.chromium.launch()
+        ctx = br.new_context(viewport={"width": 1280, "height": 1200})
+        ctx.add_cookies([{"name": "sb-shoot-auth-token", "value": "x",
+                          "domain": "127.0.0.1", "path": "/"}])
+        pg = ctx.new_page()
+        errs = []
+        pg.on("pageerror", lambda e: errs.append(str(e)))
+        pg.add_init_script("try{localStorage.setItem('theme','dark');"
+                           "localStorage.setItem('lang','');}catch(e){}")
+        pg.goto(f"http://127.0.0.1:{port}/index.html", wait_until="load")
+        pg.wait_for_timeout(1500)
+        got = pg.evaluate(_RESTORE_PROBE)
+        ctx.close()
+        br.close()
+
+    report["no_payload"] = dict(got, page_errors=errs[:4])
+    for flag in ("prov_gone", "night_back", "stamp_gone", "filter_back", "toggle_back",
+                 "sub_back", "fn_back", "track_toggle"):
+        if not got[flag]:
+            report["checks"].append(f"no-payload: {flag} FALSE — the ordinary board changed")
+    if errs:
+        report["checks"].append(f"no-payload: page errors {errs[:2]}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(HERE / "wl1d_shots"))
@@ -483,6 +514,16 @@ def main() -> int:
     httpd, port = _serve(tmp)
     try:
         _lifecycle(tmp, port, page_html, now_ms, report)
+    finally:
+        httpd.shutdown()
+
+    # THE COMMON CASE: no evening payload at all, which is the page for ~22 hours a day.
+    # Nothing may be hidden, nothing mounted, no stamp — the board has to be exactly what
+    # it was before W-L1d existed, because that is what almost every reader sees.
+    _stage(tmp, page_html, {"schema": "prophet_live.states/1"})
+    httpd, port = _serve(tmp)
+    try:
+        _no_payload(port, report)
     finally:
         httpd.shutdown()
 

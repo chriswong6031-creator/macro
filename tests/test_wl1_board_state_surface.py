@@ -807,9 +807,14 @@ def test_the_payload_must_prove_its_two_halves_agree():
             cards=[_card("TK0", href="https://evil.example/x"),
                    _card("TK1"), _card("TK2")])},
         {"fn": "cards", "board": None},                                        # 8 no board
+        # `runway: null` is the ONE permitted null among the two legs — "not measured",
+        # which the card says in words rather than binning as "already run"
+        {"fn": "cards", "board": _board(                                       # 9 accepted
+            cards=[_card("TK0", runway=None), _card("TK1"), _card("TK2")])},
     ])
     assert got[0] == "ok"
-    assert got[1:] == [None] * 8
+    assert got[1:9] == [None] * 8
+    assert got[9] == "ok", "a null runway is a supported state, not a malformed payload"
 
 
 def test_a_score_that_arrives_is_refused_rather_than_ignored():
@@ -844,6 +849,28 @@ def test_the_verb_is_never_a_constant_and_comes_only_from_runway():
     ]
     assert {b for b, _ in got} == {"ample", "some", "thin"}
     assert {v for _, v in got} == {"near", "wait"}, "buy/hold/avoid are out of scope here"
+
+
+def test_an_unmeasured_name_is_not_binned_as_one_that_has_already_run():
+    """The engine's ranking leg scores an unmeasured extension as 0.0 — fail-closed, and
+    right for ORDERING — but 0.0 is also what a name two full sigma out scores. Binning
+    both as "Thin" would tell a reader "this one has run" about a name nobody measured,
+    which is a claim rather than a caution. It gets its own words, and routes to the
+    cautious verb (the ratified rule for unknown states, #2206).
+
+    ~5 of 79 rows on the live artifact are this case, so it is not a corner."""
+    got = _pvc([{"fn": "room", "runway": r} for r in (None, 0.0)])
+    assert got[0] == ["unknown", "wait"]
+    assert got[1] == ["thin", "wait"], "a MEASURED zero still reads as thin"
+    assert got[0][0] != got[1][0], "unmeasured must not collapse into measured-extreme"
+    # and the words differ on the card, not just in the band name
+    html = _pvc([{"fn": "html", "board": _board(
+        cards=[_card("TK0", runway=None), _card("TK1", runway=0.0), _card("TK2")])}])[0]
+    first = html[:html.index('data-ticker="TK1"')]
+    second = html[html.index('data-ticker="TK1"'):html.index('data-ticker="TK2"')]
+    assert "Not checked" in first and "未检查" in first
+    assert "Thin" in second and "有限" in second
+    assert "Not checked" not in second
 
 
 def test_the_mount_tears_the_board_down_when_the_paint_does_not_verify():
@@ -987,10 +1014,20 @@ def test_a_sparkline_that_is_not_a_drawing_is_dropped_not_rendered():
     event handler. A dropped spark is an already-supported state."""
     evil = [
         '<svg onload="alert(1)"><path d="M0 0"/></svg>',
+        # `/` is a valid attribute separator inside a start tag, so these parse exactly as
+        # `<svg onload=…>`. A \s-anchored pattern waved them straight through.
+        '<svg/onload=alert(1)></svg>',
+        '<svg//onload=alert(1)><path d="M0 0"/></svg>',
+        '<svg\tonload=alert(1)></svg>',
         '<svg><script>alert(1)</script></svg>',
         '<svg><animate onbegin="alert(1)"/></svg>',
+        # `set`/`animate` write an attribute onto another element — including a handler
+        '<svg><set attributeName="onload" to="alert(1)"/></svg>',
+        '<svg><animateTransform attributeName="onload" to="alert(1)"/></svg>',
+        '<svg><style>@import url(//evil.example/x)</style></svg>',
         '<svg><foreignObject><b>x</b></foreignObject></svg>',
         '<svg><image href="javascript:alert(1)"/></svg>',
+        '<svg><a href="vbscript:alert(1)"><path d="M0 0"/></a></svg>',
         '<img src=x onerror="alert(1)">',
     ]
     boards = [_board(cards=[_card("TK0", spark=s), _card("TK1"), _card("TK2")])
@@ -1001,7 +1038,9 @@ def test_a_sparkline_that_is_not_a_drawing_is_dropped_not_rendered():
     got = _pvc([{"fn": "html", "board": b} for b in boards]
                + [{"fn": "html", "board": good}])
     for html, src in zip(got[:-1], evil):
-        assert "onload" not in html and "<script" not in html and "onbegin" not in html
-        assert "foreignObject" not in html and "javascript:" not in html
+        low = html.lower()
+        for token in ("onload", "onerror", "onbegin", "<script", "foreignobject",
+                      "javascript:", "vbscript:", "@import", "<set", "<animate"):
+            assert token not in low, f"{src!r} leaked {token!r}"
         assert html.count("pv-nochart") == 3, f"{src!r} should have fallen back"
     assert "<path" in got[-1] and got[-1].count("pv-nochart") == 2, "a real drawing survives"

@@ -1014,8 +1014,7 @@
 
      Scoped to [data-provboard] so the nightly card, which does have a chart, never sees
      it. 8px clears .pv-ov's own top offset above the chip and leaves the same below. */
-  #us-standouts .nbgrid[data-provboard] .pv-nochart,
-  #us-standouts .nbgrid[data-provboard][data-showmore-rows] .pv-nochart { height: 36px; }
+  #us-standouts .nbgrid[data-provboard] .pv-nochart { height: 36px; }
   @media (max-width: 680px) {
     .pbs { font-size: 9.5px; padding: 2px 7px; }
     .pbs-note { font-size: 11px; }
@@ -15482,7 +15481,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {%- if _bs and _bs.get('note') == 'confirmed' %}
         <span class="pbs-nv" data-bs-note="confirmed"><span class="l-en"><span class="pbs-fig">{{ _bs.n_confirmed }}</span> of <span class="pbs-fig">{{ _bs.n_total }}</span> confirmed overnight · <span class="pbs-fig">{{ _bs.n_adjusted }}</span> adjusted, <span class="pbs-fig">{{ _bs.n_dropped }}</span> left the board</span><span class="l-zh"><span class="pbs-fig">{{ _bs.n_total }}</span> 只中 <span class="pbs-fig">{{ _bs.n_confirmed }}</span> 只隔夜确认 · 调整 <span class="pbs-fig">{{ _bs.n_adjusted }}</span> 只，离榜 <span class="pbs-fig">{{ _bs.n_dropped }}</span> 只</span><span class="help">?<span class="tip tip-wide"><span class="l-en">Last evening's board was built from the day's closes; the overnight pass then rebuilt it with the inputs that only arrive at night. Confirmed means the name came through unchanged. Adjusted means its entry range, stage or place in the order moved — the card shows the current numbers. Left the board means it no longer meets the bar; that is not a sell instruction for a position you already hold.{% if _bs.get('dropped') %} Left the board: {{ _bs.dropped | join(', ') }}{% endif %}</span><span class="l-zh">昨晚的榜单是按当日收盘价生成的；隔夜复核会用深夜才到位的数据重算一遍。「确认」表示这只股票原样通过；「已调整」表示入场区间、阶段或排序位置有变动，卡片上显示的是最新数值；「已离榜」表示它不再达标 —— 这不是让你卖出已有仓位的指令。{% if _bs.get('dropped') %}已离榜：{{ _bs.dropped | join('、') }}{% endif %}</span></span></span></span>
         {%- endif %}
-        <span class="pbs-nv" data-bs-note="ahead" hidden><span class="l-en"><b>Get ready</b> — set from today's close, confirmed by morning.</span><span class="l-zh"><b>可以开始准备</b> — 依今日收盘价选出，明早完成确认。</span><span class="help">?<span class="tip tip-wide"><span class="l-en">Only part of the full test can run this early. In: how strong the signal is, and how far the name has already run. Not yet in: the entry range, the edge score the cards normally show, and the setup-quality checks — those need inputs that arrive later at night. So this is a shortlist, not the ranked board: order, scores and buy zones land with the overnight pass, and a name can still be adjusted or leave before morning. Room is how far a name has left to go before it counts as stretched.</span><span class="l-zh">这个时点只能完成整套判定中的一部分。已纳入：信号强弱，以及这只股票已经走了多远。尚未纳入：入场区间、卡片上平时显示的「优势」评分，以及形态质量检查 —— 这几项都要等深夜的数据到位。所以这是一份候选名单，还不是排好序的榜单：排序、评分和买区都要等隔夜复核给出，个别股票在明早之前仍可能被调整或移出。「空间」指的是股价在被视为过度拉伸之前还剩多少余地。</span></span></span></span>
+        <span class="pbs-nv" data-bs-note="ahead" hidden><span class="l-en"><b>Get ready</b> — set from today's close, confirmed by morning.</span><span class="l-zh"><b>可以开始准备</b> — 依今日收盘价选出，明早完成确认。</span><span class="help">?<span class="tip tip-wide"><span class="l-en">Only part of the full test can run this early. In: how strong the signal is, and how far the name has already run. Not yet in: the entry range, the edge score the cards normally show, and the setup-quality checks — those need inputs that arrive later at night. So this is a shortlist, not the ranked board: order, scores and buy zones land with the overnight pass, and a name can still be adjusted or leave before morning. Room is how far a name has left to go before it counts as stretched — "Not checked" means that reading did not arrive for this one.</span><span class="l-zh">这个时点只能完成整套判定中的一部分。已纳入：信号强弱，以及这只股票已经走了多远。尚未纳入：入场区间、卡片上平时显示的「优势」评分，以及形态质量检查 —— 这几项都要等深夜的数据到位。所以这是一份候选名单，还不是排好序的榜单：排序、评分和买区都要等隔夜复核给出，个别股票在明早之前仍可能被调整或移出。「空间」指的是股价在被视为过度拉伸之前还剩多少余地；标注「未检查」表示这只股票没有取到这项读数。</span></span></span></span>
         <span class="pbs-nv" data-bs-note="behind" hidden><span class="l-en">Tonight's early update isn't in — these are last night's confirmed picks. Check a live quote before you act.</span><span class="l-zh">今晚的提前更新未到位，以下为昨晚确认的选股名单。操作前请先看一下实时报价。</span><span class="help">?<span class="tip tip-wide"><span class="l-en">Tonight's early rebuild didn't publish, so the board still shows the picks the overnight pass confirmed on the date stamped above. The overnight pass runs regardless and will refresh the board tonight. Prices on the cards are from that date, not from today.</span><span class="l-zh">今晚的提前重算没有发布，所以榜单显示的仍是上方日期那一晚确认的选股。隔夜复核照常运行，今晚会刷新榜单。卡片上的价格来自那一天，不是今天。</span></span></span></span>
         <span class="pbs-nv" data-bs-note="closed" hidden><span class="l-en">Markets are closed — these are the last confirmed picks. The board updates after the next session's close.</span><span class="l-zh">休市中，以下为最近一次确认的选股名单。下一个交易日收盘后更新。</span><span class="help">?<span class="tip tip-wide"><span class="l-en">Markets were closed today, so there is nothing new to add. The board shows the picks confirmed after the last session, and it refreshes after the next one closes.</span><span class="l-zh">今天休市，没有新的内容。榜单显示的是上一个交易日之后确认的选股，下一个交易日收盘后会刷新。</span></span></span></span>
       </div>
@@ -16191,7 +16190,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
          2026-08-05. That is why the disclosure needed a chip of its own.) #}
       {% set _xuc = ((_su.get('ranking') or {}).get('ext_unknown_coverage') or {}) %}
       {% set _xfu = _xuc.get('featured_with_unknown') or 0 %}
-      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability or return forecast. Green glow is a featured attention shelf, not a cap on how many names qualify: fresh signal, entry window open, edge above zero (an absolute floor), {% if _xfu %}price not extended wherever tonight’s extension reading came through ({{ _xfu }} of the featured names have none at all, so for those nothing was checked){% else %}price not extended{% endif %}, up to 12 names and 4 per sector. Every qualifying name remains on this ranked, searchable board, and US Prophet evaluates the full eligible set. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 不是胜率，也不是收益预测。绿色高亮只是精选关注层，并非准入上限：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、{% if _xfu %}取到拉伸读数的个股价格未过度拉伸（另有{{ _xfu }}只精选个股完全没有读数，这一项未作检查）{% else %}价格未过度拉伸{% endif %}，最多12只、每个板块最多4只。所有符合条件的股票都会保留在这个可排序、可搜索的完整榜单中，US Prophet 会评估全部合格候选。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
+      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability or return forecast. Green glow is a featured attention shelf, not an admission limit: fresh signal, entry window open, edge above zero (an absolute floor), {% if _xfu %}price not extended wherever tonight’s extension reading came through ({{ _xfu }} of the featured names have none at all, so for those nothing was checked){% else %}price not extended{% endif %}, up to 12 names and 4 per sector. Every qualifying name remains on this ranked, searchable board, and US Prophet evaluates the full eligible set. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 不是胜率，也不是收益预测。绿色高亮只是精选关注层，并非准入上限：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、{% if _xfu %}取到拉伸读数的个股价格未过度拉伸（另有{{ _xfu }}只精选个股完全没有读数，这一项未作检查）{% else %}价格未过度拉伸{% endif %}，最多12只、每个板块最多4只。所有符合条件的股票都会保留在这个可排序、可搜索的完整榜单中，US Prophet 会评估全部合格候选。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
       {% endif %}
       </div>{# end .nb-grid-section #}
       {% set _has_outcomes = us_board_outcomes and us_board_outcomes.get('rows') %}
@@ -18507,7 +18506,15 @@ function _bsQualify(s, domKey, now){
    extension, which is a line with a meaning and not a tuned threshold. A name with room
    is NEAR (close, not there). A name that has already run is WAIT, which is the
    doctrine's "watch — don't chase" said in the card's own vocabulary. */
-var PVC_ROOM_BANDS = { ample:['Ample','充足'], some:['Some','适中'], thin:['Thin','有限'] };
+var PVC_ROOM_BANDS = { ample:['Ample','充足'], some:['Some','适中'], thin:['Thin','有限'],
+  /* THE NULL, PRINTED (doctrine Law 5). The engine's ranking leg scores an unmeasured
+     extension as 0.0 — fail-closed, and right for ORDERING — but 0.0 also happens to be
+     what a name sitting two full sigma out scores, so a card that binned both the same
+     way would tell a reader "this one has run" about a name nobody measured. That is a
+     claim, not a caution. It gets its own words instead, and the producer must send
+     `runway: null` rather than 0.0 for it (see _pvcCards). Roughly 5 of 79 rows on the
+     live artifact are this case, so it is a state a reader meets most nights. */
+  unknown:['Not checked','未检查'] };
 var PVC_ROOM_LABEL = ['Room','空间'];
 var PVC_VERB_WORDS = { near:['Near','临近'], wait:['Wait','等待'] };
 /* byte-identical to the macro's ratified `confirm` zone copy — reused, not reworded.
@@ -18521,12 +18528,18 @@ function _pvcE(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</
 function _pvcL(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+
                               (zh==null||zh===''?en:zh)+'</span>'; }
 
-/* runway 0.75 ↔ ext_z 0.5 (barely moved) · 0.50 ↔ ext_z 1.0 (a full sigma out) */
+/* runway 0.75 ↔ ext_z 0.5 (barely moved) · 0.50 ↔ ext_z 1.0 (a full sigma out).
+   A null runway is "nobody measured this", NOT "no room" — see PVC_ROOM_BANDS.unknown. */
 function _pvcRoom(runway){
+  if(typeof runway!=='number'||!isFinite(runway)) return 'unknown';
   var r=runway<0?0:(runway>1?1:runway);
   return r>=0.75?'ample':(r>=0.5?'some':'thin');
 }
-function _pvcVerb(band){ return band==='thin'?'wait':'near'; }
+/* Only a MEASURED name with room earns the forward-leaning verb. Unknown routes to the
+   cautious side — the ratified rule for unknown states (#2206, the plain-English lanes) —
+   so an unchecked name reads "Wait · Room: Not checked": don't chase it, and here is why
+   we are not telling you more than that. */
+function _pvcVerb(band){ return (band==='ample'||band==='some')?'near':'wait'; }
 
 /* The sparkline arrives as raw SVG and goes in through innerHTML. The artifact is
    same-origin and auth-gated, which is a reason to be calm about it and not a reason to
@@ -18536,9 +18549,18 @@ function _pvcVerb(band){ return band==='thin'?'wait':'near'; }
 function _pvcSpark(s){
   if(typeof s!=='string'||!s||s.length>20000) return '';
   if(s.slice(0,4).toLowerCase()!=='<svg') return '';
-  if(/<\s*(script|foreignobject|iframe|image|use|a)\b/i.test(s)) return '';
-  if(/\son[a-z]+\s*=/i.test(s)) return '';
-  if(/(javascript|data)\s*:/i.test(s)) return '';
+  /* `set` and `animate` can write an attribute — including an event handler — onto
+     another element, so element-name filtering has to cover them; `style` can pull in a
+     remote stylesheet with @import. */
+  if(/<\s*\/?\s*(script|foreignobject|iframe|image|use|a|set|animate\w*|style|handler)\b/i.test(s)) return '';
+  /* SEPARATOR CLASS, not \s: `/` is a valid attribute separator inside a start tag, so
+     `<svg/onload=alert(1)>` parses exactly as `<svg onload=alert(1)>` and a \s-anchored
+     pattern waves it straight through. Verified under node before and after. Hyphens too
+     — `on-` prefixed handlers are not a thing, but the class costs nothing and a future
+     one would not slip. */
+  if(/[\s\/"'`]on[a-z-]+\s*=/i.test(s)) return '';
+  if(/(javascript|vbscript|data)\s*:/i.test(s)) return '';
+  if(/@import|&#|\\x3c|<!\[CDATA\[/i.test(s)) return '';
   return s;
 }
 /* Relative site paths only — the board links to pages on this site and nowhere else: no
@@ -18572,7 +18594,11 @@ function _pvcCards(b){
     if(!c||typeof c!=='object') return null;
     if(!t[i]||String(c.tk||'')!==String(t[i])) return null;
     if(typeof c.signal!=='number'||!isFinite(c.signal)) return null;
-    if(typeof c.runway!=='number'||!isFinite(c.runway)) return null;
+    /* `runway` is the one leg allowed to be NULL, and the distinction is load-bearing:
+       null means the extension reading did not arrive for this name, which the card says
+       in words. A producer that collapses that to 0.0 turns "not checked" into "already
+       run" — a measurement the lane never made — so the null has to survive the wire. */
+    if(!(c.runway===null||(typeof c.runway==='number'&&isFinite(c.runway)))) return null;
     if(c.edge!==undefined&&c.edge!==null) return null;
     if(!_pvcHref(c.href)) return null;
   }
@@ -18599,7 +18625,8 @@ function _pvcKey(cards){
    .pv-zn's margin-top:auto keeps every zone row on one baseline, so a degraded card
    costs alignment nothing. */
 function _pvcCardHTML(c, chg){
-  var band=_pvcRoom(c.runway), verb=_pvcVerb(band), sp=_pvcSpark(c.spark), h=[], d, mi, sym, mkt, px;
+  var band=_pvcRoom(c.runway), verb=_pvcVerb(band), sp=_pvcSpark(c.spark),
+      h=[], d, mi, dd, sym, mkt, px;
   h.push('<a class="pvcard pv-'+verb+'" href="'+_pvcE(_pvcHref(c.href))+
          '" data-ticker="'+_pvcE(c.tk)+'">');
   h.push('<div class="pv-chart">');
@@ -18643,8 +18670,13 @@ function _pvcCardHTML(c, chg){
   d=String(c.date||'');
   if(d.length>=10){
     mi=parseInt(d.slice(5,7),10);
+    dd=parseInt(d.slice(8,10),10);
+    /* both halves NaN-guarded, not just the month: `Aug NaN` on a malformed date is the
+       kind of thing that reaches a screenshot before it reaches a bug report */
     h.push('<span class="pv-dt">'+_pvcL(
-      _pvcE(((mi>=1&&mi<=12)?PVC_MONTHS[mi-1]:d.slice(5,7))+' '+parseInt(d.slice(8,10),10)),
+      _pvcE((mi>=1&&mi<=12&&dd>=1&&dd<=31)
+            ? PVC_MONTHS[mi-1]+' '+dd
+            : d.slice(5,10)),
       _pvcE(d.slice(5,10)))+'</span>');
   }
   h.push('</div></a>');
@@ -18757,11 +18789,13 @@ function _pvcPaint(html){
      save the provisional grid as "the nightly board" and lose the real one for good. */
   var night=_bsPanel?_bsPanel.querySelector('.nbgrid[data-showmore-rows]:not([data-provboard])'):null;
   if(!night||!night.parentNode) return;
-  var bar=night.nextElementSibling, g, nb;
+  var bar=night.nextElementSibling, g;
   if(!(bar&&bar.classList&&bar.classList.contains('sm-bar'))) bar=null;
-  var trk=document.getElementById('board-track-toggle');
-  _pvcSaved={ night:night, bar:bar, trk:trk,
-              trkParent:trk?trk.parentNode:null, trkNext:trk?trk.nextSibling:null,
+  /* NB: no #board-track-toggle handling here. It is pinned into the show-more bar by
+     theme.js's pinBoardTrackToggle, but the element no longer renders at all (see the
+     template's own note above .pb-trk) — carrying re-parent/restore branches for an id
+     that is never in the document is dead code that reviews as if it does something. */
+  _pvcSaved={ night:night, bar:bar,
               filt:document.getElementById('us-stage-filter'),
               vt:document.getElementById('us-st-view-toggle'),
               sub:document.getElementById('us-board-sub'),
@@ -18801,8 +18835,6 @@ function _pvcPaint(html){
   night.parentNode.insertBefore(g, night);
   _pvcSaved.grid=g;
   if(window.initShowMore) window.initShowMore();
-  nb=g.nextElementSibling;
-  if(trk&&nb&&nb.classList&&nb.classList.contains('sm-bar')) nb.insertBefore(trk, nb.firstChild);
   /* live.js re-queries the document on every tick, so these pills WOULD be found on their
      own — in up to 60 seconds. One nudge paints them now instead, so an evening card never
      sits next to a nightly one showing a fresher price than it does. */
@@ -18813,8 +18845,6 @@ function _pvcTeardown(){
   var sv=_pvcSaved, nb;
   _pvcSaved=null; _pvcOn=false; _pvcStamp='';
   if(!sv) return;
-  if(sv.trk&&sv.trkParent&&sv.trk.parentNode!==sv.trkParent)
-    sv.trkParent.insertBefore(sv.trk, sv.trkNext&&sv.trkNext.parentNode===sv.trkParent?sv.trkNext:null);
   if(sv.grid){
     nb=sv.grid.nextElementSibling;
     if(nb&&nb.classList&&nb.classList.contains('sm-bar')&&nb.parentNode) nb.parentNode.removeChild(nb);

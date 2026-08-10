@@ -415,281 +415,305 @@
   "distribution": {
     "full_en_dark_390": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "Ample": 3,
-        "Some": 3,
+        "Some": 2,
+        "Not checked": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "full_en_dark_680": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "Ample": 3,
-        "Some": 3,
+        "Some": 2,
+        "Not checked": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "full_en_dark_1280": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "Ample": 3,
-        "Some": 4,
+        "Some": 3,
+        "Not checked": 1,
         "Thin": 5
       }
     },
     "full_en_light_390": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "Ample": 3,
-        "Some": 3,
+        "Some": 2,
+        "Not checked": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "full_en_light_680": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "Ample": 3,
-        "Some": 3,
+        "Some": 2,
+        "Not checked": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "full_en_light_1280": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "Ample": 3,
-        "Some": 4,
+        "Some": 3,
+        "Not checked": 1,
         "Thin": 5
       }
     },
     "full_zh_dark_390": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "充足": 3,
-        "适中": 3,
+        "适中": 2,
+        "未检查": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "full_zh_dark_680": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "充足": 3,
-        "适中": 3,
+        "适中": 2,
+        "未检查": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "full_zh_dark_1280": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "充足": 3,
-        "适中": 4,
+        "适中": 3,
+        "未检查": 1,
         "有限": 5
       }
     },
     "full_zh_light_390": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "充足": 3,
-        "适中": 3,
+        "适中": 2,
+        "未检查": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "full_zh_light_680": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "充足": 3,
-        "适中": 3,
+        "适中": 2,
+        "未检查": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "full_zh_light_1280": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "充足": 3,
-        "适中": 4,
+        "适中": 3,
+        "未检查": 1,
         "有限": 5
       }
     },
     "degraded_en_dark_390": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "Ample": 3,
-        "Some": 3,
+        "Some": 2,
+        "Not checked": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "degraded_en_dark_680": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "Ample": 3,
-        "Some": 3,
+        "Some": 2,
+        "Not checked": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "degraded_en_dark_1280": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "Ample": 3,
-        "Some": 4,
+        "Some": 3,
+        "Not checked": 1,
         "Thin": 5
       }
     },
     "degraded_en_light_390": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "Ample": 3,
-        "Some": 3,
+        "Some": 2,
+        "Not checked": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "degraded_en_light_680": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "Ample": 3,
-        "Some": 3,
+        "Some": 2,
+        "Not checked": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "degraded_en_light_1280": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "Ample": 3,
-        "Some": 4,
+        "Some": 3,
+        "Not checked": 1,
         "Thin": 5
       }
     },
     "degraded_zh_dark_390": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "充足": 3,
-        "适中": 3,
+        "适中": 2,
+        "未检查": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "degraded_zh_dark_680": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "充足": 3,
-        "适中": 3,
+        "适中": 2,
+        "未检查": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "degraded_zh_dark_1280": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "充足": 3,
-        "适中": 4,
+        "适中": 3,
+        "未检查": 1,
         "有限": 5
       }
     },
     "degraded_zh_light_390": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "充足": 3,
-        "适中": 3,
+        "适中": 2,
+        "未检查": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "degraded_zh_light_680": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "充足": 3,
-        "适中": 3,
+        "适中": 2,
+        "未检查": 1,
         "Some适中": 1,
         "Thin有限": 5
       }
     },
     "degraded_zh_light_1280": {
       "verbs": {
-        "near": 7,
-        "wait": 5
+        "near": 6,
+        "wait": 6
       },
       "rooms": {
         "充足": 3,
-        "适中": 4,
+        "适中": 3,
+        "未检查": 1,
         "有限": 5
       }
     }
@@ -711,5 +735,20 @@
       "stagef": null,
       "night_tickers": "NB0|NB1|NB2|NB3|NB4|NB5|NB6|NB7|NB8"
     }
+  },
+  "no_payload": {
+    "prov_gone": true,
+    "night_back": true,
+    "stamp_gone": true,
+    "filter_back": true,
+    "toggle_back": true,
+    "sub_back": true,
+    "fn_back": true,
+    "one_bar": true,
+    "n_bars": 1,
+    "track_toggle": true,
+    "stagef": null,
+    "night_tickers": "NB0|NB1|NB2|NB3|NB4|NB5|NB6|NB7|NB8",
+    "page_errors": []
   }
 }
