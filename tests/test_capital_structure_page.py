@@ -47,6 +47,20 @@ def test_observed_desk_template_renders_bilingually_without_inline_application_c
     assert executable_inline == []
 
 
+def test_loading_status_has_one_dedicated_dot_and_unconstrained_copy() -> None:
+    """Localization spans must never inherit the loader dot treatment."""
+    html = _render_template()
+    css = (TEMPLATES / "capital_structure.css").read_text(encoding="utf-8")
+
+    assert 'class="cs-loading" role="status"' in html
+    assert html.count('class="cs-loading-dot"') == 1
+    assert 'class="cs-loading-copy"' in html
+    assert ".cs-loading span {" not in css
+    assert ".cs-loading-dot {" in css
+    assert ".cs-loading-copy { min-width: 0; }" in css
+    assert ".cs-loading-dot { animation: none; }" in css
+
+
 def test_static_builder_writes_shell_and_exact_companion_assets(tmp_path: Path) -> None:
     isolated_templates = tmp_path / "templates"
     isolated_templates.mkdir()

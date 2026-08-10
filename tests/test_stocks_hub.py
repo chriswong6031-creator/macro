@@ -201,6 +201,15 @@ def test_stylesheet_declares_no_literal_surface_colour():
     )
 
 
+def test_hub_uses_one_ui_face_with_tabular_figures_not_monospace():
+    """Data alignment must not turn the market hub into a terminal texture."""
+    tpl = (ROOT / "templates" / "ticker_index.html.j2").read_text()
+    css = tpl.split("<style>", 1)[1].split("</style>", 1)[0]
+    assert "var(--font-mono)" not in css
+    assert "var(--font-ui)" in css
+    assert "font-variant-numeric: tabular-nums" in css
+
+
 # ── client payload + crawl links ────────────────────────────────────────────
 def test_search_index_column_order_matches_the_client_constants():
     """The client reads this array positionally; a silent reorder mislabels rows."""
