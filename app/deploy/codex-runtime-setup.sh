@@ -9,6 +9,32 @@
 # once per account on the VPS so each receives its own refreshable session.
 set -euo pipefail
 
+# First-rollout bridge for W1B.5. The predecessor macro-update process keeps
+# running its old inode after it installs a new updater, but it already invokes
+# this repo-side helper before reconciling macro-api.service. Create only the
+# empty root-owned deny anchors (and static identity) here so that predecessor
+# can safely install the new nonoptional InaccessiblePaths on the same tick.
+DEPLOY_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+OPTIONS_BOOTSTRAP_ONLY=1
+for option_unit in \
+	macro-market-memory-options.service \
+	macro-market-memory-options.timer
+do
+	if [ -e "/etc/systemd/system/$option_unit" ] || \
+	   systemctl cat "$option_unit" >/dev/null 2>&1 || \
+	   systemctl is-enabled "$option_unit" >/dev/null 2>&1 || \
+	   systemctl is-active "$option_unit" >/dev/null 2>&1; then
+		OPTIONS_BOOTSTRAP_ONLY=0
+	fi
+done
+if [ "$OPTIONS_BOOTSTRAP_ONLY" -eq 1 ]; then
+	bash "$DEPLOY_DIR/market-memory-options-prereqs.sh" --identity-only
+else
+	# Steady-state repair belongs to update.sh's check/disarm/trap transaction.
+	# This early compatibility bridge must never mutate while a lane is installed.
+	:
+fi
+
 CODEX_CLI_VERSION="${CODEX_CLI_VERSION:-0.145.0}"
 CODEX_STATE_DIRS="${CODEX_STATE_DIRS:-${CODEX_STATE_DIR:-/var/lib/macro-codex:/var/lib/macro-codex-2:/var/lib/macro-codex-3}}"
 QUIET=0

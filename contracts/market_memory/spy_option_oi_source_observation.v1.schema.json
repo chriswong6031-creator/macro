@@ -1,0 +1,373 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/spy_option_oi_source_observation.v1.schema.json",
+  "title": "Market Memory Massive SPY option-OI source availability observation v1",
+  "description": "A future-only source-availability canary over one intentionally bounded page. The canonical observation projects OI presence classes but no OI values, totals, vendor tickers, inferred measurement session, permanent option identity, replay authority, trusted authority, public API authority, options-episode authority, or Prophet authority. Its detached private evidence bundle retains the exact raw entity body and never publicly exposes it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "source_observation_id",
+    "profile",
+    "probe_receipt_id",
+    "available_at",
+    "provider_claim",
+    "page_observation",
+    "temporal",
+    "identity",
+    "completeness",
+    "git_sources",
+    "quality",
+    "limitations",
+    "routing",
+    "authority"
+  ],
+  "properties": {
+    "schema": {
+      "const": "market_memory.spy_option_oi_source_observation.v1"
+    },
+    "source_observation_id": {
+      "type": "string",
+      "pattern": "^mmoptionoisrc_[a-f0-9]{64}$"
+    },
+    "profile": {
+      "const": "massive_spy_option_oi_first_page_availability.v1"
+    },
+    "probe_receipt_id": {
+      "type": "string",
+      "pattern": "^mmoptionoiprobe_[a-f0-9]{64}$"
+    },
+    "available_at": {"$ref": "#/$defs/timestamp"},
+    "provider_claim": {"$ref": "#/$defs/providerClaim"},
+    "page_observation": {"$ref": "#/$defs/pageObservation"},
+    "temporal": {"$ref": "#/$defs/temporal"},
+    "identity": {"$ref": "#/$defs/identity"},
+    "completeness": {"$ref": "#/$defs/completeness"},
+    "git_sources": {"$ref": "#/$defs/gitSources"},
+    "quality": {"$ref": "#/$defs/quality"},
+    "limitations": {"$ref": "#/$defs/limitations"},
+    "routing": {"$ref": "#/$defs/routing"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "gitOid": {
+      "type": "string",
+      "oneOf": [
+        {"pattern": "^[a-f0-9]{40}$"},
+        {"pattern": "^[a-f0-9]{64}$"}
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+    },
+    "providerClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "documentation_url",
+        "reviewed_at",
+        "open_interest_basis",
+        "classification",
+        "claim_authenticated_by_response",
+        "measurement_date_available",
+        "publication_date_available",
+        "publication_timestamp_available",
+        "publication_sla_available"
+      ],
+      "properties": {
+        "documentation_url": {
+          "const": "https://massive.com/docs/rest/options/snapshots/option-chain-snapshot"
+        },
+        "reviewed_at": {"const": "2026-08-10"},
+        "open_interest_basis": {"const": "end_of_last_trading_day"},
+        "classification": {"const": "qualitative_only"},
+        "claim_authenticated_by_response": {"const": false},
+        "measurement_date_available": {"const": false},
+        "publication_date_available": {"const": false},
+        "publication_timestamp_available": {"const": false},
+        "publication_sla_available": {"const": false}
+      }
+    },
+    "pageObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "results_count",
+        "unique_vendor_ticker_count",
+        "oi_presence_counts",
+        "next_url_present"
+      ],
+      "properties": {
+        "results_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 250
+        },
+        "unique_vendor_ticker_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 250
+        },
+        "oi_presence_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["valid_nonnegative_integer", "null", "absent"],
+          "properties": {
+            "valid_nonnegative_integer": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 250
+            },
+            "null": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 249
+            },
+            "absent": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 249
+            }
+          }
+        },
+        "next_url_present": {"type": "boolean"}
+      }
+    },
+    "temporal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_availability_only",
+        "available_at_basis",
+        "event_time",
+        "measurement_time",
+        "provider_measurement_date_available",
+        "provider_publication_date_available",
+        "provider_publication_timestamp_available",
+        "provider_publication_sla_available",
+        "freshness",
+        "expected_measurement_session_inferred",
+        "expected_measurement_date_inferred",
+        "calendar_used"
+      ],
+      "properties": {
+        "source_availability_only": {"const": true},
+        "available_at_basis": {"const": "response_body_completed_at"},
+        "event_time": {"type": "null"},
+        "measurement_time": {"type": "null"},
+        "provider_measurement_date_available": {"const": false},
+        "provider_publication_date_available": {"const": false},
+        "provider_publication_timestamp_available": {"const": false},
+        "provider_publication_sla_available": {"const": false},
+        "freshness": {"const": "unverifiable"},
+        "expected_measurement_session_inferred": {"const": false},
+        "expected_measurement_date_inferred": {"const": false},
+        "calendar_used": {"const": false}
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "vendor_tickers_projected",
+        "permanent_occ_identity_parsed",
+        "permanent_contract_identity_assigned",
+        "adjustment_status",
+        "multiplier_parsed",
+        "gex_computed"
+      ],
+      "properties": {
+        "status": {"const": "unresolved"},
+        "vendor_tickers_projected": {"const": false},
+        "permanent_occ_identity_parsed": {"const": false},
+        "permanent_contract_identity_assigned": {"const": false},
+        "adjustment_status": {"const": "unresolved"},
+        "multiplier_parsed": {"const": false},
+        "gex_computed": {"const": false}
+      }
+    },
+    "completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "page_complete",
+        "continuation_followed",
+        "intentionally_bounded",
+        "chain_complete",
+        "contract_universe_complete",
+        "atomic_chain_snapshot_verified"
+      ],
+      "properties": {
+        "page_complete": {"const": true},
+        "continuation_followed": {"const": false},
+        "intentionally_bounded": {"const": true},
+        "chain_complete": {"const": false},
+        "contract_universe_complete": {"const": false},
+        "atomic_chain_snapshot_verified": {"const": false}
+      }
+    },
+    "gitArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo_path", "sha256", "bytes", "git_blob_oid"],
+      "properties": {
+        "repo_path": {"type": "string"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "git_blob_oid": {"$ref": "#/$defs/gitOid"}
+      }
+    },
+    "gitSources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "option_oi_source_config",
+        "massive_entitlement_record"
+      ],
+      "properties": {
+        "option_oi_source_config": {
+          "$ref": "#/$defs/gitArtifact",
+          "properties": {
+            "repo_path": {
+              "const": "config/market_memory_option_oi_source.v1.json"
+            },
+            "sha256": {
+              "const": "f7ae3d0f7c4a3fd41db48a8c7d6263a0e88a52af36943d3f1de40df0c0689898"
+            },
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 32768}
+          }
+        },
+        "massive_entitlement_record": {
+          "$ref": "#/$defs/gitArtifact",
+          "properties": {
+            "repo_path": {
+              "const": "research/licenses/MASSIVE_ENTITLEMENT_RECORD.md"
+            },
+            "sha256": {
+              "const": "82ad971b46d4159739117d3defe19a25a2a24ede45e5e8d28494c5849e757891"
+            },
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 65536}
+          }
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "flags",
+        "imputed",
+        "training_eligible",
+        "promotion_eligible"
+      ],
+      "properties": {
+        "status": {"const": "degraded"},
+        "flags": {
+          "const": [
+            "first_page_intentionally_bounded",
+            "chain_incomplete",
+            "contract_identity_unresolved",
+            "freshness_unverifiable"
+          ]
+        },
+        "imputed": {"const": false},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false}
+      }
+    },
+    "limitations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "future_only",
+        "first_page_only",
+        "source_availability_only",
+        "open_interest_values_projected",
+        "open_interest_total_computed",
+        "vendor_tickers_projected",
+        "raw_entity_body_present_in_bundle",
+        "raw_entity_body_publicly_exposed",
+        "contract_identity_unresolved",
+        "freshness_unverifiable",
+        "historical_backfill"
+      ],
+      "properties": {
+        "future_only": {"const": true},
+        "first_page_only": {"const": true},
+        "source_availability_only": {"const": true},
+        "open_interest_values_projected": {"const": false},
+        "open_interest_total_computed": {"const": false},
+        "vendor_tickers_projected": {"const": false},
+        "raw_entity_body_present_in_bundle": {"const": true},
+        "raw_entity_body_publicly_exposed": {"const": false},
+        "contract_identity_unresolved": {"const": true},
+        "freshness_unverifiable": {"const": true},
+        "historical_backfill": {"const": false}
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "replay_eligible",
+        "trusted_input_eligible",
+        "public_api_eligible",
+        "options_episode_eligible",
+        "prophet_eligible"
+      ],
+      "properties": {
+        "replay_eligible": {"const": false},
+        "trusted_input_eligible": {"const": false},
+        "public_api_eligible": {"const": false},
+        "options_episode_eligible": {"const": false},
+        "prophet_eligible": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "horizon_role",
+        "context_only",
+        "proposal_weight",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_escalate",
+        "may_trade",
+        "may_originate",
+        "may_select_options_candidate",
+        "may_execute",
+        "may_write_options_episode",
+        "may_append_outcome",
+        "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}

@@ -6629,9 +6629,10 @@ jobs:
           tests/test_marketing_edgar_earnings_wire.py -q -rs
 
   market-memory-contract:
-    # Public-safe temporal-context and product-shell contract. Partner captures,
-    # credentials, private findings, and provider-specific code are deliberately
-    # absent from the repository and this zero-network lane.
+    # Public-safe temporal-context and product-shell contract. Private captures,
+    # credentials, and provider responses remain absent; the option availability
+    # transport is exercised only with bounded offline fixtures in this
+    # zero-network lane.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
     timeout-minutes: 10
     runs-on: ubuntu-latest
@@ -6662,6 +6663,10 @@ jobs:
           tests/test_capture_market_memory_technicals.py
           tests/test_market_memory_technicals_deploy.py
           tests/test_market_memory_replay.py
+          tests/test_market_memory_option_oi_observation.py
+          tests/test_market_memory_option_oi_store.py
+          tests/test_capture_market_memory_option_oi.py
+          tests/test_market_memory_options_deploy.py
           tests/test_market_memory_projection.py
           tests/test_market_memory_trusted.py
           tests/test_market_memory_context_deploy.py

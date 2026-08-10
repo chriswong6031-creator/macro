@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/option_oi_capture_receipt.v1.schema.json",
+  "title": "Private option-OI source-availability capture receipt v1",
+  "description": "Strict receipt for one durable, intentionally bounded first-page source-availability observation. Exact response bytes are private CAS evidence; no option values, totals, identities, GEX, replay, training, ranking, or execution authority is projected.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "store_id",
+    "capture_id",
+    "prepared_id",
+    "prepared_object_key",
+    "source_commit",
+    "source_bodies",
+    "source_observation",
+    "probe_receipt",
+    "clocks",
+    "completeness",
+    "mode",
+    "source_availability_capture",
+    "evidence_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.option_oi_capture_receipt.v1"},
+    "profile": {
+      "const": "market_memory.private.spy_option_oi_source_availability.v1"
+    },
+    "store_id": {
+      "type": "string",
+      "pattern": "^mmoptionoistore_[a-f0-9]{64}$"
+    },
+    "capture_id": {
+      "type": "string",
+      "pattern": "^mmoptionoicapture_[a-f0-9]{64}$"
+    },
+    "prepared_id": {
+      "type": "string",
+      "pattern": "^mmoptionoiprepared_[a-f0-9]{64}$"
+    },
+    "prepared_object_key": {
+      "type": "string",
+      "pattern": "^prepared/[a-f0-9]{2}/mmoptionoiprepared_[a-f0-9]{64}\\.json$"
+    },
+    "source_commit": {"$ref": "#/$defs/gitOid"},
+    "source_bodies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "option_oi_response_body",
+        "option_oi_source_config",
+        "massive_entitlement_record"
+      ],
+      "properties": {
+        "option_oi_response_body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_kind",
+            "url",
+            "sha256",
+            "bytes",
+            "object_key"
+          ],
+          "properties": {
+            "source_kind": {"const": "remote_response_entity"},
+            "url": {
+              "const": "https://api.massive.com/v3/snapshot/options/SPY?limit=250"
+            },
+            "sha256": {"$ref": "#/$defs/sha256"},
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 4194304},
+            "object_key": {"$ref": "#/$defs/sourceBodyKey"}
+          }
+        },
+        "option_oi_source_config": {
+          "allOf": [
+            {"$ref": "#/$defs/gitSourceBody"},
+            {
+              "properties": {
+                "repo_path": {
+                  "const": "config/market_memory_option_oi_source.v1.json"
+                },
+                "bytes": {"type": "integer", "minimum": 1, "maximum": 32768}
+              }
+            }
+          ]
+        },
+        "massive_entitlement_record": {
+          "allOf": [
+            {"$ref": "#/$defs/gitSourceBody"},
+            {
+              "properties": {
+                "repo_path": {
+                  "const": "research/licenses/MASSIVE_ENTITLEMENT_RECORD.md"
+                },
+                "bytes": {"type": "integer", "minimum": 1, "maximum": 65536}
+              }
+            }
+          ]
+        }
+      }
+    },
+    "source_observation": {"$ref": "#/$defs/sourceObservationRef"},
+    "probe_receipt": {"$ref": "#/$defs/probeReceiptRef"},
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "response_body_completed_at",
+        "available_at",
+        "first_observed_at"
+      ],
+      "properties": {
+        "response_body_completed_at": {"$ref": "#/$defs/utc"},
+        "available_at": {"$ref": "#/$defs/utc"},
+        "first_observed_at": {"$ref": "#/$defs/utc"}
+      }
+    },
+    "completeness": {"$ref": "#/$defs/completeness"},
+    "mode": {"const": "private_future_only_source_availability"},
+    "source_availability_capture": {"const": true},
+    "evidence_policy": {"$ref": "#/$defs/evidencePolicy"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "gitOid": {
+      "type": "string",
+      "oneOf": [
+        {"pattern": "^[a-f0-9]{40}$"},
+        {"pattern": "^[a-f0-9]{64}$"}
+      ]
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"
+    },
+    "sourceBodyKey": {
+      "type": "string",
+      "pattern": "^source_bodies/[a-f0-9]{2}/[a-f0-9]{64}\\.bin$"
+    },
+    "gitSourceBody": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_kind",
+        "repo_path",
+        "sha256",
+        "bytes",
+        "git_blob_oid",
+        "object_key"
+      ],
+      "properties": {
+        "source_kind": {"const": "git_blob"},
+        "repo_path": {"type": "string"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "git_blob_oid": {"$ref": "#/$defs/gitOid"},
+        "object_key": {"$ref": "#/$defs/sourceBodyKey"}
+      }
+    },
+    "sourceObservationRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_observation_id",
+        "schema",
+        "sha256",
+        "bytes",
+        "object_key"
+      ],
+      "properties": {
+        "source_observation_id": {
+          "type": "string",
+          "pattern": "^mmoptionoisrc_[a-f0-9]{64}$"
+        },
+        "schema": {
+          "const": "market_memory.spy_option_oi_source_observation.v1"
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 131072},
+        "object_key": {
+          "type": "string",
+          "pattern": "^source_observations/[a-f0-9]{2}/mmoptionoisrc_[a-f0-9]{64}\\.json$"
+        }
+      }
+    },
+    "probeReceiptRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "probe_receipt_id",
+        "schema",
+        "sha256",
+        "bytes",
+        "object_key"
+      ],
+      "properties": {
+        "probe_receipt_id": {
+          "type": "string",
+          "pattern": "^mmoptionoiprobe_[a-f0-9]{64}$"
+        },
+        "schema": {"const": "market_memory.option_oi_probe_receipt.v1"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 131072},
+        "object_key": {
+          "type": "string",
+          "pattern": "^probe_receipts/[a-f0-9]{2}/mmoptionoiprobe_[a-f0-9]{64}\\.json$"
+        }
+      }
+    },
+    "completeness": {
+      "const": {
+        "page_complete": true,
+        "continuation_followed": false,
+        "intentionally_bounded": true,
+        "chain_complete": false,
+        "contract_universe_complete": false,
+        "atomic_chain_snapshot_verified": false
+      }
+    },
+    "evidencePolicy": {
+      "const": {
+        "source_availability_only": true,
+        "future_only": true,
+        "first_page_only": true,
+        "source_payload_contract_validated": true,
+        "exact_source_bodies_integrity_bound": true,
+        "provider_response_signed": false,
+        "raw_cas_durable_before_prepared_clock": true,
+        "prepared_self_recoverable_from_cas": true,
+        "prepared_temporaries_isolated_from_scan": true,
+        "page_complete": true,
+        "continuation_followed": false,
+        "intentionally_bounded": true,
+        "chain_complete": false,
+        "contract_universe_complete": false,
+        "atomic_chain_snapshot_verified": false,
+        "measurement_time_authenticated": false,
+        "measurement_session_authenticated": false,
+        "measurement_date_authenticated": false,
+        "permanent_contract_identity_resolved": false,
+        "contract_multiplier_assumed": false,
+        "raw_entity_body_preserved_in_private_cas": true,
+        "raw_entity_body_publicly_exposed": false,
+        "vendor_tickers_projected": false,
+        "open_interest_values_projected": false,
+        "open_interest_totals_projected": false,
+        "gex_projected": false,
+        "replay_eligible": false,
+        "feature_eligible": false,
+        "context_only": true,
+        "training_eligible": false,
+        "promotion_eligible": false
+      }
+    },
+    "authority": {
+      "const": {
+        "tier": "display",
+        "horizon_role": "context",
+        "context_only": true,
+        "proposal_weight": 0,
+        "may_rank": false,
+        "may_gate": false,
+        "may_size": false,
+        "may_escalate": false,
+        "may_trade": false,
+        "may_originate": false,
+        "may_select_options_candidate": false,
+        "may_execute": false,
+        "may_write_options_episode": false,
+        "may_append_outcome": false,
+        "may_train_prophet": false
+      }
+    }
+  }
+}
