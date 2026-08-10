@@ -17,6 +17,7 @@ from scripts import build_government_revenue_candidates as projection
 from tests.government_revenue_candidate_fixture import (
     canonical_frozen_at,
     canonical_fixture_root,
+    ROOT,
     shifted,
     utc_date,
 )
@@ -35,6 +36,37 @@ BETWEEN_RUNS_KNOWN_AT = shifted(FROZEN_AT, minutes=30)
 BEFORE_FROZEN_AT = shifted(FROZEN_AT, seconds=-1)
 #: A source known after the run that reads it -- the monotonicity guard's target.
 FUTURE_KNOWN_AT = shifted(FROZEN_AT, hours=9)
+
+# The first successful post-heal materialization issued this reviewed cohort at
+# 2026-08-10T04:15:07Z.  The ledger is append-only: later rows may be added, but
+# these exact records may never be deleted, rewritten, or reclassified as
+# suppressed history.  The digest covers the complete eight-row semantic JSON,
+# independent of future appended rows and line ordering.
+_ISSUED_RECOVERY_CANDIDATE_IDS = frozenset(
+    {
+        "grc1-0d9acfe1eb29619cc9b78e2d",
+        "grc1-5c04549c98dc93a935b433d7",
+        "grc1-78d7567e22834f8e1a142b43",
+        "grc1-8d90edd35a0f32f9120ebdb4",
+        "grc1-a5d800c17e0bce45ff9a8aa8",
+        "grc1-ab00c51be87b507bfb45e8a2",
+        "grc1-cc400940cd4e316d5b80a7b1",
+        "grc1-e2e57aacdde17def7eeb01d6",
+    }
+)
+_ISSUED_RECOVERY_COHORT_SHA256 = (
+    "a6a93726a9cde15da97e5d883d6f16c7c5ab6efe0ca07eecf0e414f0bef148ab"
+)
+_DISPLAY_ONLY_AUTHORITY = {
+    "tier": "display",
+    "context_only": True,
+    "can_rank": False,
+    "can_size": False,
+    "can_gate": False,
+    "can_originate_signal": False,
+    "can_add_candidates": False,
+    "can_escalate": False,
+}
 
 
 def _fixture_root(tmp_path: Path) -> Path:
@@ -326,7 +358,23 @@ def _candidate_projection_over_graph(
     return candidates_for
 
 
-def test_current_fixture_projects_honest_empty_queue_and_byte_identical_twins(tmp_path: Path) -> None:
+def _project_empty_candidate_baseline(
+    monkeypatch: pytest.MonkeyPatch,
+    root: Path,
+) -> dict:
+    """Materialize an explicit empty synthetic source, then release its patches."""
+    _candidate_projection_over_graph(
+        monkeypatch,
+        root,
+        graph=_graph(),
+        events=[],
+    )
+    result = projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    monkeypatch.undo()
+    return result
+
+
+def test_current_fixture_projects_issued_queue_and_byte_identical_twins(tmp_path: Path) -> None:
     root = _fixture_root(tmp_path)
 
     result = projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
@@ -338,14 +386,20 @@ def test_current_fixture_projects_honest_empty_queue_and_byte_identical_twins(tm
         (root / "data/government_revenue/candidate_projection_status.json").read_text(encoding="utf-8")
     )
     assert result["status"] == "ok"
-    assert result["candidate_count"] == 0
+    assert result["candidate_count"] >= len(_ISSUED_RECOVERY_CANDIDATE_IDS)
     assert result["mapping_backlog_count"] == 21
-    assert queue["counts"]["total"] == 0
+    assert queue["counts"]["total"] == result["candidate_count"]
     assert queue["counts"]["mapping_needed"] == 21
     assert queue_path.read_bytes() == public_path.read_bytes()
-    assert (root / "data/government_revenue/candidate_ledger.jsonl").read_bytes() == b""
+    ledger = projection.load_candidate_ledger(
+        root / "data/government_revenue/candidate_ledger.jsonl"
+    )
+    assert ledger.line_count == result["candidate_count"]
+    assert _ISSUED_RECOVERY_CANDIDATE_IDS <= {
+        row["candidate_id"] for row in ledger.observations
+    }
     assert status["status"] == "ok"
-    assert status["candidate_count"] == 0
+    assert status["candidate_count"] == result["candidate_count"]
     # Source health is reported from the canonical inputs, never defaulted rosy.
     # A hand-typed literal here is the same scheduled failure this suite's fixture
     # module was written to end: the award-event rail sat at "unavailable" for days
@@ -362,13 +416,69 @@ def test_current_fixture_projects_honest_empty_queue_and_byte_identical_twins(tm
     assert status["source_health"]["status"] in {"ok", "degraded"}
 
 
-def test_same_frozen_run_is_idempotent_and_one_sided_twin_is_remediated(tmp_path: Path) -> None:
+def test_issued_recovery_cohort_is_immutable_context_and_never_suppressed() -> None:
+    """The live first issuance cannot be retroactively rewritten as withheld.
+
+    #5207 healed the schema door and the serialized live writer appended eight
+    reviewed rows before the proposed suppression control could land.  Their
+    issuance is now immutable history: preserve their complete semantic bytes,
+    keep every authority action false, and reject any later suppression
+    manifest that overlaps an already-issued source identity.
+    """
+    ledger_path = ROOT / "data/government_revenue/candidate_ledger.jsonl"
+    rows = [
+        json.loads(line)
+        for line in ledger_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    cohort = sorted(
+        (
+            row
+            for row in rows
+            if row.get("candidate_id") in _ISSUED_RECOVERY_CANDIDATE_IDS
+        ),
+        key=lambda row: row["candidate_id"],
+    )
+    assert {row["candidate_id"] for row in cohort} == _ISSUED_RECOVERY_CANDIDATE_IDS
+    cohort_sha256 = sha256(
+        json.dumps(cohort, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    assert cohort_sha256 == _ISSUED_RECOVERY_COHORT_SHA256
+
+    for row in cohort:
+        assert row["authority"] == _DISPLAY_ONLY_AUTHORITY
+        assert row["candidate_scope"] == "government_revenue_research"
+        assert row["is_neuralweb_trade_candidate"] is False
+
+    suppression_path = (
+        ROOT
+        / "config/government_revenue/candidate_historical_suppressions.v1.json"
+    )
+    assert not suppression_path.exists(), (
+        "active historical-suppression plumbing cannot be introduced after the "
+        "reviewed cohort has already been issued; design any future control as a "
+        "new forward-only contract"
+    )
+
+
+def test_same_frozen_run_keeps_durable_bytes_and_remediates_one_sided_twin(tmp_path: Path) -> None:
     root = _fixture_root(tmp_path)
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
     first = _artifact_bytes(root)
 
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
-    assert _artifact_bytes(root) == first
+    second = _artifact_bytes(root)
+    for artifact in ("ledger", "queue", "status", "public"):
+        assert second[artifact] == first[artifact]
+    first_state = json.loads(first["state"])
+    second_state = json.loads(second["state"])
+    assert {
+        key: value for key, value in second_state.items() if key != "ledger"
+    } == {key: value for key, value in first_state.items() if key != "ledger"}
+    assert second_state["ledger"]["append_count"] == 0
+    assert second_state["ledger"]["prior_line_count"] == first_state["ledger"]["line_count"]
+    assert second_state["ledger"]["prior_sha256"] == first_state["ledger"]["sha256"]
+    assert second_state["ledger"]["sha256"] == first_state["ledger"]["sha256"]
 
     public_path = root / "site/government-revenue-data/candidates.json"
     public_path.unlink()
@@ -470,7 +580,7 @@ def test_first_issuance_into_an_empty_ledger_records_historical_observations(
     ``known_at`` beside the issuing run's ``generated_at``.
     """
     root = _fixture_root(tmp_path)
-    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    _project_empty_candidate_baseline(monkeypatch, root)
     _candidate_projection_with_one_candidate(monkeypatch, root)
 
     result = projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
@@ -500,7 +610,7 @@ def test_first_issuance_escape_arms_the_gate_once_any_row_exists(
 ) -> None:
     """The empty-ledger admission is one-shot: a frozen ledger refuses again."""
     root = _fixture_root(tmp_path)
-    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    _project_empty_candidate_baseline(monkeypatch, root)
     _candidate_projection_over_graph(
         monkeypatch, root, graph=_multi_row_graph(), events=[_award_event()]
     )
@@ -530,7 +640,7 @@ def test_unseen_observation_newer_than_prior_materialization_can_append(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     root = _fixture_root(tmp_path)
-    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    _project_empty_candidate_baseline(monkeypatch, root)
     _candidate_projection_with_one_candidate(
         monkeypatch,
         root,
