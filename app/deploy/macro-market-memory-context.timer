@@ -1,0 +1,13 @@
+[Unit]
+Description=Retry the trusted Market Memory regime canary each hour
+
+[Timer]
+OnBootSec=9min
+OnCalendar=*-*-* *:17:00 UTC
+AccuracySec=1min
+RandomizedDelaySec=120s
+Persistent=true
+Unit=macro-market-memory-context.service
+
+[Install]
+WantedBy=timers.target
