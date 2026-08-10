@@ -1,57 +1,9 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-08-07",
-  "generated_at_utc": "2026-08-09T06:57:52.256298+00:00",
+  "asof": "2026-08-10",
+  "generated_at_utc": "2026-08-10T09:40:07.572114+00:00",
   "horizon_days": 45,
   "entries": [
-    {
-      "date": "2026-08-07",
-      "window_end": null,
-      "etype": "FXRES",
-      "label_en": "FX reserves (SAFE)",
-      "label_zh": "外汇储备（外管局）",
-      "region": "cn",
-      "impact": "medium",
-      "source_class": "rule",
-      "source": "engine.china_event_calendar",
-      "approx": true
-    },
-    {
-      "date": "2026-08-07",
-      "window_end": null,
-      "etype": "TRADE",
-      "label_en": "Customs trade (exports/imports)",
-      "label_zh": "海关进出口数据",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "rule",
-      "source": "engine.china_event_calendar",
-      "approx": true
-    },
-    {
-      "date": "2026-08-07",
-      "window_end": "2026-08-31",
-      "etype": "earnings_season",
-      "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
-      "label_zh": "A股中报密集披露期：2026年8月约99%的覆盖名单披露",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "feed",
-      "source": "china_earnings.calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-08-07",
-      "window_end": null,
-      "etype": "US_NFP",
-      "label_en": "US payrolls (NFP)",
-      "label_zh": "美国非农就业",
-      "region": "hk",
-      "impact": "high",
-      "source_class": "rule",
-      "source": "engine.hk_event_calendar",
-      "approx": false
-    },
     {
       "date": "2026-08-10",
       "window_end": null,
@@ -86,6 +38,18 @@
       "impact": "high",
       "source_class": "static",
       "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-08-10",
+      "window_end": "2026-08-31",
+      "etype": "earnings_season",
+      "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
+      "label_zh": "A股中报密集披露期：2026年8月约99%的覆盖名单披露",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "feed",
+      "source": "china_earnings.calendar",
       "approx": false
     },
     {
@@ -398,6 +362,18 @@
       "impact": "high",
       "source_class": "rule",
       "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-09-22",
+      "window_end": null,
+      "etype": "HK_CPI",
+      "label_en": "HK CPI (composite)",
+      "label_zh": "香港 CPI（综合）",
+      "region": "hk",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.hk_event_calendar",
       "approx": false
     }
   ],
