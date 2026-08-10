@@ -1711,6 +1711,15 @@ def _falsifier_registry() -> tuple[dict, dict]:
     data/cycle_ontology/falsifiers.json is hand-authored and small (24 rows);
     read once per process.  Returns empty maps rather than raising when the file
     is absent, so a data-less checkout still renders the English body.
+
+    RETIRED PAIRS.  Re-authoring a row in place (v1 → v2, the #5194 convention)
+    deletes the old id AND, when the successor carries new claim text, the old
+    claim string — so a baked alert row quoting the v1 English claim misses on
+    BOTH lookups and leaks English into the Chinese feed.  falsifiers_retired.json
+    keeps those (id, claim, claim_zh) triples alive for exactly that healing.
+    Live rows win every collision: retired copy never shadows the current
+    registry.  A missing or unreadable retired file is not an error — the live
+    registry alone is the pre-existing behaviour.
     """
     try:
         entries = json.loads(
@@ -1719,8 +1728,19 @@ def _falsifier_registry() -> tuple[dict, dict]:
     except Exception as exc:  # noqa: BLE001
         log.warning("falsifier registry unreadable for zh claims (%s)", exc)
         return {}, {}
-    by_id = {str(e.get("id")): e for e in entries if e.get("id")}
-    by_claim = {str(e.get("claim")): e for e in entries if e.get("claim")}
+    try:
+        retired = json.loads(
+            (Path(config.ROOT) / "data" / "cycle_ontology"
+             / "falsifiers_retired.json").read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        retired = []
+    except Exception as exc:  # noqa: BLE001
+        log.warning("retired falsifier pairs unreadable for zh claims (%s)", exc)
+        retired = []
+    # Retired first, live second: the live row overwrites on any collision.
+    ordered = list(retired) + list(entries)
+    by_id = {str(e.get("id")): e for e in ordered if e.get("id")}
+    by_claim = {str(e.get("claim")): e for e in ordered if e.get("claim")}
     return by_id, by_claim
 
 
