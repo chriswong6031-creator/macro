@@ -9466,9 +9466,13 @@ artifacts:
       data/breadth/ticker_sectors.parquet) and the three published thresholds it clears.
       Membership comes from the curated store data/baskets/membership.json (the same source
       sector_pulse's theme ids descend from); members with a `removed` date are dropped.
-      Names in NEITHER mapping are OMITTED, never defaulted. A name prints its GROUP's
-      median — not recomputed leave-one-out — matching the receipts in
-      research/blocked_entry_study/r3_results.json (exemplars + current_membership).
+      Names in NEITHER mapping are OMITTED, never defaulted. THE TWO MAPS DIFFER BY
+      DESIGN: baskets[].peer_median_dd_252 is the group's plain median (a group-state
+      chip), while names[].peer_dd is the LEAVE-ONE-OUT median — the name's peers with the
+      name itself removed — which is the per-event quantity r3_axes.py graded, so every
+      published gate was measured on it. A fired name is usually among the deepest in its
+      own basket, so letting it vote in its own peer median would publish a laxer rule
+      than the gauntleted one. The >=5 floor applies to the FULL group (as upstream).
       qualifies[t] is recomputed from the PUBLISHED rounded number so a consumer that
       re-derives it always agrees. DISPLAY TIER ONLY: it feeds no score, rank, gate or
       Article-2 surface, and the live enter-mask conditional remains behind its own two

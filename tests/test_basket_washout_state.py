@@ -5,7 +5,9 @@ construction A1b; `research/BLOCKED_ENTRY_RATIFICATION_PACKET_2026-08-10.md` §4
 Covers:
   (1) frozen v1 contract shape — exact key sets, types, threshold menu, id/qualifies keys
   (2) PIT sanity — `qualifies` flips EXACTLY at the threshold, boundary inclusive, and is
-      always re-derivable from the PUBLISHED (rounded) number
+      always re-derivable from the PUBLISHED (rounded) number; the NAME map is
+      LEAVE-ONE-OUT (the graded per-event quantity) while the BASKET map is the plain
+      group median, so a deep name cannot vote itself into its own washout evidence
   (3) omitted-name behaviour — a name in neither mapping is absent, never defaulted
   (4) degrade — empty/broken membership store still emits the sector arm; a group thinner
       than MIN_PEERS states nothing and its names fall back to sector
@@ -133,14 +135,52 @@ def test_qualifies_is_rederivable_from_the_published_number():
         assert entry["qualifies"] == {str(t): v <= -t / 100.0 for t in (20, 25, 30)}
 
 
-def test_name_reads_the_same_number_as_its_group():
+def test_name_peer_dd_is_leave_one_out_and_the_basket_map_is_not():
+    """The two maps answer different questions: the basket prints its own plain median,
+    the NAME prints its peers with itself removed (the graded per-event quantity)."""
     as_of = pd.Timestamp("2026-08-07")
-    dd = _flat_group("U", 5, -0.4, as_of) | _flat_group("S", 6, -0.1, as_of)
-    out = B.build_state(_defs(theme=[f"U{i}" for i in range(5)]),
-                        {f"S{i}": "Utilities" for i in range(6)}, dd, as_of=as_of)
-    for t, e in out["names"].items():
-        if e["basis"] == "basket":
-            assert e["peer_dd"] == out["baskets"][e["group_id"]]["peer_median_dd_252"]
+    vals = {"A": -0.90, "B": -0.50, "C": -0.30, "D": -0.10, "E": 0.0}
+    dd = {t: pd.Series([v], index=[as_of], dtype="float64") for t, v in vals.items()}
+    out = B.build_state(_defs(theme=list(vals)), {}, dd, as_of=as_of)
+
+    assert out["baskets"]["theme"]["peer_median_dd_252"] == pytest.approx(-0.30)
+    assert out["names"]["A"]["peer_dd"] == pytest.approx(-0.20)   # median(-.5,-.3,-.1, 0)
+    assert out["names"]["E"]["peer_dd"] == pytest.approx(-0.40)   # median(-.9,-.5,-.3,-.1)
+    assert out["names"]["C"]["peer_dd"] == pytest.approx(-0.30)   # median(-.9,-.5,-.1, 0)
+    assert len({e["peer_dd"] for e in out["names"].values()}) > 1, \
+        "names inside one basket must NOT all print the same number"
+
+
+def test_a_deep_name_cannot_vote_itself_into_its_own_washout_evidence():
+    """The whole point of the leave-one-out read: the fired name is usually among the
+    deepest in its basket, and must not be able to drag the median over the line for
+    itself.  Group median clears 25%; the name that caused it does not."""
+    as_of = pd.Timestamp("2026-08-07")
+    vals = {"DEEP": -0.90, "B": -0.30, "C": -0.26, "D": -0.20, "E": -0.18}
+    dd = {t: pd.Series([v], index=[as_of], dtype="float64") for t, v in vals.items()}
+    out = B.build_state(_defs(theme=list(vals)), {}, dd, as_of=as_of)
+
+    assert out["baskets"]["theme"]["qualifies"]["25"] is True     # group median -0.26
+    assert out["names"]["DEEP"]["peer_dd"] == pytest.approx(-0.23)
+    assert out["names"]["DEEP"]["qualifies"]["25"] is False       # its OWN peers do not
+    assert out["names"]["E"]["qualifies"]["25"] is True           # a shallow member's do
+
+
+def test_leave_one_out_helper_is_a_true_exclusion():
+    vals = {"A": -0.9, "B": -0.5, "C": -0.3, "D": -0.1, "E": 0.0}
+    assert B.leave_one_out_median(vals, "A") == pytest.approx(-0.20)
+    assert B.leave_one_out_median(vals, "NOT_A_MEMBER") == pytest.approx(-0.30)
+    assert B.leave_one_out_median({"A": -0.3}, "A") is None
+
+
+def test_min_peers_floor_applies_to_the_full_group_so_five_leaves_four():
+    """Mirrors r3_axes.py: the >=5 floor is checked BEFORE the name is removed."""
+    as_of = pd.Timestamp("2026-08-07")
+    dd = _flat_group("U", B.MIN_PEERS, -0.33, as_of)
+    out = B.build_state(_defs(theme=[f"U{i}" for i in range(B.MIN_PEERS)]), {}, dd, as_of=as_of)
+    assert out["baskets"]["theme"]["n_members"] == B.MIN_PEERS
+    assert len(out["names"]) == B.MIN_PEERS
+    assert out["names"]["U0"]["peer_dd"] == pytest.approx(-0.33)
 
 
 # ---------------------------------------------------------- (3) omitted names --

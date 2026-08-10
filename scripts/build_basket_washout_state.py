@@ -21,12 +21,20 @@ CONSTRUCTION (mirrors `research/blocked_entry_study/r3_axes.py`, the graded inst
   * fallback           = GICS sector peers (data/breadth/ticker_sectors.parquet) for names
                          no basket claims
   * names in NEITHER mapping are OMITTED -- never defaulted to a neutral value
-  * a name PRINTS ITS GROUP'S number: the median is not recomputed leave-one-out, so a
-    name and its basket always show the same figure (these are the same all-member
-    medians the study's exemplar and current-membership receipts were reported on --
-    UEC/uranium_miners, HL/silver_miners, NEM/gold_miners)
   * `qualifies[t]` is recomputed from the PUBLISHED (rounded) number, so a consumer that
     re-derives the flag from `peer_median_dd_252` / `peer_dd` always agrees with us
+
+THE TWO MAPS ANSWER DIFFERENT QUESTIONS -- read the field you actually mean:
+  * `baskets[<id>].peer_median_dd_252` describes the GROUP: the plain median over every
+    member that printed, no exclusions.  It is a basket-level state chip.
+  * `names[<TICKER>].peer_dd` is the LEAVE-ONE-OUT median -- the name's peers with the
+    name ITSELF removed.  This is the quantity r3_axes.py computed per event, so it is
+    the one every published gate was measured on.  A name is usually among the deepest
+    drawdowns in its own basket, so letting it vote in its own peer median would ship a
+    systematically MORE PERMISSIVE rule than the one that passed the gauntlet.  The two
+    numbers therefore differ, and names inside one basket differ from each other.
+    The MIN_PEERS floor applies to the FULL group (as upstream), so a 5-member group
+    leaves a 4-peer read.
 
 Basket membership comes from the curated store `data/baskets/membership.json` (the same
 source `scripts/build_baskets.py` and the prophet candidates' `theme_membership_ids`
@@ -171,10 +179,10 @@ def compute_drawdowns(paths: dict[str, list[Path]], symbols: set[str]) -> dict[s
     return out
 
 
-def group_median(dd: dict[str, pd.Series], members, as_of: pd.Timestamp) -> tuple[float | None, int]:
-    """Median drawdown across the members that PRINT on `as_of`.  Names with no print that
-    session drop out (halted / delisted / not yet collected) rather than being carried."""
-    vals = []
+def group_values(dd: dict[str, pd.Series], members, as_of: pd.Timestamp) -> dict[str, float]:
+    """member -> its drawdown ON `as_of`.  Names with no print that session drop out
+    (halted / delisted / not yet collected) rather than being carried forward."""
+    vals: dict[str, float] = {}
     for m in members:
         s = dd.get(m)
         if s is None:
@@ -185,10 +193,28 @@ def group_median(dd: dict[str, pd.Series], members, as_of: pd.Timestamp) -> tupl
             continue
         if v is None or not np.isfinite(v):
             continue
-        vals.append(float(v))
+        vals[m] = float(v)
+    return vals
+
+
+def group_median(dd: dict[str, pd.Series], members, as_of: pd.Timestamp) -> tuple[float | None, int]:
+    """The GROUP's own state: median across every member that printed, no exclusions.
+    Under MIN_PEERS printing members the group states nothing."""
+    vals = group_values(dd, members, as_of)
     if len(vals) < MIN_PEERS:
         return None, len(vals)
-    return float(np.median(vals)), len(vals)
+    return float(np.median(list(vals.values()))), len(vals)
+
+
+def leave_one_out_median(values: dict[str, float], ticker: str) -> float | None:
+    """The NAME's read: the median of its peers with the name itself removed.  This is the
+    quantity the study's per-event `peer_dd` was computed on -- a name in deep drawdown must
+    not be able to vote itself into its own washout evidence.  The MIN_PEERS floor is
+    applied to the FULL group upstream (as in r3_axes.py), so a 5-member group leaves 4."""
+    peers = [v for t, v in values.items() if t != ticker]
+    if not peers:
+        return None
+    return float(np.median(peers))
 
 
 def primary_basket(defs: dict[str, dict], ticker: str) -> str | None:
@@ -223,47 +249,53 @@ def build_state(defs: dict[str, dict], sectors: dict[str, str],
         return payload
     as_of = pd.Timestamp(as_of)
 
-    basket_state: dict[str, float] = {}
+    # Each group's per-member values are computed ONCE and kept: the basket map reads their
+    # plain median, every name in the group reads the same values minus itself.
+    basket_vals: dict[str, dict[str, float]] = {}
     for bid in sorted(defs):
-        med, n = group_median(dd, defs[bid]["members"], as_of)
-        if med is None:
+        vals = group_values(dd, defs[bid]["members"], as_of)
+        if len(vals) < MIN_PEERS:
             continue
-        med = round(med, ROUND)
-        basket_state[bid] = med
+        basket_vals[bid] = vals
+        med = round(float(np.median(list(vals.values()))), ROUND)
         payload["baskets"][bid] = {
             "name": defs[bid]["name"],
             "name_zh": defs[bid]["name_zh"],
             "peer_median_dd_252": med,
-            "n_members": n,
+            "n_members": len(vals),
             "qualifies": _qualifies(med),
         }
 
     sector_members: dict[str, list[str]] = {}
     for t, s in sectors.items():
         sector_members.setdefault(s, []).append(t)
-    sector_state: dict[str, float] = {}
+    sector_vals: dict[str, dict[str, float]] = {}
     for s in sorted(sector_members):
-        med, _n = group_median(dd, sector_members[s], as_of)
-        if med is not None:
-            sector_state[s] = round(med, ROUND)
+        vals = group_values(dd, sector_members[s], as_of)
+        if len(vals) >= MIN_PEERS:
+            sector_vals[s] = vals
 
     # A name reads through its primary basket; if that basket could not state a number
     # tonight it falls back to its GICS sector; a name with neither is OMITTED.
     universe = sorted(set(dd) | {t for d in defs.values() for t in d["members"]} | set(sectors))
     for t in universe:
         bid = primary_basket(defs, t)
-        if bid is not None and bid in basket_state:
-            basis, gid, val = "basket", bid, basket_state[bid]
+        if bid is not None and bid in basket_vals:
+            basis, gid, vals = "basket", bid, basket_vals[bid]
         else:
             s = sectors.get(t)
-            if s is None or s not in sector_state:
+            if s is None or s not in sector_vals:
                 continue
-            basis, gid, val = "sector", s, sector_state[s]
+            basis, gid, vals = "sector", s, sector_vals[s]
+        loo = leave_one_out_median(vals, t)
+        if loo is None:
+            continue
+        loo = round(loo, ROUND)
         payload["names"][t] = {
             "basis": basis,
             "group_id": gid,
-            "peer_dd": val,
-            "qualifies": _qualifies(val),
+            "peer_dd": loo,
+            "qualifies": _qualifies(loo),
         }
     return payload
 
