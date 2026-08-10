@@ -1,80 +1,80 @@
 {
   "handles": {
     "Barchart": {
-      "last_captured_at": "2026-08-08T21:41:39Z",
-      "last_kept": 18
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 19
     },
     "DeItaone": {
-      "last_captured_at": "2026-08-08T21:41:39Z",
+      "last_captured_at": "2026-08-09T22:20:21Z",
       "last_kept": 20
     },
     "FirstSquawk": {
-      "last_captured_at": "2026-08-08T21:41:39Z",
+      "last_captured_at": "2026-08-09T22:20:21Z",
       "last_kept": 20
     },
     "KobeissiLetter": {
-      "last_captured_at": "2026-08-08T21:41:39Z",
+      "last_captured_at": "2026-08-09T22:20:21Z",
       "last_kept": 20
     },
     "LizAnnSonders": {
-      "last_captured_at": "2026-08-02T22:45:58Z",
-      "last_kept": 0
-    },
-    "Mr_Derivatives": {
-      "last_captured_at": "2026-08-02T22:45:58Z",
-      "last_kept": 0
-    },
-    "PeterLBrandt": {
-      "last_captured_at": "2026-08-02T22:45:58Z",
-      "last_kept": 0
-    },
-    "RyanDetrick": {
-      "last_captured_at": "2026-08-02T22:45:58Z",
-      "last_kept": 0
-    },
-    "StockMKTNewz": {
-      "last_captured_at": "2026-08-02T22:45:58Z",
-      "last_kept": 0
-    },
-    "alphatrends": {
-      "last_captured_at": "2026-08-02T22:45:58Z",
-      "last_kept": 0
-    },
-    "bespokeinvest": {
-      "last_captured_at": "2026-08-02T22:45:58Z",
-      "last_kept": 0
-    },
-    "charliebilello": {
-      "last_captured_at": "2026-08-02T22:45:58Z",
-      "last_kept": 0
-    },
-    "jam_croissant": {
-      "last_captured_at": "2026-08-02T22:45:58Z",
-      "last_kept": 0
-    },
-    "markminervini": {
-      "last_captured_at": "2026-08-02T22:45:58Z",
-      "last_kept": 0
-    },
-    "traderstewie": {
-      "last_captured_at": "2026-08-02T22:45:58Z",
-      "last_kept": 0
-    },
-    "unusual_whales": {
-      "last_captured_at": "2026-08-08T21:41:39Z",
+      "last_captured_at": "2026-08-09T22:20:21Z",
       "last_kept": 20
     },
+    "Mr_Derivatives": {
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 20
+    },
+    "PeterLBrandt": {
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 14
+    },
+    "RyanDetrick": {
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 16
+    },
+    "StockMKTNewz": {
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 19
+    },
+    "alphatrends": {
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 19
+    },
+    "bespokeinvest": {
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 16
+    },
+    "charliebilello": {
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 14
+    },
+    "jam_croissant": {
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 1
+    },
+    "markminervini": {
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 12
+    },
+    "traderstewie": {
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 20
+    },
+    "unusual_whales": {
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 19
+    },
     "wallstengine": {
-      "last_captured_at": "2026-08-02T22:45:58Z",
-      "last_kept": 0
+      "last_captured_at": "2026-08-09T22:20:21Z",
+      "last_kept": 19
     }
   },
   "last_run": {
-    "at": "2026-08-08T21:41:39Z",
-    "calls": 5,
-    "rows": 98,
+    "at": "2026-08-09T22:20:21Z",
+    "calls": 17,
+    "rows": 288,
     "stopped": null,
-    "usd": 0.015
+    "usd": 0.051
   },
   "months": {
     "2026-07": {
@@ -83,11 +83,11 @@
       "usd": 0.0525
     },
     "2026-08": {
-      "calls": 52,
-      "tweets": 600,
-      "usd": 0.0933
+      "calls": 69,
+      "tweets": 940,
+      "usd": 0.1443
     }
   },
   "schema": "marketing.x_intel_state/v1",
-  "updated_at": "2026-08-08T21:41:39Z"
+  "updated_at": "2026-08-09T22:20:21Z"
 }
