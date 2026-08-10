@@ -620,12 +620,23 @@ def test_the_client_writes_only_to_the_slots_the_server_reserved():
     assert inner == ["g"], inner
     assert re.search(r"g\s*=\s*document\.createElement\('div'\)", js), \
         "the only innerHTML target must be an element this code created"
-    targets = re.findall(r"querySelectorAll?\('([^']+)'\)", js)
-    assert set(targets) <= {".nbgrid:not([hidden]) .pvcard[data-ticker]", ".pbs[data-bs]",
-                            ".pbs-nv[data-bs-note]", ".pbs-nv:not([hidden])",
-                            ".pbs-dt", ".l-en", ".l-zh", ".pb-fn",
-                            ".nbgrid[data-showmore-rows]",
-                            ".nbgrid .pvcard .nb-chg[data-sym]"}, targets
+    # `querySelectorAll?` reads as "All optional" but the `?` binds to the final `l`, so
+    # the pattern this started as matched querySelectorAl(l) and NEVER the singular
+    # querySelector( — it was inspecting 3 of 10 call sites and reporting green on the
+    # rest (which is why the allowed set below used to name selectors, like `.pbs-dt`,
+    # that it could not actually see). Both forms, explicitly.
+    targets = re.findall(r"querySelector(?:All)?\('([^']+)'\)", js)
+    assert len(targets) >= 10, f"the selector census went blind again: {targets}"
+    assert set(targets) <= {
+        # board-state half — the four reserved slots, unchanged
+        ".pbs[data-bs]", ".pbs-nv[data-bs-note]", ".pbs-nv:not([hidden])",
+        ".pbs-dt", ".l-en", ".l-zh",
+        # the board the reader is actually looking at
+        ".nbgrid:not([hidden]) .pvcard[data-ticker]",
+        # W-L1d — what the mount displaces, and the shape it copies from the nightly cards
+        ".nbgrid[data-showmore-rows]:not([data-provboard])", ".pb-fn",
+        ".nbgrid .pvcard .nb-chg[data-sym]",
+    }, targets
     # Nothing that could reorder, re-rank, re-admit or drop a ROW. Scoped to row
     # operations on purpose — `s.slice(0,4)` on a sparkline string is not a re-ranking,
     # and a blanket ban on the word would only teach the next reader to weaken the test.

@@ -18746,7 +18746,11 @@ function _bsApply(rel, note, label){
 var _pvcOn=false, _pvcStamp='', _pvcRefused='', _pvcSaved=null;
 
 function _pvcPaint(html){
-  var night=_bsPanel?_bsPanel.querySelector('.nbgrid[data-showmore-rows]'):null;
+  /* :not([data-provboard]) is load-bearing, not belt-and-braces: the provisional grid
+     carries data-showmore-rows too AND is inserted BEFORE the nightly one, so it wins
+     document order — a second paint that ran without a teardown first would otherwise
+     save the provisional grid as "the nightly board" and lose the real one for good. */
+  var night=_bsPanel?_bsPanel.querySelector('.nbgrid[data-showmore-rows]:not([data-provboard])'):null;
   if(!night||!night.parentNode) return;
   var bar=night.nextElementSibling, g, nb;
   if(!(bar&&bar.classList&&bar.classList.contains('sm-bar'))) bar=null;
