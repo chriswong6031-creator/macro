@@ -1,19 +1,19 @@
 {
-  "as_of": "2026-08-04",
+  "as_of": "2026-08-10",
   "evaluator_version": "W7b-PR2",
   "dry_run": false,
-  "n_due": 3,
+  "n_due": 2,
   "results": [
     {
-      "id": "cortex-2026-07-07-h1-factor-annotated-fires-sector-rel-c-3e8049",
+      "id": "cortex-2026-07-13-h4-twin-bleed-flag-true-fires-have-high-278df0",
       "claim_shape": "entry_quality",
       "verdict": "insufficient-n",
-      "n": 25824,
+      "n": 33930,
       "metric_value": null,
       "detail": {
-        "total_spine_rows": 338640,
-        "pre_reg_dropped": 312816,
-        "post_reg_n": 25824,
+        "total_spine_rows": 359113,
+        "pre_reg_dropped": 325183,
+        "post_reg_n": 33930,
         "metric": "stop_out_rate",
         "metric_value": null,
         "wf_n_names": 0
@@ -23,60 +23,37 @@
         "threshold": 0.05,
         "min_n": 25,
         "horizon_d": 21,
-        "direction_expected": -1
+        "direction_expected": 1
       },
       "note": null
     },
     {
-      "id": "cortex-2026-07-07-h2-high-alibi-flag-fires-have-lower-p-c-6a8672",
-      "claim_shape": "conditional_regime",
-      "verdict": "failed",
-      "n": 5524,
-      "metric_value": 0.5771180304127443,
+      "id": "cortex-2026-07-13-h5-decay-flag-true-held-names-are-more-1bf548",
+      "claim_shape": "lead_lag",
+      "verdict": "passed",
+      "n": 6806,
+      "metric_value": 0.4532765207170144,
       "detail": {
         "self_excluded_rows": 1,
-        "total_spine_rows": 303111,
-        "pre_reg_dropped": 297587,
-        "post_reg_n": 5524,
-        "hits": 3188,
+        "unsigned_excluded_rows": 292617,
+        "total_spine_rows": 18461,
+        "pre_reg_dropped": 11655,
+        "post_reg_n": 6806,
+        "hits": 3085,
         "metric": "hit_rate",
-        "metric_value": 0.5771
+        "metric_value": 0.4533
       },
       "gate": {
         "metric": "hit_rate",
-        "threshold": -0.05,
-        "min_n": 25,
-        "horizon_d": 21,
-        "direction_expected": -1
-      },
-      "note": null
-    },
-    {
-      "id": "cortex-2026-07-07-h3-p-stopped-at-21d-is-heterogeneous-a-ed046a",
-      "claim_shape": "conditional_regime",
-      "verdict": "failed",
-      "n": 5524,
-      "metric_value": 0.5771180304127443,
-      "detail": {
-        "self_excluded_rows": 1,
-        "total_spine_rows": 303111,
-        "pre_reg_dropped": 297587,
-        "post_reg_n": 5524,
-        "hits": 3188,
-        "metric": "hit_rate",
-        "metric_value": 0.5771
-      },
-      "gate": {
-        "metric": "hit_rate",
-        "threshold": 1.01,
+        "threshold": 0.05,
         "min_n": 25,
         "horizon_d": 21,
         "direction_expected": 1
       },
-      "note": null
+      "note": "passed hypotheses are queued for quarterly cortex FDR batch; promotion beyond shadow also needs the standard gauntlet"
     }
   ],
-  "n_passed": 0,
-  "n_failed": 2,
+  "n_passed": 1,
+  "n_failed": 0,
   "n_insufficient": 1
 }
