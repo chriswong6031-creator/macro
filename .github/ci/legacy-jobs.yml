@@ -6859,7 +6859,11 @@ jobs:
     # owner as a distinct step instead of adding a second overlapping job that
     # defeats the representative-diff scope ceiling. Price-pressure's inferred
     # ownership closure overlaps this owner too, so its focused suite is a third
-    # distinct step here rather than another always-selected logical job.
+    # distinct step here rather than another always-selected logical job.  TOP
+    # ANATOMY's point-in-time research engine and the inert Winner Health design
+    # freeze are likewise folded in as attributable steps: the dependency install
+    # is already a strict superset, and keeping one selected owner preserves the
+    # representative-diff job ceiling without leaving either suite dark.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
     paths:
       - data/alerts/alerts_log.parquet
@@ -6873,6 +6877,9 @@ jobs:
       - tests/test_alert_zh_completeness.py
       - tests/test_falsifier_tripwires.py
       - tests/test_price_pressure.py
+      - tests/test_top_anatomy.py
+      - tests/test_winner_health_design_freeze.py
+      - templates/winner_health.html.j2
     timeout-minutes: 12
     runs-on: ubuntu-latest
     steps:
@@ -6925,3 +6932,13 @@ jobs:
         run: >-
           python -m pytest
           tests/test_price_pressure.py -q -rs
+      # Synthetic-only research guard: labels may look forward, but every feature
+      # is point-in-time and all frozen thresholds remain tied to the preregistered
+      # Phase-0 contract.  The derived scope follows its engine/script/read closure.
+      - name: TOP ANATOMY point-in-time engine and preregistration contracts
+        run: python -m pytest tests/test_top_anatomy.py -q
+      # Source-template render only; templates/winner_health.html.j2 is declared
+      # above because Jinja's runtime template lookup is intentionally not inferred
+      # as a Python import edge.
+      - name: Winner Health inert surface design freeze
+        run: python -m pytest tests/test_winner_health_design_freeze.py -q
