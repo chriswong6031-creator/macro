@@ -1,0 +1,358 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/technicals_actual_output_capture_receipt.v1.schema.json",
+  "title": "Private SPY technical actual-output capture receipt v1",
+  "description": "Strict receipt for one durable freshness-admitted raw SPY close-ratio capture. It authenticates exact private R2, Git, and entitlement evidence and grants no operational authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "store_id",
+    "capture_id",
+    "prepared_id",
+    "prepared_object_key",
+    "session",
+    "revision_id",
+    "source_commit",
+    "source_bodies",
+    "source_observation",
+    "feature_object",
+    "freshness",
+    "clocks",
+    "mode",
+    "actual_output_capture",
+    "evidence_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {
+      "const": "market_memory.technicals_actual_output_capture_receipt.v1"
+    },
+    "profile": {
+      "const": "market_memory.private.spy_raw_technical_actual_output.v1"
+    },
+    "store_id": {
+      "type": "string",
+      "pattern": "^mmactualstore_[a-f0-9]{64}$"
+    },
+    "capture_id": {
+      "type": "string",
+      "pattern": "^mmactualcapture_[a-f0-9]{64}$"
+    },
+    "prepared_id": {
+      "type": "string",
+      "pattern": "^mmprepared_[a-f0-9]{64}$"
+    },
+    "prepared_object_key": {
+      "type": "string",
+      "pattern": "^prepared/[a-f0-9]{2}/mmprepared_[a-f0-9]{64}\\.json$"
+    },
+    "session": {"$ref": "#/$defs/date"},
+    "revision_id": {
+      "type": "string",
+      "pattern": "^mmtechrev_[a-f0-9]{64}$"
+    },
+    "source_commit": {"$ref": "#/$defs/gitOid"},
+    "source_bodies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "publish_manifest",
+        "spy_daily_parquet",
+        "canary_identity_config",
+        "xnys_calendar_module",
+        "massive_entitlement_record",
+        "technical_price_basis_contract"
+      ],
+      "properties": {
+        "publish_manifest": {
+          "$ref": "#/$defs/remoteSourceBody",
+          "properties": {
+            "url": {
+              "const": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/massive_stock_day/_manifest.json"
+            },
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 524288},
+            "content_type": {"const": "application/json"}
+          }
+        },
+        "spy_daily_parquet": {
+          "$ref": "#/$defs/remoteSourceBody",
+          "properties": {
+            "url": {
+              "const": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/massive_stock_day/SPY.parquet"
+            },
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 8388608},
+            "content_type": {"const": "application/octet-stream"}
+          }
+        },
+        "canary_identity_config": {
+          "$ref": "#/$defs/gitSourceBody",
+          "properties": {
+            "repo_path": {"const": "config/market_memory_canary.v1.json"},
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 32768},
+            "sha256": {
+              "const": "5e7823e48866b2c0828122b65f684ed5872c6816a6224f61e44db4c03d129b33"
+            }
+          }
+        },
+        "xnys_calendar_module": {
+          "$ref": "#/$defs/gitSourceBody",
+          "properties": {
+            "repo_path": {"const": "lib/nyse_calendar.py"},
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 262144},
+            "sha256": {
+              "const": "7c9167fd416babb64c3067ae7e6237615011ad79e26d826e57005486496410ce"
+            }
+          }
+        },
+        "massive_entitlement_record": {
+          "$ref": "#/$defs/gitSourceBody",
+          "properties": {
+            "repo_path": {
+              "const": "research/licenses/MASSIVE_ENTITLEMENT_RECORD.md"
+            },
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 65536},
+            "sha256": {
+              "const": "82ad971b46d4159739117d3defe19a25a2a24ede45e5e8d28494c5849e757891"
+            }
+          }
+        },
+        "technical_price_basis_contract": {
+          "$ref": "#/$defs/gitSourceBody",
+          "properties": {
+            "repo_path": {
+              "const": "config/market_memory_technical_price_basis.v1.json"
+            },
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 32768},
+            "sha256": {
+              "const": "ce0244d9c18e3fdcb621c7ced6e3700cb8cb43ff0952b355b82d0542ed6b1be9"
+            }
+          }
+        }
+      }
+    },
+    "source_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_observation_id",
+        "schema",
+        "sha256",
+        "bytes",
+        "object_key"
+      ],
+      "properties": {
+        "source_observation_id": {
+          "type": "string",
+          "pattern": "^mmtechsrc_[a-f0-9]{64}$"
+        },
+        "schema": {
+          "const": "market_memory.spy_daily_price_source_observation.v1"
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 131072},
+        "object_key": {
+          "type": "string",
+          "pattern": "^source_observations/[a-f0-9]{2}/mmtechsrc_[a-f0-9]{64}\\.json$"
+        }
+      }
+    },
+    "feature_object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot_id", "schema", "sha256", "bytes", "object_key"],
+      "properties": {
+        "snapshot_id": {
+          "type": "string",
+          "pattern": "^mmtechsnap_[a-f0-9]{64}$"
+        },
+        "schema": {"const": "market_memory.spy_raw_close_ratio_snapshot.v1"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 131072},
+        "object_key": {
+          "type": "string",
+          "pattern": "^feature_objects/[a-f0-9]{2}/mmtechsnap_[a-f0-9]{64}\\.json$"
+        }
+      }
+    },
+    "freshness": {"$ref": "#/$defs/freshness"},
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first_observed_at", "available_at"],
+      "properties": {
+        "first_observed_at": {"$ref": "#/$defs/utc"},
+        "available_at": {"$ref": "#/$defs/utc"}
+      }
+    },
+    "mode": {"const": "private_actual_output_current_tip"},
+    "actual_output_capture": {"const": true},
+    "evidence_policy": {"$ref": "#/$defs/evidencePolicy"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"
+    },
+    "imfFixdate": {
+      "type": "string",
+      "pattern": "^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT$"
+    },
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "gitOid": {
+      "type": "string",
+      "oneOf": [
+        {"pattern": "^[a-f0-9]{40}$"},
+        {"pattern": "^[a-f0-9]{64}$"}
+      ]
+    },
+    "remoteSourceBody": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url",
+        "sha256",
+        "bytes",
+        "etag_md5",
+        "last_modified",
+        "content_type",
+        "object_key"
+      ],
+      "properties": {
+        "url": {"type": "string", "format": "uri"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "etag_md5": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+        "last_modified": {"$ref": "#/$defs/imfFixdate"},
+        "content_type": {
+          "enum": ["application/json", "application/octet-stream"]
+        },
+        "object_key": {
+          "type": "string",
+          "pattern": "^source_bodies/[a-f0-9]{2}/[a-f0-9]{64}\\.bin$"
+        }
+      }
+    },
+    "gitSourceBody": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo_path", "sha256", "bytes", "git_blob_oid", "object_key"],
+      "properties": {
+        "repo_path": {"type": "string"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "git_blob_oid": {"$ref": "#/$defs/gitOid"},
+        "object_key": {
+          "type": "string",
+          "pattern": "^source_bodies/[a-f0-9]{2}/[a-f0-9]{64}\\.bin$"
+        }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy",
+        "observed_utc_date",
+        "manifest_last_modified",
+        "manifest_age_seconds",
+        "manifest_max_age_seconds",
+        "latest_completed_session",
+        "previous_completed_session",
+        "latest_completed_via",
+        "latest_completed_not_before",
+        "accepted_session",
+        "session_lag",
+        "accepted_via"
+      ],
+      "properties": {
+        "policy": {
+          "const": "r2_manifest_26h_prior_xnys_0200z_finality_max_one_lag.v1"
+        },
+        "observed_utc_date": {"$ref": "#/$defs/date"},
+        "manifest_last_modified": {"$ref": "#/$defs/imfFixdate"},
+        "manifest_age_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 93600
+        },
+        "manifest_max_age_seconds": {"const": 93600},
+        "latest_completed_session": {"$ref": "#/$defs/date"},
+        "previous_completed_session": {"$ref": "#/$defs/date"},
+        "latest_completed_via": {
+          "const": "prior_session_after_0200z_finality_buffer"
+        },
+        "latest_completed_not_before": {"$ref": "#/$defs/utc"},
+        "accepted_session": {"$ref": "#/$defs/date"},
+        "session_lag": {"enum": [0, 1]},
+        "accepted_via": {
+          "enum": ["latest_completed_session", "one_completed_session_lag"]
+        }
+      }
+    },
+    "evidencePolicy": {
+      "const": {
+        "actual_output_only": true,
+        "current_tip_only": true,
+        "contract_validated": true,
+        "exact_source_bodies_authenticated": true,
+        "stable_network_transaction": true,
+        "license_entitlement_record_bound": true,
+        "provider_price_basis_contract_bound": true,
+        "basis_authenticated_by_shape": false,
+        "raw_unadjusted_close_ratio": true,
+        "economic_return": false,
+        "point_in_time_corporate_actions": false,
+        "context_only": true,
+        "training_eligible": false,
+        "promotion_eligible": false
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "horizon_role",
+        "context_only",
+        "proposal_weight",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_escalate",
+        "may_trade",
+        "may_originate",
+        "may_select_options_candidate",
+        "may_execute",
+        "may_write_options_episode",
+        "may_append_outcome",
+        "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}

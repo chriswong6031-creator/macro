@@ -1006,6 +1006,54 @@ execution, options-candidate, options-episode, and outcome authority remain
 false. It is one go-forward current-tip evidence accrual lane, not a repaired
 historical breadth database.
 
+### 11.0.5 W1B.3B private SPY raw-close technical actual output
+
+W1B.3B adds one independent private technical evidence lane over the current
+SPY daily object in the public Massive R2 publication. It does not relabel the
+value as `price.ret_20d`: the frozen feature is
+`price.raw_close_ratio_20_sessions`, computed as the endpoint close divided by
+the close exactly twenty source observations earlier. The contract states that
+the bars use the provider-documented unadjusted basis, that split, dividend,
+and other-corporate-action adjustment are false, that this is not an economic
+return, and that corporate actions and split detection are not evaluated. The
+basis is a reviewed provider-contract assertion, not a fact inferred from
+Parquet shape. The provider daily aggregate may include eligible extended-hours
+trades, so XNYS binds session dates only and a regular-session close is not
+authenticated.
+
+The projector performs one bounded stable remote transaction: manifest GET,
+SPY HEAD/conditional GET/HEAD, and manifest GET again. Fixed HTTPS host, paths,
+content types, strong ETags, MD5 body bindings, lengths, Last-Modified clocks,
+manifest anchor, and exact last 21 consecutive frozen-XNYS session dates must all
+agree. It separately pins exact Git bytes and blob IDs for the SPY canary
+identity, frozen calendar implementation, reviewed Massive entitlement record,
+and `us_stocks_sip/day_aggs_v1` provider price-basis contract. The entitlement
+record confirms the legal rights described in its own scope; binding it grants
+this private lane no ranking, execution, public-publication, or model-training
+authority.
+
+The sole writer persists all six source bodies and canonical source/feature
+objects under `/var/lib/macro-market-memory/state/technicals-v1`. The store
+owns the first-observed clock, requires a nonfuture manifest no older than 26
+hours and a tip no more than one completed XNYS session behind. A prior session
+is not treated as final until 02:00 UTC on the following calendar day, after the
+documented 20:00 ET extended-hours endpoint in both EST and EDT. The writer
+seals a prepared record before source CAS publication, preserves that clock
+across crash recovery, and rechecks freshness for an already-active idempotent retry.
+Immutable objects, capture receipts, and cumulative generations precede the
+private HEAD replacement.
+
+The network-enabled systemd writer has fixed public URLs in reviewed code,
+loads no credential or environment file, masks every repo-known application
+credential/key path, and has write access only to the technical private root.
+It runs as the existing root-owned Market Memory writer profile; this MVP mask
+is denylist-dependent rather than a dedicated service identity. `macro-api`
+cannot read or route the lane. W1B.1
+`trusted-v1`, Prophet, options, outcomes, ranking, gating, sizing, trading,
+execution, training, and promotion remain disconnected and false. Historical
+R2 rows only support the current endpoint calculation; they are not admitted
+as historical operational observations.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1112,6 +1160,25 @@ W1B.3A breadth actual-output additions:
 - `tests/test_market_memory_breadth_{observation,store,deploy}.py` — exact Git
   bytes, frozen-v1 drift, resource bounds, freshness, crash, tamper, private
   roots, deploy isolation, CI closure, and zero-authority fixtures.
+
+W1B.3B technical actual-output additions:
+
+- `engine/neuralweb/market_memory_technical_observation.py` and the strict
+  `spy_{daily_price_source_observation,raw_close_ratio_snapshot}.v1` contracts
+  — fixed-URL stable remote reads, exact Git identity/calendar/entitlement/
+  price-basis binding, bounded 21-session projection, and explicit
+  provider-documented unadjusted-price semantics with no regular-close claim;
+- `engine/neuralweb/market_memory_technical_store.py` and the strict
+  `technicals_actual_output_{capture_receipt,store}.v1` contracts — six-body
+  private CAS, first-clock freshness, sealed crash recovery, current-attempt
+  stale detection, immutable generations, and HEAD-last publication;
+- `scripts/capture_market_memory_technicals.py` and
+  `app/deploy/macro-market-memory-technicals.{service,timer}` — the sole
+  fixed-source public transport with no loaded credential/environment file,
+  plus a repo-known secret-path mask and bounded retry lane;
+- `tests/test_{market_memory_technical_observation,market_memory_technical_store,capture_market_memory_technicals,market_memory_technicals_deploy}.py`
+  — transport, ETag/body, frozen-source, resource, session, price-basis,
+  freshness, crash, tamper, private-root, deploy, CI, and zero-authority guards.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 

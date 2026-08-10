@@ -1,0 +1,291 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/spy_daily_price_source_observation.v1.schema.json",
+  "title": "Market Memory stable public-R2 SPY daily source observation v1",
+  "description": "Strict W1B.3B source object. It binds a publish-last manifest and SPY daily parquet stable-read transaction to reviewed Git-owned identity, calendar, entitlement, and provider price-basis records. It owns no observation clock and grants no signal authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "source_observation_id",
+    "profile",
+    "session",
+    "remote_sources",
+    "git_sources",
+    "manifest_anchor",
+    "transport_policy",
+    "temporal_policy",
+    "limitations",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.spy_daily_price_source_observation.v1"},
+    "source_observation_id": {
+      "type": "string",
+      "pattern": "^mmtechsrc_[a-f0-9]{64}$"
+    },
+    "profile": {"const": "public_r2_massive_stock_day_spy_raw.v1"},
+    "session": {"$ref": "#/$defs/date"},
+    "remote_sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publish_manifest", "spy_daily_parquet"],
+      "properties": {
+        "publish_manifest": {
+          "$ref": "#/$defs/remoteArtifact",
+          "properties": {
+            "url": {
+              "const": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/massive_stock_day/_manifest.json"
+            },
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 524288},
+            "content_type": {"const": "application/json"}
+          }
+        },
+        "spy_daily_parquet": {
+          "$ref": "#/$defs/remoteArtifact",
+          "properties": {
+            "url": {
+              "const": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/massive_stock_day/SPY.parquet"
+            },
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 8388608},
+            "content_type": {"const": "application/octet-stream"}
+          }
+        }
+      }
+    },
+    "git_sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canary_identity_config",
+        "xnys_calendar_module",
+        "massive_entitlement_record",
+        "technical_price_basis_contract"
+      ],
+      "properties": {
+        "canary_identity_config": {
+          "$ref": "#/$defs/gitArtifact",
+          "properties": {
+            "repo_path": {"const": "config/market_memory_canary.v1.json"},
+            "sha256": {
+              "const": "5e7823e48866b2c0828122b65f684ed5872c6816a6224f61e44db4c03d129b33"
+            },
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 32768}
+          }
+        },
+        "xnys_calendar_module": {
+          "$ref": "#/$defs/gitArtifact",
+          "properties": {
+            "repo_path": {"const": "lib/nyse_calendar.py"},
+            "sha256": {
+              "const": "7c9167fd416babb64c3067ae7e6237615011ad79e26d826e57005486496410ce"
+            },
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 262144}
+          }
+        },
+        "massive_entitlement_record": {
+          "$ref": "#/$defs/gitArtifact",
+          "properties": {
+            "repo_path": {"const": "research/licenses/MASSIVE_ENTITLEMENT_RECORD.md"},
+            "sha256": {
+              "const": "82ad971b46d4159739117d3defe19a25a2a24ede45e5e8d28494c5849e757891"
+            },
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 65536}
+          }
+        },
+        "technical_price_basis_contract": {
+          "$ref": "#/$defs/gitArtifact",
+          "properties": {
+            "repo_path": {
+              "const": "config/market_memory_technical_price_basis.v1.json"
+            },
+            "sha256": {
+              "const": "ce0244d9c18e3fdcb621c7ced6e3700cb8cb43ff0952b355b82d0542ed6b1be9"
+            },
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 32768}
+          }
+        }
+      }
+    },
+    "manifest_anchor": {"$ref": "#/$defs/manifestAnchor"},
+    "transport_policy": {"$ref": "#/$defs/transportPolicy"},
+    "temporal_policy": {"$ref": "#/$defs/temporalPolicy"},
+    "limitations": {"$ref": "#/$defs/limitations"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "md5": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "gitOid": {
+      "type": "string",
+      "oneOf": [
+        {"pattern": "^[a-f0-9]{40}$"},
+        {"pattern": "^[a-f0-9]{64}$"}
+      ]
+    },
+    "lastModified": {
+      "type": "string",
+      "pattern": "^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT$"
+    },
+    "remoteArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url",
+        "sha256",
+        "bytes",
+        "etag_md5",
+        "last_modified",
+        "content_type"
+      ],
+      "properties": {
+        "url": {"type": "string", "format": "uri"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "etag_md5": {"$ref": "#/$defs/md5"},
+        "last_modified": {"$ref": "#/$defs/lastModified"},
+        "content_type": {"type": "string"}
+      }
+    },
+    "gitArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo_path", "sha256", "bytes", "git_blob_oid"],
+      "properties": {
+        "repo_path": {"type": "string"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "git_blob_oid": {"$ref": "#/$defs/gitOid"}
+      }
+    },
+    "manifestAnchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ticker", "first", "last", "n_rows", "max_gap_calendar_days"],
+      "properties": {
+        "ticker": {"const": "SPY"},
+        "first": {"$ref": "#/$defs/date"},
+        "last": {"$ref": "#/$defs/date"},
+        "n_rows": {"type": "integer", "minimum": 21, "maximum": 4096},
+        "max_gap_calendar_days": {"type": "integer", "minimum": 1, "maximum": 31}
+      }
+    },
+    "transportPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transaction",
+        "https_only",
+        "canonical_host_and_paths",
+        "redirects_allowed",
+        "query_allowed",
+        "compression_allowed",
+        "strong_single_part_md5_etag_required",
+        "conditional_get_if_match_required"
+      ],
+      "properties": {
+        "transaction": {"const": "get_manifest_head_if_match_get_head_manifest_recheck"},
+        "https_only": {"const": true},
+        "canonical_host_and_paths": {"const": true},
+        "redirects_allowed": {"const": false},
+        "query_allowed": {"const": false},
+        "compression_allowed": {"const": false},
+        "strong_single_part_md5_etag_required": {"const": true},
+        "conditional_get_if_match_required": {"const": true}
+      }
+    },
+    "temporalPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_endpoint_only",
+        "historical_rows_operational",
+        "historical_rows_support_only",
+        "availability_clock_owner",
+        "projector_samples_clock"
+      ],
+      "properties": {
+        "current_endpoint_only": {"const": true},
+        "historical_rows_operational": {"const": false},
+        "historical_rows_support_only": {"const": true},
+        "availability_clock_owner": {
+          "const": "private_technical_store_first_durable_write"
+        },
+        "projector_samples_clock": {"const": false}
+      }
+    },
+    "limitations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_endpoint_only",
+        "historical_rows_support_only",
+        "historical_rows_operational",
+        "session_calendar_use",
+        "provider_daily_aggregate_scope",
+        "regular_session_close_authenticated",
+        "point_in_time_corporate_actions",
+        "total_return",
+        "calendar_coverage",
+        "calendar_partial_coverage"
+      ],
+      "properties": {
+        "current_endpoint_only": {"const": true},
+        "historical_rows_support_only": {"const": true},
+        "historical_rows_operational": {"const": false},
+        "session_calendar_use": {"const": "dates_only"},
+        "provider_daily_aggregate_scope": {
+          "const": "provider_daily_aggregate_eligible_trades_full_market_day"
+        },
+        "regular_session_close_authenticated": {"const": false},
+        "point_in_time_corporate_actions": {"const": false},
+        "total_return": {"const": false},
+        "calendar_coverage": {"const": "full_day_closures_only"},
+        "calendar_partial_coverage": {"const": true}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "horizon_role",
+        "context_only",
+        "proposal_weight",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_escalate",
+        "may_trade",
+        "may_originate",
+        "may_select_options_candidate",
+        "may_execute",
+        "may_write_options_episode",
+        "may_append_outcome",
+        "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}
