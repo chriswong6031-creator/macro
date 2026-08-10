@@ -19,9 +19,16 @@ import functools
 import io
 import re
 import shlex
+import sys
 import tokenize
 from dataclasses import dataclass
 from pathlib import Path
+
+# Direct file execution must resolve this checkout's ``scripts`` package before
+# any installed namesake.  The import-hygiene gate requires the unconditional
+# pin because a conditional insertion can leave a foreign path at sys.path[0].
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_REPO_ROOT))
 
 from scripts.audit_unrun_tests import FIRST_PARTY, ROOT
 
