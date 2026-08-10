@@ -134,3 +134,5 @@
 {"asof": "2026-08-08", "domain": "commodity", "field": "oil_action", "from_value": "SELL", "to_value": "HOLD", "macro_context_id": "fc74f7e48eeb03e7"}
 {"asof": "2026-08-08", "domain": "canada", "field": "canada_overlay_state", "from_value": "Risk-on", "to_value": "Neutral", "macro_context_id": "fc74f7e48eeb03e7"}
 {"asof": "2026-08-08", "domain": "canada", "field": "canada_cycle_tag", "from_value": "mid", "to_value": "late", "macro_context_id": "fc74f7e48eeb03e7"}
+{"asof": "2026-08-10", "domain": "commodity", "field": "commodity_confluence_state", "from_value": "Neutral", "to_value": "Extended \u2014 late cycle", "macro_context_id": "f1fc86fb4317b217"}
+{"asof": "2026-08-10", "domain": "commodity", "field": "oil_action", "from_value": "HOLD", "to_value": "SELL", "macro_context_id": "f1fc86fb4317b217"}

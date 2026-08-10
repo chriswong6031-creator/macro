@@ -16,7 +16,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-12",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-16",
+    "recorded_at": null
    }
   },
   {
@@ -30,7 +32,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-31",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -46,7 +50,10 @@
     "date": "2026-06-17",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-06-22",
+    "confirmed_date": "2026-06-30",
+    "recorded_at": null
    }
   },
   {
@@ -62,7 +69,10 @@
     "date": "2026-05-21",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-05-26",
+    "confirmed_date": "2026-06-03",
+    "recorded_at": null
    }
   },
   {
@@ -76,7 +86,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-04",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-08",
+    "recorded_at": null
    }
   },
   {
@@ -90,7 +102,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-09",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-11",
+    "recorded_at": null
    }
   },
   {
@@ -106,7 +120,10 @@
     "date": "2026-03-05",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-03-09",
+    "confirmed_date": "2026-03-17",
+    "recorded_at": null
    }
   },
   {
@@ -120,7 +137,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-28",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -134,7 +153,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-28",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -148,7 +169,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-07",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-09",
+    "recorded_at": null
    }
   },
   {
@@ -162,7 +185,9 @@
    "early_now": false,
    "last": {
     "date": "2026-03-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-03-09",
+    "recorded_at": null
    }
   },
   {
@@ -176,7 +201,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-12",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-16",
+    "recorded_at": null
    }
   },
   {
@@ -192,7 +219,10 @@
     "date": "2026-06-01",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-06-03",
+    "confirmed_date": "2026-06-11",
+    "recorded_at": null
    }
   },
   {
@@ -212,7 +242,10 @@
     "reasons": [
      "veto: bearish divergence",
      "pending confirmation"
-    ]
+    ],
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -232,7 +265,10 @@
     "reasons": [
      "veto: bearish divergence",
      "failed next-bar hold"
-    ]
+    ],
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -248,7 +284,10 @@
     "date": "2026-07-31",
     "type": "rebuy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -262,7 +301,9 @@
    "early_now": false,
    "last": {
     "date": "2026-05-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-05-07",
+    "recorded_at": null
    }
   },
   {
@@ -278,7 +319,10 @@
     "date": "2026-07-31",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -292,7 +336,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-10",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-07-14",
+    "recorded_at": null
    }
   },
   {
@@ -306,7 +352,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -320,7 +368,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-12",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-16",
+    "recorded_at": null
    }
   },
   {
@@ -336,7 +386,10 @@
     "date": "2026-07-31",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -350,7 +403,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-28",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -366,7 +421,10 @@
     "date": "2026-06-26",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-06-30",
+    "confirmed_date": "2026-07-09",
+    "recorded_at": null
    }
   },
   {
@@ -382,7 +440,10 @@
     "date": "2026-07-31",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -398,7 +459,10 @@
     "date": "2026-04-06",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-04-08",
+    "confirmed_date": "2026-04-16",
+    "recorded_at": null
    }
   },
   {
@@ -414,7 +478,10 @@
     "date": "2026-05-27",
     "type": "rebuy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-05-29",
+    "confirmed_date": "2026-06-08",
+    "recorded_at": null
    }
   },
   {
@@ -430,7 +497,10 @@
     "date": "2026-07-23",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-07-27",
+    "confirmed_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -444,7 +514,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-23",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-25",
+    "recorded_at": null
    }
   },
   {
@@ -458,7 +530,9 @@
    "early_now": false,
    "last": {
     "date": "2026-03-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-03-09",
+    "recorded_at": null
    }
   },
   {
@@ -472,7 +546,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -488,7 +564,10 @@
     "date": "2026-05-08",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-05-12",
+    "confirmed_date": "2026-05-20",
+    "recorded_at": null
    }
   },
   {
@@ -504,7 +583,10 @@
     "date": "2026-06-09",
     "type": "rebuy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-06-11",
+    "confirmed_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -518,7 +600,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-10",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-14",
+    "recorded_at": null
    }
   },
   {
@@ -532,7 +616,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -546,7 +632,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-07",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-09",
+    "recorded_at": null
    }
   },
   {
@@ -560,7 +648,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -576,7 +666,10 @@
     "date": "2026-06-09",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-06-11",
+    "confirmed_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -590,7 +683,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-12",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-16",
+    "recorded_at": null
    }
   },
   {
@@ -606,7 +701,10 @@
     "date": "2026-07-20",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-07-22",
+    "confirmed_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -622,7 +720,10 @@
     "date": "2026-07-10",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-14",
+    "confirmed_date": "2026-07-22",
+    "recorded_at": null
    }
   },
   {
@@ -638,7 +739,10 @@
     "date": "2026-06-26",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-06-30",
+    "confirmed_date": "2026-07-09",
+    "recorded_at": null
    }
   },
   {
@@ -652,7 +756,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-20",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-07-22",
+    "recorded_at": null
    }
   },
   {
@@ -668,7 +774,10 @@
     "date": "2026-06-09",
     "type": "rebuy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-06-11",
+    "confirmed_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -684,7 +793,10 @@
     "date": "2026-06-26",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-06-30",
+    "confirmed_date": "2026-07-09",
+    "recorded_at": null
    }
   },
   {
@@ -700,7 +812,10 @@
     "date": "2026-07-10",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-07-14",
+    "confirmed_date": "2026-07-22",
+    "recorded_at": null
    }
   },
   {
@@ -714,7 +829,9 @@
    "early_now": false,
    "last": {
     "date": "2026-05-27",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-05-29",
+    "recorded_at": null
    }
   },
   {
@@ -728,7 +845,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-28",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -744,7 +863,10 @@
     "date": "2026-04-06",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-04-08",
+    "confirmed_date": "2026-04-16",
+    "recorded_at": null
    }
   },
   {
@@ -760,7 +882,10 @@
     "date": "2026-07-15",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-17",
+    "confirmed_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -776,7 +901,10 @@
     "date": "2026-07-28",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-07-30",
+    "confirmed_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -790,7 +918,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-15",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-17",
+    "recorded_at": null
    }
   },
   {
@@ -806,7 +936,10 @@
     "date": "2026-06-26",
     "type": "rebuy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-06-30",
+    "confirmed_date": "2026-07-09",
+    "recorded_at": null
    }
   },
   {
@@ -820,7 +953,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-17",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -834,7 +969,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-28",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -848,7 +985,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-31",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -862,7 +1001,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-17",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -876,7 +1017,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-28",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -892,7 +1035,10 @@
     "date": "2026-07-15",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-17",
+    "confirmed_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -906,7 +1052,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-28",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -922,7 +1070,10 @@
     "date": "2026-03-02",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-03-04",
+    "confirmed_date": "2026-03-12",
+    "recorded_at": null
    }
   },
   {
@@ -938,7 +1089,10 @@
     "date": "2026-07-28",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-30",
+    "confirmed_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -958,7 +1112,10 @@
     "reasons": [
      "veto: bearish divergence",
      "failed next-bar hold"
-    ]
+    ],
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -974,7 +1131,10 @@
     "date": "2026-06-01",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-06-03",
+    "confirmed_date": "2026-06-11",
+    "recorded_at": null
    }
   },
   {
@@ -990,7 +1150,10 @@
     "date": "2026-05-21",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-05-26",
+    "confirmed_date": "2026-06-03",
+    "recorded_at": null
    }
   },
   {
@@ -1006,7 +1169,10 @@
     "date": "2026-07-31",
     "type": "buy",
     "quality": "pending",
-    "reason": "pending confirmation"
+    "reason": "pending confirmation",
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -1022,7 +1188,10 @@
     "date": "2026-07-28",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-30",
+    "confirmed_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -1038,7 +1207,10 @@
     "date": "2026-07-28",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-30",
+    "confirmed_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -1052,7 +1224,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-20",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-22",
+    "recorded_at": null
    }
   },
   {
@@ -1066,7 +1240,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -1082,7 +1258,10 @@
     "date": "2026-07-20",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-07-22",
+    "confirmed_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -1098,7 +1277,10 @@
     "date": "2026-06-01",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-06-03",
+    "confirmed_date": "2026-06-11",
+    "recorded_at": null
    }
   },
   {
@@ -1112,7 +1294,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-10",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-07-14",
+    "recorded_at": null
    }
   },
   {
@@ -1126,7 +1310,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-01",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-03",
+    "recorded_at": null
    }
   },
   {
@@ -1142,7 +1328,10 @@
     "date": "2026-06-01",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-06-03",
+    "confirmed_date": "2026-06-11",
+    "recorded_at": null
    }
   },
   {
@@ -1156,7 +1345,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-31",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -1170,7 +1361,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-31",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -1184,7 +1377,9 @@
    "early_now": true,
    "last": {
     "date": "2026-06-17",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -1198,7 +1393,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -1212,7 +1409,9 @@
    "early_now": false,
    "last": {
     "date": "2026-05-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-05-07",
+    "recorded_at": null
    }
   },
   {
@@ -1228,7 +1427,10 @@
     "date": "2026-07-01",
     "type": "rebuy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-07-06",
+    "confirmed_date": "2026-07-14",
+    "recorded_at": null
    }
   },
   {
@@ -1244,7 +1446,10 @@
     "date": "2026-07-20",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-07-22",
+    "confirmed_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -1258,7 +1463,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -1272,7 +1479,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-15",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-17",
+    "recorded_at": null
    }
   },
   {
@@ -1288,7 +1497,10 @@
     "date": "2026-08-05",
     "type": "buy",
     "quality": "pending",
-    "reason": "pending confirmation"
+    "reason": "pending confirmation",
+    "signal_date": "2026-08-07",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -1304,7 +1516,10 @@
     "date": "2026-06-23",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-06-25",
+    "confirmed_date": "2026-07-06",
+    "recorded_at": null
    }
   },
   {
@@ -1318,7 +1533,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-31",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -1334,7 +1551,10 @@
     "date": "2026-07-01",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-07-06",
+    "confirmed_date": "2026-07-14",
+    "recorded_at": null
    }
   },
   {
@@ -1354,7 +1574,10 @@
     "reasons": [
      "veto: bearish divergence",
      "failed next-bar hold"
-    ]
+    ],
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -1368,7 +1591,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -1384,7 +1609,10 @@
     "date": "2026-07-20",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-07-22",
+    "confirmed_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -1400,7 +1628,10 @@
     "date": "2026-07-31",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -1416,7 +1647,10 @@
     "date": "2026-07-20",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-07-22",
+    "confirmed_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -1432,7 +1666,10 @@
     "date": "2026-07-20",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-07-22",
+    "confirmed_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -1448,7 +1685,10 @@
     "date": "2026-05-05",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-05-07",
+    "confirmed_date": "2026-05-15",
+    "recorded_at": null
    }
   },
   {
@@ -1464,7 +1704,10 @@
     "date": "2026-07-31",
     "type": "rebuy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -1478,7 +1721,9 @@
    "early_now": true,
    "last": {
     "date": "2026-07-10",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-07-14",
+    "recorded_at": null
    }
   },
   {
@@ -1494,7 +1739,10 @@
     "date": "2026-07-01",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-06",
+    "confirmed_date": "2026-07-14",
+    "recorded_at": null
    }
   },
   {
@@ -1510,7 +1758,10 @@
     "date": "2026-07-20",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-22",
+    "confirmed_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -1526,7 +1777,10 @@
     "date": "2026-08-05",
     "type": "buy",
     "quality": "pending",
-    "reason": "pending confirmation"
+    "reason": "pending confirmation",
+    "signal_date": null,
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -1540,7 +1794,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-01",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-03",
+    "recorded_at": null
    }
   },
   {
@@ -1556,7 +1812,10 @@
     "date": "2026-04-06",
     "type": "rebuy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-04-08",
+    "confirmed_date": "2026-04-16",
+    "recorded_at": null
    }
   },
   {
@@ -1570,7 +1829,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-26",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-30",
+    "recorded_at": null
    }
   },
   {
@@ -1584,7 +1845,9 @@
    "early_now": false,
    "last": {
     "date": "2026-05-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-05-07",
+    "recorded_at": null
    }
   },
   {
@@ -1598,7 +1861,9 @@
    "early_now": false,
    "last": {
     "date": "2026-04-27",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-04-29",
+    "recorded_at": null
    }
   },
   {
@@ -1612,7 +1877,9 @@
    "early_now": false,
    "last": {
     "date": "2026-04-30",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-05-04",
+    "recorded_at": null
    }
   },
   {
@@ -1628,7 +1895,10 @@
     "date": "2026-07-23",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-07-27",
+    "confirmed_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -1642,7 +1912,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-23",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -1656,7 +1928,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-01",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-06-03",
+    "recorded_at": null
    }
   },
   {
@@ -1672,7 +1946,10 @@
     "date": "2026-06-12",
     "type": "rebuy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-06-16",
+    "confirmed_date": "2026-06-25",
+    "recorded_at": null
    }
   },
   {
@@ -1688,7 +1965,10 @@
     "date": "2026-05-18",
     "type": "rebuy",
     "quality": "take",
-    "reason": "reclaimed 200 & held"
+    "reason": "reclaimed 200 & held",
+    "signal_date": "2026-05-20",
+    "confirmed_date": "2026-05-29",
+    "recorded_at": null
    }
   },
   {
@@ -1704,7 +1984,10 @@
     "date": "2026-06-09",
     "type": "rebuy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-06-11",
+    "confirmed_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -1718,7 +2001,9 @@
    "early_now": false,
    "last": {
     "date": "2026-05-27",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-05-29",
+    "recorded_at": null
    }
   },
   {
@@ -1732,7 +2017,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-07",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-09",
+    "recorded_at": null
    }
   },
   {
@@ -1748,7 +2035,10 @@
     "date": "2026-05-27",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-05-29",
+    "confirmed_date": "2026-06-08",
+    "recorded_at": null
    }
   },
   {
@@ -1762,7 +2052,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-04",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-08",
+    "recorded_at": null
    }
   },
   {
@@ -1778,7 +2070,10 @@
     "date": "2026-07-31",
     "type": "buy",
     "quality": "pending",
-    "reason": "pending confirmation"
+    "reason": "pending confirmation",
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -1792,7 +2087,9 @@
    "early_now": false,
    "last": {
     "date": "2026-05-05",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-05-07",
+    "recorded_at": null
    }
   },
   {
@@ -1808,7 +2105,10 @@
     "date": "2026-06-04",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-06-08",
+    "confirmed_date": "2026-06-16",
+    "recorded_at": null
    }
   },
   {
@@ -1824,7 +2124,10 @@
     "date": "2026-06-04",
     "type": "rebuy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-06-08",
+    "confirmed_date": "2026-06-16",
+    "recorded_at": null
    }
   },
   {
@@ -1838,7 +2141,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-07",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-09",
+    "recorded_at": null
    }
   },
   {
@@ -1852,7 +2157,9 @@
    "early_now": false,
    "last": {
     "date": "2026-03-18",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-03-20",
+    "recorded_at": null
    }
   },
   {
@@ -1866,7 +2173,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-01",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-06",
+    "recorded_at": null
    }
   },
   {
@@ -1880,7 +2189,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -1894,7 +2205,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-23",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -1910,7 +2223,10 @@
     "date": "2026-07-23",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-27",
+    "confirmed_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -1926,7 +2242,10 @@
     "date": "2026-07-15",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-07-17",
+    "confirmed_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -1940,7 +2259,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -1954,7 +2275,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-10",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-14",
+    "recorded_at": null
    }
   },
   {
@@ -1968,7 +2291,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-20",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-22",
+    "recorded_at": null
    }
   },
   {
@@ -1984,7 +2309,10 @@
     "date": "2026-06-09",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-06-11",
+    "confirmed_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -2000,7 +2328,10 @@
     "date": "2026-07-23",
     "type": "rebuy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-07-27",
+    "confirmed_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -2014,7 +2345,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-01",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-06",
+    "recorded_at": null
    }
   },
   {
@@ -2028,7 +2361,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -2044,7 +2379,10 @@
     "date": "2026-06-12",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-06-16",
+    "confirmed_date": "2026-06-25",
+    "recorded_at": null
    }
   },
   {
@@ -2058,7 +2396,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-23",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-25",
+    "recorded_at": null
    }
   },
   {
@@ -2074,7 +2414,10 @@
     "date": "2026-06-09",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-06-11",
+    "confirmed_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -2090,7 +2433,10 @@
     "date": "2026-06-09",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-06-11",
+    "confirmed_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -2106,7 +2452,10 @@
     "date": "2026-07-28",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-07-30",
+    "confirmed_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -2122,7 +2471,10 @@
     "date": "2026-06-01",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-06-03",
+    "confirmed_date": "2026-06-11",
+    "recorded_at": null
    }
   },
   {
@@ -2136,7 +2488,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-28",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -2150,7 +2504,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-28",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -2166,7 +2522,10 @@
     "date": "2026-04-09",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-04-13",
+    "confirmed_date": "2026-04-21",
+    "recorded_at": null
    }
   },
   {
@@ -2180,7 +2539,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-23",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -2194,7 +2555,9 @@
    "early_now": false,
    "last": {
     "date": "2026-03-18",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-03-20",
+    "recorded_at": null
    }
   },
   {
@@ -2208,7 +2571,9 @@
    "early_now": false,
    "last": {
     "date": "2026-04-09",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-04-13",
+    "recorded_at": null
    }
   },
   {
@@ -2224,7 +2589,10 @@
     "date": "2026-06-23",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-06-25",
+    "confirmed_date": "2026-07-06",
+    "recorded_at": null
    }
   },
   {
@@ -2238,7 +2606,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-23",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-25",
+    "recorded_at": null
    }
   },
   {
@@ -2252,7 +2622,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-26",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-30",
+    "recorded_at": null
    }
   },
   {
@@ -2268,7 +2640,10 @@
     "date": "2026-07-15",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-07-17",
+    "confirmed_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -2282,7 +2657,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-01",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-06",
+    "recorded_at": null
    }
   },
   {
@@ -2296,7 +2673,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -2312,7 +2691,10 @@
     "date": "2026-07-23",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-07-27",
+    "confirmed_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -2328,7 +2710,10 @@
     "date": "2026-07-28",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-07-30",
+    "confirmed_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -2344,7 +2729,10 @@
     "date": "2026-05-05",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-05-07",
+    "confirmed_date": "2026-05-15",
+    "recorded_at": null
    }
   },
   {
@@ -2358,7 +2746,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-31",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -2372,7 +2762,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-17",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -2392,7 +2784,10 @@
     "reasons": [
      "veto: bearish divergence",
      "pending confirmation"
-    ]
+    ],
+    "signal_date": "2026-08-07",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -2408,7 +2803,10 @@
     "date": "2026-07-07",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-09",
+    "confirmed_date": "2026-07-17",
+    "recorded_at": null
    }
   },
   {
@@ -2422,7 +2820,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -2436,7 +2836,9 @@
    "early_now": false,
    "last": {
     "date": "2026-03-31",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-04-02",
+    "recorded_at": null
    }
   },
   {
@@ -2450,7 +2852,9 @@
    "early_now": false,
    "last": {
     "date": "2026-03-18",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-03-20",
+    "recorded_at": null
    }
   },
   {
@@ -2464,7 +2868,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-12",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-16",
+    "recorded_at": null
    }
   },
   {
@@ -2480,7 +2886,10 @@
     "date": "2026-07-15",
     "type": "buy",
     "quality": "block",
-    "reason": "veto: bearish divergence"
+    "reason": "veto: bearish divergence",
+    "signal_date": "2026-07-17",
+    "confirmed_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -2496,7 +2905,10 @@
     "date": "2026-07-20",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-07-22",
+    "confirmed_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -2510,7 +2922,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-20",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-22",
+    "recorded_at": null
    }
   },
   {
@@ -2530,7 +2944,10 @@
     "reasons": [
      "veto: bearish divergence",
      "failed next-bar hold"
-    ]
+    ],
+    "signal_date": "2026-06-11",
+    "confirmed_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -2544,7 +2961,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-20",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-22",
+    "recorded_at": null
    }
   },
   {
@@ -2564,7 +2983,10 @@
     "reasons": [
      "veto: bearish divergence",
      "counter-trend, no 200-reclaim/hold"
-    ]
+    ],
+    "signal_date": "2026-07-17",
+    "confirmed_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -2580,7 +3002,10 @@
     "date": "2026-07-20",
     "type": "buy",
     "quality": "take",
-    "reason": "reclaimed 200 & held"
+    "reason": "reclaimed 200 & held",
+    "signal_date": "2026-07-22",
+    "confirmed_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -2594,7 +3019,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -2608,7 +3035,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-20",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-22",
+    "recorded_at": null
    }
   },
   {
@@ -2624,7 +3053,10 @@
     "date": "2026-06-09",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-06-11",
+    "confirmed_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -2640,7 +3072,10 @@
     "date": "2026-07-23",
     "type": "rebuy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-07-27",
+    "confirmed_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -2660,7 +3095,10 @@
     "reasons": [
      "veto: bearish divergence",
      "failed next-bar hold"
-    ]
+    ],
+    "signal_date": "2026-07-17",
+    "confirmed_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -2676,7 +3114,10 @@
     "date": "2026-07-01",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-07-06",
+    "confirmed_date": "2026-07-14",
+    "recorded_at": null
    }
   },
   {
@@ -2690,7 +3131,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -2706,7 +3149,10 @@
     "date": "2026-05-21",
     "type": "rebuy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-05-26",
+    "confirmed_date": "2026-06-03",
+    "recorded_at": null
    }
   },
   {
@@ -2720,7 +3166,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-10",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-14",
+    "recorded_at": null
    }
   },
   {
@@ -2734,7 +3182,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-15",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-17",
+    "recorded_at": null
    }
   },
   {
@@ -2750,7 +3200,10 @@
     "date": "2026-07-07",
     "type": "buy",
     "quality": "block",
-    "reason": "veto: bearish divergence"
+    "reason": "veto: bearish divergence",
+    "signal_date": "2026-07-09",
+    "confirmed_date": "2026-07-17",
+    "recorded_at": null
    }
   },
   {
@@ -2764,7 +3217,9 @@
    "early_now": false,
    "last": {
     "date": "2026-05-21",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-05-26",
+    "recorded_at": null
    }
   },
   {
@@ -2778,7 +3233,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-12",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-16",
+    "recorded_at": null
    }
   },
   {
@@ -2794,7 +3251,10 @@
     "date": "2026-07-23",
     "type": "rebuy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-27",
+    "confirmed_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -2810,7 +3270,10 @@
     "date": "2026-07-01",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-07-06",
+    "confirmed_date": "2026-07-14",
+    "recorded_at": null
    }
   },
   {
@@ -2826,7 +3289,10 @@
     "date": "2026-07-23",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-27",
+    "confirmed_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -2842,7 +3308,10 @@
     "date": "2026-06-04",
     "type": "buy",
     "quality": "take",
-    "reason": "reclaimed 200 & held"
+    "reason": "reclaimed 200 & held",
+    "signal_date": "2026-06-08",
+    "confirmed_date": "2026-06-16",
+    "recorded_at": null
    }
   },
   {
@@ -2858,7 +3327,10 @@
     "date": "2026-07-31",
     "type": "buy",
     "quality": "pending",
-    "reason": "pending confirmation"
+    "reason": "pending confirmation",
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -2872,7 +3344,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-31",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -2888,7 +3362,10 @@
     "date": "2026-06-09",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-06-11",
+    "confirmed_date": "2026-06-22",
+    "recorded_at": null
    }
   },
   {
@@ -2902,7 +3379,9 @@
    "early_now": false,
    "last": {
     "date": "2026-04-27",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-04-29",
+    "recorded_at": null
    }
   },
   {
@@ -2918,7 +3397,10 @@
     "date": "2026-07-31",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -2932,7 +3414,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-01",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-06",
+    "recorded_at": null
    }
   },
   {
@@ -2946,7 +3430,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-31",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -2960,7 +3446,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-31",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -2974,7 +3462,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -2988,7 +3478,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-28",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -3004,7 +3496,10 @@
     "date": "2026-08-05",
     "type": "buy",
     "quality": "pending",
-    "reason": "pending confirmation"
+    "reason": "pending confirmation",
+    "signal_date": "2026-08-07",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -3018,7 +3513,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-23",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-25",
+    "recorded_at": null
    }
   },
   {
@@ -3032,7 +3529,9 @@
    "early_now": false,
    "last": {
     "date": "2026-03-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-03-09",
+    "recorded_at": null
    }
   },
   {
@@ -3048,7 +3547,10 @@
     "date": "2026-05-18",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, no 200-reclaim/hold"
+    "reason": "counter-trend, no 200-reclaim/hold",
+    "signal_date": "2026-05-20",
+    "confirmed_date": "2026-05-29",
+    "recorded_at": null
    }
   },
   {
@@ -3062,7 +3564,9 @@
    "early_now": false,
    "last": {
     "date": "2026-03-10",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-03-12",
+    "recorded_at": null
    }
   },
   {
@@ -3078,7 +3582,10 @@
     "date": "2026-07-15",
     "type": "buy",
     "quality": "block",
-    "reason": "counter-trend, held but no 200-reclaim"
+    "reason": "counter-trend, held but no 200-reclaim",
+    "signal_date": "2026-07-17",
+    "confirmed_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -3092,7 +3599,9 @@
    "early_now": false,
    "last": {
     "date": "2026-03-10",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-03-12",
+    "recorded_at": null
    }
   },
   {
@@ -3106,7 +3615,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-26",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-30",
+    "recorded_at": null
    }
   },
   {
@@ -3120,7 +3631,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-07",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-09",
+    "recorded_at": null
    }
   },
   {
@@ -3134,7 +3647,9 @@
    "early_now": false,
    "last": {
     "date": "2026-05-08",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-05-12",
+    "recorded_at": null
    }
   },
   {
@@ -3150,7 +3665,10 @@
     "date": "2026-07-07",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-09",
+    "confirmed_date": "2026-07-17",
+    "recorded_at": null
    }
   },
   {
@@ -3166,7 +3684,10 @@
     "date": "2026-06-26",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-06-30",
+    "confirmed_date": "2026-07-09",
+    "recorded_at": null
    }
   },
   {
@@ -3180,7 +3701,9 @@
    "early_now": false,
    "last": {
     "date": "2026-03-18",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-03-20",
+    "recorded_at": null
    }
   },
   {
@@ -3194,7 +3717,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-10",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-07-14",
+    "recorded_at": null
    }
   },
   {
@@ -3208,7 +3733,9 @@
    "early_now": false,
    "last": {
     "date": "2026-05-13",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-05-15",
+    "recorded_at": null
    }
   },
   {
@@ -3222,7 +3749,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -3236,7 +3765,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-31",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -3250,7 +3781,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-04",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-08",
+    "recorded_at": null
    }
   },
   {
@@ -3266,7 +3799,10 @@
     "date": "2026-07-31",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -3280,7 +3816,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-23",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -3294,7 +3832,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-31",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -3308,7 +3848,9 @@
    "early_now": false,
    "last": {
     "date": "2026-05-08",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-05-12",
+    "recorded_at": null
    }
   },
   {
@@ -3324,7 +3866,10 @@
     "date": "2026-06-12",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-06-16",
+    "confirmed_date": "2026-06-25",
+    "recorded_at": null
    }
   },
   {
@@ -3338,7 +3883,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-01",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-03",
+    "recorded_at": null
    }
   },
   {
@@ -3352,7 +3899,9 @@
    "early_now": false,
    "last": {
     "date": "2026-04-06",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-04-08",
+    "recorded_at": null
    }
   },
   {
@@ -3366,7 +3915,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-20",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-22",
+    "recorded_at": null
    }
   },
   {
@@ -3380,7 +3931,9 @@
    "early_now": false,
    "last": {
     "date": "2026-03-26",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-03-30",
+    "recorded_at": null
    }
   },
   {
@@ -3394,7 +3947,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-23",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-27",
+    "recorded_at": null
    }
   },
   {
@@ -3408,7 +3963,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-28",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-30",
+    "recorded_at": null
    }
   },
   {
@@ -3422,7 +3979,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -3438,7 +3997,10 @@
     "date": "2026-07-23",
     "type": "buy",
     "quality": "block",
-    "reason": "failed next-bar hold"
+    "reason": "failed next-bar hold",
+    "signal_date": "2026-07-27",
+    "confirmed_date": "2026-08-04",
+    "recorded_at": null
    }
   },
   {
@@ -3454,7 +4016,10 @@
     "date": "2026-08-05",
     "type": "buy",
     "quality": "pending",
-    "reason": "pending confirmation"
+    "reason": "pending confirmation",
+    "signal_date": "2026-08-07",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -3468,7 +4033,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-23",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-06-25",
+    "recorded_at": null
    }
   },
   {
@@ -3482,7 +4049,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-20",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-22",
+    "recorded_at": null
    }
   },
   {
@@ -3496,7 +4065,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -3512,7 +4083,10 @@
     "date": "2026-04-06",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-04-08",
+    "confirmed_date": "2026-04-16",
+    "recorded_at": null
    }
   },
   {
@@ -3526,7 +4100,9 @@
    "early_now": false,
    "last": {
     "date": "2026-08-05",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-08-07",
+    "recorded_at": null
    }
   },
   {
@@ -3540,7 +4116,9 @@
    "early_now": false,
    "last": {
     "date": "2026-06-26",
-    "type": "cut"
+    "type": "cut",
+    "signal_date": "2026-06-30",
+    "recorded_at": null
    }
   },
   {
@@ -3556,7 +4134,10 @@
     "date": "2026-07-31",
     "type": "buy",
     "quality": "pending",
-    "reason": "pending confirmation"
+    "reason": "pending confirmation",
+    "signal_date": "2026-08-04",
+    "confirmed_date": null,
+    "recorded_at": null
    }
   },
   {
@@ -3570,7 +4151,9 @@
    "early_now": false,
    "last": {
     "date": "2026-07-01",
-    "type": "sell"
+    "type": "sell",
+    "signal_date": "2026-07-06",
+    "recorded_at": null
    }
   },
   {
@@ -3590,7 +4173,10 @@
     "reasons": [
      "veto: bearish divergence",
      "failed next-bar hold"
-    ]
+    ],
+    "signal_date": "2026-06-25",
+    "confirmed_date": "2026-07-06",
+    "recorded_at": null
    }
   },
   {
@@ -3606,7 +4192,10 @@
     "date": "2026-07-15",
     "type": "buy",
     "quality": "take",
-    "reason": "held confirmation"
+    "reason": "held confirmation",
+    "signal_date": "2026-07-17",
+    "confirmed_date": "2026-07-27",
+    "recorded_at": null
    }
   }
  ]

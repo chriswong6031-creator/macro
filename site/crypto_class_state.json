@@ -2,7 +2,7 @@
   "schema": "crypto.class_state/v1",
   "tier": "display",
   "display_only": true,
-  "as_of": "2026-08-09",
+  "as_of": "2026-08-10",
   "market": {
     "stance": "Range-bound, waiting for participation",
     "total_state": "Steady",
@@ -26,13 +26,13 @@
       "trend": "Range",
       "risk": "Stressed",
       "relative": "Tracking Bitcoin",
-      "coverage": "3,722 daily observations from Coinbase daily OHLCV."
+      "coverage": "3,723 daily observations from Coinbase daily OHLCV."
     },
     "SOL": {
       "trend": "Fading",
       "risk": "Stressed",
       "relative": "Tracking Bitcoin",
-      "coverage": "1,880 daily observations from Coinbase daily OHLCV."
+      "coverage": "1,881 daily observations from Coinbase daily OHLCV."
     }
   }
 }

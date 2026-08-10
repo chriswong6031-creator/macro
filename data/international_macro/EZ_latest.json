@@ -8,7 +8,7 @@
   "scope_en": "Euro area aggregate (current EA21 composition), not the European Union. STOXX Europe 600 is broader market context only.",
   "scope_zh": "欧元区当前21国总量（EA21），并非欧盟整体。STOXX Europe 600仅作更广泛市场背景。",
   "asof": "2026-08-07",
-  "built": "2026-08-08 16:26 UTC",
+  "built": "2026-08-10 03:10 UTC",
   "regime": {
     "quad": "Q1",
     "name": "Goldilocks",
@@ -21,7 +21,7 @@
     "data_limited": false
   },
   "decision": {
-    "score": 51,
+    "score": 47,
     "state": "balanced",
     "state_en": "Balanced",
     "state_zh": "均衡",
@@ -43,7 +43,7 @@
       "inflation": -0.0,
       "recession": -0.0,
       "liquidity": -5.0,
-      "risk_state": 0.0
+      "risk_state": -4.0
     },
     "method_en": "50 + growth impulse − inflation pressure − recession stress + liquidity + current calibrated-risk state. Descriptive, not a forecast.",
     "method_zh": "50 + 增长脉冲 − 通胀压力 − 衰退压力 + 流动性 + 当前校准风险状态。仅作描述，不是预测。"
@@ -203,21 +203,21 @@
     "curve": 1.19
   },
   "risk": {
-    "state": "watch",
-    "top_score": 68,
+    "state": "caution",
+    "top_score": 72,
     "dominant_en": "Parabolic extension / exhaustion",
     "dominant_zh": "抛物线伸展／透支",
     "h21": 0.2,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 67.7,
+      "intensity": 72.0,
       "peak": 96.2,
       "peak_days_ago": 18,
-      "off_peak": 28.6,
-      "velocity": -2.8,
-      "phase": "receding",
+      "off_peak": 24.2,
+      "velocity": 1.6,
+      "phase": "rising",
       "reached_risk": true,
-      "state_now": "watch",
+      "state_now": "caution",
       "odds_now": 0.2,
       "odds_peak": 0.2,
       "odds_delta": 0.0,
@@ -245,16 +245,16 @@
         76.0,
         60.3,
         60.7,
-        67.7
+        72.0
       ],
-      "spark_pts": "3.0,15.6 6.9,14.9 10.8,17.2 14.7,6.4 18.7,3.3 22.6,3.0 26.5,5.2 30.4,15.5 34.3,20.0 38.2,18.9 42.1,18.8 46.0,11.8 50.0,13.9 53.9,9.1 57.8,8.7 61.7,6.6 65.6,12.2 69.5,14.8 73.4,17.4 77.3,17.2 81.3,14.3 85.2,23.0 89.1,22.8 93.0,18.9",
+      "spark_pts": "3.0,15.6 6.9,14.9 10.8,17.2 14.7,6.4 18.7,3.3 22.6,3.0 26.5,5.2 30.4,15.5 34.3,20.0 38.2,18.9 42.1,18.8 46.0,11.8 50.0,13.9 53.9,9.1 57.8,8.7 61.7,6.6 65.6,12.2 69.5,14.8 73.4,17.4 77.3,17.2 81.3,14.3 85.2,23.0 89.1,22.8 93.0,16.5",
       "spark_peak": {
         "x": 22.6,
         "y": 3.0
       },
       "spark_last": {
         "x": 93.0,
-        "y": 18.9
+        "y": 16.5
       },
       "spark_w": 96,
       "spark_h": 26,
@@ -311,7 +311,7 @@
         "tier": "A",
         "label_en": "Euro depreciation / outflows",
         "label_zh": "欧元贬值／资金外流",
-        "score": 26.4,
+        "score": 33.5,
         "band": "calm",
         "firing_legs": []
       }
@@ -377,8 +377,8 @@
       "key": "fx",
       "label_en": "FX reference",
       "label_zh": "汇率参考",
-      "raw": 1.1562,
-      "value": "1.16",
+      "raw": 1.1525,
+      "value": "1.15",
       "unit": "",
       "asof": null
     },
@@ -386,8 +386,8 @@
       "key": "fx_strength_3m",
       "label_en": "Currency strength, 3m",
       "label_zh": "货币强弱，3个月",
-      "raw": -0.48,
-      "value": "-0.48%",
+      "raw": -0.8,
+      "value": "-0.80%",
       "unit": "%",
       "asof": null
     },
@@ -546,7 +546,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2026-06",
-      "age_days": 68,
+      "age_days": 70,
       "state": "fresh",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -554,7 +554,7 @@
     {
       "metric": "gdp",
       "asof": "2026-04",
-      "age_days": 129,
+      "age_days": 131,
       "state": "fresh",
       "label_en": "Growth",
       "label_zh": "增长"
@@ -562,7 +562,7 @@
     {
       "metric": "unemployment",
       "asof": "2026-06",
-      "age_days": 68,
+      "age_days": 70,
       "state": "fresh",
       "label_en": "Labour",
       "label_zh": "就业"
@@ -570,7 +570,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-01",
-      "age_days": 219,
+      "age_days": 221,
       "state": "stale",
       "label_en": "Rates",
       "label_zh": "利率"

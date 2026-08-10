@@ -2,7 +2,7 @@
   "schema": "marketing.cashtag_tiers/v1",
   "schema_version": 1,
   "produced_by": "engine/marketing/radar_internal.py",
-  "produced_at": "2026-08-09T10:03:29Z",
+  "produced_at": "2026-08-10T03:51:32Z",
   "tier": "display",
   "as_of": "2026-08-07",
   "universe_n": 2680,

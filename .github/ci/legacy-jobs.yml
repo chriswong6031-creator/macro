@@ -5576,7 +5576,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: falsifier-register bans + chat plain-word projection
-        run: python -m pytest tests/test_front_facing_register.py tests/test_policy_watch_register.py tests/test_chat_plain_words.py -q
+        run: python -m pytest tests/test_front_facing_register.py tests/test_policy_watch_register.py tests/test_policy_watch_ui.py tests/test_chat_plain_words.py -q
       - name: regime-label honesty + sizing-pill null parity + forward cycle framing
         run: python -m pytest tests/test_regime_label_honesty.py tests/test_regime_sizing_disclosure_parity.py tests/test_cycle_forward_framing.py tests/test_quad_dark_day_disclosure.py -q
 
