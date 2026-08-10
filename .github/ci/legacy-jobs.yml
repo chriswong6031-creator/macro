@@ -6834,6 +6834,7 @@ jobs:
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
     paths:
       - data/cycle_ontology/falsifiers.json
+      - data/cycle_ontology/falsifiers_retired.json
       - data/cycle_ontology/tripwire_state.json
       - engine/falsifier_tripwires.py
       - tests/test_falsifier_tripwires.py
@@ -6865,6 +6866,7 @@ jobs:
     paths:
       - data/alerts/alerts_log.parquet
       - data/cycle_ontology/falsifiers.json
+      - data/cycle_ontology/falsifiers_retired.json
       - engine/alerts.py
       - engine/falsifier_tripwires.py
       - engine/i18n.py
