@@ -1109,8 +1109,39 @@ def test_the_lane_is_not_bolted_onto_the_closing_bell_spine():
         encoding="utf-8")
     assert "close_pass" not in closing_bell
     assert WORKFLOW["jobs"]["publish"]["runs-on"] == ["self-hosted", "macstudio"]
-    # The receipt job is off the mac pool entirely — it reads two JSON documents.
-    assert WORKFLOW["jobs"]["reconcile"]["runs-on"] == "ubuntu-latest"
+
+
+def test_the_receipt_is_graded_inside_the_nightly_not_after_it():
+    """This lane publishes the EVENING board and nothing else.
+
+    It used to carry a second `reconcile` job on `workflow_run: [daily]
+    completed`. That trigger is off the nightly's critical path — and also,
+    unavoidably, after the nightly RENDER, which is the receipt's only consumer.
+    The receipt for session N therefore could not exist until session N's page
+    had already shipped without it, so the surface (#5148) sat wired and
+    permanently dark, and any future reader of the published key would have
+    printed session N-1's arithmetic under session N's cards.
+
+    The grading now runs inside daily.yml's engine job, after the board of
+    record is built. Two lanes writing one receipt key on two different clocks
+    is exactly the disagreement "no receipt is better than a wrong one" exists
+    to prevent, so the old job is DELETED rather than left armed.
+    """
+    assert set(WORKFLOW["jobs"]) == {"publish"}
+    assert "workflow_run" not in WORKFLOW[True]  # yaml parses bare `on:` as True
+    assert "workflow_run" not in WORKFLOW_SRC.split("jobs:")[1]
+
+    daily_src = (ROOT / ".github" / "workflows" / "daily.yml").read_text(
+        encoding="utf-8")
+    engine = daily_src.split("\n  engine:\n", 1)[1]
+    assert "python -m scripts.close_pass_reconcile" in engine
+
+    # ORDER IS THE WHOLE POINT: the board of record does not exist on disk until
+    # build_site has run (it calls build_stock_library, which writes
+    # us_standouts.json), so a reconcile placed ahead of it would grade LAST
+    # night's board and — by its own session check — publish nothing, forever.
+    build = engine.index("run_py \"regime engine")
+    assert build < engine.index("python -m scripts.close_pass_reconcile")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -83,10 +83,21 @@ on:
   schedule:
     - cron: '25 20 * * 1-5'
     - cron: '25 21 * * 1-5'
-  # The receipt job only — fires when the nightly board of record lands.
-  workflow_run:
-    workflows: [daily]
-    types: [completed]
+#
+# WHERE THE CONFIRMATION RECEIPT WENT (W-L1 gate, 2026-08-10). This file used to
+# carry a second `reconcile` job on a `workflow_run: [daily] completed` trigger.
+# It computed the right number at the wrong moment: the receipt for session N
+# could only be published AFTER the nightly render for session N had already
+# gone out, so the render could never show it — the surface (#5148) sat wired,
+# correct and permanently dark, and anything that later READ the published key
+# would have printed session N-1's arithmetic under session N's cards. The
+# grading now happens inside the nightly itself, where both halves are in hand
+# at once: `scripts.build_site` computes it for the render (via
+# close_pass_reconcile.board_state_for) and daily.yml's engine job publishes the
+# artifact with `python -m scripts.close_pass_reconcile` right after the board
+# of record is built. The job is DELETED rather than left armed — two lanes
+# writing one receipt key on two different clocks is exactly the disagreement
+# the "no receipt is better than a wrong one" rule exists to prevent.
 
 permissions:
   contents: read
@@ -101,7 +112,6 @@ concurrency:
 jobs:
   # ── the evening board ────────────────────────────────────────────────────────
   publish:
-    if: github.event_name != 'workflow_run'
     runs-on: [self-hosted, macstudio]
     # Measured cost is the gate over the universe plus one extension panel. The
     # cap is deliberately well inside the window rather than generous: a pass
@@ -149,28 +159,3 @@ jobs:
             exit 1
           fi
           echo "data/ clean — the nightly remains the sole writer of record"
-
-  # ── the confirmation receipt ─────────────────────────────────────────────────
-  # Fires on daily.yml completing, which is when the board of record exists. Off
-  # the nightly's critical path (it cannot delay a build that has already
-  # finished) and off the mac pool entirely — this job reads two JSON documents.
-  reconcile:
-    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          # The nightly commits the board of record to main; a checkout of the
-          # workflow_run's own head would predate that commit.
-          ref: main
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: pip install --quiet boto3
-      - name: publish the provisional → nightly confirmation delta
-        env:
-          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        run: python -m scripts.close_pass_reconcile
