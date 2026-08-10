@@ -32,6 +32,10 @@ the existing root-owned `/var/lib/macro-market-memory` tree. The parent is
 profile with a symlink; only `options-v1` is service-owned mode `0700`. Both
 families deny each other in their systemd mount namespaces. `macro-api` also has
 a non-optional deny mount for the option root and exposes no option-OI route.
+Because the legacy API still runs as root, these deny mounts prevent accidental
+pathname access inside the shared host trust domain; they are not represented
+as a containment boundary against a compromised root API. Moving that API to a
+dedicated unprivileged identity remains separate platform hardening.
 
 The provider token is loaded only through:
 
@@ -51,8 +55,10 @@ For an out-of-band rotation, update the canonical root-owned, group/world-dark
 operator source (`/opt/macro/.env`, preferred, or `/etc/macro-api.env`) and let
 the next updater tick replace the derived mode-0400 systemd credential. A manual
 edit to the derived credential is intentionally overwritten while a valid
-canonical source exists. Do not paste tokens into Git, issues, PRs, command
-arguments, or journal messages.
+canonical source exists. If neither canonical source contains a valid private
+token, the helper removes the derived file and disarms the lane rather than
+silently retaining stale credential state. Do not paste tokens into Git, issues,
+PRs, command arguments, or journal messages.
 
 The committed `research/licenses/MASSIVE_ENTITLEMENT_RECORD.md` is the reviewed
 in-repo legal record for this private internal capture. It changes no evidence
@@ -60,18 +66,43 @@ or authority rule.
 
 ## Deployment behavior
 
-`api-setup.sh` and every `macro-update` tick:
+`api-setup.sh` and `macro-update` reconcile the lane as follows:
 
-1. verify/create only the static identity needed for unit validation;
-2. verify/install the API, service, and timer units;
-3. restart `macro-api` into the non-optional option-root and credential-source
-   deny namespace and seal a runtime fence marker only after its PID changes;
-4. only behind that fence, provision the disjoint root and validate/rebind the
+1. manual setup disarms immediately; the frequent updater first performs a
+   read-only preflight, leaves a healthy active timer untouched, and disarms
+   before any required identity, unit, API, credential, or state mutation;
+2. verify/create the static identity and empty root-owned deny anchors needed
+   for unit validation, without creating `options-v1` or a credential file;
+3. verify/install the API, service, and timer units;
+4. restart `macro-api` into the non-optional option-root and credential-source
+   deny namespace and seal its exact MainPID plus systemd InvocationID in a
+   runtime receipt only after both effective units and the reciprocal writers
+   are re-attested;
+5. only behind that fence, provision the disjoint root and validate/rebind the
    fixed systemd credential source;
-5. run once immediately when a credential and a new/changed contract are
+6. run once immediately when a credential and a new/changed contract are
    present; and
-6. enable the weekday timer only while the units, credential, and API fence are
-   all current.
+7. re-enable the weekday timer only while the exact loaded units (including all
+   five reciprocal writers), credential, and API fence are current. Any fatal
+   exit after option reconciliation or an option-related mutation begins
+   disarms it; an earlier fetch/preflight failure leaves an otherwise healthy
+   timer untouched.
+
+Both the timer and oneshot require the API and reciprocal runtime receipts, and
+the oneshot's `ExecCondition` rechecks their ownership, exact loaded fragments,
+absence of drop-ins, current API MainPID, and current InvocationID before every
+credentialed request. Because `/run` is cleared on reboot, an enabled timer
+remains unable to start until an updater has restarted and re-attested the API
+deny namespace. A healthy three-minute no-op updater does not stop or restart
+the active nonpersistent timer, so it cannot erase that day's randomized
+calendar firing.
+
+The first rollout has an explicit predecessor bridge: the old updater already
+invokes the newly checked-out `codex-runtime-setup.sh` before it installs the
+new API unit, and that helper creates only the empty deny anchors while no
+option unit exists. Operators must still preflight those two paths before merge;
+if either is unsafe, use a two-phase rollout instead of allowing the old updater
+to attempt the nonoptional mounts.
 
 Without a credential, the root and reviewed units are still installed so all
 non-optional deny mounts remain closed, but the timer is disabled. No request or

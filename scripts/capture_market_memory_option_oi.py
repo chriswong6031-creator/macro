@@ -15,6 +15,7 @@ import re
 import stat
 import subprocess
 import sys
+from os import environ as _process_environment
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,11 @@ class MarketMemoryOptionOiCaptureCliError(RuntimeError):
 
 
 def _repository_commit(repository_root: Path) -> str:
+    git_env = {
+        key: value
+        for key, value in _process_environment.items()
+        if not key.startswith("GIT_")
+    }
     try:
         result = subprocess.run(
             [
@@ -51,6 +57,7 @@ def _repository_commit(repository_root: Path) -> str:
             capture_output=True,
             text=True,
             timeout=30,
+            env=git_env,
         )
     except (OSError, subprocess.SubprocessError) as exc:
         raise MarketMemoryOptionOiCaptureCliError(
@@ -147,6 +154,10 @@ def capture_current_option_oi_availability(
             resumed_capture_count=len(resumed),
         )
 
+    # The reviewed source semantics and entitlement are request preconditions,
+    # not post-request decoration. Validate them before opening the systemd
+    # credential; build() repeats the stable Git pin immediately before fetch.
+    option_oi.read_pinned_option_oi_sources(root, pinned_commit=commit)
     bearer_token = _read_systemd_bearer_token()
     bundle = option_oi.build_current_spy_option_oi_observation(
         root,
@@ -247,10 +258,20 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    result = capture_current_option_oi_availability(
-        args.repository_root,
-        store_root=args.store_root,
-    )
+    try:
+        result = capture_current_option_oi_availability(
+            args.repository_root,
+            store_root=args.store_root,
+        )
+    except (
+        MarketMemoryOptionOiCaptureCliError,
+        option_oi.MarketMemoryOptionOiObservationError,
+        option_oi_store.MarketMemoryOptionOiStoreError,
+    ):
+        # The process has handled a bearer credential. Never let a nested
+        # transport/parser cause or hostile provider byte reach journald.
+        print("option-OI canary capture failed closed", file=sys.stderr)
+        return 1
     print(
         json.dumps(
             result,

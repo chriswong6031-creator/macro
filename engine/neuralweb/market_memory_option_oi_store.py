@@ -185,6 +185,14 @@ def _canonical_bytes(value: object) -> bytes:
         ) from exc
 
 
+def _json_type_strict_equal(value: object, expected: object) -> bool:
+    """Compare JSON values without Python's bool/int equality aliasing."""
+
+    if isinstance(expected, Mapping):
+        expected = dict(expected)
+    return _canonical_bytes(value) == _canonical_bytes(expected)
+
+
 def _digest(body: bytes) -> str:
     return sha256(body).hexdigest()
 
@@ -830,7 +838,7 @@ def _validate_manifest(value: Mapping[str, Any]) -> dict[str, Any]:
         "authority": dict(_AUTHORITY_V1),
     }
     for field, wanted in expected.items():
-        if clean.get(field) != wanted:
+        if not _json_type_strict_equal(clean.get(field), wanted):
             raise MarketMemoryOptionOiStoreError(f"actual-output store {field} drift")
     if type(clean.get("nonce")) is not str or not re.fullmatch(
         r"[a-f0-9]{32}", clean["nonce"]
@@ -1433,11 +1441,11 @@ def _validate_prepared(
         raise MarketMemoryOptionOiStoreError(
             "actual-output prepared observation predates availability"
         )
-    if clean.get("evidence_policy") != _EVIDENCE_POLICY_V1:
+    if not _json_type_strict_equal(clean.get("evidence_policy"), _EVIDENCE_POLICY_V1):
         raise MarketMemoryOptionOiStoreError(
             "actual-output prepared evidence policy drift"
         )
-    if clean.get("authority") != _AUTHORITY_V1:
+    if not _json_type_strict_equal(clean.get("authority"), _AUTHORITY_V1):
         raise MarketMemoryOptionOiStoreError("actual-output prepared authority drift")
     core = {
         "profile": STORE_PROFILE,
@@ -1752,7 +1760,7 @@ def _validate_receipt(
         raise MarketMemoryOptionOiStoreError(
             "actual-output receipt observation predates availability"
         )
-    if clean.get("completeness") != _COMPLETENESS_V1:
+    if not _json_type_strict_equal(clean.get("completeness"), _COMPLETENESS_V1):
         raise MarketMemoryOptionOiStoreError("actual-output receipt completeness drift")
     if clean.get("mode") != "private_future_only_source_availability":
         raise MarketMemoryOptionOiStoreError("actual-output receipt mode drift")
@@ -1760,11 +1768,11 @@ def _validate_receipt(
         raise MarketMemoryOptionOiStoreError(
             "actual-output receipt must assert its source-availability capture"
         )
-    if clean.get("evidence_policy") != _EVIDENCE_POLICY_V1:
+    if not _json_type_strict_equal(clean.get("evidence_policy"), _EVIDENCE_POLICY_V1):
         raise MarketMemoryOptionOiStoreError(
             "actual-output receipt evidence policy drift"
         )
-    if clean.get("authority") != _AUTHORITY_V1:
+    if not _json_type_strict_equal(clean.get("authority"), _AUTHORITY_V1):
         raise MarketMemoryOptionOiStoreError("actual-output receipt authority drift")
     capture_id = clean.get("capture_id")
     if type(capture_id) is not str or not _CAPTURE_ID.fullmatch(capture_id):

@@ -1,5 +1,7 @@
 [Unit]
 Description=Run the bounded Market Memory option-OI availability canary on weekdays
+ConditionPathExists=/run/macro-api-market-memory-options-deny.ready
+ConditionPathExists=/run/macro-market-memory-options-reciprocal-deny.ready
 
 [Timer]
 # This is an operational retry cadence only.  It is not evidence of the

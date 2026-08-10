@@ -1059,6 +1059,69 @@ execution, training, and promotion remain disconnected and false. Historical
 R2 rows only support the current endpoint calculation; they are not admitted
 as historical operational observations.
 
+### 11.0.6 W1B.5 private option-OI source-availability canary
+
+W1B.5 deliberately stops before building an options state plane. It makes one
+credentialed request to the fixed Massive SPY option-chain snapshot URL with
+`limit=250`, preserves the exact first-page response privately, and follows no
+continuation. The projection exposes only bounded result, unique-vendor-ticker,
+and OI-field-presence counts plus the fact that a continuation URL was present.
+It does not expose tickers or OI values. `page_complete=true` means only that
+the one response body passed its local contract; `chain_complete=false`,
+`contract_universe_complete=false`, `atomic_chain_snapshot_verified=false`, and
+`intentionally_bounded=true` are permanent v1 limits. Omitted contracts are
+never zero, and this lane cannot compute totals, surfaces, GEX, or a replay
+feature.
+
+Massive documents the field qualitatively as open interest held at the end of
+the last trading day, but this endpoint supplies no authenticated measurement
+date, publication instant, SLA, total count, or atomic snapshot token. The
+response cannot be backdated through a market calendar. `available_at` is the
+exact response-body completion clock; the private writer samples and seals a
+distinct `first_observed_at` only after every exact source body is durable. Both
+remain quality-degraded source-availability evidence, not a dated EOD OI state.
+Receipts integrity-bind the HTTPS payload and validate its local source
+contract; `provider_response_signed=false` prevents either fact from becoming a
+provider-signature claim.
+Vendor option tickers are checked only for the requested SPY source boundary
+and retained inside raw CAS. Permanent OCC identity, adjustment lineage,
+deliverables, and multiplier remain unresolved; no suffix or assumed multiplier
+is promoted into an identity claim.
+
+The append-only store lives at the disjoint
+`/var/lib/macro-market-memory-options/options-v1` profile. New attempts persist
+the exact response/config/entitlement bodies before sampling the store clock,
+then create a recoverable prepared record; immutable receipts and cumulative
+generation precede HEAD. On process or power loss, the sole writer scans
+bounded prepared records and resumes from CAS before opening the credential or
+performing another request. Scratch writes are isolated from the canonical
+prepared scan, strictly bounded, and safely cleaned under the writer lock.
+
+The networked oneshot runs as a dedicated non-login identity, receives one
+fixed systemd credential, has no application-environment or argv key fallback,
+and writes only the disjoint mode-0700 profile. `macro-api` and all existing
+Market Memory writers hide both the option root and credential source; the
+option writer reciprocally hides every other Market Memory root and reviewed
+application-secret path. These mount denies are accidental-path isolation
+inside the legacy root API trust domain, not a claim that they contain a
+compromised root process. Deployment creates only empty root-owned deny anchors
+before restart, then must prove a new `macro-api` PID under those non-optional
+mounts before it creates the service-writable profile, rebinds the credential,
+starts the writer, or enables the nonpersistent weekday timer. The API runtime
+receipt seals the exact MainPID and systemd InvocationID; a separate reciprocal
+receipt binds the stop-then-exact-load transition for all five service/timer
+pairs. Both timer and oneshot require those receipts, and the oneshot rechecks
+them plus effective unit/drop-in state before every request, so a reboot-cleared
+`/run` or an unreviewed restart cannot start the lane before re-attestation.
+
+Every action-authority bit remains zero or false; `context_only=true` is the
+restrictive context flag. No public/API publication, trusted-context, replay,
+options-episode, outcome, ranking, gating, sizing, trading, execution,
+training, or promotion consumer exists. A full chain, reference
+contract join, deliverable lineage, and independently supportable point-in-time
+options/OI plane remain W3 work; a stable or repeated first page cannot prove
+vendor-wide atomic completeness.
+
 ### 11.1 File ownership
 
 Existing/frozen now:

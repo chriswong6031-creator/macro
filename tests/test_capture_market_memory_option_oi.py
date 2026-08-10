@@ -157,6 +157,10 @@ def test_capture_wrapper_pins_git_uses_token_once_and_validates_unresolved_root(
     monkeypatch.setattr(cli, "_repository_commit", lambda root: commit)
     monkeypatch.setattr(cli, "_read_systemd_bearer_token", lambda: TOKEN)
 
+    def read_sources(root: Path, *, pinned_commit: str) -> SimpleNamespace:
+        calls.append(("read_sources", root, pinned_commit))
+        return SimpleNamespace(pinned_commit=pinned_commit)
+
     def build(root: Path, *, pinned_commit: str, bearer_token: str) -> SimpleNamespace:
         calls.append(("build", root, pinned_commit, bearer_token))
         return bundle
@@ -175,6 +179,7 @@ def test_capture_wrapper_pins_git_uses_token_once_and_validates_unresolved_root(
         return ()
 
     monkeypatch.setattr(cli.option_oi, "build_current_spy_option_oi_observation", build)
+    monkeypatch.setattr(cli.option_oi, "read_pinned_option_oi_sources", read_sources)
     monkeypatch.setattr(cli.option_oi_store, "validate_option_oi_store_root", validate)
     monkeypatch.setattr(
         cli.option_oi_store, "resume_pending_option_oi_captures", resume
@@ -189,6 +194,7 @@ def test_capture_wrapper_pins_git_uses_token_once_and_validates_unresolved_root(
     assert calls == [
         ("validate", store, repository.resolve()),
         ("resume", store.resolve()),
+        ("read_sources", repository.resolve(), commit),
         ("build", repository.resolve(), commit, TOKEN),
         ("capture", store.resolve(), bundle),
     ]
@@ -322,6 +328,26 @@ def test_cli_prints_one_finite_canonical_private_receipt(
     assert json.loads(body) == expected
 
 
+def test_cli_sanitizes_nested_credential_bearing_failures(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail(*_args: object, **_kwargs: object) -> dict:
+        try:
+            raise RuntimeError(f"transport echoed Bearer {TOKEN}")
+        except RuntimeError as cause:
+            raise cli.option_oi.MarketMemoryOptionOiObservationError(
+                "explicit-credential option-OI request failed"
+            ) from cause
+
+    monkeypatch.setattr(cli, "capture_current_option_oi_availability", fail)
+
+    assert cli.main(["--repository-root", "/tmp/reviewed"]) == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "option-OI canary capture failed closed\n"
+    assert TOKEN not in captured.err
+
+
 def test_repository_commit_rejects_noncanonical_git_output(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -340,16 +366,18 @@ def test_repository_commit_rejects_noncanonical_git_output(
 def test_repository_commit_scopes_git_safe_directory_to_the_exact_checkout(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    calls: list[list[str]] = []
+    calls: list[tuple[list[str], dict[str, object]]] = []
 
     def run(args: list[str], **kwargs: object) -> SimpleNamespace:
-        calls.append(args)
+        calls.append((args, kwargs))
         return SimpleNamespace(stdout="a" * 40 + "\n")
 
     monkeypatch.setattr(cli.subprocess, "run", run)
+    monkeypatch.setenv("GIT_DIR", "/foreign/repository/.git")
+    monkeypatch.setenv("GIT_WORK_TREE", "/foreign/repository")
 
     assert cli._repository_commit(tmp_path) == "a" * 40
-    assert calls == [
+    assert [call[0] for call in calls] == [
         [
             "git",
             "-c",
@@ -361,6 +389,9 @@ def test_repository_commit_scopes_git_safe_directory_to_the_exact_checkout(
             "HEAD^{commit}",
         ]
     ]
+    git_env = calls[0][1]["env"]
+    assert isinstance(git_env, dict)
+    assert not any(key.startswith("GIT_") for key in git_env)
 
 
 def test_production_cli_exposes_no_source_scope_or_credential_override() -> None:

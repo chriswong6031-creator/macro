@@ -17,6 +17,7 @@ bodies.  ``observed_at`` belongs to a later private store boundary.
 
 from __future__ import annotations
 
+import base64
 import copy
 import hashlib
 import json
@@ -28,6 +29,7 @@ import subprocess
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from os import environ as _process_environment
 from pathlib import Path
 from typing import Any, NoReturn
 from urllib.parse import parse_qsl, quote, quote_plus, unquote, unquote_plus, urlsplit
@@ -343,7 +345,9 @@ def _reject_duplicate_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for key, value in pairs:
         if key in result:
-            raise ValueError(f"duplicate JSON key {key!r}")
+            # Never echo a decoded key. A hostile response can spell the bearer
+            # token with JSON escapes and otherwise smuggle it into a traceback.
+            raise ValueError("duplicate JSON key")
         result[key] = value
     return result
 
@@ -405,10 +409,10 @@ def _strict_json_object(body: bytes, *, label: str) -> dict[str, Any]:
         ValueError,
         OverflowError,
         RecursionError,
-    ) as exc:
+    ):
         raise MarketMemoryOptionOiObservationError(
             f"{label} must be strict finite UTF-8 JSON"
-        ) from exc
+        ) from None
     _validate_json_shape(value)
     if type(value) is not dict:
         raise MarketMemoryOptionOiObservationError(f"{label} must be a JSON object")
@@ -444,6 +448,10 @@ def _credential_needles(bearer_token: str | None) -> tuple[bytes, ...]:
         b"Bearer " + raw,
         quote(bearer_token, safe="").encode("ascii"),
         quote_plus(bearer_token, safe="").encode("ascii"),
+        base64.b64encode(raw),
+        base64.urlsafe_b64encode(raw),
+        base64.b64encode(raw).rstrip(b"="),
+        base64.urlsafe_b64encode(raw).rstrip(b"="),
     }
     return tuple(sorted(values, key=lambda item: (len(item), item), reverse=True))
 
@@ -517,7 +525,20 @@ def _reject_decoded_json_credentials(
         elif type(item) is list:
             stack.extend(item)
         elif type(item) is str:
-            for decoded in {item, unquote(item), unquote_plus(item)}:
+            decoded_values = {item}
+            frontier = {item}
+            for _ in range(4):
+                expanded = {
+                    decoded
+                    for candidate in frontier
+                    for decoded in (unquote(candidate), unquote_plus(candidate))
+                }
+                expanded -= decoded_values
+                if not expanded:
+                    break
+                decoded_values.update(expanded)
+                frontier = expanded
+            for decoded in decoded_values:
                 _reject_credential_material(
                     decoded,
                     label="decoded response JSON",
@@ -693,10 +714,10 @@ def _default_fetcher(
             )
     except MarketMemoryOptionOiObservationError:
         raise
-    except (OSError, requests.RequestException) as exc:
+    except (OSError, requests.RequestException):
         raise MarketMemoryOptionOiObservationError(
             "explicit-credential option-OI request failed"
-        ) from exc
+        ) from None
 
 
 Fetcher = Callable[[str, str, Mapping[str, str]], HttpResponse]
@@ -721,10 +742,10 @@ def fetch_current_spy_option_oi_response(
         response = transport("GET", SOURCE_URL, headers)
     except MarketMemoryOptionOiObservationError:
         raise
-    except Exception as exc:
+    except Exception:  # noqa: BLE001 - sanitize arbitrary injected transports
         raise MarketMemoryOptionOiObservationError(
             "explicit-credential option-OI request failed"
-        ) from exc
+        ) from None
     if type(response) is not HttpResponse:
         raise MarketMemoryOptionOiObservationError(
             "option-OI fetcher must return the exact HttpResponse boundary"
@@ -770,6 +791,11 @@ def fetch_current_spy_option_oi_response(
 
 
 def _git(root: Path, *args: str, text: bool = False) -> bytes | str:
+    git_env = {
+        key: value
+        for key, value in _process_environment.items()
+        if not key.startswith("GIT_")
+    }
     try:
         result = subprocess.run(
             [
@@ -784,6 +810,7 @@ def _git(root: Path, *args: str, text: bool = False) -> bytes | str:
             capture_output=True,
             text=text,
             timeout=30,
+            env=git_env,
         )
     except (OSError, subprocess.SubprocessError) as exc:
         raise MarketMemoryOptionOiObservationError(
@@ -1281,13 +1308,13 @@ def build_current_spy_option_oi_observation(
 ) -> OptionOiObservationBundle:
     """Fetch one page, pin reviewed Git inputs, and build the detached bundle."""
 
-    fetched = fetch_current_spy_option_oi_response(
-        bearer_token=bearer_token,
-        fetcher=fetcher,
-    )
     sources = read_pinned_option_oi_sources(
         repository_root,
         pinned_commit=pinned_commit,
+    )
+    fetched = fetch_current_spy_option_oi_response(
+        bearer_token=bearer_token,
+        fetcher=fetcher,
     )
     bundle = project_current_spy_option_oi_observation(
         PinnedOptionOiInputs(

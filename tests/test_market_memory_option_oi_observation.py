@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import base64
 import copy
 import hashlib
 import io
 import json
 import subprocess
+import traceback
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Self
@@ -299,6 +301,18 @@ def test_fetcher_rejects_token_bytes_in_body_url_and_headers() -> None:
         _canonical({**_payload(), "message": TOKEN}).replace(
             b"unit-secret-token-123456", b"unit-secret-tok%65n-123456"
         ),
+        _canonical(
+            {
+                **_payload(),
+                "message": "".join(f"%25{ord(char):02X}" for char in TOKEN),
+            }
+        ),
+        _canonical(
+            {
+                **_payload(),
+                "message": base64.urlsafe_b64encode(TOKEN.encode()).decode(),
+            }
+        ),
     ),
 )
 def test_fetcher_rejects_json_and_percent_escaped_credential_material(
@@ -546,6 +560,42 @@ def test_projection_rejects_malformed_duplicate_and_nonfinite_json(body: bytes) 
         )
 
 
+def test_duplicate_escaped_credential_key_never_appears_in_traceback() -> None:
+    escaped_token = TOKEN.replace("e", r"\u0065")
+    body = f'{{"{escaped_token}":1,"{escaped_token}":2}}'.encode()
+
+    try:
+        option_oi.project_current_spy_option_oi_observation(
+            _inputs(fetched=_fetched(body=body))
+        )
+    except option_oi.MarketMemoryOptionOiObservationError as exc:
+        rendered = "".join(traceback.format_exception(exc))
+        assert TOKEN not in rendered
+        assert exc.__cause__ is None
+    else:
+        raise AssertionError("duplicate decoded credential key was accepted")
+
+
+def test_transport_exception_cannot_echo_authorization_in_traceback() -> None:
+    def hostile_transport(
+        _method: str, _url: str, headers: dict[str, str]
+    ) -> option_oi.HttpResponse:
+        raise RuntimeError(f"provider failure for {headers['Authorization']}")
+
+    try:
+        option_oi.fetch_current_spy_option_oi_response(
+            bearer_token=TOKEN,
+            fetcher=hostile_transport,
+        )
+    except option_oi.MarketMemoryOptionOiObservationError as exc:
+        rendered = "".join(traceback.format_exception(exc))
+        assert TOKEN not in rendered
+        assert "Authorization" not in rendered
+        assert exc.__cause__ is None
+    else:
+        raise AssertionError("hostile transport exception was accepted")
+
+
 def test_projection_rejects_excessive_json_depth() -> None:
     payload = _payload(next_url=...)
     cursor: dict[str, object] = payload
@@ -742,6 +792,37 @@ def test_pinned_sources_bind_exact_current_git_tip(tmp_path: Path) -> None:
         option_oi.read_pinned_option_oi_sources(repository, pinned_commit=commit)
 
 
+def test_source_or_license_drift_fails_before_any_provider_request(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repo"
+    (repository / "config").mkdir(parents=True)
+    (repository / "research/licenses").mkdir(parents=True)
+    (repository / "config/market_memory_option_oi_source.v1.json").write_bytes(
+        CONFIG_PATH.read_bytes()
+    )
+    license_path = repository / "research/licenses/MASSIVE_ENTITLEMENT_RECORD.md"
+    license_path.write_bytes(LICENSE_PATH.read_bytes())
+    _run_git(repository, "init", "-q")
+    _run_git(repository, "config", "user.email", "tests@example.com")
+    _run_git(repository, "config", "user.name", "Tests")
+    _run_git(repository, "add", "config", "research")
+    _run_git(repository, "commit", "-qm", "fixture")
+    commit = _run_git(repository, "rev-parse", "HEAD")
+    license_path.write_text("drifted legal record\n", encoding="utf-8")
+    fetcher = ScriptedFetcher(_http_response())
+
+    with pytest.raises(option_oi.MarketMemoryOptionOiObservationError):
+        option_oi.build_current_spy_option_oi_observation(
+            repository,
+            pinned_commit=commit,
+            bearer_token=TOKEN,
+            fetcher=fetcher,
+        )
+
+    assert fetcher.calls == []
+
+
 def test_git_subprocess_scopes_safe_directory_to_exact_resolved_root(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -759,6 +840,8 @@ def test_git_subprocess_scopes_safe_directory_to_exact_resolved_root(
         return Completed()
 
     monkeypatch.setattr(option_oi.subprocess, "run", fake_run)
+    monkeypatch.setenv("GIT_DIR", "/foreign/repository/.git")
+    monkeypatch.setenv("GIT_WORK_TREE", "/foreign/repository")
 
     output = option_oi._git(repository, "rev-parse", "HEAD", text=True)
 
@@ -773,7 +856,11 @@ def test_git_subprocess_scopes_safe_directory_to_exact_resolved_root(
         "HEAD",
     ]
     assert "safe.directory=*" not in observed["command"]
-    assert observed["kwargs"] == {
+    kwargs = dict(observed["kwargs"])
+    git_env = kwargs.pop("env")
+    assert isinstance(git_env, dict)
+    assert not any(key.startswith("GIT_") for key in git_env)
+    assert kwargs == {
         "check": True,
         "capture_output": True,
         "text": True,

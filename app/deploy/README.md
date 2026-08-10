@@ -75,8 +75,13 @@ parent plus disjoint service-owned mode-0700 profile at
 credential `massive-option-oi-api-key`. The timer remains disabled if that
 credential cannot be safely rebound from existing private operator state, if
 the reviewed units drift, or until a verified `macro-api` PID transition has
-placed the API behind non-optional store and credential deny mounts. Sensitive
-roots are provisioned only after that API fence exists.
+placed the API behind non-optional store and credential deny mounts. The
+runtime receipt binds both MainPID and systemd InvocationID, and the oneshot
+rechecks it plus the exact reciprocal service/timer fragments before each
+request. Sensitive
+service-writable state and the credential file are provisioned only after that
+API fence exists; fresh hosts create only empty root-owned deny-anchor
+directories before the first unit verification/restart.
 
 This is intentionally one first-page source probe—not a complete chain, OI
 surface, GEX builder, replay input, or public/API feature. See

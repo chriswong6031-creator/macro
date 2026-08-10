@@ -508,6 +508,34 @@ def test_tampered_prepared_record_is_rejected(tmp_path: Path) -> None:
         )
 
 
+@pytest.mark.parametrize(
+    ("section", "field", "numeric_value"),
+    (
+        ("authority", "may_trade", 0),
+        ("authority", "context_only", 1),
+        ("evidence_policy", "provider_response_signed", 0),
+        ("evidence_policy", "source_availability_only", 1),
+    ),
+)
+def test_prepared_frozen_booleans_reject_numeric_json_aliases(
+    tmp_path: Path,
+    section: str,
+    field: str,
+    numeric_value: int,
+) -> None:
+    root, stored = _capture(tmp_path)
+    path = root / stored.capture_receipt["prepared_object_key"]
+    prepared = json.loads(path.read_text())
+    prepared[section][field] = numeric_value
+    _write_canonical(path, prepared)
+
+    with pytest.raises(store.MarketMemoryOptionOiStoreError):
+        store.load_option_oi_capture(
+            root,
+            capture_id=stored.capture_receipt["capture_id"],
+        )
+
+
 def test_tampered_head_or_generation_is_rejected(tmp_path: Path) -> None:
     root, _ = _capture(tmp_path)
     head_path = root / "HEAD.json"
