@@ -136,7 +136,6 @@ scripts/build_marketing.py
 scripts/build_markets.py
 scripts/build_masterminds.py
 scripts/build_mechanism_pathways.py
-scripts/build_movers_page.py
 scripts/build_options_command.py
 scripts/build_options_entry_state.py
 scripts/build_options_flow.py

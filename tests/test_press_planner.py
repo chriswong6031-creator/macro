@@ -172,8 +172,8 @@ def test_superseded_staging_record_does_not_block_corrected_revision(tmp_path):
     assert "old-call-read" not in slugs
 
 
-def test_no_gated_url_survives_anywhere_in_the_press_config():
-    """Verified 2026-07-26: each of these answers 302 to /?signin=1."""
+def test_no_non_source_internal_url_survives_anywhere_in_the_press_config():
+    """Gated pages and retired compatibility hops are not press sources."""
     import yaml
 
     raw = (F.REPO / "config" / "press.yml").read_text(encoding="utf-8")

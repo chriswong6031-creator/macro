@@ -34,8 +34,11 @@
 
   ENV FILE:
     Secrets are read from the .env in the deploy worktree (see below).  This
-    lane writes only local parquet (data/chain_snapshots/) — no R2 creds are
-    required for it to run.
+    lane always writes local parquet (data/chain_snapshots/). Canonical config
+    keeps the Light U-CHAIN projection disabled until its M1 rollout gates pass.
+    When explicitly enabled, the standard R2 variables are also required; their
+    absence fails only the post-availability projection, never the completed
+    source receipt.
 
   LOG TAILING:
     tail -f /tmp/chainsnapshots.stdout.log /tmp/chainsnapshots.stderr.log

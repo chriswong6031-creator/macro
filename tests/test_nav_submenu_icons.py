@@ -39,8 +39,8 @@ EXPECTED_ICON_FAMILIES = {
 # (trigger + options.html + gex.html [now carrying the freed submenu-icon-dashboard]
 # + intraday_flow + darkpool + market_structure) — options_screener/flow_desk/
 # flow_leaders leave the flyout (URLs stay live forever with their own banner) and
-# Daily Movers relocates into the United States group (same submenu-icon-stocks,
-# net zero on that family). submenu-icon-leader was flow_leaders' ONLY user
+# Daily Movers relocated into the United States group (same submenu-icon-stocks,
+# net zero on that family at the time). submenu-icon-leader was flow_leaders' ONLY user
 # anywhere in this menu, so it drops out of EXPECTED_ICON_FAMILIES entirely rather
 # than staying in the emitted-minus set below (unlike allocation/bitcoin, which
 # are used elsewhere, just not in THIS rendered menu). Net count verified against
@@ -78,12 +78,13 @@ EXPECTED_ICON_FAMILIES = {
 #
 # This branch and the China consolidation landed against the same 56 and were
 # merged here, so the two deltas COMPOSE (-3 then -1) rather than either count
-# standing alone. 52 is the measured span count of the merged
-# _navlinks.html.j2 — the arithmetic is shown only to make the merge auditable.
+# standing alone. Daily Movers was later consolidated into the stocks hub and
+# removed from navigation, so its one submenu-icon-stocks span takes 52 -> 51;
+# the family remains emitted by every regional Stock Dashboard row.
 EXPECTED_EMITTED_ICON_FAMILIES = EXPECTED_ICON_FAMILIES - {
     "allocation", "bitcoin", "rotation",
 }
-EXPECTED_EMITTED_ICON_COUNT = 52
+EXPECTED_EMITTED_ICON_COUNT = 51
 LEGACY_SUBMENU_MARKS = (
     "📊", "📈", "📶", "🧠", "🧺", "🌀", "💫", "🎛", "📰", "🚨",
     "🧲", "🌊", "🏆", "🌑", "🏗", "📡", "🔥", "🔬", "🛰", "🏛",

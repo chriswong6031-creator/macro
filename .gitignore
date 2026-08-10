@@ -369,6 +369,7 @@ data/live_flow_out/
 
 # U-CHAIN chain-snapshot lane output (~0.4-1 GB/day forward; never committed)
 data/chain_snapshots/
+data/options_structure_intraday_r2/
 
 # W0.2 OHLC store (reproducible from collector + manifest; not committed)
 data/yahoo_ohlc/

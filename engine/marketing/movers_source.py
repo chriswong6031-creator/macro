@@ -74,7 +74,7 @@ sweep: pt_generated=0, pt_dropped=1, reason "tape stale").
 
 So every ROW now carries the stamp of the artifact it actually came from, and the
 payload keeps per-artifact stamps alongside the legacy ``asof`` (still the sp500
-one, because scripts/build_movers_page and engine/press/desk_planner date their
+one, because the stocks-hub movers board and engine/press/desk_planner date their
 S&P claims with it).
 """
 from __future__ import annotations
@@ -316,7 +316,7 @@ def load_movers(root: PathLike) -> dict | None:
         "sp500_tiles": sp500_tiles,
         "theme_tiles": theme_tiles,
         "pack_tiles": pack_tiles,
-        # LEGACY key, deliberately unchanged in meaning: build_movers_page and
+        # LEGACY key, deliberately unchanged in meaning: the stocks hub and
         # press.desk_planner both date their S&P claims with it.
         "asof": sp500_asof,
         "sp500_asof": sp500_asof,

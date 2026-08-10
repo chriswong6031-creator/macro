@@ -27,7 +27,7 @@ _ALREADY_HAD_SEO = {
     "macro.html.j2", "us_stocks.html.j2", "china.html.j2", "hk.html.j2",
     "canada.html.j2", "bonds.html.j2", "forex.html.j2", "cycle.html.j2",
     "commodities.html.j2", "macro_context.html.j2", "market_structure.html.j2",
-    "movers.html.j2", "transmission.html.j2", "china_mechanics.html.j2",
+    "transmission.html.j2", "china_mechanics.html.j2",
     "stage_analysis.html.j2", "china_stocks.html.j2", "hk_stocks.html.j2",
     "confluence_screener.html.j2", "dashboard.html.j2",
 }
@@ -193,6 +193,9 @@ class TestSeoHeadPresence:
 
     def _templates(self) -> list[Path]:
         return _public_page_templates()
+
+    def test_retired_movers_template_is_not_part_of_the_public_estate(self) -> None:
+        assert not (TMPL / "movers.html.j2").exists()
 
     @pytest.mark.parametrize("tmpl", _public_page_templates(), ids=lambda p: p.name)
     def test_includes_seo_head(self, tmpl: Path) -> None:
