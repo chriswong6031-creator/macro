@@ -1,0 +1,50 @@
+{
+  "schema": "market_memory.canary_identity_config.v1",
+  "symbol": "SPY",
+  "subject": {
+    "canonical_key": "US:ETF:SPDR_SP_500_ETF_TRUST",
+    "subject_id": "mmsecurity_5fc37e8db34f74314b654c910ea8bacfa7de8b5d2d067f2e5421c9d5745ceb4c",
+    "instrument_key": "US:ARCX:SPY:USD",
+    "instrument_id": "mmsecurity_6f361f5bad9f06a3b2ff157585d5728f55f77198420959aadd8922d1045c3fea",
+    "identity_version": "mmidentityv_65ec5e55473e953b55fa2d146f40e8b56dfae2e68a3df7423405db1034d16903",
+    "mic": "ARCX",
+    "currency": "USD"
+  },
+  "universe": {
+    "canonical_key": "US_MARKET_CONTEXT_CANARY",
+    "universe_id": "mmuniverse_5f6904b77722f506a8d1d6f283ef69678a1ec7df3b2c1fc25cc1a15a3a4e8e6a",
+    "membership_status": "market_scope"
+  },
+  "calendar": {
+    "canonical_key": "US_CASH_EQUITIES",
+    "calendar_id": "mmcalendar_a102c5367c17f9c0b4df3af5c2826824fc112935ec76e6d18d55833f53644e0c",
+    "market_session": "XNYS_REGULAR",
+    "rules_version": "lib.nyse_calendar.full_day_closures.v1",
+    "coverage": "full_day_closures_only",
+    "quality": {
+      "status": "degraded",
+      "flags": [
+        "partial_coverage"
+      ],
+      "staleness_seconds": 0,
+      "imputed": false
+    }
+  },
+  "authority": {
+    "tier": "display",
+    "horizon_role": "context",
+    "context_only": true,
+    "proposal_weight": 0,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "may_trade": false,
+    "may_originate": false,
+    "may_select_options_candidate": false,
+    "may_execute": false,
+    "may_write_options_episode": false,
+    "may_append_outcome": false,
+    "may_train_prophet": false
+  }
+}

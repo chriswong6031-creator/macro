@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/macro_regime_feature_object.v1.schema.json",
+  "title": "Market Memory immutable macro regime feature object v1",
+  "description": "Exact content-addressed public object referenced by macro.regime_state. Observation quality, authority, and capture clocks remain in the validated packet and trusted capture receipt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "as_of",
+    "transform_version",
+    "source_artifact",
+    "state"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.macro_regime_feature_object.v1"},
+    "as_of": {"$ref": "#/$defs/timestamp"},
+    "transform_version": {
+      "const": "market_memory.macro_regime_transform.v1"
+    },
+    "source_artifact": {"$ref": "#/$defs/sourceArtifact"},
+    "state": {"$ref": "#/$defs/state"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"
+    },
+    "quad": {
+      "enum": ["Q1", "Q2", "Q3", "Q4"]
+    },
+    "nullableQuad": {
+      "oneOf": [
+        {"$ref": "#/$defs/quad"},
+        {"type": "null"}
+      ]
+    },
+    "sourceArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "source_schema_version",
+        "source_asof",
+        "built_at",
+        "raw_sha256",
+        "raw_bytes"
+      ],
+      "properties": {
+        "source_id": {"const": "data.regime.latest"},
+        "source_schema_version": {"const": 1},
+        "source_asof": {"$ref": "#/$defs/date"},
+        "built_at": {"$ref": "#/$defs/timestamp"},
+        "raw_sha256": {"$ref": "#/$defs/sha256"},
+        "raw_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2097152
+        }
+      }
+    },
+    "transitionFlags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "flag_breadth_price",
+        "flag_credit_equity",
+        "flag_ratio_inflection",
+        "flag_inflation_basket",
+        "flag_confidence_decay",
+        "flag_gex",
+        "flag_rotation_persistence"
+      ],
+      "properties": {
+        "flag_breadth_price": {"type": "boolean"},
+        "flag_credit_equity": {"type": "boolean"},
+        "flag_ratio_inflection": {"type": "boolean"},
+        "flag_inflation_basket": {"type": "boolean"},
+        "flag_confidence_decay": {"type": "boolean"},
+        "flag_gex": {"type": "boolean"},
+        "flag_rotation_persistence": {"type": "boolean"}
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quad",
+        "raw_quad",
+        "pending_quad",
+        "pending_days",
+        "pending_need",
+        "growth_score",
+        "inflation_score",
+        "growth_confidence",
+        "inflation_confidence",
+        "confidence",
+        "liquidity_overlay",
+        "cycle_tag",
+        "transition_state",
+        "transition_state_raw",
+        "transition_ratcheted",
+        "transition_dwell_remaining",
+        "transition_flags"
+      ],
+      "properties": {
+        "quad": {"$ref": "#/$defs/quad"},
+        "raw_quad": {"$ref": "#/$defs/nullableQuad"},
+        "pending_quad": {"$ref": "#/$defs/nullableQuad"},
+        "pending_days": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3650
+        },
+        "pending_need": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3650
+        },
+        "growth_score": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "inflation_score": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "growth_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "inflation_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "liquidity_overlay": {
+          "enum": ["expanding", "neutral", "contracting", "unknown"]
+        },
+        "cycle_tag": {"enum": ["early", "mid", "late", "unknown"]},
+        "transition_state": {
+          "enum": ["STABLE", "WEAKENING", "TRANSITIONING", "NEW_REGIME"]
+        },
+        "transition_state_raw": {
+          "enum": ["STABLE", "WEAKENING", "TRANSITIONING", "NEW_REGIME"]
+        },
+        "transition_ratcheted": {"type": "boolean"},
+        "transition_dwell_remaining": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3650
+        },
+        "transition_flags": {"$ref": "#/$defs/transitionFlags"}
+      }
+    }
+  }
+}
