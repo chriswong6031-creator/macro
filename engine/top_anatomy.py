@@ -92,10 +92,13 @@ conservative, documented here, and reported upward rather than re-pinned)
 12. "Controls from other names" excludes any candidate whose BASE TICKER matches
     the case's, not merely its identity segment.
 13. `matched_delta_stats` p-values are two-sided bootstrap p-values from the
-    month-block resample (`2·min(P(median ≤ 0), P(median ≥ 0))`, floored at
-    1/(B+1)) and feed BH-FDR within family. A pre-declared-direction feature must
-    clear its CI on the declared side; an exploratory (direction 0) feature may
-    clear on either side.
+    episode-peak-month block resample (`2·min(P(median ≤ 0), P(median ≥ 0))`,
+    floored at 1/(B+1)) and feed BH-FDR within family. §4.5's aggregation is
+    EPISODE-FIRST: `episode_deltas` collapses an episode's {21,10,5} snapshots to
+    their MEDIAN before anything is pooled, so N is distinct episodes. A Δ exists
+    only where the case and ≥2 controls are finite. A direction-declared feature
+    must show the declared sign; a direction-0 field can only ever be graded
+    `EXPLORATORY-DISCOVERY`, never DETECTION.
 14. `top_ruler` computes each metric per BASE TICKER first and then takes the
     median across tickers (per-name-first, then pooled), so one heavily-fired
     name cannot carry a ruler number.
@@ -104,6 +107,24 @@ conservative, documented here, and reported upward rather than re-pinned)
 16. Where a rung carries no `high`/`low`, true range degrades to
     |c_t − c_{t−1}| rather than dropping the name; where it carries no `open`,
     C5 (`gap_freq21`) is null and counted in coverage.
+17. §3 RAW-LEVEL ELIGIBILITY. The $3 price floor and the $2M median-21d
+    dollar-volume floor read the **raw as-printed** close and close×volume; every
+    window, trigger and feature reads the **repaired** frame. This is not a
+    nicety: `split_adjust` recovers the factor from the FULL series, so a 2025
+    split rescales every 2022 repaired close, and an adjusted-price floor would
+    evict 2022 days on 2025 information. The split-factor STEP DAY is ineligible;
+    the days before it are never retro-removed. Because the repair divides
+    open/high/low/close by the factor and multiplies volume by it, repaired
+    close×volume is invariant, so the liquidity floor reads the same either way —
+    the price floor is where the leak lived.
+18. Every frozen feature is a ratio, a log-difference, an ordinal lag, or a
+    standardized quantity over a window in which the split factor is CONSTANT, so
+    a future split cannot move a past feature value. That is an argument, not a
+    proof, so it is enforced as a hard gate: `tests/test_top_anatomy.py`'s
+    full-series-vs-prefix parity test runs a mid-series split through the real
+    repair path and demands bit-level agreement at d for a feature from every
+    family, and the harness re-checks 3 sampled names per track before any
+    experiment runs.
 """
 from __future__ import annotations
 
@@ -117,11 +138,13 @@ __all__ = [
     "EXT_R126_MIN", "EXT_R63_MIN", "EXT_ATRZ_MIN", "NEAR_HIGH_FRAC", "NEAR_HIGH_LOOKBACK",
     "EPISODE_GAP_MAX", "EPISODE_MIN_EXT_DAYS", "RACE_HORIZON", "RACE_DD_FRAC",
     "RACE_UP_FRAC", "PEAK_BUFFER", "PEAK_SEAL_WINDOW", "CASE_OFFSETS", "MAX_CONTROLS",
+    "MIN_FINITE_CONTROLS", "MIN_EPISODE_MONTHS", "E1B_EMBARGO_SESSIONS",
     "BOOTSTRAP_B", "FDR_Q", "FEATURES", "FEATURE_FAMILY", "FEATURE_DIRECTION",
     "FAMILY_NAMES", "segment_ticker", "identity_segment_bounds", "split_identity_segments",
     "eligibility_mask", "equal_weight_median_index", "extended_mask", "extract_episodes",
     "race_labels", "episode_peaks", "feature_library", "matched_controls",
-    "matched_deltas", "matched_delta_stats", "top_ruler", "bh_fdr",
+    "matched_deltas", "episode_deltas", "matched_delta_stats", "direction_tail",
+    "top_ruler", "bh_fdr",
 ]
 
 # ── frozen construction constants (prereg §3–§5; changing one is a new arm) ───
@@ -143,8 +166,11 @@ PEAK_BUFFER = 63                 # §4.4 peak search runs to episode_end + 63
 PEAK_SEAL_WINDOW = 126           # §4.4 sealing window after the peak
 CASE_OFFSETS = (21, 10, 5)       # §4.5 days_to_peak snapshots
 MAX_CONTROLS = 4                 # §4.5
+MIN_FINITE_CONTROLS = 2          # §4.5 a Δ needs the case + >=2 finite controls
+MIN_EPISODE_MONTHS = 12          # §4.5 registered separation needs >=12 peak-months
 BOOTSTRAP_B = 2000               # §4.5
 FDR_Q = 0.10                     # §0 trial budget
+E1B_EMBARGO_SESSIONS = 250       # §4.7 walk-forward purge = the full label horizon
 AUX_FWD_HORIZONS = (21, 63, 126)  # §4.3 display-grade auxiliaries
 AUX_DD_LEVELS = (0.10, 0.15, 0.30)
 
@@ -387,31 +413,75 @@ def bh_fdr(pvals: Sequence[float]) -> np.ndarray:
 # ══════════════════════════════════════════════════════════════════════════════
 # §3 eligibility · §4.1 extended day
 # ══════════════════════════════════════════════════════════════════════════════
+def _raw_floor_inputs(
+    col: str,
+    c: pd.Series,
+    dollar_vol_df: pd.DataFrame,
+    raw_close_df: pd.DataFrame | None,
+    raw_dollar_vol_df: pd.DataFrame | None,
+    split_day_df: pd.DataFrame | None,
+) -> tuple[pd.Series, pd.Series, pd.Series]:
+    """The three RAW-level §3 floor inputs for one segment: price, $vol, split-step flag.
+
+    §3 pins the price and liquidity floors to the **raw as-printed** prints, not the
+    split-repaired ones. This is the whole point: a 10:1 split in 2025 divides every
+    2022 repaired close by ten, so an adjusted-price floor would retroactively evict
+    2022 days on 2025 information. The repaired frame still drives every window and
+    every feature. When a caller supplies no raw frames (a synthetic panel with no
+    repair applied) the repaired frames stand in — stated, never silent.
+    """
+    def _col(frame: pd.DataFrame | None, default: pd.Series) -> pd.Series:
+        if frame is None or col not in getattr(frame, "columns", ()):
+            return default
+        return pd.to_numeric(frame[col], errors="coerce").reindex(c.index)
+
+    dv_default = (pd.to_numeric(dollar_vol_df[col], errors="coerce").reindex(c.index)
+                  if col in dollar_vol_df.columns else pd.Series(np.nan, index=c.index))
+    raw_c = _col(raw_close_df, c)
+    raw_dv = _col(raw_dollar_vol_df, dv_default)
+    if split_day_df is not None and col in getattr(split_day_df, "columns", ()):
+        step = split_day_df[col].reindex(c.index).fillna(False).astype(bool)
+    else:
+        step = pd.Series(False, index=c.index)
+    return raw_c, raw_dv, step
+
+
 def eligibility_mask(
     close_df: pd.DataFrame,
     dollar_vol_df: pd.DataFrame,
     *,
+    raw_close_df: pd.DataFrame | None = None,
+    raw_dollar_vol_df: pd.DataFrame | None = None,
+    split_day_df: pd.DataFrame | None = None,
     min_close: float = MIN_CLOSE,
     min_dollar_vol: float = MIN_MEDIAN_DVOL21,
     min_prior_sessions: int = MIN_PRIOR_SESSIONS,
 ) -> pd.DataFrame:
     """§3 tradeability floors per (identity segment, day): price, liquidity, history.
 
-    Columns of both frames are IDENTITY SEGMENTS, not raw tickers — each column is
-    compacted to its own bars before any window is taken, so a halted stretch
-    costs sessions rather than silently borrowing a neighbour's.
+    The price and liquidity floors read the **RAW as-printed** close and raw
+    close×volume (§3); the ≥260-prior-session history floor is counted on the
+    segment's own bars. A **split-factor step day is ineligible** — the repair snaps
+    a real price discontinuity and that one bar is not tradeable evidence — while
+    the days BEFORE it are left alone, because removing them would be using a future
+    split to edit the past.
+
+    Columns of every frame are IDENTITY SEGMENTS, not raw tickers: each column is
+    compacted to its own bars before any window is taken, so a halted stretch costs
+    sessions rather than silently borrowing a neighbour's.
     """
     out = pd.DataFrame(False, index=close_df.index, columns=close_df.columns)
     for col in close_df.columns:
         c = _bars(close_df, col)
         if c is None or len(c) <= min_prior_sessions:
             continue
-        dv = pd.to_numeric(dollar_vol_df[col], errors="coerce").reindex(c.index) \
-            if col in dollar_vol_df.columns else pd.Series(np.nan, index=c.index)
-        med_dv = dv.rolling(21, min_periods=21).median()
+        raw_c, raw_dv, step = _raw_floor_inputs(col, c, dollar_vol_df, raw_close_df,
+                                                raw_dollar_vol_df, split_day_df)
+        med_dv = raw_dv.rolling(21, min_periods=21).median()
         pos = np.arange(len(c))
-        ok = (c >= min_close) & (med_dv >= min_dollar_vol) & (pos >= min_prior_sessions)
-        out.loc[c.index[ok.to_numpy()], col] = True
+        ok = ((raw_c >= min_close) & (med_dv >= min_dollar_vol)
+              & (pos >= min_prior_sessions) & (~step))
+        out.loc[c.index[ok.fillna(False).to_numpy()], col] = True
     return out
 
 
@@ -422,6 +492,9 @@ def extended_mask(
     variant: str = "primary",
     high_df: pd.DataFrame | None = None,
     low_df: pd.DataFrame | None = None,
+    raw_close_df: pd.DataFrame | None = None,
+    raw_dollar_vol_df: pd.DataFrame | None = None,
+    split_day_df: pd.DataFrame | None = None,
     min_close: float = MIN_CLOSE,
     min_dollar_vol: float = MIN_MEDIAN_DVOL21,
     min_prior_sessions: int = MIN_PRIOR_SESSIONS,
@@ -431,10 +504,12 @@ def extended_mask(
     """§4.1 EXTENDED days per identity segment — the population everything conditions on.
 
     Primary: ``r126 >= +0.50`` AND ``close >= 0.90 x max(close, trailing 252)`` AND
-    the §3 floors (close >= $3, median 21d dollar volume >= $2M, >= 260 prior
-    sessions inside the segment). The near-high term is the inherited
-    `sector_signals` invariant — "still extended, not already broken" — and it is
-    what keeps this from becoming a breakdown screen.
+    the §3 floors. The trigger and near-high terms read the **repaired** close (they
+    are ratios, so the split factor cancels); the price and liquidity floors read the
+    **raw as-printed** prints and a split-factor step day is ineligible (see
+    `eligibility_mask`). The near-high term is the inherited `sector_signals`
+    invariant — "still extended, not already broken" — and it is what keeps this from
+    becoming a breakdown screen.
 
     Report-only sensitivity arms (no registration claims ride on them):
       ``variant="r63"``  -> ``r63 >= +0.35`` with the same near-high term.
@@ -447,9 +522,9 @@ def extended_mask(
         c = _bars(close_df, col)
         if c is None or len(c) <= min_prior_sessions:
             continue
-        dv = pd.to_numeric(dollar_vol_df[col], errors="coerce").reindex(c.index) \
-            if col in dollar_vol_df.columns else pd.Series(np.nan, index=c.index)
-        med_dv = dv.rolling(21, min_periods=21).median()
+        raw_c, raw_dv, step = _raw_floor_inputs(col, c, dollar_vol_df, raw_close_df,
+                                                raw_dollar_vol_df, split_day_df)
+        med_dv = raw_dv.rolling(21, min_periods=21).median()
         near_high = c >= near_high_frac * c.rolling(near_high_lookback,
                                                     min_periods=near_high_lookback).max()
         if variant == "primary":
@@ -462,9 +537,9 @@ def extended_mask(
             ma200 = c.rolling(200, min_periods=200).mean()
             trig = ((c - ma200) / atr63.replace(0.0, np.nan)) >= EXT_ATRZ_MIN
         pos = np.arange(len(c))
-        ok = (trig.fillna(False) & near_high.fillna(False) & (c >= min_close)
-              & (med_dv >= min_dollar_vol) & (pos >= min_prior_sessions))
-        out.loc[c.index[ok.to_numpy()], col] = True
+        ok = (trig.fillna(False) & near_high.fillna(False) & (raw_c >= min_close)
+              & (med_dv >= min_dollar_vol) & (pos >= min_prior_sessions) & (~step))
+        out.loc[c.index[ok.fillna(False).to_numpy()], col] = True
     return out
 
 
@@ -1047,12 +1122,19 @@ def matched_deltas(
     pairs: pd.DataFrame,
     feature_panel: pd.DataFrame,
     feature_cols: Sequence[str] = FEATURES,
+    *,
+    min_finite_controls: int = MIN_FINITE_CONTROLS,
 ) -> pd.DataFrame:
-    """Per-case matched-set Δ = case value − MEAN of its matched controls (§4.5).
+    """Per-CASE matched-set Δ = case value − mean of its FINITE controls (§4.5).
 
-    ``feature_panel`` is a `feature_library` output keyed by (segment, date). One
-    row per matched case; a feature null on the case OR null across every one of
-    its controls stays null (the coverage is then reported, never filled).
+    §4.5 defines the Δ "only when the case and at least two controls are finite for
+    that feature", so a matched set that survives on a single control is a null, not
+    a thin estimate: one control is a comparison, not a matched set, and averaging
+    it would smuggle a coverage hole in as a measurement. ``feature_panel`` is a
+    `feature_library` output keyed by (segment, date).
+
+    One row per matched case. Episode-first aggregation happens in `episode_deltas`
+    — this frame is the snapshot-level input to it, never the headline.
     """
     if pairs.empty:
         return pd.DataFrame(columns=["case_id", "ticker", "date", *feature_cols])
@@ -1071,7 +1153,8 @@ def matched_deltas(
     kv = fp[cols].reindex(ctrl_key).to_numpy(dtype=float)
     ctrl = pd.DataFrame(kv, columns=cols)
     ctrl["case_id"] = p["case_id"].to_numpy()
-    ctrl_mean = ctrl.groupby("case_id", sort=False)[cols].mean()
+    grp = ctrl.groupby("case_id", sort=False)[cols]
+    ctrl_mean, ctrl_n = grp.mean(), grp.count()
 
     case_vals = pd.DataFrame(cv, columns=cols)
     case_vals["case_id"] = p["case_id"].to_numpy()
@@ -1079,9 +1162,52 @@ def matched_deltas(
     case_vals["date"] = p["date"].to_numpy()
     first = case_vals.groupby("case_id", sort=False).first()
     out = first[cols] - ctrl_mean.reindex(first.index)
+    out = out.where(ctrl_n.reindex(first.index) >= min_finite_controls)
     out.insert(0, "date", first["date"])
     out.insert(0, "ticker", first["ticker"])
     return out.reset_index()
+
+
+def episode_deltas(
+    case_deltas: pd.DataFrame,
+    cases: pd.DataFrame,
+    episodes: pd.DataFrame | None = None,
+    feature_cols: Sequence[str] = FEATURES,
+) -> pd.DataFrame:
+    """§4.5 EPISODE-FIRST aggregation — the headline unit is the episode, not the snapshot.
+
+    Each TOPPED episode contributes up to three snapshots (`days_to_peak ∈ {21,10,5}`),
+    and those three are three looks at ONE event. Pooling them as independent cases
+    would inflate N roughly threefold and let a single well-covered episode outvote
+    three thin ones. So the episode's snapshots collapse to their MEDIAN Δ first
+    (§4.5's literal word), and every downstream statistic — median, CI, N — is taken
+    across DISTINCT EPISODES.
+
+    ``cases`` supplies `case_id` → `episode_id`/`ticker`; ``episodes`` supplies each
+    episode's `peak_date`, which becomes the month-block key (§4.5: the primary CI
+    resamples episode-peak calendar-month blocks). Returns one row per episode with
+    `episode_id`, `ticker`, `peak_date`, `n_snapshots`, and the feature Δs.
+    """
+    cols = [c for c in feature_cols if c in case_deltas.columns]
+    empty = pd.DataFrame(columns=["episode_id", "ticker", "peak_date", "date",
+                                  "n_snapshots", *cols])
+    if case_deltas.empty or cases.empty or "episode_id" not in cases.columns:
+        return empty
+    link = cases[["case_id", "episode_id"]].drop_duplicates("case_id")
+    d = case_deltas.merge(link, on="case_id", how="inner")
+    if d.empty:
+        return empty
+    agg = d.groupby("episode_id", sort=False)[cols].median()
+    meta = d.groupby("episode_id", sort=False).agg(ticker=("ticker", "first"),
+                                                   n_snapshots=("case_id", "nunique"),
+                                                   date=("date", "min"))
+    out = meta.join(agg).reset_index()
+    if episodes is not None and not episodes.empty and "peak_date" in episodes.columns:
+        pk = episodes[["episode_id", "peak_date"]].drop_duplicates("episode_id")
+        out = out.merge(pk, on="episode_id", how="left")
+    else:
+        out["peak_date"] = out["date"]
+    return out[["episode_id", "ticker", "peak_date", "date", "n_snapshots", *cols]]
 
 
 def _median_ci(
@@ -1127,29 +1253,38 @@ def matched_delta_stats(
     q_threshold: float = FDR_Q,
     directions: Mapping[str, int] | None = None,
     coverage_floor: float = 0.60,
+    min_blocks: int = MIN_EPISODE_MONTHS,
 ) -> pd.DataFrame:
-    """§4.5 estimator: median matched Δ, month-block CI, ticker-cluster CI, BH-FDR.
+    """§4.5 estimator: median Δ across EPISODES, episode-peak-month CI, BH-FDR.
 
-    Headline = median of the per-case matched Δ. The 95% interval resamples
-    CALENDAR-MONTH BLOCKS of case dates (B=2000), because extended-move tops
-    arrive in market-wide bunches and a per-case interval would overstate
-    precision by roughly the cluster size. The ticker-cluster interval is the
-    report-only robustness arm. Two-sided bootstrap p-values feed BH-FDR WITHIN
-    FAMILY (six families, §4.6). ``separates`` requires the month-block CI to
-    exclude 0 on the PRE-DECLARED side and q <= 0.10; an exploratory feature
-    (direction 0) may clear on either side. A feature under ``coverage_floor`` is
-    marked not-interpretable and never counted as a survivor (house coverage law).
+    Feed this `episode_deltas` output — the unit is the distinct episode. The 95%
+    interval resamples **episode-peak CALENDAR-MONTH blocks** (B=2000), because
+    extended-move tops arrive in market-wide bunches and a per-episode interval
+    would overstate precision by roughly the cluster size. The ticker-cluster
+    interval is the report-only robustness arm. All 36 tests are two-sided; the
+    block-bootstrap sign-tail p-values feed BH-FDR WITHIN FAMILY (six families).
+
+    A registered separation (§4.5) needs ALL of: ≥``min_blocks`` distinct
+    episode-peak months, the 95% block CI excluding 0, BH q ≤ 0.10, coverage at or
+    above the floor, and — where a direction was declared — the observed sign
+    matching it. A direction-0 field can only ever be ``EXPLORATORY-DISCOVERY``: it
+    may be flagged as a discovery-only separator in either direction but can never
+    reach DETECTION grade or carry authority without a fresh confirmatory prereg.
 
     Deterministic in ``seed``. Every row carries its own honest N.
     """
     dirs = dict(FEATURE_DIRECTION if directions is None else directions)
     if deltas.empty:
-        return pd.DataFrame(columns=["feature", "family", "direction", "n_cases",
-                                     "coverage", "median_delta", "ci_lo", "ci_hi",
-                                     "p_value", "q_value", "separates"])
+        return pd.DataFrame(columns=["feature", "family", "direction", "n_episodes",
+                                     "n_blocks", "coverage", "median_delta", "ci_lo",
+                                     "ci_hi", "p_value", "q_value", "separates", "grade"])
     d = deltas.copy()
-    d["date"] = pd.to_datetime(d["date"])
-    month = d["date"].dt.to_period("M").astype(str).to_numpy()
+    d["date"] = pd.to_datetime(d["date"]) if "date" in d.columns else pd.NaT
+    # §4.5: blocks are EPISODE-PEAK months. Falling back to the snapshot date keeps a
+    # caller that hands over raw case-level deltas honest rather than silently wrong.
+    block_src = "peak_date" if "peak_date" in d.columns and d["peak_date"].notna().any() \
+        else "date"
+    month = pd.to_datetime(d[block_src]).dt.to_period("M").astype(str).to_numpy()
     tick = d["ticker"].astype(str).to_numpy()
     rows = []
     n_all = len(d)
@@ -1165,12 +1300,14 @@ def matched_delta_stats(
         rng2 = np.random.default_rng(seed + 1000 * k_feat + 500_000)
         tlo, thi, tp, _ = _median_ci(vals, tick, b=b, rng=rng2)
         med = float(np.nanmedian(vals)) if np.isfinite(vals).any() else float("nan")
+        n_blocks = int(len(np.unique(month[np.isfinite(vals)])))
         rows.append({
             "feature": feat, "family": FEATURE_FAMILY.get(feat, feat[0]),
-            "direction": int(dirs.get(feat, 0)), "n_cases": n, "coverage": cov,
-            "median_delta": med, "ci_lo": lo, "ci_hi": hi, "p_value": p,
-            "ticker_ci_lo": tlo, "ticker_ci_hi": thi, "ticker_p_value": tp,
-            "interpretable": bool(cov >= coverage_floor),
+            "direction": int(dirs.get(feat, 0)), "n_episodes": n, "n_blocks": n_blocks,
+            "coverage": cov, "median_delta": med, "ci_lo": lo, "ci_hi": hi,
+            "p_value": p, "ticker_ci_lo": tlo, "ticker_ci_hi": thi,
+            "ticker_p_value": tp, "interpretable": bool(cov >= coverage_floor),
+            "block_key": block_src,
         })
     out = pd.DataFrame(rows)
     if out.empty:
@@ -1178,16 +1315,34 @@ def matched_delta_stats(
     out["q_value"] = np.nan
     for fam, g in out.groupby("family", sort=False):
         out.loc[g.index, "q_value"] = bh_fdr(g["p_value"].to_numpy(dtype=float))
-    sign_ok = np.where(
-        out["direction"] > 0, out["ci_lo"] > 0,
-        np.where(out["direction"] < 0, out["ci_hi"] < 0,
-                 (out["ci_lo"] > 0) | (out["ci_hi"] < 0)))
-    out["separates"] = (pd.Series(sign_ok, index=out.index)
+    ci_excludes_zero = (out["ci_lo"] > 0) | (out["ci_hi"] < 0)
+    sign_ok = np.where(out["direction"] > 0, out["median_delta"] > 0,
+                       np.where(out["direction"] < 0, out["median_delta"] < 0, True))
+    out["separates"] = (ci_excludes_zero
+                        & pd.Series(sign_ok, index=out.index)
                         & (out["q_value"] <= q_threshold)
-                        & out["interpretable"]).astype(bool)
+                        & out["interpretable"]
+                        & (out["n_blocks"] >= min_blocks)).astype(bool)
+    out["grade"] = np.where(~out["separates"], "",
+                            np.where(out["direction"] != 0, "REGISTERED",
+                                     "EXPLORATORY-DISCOVERY"))
     out["ticker_ci_agrees"] = np.where(
         out["median_delta"] > 0, out["ticker_ci_lo"] > 0, out["ticker_ci_hi"] < 0)
     return out.sort_values(["family", "feature"], ignore_index=True)
+
+
+def direction_tail(direction: int, observed_median: float = float("nan")) -> float:
+    """The direction-aligned control-tail quantile (§2, §4.8).
+
+    P90 when a higher value is the risk side, P10 when a lower value is. A direction
+    -0 (exploratory) field has no declared risk side, so the OBSERVED sign of its
+    matched Δ picks the tail — printed, and discovery-only either way.
+    """
+    if direction > 0:
+        return 0.90
+    if direction < 0:
+        return 0.10
+    return 0.10 if (np.isfinite(observed_median) and observed_median < 0) else 0.90
 
 
 # ══════════════════════════════════════════════════════════════════════════════

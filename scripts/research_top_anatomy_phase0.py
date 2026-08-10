@@ -62,12 +62,18 @@ from scripts.replay_standout_pipeline import split_adjust  # noqa: E402
 
 FAMILY = "top_anatomy_p0"
 CACHE_SUBDIR = "research/top_anatomy_p0"
-W_PANEL_COLS = ("close", "open", "high", "low", "volume")
+#: `raw_close`/`raw_dvol` carry the AS-PRINTED prints the §3 floors are evaluated on;
+#: `split_day` flags the factor step day (ineligible). Everything else is repaired.
+W_PANEL_COLS = ("close", "open", "high", "low", "volume", "raw_close", "raw_dvol",
+                "split_day")
 D_START = "1997-01-01"
 SAMPLE_EVERY = 5                      # 1-in-5 systematic sample of all EXT days
-E2_BUCKETS = ((-63, -22), (-21, -6), (-5, -1), (0, 5))
-E2_LABELS = {(-63, -22): "EARLY", (-21, -6): "MID", (-5, -1): "LATE",
-             (0, 5): "POST-TOP CONFIRMATION"}
+#: §4.8 windows, stated POSITIVE-BEFORE-PEAK: days_to_peak = peak_date − d.
+E2_BUCKETS = ((22, 63), (6, 21), (1, 5), (-5, 0))
+E2_LABELS = {(22, 63): "EARLY", (6, 21): "MID", (1, 5): "LATE",
+             (-5, 0): "POST-TOP CONFIRMATION"}
+PARITY_SAMPLE_NAMES = 3               # §3 hard pre-run gate, per track
+PARITY_TOLERANCE = 1e-9
 W_ERAS = (("2021H2-2022", "2021-07-01", "2022-12-31"),
           ("2023-2024", "2023-01-01", "2024-12-31"),
           ("2025-2026", "2025-01-01", "2099-12-31"))
@@ -94,6 +100,34 @@ def _wide(segments: dict[str, pd.DataFrame], col: str) -> pd.DataFrame:
     return pd.DataFrame(have).sort_index() if have else pd.DataFrame()
 
 
+def repair_bars(df: pd.DataFrame) -> pd.DataFrame:
+    """THE repair path: split-repair one ticker's RAW bars, carrying the factor to all legs.
+
+    `split_adjust` recovers a share-split factor from the close series; §3 requires
+    it to be carried to **open/high/low/close by DIVISION and to volume by
+    MULTIPLICATION**, so repaired close×volume is invariant across the repair and a
+    liquidity floor cannot move because a name split. The as-printed `raw_close` and
+    `raw_dvol` ride along because the §3 price/liquidity floors are evaluated on the
+    RAW prints, and `split_day` marks the factor STEP DAY, which is ineligible.
+
+    This is the single function both `build_panel_w` and the full-series-vs-prefix
+    parity gate call — a parity test against a re-implementation of the repair would
+    prove nothing about the repair the study actually runs.
+    """
+    px = pd.to_numeric(df["close"], errors="coerce").dropna()
+    factor = (px / split_adjust(px)).reindex(df.index).ffill().bfill()
+    raw_c = pd.to_numeric(df["close"], errors="coerce")
+    raw_v = pd.to_numeric(df["volume"], errors="coerce") if "volume" in df.columns \
+        else pd.Series(np.nan, index=df.index)
+    out = {"close": raw_c / factor, "volume": raw_v * factor,
+           "raw_close": raw_c, "raw_dvol": raw_c * raw_v,
+           "split_day": factor.diff().fillna(0.0).abs() > 1e-9}
+    for c in ("open", "high", "low"):
+        if c in df.columns:
+            out[c] = pd.to_numeric(df[c], errors="coerce") / factor
+    return pd.DataFrame(out).dropna(subset=["close"])
+
+
 def _finish_panel(bars: dict[str, pd.DataFrame], cache: Path, tag: str) -> dict:
     """Identity-segment a per-ticker store, widen it, and cache the frames."""
     calendar = pd.DatetimeIndex(sorted({d for b in bars.values() for d in b.index}))
@@ -106,22 +140,41 @@ def _finish_panel(bars: dict[str, pd.DataFrame], cache: Path, tag: str) -> dict:
     for c in W_PANEL_COLS:
         if not panel[c].empty:
             panel[c] = panel[c].reindex(index=calendar, columns=panel["close"].columns)
+            if c == "split_day":
+                panel[c] = panel[c].fillna(False).astype(bool)
     cache.mkdir(parents=True, exist_ok=True)
     for c, fr in panel.items():
         if not fr.empty:
             fr.to_parquet(cache / f"panel_{c}.parquet")
-    meta = {"n_tickers": len(bars), "n_segments": len(segs), "n_tickers_split": n_split}
+    meta = {"n_tickers": len(bars), "n_segments": len(segs), "n_tickers_split": n_split,
+            "n_split_factor_step_days": (int(panel["split_day"].to_numpy().sum())
+                                         if not panel["split_day"].empty else 0)}
     (cache / "meta.json").write_text(json.dumps(meta, indent=2))
     return {"panel": panel, "meta": meta}
 
 
+#: Legs a cache MUST carry to be usable. `raw_close`/`raw_dvol`/`split_day` are the
+#: §3 floor inputs: a cache written before they existed would silently fall the
+#: floors back to repaired prices — the exact leak §3 closes — so a cache missing
+#: any of them is REBUILT, never partially loaded.
+_REQUIRED_PANEL_LEGS = ("close", "raw_close", "raw_dvol", "split_day")
+
+
 def _load_cached(cache: Path) -> dict | None:
-    if not (cache / "panel_close.parquet").exists() or not (cache / "meta.json").exists():
+    if not (cache / "meta.json").exists():
+        return None
+    missing = [c for c in _REQUIRED_PANEL_LEGS
+               if not (cache / f"panel_{c}.parquet").exists()]
+    if missing:
+        say(f"cache at {cache} predates the raw-eligibility legs ({', '.join(missing)}) "
+            "— rebuilding rather than running the floors on repaired prices")
         return None
     panel = {}
     for c in W_PANEL_COLS:
         p = cache / f"panel_{c}.parquet"
         panel[c] = pd.read_parquet(p) if p.exists() else pd.DataFrame()
+    if not panel["split_day"].empty:
+        panel["split_day"] = panel["split_day"].fillna(False).astype(bool)
     return {"panel": panel, "meta": json.loads((cache / "meta.json").read_text())}
 
 
@@ -161,13 +214,7 @@ def build_panel_w(data_root: Path, cache: Path, *, quick: int | None = None) -> 
         dv21 = (px * vol).rolling(21, min_periods=21).median()
         if not (dv21.max() >= ta.MIN_MEDIAN_DVOL21):
             continue
-        factor = (px / split_adjust(px)).reindex(df.index).ffill().bfill()
-        out = {"close": pd.to_numeric(df["close"], errors="coerce") / factor,
-               "volume": pd.to_numeric(df["volume"], errors="coerce") * factor}
-        for c in ("open", "high", "low"):
-            if c in df.columns:
-                out[c] = pd.to_numeric(df[c], errors="coerce") / factor
-        frame = pd.DataFrame(out).dropna(subset=["close"])
+        frame = repair_bars(df)
         if len(frame) >= 261:
             keep[f.stem] = frame
     say(f"track W: {len(keep)} tickers pass the superset pre-filter")
@@ -227,6 +274,14 @@ def build_panel_d(data_root: Path, cache: Path, *, quick: int | None = None) -> 
             for c in ("open", "high", "low", "volume"):
                 if c in df.columns:
                     out[c] = pd.to_numeric(df[c], errors="coerce")
+            # The D rungs are ALREADY split+dividend adjusted, so there is no repair
+            # to carry and no factor step day: the as-printed leg IS the adjusted
+            # leg. Stated rather than left implicit — a reader must be able to see
+            # that raw-level eligibility means something different on this track.
+            out["raw_close"] = out["close"]
+            out["raw_dvol"] = out["close"] * out.get(
+                "volume", pd.Series(np.nan, index=df.index))
+            out["split_day"] = pd.Series(False, index=df.index)
             frame = pd.DataFrame(out).dropna(subset=["close"])
             if len(frame) >= 261:
                 keep[tk] = frame
@@ -301,36 +356,197 @@ def _describe(x) -> dict:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# §3 hard pre-run gate: a future split may not move a past feature value
+# ══════════════════════════════════════════════════════════════════════════════
+def _parity_side(rep: pd.DataFrame, d: pd.Timestamp, eqw: pd.Series) -> pd.DataFrame:
+    """One side of the parity check: features at d, with the EPISODE anchor rebuilt
+    from that side's own bars and the cross-section held fixed.
+
+    The episode context is rebuilt per side on purpose — an episode-anchored feature
+    (F1/F2/F5) reading a boundary that moved would fail here. The equal-weight index
+    is deliberately NOT rebuilt per side: it compounds the per-day CROSS-SECTIONAL
+    MEDIAN DAILY RETURN over thousands of names, and repairing one name's splits
+    rescales that name's closes by a constant, which leaves its returns — and
+    therefore the index — untouched. Rebuilding it from the single name under test
+    would instead make `rs_line = c / index` a degenerate near-constant whose
+    63-session argmax is decided by float noise, and the gate would fail on E3f/E4f
+    for a reason that has nothing to do with the repair (measured on ABVE, 2026-08).
+    The RS family is still fully exercised: `rs_line` carries the split factor, so a
+    broken carry would still move E5f's log-slope and E3f's lag.
+    """
+    close = pd.DataFrame({"T": rep["close"]})
+    dvol = pd.DataFrame({"T": rep["close"] * rep.get("volume", np.nan)})
+    floors = {"raw_close_df": pd.DataFrame({"T": rep["raw_close"]}),
+              "raw_dollar_vol_df": pd.DataFrame({"T": rep["raw_dvol"]}),
+              "split_day_df": pd.DataFrame({"T": rep["split_day"]})}
+    ext = ta.extended_mask(close, dvol, high_df=pd.DataFrame({"T": rep["high"]})
+                           if "high" in rep else None,
+                           low_df=pd.DataFrame({"T": rep["low"]}) if "low" in rep else None,
+                           **floors)
+    eps = ta.extract_episodes(ext, close)
+    return ta.feature_library({"T": rep}, eqw, {"T": [d]}, episodes=eps)
+
+
+def prefix_parity_report(bars: pd.DataFrame, d: pd.Timestamp,
+                         eqw: pd.Series | None = None) -> pd.DataFrame:
+    """Feature values at d computed from the FULL series vs from a prefix ending at d+1.
+
+    Both sides go through `repair_bars`, the real repair path. The prefix cannot see
+    any split after d+1, so its recovered factor differs from the full series' factor
+    at every bar ≤ d — if a feature value at d moves with it, that feature is reading
+    the future through the repair, and no matched contrast built on it would mean
+    anything. ``eqw`` is the track's cross-section, identical on both sides (see
+    `_parity_side`). Returns one row per feature with both values and their gap.
+    """
+    idx = bars.index
+    pos = int(idx.searchsorted(pd.Timestamp(d)))
+    a = _parity_side(repair_bars(bars), d, eqw)
+    b = _parity_side(repair_bars(bars.iloc[:min(pos + 2, len(idx))]), d, eqw)
+    rows = []
+    for f in ta.FEATURES:
+        va = float(a[f].iloc[0]) if len(a) else float("nan")
+        vb = float(b[f].iloc[0]) if len(b) else float("nan")
+        both_null = not np.isfinite(va) and not np.isfinite(vb)
+        gap = 0.0 if both_null else abs(va - vb)
+        rows.append({"feature": f, "family": ta.FEATURE_FAMILY[f], "full": va,
+                     "prefix": vb, "abs_gap": gap, "null_both": both_null})
+    return pd.DataFrame(rows)
+
+
+def assert_prefix_parity(panel: dict, track: str, eqw: pd.Series, *,
+                         n_names: int = PARITY_SAMPLE_NAMES,
+                         tol: float = PARITY_TOLERANCE) -> dict:
+    """§3 HARD GATE — run the parity check on sampled names and raise before experiments.
+
+    The synthetic version of this lives in `tests/test_top_anatomy.py`; this is the
+    runtime half, so the gate also fires on REAL bars with real vendor splits. It runs
+    before a single label is computed: a repair that leaks the future must stop the
+    run, not appear as a footnote under a result.
+    """
+    close = panel["close"]
+    step = panel.get("split_day")
+    cands = []
+    if step is not None and not step.empty:                 # prefer names that split
+        cands = list(step.columns[step.fillna(False).any().to_numpy()])
+    pool = [c for c in cands if close[c].notna().sum() > 400]
+    pool += [c for c in close.columns if c not in pool and close[c].notna().sum() > 400]
+    checked, worst = [], 0.0
+    for seg in pool[:n_names]:
+        c = close[seg]
+        c = c[c.notna()]
+        bars = pd.DataFrame({
+            "close": panel["raw_close"][seg].reindex(c.index)
+            if not panel.get("raw_close", pd.DataFrame()).empty else c,
+            "volume": (panel["raw_dvol"][seg].reindex(c.index)
+                       / panel["raw_close"][seg].reindex(c.index))
+            if not panel.get("raw_dvol", pd.DataFrame()).empty
+            else pd.Series(np.nan, index=c.index),
+        }).dropna(subset=["close"])
+        if len(bars) < 400:
+            continue
+        d = bars.index[int(len(bars) * 0.7)]
+        rep = prefix_parity_report(bars, d, eqw)
+        bad = rep[(rep["abs_gap"] > tol) & rep["abs_gap"].notna()]
+        worst = max(worst, float(rep["abs_gap"].max(skipna=True) or 0.0))
+        if not bad.empty:
+            raise AssertionError(
+                f"§3 prefix-parity gate FAILED on track {track} segment {seg} at "
+                f"{pd.Timestamp(d).date()}: "
+                + ", ".join(f"{r.feature} full={r.full!r} prefix={r.prefix!r}"
+                            for r in bad.itertuples())
+                + " — a future split is moving a past feature value; stop and fix the "
+                  "repair carry before reading any outcome.")
+        checked.append({"segment": seg, "asof": str(pd.Timestamp(d).date()),
+                        "n_features_compared": int((~rep["null_both"]).sum()),
+                        "max_abs_gap": float(rep["abs_gap"].max())})
+    say(f"[{track}] §3 prefix-parity gate PASSED on {len(checked)} name(s); "
+        f"worst |gap| = {worst:.3g}")
+    return {"passed": True, "tolerance": tol, "n_names_checked": len(checked),
+            "worst_abs_gap": worst, "names": checked}
+
+
+def _instrument_census(panel: dict, ext: pd.DataFrame, elig: pd.DataFrame,
+                       n_files: int) -> dict:
+    """§3 — PRINT the instrument/dead-name census instead of inferring it from a file count."""
+    close = panel["close"]
+    if close.empty:
+        return {"n_files_scanned": n_files, "n_segments": 0}
+    last_day = close.index.max()
+    cutoff = close.index[max(0, len(close.index) - 61)]
+    lasts = close.apply(lambda s: s.last_valid_index())
+    dead = lasts[lasts.notna() & (lasts < cutoff)]
+    dead_with_ext = [s for s in dead.index if s in ext.columns and bool(ext[s].any())]
+    return {
+        "n_files_scanned": int(n_files),
+        "n_tickers_kept": int(len({ta.segment_ticker(c) for c in close.columns})),
+        "n_segments": int(close.shape[1]),
+        "n_segments_ever_eligible": int((elig.sum() > 0).sum()),
+        "n_segments_with_ext": int((ext.sum() > 0).sum()),
+        "last_panel_day": str(last_day.date()),
+        "dead_cutoff_last_bar_before": str(pd.Timestamp(cutoff).date()),
+        "n_segments_candidate_dead": int(len(dead)),
+        "n_candidate_dead_with_ext_day": int(len(dead_with_ext)),
+        "share_candidate_dead": (float(len(dead) / close.shape[1])
+                                 if close.shape[1] else 0.0),
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # the track pipeline
 # ══════════════════════════════════════════════════════════════════════════════
-def run_track(track: str, panel: dict, meta: dict, *, seed: int, quick: bool) -> dict:
+def run_track(track: str, panel: dict, meta: dict, *, seed: int, quick: bool,
+              n_files: int = 0) -> dict:
     """EXT -> episodes -> race -> peaks -> cases/controls -> features -> E1..E4."""
     close = panel["close"]
     volume = panel.get("volume")
     dvol = (close * volume).reindex_like(close) if volume is not None and not volume.empty \
         else pd.DataFrame(np.nan, index=close.index, columns=close.columns)
+    raw_close = panel.get("raw_close")
+    raw_dvol = panel.get("raw_dvol")
+    split_day = panel.get("split_day")
+    floors = {"raw_close_df": raw_close if raw_close is not None and not raw_close.empty
+              else None,
+              "raw_dollar_vol_df": raw_dvol if raw_dvol is not None and not raw_dvol.empty
+              else None,
+              "split_day_df": split_day if split_day is not None and not split_day.empty
+              else None}
     out: dict = {"track": track, "panel": dict(meta)}
     out["panel"].update({
         "n_sessions": int(close.shape[0]), "n_segments": int(close.shape[1]),
         "first_session": str(close.index.min().date()) if len(close) else None,
         "last_session": str(close.index.max().date()) if len(close) else None,
+        "floors_on_raw_prints": floors["raw_close_df"] is not None,
     })
 
-    say(f"[{track}] EXT mask (primary)")
-    ext = ta.extended_mask(close, dvol, high_df=panel.get("high"), low_df=panel.get("low"))
-    elig = ta.eligibility_mask(close, dvol)
+    # §3 eligibility and the PIT cross-section come first — neither is an outcome —
+    # then the HARD GATE, before a single label exists.
+    elig = ta.eligibility_mask(close, dvol, **floors)
+    eqw = ta.equal_weight_median_index(close, elig, min_names=20 if not quick else 1)
+    out["prefix_parity_gate"] = assert_prefix_parity(panel, track, eqw)
+
+    say(f"[{track}] EXT mask (primary; floors on raw prints, split-step days excluded)")
+    ext = ta.extended_mask(close, dvol, high_df=panel.get("high"),
+                           low_df=panel.get("low"), **floors)
     n_ext = int(ext.to_numpy().sum())
     out["ext"] = {"n_ext_days": n_ext,
                   "n_eligible_days": int(elig.to_numpy().sum()),
                   "n_segments_with_ext": int((ext.sum() > 0).sum())}
+    out["census"] = _instrument_census(panel, ext, elig, n_files)
     say(f"[{track}] {n_ext} EXT days on {out['ext']['n_segments_with_ext']} segments")
+    c = out["census"]
+    say(f"[{track}] census: {c.get('n_files_scanned')} files scanned · "
+        f"{c.get('n_tickers_kept')} tickers · {c.get('n_segments')} segments · "
+        f"{c.get('n_segments_ever_eligible')} ever-eligible · "
+        f"{c.get('n_segments_candidate_dead')} candidate-dead (last bar before "
+        f"{c.get('dead_cutoff_last_bar_before')}) · "
+        f"{c.get('n_candidate_dead_with_ext_day')} of those held >=1 EXT day")
 
     say(f"[{track}] sensitivity arms (report-only)")
     out["ext_variants"] = {"primary": n_ext}
     for variant in ("r63", "atrz"):
         try:
-            m = ta.extended_mask(close, dvol, variant=variant,
-                                 high_df=panel.get("high"), low_df=panel.get("low"))
+            m = ta.extended_mask(close, dvol, variant=variant, high_df=panel.get("high"),
+                                 low_df=panel.get("low"), **floors)
             out["ext_variants"][variant] = int(m.to_numpy().sum())
             out["ext_variants"][f"{variant}_overlap_with_primary"] = int(
                 (m & ext).to_numpy().sum())
@@ -429,7 +645,6 @@ def run_track(track: str, panel: dict, meta: dict, *, seed: int, quick: bool) ->
     say(f"[{track}] features on {len(need)} (segment, day) points "
         f"({len(sample)} from the 1-in-{SAMPLE_EVERY} EXT sample)")
 
-    eqw = ta.equal_weight_median_index(close, elig, min_names=20 if not quick else 1)
     bars = _segment_bars(panel, sorted(set(need["segment"])))
     feats = ta.feature_library(bars, eqw, need[["segment", "date"]], episodes=episodes)
     out["feature_coverage"] = {
@@ -438,40 +653,62 @@ def run_track(track: str, panel: dict, meta: dict, *, seed: int, quick: bool) ->
     out["features_below_coverage_floor"] = sorted(
         f for f, c in out["feature_coverage"].items() if c < COVERAGE_FLOOR)
 
-    # ── E1 ───────────────────────────────────────────────────────────────────
-    say(f"[{track}] E1 matched deltas + month-block bootstrap (B={ta.BOOTSTRAP_B})")
-    deltas = ta.matched_deltas(pairs, feats)
-    e1 = ta.matched_delta_stats(deltas, b=ta.BOOTSTRAP_B if not quick else 400, seed=seed,
-                                coverage_floor=COVERAGE_FLOOR)
+    # ── E1 (EPISODE-FIRST, §4.5) ─────────────────────────────────────────────
+    say(f"[{track}] E1 matched deltas -> episode-first aggregation -> "
+        f"episode-peak-month bootstrap (B={ta.BOOTSTRAP_B})")
+    case_deltas = ta.matched_deltas(pairs, feats)
+    ep_deltas = ta.episode_deltas(case_deltas, cases, episodes)
+    e1 = ta.matched_delta_stats(ep_deltas, b=ta.BOOTSTRAP_B if not quick else 400,
+                                seed=seed, coverage_floor=COVERAGE_FLOOR)
+    n_months = (int(pd.to_datetime(ep_deltas["peak_date"]).dt.to_period("M").nunique())
+                if not ep_deltas.empty else 0)
     out["e1"] = {
-        "n_matched_cases": int(len(deltas)),
-        "n_case_episodes": int(cases.loc[cases["case_id"].isin(deltas["case_id"]),
-                                         "episode_id"].nunique()) if not deltas.empty else 0,
+        "aggregation": "episode-first (median over the episode's {21,10,5} snapshots)",
+        "n_case_sets": int(len(case_deltas)),
+        "n_episodes": int(len(ep_deltas)),
+        "n_distinct_peak_months": n_months,
+        "min_peak_months_required": ta.MIN_EPISODE_MONTHS,
+        "min_finite_controls": ta.MIN_FINITE_CONTROLS,
+        "snapshots_per_episode": _describe(ep_deltas["n_snapshots"])
+        if not ep_deltas.empty else _describe([]),
         "table": _records(e1),
         "n_separating": int(e1["separates"].sum()) if not e1.empty else 0,
         "separating": sorted(e1.loc[e1["separates"], "feature"]) if not e1.empty else [],
+        "registered_separating": sorted(e1.loc[e1["grade"] == "REGISTERED", "feature"])
+        if not e1.empty else [],
+        "exploratory_separating": sorted(
+            e1.loc[e1["grade"] == "EXPLORATORY-DISCOVERY", "feature"]) if not e1.empty else [],
         "by_family": ({fam: {"n_tested": int(len(g)), "n_separating": int(g["separates"].sum())}
                        for fam, g in e1.groupby("family")} if not e1.empty else {}),
     }
-    say(f"[{track}] E1: {out['e1']['n_separating']} of {len(ta.FEATURES)} features separate")
+    say(f"[{track}] E1: {out['e1']['n_separating']} of {len(ta.FEATURES)} separate "
+        f"(N = {len(ep_deltas)} episodes / {len(case_deltas)} case-sets, "
+        f"{n_months} peak-months vs the {ta.MIN_EPISODE_MONTHS} required)")
 
     # ── E1b ──────────────────────────────────────────────────────────────────
     say(f"[{track}] E1b pooled AUC increment")
-    out["e1b"] = _e1b(feats, race, episodes, sample, close.index, seed=seed)
+    out["e1b"] = _e1b(feats, race, episodes, sample, close.index, seed=seed, quick=quick)
 
     # ── E2 / E3 / E4 ─────────────────────────────────────────────────────────
     survivors = out["e1"]["separating"]
+    # §2/§4.8: the control tail is DIRECTION-ALIGNED; an exploratory field has no
+    # declared risk side, so its OBSERVED sign picks the tail (discovery-only).
+    obs = ({r["feature"]: r["median_delta"] for r in out["e1"]["table"]}
+           if out["e1"]["table"] else {})
+    grades = ({r["feature"]: r.get("grade", "") for r in out["e1"]["table"]}
+              if out["e1"]["table"] else {})
     say(f"[{track}] E2 lead-time profiles on {len(survivors)} survivor(s)")
-    out["e2"] = _e2(e2_days, pool, feats, survivors, seed=seed, quick=quick)
-    say(f"[{track}] E3 ordering")
-    out["e3"] = _e3(feats, dtp, topped_ids, pool, survivors)
-    say(f"[{track}] E4 era / dollar-volume stability")
-    out["e4"] = _e4(deltas, cases, gates, survivors, W_ERAS if track == "W" else D_ERAS,
+    out["e2"] = _e2(e2_days, pool, feats, survivors, episodes, grades,
                     seed=seed, quick=quick)
+    say(f"[{track}] E3 ordering")
+    out["e3"] = _e3(feats, dtp, topped_ids, pool, survivors, obs)
+    say(f"[{track}] E4 era / dollar-volume stability")
+    out["e4"] = _e4(ep_deltas, gates, cases, survivors,
+                    W_ERAS if track == "W" else D_ERAS, seed=seed, quick=quick)
 
     # ── the ruler (§2) ───────────────────────────────────────────────────────
     say(f"[{track}] top ruler on survivor legs")
-    out["ruler"] = _ruler(feats, ext, episodes, close, pool, survivors)
+    out["ruler"] = _ruler(feats, ext, episodes, close, pool, survivors, obs)
 
     # ── G0.2 + today's tape ──────────────────────────────────────────────────
     out["g0_2_delisting"] = _delisting_check(close, episodes)
@@ -504,27 +741,88 @@ def _e2_case_days(dtp_e1: pd.DataFrame, topped_ids: set) -> pd.DataFrame:
     d = dtp_e1[dtp_e1["episode_id"].isin(topped_ids)].copy()
     if d.empty:
         return d.assign(bucket=None, case_id=None)
-    d["signed"] = -d["days_to_peak"]                  # negative = before the peak
+    # §4.8 windows are stated POSITIVE-BEFORE-PEAK, so the bucket variable IS
+    # days_to_peak (= peak_date − d): +22..+63 EARLY through 0..−5 POST-TOP.
     lab = []
     for lo, hi in E2_BUCKETS:
-        g = d[(d["signed"] >= lo) & (d["signed"] <= hi)].copy()
-        g["bucket"] = f"{lo}..{hi}"
-        lab.append(g.sort_values("signed").groupby("episode_id", as_index=False).head(2))
+        g = d[(d["days_to_peak"] >= lo) & (d["days_to_peak"] <= hi)].copy()
+        g["bucket"] = _bucket_tag(lo, hi)
+        lab.append(g.sort_values("days_to_peak", ascending=False)
+                   .groupby("episode_id", as_index=False).head(2))
     out = pd.concat(lab, ignore_index=True) if lab else d.head(0)
-    out["case_id"] = out["episode_id"] + "@" + out["bucket"] + "@" + out["signed"].astype(str)
+    out["case_id"] = (out["episode_id"] + "@" + out["bucket"] + "@"
+                      + out["days_to_peak"].astype(str))
+    return out
+
+
+def _bucket_tag(lo: int, hi: int) -> str:
+    """`+22..+63` style tag — days BEFORE the peak read positive (§4.8, entry (a))."""
+    return f"{hi:+d}..{lo:+d}" if lo > 0 else f"{hi:+d}..{lo:+d}"
+
+
+def _episode_block_ci(y: np.ndarray, p: np.ndarray, blocks: np.ndarray, auc_fn,
+                      *, b: int, seed: int, paired: np.ndarray | None = None) -> dict:
+    """95% percentile CI for an AUC (and, when `paired` is given, for the ΔAUC).
+
+    Resamples EPISODE blocks with replacement: EXT days inside one episode are the
+    same event looked at repeatedly, so a row-level interval would be a fiction. The
+    ΔAUC uses the SAME draws as the two AUCs, which is what makes it a paired
+    interval rather than two independent ones subtracted.
+    """
+    rng = np.random.default_rng(seed)
+    keys, inv = np.unique(blocks, return_inverse=True)
+    members = [np.flatnonzero(inv == i) for i in range(len(keys))]
+    k = len(members)
+    if k < 5:
+        return {"ci_lo": None, "ci_hi": None, "n_blocks": int(k),
+                "reason": "fewer than 5 episode blocks"}
+    a_draws, d_draws = [], []
+    for _ in range(b):
+        idx = np.concatenate([members[j] for j in rng.integers(0, k, k)])
+        if len(np.unique(y[idx])) < 2:
+            continue
+        a_draws.append(auc_fn(y[idx], p[idx]))
+        if paired is not None:
+            d_draws.append(a_draws[-1] - auc_fn(y[idx], paired[idx]))
+    if len(a_draws) < 50:
+        return {"ci_lo": None, "ci_hi": None, "n_blocks": int(k),
+                "reason": "too few two-class resamples"}
+    lo, hi = np.percentile(a_draws, [2.5, 97.5])
+    out = {"ci_lo": float(lo), "ci_hi": float(hi), "n_blocks": int(k)}
+    if d_draws:
+        dlo, dhi = np.percentile(d_draws, [2.5, 97.5])
+        out["delta_ci_lo"], out["delta_ci_hi"] = float(dlo), float(dhi)
     return out
 
 
 def _e1b(feats: pd.DataFrame, race: pd.DataFrame, episodes: pd.DataFrame,
-        sample: pd.DataFrame, calendar: pd.DatetimeIndex, *, seed: int) -> dict:
-    """§4.7 pooled increment: M0 (r126) vs M1 (+rv63) vs M2 (all 36), two CV schemes.
+        sample: pd.DataFrame, calendar: pd.DatetimeIndex, *, seed: int,
+        quick: bool = False) -> dict:
+    """§4.7 pooled increment: NESTED M0 ⊂ M1 ⊂ M2, two CV schemes, episode-block CIs.
 
-    Fixed L2 logistic (C=1.0) on standardized inputs, no grid, no selection inside
-    folds. CV-A groups by TICKER so no company appears in both arms; CV-B expands by
-    calendar quarter with a 63-session embargo between train end and test start.
-    The claim of interest is AUC(M2) − AUC(M1), sign-consistent across both schemes.
+    M0 = r126 alone. M1 = M0 + the rv63 realized-volatility nuisance control.
+    M2 = M1 + the other 35 frozen features (r126 appears once). The models are
+    NESTED on purpose: the question is what the library adds over extension AND
+    volatility, so M1 is the baseline that must be beaten, not M0.
+
+    Leakage discipline (§4.7): every fold fits its median-imputer and its
+    standardization on TRAINING ROWS ONLY — they live inside the sklearn Pipeline,
+    so a test row can never contribute to its own scaling. No missingness
+    indicators, no full-sample preprocessing, and rows are IMPUTED rather than
+    dropped (dropping every incomplete row is itself a full-sample decision, and it
+    silently deletes the thin-coverage names the study cares about).
+
+    CV-A: 5-fold grouped by RAW TICKER, so every identity segment of a reused ticker
+    stays on one side. CV-B: expanding walk-forward by calendar quarter with a
+    250-SESSION purge between train end and test start — the full race-label
+    horizon, because a training row's label can be resolved by bars up to 250
+    sessions later and anything shorter trains on the test window's own outcome.
+
+    Descriptive: E1b creates no registered test. AUCs and the paired ΔAUC carry
+    episode-block bootstrap CIs.
     """
     try:
+        from sklearn.impute import SimpleImputer
         from sklearn.linear_model import LogisticRegression
         from sklearn.metrics import roc_auc_score
         from sklearn.model_selection import GroupKFold
@@ -541,78 +839,111 @@ def _e1b(feats: pd.DataFrame, race: pd.DataFrame, episodes: pd.DataFrame,
     if d.empty or d["y"].nunique() < 2:
         return {"error": "no two-class EXT-day sample", "n": int(len(d))}
 
-    models = {"M0": ["A3_r126"], "M1": ["A3_r126", "C1_rv21"], "M2": list(ta.FEATURES)}
-    # M1's second leg is rv63; the library carries rv21 and the rv21/rv63 ratio, so
-    # rv63 is reconstructed rather than re-derived from bars.
-    d["_rv63"] = d["C1_rv21"] / d["C2_rv21_over_rv63"].replace(0.0, np.nan)
-    models["M1"] = ["A3_r126", "_rv63"]
+    # rv63 is the §4.7 nuisance control; the library carries rv21 and rv21/rv63, so
+    # it is reconstructed exactly rather than re-derived from bars on a second path.
+    d["N1_rv63"] = d["C1_rv21"] / d["C2_rv21_over_rv63"].replace(0.0, np.nan)
+    m0 = ["A3_r126"]
+    m1 = [*m0, "N1_rv63"]
+    m2 = [*m1, *[f for f in ta.FEATURES if f not in m1]]
+    models = {"M0": m0, "M1": m1, "M2": m2}
 
-    ticker = d["ticker"].astype(str) if "ticker" in d.columns else d["segment"].astype(str)
+    # Episode membership: the block key for every bootstrap and the episode-AUC join.
     ep = episodes[["segment", "start", "end", "episode_id", "outcome"]]
-    out: dict = {"n_rows": int(len(d)), "base_rate_topped": float(d["y"].mean()),
-                 "n_names": int(ticker.nunique()), "models": {}}
+    j = d[["segment", "date"]].reset_index().merge(ep, on="segment", how="left")
+    j = j[(j["date"] >= j["start"]) & (j["date"] <= j["end"])]
+    d["episode_id"] = pd.Series(j.set_index("index")["episode_id"]).reindex(d.index)
+    d["episode_id"] = d["episode_id"].fillna("_" + d["segment"].astype(str))
 
-    def fit_auc(cols: list[str], scheme: str) -> dict:
+    b_boot = 300 if quick else 1000
+    out: dict = {"n_rows": int(len(d)), "base_rate_topped": float(d["y"].mean()),
+                 "n_names": int(d["ticker"].nunique()),
+                 "n_episodes_in_sample": int(d["episode_id"].nunique()),
+                 "nested": "M0 (r126) subset M1 (+rv63) subset M2 (+the other 35)",
+                 "preprocessing": "median-impute + standardize, fit on TRAIN folds only",
+                 "embargo_sessions": ta.E1B_EMBARGO_SESSIONS, "models": {}}
+
+    y_all = d["y"].to_numpy()
+    dates = pd.to_datetime(d["date"]).to_numpy()
+    probs: dict[str, dict[str, np.ndarray]] = {}
+
+    def oof(cols: list[str], scheme: str) -> np.ndarray | str:
+        """Out-of-fold probabilities, or a string reason why there are none."""
         x = d[cols].to_numpy(dtype=float)
-        y = d["y"].to_numpy()
-        ok = np.isfinite(x).all(axis=1)
-        x, y2 = x[ok], y[ok]
-        sub = d[ok]
-        if len(np.unique(y2)) < 2 or len(y2) < 200:
-            return {"auc": None, "n": int(len(y2)), "reason": "too thin"}
-        prob = np.full(len(y2), np.nan)
-        pipe = make_pipeline(StandardScaler(),
-                             LogisticRegression(C=1.0, max_iter=2000, random_state=seed))
+        if len(y_all) < 200:
+            return "too thin"
+        prob = np.full(len(y_all), np.nan)
+        pipe = make_pipeline(
+            SimpleImputer(strategy="median", keep_empty_features=True),
+            StandardScaler(),
+            LogisticRegression(C=1.0, max_iter=2000, random_state=seed))
         if scheme == "grouped":
-            g = sub["ticker"].to_numpy()
+            g = d["ticker"].to_numpy()
             n_split = min(5, len(np.unique(g)))
             if n_split < 2:
-                return {"auc": None, "n": int(len(y2)), "reason": "one group"}
-            for tr, te in GroupKFold(n_splits=n_split).split(x, y2, groups=g):
-                if len(np.unique(y2[tr])) < 2:
+                return "one group"
+            for tr, te in GroupKFold(n_splits=n_split).split(x, y_all, groups=g):
+                if len(np.unique(y_all[tr])) < 2:
                     continue
-                prob[te] = pipe.fit(x[tr], y2[tr]).predict_proba(x[te])[:, 1]
+                prob[te] = pipe.fit(x[tr], y_all[tr]).predict_proba(x[te])[:, 1]
         else:
-            q = pd.PeriodIndex(pd.to_datetime(sub["date"]), freq="Q")
+            q = pd.PeriodIndex(pd.to_datetime(d["date"]), freq="Q")
             uq = sorted(q.unique())
-            dates = pd.to_datetime(sub["date"]).to_numpy()
             for i in range(4, len(uq)):
                 te = np.flatnonzero(q == uq[i])
-                # 63-SESSION embargo, counted on the panel's own trading calendar
-                # (a calendar-day approximation would leak on holiday-dense quarters).
+                # 250-SESSION label purge on the panel's own trading calendar: a
+                # training row's race label can need 250 forward sessions to resolve,
+                # so anything shorter trains on the test window's own outcome.
                 pos = int(calendar.searchsorted(uq[i].start_time))
-                cut = calendar[max(0, pos - 63)]
+                cut = calendar[max(0, pos - ta.E1B_EMBARGO_SESSIONS)]
                 tr = np.flatnonzero(dates < np.datetime64(cut))
-                if len(tr) < 200 or len(te) == 0 or len(np.unique(y2[tr])) < 2:
+                if len(tr) < 200 or len(te) == 0 or len(np.unique(y_all[tr])) < 2:
                     continue
-                prob[te] = pipe.fit(x[tr], y2[tr]).predict_proba(x[te])[:, 1]
-        m = np.isfinite(prob)
-        if m.sum() < 100 or len(np.unique(y2[m])) < 2:
-            return {"auc": None, "n": int(m.sum()), "reason": "no scored fold"}
-        res = {"auc": float(roc_auc_score(y2[m], prob[m])), "n": int(m.sum())}
-        # episode-level AUC: max probability inside an episode vs the episode outcome
-        scored = sub[m].copy()
-        scored["p"] = prob[m]
-        joined = scored.merge(ep, on="segment", how="left")
-        joined = joined[(joined["date"] >= joined["start"]) & (joined["date"] <= joined["end"])]
-        if not joined.empty:
-            agg = joined.groupby("episode_id").agg(p=("p", "max"),
-                                                   outcome=("outcome", "first"))
-            yy = (agg["outcome"] == "TOPPED").astype(int)
-            if yy.nunique() == 2:
-                res["episode_auc"] = float(roc_auc_score(yy, agg["p"]))
-                res["n_episodes"] = int(len(agg))
-        return res
+                prob[te] = pipe.fit(x[tr], y_all[tr]).predict_proba(x[te])[:, 1]
+        return prob
 
     for name, cols in models.items():
         cols = [c for c in cols if c in d.columns]
-        out["models"][name] = {"features": cols,
-                               "grouped": fit_auc(cols, "grouped"),
-                               "walk_forward": fit_auc(cols, "walk_forward")}
+        entry: dict = {"features": cols, "n_features": len(cols)}
+        probs[name] = {}
+        for scheme in ("grouped", "walk_forward"):
+            p = oof(cols, scheme)
+            if isinstance(p, str):
+                entry[scheme] = {"auc": None, "reason": p}
+                continue
+            m = np.isfinite(p)
+            if m.sum() < 100 or len(np.unique(y_all[m])) < 2:
+                entry[scheme] = {"auc": None, "n": int(m.sum()), "reason": "no scored fold"}
+                continue
+            probs[name][scheme] = p
+            res = {"auc": float(roc_auc_score(y_all[m], p[m])), "n": int(m.sum())}
+            res.update(_episode_block_ci(y_all[m], p[m],
+                                         d["episode_id"].to_numpy()[m], roc_auc_score,
+                                         b=b_boot, seed=seed))
+            scored = d[m].copy()
+            scored["p"] = p[m]
+            agg = scored[scored["episode_id"].isin(set(ep["episode_id"]))] \
+                .groupby("episode_id").agg(p=("p", "max"))
+            agg = agg.join(ep.set_index("episode_id")["outcome"], how="inner")
+            if not agg.empty and (agg["outcome"] == "TOPPED").nunique() == 2:
+                res["episode_auc"] = float(
+                    roc_auc_score((agg["outcome"] == "TOPPED").astype(int), agg["p"]))
+                res["n_episodes"] = int(len(agg))
+            entry[scheme] = res
+        out["models"][name] = entry
+
     for scheme in ("grouped", "walk_forward"):
         a2 = out["models"]["M2"][scheme].get("auc")
         a1 = out["models"]["M1"][scheme].get("auc")
         out[f"increment_{scheme}"] = (a2 - a1) if (a2 is not None and a1 is not None) else None
+        p2, p1 = probs["M2"].get(scheme), probs["M1"].get(scheme)
+        if p2 is not None and p1 is not None:
+            m = np.isfinite(p2) & np.isfinite(p1)
+            if m.sum() >= 100:
+                ci = _episode_block_ci(y_all[m], p2[m], d["episode_id"].to_numpy()[m],
+                                       roc_auc_score, b=b_boot, seed=seed + 1,
+                                       paired=p1[m])
+                out[f"increment_{scheme}_ci"] = [ci.get("delta_ci_lo"),
+                                                 ci.get("delta_ci_hi")]
     incs = [out.get("increment_grouped"), out.get("increment_walk_forward")]
     out["sign_consistent"] = (all(i is not None for i in incs)
                               and (incs[0] > 0) == (incs[1] > 0))
@@ -620,47 +951,63 @@ def _e1b(feats: pd.DataFrame, race: pd.DataFrame, episodes: pd.DataFrame,
 
 
 def _e2(e2_days: pd.DataFrame, pool: pd.DataFrame, feats: pd.DataFrame,
-        survivors: list[str], *, seed: int, quick: bool) -> dict:
-    """§4.8 lead-time profile: matched Δ by days_to_peak bucket, with the label.
+        survivors: list[str], episodes: pd.DataFrame, grades: dict, *,
+        seed: int, quick: bool) -> dict:
+    """§4.8 lead-time profile: matched Δ per positive-before-peak window, with the label.
 
-    A survivor is labelled by the EARLIEST bucket whose month-block CI excludes 0;
-    a survivor that separates only in {0..+5} is POST-TOP CONFIRMATION and may
-    never be described as detection (G0.4).
+    Windows are stated POSITIVE-BEFORE-PEAK: EARLY +22..+63, MID +6..+21, LATE
+    +1..+5, POST-TOP CONFIRMATION 0..−5. A survivor takes the EARLIEST pre-peak
+    window whose episode-block CI excludes 0; a survivor that separates only in the
+    last window is POST-TOP CONFIRMATION and may never be described as detection
+    (G0.4). An exploratory field keeps an `EXPLORATORY ` prefix and cannot reach
+    DETECTION grade whatever its lead time.
     """
     if not survivors or e2_days.empty or pool.empty:
-        return {"labels": {}, "buckets": {}, "note": "no E1 survivors to profile"}
-    res: dict = {"buckets": {}, "labels": {}}
+        return {"labels": {}, "buckets": {}, "note": "no E1 survivors to profile",
+                "convention": "positive = sessions BEFORE the peak"}
+    res: dict = {"buckets": {}, "labels": {},
+                 "convention": "positive = sessions BEFORE the peak"}
     for lo, hi in E2_BUCKETS:
-        tag = f"{lo}..{hi}"
+        tag = _bucket_tag(lo, hi)
         sub = e2_days[e2_days["bucket"] == tag]
         if sub.empty:
-            res["buckets"][tag] = {"n_cases": 0, "features": {}}
+            res["buckets"][tag] = {"n_cases": 0, "n_episodes": 0, "table": []}
             continue
         pairs, diag = ta.matched_controls(sub, pool)
-        deltas = ta.matched_deltas(pairs, feats)
-        stats = ta.matched_delta_stats(deltas, survivors,
+        # episode-first here too: a window contributes one row per episode.
+        ep_d = ta.episode_deltas(ta.matched_deltas(pairs, feats), sub, episodes)
+        stats = ta.matched_delta_stats(ep_d, survivors,
                                        b=500 if quick else ta.BOOTSTRAP_B, seed=seed,
                                        coverage_floor=COVERAGE_FLOOR)
         res["buckets"][tag] = {
-            "n_cases": int(diag["n_matched"]),
-            "n_episodes": int(sub["episode_id"].nunique()),
+            "window": E2_LABELS[(lo, hi)], "n_cases": int(diag["n_matched"]),
+            "n_episodes": int(len(ep_d)),
+            "n_episodes_available": int(sub["episode_id"].nunique()),
             "table": _records(stats),
         }
     for f in survivors:
         label = "NO PRE-PEAK SEPARATION"
         for lo, hi in E2_BUCKETS:
-            t = res["buckets"].get(f"{lo}..{hi}", {}).get("table", [])
+            t = res["buckets"].get(_bucket_tag(lo, hi), {}).get("table", [])
             row = next((r for r in t if r["feature"] == f), None)
             if row and row.get("separates"):
                 label = E2_LABELS[(lo, hi)]
                 break
+        if grades.get(f) == "EXPLORATORY-DISCOVERY":
+            label = f"EXPLORATORY {label}"
         res["labels"][f] = label
     return res
 
 
+def _tail_for(feat: str, observed: dict) -> tuple[int, float]:
+    """(direction, control-tail quantile) for a survivor leg — §2's direction-aligned tail."""
+    direction = ta.FEATURE_DIRECTION.get(feat, 0)
+    return direction, ta.direction_tail(direction, float(observed.get(feat, np.nan)))
+
+
 def _e3(feats: pd.DataFrame, dtp: pd.DataFrame, topped_ids: set, pool: pd.DataFrame,
-        survivors: list[str]) -> dict:
-    """§4.8 E3 — descriptive first-crossing ORDER of survivors at control-P90 thresholds."""
+        survivors: list[str], observed: dict) -> dict:
+    """§4.8 E3 — descriptive first-crossing ORDER at direction-aligned control tails."""
     if not survivors:
         return {"note": "no E1 survivors to order", "order": []}
     ctrl = _pick(feats, pool[["segment", "date"]])
@@ -671,50 +1018,58 @@ def _e3(feats: pd.DataFrame, dtp: pd.DataFrame, topped_ids: set, pool: pd.DataFr
     for feat in survivors:
         if feat not in ctrl.columns or ctrl[feat].notna().sum() < 50:
             continue
-        direction = ta.FEATURE_DIRECTION.get(feat, 0)
-        thr = float(ctrl[feat].quantile(0.90 if direction >= 0 else 0.10))
-        cross = f[f[feat] >= thr] if direction >= 0 else f[f[feat] <= thr]
+        direction, tail = _tail_for(feat, observed)
+        thr = float(ctrl[feat].quantile(tail))
+        cross = f[f[feat] >= thr] if tail >= 0.5 else f[f[feat] <= thr]
         if cross.empty:
             continue
         first = cross.sort_values("days_to_peak", ascending=False) \
             .groupby("episode_id", as_index=False).first()
         rows.append({
-            "feature": feat, "direction": direction, "threshold_control_p90": thr,
+            "feature": feat, "direction": direction, "control_tail": tail,
+            "threshold": thr,
             "n_episodes_crossing": int(len(first)),
             "median_days_to_peak_at_first_cross": float(first["days_to_peak"].median()),
             "p25": float(first["days_to_peak"].quantile(0.25)),
             "p75": float(first["days_to_peak"].quantile(0.75)),
         })
     rows.sort(key=lambda r: -r["median_days_to_peak_at_first_cross"])
-    return {"order": rows}
+    return {"order": rows, "convention": "positive = sessions BEFORE the peak"}
 
 
-def _e4(deltas: pd.DataFrame, cases: pd.DataFrame, gates: pd.DataFrame,
+def _e4(ep_deltas: pd.DataFrame, gates: pd.DataFrame, cases: pd.DataFrame,
         survivors: list[str], eras, *, seed: int, quick: bool) -> dict:
-    """§4.9 descriptive sign stability of survivors across eras and dollar-volume terciles."""
-    if not survivors or deltas.empty:
+    """§4.9 descriptive sign stability of survivors across eras and dollar-volume terciles.
+
+    Stratifies the EPISODE-level deltas (§4.5 aggregation), keyed on the episode's
+    peak date, so an era cell counts episodes rather than snapshots.
+    """
+    if not survivors or ep_deltas.empty:
         return {"eras": {}, "dvol_terciles": {}, "note": "no E1 survivors to stratify"}
-    d = deltas.merge(cases[["case_id", "date", "dvol21"]].drop_duplicates("case_id"),
-                     on="case_id", how="left", suffixes=("", "_c"))
-    d["date"] = pd.to_datetime(d["date"])
+    d = ep_deltas.copy()
+    d["peak_date"] = pd.to_datetime(d["peak_date"])
+    dv = (cases[["episode_id", "dvol21"]].groupby("episode_id", as_index=False).median()
+          if "dvol21" in cases.columns else pd.DataFrame(columns=["episode_id", "dvol21"]))
+    d = d.merge(dv, on="episode_id", how="left")
     b = 400 if quick else 1000
-    res: dict = {"eras": {}, "dvol_terciles": {}}
+    res: dict = {"eras": {}, "dvol_terciles": {}, "unit": "distinct episodes"}
     for name, lo, hi in eras:
-        sub = d[(d["date"] >= pd.Timestamp(lo)) & (d["date"] <= pd.Timestamp(hi))]
+        sub = d[(d["peak_date"] >= pd.Timestamp(lo)) & (d["peak_date"] <= pd.Timestamp(hi))]
         res["eras"][name] = {
-            "n_cases": int(len(sub)),
+            "n_episodes": int(len(sub)),
             "table": _records(ta.matched_delta_stats(sub, survivors, b=b, seed=seed,
                                                      coverage_floor=COVERAGE_FLOOR))
             if len(sub) >= 20 else [],
         }
-    if d["dvol21"].notna().sum() >= 30:
+    if "dvol21" in d.columns and d["dvol21"].notna().sum() >= 30:
         try:
-            d["_terc"] = pd.qcut(d["dvol21"].rank(method="first"), 3, labels=["low", "mid", "high"])
+            d["_terc"] = pd.qcut(d["dvol21"].rank(method="first"), 3,
+                                 labels=["low", "mid", "high"])
         except ValueError:
             d["_terc"] = "all"
         for terc, sub in d.groupby("_terc", observed=True):
             res["dvol_terciles"][str(terc)] = {
-                "n_cases": int(len(sub)),
+                "n_episodes": int(len(sub)),
                 "table": _records(ta.matched_delta_stats(sub, survivors, b=b, seed=seed,
                                                          coverage_floor=COVERAGE_FLOOR))
                 if len(sub) >= 20 else [],
@@ -723,8 +1078,9 @@ def _e4(deltas: pd.DataFrame, cases: pd.DataFrame, gates: pd.DataFrame,
 
 
 def _ruler(feats: pd.DataFrame, ext: pd.DataFrame, episodes: pd.DataFrame,
-           close: pd.DataFrame, pool: pd.DataFrame, survivors: list[str]) -> dict:
-    """§2 wrong-ruler check for each survivor leg thresholded at control-P90."""
+           close: pd.DataFrame, pool: pd.DataFrame, survivors: list[str],
+           observed: dict) -> dict:
+    """§2 wrong-ruler check per survivor leg, at the DIRECTION-ALIGNED control tail."""
     if not survivors:
         return {"note": "no E1 survivors to rule", "legs": {}}
     ctrl = _pick(feats, pool[["segment", "date"]])
@@ -735,10 +1091,10 @@ def _ruler(feats: pd.DataFrame, ext: pd.DataFrame, episodes: pd.DataFrame,
     for feat in survivors:
         if feat not in ctrl.columns or ctrl[feat].notna().sum() < 50:
             continue
-        direction = ta.FEATURE_DIRECTION.get(feat, 0)
-        thr = float(ctrl[feat].quantile(0.90 if direction >= 0 else 0.10))
+        direction, tail = _tail_for(feat, observed)
+        thr = float(ctrl[feat].quantile(tail))
         f = feats[["segment", "date", feat]].dropna()
-        f = f[f[feat] >= thr] if direction >= 0 else f[f[feat] <= thr]
+        f = f[f[feat] >= thr] if tail >= 0.5 else f[f[feat] <= thr]
         fires = pd.DataFrame(False, index=ext.index, columns=ext.columns)
         for seg, g in f.groupby("segment"):
             if seg in fires.columns:
@@ -749,7 +1105,8 @@ def _ruler(feats: pd.DataFrame, ext: pd.DataFrame, episodes: pd.DataFrame,
         r["fwd_63_excess"] = (fh - fn) if (fh is not None and fn is not None
                                           and np.isfinite(fh) and np.isfinite(fn)) else None
         r["null_median_remaining_upside"] = null.get("median_remaining_upside")
-        legs[feat] = {"threshold_control_p90": thr, **r}
+        legs[feat] = {"direction": direction, "control_tail": tail,
+                      "threshold": thr, **r}
     return {"legs": legs, "all_ext_null": null}
 
 
@@ -833,14 +1190,17 @@ def _fmt(x, nd: int = 4) -> str:
 
 
 def _e1_table(rows: list[dict]) -> list[str]:
-    out = ["| feature | family | dir | n | cov | median Δ | 95% CI (month-block) | q | separates |",
-           "|---|---|---|---|---|---|---|---|---|"]
+    out = ["| feature | family | dir | episodes | peak-months | cov | median Δ "
+           "| 95% CI (peak-month block) | q | grade |",
+           "|---|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         d = {1: "higher⇒TOPPED", -1: "lower⇒TOPPED", 0: "exploratory"}[r["direction"]]
         ci = f"[{_fmt(r['ci_lo'])}, {_fmt(r['ci_hi'])}]"
-        out.append(f"| `{r['feature']}` | {r['family']} | {d} | {_fmt(r['n_cases'])} | "
+        grade = r.get("grade") or ("no" if not r.get("separates") else "**YES**")
+        out.append(f"| `{r['feature']}` | {r['family']} | {d} | "
+                   f"{_fmt(r.get('n_episodes'))} | {_fmt(r.get('n_blocks'))} | "
                    f"{_fmt(r['coverage'], 2)} | {_fmt(r['median_delta'])} | {ci} | "
-                   f"{_fmt(r['q_value'], 3)} | {'**YES**' if r['separates'] else 'no'} |")
+                   f"{_fmt(r['q_value'], 3)} | {grade} |")
     return out
 
 
@@ -914,6 +1274,40 @@ def write_report(path: Path, summary: dict) -> None:
       f"`(c−MA200)/ATR63≥6` = {_fmt(w.get('ext_variants', {}).get('atrz'))}.")
     A("")
 
+    A("## 1b. Instrument / dead-name census (§3) and the §3 parity gate")
+    A("")
+    A("Counted from the panel, never inferred from a file count.")
+    A("")
+    A("| | track W | track D |")
+    A("|---|---|---|")
+    for lab, key in (("files scanned", "n_files_scanned"),
+                     ("tickers kept", "n_tickers_kept"),
+                     ("identity segments", "n_segments"),
+                     ("segments ever ELIGIBLE", "n_segments_ever_eligible"),
+                     ("segments with ≥1 EXT day", "n_segments_with_ext"),
+                     ("segments CANDIDATE-DEAD (last bar >60 sessions back)",
+                      "n_segments_candidate_dead"),
+                     ("…of those, held ≥1 EXT day", "n_candidate_dead_with_ext_day")):
+        A(f"| {lab} | {_fmt(w.get('census', {}).get(key))} | "
+          f"{_fmt(d.get('census', {}).get(key))} |")
+    A("")
+    pg = (w.get("prefix_parity_gate") or d.get("prefix_parity_gate") or {})
+    pg_track = "W" if w.get("prefix_parity_gate") else "D"
+    A(f"**§3 full-series-vs-prefix parity gate: PASSED** on "
+      f"{_fmt(pg.get('n_names_checked'))} sampled track-{pg_track} name(s) "
+      f"(worst |gap| {_fmt(pg.get('worst_abs_gap'), 12)}, tolerance "
+      f"{_fmt(pg.get('tolerance'), 12)}). Features at d are recomputed from the "
+      "series truncated just after d, through the same repair path — so a split "
+      "discovered later cannot move a value the study already read. The gate runs "
+      "before any label is computed and hard-fails the run; the synthetic twin lives "
+      "in `tests/test_top_anatomy.py`.")
+    A("")
+    A("Split-factor step days are INELIGIBLE, and the §3 price/liquidity floors are "
+      "evaluated on the **raw as-printed** close and close×volume — an adjusted-price "
+      "floor would evict 2022 days on a 2025 split. The recovered factor divides "
+      "open/high/low/close and multiplies volume, so repaired dollar volume is "
+      "invariant across the repair.")
+    A("")
     A("## 2. Race labels (§4.3) — the outcome, with its nulls printed")
     A("")
     A("| label | track W | track D |")
@@ -930,6 +1324,10 @@ def write_report(path: Path, summary: dict) -> None:
 
     A("## 3. E1 — matched-control separation (registration track W)")
     A("")
+    if not e1:
+        A("*Track W was not run in this pass, so there is no registration result. "
+          "Track D can never register a claim (survivorship tilt, §11).*")
+        A("")
     A(f"Cases: {_fmt(w.get('cases', {}).get('n_cases'))} snapshots at `days_to_peak ∈ "
       f"{{21, 10, 5}}` from {_fmt(w.get('cases', {}).get('n_case_episodes'))} TOPPED "
       f"episodes (per offset: {w.get('cases', {}).get('per_offset', {})}). Controls: "
@@ -939,13 +1337,24 @@ def write_report(path: Path, summary: dict) -> None:
       "the case's own name.")
     A("")
     m = w.get("matching", {})
-    A(f"**Honest N:** {_fmt(m.get('n_matched'))} matched cases across "
-      f"{_fmt(e1.get('n_case_episodes'))} DISTINCT EPISODES "
-      f"({_fmt(m.get('n_dropped_no_control'))} cases dropped with zero eligible "
-      f"controls, {_fmt(m.get('controls_per_case_mean'), 2)} controls per matched case).")
+    A(f"**Honest N: {_fmt(e1.get('n_episodes'))} DISTINCT EPISODES** "
+      f"(from {_fmt(e1.get('n_case_sets'))} matched case-sets; "
+      f"{_fmt(m.get('n_dropped_no_control'))} cases dropped with zero eligible "
+      f"controls, {_fmt(m.get('controls_per_case_mean'), 2)} controls per matched "
+      "case). §4.5 aggregation is EPISODE-FIRST: an episode's {21,10,5} snapshots "
+      "collapse to their median Δ before anything is pooled, because three looks at "
+      "one event are not three events. A Δ exists only where the case and ≥"
+      f"{ta.MIN_FINITE_CONTROLS} controls are finite.")
     A("")
-    A(f"**{n_sep} of 36 features separate** (month-block CI excluding 0 on the "
-      "pre-declared side AND BH-FDR q ≤ 0.10 within family AND ≥60% coverage). "
+    A(f"Distinct episode-peak months: **{_fmt(e1.get('n_distinct_peak_months'))}** "
+      f"against the {ta.MIN_EPISODE_MONTHS} a registered separation requires.")
+    A("")
+    A(f"**{n_sep} of 36 features separate** (≥{ta.MIN_EPISODE_MONTHS} peak-months "
+      "AND the 95% episode-peak-month block CI excluding 0 AND the declared sign "
+      "where one was declared AND BH-FDR q ≤ 0.10 within family AND ≥60% coverage). "
+      f"Registered: {e1.get('registered_separating') or 'none'}. "
+      f"Exploratory (discovery-only, never DETECTION): "
+      f"{e1.get('exploratory_separating') or 'none'}. "
       f"By family: {e1.get('by_family', {})}.")
     A("")
     L.extend(_e1_table(e1.get("table", [])))
@@ -955,32 +1364,49 @@ def write_report(path: Path, summary: dict) -> None:
       f"{', '.join('`%s`' % f for f in below) if below else 'none'}.")
     A("")
 
-    A("## 4. E1b — pooled AUC increment over extension alone (§4.7)")
+    A("## 4. E1b — pooled AUC increment over extension + volatility (§4.7)")
     A("")
     b = w.get("e1b", {})
-    if b.get("error"):
+    if not b:
+        A("Track W was not run in this pass — no E1b.")
+    elif b.get("error"):
         A(f"Not computed: {b['error']}.")
     else:
-        A("| model | grouped-by-ticker AUC | walk-forward AUC | episode AUC (grouped) |")
-        A("|---|---|---|---|")
+        A(f"Nested: {b.get('nested')}. Preprocessing: {b.get('preprocessing')}. "
+          f"Walk-forward purge = {b.get('embargo_sessions')} sessions (the full "
+          "race-label horizon, so a training row's label cannot be resolved by bars "
+          "inside the test window).")
+        A("")
+        A("| model | features | grouped-by-ticker AUC [95% CI] | walk-forward AUC "
+          "[95% CI] | episode AUC (grouped) |")
+        A("|---|---|---|---|---|")
         for k in ("M0", "M1", "M2"):
             mm = b.get("models", {}).get(k, {})
-            A(f"| {k} ({len(mm.get('features', []))} features) | "
-              f"{_fmt(mm.get('grouped', {}).get('auc'), 3)} | "
-              f"{_fmt(mm.get('walk_forward', {}).get('auc'), 3)} | "
-              f"{_fmt(mm.get('grouped', {}).get('episode_auc'), 3)} |")
+            g, wf = mm.get("grouped", {}), mm.get("walk_forward", {})
+            gci = f"[{_fmt(g.get('ci_lo'), 3)}, {_fmt(g.get('ci_hi'), 3)}]"
+            wci = f"[{_fmt(wf.get('ci_lo'), 3)}, {_fmt(wf.get('ci_hi'), 3)}]"
+            A(f"| {k} | {mm.get('n_features', len(mm.get('features', [])))} | "
+              f"{_fmt(g.get('auc'), 3)} {gci} | {_fmt(wf.get('auc'), 3)} {wci} | "
+              f"{_fmt(g.get('episode_auc'), 3)} |")
         A("")
-        A(f"AUC(M2) − AUC(M1): grouped {_fmt(b.get('increment_grouped'), 3)}, "
-          f"walk-forward {_fmt(b.get('increment_walk_forward'), 3)} — "
+        gci = b.get("increment_grouped_ci") or [None, None]
+        wci = b.get("increment_walk_forward_ci") or [None, None]
+        A(f"AUC(M2) − AUC(M1), paired episode-block CI: grouped "
+          f"{_fmt(b.get('increment_grouped'), 3)} [{_fmt(gci[0], 3)}, {_fmt(gci[1], 3)}], "
+          f"walk-forward {_fmt(b.get('increment_walk_forward'), 3)} "
+          f"[{_fmt(wci[0], 3)}, {_fmt(wci[1], 3)}] — "
           f"sign-consistent: **{b.get('sign_consistent')}**. "
-          f"n = {_fmt(b.get('n_rows'))} EXT days on {_fmt(b.get('n_names'))} names, "
-          f"base rate TOPPED = {_fmt(b.get('base_rate_topped'), 3)}.")
+          f"n = {_fmt(b.get('n_rows'))} EXT days on {_fmt(b.get('n_names'))} names / "
+          f"{_fmt(b.get('n_episodes_in_sample'))} episodes, base rate TOPPED = "
+          f"{_fmt(b.get('base_rate_topped'), 3)}. Descriptive — E1b registers no test.")
     A("")
 
     A("## 5. E2 — lead-time labels (§4.8; G0.4 is mandatory)")
     A("")
-    A("A feature that separates only in the `{0..+5}` bucket is **POST-TOP "
-      "CONFIRMATION** and may never be described as detection.")
+    A("A feature that separates only in the last window (`0..-5`, peak day through "
+      "five sessions after) is **POST-TOP CONFIRMATION** and may never be described "
+      "as detection. An exploratory field keeps an `EXPLORATORY` prefix and can never "
+      "reach DETECTION grade.")
     A("")
     labels = w.get("e2", {}).get("labels", {})
     if labels:
@@ -991,21 +1417,24 @@ def write_report(path: Path, summary: dict) -> None:
     else:
         A(f"No survivors to profile — {w.get('e2', {}).get('note', '')}.")
     A("")
+    A("")
+    A("Windows are stated **positive-before-peak** (`days_to_peak = peak_date − d`): "
+      "EARLY +22..+63, MID +6..+21, LATE +1..+5, POST-TOP CONFIRMATION 0..−5.")
     for tag, blk in w.get("e2", {}).get("buckets", {}).items():
-        A(f"- bucket `{tag}`: {_fmt(blk.get('n_cases'))} matched cases across "
-          f"{_fmt(blk.get('n_episodes'))} episodes.")
+        A(f"- `{tag}` ({blk.get('window', '')}): {_fmt(blk.get('n_episodes'))} episodes "
+          f"from {_fmt(blk.get('n_cases'))} matched cases.")
     A("")
 
     A("## 6. E3 — first-crossing order (descriptive)")
     A("")
     order = w.get("e3", {}).get("order", [])
     if order:
-        A("| survivor | control-P90 threshold | episodes crossing "
+        A("| survivor | control tail | threshold | episodes crossing "
           "| median days_to_peak at first cross |")
-        A("|---|---|---|---|")
+        A("|---|---|---|---|---|")
         for r in order:
-            A(f"| `{r['feature']}` | {_fmt(r['threshold_control_p90'])} | "
-              f"{_fmt(r['n_episodes_crossing'])} | "
+            A(f"| `{r['feature']}` | P{int(r.get('control_tail', 0.9) * 100)} | "
+              f"{_fmt(r['threshold'])} | {_fmt(r['n_episodes_crossing'])} | "
               f"{_fmt(r['median_days_to_peak_at_first_cross'], 1)} |")
     else:
         A(f"Nothing to order — {w.get('e3', {}).get('note', 'no survivors')}.")
@@ -1026,25 +1455,26 @@ def write_report(path: Path, summary: dict) -> None:
             e = rows[name]
             signs = {r["feature"]: _fmt(r["median_delta"]) for r in e.get("table", [])}
             note = "" if signs else " — under the 20-case floor, not estimated (printed null)"
-            A(f"- `{name}`: {_fmt(e.get('n_cases'))} cases · median Δ "
+            A(f"- `{name}`: {_fmt(e.get('n_episodes'))} episodes · median Δ "
               f"{signs if signs else 'null'}{note}")
         terc = blk.get("dvol_terciles", {})
         for t, e in terc.items():
             signs = {r["feature"]: _fmt(r["median_delta"]) for r in e.get("table", [])}
-            A(f"- dollar-volume tercile `{t}`: {_fmt(e.get('n_cases'))} cases · median Δ "
-              f"{signs if signs else 'null (under the 20-case floor)'}")
+            A(f"- dollar-volume tercile `{t}`: {_fmt(e.get('n_episodes'))} episodes · "
+              f"median Δ {signs if signs else 'null (under the 20-episode floor)'}")
         A("")
 
     A("## 8. The top ruler (§2) — is a fire a GOOD warning?")
     A("")
     legs = w.get("ruler", {}).get("legs", {})
     if legs:
-        A("| survivor leg @ control-P90 | fires | episodes "
+        A("| survivor leg @ direction-aligned control tail | fires | episodes "
           "| median remaining upside to peak | within 5% of peak price "
           "| within ±10td of peak | fwd-63 excess vs all-EXT null |")
         A("|---|---|---|---|---|---|---|")
         for f, r in legs.items():
-            A(f"| `{f}` | {_fmt(r.get('n_fires'))} | {_fmt(r.get('n_fire_episodes'))} | "
+            A(f"| `{f}` @P{int(r.get('control_tail', 0.9) * 100)} | "
+              f"{_fmt(r.get('n_fires'))} | {_fmt(r.get('n_fire_episodes'))} | "
               f"{_fmt(r.get('median_remaining_upside'), 3)} | "
               f"{_fmt(r.get('share_within_peak_price'), 3)} | "
               f"{_fmt(r.get('share_within_peak_time'), 3)} | "
@@ -1127,6 +1557,20 @@ def write_report(path: Path, summary: dict) -> None:
 # ══════════════════════════════════════════════════════════════════════════════
 # entry point
 # ══════════════════════════════════════════════════════════════════════════════
+def _source_file_count(data_root: Path, track: str, quick: int | None) -> int:
+    """How many source files the census denominator should use (cache-hit safe)."""
+    if track == "W":
+        n = len(list((data_root / "massive_stock_day").glob("*.parquet")))
+    else:
+        names: set[str] = set()
+        for _, sub in _D_RUNGS:
+            d = data_root / sub
+            if d.exists():
+                names |= {p.stem for p in d.glob("*.parquet") if not p.stem.startswith("_")}
+        n = len(names)
+    return min(n, quick) if quick else n
+
+
 def _git_sha() -> str:
     try:
         r = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=_REPO,
@@ -1175,8 +1619,9 @@ def main(argv=None) -> int:
                               f"D_quick{a.quick}" if (tk == "D" and quick) else tk)
         built = (build_panel_w(a.data_root, cache, quick=a.quick) if tk == "W"
                  else build_panel_d(a.data_root, cache, quick=a.quick))
+        n_files = _source_file_count(a.data_root, tk, a.quick)
         summary["tracks"][tk] = run_track(tk, built["panel"], built["meta"],
-                                          seed=a.seed, quick=quick)
+                                          seed=a.seed, quick=quick, n_files=n_files)
         say(f"track {tk} complete")
 
     summary["wall_seconds"] = time.time() - _T0

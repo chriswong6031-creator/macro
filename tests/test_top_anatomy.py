@@ -17,6 +17,7 @@ import pandas as pd
 import pytest
 
 from engine import top_anatomy as ta
+from scripts import research_top_anatomy_phase0 as rh
 
 REPO = Path(__file__).resolve().parent.parent
 
@@ -436,6 +437,136 @@ def test_nothing_crosses_an_identity_segment_boundary():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# §3 RAW-LEVEL ELIGIBILITY + the full-series-vs-prefix parity HARD GATE
+# ══════════════════════════════════════════════════════════════════════════════
+def _split_world(n: int = 700, split_at: int = 600, ratio: float = 10.0):
+    """An EXTENDED name trading just over $3 that then does a 10:1 split late on.
+
+    Raw prints clear the $3 floor at d; the REPAIRED pre-split closes are ten times
+    smaller, so an adjusted-price floor would retroactively evict every pre-split day
+    the moment the split prints — the leak §3 closes. The ramp is steep enough that d
+    is a genuine EXT day inside an episode, so the F-family is live rather than null.
+    """
+    idx = _cal(n)
+    raw = pd.Series(_ramp(n, base=0.35, daily=0.006, seed=42), index=idx)
+    raw.iloc[split_at:] = raw.iloc[split_at:] / ratio
+    vol = pd.Series(_volumes(n, seed=43), index=idx) * 40.0
+    return idx, pd.DataFrame({"close": raw, "volume": vol,
+                              "high": raw * 1.01, "low": raw * 0.99,
+                              "open": raw.shift(1).fillna(raw.iloc[0])})
+
+
+def test_eligibility_floors_read_raw_prints_not_repaired_ones():
+    """A future 10:1 split must not evict pre-split days through the price floor."""
+    idx, bars = _split_world()
+    rep = rh.repair_bars(bars)
+    close = pd.DataFrame({"T": rep["close"]})
+    dvol = pd.DataFrame({"T": rep["close"] * rep["volume"]})
+    raw_c = pd.DataFrame({"T": rep["raw_close"]})
+    raw_dv = pd.DataFrame({"T": rep["raw_dvol"]})
+    step = pd.DataFrame({"T": rep["split_day"]})
+
+    pre = idx[500]                                   # a pre-split day
+    assert rep["raw_close"].loc[pre] >= ta.MIN_CLOSE
+    assert rep["close"].loc[pre] < ta.MIN_CLOSE, "the repair must scale it under $3"
+
+    on_raw = ta.eligibility_mask(close, dvol, raw_close_df=raw_c,
+                                 raw_dollar_vol_df=raw_dv, split_day_df=step)
+    on_adjusted = ta.eligibility_mask(close, dvol)    # the leaky comparison
+    assert bool(on_raw.loc[pre, "T"]), "raw-level eligibility lost a pre-split day"
+    assert not bool(on_adjusted.loc[pre, "T"]), \
+        "the adjusted-price floor no longer evicts the day — this test is vacuous"
+
+
+def test_split_factor_step_day_is_ineligible_and_the_days_before_it_survive():
+    idx, bars = _split_world()
+    rep = rh.repair_bars(bars)
+    close = pd.DataFrame({"T": rep["close"]})
+    dvol = pd.DataFrame({"T": rep["close"] * rep["volume"]})
+    kw = dict(raw_close_df=pd.DataFrame({"T": rep["raw_close"]}),
+              raw_dollar_vol_df=pd.DataFrame({"T": rep["raw_dvol"]}),
+              split_day_df=pd.DataFrame({"T": rep["split_day"]}))
+    elig = ta.eligibility_mask(close, dvol, **kw)
+    steps = list(rep.index[rep["split_day"].to_numpy(dtype=bool)])
+    assert steps, "the fixture must actually produce a factor step day"
+    for sd in steps:
+        assert not bool(elig.loc[sd, "T"]), "the split-factor step day must be ineligible"
+    prior = idx[idx.get_loc(steps[0]) - 1]
+    assert bool(elig.loc[prior, "T"]), \
+        "the day BEFORE the split was retro-removed using future information"
+
+
+def test_split_factor_carries_to_full_ohlcv_and_dollar_volume_is_invariant():
+    """Factor DIVIDES open/high/low/close and MULTIPLIES volume (§3)."""
+    _, bars = _split_world()
+    rep = rh.repair_bars(bars)
+    assert (rep["close"] <= rep["raw_close"] + 1e-12).all()
+    for c in ("open", "high", "low"):
+        ratio = (bars[c] / rep[c]).dropna()
+        assert np.allclose(ratio, bars["close"] / rep["close"], rtol=1e-12), \
+            f"{c} did not take the same factor as close"
+    pd.testing.assert_series_equal(rep["close"] * rep["volume"], rep["raw_dvol"],
+                                   check_names=False, rtol=1e-12)
+
+
+def _parity_eqw(idx: pd.DatetimeIndex) -> pd.Series:
+    """A fixed, drifting cross-section for the parity check.
+
+    Held identical on both sides because one name's split repair cannot move a
+    median-daily-return index (see `_parity_side`); drifting rather than flat so
+    `rs_line = c / index` is not just a copy of the close and the E-family is
+    genuinely exercised.
+    """
+    return pd.Series(1.0005 ** np.arange(len(idx)), index=idx)
+
+
+PARITY_FAMILY_FEATURES = [
+    "A6_ext_ma200_atr21",   # A — a level difference over an ATR, both factor-scaled
+    "B2_rsi14",             # B — recursive smoothing of price differences
+    "C1_rv21",              # C — log-return dispersion
+    "D1_dvol_z",            # D — dollar-volume z (invariant only if the carry is right)
+    "E5f_rs_decel",         # E — log-slope change of the RS line
+    "F2_drawdown_in_episode",  # F — episode-anchored ratio
+]
+
+
+@pytest.mark.parametrize("feature", PARITY_FAMILY_FEATURES)
+def test_full_series_vs_prefix_parity_at_every_family(feature):
+    """§3 HARD GATE: a split AFTER d may not move the feature value AT d.
+
+    Both sides run through the harness's real repair path (`repair_bars`), because a
+    parity check against a re-implementation would prove nothing about the repair the
+    study actually uses. The prefix stops just after d, so it cannot see the later
+    split and recovers a different factor for every bar ≤ d — if any feature moves
+    with that, the repair is leaking the future into a "point-in-time" value.
+    """
+    idx, bars = _split_world()
+    d = idx[500]                                     # 100 sessions before the split
+    rep = rh.prefix_parity_report(bars, d, _parity_eqw(idx)).set_index("feature")
+    row = rep.loc[feature]
+    assert not row["null_both"], f"{feature} is null on both sides — vacuous"
+    assert row["abs_gap"] <= rh.PARITY_TOLERANCE, (
+        f"{feature} moved when a FUTURE split was revealed: "
+        f"full={row['full']!r} prefix={row['prefix']!r}")
+
+
+def test_prefix_parity_covers_all_six_families():
+    assert {f[0] for f in PARITY_FAMILY_FEATURES} == set("ABCDEF")
+
+
+def test_prefix_parity_gate_fires_on_a_planted_leak():
+    """The gate is only worth something if a future-reading feature fails it."""
+    idx, bars = _split_world()
+    d = idx[500]
+    full = rh.repair_bars(bars)
+    prefix = rh.repair_bars(bars.iloc[:idx.get_loc(d) + 2])
+    # a "feature" that reads the repaired LEVEL rather than a ratio is exactly what
+    # the split factor moves — this is the failure mode the gate exists to catch.
+    assert not np.isclose(full["close"].loc[d], prefix["close"].loc[d]), \
+        "the fixture no longer changes the recovered factor — the gate is untested"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # (e) §4.5 matching bucket integrity
 # ══════════════════════════════════════════════════════════════════════════════
 def _matching_fixture(seed: int = 4):
@@ -500,39 +631,116 @@ def test_matching_counts_zero_control_cases_instead_of_hiding_them():
     assert diag["n_dropped_no_control"] == 1 and diag["n_matched"] == 0
 
 
+def _episode_delta_frame(n: int = 120, **planted) -> pd.DataFrame:
+    """An episode-level Δ frame: one row per episode, keyed on its peak date."""
+    peaks = pd.bdate_range("2022-01-03", periods=n, freq="7D")
+    return pd.DataFrame({
+        "episode_id": [f"E{i}" for i in range(n)],
+        "ticker": [f"T{i%20}" for i in range(n)],
+        "peak_date": peaks, "date": peaks, "n_snapshots": 3, **planted})
+
+
 def test_matched_delta_stats_are_deterministic_and_fdr_corrected():
     rng = np.random.default_rng(3)
     n = 120
-    d = pd.DataFrame({
-        "case_id": [f"K{i}" for i in range(n)],
-        "ticker": [f"T{i%20}" for i in range(n)],
-        "date": pd.bdate_range("2022-01-03", periods=n),
-        "A5_ext_ma50_atr21": rng.normal(1.5, 0.5, n),     # planted, declared direction +1
-        "A6_ext_ma200_atr21": rng.normal(0.0, 0.5, n),    # null
-    })
+    d = _episode_delta_frame(
+        n,
+        A5_ext_ma50_atr21=rng.normal(1.5, 0.5, n),    # planted, declared direction +1
+        A6_ext_ma200_atr21=rng.normal(0.0, 0.5, n))   # null
     cols = ["A5_ext_ma50_atr21", "A6_ext_ma200_atr21"]
     a = ta.matched_delta_stats(d, cols, b=200, seed=11)
     b = ta.matched_delta_stats(d, cols, b=200, seed=11)
     pd.testing.assert_frame_equal(a, b)
     row = a.set_index("feature").loc["A5_ext_ma50_atr21"]
-    assert row["ci_lo"] > 0 and row["separates"]
+    assert row["ci_lo"] > 0 and row["separates"] and row["grade"] == "REGISTERED"
     assert not a.set_index("feature").loc["A6_ext_ma200_atr21"]["separates"]
     assert (a["q_value"] >= a["p_value"] - 1e-12).all()
+    assert (a["block_key"] == "peak_date").all(), "blocks must be episode-PEAK months"
 
 
 def test_wrong_signed_move_never_separates():
     """A feature that moves the OPPOSITE way from its pre-declaration is not a survivor."""
     rng = np.random.default_rng(5)
     n = 120
-    d = pd.DataFrame({
-        "case_id": [f"K{i}" for i in range(n)],
-        "ticker": [f"T{i%20}" for i in range(n)],
-        "date": pd.bdate_range("2022-01-03", periods=n),
-        "F1_episode_age": rng.normal(-3.0, 0.5, n),       # declared +1, moves -3
-    })
+    d = _episode_delta_frame(n, F1_episode_age=rng.normal(-3.0, 0.5, n))  # declared +1
     out = ta.matched_delta_stats(d, ["F1_episode_age"], b=200, seed=11)
     assert out.iloc[0]["ci_hi"] < 0
     assert not out.iloc[0]["separates"]
+    assert out.iloc[0]["grade"] == ""
+
+
+def test_exploratory_field_can_only_be_discovery_grade():
+    """A direction-0 field may flag as a separator but can never be DETECTION (§4.5)."""
+    rng = np.random.default_rng(6)
+    n = 120
+    d = _episode_delta_frame(n, A1_r21=rng.normal(2.0, 0.4, n))   # direction 0
+    out = ta.matched_delta_stats(d, ["A1_r21"], b=200, seed=11).iloc[0]
+    assert out["separates"] and out["grade"] == "EXPLORATORY-DISCOVERY"
+
+
+def test_registered_separation_needs_twelve_distinct_peak_months():
+    """§4.5's ≥12-peak-month floor: a strong effect inside one quarter is not enough."""
+    rng = np.random.default_rng(7)
+    n = 90
+    d = _episode_delta_frame(n, A5_ext_ma50_atr21=rng.normal(2.0, 0.3, n))
+    d["peak_date"] = pd.bdate_range("2022-01-03", periods=n, freq="D")   # ~4 months
+    thin = ta.matched_delta_stats(d, ["A5_ext_ma50_atr21"], b=200, seed=11).iloc[0]
+    assert thin["n_blocks"] < ta.MIN_EPISODE_MONTHS
+    assert not thin["separates"], "a 4-month sample cleared the 12-peak-month floor"
+    d["peak_date"] = pd.bdate_range("2022-01-03", periods=n, freq="14D")  # ~3.5 years
+    wide = ta.matched_delta_stats(d, ["A5_ext_ma50_atr21"], b=200, seed=11).iloc[0]
+    assert wide["n_blocks"] >= ta.MIN_EPISODE_MONTHS and wide["separates"]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# §4.5 episode-first aggregation and the ≥2-finite-controls rule
+# ══════════════════════════════════════════════════════════════════════════════
+def _pairs_and_panel(control_values: dict[str, list[float]], case_value: float = 10.0):
+    """One case with hand-picked control values, so the Δ is computable by eye."""
+    day = pd.Timestamp("2022-03-01")
+    rows = [{"segment": "CASE", "date": day, "A1_r21": case_value, "ticker": "CASE"}]
+    pairs = []
+    for i, (seg, vals) in enumerate(control_values.items()):
+        rows.append({"segment": seg, "date": day, "A1_r21": vals[0], "ticker": seg})
+        pairs.append({"case_id": "K0", "segment": "CASE", "ticker": "CASE", "date": day,
+                      "control_segment": seg, "control_ticker": seg, "control_date": day})
+    return pd.DataFrame(pairs), pd.DataFrame(rows)
+
+
+def test_delta_needs_the_case_and_at_least_two_finite_controls():
+    pairs, panel = _pairs_and_panel({"C1": [4.0], "C2": [6.0]})
+    d = ta.matched_deltas(pairs, panel, ["A1_r21"])
+    assert d.iloc[0]["A1_r21"] == pytest.approx(10.0 - 5.0)      # mean(4,6) = 5
+    pairs1, panel1 = _pairs_and_panel({"C1": [4.0], "C2": [np.nan]})
+    d1 = ta.matched_deltas(pairs1, panel1, ["A1_r21"])
+    assert pd.isna(d1.iloc[0]["A1_r21"]), \
+        "one finite control is a comparison, not a matched set — §4.5 wants >=2"
+
+
+def test_episode_first_aggregation_collapses_snapshots_before_pooling():
+    """Three offsets of ONE episode must count once, at their MEDIAN (§4.5)."""
+    case_deltas = pd.DataFrame({
+        "case_id": ["E1@21", "E1@10", "E1@5", "E2@5"],
+        "ticker": ["A", "A", "A", "B"],
+        "date": pd.to_datetime(["2022-01-03", "2022-01-14", "2022-01-21", "2022-05-02"]),
+        "A1_r21": [1.0, 5.0, 9.0, 100.0],
+    })
+    cases = pd.DataFrame({
+        "case_id": ["E1@21", "E1@10", "E1@5", "E2@5"],
+        "episode_id": ["E1", "E1", "E1", "E2"]})
+    episodes = pd.DataFrame({
+        "episode_id": ["E1", "E2"],
+        "peak_date": pd.to_datetime(["2022-01-28", "2022-05-09"])})
+    ep = ta.episode_deltas(case_deltas, cases, episodes, ["A1_r21"])
+    assert len(ep) == 2, "four snapshots must collapse to two episodes"
+    e1 = ep.set_index("episode_id").loc["E1"]
+    assert e1["A1_r21"] == pytest.approx(5.0)      # median(1, 5, 9)
+    assert e1["n_snapshots"] == 3
+    assert e1["peak_date"] == pd.Timestamp("2022-01-28"), "peak date drives the block"
+    # pooling at snapshot level would have let one episode's three looks outvote the
+    # other episode entirely — a different, over-weighted answer
+    assert float(case_deltas["A1_r21"].median()) == pytest.approx(7.0)
+    assert float(ep["A1_r21"].median()) == pytest.approx(52.5)
 
 
 def test_bh_fdr_matches_the_textbook_step_up():
