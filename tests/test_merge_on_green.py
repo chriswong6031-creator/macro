@@ -1727,6 +1727,100 @@ def test_a_truncated_commit_file_list_is_re_proven():
     assert stale and "too many files" in reason, reason
 
 
+def test_a_truncated_pipeline_bake_is_proven_by_complete_root_trees(monkeypatch):
+    """A 9,000-file nightly is exactly where the REST ``files`` cap used to turn
+    the bake exclusion off and livelock every green PR. Root tree IDs prove the
+    complete boundary without enumerating those 9,000 descendants."""
+    sha, parent = "a" * 40, "b" * 40
+    current_tree, parent_tree = "c" * 40, "d" * 40
+    freshness = MOG.ProofFreshness(
+        "acme/widgets",
+        "read",
+        [{"workflow": "ci.yml", "patterns": ["data/**", "site/**"]}],
+        [{"sha": sha, "when": MOG._parse_iso(MAIN_MOVED_AT_1026)}],
+    )
+    freshness._pr_files[4242] = ["site/chart.js"]
+
+    stable_engine = {"path": "engine", "type": "tree", "mode": "040000", "sha": "e" * 40}
+    stable_tests = {"path": "tests", "type": "tree", "mode": "040000", "sha": "f" * 40}
+    old_data = {"path": "data", "type": "tree", "mode": "040000", "sha": "1" * 40}
+    new_data = {"path": "data", "type": "tree", "mode": "040000", "sha": "2" * 40}
+    stable_site = {"path": "site", "type": "tree", "mode": "040000", "sha": "3" * 40}
+
+    def fake_request(method, url, token, payload=None):
+        assert method == "GET" and token == "read" and payload is None
+        if url.endswith(f"/commits/{sha}") and "/git/" not in url:
+            return 200, {
+                "commit": {"tree": {"sha": current_tree}},
+                "parents": [{"sha": parent}],
+                "files": [{"filename": f"data/file-{index}.json"} for index in range(300)],
+            }
+        if url.endswith(f"/git/commits/{parent}"):
+            return 200, {"tree": {"sha": parent_tree}}
+        if url.endswith(f"/git/trees/{current_tree}"):
+            return 200, {
+                "truncated": False,
+                "tree": [new_data, stable_site, stable_engine, stable_tests],
+            }
+        if url.endswith(f"/git/trees/{parent_tree}"):
+            return 200, {
+                "truncated": False,
+                "tree": [old_data, stable_site, stable_engine, stable_tests],
+            }
+        raise AssertionError(url)
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    files, truncated = freshness.files_of(sha)
+    assert files == ["data/__bulk_pipeline_tree__"]
+    assert not truncated
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+    assert not stale, reason
+
+
+def test_a_truncated_commit_with_any_changed_source_root_stays_fail_closed(monkeypatch):
+    """Root-tree proof is conjunctive: one changed source subtree defeats it even
+    when all 300 visible file rows happen to be under ``data/``."""
+    sha, parent = "a" * 40, "b" * 40
+    current_tree, parent_tree = "c" * 40, "d" * 40
+    freshness = MOG.ProofFreshness(
+        "acme/widgets",
+        "read",
+        _gates(),
+        [{"sha": sha, "when": MOG._parse_iso(MAIN_MOVED_AT_1026)}],
+    )
+
+    def entry(path, object_sha):
+        return {"path": path, "type": "tree", "mode": "040000", "sha": object_sha}
+
+    def fake_request(method, url, token, payload=None):
+        if url.endswith(f"/commits/{sha}") and "/git/" not in url:
+            return 200, {
+                "commit": {"tree": {"sha": current_tree}},
+                "parents": [{"sha": parent}],
+                "files": [{"filename": f"data/file-{index}.json"} for index in range(300)],
+            }
+        if url.endswith(f"/git/commits/{parent}"):
+            return 200, {"tree": {"sha": parent_tree}}
+        if url.endswith(f"/git/trees/{current_tree}"):
+            return 200, {
+                "truncated": False,
+                "tree": [entry("data", "2" * 40), entry("engine", "4" * 40)],
+            }
+        if url.endswith(f"/git/trees/{parent_tree}"):
+            return 200, {
+                "truncated": False,
+                "tree": [entry("data", "1" * 40), entry("engine", "3" * 40)],
+            }
+        raise AssertionError(url)
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    files, truncated = freshness.files_of(sha)
+    assert len(files) == 300
+    assert truncated, "the hidden engine change must defeat the pipeline-bake proof"
+
+
 def test_a_raising_surface_check_can_never_become_permission_to_merge(monkeypatch, capsys):
     """The catch-all. Whatever breaks inside the gate, the answer is re-prove."""
     calls = _fake_api(
