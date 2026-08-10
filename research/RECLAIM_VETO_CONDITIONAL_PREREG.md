@@ -76,4 +76,27 @@ any such use disclosed per arm.
 
 ## §5 Ratification log
 
-- *(empty at freeze)*
+- **2026-08-10 — ADJUDICATED** (receipts `research/reclaim_veto_study/`; production bars primary):
+  **§1's Arm-T cohort was MIS-SPECIFIED at freeze and is corrected here, pre-ratification.** The
+  keeper's `"failed reclaim-and-hold"` string fires mostly (67.5%) on a bare next-bar-HOLD failure
+  where no reclaim leg was tested — the reclaim waiver cannot relieve those; only **12.6%** of the
+  literal reason-set cohort is relievable (independently corroborated: 40.06% of CT-reason
+  refusals relievable vs the engine's own 40.2% in #4583). The charting-app copy never received
+  #4583's string split — the same collapsed-literal trap the packet §2 amendment warns about, now
+  caught a second time cross-repo. Likewise §1's Arm-P reason set over-included `CT_BOTH_FAIL`
+  (measured contribution: 0 — it can never satisfy `off=="take"`). ADJUDICATION on the corrected
+  constructions: **Arm P (faithful packet-path, `sq.analyze` on/off) PASSES at 20/25/30** (25%:
+  capR +1.693, episode CI [0.205,3.046] on 24 episodes, equal-date +0.663, ex-COVID=LOO-min
+  +0.901, coverage 75.6%); 15% FAILS (equal-date CI spans 0). **Arm T (relievable subset only —
+  held passed, reclaim failed) PASSES at 20/25/30** (25%: capR +2.478, episode CI [0.789,3.609],
+  25 episodes, ex-COVID +1.620); the relievable Arm-T cohort is BYTE-IDENTICAL to the oracle-frame
+  Arm-P — one cohort through two code paths, counted as ONE evidence table for the Terminal ship,
+  with the faithful packet-path table standing separately for the Prophet ship. **Coverage gate:**
+  NEM 2026-08-05 (entry) — relievable, admits at every threshold; HL 06-25 — relievable, admits at
+  every threshold; **HL 06-16 — NOT RELIEVABLE (hold-leg failure): the basket state admits it but
+  this construction cannot** — hold-leg relaxation is a DIFFERENT construction (the packet §7
+  "relaxed leg" open question) requiring its own prereg; named as the honest boundary, not shipped
+  around. Dead-name arm not run this family (blocked-entry §7's −0.05R weak floor stands as the
+  survivor-bias reference; levels overstated by an unmeasured amount, disclosed). 15% excluded
+  everywhere. **Awaiting operator notch word (20/25/30) per §4; 25% recommended for family
+  consistency with the ratified blocked-entry override.** No live behavior changed by this entry.

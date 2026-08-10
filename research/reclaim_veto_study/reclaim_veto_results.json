@@ -1,0 +1,1176 @@
+{
+ "meta": {
+  "prereg": "RECLAIM_VETO_CONDITIONAL_PREREG.md",
+  "basis": "PRODUCTION bars (regrade/prod_bars)",
+  "n_prod_bars": 2458,
+  "n_us": 2455,
+  "n_cnhk_excluded": 3,
+  "m": "0.5 fixed",
+  "cap": 10.0,
+  "B": 2000,
+  "seed": 20260810,
+  "signal_sha256": "30c12a90448579d689e2a9ed405055f6c44462cf0f69347940e619d020c7384d"
+ },
+ "cohorts": {
+  "armT_literal_prereg": 51308,
+  "armT_relievable_by_waiver": 6465,
+  "armT_bearish_div_excluded": 21087,
+  "armT_reason_mix": [
+   [
+    "failed reclaim-and-hold",
+    34639
+   ],
+   [
+    "counter-trend, no 200-reclaim/hold",
+    16669
+   ]
+  ],
+  "armP_refused": 6465,
+  "armP_ct_reason_any": 16136,
+  "armP_reason_mix": [
+   [
+    "counter-trend, no 200-reclaim/hold",
+    9671
+   ],
+   [
+    "counter-trend, held but no 200-reclaim",
+    6465
+   ]
+  ]
+ },
+ "arms": {
+  "T": {
+   "coverage": {
+    "fire_weighted_union": 0.7550479457394559,
+    "fire_weighted_basket": 0.16233335932018397,
+    "n_heldout": 10444,
+    "n_design": 28296,
+    "passes_floor": true
+   },
+   "grid": {
+    "0.15": {
+     "design_abs_separation": 0.0965922149578568,
+     "cell_level": {
+      "n": 4655,
+      "n_names": 1429,
+      "mean_R_capped10": 0.6578622580762632,
+      "mean_R_winsor99": 0.8189222601580549,
+      "mean_R_raw": 1.0019823036560696,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.17990107790020027,
+      "median_ret": -0.07555039191330792,
+      "win_rate": 0.31063372717508053,
+      "n_censored_excluded": 209,
+      "censored_mark_mean_R": 3.2688178822626175
+     },
+     "complement_level": {
+      "n": 5291,
+      "n_names": 1448,
+      "mean_R_capped10": -0.22929877342367155,
+      "mean_R_winsor99": -0.18671272116334076,
+      "mean_R_raw": -0.11371691759770504,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.007614077734864077,
+      "median_ret": -0.07414903299514741,
+      "win_rate": 0.15819315819315818,
+      "n_censored_excluded": 289,
+      "censored_mark_mean_R": 2.7648551439694438
+     },
+     "cell_boot_cluster": {
+      "point": 0.6578622580762632,
+      "ci_lo": 0.5655009331827717,
+      "ci_hi": 0.7524629586212276,
+      "n_clusters": 1712,
+      "n_fires": 4655
+     },
+     "cell_boot_episode": {
+      "point": 0.6578622580762632,
+      "ci_lo": -0.042141911931035475,
+      "ci_hi": 0.7206201225689595,
+      "n_clusters": 2,
+      "n_fires": 4655
+     },
+     "cell_equal_date": {
+      "point": 0.25050381869163685,
+      "ci_lo": 0.1171216257691474,
+      "ci_hi": 0.3838249512140922,
+      "n_dates": 1216
+     },
+     "diff_vs_complement": {
+      "point": 0.8871610314999347,
+      "ci_lo": 0.7756392655862726,
+      "ci_hi": 0.9980503212392572,
+      "n_clusters": 2404
+     },
+     "loco_loo": {
+      "full": 0.6578622580762632,
+      "n_full": 4655,
+      "ex_covid": 0.40798773884799727,
+      "n_ex_covid": 4238,
+      "n_covid": 417,
+      "covid_share_of_fires": 0.08958109559613318,
+      "covid_share_of_R": 0.43538370585602865,
+      "loo_episode_min": -0.04214191193103554,
+      "loo_episode_max": 0.7206201225689587,
+      "loo_worst_episode": 1,
+      "n_episodes": 2
+     },
+     "admit_share_heldout": 0.46572194561470703,
+     "checks": {
+      "G1_cluster_CI_gt0": true,
+      "G2_diff_CI_gt0": true,
+      "G3_equal_date_CI_gt0": true,
+      "G4_episode_CI_gt0": false,
+      "G5_ex_covid_positive": true,
+      "G6_loo_min_positive": false,
+      "G7_coverage_floor": true,
+      "G8_not_episode_thin": false
+     },
+     "verdict": "FAIL"
+    },
+    "0.20": {
+     "design_abs_separation": 0.05698292465382815,
+     "cell_level": {
+      "n": 2823,
+      "n_names": 1198,
+      "mean_R_capped10": 0.9315840268635116,
+      "mean_R_winsor99": 1.2357145406524799,
+      "mean_R_raw": 1.4217877340132257,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.26220292816952934,
+      "median_ret": -0.07427546408494845,
+      "win_rate": 0.3499822883457315,
+      "n_censored_excluded": 78,
+      "censored_mark_mean_R": 3.29977733581032
+     },
+     "complement_level": {
+      "n": 7123,
+      "n_names": 1521,
+      "mean_R_capped10": -0.1096072871929432,
+      "mean_R_winsor99": -0.0671024033112858,
+      "mean_R_raw": 0.006857312844336719,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.019307417759092626,
+      "median_ret": -0.07477570069217254,
+      "win_rate": 0.1818054190650007,
+      "n_censored_excluded": 420,
+      "censored_mark_mean_R": 2.9162939090639326
+     },
+     "cell_boot_cluster": {
+      "point": 0.9315840268635116,
+      "ci_lo": 0.8073709250914533,
+      "ci_hi": 1.0596222540589253,
+      "n_clusters": 1687,
+      "n_fires": 2823
+     },
+     "cell_boot_episode": {
+      "point": 0.9315840268635116,
+      "ci_lo": 0.17942269262224492,
+      "ci_hi": 2.720461046003027,
+      "n_clusters": 5,
+      "n_fires": 2823
+     },
+     "cell_equal_date": {
+      "point": 0.4495334439513691,
+      "ci_lo": 0.28315223703120956,
+      "ci_hi": 0.6171312211054354,
+      "n_dates": 872
+     },
+     "diff_vs_complement": {
+      "point": 1.0411913140564548,
+      "ci_lo": 0.9030556968439384,
+      "ci_hi": 1.180263240616633,
+      "n_clusters": 3073
+     },
+     "loco_loo": {
+      "full": 0.9315840268635116,
+      "n_full": 2823,
+      "ex_covid": 0.5539844449864836,
+      "n_ex_covid": 2443,
+      "n_covid": 380,
+      "covid_share_of_fires": 0.13460857244066596,
+      "covid_share_of_R": 0.48537826340086204,
+      "loo_episode_min": 0.33839451209339255,
+      "loo_episode_max": 2.203294177631027,
+      "loo_worst_episode": 1,
+      "n_episodes": 5
+     },
+     "admit_share_heldout": 0.27776713902719263,
+     "checks": {
+      "G1_cluster_CI_gt0": true,
+      "G2_diff_CI_gt0": true,
+      "G3_equal_date_CI_gt0": true,
+      "G4_episode_CI_gt0": true,
+      "G5_ex_covid_positive": true,
+      "G6_loo_min_positive": true,
+      "G7_coverage_floor": true,
+      "G8_not_episode_thin": true
+     },
+     "verdict": "PASS"
+    },
+    "0.25": {
+     "design_abs_separation": 0.03264097093064833,
+     "cell_level": {
+      "n": 1662,
+      "n_names": 936,
+      "mean_R_capped10": 1.3007827338878568,
+      "mean_R_winsor99": 1.7313104340731154,
+      "mean_R_raw": 1.9314346282787196,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.3796956049679118,
+      "median_ret": -0.06494896625284002,
+      "win_rate": 0.4043321299638989,
+      "n_censored_excluded": 23,
+      "censored_mark_mean_R": 3.835064237821773
+     },
+     "complement_level": {
+      "n": 8284,
+      "n_names": 1544,
+      "mean_R_capped10": -0.037756144683879625,
+      "mean_R_winsor99": 0.009454032294842108,
+      "mean_R_raw": 0.10291007488053051,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.029776859906316833,
+      "median_ret": -0.07562893920573271,
+      "win_rate": 0.19447126991791405,
+      "n_censored_excluded": 475,
+      "censored_mark_mean_R": 2.9347780979582225
+     },
+     "cell_boot_cluster": {
+      "point": 1.3007827338878568,
+      "ci_lo": 1.1249352671186643,
+      "ci_hi": 1.4830059778447549,
+      "n_clusters": 1181,
+      "n_fires": 1662
+     },
+     "cell_boot_episode": {
+      "point": 1.3007827338878568,
+      "ci_lo": -0.394335598399775,
+      "ci_hi": 2.864561391350493,
+      "n_clusters": 7,
+      "n_fires": 1662
+     },
+     "cell_equal_date": {
+      "point": 0.6691018616408941,
+      "ci_lo": 0.4479133764458111,
+      "ci_hi": 0.8876944572849964,
+      "n_dates": 587
+     },
+     "diff_vs_complement": {
+      "point": 1.3385388785717365,
+      "ci_lo": 1.1604630106506542,
+      "ci_hi": 1.5173189467681372,
+      "n_clusters": 2681
+     },
+     "loco_loo": {
+      "full": 1.3007827338878568,
+      "n_full": 1662,
+      "ex_covid": 0.7138700746810513,
+      "n_ex_covid": 1310,
+      "n_covid": 352,
+      "covid_share_of_fires": 0.21179302045728038,
+      "covid_share_of_R": 0.5674317003974033,
+      "loo_episode_min": 0.47645605902601235,
+      "loo_episode_max": 2.455892722619587,
+      "loo_worst_episode": 2,
+      "n_episodes": 7
+     },
+     "admit_share_heldout": 0.1613366526235159,
+     "checks": {
+      "G1_cluster_CI_gt0": true,
+      "G2_diff_CI_gt0": true,
+      "G3_equal_date_CI_gt0": true,
+      "G4_episode_CI_gt0": false,
+      "G5_ex_covid_positive": true,
+      "G6_loo_min_positive": true,
+      "G7_coverage_floor": true,
+      "G8_not_episode_thin": true
+     },
+     "verdict": "FAIL"
+    },
+    "0.30": {
+     "design_abs_separation": 0.10075333554109978,
+     "cell_level": {
+      "n": 958,
+      "n_names": 625,
+      "mean_R_capped10": 1.7720309327657118,
+      "mean_R_winsor99": 2.285394061139359,
+      "mean_R_raw": 2.437960364889754,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.4913830121915649,
+      "median_ret": -0.054916858168600646,
+      "win_rate": 0.4697286012526096,
+      "n_censored_excluded": 11,
+      "censored_mark_mean_R": 3.3285969425622515
+     },
+     "complement_level": {
+      "n": 8988,
+      "n_names": 1548,
+      "mean_R_capped10": 0.016858407606898898,
+      "mean_R_winsor99": 0.07547663288872004,
+      "mean_R_raw": 0.19214345604641317,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.04528044918125044,
+      "median_ret": -0.07544328386433202,
+      "win_rate": 0.20393858477970628,
+      "n_censored_excluded": 487,
+      "censored_mark_mean_R": 2.9684014530428575
+     },
+     "cell_boot_cluster": {
+      "point": 1.7720309327657118,
+      "ci_lo": 1.5317458669477368,
+      "ci_hi": 2.026997749160289,
+      "n_clusters": 787,
+      "n_fires": 958
+     },
+     "cell_boot_episode": {
+      "point": 1.7720309327657118,
+      "ci_lo": 0.11568737215618292,
+      "ci_hi": 2.7472046811035367,
+      "n_clusters": 13,
+      "n_fires": 958
+     },
+     "cell_equal_date": {
+      "point": 0.9960826068969306,
+      "ci_lo": 0.7049761995945641,
+      "ci_hi": 1.3001266391089716,
+      "n_dates": 391
+     },
+     "diff_vs_complement": {
+      "point": 1.7551725251588128,
+      "ci_lo": 1.5050375223664367,
+      "ci_hi": 2.019452520311851,
+      "n_clusters": 2309
+     },
+     "loco_loo": {
+      "full": 1.7720309327657118,
+      "n_full": 958,
+      "ex_covid": 1.064095710622707,
+      "n_ex_covid": 668,
+      "n_covid": 290,
+      "covid_share_of_fires": 0.302713987473904,
+      "covid_share_of_R": 0.5812832376192326,
+      "loo_episode_min": 0.8156775891636545,
+      "loo_episode_max": 2.426409034637247,
+      "loo_worst_episode": 3,
+      "n_episodes": 13
+     },
+     "admit_share_heldout": 0.09278054385292991,
+     "checks": {
+      "G1_cluster_CI_gt0": true,
+      "G2_diff_CI_gt0": true,
+      "G3_equal_date_CI_gt0": true,
+      "G4_episode_CI_gt0": true,
+      "G5_ex_covid_positive": true,
+      "G6_loo_min_positive": true,
+      "G7_coverage_floor": true,
+      "G8_not_episode_thin": true
+     },
+     "verdict": "PASS"
+    }
+   },
+   "design_selected": "0.30"
+  },
+  "T_relievable": {
+   "coverage": {
+    "fire_weighted_union": 0.7166279969064192,
+    "fire_weighted_basket": 0.14957463263727766,
+    "n_heldout": 1658,
+    "n_design": 2975,
+    "passes_floor": true
+   },
+   "grid": {
+    "0.15": {
+     "design_abs_separation": 0.08854096151325863,
+     "cell_level": {
+      "n": 973,
+      "n_names": 703,
+      "mean_R_capped10": 1.4763361181550498,
+      "mean_R_winsor99": 1.9387854013664754,
+      "mean_R_raw": 2.1080089413380945,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.34693590466241286,
+      "median_ret": -0.06068306790916311,
+      "win_rate": 0.42034943473792397,
+      "n_censored_excluded": 50,
+      "censored_mark_mean_R": 4.459201270163862
+     },
+     "complement_level": {
+      "n": 611,
+      "n_names": 474,
+      "mean_R_capped10": 0.09691585517938245,
+      "mean_R_winsor99": 0.3208472529958271,
+      "mean_R_raw": 0.37819397776926394,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.07545984240173788,
+      "median_ret": -0.06934953319091297,
+      "win_rate": 0.19476268412438624,
+      "n_censored_excluded": 24,
+      "censored_mark_mean_R": 4.577276061880273
+     },
+     "cell_boot_cluster": {
+      "point": 1.4763361181550498,
+      "ci_lo": 1.251164164515647,
+      "ci_hi": 1.7053392386885766,
+      "n_clusters": 930,
+      "n_fires": 973
+     },
+     "cell_boot_episode": {
+      "point": 1.4763361181550498,
+      "ci_lo": 0.42826543527837646,
+      "ci_hi": 2.7625615213960026,
+      "n_clusters": 12,
+      "n_fires": 973
+     },
+     "cell_equal_date": {
+      "point": 0.8628284497161829,
+      "ci_lo": 0.5756308443984484,
+      "ci_hi": 1.1587658999436674,
+      "n_dates": 456
+     },
+     "diff_vs_complement": {
+      "point": 1.3794202629756673,
+      "ci_lo": 1.0690963365693609,
+      "ci_hi": 1.6987328892020404,
+      "n_clusters": 1479
+     },
+     "loco_loo": {
+      "full": 1.4763361181550498,
+      "n_full": 973,
+      "ex_covid": 1.0329736197960109,
+      "n_ex_covid": 846,
+      "n_covid": 127,
+      "covid_share_of_fires": 0.13052415210688592,
+      "covid_share_of_R": 0.3916387989980547,
+      "loo_episode_min": 1.0329736197960109,
+      "loo_episode_max": 1.885434112977621,
+      "loo_worst_episode": 1,
+      "n_episodes": 12
+     },
+     "admit_share_heldout": 0.6170084439083233,
+     "checks": {
+      "G1_cluster_CI_gt0": true,
+      "G2_diff_CI_gt0": true,
+      "G3_equal_date_CI_gt0": true,
+      "G4_episode_CI_gt0": true,
+      "G5_ex_covid_positive": true,
+      "G6_loo_min_positive": true,
+      "G7_coverage_floor": true,
+      "G8_not_episode_thin": true
+     },
+     "verdict": "PASS"
+    },
+    "0.20": {
+     "design_abs_separation": 0.18748195080801633,
+     "cell_level": {
+      "n": 642,
+      "n_names": 507,
+      "mean_R_capped10": 1.9558811944886547,
+      "mean_R_winsor99": 2.6173613076602686,
+      "mean_R_raw": 2.7616166812025975,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.46796741408132914,
+      "median_ret": -0.030253397649323444,
+      "win_rate": 0.48753894080996885,
+      "n_censored_excluded": 18,
+      "censored_mark_mean_R": 3.699844072185965
+     },
+     "complement_level": {
+      "n": 942,
+      "n_names": 659,
+      "mean_R_capped10": 0.2547928913139591,
+      "mean_R_winsor99": 0.3918056737799374,
+      "mean_R_raw": 0.5405640244234804,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.08836466996154595,
+      "median_ret": -0.07125485361170286,
+      "win_rate": 0.22823779193205945,
+      "n_censored_excluded": 56,
+      "censored_mark_mean_R": 4.753883851678076
+     },
+     "cell_boot_cluster": {
+      "point": 1.9558811944886547,
+      "ci_lo": 1.6389994208743388,
+      "ci_hi": 2.268320264619898,
+      "n_clusters": 632,
+      "n_fires": 642
+     },
+     "cell_boot_episode": {
+      "point": 1.9558811944886547,
+      "ci_lo": 0.4731572898594538,
+      "ci_hi": 3.13856445202974,
+      "n_clusters": 22,
+      "n_fires": 642
+     },
+     "cell_equal_date": {
+      "point": 1.2623950348444932,
+      "ci_lo": 0.9263390838995984,
+      "ci_hi": 1.608276576699145,
+      "n_dates": 321
+     },
+     "diff_vs_complement": {
+      "point": 1.7010883031746955,
+      "ci_lo": 1.3388618401901382,
+      "ci_hi": 2.0529338784770785,
+      "n_clusters": 1449
+     },
+     "loco_loo": {
+      "full": 1.9558811944886547,
+      "n_full": 642,
+      "ex_covid": 1.3575493511031453,
+      "n_ex_covid": 519,
+      "n_covid": 123,
+      "covid_share_of_fires": 0.19158878504672897,
+      "covid_share_of_R": 0.43889326029782827,
+      "loo_episode_min": 1.3575493511031453,
+      "loo_episode_max": 2.4590910221072466,
+      "loo_worst_episode": 5,
+      "n_episodes": 22
+     },
+     "admit_share_heldout": 0.39806996381182147,
+     "checks": {
+      "G1_cluster_CI_gt0": true,
+      "G2_diff_CI_gt0": true,
+      "G3_equal_date_CI_gt0": true,
+      "G4_episode_CI_gt0": true,
+      "G5_ex_covid_positive": true,
+      "G6_loo_min_positive": true,
+      "G7_coverage_floor": true,
+      "G8_not_episode_thin": true
+     },
+     "verdict": "PASS"
+    },
+    "0.25": {
+     "design_abs_separation": 0.23309466037299598,
+     "cell_level": {
+      "n": 402,
+      "n_names": 355,
+      "mean_R_capped10": 2.4783960127049918,
+      "mean_R_winsor99": 3.2699608145509544,
+      "mean_R_raw": 3.368827309021411,
+      "median_R": 1.0414959868814666,
+      "equal_notional_mean_ret": 0.6192188571452896,
+      "median_ret": 0.15393984833345797,
+      "win_rate": 0.5447761194029851,
+      "n_censored_excluded": 6,
+      "censored_mark_mean_R": 5.225272661821565
+     },
+     "complement_level": {
+      "n": 1182,
+      "n_names": 777,
+      "mean_R_capped10": 0.4224834461692549,
+      "mean_R_winsor99": 0.6358366588944809,
+      "mean_R_raw": 0.7850259239529431,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.11400052315700776,
+      "median_ret": -0.07126627520273066,
+      "win_rate": 0.2614213197969543,
+      "n_censored_excluded": 68,
+      "censored_mark_mean_R": 4.433280191505738
+     },
+     "cell_boot_cluster": {
+      "point": 2.4783960127049918,
+      "ci_lo": 2.0734762795603876,
+      "ci_hi": 2.862108529151431,
+      "n_clusters": 401,
+      "n_fires": 402
+     },
+     "cell_boot_episode": {
+      "point": 2.4783960127049918,
+      "ci_lo": 0.7886866478891034,
+      "ci_hi": 3.6091267020128583,
+      "n_clusters": 25,
+      "n_fires": 402
+     },
+     "cell_equal_date": {
+      "point": 1.6620385475617714,
+      "ci_lo": 1.1960185104680618,
+      "ci_hi": 2.1441182903254945,
+      "n_dates": 206
+     },
+     "diff_vs_complement": {
+      "point": 2.0559125665357367,
+      "ci_lo": 1.6260252971570928,
+      "ci_hi": 2.4818561689405283,
+      "n_clusters": 1381
+     },
+     "loco_loo": {
+      "full": 2.4783960127049918,
+      "n_full": 402,
+      "ex_covid": 1.6203464382275639,
+      "n_ex_covid": 285,
+      "n_covid": 117,
+      "covid_share_of_fires": 0.291044776119403,
+      "covid_share_of_R": 0.5364933344030164,
+      "loo_episode_min": 1.6203464382275639,
+      "loo_episode_max": 2.793278538529126,
+      "loo_worst_episode": 5,
+      "n_episodes": 25
+     },
+     "admit_share_heldout": 0.24607961399276237,
+     "checks": {
+      "G1_cluster_CI_gt0": true,
+      "G2_diff_CI_gt0": true,
+      "G3_equal_date_CI_gt0": true,
+      "G4_episode_CI_gt0": true,
+      "G5_ex_covid_positive": true,
+      "G6_loo_min_positive": true,
+      "G7_coverage_floor": true,
+      "G8_not_episode_thin": true
+     },
+     "verdict": "PASS"
+    },
+    "0.30": {
+     "design_abs_separation": 0.49313556921612445,
+     "cell_level": {
+      "n": 249,
+      "n_names": 230,
+      "mean_R_capped10": 3.039834781183842,
+      "mean_R_winsor99": 4.142277670134501,
+      "mean_R_raw": 4.237242261962241,
+      "median_R": 2.0997561368889412,
+      "equal_notional_mean_ret": 0.7768358583375434,
+      "median_ret": 0.3897058823529409,
+      "win_rate": 0.606425702811245,
+      "n_censored_excluded": 2,
+      "censored_mark_mean_R": 7.191492346437384
+     },
+     "complement_level": {
+      "n": 1335,
+      "n_names": 847,
+      "mean_R_capped10": 0.553387093606509,
+      "mean_R_winsor99": 0.7748523934252721,
+      "mean_R_raw": 0.9191729566369947,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.14250372300969383,
+      "median_ret": -0.06988585936326808,
+      "win_rate": 0.28239700374531834,
+      "n_censored_excluded": 72,
+      "censored_mark_mean_R": 4.4226625597284
+     },
+     "cell_boot_cluster": {
+      "point": 3.039834781183842,
+      "ci_lo": 2.506077508715044,
+      "ci_hi": 3.5398249560222,
+      "n_clusters": 249,
+      "n_fires": 249
+     },
+     "cell_boot_episode": {
+      "point": 3.039834781183842,
+      "ci_lo": 1.0235254114474788,
+      "ci_hi": 4.0109565851726785,
+      "n_clusters": 23,
+      "n_fires": 249
+     },
+     "cell_equal_date": {
+      "point": 2.2000622544066943,
+      "ci_lo": 1.5818476640988066,
+      "ci_hi": 2.8276549498705252,
+      "n_dates": 128
+     },
+     "diff_vs_complement": {
+      "point": 2.486447687577333,
+      "ci_lo": 1.9275459206334222,
+      "ci_hi": 3.043144651688544,
+      "n_clusters": 1367
+     },
+     "loco_loo": {
+      "full": 3.039834781183842,
+      "n_full": 249,
+      "ex_covid": 2.0105510016080372,
+      "n_ex_covid": 152,
+      "n_covid": 97,
+      "covid_share_of_fires": 0.3895582329317269,
+      "covid_share_of_R": 0.596252956312144,
+      "loo_episode_min": 2.0105510016080372,
+      "loo_episode_max": 3.253943821069276,
+      "loo_worst_episode": 4,
+      "n_episodes": 23
+     },
+     "admit_share_heldout": 0.1513872135102533,
+     "checks": {
+      "G1_cluster_CI_gt0": true,
+      "G2_diff_CI_gt0": true,
+      "G3_equal_date_CI_gt0": true,
+      "G4_episode_CI_gt0": true,
+      "G5_ex_covid_positive": true,
+      "G6_loo_min_positive": true,
+      "G7_coverage_floor": true,
+      "G8_not_episode_thin": true
+     },
+     "verdict": "PASS"
+    }
+   },
+   "design_selected": "0.30"
+  },
+  "P": {
+   "coverage": {
+    "fire_weighted_union": 0.7166279969064192,
+    "fire_weighted_basket": 0.14957463263727766,
+    "n_heldout": 1658,
+    "n_design": 2975,
+    "passes_floor": true
+   },
+   "grid": {
+    "0.15": {
+     "design_abs_separation": 0.08854096151325863,
+     "cell_level": {
+      "n": 973,
+      "n_names": 703,
+      "mean_R_capped10": 1.4763361181550498,
+      "mean_R_winsor99": 1.9387854013664754,
+      "mean_R_raw": 2.1080089413380945,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.34693590466241286,
+      "median_ret": -0.06068306790916311,
+      "win_rate": 0.42034943473792397,
+      "n_censored_excluded": 50,
+      "censored_mark_mean_R": 4.459201270163862
+     },
+     "complement_level": {
+      "n": 611,
+      "n_names": 474,
+      "mean_R_capped10": 0.09691585517938245,
+      "mean_R_winsor99": 0.3208472529958271,
+      "mean_R_raw": 0.37819397776926394,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.07545984240173788,
+      "median_ret": -0.06934953319091297,
+      "win_rate": 0.19476268412438624,
+      "n_censored_excluded": 24,
+      "censored_mark_mean_R": 4.577276061880273
+     },
+     "cell_boot_cluster": {
+      "point": 1.4763361181550498,
+      "ci_lo": 1.251164164515647,
+      "ci_hi": 1.7053392386885766,
+      "n_clusters": 930,
+      "n_fires": 973
+     },
+     "cell_boot_episode": {
+      "point": 1.4763361181550498,
+      "ci_lo": 0.42826543527837646,
+      "ci_hi": 2.7625615213960026,
+      "n_clusters": 12,
+      "n_fires": 973
+     },
+     "cell_equal_date": {
+      "point": 0.8628284497161829,
+      "ci_lo": 0.5756308443984484,
+      "ci_hi": 1.1587658999436674,
+      "n_dates": 456
+     },
+     "diff_vs_complement": {
+      "point": 1.3794202629756673,
+      "ci_lo": 1.0690963365693609,
+      "ci_hi": 1.6987328892020404,
+      "n_clusters": 1479
+     },
+     "loco_loo": {
+      "full": 1.4763361181550498,
+      "n_full": 973,
+      "ex_covid": 1.0329736197960109,
+      "n_ex_covid": 846,
+      "n_covid": 127,
+      "covid_share_of_fires": 0.13052415210688592,
+      "covid_share_of_R": 0.3916387989980547,
+      "loo_episode_min": 1.0329736197960109,
+      "loo_episode_max": 1.885434112977621,
+      "loo_worst_episode": 1,
+      "n_episodes": 12
+     },
+     "admit_share_heldout": 0.6170084439083233,
+     "checks": {
+      "G1_cluster_CI_gt0": true,
+      "G2_diff_CI_gt0": true,
+      "G3_equal_date_CI_gt0": true,
+      "G4_episode_CI_gt0": true,
+      "G5_ex_covid_positive": true,
+      "G6_loo_min_positive": true,
+      "G7_coverage_floor": true,
+      "G8_not_episode_thin": true
+     },
+     "verdict": "PASS"
+    },
+    "0.20": {
+     "design_abs_separation": 0.18748195080801633,
+     "cell_level": {
+      "n": 642,
+      "n_names": 507,
+      "mean_R_capped10": 1.9558811944886547,
+      "mean_R_winsor99": 2.6173613076602686,
+      "mean_R_raw": 2.7616166812025975,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.46796741408132914,
+      "median_ret": -0.030253397649323444,
+      "win_rate": 0.48753894080996885,
+      "n_censored_excluded": 18,
+      "censored_mark_mean_R": 3.699844072185965
+     },
+     "complement_level": {
+      "n": 942,
+      "n_names": 659,
+      "mean_R_capped10": 0.2547928913139591,
+      "mean_R_winsor99": 0.3918056737799374,
+      "mean_R_raw": 0.5405640244234804,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.08836466996154595,
+      "median_ret": -0.07125485361170286,
+      "win_rate": 0.22823779193205945,
+      "n_censored_excluded": 56,
+      "censored_mark_mean_R": 4.753883851678076
+     },
+     "cell_boot_cluster": {
+      "point": 1.9558811944886547,
+      "ci_lo": 1.6389994208743388,
+      "ci_hi": 2.268320264619898,
+      "n_clusters": 632,
+      "n_fires": 642
+     },
+     "cell_boot_episode": {
+      "point": 1.9558811944886547,
+      "ci_lo": 0.4731572898594538,
+      "ci_hi": 3.13856445202974,
+      "n_clusters": 22,
+      "n_fires": 642
+     },
+     "cell_equal_date": {
+      "point": 1.2623950348444932,
+      "ci_lo": 0.9263390838995984,
+      "ci_hi": 1.608276576699145,
+      "n_dates": 321
+     },
+     "diff_vs_complement": {
+      "point": 1.7010883031746955,
+      "ci_lo": 1.3388618401901382,
+      "ci_hi": 2.0529338784770785,
+      "n_clusters": 1449
+     },
+     "loco_loo": {
+      "full": 1.9558811944886547,
+      "n_full": 642,
+      "ex_covid": 1.3575493511031453,
+      "n_ex_covid": 519,
+      "n_covid": 123,
+      "covid_share_of_fires": 0.19158878504672897,
+      "covid_share_of_R": 0.43889326029782827,
+      "loo_episode_min": 1.3575493511031453,
+      "loo_episode_max": 2.4590910221072466,
+      "loo_worst_episode": 5,
+      "n_episodes": 22
+     },
+     "admit_share_heldout": 0.39806996381182147,
+     "checks": {
+      "G1_cluster_CI_gt0": true,
+      "G2_diff_CI_gt0": true,
+      "G3_equal_date_CI_gt0": true,
+      "G4_episode_CI_gt0": true,
+      "G5_ex_covid_positive": true,
+      "G6_loo_min_positive": true,
+      "G7_coverage_floor": true,
+      "G8_not_episode_thin": true
+     },
+     "verdict": "PASS"
+    },
+    "0.25": {
+     "design_abs_separation": 0.23309466037299598,
+     "cell_level": {
+      "n": 402,
+      "n_names": 355,
+      "mean_R_capped10": 2.4783960127049918,
+      "mean_R_winsor99": 3.2699608145509544,
+      "mean_R_raw": 3.368827309021411,
+      "median_R": 1.0414959868814666,
+      "equal_notional_mean_ret": 0.6192188571452896,
+      "median_ret": 0.15393984833345797,
+      "win_rate": 0.5447761194029851,
+      "n_censored_excluded": 6,
+      "censored_mark_mean_R": 5.225272661821565
+     },
+     "complement_level": {
+      "n": 1182,
+      "n_names": 777,
+      "mean_R_capped10": 0.4224834461692549,
+      "mean_R_winsor99": 0.6358366588944809,
+      "mean_R_raw": 0.7850259239529431,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.11400052315700776,
+      "median_ret": -0.07126627520273066,
+      "win_rate": 0.2614213197969543,
+      "n_censored_excluded": 68,
+      "censored_mark_mean_R": 4.433280191505738
+     },
+     "cell_boot_cluster": {
+      "point": 2.4783960127049918,
+      "ci_lo": 2.0734762795603876,
+      "ci_hi": 2.862108529151431,
+      "n_clusters": 401,
+      "n_fires": 402
+     },
+     "cell_boot_episode": {
+      "point": 2.4783960127049918,
+      "ci_lo": 0.7886866478891034,
+      "ci_hi": 3.6091267020128583,
+      "n_clusters": 25,
+      "n_fires": 402
+     },
+     "cell_equal_date": {
+      "point": 1.6620385475617714,
+      "ci_lo": 1.1960185104680618,
+      "ci_hi": 2.1441182903254945,
+      "n_dates": 206
+     },
+     "diff_vs_complement": {
+      "point": 2.0559125665357367,
+      "ci_lo": 1.6260252971570928,
+      "ci_hi": 2.4818561689405283,
+      "n_clusters": 1381
+     },
+     "loco_loo": {
+      "full": 2.4783960127049918,
+      "n_full": 402,
+      "ex_covid": 1.6203464382275639,
+      "n_ex_covid": 285,
+      "n_covid": 117,
+      "covid_share_of_fires": 0.291044776119403,
+      "covid_share_of_R": 0.5364933344030164,
+      "loo_episode_min": 1.6203464382275639,
+      "loo_episode_max": 2.793278538529126,
+      "loo_worst_episode": 5,
+      "n_episodes": 25
+     },
+     "admit_share_heldout": 0.24607961399276237,
+     "checks": {
+      "G1_cluster_CI_gt0": true,
+      "G2_diff_CI_gt0": true,
+      "G3_equal_date_CI_gt0": true,
+      "G4_episode_CI_gt0": true,
+      "G5_ex_covid_positive": true,
+      "G6_loo_min_positive": true,
+      "G7_coverage_floor": true,
+      "G8_not_episode_thin": true
+     },
+     "verdict": "PASS"
+    },
+    "0.30": {
+     "design_abs_separation": 0.49313556921612445,
+     "cell_level": {
+      "n": 249,
+      "n_names": 230,
+      "mean_R_capped10": 3.039834781183842,
+      "mean_R_winsor99": 4.142277670134501,
+      "mean_R_raw": 4.237242261962241,
+      "median_R": 2.0997561368889412,
+      "equal_notional_mean_ret": 0.7768358583375434,
+      "median_ret": 0.3897058823529409,
+      "win_rate": 0.606425702811245,
+      "n_censored_excluded": 2,
+      "censored_mark_mean_R": 7.191492346437384
+     },
+     "complement_level": {
+      "n": 1335,
+      "n_names": 847,
+      "mean_R_capped10": 0.553387093606509,
+      "mean_R_winsor99": 0.7748523934252721,
+      "mean_R_raw": 0.9191729566369947,
+      "median_R": -1.0,
+      "equal_notional_mean_ret": 0.14250372300969383,
+      "median_ret": -0.06988585936326808,
+      "win_rate": 0.28239700374531834,
+      "n_censored_excluded": 72,
+      "censored_mark_mean_R": 4.4226625597284
+     },
+     "cell_boot_cluster": {
+      "point": 3.039834781183842,
+      "ci_lo": 2.506077508715044,
+      "ci_hi": 3.5398249560222,
+      "n_clusters": 249,
+      "n_fires": 249
+     },
+     "cell_boot_episode": {
+      "point": 3.039834781183842,
+      "ci_lo": 1.0235254114474788,
+      "ci_hi": 4.0109565851726785,
+      "n_clusters": 23,
+      "n_fires": 249
+     },
+     "cell_equal_date": {
+      "point": 2.2000622544066943,
+      "ci_lo": 1.5818476640988066,
+      "ci_hi": 2.8276549498705252,
+      "n_dates": 128
+     },
+     "diff_vs_complement": {
+      "point": 2.486447687577333,
+      "ci_lo": 1.9275459206334222,
+      "ci_hi": 3.043144651688544,
+      "n_clusters": 1367
+     },
+     "loco_loo": {
+      "full": 3.039834781183842,
+      "n_full": 249,
+      "ex_covid": 2.0105510016080372,
+      "n_ex_covid": 152,
+      "n_covid": 97,
+      "covid_share_of_fires": 0.3895582329317269,
+      "covid_share_of_R": 0.596252956312144,
+      "loo_episode_min": 2.0105510016080372,
+      "loo_episode_max": 3.253943821069276,
+      "loo_worst_episode": 4,
+      "n_episodes": 23
+     },
+     "admit_share_heldout": 0.1513872135102533,
+     "checks": {
+      "G1_cluster_CI_gt0": true,
+      "G2_diff_CI_gt0": true,
+      "G3_equal_date_CI_gt0": true,
+      "G4_episode_CI_gt0": true,
+      "G5_ex_covid_positive": true,
+      "G6_loo_min_positive": true,
+      "G7_coverage_floor": true,
+      "G8_not_episode_thin": true
+     },
+     "verdict": "PASS"
+    }
+   },
+   "design_selected": "0.30"
+  }
+ },
+ "exemplars": {
+  "HL@2026-06-16": {
+   "found": true,
+   "known_ts": "2026-06-18",
+   "entry_date": "2026-06-22",
+   "entry_px": 15.54,
+   "keeper": [
+    "block",
+    "counter-trend, no 200-reclaim/hold"
+   ],
+   "armT": true,
+   "armT_relievable": false,
+   "armP": false,
+   "p_on": [
+    "False",
+    "counter-trend, no 200-reclaim/hold"
+   ],
+   "p_off": [
+    "False",
+    "failed next-bar hold"
+   ],
+   "peer_src": "basket",
+   "peer_dd": -0.3221,
+   "admitted": {
+    "15%": true,
+    "20%": true,
+    "25%": true,
+    "30%": true
+   }
+  },
+  "HL@2026-06-25": {
+   "found": true,
+   "known_ts": "2026-06-29",
+   "entry_date": "2026-06-30",
+   "entry_px": 15.53,
+   "keeper": [
+    "block",
+    "counter-trend, no 200-reclaim/hold"
+   ],
+   "armT": true,
+   "armT_relievable": true,
+   "armP": true,
+   "p_on": [
+    "False",
+    "counter-trend, held but no 200-reclaim"
+   ],
+   "p_off": [
+    "True",
+    "held confirmation (counter-trend)"
+   ],
+   "peer_src": "basket",
+   "peer_dd": -0.3873,
+   "admitted": {
+    "15%": true,
+    "20%": true,
+    "25%": true,
+    "30%": true
+   }
+  },
+  "NEM@2026-08-05": {
+   "found": false
+  }
+ },
+ "current_membership": {
+  "as_of": "2026-08-07",
+  "by_threshold": {
+   "15%": [
+    "basket:ai_infra|ai_semiconductors",
+    "basket:ai_neoclouds",
+    "basket:ai_software|non_ai_software",
+    "basket:critical_minerals",
+    "basket:gold_miners",
+    "basket:non_ai_software",
+    "basket:nuclear_power|power_grid",
+    "basket:obesity_glp1",
+    "basket:payments_fintech",
+    "basket:robotics_automation",
+    "basket:semicap_equipment",
+    "basket:silver_miners",
+    "basket:space_economy",
+    "basket:uranium_miners",
+    "sector:Communication Services",
+    "sector:Energy",
+    "sector:Information Technology",
+    "sector:Materials"
+   ],
+   "20%": [
+    "basket:ai_infra|ai_semiconductors",
+    "basket:ai_neoclouds",
+    "basket:ai_software|non_ai_software",
+    "basket:critical_minerals",
+    "basket:gold_miners",
+    "basket:non_ai_software",
+    "basket:nuclear_power|power_grid",
+    "basket:obesity_glp1",
+    "basket:robotics_automation",
+    "basket:semicap_equipment",
+    "basket:silver_miners",
+    "basket:space_economy",
+    "basket:uranium_miners",
+    "sector:Information Technology",
+    "sector:Materials"
+   ],
+   "25%": [
+    "basket:ai_neoclouds",
+    "basket:ai_software|non_ai_software",
+    "basket:critical_minerals",
+    "basket:gold_miners",
+    "basket:non_ai_software",
+    "basket:nuclear_power|power_grid",
+    "basket:robotics_automation",
+    "basket:semicap_equipment",
+    "basket:silver_miners",
+    "basket:space_economy",
+    "basket:uranium_miners",
+    "sector:Information Technology"
+   ],
+   "30%": [
+    "basket:ai_neoclouds",
+    "basket:critical_minerals",
+    "basket:nuclear_power|power_grid",
+    "basket:space_economy"
+   ]
+  },
+  "deepest": {
+   "basket:critical_minerals": -0.5095372796058655,
+   "basket:space_economy": -0.4806615710258484,
+   "basket:ai_neoclouds": -0.41093429923057556,
+   "basket:nuclear_power|power_grid": -0.35216817259788513,
+   "basket:semicap_equipment": -0.29942816495895386,
+   "basket:silver_miners": -0.29738059639930725,
+   "basket:robotics_automation": -0.29548951983451843,
+   "basket:non_ai_software": -0.283165842294693,
+   "basket:ai_software|non_ai_software": -0.2747385799884796,
+   "basket:uranium_miners": -0.27369678020477295
+  }
+ }
+}
