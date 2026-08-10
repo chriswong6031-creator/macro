@@ -354,6 +354,7 @@ artifacts:
       - engine/us_basket_turn.py
       - engine/us_board_rank.py
       - scripts/basket_coherence_audit.py
+      - scripts/build_basket_washout_state.py
       - scripts/build_baskets.py
       - scripts/build_demand.py
       - scripts/build_gex_board.py
@@ -6819,6 +6820,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
+      - scripts/build_basket_washout_state.py
       - scripts/research/long_hold_label_panel.py
     external_consumers: []
     notes: >
@@ -9434,6 +9436,51 @@ artifacts:
       (RESIDUAL_ALPHA_MOMENTUM) and factor timing/velocity signals are a standing
       kill — this artifact feeds no score, rank, gate, or Article-2 surface.
       display_only=true. Consumed by factors.html.j2 "Where the heat is" panel only.
+
+  site-basket-washout-state:
+    path: site/factordata/basket_washout_state.json
+    format: json
+    producer: scripts/build_basket_washout_state.py
+    known_extra_writers: []
+    owner_program: blocked-entry-override
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: basket_washout_state.v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - terminal:pull_macro_intel
+    notes: >
+      Nightly basket-washout state (schema: basket_washout_state.v1) for the RATIFIED
+      blocked-entry override, construction A1b @25% — prereg
+      research/BLOCKED_ENTRY_CONDITIONAL_PREREG.md §5 (ratification log) and
+      research/BLOCKED_ENTRY_RATIFICATION_PACKET_2026-08-10.md §4. Payload: per thematic
+      basket the MEDIAN 252-session drawdown across its members that printed on as_of
+      (close / rolling-252 max − 1, min_periods 60, groups under 5 printing members
+      omitted), plus a per-name lookup giving the group a name reads through
+      (basis=basket → its primary/most specific basket; basis=sector → GICS fallback from
+      data/breadth/ticker_sectors.parquet) and the three published thresholds it clears.
+      Membership comes from the curated store data/baskets/membership.json (the same source
+      sector_pulse's theme ids descend from); members with a `removed` date are dropped.
+      Names in NEITHER mapping are OMITTED, never defaulted. THE TWO MAPS DIFFER BY
+      DESIGN: baskets[].peer_median_dd_252 is the group's plain median (a group-state
+      chip), while names[].peer_dd is the LEAVE-ONE-OUT median — the name's peers with the
+      name itself removed — which is the per-event quantity r3_axes.py graded, so every
+      published gate was measured on it. A fired name is usually among the deepest in its
+      own basket, so letting it vote in its own peer median would publish a laxer rule
+      than the gauntleted one. The >=5 floor applies to the FULL group (as upstream).
+      qualifies[t] is recomputed from the PUBLISHED rounded number so a consumer that
+      re-derives it always agrees. DISPLAY TIER ONLY: it feeds no score, rank, gate or
+      Article-2 surface, and the live enter-mask conditional remains behind its own two
+      standing gates (production-feed re-grade + signal-era fence, packet §4). The three
+      thresholds are the published operator aggressiveness menu, not three claims — 25 is
+      the ratified default. Built in daily.yml cl_baskets (~5s, off the render-critical
+      path); the engine job's catch-all `git add site/` commits it.
 
   # --- PR-C: NW lobe-status health surface ---
   neuralweb-health:

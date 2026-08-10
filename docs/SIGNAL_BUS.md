@@ -14,6 +14,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | active-build-map | 1 |
 | agentic_media | 4 |
 | biopharma-seasonality-intelligence | 7 |
+| blocked-entry-override | 1 |
 | btc-vector | 6 |
 | capital-structure-intelligence | 20 |
 | causal-hypothesis-factory | 9 |
@@ -110,7 +111,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 368 |
+| display | 369 |
 | infrastructure | 155 |
 | scored | 4 |
 | shadow | 91 |
@@ -119,7 +120,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 579 |
+| git | 580 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 17 |
@@ -158,6 +159,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | data-stock-seasonality-selection-cache | `data/seasonality/selection/<SYM>.json` | json | daily-engine | infrastructure | 1 | 0 |
 | site-biopharma-seasonality-methodology | `site/seasonalitydata/methodology.json` | json | daily-engine | display | 0 | 1 |
 | data-seasonality-program-watch | `data/seasonality/program_watch.json` | json | daily-engine | infrastructure | 0 | 0 |
+
+### blocked-entry-override
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-basket-washout-state | `site/factordata/basket_washout_state.json` | json | daily-engine | display | 0 | 1 |
 
 ### btc-vector
 
@@ -537,6 +544,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | edgar-statements-quarterly | `data/edgar/statements_quarterly.parquet` | parquet | on-demand | display | 3 | 0 |
 | long-hold-delivery-waterfall-panel | `data/research/delivery_waterfall_panel.json` | json | on-demand | display | 2 | 0 |
+| ticker-sectors | `data/breadth/ticker_sectors.parquet` | parquet | on-demand | display | 2 | 0 |
 | breakaway-watch-states | `data/research/breakaway_watch.parquet` | parquet | daily-engine | display | 1 | 0 |
 | capital-allocation-delta | `embedded: capital_allocation block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | expect-drift-ruler-p-results | `data/research/expect_drift_ruler_p_results.parquet` | parquet | on-demand | display | 1 | 0 |
@@ -564,7 +572,6 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | per-fire-sector-benchmark | `data/research/per_fire_sector_benchmark.parquet` | parquet | on-demand | display | 1 | 0 |
 | pricing-power-manifest | `data/research/pricing_power_manifest.json` | json | on-demand | display | 1 | 0 |
 | pricing-power-states | `data/research/pricing_power_states.parquet` | parquet | on-demand | display | 1 | 0 |
-| ticker-sectors | `data/breadth/ticker_sectors.parquet` | parquet | on-demand | display | 1 | 0 |
 | winner-autopsy-panel | `data/research/winner_autopsy_panel.json` | json | daily-engine | display | 1 | 0 |
 | winner-episodes | `data/research/winner_episodes.parquet` | parquet | on-demand | display | 1 | 0 |
 | breakaway-watch-history | `data/research/breakaway_watch_history.parquet` | parquet | daily-engine | display | 0 | 0 |
@@ -1064,7 +1071,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| baskets-membership | `data/baskets/membership.json` | json | weekly | infrastructure | 18 | 0 |
+| baskets-membership | `data/baskets/membership.json` | json | weekly | infrastructure | 19 | 0 |
 | site-baskets-json | `site/basketdata/baskets.json` | json | daily-engine | display | 9 | 1 |
 | site-sector-pulse | `site/basketdata/sector_pulse.json` | json | daily-engine | display | 3 | 2 |
 
@@ -1238,19 +1245,19 @@ flowchart LR
     C_engine_neuralweb_context_api_py["engine/neuralweb/context_api.py"]
     C_engine_neuralweb_lagging_py["engine/neuralweb/lagging.py"]
     OVF_regime_history["...+16 more"]
-    P_collectors_breadth_py(("collectors/breadth.py"))
-    A_breadth_breadth["breadth-breadth"]
-    C_engine_anticipation_py["engine/anticipation.py"]
-    C_engine_basket_score_py["engine/basket_score.py"]
-    C_engine_neuralweb_world_state_py["engine/neuralweb/world_state.py"]
-    OVF_breadth_breadth["...+15 more"]
     P_scripts_seed_us_sector_baskets_py(("scripts/seed_us_sector_baskets.py"))
     A_baskets_membership["baskets-membership"]
     C_engine_demand_ledger_py["engine/demand_ledger.py"]
     C_engine_financial_news_py["engine/financial_news.py"]
     C_engine_froth_fragility_py["engine/froth_fragility.py"]
     C_engine_news_common_py["engine/news_common.py"]
-    OVF_baskets_membership["...+14 more"]
+    OVF_baskets_membership["...+15 more"]
+    P_collectors_breadth_py(("collectors/breadth.py"))
+    A_breadth_breadth["breadth-breadth"]
+    C_engine_anticipation_py["engine/anticipation.py"]
+    C_engine_basket_score_py["engine/basket_score.py"]
+    C_engine_neuralweb_world_state_py["engine/neuralweb/world_state.py"]
+    OVF_breadth_breadth["...+15 more"]
     P_scripts_build_stock_library_py(("scripts/build_stock_library.py"))
     A_site_us_standouts["site-us-standouts"]
     C_engine_intelligence_py["engine/intelligence.py"]
@@ -1332,18 +1339,18 @@ flowchart LR
     A_regime_history --> C_engine_neuralweb_context_api_py
     A_regime_history --> C_engine_neuralweb_lagging_py
     A_regime_history --> OVF_regime_history
-    P_collectors_breadth_py --> A_breadth_breadth
-    A_breadth_breadth --> C_engine_anticipation_py
-    A_breadth_breadth --> C_engine_basket_score_py
-    A_breadth_breadth --> C_engine_neuralweb_lagging_py
-    A_breadth_breadth --> C_engine_neuralweb_world_state_py
-    A_breadth_breadth --> OVF_breadth_breadth
     P_scripts_seed_us_sector_baskets_py --> A_baskets_membership
     A_baskets_membership --> C_engine_demand_ledger_py
     A_baskets_membership --> C_engine_financial_news_py
     A_baskets_membership --> C_engine_froth_fragility_py
     A_baskets_membership --> C_engine_news_common_py
     A_baskets_membership --> OVF_baskets_membership
+    P_collectors_breadth_py --> A_breadth_breadth
+    A_breadth_breadth --> C_engine_anticipation_py
+    A_breadth_breadth --> C_engine_basket_score_py
+    A_breadth_breadth --> C_engine_neuralweb_lagging_py
+    A_breadth_breadth --> C_engine_neuralweb_world_state_py
+    A_breadth_breadth --> OVF_breadth_breadth
     P_scripts_build_stock_library_py --> A_site_us_standouts
     A_site_us_standouts --> C_engine_intelligence_py
     A_site_us_standouts --> C_engine_risk_brain_py
