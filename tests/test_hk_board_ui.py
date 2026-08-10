@@ -1861,10 +1861,22 @@ def test_legacy_render_is_tag_stream_identical_to_the_base_branch():
     art = legacy_artifact()
     assert art.get("board_definition") is None and art.get("rank_by") is None
     normalized, quote_count = _without_opt_in_live_change(_render(art))
-    base_normalized, base_quote_count = _without_opt_in_live_change(
-        _render_source(base, art))
     assert quote_count == len(art["buy"]), (
         "live quote normalizer did not cover exactly one pill per legacy card")
+    # BOTH sides get the normalizer, and that is not symmetry for its own sake.
+    # It was applied to this side only, which was correct for exactly as long as the
+    # live-quote pill (#5214) was unique to the branch: the moment #5214 MERGED, the
+    # base branch grew the same pill, and normalizing one side started deleting 4 tags
+    # per legacy card from `mine` that `theirs` still carried — 3115 vs 3127 on a
+    # 3-card fixture, red on main and therefore on every open PR's pack, with no
+    # branch actually having changed the board's shape.
+    # The asymmetry is the bug: an opt-in normalizer measures "did the SHAPE change"
+    # only when both renders are reduced to the same vocabulary. A one-sided one
+    # measures "does the base have the feature yet", which flips the day it lands.
+    base_normalized, base_quote_count = _without_opt_in_live_change(
+        _render_source(base, art))
+    # A PR may still be proving against a base from either side of #5214. Accept a
+    # wholly pre-feature or wholly post-feature base, but never a partial migration.
     assert base_quote_count in (0, len(art["buy"])), (
         "base render contains a partial live quote migration: %d/%d cards" % (
             base_quote_count, len(art["buy"])))

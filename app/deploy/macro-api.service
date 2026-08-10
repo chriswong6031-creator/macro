@@ -15,6 +15,7 @@ Environment=CODEX_HOME=/var/lib/macro-codex
 Environment=CODEX_ACCOUNT_HOMES=/var/lib/macro-codex:/var/lib/macro-codex-2:/var/lib/macro-codex-3
 Environment=CODEX_PROVIDER_ENABLED=1
 Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public
+Environment=MARKET_MEMORY_CONTEXT_STORE_DIR=/var/lib/macro-market-memory/public
 StateDirectory=macro-codex macro-codex-2 macro-codex-3
 StateDirectoryMode=0700
 # ── Site Access Gate env (all optional; safe defaults apply when absent) ─────
@@ -75,10 +76,15 @@ UMask=0077
 # A leading '-' preserves a healthy API while the operator-armed lane is not
 # provisioned. Once these paths exist, the same mounts are enforced at restart.
 ReadOnlyPaths=-/var/lib/macro-biocatalyst/public
+# update.sh provisions this root before restart, so the non-optional mount fails
+# closed rather than leaving a later-created context store writable by the API.
+ReadOnlyPaths=/var/lib/macro-market-memory/public
 InaccessiblePaths=-/var/lib/macro-biocatalyst/state
 InaccessiblePaths=-/var/lib/macro-biocatalyst/activation
 InaccessiblePaths=-/etc/macro-biocatalyst.env
 InaccessiblePaths=-/etc/macro-biocatalyst-control.env
+InaccessiblePaths=-/var/lib/macro-market-memory/state
+InaccessiblePaths=-/etc/macro-market-memory.env
 
 [Install]
 WantedBy=multi-user.target
