@@ -97,11 +97,13 @@ def test_caddy_source_is_validated_before_install():
 
 def test_changed_systemd_unit_forces_api_restart():
     assert "API_UNIT_UPDATED=1" in SCRIPT
-    restart_condition = (
-        'if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | '
-        "grep -qE"
-    )
-    assert restart_condition in SCRIPT
+    trigger = SCRIPT.split("# BEGIN MACRO_API_RESTART_TRIGGER\n", 1)[1].split(
+        "# END MACRO_API_RESTART_TRIGGER", 1
+    )[0]
+    assert 'if [ "$API_UNIT_UPDATED" -eq 1 ] ||' in trigger
+    assert "! mm_api_fence_marker_ready" in trigger
+    assert "grep -qE" in trigger
+    assert '<<<"$CHANGED"' in trigger
 
 
 # --------------------------------------------------------------------------
@@ -122,11 +124,16 @@ def _ere_on_line(line: str) -> str:
 
 def _api_restart_regex() -> str:
     """The ERE from the macro-api restart line in update.sh."""
-    marker = '[ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | ' + _GREP
-    return _ere_on_line(next(
-        ln for ln in SCRIPT.splitlines()
-        if marker in ln and ln.lstrip().startswith("if ")
-    ))
+    trigger = SCRIPT.split("# BEGIN MACRO_API_RESTART_TRIGGER\n", 1)[1].split(
+        "# END MACRO_API_RESTART_TRIGGER", 1
+    )[0]
+    return _ere_on_line(
+        next(
+            line
+            for line in trigger.splitlines()
+            if _GREP in line and line.lstrip().startswith("if ")
+        )
+    )
 
 
 def _admin_restart_regex() -> str:

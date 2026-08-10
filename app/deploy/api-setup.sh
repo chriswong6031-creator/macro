@@ -107,16 +107,6 @@ for reciprocal_profile in source context identity breadth technicals; do
   fi
 done
 
-# Migrate only the one byte-exact reviewed legacy drop-in. Unknown files,
-# symlinks, metadata drift, or sibling drop-ins abort setup with both writer
-# families already stopped; nothing broad is deleted.
-if [ -e "$MM_LEGACY_API_DROPIN_DIR" ] || [ -L "$MM_LEGACY_API_DROPIN_DIR" ]; then
-  if ! mm_remove_exact_legacy_api_ollama_dropin; then
-    log "refusing unsafe legacy macro-api drop-in migration"
-    exit 1
-  fi
-fi
-
 log "[1/5] python venv + minimal deps"
 export DEBIAN_FRONTEND=noninteractive
 apt-get install -y python3-venv >/dev/null 2>&1 || true
@@ -190,6 +180,18 @@ install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-technicals.service" /et
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-technicals.timer" /etc/systemd/system/macro-market-memory-technicals.timer
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-options.service" /etc/systemd/system/macro-market-memory-options.service
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-options.timer" /etc/systemd/system/macro-market-memory-options.timer
+# Migrate only after the exact canonical API fragment is installed. Unknown
+# files, symlinks, metadata drift, sibling drop-ins, or a noncanonical fragment
+# abort setup with both writer families already stopped; nothing broad is
+# deleted.
+if [ -e "$MM_LEGACY_API_DROPIN_DIR" ] || [ -L "$MM_LEGACY_API_DROPIN_DIR" ]; then
+  if ! mm_remove_exact_legacy_api_ollama_dropin \
+    "$APP_DIR/app/deploy/macro-api.service" \
+    /etc/systemd/system/macro-api.service; then
+    log "refusing unsafe legacy macro-api drop-in migration"
+    exit 1
+  fi
+fi
 systemctl daemon-reload
 [ "$(systemctl show -p NeedDaemonReload --value macro-api)" = no ] || {
   log "systemd still reports a stale macro-api unit after daemon-reload"

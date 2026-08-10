@@ -429,8 +429,12 @@ chmod "$mode" "$1"
 [ "$1" = -c ] || exit 2
 format=$2
 path=$3
-mode=$(/usr/bin/stat -f '%Lp' "$path") || exit 1
-size=$(/usr/bin/stat -f '%z' "$path") || exit 1
+if mode=$(/usr/bin/stat -c '%a' "$path" 2>/dev/null); then
+  size=$(/usr/bin/stat -c '%s' "$path") || exit 1
+else
+  mode=$(/usr/bin/stat -f '%Lp' "$path") || exit 1
+  size=$(/usr/bin/stat -f '%z' "$path") || exit 1
+fi
 owner=root
 group=root
 case "$path" in
@@ -546,9 +550,19 @@ def test_setup_provisions_before_api_and_conditionally_arms_option_lane() -> Non
     legacy_migration = setup.index(
         "if ! mm_remove_exact_legacy_api_ollama_dropin", marker_remove
     )
+    api_install = setup.index(
+        'install -m 0644 "$APP_DIR/app/deploy/macro-api.service" '
+        "/etc/systemd/system/macro-api.service"
+    )
     assert early_disarm < setup.index('log "[1/5]')
     assert marker_remove < early_disarm
-    assert early_disarm < legacy_migration < setup.index(identity_prereq) < verify
+    assert (
+        early_disarm
+        < setup.index(identity_prereq)
+        < verify
+        < api_install
+        < legacy_migration
+    )
     for name in (
         "macro-market-memory-options.service",
         "macro-market-memory-options.timer",
@@ -986,17 +1000,35 @@ def test_legacy_api_dropin_migration_is_exact_and_fail_closed(tmp_path: Path) ->
     assert api_service.count("EnvironmentFile=-/etc/macro-ollama.env") == 1
     assert source_line in setup and source_line in update
     update_migration = update.index("if ! mm_remove_exact_legacy_api_ollama_dropin")
-    assert update_migration < update.index("if ! mm_reviewed_unit_file_ready")
+    update_install = update.index(
+        'install -m 0644 "$APP_DIR/app/deploy/macro-api.service" '
+        "/etc/systemd/system/macro-api.service"
+    )
+    assert update_install < update_migration
 
     dropin_dir = tmp_path / "macro-api.service.d"
     dropin = dropin_dir / "ollama.conf"
+    source_unit = tmp_path / "macro-api.service"
+    installed_unit = tmp_path / "installed-macro-api.service"
+    source_unit.write_text(
+        "[Service]\nEnvironmentFile=-/etc/macro-ollama.env\n",
+        encoding="utf-8",
+    )
+    installed_unit.write_bytes(source_unit.read_bytes())
+    source_unit.chmod(0o644)
+    installed_unit.chmod(0o644)
     helper = _text(DROPIN_MIGRATION).replace(
         "MM_LEGACY_API_DROPIN_DIR=/etc/systemd/system/macro-api.service.d",
         f"MM_LEGACY_API_DROPIN_DIR={shlex.quote(str(dropin_dir))}",
     )
     harness = tmp_path / "dropin-migration.sh"
     harness.write_text(
-        helper + "\nmm_remove_exact_legacy_api_ollama_dropin\n", encoding="utf-8"
+        f"source {shlex.quote(str(UNIT_BOUNDARY))}\n"
+        + helper
+        + "\nmm_remove_exact_legacy_api_ollama_dropin "
+        + f"{shlex.quote(str(source_unit))} "
+        + f"{shlex.quote(str(installed_unit))}\n",
+        encoding="utf-8",
     )
 
     fake_bin = tmp_path / "bin"
@@ -1042,6 +1074,16 @@ else:
     assert not dropin_dir.exists()
 
     dropin_dir.mkdir(mode=0o755)
+    dropin.write_text(
+        "[Service]\nEnvironmentFile=-/etc/macro-ollama.env\n", encoding="utf-8"
+    )
+    dropin.chmod(0o644)
+    installed_unit.write_text("[Service]\n", encoding="utf-8")
+    rejected_noncanonical = run()
+    assert rejected_noncanonical.returncode != 0
+    assert dropin.exists()
+    installed_unit.write_bytes(source_unit.read_bytes())
+
     dropin.write_text("[Service]\nEnvironment=UNREVIEWED=1\n", encoding="utf-8")
     dropin.chmod(0o644)
     rejected = run()
