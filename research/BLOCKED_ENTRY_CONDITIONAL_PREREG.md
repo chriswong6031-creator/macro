@@ -152,6 +152,23 @@ no interior optimum anywhere (argmax = no stop) — the m degree of freedom was 
 close-stop headline vs intrabar −0.07R. Net pooled honest read ≈ **+0.55-0.65R vs placebo ≈ 0** —
 the signal is real; every round-1/2 LEVEL was overstated.
 
+**§7 ADJUDICATION (2026-08-10 ~09:5xZ; receipts `research/blocked_entry_study/r3_results.json` +
+`r3_axes.py`):** **A1b PASS at 20/25/30%** — all four frozen gates, both clustering units, and the
+F1 test sysA failed: ex-COVID premium POSITIVE across the grid (+0.60/+0.73/+0.92), LOO-min
+positive, equal-notional premium economic (+18/+23/+31pp — not an F3 denominator artifact; cell
++26.5% vs complement +3.45% @25%). 15% EPISODE-THIN (3) — excluded from the shipping menu. All
+three computable US exemplar fires (UEC 08-03 via `uranium_miners` −38.8%, HL 06-16/06-25 via
+`silver_miners`) admit at EVERY threshold — the coverage gate that killed A1 is satisfied; the
+threshold is a pure aggressiveness dial. Disclosures binding on any ratification: episode
+honest-N 8@25%/14@30% with episode-CI ~3× wide; 53.4% of cell statistics arrive via the GICS
+fallback (both arms pass independently — checked); dead-arm correction −0.048R is a WEAK floor
+(acquisition-dominated store, price→0 tail unrepresented, non-index deaths unmeasured) so levels
+stay optimistic, contrasts robust; CN/HK not computable — own construction required before any
+CN/HK change. **Ratification menu + remaining gates: `research/
+BLOCKED_ENTRY_RATIFICATION_PACKET_2026-08-10.md` — awaiting the operator's threshold word
+(20/25/30) or hold; production-feed re-grade + signal-era fence stand between ratification and
+any live `enter`-mask change.**
+
 **Round-3 methodology (frozen, supersedes prior aggregation choices):** m FIXED at 0.5 (stops are
 the operator's risk-bound, not a return-max device — F6); primary aggregate = R capped at +10 AND
 winsor-99 shown together; censored-unstopped rows EXCLUDED from levels (reported separately);
