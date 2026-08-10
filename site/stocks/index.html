@@ -44,7 +44,7 @@
 <link rel="stylesheet" href="../theme.css?v=70725c26">
 
 <script defer src="../theme.js?v=5ff0002c"></script>
-<link rel="stylesheet" href="../assets/css/e5b1a8ec.css?v=e5b1a8ec">
+<link rel="stylesheet" href="../assets/css/46663c08.css?v=46663c08">
 <link rel="preload" as="style" href="../product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="../navigation-refresh.css?v=65bba21c">
 </head>
@@ -403,7 +403,9 @@
            stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
       <label class="l-en" for="q" style="position:absolute;left:-9999px">Search stock dossiers</label>
       <input id="q" type="search" autocomplete="off" spellcheck="false"
-             placeholder="Search 1,593 dossiers / 搜索 1,593 只个股">
+             placeholder="Search 1,593 dossiers"
+             data-placeholder-en="Search 1,593 dossiers"
+             data-placeholder-zh="搜索 1,593 只个股">
       <span class="kbd"><kbd>/</kbd><span class="l-en">to search</span><span class="l-zh">搜索</span></span>
     </div>
 
@@ -2122,6 +2124,14 @@ window.__HUB_SECEN=["Comm. Services", "Consumer Disc.", "Energy", "Financials", 
   var q = document.getElementById("q"), out = document.getElementById("rows");
   var meta = document.getElementById("res-meta"), moreBtn = document.getElementById("more");
   var resSec = document.getElementById("res");
+  function syncSearchPlaceholder() {
+    if (!q) return;
+    var attr = document.documentElement.getAttribute("data-lang") === "zh"
+      ? "data-placeholder-zh" : "data-placeholder-en";
+    q.placeholder = q.getAttribute(attr) || "";
+  }
+  syncSearchPlaceholder();
+  document.addEventListener("langchange", syncSearchPlaceholder);
   if (!q || !out || !ROWS.length) return;
 
   var state = { q: "", sec: "", st: "", dir: "", cap: "", sort: "cap", page: 1 }, PAGE = 25;

@@ -52,6 +52,13 @@ PAGES: dict[str, dict] = {
     },
     "watchlist.html.j2": {},
     "sector_central.html.j2": {"basket_member_syms": ["SPY"]},
+    "ticker_index.html.j2": {
+        "rows": [],
+        "n_total": 2,
+        "generated_utc": "2026-08-09T00:00:00Z",
+        "canonical_url": "https://mastermind-x.com/stocks/index.html",
+        "hub": {"search": [], "directory": [], "sector_keys": []},
+    },
 }
 
 _TAG = re.compile(r"<[a-zA-Z][^>]*>")

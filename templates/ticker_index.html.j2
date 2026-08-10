@@ -64,9 +64,10 @@ body { background: var(--bg); color: var(--text);
 a { color: inherit; text-decoration: none; }
 .wrap { padding: var(--gut-top) var(--gut) 0; }
 
-/* numerals: mono + tabular wherever a figure appears — never for words */
+/* One product face throughout; figures keep tabular alignment without switching
+   the page into a terminal/mono texture. */
 .fig, .bd-v, .bd-x, .ss-v, .dir-t, .bd-tk, .r-px, .r-chg, .r-tk, .sp-lab b
-  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  { font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
 .up { color: var(--up); } .dn { color: var(--down); }
 
 .sec-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 30px 2px 12px; }
@@ -90,9 +91,9 @@ a { color: inherit; text-decoration: none; }
 .tape-i { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
 .tape-k { font-size: 11px; color: var(--muted); font-weight: 600; white-space: nowrap; }
 .tape-v { display: inline-flex; align-items: baseline; gap: 6px; }
-.tape .nb-px { font: 650 13px/1 var(--font-mono); font-variant-numeric: tabular-nums;
+.tape .nb-px { font: 650 13px/1 var(--font-ui); font-variant-numeric: tabular-nums;
                color: var(--text); }
-.tape .nb-chg { font: 600 11.5px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.tape .nb-chg { font: 600 11.5px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 
 .pulse h1 { margin: 0; font-weight: 800; letter-spacing: -.03em; line-height: 1.05;
             font-size: clamp(30px, 4.6vw, 46px); }
@@ -150,7 +151,7 @@ a { color: inherit; text-decoration: none; }
            box-shadow: 0 0 0 3px color-mix(in srgb, var(--link) 18%, transparent); }
 .sbox .kbd { position: absolute; right: 14px; display: flex; gap: 5px;
              align-items: center; font-size: 11px; color: var(--muted); pointer-events: none; }
-.kbd kbd { font: 600 10.5px/1 var(--font-mono); border: 1px solid var(--line);
+.kbd kbd { font: 600 10.5px/1 var(--font-ui); border: 1px solid var(--line);
            border-radius: 5px; padding: 4px 6px; background: var(--panel2); }
 #q:not(:placeholder-shown) ~ .kbd { opacity: 0; }
 
@@ -248,9 +249,9 @@ a { color: inherit; text-decoration: none; }
            letter-spacing: .07em; text-transform: uppercase; }
 .hmt rect { transition: opacity .12s; }
 .hmt:hover rect { opacity: .72; }
-.hmt-t { font: 700 9.6px/1 var(--font-mono); fill: var(--text);
+.hmt-t { font: 700 9.6px/1 var(--font-ui); fill: var(--text);
          text-anchor: middle; pointer-events: none; }
-.hmt-p { font: 600 8.4px/1 var(--font-mono); fill: var(--text);
+.hmt-p { font: 600 8.4px/1 var(--font-ui); fill: var(--text);
          text-anchor: middle; opacity: .78; pointer-events: none; }
 .hm-legend { display: flex; align-items: center; gap: 8px; margin-top: 11px;
              font-size: 11px; color: var(--muted); flex-wrap: wrap; }
@@ -261,7 +262,7 @@ a { color: inherit; text-decoration: none; }
 .dir { border-top: 1px solid var(--line); margin-top: 34px; padding-top: 20px; }
 .dir-grp { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px;
            padding: 7px 0; border-bottom: 1px solid var(--rule); }
-.dir-l { font: 750 13px/1.5 var(--font-mono); color: var(--muted); }
+.dir-l { font: 750 13px/1.5 var(--font-ui); color: var(--muted); }
 .dir-row { display: flex; flex-wrap: wrap; gap: 4px; }
 .dir-t { font-size: 11.5px; font-weight: 600; color: var(--muted); padding: 2px 6px;
          border-radius: 5px; transition: color .1s, background .1s; }
@@ -436,7 +437,9 @@ footer.foot { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--l
            stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
       <label class="l-en" for="q" style="position:absolute;left:-9999px">Search stock dossiers</label>
       <input id="q" type="search" autocomplete="off" spellcheck="false"
-             placeholder="Search {{ "{:,}".format(n_total) }} dossiers / 搜索 {{ "{:,}".format(n_total) }} 只个股">
+             placeholder="Search {{ "{:,}".format(n_total) }} dossiers"
+             data-placeholder-en="Search {{ "{:,}".format(n_total) }} dossiers"
+             data-placeholder-zh="搜索 {{ "{:,}".format(n_total) }} 只个股">
       <span class="kbd"><kbd>/</kbd>{{ t('to search', '搜索') }}</span>
     </div>
 
@@ -630,6 +633,14 @@ window.__HUB_SECEN={{ ((hub.sector_keys if hub else []) | map(attribute='key') |
   var q = document.getElementById("q"), out = document.getElementById("rows");
   var meta = document.getElementById("res-meta"), moreBtn = document.getElementById("more");
   var resSec = document.getElementById("res");
+  function syncSearchPlaceholder() {
+    if (!q) return;
+    var attr = document.documentElement.getAttribute("data-lang") === "zh"
+      ? "data-placeholder-zh" : "data-placeholder-en";
+    q.placeholder = q.getAttribute(attr) || "";
+  }
+  syncSearchPlaceholder();
+  document.addEventListener("langchange", syncSearchPlaceholder);
   if (!q || !out || !ROWS.length) return;
 
   var state = { q: "", sec: "", st: "", dir: "", cap: "", sort: "cap", page: 1 }, PAGE = 25;

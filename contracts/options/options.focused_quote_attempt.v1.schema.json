@@ -1,0 +1,575 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/options/options.focused_quote_attempt.v1.schema.json",
+  "title": "W0b focused vendor-snapshot quote decision and receipt",
+  "description": "A discriminated create-only decision/receipt pair for explicitly requested W0a contracts. Vendor snapshot bid/ask is not NBBO, live, current, or executable and carries no rank, gate, sizing, issue, trade, Prophet, or Neural Web authority.",
+  "oneOf": [
+    {"$ref": "#/$defs/decision"},
+    {"$ref": "#/$defs/receipt"}
+  ],
+  "$defs": {
+    "root": {
+      "type": "string",
+      "pattern": "^[A-Z0-9](?:[A-Z0-9.-]{0,13}[A-Z0-9])?$"
+    },
+    "profileId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,63}$"
+    },
+    "contractId": {
+      "type": "string",
+      "pattern": "^contract:uchain:[a-f0-9]{64}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+    },
+    "epoch": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}/(?:0\\d|1\\d|2[0-3]):(?:00|15|30|45)$"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rank_authority",
+        "gate_authority",
+        "sizing_authority",
+        "issue_authority",
+        "trade_authority",
+        "prophet_authority",
+        "neural_web_authority"
+      ],
+      "properties": {
+        "rank_authority": {"const": false},
+        "gate_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "issue_authority": {"const": false},
+        "trade_authority": {"const": false},
+        "prophet_authority": {"const": false},
+        "neural_web_authority": {"const": false}
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "root", "profile_id", "contract_id"],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 1, "maximum": 12},
+        "root": {"$ref": "#/$defs/root"},
+        "profile_id": {"$ref": "#/$defs/profileId"},
+        "contract_id": {"$ref": "#/$defs/contractId"}
+      }
+    },
+    "indexAttestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "sha256", "bytes", "index_id", "epoch"],
+      "properties": {
+        "key": {"const": "options_structure/msc_intraday/index.json"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "index_id": {
+          "type": "string",
+          "pattern": "^index:uchain:[a-f0-9]{64}$"
+        },
+        "epoch": {"$ref": "#/$defs/epoch"}
+      }
+    },
+    "packetAttestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "key", "sha256", "bytes", "packet_id", "epoch"],
+      "properties": {
+        "root": {"$ref": "#/$defs/root"},
+        "key": {
+          "type": "string",
+          "pattern": "^options_structure/msc_intraday/[A-Z0-9.-]+/\\d{4}-\\d{2}-\\d{2}/(?:0\\d|1\\d|2[0-3])(?:00|15|30|45)\\.json$"
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "packet_id": {
+          "type": "string",
+          "pattern": "^packet:uchain:[a-f0-9]{64}$"
+        },
+        "epoch": {"$ref": "#/$defs/epoch"}
+      }
+    },
+    "completionAttestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "ledger_key",
+        "state",
+        "state_sha256",
+        "state_bytes",
+        "bucket_id",
+        "session_date",
+        "snapshot_bucket",
+        "cadence_minutes",
+        "root_count",
+        "roots",
+        "intent",
+        "decision",
+        "availability"
+      ],
+      "properties": {
+        "schema": {"const": "chain_snapshots.bucket_completion/v1"},
+        "ledger_key": {
+          "type": "string",
+          "pattern": "^chain_snapshots/_bucket_receipts/\\d{4}-\\d{2}-\\d{2}\\.jsonl$"
+        },
+        "state": {"const": "complete"},
+        "state_sha256": {"$ref": "#/$defs/sha256"},
+        "state_bytes": {"type": "integer", "minimum": 1},
+        "bucket_id": {
+          "type": "string",
+          "pattern": "^csb_[a-f0-9]{24}$"
+        },
+        "session_date": {"$ref": "#/$defs/date"},
+        "snapshot_bucket": {
+          "type": "string",
+          "pattern": "^(?:0[9]|1[0-6]):(?:00|15|30|45)$"
+        },
+        "cadence_minutes": {"enum": [1, 2, 3, 4, 5, 6, 10, 15, 30]},
+        "root_count": {"type": "integer", "minimum": 1},
+        "roots": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/root"}
+        },
+        "intent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["receipt_id", "sha256", "intent_at"],
+          "properties": {
+            "receipt_id": {
+              "type": "string",
+              "pattern": "^csbr_[a-f0-9]{24}$"
+            },
+            "sha256": {"$ref": "#/$defs/sha256"},
+            "intent_at": {"$ref": "#/$defs/dateTime"}
+          }
+        },
+        "decision": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "receipt_id",
+            "sha256",
+            "decision_at",
+            "completion_result_sha256"
+          ],
+          "properties": {
+            "receipt_id": {
+              "type": "string",
+              "pattern": "^csbr_[a-f0-9]{24}$"
+            },
+            "sha256": {"$ref": "#/$defs/sha256"},
+            "decision_at": {"$ref": "#/$defs/dateTime"},
+            "completion_result_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "availability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["receipt_id", "sha256", "availability_at"],
+          "properties": {
+            "receipt_id": {
+              "type": "string",
+              "pattern": "^csbr_[a-f0-9]{24}$"
+            },
+            "sha256": {"$ref": "#/$defs/sha256"},
+            "availability_at": {"$ref": "#/$defs/dateTime"}
+          }
+        }
+      }
+    },
+    "w0a": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["completion", "index", "packets"],
+      "properties": {
+        "completion": {"$ref": "#/$defs/completionAttestation"},
+        "index": {"$ref": "#/$defs/indexAttestation"},
+        "packets": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/packetAttestation"}
+        }
+      }
+    },
+    "requestedContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordinal",
+        "root",
+        "profile_id",
+        "contract_id",
+        "expiration",
+        "right",
+        "strike_canonical",
+        "strike_millis",
+        "occ_symbol"
+      ],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 1, "maximum": 12},
+        "root": {"$ref": "#/$defs/root"},
+        "profile_id": {"$ref": "#/$defs/profileId"},
+        "contract_id": {"$ref": "#/$defs/contractId"},
+        "expiration": {"$ref": "#/$defs/date"},
+        "right": {"enum": ["C", "P"]},
+        "strike_canonical": {
+          "type": "string",
+          "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+        },
+        "strike_millis": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 99999999
+        },
+        "occ_symbol": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Z0-9 ]{6}\\d{6}[CP]\\d{8}$"
+        }
+      }
+    },
+    "preflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "abstention_reason",
+        "unique_roots",
+        "endpoint",
+        "calls_per_root",
+        "selection_performed"
+      ],
+      "properties": {
+        "status": {"enum": ["poll", "abstain"]},
+        "abstention_reason": {
+          "type": ["string", "null"],
+          "enum": [null, "NON_MILLISTRIKE_CONTRACT", "OCC_ROUNDTRIP_FAILED"]
+        },
+        "unique_roots": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/root"}
+        },
+        "endpoint": {"const": "/v3/option/snapshot/greeks/first_order"},
+        "calls_per_root": {"const": 1},
+        "selection_performed": {"const": false}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "poll"}}},
+          "then": {"properties": {"abstention_reason": {"const": null}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "abstain"}}},
+          "then": {
+            "properties": {
+              "abstention_reason": {
+                "enum": ["NON_MILLISTRIKE_CONTRACT", "OCC_ROUNDTRIP_FAILED"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "visibility",
+        "immutable_only",
+        "current_pointer",
+        "discovery_pointer",
+        "decision_key",
+        "receipt_key"
+      ],
+      "properties": {
+        "visibility": {"const": "private"},
+        "immutable_only": {"const": true},
+        "current_pointer": {"const": false},
+        "discovery_pointer": {"const": false},
+        "decision_key": {
+          "type": "string",
+          "pattern": "^private/options_focused_quote/v1/attempts/[a-f0-9]{64}/decision\\.json$"
+        },
+        "receipt_key": {
+          "type": "string",
+          "pattern": "^private/options_focused_quote/v1/attempts/[a-f0-9]{64}/receipt\\.json$"
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "record_type",
+        "decision_id",
+        "decided_at",
+        "attempt_id",
+        "inputs",
+        "w0a",
+        "requested_contracts",
+        "preflight",
+        "publication",
+        "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.focused_quote_attempt/v1"},
+        "record_type": {"const": "decision"},
+        "decision_id": {
+          "type": "string",
+          "pattern": "^decision:focused_quote:[a-f0-9]{64}$"
+        },
+        "decided_at": {"$ref": "#/$defs/dateTime"},
+        "attempt_id": {
+          "type": "string",
+          "pattern": "^attempt:focused_quote:[a-f0-9]{64}$"
+        },
+        "inputs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/input"}
+        },
+        "w0a": {"$ref": "#/$defs/w0a"},
+        "requested_contracts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/requestedContract"}
+        },
+        "preflight": {"$ref": "#/$defs/preflight"},
+        "publication": {"$ref": "#/$defs/publication"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "sourceCall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root",
+        "endpoint",
+        "call_count",
+        "returned_row_count",
+        "source_shape_valid",
+        "requested_match_row_count",
+        "structurally_accepted_requested_row_count",
+        "malformed_requested_row_count"
+      ],
+      "properties": {
+        "root": {"$ref": "#/$defs/root"},
+        "endpoint": {"const": "/v3/option/snapshot/greeks/first_order"},
+        "call_count": {"const": 1},
+        "returned_row_count": {"type": ["integer", "null"], "minimum": 0},
+        "source_shape_valid": {"type": "boolean"},
+        "requested_match_row_count": {"type": "integer", "minimum": 0},
+        "structurally_accepted_requested_row_count": {"type": "integer", "minimum": 0},
+        "malformed_requested_row_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "quoteSemantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "endpoint",
+        "label",
+        "nbbo",
+        "live",
+        "current",
+        "executable",
+        "sizes_available",
+        "venues_available",
+        "conditions_available",
+        "trade_quote_spliced"
+      ],
+      "properties": {
+        "endpoint": {"const": "/v3/option/snapshot/greeks/first_order"},
+        "label": {"const": "vendor_snapshot_bid_ask"},
+        "nbbo": {"const": false},
+        "live": {"const": false},
+        "current": {"const": false},
+        "executable": {"const": false},
+        "sizes_available": {"const": false},
+        "venues_available": {"const": false},
+        "conditions_available": {"const": false},
+        "trade_quote_spliced": {"const": false}
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["basis", "verified_available_at", "age_microseconds"],
+      "properties": {
+        "basis": {"const": "verified_available_at_minus_vendor_snapshot_ts"},
+        "verified_available_at": {"$ref": "#/$defs/dateTime"},
+        "age_microseconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Informational elapsed age only; this contract imposes no freshness threshold."
+        }
+      }
+    },
+    "vendorSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "bid", "ask", "snapshot_ts", "freshness"],
+      "properties": {
+        "label": {"const": "vendor_snapshot_bid_ask"},
+        "bid": {"type": "number", "minimum": 0},
+        "ask": {"type": "number", "minimum": 0},
+        "snapshot_ts": {"$ref": "#/$defs/dateTime"},
+        "freshness": {"$ref": "#/$defs/freshness"}
+      }
+    },
+    "quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordinal",
+        "root",
+        "profile_id",
+        "contract_id",
+        "occ_symbol",
+        "strike_millis",
+        "vendor_snapshot"
+      ],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 1, "maximum": 12},
+        "root": {"$ref": "#/$defs/root"},
+        "profile_id": {"$ref": "#/$defs/profileId"},
+        "contract_id": {"$ref": "#/$defs/contractId"},
+        "occ_symbol": {
+          "type": "string",
+          "pattern": "^[A-Z0-9 ]{6}\\d{6}[CP]\\d{8}$"
+        },
+        "strike_millis": {"type": "integer", "minimum": 1, "maximum": 99999999},
+        "vendor_snapshot": {"$ref": "#/$defs/vendorSnapshot"}
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deadline_seconds", "recovered_without_repoll"],
+      "properties": {
+        "deadline_seconds": {"const": 300},
+        "recovered_without_repoll": {"type": "boolean"}
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "record_type",
+        "receipt_id",
+        "attempt_id",
+        "decision_id",
+        "verified_available_at",
+        "status",
+        "abstention_reason",
+        "input_count",
+        "source_calls",
+        "quotes",
+        "quote_semantics",
+        "recovery",
+        "publication",
+        "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.focused_quote_attempt/v1"},
+        "record_type": {"const": "receipt"},
+        "receipt_id": {
+          "type": "string",
+          "pattern": "^receipt:focused_quote:[a-f0-9]{64}$"
+        },
+        "attempt_id": {
+          "type": "string",
+          "pattern": "^attempt:focused_quote:[a-f0-9]{64}$"
+        },
+        "decision_id": {
+          "type": "string",
+          "pattern": "^decision:focused_quote:[a-f0-9]{64}$"
+        },
+        "verified_available_at": {"$ref": "#/$defs/dateTime"},
+        "status": {
+          "enum": ["complete", "abstain"],
+          "description": "Complete means every explicit identity was structurally bound; it does not mean fresh, current, live, tradable, NBBO, or executable."
+        },
+        "abstention_reason": {
+          "type": ["string", "null"],
+          "enum": [
+            null,
+            "NON_MILLISTRIKE_CONTRACT",
+            "OCC_ROUNDTRIP_FAILED",
+            "NO_STRUCTURALLY_ACCEPTED_SOURCE_ROW",
+            "RECOVERY_DEADLINE_EXCEEDED"
+          ]
+        },
+        "input_count": {"type": "integer", "minimum": 1, "maximum": 12},
+        "source_calls": {
+          "type": "array",
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sourceCall"}
+        },
+        "quotes": {
+          "type": "array",
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/quote"}
+        },
+        "quote_semantics": {"$ref": "#/$defs/quoteSemantics"},
+        "recovery": {"$ref": "#/$defs/recovery"},
+        "publication": {"$ref": "#/$defs/publication"},
+        "authority": {"$ref": "#/$defs/authority"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "complete"}}},
+          "then": {
+            "properties": {
+              "abstention_reason": {"const": null},
+              "quotes": {"minItems": 1},
+              "recovery": {
+                "properties": {"recovered_without_repoll": {"const": false}}
+              }
+            }
+          }
+        },
+        {
+          "if": {"properties": {"status": {"const": "abstain"}}},
+          "then": {
+            "properties": {
+              "abstention_reason": {"type": "string"},
+              "quotes": {"maxItems": 0}
+            }
+          }
+        }
+      ]
+    }
+  }
+}
