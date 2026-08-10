@@ -6,10 +6,11 @@ one is paired with a mutation that proves the assertion can see the defect it
 claims to guard — a green assertion against an implementation that cannot fail is
 the exact class of dead guard this file is meant not to join.
 
-The lobe has zero live candidates by design (the ledger is 0 bytes and the event
-spine is unavailable), so everything here runs against fixtures. That is the
-point: the harness has to exist before the first candidate is issued, or the
-first cohort is ungradeable after the fact.
+The lobe now has an immutable issued recovery cohort, but those rows remain
+display/context-only and the grader still has no production caller.  Everything
+here therefore runs against fixtures.  The harness existed before the first
+candidate was issued; now that issuance exists, any evaluation-rule amendment
+requires a new ``family_id`` rather than rewriting this registered family.
 """
 from __future__ import annotations
 
@@ -38,6 +39,28 @@ PREREG_PATH = ROOT / "research" / "GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md
 _DIGEST = "a" * 64
 _APPENDED_AT = "2026-08-06T00:00:00+00:00"
 _ENTRY_INDEX = 300
+_ISSUED_RECOVERY_CANDIDATE_IDS = frozenset(
+    {
+        "grc1-0d9acfe1eb29619cc9b78e2d",
+        "grc1-5c04549c98dc93a935b433d7",
+        "grc1-78d7567e22834f8e1a142b43",
+        "grc1-8d90edd35a0f32f9120ebdb4",
+        "grc1-a5d800c17e0bce45ff9a8aa8",
+        "grc1-ab00c51be87b507bfb45e8a2",
+        "grc1-cc400940cd4e316d5b80a7b1",
+        "grc1-e2e57aacdde17def7eeb01d6",
+    }
+)
+_DISPLAY_ONLY_AUTHORITY = {
+    "tier": "display",
+    "context_only": True,
+    "can_rank": False,
+    "can_size": False,
+    "can_gate": False,
+    "can_originate_signal": False,
+    "can_add_candidates": False,
+    "can_escalate": False,
+}
 
 
 # ---------------------------------------------------------------------------
@@ -2210,7 +2233,7 @@ def test_the_zero_candidate_state_labels_cleanly(calendar):
 
 
 def test_the_registration_registers_the_disclosure_layer_before_observation():
-    """§11 exists, is versioned, and the code/document drift guard reads it."""
+    """§11 was registered before outcome observation and remains versioned."""
     text = PREREG_PATH.read_text(encoding="utf-8")
     assert "## 11. Disclosure labels" in text
     for state in grader.DISCLOSURE_LABEL_STATES:
@@ -2219,45 +2242,52 @@ def test_the_registration_registers_the_disclosure_layer_before_observation():
         assert f"`{reason}`" in text
     family, _digest = grader.load_family_declaration(PREREG_PATH)
     assert family.version == "4.1.0"
-    # Still pre-observation, which is what makes this amendment legal at all.
+    # The dedicated grader outcome log remains empty.  Candidate issuance is
+    # pinned separately below and permanently closes the amendment window.
     live = ROOT / "data" / "government_revenue" / grader.ISSUANCE_LOG_FILENAME
     assert not live.exists() or live.stat().st_size == 0
 
 
 # ---------------------------------------------------------------------------
-# AMENDMENT-WINDOW WITNESS (version 4.0.0, 2026-08-08)
+# CLOSED AMENDMENT-WINDOW WITNESS (first issuance 2026-08-10)
 #
-# DELETE THIS TEST IN THE PR THAT ISSUES THE FIRST ROW. It exists to make the
-# legality of the 4.0.0 amendment a CHECKED fact rather than a claim in a
-# document: §9 permits a change to a registered evaluation rule only before the
-# first observation exists, and "before the first observation" is a property of
-# the repository at a moment, which prose cannot assert and a test can.
-#
-# The moment it stops being true, this test goes red — which is the correct
-# alarm, because at that point no further amendment is legal without a new
-# family_id.
+# The original witness deliberately went red when the first candidate rows were
+# issued.  This successor freezes that transition: the eight issued rows remain
+# immutable and context-only, the grader remains uncalled, and §9 requires a new
+# family_id for any later evaluation-rule change.
 # ---------------------------------------------------------------------------
 
 
-def test_amendment_window_the_issuance_record_is_still_empty_and_uncalled():
-    """No observation exists, so no threshold here was tuned against data.
+def test_amendment_window_is_closed_after_immutable_issuance_and_grader_stays_uncalled():
+    """Issued context exists, so this family may never be amended in place.
 
     Three independent witnesses, because any one of them alone is weak:
 
-    1. the committed candidate ledger is empty;
-    2. no issuance log exists anywhere under ``data/``; and
+    1. all eight immutable recovery candidates exist and have no authority;
+    2. no grader outcome log exists anywhere under ``data/``; and
     3. **nothing calls the grader** — no builder, script, or app module imports
-       it, so there is no path by which a number could have been produced,
-       looked at, and then legislated around.
+       it, so the issued context cannot silently acquire verdict authority.
     """
     ledger = ROOT / "data" / "government_revenue" / "candidate_ledger.jsonl"
-    assert not ledger.exists() or ledger.stat().st_size == 0, (
-        "the candidate ledger has content: the amendment window is CLOSED and §9 now "
-        "requires a new family_id rather than an amendment"
+    rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line]
+    by_id = {row["candidate_id"]: row for row in rows}
+    assert len(by_id) == len(rows), "candidate identities must remain append-only and unique"
+    assert _ISSUED_RECOVERY_CANDIDATE_IDS <= set(by_id), (
+        "the immutable recovery cohort was suppressed, deleted, or rewritten"
+    )
+    for candidate_id in _ISSUED_RECOVERY_CANDIDATE_IDS:
+        row = by_id[candidate_id]
+        assert row["authority"] == _DISPLAY_ONLY_AUTHORITY
+        assert row["is_neuralweb_trade_candidate"] is False
+
+    preregistration = " ".join(PREREG_PATH.read_text(encoding="utf-8").split())
+    assert (
+        "after the first issuance row exists, none of this may move without a new "
+        "`family_id`" in preregistration
     )
 
-    logs = sorted((ROOT / "data").rglob(grader.ISSUANCE_LOG_FILENAME))
-    assert logs == [], f"an issuance log exists: {logs}"
+    grader_logs = sorted((ROOT / "data").rglob(grader.ISSUANCE_LOG_FILENAME))
+    assert grader_logs == [], f"a grader outcome log exists: {grader_logs}"
 
     callers = []
     for area in ("engine", "scripts", "app", "admin"):
@@ -2270,8 +2300,8 @@ def test_amendment_window_the_issuance_record_is_still_empty_and_uncalled():
             if "candidate_grader" in path.read_text(encoding="utf-8", errors="ignore"):
                 callers.append(str(path.relative_to(ROOT)))
     assert callers == [], (
-        f"the grader has acquired callers {callers}: a produced number may exist, and an "
-        "evaluation rule amended after a number exists is a rule tuned on data"
+        f"the grader has acquired callers {callers}: context-only issuance may have gained "
+        "an unregistered path to verdict authority"
     )
 
 
