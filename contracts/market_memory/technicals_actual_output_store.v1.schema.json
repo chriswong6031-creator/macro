@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/technicals_actual_output_store.v1.schema.json",
+  "title": "Private SPY technical actual-output store manifest v1",
+  "description": "Strict manifest for the isolated technicals-v1 current-tip actual-output store. It grants no ranking, gating, sizing, trading, options, outcome, training, or promotion authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "store_id",
+    "nonce",
+    "profile",
+    "prepared_schema",
+    "capture_receipt_schema",
+    "source_observation_schema",
+    "feature_object_schema",
+    "generation_schema",
+    "head_schema",
+    "mode",
+    "evidence_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.technicals_actual_output_store.v1"},
+    "store_id": {
+      "type": "string",
+      "pattern": "^mmactualstore_[a-f0-9]{64}$"
+    },
+    "nonce": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "profile": {
+      "const": "market_memory.private.spy_raw_technical_actual_output.v1"
+    },
+    "prepared_schema": {
+      "const": "market_memory.technicals_actual_output_prepared.v1"
+    },
+    "capture_receipt_schema": {
+      "const": "market_memory.technicals_actual_output_capture_receipt.v1"
+    },
+    "source_observation_schema": {
+      "const": "market_memory.spy_daily_price_source_observation.v1"
+    },
+    "feature_object_schema": {
+      "const": "market_memory.spy_raw_close_ratio_snapshot.v1"
+    },
+    "generation_schema": {
+      "const": "market_memory.actual_output_store_generation.v1"
+    },
+    "head_schema": {"const": "market_memory.actual_output_store_head.v1"},
+    "mode": {"const": "private_actual_output_current_tip"},
+    "evidence_policy": {"$ref": "#/$defs/evidencePolicy"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "evidencePolicy": {
+      "const": {
+        "actual_output_only": true,
+        "current_tip_only": true,
+        "contract_validated": true,
+        "exact_source_bodies_authenticated": true,
+        "stable_network_transaction": true,
+        "license_entitlement_record_bound": true,
+        "provider_price_basis_contract_bound": true,
+        "basis_authenticated_by_shape": false,
+        "raw_unadjusted_close_ratio": true,
+        "economic_return": false,
+        "point_in_time_corporate_actions": false,
+        "context_only": true,
+        "training_eligible": false,
+        "promotion_eligible": false
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "horizon_role",
+        "context_only",
+        "proposal_weight",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_escalate",
+        "may_trade",
+        "may_originate",
+        "may_select_options_candidate",
+        "may_execute",
+        "may_write_options_episode",
+        "may_append_outcome",
+        "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}
