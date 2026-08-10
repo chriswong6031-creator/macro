@@ -67,8 +67,8 @@
       "then": {
         "properties": {
           "outcome_reason": {"enum": ["source_window_incomplete", "instrument_unavailable", "event_invalidated", "coverage_ended"]},
-          "candidate_score": {"properties": {"disposition": {"const": "not_scored"}, "not_scored_reason": {"const": "outcome_censored"}, "score_value": {"type": "null"}}},
-          "baseline_scores": {"items": {"properties": {"disposition": {"const": "not_scored"}, "not_scored_reason": {"const": "outcome_censored"}, "score_value": {"type": "null"}}}}
+          "candidate_score": {"properties": {"disposition": {"const": "not_scored"}, "not_scored_reason": {"enum": ["forecast_abstained", "outcome_censored"]}, "score_value": {"type": "null"}}},
+          "baseline_scores": {"items": {"properties": {"disposition": {"const": "not_scored"}, "not_scored_reason": {"enum": ["baseline_unavailable", "outcome_censored"]}, "score_value": {"type": "null"}}}}
         }
       }
     },
@@ -77,8 +77,8 @@
       "then": {
         "properties": {
           "outcome_reason": {"enum": ["source_unavailable", "source_not_published", "identity_unresolved", "quality_gate_failed"]},
-          "candidate_score": {"properties": {"disposition": {"const": "not_scored"}, "not_scored_reason": {"const": "outcome_missing"}, "score_value": {"type": "null"}}},
-          "baseline_scores": {"items": {"properties": {"disposition": {"const": "not_scored"}, "not_scored_reason": {"const": "outcome_missing"}, "score_value": {"type": "null"}}}}
+          "candidate_score": {"properties": {"disposition": {"const": "not_scored"}, "not_scored_reason": {"enum": ["forecast_abstained", "outcome_missing"]}, "score_value": {"type": "null"}}},
+          "baseline_scores": {"items": {"properties": {"disposition": {"const": "not_scored"}, "not_scored_reason": {"enum": ["baseline_unavailable", "outcome_missing"]}, "score_value": {"type": "null"}}}}
         }
       }
     },

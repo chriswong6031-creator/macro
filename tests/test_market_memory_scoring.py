@@ -7,6 +7,7 @@ import copy
 import hashlib
 import inspect
 import json
+from decimal import Context, localcontext
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +23,13 @@ from tests.test_market_memory import _observe_snapshot, _source_for_feature
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "contracts" / "market_memory"
+W2B1_CI_PATHS = (
+    "engine/neuralweb/market_memory_scoring.py",
+    "contracts/market_memory/baseline_forecast_bundle.v1.schema.json",
+    "contracts/market_memory/event_score_record.v1.schema.json",
+    "tests/test_market_memory_scoring.py",
+    "research/KONSEKI_CLEAN_ROOM_MARKET_MEMORY_AND_COGNITIVE_ARCHITECTURE_FOR_FABLE_2026-08-08.md",
+)
 
 
 def _context_bytes() -> bytes:
@@ -143,7 +151,7 @@ def _trial(
             "development_end": "2022-01-01T00:00:00.000000Z",
             "test_start": "2022-01-01T00:00:00.000000Z",
             "test_end": "2024-01-01T00:00:00.000000Z",
-            "live_forward_start": "2024-01-01T00:00:00.000000Z",
+            "live_forward_start": "2026-08-02T00:00:00.000000Z",
         },
         purge={"enabled": True, "before_seconds": 172_800, "after_seconds": 0},
         embargo={"enabled": True, "duration_seconds": 172_800},
@@ -507,6 +515,74 @@ def test_multiclass_brier_is_sum_not_mean_or_binary_projection() -> None:
     }
 
 
+def test_categorical_probabilities_require_exact_decimal_mass_without_repair() -> None:
+    trial = _trial(kind="categorical", proper_score="brier_score")
+    near_one = _distribution("categorical")
+    near_one["probabilities"] = [
+        {"category": "down", "probability": 0.1},
+        {"category": "flat", "probability": 0.6},
+        {"category": "up", "probability": 0.2999999999995},
+    ]
+    with pytest.raises(scoring.MarketMemoryScoringContractError, match="sum to one"):
+        scoring.score_predictive_distribution(
+            trial_registration=trial,
+            predictive_distribution=near_one,
+            outcome_value={
+                "value_type": "string",
+                "value": "flat",
+                "unit": "category",
+            },
+        )
+
+    exact = _context_bytes()
+    with pytest.raises(forward.MarketMemoryForwardContractError, match="sum to one"):
+        _forecast(
+            trial=trial,
+            state=_state(exact),
+            exact=exact,
+            distribution=near_one,
+        )
+
+    tiny_tail = _distribution("categorical")
+    tiny_tail["probabilities"] = [
+        {"category": "down", "probability": 0},
+        {"category": "flat", "probability": 1},
+        {"category": "up", "probability": 1e-100},
+    ]
+    with localcontext(Context(prec=1)):
+        with pytest.raises(
+            scoring.MarketMemoryScoringContractError, match="sum to one"
+        ):
+            scoring.score_predictive_distribution(
+                trial_registration=trial,
+                predictive_distribution=tiny_tail,
+                outcome_value={
+                    "value_type": "string",
+                    "value": "flat",
+                    "unit": "category",
+                },
+            )
+        with pytest.raises(
+            forward.MarketMemoryForwardContractError, match="sum to one"
+        ):
+            _forecast(
+                trial=trial,
+                state=_state(exact),
+                exact=exact,
+                distribution=tiny_tail,
+            )
+        valid = scoring.score_predictive_distribution(
+            trial_registration=trial,
+            predictive_distribution=_distribution("categorical"),
+            outcome_value={
+                "value_type": "string",
+                "value": "flat",
+                "unit": "category",
+            },
+        )
+    assert valid["score_value"]["decimal"] == "0.260000000000000000"
+
+
 def test_distribution_and_outcome_semantics_are_exactly_preregistered() -> None:
     quantile_trial = _trial(kind="quantiles", proper_score="pinball_loss")
     drifted = _distribution("quantiles")
@@ -644,26 +720,15 @@ def test_bundle_exactly_covers_preregistered_baselines_and_fit_is_predecision() 
 
 
 @pytest.mark.parametrize(
-    (
-        "forecast_disposition",
-        "outcome_status",
-        "baseline_unavailable",
-        "candidate_reason",
-        "baseline_reason",
-    ),
-    [
-        ("abstained", "complete", False, "forecast_abstained", None),
-        ("issued", "censored", False, "outcome_censored", "outcome_censored"),
-        ("issued", "missing", False, "outcome_missing", "outcome_missing"),
-        ("issued", "complete", True, None, "baseline_unavailable"),
-    ],
+    "forecast_disposition",
+    ["issued", "abstained"],
 )
+@pytest.mark.parametrize("outcome_status", ["complete", "censored", "missing"])
+@pytest.mark.parametrize("baseline_unavailable", [False, True])
 def test_score_dispositions_preserve_abstention_unavailable_censored_and_missing(
     forecast_disposition: str,
     outcome_status: str,
     baseline_unavailable: bool,
-    candidate_reason: str | None,
-    baseline_reason: str | None,
 ) -> None:
     fixture = _fixture(
         forecast_disposition=forecast_disposition,
@@ -673,6 +738,20 @@ def test_score_dispositions_preserve_abstention_unavailable_censored_and_missing
     score = _score(*fixture)
     candidate = score["candidate_score"]
     baseline = score["baseline_scores"][0]
+    candidate_reason = (
+        "forecast_abstained"
+        if forecast_disposition == "abstained"
+        else None
+        if outcome_status == "complete"
+        else f"outcome_{outcome_status}"
+    )
+    baseline_reason = (
+        "baseline_unavailable"
+        if baseline_unavailable
+        else None
+        if outcome_status == "complete"
+        else f"outcome_{outcome_status}"
+    )
     assert candidate["not_scored_reason"] == candidate_reason
     assert baseline["not_scored_reason"] == baseline_reason
     assert candidate["disposition"] == ("not_scored" if candidate_reason else "scored")
@@ -681,6 +760,7 @@ def test_score_dispositions_preserve_abstention_unavailable_censored_and_missing
         assert candidate["score_value"] is None
     if baseline_reason:
         assert baseline["score_value"] is None
+    _validators()["event_score_record.v1.schema.json"].validate(score)
 
 
 def test_schema_runtime_parity_covers_every_disposition_and_infinity_fence() -> None:
@@ -781,6 +861,20 @@ def test_event_join_recomputes_scores_and_rejects_identity_or_value_tampering() 
             exact_context_bytes=exact,
             outcome_record=outcome,
             baseline_forecast_bundle=bundle,
+            expected_evaluator_code_sha256="a" * 64,
+            expected_evaluator_config_sha256="b" * 64,
+        )
+    with pytest.raises(scoring.MarketMemoryScoringContractError, match="recomputed"):
+        scoring.validate_event_score_record_join(
+            score,
+            trial_registration=trial,
+            state_snapshot=state,
+            forecast_record=forecast,
+            exact_context_bytes=exact,
+            outcome_record=outcome,
+            baseline_forecast_bundle=bundle,
+            expected_evaluator_code_sha256="c" * 64,
+            expected_evaluator_config_sha256="b" * 64,
         )
     hostile_bundle = copy.deepcopy(bundle)
     hostile_bundle["forecast_id"] = "mmforecast_" + "f" * 64
@@ -841,6 +935,8 @@ def test_strict_loaders_round_trip_and_reject_noncanonical_or_hostile_json() -> 
             exact_context_bytes=exact,
             outcome_record=outcome,
             baseline_forecast_bundle=bundle,
+            expected_evaluator_code_sha256="a" * 64,
+            expected_evaluator_config_sha256="b" * 64,
         )
         == score
     )
@@ -863,6 +959,8 @@ def test_strict_loaders_round_trip_and_reject_noncanonical_or_hostile_json() -> 
                 exact_context_bytes=exact,
                 outcome_record=outcome,
                 baseline_forecast_bundle=bundle,
+                expected_evaluator_code_sha256="a" * 64,
+                expected_evaluator_config_sha256="b" * 64,
             )
 
 
@@ -972,6 +1070,16 @@ def test_public_api_is_frozen_and_module_has_no_operational_dependencies() -> No
         assert forbidden not in source
 
 
+def test_w2b1_contract_and_test_share_the_market_memory_ci_gate() -> None:
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    jobs = (ROOT / ".github/ci/legacy-jobs.yml").read_text(encoding="utf-8")
+    lane = jobs.split("  market-memory-contract:", 1)[1].split("\n  group-pulse:", 1)[0]
+
+    for path in W2B1_CI_PATHS:
+        assert f'      - "{path}"' in workflow, f"missing W2B1 CI trigger: {path}"
+    assert "tests/test_market_memory_scoring.py" in lane
+
+
 def test_bool_numbers_nonfinite_and_noncanonical_score_decimals_are_rejected() -> None:
     trial = _trial()
     for point in (True, float("nan"), float("inf"), 10**16):
@@ -1043,3 +1151,28 @@ def test_numeric_boundary_negative_zero_and_dictionary_order_are_deterministic()
         outcome_value={"value": 0, "value_type": "number", "unit": "ratio"},
     )
     assert reordered == negative_zero
+
+
+@pytest.mark.parametrize(
+    ("point", "expected"),
+    [
+        (0.5e-18, "0.000000000000000000"),
+        (1.5e-18, "0.000000000000000002"),
+        (2.5e-18, "0.000000000000000002"),
+    ],
+)
+def test_final_q18_quantization_uses_half_even_ties(
+    point: float, expected: str
+) -> None:
+    trial = _trial(proper_score="absolute_error")
+    result = scoring.score_predictive_distribution(
+        trial_registration=trial,
+        predictive_distribution={
+            "kind": "scalar",
+            "point": point,
+            "quantiles": [],
+            "probabilities": [],
+        },
+        outcome_value={"value_type": "number", "value": 0, "unit": "ratio"},
+    )
+    assert result["score_value"] == {"kind": "finite", "decimal": expected}

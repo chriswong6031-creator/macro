@@ -25,6 +25,7 @@ import re
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_EVEN, Context, Decimal, InvalidOperation, localcontext
+from fractions import Fraction
 from itertools import pairwise
 from types import MappingProxyType
 from typing import Any, Final, NoReturn
@@ -370,12 +371,11 @@ def _validate_distribution(
         point = None
         if payload["point"] is not None or quantiles or len(probabilities) < 2:
             _fail("categorical forecast must carry only category probabilities")
-        if not math.isclose(
-            sum(float(row["probability"]) for row in probabilities),
-            1.0,
-            rel_tol=0.0,
-            abs_tol=1e-12,
-        ):
+        probability_total = sum(
+            (Fraction(Decimal(str(row["probability"]))) for row in probabilities),
+            Fraction(0),
+        )
+        if probability_total != 1:
             _fail("forecast category probabilities must sum to one")
 
     clean = {
@@ -990,11 +990,11 @@ def _score_components(
     outcome: Mapping[str, Any],
     bundle: Mapping[str, Any],
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    if outcome["status"] != "complete":
+    if forecast["disposition"] == "abstained":
+        candidate = _not_scored("forecast_abstained")
+    elif outcome["status"] != "complete":
         reason = f"outcome_{outcome['status']}"
         candidate = _not_scored(reason)
-    elif forecast["disposition"] == "abstained":
-        candidate = _not_scored("forecast_abstained")
     else:
         assert forecast["predictive_distribution"] is not None
         assert outcome["outcome_value"] is not None
@@ -1012,10 +1012,10 @@ def _score_components(
             "baseline_version": baseline["baseline_version"],
             "config_sha256": baseline["config_sha256"],
         }
-        if outcome["status"] != "complete":
-            score = _not_scored(f"outcome_{outcome['status']}")
-        elif baseline["disposition"] == "unavailable":
+        if baseline["disposition"] == "unavailable":
             score = _not_scored("baseline_unavailable")
+        elif outcome["status"] != "complete":
+            score = _not_scored(f"outcome_{outcome['status']}")
         else:
             assert baseline["predictive_distribution"] is not None
             assert outcome["outcome_value"] is not None
@@ -1141,6 +1141,8 @@ def build_event_score_record(
         exact_context_bytes=exact_context_bytes,
         outcome_record=outcome,
         baseline_forecast_bundle=bundle,
+        expected_evaluator_code_sha256=payload["evaluator_code_sha256"],
+        expected_evaluator_config_sha256=payload["evaluator_config_sha256"],
     )
 
 
@@ -1210,11 +1212,15 @@ def validate_event_score_record(value: Mapping[str, Any]) -> dict[str, Any]:
     baselines = _validate_baseline_scores(payload["baseline_scores"])
     if status in {"censored", "missing"}:
         expected_reason = f"outcome_{status}"
-        if candidate["not_scored_reason"] != expected_reason or any(
-            row["not_scored_reason"] != expected_reason for row in baselines
+        if candidate["not_scored_reason"] not in {
+            "forecast_abstained",
+            expected_reason,
+        } or any(
+            row["not_scored_reason"] not in {"baseline_unavailable", expected_reason}
+            for row in baselines
         ):
             _fail(
-                "non-complete outcome must leave every event score explicitly unscored"
+                "non-complete outcome must preserve intrinsic or outcome unscored reasons"
             )
     else:
         if candidate["not_scored_reason"] not in {None, "forecast_abstained"}:
@@ -1311,8 +1317,10 @@ def validate_event_score_record_join(
     exact_context_bytes: bytes,
     outcome_record: Mapping[str, Any],
     baseline_forecast_bundle: Mapping[str, Any],
+    expected_evaluator_code_sha256: str,
+    expected_evaluator_config_sha256: str,
 ) -> dict[str, Any]:
-    """Recompute one score against every exact W2A and W2B1 dependency."""
+    """Recompute one score against exact records and expected evaluator hashes."""
 
     clean = validate_event_score_record(value)
     trial = _clean_trial(trial_registration)
@@ -1338,8 +1346,14 @@ def validate_event_score_record_join(
         outcome=outcome,
         bundle=bundle,
         evaluated_at=clean["evaluated_at"],
-        evaluator_code_sha256=clean["evaluator_code_sha256"],
-        evaluator_config_sha256=clean["evaluator_config_sha256"],
+        evaluator_code_sha256=_sha256(
+            expected_evaluator_code_sha256,
+            field="expected_evaluator_code_sha256",
+        ),
+        evaluator_config_sha256=_sha256(
+            expected_evaluator_config_sha256,
+            field="expected_evaluator_config_sha256",
+        ),
     )
     if not _exact_equal(clean, expected, field="event score exact join"):
         _fail("event score differs from recomputed exact dependency join")
@@ -1355,8 +1369,10 @@ def load_event_score_record_join_json(
     exact_context_bytes: bytes,
     outcome_record: Mapping[str, Any],
     baseline_forecast_bundle: Mapping[str, Any],
+    expected_evaluator_code_sha256: str,
+    expected_evaluator_config_sha256: str,
 ) -> dict[str, Any]:
-    """Strictly parse one score and revalidate every immutable dependency."""
+    """Strictly parse one score and revalidate records plus evaluator hashes."""
 
     return validate_event_score_record_join(
         _strict_json_object(body, field="event_score_record"),
@@ -1366,6 +1382,8 @@ def load_event_score_record_join_json(
         exact_context_bytes=exact_context_bytes,
         outcome_record=outcome_record,
         baseline_forecast_bundle=baseline_forecast_bundle,
+        expected_evaluator_code_sha256=expected_evaluator_code_sha256,
+        expected_evaluator_config_sha256=expected_evaluator_config_sha256,
     )
 
 
