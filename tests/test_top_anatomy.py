@@ -436,6 +436,51 @@ def test_nothing_crosses_an_identity_segment_boundary():
     assert race.iloc[0]["sessions_available"] == 0
 
 
+def test_sanity_segmented_arm_breaks_only_residual_three_x_up_jumps():
+    """The repair threshold is inclusive and asymmetric; a collapse is evidence."""
+    idx = _cal(5)
+    bars = _bars(np.array([10.0, 29.0, 87.0, 1.0, 2.99]), idx)
+    assert ta.residual_up_break_positions(bars["close"]).tolist() == [2]
+
+    gap_only = ta.split_identity_segments({"ODD": bars}, idx)
+    repaired = ta.split_identity_segments(
+        {"ODD": bars}, idx,
+        residual_up_ratio_break=ta.RESIDUAL_UP_RATIO_BREAK,
+    )
+    assert set(gap_only) == {"ODD"}
+    assert set(repaired) == {"ODD#0", "ODD#1"}
+    assert repaired["ODD#0"].index[-1] == idx[1]
+    assert repaired["ODD#1"].index[0] == idx[2]
+    assert idx[3] in repaired["ODD#1"].index, "the 98.9% collapse was screened"
+
+
+def test_residual_up_identity_break_resets_history_features_and_races():
+    """No EXT, feature lookback, or forward race may cross the repair-arm seam."""
+    idx = _cal(600)
+    first = _ramp(300, base=5.0, daily=0.005, seed=41)
+    second = _ramp(300, base=first[-1] * 4.0, daily=0.005, seed=42)
+    bars = _bars(np.r_[first, second], idx)
+    segs = ta.split_identity_segments(
+        {"RSPL": bars}, idx,
+        residual_up_ratio_break=ta.RESIDUAL_UP_RATIO_BREAK,
+    )
+    assert set(segs) == {"RSPL#0", "RSPL#1"}
+
+    close = pd.DataFrame({k: v["close"] for k, v in segs.items()}).reindex(idx)
+    ext = ta.extended_mask(close, close * 5e6)
+    new_dates = segs["RSPL#1"].index
+    assert not ext["RSPL#1"].reindex(new_dates).iloc[:260].any()
+    f = ta.feature_library(segs, None, {"RSPL#1": [new_dates[10]]})
+    assert np.isnan(f["A3_r126"].iloc[0])
+
+    old_end = segs["RSPL#0"].index[-1]
+    mask = pd.DataFrame(False, index=idx, columns=close.columns)
+    mask.loc[old_end, "RSPL#0"] = True
+    race = ta.race_labels(close, mask)
+    assert race.iloc[0]["censor_reason"] == "data_end"
+    assert race.iloc[0]["sessions_available"] == 0
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # §3 RAW-LEVEL ELIGIBILITY + the full-series-vs-prefix parity HARD GATE
 # ══════════════════════════════════════════════════════════════════════════════

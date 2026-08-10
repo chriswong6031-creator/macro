@@ -29,9 +29,9 @@ DATA HONESTY
   * Track W (`data/massive_stock_day`, the registration track) is UNADJUSTED; split
     repair reuses the canonical yahoo-verified `scripts.replay_standout_pipeline
     .split_adjust`. Dividends are not adjusted (a small stated downward drift).
-  * Tickers get REUSED. Every ticker's tape is cut at interior gaps > 60 sessions
-    into identity segments, so a reassigned ticker can never stitch two companies
-    into one forward path (`engine.top_anatomy`, prereg ratification log).
+  * Tickers get REUSED. Every ticker's tape is cut at interior gaps > 60 sessions;
+    Track W's declared `sanity-segmented` repair arm also cuts residual repaired-
+    close up-jumps >=3x. Neither seam may contribute history to the next identity.
   * Track D (`engine.price_ladder` adjusted rungs, first-rung-wins) is a CURATED
     universe: names that topped and died are underrepresented, so its topped-arm
     severity is understated. Every D table says so.
@@ -82,6 +82,8 @@ D_ERAS = (("1997-2003", "1997-01-01", "2003-12-31"),
           ("2021-2026", "2021-01-01", "2099-12-31"))
 COVERAGE_FLOOR = 0.60
 TODAY_TAPE_CAP = 200
+W_REPAIR_ARM = "sanity-segmented"
+W_RESIDUAL_UP_RATIO_BREAK = ta.RESIDUAL_UP_RATIO_BREAK
 
 _T0 = time.time()
 
@@ -127,13 +129,57 @@ def repair_bars(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(out).dropna(subset=["close"])
 
 
-def _finish_panel(bars: dict[str, pd.DataFrame], cache: Path, tag: str) -> dict:
+def _repair_arm_counts(
+    segments: dict[str, pd.DataFrame],
+    calendar: pd.DatetimeIndex,
+) -> dict[str, int]:
+    """EXT/episode accounting on only the names touched by the repair arm."""
+    if not segments:
+        return {"n_segments": 0, "n_ext_days": 0, "n_episodes": 0}
+    legs = {c: _wide(segments, c).reindex(calendar) for c in W_PANEL_COLS}
+    close = legs["close"]
+    volume = legs["volume"]
+    dvol = close * volume
+    ext = ta.extended_mask(
+        close, dvol, high_df=legs["high"], low_df=legs["low"],
+        raw_close_df=legs["raw_close"], raw_dollar_vol_df=legs["raw_dvol"],
+        split_day_df=legs["split_day"].fillna(False).astype(bool),
+    )
+    episodes = ta.extract_episodes(ext, close)
+    return {
+        "n_segments": int(len(segments)),
+        "n_ext_days": int(ext.to_numpy().sum()),
+        "n_episodes": int(len(episodes)),
+    }
+
+
+def _finish_panel(
+    bars: dict[str, pd.DataFrame],
+    cache: Path,
+    tag: str,
+    *,
+    residual_up_ratio_break: float | None = None,
+) -> dict:
     """Identity-segment a per-ticker store, widen it, and cache the frames."""
     calendar = pd.DatetimeIndex(sorted({d for b in bars.values() for d in b.index}))
-    segs = ta.split_identity_segments(bars, calendar)
-    n_split = len({ta.segment_ticker(s) for s in segs if "#" in s})
+    gap_segs = ta.split_identity_segments(bars, calendar)
+    segs = ta.split_identity_segments(
+        bars, calendar, residual_up_ratio_break=residual_up_ratio_break)
+    gap_counts: dict[str, int] = {}
+    final_counts: dict[str, int] = {}
+    for s in gap_segs:
+        tk = ta.segment_ticker(s)
+        gap_counts[tk] = gap_counts.get(tk, 0) + 1
+    for s in segs:
+        tk = ta.segment_ticker(s)
+        final_counts[tk] = final_counts.get(tk, 0) + 1
+    gap_split = {tk for tk, n in gap_counts.items() if n > 1}
+    residual_split = {tk for tk, n in final_counts.items()
+                      if n > gap_counts.get(tk, 0)}
+    n_split = len(gap_split)
     say(f"{tag}: {len(bars)} tickers -> {len(segs)} identity segments "
-        f"({n_split} tickers split on a >60-session gap)")
+        f"({n_split} tickers split on a >60-session gap; "
+        f"{len(residual_split)} on the residual-up rule)")
     panel = {c: _wide(segs, c) for c in W_PANEL_COLS}
     panel["close"] = panel["close"].reindex(calendar)
     for c in W_PANEL_COLS:
@@ -147,7 +193,28 @@ def _finish_panel(bars: dict[str, pd.DataFrame], cache: Path, tag: str) -> dict:
             fr.to_parquet(cache / f"panel_{c}.parquet")
     meta = {"n_tickers": len(bars), "n_segments": len(segs), "n_tickers_split": n_split,
             "n_split_factor_step_days": (int(panel["split_day"].to_numpy().sum())
-                                         if not panel["split_day"].empty else 0)}
+                                         if not panel["split_day"].empty else 0),
+            "residual_up_ratio_break": residual_up_ratio_break,
+            "n_tickers_residual_up_split": len(residual_split),
+            "n_residual_up_breaks": int(len(segs) - len(gap_segs))}
+    if residual_up_ratio_break is not None:
+        pre_affected = {s: b for s, b in gap_segs.items()
+                        if ta.segment_ticker(s) in residual_split}
+        post_affected = {s: b for s, b in segs.items()
+                         if ta.segment_ticker(s) in residual_split}
+        pre_counts = _repair_arm_counts(pre_affected, calendar)
+        post_counts = _repair_arm_counts(post_affected, calendar)
+        meta["repair_arm"] = W_REPAIR_ARM
+        meta["repair_impact"] = {
+            "n_tickers_affected": len(residual_split),
+            "n_additional_identity_segments": int(len(segs) - len(gap_segs)),
+            "pre_repair_affected_names": pre_counts,
+            "sanity_segmented_affected_names": post_counts,
+            "removed_from_affected_names": {
+                "n_ext_days": pre_counts["n_ext_days"] - post_counts["n_ext_days"],
+                "n_episodes": pre_counts["n_episodes"] - post_counts["n_episodes"],
+            },
+        }
     (cache / "meta.json").write_text(json.dumps(meta, indent=2))
     return {"panel": panel, "meta": meta}
 
@@ -159,8 +226,18 @@ def _finish_panel(bars: dict[str, pd.DataFrame], cache: Path, tag: str) -> dict:
 _REQUIRED_PANEL_LEGS = ("close", "raw_close", "raw_dvol", "split_day")
 
 
-def _load_cached(cache: Path) -> dict | None:
+def _load_cached(
+    cache: Path,
+    *,
+    residual_up_ratio_break: float | None = None,
+) -> dict | None:
     if not (cache / "meta.json").exists():
+        return None
+    meta = json.loads((cache / "meta.json").read_text())
+    if residual_up_ratio_break is not None \
+            and meta.get("residual_up_ratio_break") != residual_up_ratio_break:
+        say(f"cache at {cache} predates the {W_REPAIR_ARM} identity rule "
+            "— rebuilding rather than allowing a residual split to seed features")
         return None
     missing = [c for c in _REQUIRED_PANEL_LEGS
                if not (cache / f"panel_{c}.parquet").exists()]
@@ -174,7 +251,7 @@ def _load_cached(cache: Path) -> dict | None:
         panel[c] = pd.read_parquet(p) if p.exists() else pd.DataFrame()
     if not panel["split_day"].empty:
         panel["split_day"] = panel["split_day"].fillna(False).astype(bool)
-    return {"panel": panel, "meta": json.loads((cache / "meta.json").read_text())}
+    return {"panel": panel, "meta": meta}
 
 
 def build_panel_w(data_root: Path, cache: Path, *, quick: int | None = None) -> dict:
@@ -186,7 +263,7 @@ def build_panel_w(data_root: Path, cache: Path, *, quick: int | None = None) -> 
     than the 261 a single EXT day needs). Dropping on a per-day floor here would
     silently delete the population the study exists to measure.
     """
-    cached = _load_cached(cache)
+    cached = _load_cached(cache, residual_up_ratio_break=W_RESIDUAL_UP_RATIO_BREAK)
     if cached is not None:
         say(f"track W: panel cache hit at {cache} "
             f"({cached['meta']['n_segments']} segments)")
@@ -217,7 +294,8 @@ def build_panel_w(data_root: Path, cache: Path, *, quick: int | None = None) -> 
         if len(frame) >= 261:
             keep[f.stem] = frame
     say(f"track W: {len(keep)} tickers pass the superset pre-filter")
-    return _finish_panel(keep, cache, "track W")
+    return _finish_panel(keep, cache, "track W",
+                         residual_up_ratio_break=W_RESIDUAL_UP_RATIO_BREAK)
 
 
 _D_RUNGS = (("baskets_ohlcv", "baskets/ohlcv"), ("yahoo", "yahoo"), ("data_stocks", "stocks"))
@@ -1341,6 +1419,27 @@ def write_report(path: Path, summary: dict) -> None:
       f"`r63≥+0.35` = {_fmt(w.get('ext_variants', {}).get('r63'))}; "
       f"`(c−MA200)/ATR63≥6` = {_fmt(w.get('ext_variants', {}).get('atrz'))}.")
     A("")
+
+    repair = w.get("panel", {}).get("repair_impact", {})
+    if repair:
+        pre_repair = repair.get("pre_repair_affected_names", {})
+        repaired = repair.get("sanity_segmented_affected_names", {})
+        removed = repair.get("removed_from_affected_names", {})
+        A(f"**Track W headline repair arm: `{w.get('panel', {}).get('repair_arm')}`.** "
+          f"A repaired-close up-jump ≥"
+          f"{_fmt(w.get('panel', {}).get('residual_up_ratio_break'), 1)}x starts a new "
+          "identity; there is no down-jump screen. "
+          f"{_fmt(repair.get('n_tickers_affected'))} tickers gained "
+          f"{_fmt(repair.get('n_additional_identity_segments'))} boundaries. On those "
+          f"affected names, pre-repair → headline accounting is "
+          f"{_fmt(pre_repair.get('n_segments'))} → {_fmt(repaired.get('n_segments'))} "
+          f"segments, {_fmt(pre_repair.get('n_ext_days'))} → "
+          f"{_fmt(repaired.get('n_ext_days'))} EXT days, and "
+          f"{_fmt(pre_repair.get('n_episodes'))} → "
+          f"{_fmt(repaired.get('n_episodes'))} episodes (removed: "
+          f"{_fmt(removed.get('n_ext_days'))} EXT days / "
+          f"{_fmt(removed.get('n_episodes'))} episodes). The pre-repair arm is audit-only.")
+        A("")
 
     A("## 1b. Instrument / dead-name census (§3) and the §3 parity gate")
     A("")

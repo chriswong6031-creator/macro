@@ -133,13 +133,15 @@ import numpy as np
 import pandas as pd
 
 __all__ = [
-    "IDENTITY_GAP_MAX_SESSIONS", "MIN_CLOSE", "MIN_MEDIAN_DVOL21", "MIN_PRIOR_SESSIONS",
+    "IDENTITY_GAP_MAX_SESSIONS", "RESIDUAL_UP_RATIO_BREAK", "MIN_CLOSE",
+    "MIN_MEDIAN_DVOL21", "MIN_PRIOR_SESSIONS",
     "EXT_R126_MIN", "EXT_R63_MIN", "EXT_ATRZ_MIN", "NEAR_HIGH_FRAC", "NEAR_HIGH_LOOKBACK",
     "EPISODE_GAP_MAX", "EPISODE_MIN_EXT_DAYS", "RACE_HORIZON", "RACE_DD_FRAC",
     "RACE_UP_FRAC", "PEAK_BUFFER", "PEAK_SEAL_WINDOW", "CASE_OFFSETS", "MAX_CONTROLS",
     "MIN_FINITE_CONTROLS", "MIN_EPISODE_MONTHS", "E1B_EMBARGO_SESSIONS",
     "BOOTSTRAP_B", "FDR_Q", "FEATURES", "FEATURE_FAMILY", "FEATURE_DIRECTION",
-    "FAMILY_NAMES", "segment_ticker", "identity_segment_bounds", "split_identity_segments",
+    "FAMILY_NAMES", "segment_ticker", "identity_segment_bounds",
+    "residual_up_break_positions", "split_identity_segments",
     "eligibility_mask", "equal_weight_median_index", "cross_sectional_median_returns",
     "extended_mask", "extract_episodes",
     "race_labels", "episode_peaks", "feature_library", "matched_controls",
@@ -149,6 +151,9 @@ __all__ = [
 
 # ── frozen construction constants (prereg §3–§5; changing one is a new arm) ───
 IDENTITY_GAP_MAX_SESSIONS = 60   # interior tape gap that means "different company"
+#: §6 repair arm: a residual >=3x up-jump in Track W's already-repaired
+#: close starts a new identity. Deliberately asymmetric; collapses remain.
+RESIDUAL_UP_RATIO_BREAK = 3.0
 MIN_CLOSE = 3.0                  # §3 eligibility floor
 MIN_MEDIAN_DVOL21 = 2e6          # §3 eligibility floor (median 21d dollar volume)
 MIN_PRIOR_SESSIONS = 260         # §3 history floor, inside the identity segment
@@ -280,17 +285,46 @@ def _busday_gaps(idx: pd.DatetimeIndex) -> np.ndarray:
     return np.busday_count(d[:-1], d[1:]).astype(float) - 1.0
 
 
+def residual_up_break_positions(
+    close: pd.Series,
+    *,
+    min_ratio: float = RESIDUAL_UP_RATIO_BREAK,
+) -> np.ndarray:
+    """Positions whose bar starts a new identity after a residual up-jump.
+
+    ``close`` is the already-repaired series. A position is returned only when
+    both adjacent prints are finite and positive and ``close[t] / close[t-1]``
+    is at least ``min_ratio``. There is intentionally no reciprocal/down-jump
+    rule: real collapses belong in this study.
+    """
+    if not np.isfinite(min_ratio) or float(min_ratio) <= 1.0:
+        raise ValueError("min_ratio must be finite and greater than 1")
+    a = pd.to_numeric(close, errors="coerce").to_numpy(dtype=float)
+    if len(a) < 2:
+        return np.array([], dtype=int)
+    prev, cur = a[:-1], a[1:]
+    valid = np.isfinite(prev) & np.isfinite(cur) & (prev > 0.0) & (cur > 0.0)
+    ratio = np.full(len(prev), np.nan)
+    ratio[valid] = cur[valid] / prev[valid]
+    return np.flatnonzero(ratio >= float(min_ratio)) + 1
+
+
 def split_identity_segments(
     bars_by_ticker: Mapping[str, pd.DataFrame],
     calendar: pd.DatetimeIndex | None = None,
     *,
     max_gap_sessions: int = IDENTITY_GAP_MAX_SESSIONS,
+    residual_up_ratio_break: float | None = None,
 ) -> dict[str, pd.DataFrame]:
     """Split every ticker's bars into identity segments keyed `TICK` or `TICK#k`.
 
     A ticker whose tape is continuous keeps its bare name (so ordinary reports
     read `NVDA`, not `NVDA#0`); a reused ticker yields `TICK#0`, `TICK#1`, … in
     chronological order. `segment_ticker` recovers the base ticker either way.
+
+    Supplying ``residual_up_ratio_break`` also starts a segment on repaired-close
+    up-jumps at or above that ratio. Track W's declared ``sanity-segmented`` arm
+    enables it; adjusted Track D and existing general callers remain gap-only.
     """
     out: dict[str, pd.DataFrame] = {}
     for tk, bars in bars_by_ticker.items():
@@ -298,6 +332,17 @@ def split_identity_segments(
             continue
         b = bars.sort_index()
         spans = identity_segment_bounds(b.index, calendar, max_gap_sessions=max_gap_sessions)
+        if residual_up_ratio_break is not None:
+            if "close" not in b.columns:
+                raise ValueError(f"{tk}: residual up-jump segmentation needs close")
+            value_cuts = residual_up_break_positions(
+                b["close"], min_ratio=residual_up_ratio_break)
+            if value_cuts.size:
+                gap_cuts = np.array([s for s, _ in spans[1:]], dtype=int)
+                cuts = np.unique(np.r_[gap_cuts, value_cuts]).astype(int)
+                starts = np.r_[0, cuts]
+                ends = np.r_[cuts - 1, len(b) - 1]
+                spans = list(zip(starts.tolist(), ends.tolist()))
         if len(spans) == 1:
             out[str(tk)] = b
             continue
