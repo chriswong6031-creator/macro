@@ -123,6 +123,25 @@ def _tags(html: str) -> list[str]:
     return ["".join(m) for m in re.findall(r"<\s*(/?)([a-zA-Z][a-zA-Z0-9-]*)", html)]
 
 
+def _without_opt_in_live_change(html: str) -> tuple[str, int]:
+    """Collapse the approved live quote enhancement back to the legacy price node.
+
+    The base-branch comparison below guards the HK artifact's fail-soft board shape,
+    not cross-market additions explicitly opted into by the caller.  Normalize only
+    the new ``pv-quote`` wrapper plus its adjacent ``nb-chg`` node; every other added
+    or removed element must still fail the tag-stream comparison.
+    """
+    return re.subn(
+        r'(<span class="pv-ov pv-ovr">)'
+        r'<span class="pv-quote">'
+        r'(<span class="nb-px pv-px"[^>]*>.*?</span>)'
+        r'<span class="nb-chg pv-chg"[^>]*>.*?</span>'
+        r'</span>(</span>)',
+        r'\1\2\3',
+        html,
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Fixtures
 # --------------------------------------------------------------------------- #
@@ -1780,6 +1799,12 @@ def test_legacy_board_keeps_the_artifacts_own_card_order(legacy_html):
     assert order == [r["ticker"] for r in legacy_artifact()["buy"]]
 
 
+def test_legacy_board_cards_opt_into_the_live_price_change_pill(legacy_html):
+    cards = len(legacy_artifact()["buy"])
+    assert legacy_html.count('<span class="pv-quote">') == cards
+    assert legacy_html.count('<span class="nb-chg pv-chg"') == cards
+
+
 def test_laggards_value_class_follows_the_sign(legacy_html):
     """The value was hardcoded `.neg`, so a POSITIVE laggard printed in the loss
     colour — and because `.neg` maps to --down, which inverts under
@@ -1835,7 +1860,10 @@ def test_legacy_render_is_tag_stream_identical_to_the_base_branch():
     # exact drift that took this file down.
     art = legacy_artifact()
     assert art.get("board_definition") is None and art.get("rank_by") is None
-    mine, theirs = _tags(_render(art)), _tags(_render_source(base, art))
+    normalized, quote_count = _without_opt_in_live_change(_render(art))
+    assert quote_count == len(art["buy"]), (
+        "live quote normalizer did not cover exactly one pill per legacy card")
+    mine, theirs = _tags(normalized), _tags(_render_source(base, art))
     assert mine == theirs, "legacy render changed shape vs the base branch (%d vs %d tags)" % (
         len(mine), len(theirs))
 

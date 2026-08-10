@@ -41,18 +41,16 @@ PREREG_PATH = ROOT / "research" / "GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md
 _DIGEST = "a" * 64
 _APPENDED_AT = "2026-08-06T00:00:00+00:00"
 _ENTRY_INDEX = 300
-_ISSUED_RECOVERY_CANDIDATE_IDS = frozenset(
-    {
-        "grc1-0d9acfe1eb29619cc9b78e2d",
-        "grc1-5c04549c98dc93a935b433d7",
-        "grc1-78d7567e22834f8e1a142b43",
-        "grc1-8d90edd35a0f32f9120ebdb4",
-        "grc1-a5d800c17e0bce45ff9a8aa8",
-        "grc1-ab00c51be87b507bfb45e8a2",
-        "grc1-cc400940cd4e316d5b80a7b1",
-        "grc1-e2e57aacdde17def7eeb01d6",
-    }
-)
+_ISSUED_RECOVERY_OBSERVATIONS = {
+    "gro1-021c5d60ada8e95b6f564644": "grc1-e2e57aacdde17def7eeb01d6",
+    "gro1-0909bb4f623d7708ec0cd853": "grc1-cc400940cd4e316d5b80a7b1",
+    "gro1-133526008591c002451225a5": "grc1-5c04549c98dc93a935b433d7",
+    "gro1-3ce986af15368e84192e0ba4": "grc1-ab00c51be87b507bfb45e8a2",
+    "gro1-4b1c8aa4985c7283a1ead04c": "grc1-78d7567e22834f8e1a142b43",
+    "gro1-a26204eaac0c2fdd4f24ed83": "grc1-0d9acfe1eb29619cc9b78e2d",
+    "gro1-b3cd3e2eab5b6af7a4bf44e4": "grc1-8d90edd35a0f32f9120ebdb4",
+    "gro1-beb39cd54fc0defd9b2cd3d4": "grc1-a5d800c17e0bce45ff9a8aa8",
+}
 _DISPLAY_ONLY_AUTHORITY = {
     "tier": "display",
     "context_only": True,
@@ -63,6 +61,22 @@ _DISPLAY_ONLY_AUTHORITY = {
     "can_add_candidates": False,
     "can_escalate": False,
 }
+
+
+def _assert_issued_recovery_observations(rows: list[dict]) -> list[dict]:
+    """Return the exact first-issuance observations, independent of later rows."""
+    issued = []
+    for observation_id, candidate_id in _ISSUED_RECOVERY_OBSERVATIONS.items():
+        matches = [row for row in rows if row.get("observation_id") == observation_id]
+        assert len(matches) == 1, (
+            f"immutable observation {observation_id} was deleted, duplicated, or rewritten"
+        )
+        row = matches[0]
+        assert row["candidate_id"] == candidate_id
+        assert row["authority"] == _DISPLAY_ONLY_AUTHORITY
+        assert row["is_neuralweb_trade_candidate"] is False
+        issued.append(row)
+    return issued
 
 
 # ---------------------------------------------------------------------------
@@ -2272,15 +2286,7 @@ def test_amendment_window_is_closed_after_immutable_issuance_and_grader_stays_un
     """
     ledger = ROOT / "data" / "government_revenue" / "candidate_ledger.jsonl"
     rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line]
-    by_id = {row["candidate_id"]: row for row in rows}
-    assert len(by_id) == len(rows), "candidate identities must remain append-only and unique"
-    assert _ISSUED_RECOVERY_CANDIDATE_IDS <= set(by_id), (
-        "the immutable recovery cohort was suppressed, deleted, or rewritten"
-    )
-    for candidate_id in _ISSUED_RECOVERY_CANDIDATE_IDS:
-        row = by_id[candidate_id]
-        assert row["authority"] == _DISPLAY_ONLY_AUTHORITY
-        assert row["is_neuralweb_trade_candidate"] is False
+    assert len(_assert_issued_recovery_observations(rows)) == 8
 
     preregistration = " ".join(PREREG_PATH.read_text(encoding="utf-8").split())
     assert (
@@ -2305,6 +2311,23 @@ def test_amendment_window_is_closed_after_immutable_issuance_and_grader_stays_un
         f"the grader has acquired callers {callers}: context-only issuance may have gained "
         "an unregistered path to verdict authority"
     )
+
+
+def test_closed_window_guard_allows_a_later_observation_of_an_existing_candidate():
+    """Candidate IDs name histories; observation IDs name immutable ledger rows."""
+    ledger = ROOT / "data" / "government_revenue" / "candidate_ledger.jsonl"
+    rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line]
+    original = _assert_issued_recovery_observations(rows)
+    later = copy.deepcopy(original[0])
+    later["observation_id"] = "gro1-ffffffffffffffffffffffff"
+    later["known_at"] = "2026-08-09T00:00:00+00:00"
+    later["source_event"]["known_at"] = later["known_at"]
+    later["source_receipt_refs"][0]["known_at"] = later["known_at"]
+    later["freshness"]["event_known_at"] = later["known_at"]
+    rows.append(later)
+
+    assert sum(row["candidate_id"] == later["candidate_id"] for row in rows) == 2
+    assert _assert_issued_recovery_observations(rows) == original
 
 
 # ---------------------------------------------------------------------------

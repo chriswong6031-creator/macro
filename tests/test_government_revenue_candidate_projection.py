@@ -42,18 +42,17 @@ FUTURE_KNOWN_AT = shifted(FROZEN_AT, hours=9)
 # these exact records may never be deleted, rewritten, or reclassified as
 # suppressed history.  The digest covers the complete eight-row semantic JSON,
 # independent of future appended rows and line ordering.
-_ISSUED_RECOVERY_CANDIDATE_IDS = frozenset(
-    {
-        "grc1-0d9acfe1eb29619cc9b78e2d",
-        "grc1-5c04549c98dc93a935b433d7",
-        "grc1-78d7567e22834f8e1a142b43",
-        "grc1-8d90edd35a0f32f9120ebdb4",
-        "grc1-a5d800c17e0bce45ff9a8aa8",
-        "grc1-ab00c51be87b507bfb45e8a2",
-        "grc1-cc400940cd4e316d5b80a7b1",
-        "grc1-e2e57aacdde17def7eeb01d6",
-    }
-)
+_ISSUED_RECOVERY_OBSERVATIONS = {
+    "gro1-021c5d60ada8e95b6f564644": "grc1-e2e57aacdde17def7eeb01d6",
+    "gro1-0909bb4f623d7708ec0cd853": "grc1-cc400940cd4e316d5b80a7b1",
+    "gro1-133526008591c002451225a5": "grc1-5c04549c98dc93a935b433d7",
+    "gro1-3ce986af15368e84192e0ba4": "grc1-ab00c51be87b507bfb45e8a2",
+    "gro1-4b1c8aa4985c7283a1ead04c": "grc1-78d7567e22834f8e1a142b43",
+    "gro1-a26204eaac0c2fdd4f24ed83": "grc1-0d9acfe1eb29619cc9b78e2d",
+    "gro1-b3cd3e2eab5b6af7a4bf44e4": "grc1-8d90edd35a0f32f9120ebdb4",
+    "gro1-beb39cd54fc0defd9b2cd3d4": "grc1-a5d800c17e0bce45ff9a8aa8",
+}
+_ISSUED_RECOVERY_CANDIDATE_IDS = frozenset(_ISSUED_RECOVERY_OBSERVATIONS.values())
 _ISSUED_RECOVERY_COHORT_SHA256 = (
     "a6a93726a9cde15da97e5d883d6f16c7c5ab6efe0ca07eecf0e414f0bef148ab"
 )
@@ -67,6 +66,27 @@ _DISPLAY_ONLY_AUTHORITY = {
     "can_add_candidates": False,
     "can_escalate": False,
 }
+
+
+def _issued_recovery_cohort(rows: list[dict]) -> list[dict]:
+    """Select the exact first-issuance observations, not later history rows."""
+    cohort = []
+    for observation_id, candidate_id in _ISSUED_RECOVERY_OBSERVATIONS.items():
+        matches = [row for row in rows if row.get("observation_id") == observation_id]
+        assert len(matches) == 1, (
+            f"immutable observation {observation_id} was deleted, duplicated, or rewritten"
+        )
+        row = matches[0]
+        assert row["candidate_id"] == candidate_id
+        cohort.append(row)
+    return sorted(cohort, key=lambda row: row["candidate_id"])
+
+
+def _issued_recovery_cohort_sha256(rows: list[dict]) -> str:
+    cohort = _issued_recovery_cohort(rows)
+    return sha256(
+        json.dumps(cohort, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
 
 
 def _fixture_root(tmp_path: Path) -> Path:
@@ -431,19 +451,9 @@ def test_issued_recovery_cohort_is_immutable_context_and_never_corrected_away() 
         for line in ledger_path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
-    cohort = sorted(
-        (
-            row
-            for row in rows
-            if row.get("candidate_id") in _ISSUED_RECOVERY_CANDIDATE_IDS
-        ),
-        key=lambda row: row["candidate_id"],
-    )
+    cohort = _issued_recovery_cohort(rows)
     assert {row["candidate_id"] for row in cohort} == _ISSUED_RECOVERY_CANDIDATE_IDS
-    cohort_sha256 = sha256(
-        json.dumps(cohort, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    ).hexdigest()
-    assert cohort_sha256 == _ISSUED_RECOVERY_COHORT_SHA256
+    assert _issued_recovery_cohort_sha256(rows) == _ISSUED_RECOVERY_COHORT_SHA256
 
     for row in cohort:
         assert row["authority"] == _DISPLAY_ONLY_AUTHORITY
@@ -479,6 +489,26 @@ def test_issued_recovery_cohort_is_immutable_context_and_never_corrected_away() 
         assert not any(token in text for token in forbidden_tokens), (
             f"{surface.relative_to(ROOT)} resurrected a retroactive issued-row overlay"
         )
+
+
+def test_issued_cohort_digest_ignores_later_observation_of_existing_candidate() -> None:
+    """A candidate history may grow without changing the frozen issuance digest."""
+    ledger_path = ROOT / "data/government_revenue/candidate_ledger.jsonl"
+    rows = [
+        json.loads(line)
+        for line in ledger_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    later = deepcopy(_issued_recovery_cohort(rows)[0])
+    later["observation_id"] = "gro1-ffffffffffffffffffffffff"
+    later["known_at"] = "2026-08-09T00:00:00+00:00"
+    later["source_event"]["known_at"] = later["known_at"]
+    later["source_receipt_refs"][0]["known_at"] = later["known_at"]
+    later["freshness"]["event_known_at"] = later["known_at"]
+    rows.append(later)
+
+    assert sum(row["candidate_id"] == later["candidate_id"] for row in rows) == 2
+    assert _issued_recovery_cohort_sha256(rows) == _ISSUED_RECOVERY_COHORT_SHA256
 
 
 def test_same_frozen_run_keeps_durable_bytes_and_remediates_one_sided_twin(tmp_path: Path) -> None:

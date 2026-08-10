@@ -3998,6 +3998,7 @@
         'href': 'hk_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'hk',
         'name': n.name, 'sec': n.sector, 'sec_zh': _csz,
         'price_txt': ('%.2f'|format(n.price)) if n.price is not none else none,
+        'show_change': true,
         'verb': _verb,
         'edge': (('%.0f'|format(_prs)) if _prs is not none
                  else (c.score if (c and c.score is not none) else none)),
