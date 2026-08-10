@@ -9482,6 +9482,43 @@ artifacts:
       the ratified default. Built in daily.yml cl_baskets (~5s, off the render-critical
       path); the engine job's catch-all `git add site/` commits it.
 
+  site-basket-washout-history:
+    path: site/factordata/basket_washout_history.json
+    format: json
+    producer: scripts/build_basket_washout_state.py
+    known_extra_writers: []
+    owner_program: blocked-entry-override
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: basket_washout_history.v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - terminal:pull_macro_washout
+    notes: >
+      Sibling of site-basket-washout-state, same builder and same nightly step (operator
+      directive 2026-08-10: historical ⊘ fires must be re-markable under the as-shipped
+      rule). Payload: per US name the date-INTERVALS during which it qualified, over its
+      full available history, on the SAME leave-one-out peer read and the SAME
+      basis/group_id the state artifact assigns it — the two artifacts cannot disagree
+      because the history pass reads the state payload's own name→group assignment.
+      `intervals` is keyed PER NOTCH ({"20","25","30"}, all three always present, empty
+      list = never qualified there) so moving the live dial — 20 as of 2026-08-10 — is a
+      consumer-side change that never needs a rebuild. Ends are INCLUSIVE; a null end means
+      the run reaches as_of. Crossings are RAW (no smoothing, no minimum length) because
+      the shipped rule is evaluated per fire date. RETRO-APPLIED, NOT A RECORD OF CALLS
+      MADE: today's rosters and today's GICS map are applied to the whole past, so a
+      consumer must label anything derived from it retro-applied — the artifact's own
+      `notes` field carries that disclosure and is part of the contract. DISPLAY TIER
+      ONLY: no score, rank, gate or Article-2 surface, and the live enter-mask conditional
+      stays behind its own two standing gates (packet §4). Full recompute nightly (~4s on
+      top of the state pass, one argsort per group) — no incremental store to go stale.
+
   # --- PR-C: NW lobe-status health surface ---
   neuralweb-health:
     path: data/neuralweb/health.json

@@ -24,14 +24,16 @@ Test coverage:
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import os
 import plistlib
 import stat
+import subprocess
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -658,7 +660,149 @@ def _patch_receipt_root(monkeypatch, tmp_path: Path) -> Path:
     return root
 
 
+def _complete_packet(monkeypatch, tmp_path: Path) -> dict:
+    _patch_receipt_root(monkeypatch, tmp_path)
+    captured: list[dict] = []
+    summary = run_managed_sweep(
+        ["SPY"], SESSION, "09:30", {"cadence_min": 15},
+        now=datetime(2026, 7, 2, 9, 36, tzinfo=ET),
+        now_fn=_clock(
+            datetime(2026, 7, 2, 13, 36, 0, 100001, tzinfo=timezone.utc),
+            datetime(2026, 7, 2, 13, 36, 0, 100002, tzinfo=timezone.utc),
+            datetime(2026, 7, 2, 13, 36, 0, 100003, tzinfo=timezone.utc),
+            datetime(2026, 7, 2, 13, 36, 0, 100004, tzinfo=timezone.utc),
+        ),
+        sweep_fn=lambda roots, *_args: _sweep_summary(roots),
+        completion_hook=captured.append,
+    )
+    assert summary["receipt_state"] == "complete"
+    assert len(captured) == 1
+    return captured[0]
+
+
+def _patch_memory_publication_cursor(monkeypatch, publisher):
+    holder: dict[str, dict | None] = {"cursor": None, "scan_cursor": None}
+
+    def advance(_out_dir, packet, *, prefix_packets, activation_session):
+        state = bucket_completion.validate_completion_packet(packet)
+        holder["cursor"] = {
+            "activation_session": activation_session,
+            "session_date": state.intent["session_date"],
+            "snapshot_bucket": state.intent["bucket"],
+            "bucket_id": state.intent["bucket_id"],
+            "availability_receipt_id": state.availability["receipt_id"],
+            "completion_packet_sha256": hashlib.sha256(
+                bucket_completion.canonical_bytes(packet)
+            ).hexdigest(),
+            **publisher.publication_prefix_receipt(prefix_packets),
+        }
+
+    def advance_scan(
+        _out_dir,
+        *,
+        activation_session,
+        from_session,
+        to_session,
+        sealed_session,
+        sealed_ledger_sha256,
+        sealed_packets,
+    ):
+        assert from_session >= activation_session
+        holder["scan_cursor"] = {
+            "activation_session": activation_session,
+            "scan_session": to_session,
+            "sealed_session": sealed_session,
+            "sealed_ledger_sha256": sealed_ledger_sha256,
+            "sealed_complete_count": len(sealed_packets),
+        }
+
+    monkeypatch.setattr(
+        publisher, "read_publication_cursor", lambda _out_dir: holder["cursor"],
+    )
+    monkeypatch.setattr(
+        publisher,
+        "read_publication_scan_cursor",
+        lambda _out_dir: holder["scan_cursor"],
+    )
+    monkeypatch.setattr(publisher, "advance_publication_cursor", advance)
+    monkeypatch.setattr(
+        publisher, "advance_publication_scan_cursor", advance_scan,
+    )
+    monkeypatch.setattr(
+        publisher,
+        "publication_scan_cursor_matches",
+        lambda _out_dir, _cursor, _packets: True,
+    )
+    return holder
+
+
 class TestBucketCompletionState:
+    @pytest.mark.parametrize("history_sessions", [3, 80])
+    def test_bounded_completion_window_decodes_only_two_sessions(
+        self, tmp_path, monkeypatch, history_sessions,
+    ):
+        root = _patch_receipt_root(monkeypatch, tmp_path)
+        sessions: list[str] = []
+        candidate = date(2026, 1, 2)
+        while len(sessions) < history_sessions:
+            if bucket_completion.nyse_calendar.is_session(candidate):
+                sessions.append(candidate.isoformat())
+            candidate += timedelta(days=1)
+        for session in sessions:
+            local = datetime.combine(
+                date.fromisoformat(session),
+                datetime.min.time(),
+                tzinfo=ET,
+            ).replace(hour=9, minute=36)
+            run_managed_sweep(
+                ["SPY"], session, "09:30", {"cadence_min": 15},
+                now=local,
+                now_fn=lambda local=local: local.astimezone(timezone.utc),
+                sweep_fn=lambda roots, *_args: _sweep_summary(
+                    roots, failed={"SPY"},
+                ),
+            )
+
+        decoded: list[str] = []
+        real_decode = bucket_completion.decode_ledger
+
+        def decode(raw, path):
+            decoded.append(path.stem)
+            return real_decode(raw, path)
+
+        monkeypatch.setattr(bucket_completion, "decode_ledger", decode)
+        with bucket_completion.BucketCompletionStore(root) as store:
+            packets, receipts, has_more = store.complete_packets_from(
+                sessions[0], max_sessions=2, require_start=True,
+            )
+        assert packets == []
+        assert [item["session_date"] for item in receipts] == sessions[:2]
+        assert decoded == sessions[:2]
+        assert has_more is (history_sessions > 2)
+
+    def test_bounded_window_rejects_nonterminal_tail_before_unread_ledger(
+        self, tmp_path, monkeypatch,
+    ):
+        root = _patch_receipt_root(monkeypatch, tmp_path)
+        pending_session = "2026-07-06"
+        run_managed_sweep(
+            ["SPY"], pending_session, "09:30", {"cadence_min": 15},
+            now=datetime(2026, 7, 6, 9, 36, tzinfo=ET),
+            now_fn=lambda: datetime(
+                2026, 7, 6, 13, 36, 0, 100001, tzinfo=timezone.utc,
+            ),
+            sweep_fn=lambda roots, *_args: _sweep_summary(roots, failed={"SPY"}),
+        )
+        (root / "2026-07-07.jsonl").write_bytes(b"")
+        with bucket_completion.BucketCompletionStore(root) as store:
+            with pytest.raises(
+                bucket_completion.BucketStateError,
+                match="nonterminal receipt session precedes a later ledger",
+            ):
+                store.complete_packets_from(
+                    pending_session, max_sessions=1, require_start=True,
+                )
+
     def test_exact_durability_and_clock_order(self, tmp_path, monkeypatch):
         root = _patch_receipt_root(monkeypatch, tmp_path)
         root.mkdir()
@@ -1161,6 +1305,22 @@ class TestBucketCompletionState:
         assert retry["receipt_state"] == "complete_skip"
         assert source_calls == 1 and len(repaired) == 1
 
+    def test_partial_sweep_never_calls_completion_hook(self, tmp_path, monkeypatch):
+        _patch_receipt_root(monkeypatch, tmp_path)
+        summary = run_managed_sweep(
+            ["SPY"], SESSION, "09:30", {"cadence_min": 15},
+            now=datetime(2026, 7, 2, 9, 36, tzinfo=ET),
+            now_fn=_clock(
+                datetime(2026, 7, 2, 13, 36, 0, 100001, tzinfo=timezone.utc),
+                datetime(2026, 7, 2, 13, 36, 0, 100002, tzinfo=timezone.utc),
+            ),
+            sweep_fn=lambda roots, *_args: _sweep_summary(roots, failed={"SPY"}),
+            completion_hook=lambda _packet: pytest.fail(
+                "partial source sweep cannot publish"
+            ),
+        )
+        assert summary["receipt_state"] == "intent_pending"
+
     def test_receipts_validate_against_governed_schema(self, tmp_path, monkeypatch):
         jsonschema = pytest.importorskip("jsonschema")
         root = _patch_receipt_root(monkeypatch, tmp_path)
@@ -1476,6 +1636,509 @@ class TestBucketCompletionState:
             )
 
 
+def test_options_structure_hook_is_default_off_and_makes_no_subprocess_call(
+    monkeypatch,
+):
+    from scripts import chain_snapshot_poller as poller
+
+    monkeypatch.setattr(
+        poller.subprocess,
+        "run",
+        lambda *_args, **_kwargs: pytest.fail("disabled hook cannot spawn publisher"),
+    )
+    assert poller._options_structure_completion_hook({"cadence_min": 15}) is None
+
+
+def test_options_structure_hook_passes_exact_receipt_to_existing_builder(
+    tmp_path, monkeypatch,
+):
+    from scripts import chain_snapshot_poller as poller
+    from scripts import build_options_structure_intraday as publisher
+
+    packet = _complete_packet(monkeypatch, tmp_path)
+    seen: dict[str, object] = {}
+
+    def run(command, **kwargs):
+        seen["command"] = command
+        seen.update(kwargs)
+        return subprocess.CompletedProcess(command, 0, stdout=b"ok\n", stderr=b"")
+
+    monkeypatch.setattr(poller, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(poller.subprocess, "run", run)
+    monkeypatch.setattr(
+        publisher,
+        "publication_acknowledged",
+        lambda out_dir, received: out_dir == tmp_path / "data" / "options_structure_intraday_r2"
+        and received == packet,
+    )
+    hook = poller._options_structure_completion_hook({
+        "options_structure_r2": {
+            "enabled": True,
+            "activation_session": SESSION,
+            "timeout_sec": 120,
+        },
+    })
+    assert hook is not None
+    hook(packet)
+    assert seen["command"] == [
+        poller.sys.executable,
+        "-m",
+        "scripts.build_options_structure_intraday",
+        "--completion-packet-stdin",
+        "--data-root",
+        str(tmp_path / "data" / "chain_snapshots"),
+        "--out-dir",
+        str(tmp_path / "data" / "options_structure_intraday_r2"),
+        "--publish",
+    ]
+    assert seen["cwd"] == tmp_path
+    assert seen["timeout"] == 120
+    assert seen["capture_output"] is True
+    assert seen["check"] is False
+    decoded = bucket_completion.strict_json_loads(seen["input"])
+    assert decoded == packet
+    assert bucket_completion.validate_completion_packet(decoded).status == "complete"
+
+
+def test_options_structure_hook_timeout_is_loud(tmp_path, monkeypatch):
+    from scripts import chain_snapshot_poller as poller
+
+    packet = _complete_packet(monkeypatch, tmp_path)
+    monkeypatch.setattr(poller, "REPO_ROOT", tmp_path)
+
+    def timeout(command, **_kwargs):
+        raise subprocess.TimeoutExpired(command, 120)
+
+    monkeypatch.setattr(poller.subprocess, "run", timeout)
+    hook = poller._options_structure_completion_hook({
+        "options_structure_r2": {
+            "enabled": True,
+            "activation_session": SESSION,
+            "timeout_sec": 120,
+        },
+    })
+    assert hook is not None
+    with pytest.raises(RuntimeError, match="exceeded 120s"):
+        hook(packet)
+
+
+def test_options_structure_hook_abstains_before_exact_activation_floor(
+    tmp_path, monkeypatch,
+):
+    from scripts import chain_snapshot_poller as poller
+
+    packet = _complete_packet(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        poller,
+        "_run_options_structure_publisher",
+        lambda *_args, **_kwargs: pytest.fail("pre-floor packet cannot publish"),
+    )
+    hook = poller._options_structure_completion_hook({
+        "options_structure_r2": {
+            "enabled": True,
+            "activation_session": "2026-07-06",
+            "timeout_sec": 120,
+        },
+    })
+    assert hook is not None
+    assert hook(packet) is None
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        True,
+        {"enabled": "yes"},
+        {"enabled": True, "timeout_sec": 120},
+        {"enabled": True, "activation_session": "2026-07-04"},
+        {
+            "enabled": True,
+            "activation_session": SESSION,
+            "timeout_sec": 120.0,
+        },
+        {
+            "enabled": True,
+            "activation_session": SESSION,
+            "timeout_sec": 121,
+        },
+    ],
+)
+def test_options_structure_hook_config_fails_closed(block):
+    from scripts import chain_snapshot_poller as poller
+
+    with pytest.raises(ValueError, match="options_structure_r2"):
+        poller._options_structure_completion_hook({"options_structure_r2": block})
+
+
+def test_completed_receipt_catchup_is_durable_bounded_and_idempotent(
+    tmp_path, monkeypatch,
+):
+    from scripts import build_options_structure_intraday as publisher
+    from scripts import chain_snapshot_poller as poller
+
+    packet = _complete_packet(monkeypatch, tmp_path)
+    receipt_root = tmp_path / "receipts"
+    monkeypatch.setattr(poller, "_receipt_root_path", lambda: receipt_root)
+    acknowledged: set[str] = set()
+    attempts = 0
+
+    def is_acknowledged(_out_dir, candidate):
+        return candidate["availability"]["receipt_id"] in acknowledged
+
+    def publish(candidate):
+        nonlocal attempts
+        attempts += 1
+        assert candidate == packet
+        if attempts == 1:
+            raise RuntimeError("transient R2 outage")
+        acknowledged.add(candidate["availability"]["receipt_id"])
+
+    monkeypatch.setattr(publisher, "publication_acknowledged", is_acknowledged)
+    cursor = _patch_memory_publication_cursor(monkeypatch, publisher)
+    first = poller._retry_unacknowledged_publications(
+        publish, activation_session=SESSION,
+    )
+    assert first["attempted"] == 1
+    assert first["acknowledged"] == 0
+    assert first["remaining"] == 1
+    assert first["deep_reproofs"] <= 2
+    assert "transient R2 outage" in first["errors"][-1]
+
+    second = poller._retry_unacknowledged_publications(
+        publish, activation_session=SESSION,
+    )
+    assert second["attempted"] == 1
+    assert second["acknowledged"] == 1
+    assert second["remaining"] == 0
+
+    third = poller._retry_unacknowledged_publications(
+        publish, activation_session=SESSION,
+    )
+    assert third["complete_scanned"] == 1
+    assert third["pending_before"] == 0
+    assert third["attempted"] == 0
+    assert attempts == 2
+
+    changed_floor = poller._retry_unacknowledged_publications(
+        lambda _packet: pytest.fail("activation drift cannot publish"),
+        activation_session="2026-07-01",
+    )
+    assert changed_floor["remaining"] == 1
+    assert "activation does not match" in changed_floor["errors"][0]
+
+
+def test_ack_written_before_cursor_restart_advances_without_republication(
+    tmp_path, monkeypatch,
+):
+    from scripts import build_options_structure_intraday as publisher
+    from scripts import chain_snapshot_poller as poller
+
+    packet = _complete_packet(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        poller, "_receipt_root_path", lambda: tmp_path / "receipts",
+    )
+    acknowledged = {packet["availability"]["receipt_id"]}
+    monkeypatch.setattr(
+        publisher,
+        "publication_acknowledged",
+        lambda _out_dir, candidate: (
+            candidate["availability"]["receipt_id"] in acknowledged
+        ),
+    )
+    cursor = _patch_memory_publication_cursor(monkeypatch, publisher)
+    status = poller._retry_unacknowledged_publications(
+        lambda _packet: pytest.fail("acknowledged packet must not republish"),
+        activation_session=SESSION,
+    )
+    assert status["attempted"] == 0
+    assert status["acknowledged"] == 1
+    assert status["remaining"] == 0
+    assert cursor["cursor"]["snapshot_bucket"] == "09:30"
+
+
+def test_derivative_cursor_error_is_contained_and_suppresses_only_projection(
+    tmp_path, monkeypatch,
+):
+    from scripts import build_options_structure_intraday as publisher
+    from scripts import chain_snapshot_poller as poller
+
+    _complete_packet(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        poller, "_receipt_root_path", lambda: tmp_path / "receipts",
+    )
+    monkeypatch.setattr(
+        publisher,
+        "read_publication_cursor",
+        lambda _out_dir: {
+            "activation_session": SESSION,
+            "session_date": SESSION,
+            "snapshot_bucket": "09:45",
+            "bucket_id": "csb_absent",
+            "availability_receipt_id": "csr_absent",
+            "completion_packet_sha256": "0" * 64,
+            "complete_prefix_count": 1,
+            "complete_prefix_sha256": "1" * 64,
+        },
+    )
+    status = poller._retry_unacknowledged_publications(
+        lambda _packet: pytest.fail("bad cursor cannot invoke projection"),
+        activation_session=SESSION,
+    )
+    assert status["remaining"] == 1
+    assert status["attempted"] == 0
+    assert "does not identify exactly one" in status["errors"][0]
+
+
+def test_missing_scan_floor_ledger_suppresses_projection_not_source(
+    tmp_path, monkeypatch,
+):
+    from scripts import build_options_structure_intraday as publisher
+    from scripts import chain_snapshot_poller as poller
+
+    _complete_packet(monkeypatch, tmp_path)
+    receipt_root = tmp_path / "receipts"
+    monkeypatch.setattr(poller, "_receipt_root_path", lambda: receipt_root)
+    cursor = _patch_memory_publication_cursor(monkeypatch, publisher)
+    cursor["scan_cursor"] = {
+        "activation_session": SESSION,
+        "scan_session": "2026-07-06",
+        "sealed_session": SESSION,
+        "sealed_ledger_sha256": hashlib.sha256(
+            (receipt_root / f"{SESSION}.jsonl").read_bytes()
+        ).hexdigest(),
+        "sealed_complete_count": 1,
+    }
+    status = poller._retry_unacknowledged_publications(
+        lambda _packet: pytest.fail("invalid scan floor cannot project"),
+        activation_session=SESSION,
+    )
+    assert status["remaining"] == 1
+    assert status["attempted"] == 0
+    assert "scan cursor" in status["errors"][0]
+
+    source_calls: list[str] = []
+
+    def source(roots, *_args):
+        source_calls.extend(roots)
+        result = _sweep_summary(roots)
+        result["bucket"] = "09:45"
+        return result
+
+    summary = run_managed_sweep(
+        ["SPY"], SESSION, "09:45", {"cadence_min": 15},
+        now=datetime(2026, 7, 2, 9, 46, tzinfo=ET),
+        now_fn=_clock(
+            datetime(2026, 7, 2, 13, 46, 0, 100001, tzinfo=timezone.utc),
+            datetime(2026, 7, 2, 13, 46, 0, 100002, tzinfo=timezone.utc),
+            datetime(2026, 7, 2, 13, 46, 0, 100003, tzinfo=timezone.utc),
+            datetime(2026, 7, 2, 13, 46, 0, 100004, tzinfo=timezone.utc),
+        ),
+        sweep_fn=source,
+    )
+    assert summary["receipt_state"] == "complete"
+    assert source_calls == ["SPY"]
+
+
+def test_missing_scan_cursor_recovers_from_activation_bound_delivery_cursor(
+    tmp_path, monkeypatch,
+):
+    from scripts import build_options_structure_intraday as publisher
+    from scripts import chain_snapshot_poller as poller
+
+    first = _complete_packet(monkeypatch, tmp_path)
+    later_session = "2026-07-06"
+    captured: list[dict] = []
+    run_managed_sweep(
+        ["SPY"], later_session, "09:30", {"cadence_min": 15},
+        now=datetime(2026, 7, 6, 9, 36, tzinfo=ET),
+        now_fn=_clock(
+            datetime(2026, 7, 6, 13, 36, 0, 100001, tzinfo=timezone.utc),
+            datetime(2026, 7, 6, 13, 36, 0, 100002, tzinfo=timezone.utc),
+            datetime(2026, 7, 6, 13, 36, 0, 100003, tzinfo=timezone.utc),
+            datetime(2026, 7, 6, 13, 36, 0, 100004, tzinfo=timezone.utc),
+        ),
+        sweep_fn=lambda roots, *_args: _sweep_summary(roots),
+        completion_hook=captured.append,
+    )
+    later = captured[0]
+    monkeypatch.setattr(
+        poller, "_receipt_root_path", lambda: tmp_path / "receipts",
+    )
+    acknowledged = {
+        first["availability"]["receipt_id"],
+        later["availability"]["receipt_id"],
+    }
+    monkeypatch.setattr(
+        publisher,
+        "publication_acknowledged",
+        lambda _out_dir, packet: packet["availability"]["receipt_id"] in acknowledged,
+    )
+    cursor = _patch_memory_publication_cursor(monkeypatch, publisher)
+    publisher.advance_publication_cursor(
+        Path("unused"),
+        later,
+        prefix_packets=[later],
+        activation_session=SESSION,
+    )
+    assert cursor["scan_cursor"] is None
+    status = poller._retry_unacknowledged_publications(
+        lambda _packet: pytest.fail("delivery cursor already covers the packet"),
+        activation_session=SESSION,
+    )
+    assert status["errors"] == []
+    assert status["remaining"] == 0
+    assert status["deep_reproofs"] == 1
+
+
+def test_completed_receipt_catchup_preserves_epoch_order_and_one_per_pass(
+    tmp_path, monkeypatch,
+):
+    from scripts import build_options_structure_intraday as publisher
+    from scripts import chain_snapshot_poller as poller
+
+    _complete_packet(monkeypatch, tmp_path)
+    run_managed_sweep(
+        ["SPY"], SESSION, "09:45", {"cadence_min": 15},
+        now=datetime(2026, 7, 2, 9, 46, tzinfo=ET),
+        now_fn=_clock(
+            datetime(2026, 7, 2, 13, 46, 0, 100001, tzinfo=timezone.utc),
+            datetime(2026, 7, 2, 13, 46, 0, 100002, tzinfo=timezone.utc),
+            datetime(2026, 7, 2, 13, 46, 0, 100003, tzinfo=timezone.utc),
+            datetime(2026, 7, 2, 13, 46, 0, 100004, tzinfo=timezone.utc),
+        ),
+        sweep_fn=lambda roots, *_args: {
+            **_sweep_summary(roots),
+            "bucket": "09:45",
+        },
+    )
+    monkeypatch.setattr(
+        poller, "_receipt_root_path", lambda: tmp_path / "receipts",
+    )
+    acknowledged: set[str] = set()
+    published: list[str] = []
+
+    def is_acknowledged(_out_dir, packet):
+        return packet["availability"]["receipt_id"] in acknowledged
+
+    def publish(packet):
+        published.append(packet["intent"]["bucket"])
+        acknowledged.add(packet["availability"]["receipt_id"])
+
+    monkeypatch.setattr(publisher, "publication_acknowledged", is_acknowledged)
+    cursor = _patch_memory_publication_cursor(monkeypatch, publisher)
+    first = poller._retry_unacknowledged_publications(
+        publish, activation_session=SESSION,
+    )
+    assert first["pending_before"] == 2
+    assert first["attempted"] == 1
+    assert first["remaining"] == 1
+    assert first["deep_reproofs"] <= 2
+    assert published == ["09:30"]
+
+    second = poller._retry_unacknowledged_publications(
+        publish, activation_session=SESSION,
+    )
+    assert second["pending_before"] == 1
+    assert second["remaining"] == 0
+    assert second["deep_reproofs"] <= 2
+    assert published == ["09:30", "09:45"]
+
+    with bucket_completion.BucketCompletionStore(tmp_path / "receipts") as store:
+        packets, _receipts, _has_more = store.complete_packets_from(
+            SESSION, max_sessions=1, require_start=True,
+        )
+    cursor["cursor"].update(publisher.publication_prefix_receipt([packets[-1]]))
+    drift = poller._retry_unacknowledged_publications(
+        lambda _packet: pytest.fail("changed prefix cannot publish"),
+        activation_session=SESSION,
+    )
+    assert drift["remaining"] == 2
+    assert "prefix changed" in drift["errors"][0]
+
+
+def test_catchup_persists_progress_across_terminal_empty_session(
+    tmp_path, monkeypatch,
+):
+    from scripts import build_options_structure_intraday as publisher
+    from scripts import chain_snapshot_poller as poller
+
+    first_packet = _complete_packet(monkeypatch, tmp_path)
+    receipt_root = tmp_path / "receipts"
+    empty_session = "2026-07-06"
+    final_session = "2026-07-07"
+    pending = run_managed_sweep(
+        ["SPY"], empty_session, "09:30", {"cadence_min": 15},
+        now=datetime(2026, 7, 6, 9, 36, tzinfo=ET),
+        now_fn=lambda: datetime(
+            2026, 7, 6, 13, 36, 0, 100001, tzinfo=timezone.utc,
+        ),
+        sweep_fn=lambda roots, *_args: _sweep_summary(roots, failed={"SPY"}),
+    )
+    assert pending["receipt_state"] == "intent_pending"
+    captured: list[dict] = []
+    run_managed_sweep(
+        ["SPY"], final_session, "09:30", {"cadence_min": 15},
+        now=datetime(2026, 7, 7, 9, 36, tzinfo=ET),
+        now_fn=_clock(
+            datetime(2026, 7, 7, 13, 36, 0, 100001, tzinfo=timezone.utc),
+            datetime(2026, 7, 7, 13, 36, 0, 100002, tzinfo=timezone.utc),
+            datetime(2026, 7, 7, 13, 36, 0, 100003, tzinfo=timezone.utc),
+            datetime(2026, 7, 7, 13, 36, 0, 100004, tzinfo=timezone.utc),
+        ),
+        sweep_fn=lambda roots, *_args: _sweep_summary(roots),
+        completion_hook=captured.append,
+    )
+    assert len(captured) == 1
+    assert [row["kind"] for row in _records(receipt_root, empty_session)] == [
+        "intent", "incomplete",
+    ]
+
+    monkeypatch.setattr(poller, "_receipt_root_path", lambda: receipt_root)
+    acknowledged: set[str] = set()
+    published: list[tuple[str, str]] = []
+
+    def is_acknowledged(_out_dir, packet):
+        return packet["availability"]["receipt_id"] in acknowledged
+
+    def publish(packet):
+        published.append((
+            packet["intent"]["session_date"], packet["intent"]["bucket"],
+        ))
+        acknowledged.add(packet["availability"]["receipt_id"])
+
+    monkeypatch.setattr(publisher, "publication_acknowledged", is_acknowledged)
+    cursor = _patch_memory_publication_cursor(monkeypatch, publisher)
+    first = poller._retry_unacknowledged_publications(
+        publish, activation_session=SESSION,
+    )
+    assert first["acknowledged"] == 1
+    assert published == [(SESSION, "09:30")]
+
+    second = poller._retry_unacknowledged_publications(
+        publish, activation_session=SESSION,
+    )
+    assert second["attempted"] == 0
+    assert second["scan_advanced"] == 1
+    assert second["remaining"] == 1
+    assert cursor["scan_cursor"]["scan_session"] == empty_session
+
+    third = poller._retry_unacknowledged_publications(
+        publish, activation_session=SESSION,
+    )
+    assert third["acknowledged"] == 1
+    assert third["remaining"] == 0
+    assert published == [(SESSION, "09:30"), (final_session, "09:30")]
+    assert first_packet["intent"]["session_date"] == SESSION
+
+    cursor["scan_cursor"]["sealed_ledger_sha256"] = "0" * 64
+    drift = poller._retry_unacknowledged_publications(
+        lambda _packet: pytest.fail("corrupt scan binding cannot publish"),
+        activation_session=SESSION,
+    )
+    assert drift["remaining"] == 1
+    assert "ledger hash drifted" in drift["errors"][0]
+
+
 def test_atomic_parquet_install_has_file_replace_directory_verify_order(
     tmp_path, monkeypatch,
 ):
@@ -1771,7 +2434,12 @@ def test_runbook_pins_exact_clock_join_recovery_and_installed_reload_order():
 
 
 def _leave_close_decision_only(
-    monkeypatch, tmp_path: Path, *, stable_repo_root: bool = False,
+    monkeypatch,
+    tmp_path: Path,
+    *,
+    stable_repo_root: bool = False,
+    session: str = SESSION,
+    bucket: str = "16:00",
 ) -> Path:
     if stable_repo_root:
         from scripts import chain_snapshot_poller as poller
@@ -1781,14 +2449,22 @@ def _leave_close_decision_only(
     else:
         root = _patch_receipt_root(monkeypatch, tmp_path)
     calls = 0
+    close_hour_utc = 18 if bucket == "13:00" else 20
+    session_day = date.fromisoformat(session)
 
     def clock():
         nonlocal calls
         calls += 1
         values = {
-            1: datetime(2026, 7, 2, 20, 0, 20, tzinfo=timezone.utc),
-            2: datetime(2026, 7, 2, 20, 0, 40, tzinfo=timezone.utc),
-            3: datetime(2026, 7, 2, 20, 5, 0, tzinfo=timezone.utc),
+            1: datetime.combine(
+                session_day, datetime.min.time(), tzinfo=timezone.utc,
+            ).replace(hour=close_hour_utc, second=20),
+            2: datetime.combine(
+                session_day, datetime.min.time(), tzinfo=timezone.utc,
+            ).replace(hour=close_hour_utc, second=40),
+            3: datetime.combine(
+                session_day, datetime.min.time(), tzinfo=timezone.utc,
+            ).replace(hour=close_hour_utc, minute=5),
         }
         if calls == 4:
             raise RuntimeError("crash after close decision")
@@ -1796,17 +2472,33 @@ def _leave_close_decision_only(
 
     def sweep(roots, *_args):
         summary = _sweep_summary(roots)
-        summary["bucket"] = "16:00"
+        summary["bucket"] = bucket
+        vendor_at = datetime.combine(
+            session_day, datetime.min.time(), tzinfo=timezone.utc,
+        ).replace(hour=close_hour_utc)
+        for result in summary["_root_results"]:
+            result["first_vendor_min_at"] = bucket_completion.utc_microseconds(
+                vendor_at,
+            )
+            result["first_vendor_max_at"] = bucket_completion.utc_microseconds(
+                vendor_at,
+            )
         return summary
 
     with pytest.raises(RuntimeError, match="crash after close decision"):
         run_managed_sweep(
-            ["SPY"], SESSION, "16:00", {"cadence_min": 15},
-            now=datetime(2026, 7, 2, 16, 0, 20, tzinfo=ET),
+            ["SPY"], session, bucket, {"cadence_min": 15},
+            now=datetime.combine(
+                session_day, datetime.min.time(), tzinfo=ET,
+            ).replace(
+                hour=int(bucket.split(":")[0]),
+                minute=int(bucket.split(":")[1]),
+                second=20,
+            ),
             now_fn=clock,
             sweep_fn=sweep,
         )
-    assert [row["kind"] for row in _records(root)] == ["intent", "decision"]
+    assert [row["kind"] for row in _records(root, session)] == ["intent", "decision"]
     return root
 
 
@@ -1814,19 +2506,148 @@ def test_entrypoint_drains_close_decision_after_rth_without_theta(
     tmp_path, monkeypatch,
 ):
     from collectors import thetadata as td
+    from scripts import build_options_structure_intraday as publisher
     from scripts import chain_snapshot_poller as poller
 
     root = _leave_close_decision_only(monkeypatch, tmp_path)
     now = datetime(2026, 7, 2, 16, 6, tzinfo=ET)
+    published: list[dict] = []
     monkeypatch.setattr(poller, "_receipt_root_path", lambda: root)
     monkeypatch.setattr(poller, "_now_et", lambda: now)
-    monkeypatch.setattr(poller, "_cfg", lambda: {"cadence_min": 15})
+    monkeypatch.setattr(
+        poller,
+        "_cfg",
+        lambda: {
+            "cadence_min": 15,
+            "options_structure_r2": {
+                "enabled": True,
+                "activation_session": SESSION,
+                "timeout_sec": 120,
+            },
+        },
+    )
+    acknowledged: set[str] = set()
+
+    def publish(packet, **_kwargs):
+        published.append(packet)
+        acknowledged.add(packet["availability"]["receipt_id"])
+
+    monkeypatch.setattr(poller, "_run_options_structure_publisher", publish)
+    monkeypatch.setattr(
+        publisher,
+        "publication_acknowledged",
+        lambda _out_dir, packet: packet["availability"]["receipt_id"] in acknowledged,
+    )
+    _patch_memory_publication_cursor(monkeypatch, publisher)
     monkeypatch.setattr(poller, "_write_meta", lambda *_args: None)
     monkeypatch.setattr(td, "reachable", lambda **_kwargs: pytest.fail("Theta forbidden"))
     assert poller.main(["--once", "--roots", "SPY"]) == 0
     records = _records(root)
     assert [row["kind"] for row in records] == ["intent", "decision", "availability"]
     assert records[-1]["availability_at"] == "2026-07-02T20:06:00.000000Z"
+    assert len(published) == 1
+    assert bucket_completion.validate_completion_packet(published[0]).status == "complete"
+
+
+def test_entrypoint_drains_early_close_decision_into_acknowledged_publication(
+    tmp_path, monkeypatch,
+):
+    from collectors import thetadata as td
+    from scripts import build_options_structure_intraday as publisher
+    from scripts import chain_snapshot_poller as poller
+
+    session = "2026-11-27"
+    root = _leave_close_decision_only(
+        monkeypatch,
+        tmp_path,
+        session=session,
+        bucket="13:00",
+    )
+    acknowledged: set[str] = set()
+    published: list[dict] = []
+
+    def publish(packet, **_kwargs):
+        published.append(packet)
+        acknowledged.add(packet["availability"]["receipt_id"])
+
+    monkeypatch.setattr(poller, "_receipt_root_path", lambda: root)
+    monkeypatch.setattr(
+        poller,
+        "_now_et",
+        lambda: datetime(2026, 11, 27, 13, 6, tzinfo=ET),
+    )
+    monkeypatch.setattr(
+        poller,
+        "_cfg",
+        lambda: {
+            "cadence_min": 15,
+            "options_structure_r2": {
+                "enabled": True,
+                "activation_session": session,
+                "timeout_sec": 120,
+            },
+        },
+    )
+    monkeypatch.setattr(poller, "_run_options_structure_publisher", publish)
+    monkeypatch.setattr(
+        publisher,
+        "publication_acknowledged",
+        lambda _out_dir, packet: packet["availability"]["receipt_id"] in acknowledged,
+    )
+    _patch_memory_publication_cursor(monkeypatch, publisher)
+    monkeypatch.setattr(poller, "_write_meta", lambda *_args: None)
+    monkeypatch.setattr(td, "reachable", lambda **_kwargs: pytest.fail("Theta forbidden"))
+
+    assert poller.main(["--rth-only", "--roots", "SPY"]) == 0
+    assert [row["kind"] for row in _records(root, session)] == [
+        "intent", "decision", "availability",
+    ]
+    assert len(published) == 1
+
+
+def test_close_tail_publication_failure_is_retryable_and_exits_nonzero(
+    tmp_path, monkeypatch,
+):
+    from collectors import thetadata as td
+    from scripts import build_options_structure_intraday as publisher
+    from scripts import chain_snapshot_poller as poller
+
+    root = _leave_close_decision_only(monkeypatch, tmp_path)
+    attempts = 0
+
+    def fail(_packet, **_kwargs):
+        nonlocal attempts
+        attempts += 1
+        raise RuntimeError("R2 unavailable")
+
+    monkeypatch.setattr(poller, "_receipt_root_path", lambda: root)
+    monkeypatch.setattr(
+        poller, "_now_et", lambda: datetime(2026, 7, 2, 16, 6, tzinfo=ET),
+    )
+    monkeypatch.setattr(
+        poller,
+        "_cfg",
+        lambda: {
+            "cadence_min": 15,
+            "options_structure_r2": {
+                "enabled": True,
+                "activation_session": SESSION,
+                "timeout_sec": 120,
+            },
+        },
+    )
+    monkeypatch.setattr(poller, "_run_options_structure_publisher", fail)
+    monkeypatch.setattr(
+        publisher, "publication_acknowledged", lambda _out_dir, _packet: False,
+    )
+    monkeypatch.setattr(poller, "_write_meta", lambda *_args: None)
+    monkeypatch.setattr(td, "reachable", lambda **_kwargs: pytest.fail("Theta forbidden"))
+
+    assert poller.main(["--once", "--roots", "SPY"]) == 1
+    assert attempts == 2
+    assert [row["kind"] for row in _records(root)] == [
+        "intent", "decision", "availability",
+    ]
 
 
 def test_entrypoint_real_root_decision_drain_precedes_malformed_yaml(
@@ -2068,13 +2889,29 @@ def test_once_outside_real_live_bucket_never_calls_theta_or_receipt(
     from collectors import thetadata as td
     from scripts import chain_snapshot_poller as poller
 
-    monkeypatch.setattr(poller, "_cfg", lambda: {"cadence_min": 15})
+    monkeypatch.setattr(
+        poller,
+        "_cfg",
+        lambda: {
+            "cadence_min": 15,
+            "options_structure_r2": {
+                "enabled": True,
+                "activation_session": SESSION,
+                "timeout_sec": 120,
+            },
+        },
+    )
     monkeypatch.setattr(poller, "_now_et", lambda: outside)
     absent_receipts = tmp_path / "absent-receipts"
     monkeypatch.setattr(poller, "_receipt_root_path", lambda: absent_receipts)
     monkeypatch.setattr(td, "reachable", lambda **_kwargs: pytest.fail("Theta probe forbidden"))
     monkeypatch.setattr(
         poller, "_receipt_root", lambda: pytest.fail("receipt creation forbidden"),
+    )
+    monkeypatch.setattr(
+        poller,
+        "_run_options_structure_publisher",
+        lambda *_args, **_kwargs: pytest.fail("closed session cannot publish"),
     )
     assert poller.main(["--once", "--roots", "SPY"]) == 0
     assert not absent_receipts.exists()
