@@ -707,6 +707,7 @@ on:
       - "app/deploy/market-memory-options-prereqs.sh"
       - "app/deploy/market-memory-options-unit-boundary.sh"
       - "app/deploy/market-memory-options-runtime-fence.sh"
+      - "app/deploy/market-memory-options-dropin-migration.sh"
       - "app/deploy/codex-runtime-setup.sh"
       - "app/deploy/macro-market-memory-options.service"
       - "app/deploy/macro-market-memory-options.timer"

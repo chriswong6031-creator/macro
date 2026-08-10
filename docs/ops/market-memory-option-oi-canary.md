@@ -76,6 +76,8 @@ or authority rule.
 2. verify/create the static identity and empty root-owned deny anchors needed
    for unit validation, without creating `options-v1` or a credential file;
 3. verify/install the API, service, and timer units;
+   migrate the one byte-exact reviewed legacy API Ollama drop-in into the
+   canonical API unit, while rejecting any unknown override or metadata drift;
 4. restart `macro-api` into the non-optional option-root and credential-source
    deny namespace and seal its exact MainPID plus systemd InvocationID in a
    runtime receipt only after both effective units and the reciprocal writers

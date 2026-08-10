@@ -17,6 +17,7 @@ exec 9>/var/lock/macro-update.lock
 flock -n 9 || exit 0
 source "$APP_DIR/app/deploy/market-memory-options-unit-boundary.sh"
 source "$APP_DIR/app/deploy/market-memory-options-runtime-fence.sh"
+source "$APP_DIR/app/deploy/market-memory-options-dropin-migration.sh"
 
 OPTIONS_TIMER_WAS_ENABLED=0
 if systemctl is-enabled macro-market-memory-options.timer >/dev/null 2>&1; then
@@ -29,8 +30,8 @@ fi
 OPTIONS_TIMER_DISARMED=0
 OPTIONS_API_FENCE_MARKER=/run/macro-api-market-memory-options-deny.ready
 OPTIONS_RECIPROCAL_FENCE_MARKER=/run/macro-market-memory-options-reciprocal-deny.ready
-OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|context|identity|breadth|technicals)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence)\.sh)|scripts/(__init__|capture_market_memory_option_oi)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
-OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-options-(unit-boundary|runtime-fence))\.sh|app/deploy/macro-market-memory-(source|context|identity|breadth|technicals)\.(service|timer)|scripts/__init__\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit)?)\.py))$'
+OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|context|identity|breadth|technicals)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|context|identity|breadth|technicals)\.(service|timer)|scripts/__init__\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit)?)\.py))$'
 RECIPROCAL_TIMERS_PAUSED=0
 OPTIONS_DEFER_REARM_FOR_SELF_UPDATE=0
 
@@ -342,6 +343,23 @@ fi
 OPTIONS_CREDENTIAL_READY=0
 API_UNIT_UPDATED=0
 API_UNIT_READY=0
+
+# Production historically supplied the optional Ollama endpoint through one
+# hand-installed drop-in. The reviewed macro-api fragment now owns the same
+# EnvironmentFile line. Disarm both private writer families, then remove only
+# that exact root-owned 49-byte legacy file; any unknown override fails closed.
+if [ -e "$MM_LEGACY_API_DROPIN_DIR" ] || [ -L "$MM_LEGACY_API_DROPIN_DIR" ]; then
+	disarm_options_timer
+	stop_reciprocal_market_memory_writers
+	rm -f "$OPTIONS_API_FENCE_MARKER"
+	if ! mm_remove_exact_legacy_api_ollama_dropin; then
+		echo "macro-update: refusing unsafe legacy macro-api drop-in migration" >&2
+		exit 1
+	fi
+	systemctl daemon-reload
+	RECONCILED=1
+	echo "macro-update: migrated reviewed legacy macro-api Ollama drop-in"
+fi
 if ! mm_reviewed_unit_file_ready \
 	"$APP_DIR/app/deploy/macro-api.service" \
 	/etc/systemd/system/macro-api.service; then
