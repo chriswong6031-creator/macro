@@ -63,6 +63,15 @@ the signal. Enumerated so the engine can learn the shape:
    First-failing-gate ≠ counterfactual; the label vocabulary itself (refutation register) is
    banned front-facing by the 2026-07-27 ruling and misleads internal synthesis just as badly.
 
+A fourth layer surfaced during the rev-1 build itself: **a loud falsifier masks its silent
+siblings.** `_falsifier_fires` short-circuits on the first hit, so the always-firing index-0
+window hid a latent bug in the gold chain's terminal falsifier (`GC=F 63d < 0`) — its prose
+presupposes the rolldown but its DSL didn't, and the moment index 0 was gated, gold's trailing
+quarter (−4.7%) started vetoing ARMING, which says nothing about the peak thesis. Fixed by
+hop-scoped falsifiers (`from_hop`): a falsifier whose prose presupposes a hop now evaluates
+only once that hop has confirmed. The general trap is registered in memory as
+loud-failure-gets-fixed-silent-sibling-stays-dark; this is its chain-grammar instance.
+
 What was NOT wrong: arming on the extreme (it armed), the hop ordering (gold's bid without a
 confirmed rolldown is genuinely a different channel until the rolldown prints), the display-tier
 fence (nothing gated or sized off the failed state), and the scored lanes (they were long).
@@ -112,7 +121,10 @@ not from the live bar.
    confirm — context on ARMED.
 5. **Label fix:** "failed" now displays en "Halted" / zh "已中止" (refutation register out of
    front-facing labels per the 2026-07-27 ruling; full verdicts stay on the Calibration Lab).
-6. Calibration re-mined against rev 1 in the same PR (node tests unchanged → identical rates;
+6. **Hop-scoped falsifiers (`from_hop`):** a falsifier whose prose presupposes a hop evaluates
+   only once that hop has confirmed (gold's terminal falsifier and crypto's credit-stress +
+   terminal falsifiers all carry `from_hop: 1` — see §2 fourth layer for why this was latent).
+7. Calibration re-mined against rev 1 in the same PR (node tests unchanged → identical rates;
    rev stamp moves so `_merge_calibration` keeps printing them).
 
 Deferred deliberately: `bitcoin.cycle_position.v2` re-registration (falsifiers.json owned by

@@ -30,6 +30,7 @@ surfaces it, the compiler skips it. Never fake a detector to make a chain green.
 | `nodes` | map | `id -> {src, field/test, ...}`; the observable states. See **Nodes**. |
 | `hops` | list | directed edges between node ids. See **Hops**. |
 | `falsifiers` | list[str] | plain-word conditions that KILL an armed episode → `failed`. Each maps to a compiled check (see **Falsifiers**). |
+| `stall` | map | (optional) DISPLAY-ONLY turn-watch annotation on an open episode. See **Stall (turn-watch)**. |
 | `null_model` | str | the naive baseline the chain must beat at promotion (W3); prose in W1. |
 | `exposure_screens` | map | `flag_name -> {field_expr, note}`; per-name blast screens. **DECLARED but NOT resolved in W1** (W2 resolves them). |
 | `provenance` | map | `{theory:[...], episodes:[...], added_by, added_on}`. |
@@ -70,6 +71,8 @@ A `test` is a dict the adapter reads. Supported forms (fail-loud on an unknown o
 test: {series: "CL=F", metric: ret, window: 60, op: gt, value: 25}       # 60d return > +25%
 test: {series: "CL=F", metric: ma_slope, window: 50, lookback: 5, op: gt, value: 0}
 test: {series: "T10YIE", metric: ret_bp, window: 22, op: gt, value: 15}  # Δ ~30d > +15bp
+# how far a LEVEL series sits BELOW its trailing-window high, in bp (>=0; 0 = at the high):
+test: {series: "DFII10", metric: off_high_bp, window: 10, op: lt, value: 4}  # still pressing 10d highs
 # a relative-strength cohort proxy (two series; requires 'vs'; value in pct points):
 test: {series: "QQQ", vs: "SPY", metric: rs, window: 63, op: lt, value: 0}  # RS_63d < 0
 # a ratio metric (two series → one price ratio; requires 'ratio'; value in pct):
@@ -89,7 +92,11 @@ test: {any: [ {path: "...", op: in, value: [warning]}, {path: "...", op: gte, va
 
 Ops: `gt gte lt lte eq ne is_true is_false in in_contains`. Metrics (store adapters):
 `ret` (pct change over `window` trading days), `ret_bp` (absolute Δ of a level series in
-basis points), `ma_slope` (change in the `window`-day MA over `lookback` days), `rs`
+basis points), `off_high_bp` (basis points the level series' last observation sits BELOW the
+highest observation of the trailing `window` bars — the window INCLUDES the last bar; always
+`>= 0`, and `0` means the series is AT its window high, i.e. still pressing. Needs `window`
+observations, not `window`+1: it is a max-vs-last, not a shifted difference), `ma_slope`
+(change in the `window`-day MA over `lookback` days), `rs`
 (RS = own `window`-return minus `vs`-return, in pct points; requires `vs`), `ratio_ret`
 (pct return of the `series/ratio` price ratio; requires `ratio`). A `vs` is required by
 (and only by) `rs`; a `ratio` by (and only by) `ratio_ret` — the validator rejects a
@@ -118,10 +125,43 @@ reads `fred`).
 ## Falsifiers
 
 `falsifiers:` is a list. Each entry is either plain prose (documentary) OR a structured
-`{when: <node-test>, note: "..."}` that the compiler checks each night on an ARMED
-episode. A fired falsifier → the episode transitions to `failed` (and, at promotion, the
-kill is logged into the CHF null library). W1 supports the structured form; bare-prose
-falsifiers are recorded but not auto-checked (noted as such).
+`{when: <node-test>, note: "...", src: <adapter>, from_hop: <int>}` that the compiler checks
+each night on an ARMED episode. A fired falsifier → the episode transitions to `failed`
+(and, at promotion, the kill is logged into the CHF null library). W1 supports the
+structured form; bare-prose falsifiers are recorded but not auto-checked (noted as such).
+
+| key | meaning |
+|---|---|
+| `when` | the structured test (same whitelisted grammar as a node test). |
+| `note` | plain-word statement of what firing means. Printed with the receipt. |
+| `src` | (optional) source adapter, when the test reads a different source than the chain's terminal node. Defaults to the terminal node's adapter. |
+| `from_hop` | (optional int, default `0`; must satisfy `0 <= from_hop < len(hops)`) — the falsifier is evaluated only once `>= from_hop` hops have **confirmed**. A falsifier whose prose presupposes a hop must be scoped to that hop. |
+
+**Why `from_hop` is not optional in practice.** The falsifier loop short-circuits on its
+first hit, so an always-firing early falsifier can HIDE a later one that is testing a leg
+the episode has not reached. Measured 2026-08-07: gating the gold chain's peak falsifier
+un-masked its terminal falsifier (`GC=F` 63d < 0, then −4.7%), which then vetoed *arming* —
+a statement about gold's trailing quarter, not about the real-rate peak the chain arms on.
+Both peak chains now scope their post-rolldown falsifiers with `from_hop: 1`.
+
+## Stall (turn-watch)
+
+`stall:` is an OPTIONAL top-level block. Shape:
+
+```yaml
+stall:
+  when: <node-test dict>          # same whitelisted grammar as a falsifier's `when`
+  src: fred                       # optional adapter; same fallback rule as a falsifier's src
+  label: {en: "...", zh: "..."}   # optional bilingual copy, shown only while it holds
+```
+
+It is a **display-only turn-watch annotation on an open episode; never a hop, never a
+confirm.** The compiler evaluates it only when the resulting state is `arming` or
+`propagating`, and emits `turn_watch: {stalling: <bool>, receipts: [...]}` on the chain's
+state (plus `label` only while `stalling` is true). Any other state — and any chain with no
+`stall:` block — carries no `turn_watch` key at all. Fail-open like a falsifier: an
+unevaluable test emits `{stalling: false, unresolved: "<reason>"}` and never changes a
+state, appends a ledger row, or gates anything.
 
 ## Exposure screens (W2 — declared only)
 
@@ -142,7 +182,13 @@ is `[]` in W1.
   within the hop's `lag_d` window of the prior confirmation). `k` counts confirmed hops.
 - **expressed** — the final hop confirmed (terminal node true in-window).
 - **expired** — a hop's `lag_d[hi]` window closed with its `to`-node still false.
-- **failed** — a declared (structured) falsifier fired on the armed episode.
+- **failed** — a declared (structured) falsifier fired on the armed episode, subject to its
+  `from_hop` scope (a falsifier is silent until its presupposed hop has confirmed).
+- **arming veto** — node 0 is TRUE but a structured falsifier is ALREADY firing on the
+  would-be arming day (checked exactly as the armed path would, at `elapsed=0` against hop
+  0's `lag_d[lo]`). No episode opens, no ledger row is appended, the chain stays `dormant`
+  and carries `arm_veto` (the falsifier receipt) so the dormancy is explained. This closes
+  the rev-0 churn where a chain armed and failed on the same `asof`.
 
 Evaluated nightly from the existing artifacts; **idempotent** per `asof` (a same-day
 re-run appends no duplicate ledger line and produces the same state). Transitions append

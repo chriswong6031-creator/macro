@@ -34,8 +34,19 @@ The episode STATE MACHINE (TXI-R2):
   * propagating(k)    hops 1..k confirmed, each within its lag window of the prior confirm
   * expressed         the terminal hop confirmed
   * expired           a hop's lag window closed with its target still false
-  * failed            a declared (structured) falsifier fired on the armed episode
+  * failed            a declared (structured) falsifier fired on the armed episode. A
+                      falsifier may carry ``from_hop`` (default 0) — it is silent until that
+                      many hops have CONFIRMED, so a falsifier whose prose presupposes a hop
+                      never judges a leg the episode has not reached.
+  * ARMING VETO       node 0 confirms but a structured falsifier is ALREADY true on the
+                      would-be arming day (evaluated exactly as the armed path would, at
+                      elapsed=0 vs hop 0's minimum lag) ⇒ the episode never opens: the chain
+                      stays dormant and carries ``arm_veto`` (the falsifier receipt) so the
+                      dormancy is explained, never silent.
 Same-``asof`` re-evaluation is IDEMPOTENT: no duplicate ledger line, identical state.
+
+An optional ``stall:`` block adds a DISPLAY-ONLY turn-watch annotation (``turn_watch``) on
+an open (arming|propagating) episode — never a hop, never a confirm, never a state.
 """
 from __future__ import annotations
 
@@ -59,7 +70,11 @@ STATE_LABELS: dict[str, dict[str, str]] = {
     "arming":      {"en": "Arming", "zh": "触发中"},
     "propagating": {"en": "Propagating", "zh": "传导中"},
     "expressed":   {"en": "Expressed", "zh": "已兑现"},
-    "failed":      {"en": "Failed", "zh": "已证伪"},
+    # "Halted"/"已中止", never the REFUTATION register (banned front-facing — operator ruling
+    # 2026-07-27, #3821). A closed episode is a watch that stopped; the full verdict
+    # vocabulary lives on the Calibration Lab (measurement.html), never on a chain card.
+    # tests/test_transmission_chains.py pins the absence of that register in this module.
+    "failed":      {"en": "Halted", "zh": "已中止"},
     "expired":     {"en": "Expired", "zh": "已过期"},
 }
 
@@ -72,7 +87,7 @@ _VALID_TIERS = {"hypothesis", "probe", "calibrated"}
 # artifact carries a real (n>=floor) base rate for ≥1 of its hops. Display-only; never authority.
 CALIBRATED_CONTEXT_TIER = "calibrated_context"
 _VALID_OPS = {"gt", "gte", "lt", "lte", "eq", "ne", "is_true", "is_false", "in", "in_contains"}
-_VALID_METRICS = {"ret", "ret_bp", "ma_slope", "rs", "ratio_ret"}
+_VALID_METRICS = {"ret", "ret_bp", "ma_slope", "rs", "ratio_ret", "off_high_bp"}
 
 # W2 — exposure-screen mini-form ops (TXI-R1 extension). A screen clause is a structured,
 # deterministic dict `{path, op, value}` read against the per-ticker substrate JSON — NO
@@ -213,6 +228,25 @@ def validate_chain(chain: dict, filename: str) -> None:
     for i, fx in enumerate(fals):
         if isinstance(fx, dict) and "when" in fx:
             _validate_test(fx["when"], f"{filename}:falsifier[{i}].when")
+            if "from_hop" in fx:
+                # HOP SCOPE: this falsifier only evaluates once >= from_hop hops have
+                # CONFIRMED. A falsifier whose prose presupposes a hop ("real yields rolled
+                # down with gold flat-to-down") must be scoped to that hop, or it judges a
+                # leg that has not happened yet.
+                fh = fx["from_hop"]
+                _require(isinstance(fh, int) and not isinstance(fh, bool)
+                         and 0 <= fh < len(hops),
+                         f"{filename}: falsifier[{i}] 'from_hop' must be an int in "
+                         f"[0, {len(hops) - 1}], got {fh!r}")
+    if "stall" in chain:
+        # optional turn-watch annotation block (display-only; never a hop, never a confirm).
+        stall = chain["stall"]
+        _require(isinstance(stall, dict), f"{filename}: 'stall' must be a mapping")
+        _require("when" in stall, f"{filename}: 'stall' requires a 'when' test")
+        _validate_test(stall["when"], f"{filename}:stall.when")
+        if "label" in stall:
+            _require(isinstance(stall["label"], dict),
+                     f"{filename}: 'stall.label' must be a bilingual mapping")
     screens = chain.get("exposure_screens", {})
     _require(isinstance(screens, dict), f"{filename}: 'exposure_screens' must be a mapping")
     for flag, screen in screens.items():
@@ -402,6 +436,17 @@ def _series_metric(adapter: _SeriesAdapter, t: dict) -> tuple[float, dict]:
         val = float((ratio.iloc[-1] / ratio.iloc[-1 - window] - 1.0) * 100.0)  # pct
         return val, {"series": f"{t['series']}/{t['ratio']}", "metric": "ratio_ret_pct",
                      "window": window, "value": round(val, 3)}
+    if metric == "off_high_bp":
+        # EXHAUSTION gate on a level series: how far the last observation sits BELOW the
+        # highest observation of the trailing `window` bars (the window INCLUDES the last
+        # bar), in basis points. Always >= 0; 0 == the series is AT its window high (still
+        # pressing). Needs `window` observations, NOT window+1 — this is a max-vs-last, not
+        # a shifted difference, so it has one fewer lookback requirement than ret/ret_bp.
+        if len(s) < window:
+            raise _Unresolvable(f"off_high_bp window {window} exceeds history for {t['series']}")
+        val = float((s.iloc[-window:].max() - s.iloc[-1]) * 100.0)
+        return val, {"series": t["series"], "metric": "off_high_bp", "window": window,
+                     "value": round(val, 1)}
     if len(s) <= window:
         raise _Unresolvable(f"window {window} exceeds history for {t['series']}")
     if metric == "ret":
@@ -438,6 +483,7 @@ def series_metric_timeseries(get_series, t: dict) -> pd.Series:
     ticker (the miner passes a store-backed reader). Mirrors `_series_metric` exactly:
       * ret        pct change over `window` trading days (×100)
       * ret_bp     absolute Δ of a level series over `window`, in basis points (×100)
+      * off_high_bp  bp the level series sits BELOW its trailing `window`-bar high (>=0)
       * ma_slope   change of the `window`-day MA over `lookback` days (raw units)
       * rs         own `window`-return minus `vs`-return, in percentage points
       * ratio_ret  pct return of the `series/ratio` price ratio (×100)
@@ -460,6 +506,10 @@ def series_metric_timeseries(get_series, t: dict) -> pd.Series:
         return ((s / s.shift(window) - 1.0) * 100.0).dropna()
     if metric == "ret_bp":
         return ((s - s.shift(window)) * 100.0).dropna()
+    if metric == "off_high_bp":
+        # rolling(window).max() INCLUDES the current bar — so at the last bar this is exactly
+        # `_series_metric`'s `s.iloc[-window:].max() - s.iloc[-1]` (the W3 parity law).
+        return ((s.rolling(window).max() - s) * 100.0).dropna()
     if metric == "ma_slope":
         lookback = int(t.get("lookback", 5))
         ma = s.rolling(window).mean()
@@ -655,11 +705,20 @@ def evaluate_chain(chain: dict, adapters: dict[str, Any], asof: str,
     # hop's MINIMUM lag has elapsed — a "passthrough absent" falsifier cannot fire before
     # the passthrough has had time to happen; this also keeps a same-asof re-run idempotent
     # since the arming day has elapsed=0 < lag_lo). -------
-    def _falsifier_fires(elapsed_days: int, min_lag: float) -> dict | None:
+    def _falsifier_fires(elapsed_days: int, min_lag: float,
+                         confirmed_hops: int) -> dict | None:
         if elapsed_days < min_lag:
             return None
         for i, fx in enumerate(chain.get("falsifiers", [])):
             if isinstance(fx, dict) and "when" in fx:
+                # HOP SCOPE (`from_hop`, default 0): a falsifier whose prose presupposes a hop
+                # is silent until that hop has CONFIRMED. Without this the loop's first-hit
+                # short-circuit hides the defect — gating an earlier falsifier un-masks a
+                # terminal one that then judges a leg the episode has not reached (measured
+                # 2026-08-07: the gold chain's `GC=F 63d < 0` was vetoing ARMING on gold's
+                # trailing quarter, which says nothing about the real-rate peak thesis).
+                if fx.get("from_hop", 0) > confirmed_hops:
+                    continue
                 try:
                     passed, receipts = eval_test(fx["when"], adapters, _falsifier_src(chain, fx))
                 except _Unresolvable:
@@ -672,6 +731,7 @@ def evaluate_chain(chain: dict, adapters: dict[str, Any], asof: str,
     state = "dormant"
     hop_k = 0
     fired_falsifier: dict | None = None
+    arm_veto: dict | None = None
     arm_date = open_ep["arm_date"] if open_ep else None
     hop_dates = dict(open_ep["hop_dates"]) if open_ep else {}
     episode_id = open_ep["episode_id"] if open_ep else _episode_id(slug, rev, asof)
@@ -683,10 +743,25 @@ def evaluate_chain(chain: dict, adapters: dict[str, Any], asof: str,
     elif open_ep is None:
         # no open episode → can only ARM (needs node 0 true now)
         if node_states[0]["confirmed"]:
-            state, hop_k = "arming", 0
-            arm_date, episode_id = asof, _episode_id(slug, rev, asof)
-            hop_dates = {}
-            new_transitions.append(_mk_transition(slug, rev, episode_id, "arming", 0, asof, _receipts_map()))
+            # ARMING VETO: evaluate the structured falsifiers EXACTLY as the armed path would
+            # on the arming day itself (elapsed=0 against hop 0's MINIMUM lag). rev 0 armed an
+            # episode and failed it on the SAME asof — both peak chains did this on 2026-08-07
+            # (ledger) — which is episode churn carrying no information: an episode opened only
+            # to be closed by a condition that was already true when it opened. Passing hop 0's
+            # lag_lo preserves rev-0 lag-gating semantics precisely: a chain whose hop 0 has
+            # lag_lo > 0 can never be vetoed here, because its falsifier could not have fired on
+            # the arming day under rev 0 either. confirmed_hops=0: on the arming day NO hop has
+            # confirmed, so only from_hop-0 falsifiers are in scope to veto.
+            arm_veto = _falsifier_fires(0, hops[0].get("lag_d", [0, 0])[0], 0)
+            if arm_veto is not None:
+                # stay dormant, open NO episode, append NO transition — but say WHY
+                # (`arm_veto` in the emit), so the dormancy is explained, never silent.
+                state, hop_k = "dormant", 0
+            else:
+                state, hop_k = "arming", 0
+                arm_date, episode_id = asof, _episode_id(slug, rev, asof)
+                hop_dates = {}
+                new_transitions.append(_mk_transition(slug, rev, episode_id, "arming", 0, asof, _receipts_map()))
         else:
             state, hop_k = "dormant", 0
     else:
@@ -703,8 +778,9 @@ def evaluate_chain(chain: dict, adapters: dict[str, Any], asof: str,
         else:
             lag_lo = lag_hi = 0
             elapsed = 0
-        # a falsifier fires ⇒ failed (terminal) — gated on the pending hop's minimum lag
-        fired_falsifier = _falsifier_fires(elapsed, lag_lo)
+        # a falsifier fires ⇒ failed (terminal) — gated on the pending hop's minimum lag AND
+        # on its own hop scope (`last_hop` IS the confirmed-hop count: arming=0, propagating(k)=k)
+        fired_falsifier = _falsifier_fires(elapsed, lag_lo, last_hop)
         if fired_falsifier is not None:
             state, hop_k = "failed", last_hop
             new_transitions.append(_mk_transition(slug, rev, episode_id, "failed", last_hop, asof,
@@ -739,6 +815,25 @@ def evaluate_chain(chain: dict, adapters: dict[str, Any], asof: str,
                         # still waiting inside the window — hold current state, NO new row
                         state = "arming" if last_hop == 0 else "propagating"
                         hop_k = last_hop
+
+    # ------- optional `stall:` TURN-WATCH annotation (display-only) -------
+    # A declared stall block is evaluated ONLY on an OPEN episode (arming|propagating): it
+    # annotates the shape of the watch ("at the extreme, momentum fading") without being a
+    # hop, a confirm, or a state. Fail-open exactly like a falsifier: an unevaluable stall
+    # test prints stalling:False + the reason, it never crashes or flips a state.
+    stall = chain.get("stall")
+    turn_watch: dict | None = None
+    if isinstance(stall, dict) and "when" in stall and state in ("arming", "propagating"):
+        try:
+            passed, stall_receipts = eval_test(stall["when"], adapters, _stall_src(chain, stall))
+        except _Unresolvable as e:
+            turn_watch = {"stalling": False, "unresolved": str(e)}
+        else:
+            turn_watch = {"stalling": bool(passed), "receipts": stall_receipts}
+            if passed:
+                # the bilingual copy is carried ONLY while the shape actually holds — a label
+                # attached to a False annotation would read as a claim the tape isn't making.
+                turn_watch["label"] = stall.get("label")
 
     # per-hop confirmation view for chain_state.json (uses the reconstructed hop_dates)
     hop_view = []
@@ -775,6 +870,10 @@ def evaluate_chain(chain: dict, adapters: dict[str, Any], asof: str,
         "blast": [],                 # W2 fills — per-name blast-radius flags
         "display_only": True,
     }
+    if arm_veto is not None:
+        per_chain["arm_veto"] = arm_veto
+    if turn_watch is not None:
+        per_chain["turn_watch"] = turn_watch
     if unresolved:
         per_chain["unresolved_nodes"] = [{"id": ns["id"], "reason": ns["unresolved_reason"]}
                                          for ns in unresolved]
@@ -800,6 +899,13 @@ def _falsifier_src(chain: dict, fx: dict) -> str:
     # default: the terminal node's adapter (most falsifiers re-test the last leg)
     term_id = list(chain["nodes"].keys())[-1]
     return chain["nodes"][term_id].get("src", "yahoo")
+
+
+def _stall_src(chain: dict, stall: dict) -> str:
+    """The source adapter for a `stall:` turn-watch test — SAME fallback convention as a
+    structured falsifier's (explicit `src` wins, else the chain's terminal node's adapter),
+    so one grammar means one src rule."""
+    return _falsifier_src(chain, stall)
 
 
 def _episode_id(chain_slug: str, rev: int, asof: str) -> str:

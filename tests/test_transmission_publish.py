@@ -174,3 +174,50 @@ def test_build_site_emit_writes_valid_json_when_present(tmp_path, chain_state):
     reloaded = json.loads((site / "transmission_chains.json").read_text(encoding="utf-8"))
     assert reloaded["schema"] == "transmission_chains_display.v1"
     assert len(reloaded["chains"]) == 4
+
+
+# ---------------------------------------------------------------------------
+# rev-1 — the `turn_watch` turn-watch annotation passes through to the site row
+# ---------------------------------------------------------------------------
+def _one_chain_state(chain_extra: dict) -> dict:
+    return {
+        "asof": "2026-08-07", "caveats": [],
+        "chains": [{
+            "chain": "real_rate_peak_gold_rerate",
+            "title": {"en": "Real-rate peak → gold re-rates", "zh": "实际利率见顶 → 黄金估值修复"},
+            "state": "arming", "tier": "hypothesis",
+            "hops": [{"id": "a->b", "from": "a", "to": "b", "confirmed": False, "asof": None}],
+            "blast": {},
+            **chain_extra,
+        }],
+    }
+
+
+def test_turn_watch_passes_through_to_the_site_row():
+    tw = {"stalling": True,
+          "label": {"en": "At the extreme, momentum fading", "zh": "处于极值、动能减弱"},
+          "receipts": [{"series": "DFII10", "metric": "off_high_bp", "window": 10,
+                        "value": 6.0, "op": "gte", "threshold": 4, "passed": True}]}
+    row = _subset(_one_chain_state({"turn_watch": tw}))["chains"][0]
+    assert row["turn_watch"]["stalling"] is True
+    assert row["turn_watch"]["label"]["en"] and row["turn_watch"]["label"]["zh"]
+    # the receipt rides along: it IS the Tier-2 disclosure behind the plain-word chip
+    assert row["turn_watch"]["receipts"][0]["metric"] == "off_high_bp"
+
+
+def test_turn_watch_absent_when_the_chain_carries_none():
+    """A chain with no open episode / no `stall:` block emits no key at all — the subset must
+    not invent a falsy annotation the client would have to special-case."""
+    row = _subset(_one_chain_state({}))["chains"][0]
+    assert "turn_watch" not in row
+    # the fixture-backed (pre-rev-1) artifact likewise publishes no annotation
+    cs = json.loads(FIX.read_text(encoding="utf-8"))
+    assert all("turn_watch" not in c for c in _subset(cs)["chains"])
+
+
+def test_turn_watch_passthrough_is_a_copy_not_an_alias():
+    tw = {"stalling": False, "receipts": []}
+    cs = _one_chain_state({"turn_watch": tw})
+    row = _subset(cs)["chains"][0]
+    row["turn_watch"]["stalling"] = True
+    assert tw["stalling"] is False, "the projection must not mutate the canonical artifact"

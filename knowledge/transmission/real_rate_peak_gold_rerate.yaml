@@ -87,7 +87,11 @@ falsifiers:
     note: "real 10y +15bp over the quarter AND still pressing its 10-day highs while armed — restriction still building"
   # Terminal falsifier: the rolldown confirmed but gold went nowhere for a quarter —
   # the opportunity-cost channel is not transmitting (e.g. deflation-scare selling).
+  # rev 1: scoped post-rolldown — the prose presupposes the rolldown; rev-0's first-hit
+  # short-circuit masked this falsifier, and unmasked it was vetoing ARMING on gold's
+  # trailing quarter (−4.7% on 2026-08-07), which says nothing about the peak.
   - when: {series: "GC=F", metric: ret, window: 63, op: lt, value: 0}
+    from_hop: 1
     note: "real yields rolled down with gold flat-to-down over 63d — the re-rate leg is falsified"
 
 # Turn-watch annotation (rev 1) — the plateau shape, as display-only context on the ARMED
@@ -139,7 +143,10 @@ changelog:
      off_high_bp(10) < 4 (still pressing highs); stall turn-watch annotation added
      (0.96 vs 0.85 baseline, n printed); node tests and hops UNCHANGED, so mined base
      rates carry over via the same-PR re-mine. Measured 2026-08-09 on the 2003→ store;
-     thresholds from the 5-peak autopsy table in the case study."
+     thresholds from the 5-peak autopsy table in the case study.
+     Same-rev follow-up: hop-scoped falsifiers (from_hop) — gating index 0 unmasked the
+     terminal falsifier at ARM time (rev-0 first-hit short-circuit had hidden it), so
+     falsifiers whose prose presupposes a hop now evaluate only once that hop has confirmed."
 
 validator_note: >
   real_rate_extreme reads the rate/inflation engine's own published percentile + regime
