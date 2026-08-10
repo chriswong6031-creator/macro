@@ -1163,6 +1163,43 @@
   .pbs-fig { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text); }
   .pbs-note .help { margin-left: 5px; vertical-align: 1px; }
   .pbs-nv[hidden] { display: none; }
+  /* ── W-L1d — WHAT THE PROVISIONAL BOARD PUTS AWAY ──────────────────────────────
+     While tonight's cards are mounted, the nightly grid, its show-more bar, the stage
+     filter and the grid/table toggle are all hidden: each of them is a view of columns
+     this board deliberately does not carry (spec §10.3 — "a filter over absent buckets
+     is a broken control", and the table has a whole score column with nothing to put in
+     it). Nothing is emptied or rebuilt — hiding is the entire mechanism, so restoring is
+     one attribute per element and the nightly board can never come back half-swapped.
+
+     It has to be a RULE and not an inline style for two independent reasons: a
+     class-level `display` out-specifies the UA [hidden] rule (the .pv-live[hidden] trap,
+     fifty lines up), AND show-more's own reflow pass rewrites .sm-bar's INLINE display
+     whenever the column count changes — so a resize would silently un-hide a bar that is
+     counting the wrong board. This is the whole CSS cost of W-L1d; the cards themselves
+     add none (spec §10.2). */
+  #us-standouts .nbgrid[hidden], #us-standouts .sm-bar[hidden],
+  #us-standouts .pbf-bar[hidden], #us-standouts .st-view-toggle[hidden],
+  #us-standouts #us-board-sub[hidden], #us-standouts .pb-fn[hidden] { display: none !important; }
+  /* ── THE CHIP RAIL — W-L1d's one geometric decision ────────────────────────────
+     The evening payload carries NO sparkline, on purpose: the sparks are 86% of the
+     artifact on a 120-second poll for a key that changes once a day, and an evening spark
+     would draw bandless anyway because the buy-zone band derives from the omitted `entry`
+     leg. So .pv-nochart's 74px reserves a chart that is not coming to THIS card — the
+     chart comes with the morning board — and an empty 74px hue wash with two chips
+     floating at the top of it reads exactly like an image that failed to load. Measured
+     on the real page before this rule existed, and it is the reason the rule exists.
+
+     Collapsing it to the chip rail's own height is the honest geometry AND the design:
+     the evening card is deliberately lighter than the morning card at every slot — no
+     score, no stage rail, no marks, no zone range, and now no chart — so a reader can see
+     at a glance that this board is holding less back than it is holding out. Do not fill
+     this space with a meter, a bar or a runway gauge: the lane owns two legs, both of
+     them already have a word on the card, and anything else here would be ornament
+     invented to cover an absence (§10.4 — the absence is the point).
+
+     Scoped to [data-provboard] so the nightly card, which does have a chart, never sees
+     it. 8px clears .pv-ov's own top offset above the chip and leaves the same below. */
+  #us-standouts .nbgrid[data-provboard] .pv-nochart { height: 36px; }
   @media (max-width: 680px) {
     .pbs { font-size: 9.5px; padding: 2px 7px; }
     .pbs-note { font-size: 11px; }
