@@ -17,7 +17,14 @@ from engine.neuralweb import market_memory_identity as identity
 from engine.neuralweb import market_memory_pit as pit
 from engine.neuralweb import market_memory_projection as projection
 from engine.neuralweb import market_memory_trusted as trusted
-from tests.test_market_memory_pit import _packet as _w1a_packet
+from tests.test_market_memory_pit import (
+    _api_client,
+    _assert_private,
+    _query_url,
+)
+from tests.test_market_memory_pit import (
+    _packet as _w1a_packet,
+)
 
 SNAPSHOT_CLOCK = datetime(2026, 8, 10, 10, 0, 0, tzinfo=timezone.utc)
 IDENTITY_CLOCK = SNAPSHOT_CLOCK + timedelta(seconds=1)
@@ -644,6 +651,41 @@ def test_composite_serves_each_exact_store_and_rejects_cross_store_conflict(
             subject=trusted_stored.packet["subject"],
             event_time=trusted_stored.packet["clocks"]["event_time"],
             as_known_at=trusted_stored.packet["clocks"]["as_known_at"],
+        )
+
+
+def test_private_api_serves_exact_trusted_capture_with_hash_bound_headers(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _candidate(monkeypatch, tmp_path)
+    trusted_stored = _capture(candidate)
+    w1a_root = tmp_path / "w1a"
+    monkeypatch.setattr(
+        pit,
+        "_utc_now",
+        lambda: datetime(2026, 8, 7, 20, 5, 30, tzinfo=timezone.utc),
+    )
+    pit.capture_context(w1a_root, _w1a_packet())
+    monkeypatch.setattr(pit, "_utc_now", lambda: CAPTURE_CLOCK)
+    monkeypatch.setenv("MARKET_MEMORY_CONTEXT_STORE_DIR", str(w1a_root))
+    monkeypatch.setenv("MARKET_MEMORY_TRUSTED_STORE_DIR", str(candidate.public))
+    client = _api_client()
+
+    exact = client.get(_query_url(trusted_stored.packet))
+    by_id = client.get(
+        f"/api/market-memory/v1/context/{trusted_stored.packet['context_id']}"
+    )
+
+    for response in (exact, by_id):
+        assert response.status_code == 200
+        _assert_private(response)
+        assert response.json() == trusted_stored.response_payload()
+        assert response.headers["etag"] == (
+            f'"{trusted_stored.capture_receipt["packet_sha256"]}"'
+        )
+        assert (
+            response.headers["x-market-memory-capture-id"]
+            == trusted_stored.capture_receipt["capture_id"]
         )
 
 
