@@ -1496,7 +1496,7 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
                  "research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md §7)."),
     }
     return _assemble_track(
-        df=df, boards=boards, board_dates=board_dates, graded_dates=graded_dates,
+        df=df, board_dates=board_dates, graded_dates=graded_dates,
         survivorship=survivorship, n_excluded=_n_excluded,
         per_horizon=per_horizon, definitions=definitions, era_scope=era_scope)
 
@@ -1636,11 +1636,11 @@ def _per_horizon(df: pd.DataFrame) -> dict:
     return per_horizon
 
 
-def _assemble_track(*, df, boards, board_dates, graded_dates, survivorship, n_excluded,
+def _assemble_track(*, df, board_dates, graded_dates, survivorship, n_excluded,
                     per_horizon, definitions, era_scope) -> dict:
     """The published `us_board_track.json` payload.  Key order and every existing key are
     preserved — `definitions`/`era_scope` are strictly additive, and `per_horizon` keeps
-    its name and shape (it is now one era's block instead of a pooled one)."""
+    its name and shape (it is now ONE era's block instead of a pooled one)."""
     _n_excluded = n_excluded
     return {
         "generated": dt.datetime.now(dt.timezone.utc).isoformat(),
