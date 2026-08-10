@@ -83,7 +83,11 @@ InaccessiblePaths=-/var/lib/macro-biocatalyst/state
 InaccessiblePaths=-/var/lib/macro-biocatalyst/activation
 InaccessiblePaths=-/etc/macro-biocatalyst.env
 InaccessiblePaths=-/etc/macro-biocatalyst-control.env
-InaccessiblePaths=-/var/lib/macro-market-memory/state
+# W1B provisions this private writer root before unit verification/restart.
+# Keep the deny mount non-optional: an optional path can be skipped when an old
+# API namespace starts before the writer tree exists, then expose the tree once
+# a rolling deploy creates it underneath that still-running namespace.
+InaccessiblePaths=/var/lib/macro-market-memory/state
 InaccessiblePaths=-/etc/macro-market-memory.env
 
 [Install]
