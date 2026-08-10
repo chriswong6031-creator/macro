@@ -26,23 +26,38 @@ _OTHER_DONE = f"{_DATE}T00:00:02.100000Z"
 _SEC_START = f"{_DATE}T00:00:03.000000Z"
 _SEC_DONE = f"{_DATE}T00:00:03.100000Z"
 _COLLECTOR_DONE = f"{_DATE}T00:00:04.000000Z"
+_NASDAQ_ROWS = 5_584
+_OTHER_ROWS = 7_529
+_TOTAL_ROWS = _NASDAQ_ROWS + _OTHER_ROWS
 
 
 def _listing_frame() -> pd.DataFrame:
-    ordinary_rows = 7_999
+    other_ordinary_rows = _OTHER_ROWS - 1
     return pd.DataFrame(
         {
-            "date": [_DATE] * 8_000,
-            "symbol": [f"N{index:07d}" for index in range(ordinary_rows)] + ["SPY"],
-            "security_name": [f"Synthetic {index}" for index in range(ordinary_rows)]
+            "date": [_DATE] * _TOTAL_ROWS,
+            "symbol": [f"N{index:07d}" for index in range(_NASDAQ_ROWS)]
+            + [f"O{index:07d}" for index in range(other_ordinary_rows)]
+            + ["SPY"],
+            "security_name": [
+                f"Nasdaq Synthetic {index}" for index in range(_NASDAQ_ROWS)
+            ]
+            + [f"Other Synthetic {index}" for index in range(other_ordinary_rows)]
             + ["SPDR S&P 500 ETF Trust"],
-            "exchange": ["NASDAQ"] * ordinary_rows + ["P"],
-            "etf": [False] * ordinary_rows + [True],
-            "test_issue": [False] * 8_000,
-            "is_preferred": [False] * 8_000,
-            "source": ["nasdaqlisted"] * ordinary_rows + ["otherlisted"],
+            "exchange": ["NASDAQ"] * _NASDAQ_ROWS + ["N"] * other_ordinary_rows + ["P"],
+            "etf": [False] * (_TOTAL_ROWS - 1) + [True],
+            "test_issue": [False] * _TOTAL_ROWS,
+            "is_preferred": [False] * _TOTAL_ROWS,
+            "source": ["nasdaqlisted"] * _NASDAQ_ROWS + ["otherlisted"] * _OTHER_ROWS,
         }
     )
+
+
+def _truncated_listing_frame() -> pd.DataFrame:
+    frame = _listing_frame()
+    nasdaq = frame[frame["source"] == "nasdaqlisted"]
+    other = frame[frame["source"] == "otherlisted"].iloc[:2_416]
+    return pd.concat([nasdaq, other], ignore_index=True)
 
 
 def _cik_frame() -> pd.DataFrame:
@@ -120,12 +135,12 @@ def _listing_receipt(tmp_path: Path) -> tuple[Path, Path, dict]:
         source_fetches=_listing_fetches(),
         collector_started_at=_COLLECTOR_START,
         collector_completed_at=_COLLECTOR_DONE,
-        pre_dedupe_rows=8_000,
+        pre_dedupe_rows=_TOTAL_ROWS,
         duplicate_occurrences=0,
         duplicate_key_count=0,
         source_row_counts=(
-            (receipts.NASDAQ_LISTED_SOURCE_ID, 7_999),
-            (receipts.OTHER_LISTED_SOURCE_ID, 1),
+            (receipts.NASDAQ_LISTED_SOURCE_ID, _NASDAQ_ROWS),
+            (receipts.OTHER_LISTED_SOURCE_ID, _OTHER_ROWS),
         ),
         pre_dedupe_spy_occurrences=(
             {
@@ -163,54 +178,37 @@ def _listing_receipt(tmp_path: Path) -> tuple[Path, Path, dict]:
     return artifact, sidecar, value
 
 
-def _listing_absent_receipt(tmp_path: Path) -> tuple[Path, dict]:
+def _listing_absent_artifact(tmp_path: Path) -> Path:
     artifact = tmp_path / "symbol_directory" / "snapshots" / f"{_DATE}.parquet"
     receipts.durable_atomic_write_parquet(_listing_absent_frame(), artifact)
-    value = receipts.build_symbol_directory_completion_receipt(
-        kind="listing_snapshot",
-        observation_date=_DATE,
-        artifact_path=artifact,
-        source_fetches=_listing_fetches(),
-        collector_started_at=_COLLECTOR_START,
-        collector_completed_at=_COLLECTOR_DONE,
-        pre_dedupe_rows=8_000,
-        duplicate_occurrences=0,
-        duplicate_key_count=0,
-        source_row_counts=(
-            (receipts.NASDAQ_LISTED_SOURCE_ID, 7_999),
-            (receipts.OTHER_LISTED_SOURCE_ID, 1),
-        ),
-        pre_dedupe_spy_occurrences=(),
-        non_authoritative_footers=(
-            receipts.footer_diagnostic(
-                source_id=receipts.NASDAQ_LISTED_SOURCE_ID,
-                text="File Creation Time: 8/10/2026 00:00:00",
-            ),
-            receipts.footer_diagnostic(
-                source_id=receipts.OTHER_LISTED_SOURCE_ID,
-                text="File Creation Time: 8/10/2026 00:00:01",
-            ),
-        ),
-    )
-    return artifact, value
+    return artifact
 
 
-def _nasdaq_text() -> str:
+def _nasdaq_text(row_count: int = _NASDAQ_ROWS) -> str:
     header = (
         "Symbol|Security Name|Market Category|Test Issue|Financial Status|"
         "Round Lot Size|ETF|NextShares"
     )
-    rows = [f"N{index:07d}|Synthetic {index}|Q|N|N|100|N|N" for index in range(7_999)]
+    rows = [
+        f"N{index:07d}|Nasdaq Synthetic {index}|Q|N|N|100|N|N"
+        for index in range(row_count)
+    ]
     return "\n".join([header, *rows, "File Creation Time: 8/10/2026 00:00:00"])
 
 
-def _other_text() -> str:
-    return (
+def _other_text(row_count: int = _OTHER_ROWS, *, include_spy: bool = True) -> str:
+    header = (
         "ACT Symbol|Security Name|Exchange|CQS Symbol|ETF|Round Lot Size|"
-        "Test Issue|NASDAQ Symbol\n"
-        "SPY|SPDR S&P 500 ETF Trust|P|SPY|Y|100|N|SPY\n"
-        "File Creation Time: 8/10/2026 00:00:01"
+        "Test Issue|NASDAQ Symbol"
     )
+    ordinary_rows = row_count - int(include_spy)
+    rows = [
+        f"O{index:07d}|Other Synthetic {index}|N|O{index:07d}|N|100|N|O{index:07d}"
+        for index in range(ordinary_rows)
+    ]
+    if include_spy:
+        rows.append("SPY|SPDR S&P 500 ETF Trust|P|SPY|Y|100|N|SPY")
+    return "\n".join([header, *rows, "File Creation Time: 8/10/2026 00:00:01"])
 
 
 def _operational_fetches() -> tuple[
@@ -361,7 +359,21 @@ def test_new_artifact_transactions_emit_separate_receipts_last(
         listing_artifact,
         expected_kind="listing_snapshot",
     )
-    assert listing["artifact"]["rows"] == 8_000
+    assert listing["artifact"]["rows"] == _TOTAL_ROWS
+    assert listing["completeness"]["source_row_counts"] == [
+        {
+            "source_id": receipts.NASDAQ_LISTED_SOURCE_ID,
+            "parsed_rows": _NASDAQ_ROWS,
+            "artifact_rows": _NASDAQ_ROWS,
+            "minimum_artifact_rows": receipts.NASDAQ_LISTED_ARTIFACT_MIN_ROWS,
+        },
+        {
+            "source_id": receipts.OTHER_LISTED_SOURCE_ID,
+            "parsed_rows": _OTHER_ROWS,
+            "artifact_rows": _OTHER_ROWS,
+            "minimum_artifact_rows": receipts.OTHER_LISTED_ARTIFACT_MIN_ROWS,
+        },
+    ]
     assert listing["diagnostics"]["pre_dedupe_spy_occurrence_count"] == 1
     assert [source["response_sha256"] for source in listing["sources"]] == [
         hashlib.sha256(nasdaq.content).hexdigest(),
@@ -387,6 +399,55 @@ def test_new_artifact_transactions_emit_separate_receipts_last(
     assert (
         cik["sources"][0]["response_sha256"] == hashlib.sha256(sec.content).hexdigest()
     )
+
+
+def test_zero_spy_snapshot_at_source_floors_gets_no_operational_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    nasdaq_text = _nasdaq_text(row_count=receipts.NASDAQ_LISTED_ARTIFACT_MIN_ROWS)
+    other_text = _other_text(
+        row_count=receipts.OTHER_LISTED_ARTIFACT_MIN_ROWS,
+        include_spy=False,
+    )
+    _nasdaq, _other, sec = _operational_fetches()
+    monkeypatch.setattr(collector.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(
+        collector,
+        "_fetch_text",
+        Mock(
+            side_effect=[
+                receipts.SourceFetch(
+                    value=nasdaq_text,
+                    content=nasdaq_text.encode(),
+                    requested_url=collector._NASDAQ_LISTED_URL,
+                    started_at=_NASDAQ_START,
+                    completed_at=_NASDAQ_DONE,
+                ),
+                receipts.SourceFetch(
+                    value=other_text,
+                    content=other_text.encode(),
+                    requested_url=collector._OTHER_LISTED_URL,
+                    started_at=_OTHER_START,
+                    completed_at=_OTHER_DONE,
+                ),
+            ]
+        ),
+    )
+    monkeypatch.setattr(collector, "_fetch_sec_json", Mock(return_value=sec))
+    monkeypatch.setattr(
+        collector,
+        "canonical_utc_now",
+        Mock(side_effect=[_COLLECTOR_START, _COLLECTOR_DONE, _COLLECTOR_DONE]),
+    )
+
+    result = collector.SymbolDirectoryAdapter().fetch()
+
+    root = tmp_path / "symbol_directory"
+    assert result["symbol_directory__ingest"].iloc[0]["snapshot_written"] == 1
+    assert (root / "snapshots" / f"{_DATE}.parquet").exists()
+    assert not (root / "receipts" / "snapshots" / f"{_DATE}.json").exists()
+    assert (root / "receipts" / "cik_map" / f"{_DATE}.json").exists()
 
 
 def test_existing_legacy_files_never_retro_mint_receipts(
@@ -433,8 +494,93 @@ def test_listing_parse_cannot_claim_complete_after_skipping_a_source_row(
     )
     adapter = collector.SymbolDirectoryAdapter()
     adapter._SNAPSHOT_MIN_ROWS = 0
+    adapter._SOURCE_ARTIFACT_MIN_ROWS = {
+        "nasdaqlisted": 0,
+        "otherlisted": 0,
+    }
 
     assert adapter._collect_symbol_snapshot() is None
+
+
+def test_truncated_otherlisted_cannot_mint_complete_operational_absence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Exact 5,584 + 2,416 attack stays below Other's evidence floor."""
+
+    nasdaq_text = _nasdaq_text(row_count=5_584)
+    other_text = _other_text(row_count=2_416, include_spy=False)
+    monkeypatch.setattr(
+        collector,
+        "_fetch_text",
+        Mock(
+            side_effect=[
+                receipts.SourceFetch(
+                    value=nasdaq_text,
+                    content=nasdaq_text.encode(),
+                    requested_url=collector._NASDAQ_LISTED_URL,
+                    started_at=_NASDAQ_START,
+                    completed_at=_NASDAQ_DONE,
+                ),
+                receipts.SourceFetch(
+                    value=other_text,
+                    content=other_text.encode(),
+                    requested_url=collector._OTHER_LISTED_URL,
+                    started_at=_OTHER_START,
+                    completed_at=_OTHER_DONE,
+                ),
+            ]
+        ),
+    )
+
+    collected = collector.SymbolDirectoryAdapter()._collect_symbol_snapshot(
+        with_evidence=True
+    )
+
+    assert collected is None
+
+    artifact = tmp_path / "symbol_directory" / "snapshots" / f"{_DATE}.parquet"
+    receipts.durable_atomic_write_parquet(_truncated_listing_frame(), artifact)
+    with pytest.raises(
+        receipts.ReceiptValidationError,
+        match="artifact_rows.*less than the minimum of 6500",
+    ):
+        receipts.build_symbol_directory_completion_receipt(
+            kind="listing_snapshot",
+            observation_date=_DATE,
+            artifact_path=artifact,
+            source_fetches=_listing_fetches(),
+            collector_started_at=_COLLECTOR_START,
+            collector_completed_at=_COLLECTOR_DONE,
+            pre_dedupe_rows=8_000,
+            duplicate_occurrences=0,
+            duplicate_key_count=0,
+            source_row_counts=(
+                (receipts.NASDAQ_LISTED_SOURCE_ID, 5_584),
+                (receipts.OTHER_LISTED_SOURCE_ID, 2_416),
+            ),
+            pre_dedupe_spy_occurrences=(
+                {
+                    "source_id": receipts.OTHER_LISTED_SOURCE_ID,
+                    "symbol": "SPY",
+                    "security_name": "SPDR S&P 500 ETF Trust",
+                    "exchange": "P",
+                    "etf": True,
+                    "test_issue": False,
+                    "is_preferred": False,
+                },
+            ),
+            non_authoritative_footers=(
+                receipts.footer_diagnostic(
+                    source_id=receipts.NASDAQ_LISTED_SOURCE_ID,
+                    text="File Creation Time: 8/10/2026 00:00:00",
+                ),
+                receipts.footer_diagnostic(
+                    source_id=receipts.OTHER_LISTED_SOURCE_ID,
+                    text="File Creation Time: 8/10/2026 00:00:01",
+                ),
+            ),
+        )
 
 
 def test_cik_parse_cannot_claim_complete_after_skipping_a_malformed_entry(
@@ -595,47 +741,74 @@ def test_recomputed_receipt_id_cannot_widen_authority(tmp_path: Path) -> None:
         )
 
 
-def test_complete_spy_absent_listing_is_valid_operational_evidence(
+def test_recomputed_receipt_cannot_forge_artifact_source_counts(
     tmp_path: Path,
 ) -> None:
-    artifact, value = _listing_absent_receipt(tmp_path)
+    artifact, _, value = _listing_receipt(tmp_path)
+    forged = copy.deepcopy(value)
+    forged["completeness"]["source_row_counts"][0]["artifact_rows"] += 1
+    forged["completeness"]["source_row_counts"][1]["artifact_rows"] -= 1
+    _recompute_receipt_id(forged)
 
-    loaded = receipts.validate_symbol_directory_completion_receipt_bytes(
-        value,
-        _canonical_receipt_body(value),
-        artifact.read_bytes(),
-        expected_kind="listing_snapshot",
-    )
+    with pytest.raises(
+        receipts.ReceiptValidationError,
+        match="source artifact row count does not match parquet",
+    ):
+        receipts.validate_symbol_directory_completion_receipt_bytes(
+            forged,
+            _canonical_receipt_body(forged),
+            artifact.read_bytes(),
+            expected_kind="listing_snapshot",
+        )
 
-    assert loaded["diagnostics"]["pre_dedupe_spy_occurrence_count"] == 0
-    assert loaded["diagnostics"]["pre_dedupe_spy_occurrences"] == []
-    assert loaded["evidence_policy"]["historical_continuity_inferred"] is False
 
-
-def test_spy_absent_artifact_rejects_recomputed_present_diagnostic(
+def test_spy_absent_listing_cannot_mint_operational_completion_receipt(
     tmp_path: Path,
 ) -> None:
-    artifact, value = _listing_absent_receipt(tmp_path)
+    artifact = _listing_absent_artifact(tmp_path)
+
+    with pytest.raises(
+        receipts.ReceiptValidationError,
+        match="requires exactly one SPY occurrence",
+    ):
+        receipts.build_symbol_directory_completion_receipt(
+            kind="listing_snapshot",
+            observation_date=_DATE,
+            artifact_path=artifact,
+            source_fetches=_listing_fetches(),
+            collector_started_at=_COLLECTOR_START,
+            collector_completed_at=_COLLECTOR_DONE,
+            pre_dedupe_rows=_TOTAL_ROWS,
+            duplicate_occurrences=0,
+            duplicate_key_count=0,
+            source_row_counts=(
+                (receipts.NASDAQ_LISTED_SOURCE_ID, _NASDAQ_ROWS),
+                (receipts.OTHER_LISTED_SOURCE_ID, _OTHER_ROWS),
+            ),
+            pre_dedupe_spy_occurrences=(),
+            non_authoritative_footers=(),
+        )
+
+
+def test_spy_absent_artifact_rejects_recomputed_present_receipt(
+    tmp_path: Path,
+) -> None:
+    artifact = _listing_absent_artifact(tmp_path / "absent")
+    _present_artifact, _sidecar, value = _listing_receipt(tmp_path / "present")
     false_present = copy.deepcopy(value)
-    false_present["diagnostics"]["pre_dedupe_spy_occurrence_count"] = 1
-    false_present["diagnostics"]["pre_dedupe_spy_occurrences"] = [
-        {
-            "source_id": receipts.OTHER_LISTED_SOURCE_ID,
-            "symbol": "SPY",
-            "security_name": "SPDR S&P 500 ETF Trust",
-            "exchange": "P",
-            "etf": True,
-            "test_issue": False,
-            "is_preferred": False,
-        }
-    ]
+    artifact_body = artifact.read_bytes()
+    false_present["artifact"]["sha256"] = hashlib.sha256(artifact_body).hexdigest()
+    false_present["artifact"]["bytes"] = len(artifact_body)
     _recompute_receipt_id(false_present)
 
-    with pytest.raises(receipts.ReceiptValidationError, match="SPY-absent"):
+    with pytest.raises(
+        receipts.ReceiptValidationError,
+        match="requires exactly one artifact SPY row",
+    ):
         receipts.validate_symbol_directory_completion_receipt_bytes(
             false_present,
             _canonical_receipt_body(false_present),
-            artifact.read_bytes(),
+            artifact_body,
             expected_kind="listing_snapshot",
         )
 

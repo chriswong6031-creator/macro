@@ -21,6 +21,9 @@ from lib import symbol_directory_receipts as source_receipts
 
 _ROOT = Path(__file__).resolve().parent.parent
 _SNAPSHOTS = _ROOT / "data" / "symbol_directory" / "snapshots"
+_NASDAQ_ROWS = 5_000
+_OTHER_ROWS = 6_500
+_TOTAL_ROWS = _NASDAQ_ROWS + _OTHER_ROWS
 
 
 @pytest.fixture(autouse=True)
@@ -33,24 +36,24 @@ def _release_arrow_pool_after_test():
 
 
 def _frame(date_partition: str, *, spy: bool = True) -> pd.DataFrame:
-    ordinary_rows = 7_999 if spy else 8_000
-    symbols = [f"N{index:07d}" for index in range(ordinary_rows)]
-    names = [f"Synthetic {index}" for index in range(ordinary_rows)]
-    exchanges = ["NASDAQ"] * ordinary_rows
-    etfs = [False] * ordinary_rows
-    sources = ["nasdaqlisted"] * ordinary_rows
-    if spy:
-        symbols.append("SPY")
-        names.append("SPDR S&P 500 ETF Trust")
-        exchanges.append("P")
-        etfs.append(True)
-        sources.append("otherlisted")
-    else:
-        symbols[-1] = "DIA"
-        names[-1] = "SPDR Dow Jones Industrial Average ETF Trust"
-        exchanges[-1] = "P"
-        etfs[-1] = True
-        sources[-1] = "otherlisted"
+    symbols = [f"N{index:07d}" for index in range(_NASDAQ_ROWS)] + [
+        f"O{index:07d}" for index in range(_OTHER_ROWS - 1)
+    ]
+    names = [f"Nasdaq Synthetic {index}" for index in range(_NASDAQ_ROWS)] + [
+        f"Other Synthetic {index}" for index in range(_OTHER_ROWS - 1)
+    ]
+    exchanges = ["NASDAQ"] * _NASDAQ_ROWS + ["N"] * (_OTHER_ROWS - 1)
+    etfs = [False] * (_TOTAL_ROWS - 1)
+    sources = ["nasdaqlisted"] * _NASDAQ_ROWS + ["otherlisted"] * (_OTHER_ROWS - 1)
+    symbols.append("SPY" if spy else "DIA")
+    names.append(
+        "SPDR S&P 500 ETF Trust"
+        if spy
+        else "SPDR Dow Jones Industrial Average ETF Trust"
+    )
+    exchanges.append("P")
+    etfs.append(True)
+    sources.append("otherlisted")
     rows = len(symbols)
     return pd.DataFrame(
         {
@@ -126,12 +129,12 @@ def _write_receipt(
         collector_completed_at=(
             collector_completed_at or f"{date_partition}T00:00:04.000000Z"
         ),
-        pre_dedupe_rows=8_000,
+        pre_dedupe_rows=_TOTAL_ROWS,
         duplicate_occurrences=0,
         duplicate_key_count=0,
         source_row_counts=(
-            (source_receipts.NASDAQ_LISTED_SOURCE_ID, 7_999),
-            (source_receipts.OTHER_LISTED_SOURCE_ID, 1),
+            (source_receipts.NASDAQ_LISTED_SOURCE_ID, _NASDAQ_ROWS),
+            (source_receipts.OTHER_LISTED_SOURCE_ID, _OTHER_ROWS),
         ),
         pre_dedupe_spy_occurrences=(
             (
@@ -339,7 +342,7 @@ def test_valid_legacy_cutoff_receipt_cannot_retroactively_upgrade_snapshot(
         )
 
 
-def test_receipt_backed_complete_spy_absence_remains_absence_only(
+def test_spy_absence_cannot_be_upgraded_but_remains_reconstruction_only(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     artifact = _write_snapshot(
@@ -347,15 +350,17 @@ def test_receipt_backed_complete_spy_absence_remains_absence_only(
         "2026-08-11",
         frame=_frame("2026-08-11", spy=False),
     )
-    sidecar, _receipt = _write_receipt(artifact, date_partition="2026-08-11", spy=False)
+    with pytest.raises(
+        source_receipts.ReceiptValidationError,
+        match="requires exactly one SPY occurrence",
+    ):
+        _write_receipt(artifact, date_partition="2026-08-11", spy=False)
     _fixed_clock(monkeypatch, "2026-08-11T00:00:05.000000Z")
 
-    bundle = observation.build_spy_listing_observation(
-        artifact, completion_receipt_path=sidecar
-    )
+    bundle = observation.build_spy_listing_observation(artifact)
 
-    assert bundle.observation["operational"] is True
-    assert bundle.observation["pit_basis"] == "live_captured"
+    assert bundle.observation["operational"] is False
+    assert bundle.observation["pit_basis"] == "public_reconstruction"
     assert bundle.observation["listing_state"] == (
         "symbol_absent_from_complete_snapshot"
     )

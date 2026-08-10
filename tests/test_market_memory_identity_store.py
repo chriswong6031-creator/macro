@@ -24,6 +24,9 @@ from lib import symbol_directory_receipts
 
 _ROOT = Path(__file__).resolve().parent.parent
 _SNAPSHOTS = _ROOT / "data" / "symbol_directory" / "snapshots"
+_NASDAQ_ROWS = 5_000
+_OTHER_ROWS = 6_500
+_TOTAL_ROWS = _NASDAQ_ROWS + _OTHER_ROWS
 
 
 @pytest.fixture(autouse=True)
@@ -41,24 +44,24 @@ def _fixed_clock(monkeypatch: pytest.MonkeyPatch, timestamp: str) -> None:
 
 
 def _frame(date_partition: str, *, spy: bool = True) -> pd.DataFrame:
-    ordinary_rows = 7_999 if spy else 8_000
-    symbols = [f"N{index:07d}" for index in range(ordinary_rows)]
-    names = [f"Synthetic {index}" for index in range(ordinary_rows)]
-    exchanges = ["NASDAQ"] * ordinary_rows
-    etfs = [False] * ordinary_rows
-    sources = ["nasdaqlisted"] * ordinary_rows
-    if spy:
-        symbols.append("SPY")
-        names.append("SPDR S&P 500 ETF Trust")
-        exchanges.append("P")
-        etfs.append(True)
-        sources.append("otherlisted")
-    else:
-        symbols[-1] = "DIA"
-        names[-1] = "SPDR Dow Jones Industrial Average ETF Trust"
-        exchanges[-1] = "P"
-        etfs[-1] = True
-        sources[-1] = "otherlisted"
+    symbols = [f"N{index:07d}" for index in range(_NASDAQ_ROWS)] + [
+        f"O{index:07d}" for index in range(_OTHER_ROWS - 1)
+    ]
+    names = [f"Nasdaq Synthetic {index}" for index in range(_NASDAQ_ROWS)] + [
+        f"Other Synthetic {index}" for index in range(_OTHER_ROWS - 1)
+    ]
+    exchanges = ["NASDAQ"] * _NASDAQ_ROWS + ["N"] * (_OTHER_ROWS - 1)
+    etfs = [False] * (_TOTAL_ROWS - 1)
+    sources = ["nasdaqlisted"] * _NASDAQ_ROWS + ["otherlisted"] * (_OTHER_ROWS - 1)
+    symbols.append("SPY" if spy else "DIA")
+    names.append(
+        "SPDR S&P 500 ETF Trust"
+        if spy
+        else "SPDR Dow Jones Industrial Average ETF Trust"
+    )
+    exchanges.append("P")
+    etfs.append(True)
+    sources.append("otherlisted")
     rows = len(symbols)
     return pd.DataFrame(
         {
@@ -135,12 +138,12 @@ def _write_operational_receipt(
         source_fetches=fetches,
         collector_started_at=f"{date_partition}T00:00:00.000000Z",
         collector_completed_at=f"{date_partition}T00:00:04.000000Z",
-        pre_dedupe_rows=8_000,
+        pre_dedupe_rows=_TOTAL_ROWS,
         duplicate_occurrences=0,
         duplicate_key_count=0,
         source_row_counts=(
-            (symbol_directory_receipts.NASDAQ_LISTED_SOURCE_ID, 7_999),
-            (symbol_directory_receipts.OTHER_LISTED_SOURCE_ID, 1),
+            (symbol_directory_receipts.NASDAQ_LISTED_SOURCE_ID, _NASDAQ_ROWS),
+            (symbol_directory_receipts.OTHER_LISTED_SOURCE_ID, _OTHER_ROWS),
         ),
         pre_dedupe_spy_occurrences=occurrences,
         non_authoritative_footers=(
@@ -544,7 +547,7 @@ def test_date_conflict_is_fatal_but_next_complete_absence_is_observed(
     assert absent.head["capture_count"] == 2
 
 
-def test_receipt_backed_operational_absence_persists_without_delist_claim(
+def test_spy_absence_persists_only_as_reconstruction_without_delist_claim(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     artifact = _write_snapshot(
@@ -552,19 +555,15 @@ def test_receipt_backed_operational_absence_persists_without_delist_claim(
         "2026-08-11",
         frame=_frame("2026-08-11", spy=False),
     )
-    sidecar = _write_operational_receipt(
-        artifact, date_partition="2026-08-11", spy=False
-    )
     _fixed_clock(monkeypatch, "2026-08-11T00:00:05.000000Z")
-    bundle = observation.build_spy_listing_observation(
-        artifact, completion_receipt_path=sidecar
-    )
+    bundle = observation.build_spy_listing_observation(artifact)
     root = tmp_path / "identity-v1"
 
     result = store.capture_spy_listing_observation(root, bundle)
     loaded = store.load_identity_observation_store(root)
 
-    assert result.observation["operational"] is True
+    assert result.observation["operational"] is False
+    assert result.observation["pit_basis"] == "public_reconstruction"
     assert result.observation["listing_state"] == (
         "symbol_absent_from_complete_snapshot"
     )
@@ -756,6 +755,7 @@ def test_prepared_capture_and_store_receipt_schemas_validate_exact_outputs(
         Draft202012Validator.check_schema(schema)
     prepared_validator = Draft202012Validator(prepared_schema, registry=registry)
     capture_validator = Draft202012Validator(capture_schema, registry=registry)
+    observation_validator = Draft202012Validator(observation_schema)
     prepared_validator.validate(prepared)
     capture_validator.validate(result.capture_receipt)
     receipt_validator = Draft202012Validator(store_schema)
@@ -813,6 +813,24 @@ def test_prepared_capture_and_store_receipt_schemas_validate_exact_outputs(
     )
     prepared_validator.validate(json.loads(operational_prepared_path.read_bytes()))
     capture_validator.validate(operational_result.capture_receipt)
+
+    operational_absence = copy.deepcopy(operational_bundle.observation)
+    operational_absence["listing_state"] = "symbol_absent_from_complete_snapshot"
+    assert list(observation_validator.iter_errors(operational_absence))
+
+    operational_generation_absence = copy.deepcopy(operational_result.generation)
+    operational_generation_absence["captures"][0]["listing_state"] = (
+        "symbol_absent_from_complete_snapshot"
+    )
+    assert list(receipt_validator.iter_errors(operational_generation_absence))
+    with pytest.raises(
+        store.MarketMemoryIdentityStoreError,
+        match="requires SPY presence",
+    ):
+        store._validate_generation(
+            operational_generation_absence,
+            store_id=operational_result.head["store_id"],
+        )
 
     contradictory_generation = copy.deepcopy(snapshot.generation)
     contradictory_generation["captures"][0]["pit_basis"] = "live_captured"
