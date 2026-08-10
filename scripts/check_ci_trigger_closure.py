@@ -97,12 +97,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import ast
-import io
 import json
 import re
 import sys
-import tokenize
 from pathlib import Path
 
 import yaml
@@ -113,25 +110,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # rules; run_ci_pack owns the manifest's fail-closed per-job parse.
 from scripts.audit_unrun_tests import (  # noqa: E402
     CI_MANIFEST,
-    FIRST_PARTY,
     ROOT,
     WORKFLOWS,
     discover_suites,
 )
-from scripts.run_ci_pack import ManifestError, load_legacy_jobs  # noqa: E402
-
-# Directories a repo-relative string literal may name.  Import ROOTS stay
-# FIRST_PARTY (you cannot `import research`); these are the trees a suite reaches
-# by path instead — research/ scripts live outside any package and are loaded with
-# spec_from_file_location, which is exactly how the reclaim-veto packet is read.
-#
-# `data/` is deliberately EXCLUDED.  A suite reading a nightly artifact is a
-# different class: those files are rewritten by the pipeline, not edited by a PR,
-# so demanding a trigger entry for each would add 150+ findings that no author can
-# act on.  Subject = something a human edits.
-LITERAL_DIRS = tuple(FIRST_PARTY) + (
-    "research", "tools", "config", "templates", "contracts", "ops",
+from scripts.ci_scope_dependencies import (  # noqa: E402
+    _DATA_MARKER,
+    closure,
+    direct_reads,
 )
+from scripts.run_ci_pack import ManifestError, load_legacy_jobs  # noqa: E402
 
 # A suite named in a `run:` step, AS WRITTEN — any directory, both pytest filename
 # shapes.  This used to require a literal `tests/` prefix and accept ANY `.py` under
@@ -143,45 +131,6 @@ _TEST_PATH = re.compile(
     r"(?<![\w/.-])((?:[\w.-]+/)*(?:test_[\w-]+|[\w-]+_test)\.py)(?![\w])"
 )
 _MANIFEST_REF = re.compile(r"--workflow\s+(\.github/[\w./-]+\.ya?ml)")
-_IMPORT_MODULE = re.compile(r'import_module\(\s*["\']([\w.]+)["\']')
-# FULL-matched against a string constant's value.  "A path is the whole string" is
-# the third form of the same rule the docstring and comment exclusions apply: a
-# path inside a SENTENCE is prose, not a read.  Both shapes are live here —
-#
-#   PRESS_MUST_RESTART = ["app/deploy/marketing-press-feeds.service", ...]   a read
-#   assert ..., "... (see app/deploy/README.md § Press properties (W1.5))"   a pointer
-#
-# — and the second one costs a path entry for a README no suite ever opens.  An
-# f-string's literal chunks carry their surrounding prose, so they fail this too.
-_PATH_LITERAL = re.compile(
-    r"(?:" + "|".join(LITERAL_DIRS) + r")"
-    r"/[\w./-]+\.[A-Za-z0-9_]{1,8}(?:#[\w.-]+)?"
-)
-"""Everything below reads the AST, never the raw text.  Two reasons, both learned
-the hard way in this repo:
-
-  * COMMENTS AND DOCSTRINGS ARE NOT WIRING.  `audit_unrun_tests.py` used to scan
-    raw workflow text, so a suite named in a YAML comment counted as "run by CI" —
-    the census's own vacuous green (OIP E8).  The same trap is live here: a dozen
-    suites describe their subject in prose ("validated against the REAL committed
-    config/causal_priors.yml") without the code ever naming it.  Prose is a claim;
-    only code is a read.  Comments never reach the AST at all, and docstrings are
-    excluded explicitly.
-
-  * A JOIN'S BASE DECIDES WHAT IT NAMES.  `tmp_path / "config" / "brain.yml"` and
-    `ROOT / "config" / "brain.yml"` have identical segments; the first is a file
-    the suite WRITES under pytest's temp dir and is not a subject at all.  Only a
-    base provably derived from `__file__` can point into the checkout, so that is
-    the only base accepted — under-reporting on an exotic spelling is the right
-    way to be wrong for something that gates a merge.
-
-The ONE deliberate exception is `_DATA_MARKER` below, and it proves the rule: the
-author's "this string is a NAME, not a file I open" can only live in a comment, so
-it is read from COMMENT tokens.  Being a token and not a substring is what keeps it
-honest — the same words inside a string constant (this file's own selftest fixture,
-for one) are inert.
-"""
-_DATA_MARKER = re.compile(r"#\s*ci-trigger-closure:\s*data\b")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -352,279 +301,6 @@ def suites_by_source() -> dict[str, dict[str, set[str]]]:
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. what a suite reads
 # ─────────────────────────────────────────────────────────────────────────────
-
-def _join_segments(node: ast.BinOp) -> tuple[ast.expr, list[str]] | None:
-    """Flatten ``base / "a" / "b.py"`` into ``(base, ["a", "b.py"])``."""
-    segments: list[str] = []
-    current: ast.expr = node
-    while isinstance(current, ast.BinOp) and isinstance(current.op, ast.Div):
-        right = current.right
-        if not (isinstance(right, ast.Constant) and isinstance(right.value, str)):
-            return None
-        segments.append(right.value)
-        current = current.left
-    if not segments:
-        return None
-    segments.reverse()
-    return current, segments
-
-
-def _mentions_file_dunder(node: ast.AST) -> bool:
-    return any(
-        isinstance(inner, ast.Name) and inner.id == "__file__"
-        for inner in ast.walk(node)
-    )
-
-
-def _checkout_bases(tree: ast.Module) -> set[str]:
-    """Module-level names bound to something derived from ``__file__``.
-
-    `ROOT = Path(__file__).resolve().parents[1]` is the only way a suite can name
-    the real checkout.  A name bound anywhere else — a fixture parameter, a local
-    `root`, `tmp_path` — may look identical at the join site and point at a
-    synthetic tree, so it is not accepted.
-    """
-    bases: set[str] = set()
-    for node in tree.body:
-        if isinstance(node, ast.Assign) and _mentions_file_dunder(node.value):
-            bases |= {t.id for t in node.targets if isinstance(t, ast.Name)}
-        elif (
-            isinstance(node, ast.AnnAssign)
-            and isinstance(node.target, ast.Name)
-            and node.value is not None
-            and _mentions_file_dunder(node.value)
-        ):
-            bases.add(node.target.id)
-    return bases
-
-
-def _docstring_ids(tree: ast.Module) -> set[int]:
-    """Identities of the Constant nodes that are docstrings, so prose is excluded."""
-    out: set[int] = set()
-    for node in ast.walk(tree):
-        if not isinstance(
-            node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
-        ):
-            continue
-        body = getattr(node, "body", None) or []
-        first = body[0] if body else None
-        if (
-            isinstance(first, ast.Expr)
-            and isinstance(first.value, ast.Constant)
-            and isinstance(first.value.value, str)
-        ):
-            out.add(id(first.value))
-    return out
-
-
-def _data_lines(source: str, tree: ast.Module) -> set[int]:
-    """Source lines a `# ci-trigger-closure: data` comment opts out of the closure.
-
-    Two branches, chosen so both the surgical and the whole-fixture spelling read the
-    way an author would expect:
-
-      * the marker line ITSELF carries a path literal → it marks that one line, so a
-        single entry can be excused out of a list whose other entries are real;
-      * otherwise → it marks the statement it opens (`FILES = [  # marker`) or, when
-        it sits on its own line between statements, the next statement to start.
-
-    Deliberately coarse in the second branch: a marker anywhere inside a multi-line
-    fixture excuses the whole fixture.  That is the shape these lists actually have —
-    a manifest of names is data end to end — and a rule an author can predict without
-    reading this function beats a precise one they cannot.
-    """
-    try:
-        comments = [
-            token.start[0]
-            for token in tokenize.generate_tokens(io.StringIO(source).readline)
-            if token.type == tokenize.COMMENT and _DATA_MARKER.search(token.string)
-        ]
-    except (tokenize.TokenError, IndentationError, SyntaxError):
-        return set()          # unparsable comments cannot excuse anything
-    if not comments:
-        return set()
-
-    literal_lines = {
-        node.lineno
-        for node in ast.walk(tree)
-        if isinstance(node, ast.Constant)
-        and isinstance(node.value, str)
-        and _PATH_LITERAL.fullmatch(node.value.strip())
-    }
-    statements = [node for node in ast.walk(tree) if isinstance(node, ast.stmt)]
-
-    def span(node: ast.stmt) -> range:
-        return range(node.lineno, (node.end_lineno or node.lineno) + 1)
-
-    covered: set[int] = set()
-    for line in comments:
-        if line in literal_lines:
-            covered.add(line)
-            continue
-        enclosing = [node for node in statements if line in span(node)]
-        target = min(
-            enclosing,
-            key=lambda node: (node.end_lineno or node.lineno) - node.lineno,
-            default=None,
-        )
-        if target is None:
-            following = [node for node in statements if node.lineno > line]
-            target = min(following, key=lambda node: node.lineno, default=None)
-        if target is not None:
-            covered |= set(span(target))
-    return covered
-
-
-def _resolve(module: str) -> list[str]:
-    """Repo-relative files a dotted module name can denote — existing ones only."""
-    base = module.replace(".", "/")
-    return [
-        candidate
-        for candidate in (f"{base}.py", f"{base}/__init__.py")
-        if (ROOT / candidate).is_file()
-    ]
-
-
-def direct_reads(
-    path: Path, *, collect_data: dict[str, str] | None = None
-) -> dict[str, str]:
-    """``{repo-relative file: "kind at line N"}`` for what ``path`` reads directly.
-
-    Every returned path exists in the tree.  A path that does not exist cannot be
-    edited, so it can never be the module a PR touches — including it would only
-    add noise (and `config/foo.yml`-shaped placeholder strings are exactly that).
-
-    The provenance is not decoration: a finding says "add a path entry for a file
-    you did not know this suite read", and the reviewer's first question is always
-    "where?".  Without the line, verifying one finding costs a grep per finding.
-
-    Pass ``collect_data`` to receive what a `# ci-trigger-closure: data` marker
-    excused, same ``{rel: provenance}`` shape.  Nothing suppressed is silent: the
-    summary counts it and `--report` names it.
-    """
-    files: dict[str, str] = {}
-
-    def record(rel: str, kind: str, line: int) -> None:
-        files.setdefault(rel, f"{kind} at line {line}")
-
-    def excused(rel: str, kind: str, line: int) -> None:
-        if collect_data is not None:
-            collect_data.setdefault(rel, f"{kind} at line {line}")
-
-    try:
-        source = path.read_text(errors="ignore")
-        tree = ast.parse(source)
-    except SyntaxError:
-        return files
-
-    bases = _checkout_bases(tree)
-    docstrings = _docstring_ids(tree)
-    # Literals and joins only. An `import` is a read no comment can talk out of.
-    data_lines = _data_lines(source, tree)
-
-    for node in ast.walk(tree):
-        # a) imports
-        names: list[str] = []
-        if isinstance(node, ast.Import):
-            names = [alias.name for alias in node.names]
-        elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
-            names = [node.module]
-            # `from pkg import a, b` binds pkg.a / pkg.b when those are submodules;
-            # resolving only `pkg` collapses the closure onto pkg/__init__.py and
-            # understates the gap.
-            if node.module.split(".")[0] in FIRST_PARTY:
-                names += [f"{node.module}.{alias.name}" for alias in node.names]
-        for name in names:
-            if name.split(".")[0] in FIRST_PARTY:
-                for rel in _resolve(name):
-                    record(rel, "import", node.lineno)
-
-        # b) importlib.import_module("engine.foo")
-        if isinstance(node, ast.Call) and node.args:
-            func = node.func
-            label = func.attr if isinstance(func, ast.Attribute) else getattr(func, "id", "")
-            first = node.args[0]
-            if (
-                label == "import_module"
-                and isinstance(first, ast.Constant)
-                and isinstance(first.value, str)
-                and first.value.split(".")[0] in FIRST_PARTY
-            ):
-                for rel in _resolve(first.value):
-                    record(rel, "import_module", node.lineno)
-
-        # c) a whole repo-relative path in one string literal — never a docstring
-        if (
-            isinstance(node, ast.Constant)
-            and isinstance(node.value, str)
-            and id(node) not in docstrings
-        ):
-            match = _PATH_LITERAL.fullmatch(node.value.strip())
-            if match and (ROOT / match.group(0).split("#")[0]).is_file():
-                rel = match.group(0).split("#")[0]
-                if node.lineno in data_lines:
-                    excused(rel, "path literal", node.lineno)
-                else:
-                    record(rel, "path literal", node.lineno)
-
-        # d) ROOT / "a" / "b.py" — only off a base derived from __file__
-        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
-            chain = _join_segments(node)
-            if chain is not None:
-                base, segments = chain
-                rooted = _mentions_file_dunder(base) or (
-                    isinstance(base, ast.Name) and base.id in bases
-                )
-                joined = "/".join(segments)
-                if (
-                    rooted
-                    and joined.split("/")[0] in LITERAL_DIRS
-                    and (ROOT / joined).is_file()
-                ):
-                    if node.lineno in data_lines:
-                        excused(joined, "path join", node.lineno)
-                    else:
-                        record(joined, "path join", node.lineno)
-
-    # An __init__.py is a package marker, not a subject: flagging it would demand a
-    # path entry for every package a suite imports through.
-    kept = {rel: why for rel, why in files.items() if not rel.endswith("__init__.py")}
-    if collect_data is not None:
-        # A file the suite also IMPORTS was never suppressed — reporting it as
-        # excused would overstate what the marker does.
-        for rel in list(collect_data):
-            if rel in kept or rel.endswith("__init__.py"):
-                del collect_data[rel]
-    return kept
-
-
-def closure(
-    start: Path,
-    depth: int,
-    cache: dict[str, dict[str, str]],
-    data_cache: dict[str, dict[str, str]] | None = None,
-) -> dict[str, str]:
-    """``{file: provenance}`` reachable from ``start`` in at most ``depth`` hops."""
-    def reads(path: Path) -> dict[str, str]:
-        key = path.as_posix()
-        if key not in cache:
-            excused: dict[str, str] = {}
-            cache[key] = direct_reads(path, collect_data=excused)
-            if data_cache is not None:
-                data_cache[key] = excused
-        return cache[key]
-
-    seen: dict[str, str] = {}
-    frontier: list[tuple[Path, int, str]] = [(start, 0, "")]
-    while frontier:
-        current, level, via = frontier.pop()
-        for rel, why in reads(current).items():
-            if rel in seen:
-                continue
-            seen[rel] = why if not via else f"{why} of {via}"
-            if level + 1 < depth and rel.endswith(".py"):
-                frontier.append((ROOT / rel, level + 1, rel))
-    return seen
 
 
 # ─────────────────────────────────────────────────────────────────────────────

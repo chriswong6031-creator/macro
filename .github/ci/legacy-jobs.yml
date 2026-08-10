@@ -6819,3 +6819,26 @@ jobs:
         run: >-
           python -m pytest
           tests/test_group_linked_outsiders.py -q -rs
+
+  falsifier-tripwires:
+    # The stateful cycle-ontology falsifier engine was triggerable but its focused
+    # regression suite was named by no CI command (#5194).  Keep this as a small
+    # first-class owner so path-aware selection can remove unrelated packs without
+    # making the exact changed behavior dark.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - data/cycle_ontology/falsifiers.json
+      - data/cycle_ontology/tripwire_state.json
+      - engine/falsifier_tripwires.py
+      - tests/test_falsifier_tripwires.py
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install falsifier test dependencies
+        run: python -m pip install pytest pandas numpy pyyaml
+      - name: falsifier tripwire state and v2 gate contracts
+        run: python -m pytest tests/test_falsifier_tripwires.py -q

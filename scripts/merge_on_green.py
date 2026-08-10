@@ -217,6 +217,14 @@ MERGE_BLOCKED_LABEL = "merge-blocked"
 MAIN_RED_REPAIR_LABEL = "main-red-repair"
 BASELINE_WORKFLOW = "integration-baseline.yml"
 WORKFLOWS_DIR = Path(__file__).resolve().parents[1] / ".github" / "workflows"
+# A workflow-level catch-all is allowed to START the selector so a brand-new
+# repository root cannot bypass CI.  It is not, by itself, evidence that every
+# file affects every check.  Treating ``**`` as a tested-surface entry makes any
+# main commit overlap every pull request and recreates the strict update-branch
+# livelock that the freshness gate was built to avoid.  ``load_pr_gates`` keeps
+# this provenance separately and the decision below fails closed only when a
+# path is covered by the catch-all and by no more specific ownership entry.
+START_ONLY_PATH_PATTERNS = frozenset({"**"})
 # The conclusions that count as "this check did not fail". `neutral` and
 # `skipped` are the shapes a path-filtered or deliberately-inert job publishes.
 #
@@ -663,7 +671,8 @@ def load_pr_gates(workflows_dir: Path = WORKFLOWS_DIR) -> list[dict[str, Any]]:
         likely cause is a sparse-checkout that stopped fetching it, and a surface
         derived from nothing is the no-op-that-reviews-as-protection this gate
         exists to avoid;
-      * no PR-triggered workflow declares a `paths:` filter at all — same reason;
+      * no PR-triggered workflow declares a specific (non-catch-all) path at all
+        — same reason;
       * a filter contains a `!` negation, which `gh_path_filter` does not model.
         Refusing loudly beats mis-evaluating a surface nobody re-derived.
     """
@@ -689,21 +698,41 @@ def load_pr_gates(workflows_dir: Path = WORKFLOWS_DIR) -> list[dict[str, Any]]:
             continue
         trigger = block.get("pull_request")
         patterns = None
+        start_only_patterns: list[str] = []
         if isinstance(trigger, dict) and isinstance(trigger.get("paths"), list):
-            patterns = [str(entry) for entry in trigger["paths"]]
-            negated = [entry for entry in patterns if entry.startswith(NEGATION_PREFIX)]
+            declared_patterns = [str(entry) for entry in trigger["paths"]]
+            negated = [
+                entry for entry in declared_patterns if entry.startswith(NEGATION_PREFIX)
+            ]
             if negated:
                 raise RuntimeError(
                     f"{path.name} uses `!` negation in on.pull_request.paths "
                     f"({negated[0]}), which the shared matcher does not model"
                 )
-        gates.append({"workflow": path.name, "patterns": patterns})
+            start_only_patterns = [
+                entry
+                for entry in declared_patterns
+                if entry in START_ONLY_PATH_PATTERNS
+            ]
+            patterns = [
+                entry
+                for entry in declared_patterns
+                if entry not in START_ONLY_PATH_PATTERNS
+            ]
+        gates.append(
+            {
+                "workflow": path.name,
+                "patterns": patterns,
+                "start_only_patterns": start_only_patterns,
+            }
+        )
 
     if not gates:
         raise RuntimeError(f"no on.pull_request workflow found under {workflows_dir}")
-    if not any(gate["patterns"] is not None for gate in gates):
+    if not any(gate["patterns"] for gate in gates):
         raise RuntimeError(
-            f"no PR-triggered workflow under {workflows_dir} declares a paths filter"
+            f"no PR-triggered workflow under {workflows_dir} declares a paths "
+            "filter with a specific non-catch-all entry"
         )
     return gates
 
@@ -908,8 +937,23 @@ class ProofFreshness:
             if files and all(name.startswith(PIPELINE_TREES) for name in files):
                 continue  # a render/nightly bake, not an edit
             for name in files:
+                matched_specific = False
+                matched_start_only = False
                 for gate in self.gates:
-                    candidates.update(matching_patterns(name, gate["patterns"]))
+                    matches = matching_patterns(name, gate["patterns"])
+                    candidates.update(matches)
+                    matched_specific = matched_specific or bool(matches)
+                    matched_start_only = matched_start_only or bool(
+                        matching_patterns(
+                            name, gate.get("start_only_patterns") or []
+                        )
+                    )
+                if matched_start_only and not matched_specific:
+                    return True, (
+                        f"main commit {commit['sha'][:12]} touched {name}, which is "
+                        "covered only by a workflow start catch-all and has no "
+                        "specific tested-surface owner"
+                    )
 
         if not candidates:
             return False, (

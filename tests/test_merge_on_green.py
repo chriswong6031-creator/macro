@@ -1376,6 +1376,52 @@ def test_an_unfiltered_workflow_does_not_make_every_surface_everything():
     assert not stale, reason
 
 
+def test_a_workflow_start_catchall_does_not_make_every_surface_everything():
+    """``ci.yml`` starts for ``**`` so a new root cannot bypass the selector.
+
+    That routing catch-all is not job ownership.  Known files still use the
+    narrower entries beside it, otherwise every main commit intersects every PR
+    and the sweeper returns to strict update-branch livelock.
+    """
+    gates = [
+        {
+            "workflow": "ci.yml",
+            "patterns": ["engine/**", "collectors/**"],
+            "start_only_patterns": ["**"],
+        }
+    ]
+    freshness = _freshness(
+        commits=[(MAIN_MOVED_AT_1026, ["collectors/fred.py"])],
+        gates=gates,
+        pull_files={4242: ["engine/signal_quality.py"]},
+    )
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+    assert not stale, reason
+
+
+def test_a_new_root_seen_only_by_the_start_catchall_is_re_proven():
+    """Unknown ownership is fail-closed even though ``**`` is start-only."""
+    gates = [
+        {
+            "workflow": "ci.yml",
+            "patterns": ["engine/**"],
+            "start_only_patterns": ["**"],
+        }
+    ]
+    freshness = _freshness(
+        commits=[(MAIN_MOVED_AT_1026, ["brand_new_root/subject.py"])],
+        gates=gates,
+        pull_files={4242: ["engine/signal_quality.py"]},
+    )
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+    assert stale
+    assert "start catch-all" in reason and "no specific" in reason
+
+
 def test_a_pipeline_bake_is_not_an_edit():
     """82% of main's commits here are render.yml re-baking `site/` or the nightly
     advancing `data/`. Counting them puts a hit inside 96% of 35-minute windows and
@@ -1615,6 +1661,14 @@ def test_build_refuses_a_workflow_set_that_cannot_scope_anything(tmp_path):
     (unfiltered / "fences.yml").write_text("on:\n  pull_request:\njobs: {}\n")
     with pytest.raises(RuntimeError, match="declares a paths filter"):
         MOG.load_pr_gates(unfiltered)
+
+    catchall_only = tmp_path / "catchall-only"
+    catchall_only.mkdir()
+    (catchall_only / "ci.yml").write_text(
+        'on:\n  pull_request:\n    paths:\n      - "**"\njobs: {}\n'
+    )
+    with pytest.raises(RuntimeError, match="specific non-catch-all entry"):
+        MOG.load_pr_gates(catchall_only)
 
     negated = tmp_path / "negated"
     negated.mkdir()
@@ -3571,6 +3625,12 @@ def test_the_stale_reason_is_re_derived_from_the_runs(monkeypatch, runs, expecte
     `failing_check_names` records: display strings are for humans, decisions are made
     from data. A `pending` that is NOT the stale-green case must not dispatch."""
     calls = _source_api(monkeypatch, runs)
+    # The one-hour fixture is created at collection time, while this 200-test
+    # module takes several minutes to reach this assertion on hosted runners.
+    # Pin the formatter input: this case is about deriving the reason from the
+    # concluded run list, not about wall-clock progress during the test process.
+    if expected == "not needed (the proof is 1.0h old)":
+        monkeypatch.setattr(MOG, "_baseline_age_hours", lambda _run: 1.0)
     assert MOG.ensure_integration_baseline("acme/widgets", "write", "pending") == expected
     assert _source_dispatches(calls) == []
 
