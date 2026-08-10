@@ -6,10 +6,11 @@ one is paired with a mutation that proves the assertion can see the defect it
 claims to guard — a green assertion against an implementation that cannot fail is
 the exact class of dead guard this file is meant not to join.
 
-The lobe has zero live candidates by design (the ledger is 0 bytes and the event
-spine is unavailable), so everything here runs against fixtures. That is the
-point: the harness has to exist before the first candidate is issued, or the
-first cohort is ungradeable after the fact.
+The harness was committed while the lobe still had zero live candidates.  The
+first candidate rows now exist, so the temporary amendment-window witness has
+expired; the permanent grader guards continue to run against fixed fixtures.
+That ordering is the point: the harness had to exist before the first candidate
+was issued, or the first cohort would have been ungradeable after the fact.
 """
 from __future__ import annotations
 
@@ -2222,57 +2223,6 @@ def test_the_registration_registers_the_disclosure_layer_before_observation():
     # Still pre-observation, which is what makes this amendment legal at all.
     live = ROOT / "data" / "government_revenue" / grader.ISSUANCE_LOG_FILENAME
     assert not live.exists() or live.stat().st_size == 0
-
-
-# ---------------------------------------------------------------------------
-# AMENDMENT-WINDOW WITNESS (version 4.0.0, 2026-08-08)
-#
-# DELETE THIS TEST IN THE PR THAT ISSUES THE FIRST ROW. It exists to make the
-# legality of the 4.0.0 amendment a CHECKED fact rather than a claim in a
-# document: §9 permits a change to a registered evaluation rule only before the
-# first observation exists, and "before the first observation" is a property of
-# the repository at a moment, which prose cannot assert and a test can.
-#
-# The moment it stops being true, this test goes red — which is the correct
-# alarm, because at that point no further amendment is legal without a new
-# family_id.
-# ---------------------------------------------------------------------------
-
-
-def test_amendment_window_the_issuance_record_is_still_empty_and_uncalled():
-    """No observation exists, so no threshold here was tuned against data.
-
-    Three independent witnesses, because any one of them alone is weak:
-
-    1. the committed candidate ledger is empty;
-    2. no issuance log exists anywhere under ``data/``; and
-    3. **nothing calls the grader** — no builder, script, or app module imports
-       it, so there is no path by which a number could have been produced,
-       looked at, and then legislated around.
-    """
-    ledger = ROOT / "data" / "government_revenue" / "candidate_ledger.jsonl"
-    assert not ledger.exists() or ledger.stat().st_size == 0, (
-        "the candidate ledger has content: the amendment window is CLOSED and §9 now "
-        "requires a new family_id rather than an amendment"
-    )
-
-    logs = sorted((ROOT / "data").rglob(grader.ISSUANCE_LOG_FILENAME))
-    assert logs == [], f"an issuance log exists: {logs}"
-
-    callers = []
-    for area in ("engine", "scripts", "app", "admin"):
-        root = ROOT / area
-        if not root.exists():
-            continue
-        for path in root.rglob("*.py"):
-            if path.name == "candidate_grader.py":
-                continue
-            if "candidate_grader" in path.read_text(encoding="utf-8", errors="ignore"):
-                callers.append(str(path.relative_to(ROOT)))
-    assert callers == [], (
-        f"the grader has acquired callers {callers}: a produced number may exist, and an "
-        "evaluation rule amended after a number exists is a rule tuned on data"
-    )
 
 
 # ---------------------------------------------------------------------------
