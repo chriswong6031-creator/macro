@@ -29,6 +29,7 @@ Run:  python3 study.py --mode pilot      (60 names, end-to-end)
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -38,14 +39,38 @@ import numpy as np
 import pandas as pd
 
 # ----------------------------------------------------------------- wiring ----
-MACRO = Path("/Users/chriswong/Documents/Cluade/Macro Dashboard")
-CHART = Path("/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/mobile-search-live-quotes")
-os.environ.setdefault("MACRO_REPO", str(MACRO))
+HERE = Path(__file__).resolve().parent
+MACRO = HERE.parents[1]
+CHART = Path(os.environ.get(
+    "CHART_REPO",
+    "/Users/chriswong/Documents/Cluade/charting-app/.claude/worktrees/mobile-search-live-quotes",
+))
+SIGNAL_SOURCE = CHART / "signal_layer" / "confluence.py"
+SIGNAL_SOURCE_SHA256 = "30c12a90448579d689e2a9ed405055f6c44462cf0f69347940e619d020c7384d"
+
+# This study is a frozen receipt, so silently importing whichever signal-layer
+# bytes happen to occupy a personal worktree would make every downstream number
+# unrepeatable.  The dependency is external because that is where the production
+# implementation lives; pin its exact bytes and fail closed when they move.
+try:
+    _signal_sha = hashlib.sha256(SIGNAL_SOURCE.read_bytes()).hexdigest()
+except OSError as exc:
+    raise RuntimeError(
+        f"blocked-entry study requires pinned signal source {SIGNAL_SOURCE}"
+    ) from exc
+if _signal_sha != SIGNAL_SOURCE_SHA256:
+    raise RuntimeError(
+        "blocked-entry signal source drifted: "
+        f"expected {SIGNAL_SOURCE_SHA256}, got {_signal_sha}"
+    )
+
+# The imported signal layer also consults MACRO_REPO.  A caller's ambient value
+# must not redirect half the study to a different checkout while the OHLC paths
+# above read this one.
+os.environ["MACRO_REPO"] = str(MACRO)
 sys.path.insert(0, str(CHART))
 
 from signal_layer import confluence as oracle  # noqa: E402
-
-HERE = Path(__file__).resolve().parent
 
 US_OHLCV = MACRO / "data" / "baskets" / "ohlcv"     # 2014+, has open
 US_DEEP = MACRO / "data" / "stocks"                 # deep history, NO open
@@ -75,6 +100,12 @@ MIN_R_FRAC = 0.005          # R below 0.5% of entry px is not R-graded (divide-b
 PLACEBO_SEED = 20260809
 
 SIX_NAMES = ("UEC", "HL", "NEM", "9988.HK", "600547.SS", "002716.SZ")
+
+
+def placebo_seed(sym: str) -> int:
+    """Stable per-symbol seed; Python's salted ``hash`` is not a receipt."""
+    digest = hashlib.md5(sym.encode("utf-8"), usedforsecurity=False).digest()
+    return PLACEBO_SEED + (int.from_bytes(digest[:8], "big") % 100000)
 
 
 # ------------------------------------------------------------------ data -----
@@ -342,7 +373,7 @@ def events_for_symbol(sym: str, anchor: int = ANCHOR) -> list[dict]:
             y = int(ev["entry_date"][:4])
             blocked_years[y] = blocked_years.get(y, 0) + 1
     if blocked_years:
-        rng = np.random.default_rng(PLACEBO_SEED + (abs(hash(sym)) % 100000))
+        rng = np.random.default_rng(placebo_seed(sym))
         yrs = np.array([d.year for d in rows.index])
         for y, k in blocked_years.items():
             pool = np.flatnonzero((yrs == y) & ~raw)
@@ -626,7 +657,7 @@ def main() -> int:
 
     payload = {
         "meta": {
-            "generated": pd.Timestamp.utcnow().isoformat(),
+            "generated": pd.Timestamp.now(tz="UTC").isoformat(),
             "mode": args.mode, "anchor": args.anchor,
             "veto": "bear_block = (~mo_bull) & (~above200) & (~w2_bull)  [confluence.py:316]",
             "cohort": "raw (CB|revBuy) & bear_block — keeper verdicts never reach these bars",
@@ -638,6 +669,12 @@ def main() -> int:
                        "spy_below200_days": SPY_BELOW200_DAYS},
             "stop_rule": "daily CLOSE < stop (intrabar low reported as sensitivity)",
             "entry_rule": "next session after known_ts; OPEN, else CLOSE where no open exists",
+            "signal_source": {
+                "path": str(SIGNAL_SOURCE),
+                "sha256": SIGNAL_SOURCE_SHA256,
+                "chart_repo_commit": "f80116fad640c97e5a245ea9ab260e12d9e2cf25",
+            },
+            "placebo_seed_rule": "20260809 + md5(symbol)[:8] mod 100000",
         },
         "coverage": cov,
         "design_era_tuning": {

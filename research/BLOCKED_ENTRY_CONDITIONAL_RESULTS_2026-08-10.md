@@ -1,73 +1,75 @@
 # Blocked-entry conditional override — RESULTS & ADJUDICATION
 
 **Date:** 2026-08-10 · **Family:** `blocked_entry_conditional_v1` · **Prereg:**
-`research/BLOCKED_ENTRY_CONDITIONAL_PREREG.md` (frozen ~05:50Z, before results)
+`research/BLOCKED_ENTRY_CONDITIONAL_PREREG.md` (commit `98fe6113af6`, 05:35:10Z, before results)
 · **Instrument + frozen receipts:** `research/blocked_entry_study/{study.py, ci_bootstrap.py,
 results.json, ci_results.json}` (event parquets remain in the session scratchpad; regeneration is
-deterministic for blocked/taken arms — see §5.2)
-· **Panel:** 4,281 names / 234,747 events / US primary 29,448 blocked · 67,358 taken · ~29.3k
-placebo fires on 5,445 distinct dates, 1962-06-07 → 2026-06-05 (local tape ends 2026-07-08).
+deterministic for all arms — see §5.2)
+· **Panel:** 4,788 requested / 4,649 with events / 262,818 events · US primary 32,059 blocked ·
+72,552 taken · 31,885 placebo, 1962-06-07 → 2026-07-09 (local tape ends 2026-07-08; the final
+date is the next-session entry).
 Execution ruler: PIT entry after the fire's known date; stop = 3-bar washout low − m×ATR14; graded
 in R. CIs: date-clustered bootstrap, B=2000, seed 20260810, both parameterizations
 (primary m=0.5/`sysAB`; design-frozen m=1.0/`sysA`).
 
 ## §1 ADJUDICATION against the frozen gates
 
-- **H1 (ordinary-washout override) — PASS, with one disclosure.** Held-out non-systemic blocked
-  expectancy **+0.573R [
-+0.399, +0.760]** (m1.0/sysA: +0.549 [+0.400, +0.707]); blocked−placebo
-  **+0.459R [+0.251, +0.665]** (+0.471 [+0.308, +0.646]). Both registered CIs exclude 0.
-  Disclosure: the per-date **median-of-medians** R is −1.08 [−1.090, −1.078] — mechanically negative
-  for ANY stop construction whose stop-hit rate exceeds 50% (the TAKEN arm's median R is likewise
-  −1.04): the median fire on the median date stops out; the strategy is a right-tail harvest. The
-  per-date blocked−placebo difference is sign-positive with CI excluding 0 (+0.073 [+0.061, +0.085]),
-  which is the sense in which the prereg's per-date sign requirement is met; the median-of-medians
-  level statistic cannot be positive for this construction class and is disclosed, not gated on.
+- **H1 (ordinary-washout override) — PASS, context-only.** Held-out non-systemic blocked
+  expectancy **+0.572R [+0.384, +0.785]** (m1.0/sysA: +0.539 [+0.371, +0.706]);
+  blocked−placebo **+0.580R [+0.390, +0.777]** (+0.483 [+0.316, +0.658]). The preregistered
+  equal-date-weighted read is also positive: blocked +0.492R [+0.284,+0.754] and
+  blocked−placebo +0.419R [+0.154,+0.719] (frozen: +0.514 and +0.341, both CIs exclude 0).
+  The descriptive per-date **median-of-medians** remains −1.08R: the median fire on the median
+  date stops out, so this is a right-tail cohort result, not a typical-trade claim. That median
+  diagnostic is not substituted for the preregistered equal-date expectancy.
 - **H2 (systemic-bear total-washout timing) — FAIL, INVERTED.** Within systemic bears, waiting for
-  the 2W StochRSI floor-turn SUBTRACTS: washT−washF **−0.899R [−1.628, −0.204]** (CI excludes 0 on
-  the wrong side) at primary params; −0.534 [−1.072, +0.028] at frozen params. The registered
-  conditional is dead as stated; the flag is harmful-to-neutral, never the precondition.
+  the 2W StochRSI floor-turn SUBTRACTS: washT−washF **−1.003R [−1.729, −0.367]** (CI excludes 0 on
+  the wrong side) at primary params; −0.624 [−1.133, −0.114] at frozen params. The equal-date
+  read is −0.861 [−1.819,+0.051], which also does not satisfy the positive/excludes-zero gate.
+  The registered conditional is dead as stated; the flag is harmful-to-neutral, never the
+  precondition.
 - **POST-HOC discovered rule (labeled as such; carries no pre-registered authority):** blocked
   fires DURING systemic bears, taken immediately, are the strongest cohort in the study —
-  held-out **+1.753R [+1.121, +2.476]** (frozen: +1.423 [+0.931, +1.931]); sysT−sysF
-  **+1.032R [+0.408, +1.683]** (+0.788 [+0.292, +1.288]); the frozen-param cell is the ONLY cell
-  with a positive median trade (+5.9%, win 52.5%, stop-hit 50.2%, n=2,912). Direction is
-  era-consistent and 3D-grid-phase-robust (anchors 0/1/2). `sysA` (SPY >15% off 252d high) carries
-  all separation; the 200dma-duration leg (`sysB`) carries none and mildly inverts.
-- **Context:** pooled full-history blocked−taken = **−0.126R [−0.231, −0.020]** — the veto holds a
+  held-out **+1.790R [+1.147, +2.485]** (frozen: +1.447 [+0.919, +1.968]); sysT−sysF
+  **+1.054R [+0.401, +1.726]** (+0.807 [+0.300, +1.332]); the frozen-param cell is the ONLY cell
+  with a positive median trade (+4.3%, win 51.8%, stop-hit 43.9%, n=3,120). Direction is
+  era-consistent in the committed anchor-0 receipt. `sysA` (SPY >15% off 252d high) carries all
+  separation; the 200dma-duration leg (`sysB`) carries none and mildly inverts. No uncommitted
+  anchor sensitivity is promoted to evidence here.
+- **Context:** pooled full-history blocked−taken = **−0.148R [−0.258, −0.039]** — the veto holds a
   small real edge ON AVERAGE, which is why a flat "take every ⊘" stays dead
-  (`DNR:KILL-200DMA-RECLAIM-VETO-FLAT` analog logic) while the systemic-conditional is live.
+  (`DNR:KILL-200DMA-RECLAIM-VETO-FLAT` analog logic) while the systemic conditional remains a
+  context-only, post-hoc candidate.
 
 ## §2 Headline tables (condensed; full tables in results.json)
 
-Arms, US, exit (a) stop+252d, m=0.5 pooled: blocked **+0.848R** (win 32.1%, stop-hit 66.3%, p90
-+57.5%, p95 +93.7%) · taken +0.975R · placebo +0.198R. Fixed-63d: blocked median date **+2.4%** vs
-placebo −1.6%.
+Arms, US, exit (a) stop+252d, m=0.5 pooled: blocked **+0.827R** (win 31.3%, stop-hit 67.1%, p90
++57.8%, p95 +95.8%) · taken +0.975R · placebo +0.159R. Fixed-63d remains descriptive only.
 
-2×2 held-out (frozen params): sysF/washF +0.601R (median −10.4%) · sysF/washT ≈ +0.35R ·
-**sysT/washF +1.423R (median +5.9%)** · sysT/washT +0.889R (median −9.0%). Depth bands: R U-shaped,
-median return monotone −5.2% → −14.3% with depth (depth buys tail, not reliability). Fire-density
-q4 (>56 same-date fires): highest win 40.4%, lowest stop-hit 57.4%.
+2×2 held-out (frozen params): sysF/washF +0.591R (median −10.7%) · sysF/washT +0.333R ·
+**sysT/washF +1.447R (median +4.3%)** · sysT/washT +0.823R (median −9.6%). Depth bands: R rises
+while median return worsens −6.0% → −15.3% with depth (depth buys tail, not reliability).
+Fire-density q4 (>59 same-date fires): highest win 38.9%, lowest stop-hit 59.0%.
 
-Named rows (blocked cohort, local tape): UEC n=15 **+3.13R** (two fires alone +9.0R/+10.9R;
-median −12.3%) · HL n=18 +0.22R · NEM n=56 +0.60R · 600547.SS n=25 +0.85R · **9988.HK n=4 −1.11R
-(0-for-4, all stopped)** · 002716.SZ absent from local stores. Every named row has a negative
-median R — the edge is cohort-level tail, not per-chart reliability. CN/HK panels (reported, never
-pooled): CN blocked +0.916R vs taken +1.726R; HK blocked +0.798R vs taken +1.573R.
+Named rows (blocked cohort, local tape): UEC n=15 **+3.13R** (median −12.3%) · HL n=18 +0.22R ·
+NEM n=56 +0.60R · 600547.SS n=26 +0.91R · 002716.SZ n=16 +1.04R · **9988.HK n=4 −1.12R
+(0-for-4, all stopped)**. Every named row still has a negative median return — the edge is
+cohort-level tail, not per-chart reliability. CN/HK panels (reported, never pooled): CN blocked
++0.888R vs taken +1.605R; HK blocked +0.799R vs taken +1.601R.
 
 ## §3 Decision — what this supports now
 
-1. **Display-tier (ships without further evidence):** ⊘ markers during `sysA` systemic-bear state
-   render as the distinct "washout override candidate" class per prereg §3, with plain-word Tier-2
-   copy quoting §2's numbers (win ~1-in-2, median +5.9% in that state; ~1-in-3 and negative median
-   elsewhere — stop discipline is the construction).
-2. **Live `enter`-mask conditional (one line in `confluence_v2`): READY, pending two named gates —**
+1. **Context-only result; no display promotion.** The study records that the `sysA` systemic-bear
+   cohort is the post-hoc candidate. Per prereg §3, even a display-tier class remains queued behind
+   explicit operator ratification, the production-feed re-grade, and the era fence. Nothing in
+   this PR may rank, gate, size, enter, issue, or alter a reader-facing marker.
+2. **Live `enter`-mask conditional: NOT READY; pending two named gates plus the era fence —**
    (a) **operator ratification** recorded in prereg §5 (the promoted rule is post-hoc-discovered;
    H2 as the operator originally phrased it is dead, so the ratification must be of THIS rule:
    *take `bear_block`-vetoed CB/revBuy fires immediately when SPY is >15% below its 252d high; ⊘
    stays refusal-only otherwise*), and (b) the **production-feed re-grade**: the six live exemplar
    markers do not all reproduce on local adjusted parquets (HL's June fires score `mo_bull=True`
-   locally → not blocked; UEC past tape end; 002716 absent) — the monthly leg diverges between
+   locally → not blocked; UEC/current 002716 marks are past tape end) — the monthly leg diverges between
    feeds, so the verdict-era pass re-runs on the VPS slice-basis OHLC before the flip, and the live
    conditional keys off production's own `bear_block` computation either way. Era fence per prereg
    §4 (signal_layer emission version bump; no pre/post pooling).
@@ -85,11 +87,13 @@ per-name conviction.
 
 ## §5 Limits (disclosed, none verdict-bearing)
 
-1. **Median-of-medians mechanics** (§1 H1 disclosure) — structurally −1R-bounded for stop-heavy
-   cohorts; applies equally to the TAKEN arm.
-2. **Placebo seeding is not byte-reproducible** (`hash()` per-process salt; n drifted 0.15% between
-   runs). Blocked/taken arms fully deterministic. Fix idiom for any re-run: `hashlib.md5` per
-   `washout_lab.py:_half`. Committed instrument is AS-RUN; receipts match it.
+1. **Median-of-medians mechanics** (§1 H1 disclosure) — structurally near −1R for stop-heavy
+   cohorts; it is a tail-shape diagnostic, not the registered equal-date-weighted expectancy.
+2. **Reproducibility repair before merge.** The draft instrument used Python's salted `hash()`
+   for placebo seeds and accidentally resolved Macro data through the shared checkout. The merged
+   receipt instead uses `md5(symbol)` for a stable seed, derives the Macro root from this worktree,
+   pins the external `signal_layer/confluence.py` SHA-256 and chart-repo commit, and was regenerated
+   after those repairs. The committed JSON matches the repaired instrument, not the draft run.
 3. **Event parquets carry no exit columns** (dict fields stripped on write); `ci_bootstrap.py`
    regenerates events deterministically via `study.events_for_symbol` (17s).
 4. **SPY store starts 1993** — pre-1993 design-era fires default `systemic=False`; the held-out era

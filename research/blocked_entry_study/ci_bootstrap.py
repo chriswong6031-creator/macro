@@ -3,8 +3,8 @@
 NOTE ON INPUT: events_anchor0.parquet does NOT carry the per-ATR-multiple exit results —
 study.py strips dict-valued fields when it writes that file, so a_R/a_ret never landed in it.
 This script therefore regenerates the event dicts by calling study.events_for_symbol (imported
-unmodified). That call is deterministic — same anchor, same per-symbol seeded placebo RNG — so
-it reproduces the identical event set behind results.json.
+unmodified). That call is deterministic — same anchor and stable digest-derived per-symbol
+placebo RNG — so it reproduces the identical event set behind results.json.
 
 Cluster unit = entry_date (what study.py's median_of_per_date_medians already clusters on;
 it is the fire's known_ts advanced one session, so the clusters are in bijection with fire
@@ -12,8 +12,9 @@ dates). Resampling is WITH REPLACEMENT over distinct dates, B=2000, numpy seed 2
 Difference tests resample the UNION of both arms' dates ONCE per draw so both arms are
 evaluated on the same sampled dates.
 
-Statistics: (i) mean R across all fires falling on the sampled dates; (ii) median of the
-per-date median R over the sampled dates. CIs are 2.5/97.5 percentiles of the draws.
+Statistics: (i) mean R across all fires falling on the sampled dates; (ii) the registered
+equal-date-weighted expectancy (mean of each date's mean R); and (iii) median of the per-date
+median R as a descriptive tail-shape diagnostic. CIs are 2.5/97.5 percentiles of the draws.
 """
 from __future__ import annotations
 
@@ -59,7 +60,7 @@ def collect() -> pd.DataFrame:
 def _prep(sub: pd.DataFrame, rcol: str) -> pd.DataFrame:
     s = sub[["entry_date", rcol]].dropna()
     g = s.groupby("entry_date")[rcol]
-    return pd.DataFrame({"sum": g.sum(), "n": g.size(), "med": g.median()})
+    return pd.DataFrame({"sum": g.sum(), "n": g.size(), "mean": g.mean(), "med": g.median()})
 
 
 def _draw(n_dates: int, rng) -> np.ndarray:
@@ -70,13 +71,17 @@ def _stats(tab: pd.DataFrame, dates: pd.Index, idx: np.ndarray):
     a = tab.reindex(dates)
     sm = a["sum"].fillna(0).to_numpy(float)
     nn = a["n"].fillna(0).to_numpy(float)
+    av = a["mean"].to_numpy(float)
     md = a["med"].to_numpy(float)
     with np.errstate(invalid="ignore", divide="ignore"):
         mean_draws = sm[idx].sum(1) / nn[idx].sum(1)
+        date_mean_draws = np.nanmean(av[idx], axis=1)
         med_draws = np.nanmedian(md[idx], axis=1)
     point_mean = sm.sum() / nn.sum() if nn.sum() else np.nan
+    point_date_mean = float(np.nanmean(av)) if np.isfinite(av).any() else np.nan
     point_med = float(np.nanmedian(md)) if np.isfinite(md).any() else np.nan
-    return mean_draws, med_draws, point_mean, point_med, int(nn.sum()), int(np.isfinite(md).sum())
+    return (mean_draws, date_mean_draws, med_draws, point_mean, point_date_mean,
+            point_med, int(nn.sum()), int(np.isfinite(md).sum()))
 
 
 def _ci(draws: np.ndarray) -> tuple[float, float, int]:
@@ -93,11 +98,14 @@ def single(sub: pd.DataFrame, rcol: str, label: str) -> dict:
     if len(dates) == 0:
         return {"test": label, "n_fires": 0, "n_dates": 0}
     idx = _draw(len(dates), rng)
-    mn, md, pm, pmd, nf, nd = _stats(tab, dates, idx)
+    mn, dm, md, pm, pdm, pmd, nf, nd = _stats(tab, dates, idx)
     lo, hi, drop = _ci(mn)
+    dlo, dhi, _ = _ci(dm)
     lo2, hi2, _ = _ci(md)
     return {"test": label, "stat": "mean_R", "point": pm, "ci_lo": lo, "ci_hi": hi,
             "n_fires": nf, "n_dates": len(dates), "nan_draws": drop,
+            "equal_date_mean": {"stat": "mean_of_per_date_mean_R", "point": pdm,
+                                "ci_lo": dlo, "ci_hi": dhi},
             "per_date_median": {"stat": "median_of_per_date_median_R", "point": pmd,
                                 "ci_lo": lo2, "ci_hi": hi2}}
 
@@ -111,9 +119,10 @@ def diff(sub_a: pd.DataFrame, sub_b: pd.DataFrame, rcol: str, label: str,
     if len(dates) == 0:
         return {"test": label, "n_fires": 0, "n_dates": 0}
     idx = _draw(len(dates), rng)
-    mna, mda, pma, pmda, nfa, _ = _stats(ta, dates, idx)
-    mnb, mdb, pmb, pmdb, nfb, _ = _stats(tb, dates, idx)
+    mna, dma, mda, pma, pdma, pmda, nfa, _ = _stats(ta, dates, idx)
+    mnb, dmb, mdb, pmb, pdmb, pmdb, nfb, _ = _stats(tb, dates, idx)
     lo, hi, drop = _ci(mna - mnb)
+    dlo, dhi, _ = _ci(dma - dmb)
     lo2, hi2, _ = _ci(mda - mdb)
     return {"test": label, "stat": f"mean_R diff ({name_a} - {name_b})",
             "point": pma - pmb, "ci_lo": lo, "ci_hi": hi,
@@ -121,6 +130,8 @@ def diff(sub_a: pd.DataFrame, sub_b: pd.DataFrame, rcol: str, label: str,
             f"n_fires_{name_a}": nfa, f"n_fires_{name_b}": nfb,
             f"point_{name_a}": pma, f"point_{name_b}": pmb,
             "date_support_overlap": int(len(ta.index.intersection(tb.index))),
+            "equal_date_mean": {"stat": "mean_of_per_date_mean_R diff",
+                                "point": pdma - pdmb, "ci_lo": dlo, "ci_hi": dhi},
             "per_date_median": {"stat": "median_of_per_date_median_R diff",
                                 "point": pmda - pmdb, "ci_lo": lo2, "ci_hi": hi2}}
 
@@ -143,6 +154,9 @@ def main() -> int:
     out: dict = {"meta": {"B": B, "seed": SEED, "cluster_unit": "entry_date",
                           "panel": "US", "exit": "(a) stop + 252d time exit",
                           "ci": "percentile 2.5/97.5",
+                          "equal_date_weighting": "mean of each date's mean R",
+                          "placebo_seed_rule": "20260809 + md5(symbol)[:8] mod 100000",
+                          "signal_source_sha256": S.SIGNAL_SOURCE_SHA256,
                           "input_note": "event dicts regenerated via study.events_for_symbol; "
                                         "events_anchor0.parquet carries no a_R column",
                           "held_out_era": "entry_date > 2018-12-31"}, "tests": {}}
@@ -190,7 +204,18 @@ def main() -> int:
                 continue
             print(f"{r['test'][:51]:52s}{tag:10s}{r['point']:>9.3f}{r['ci_lo']:>9.3f}"
                   f"{r['ci_hi']:>9.3f}{r['n_fires']:>8d}{r['n_dates']:>7d}")
-    print("\nper-date-median versions (tests 1 and 3):")
+    print("\nregistered equal-date-weighted versions:")
+    for pname in PARAMS:
+        tag = "m0.5" if "0.5" in pname else "m1.0"
+        for k, r in out["tests"][pname].items():
+            if not r.get("n_dates") or "equal_date_mean" not in r:
+                continue
+            if not k.startswith(("H1", "H2")):
+                continue
+            p = r["equal_date_mean"]
+            print(f"{r['test'][:51]:52s}{tag:10s}{p['point']:>9.3f}{p['ci_lo']:>9.3f}"
+                  f"{p['ci_hi']:>9.3f}")
+    print("\nper-date-median descriptive versions (tests 1 and 3):")
     for pname in PARAMS:
         tag = "m0.5" if "0.5" in pname else "m1.0"
         for k, r in out["tests"][pname].items():
