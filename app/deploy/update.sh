@@ -134,8 +134,10 @@ fi
 # path fails closed instead of widening either side of the trust boundary.
 install -d -m 0700 /var/lib/macro-market-memory
 install -d -m 0700 /var/lib/macro-market-memory/public
+install -d -m 0700 /var/lib/macro-market-memory/public/trusted-v1
 install -d -m 0700 /var/lib/macro-market-memory/state
 install -d -m 0700 /var/lib/macro-market-memory/state/sources
+install -d -m 0700 /var/lib/macro-market-memory/state/context-projection
 API_UNIT_UPDATED=0
 if ! cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service; then
 	if systemd-analyze verify "$APP_DIR/app/deploy/macro-api.service"; then
@@ -219,6 +221,50 @@ if [ "$MARKET_MEMORY_SOURCE_RUN_NEEDED" -eq 1 ]; then
 		echo "macro-update: deferring Market Memory source intake — shared runtime dependencies are not current" >&2
 	elif ! systemctl start macro-market-memory-source.service; then
 		echo "macro-update: Market Memory source intake failed closed; hourly timer will retry" >&2
+	fi
+fi
+
+# W1B.1 trusted context publisher: network-dark and credential-free. It writes
+# exact raw evidence only below the API-inaccessible state tree and advances the
+# separate public trusted-v1 HEAD only after that evidence and the typed feature
+# object are durable.
+MARKET_MEMORY_CONTEXT_UNIT_UPDATED=0
+MARKET_MEMORY_CONTEXT_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-context.service"
+	"$APP_DIR/app/deploy/macro-market-memory-context.timer"
+)
+if ! cmp -s "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-context.service || \
+   ! cmp -s "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-context.timer; then
+	if systemd-analyze verify "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_CONTEXT_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_CONTEXT_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-market-memory-context.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: Market Memory trusted-context units updated"
+		fi
+	else
+		echo "macro-update: refusing Market Memory context unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+systemctl enable --now macro-market-memory-context.timer >/dev/null 2>&1 || \
+	echo "macro-update: macro-market-memory-context.timer could not be enabled" >&2
+
+MARKET_MEMORY_CONTEXT_RUN_NEEDED=0
+if [ "$MARKET_MEMORY_CONTEXT_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(scripts/project_market_memory_context\.py|engine/neuralweb/market_memory(_pit|_identity|_projection|_trusted)?\.py|contracts/market_memory/(macro_regime_snapshot|macro_regime_feature_object|trusted_capture_receipt)\.v1\.schema\.json|config/market_memory_canary\.v1\.json|engine/run\.py|data/regime/latest\.json)$'; then
+	MARKET_MEMORY_CONTEXT_RUN_NEEDED=1
+fi
+if [ "$MARKET_MEMORY_CONTEXT_RUN_NEEDED" -eq 1 ]; then
+	if [ "$API_DEPS_OK" -ne 1 ]; then
+		echo "macro-update: deferring Market Memory context projection — shared runtime dependencies are not current" >&2
+	elif ! systemctl start macro-market-memory-context.service; then
+		echo "macro-update: Market Memory context projection failed closed; hourly timer will retry" >&2
 	fi
 fi
 
@@ -332,7 +378,7 @@ fi
 #     schemas/implementations only and never calls run(), so those ~90 modules are
 #     NOT in the API's sys.modules. Adding them would restart /api on nearly every
 #     engine commit — exactly what this narrow list exists to prevent.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
+if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
 	# Verified restart, not fire-and-forget: on 2026-07-30 the old one-liner
 	# (`... && systemctl restart macro-api || true`) left the API on its 5-hour-old
 	# PID after a matching deploy, and the `|| true` destroyed every trace of why.

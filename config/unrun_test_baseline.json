@@ -26,7 +26,6 @@
   "tests/test_agg_greek_trend.py",
   "tests/test_alert_rules_phase0.py",
   "tests/test_alert_triage.py",
-  "tests/test_alert_zh_completeness.py",
   "tests/test_alerts.py",
   "tests/test_allocation_alerts.py",
   "tests/test_alpha_grammar.py",
