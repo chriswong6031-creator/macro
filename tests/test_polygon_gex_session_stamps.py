@@ -36,11 +36,11 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from lib import config, nyse_calendar  # noqa: E402
-
 import scripts.build_polygon_gex as bpg  # noqa: E402
 import scripts.complete_polygon_gex_session_stamps as comp  # noqa: E402
 import scripts.migrate_polygon_gex_session_stamps as mig  # noqa: E402
+import scripts.quarantine_polygon_gex_20260807_preopen as preopen_repair  # noqa: E402
+from lib import config, nyse_calendar  # noqa: E402
 
 #: The chains files the two rulings kept: #4807's adjudication of the 42 run-date files
 #: that existed when its manifest was frozen, plus PINNED_COMPLETION's re-adjudication of
@@ -547,6 +547,75 @@ def test_the_migrated_spots_match_the_cboe_sibling_on_the_SAME_session():
     assert not mismatched, (
         f"{len(mismatched)} of {len(shared)} polygon rows disagree with the Cboe "
         f"sibling on their OWN session: {mismatched[:5]} — the store is shifted again")
+
+
+def test_post_migration_spy_spots_match_the_committed_session_close():
+    """Catch a bad session stamp on the same nightly it lands, without waiting for the
+    weekly ``index_gex_history`` sibling to advance.
+
+    The stale 2026-08-07 workflow row was only 0.38% away from SPY's eventual close, so
+    a broad percentage tolerance would have hidden it.  Polygon's stock snapshot and the
+    committed Yahoo daily bar both carry the official close to the cent after settlement;
+    post-migration rows must therefore agree to the same two-cent float-storage tolerance
+    used by the independent-sibling check above.
+    """
+    poly_path = config.data_dir() / "polygon_gex" / "summary_SPY.parquet"
+    yahoo_path = config.data_dir() / "yahoo" / "SPY.parquet"
+    if not (poly_path.exists() and yahoo_path.exists()):
+        pytest.skip("SPY Polygon/Yahoo stores absent on this runner")
+    poly, yahoo = pd.read_parquet(poly_path), pd.read_parquet(yahoo_path)
+    close_col = "close" if "close" in yahoo.columns else "close_price"
+    start = pd.Timestamp(_WINDOW_END)
+    shared = [t for t in poly.index if t >= start and t in yahoo.index]
+    assert shared, f"no SPY session-close row at/after the migration window {start.date()}"
+    mismatched = [
+        (str(t.date()), round(float(poly.loc[t, "spot"]), 3),
+         round(float(yahoo.loc[t, close_col]), 3))
+        for t in shared
+        if abs(float(poly.loc[t, "spot"]) - float(yahoo.loc[t, close_col])) > 0.02
+    ]
+    assert not mismatched, (
+        "post-migration Polygon SPY spots do not match their committed session close: "
+        f"{mismatched}; this is the stale-runner/pre-open stamp shape")
+
+
+def test_the_2026_08_07_preopen_snapshot_is_quarantined_with_recovery_provenance():
+    """The bad row is removed, not edited to agree with another provider.
+
+    Run 31138544929 checked out the old UTC-date writer before #4807, slept in the
+    queue, captured a pre-open 08-07 chain, then rebased its data commit onto fixed main.
+    The raw bytes remain recoverable from that commit; the source store carries an honest
+    gap rather than a fabricated close.
+    """
+    import json
+
+    manifest_path = preopen_repair.MANIFEST
+    assert manifest_path.exists()
+    manifest = json.loads(manifest_path.read_text())
+    assert manifest["root_cause"]["workflow_run"] == 31138544929
+    assert manifest["root_cause"]["checkout_head"] == preopen_repair.SOURCE_HEAD
+    assert manifest["adjudication"]["classification_against_claimed_session"] == "MIXED"
+    assert manifest["adjudication"]["metrics_against_claimed_session"][
+        "median_abs_err_pct"] > 1.0
+    assert manifest["adjudication"]["disposition"] == "quarantine"
+    assert manifest["changes"]["summary_rows_removed"] == 372
+
+    assert not (ROOT / preopen_repair.CHAIN_REL).exists()
+    survivors = []
+    for path in _summary_files():
+        if pd.Timestamp(preopen_repair.TARGET) in pd.read_parquet(path).index:
+            survivors.append(path.name)
+    assert not survivors, f"pre-open {preopen_repair.TARGET} rows remain: {survivors[:10]}"
+
+    if subprocess.run(["git", "rev-parse", "--is-shallow-repository"], cwd=ROOT,
+                      capture_output=True, text=True).stdout.strip() != "true":
+        blob = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet",
+             f"{preopen_repair.RECOVERY_COMMIT}:{preopen_repair.CHAIN_REL}"],
+            cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
+        assert blob == preopen_repair.CHAIN_GIT_BLOB
+
+    assert preopen_repair.build_plan()["already_applied"] is True
 
 
 def test_the_committed_chains_files_are_the_ones_the_adjudications_kept():
