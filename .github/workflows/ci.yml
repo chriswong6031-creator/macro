@@ -11,6 +11,35 @@ on:
     types: [opened, synchronize, reopened, closed]
     branches: [main]
     paths:
+      # Start on every repository path. The selector, not this event filter, owns
+      # cost; this catch-all is what makes a brand-new top-level directory fail
+      # closed instead of bypassing CI before the ownership audit can see it.
+      - "**"
+      - "*"
+      # Path-aware pack ownership makes broad START coverage cheap.  These roots
+      # ensure an edit to any suite or first-party dependency can start the job
+      # whose derived scope owns it; the pack selector then runs only that owner
+      # family.  Keep the detailed entries below as executable provenance for
+      # non-code artifacts and special cross-root contracts.
+      - "app/**"
+      - "admin/**"
+      - "collectors/**"
+      - "config/**"
+      - "content/**"
+      - "contracts/**"
+      - "data/**"
+      - "docs/**"
+      - "engine/**"
+      - "lib/**"
+      - "ops/**"
+      - "research/**"
+      - "scripts/**"
+      - "site/**"
+      - "templates/**"
+      - "tests/**"
+      - "tools/**"
+      - "worker/**"
+      - "wrangler.toml"
       # repo-wide pytest conftest: session fixtures/guards run in EVERY pytest
       # job, so a conftest edit must trigger the full suite (2026-07-16 #2636
       # fixture import broke 14 minimal-lane jobs without triggering ci.yml).
@@ -653,6 +682,12 @@ on:
       - "engine/falsifier_packet.py"
       - "scripts/research/build_falsifier_packets.py"
       - "tests/test_falsifier_packet.py"
+      # Stateful cycle-ontology tripwires: both committed state inputs, the engine,
+      # and the formerly dark focused suite must start their scoped owner.
+      - "data/cycle_ontology/falsifiers.json"
+      - "data/cycle_ontology/tripwire_state.json"
+      - "engine/falsifier_tripwires.py"
+      - "tests/test_falsifier_tripwires.py"
       # china_news engine contract (theme gate, flash filter, bilingual synthesis
       # labels — doctrine Law 2): engine + test re-run together.
       - "engine/china_news.py"
@@ -3627,7 +3662,7 @@ jobs:
     # Skipping here cancels the obsolete pack without allocating a replacement.
     if: github.event.action != 'closed'
     # The logical jobs in .github/ci/legacy-jobs.yml remain the reviewable
-    # source of truth, but GitHub sees only this matrix. Four pack runners
+    # source of truth, but GitHub sees only this matrix. Twelve pack runners
     # execute every legacy run step against a clean working tree, sharing one
     # checkout and reusing only identical dependency sets instead of
     # provisioning more than one hundred separate VMs/check records.
@@ -3638,7 +3673,12 @@ jobs:
     # partition balances 4x619 weight against 2x1238 (run_ci_pack.py
     # --validate-only), so wall-clock to green roughly halves; GitHub-hosted
     # pickup is 2-3 s per job, so two more runners cost queue nothing. These
-    # names are the intended required-checks set (ci-pack-0..3) for branch
+    # Twelve, up from four (operator 2026-08-10): paid Enterprise capacity now
+    # starts the whole hosted matrix within seconds, while four full packs still
+    # took 40-55 minutes. Twelve keeps every legacy job gated and cuts the
+    # measured balanced critical-path weight roughly in half; the remaining
+    # floor is one deliberately indivisible render-guard lane. These names are
+    # the intended required-checks set (ci-pack-0..11) for any future branch
     # protection; renaming or renumbering them must update that setting too.
     name: ci-pack-${{ matrix.pack }}
     # EVERY event runs on the hosted pool. The self-hosted detour is retired.
@@ -3652,11 +3692,11 @@ jobs:
     # armed pull request that inherited a since-healed red stays blocked.
     #
     # That fix was correct for its constraint, and the constraint is now GONE. The
-    # repository moved to the MastermindX enterprise organization on 2026-08-09 and the
-    # hosted concurrency ceiling went from 40 to 180 concurrent jobs. The measured
-    # backlog that caused the starvation was ~195 hosted jobs; at 180 it drains in one
-    # wave, and the observed queue fell from 103 runs to 7 within minutes of the
-    # transfer. Hosted pickup is 2-3 s per job. There is no longer anything to escape.
+    # repository moved to the MastermindX enterprise organization on 2026-08-09 and its
+    # paid Enterprise plan now carries GitHub's 500-standard-hosted-job ceiling instead
+    # of the 20-job Free ceiling. The measured backlog that caused the starvation was
+    # ~195 hosted jobs, so it now fits inside one wave; observed four-pack jobs begin
+    # within the same second. There is no longer anything to escape.
     #
     # Routing back is strictly better than leaving it:
     #   * `render-linux` is FOUR runners shared with `render.yml`, `engine-render.yml`
@@ -3664,8 +3704,9 @@ jobs:
     #     pool, starving both renders and the sweeper. The packs and sweeper now use
     #     hosted runners; all four self-hosted slots are back with render workloads.
     #   * The `max-parallel: 2` that bounded that damage is deleted with it — on hosted
-    #     runners the four packs run concurrently again, so main's proof goes back to
-    #     ~26 minutes from the ~50 the throttle cost.
+    #     runners the hosted packs run concurrently again. With paid Enterprise
+    #     capacity, twelve balanced packs reduce the measured 40-55 minute
+    #     four-pack tail without competing with render workers.
     #   * One `runs-on` for every event removes the event-dependent routing entirely,
     #     so main's baseline and a pull request now prove the packs the SAME way.
     #
@@ -3682,7 +3723,7 @@ jobs:
       # unthrottled vs ~50 min at 2). Do not reintroduce one without a shared-pool
       # reason; the hosted ceiling is an ACCOUNT-wide limit that this key cannot help.
       matrix:
-        pack: [0, 1, 2, 3]
+        pack: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     steps:
       # A self-hosted runner REUSES its workspace between jobs, and a sibling job that
       # checked out sparsely leaves `core.sparseCheckout=true` behind in the SAME
@@ -3745,12 +3786,12 @@ jobs:
           python -m venv "$RUNNER_TEMP/ci-pack-runner"
           "$RUNNER_TEMP/ci-pack-runner/bin/pip" install pyyaml
       # `--changed-from` is passed ONLY on pull requests, so a legacy job that
-      # declares a `paths:` scope runs only when the diff can reach it. Main's
-      # baseline and every workflow_dispatch omit the flag and therefore run all
-      # 173 jobs — that asymmetry is the safety net for the one failure mode
-      # static scoping cannot catch (an implicit import a job's commands never
-      # name), which surfaces as a red main rather than a green PR that shipped
-      # a break. A job with no scope always runs, on every event.
+      # has a proven derived/declared scope runs only when the immutable PR diff
+      # can reach it. Main's baseline and every workflow_dispatch omit the flag
+      # and therefore run the complete manifest (180 jobs at this revision). That
+      # full-main run is an audit/backstop,
+      # not permission to under-scope a PR: uncertain jobs remain always-on and
+      # any unknown path widens the PR back to the full suite.
       #
       # The scope flag is built in `env`, NOT inline in the folded scalar. A
       # more-indented continuation line inside `>-` keeps its newline instead of
@@ -3760,17 +3801,21 @@ jobs:
       # sit at the SAME indent so folding joins them with spaces.
       #
       # `$CI_SCOPE_ARG` is intentionally unquoted: it word-splits into
-      # `--changed-from <branch>` on a pull request and disappears entirely on
-      # every other event, which is what keeps main's baseline running all 173.
+      # `--changed-from <immutable-base-sha>` on a pull request and disappears
+      # entirely on every other event, which keeps main's baseline full-suite.
       - name: validate and run legacy CI pack
         env:
           CI_BASE_REF: ${{ github.base_ref || 'main' }}
           CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
-          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.base_ref) || '' }}
+          # First deployment defaults to shadow: prediction is visible while all
+          # jobs still run. Set the repository variable to `active` only after a
+          # representative full-green comparison; `off` is the emergency kill switch.
+          CI_SCOPE_MODE: ${{ vars.CI_SCOPE_MODE || 'shadow' }}
+          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.event.pull_request.base.sha) || '' }}
         run: >-
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
           --pack-index ${{ matrix.pack }}
-          --pack-count 4
+          --pack-count 12
           $CI_SCOPE_ARG
           --execute

@@ -1,0 +1,360 @@
+{# =====================================================================
+   CN LIMIT-MOVE PICKS — standalone research-preview page (cn_limit_picks.html)
+
+   Operator-ordered 2026-08-09: "a simple dashboard page on front end, no need
+   to have menu link, containing them, so I can see — cards like the
+   china_stocks.html cards."  So: NO entry in _navlinks.html.j2, but the SHARED
+   product header (_site_nav.html.j2) is included exactly as cn_reversal_sleeve
+   does — a nav-less page would have no theme or EN/ZH toggle, and the house has
+   exactly two header families (CLAUDE.md §Navigation source-of-truth).
+
+   ── CARD LANGUAGE ─────────────────────────────────────────────────────
+   This is a SIBLING of _prophet_card.html.j2, not a copy of it. The parent's
+   anatomy is preserved slot-for-slot — hue rail, hero band, body, footer strip
+   — and every geometry/type/chip value below is lifted from it verbatim so the
+   two read as one product on the same screen. What changed is what fills the
+   hero: the parent shows a price sparkline, this page has no price series, and
+   an empty 74px chart block on 20 cards is dead space. The hero carries the
+   probability instead — the one thing a reader came here for.
+
+   Slots the parent has that this card deliberately DROPS, rather than render
+   as em-dashes: the verb chip (buy/near/wait/hold/avoid — this page issues no
+   trade stance per name, and "wait" on all 20 says nothing), the Bottoming →
+   Turning → Ready → Trend lifecycle rail (not computed here; the operator's
+   brief excludes it), and the buy-zone footer. The lifecycle rail's SLOT is
+   reused by the ladder rail, which is the one structure this page adds.
+
+   ── COLOUR (deliberate, and the page's one risk) ───────────────────────
+   No --up, no --down, no --pv-buy anywhere on this page. Nothing here is a
+   direction: every figure is "how often does this happen", not "which way did
+   it go", and painting a probability green would read as a buy call the model
+   never made. The page runs on two inks only:
+     --prov / --prov-ink  the house "provisional, not yet graded" blue. Every
+                          number here is an un-graded forward claim until
+                          Monday's close settles it. Colour is earned by
+                          grading, and nothing on this page has been graded.
+     --warn / --ink-warn  "discount this number" — the two read-down states.
+   A happy consequence: 红涨绿跌 has nothing to flip, so the zh reading is
+   correct by construction rather than by translation.
+
+   ── TIERING (docs/DESIGN_DOCTRINE.md) ─────────────────────────────────
+   Tier 1: the state (percentage + rung + board) and the panel stance
+           ("Watch — don't chase"), plus the fill caveat that decides whether
+           any of it is actionable at all.
+   Tier 2: data-tip-en/zh on the two number labels and on both caution chips —
+           the calibration multiple, the ladder's own base rate, what "rung
+           base" is measured over.  No translated text in title= (CI-guarded).
+   Tier 3: the 100-row table below the cards, and the ledger itself.
+   Constants live in the header ONCE (Law 4). Slot LABELS repeat per card —
+   that is the parent card's own convention (.pv-edl "Edge", .pv-znl "Zone");
+   what Law 4 bans is a repeated statistic, and there is none.
+
+   Context: see scripts/build_cn_limit_picks.py for the view-model contract.
+   ===================================================================== #}
+{% from "_icons.html.j2" import icon %}
+{% macro t(en, zh='') -%}<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CN Limit-Move Picks — research preview</title>
+{% set seo_title = "CN Limit-Move Picks — MastermindX research preview" %}
+{% set seo_desc = "A research preview of working-ledger A-share limit-close probabilities: provisional windows, graded after the next session." %}
+{% set seo_path = "cn_limit_picks.html" %}
+{% include "_seo_head.html.j2" %}
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||'';if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1360px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:22px; margin:0 0 2px; }
+  h2 { font-size:16px; margin:0; }
+
+  /* ── header ─────────────────────────────────────────────────────────
+     Tier-1 header: h1 + a ≤14-word subtitle carrying the panel stance, then
+     the provenance strip, then ONE disclosure box. The page's long-form
+     honesty lives in that box, never stacked as micro-disclaimers. */
+  .clp-tag { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.04em;
+    color:var(--prov-ink); border:1px solid color-mix(in srgb,var(--prov) 45%,var(--line));
+    background:color-mix(in srgb,var(--prov) 12%,transparent); padding:2px 8px; border-radius:7px;
+    margin-left:8px; vertical-align:3px; }
+  .clp-lead { color:var(--muted); font-size:13px; margin:0 0 12px; max-width:940px; }
+  .clp-lead b { color:var(--text); font-weight:700; }
+  .strip { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 12px; }
+  .stat { font-size:12px; color:var(--muted); padding:5px 12px; border:1px solid var(--line);
+    border-radius:9px; background:var(--panel); }
+  .stat b { color:var(--text); font-size:13px; font-variant-numeric:tabular-nums; }
+  .stat.prov b { color:var(--muted); font-weight:600; font-size:12px; }
+  .disc { font-size:12.5px; line-height:1.6; color:var(--muted); border:1px dashed var(--line);
+    border-radius:10px; padding:11px 13px; margin:0 0 18px; max-width:960px; }
+  .disc b { color:var(--text); }
+  .disc p { margin:0 0 6px; } .disc p:last-child { margin:0; }
+
+  /* section heads (china family) */
+  .sec { display:flex; align-items:baseline; gap:10px; margin:22px 0 6px; }
+  .sec .cnt { color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .sub { color:var(--muted); font-size:12.5px; margin:0 0 10px; max-width:900px; }
+
+  /* ── CARD ───────────────────────────────────────────────────────────
+     Geometry, radii, shadow, hover lift and the 3px hue rail are lifted from
+     .pvcard in _prophet_card.html.j2 so a reader who knows the china board
+     recognises this card before reading a word of it. 246px min column is the
+     prophet board's own grid step. */
+  .clp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(246px,1fr)); gap:10px; }
+  .clp-card { position:relative; display:flex; flex-direction:column; background:var(--panel2);
+    border:1px solid var(--line); border-radius:12px; overflow:hidden; color:var(--text);
+    min-width:0; transition:transform .12s,box-shadow .12s,border-color .12s; }
+  .clp-card:hover { transform:translateY(-2px); box-shadow:0 5px 18px rgba(0,0,0,.22);
+    border-color:color-mix(in srgb,var(--pvh) 55%,var(--line)); }
+  /* LIGHT IS A DESIGN TARGET, NOT A TOKEN SWAP (DESIGN_DOCTRINE §5.8). The card's
+     dark fill is --panel2, which in light resolves to #eef1f6 against a #e8ebf1
+     canvas — a 6-unit delta, i.e. the named panel≈bg flatness bug, with no shadow
+     to rescue it. Light gets what the doctrine prescribes and what the parent
+     card's own featured rule already does: a WHITE panel on the deeper canvas,
+     lifted by a soft shadow. The footer strip then steps DOWN to --panel2 so it
+     still separates from a card that is now white. */
+  html[data-theme="light"] .clp-card { background:#fff;
+    box-shadow:0 1px 2px rgba(16,24,40,.05), 0 6px 16px -10px rgba(16,24,40,.28); }
+  html[data-theme="light"] .clp-card:hover { box-shadow:0 2px 4px rgba(16,24,40,.07),
+    0 12px 26px -12px rgba(16,24,40,.34); }
+  html[data-theme="light"] .clp-fill { background:var(--panel2); }
+  .clp-card:focus-visible { outline:2px solid var(--pvh-ink); outline-offset:2px; }
+  .clp-card::before { content:""; position:absolute; top:0; left:0; right:0; height:3px; z-index:3;
+    pointer-events:none; border-radius:12px 12px 0 0;
+    background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 12%,transparent) 90%);
+    box-shadow:0 1px 8px color-mix(in srgb,var(--pvh) 45%,transparent); }
+  /* two hues only — see the header note. --pvh is the FILL grade, --pvh-ink the
+     TEXT grade (theme.css derives the ink variants so 9.5-26px text clears AA
+     in both themes; the raw token does not in light). */
+  .clp-prov { --pvh:var(--prov); --pvh-ink:var(--prov-ink); }
+  .clp-caut { --pvh:var(--warn); --pvh-ink:var(--ink-warn,var(--warn)); }
+
+  /* hero band — the parent card's sparkline slot, carrying the probability.
+     TINT CALIBRATION follows the ratified prophet-card correction (2026-08-03):
+     dark gets a barely-there lift, light gets NO tint at all (a coloured wash
+     over #fff reads as paint). The hairline below does the separating in both. */
+  .clp-hero { padding:10px 11px 9px; border-bottom:1px solid var(--line);
+    background:color-mix(in srgb,var(--pvh) 4%,transparent); }
+  html[data-theme="light"] .clp-hero { background:transparent; }
+  .clp-hl { display:block; font-size:9.5px; font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--muted); margin:0 0 2px; }
+  .clp-fig { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .clp-p { font-size:26px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums;
+    color:var(--pvh-ink); }
+  .clp-b { font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums;
+    text-align:right; white-space:nowrap; flex:none; }
+  .clp-b b { font-weight:700; color:color-mix(in srgb,var(--muted) 45%,var(--text)); }
+
+  /* body */
+  .clp-bd { padding:8px 11px 9px; display:flex; flex-direction:column; flex:1; min-width:0; }
+  .clp-idw { display:flex; align-items:baseline; gap:6px; min-width:0; overflow:hidden; }
+  .clp-tk { font-size:13px; font-weight:800; letter-spacing:.01em; white-space:nowrap;
+    font-variant-numeric:tabular-nums; }
+  .clp-nm { font-size:10.5px; color:var(--muted); white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis; min-width:0; }
+  .clp-rung { font-size:10.5px; color:var(--muted); opacity:.85; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+
+  /* marks row — .pv-mk formula verbatim. Board chip is IDENTITY (muted); the
+     caution chips are the INSTRUCTION (warn ink). One fact per chip, so the row
+     reads as a taxonomy rather than chip spam. min-height reserves the slot so
+     a card with nothing to flag stays aligned with its neighbours. */
+  .clp-mk { display:flex; flex-wrap:wrap; align-items:center; gap:3px 4px; margin-top:5px;
+    min-width:0; min-height:18px; }
+  .clp-mk-i { font-size:9.5px; font-weight:700; line-height:1.45; padding:1px 6px; border-radius:6px;
+    white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis;
+    color:var(--muted); background:color-mix(in srgb,var(--muted) 10%,transparent);
+    border:1px solid color-mix(in srgb,var(--muted) 22%,transparent); }
+  /* the read-down chips borrow .pv-mk-blow's ink family: full-strength --ink-warn
+     on an 8% wash reads 6.89:1 dark / 4.77:1 light — 9.5px/800 is not "large
+     text", so the 3:1 allowance does not apply and the softer 15% wash fails. */
+  .clp-mk-warn { font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--ink-warn,var(--warn)); background:color-mix(in srgb,var(--warn) 8%,var(--panel));
+    border-color:color-mix(in srgb,var(--ink-warn,var(--warn)) 50%,transparent); }
+
+  /* ── LADDER RAIL (the signature) ─────────────────────────────────────
+     Occupies the parent card's lifecycle-rail slot and reuses its exact
+     geometry (6.5px dots, 2px segments), re-pointed at the thing this page is
+     actually about: the 涨停板 ladder. Solid = a limit-up already taken; the
+     hollow ring = the one Monday would add; faint = rungs beyond it. A ladder
+     genuinely IS a sequence, which is the only case where a stepped device
+     earns its place. Purely a second reading of .clp-rung above it, so it is
+     aria-hidden — the sentence is what a screen reader gets. */
+  .clp-rail { display:flex; align-items:center; margin:7px 1px 0; }
+  .clp-dot { width:6.5px; height:6.5px; border-radius:50%; background:var(--line); flex:none; }
+  .clp-seg { flex:1; height:2px; background:var(--line); opacity:.75; }
+  .clp-dot.on { background:var(--pvh); }
+  .clp-seg.on { background:color-mix(in srgb,var(--pvh) 45%,var(--line)); opacity:1; }
+  .clp-dot.next { background:transparent; box-shadow:inset 0 0 0 2px var(--pvh),
+    0 0 0 3px color-mix(in srgb,var(--pvh) 18%,transparent); }
+
+  /* footer strip — .pv-zn geometry. Repeats per card exactly as the parent's
+     zone row does; it is the one fact that decides whether the number above it
+     is reachable at all, so it rides the card, not the page footer. */
+  .clp-fill { display:flex; align-items:center; gap:5px; margin-top:auto;
+    background:color-mix(in srgb,var(--panel) 55%,var(--bg)); border-top:1px solid var(--line);
+    padding:6px 10px 7px; font-size:10.5px; color:var(--muted); white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; }
+  /* monoline mark, never an emoji glyph (DESIGN_DOCTRINE §5.8): ⚠ renders as
+     clip-art on white and drifts between headless engines. .ic-svg is scoped by
+     the host page by contract — _icons.html.j2 ships no bare rule. */
+  .clp-fill .ic-svg { width:12px; height:12px; flex:none; display:block; fill:none;
+    stroke:var(--pvh-ink); stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* ── table (Tier 3) ─────────────────────────────────────────────────── */
+  .clp-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:10px;
+    background:var(--panel); }
+  table.clp-tbl { width:100%; border-collapse:collapse; font-size:12px; }
+  .clp-tbl th { position:sticky; top:0; z-index:1; text-align:left; font-size:10px; font-weight:800;
+    letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--panel);
+    border-bottom:1px solid var(--line); padding:7px 10px; white-space:nowrap; }
+  .clp-tbl td { padding:6px 10px; border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);
+    white-space:nowrap; }
+  .clp-tbl tr:last-child td { border-bottom:0; }
+  .clp-tbl tbody tr:hover { background:color-mix(in srgb,var(--prov) 7%,transparent); }
+  .clp-tbl .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .clp-tbl .tk { font-weight:700; font-variant-numeric:tabular-nums; }
+  .clp-tbl .nm { color:var(--muted); max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+  .clp-tbl .p { font-weight:800; color:var(--prov-ink); }
+  .clp-tbl .b { color:var(--muted); }
+  .clp-tbl tr.w td.p { color:var(--ink-warn,var(--warn)); }
+
+  .clp-foot { font-size:12px; color:var(--muted); border-top:1px solid var(--line);
+    margin:18px 0 0; padding:10px 0 0; max-width:960px; }
+  .clp-foot b { color:var(--text); }
+
+  @media (max-width:680px){
+    .clp-p { font-size:23px; }
+    .clp-mk-i { font-size:10px; padding:2px 7px; }
+    .clp-fill { font-size:10px; }
+  }
+  /* The only motion on this page is the card's hover lift. Naming the exact
+     transitioned properties (not a blanket `all`) keeps the kill honest, and
+     the hover STATE survives — border and shadow still respond, only the
+     translate stops. There are no animations and no animated pseudos here. */
+  @media (prefers-reduced-motion: reduce){
+    .clp-card { transition:none; }
+    .clp-card:hover { transform:none; }
+  }
+</style>
+</head>
+<body>
+{% include "_site_nav.html.j2" %}
+
+<h1>{{ t('CN Limit-Move Picks','A股涨停预测') }}<span class="clp-tag">{{ t('research preview','研究预览') }}</span></h1>
+<p class="clp-lead">{{ t(
+  "Working-ledger probabilities, strongest first. Watch — don't chase.",
+  '工作台账概率，按强弱排序。观望为主 — 不要追高。') }}</p>
+
+<div class="strip">
+  <span class="stat">{{ t('predicts','预测日') }} <b>{{ d.predict_date }}</b> {{ t('(Mon)','（周一）') }}</span>
+  <span class="stat">{{ t('from the close of','数据截至') }} <b>{{ d.feature_date }}</b> {{ t('(Fri)','（周五）') }}</span>
+  <span class="stat">{{ t('names','名单') }} <b>{{ d.n_rows }}</b></span>
+  <span class="stat prov">{{ t('model build','模型版本') }} <b>{{ d.model_version }}</b></span>
+  <span class="stat prov">{{ t('basis','口径') }} <b>{{ t('tolerant working tape','宽容口径工作台账') }}</b></span>
+  <span class="stat prov">{{ t('ledger stamp','台账时间') }} <b>{{ d.ledger_stamp }}</b></span>
+</div>
+
+{# ONE disclosure box (Law 4: one footnote per panel, merged — never stacked).
+   Everything constant across all 100 rows is said here, once: what the number
+   means, why the best of them are unbuyable, what the page is not. #}
+<div class="disc">
+  <p>{{ t(
+    'Every percentage is the onset_v1 working-ledger probability that the name meets its <b>pre-registered tolerant close criterion</b> next session: at least 99.8% of a model-computed upper band. It is not an exact exchange-limit verdict, a target, a return, or a rating.',
+    '本页每一个百分比都是 onset_v1 工作台账给出的概率：该股在下一交易日收盘达到<b>预注册宽容口径</b>，即不低于模型计算涨停价的 99.8%。它不是交易所精确涨停判定，也不是目标价、收益率或评级。') }}</p>
+  <p>{{ t(
+    'Exact legal-band evidence requires unadjusted TuShare daily prices joined by ticker and trade date to vendor stk_limit, then compared in integer cents. This page does not use that exact plane; its Yahoo-derived back-adjusted tape is display-tier research only.',
+    '精确法定涨跌停判定必须把未复权 TuShare 日线与同代码、同交易日的厂商 stk_limit 数据连接，并以整数分比较。本页并未使用该精确数据面；其源自 Yahoo 的后复权工作台账仅供展示级研究。') }}</p>
+  <p>{{ t(
+    'The catch is that the strongest names usually open there and never trade — a <b>一字板</b>, flat at the limit from the bell. A high number and an unfillable open often arrive together, so read every card with its bottom line.',
+    '问题在于：最强的那几只往往开盘即封死、全天不成交 — 也就是<b>一字板</b>。高概率与买不到常常同时出现，所以每张卡片都要连同底部那行一起读。') }}</p>
+  <p>{{ t(
+    'These are windows, not certainties, and they are re-drawn every night. Informational only, not investment advice — a research preview, never a buy list.',
+    '这些是概率窗口，不是确定性判断，且每晚重绘。仅供参考，非投资建议 — 研究预览，绝非买入清单。') }}</p>
+</div>
+
+<div class="sec">
+  <h2>{{ t('Strongest 20','最强 20 只') }}</h2>
+  <span class="cnt">{{ t('by modelled chance','按模型概率') }}</span>
+</div>
+<p class="sub">{{ t(
+  'Cards carry the two numbers that matter together: the model, and how often this ladder rung takes the next limit-up on its own. Where they disagree, the card says which to trust.',
+  '每张卡片并列两个数：模型概率，以及该板位历史上自行封出下一板的频率。两者不一致时，卡片会标明该以哪个为准。') }}</p>
+
+<div class="clp-grid">
+{% for r in d.cards %}
+  <a class="clp-card {{ 'clp-caut' if r.flags else 'clp-prov' }}" href="china_lookup.html#{{ r.ticker }}">
+    <div class="clp-hero">
+      <span class="clp-hl" data-tip-en="Working-ledger chance this name meets the pre-registered tolerant close criterion on {{ d.predict_date }}: at least 99.8% of a model-computed upper band. This is not an exact-cent exchange-limit verdict." data-tip-zh="工作台账给出的该股在 {{ d.predict_date }} 达到预注册宽容收盘口径的概率：不低于模型计算涨停价的 99.8%。这不是交易所整数分精确涨停判定。">{{ t('Tolerant close window','宽容口径窗口') }}</span>
+      <span class="clp-fig">
+        <span class="clp-p">{{ r.p_txt }}</span>
+        <span class="clp-b" data-tip-en="How often a name on this working-tape rung met the registered tolerant close criterion next — the plain historical rate before the model looks at this particular name." data-tip-zh="工作台账中处于同一板位的个股，随后达到预注册宽容收盘口径的频率 — 未考虑个股自身特征的板位基准值。">{{ t('rung base','板位基准') }} <b>{{ r.b_txt }}</b></span>
+      </span>
+    </div>
+    <div class="clp-bd">
+      <span class="clp-idw">
+        <span class="clp-tk">{{ r.ticker }}</span>
+        {%- if r.name_en %}<span class="clp-nm">{{ t(r.name_en, r.name_zh) }}</span>{% endif %}
+      </span>
+      <div class="clp-rung">{{ t(r.rung_en, r.rung_zh) }}</div>
+      <div class="clp-mk">
+        <span class="clp-mk-i">{{ t(r.board_en, r.board_zh) }}</span>
+        {%- for f in r.flags %}
+        <span class="clp-mk-i clp-mk-warn" data-tip-en="{{ f.tip_en }}" data-tip-zh="{{ f.tip_zh }}">{{ t(f.en, f.zh) }}</span>
+        {%- endfor %}
+      </div>
+      {# ladder rail — 5 rungs; solid = taken, ring = Monday's, faint = beyond #}
+      <div class="clp-rail" aria-hidden="true">
+        {%- for i in [1,2,3,4,5] %}
+        {%- if i > 1 %}<span class="clp-seg{{ ' on' if i <= r.n_at_t else '' }}"></span>{% endif %}
+        <span class="clp-dot{{ ' on' if i <= r.n_at_t else (' next' if i == r.n_at_t + 1 else '') }}"></span>
+        {%- endfor %}
+      </div>
+    </div>
+    <div class="clp-fill">{{ icon('alert') }}{{ t('No fill if it opens at the limit','开盘即涨停则买不到') }}</div>
+  </a>
+{% endfor %}
+</div>
+
+<div class="sec">
+  <h2>{{ t('All names','全部名单') }}</h2>
+  <span class="cnt">{{ d.n_rows }}</span>
+</div>
+<p class="sub">{{ t(
+  'Same order as the cards. A model number below its rung base is the model disagreeing with plain history — on this ladder, history has been the better read.',
+  '排序与卡片一致。模型概率低于板位基准，即模型与历史读数不一致 — 在板位这件事上，历史一直是更好的参考。') }}</p>
+<div class="clp-wrap">
+<table class="clp-tbl">
+  <thead><tr>
+    <th>{{ t('Ticker','代码') }}</th>
+    <th>{{ t('Name','名称') }}</th>
+    <th>{{ t('Board','板块') }}</th>
+    <th class="num">{{ t('In a row','连板') }}</th>
+    <th class="num">{{ t('Tolerant close','宽容收盘') }}</th>
+    <th class="num">{{ t('Rung base','板位基准') }}</th>
+  </tr></thead>
+  <tbody>
+  {%- for r in d.rows %}
+    <tr{% if r.flags %} class="w"{% endif %}>
+      <td class="tk"><a href="china_lookup.html#{{ r.ticker }}">{{ r.ticker }}</a></td>
+      <td class="nm">{% if r.name_en %}{{ t(r.name_en, r.name_zh) }}{% else %}—{% endif %}</td>
+      <td>{{ t(r.board_en, r.board_zh) }}</td>
+      <td class="num">{{ r.n_at_t }}</td>
+      <td class="num p">{{ r.p_txt }}</td>
+      <td class="num b">{{ r.b_txt }}</td>
+    </tr>
+  {%- endfor %}
+  </tbody>
+</table>
+</div>
+
+<p class="clp-foot">{{ t(
+  'Graded after the predicted session against the registered tolerant criterion, win or lose. Exact-cent evidence is recorded separately once the authoritative TuShare daily + stk_limit plane is available. Read as of the ledger stamp above.',
+  '预测交易日收盘后按预注册宽容口径打分，无论对错。权威 TuShare 日线 + stk_limit 数据面可用后，整数分精确结果将另行记录。以上方台账时间为准。') }}</p>
+
+<script src="theme.js"></script>
+</body>
+</html>
