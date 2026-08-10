@@ -5245,11 +5245,10 @@ jobs:
         run: python -m pytest tests/test_sbir_awards.py -q
 
   unrun-government-revenue-candidate-projection:
-    # The candidate API/projection fixtures exercise the full contract and are
-    # intentionally isolated from the broad ownership lane above.  They were
-    # the long pole in the old eight-minute job; a separate bounded lane keeps
-    # both failure domains visible instead of masking every Government Revenue
-    # suite behind one timeout.
+    # The projection matrix is the slower half of the candidate contract. It
+    # reached 42/44 tests when it shared one sequential 15-minute lane with the
+    # API suite. Keep projection isolated; the shorter API suite runs with the
+    # existing candidate-grader owner below so both retain bounded runner margin.
     if: ${{ false }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -5259,9 +5258,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install candidate contract dependencies
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
-      - name: candidate API + projection contract fixtures
-        run: python -m pytest tests/test_government_revenue_candidate_api.py tests/test_government_revenue_candidate_projection.py -q
+        run: pip install pytest pytest-xdist pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
+      - name: candidate projection contract fixtures
+        run: python -m pytest -n 2 --dist load --max-worker-restart=0 tests/test_government_revenue_candidate_projection.py -q
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
@@ -6493,13 +6492,10 @@ jobs:
   unrun-government-revenue-grader:
     # Wave 9G prospective candidate grader — the instrument that is allowed to
     # tell us the Government Revenue lobe has no predictive value.  It ships as
-    # its OWN job rather than as a step inside unrun-government-revenue for two
-    # reasons: PR #4776 is concurrently rewriting that job's step list (the
-    # nineteen-suite darkness backfill), and this suite needs none of that job's
-    # extra wheels — the grader imports stdlib only, on purpose, so a cohort can
-    # be graded in a minimal environment.  The install line below is repeated
-    # BYTE-FOR-BYTE from the shared unrun-* set, which is what keeps this job
-    # inside that set's single venv instead of buying another one.
+    # its OWN job rather than as a step inside unrun-government-revenue. The
+    # candidate API contract shares this owner because both exercise the same
+    # broad GovRev dependency closure and together remain well inside one bounded
+    # lane; projection keeps its independent 15-minute lane above.
     #
     # Every assertion in the suite is paired with a mutation that proves it can
     # see the defect it guards (widened read window, resolution-conditioned
@@ -6507,7 +6503,7 @@ jobs:
     # own tests are dark is worse than no grader, which is the whole reason this
     # job exists on the day the module lands rather than in a later backfill.
     if: ${{ false }}
-    timeout-minutes: 3
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -6515,9 +6511,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
       - name: prospective candidate grader — issuance log, no-leakage, denominators, coverage
         run: python -m pytest tests/test_government_revenue_candidate_grader.py -q
+      - name: candidate API contract fixtures — cache invalidation, quarantine, audit history
+        run: python -m pytest tests/test_government_revenue_candidate_api.py -q
 
   research-price-panel:
     if: ${{ false }}
