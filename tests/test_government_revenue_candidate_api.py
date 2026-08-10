@@ -65,9 +65,12 @@ def _materialize(
     monkeypatch: pytest.MonkeyPatch,
     *,
     exact: bool = False,
+    empty: bool = False,
     leaked_observed_change: bool = False,
 ) -> None:
     """Publish a real temp generation, with exact rows only where a route needs them."""
+    if exact and empty:
+        raise ValueError("candidate API fixture cannot be both exact and empty")
     if exact:
         (root / "data/government_revenue/recipient_entity_graph.json").write_text(
             projection._canonical_json(_graph()),
@@ -103,6 +106,36 @@ def _materialize(
 
         monkeypatch.setattr(projection, "build_candidate_observations", exact_observations)
         monkeypatch.setattr(projection, "build_candidate_queue", exact_queue)
+    elif empty:
+        original_queue = projection.build_candidate_queue
+
+        def empty_observations(*_args, **_kwargs):
+            return []
+
+        def empty_queue(latest, graph, *, generated_at):
+            queue = original_queue(latest, graph, generated_at=generated_at)
+            queue["candidates"] = []
+            queue["counts"] = {
+                **queue["counts"],
+                "total": 0,
+                "exact_linked": 0,
+                "by_family": {},
+                "by_state": {},
+                "by_freshness": {},
+                "by_exact_link_status": {
+                    "exact_linked": 0,
+                    "mapping_needed": len(queue["mapping_backlog"]),
+                },
+            }
+            queue["freshness"] = {
+                **queue["freshness"],
+                "exact_candidate_availability": "not_observed",
+            }
+            queue["content_id"] = candidate_queue_content_id(queue)
+            return queue
+
+        monkeypatch.setattr(projection, "build_candidate_observations", empty_observations)
+        monkeypatch.setattr(projection, "build_candidate_queue", empty_queue)
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
 
 
@@ -146,7 +179,7 @@ def test_zero_candidate_generation_is_a_successful_empty_envelope_with_mapping_b
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     root = _fixture_root(tmp_path)
-    _materialize(root, monkeypatch)
+    _materialize(root, monkeypatch, empty=True)
     _wire_api(root, monkeypatch)
 
     listing = _list(limit=1)
@@ -238,7 +271,7 @@ def test_candidate_cache_fails_closed_when_bound_workspace_advances(
     root = _fixture_root(tmp_path)
     _materialize(root, monkeypatch)
     _wire_api(root, monkeypatch)
-    assert _list()["total"] == 0
+    assert _list()["total"] > 0
 
     workspace_path = root / "data/government_revenue/workspace.json"
     workspace = json.loads(workspace_path.read_text(encoding="utf-8"))
@@ -367,7 +400,7 @@ def test_candidate_cache_reset_isolates_temp_projection_roots(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     empty_root = _fixture_root(tmp_path / "empty")
-    _materialize(empty_root, monkeypatch)
+    _materialize(empty_root, monkeypatch, empty=True)
     _wire_api(empty_root, monkeypatch)
     assert _list(limit=1)["total"] == 0
 
