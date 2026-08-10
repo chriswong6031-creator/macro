@@ -6,11 +6,13 @@ import json, multiprocessing as mp, os, sys
 from collections import Counter
 from pathlib import Path
 import numpy as np, pandas as pd
-sys.path.insert(0, "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/regime-blocked-entry-signals-055e2c")
+ROOT = Path(__file__).resolve().parents[2]
+SHARED_STUDY = ROOT / "research" / "blocked_entry_study"
+sys.path[:0] = [str(ROOT), str(SHARED_STUDY)]
 import study as S, r3_axes as R3                       # noqa: E402
 from engine import signal_quality as sq                # noqa: E402
 
-OUT = Path(__file__).resolve().parents[3]
+OUT = Path(__file__).resolve().parent
 BLOCK_REASON, TAKE = sq.CT_RECLAIM_FAIL, "take"
 
 

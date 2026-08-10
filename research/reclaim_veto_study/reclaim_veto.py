@@ -30,8 +30,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-MACRO_WT = "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/regime-blocked-entry-signals-055e2c"
-sys.path.insert(0, MACRO_WT)
+ROOT = Path(__file__).resolve().parents[2]
+SHARED_STUDY = ROOT / "research" / "blocked_entry_study"
+sys.path[:0] = [str(ROOT), str(SHARED_STUDY)]
 
 import study as S                      # noqa: E402  (regrade build: OHLC_BASIS switch)
 import r3_axes as R3                   # noqa: E402  (peers, episodes, agg, boot, loco)
@@ -40,7 +41,7 @@ from signal_layer.confluence_v2 import keeper_quality_map  # noqa: E402
 from engine.signal_quality import (                        # noqa: E402
     _buy_filter, CT_RECLAIM_FAIL, CT_BOTH_FAIL)
 
-OUT = Path(__file__).resolve().parents[3]          # .../reclaim_veto_study
+OUT = Path(__file__).resolve().parent
 GRID = R3.GRID
 CAP, B, SEED = R3.CAP, R3.B, R3.SEED
 DIV_REASON = "veto: bearish divergence"
