@@ -1,6 +1,8 @@
 # Blocked-entry conditional override — PRE-REGISTRATION
 
-**Date frozen:** 2026-08-10 ~05:50Z — **before any held-out results were viewed.**
+**Registration commit:** `98fe6113af617a7f37f6efce85c6945eaa37cff0` at
+`2026-08-10T05:35:10Z`. Author attestation: frozen before any held-out results were
+viewed; no study implementation or results artifact exists in the repository at that commit.
 **Family:** `blocked_entry_conditional_v1` (Terminal `bear_block` override arm).
 **Instrument:** scratchpad `blocked_entry_study/study.py` (committed with results doc on completion).
 **Operator direction (2026-08-10):** no shadow-ledger delay; mine the full backtest history now;
@@ -17,8 +19,9 @@ ratifiable and a failing one closes cleanly.
 - Not a regime scorecard/fusion (`DNR:KILL-REGIME-SCORECARD`, `KILL-COMPOSITE-REGIME-RELIABILITY-MONITOR`):
   conditioning uses two plain, existing measures (SPY drawdown/200dma state; the name's own 2-week
   StochRSI) — no composite score, no positioning keys.
-- Research tier: display/accrual free; any LIVE veto behavior change requires the operator era stamp
-  (§4) — the LLM originates nothing (A7).
+- Research tier: context-only, with no display or accrual authority; it cannot rank, gate, size,
+  enter, issue, or alter Prophet/Neural Web. Any LIVE veto behavior change requires the operator
+  era stamp (§4) — the LLM originates nothing (A7).
 
 ## §1 Cohort and execution construction (frozen)
 
@@ -48,6 +51,9 @@ capture 126/252d; arms: taken-entries, per-name-year matched random-date placebo
   fire-density breadth. Multiple-testing budget: H1+H2 are the only promotion-bearing tests.
 
 ## §3 Decision rule (what each outcome ships)
+
+A study verdict is context-only: neither a display promotion nor an entry-mask change is automatic.
+Both require the operator ratification and era fence in §4 before they can ship.
 
 - **H1 PASS →** Terminal display promotion: non-systemic blocked fires render as a distinct
   "washout override candidate" class (amber→green-outline tier, plain-word copy; falsifier language
