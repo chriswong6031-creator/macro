@@ -273,8 +273,8 @@
     {
       "rule": "circuit_breaker_open",
       "severity": "warn",
-      "message": "Source 'intl_universe' marked dead after 3 consecutive failures \u2014 collector skipped until it recovers; affected signals degrade",
-      "message_zh": "\u6570\u636e\u6e90 'intl_universe' \u8fde\u7eed 3 \u6b21\u5931\u8d25\u540e\u88ab\u6807\u8bb0\u4e3a\u4e2d\u65ad \u2014\u91c7\u96c6\u5668\u6682\u505c\u76f4\u81f3\u6062\u590d\uff1b\u76f8\u5173\u4fe1\u53f7\u7f6e\u4fe1\u5ea6\u4e0b\u964d"
+      "message": "Source 'hkma' marked dead after 3 consecutive failures \u2014 collector skipped until it recovers; affected signals degrade",
+      "message_zh": "\u6570\u636e\u6e90 'hkma' \u8fde\u7eed 3 \u6b21\u5931\u8d25\u540e\u88ab\u6807\u8bb0\u4e3a\u4e2d\u65ad \u2014\u91c7\u96c6\u5668\u6682\u505c\u76f4\u81f3\u6062\u590d\uff1b\u76f8\u5173\u4fe1\u53f7\u7f6e\u4fe1\u5ea6\u4e0b\u964d"
     }
   ],
   "liquidity_quality": {
@@ -468,12 +468,27 @@
       "read": "labor firm"
     },
     "inflation_nowcast": {
-      "sticky_ann": 0.22770786500000006,
+      "sticky_ann": 2.7659951868999944,
+      "flexible_ann": 2.69822424745898,
+      "window_months": 3,
+      "basis": "exact_contiguous_monthly_percent_compounding_annualized",
+      "source": "Federal Reserve Bank of Atlanta via FRED",
+      "source_units": "percent_change_from_month_ago",
+      "output_units": "percent_change_at_annual_rate",
+      "source_series": {
+        "sticky": {
+          "id": "STICKCPIM157SFRBATL",
+          "observation_month": "2026-06"
+        },
+        "flexible": {
+          "id": "FLEXCPIM157SFRBATL",
+          "observation_month": "2026-06"
+        }
+      },
       "sticky_trend": "cooling",
-      "flexible_ann": 0.2322820853333337,
       "median_cpi": 2.10961524352649,
       "umich_1y_exp": 4.6,
-      "read": "transitory (flexible-led)"
+      "read": "persistent (sticky-led)"
     },
     "risk_appetite": {
       "vrp": 0.8485903621224757,
@@ -4197,7 +4212,7 @@
       "reason": "version-matched + fresh",
       "calibration_version": "w2.7-loro-v1",
       "calibration_generated_at": "2026-07-02T12:32:51Z",
-      "calibration_age_days": 37
+      "calibration_age_days": 38
     },
     "lag_passport": {
       "basis": "per_leg_schedule",
@@ -9364,14 +9379,14 @@
   },
   "fed_path": {
     "asof": "2026-08-07",
-    "built": "2026-08-08T20:34:53.981610+00:00",
+    "built": "2026-08-10T01:51:22.575745+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
     "target_mid": 3.62,
     "implied": {
       "now": 3.63,
-      "m1": 3.66,
+      "m1": null,
       "m3": 3.78,
       "m6": 3.94,
       "m12": 4.06
@@ -9383,7 +9398,7 @@
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
-      "m3": 3.84,
+      "m3": 3.85,
       "m6": 4.0,
       "m12": 4.1
     },
@@ -14698,7 +14713,7 @@
         "name": "GLP-1 / Obesity",
         "stage": "BROADENING (fingerprint)",
         "tier": "P",
-        "rationale": "fingerprint-only (annual member filings) TIGHT and revisions rising \u2014 awaiting real-time physical confirmation \u00b7 policy pipeline: comment close in 37d (2026-09-14); 1 proposed rule(s) last 60d; 1 final rule(s) last 60d",
+        "rationale": "fingerprint-only (annual member filings) TIGHT and revisions rising \u2014 awaiting real-time physical confirmation \u00b7 policy pipeline: comment close in 35d (2026-09-14); 1 proposed rule(s) last 60d; 1 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "fingerprint-only thesis \u2014 awaiting real-time physical confirmation; no entry until FRED bottleneck leg fires",
         "bottleneck_band": "TIGHTENING (fingerprint)",
@@ -14773,8 +14788,8 @@
         "language_accel": 0.0,
         "policy_reg_chip": {
           "theme": "glp1_obesity",
-          "summary": "comment close in 37d (2026-09-14); 1 proposed rule(s) last 60d; 1 final rule(s) last 60d",
-          "days_to_comment_close": 37,
+          "summary": "comment close in 35d (2026-09-14); 1 proposed rule(s) last 60d; 1 final rule(s) last 60d",
+          "days_to_comment_close": 35,
           "days_to_rule_effective": null,
           "prorule_inflow_60d": 1,
           "rule_finalization_60d": 1,
@@ -14831,7 +14846,7 @@
         "name": "Medical Devices",
         "stage": "PRECIPICE (fingerprint)",
         "tier": "P",
-        "rationale": "fingerprint-only (annual member filings) TIGHT, revisions undetermined \u2014 awaiting real-time physical confirmation \u00b7 policy pipeline: comment close in 13d (2026-08-21); 3 proposed rule(s) last 60d; 27 final rule(s) last 60d",
+        "rationale": "fingerprint-only (annual member filings) TIGHT, revisions undetermined \u2014 awaiting real-time physical confirmation \u00b7 policy pipeline: comment close in 11d (2026-08-21); 4 proposed rule(s) last 60d; 26 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "fingerprint-only thesis \u2014 awaiting real-time physical confirmation; no entry until FRED bottleneck leg fires",
         "bottleneck_band": "TIGHTENING (fingerprint)",
@@ -14897,11 +14912,11 @@
         "language_accel": 1.0,
         "policy_reg_chip": {
           "theme": "medical_devices",
-          "summary": "comment close in 13d (2026-08-21); 3 proposed rule(s) last 60d; 27 final rule(s) last 60d",
-          "days_to_comment_close": 13,
+          "summary": "comment close in 11d (2026-08-21); 4 proposed rule(s) last 60d; 26 final rule(s) last 60d",
+          "days_to_comment_close": 11,
           "days_to_rule_effective": null,
-          "prorule_inflow_60d": 3,
-          "rule_finalization_60d": 27,
+          "prorule_inflow_60d": 4,
+          "rule_finalization_60d": 26,
           "next_comment_close_date": "2026-08-21",
           "next_comment_close_title": "Agency Information Collection Activities; Submission for Office of Management and Budget Review; Comment Request; Premar",
           "evidence_class": "dated-structured"
@@ -14955,7 +14970,7 @@
         "name": "Grid & Electrification",
         "stage": "BROADENING (text)",
         "tier": "P",
-        "rationale": "language signal TIGHT and revisions rising \u2014 text-only; awaiting numeric physical confirmation \u00b7 customer capex accelerating (+69% YoY) confirms demand \u00b7 policy pipeline: comment close in 12d (2026-08-20); 4 proposed rule(s) last 60d; 1 final rule(s) last 60d",
+        "rationale": "language signal TIGHT and revisions rising \u2014 text-only; awaiting numeric physical confirmation \u00b7 customer capex accelerating (+69% YoY) confirms demand \u00b7 policy pipeline: comment close in 10d (2026-08-20); 4 proposed rule(s) last 60d; 1 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "text-only thesis \u2014 awaiting numeric physical confirmation; no entry until FRED bottleneck leg fires",
         "bottleneck_band": "TIGHT (text)",
@@ -15021,8 +15036,8 @@
         "language_accel": 3.0,
         "policy_reg_chip": {
           "theme": "grid_electrification",
-          "summary": "comment close in 12d (2026-08-20); 4 proposed rule(s) last 60d; 1 final rule(s) last 60d",
-          "days_to_comment_close": 12,
+          "summary": "comment close in 10d (2026-08-20); 4 proposed rule(s) last 60d; 1 final rule(s) last 60d",
+          "days_to_comment_close": 10,
           "days_to_rule_effective": null,
           "prorule_inflow_60d": 4,
           "rule_finalization_60d": 1,
@@ -15081,7 +15096,7 @@
         "name": "Nuclear & SMR Power",
         "stage": "BROADENING (text)",
         "tier": "P",
-        "rationale": "language signal TIGHT and revisions rising \u2014 text-only; awaiting numeric physical confirmation \u00b7 customer capex accelerating (+69% YoY) confirms demand \u00b7 policy pipeline: comment close in 2d (2026-08-10); rule effective in 16d; 10 proposed rule(s) last 60d; 5 final rule(s) last 60d",
+        "rationale": "language signal TIGHT and revisions rising \u2014 text-only; awaiting numeric physical confirmation \u00b7 customer capex accelerating (+69% YoY) confirms demand \u00b7 policy pipeline: comment close in 0d (2026-08-10); rule effective in 14d; 10 proposed rule(s) last 60d; 5 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "text-only thesis \u2014 awaiting numeric physical confirmation; no entry until FRED bottleneck leg fires",
         "bottleneck_band": "TIGHT (text)",
@@ -15147,9 +15162,9 @@
         "language_accel": 2.0,
         "policy_reg_chip": {
           "theme": "nuclear_power",
-          "summary": "comment close in 2d (2026-08-10); rule effective in 16d; 10 proposed rule(s) last 60d; 5 final rule(s) last 60d",
-          "days_to_comment_close": 2,
-          "days_to_rule_effective": 16,
+          "summary": "comment close in 0d (2026-08-10); rule effective in 14d; 10 proposed rule(s) last 60d; 5 final rule(s) last 60d",
+          "days_to_comment_close": 0,
+          "days_to_rule_effective": 14,
           "prorule_inflow_60d": 10,
           "rule_finalization_60d": 5,
           "next_comment_close_date": "2026-08-10",
@@ -15333,7 +15348,7 @@
         "name": "Space & Satellites",
         "stage": "RE-RATING",
         "tier": "P",
-        "rationale": "language signal present but revisions already broad \u2014 runway maturing, do not chase (text-only) \u00b7 policy pipeline: comment close in 2d (2026-08-10); rule effective in 53d; 12 proposed rule(s) last 60d; 10 final rule(s) last 60d",
+        "rationale": "language signal present but revisions already broad \u2014 runway maturing, do not chase (text-only) \u00b7 policy pipeline: comment close in 0d (2026-08-10); rule effective in 51d; 12 proposed rule(s) last 60d; 10 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "late \u2014 revisions already broad; do not chase, wait for a reset",
         "bottleneck_band": "TIGHT (text)",
@@ -15401,9 +15416,9 @@
         "language_accel": 1.5,
         "policy_reg_chip": {
           "theme": "space_satellite",
-          "summary": "comment close in 2d (2026-08-10); rule effective in 53d; 12 proposed rule(s) last 60d; 10 final rule(s) last 60d",
-          "days_to_comment_close": 2,
-          "days_to_rule_effective": 53,
+          "summary": "comment close in 0d (2026-08-10); rule effective in 51d; 12 proposed rule(s) last 60d; 10 final rule(s) last 60d",
+          "days_to_comment_close": 0,
+          "days_to_rule_effective": 51,
           "prorule_inflow_60d": 12,
           "rule_finalization_60d": 10,
           "next_comment_close_date": "2026-08-10",
@@ -15461,7 +15476,7 @@
         "name": "Data Center Power & Cooling",
         "stage": "WATCH",
         "tier": "P",
-        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 9d (2026-08-17); 7 proposed rule(s) last 60d; 4 final rule(s) last 60d",
+        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 7d (2026-08-17); 7 proposed rule(s) last 60d; 4 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "not a thesis stage \u2014 no entry",
         "bottleneck_band": "TIGHTENING",
@@ -15527,8 +15542,8 @@
         "language_accel": -0.5,
         "policy_reg_chip": {
           "theme": "data_center_power",
-          "summary": "comment close in 9d (2026-08-17); 7 proposed rule(s) last 60d; 4 final rule(s) last 60d",
-          "days_to_comment_close": 9,
+          "summary": "comment close in 7d (2026-08-17); 7 proposed rule(s) last 60d; 4 final rule(s) last 60d",
+          "days_to_comment_close": 7,
           "days_to_rule_effective": null,
           "prorule_inflow_60d": 7,
           "rule_finalization_60d": 4,
@@ -15829,7 +15844,7 @@
         "name": "Defense & Aerospace",
         "stage": "WATCH",
         "tier": "P",
-        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 6d (2026-08-14); 8 proposed rule(s) last 60d; 1 final rule(s) last 60d",
+        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 4d (2026-08-14); 8 proposed rule(s) last 60d; 1 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "not a thesis stage \u2014 no entry",
         "bottleneck_band": "NEUTRAL",
@@ -15898,8 +15913,8 @@
         "language_accel": 0.25,
         "policy_reg_chip": {
           "theme": "defense_aerospace",
-          "summary": "comment close in 6d (2026-08-14); 8 proposed rule(s) last 60d; 1 final rule(s) last 60d",
-          "days_to_comment_close": 6,
+          "summary": "comment close in 4d (2026-08-14); 8 proposed rule(s) last 60d; 1 final rule(s) last 60d",
+          "days_to_comment_close": 4,
           "days_to_rule_effective": null,
           "prorule_inflow_60d": 8,
           "rule_finalization_60d": 1,
@@ -15958,7 +15973,7 @@
         "name": "Copper, Steel & Electrification",
         "stage": "WATCH",
         "tier": "P",
-        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 9d (2026-08-17); 2 final rule(s) last 60d",
+        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 7d (2026-08-17); 2 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "not a thesis stage \u2014 no entry",
         "bottleneck_band": "NEUTRAL",
@@ -16024,8 +16039,8 @@
         "language_accel": 0.5,
         "policy_reg_chip": {
           "theme": "copper_steel_electrify",
-          "summary": "comment close in 9d (2026-08-17); 2 final rule(s) last 60d",
-          "days_to_comment_close": 9,
+          "summary": "comment close in 7d (2026-08-17); 2 final rule(s) last 60d",
+          "days_to_comment_close": 7,
           "days_to_rule_effective": null,
           "prorule_inflow_60d": 0,
           "rule_finalization_60d": 2,
@@ -16084,7 +16099,7 @@
         "name": "Rare Earth & Critical Minerals",
         "stage": "WATCH",
         "tier": "P",
-        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 13d (2026-08-21); 7 proposed rule(s) last 60d; 5 final rule(s) last 60d",
+        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 11d (2026-08-21); 7 proposed rule(s) last 60d; 4 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "not a thesis stage \u2014 no entry",
         "bottleneck_band": "NEUTRAL",
@@ -16150,11 +16165,11 @@
         "language_accel": 1.0,
         "policy_reg_chip": {
           "theme": "rare_earth_critical_min",
-          "summary": "comment close in 13d (2026-08-21); 7 proposed rule(s) last 60d; 5 final rule(s) last 60d",
-          "days_to_comment_close": 13,
+          "summary": "comment close in 11d (2026-08-21); 7 proposed rule(s) last 60d; 4 final rule(s) last 60d",
+          "days_to_comment_close": 11,
           "days_to_rule_effective": null,
           "prorule_inflow_60d": 7,
-          "rule_finalization_60d": 5,
+          "rule_finalization_60d": 4,
           "next_comment_close_date": "2026-08-21",
           "next_comment_close_title": "Energy Conservation Program: Procedures, Interpretations, and Policies for Consideration of New or Revised Energy Conser",
           "evidence_class": "dated-structured"
@@ -16325,7 +16340,7 @@
         "name": "Agriculture & Fertilizer",
         "stage": "WATCH",
         "tier": "P",
-        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 2d (2026-08-10); 12 proposed rule(s) last 60d; 18 final rule(s) last 60d",
+        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 0d (2026-08-10); 11 proposed rule(s) last 60d; 18 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "not a thesis stage \u2014 no entry",
         "bottleneck_band": "LOOSE",
@@ -16391,10 +16406,10 @@
         "language_accel": -0.33,
         "policy_reg_chip": {
           "theme": "ag_fertilizer",
-          "summary": "comment close in 2d (2026-08-10); 12 proposed rule(s) last 60d; 18 final rule(s) last 60d",
-          "days_to_comment_close": 2,
+          "summary": "comment close in 0d (2026-08-10); 11 proposed rule(s) last 60d; 18 final rule(s) last 60d",
+          "days_to_comment_close": 0,
           "days_to_rule_effective": null,
-          "prorule_inflow_60d": 12,
+          "prorule_inflow_60d": 11,
           "rule_finalization_60d": 18,
           "next_comment_close_date": "2026-08-10",
           "next_comment_close_title": "Agricultural Foreign Investment Disclosure Act of 1978",
@@ -16448,7 +16463,7 @@
         "name": "Fintech & Payments",
         "stage": "WATCH",
         "tier": "P",
-        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 2d (2026-08-10); 5 proposed rule(s) last 60d; 2 final rule(s) last 60d",
+        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 0d (2026-08-10); 5 proposed rule(s) last 60d; 2 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "not a thesis stage \u2014 no entry",
         "bottleneck_band": "NEUTRAL",
@@ -16514,8 +16529,8 @@
         "language_accel": 1.0,
         "policy_reg_chip": {
           "theme": "fintech_payments",
-          "summary": "comment close in 2d (2026-08-10); 5 proposed rule(s) last 60d; 2 final rule(s) last 60d",
-          "days_to_comment_close": 2,
+          "summary": "comment close in 0d (2026-08-10); 5 proposed rule(s) last 60d; 2 final rule(s) last 60d",
+          "days_to_comment_close": 0,
           "days_to_rule_effective": null,
           "prorule_inflow_60d": 5,
           "rule_finalization_60d": 2,
@@ -16571,7 +16586,7 @@
         "name": "Diagnostics & Life-Science Tools",
         "stage": "WATCH",
         "tier": "P",
-        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 13d (2026-08-21); 6 proposed rule(s) last 60d; 13 final rule(s) last 60d",
+        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 11d (2026-08-21); 6 proposed rule(s) last 60d; 13 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "not a thesis stage \u2014 no entry",
         "bottleneck_band": "NEUTRAL",
@@ -16637,8 +16652,8 @@
         "language_accel": 0.0,
         "policy_reg_chip": {
           "theme": "diagnostics_lifesci",
-          "summary": "comment close in 13d (2026-08-21); 6 proposed rule(s) last 60d; 13 final rule(s) last 60d",
-          "days_to_comment_close": 13,
+          "summary": "comment close in 11d (2026-08-21); 6 proposed rule(s) last 60d; 13 final rule(s) last 60d",
+          "days_to_comment_close": 11,
           "days_to_rule_effective": null,
           "prorule_inflow_60d": 6,
           "rule_finalization_60d": 13,
@@ -16808,7 +16823,7 @@
         "name": "Cybersecurity",
         "stage": "WATCH",
         "tier": "P",
-        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 16d (2026-08-24); rule effective in 20d; 4 proposed rule(s) last 60d; 6 final rule(s) last 60d",
+        "rationale": "supply not tight; nothing actionable yet \u00b7 policy pipeline: comment close in 14d (2026-08-24); rule effective in 18d; 4 proposed rule(s) last 60d; 7 final rule(s) last 60d",
         "entry_ready": false,
         "entry_note": "not a thesis stage \u2014 no entry",
         "bottleneck_band": "NEUTRAL",
@@ -16874,11 +16889,11 @@
         "language_accel": 0.0,
         "policy_reg_chip": {
           "theme": "cybersecurity",
-          "summary": "comment close in 16d (2026-08-24); rule effective in 20d; 4 proposed rule(s) last 60d; 6 final rule(s) last 60d",
-          "days_to_comment_close": 16,
-          "days_to_rule_effective": 20,
+          "summary": "comment close in 14d (2026-08-24); rule effective in 18d; 4 proposed rule(s) last 60d; 7 final rule(s) last 60d",
+          "days_to_comment_close": 14,
+          "days_to_rule_effective": 18,
           "prorule_inflow_60d": 4,
-          "rule_finalization_60d": 6,
+          "rule_finalization_60d": 7,
           "next_comment_close_date": "2026-08-24",
           "next_comment_close_title": "Naturalization Application Fee Adjustments",
           "evidence_class": "dated-structured"
@@ -16956,7 +16971,7 @@
   },
   "theme_emergence": {
     "asof": "2026-08-03",
-    "n_candidates": 8,
+    "n_candidates": 7,
     "candidates": [
       {
         "sic": "3674",
@@ -17165,47 +17180,6 @@
           }
         ],
         "asof": "2026-06-22"
-      },
-      {
-        "sic": "3620",
-        "sic_desc": "Electrical Industrial Apparatus",
-        "n_filers": 3,
-        "n_new_filers": 3,
-        "n_known_filers": 0,
-        "velocity": 3,
-        "new_filers": [
-          "BE",
-          "EROC",
-          "FPS"
-        ],
-        "phrases": [
-          "capacity constrained",
-          "on allocation",
-          "supply constrained"
-        ],
-        "sample_quotes": [
-          {
-            "ticker": "EROC",
-            "phrase": "on allocation",
-            "file_date": "2026-06-15"
-          },
-          {
-            "ticker": "FPS",
-            "phrase": "capacity constrained",
-            "file_date": "2026-05-14"
-          },
-          {
-            "ticker": "FPS",
-            "phrase": "capacity constrained",
-            "file_date": "2026-03-16"
-          },
-          {
-            "ticker": "BE",
-            "phrase": "supply constrained",
-            "file_date": "2026-02-09"
-          }
-        ],
-        "asof": "2026-06-15"
       },
       {
         "sic": "3690",
@@ -18322,46 +18296,42 @@
     "note": "W4a rebuild: HEAT = n_lit_sources / n_available_sources [\u00d7 earliness when measured \u2014 dropped, not filled, when absent].  5 distinct data feeds (physical \u00b7 demand \u00b7 guidance \u00b7 altdata \u00b7 edgar_scarcity \u2014 the old subsector_scarcity + discovery_echo were one EDGAR parquet, now counted once). Dark sources leave the denominator \u2014 no outage penalty.  Earliness from engine/foresight_earliness.py (attention-based, Q3); absent below 2 usable legs \u2192 factor DROPPED (not laundered as neutral 0.5).  Physical numeric bonus \u00d71.15 when genuinely TIGHT/SOLD_OUT.  Threshold 0.40 PROVISIONAL.  Meta-driver cards emit for \u22653 co-heating same-cluster themes.  Cross-theme heats reflect agreement among AVAILABLE surfaces only \u2014 themes with different data coverage are not on a fully comparable scale."
   },
   "foresight_analyst": {
-    "regime_read": "The clearest convergence is concentrated in data-center power and cooling, where tightening physical conditions, accelerating customer demand, and raising guidance align, though broad revisions reduce the remaining earliness. Other themes either rely on too few independent surfaces or have neutral physical evidence that breaks the mechanism.",
-    "regime_read_zh": "\u5f53\u524d\u6700\u6e05\u6670\u7684\u6c47\u805a\u96c6\u4e2d\u5728\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e0e\u51b7\u5374\uff1a\u5b9e\u4f53\u4f9b\u7ed9\u8d8b\u7d27\u3001\u5ba2\u6237\u9700\u6c42\u52a0\u901f\u4e0e\u7ba1\u7406\u5c42\u4e0a\u8c03\u6307\u5f15\u5f7c\u6b64\u5370\u8bc1\uff0c\u4f46\u5206\u6790\u5e08\u4fee\u6b63\u5df2\u8f83\u5e7f\uff0c\u524a\u5f31\u4e86\u5269\u4f59\u7684\u65e9\u671f\u6027\u3002\u5176\u4ed6\u4e3b\u9898\u8981\u4e48\u72ec\u7acb\u4fe1\u53f7\u4e0d\u8db3\uff0c\u8981\u4e48\u5b9e\u4f53\u8bc1\u636e\u4ecd\u4e3a\u4e2d\u6027\uff0c\u65e0\u6cd5\u5f62\u6210\u8fde\u8d2f\u673a\u5236\u3002",
+    "regime_read": "The convergence board shows isolated surface hits but no multi-leg alignment that is both independent and early. Most themes lack the critical mass of independent confirmations needed for a durable thesis; the few with multiple surfaces lit are either already broadly priced or have contradictory physical reads.",
+    "regime_read_zh": "\u6536\u655b\u9762\u677f\u663e\u793a\u5b64\u7acb\u8868\u9762\u4fe1\u53f7\uff0c\u4f46\u7f3a\u4e4f\u72ec\u7acb\u4e14\u65e9\u671f\u7684\u591a\u817f\u5bf9\u9f50\u3002\u5927\u591a\u6570\u4e3b\u9898\u7f3a\u4e4f\u5f62\u6210\u6301\u4e45\u8bba\u70b9\u6240\u9700\u7684\u5173\u952e\u6570\u91cf\u72ec\u7acb\u786e\u8ba4\uff1b\u5c11\u6570\u4eae\u8d77\u591a\u4e2a\u8868\u9762\u7684\u4e3b\u9898\uff0c\u8981\u4e48\u5df2\u88ab\u5e7f\u6cdb\u5b9a\u4ef7\uff0c\u8981\u4e48\u5b58\u5728\u77db\u76fe\u7684\u7269\u7406\u8bfb\u6570\u3002",
     "theses": [
       {
         "theme": "data_center_power",
-        "mechanism": "Accelerating customer demand is meeting tightening physical capacity, giving management enough visibility to raise guidance; the three legs describe demand reaching a constrained delivery layer rather than an isolated sentiment change [demand] [physical] [guidance].",
-        "non_obvious": "The hard-to-see pattern is that customer-capex acceleration and management guidance are confirming each other while the physical bottleneck is still only tightening, not yet fully tight. That suggests operating strain is emerging before the physical leg reaches its strongest classification, although already-broad revisions mean the recognition gap is narrowing [demand] [guidance] [physical].",
+        "mechanism": "Three independent legs are lighting up simultaneously: physical bottleneck signals are shifting from neutral to TIGHTENING [physical], demand proxies are ACCELERATING [demand], and management teams are RAISING guidance [guidance]. This suggests real-time capacity stress is meeting accelerating demand, and executives are confirming it in their forward-looking statements.",
+        "non_obvious": "The cross-surface signal is the combination of a TIGHTENING (not yet 'tight') bottleneck with guidance RAISING, not just solid demand. This captures the critical inflection point where capacity is beginning to constrain, giving suppliers pricing power, even before a full-blown shortage is visible in broad analyst revisions. The guidance lift is the forward-looking proof the bottleneck will soon bind.",
         "kill_criteria": [
-          "The physical bottleneck loosens from TIGHTENING to NEUTRAL [physical].",
-          "Customer demand falls from ACCELERATING to NEUTRAL or weaker [demand].",
-          "Management guidance moves from RAISING to NEUTRAL or cuts [guidance].",
-          "Revision breadth broadens further and then rolls over while either demand or guidance also deteriorates [demand] [guidance]."
+          "physical bottleneck band reverses to NEUTRAL or EASING",
+          "demand band drops to NEUTRAL or DECELERATING",
+          "guidance band turns NEUTRAL or shifts to cuts",
+          "revision breadth peaks and rolls over with no follow-through"
         ],
         "evidence": [
           {
-            "text": "physical: bottleneck band is TIGHTENING and physically confirmed",
+            "text": "physical: TIGHTENING",
             "ungrounded": true
           },
           {
-            "text": "demand: demand band is ACCELERATING",
+            "text": "demand: ACCELERATING",
             "ungrounded": true
           },
           {
-            "text": "guidance: guidance band is RAISING with multiple raisers",
-            "ungrounded": true
-          },
-          {
-            "text": "revisions: revision breadth is already broad, limiting earliness",
+            "text": "guidance: RAISING",
             "ungrounded": true
           }
         ],
         "evidence_display": [],
-        "dissent": "The board itself still labels the theme WATCH and says supply is not yet tight; broad revisions also imply that much of the operating improvement may already be recognized.",
+        "dissent": "The entire thesis rests on the bottleneck *tightening* into a constraint; it could easily resolve (become NEUTRAL) if supply chain issues prove temporary, and the 'tightening' read is not yet the hard, numeric confirmation of 'tight'. The high revision breadth (0.708) suggests the early part of this story may already be in consensus estimates, limiting the 'earliness' advantage.",
         "confidence": "medium",
         "n_grounded": 0,
-        "n_total_evidence": 4,
+        "n_total_evidence": 3,
         "_forecast_clamped": null
       }
     ],
-    "confidence": "medium",
+    "confidence": "low",
     "asof": "2026-08-08",
     "n_theses": 1,
     "disclaimer": "An AI reading of the desk's OWN deterministic convergence \u2014 checkable and forward-graded, never a price forecast."
@@ -19543,7 +19513,7 @@
     }
   },
   "ignition_radar": {
-    "as_of": "2026-08-08",
+    "as_of": "2026-08-09",
     "data_session": "2026-08-07",
     "state": "warming",
     "k_count": 1,
@@ -19861,7 +19831,7 @@
       "n_qualifying": 46,
       "null": false,
       "floor": "state in igniting/running (pre-registered ALERT_STATES); empty when nothing clears \u2014 honest null",
-      "as_of": "2026-08-08"
+      "as_of": "2026-08-09"
     },
     "narrow_top": {
       "basket_id": "silver_miners",
@@ -19875,7 +19845,7 @@
       "phase": null
     },
     "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-    "_timing_s": 2.32,
+    "_timing_s": 2.53,
     "forward_log": {
       "market": "us",
       "n_graded": 0,
@@ -20091,7 +20061,7 @@
         }
       }
     },
-    "_timing_s": 0.12
+    "_timing_s": 0.14
   },
   "mag7_washout": {
     "schema": "mag7_washout.v1",
@@ -20128,8 +20098,8 @@
   },
   "index_momentum": {
     "organ": "index_momentum.v1",
-    "as_of": "2026-08-08",
-    "data_as_of": "2026-08-07",
+    "as_of": "2026-08-09",
+    "data_as_of": "2026-08-10",
     "authority": {
       "rank": false,
       "size": false,
@@ -20331,18 +20301,6 @@
                 "quality_tag": "ordinary",
                 "us_confirm": false,
                 "global_washout_turn": false
-              },
-              {
-                "index": "QQQ",
-                "grid": "1D",
-                "date": "2026-07-10",
-                "direction": "bull",
-                "depth_at_cross": -6.528,
-                "depth_pctile": 11.9,
-                "hist_vel3": 0.565,
-                "quality_tag": "ordinary",
-                "us_confirm": false,
-                "global_washout_turn": false
               }
             ]
           },
@@ -20457,18 +20415,6 @@
                 "depth_at_cross": 0.255,
                 "depth_pctile": 49.4,
                 "hist_vel3": 1.323,
-                "quality_tag": "ordinary",
-                "us_confirm": false,
-                "global_washout_turn": false
-              },
-              {
-                "index": "IWM",
-                "grid": "2B",
-                "date": "2026-07-08",
-                "direction": "bear",
-                "depth_at_cross": 3.771,
-                "depth_pctile": 74.7,
-                "hist_vel3": -0.635,
                 "quality_tag": "ordinary",
                 "us_confirm": false,
                 "global_washout_turn": false
@@ -20713,18 +20659,6 @@
                 "quality_tag": "ordinary",
                 "us_confirm": false,
                 "global_washout_turn": false
-              },
-              {
-                "index": "MAG7",
-                "grid": "2B",
-                "date": "2026-07-09",
-                "direction": "bull",
-                "depth_at_cross": -2.51,
-                "depth_pctile": 33.7,
-                "hist_vel3": 1.88,
-                "quality_tag": "ordinary",
-                "us_confirm": false,
-                "global_washout_turn": false
               }
             ]
           },
@@ -20853,20 +20787,7 @@
             "pctile_window_days": 3528,
             "fast_reclaim": false,
             "as_of": "2026-08-07",
-            "recent_events": [
-              {
-                "index": "^HSI",
-                "grid": "2B",
-                "date": "2026-07-08",
-                "direction": "bull",
-                "depth_at_cross": -7.722,
-                "depth_pctile": 8.1,
-                "hist_vel3": 1.882,
-                "quality_tag": "washout_turn",
-                "us_confirm": true,
-                "global_washout_turn": false
-              }
-            ]
+            "recent_events": []
           },
           "3B": {
             "macd": -0.945,
@@ -20969,20 +20890,7 @@
             "pctile_window_days": 3528,
             "fast_reclaim": false,
             "as_of": "2026-08-07",
-            "recent_events": [
-              {
-                "index": "^HSCE",
-                "grid": "2B",
-                "date": "2026-07-08",
-                "direction": "bull",
-                "depth_at_cross": -7.14,
-                "depth_pctile": 9.8,
-                "hist_vel3": 2.052,
-                "quality_tag": "washout_turn",
-                "us_confirm": true,
-                "global_washout_turn": false
-              }
-            ]
+            "recent_events": []
           },
           "3B": {
             "macd": 0.03,
@@ -21097,20 +21005,7 @@
             "pctile_window_days": 918,
             "fast_reclaim": false,
             "as_of": "2026-08-06",
-            "recent_events": [
-              {
-                "index": "3033.HK",
-                "grid": "2B",
-                "date": "2026-07-09",
-                "direction": "bull",
-                "depth_at_cross": -1.722,
-                "depth_pctile": 44.0,
-                "hist_vel3": 1.431,
-                "quality_tag": "ordinary",
-                "us_confirm": false,
-                "global_washout_turn": false
-              }
-            ]
+            "recent_events": []
           },
           "3B": {
             "macd": 0.431,
@@ -21124,20 +21019,7 @@
             "pctile_window_days": 578,
             "fast_reclaim": false,
             "as_of": "2026-08-06",
-            "recent_events": [
-              {
-                "index": "3033.HK",
-                "grid": "3B",
-                "date": "2026-07-08",
-                "direction": "bull",
-                "depth_at_cross": -3.753,
-                "depth_pctile": 20.9,
-                "hist_vel3": 0.553,
-                "quality_tag": "ordinary",
-                "us_confirm": false,
-                "global_washout_turn": false
-              }
-            ]
+            "recent_events": []
           },
           "W-FRI": {
             "macd": -4.176,
@@ -21151,20 +21033,7 @@
             "pctile_window_days": 333,
             "fast_reclaim": false,
             "as_of": "2026-08-07",
-            "recent_events": [
-              {
-                "index": "3033.HK",
-                "grid": "W-FRI",
-                "date": "2026-07-10",
-                "direction": "bull",
-                "depth_at_cross": -7.12,
-                "depth_pctile": 6.4,
-                "hist_vel3": 0.364,
-                "quality_tag": "washout_turn",
-                "us_confirm": true,
-                "global_washout_turn": false
-              }
-            ]
+            "recent_events": []
           }
         }
       },
@@ -21515,17 +21384,17 @@
         "region": "INTL",
         "grids": {
           "1D": {
-            "macd": -8.105,
-            "signal": -9.168,
-            "hist": 1.063,
-            "hist_vel3": 0.163,
-            "k": 85.709,
-            "d": 87.629,
-            "depth_pctile": 8.77,
+            "macd": -7.557,
+            "signal": -8.631,
+            "hist": 1.073,
+            "hist_vel3": -0.155,
+            "k": 81.379,
+            "d": 85.33,
+            "depth_pctile": 11.111,
             "pctile_window_bars": 2520,
             "pctile_window_days": 3528,
             "fast_reclaim": false,
-            "as_of": "2026-08-07",
+            "as_of": "2026-08-10",
             "recent_events": [
               {
                 "index": "^KS11",
@@ -21711,7 +21580,7 @@
       ]
     },
     "n_roster": 13,
-    "_timing_s": 2.15
+    "_timing_s": 2.3
   },
   "vol_shock": {
     "score": 38.3,
@@ -21769,8 +21638,8 @@
         "products_disagree": {
           "spy_regime": "long",
           "spx_regime": "long",
-          "spy_asof": "2026-08-08",
-          "spx_asof": "2026-08-08",
+          "spy_asof": "2026-08-07",
+          "spx_asof": "2026-08-07",
           "disagree": false,
           "note": "SPY and SPX agree on the gamma-regime sign today."
         }
@@ -21873,8 +21742,8 @@
     "gex_products_disagree": {
       "spy_regime": "long",
       "spx_regime": "long",
-      "spy_asof": "2026-08-08",
-      "spx_asof": "2026-08-08",
+      "spy_asof": "2026-08-07",
+      "spx_asof": "2026-08-07",
       "disagree": false,
       "note": "SPY and SPX agree on the gamma-regime sign today."
     },
@@ -24402,62 +24271,62 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4340.7,
+        "price": 4400.1,
         "above50": true,
         "above200": false,
-        "pct_vs_50dma": 5.1,
-        "pct_vs_200dma": -3.2,
-        "rsi14": 66.0,
+        "pct_vs_50dma": 6.5,
+        "pct_vs_200dma": -1.9,
+        "rsi14": 69.0,
         "macd_pos": true,
-        "off_52w_high_pct": -18.4,
-        "season_this": "Aug: +2.2% avg, up 73% of years (n=26)",
-        "season_this_zh": "8\u6708\uff1a\u5e73\u5747 +2.2%\uff0c73% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -4.2
+        "off_52w_high_pct": -17.3,
+        "season_this": "Aug: +2.3% avg, up 73% of years (n=26)",
+        "season_this_zh": "8\u6708\uff1a\u5e73\u5747 +2.3%\uff0c73% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+        "mom_60d_pct": -3.1
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 78.18,
-        "above50": false,
+        "price": 78.85,
+        "above50": true,
         "above200": true,
-        "pct_vs_50dma": -0.8,
-        "pct_vs_200dma": 1.8,
-        "rsi14": 46.0,
+        "pct_vs_50dma": 0.3,
+        "pct_vs_200dma": 2.5,
+        "rsi14": 48.0,
         "macd_pos": false,
-        "off_52w_high_pct": -30.8,
-        "season_this": "Aug: -1.1% avg, up 46% of years (n=26)",
-        "season_this_zh": "8\u6708\uff1a\u5e73\u5747 -1.1%\uff0c46% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -20.4
+        "off_52w_high_pct": -30.2,
+        "season_this": "Aug: -1.0% avg, up 46% of years (n=26)",
+        "season_this_zh": "8\u6708\uff1a\u5e73\u5747 -1.0%\uff0c46% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+        "mom_60d_pct": -18.2
       },
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.57,
+        "price": 6.6,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 4.0,
-        "pct_vs_200dma": 11.9,
-        "rsi14": 59.0,
+        "pct_vs_50dma": 4.4,
+        "pct_vs_200dma": 12.4,
+        "rsi14": 60.0,
         "macd_pos": true,
-        "off_52w_high_pct": -2.0,
+        "off_52w_high_pct": -1.5,
         "season_this": "Aug: -1.0% avg, up 42% of years (n=26)",
         "season_this_zh": "8\u6708\uff1a\u5e73\u5747 -1.0%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": 4.5
+        "mom_60d_pct": 5.5
       },
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 99.6,
+        "price": 99.64,
         "above50": false,
         "above200": true,
         "pct_vs_50dma": -1.0,
         "pct_vs_200dma": 0.4,
-        "rsi14": 35.0,
+        "rsi14": 36.0,
         "macd_pos": false,
-        "off_52w_high_pct": -2.0,
+        "off_52w_high_pct": -1.9,
         "season_this": "Aug: +0.2% avg, up 48% of years (n=56)",
         "season_this_zh": "8\u6708\uff1a\u5e73\u5747 +0.2%\uff0c48% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
-        "mom_60d_pct": 0.3
+        "mom_60d_pct": 0.5
       }
     ],
     "evidence": {
@@ -24533,9 +24402,9 @@
   },
   "freshness": {
     "asof": "2026-08-07",
-    "built_at": "2026-08-08T20:35:57Z",
-    "age_days": 1,
-    "age_sessions": 0,
+    "built_at": "2026-08-10T01:52:29Z",
+    "age_days": 3,
+    "age_sessions": 1,
     "max_age_sessions": 1,
     "stale": false,
     "note": "contract asof vs build time; the daily build lands post-close (22:40 UTC) so a consumer reading intraday should expect asof = prior session \u2014 recompute age against built_at at read time."
@@ -24558,7 +24427,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-12",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-16",
+          "recorded_at": null
         }
       },
       {
@@ -24572,7 +24443,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-31",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -24588,7 +24461,10 @@
           "date": "2026-06-17",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-06-22",
+          "confirmed_date": "2026-06-30",
+          "recorded_at": null
         }
       },
       {
@@ -24604,7 +24480,10 @@
           "date": "2026-05-21",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-05-26",
+          "confirmed_date": "2026-06-03",
+          "recorded_at": null
         }
       },
       {
@@ -24618,7 +24497,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-04",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-08",
+          "recorded_at": null
         }
       },
       {
@@ -24632,7 +24513,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-09",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-11",
+          "recorded_at": null
         }
       },
       {
@@ -24648,7 +24531,10 @@
           "date": "2026-03-05",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-03-09",
+          "confirmed_date": "2026-03-17",
+          "recorded_at": null
         }
       },
       {
@@ -24662,7 +24548,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-28",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -24676,7 +24564,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-28",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -24690,7 +24580,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-07",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-09",
+          "recorded_at": null
         }
       },
       {
@@ -24704,7 +24596,9 @@
         "early_now": false,
         "last": {
           "date": "2026-03-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-03-09",
+          "recorded_at": null
         }
       },
       {
@@ -24718,7 +24612,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-12",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-16",
+          "recorded_at": null
         }
       },
       {
@@ -24734,7 +24630,10 @@
           "date": "2026-06-01",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-06-03",
+          "confirmed_date": "2026-06-11",
+          "recorded_at": null
         }
       },
       {
@@ -24754,7 +24653,10 @@
           "reasons": [
             "veto: bearish divergence",
             "pending confirmation"
-          ]
+          ],
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -24774,7 +24676,10 @@
           "reasons": [
             "veto: bearish divergence",
             "failed next-bar hold"
-          ]
+          ],
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -24790,7 +24695,10 @@
           "date": "2026-07-31",
           "type": "rebuy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -24804,7 +24712,9 @@
         "early_now": false,
         "last": {
           "date": "2026-05-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-05-07",
+          "recorded_at": null
         }
       },
       {
@@ -24820,7 +24730,10 @@
           "date": "2026-07-31",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -24834,7 +24747,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-10",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-07-14",
+          "recorded_at": null
         }
       },
       {
@@ -24848,7 +24763,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -24862,7 +24779,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-12",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-16",
+          "recorded_at": null
         }
       },
       {
@@ -24878,7 +24797,10 @@
           "date": "2026-07-31",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -24892,7 +24814,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-28",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -24908,7 +24832,10 @@
           "date": "2026-06-26",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-06-30",
+          "confirmed_date": "2026-07-09",
+          "recorded_at": null
         }
       },
       {
@@ -24924,7 +24851,10 @@
           "date": "2026-07-31",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -24940,7 +24870,10 @@
           "date": "2026-04-06",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-04-08",
+          "confirmed_date": "2026-04-16",
+          "recorded_at": null
         }
       },
       {
@@ -24956,7 +24889,10 @@
           "date": "2026-05-27",
           "type": "rebuy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-05-29",
+          "confirmed_date": "2026-06-08",
+          "recorded_at": null
         }
       },
       {
@@ -24972,7 +24908,10 @@
           "date": "2026-07-23",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-07-27",
+          "confirmed_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -24986,7 +24925,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-23",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-25",
+          "recorded_at": null
         }
       },
       {
@@ -25000,7 +24941,9 @@
         "early_now": false,
         "last": {
           "date": "2026-03-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-03-09",
+          "recorded_at": null
         }
       },
       {
@@ -25014,7 +24957,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -25030,7 +24975,10 @@
           "date": "2026-05-08",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-05-12",
+          "confirmed_date": "2026-05-20",
+          "recorded_at": null
         }
       },
       {
@@ -25046,7 +24994,10 @@
           "date": "2026-06-09",
           "type": "rebuy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-06-11",
+          "confirmed_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -25060,7 +25011,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-10",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-14",
+          "recorded_at": null
         }
       },
       {
@@ -25074,7 +25027,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -25088,7 +25043,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-07",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-09",
+          "recorded_at": null
         }
       },
       {
@@ -25102,7 +25059,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -25118,7 +25077,10 @@
           "date": "2026-06-09",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-06-11",
+          "confirmed_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -25132,7 +25094,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-12",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-16",
+          "recorded_at": null
         }
       },
       {
@@ -25148,7 +25112,10 @@
           "date": "2026-07-20",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-07-22",
+          "confirmed_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -25164,7 +25131,10 @@
           "date": "2026-07-10",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-14",
+          "confirmed_date": "2026-07-22",
+          "recorded_at": null
         }
       },
       {
@@ -25180,7 +25150,10 @@
           "date": "2026-06-26",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-06-30",
+          "confirmed_date": "2026-07-09",
+          "recorded_at": null
         }
       },
       {
@@ -25194,7 +25167,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-20",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-07-22",
+          "recorded_at": null
         }
       },
       {
@@ -25210,7 +25185,10 @@
           "date": "2026-06-09",
           "type": "rebuy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-06-11",
+          "confirmed_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -25226,7 +25204,10 @@
           "date": "2026-06-26",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-06-30",
+          "confirmed_date": "2026-07-09",
+          "recorded_at": null
         }
       },
       {
@@ -25242,7 +25223,10 @@
           "date": "2026-07-10",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-07-14",
+          "confirmed_date": "2026-07-22",
+          "recorded_at": null
         }
       },
       {
@@ -25256,7 +25240,9 @@
         "early_now": false,
         "last": {
           "date": "2026-05-27",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-05-29",
+          "recorded_at": null
         }
       },
       {
@@ -25270,7 +25256,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-28",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -25286,7 +25274,10 @@
           "date": "2026-04-06",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-04-08",
+          "confirmed_date": "2026-04-16",
+          "recorded_at": null
         }
       },
       {
@@ -25302,7 +25293,10 @@
           "date": "2026-07-15",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-17",
+          "confirmed_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -25318,7 +25312,10 @@
           "date": "2026-07-28",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-07-30",
+          "confirmed_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -25332,7 +25329,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-15",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-17",
+          "recorded_at": null
         }
       },
       {
@@ -25348,7 +25347,10 @@
           "date": "2026-06-26",
           "type": "rebuy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-06-30",
+          "confirmed_date": "2026-07-09",
+          "recorded_at": null
         }
       },
       {
@@ -25362,7 +25364,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-17",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -25376,7 +25380,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-28",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -25390,7 +25396,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-31",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -25404,7 +25412,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-17",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -25418,7 +25428,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-28",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -25434,7 +25446,10 @@
           "date": "2026-07-15",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-17",
+          "confirmed_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -25448,7 +25463,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-28",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -25464,7 +25481,10 @@
           "date": "2026-03-02",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-03-04",
+          "confirmed_date": "2026-03-12",
+          "recorded_at": null
         }
       },
       {
@@ -25480,7 +25500,10 @@
           "date": "2026-07-28",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-30",
+          "confirmed_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -25500,7 +25523,10 @@
           "reasons": [
             "veto: bearish divergence",
             "failed next-bar hold"
-          ]
+          ],
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -25516,7 +25542,10 @@
           "date": "2026-06-01",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-06-03",
+          "confirmed_date": "2026-06-11",
+          "recorded_at": null
         }
       },
       {
@@ -25532,7 +25561,10 @@
           "date": "2026-05-21",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-05-26",
+          "confirmed_date": "2026-06-03",
+          "recorded_at": null
         }
       },
       {
@@ -25548,7 +25580,10 @@
           "date": "2026-07-31",
           "type": "buy",
           "quality": "pending",
-          "reason": "pending confirmation"
+          "reason": "pending confirmation",
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -25564,7 +25599,10 @@
           "date": "2026-07-28",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-30",
+          "confirmed_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -25580,7 +25618,10 @@
           "date": "2026-07-28",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-30",
+          "confirmed_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -25594,7 +25635,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-20",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-22",
+          "recorded_at": null
         }
       },
       {
@@ -25608,7 +25651,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -25624,7 +25669,10 @@
           "date": "2026-07-20",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-07-22",
+          "confirmed_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -25640,7 +25688,10 @@
           "date": "2026-06-01",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-06-03",
+          "confirmed_date": "2026-06-11",
+          "recorded_at": null
         }
       },
       {
@@ -25654,7 +25705,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-10",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-07-14",
+          "recorded_at": null
         }
       },
       {
@@ -25668,7 +25721,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-01",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-03",
+          "recorded_at": null
         }
       },
       {
@@ -25684,7 +25739,10 @@
           "date": "2026-06-01",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-06-03",
+          "confirmed_date": "2026-06-11",
+          "recorded_at": null
         }
       },
       {
@@ -25698,7 +25756,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-31",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -25712,7 +25772,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-31",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -25726,7 +25788,9 @@
         "early_now": true,
         "last": {
           "date": "2026-06-17",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -25740,7 +25804,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -25754,7 +25820,9 @@
         "early_now": false,
         "last": {
           "date": "2026-05-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-05-07",
+          "recorded_at": null
         }
       },
       {
@@ -25770,7 +25838,10 @@
           "date": "2026-07-01",
           "type": "rebuy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-07-06",
+          "confirmed_date": "2026-07-14",
+          "recorded_at": null
         }
       },
       {
@@ -25786,7 +25857,10 @@
           "date": "2026-07-20",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-07-22",
+          "confirmed_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -25800,7 +25874,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -25814,7 +25890,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-15",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-17",
+          "recorded_at": null
         }
       },
       {
@@ -25830,7 +25908,10 @@
           "date": "2026-08-05",
           "type": "buy",
           "quality": "pending",
-          "reason": "pending confirmation"
+          "reason": "pending confirmation",
+          "signal_date": "2026-08-07",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -25846,7 +25927,10 @@
           "date": "2026-06-23",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-06-25",
+          "confirmed_date": "2026-07-06",
+          "recorded_at": null
         }
       },
       {
@@ -25860,7 +25944,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-31",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -25876,7 +25962,10 @@
           "date": "2026-07-01",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-07-06",
+          "confirmed_date": "2026-07-14",
+          "recorded_at": null
         }
       },
       {
@@ -25896,7 +25985,10 @@
           "reasons": [
             "veto: bearish divergence",
             "failed next-bar hold"
-          ]
+          ],
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -25910,7 +26002,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -25926,7 +26020,10 @@
           "date": "2026-07-20",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-07-22",
+          "confirmed_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -25942,7 +26039,10 @@
           "date": "2026-07-31",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -25958,7 +26058,10 @@
           "date": "2026-07-20",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-07-22",
+          "confirmed_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -25974,7 +26077,10 @@
           "date": "2026-07-20",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-07-22",
+          "confirmed_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -25990,7 +26096,10 @@
           "date": "2026-05-05",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-05-07",
+          "confirmed_date": "2026-05-15",
+          "recorded_at": null
         }
       },
       {
@@ -26006,7 +26115,10 @@
           "date": "2026-07-31",
           "type": "rebuy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -26020,7 +26132,9 @@
         "early_now": true,
         "last": {
           "date": "2026-07-10",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-07-14",
+          "recorded_at": null
         }
       },
       {
@@ -26036,7 +26150,10 @@
           "date": "2026-07-01",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-06",
+          "confirmed_date": "2026-07-14",
+          "recorded_at": null
         }
       },
       {
@@ -26052,7 +26169,10 @@
           "date": "2026-07-20",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-22",
+          "confirmed_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -26068,7 +26188,10 @@
           "date": "2026-08-05",
           "type": "buy",
           "quality": "pending",
-          "reason": "pending confirmation"
+          "reason": "pending confirmation",
+          "signal_date": null,
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -26082,7 +26205,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-01",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-03",
+          "recorded_at": null
         }
       },
       {
@@ -26098,7 +26223,10 @@
           "date": "2026-04-06",
           "type": "rebuy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-04-08",
+          "confirmed_date": "2026-04-16",
+          "recorded_at": null
         }
       },
       {
@@ -26112,7 +26240,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-26",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-30",
+          "recorded_at": null
         }
       },
       {
@@ -26126,7 +26256,9 @@
         "early_now": false,
         "last": {
           "date": "2026-05-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-05-07",
+          "recorded_at": null
         }
       },
       {
@@ -26140,7 +26272,9 @@
         "early_now": false,
         "last": {
           "date": "2026-04-27",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-04-29",
+          "recorded_at": null
         }
       },
       {
@@ -26154,7 +26288,9 @@
         "early_now": false,
         "last": {
           "date": "2026-04-30",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-05-04",
+          "recorded_at": null
         }
       },
       {
@@ -26170,7 +26306,10 @@
           "date": "2026-07-23",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-07-27",
+          "confirmed_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -26184,7 +26323,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-23",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -26198,7 +26339,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-01",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-06-03",
+          "recorded_at": null
         }
       },
       {
@@ -26214,7 +26357,10 @@
           "date": "2026-06-12",
           "type": "rebuy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-06-16",
+          "confirmed_date": "2026-06-25",
+          "recorded_at": null
         }
       },
       {
@@ -26230,7 +26376,10 @@
           "date": "2026-05-18",
           "type": "rebuy",
           "quality": "take",
-          "reason": "reclaimed 200 & held"
+          "reason": "reclaimed 200 & held",
+          "signal_date": "2026-05-20",
+          "confirmed_date": "2026-05-29",
+          "recorded_at": null
         }
       },
       {
@@ -26246,7 +26395,10 @@
           "date": "2026-06-09",
           "type": "rebuy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-06-11",
+          "confirmed_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -26260,7 +26412,9 @@
         "early_now": false,
         "last": {
           "date": "2026-05-27",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-05-29",
+          "recorded_at": null
         }
       },
       {
@@ -26274,7 +26428,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-07",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-09",
+          "recorded_at": null
         }
       },
       {
@@ -26290,7 +26446,10 @@
           "date": "2026-05-27",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-05-29",
+          "confirmed_date": "2026-06-08",
+          "recorded_at": null
         }
       },
       {
@@ -26304,7 +26463,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-04",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-08",
+          "recorded_at": null
         }
       },
       {
@@ -26320,7 +26481,10 @@
           "date": "2026-07-31",
           "type": "buy",
           "quality": "pending",
-          "reason": "pending confirmation"
+          "reason": "pending confirmation",
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -26334,7 +26498,9 @@
         "early_now": false,
         "last": {
           "date": "2026-05-05",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-05-07",
+          "recorded_at": null
         }
       },
       {
@@ -26350,7 +26516,10 @@
           "date": "2026-06-04",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-06-08",
+          "confirmed_date": "2026-06-16",
+          "recorded_at": null
         }
       },
       {
@@ -26366,7 +26535,10 @@
           "date": "2026-06-04",
           "type": "rebuy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-06-08",
+          "confirmed_date": "2026-06-16",
+          "recorded_at": null
         }
       },
       {
@@ -26380,7 +26552,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-07",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-09",
+          "recorded_at": null
         }
       },
       {
@@ -26394,7 +26568,9 @@
         "early_now": false,
         "last": {
           "date": "2026-03-18",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-03-20",
+          "recorded_at": null
         }
       },
       {
@@ -26408,7 +26584,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-01",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-06",
+          "recorded_at": null
         }
       },
       {
@@ -26422,7 +26600,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -26436,7 +26616,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-23",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -26452,7 +26634,10 @@
           "date": "2026-07-23",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-27",
+          "confirmed_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -26468,7 +26653,10 @@
           "date": "2026-07-15",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-07-17",
+          "confirmed_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -26482,7 +26670,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -26496,7 +26686,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-10",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-14",
+          "recorded_at": null
         }
       },
       {
@@ -26510,7 +26702,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-20",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-22",
+          "recorded_at": null
         }
       },
       {
@@ -26526,7 +26720,10 @@
           "date": "2026-06-09",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-06-11",
+          "confirmed_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -26542,7 +26739,10 @@
           "date": "2026-07-23",
           "type": "rebuy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-07-27",
+          "confirmed_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -26556,7 +26756,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-01",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-06",
+          "recorded_at": null
         }
       },
       {
@@ -26570,7 +26772,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -26586,7 +26790,10 @@
           "date": "2026-06-12",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-06-16",
+          "confirmed_date": "2026-06-25",
+          "recorded_at": null
         }
       },
       {
@@ -26600,7 +26807,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-23",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-25",
+          "recorded_at": null
         }
       },
       {
@@ -26616,7 +26825,10 @@
           "date": "2026-06-09",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-06-11",
+          "confirmed_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -26632,7 +26844,10 @@
           "date": "2026-06-09",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-06-11",
+          "confirmed_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -26648,7 +26863,10 @@
           "date": "2026-07-28",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-07-30",
+          "confirmed_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -26664,7 +26882,10 @@
           "date": "2026-06-01",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-06-03",
+          "confirmed_date": "2026-06-11",
+          "recorded_at": null
         }
       },
       {
@@ -26678,7 +26899,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-28",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -26692,7 +26915,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-28",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -26708,7 +26933,10 @@
           "date": "2026-04-09",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-04-13",
+          "confirmed_date": "2026-04-21",
+          "recorded_at": null
         }
       },
       {
@@ -26722,7 +26950,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-23",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -26736,7 +26966,9 @@
         "early_now": false,
         "last": {
           "date": "2026-03-18",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-03-20",
+          "recorded_at": null
         }
       },
       {
@@ -26750,7 +26982,9 @@
         "early_now": false,
         "last": {
           "date": "2026-04-09",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-04-13",
+          "recorded_at": null
         }
       },
       {
@@ -26766,7 +27000,10 @@
           "date": "2026-06-23",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-06-25",
+          "confirmed_date": "2026-07-06",
+          "recorded_at": null
         }
       },
       {
@@ -26780,7 +27017,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-23",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-25",
+          "recorded_at": null
         }
       },
       {
@@ -26794,7 +27033,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-26",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-30",
+          "recorded_at": null
         }
       },
       {
@@ -26810,7 +27051,10 @@
           "date": "2026-07-15",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-07-17",
+          "confirmed_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -26824,7 +27068,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-01",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-06",
+          "recorded_at": null
         }
       },
       {
@@ -26838,7 +27084,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -26854,7 +27102,10 @@
           "date": "2026-07-23",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-07-27",
+          "confirmed_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -26870,7 +27121,10 @@
           "date": "2026-07-28",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-07-30",
+          "confirmed_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -26886,7 +27140,10 @@
           "date": "2026-05-05",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-05-07",
+          "confirmed_date": "2026-05-15",
+          "recorded_at": null
         }
       },
       {
@@ -26900,7 +27157,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-31",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -26914,7 +27173,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-17",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -26934,7 +27195,10 @@
           "reasons": [
             "veto: bearish divergence",
             "pending confirmation"
-          ]
+          ],
+          "signal_date": "2026-08-07",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -26950,7 +27214,10 @@
           "date": "2026-07-07",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-09",
+          "confirmed_date": "2026-07-17",
+          "recorded_at": null
         }
       },
       {
@@ -26964,7 +27231,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -26978,7 +27247,9 @@
         "early_now": false,
         "last": {
           "date": "2026-03-31",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-04-02",
+          "recorded_at": null
         }
       },
       {
@@ -26992,7 +27263,9 @@
         "early_now": false,
         "last": {
           "date": "2026-03-18",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-03-20",
+          "recorded_at": null
         }
       },
       {
@@ -27006,7 +27279,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-12",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-16",
+          "recorded_at": null
         }
       },
       {
@@ -27022,7 +27297,10 @@
           "date": "2026-07-15",
           "type": "buy",
           "quality": "block",
-          "reason": "veto: bearish divergence"
+          "reason": "veto: bearish divergence",
+          "signal_date": "2026-07-17",
+          "confirmed_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -27038,7 +27316,10 @@
           "date": "2026-07-20",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-07-22",
+          "confirmed_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -27052,7 +27333,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-20",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-22",
+          "recorded_at": null
         }
       },
       {
@@ -27072,7 +27355,10 @@
           "reasons": [
             "veto: bearish divergence",
             "failed next-bar hold"
-          ]
+          ],
+          "signal_date": "2026-06-11",
+          "confirmed_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -27086,7 +27372,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-20",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-22",
+          "recorded_at": null
         }
       },
       {
@@ -27106,7 +27394,10 @@
           "reasons": [
             "veto: bearish divergence",
             "counter-trend, no 200-reclaim/hold"
-          ]
+          ],
+          "signal_date": "2026-07-17",
+          "confirmed_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -27122,7 +27413,10 @@
           "date": "2026-07-20",
           "type": "buy",
           "quality": "take",
-          "reason": "reclaimed 200 & held"
+          "reason": "reclaimed 200 & held",
+          "signal_date": "2026-07-22",
+          "confirmed_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -27136,7 +27430,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -27150,7 +27446,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-20",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-22",
+          "recorded_at": null
         }
       },
       {
@@ -27166,7 +27464,10 @@
           "date": "2026-06-09",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-06-11",
+          "confirmed_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -27182,7 +27483,10 @@
           "date": "2026-07-23",
           "type": "rebuy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-07-27",
+          "confirmed_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -27202,7 +27506,10 @@
           "reasons": [
             "veto: bearish divergence",
             "failed next-bar hold"
-          ]
+          ],
+          "signal_date": "2026-07-17",
+          "confirmed_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -27218,7 +27525,10 @@
           "date": "2026-07-01",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-07-06",
+          "confirmed_date": "2026-07-14",
+          "recorded_at": null
         }
       },
       {
@@ -27232,7 +27542,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -27248,7 +27560,10 @@
           "date": "2026-05-21",
           "type": "rebuy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-05-26",
+          "confirmed_date": "2026-06-03",
+          "recorded_at": null
         }
       },
       {
@@ -27262,7 +27577,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-10",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-14",
+          "recorded_at": null
         }
       },
       {
@@ -27276,7 +27593,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-15",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-17",
+          "recorded_at": null
         }
       },
       {
@@ -27292,7 +27611,10 @@
           "date": "2026-07-07",
           "type": "buy",
           "quality": "block",
-          "reason": "veto: bearish divergence"
+          "reason": "veto: bearish divergence",
+          "signal_date": "2026-07-09",
+          "confirmed_date": "2026-07-17",
+          "recorded_at": null
         }
       },
       {
@@ -27306,7 +27628,9 @@
         "early_now": false,
         "last": {
           "date": "2026-05-21",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-05-26",
+          "recorded_at": null
         }
       },
       {
@@ -27320,7 +27644,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-12",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-16",
+          "recorded_at": null
         }
       },
       {
@@ -27336,7 +27662,10 @@
           "date": "2026-07-23",
           "type": "rebuy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-27",
+          "confirmed_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -27352,7 +27681,10 @@
           "date": "2026-07-01",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-07-06",
+          "confirmed_date": "2026-07-14",
+          "recorded_at": null
         }
       },
       {
@@ -27368,7 +27700,10 @@
           "date": "2026-07-23",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-27",
+          "confirmed_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -27384,7 +27719,10 @@
           "date": "2026-06-04",
           "type": "buy",
           "quality": "take",
-          "reason": "reclaimed 200 & held"
+          "reason": "reclaimed 200 & held",
+          "signal_date": "2026-06-08",
+          "confirmed_date": "2026-06-16",
+          "recorded_at": null
         }
       },
       {
@@ -27400,7 +27738,10 @@
           "date": "2026-07-31",
           "type": "buy",
           "quality": "pending",
-          "reason": "pending confirmation"
+          "reason": "pending confirmation",
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -27414,7 +27755,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-31",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -27430,7 +27773,10 @@
           "date": "2026-06-09",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-06-11",
+          "confirmed_date": "2026-06-22",
+          "recorded_at": null
         }
       },
       {
@@ -27444,7 +27790,9 @@
         "early_now": false,
         "last": {
           "date": "2026-04-27",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-04-29",
+          "recorded_at": null
         }
       },
       {
@@ -27460,7 +27808,10 @@
           "date": "2026-07-31",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -27474,7 +27825,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-01",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-06",
+          "recorded_at": null
         }
       },
       {
@@ -27488,7 +27841,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-31",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -27502,7 +27857,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-31",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -27516,7 +27873,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -27530,7 +27889,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-28",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -27546,7 +27907,10 @@
           "date": "2026-08-05",
           "type": "buy",
           "quality": "pending",
-          "reason": "pending confirmation"
+          "reason": "pending confirmation",
+          "signal_date": "2026-08-07",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -27560,7 +27924,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-23",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-25",
+          "recorded_at": null
         }
       },
       {
@@ -27574,7 +27940,9 @@
         "early_now": false,
         "last": {
           "date": "2026-03-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-03-09",
+          "recorded_at": null
         }
       },
       {
@@ -27590,7 +27958,10 @@
           "date": "2026-05-18",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "counter-trend, no 200-reclaim/hold",
+          "signal_date": "2026-05-20",
+          "confirmed_date": "2026-05-29",
+          "recorded_at": null
         }
       },
       {
@@ -27604,7 +27975,9 @@
         "early_now": false,
         "last": {
           "date": "2026-03-10",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-03-12",
+          "recorded_at": null
         }
       },
       {
@@ -27620,7 +27993,10 @@
           "date": "2026-07-15",
           "type": "buy",
           "quality": "block",
-          "reason": "counter-trend, held but no 200-reclaim"
+          "reason": "counter-trend, held but no 200-reclaim",
+          "signal_date": "2026-07-17",
+          "confirmed_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -27634,7 +28010,9 @@
         "early_now": false,
         "last": {
           "date": "2026-03-10",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-03-12",
+          "recorded_at": null
         }
       },
       {
@@ -27648,7 +28026,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-26",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-30",
+          "recorded_at": null
         }
       },
       {
@@ -27662,7 +28042,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-07",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-09",
+          "recorded_at": null
         }
       },
       {
@@ -27676,7 +28058,9 @@
         "early_now": false,
         "last": {
           "date": "2026-05-08",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-05-12",
+          "recorded_at": null
         }
       },
       {
@@ -27692,7 +28076,10 @@
           "date": "2026-07-07",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-09",
+          "confirmed_date": "2026-07-17",
+          "recorded_at": null
         }
       },
       {
@@ -27708,7 +28095,10 @@
           "date": "2026-06-26",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-06-30",
+          "confirmed_date": "2026-07-09",
+          "recorded_at": null
         }
       },
       {
@@ -27722,7 +28112,9 @@
         "early_now": false,
         "last": {
           "date": "2026-03-18",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-03-20",
+          "recorded_at": null
         }
       },
       {
@@ -27736,7 +28128,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-10",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-07-14",
+          "recorded_at": null
         }
       },
       {
@@ -27750,7 +28144,9 @@
         "early_now": false,
         "last": {
           "date": "2026-05-13",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-05-15",
+          "recorded_at": null
         }
       },
       {
@@ -27764,7 +28160,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -27778,7 +28176,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-31",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -27792,7 +28192,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-04",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-08",
+          "recorded_at": null
         }
       },
       {
@@ -27808,7 +28210,10 @@
           "date": "2026-07-31",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -27822,7 +28227,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-23",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -27836,7 +28243,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-31",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -27850,7 +28259,9 @@
         "early_now": false,
         "last": {
           "date": "2026-05-08",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-05-12",
+          "recorded_at": null
         }
       },
       {
@@ -27866,7 +28277,10 @@
           "date": "2026-06-12",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-06-16",
+          "confirmed_date": "2026-06-25",
+          "recorded_at": null
         }
       },
       {
@@ -27880,7 +28294,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-01",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-03",
+          "recorded_at": null
         }
       },
       {
@@ -27894,7 +28310,9 @@
         "early_now": false,
         "last": {
           "date": "2026-04-06",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-04-08",
+          "recorded_at": null
         }
       },
       {
@@ -27908,7 +28326,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-20",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-22",
+          "recorded_at": null
         }
       },
       {
@@ -27922,7 +28342,9 @@
         "early_now": false,
         "last": {
           "date": "2026-03-26",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-03-30",
+          "recorded_at": null
         }
       },
       {
@@ -27936,7 +28358,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-23",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-27",
+          "recorded_at": null
         }
       },
       {
@@ -27950,7 +28374,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-28",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-30",
+          "recorded_at": null
         }
       },
       {
@@ -27964,7 +28390,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -27980,7 +28408,10 @@
           "date": "2026-07-23",
           "type": "buy",
           "quality": "block",
-          "reason": "failed next-bar hold"
+          "reason": "failed next-bar hold",
+          "signal_date": "2026-07-27",
+          "confirmed_date": "2026-08-04",
+          "recorded_at": null
         }
       },
       {
@@ -27996,7 +28427,10 @@
           "date": "2026-08-05",
           "type": "buy",
           "quality": "pending",
-          "reason": "pending confirmation"
+          "reason": "pending confirmation",
+          "signal_date": "2026-08-07",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -28010,7 +28444,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-23",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-06-25",
+          "recorded_at": null
         }
       },
       {
@@ -28024,7 +28460,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-20",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-22",
+          "recorded_at": null
         }
       },
       {
@@ -28038,7 +28476,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -28054,7 +28494,10 @@
           "date": "2026-04-06",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-04-08",
+          "confirmed_date": "2026-04-16",
+          "recorded_at": null
         }
       },
       {
@@ -28068,7 +28511,9 @@
         "early_now": false,
         "last": {
           "date": "2026-08-05",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-08-07",
+          "recorded_at": null
         }
       },
       {
@@ -28082,7 +28527,9 @@
         "early_now": false,
         "last": {
           "date": "2026-06-26",
-          "type": "cut"
+          "type": "cut",
+          "signal_date": "2026-06-30",
+          "recorded_at": null
         }
       },
       {
@@ -28098,7 +28545,10 @@
           "date": "2026-07-31",
           "type": "buy",
           "quality": "pending",
-          "reason": "pending confirmation"
+          "reason": "pending confirmation",
+          "signal_date": "2026-08-04",
+          "confirmed_date": null,
+          "recorded_at": null
         }
       },
       {
@@ -28112,7 +28562,9 @@
         "early_now": false,
         "last": {
           "date": "2026-07-01",
-          "type": "sell"
+          "type": "sell",
+          "signal_date": "2026-07-06",
+          "recorded_at": null
         }
       },
       {
@@ -28132,7 +28584,10 @@
           "reasons": [
             "veto: bearish divergence",
             "failed next-bar hold"
-          ]
+          ],
+          "signal_date": "2026-06-25",
+          "confirmed_date": "2026-07-06",
+          "recorded_at": null
         }
       },
       {
@@ -28148,7 +28603,10 @@
           "date": "2026-07-15",
           "type": "buy",
           "quality": "take",
-          "reason": "held confirmation"
+          "reason": "held confirmation",
+          "signal_date": "2026-07-17",
+          "confirmed_date": "2026-07-27",
+          "recorded_at": null
         }
       }
     ]

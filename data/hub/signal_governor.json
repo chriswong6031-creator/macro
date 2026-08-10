@@ -1,7 +1,7 @@
 {
   "schema": "signal_governor.v1",
-  "as_of": "2026-08-08",
-  "generated_at": "2026-08-08T16:18:59.937430+00:00",
+  "as_of": "2026-08-09",
+  "generated_at": "2026-08-10T03:29:56.034546+00:00",
   "region": "us",
   "gate": {
     "min_n": 150,
@@ -17,26 +17,41 @@
   "signals": {
     "radar": {
       "signal": "radar",
-      "n_matured": 4933,
-      "ic": -0.0748,
-      "t_hac": -0.845,
+      "n_matured": 4970,
+      "ic": -0.0671,
+      "t_hac": -0.757,
       "horizon": "21",
       "demoted": false,
       "trust": 1.0,
-      "reason": "not significant: 21d t=-0.845 (need |t|\u22652.0) \u2014 trust 1.0"
+      "reason": "not significant: 21d t=-0.757 (need |t|\u22652.0) \u2014 trust 1.0",
+      "input": {
+        "source": "site/basketdata/radar_ic.json",
+        "as_of": "2026-08-09",
+        "age_days": 0,
+        "stale": false
+      }
     },
     "hub": {
       "signal": "hub",
-      "n_matured": 12488,
-      "ic": -0.041,
-      "t_hac": -0.816,
+      "n_matured": 15584,
+      "ic": -0.0395,
+      "t_hac": -0.805,
       "horizon": "21",
       "demoted": false,
       "trust": 1.0,
-      "reason": "not significant: 21d t=-0.816 (need |t|\u22652.0) \u2014 trust 1.0"
+      "reason": "not significant: 21d t=-0.805 (need |t|\u22652.0) \u2014 trust 1.0"
     }
   },
   "n_demoted": 0,
   "note": "No signal has cleared the de-escalation gate yet \u2014 all trust 1.0 (shadow/measuring).",
+  "inputs": {
+    "radar": {
+      "source": "site/basketdata/radar_ic.json",
+      "as_of": "2026-08-09",
+      "age_days": 0,
+      "stale": false
+    }
+  },
+  "stale_inputs": [],
   "disclaimer": "De-escalation-only signal governor. A signal is demoted ONLY once its matured, overlap-robust track record proves it mis-firing; trust never exceeds 1.0 and never sizes a position. Absent \u21d2 hub is ungoverned."
 }

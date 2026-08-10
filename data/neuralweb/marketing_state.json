@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-08-09",
+  "as_of": "2026-08-10",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -82,7 +82,7 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 185,
+    "opportunity_queue_depth": 203,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
@@ -1690,31 +1690,31 @@
   },
   "pipeline": {
     "opportunities": {
-      "open": 185,
-      "scored": 297,
+      "open": 203,
+      "scored": 305,
       "newest": [
         {
-          "id": "radar-confluence-AVGO-2026-08-09",
-          "problem_or_desire": "$AVGO: confluence combo Double bottom (fast) + ribbon flips up + Golden Star 21/100 firing, test WR 71%",
-          "expected_value": 0.55,
-          "score": 0.527642,
-          "half_life_class": "weekly_signal",
+          "id": "radar-earnings-AAON-2026-08-10",
+          "problem_or_desire": "$AAON: earnings 2026-08-10 after hours",
+          "expected_value": 0.5,
+          "score": 0.447266,
+          "half_life_class": "earnings_follow_up",
           "status": "open"
         },
         {
-          "id": "radar-confluence-BKNG-2026-08-09",
-          "problem_or_desire": "$BKNG: confluence combo Weekly long-term uptrend + weekly reclaims 100-day line + reclaims 7-day line firing, test WR 64%",
-          "expected_value": 0.55,
-          "score": 0.527642,
-          "half_life_class": "weekly_signal",
+          "id": "radar-earnings-ABSI-2026-08-10",
+          "problem_or_desire": "$ABSI: earnings 2026-08-11 after hours",
+          "expected_value": 0.5,
+          "score": 0.447266,
+          "half_life_class": "earnings_follow_up",
           "status": "open"
         },
         {
-          "id": "radar-confluence-EBAY-2026-08-09",
-          "problem_or_desire": "$EBAY: confluence combo Weekly short-term uptrend + RSI-14 washed out + POC retest holds firing, test WR 65%",
-          "expected_value": 0.55,
-          "score": 0.527642,
-          "half_life_class": "weekly_signal",
+          "id": "radar-earnings-ACHR-2026-08-10",
+          "problem_or_desire": "$ACHR: earnings 2026-08-10 after hours",
+          "expected_value": 0.5,
+          "score": 0.447266,
+          "half_life_class": "earnings_follow_up",
           "status": "open"
         }
       ]
@@ -1985,12 +1985,12 @@
     }
   ],
   "content": {
-    "total_posts": 4,
-    "signal_posts": 0,
-    "charts": 93,
+    "total_posts": 7,
+    "signal_posts": 4,
+    "charts": 95,
     "accounts": 13,
     "state": "present",
-    "as_of": "2026-08-09"
+    "as_of": "2026-08-10"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -2000,7 +2000,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-08-09T10:03:30Z",
-  "inputs_hash": "sha256:a056d8243f1bc3b6288a884f359a2b84e0d436f1f210067bbee080e22a97234d",
+  "produced_at": "2026-08-10T03:51:33Z",
+  "inputs_hash": "sha256:2e17af1d47997e1c64a4a5b2ad2a4d4ce7cc32f4c4c1c6b68cc2aa81dd514a79",
   "tier": "display"
 }

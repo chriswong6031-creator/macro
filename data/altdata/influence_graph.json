@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-08-08T20:36:18.277145+00:00",
+  "generated_utc": "2026-08-10T03:28:53.877825+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -801,14 +801,13 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.65,
+      "alt_score": 4,
+      "alt_weighted": 1.15,
       "alt_channels": [
         "affiliation",
         "lobbying",
         "special_situation",
-        "stocktwits_bull",
-        "trump"
+        "stocktwits_bull"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1095,14 +1094,13 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 6,
-      "alt_weighted": 2.2,
+      "alt_score": 5,
+      "alt_weighted": 1.85,
       "alt_channels": [
         "affiliation",
         "analyst_upgrade_cluster",
         "app_demand",
         "github_momentum",
-        "hf_model_momentum",
         "lobbying"
       ],
       "top_holder": {
@@ -1317,11 +1315,12 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 1.05,
+      "alt_score": 3,
+      "alt_weighted": 1.25,
       "alt_channels": [
         "affiliation",
-        "material_8k"
+        "material_8k",
+        "special_situation"
       ],
       "top_holder": {
         "owner": "BERKSHIRE HATHAWAY INC",
@@ -1375,6 +1374,31 @@
         "owner": "VOYA INVESTMENT MANAGEMENT LLC",
         "title": "Institution",
         "shares": 198470000
+      }
+    },
+    {
+      "ticker": "COIN",
+      "actors": [
+        {
+          "actor": "Cathie Wood",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.65,
+      "alt_channels": [
+        "affiliation",
+        "stocktwits_bull"
+      ],
+      "top_holder": {
+        "owner": "LINDEN ADVISORS LP",
+        "title": "Institution",
+        "shares": 384176000
       }
     },
     {
@@ -1613,30 +1637,6 @@
       "top_holder": null
     },
     {
-      "ticker": "COIN",
-      "actors": [
-        {
-          "actor": "Cathie Wood",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": {
-        "owner": "LINDEN ADVISORS LP",
-        "title": "Institution",
-        "shares": 384176000
-      }
-    },
-    {
       "ticker": "MOH",
       "actors": [
         {
@@ -1738,11 +1738,11 @@
     },
     {
       "date": "2026-08-05",
-      "form": "425",
-      "company": "Trump Media & Technology Group Corp.",
+      "form": "8-K",
+      "company": "New America Acquisition I Corp.",
       "ticker": null,
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126031402/ef20079557_425.htm"
+      "items": "5.02,7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/2074878/000149315226036181/ex99-1.htm"
     },
     {
       "date": "2026-08-05",
@@ -1755,14 +1755,6 @@
     {
       "date": "2026-08-05",
       "form": "8-K",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926025800/djt20260805_8k.htm"
-    },
-    {
-      "date": "2026-08-05",
-      "form": "8-K",
       "company": "New America Acquisition I Corp.",
       "ticker": null,
       "items": "5.02,7.01,9.01",
@@ -1770,11 +1762,19 @@
     },
     {
       "date": "2026-08-05",
-      "form": "8-K",
-      "company": "New America Acquisition I Corp.",
+      "form": "425",
+      "company": "Trump Media & Technology Group Corp.",
       "ticker": null,
-      "items": "5.02,7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/2074878/000149315226036181/ex99-1.htm"
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126031402/ef20079557_425.htm"
+    },
+    {
+      "date": "2026-08-05",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926025800/djt20260805_8k.htm"
     }
   ]
 }

@@ -99,14 +99,14 @@
   },
   "fed_path": {
     "asof": "2026-08-07",
-    "built": "2026-08-08T21:26:48.579463+00:00",
+    "built": "2026-08-10T02:37:11.944030+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
     "target_mid": 3.62,
     "implied": {
       "now": 3.63,
-      "m1": 3.66,
+      "m1": null,
       "m3": 3.78,
       "m6": 3.94,
       "m12": 4.06
@@ -118,7 +118,7 @@
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
-      "m3": 3.84,
+      "m3": 3.85,
       "m6": 4.0,
       "m12": 4.1
     },
@@ -681,8 +681,8 @@
       "em_fx_basket": {
         "value": 0.0,
         "vel_5d_z": null,
-        "vel_20d_z": 1.154,
-        "asof": "2026-08-08"
+        "vel_20d_z": 1.058,
+        "asof": "2026-08-10"
       },
       "em_equity_breadth": {
         "value": 71.4,
@@ -713,7 +713,7 @@
     "display_only": true
   },
   "corporate_credit": {
-    "as_of": "2026-08-08",
+    "as_of": "2026-08-09",
     "authority": {
       "rank": false,
       "size": false,
