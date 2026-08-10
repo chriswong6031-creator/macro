@@ -21,9 +21,11 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -34,6 +36,82 @@ from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_policy_watch")
+
+
+def brief(text: object, limit: int = 160) -> str:
+    """Return one readable sentence for the glance layer.
+
+    The policy substrate intentionally keeps full research notes.  The public
+    page should not dump those notes into every card, so this helper preserves
+    the first complete thought and applies a word-safe cap when that thought is
+    still too long.  Full records remain available in the closed detail layer.
+    """
+    value = re.sub(r"\s+", " ", str(text or "")).strip()
+    if not value or len(value) <= limit:
+        return value
+    sentence = re.split(r"(?<=[.!?。！？])\s*", value, maxsplit=1)[0].strip()
+    candidate = sentence if 24 <= len(sentence) <= limit else value[: limit + 1]
+    if len(candidate) <= limit:
+        return candidate
+    clipped = candidate[:limit].rstrip()
+    if " " in clipped and not re.search(r"[\u3400-\u9fff]", clipped):
+        clipped = clipped.rsplit(" ", 1)[0]
+    return clipped.rstrip(" ,;:，；：") + "…"
+
+
+def source_label(url: object) -> str:
+    """Turn a source URL into a short publisher label."""
+    host = urlparse(str(url or "")).netloc.lower().split(":", 1)[0]
+    host = host.removeprefix("www.")
+    known = {
+        "federalreserve.gov": "Federal Reserve",
+        "home.treasury.gov": "U.S. Treasury",
+        "treasury.gov": "U.S. Treasury",
+        "whitehouse.gov": "White House",
+        "energy.gov": "Energy Department",
+        "sec.gov": "SEC",
+        "nato.int": "NATO",
+        "congress.gov": "Congress",
+        "supremecourt.gov": "Supreme Court",
+        "cmegroup.com": "CME Group",
+    }
+    if host in known:
+        return known[host]
+    return host or "Source"
+
+
+def _verified_labels(as_of: object) -> tuple[str, str]:
+    raw = str(as_of or "").strip()
+    try:
+        parsed = datetime.strptime(raw, "%Y-%m-%d")
+    except ValueError:
+        return raw, raw
+    return parsed.strftime("%b %-d, %Y"), f"{parsed.year}年{parsed.month}月{parsed.day}日"
+
+
+def _featured_predictions(preds: list[dict], dates: object, limit: int = 6) -> list[dict]:
+    """Put overdue and open calls ahead of the long technical ledger."""
+    date_rows = (dates or {}).get("predictions", {}) if isinstance(dates, dict) else {}
+
+    def decorated(pred: dict) -> dict:
+        date_row = date_rows.get(pred.get("id"), {}) or {}
+        # P44's ceasefire premise broke before its deadline; it is no longer a
+        # clean active forecast and should stay in review until rewritten.
+        needs_review = bool(date_row.get("overdue")) or pred.get("id") == "P44"
+        return {**pred, "needs_review": needs_review}
+
+    rows = [decorated(pred) for pred in preds]
+
+    def rank(pred: dict) -> tuple[int, str, str]:
+        if pred["needs_review"]:
+            bucket = 0
+        elif pred.get("status") == "open":
+            bucket = 1
+        else:
+            bucket = 2
+        return bucket, str(pred.get("check_by") or "9999-12-31"), str(pred.get("id") or "")
+
+    return sorted(rows, key=rank)[:limit]
 
 
 def main() -> int:
@@ -139,13 +217,21 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("scorecard skipped: %s", e)
 
+    verified_en, verified_zh = _verified_labels(intel.get("as_of"))
+    source_links = [{"url": url, "label": source_label(url)} for url in intel.get("sources", [])]
+    featured_predictions = _featured_predictions(preds, dates)
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("policy_watch.html.j2").render(
         intel=intel, counts=counts, desk=desk, fed_stance=fed_stance, fed_hist=fed_hist,
         rot=rot, rot_hist=rot_hist, dates=dates, catalysts=catalysts, scorecard=scorecard,
-        generated_utc=built, active_section="research", active_page="policy_watch",
+        generated_utc=built, verified_en=verified_en, verified_zh=verified_zh,
+        source_links=source_links, featured_predictions=featured_predictions, brief=brief,
+        active_section="research", active_page="policy_watch",
     )
+    # Jinja's language branches leave indentation on otherwise-empty lines.
+    # Normalize it here so the committed artifact stays diff-clean after every build.
+    html = re.sub(r"[ \t]+(?=\n)", "", html)
     write_page(site / "policy_watch.html", html)
     log.info("wrote %s/policy_watch.html (%d preds, %d task forces, %d KB)",
              site, counts["total"], len(intel.get("fed", {}).get("task_forces", [])), len(html) // 1024)
