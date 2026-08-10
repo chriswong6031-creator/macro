@@ -107,8 +107,29 @@ def _provisional(as_of: str | None = PROPHET_CURRENT_ASOF, *,
 CLIENT_PATH = "/live/prophet_live.json"
 
 
+def _paintable_state(as_of: str,
+                     observed_at: datetime = NOW) -> dict:
+    """One W-L1d payload that the real client contract accepts and can paint."""
+    tickers = ["AAPL", "MSFT"]
+    cards = [
+        {"tk": tk, "sym": tk, "mkt": "us", "href": f"stock.html#{tk}",
+         "date": as_of, "name": f"{tk} Corp", "price_txt": "$100.00",
+         "signal": 0.8, "runway": 0.6}
+        for tk in tickers
+    ]
+    return {
+        "rel": "ahead",
+        "note": "ahead",
+        "generated_at": (observed_at - timedelta(minutes=5)).isoformat(),
+        "valid_until": (observed_at + timedelta(hours=4)).isoformat(),
+        "board": {"as_of": as_of, "lane": "closepass",
+                  "card_complete": True, "tickers": tickers, "cards": cards},
+    }
+
+
 def _live_strip(as_of: str | None = PROPHET_CURRENT_ASOF, *,
-                key: str = "board_state") -> fs.FetchResult:
+                key: str = "board_state",
+                observed_at: datetime = NOW) -> fs.FetchResult:
     """One live-plane read of prophet_live.json — the artifact the client polls.
 
     ``as_of=None`` is the shape that matters most: the evaluator's artifact
@@ -119,9 +140,7 @@ def _live_strip(as_of: str | None = PROPHET_CURRENT_ASOF, *,
     """
     doc: dict = {"schema": "prophet_live/v1", "status": "live", "states": []}
     if as_of is not None:
-        doc[key] = {"rel": "ahead", "note": "ahead",
-                    "board": {"as_of": as_of, "lane": "closepass",
-                              "tickers": ["AAPL", "MSFT"]}}
+        doc[key] = _paintable_state(as_of, observed_at)
     return fs.FetchResult(
         status=200, last_modified=NOW - timedelta(hours=12), body=json.dumps(doc),
     )
@@ -167,10 +186,11 @@ def _fresh_results() -> dict[str, fs.FetchResult]:
     }
 
 
-def _client_reads(as_of: str | None = PROPHET_CURRENT_ASOF, **kw
+def _client_reads(as_of: str | None = PROPHET_CURRENT_ASOF,
+                  observed_at: datetime = NOW, **kw
                   ) -> dict[str, fs.FetchResult]:
     """The reader-side reads evaluate() folds into the SLA surfaces."""
-    return {CLIENT_PATH: _live_strip(as_of, **kw)}
+    return {CLIENT_PATH: _live_strip(as_of, observed_at=observed_at, **kw)}
 
 
 # --------------------------------------------------------------------------- #
@@ -878,7 +898,7 @@ def test_sentinel_is_stdlib_only():
     src = (ROOT / "scripts" / "freshness_sentinel.py").read_text()
     tree = ast.parse(src)
     stdlib_ok = {
-        "__future__", "argparse", "json", "os", "re", "sys", "tempfile", "urllib",
+            "__future__", "argparse", "json", "math", "os", "re", "sys", "tempfile", "urllib",
         "urllib.error", "urllib.request", "dataclasses", "datetime",
         "email.utils", "pathlib",
     }
@@ -1028,7 +1048,8 @@ def _ok_report(session: str = "2026-08-07", now: datetime = ON_TIME,
     """
     results = _fresh_results()
     results["us_board_provisional"] = _provisional(session)
-    reads = _client_reads(session if client is _UNSET else client)
+    reads = _client_reads(session if client is _UNSET else client,
+                          observed_at=now)
     return fs.evaluate(results, now, client_reads=reads)
 
 
@@ -1324,6 +1345,85 @@ def test_a_reader_looking_at_another_session_is_not_a_met_sla():
     # "no client key ever qualifies".
     rec = fs.record_first_fresh({}, _ok_report("2026-08-07"), ON_TIME)
     assert rec["sessions"]["2026-08-07"]["us_board_provisional"]["met"] is True
+
+
+def test_a_board_date_without_a_renderer_paintable_payload_cannot_meet_the_sla():
+    """The post-W-L1d boundary. #5222 stopped an absent ``board_state`` from
+    passing, but still treated ``board.as_of`` as proof that the browser showed
+    a board. The renderer does not: its `_pvcWanted` gate requires a fresh
+    ``ahead`` state and a complete parallel card projection. Pin the exact
+    timestamp-only false positive end to end — board artifact green, date
+    present, browser dark, no SLA stamp.
+    """
+    date_only = fs.FetchResult(
+        status=200,
+        body=json.dumps({
+            "schema": "prophet_live/v1",
+            "board_state": {"rel": "ahead", "board": {"as_of": "2026-08-07"}},
+        }),
+    )
+    report = fs.evaluate(
+        _fresh_results(), ON_TIME, client_reads={CLIENT_PATH: date_only}
+    )
+    c = report["surfaces"]["us_board_provisional"]
+    assert c["status"] == "ok" and c["asof"] == "2026-08-07"
+    assert c["client_session"] is None
+    assert fs.record_first_fresh({}, report, ON_TIME).get("sessions") in (None, {})
+
+    # A payload satisfying that same renderer contract still stamps normally.
+    visible = _ok_report("2026-08-07", ON_TIME)
+    assert visible["surfaces"]["us_board_provisional"]["client_session"] == "2026-08-07"
+    assert fs.record_first_fresh({}, visible, ON_TIME)["sessions"]["2026-08-07"][
+        "us_board_provisional"
+    ]["met"] is True
+
+
+def test_the_sla_validator_refuses_every_payload_shape_the_renderer_refuses():
+    """Parity fence for `_pvcWanted` / `_pvcCards` in dashboard.html.j2.
+
+    The client contract's executable tests own the JavaScript side. These are
+    the same refusal families at the SLA boundary, so a future simplification
+    cannot quietly turn "the JSON names tonight" back into "tonight painted".
+    """
+    sla = next(s["sla"] for s in fs.SURFACES if s["id"] == "us_board_provisional")
+    good = _paintable_state("2026-08-07", ON_TIME)
+
+    def clone() -> dict:
+        return json.loads(json.dumps(good))
+
+    bad: list[tuple[str, dict]] = []
+    state = clone(); state["rel"] = "behind"; bad.append(("wrong rel", state))
+    state = clone(); state["valid_until"] = (ON_TIME - timedelta(seconds=1)).isoformat()
+    bad.append(("expired", state))
+    state = clone(); state["generated_at"] = (ON_TIME - timedelta(hours=97)).isoformat()
+    bad.append(("older than the 96h backstop", state))
+    state = clone(); state["board"]["card_complete"] = False
+    bad.append(("not card-complete", state))
+    state = clone(); state["board"].pop("cards")
+    bad.append(("no cards", state))
+    state = clone(); state["board"]["cards"].pop()
+    bad.append(("card count differs from tickers", state))
+    state = clone(); state["board"]["cards"].reverse()
+    bad.append(("card order differs from tickers", state))
+    state = clone(); state["board"]["cards"][0]["signal"] = None
+    bad.append(("non-numeric signal", state))
+    state = clone(); state["board"]["cards"][0]["signal"] = True
+    bad.append(("boolean is not a JavaScript number", state))
+    state = clone(); state["board"]["cards"][0]["signal"] = 10 ** 1000
+    bad.append(("unrepresentable numeric magnitude", state))
+    state = clone(); state["board"]["cards"][0]["runway"] = "lots"
+    bad.append(("non-numeric runway", state))
+    state = clone(); state["board"]["cards"][0]["edge"] = 40
+    bad.append(("forbidden partial score", state))
+    state = clone(); state["board"]["cards"][0]["href"] = "https://evil.example/x"
+    bad.append(("off-site href", state))
+
+    def read(state: dict) -> fs.FetchResult:
+        return fs.FetchResult(status=200, body=json.dumps({"board_state": state}))
+
+    assert fs.client_visible_session(read(good), sla, ON_TIME) == "2026-08-07"
+    for label, state in bad:
+        assert fs.client_visible_session(read(state), sla, ON_TIME) is None, label
 
 
 def test_a_key_that_lands_after_the_deadline_is_stamped_late_not_dropped():

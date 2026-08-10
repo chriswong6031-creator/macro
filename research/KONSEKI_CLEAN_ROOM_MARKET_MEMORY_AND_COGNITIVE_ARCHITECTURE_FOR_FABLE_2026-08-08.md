@@ -840,6 +840,45 @@ Admission is deliberately narrower than the complete Wave 1 plan:
 This is a go-forward capture/read **spine**, not completion of the Historical
 Experience Simulator and not evidence-authoritative PIT history.
 
+### 11.0.1 W1B.0 source-evidence checkpoint
+
+W1B begins below the feature layer. Its first subwave captures one bounded,
+official source family without claiming that a single macro series is a regime,
+that a backfill was known contemporaneously, or that a source receipt is a
+forecast. The pilot is the ALFRED `CPIAUCSL` full-vintage matrix already owned
+by `scripts/collect_release_target_vintages.py` and consumed by Release Radar.
+Market Memory does not become a second FRED collector.
+
+The source intake contract is deliberately separate from the W1A context
+store:
+
+- the collector publishes a completion clock and exact artifact byte/hash
+  binding only after its durable parquet write;
+- the private Market Memory source writer stable-reads the collector manifest
+  and artifact, validates ALFRED `output_type=2`, and preserves the selected
+  vintage as immutable evidence;
+- a source object and receipt are published before a cumulative immutable
+  generation, and `SOURCE_HEAD.json` advances last;
+- readers may pin a generation, so a later revision appends evidence rather
+  than silently changing an earlier read;
+- ALFRED `realtime_start` remains date-precision evidence. Availability is the
+  half-open UTC interval from the start of that date to the start of the next
+  date. Operational admission requires both the conservative upper bound and
+  the actual Market Memory observation clock, so a late capture cannot be
+  backdated. No exact release timestamp is invented;
+- a legacy manifest without an exact artifact/completion binding is
+  reconstruction evidence only. It cannot become an operational source
+  receipt merely because the file is present in Git or observed later;
+- the API process cannot read the private writer state, and no route exposes
+  raw source artifacts.
+
+W1B.0 still emits no observed Market Memory feature. All 18 W1A feature rows,
+including `macro.regime_state` and every `options.*` row, remain explicitly
+missing until a later adapter can bind a complete derived feature to all of its
+component receipts, identity/calendar evidence, and cutoff. Consequently this
+checkpoint remains ineligible for training, ranking, gating, sizing, trading,
+Prophet promotion, or options-ledger mutation.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -871,6 +910,23 @@ Wave 1 owned additions, kept in the current Neural Web read namespace:
 - `app/market_memory.py` W1A routes — authenticated exact requested-as-of read;
   no label co-mingling.
 - `tests/test_market_memory_pit.py` — vintage, identity, cutoff, missingness, one-writer, and immutability fixtures.
+
+W1B.0 source-evidence additions:
+
+- `engine/neuralweb/market_memory_sources.py` — private CPI source-object,
+  receipt, cumulative-generation, and pinned-reader contract; no feature or
+  packet writer;
+- `contracts/market_memory/source_artifact_receipt.v1.schema.json` — strict
+  receipt/clock/provenance/authority shape, including reconstruction-versus-
+  hardened evidence coupling;
+- `scripts/ingest_market_memory_sources.py` — sole credential-free production
+  intake wrapper over the engine-owned validator;
+- `app/deploy/macro-market-memory-source.{service,timer}` — network-dark
+  root-only writer lane whose state is explicitly inaccessible to `macro-api`;
+- `tests/test_market_memory_sources.py` and
+  `tests/test_market_memory_source_deploy.py` — exact bytes, stable reads,
+  availability bounds, immutable retries/generations, tamper failure, private
+  deployment, and zero-authority fixtures.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 

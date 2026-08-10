@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Slice 2 — deploy the FastAPI serving tier (macro-api) on the droplet.
-# Builds a minimal venv (NOT the heavy engine stack), installs a systemd unit, starts it.
+# Builds a minimal venv (NOT the heavy engine stack), installs the serving and
+# private Market Memory source-intake units, and starts their public-safe lanes.
 # Idempotent. Run AFTER setup.sh (which installs the Caddyfile that proxies /api/* here).
 #   bash /opt/macro/app/deploy/api-setup.sh
 set -euo pipefail
@@ -21,17 +22,27 @@ sha256sum "$APP_DIR/app/requirements.txt" | cut -d' ' -f1 > /opt/macro-api/.requ
 log "[2/5] pinned Codex runtime"
 bash "$APP_DIR/app/deploy/codex-runtime-setup.sh"
 
-log "[3/5] systemd unit"
+log "[3/5] systemd units + private Market Memory state"
 # The unit's Market Memory bind is deliberately non-optional and read-only.
 # Provision it before installation so a fresh host fails closed without making
 # the first service start impossible.
+install -d -m 0700 /var/lib/macro-market-memory
 install -d -m 0700 /var/lib/macro-market-memory/public
+install -d -m 0700 /var/lib/macro-market-memory/state
+install -d -m 0700 /var/lib/macro-market-memory/state/sources
+systemd-analyze verify \
+  "$APP_DIR/app/deploy/macro-api.service" \
+  "$APP_DIR/app/deploy/macro-market-memory-source.service" \
+  "$APP_DIR/app/deploy/macro-market-memory-source.timer"
 install -m 0644 "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service
+install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-source.service" /etc/systemd/system/macro-market-memory-source.service
+install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-source.timer" /etc/systemd/system/macro-market-memory-source.timer
 systemctl daemon-reload
 
-log "[4/5] start service"
+log "[4/5] start serving tier + trusted-source timer"
 systemctl enable macro-api >/dev/null 2>&1 || true
 systemctl restart macro-api
+systemctl enable --now macro-market-memory-source.timer
 
 log "[5/5] health check (local)"
 sleep 2

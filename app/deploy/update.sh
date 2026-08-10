@@ -129,11 +129,13 @@ fi
 # macro-api systemd sandbox: keep the installed unit aligned with the reviewed
 # repo copy. Validate before installation; a broken unit never replaces the
 # running one. The restart decision below includes this path.
-# Provision the empty serving root before unit validation/restart. The unit uses
-# a non-optional ReadOnlyPaths mount, so an absent path fails closed instead of
-# silently starting an API namespace that could later write a newly-created
-# store.
+# Provision the serving root and the disjoint private writer root before unit
+# validation/restart.  Both units use non-optional path mounts, so an absent
+# path fails closed instead of widening either side of the trust boundary.
+install -d -m 0700 /var/lib/macro-market-memory
 install -d -m 0700 /var/lib/macro-market-memory/public
+install -d -m 0700 /var/lib/macro-market-memory/state
+install -d -m 0700 /var/lib/macro-market-memory/state/sources
 API_UNIT_UPDATED=0
 if ! cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service; then
 	if systemd-analyze verify "$APP_DIR/app/deploy/macro-api.service"; then
@@ -169,6 +171,54 @@ if [ "$API_REQ_HASH" != "$API_INSTALLED_REQ_HASH" ]; then
 	else
 		API_DEPS_OK=0
 		echo "macro-update: macro-api dependency reconciliation FAILED; keeping the running API" >&2
+	fi
+fi
+
+# W1B.0 trusted-source writer: credential-free, network-dark, and private. It
+# is safe to install and arm automatically because its only input is the exact
+# committed CPIAUCSL collector artifact and its only writable path is the
+# root-only source store above. The engine intake validates the hardened
+# manifest, exact bytes, and append-only generation before advancing HEAD.
+MARKET_MEMORY_SOURCE_UNIT_UPDATED=0
+MARKET_MEMORY_SOURCE_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-source.service"
+	"$APP_DIR/app/deploy/macro-market-memory-source.timer"
+)
+if ! cmp -s "${MARKET_MEMORY_SOURCE_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-source.service || \
+   ! cmp -s "${MARKET_MEMORY_SOURCE_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-source.timer; then
+	if systemd-analyze verify "${MARKET_MEMORY_SOURCE_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_SOURCE_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_SOURCE_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_SOURCE_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-market-memory-source.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: Market Memory trusted-source units updated"
+		fi
+	else
+		echo "macro-update: refusing Market Memory source unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+systemctl enable --now macro-market-memory-source.timer >/dev/null 2>&1 || \
+	echo "macro-update: macro-market-memory-source.timer could not be enabled" >&2
+
+# Run immediately when the reviewed writer, engine contract, or exact CPI bytes
+# advance. A failure is visible in journald and retryable by the hourly timer;
+# it must not interrupt site/API deployment or fall back to an older artifact.
+MARKET_MEMORY_SOURCE_RUN_NEEDED=0
+if [ "$MARKET_MEMORY_SOURCE_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(scripts/ingest_market_memory_sources\.py|engine/neuralweb/market_memory_sources\.py|contracts/market_memory/.*source.*\.schema\.json|data/fred_vintage/release_targets/(manifest\.json|CPIAUCSL_all_vintages\.parquet))$'; then
+	MARKET_MEMORY_SOURCE_RUN_NEEDED=1
+fi
+if [ "$MARKET_MEMORY_SOURCE_RUN_NEEDED" -eq 1 ]; then
+	if [ "$API_DEPS_OK" -ne 1 ]; then
+		echo "macro-update: deferring Market Memory source intake — shared runtime dependencies are not current" >&2
+	elif ! systemctl start macro-market-memory-source.service; then
+		echo "macro-update: Market Memory source intake failed closed; hourly timer will retry" >&2
 	fi
 fi
 

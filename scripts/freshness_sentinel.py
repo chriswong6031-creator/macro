@@ -106,10 +106,13 @@ Outputs:
 
     An SLA surface may name a CLIENT ARTIFACT (``sla.client_path`` +
     ``sla.client_session_path``), and when it does, the stamp additionally
-    requires that artifact to name the same session. The gate the record exists
-    to measure is a READER question — "fresh picks live on the site by 18:30
-    ET" — and the artifact the sentinel budgets for staleness is not always the
-    one a browser consumes. For the close-pass board they are two different
+    requires that artifact to name the same session. A surface may also name a
+    ``client_contract``: then naming a date is not enough — the payload at
+    ``client_state_path`` must pass the same fail-dark shape/freshness gates as
+    the browser renderer. The gate the record exists to measure is a READER
+    question — "fresh picks live on the site by 18:30 ET" — and the artifact
+    the sentinel budgets for staleness is not always the one a browser consumes.
+    For the close-pass board they are two different
     files written by two different steps: the full board lands in
     live/us_board_provisional.json, and the small ``board_state`` key the
     dashboard actually paints from is merged into live/prophet_live.json by a
@@ -151,6 +154,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import sys
@@ -338,6 +342,8 @@ SURFACES: list[dict] = [
             "by_et": "18:30",
             "sessions_required": 5,
             "client_path": "/live/prophet_live.json",
+            "client_state_path": ("board_state",),
+            "client_contract": "wl1.provisional_cards/paintable-v1",
             "client_session_path": ("board_state", "board", "as_of"),
         },
     },
@@ -605,16 +611,117 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
     return out
 
 
-def client_visible_session(fr: FetchResult | None, sla: dict) -> str | None:
-    """The session the READER'S artifact names, or None when it shows nothing.
+_PVC_HREF_RE = re.compile(r"[A-Za-z0-9._/-]+(?:#[A-Za-z0-9._-]+)?\Z")
+_PVC_MAX_AGE_SECONDS = 96 * 60 * 60
+_PVC_CLIENT_CONTRACT = "wl1.provisional_cards/paintable-v1"
+
+
+def _nested_value(node: object, path: tuple[str, ...] | list[str]) -> object:
+    """A fail-dark lookup used only by the client-side SLA observation."""
+    for step in path:
+        if not isinstance(node, dict):
+            return None
+        node = node.get(step)
+    return node
+
+
+def _instant(value: object) -> datetime | None:
+    """One timezone-qualified ISO instant, normalized to UTC."""
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if stamp.tzinfo is None:
+        return None
+    return stamp.astimezone(timezone.utc)
+
+
+def _finite_number(value: object) -> bool:
+    # JavaScript's ``typeof value === 'number'`` rejects booleans; Python's
+    # ``bool`` is an ``int`` subclass, so spell the same boundary explicitly.
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:  # an arbitrarily large JSON integer still fails dark
+        return False
+
+
+def _paintable_wl1_board_state(state: object, now: datetime) -> bool:
+    """Whether W-L1d's client can qualify and render this payload now.
+
+    This is the server-side twin of ``_pvcWanted`` / ``_pvcCards`` in
+    ``templates/dashboard.html.j2``. It validates only facts the renderer itself
+    refuses: current producer validity, ``rel == ahead``, a non-empty parallel
+    ticker/card projection, finite close-pass legs, no forbidden score, and a
+    same-site card link. Optional display fields remain optional because the
+    renderer degrades them to an honest empty treatment.
+
+    The DOM readback remains the browser's final authority. This predicate says
+    the payload is capable of reaching that mount; it never claims a browser
+    mounted a board that the renderer would reject before painting.
+    """
+    if not isinstance(state, dict) or now.tzinfo is None:
+        return False
+    now_utc = now.astimezone(timezone.utc)
+    until = _instant(state.get("valid_until"))
+    born = _instant(state.get("generated_at"))
+    if until is None or now_utc > until:
+        return False
+    if born is None or (now_utc - born).total_seconds() > _PVC_MAX_AGE_SECONDS:
+        return False
+    if state.get("rel") != "ahead":
+        return False
+
+    board = state.get("board")
+    if not isinstance(board, dict) or board.get("card_complete") is not True:
+        return False
+    tickers = board.get("tickers")
+    cards = board.get("cards")
+    if not isinstance(tickers, list) or not isinstance(cards, list):
+        return False
+    if not tickers or len(cards) != len(tickers):
+        return False
+
+    for ticker, card in zip(tickers, cards):
+        if not ticker or not isinstance(card, dict):
+            return False
+        if str(card.get("tk") or "") != str(ticker):
+            return False
+        if not _finite_number(card.get("signal")):
+            return False
+        runway = card.get("runway")
+        if runway is not None and not _finite_number(runway):
+            return False
+        if card.get("edge") is not None:
+            return False
+        href = card.get("href")
+        if (
+            not isinstance(href, str)
+            or not href
+            or len(href) > 200
+            or _PVC_HREF_RE.fullmatch(href) is None
+            or href.startswith("/")
+            or ".." in href
+        ):
+            return False
+    return True
+
+
+def client_visible_session(fr: FetchResult | None, sla: dict,
+                           now: datetime) -> str | None:
+    """The session the READER can paint, or None when it shows nothing.
 
     Deliberately total and deliberately silent: an absent file, an unparseable
-    one, a missing key and a key of the wrong shape all answer None, because
-    every one of them means the same thing to a browser — nothing paints. There
-    is no error channel here ON PURPOSE. None is not a verdict about the estate,
-    it only withholds an SLA stamp (see ``record_first_fresh``), and the caller
-    must never be able to turn it into a breach: this key is legitimately absent
-    for most of every day and alarming on it would page daily by construction.
+    one, a missing key, a key of the wrong shape, or a renderer-rejected board
+    all answer None, because every one means the same thing to a browser —
+    nothing paints. There is no error channel here ON PURPOSE. None is not a
+    verdict about the estate; it only withholds an SLA stamp (see
+    ``record_first_fresh``), and the caller must never turn it into a breach:
+    this key is legitimately absent for most of every day and alarming on it
+    would page daily by construction.
     """
     if fr is None or fr.error or fr.status != 200 or not fr.body:
         return None
@@ -622,11 +729,18 @@ def client_visible_session(fr: FetchResult | None, sla: dict) -> str | None:
         node = json.loads(fr.body)
     except ValueError:
         return None
-    for step in sla.get("client_session_path") or ():
-        if not isinstance(node, dict):
+    contract = sla.get("client_contract")
+    if contract:
+        # Unknown contracts fail dark. Treating an unimplemented validator as a
+        # pass would restore the exact "timestamp means visible" bug this hook
+        # exists to prevent.
+        if contract != _PVC_CLIENT_CONTRACT:
             return None
-        node = node.get(step)
-    return node if isinstance(node, str) and node else None
+        state = _nested_value(node, sla.get("client_state_path") or ())
+        if not _paintable_wl1_board_state(state, now):
+            return None
+    session = _nested_value(node, sla.get("client_session_path") or ())
+    return session if isinstance(session, str) and session else None
 
 
 def evaluate(results: dict[str, FetchResult], now: datetime,
@@ -649,13 +763,13 @@ def evaluate(results: dict[str, FetchResult], now: datetime,
         sla = s.get("sla") or {}
         if not sla.get("client_path"):
             continue
-        # A session date, and nothing else, on an artifact that already carries
-        # this surface's own ``asof`` — so publishing it in the public
-        # staleness.json adds no fact that was not already there, and it is what
+        # A renderer-qualified client session on an artifact that already
+        # carries this surface's own ``asof`` — so publishing it in the public
+        # staleness.json adds no market fact that was not already there, and it
         # makes "board fresh, reader dark" diagnosable instead of a silent
         # never-stamping SLA.
         checked[s["id"]]["client_session"] = client_visible_session(
-            (client_reads or {}).get(sla["client_path"]), sla
+            (client_reads or {}).get(sla["client_path"]), sla, now
         )
     stale = sorted(sid for sid, c in checked.items() if c["status"] == "stale")
     indeterminate = sorted(
