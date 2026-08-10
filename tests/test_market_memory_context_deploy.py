@@ -370,10 +370,13 @@ def test_api_uses_the_composite_reader_and_updater_restarts_its_import_closure()
     router = _text(API_ROUTER)
     restart = _api_restart_block()
 
-    assert (
-        "from engine.neuralweb import market_memory, market_memory_pit, "
-        "market_memory_trusted"
-    ) in router
+    for module in (
+        "market_memory",
+        "market_memory_pit",
+        "market_memory_playback",
+        "market_memory_trusted",
+    ):
+        assert module in router
     pit_reader = router.split("def _pit_reader()", 1)[1].split("\n\n", 1)[0]
     assert "market_memory_trusted.CompositeAsKnownAtReader(" in pit_reader
     assert "market_memory_pit.default_store_root(repository)" in pit_reader
@@ -385,6 +388,7 @@ def test_api_uses_the_composite_reader_and_updater_restarts_its_import_closure()
         if line.startswith('if [ "$API_UNIT_UPDATED"')
     )
     assert "market_memory_trusted" in restart_predicate
+    assert "market_memory_playback" in restart_predicate
     assert "market_memory_projection" in restart_predicate
 
 
@@ -411,6 +415,7 @@ def test_public_router_has_no_raw_source_or_evidence_route() -> None:
         ("get", "/as-known-at"),
         ("get", "/context/{context_id}"),
         ("get", "/macro"),
+        ("get", "/playback/catalog"),
         ("get", "/symbol/{ticker}"),
     }
     forbidden = ("source", "artifact", "evidence", "raw", "snapshot")
