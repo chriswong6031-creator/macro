@@ -79,7 +79,36 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
 
-BOARD_DEFINITION = "us_prophet_v1"
+# v2 (RATIFIED 2026-08-10): ADMISSION changed — the counter-trend 200-day RECLAIM leg is
+# now WAIVED for a US name whose basket peers are themselves washed out at the ratified
+# notch (`engine.signal_quality.RECLAIM_WAIVED`; the HOLD leg is untouched and every
+# other leg is byte-identical).  Authority: `research/RECLAIM_VETO_CONDITIONAL_PREREG.md`
+# §4 Arm P, adjudicated + ratified §5, notch moved to 20% family-wide by the operator the
+# same day; the fence itself was pre-specified by
+# `research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md` §7, which is why this
+# constant — not a new one — is the thing that moves.
+#
+# An admission change makes v1 and v2 two different products: the v1 board could not admit
+# a washed-out counter-trend name at all, so pooling their forward records would read as
+# one track record of a rule that never existed.  The stamp is the fence — it rides into
+# `us_standouts.json` (`rank_by` / `board_definition`, stamped from HERE by
+# scripts/build_stock_library.py), into the US board ledger through `grade_us_board`'s
+# `rank_by`, into the research spine through `us_context_vector`'s
+# `(stamp_date, ticker, board_definition)` dedupe key, and into every `ranking` block
+# emitted below.  Same move, same reason, as `hk_prophet_v2` (#4470).
+BOARD_DEFINITION = "us_prophet_v2"
+
+#: Era stamps this board USED to publish under, newest last.  A `BOARD_DEFINITION` bump
+#: appends the displaced stamp here in the SAME PR: these are HISTORICAL FACTS about rows
+#: already written to `data/us_board_ledger/` and the context-vector spine, and nothing in
+#: `engine/` names them any more, so there is no producer left to read them from.  The CN
+#: sibling (`scripts/build_china_library._CN_SUPERSEDED_ERA_STAMPS`) carries the scar that
+#: motivates this: #4509 bumped the stamp without appending, and 72 rows of the displaced
+#: era fell out of every cohort.  A consumer that partitions a ledger by era reads
+#: `{BOARD_DEFINITION} | set(SUPERSEDED_ERA_STAMPS)` — never a hand-copied literal.
+SUPERSEDED_ERA_STAMPS: tuple[str, ...] = (
+    "us_prophet_v1",   # live 2026-08-02 → 2026-08-10, displaced by us_prophet_v2
+)
 
 FEATURED_CAP = 12
 SECTOR_CAP = 4

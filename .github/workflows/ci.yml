@@ -256,6 +256,15 @@ on:
       # flip-isolation construction still isolates exactly one leg.
       - "research/prophet_us_audit/reclaim_veto_packet.py"
       - "tests/test_us_reclaim_veto_packet.py"
+      # The RATIFIED sibling of that packet (us_prophet_v2, 2026-08-10): the counter-trend
+      # reclaim waiver and its era fence. Both halves per #3488 — the suite, plus the
+      # AUTHORITY it reads. engine/** already covers signal_quality/signal_gate/us_board_rank
+      # and site/** does not exist as a trigger, so the prereg is named explicitly: this
+      # suite pins the shipped NOTCH ("20"), and a PR that moves the operator's dial in the
+      # ratification log without moving the constant must be able to start the job that
+      # would catch it.
+      - "tests/test_us_reclaim_waiver_prophet_v2.py"
+      - "research/RECLAIM_VETO_CONDITIONAL_PREREG.md"
       # Versioned FROZEN research price panel (research-price-panel job). Both halves per
       # #3488: the suite AND every module it measures. The writer/reader own the write-once
       # and never-fall-back properties; price_ladder.py is the adjusted-first resolver they

@@ -295,7 +295,31 @@ def verdict(result: dict | None) -> dict:
     return v
 
 
-def gate(ticker: str, daily_close, *, reclaim_veto: bool = True, event_latch=None) -> dict:
+def _waiver_receipt(ticker: str, daily_close, marker: dict | None) -> dict | None:
+    """The RECEIPT for a counter-trend reclaim the ratified waiver relieved, or ``None``.
+
+    RE-DERIVED, not carried.  `research/signal_engine/SCHEMA.json` closes the §7 marker
+    shape (`additionalProperties: false`) and it is a cross-repo published contract, so
+    `analyze` emits only the reason literal and this function reconstructs the rest from the
+    same two pure functions `analyze` used — same artifact, same ticker, same knowable date,
+    so the answer is the same answer.  It is the audit surface for an ADMISSION change: which
+    peer group relieved the name, how washed out that group was, and how old the reading was.
+    Never rendered — every field is a raw slug, an untranslated stat or an era name.
+    """
+    if not marker or marker.get("reason") != signal_quality.RECLAIM_WAIVED:
+        return None
+    w = signal_quality.reclaim_waiver_for(
+        signal_quality.washout_qualifier(ticker), marker.get("confirmed_date"),
+        getattr(daily_close, "index", []))
+    if w is None:                       # unreachable in practice; a refusal, never a guess
+        return None
+    return {"rule": "reclaim", "notch": w.notch, "group_id": w.group_id, "basis": w.basis,
+            "peer_dd": w.peer_dd, "as_of": w.as_of, "stale_sessions": w.stale_sessions,
+            "era": "us_prophet_v2"}
+
+
+def gate(ticker: str, daily_close, *, reclaim_veto: bool = True, event_latch=None,
+         washout_waiver: bool = True) -> dict:
     """analyze() the close series, then return the verdict PLUS the raw analyze() result
     (the §7 site/signals/<T>.json payload) under "result". Never raises on thin/bad data.
 
@@ -304,14 +328,28 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True, event_latch=Non
     validated policy byte-for-byte; HK passes False per the 2026-08-03 operator ruling —
     see that function's docstring for the mechanism.
 
+    ``washout_waiver`` passes through to :func:`engine.signal_quality.analyze`. DEFAULT True
+    = the RATIFIED ``us_prophet_v2`` policy (prereg `reclaim_veto_conditional_v1` §4 Arm P,
+    notch 20): a US name whose basket peers are themselves washed out has the counter-trend
+    200-day RECLAIM leg waived — the HOLD leg is still required, and nothing else in the
+    filter moves. A verdict the waiver decided carries a ``waiver`` receipt naming the peer
+    group, its drawdown and the state's ``as_of``; every other verdict is byte-identical to
+    before, key order included.
+
     ``event_latch`` (engine.confluence_latch.EventLatch) makes the T2 event history immutable
     so the incomplete trailing bucket cannot un-fire an event on a bar that already printed.
     DEFAULT None = unchanged for every caller that does not opt in."""
     try:
-        res = analyze(ticker, daily_close, reclaim_veto=reclaim_veto)
+        res = analyze(ticker, daily_close, reclaim_veto=reclaim_veto,
+                      washout_waiver=washout_waiver)
     except Exception:
         res = None
     v = verdict(res)
+    # Emitted ONLY when the waiver actually decided the verdict, so a run in which nothing
+    # was waived serializes exactly as it did pre-change.
+    _wr = _waiver_receipt(ticker, daily_close, v.get("last"))
+    if _wr is not None:
+        v["waiver"] = _wr
     # ---- owner's WEIGHTED tier cascade (T1 master -> T4 earliest), TIERED_CASCADE.md ----
     # Extends the take/pending/early leaf: T1 = the validated master (TAKE, or a forming
     # 'pending' master), T2/T3/T4 = the 2D-MACD-cross / 2D-projected / 2D-projected+2D-stoch

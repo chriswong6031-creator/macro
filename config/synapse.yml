@@ -9448,11 +9448,14 @@ artifacts:
     asof_field: as_of
     freshness_sla_hours: 30
     schema: basket_washout_state.v1
-    tier: display
+    tier: scored
+    qual_ladder_ref: research/RECLAIM_VETO_CONDITIONAL_PREREG.md
     horizon_role: tactical_entry
     weights: none
-    scored_path_surfaces: []
-    consumers: []
+    scored_path_surfaces:
+      - board_ordering
+    consumers:
+      - engine/signal_quality.py
     external_consumers:
       - terminal:pull_macro_intel
     notes: >
@@ -9475,12 +9478,28 @@ artifacts:
       own basket, so letting it vote in its own peer median would publish a laxer rule
       than the gauntleted one. The >=5 floor applies to the FULL group (as upstream).
       qualifies[t] is recomputed from the PUBLISHED rounded number so a consumer that
-      re-derives it always agrees. DISPLAY TIER ONLY: it feeds no score, rank, gate or
-      Article-2 surface, and the live enter-mask conditional remains behind its own two
-      standing gates (production-feed re-grade + signal-era fence, packet §4). The three
-      thresholds are the published operator aggressiveness menu, not three claims — 25 is
-      the ratified default. Built in daily.yml cl_baskets (~5s, off the render-critical
-      path); the engine job's catch-all `git add site/` commits it.
+      re-derives it always agrees. The three thresholds are the published operator
+      aggressiveness menu, not three claims — the operator moved the family dial to 20 on
+      2026-08-10 (RECLAIM_VETO_CONDITIONAL_PREREG §5, "NOTCH MOVED TO 20% FAMILY-WIDE").
+      TIER MOVED display -> scored 2026-08-10, and the sentence that stood here — "it feeds
+      no score, rank, gate or Article-2 surface" — is retired because it stopped being true:
+      engine/signal_quality.py now reads names[].qualifies["20"] to WAIVE the counter-trend
+      200-day reclaim leg of the buy filter (signal_quality.RECLAIM_WAIVED), an ADMISSION
+      change reaching board_ordering through scripts/build_stock_library.py's
+      signal_gate.gate() call. Authority for that read, and the qual ladder this entry
+      points at: research/RECLAIM_VETO_CONDITIONAL_PREREG.md §4 Arm P (gauntlet §3, gates
+      adjudicated §5, receipts research/reclaim_veto_study/arm_p_faithful.json), fenced by
+      the us_prophet_v1 -> us_prophet_v2 era stamp per
+      research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md §7. The reader is PIT and
+      fail-closed: the artifact's as_of must not postdate the bar's knowable date, staleness
+      is capped at 5 sessions on the name's own calendar, and an absent/stale/unparseable
+      artifact returns the v1 verdict (veto intact) rather than a default. The blocked-entry
+      enter-mask conditional this artifact was built for is a SEPARATE consumer behind its
+      own two standing gates (production-feed re-grade + signal-era fence, packet §4).
+      Built in daily.yml cl_baskets (~5s, off the render-critical path); the engine job's
+      catch-all `git add site/` commits it. ORDERING: cl_baskets runs AFTER the MTF
+      buy-filter, build_site/build_stock_library and Prophet steps, so every US consumer
+      reads the PRIOR night's artifact (stale_sessions == 1 on a healthy night).
 
   # --- PR-C: NW lobe-status health surface ---
   neuralweb-health:
