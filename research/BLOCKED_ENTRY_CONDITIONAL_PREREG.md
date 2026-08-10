@@ -178,6 +178,16 @@ cell** — a cell whose premium dies ex-COVID is dead (F1). Gates for A1b unchan
 
 ## §5 Ratification log
 
+- **2026-08-10 — RATIFIED (operator: "go ahead").** Threshold = **25%** (the design-era-selected
+  default; the operator named no notch — 20/30 remain one word away, and a change before the live
+  flip is a config edit, after it is an era event). Staged execution per the packet §4:
+  (1) production-feed re-grade (gate B) launched; (2) macro-side nightly `basket_washout_state`
+  artifact + forward ledger accrual launched (display-tier, off render-critical path); (3) Terminal
+  display promotion queued behind the charting-app collision check (active sibling lanes on the
+  blocked-entry surface); (4) live `enter`-mask conditional remains gated on the re-grade passing +
+  the signal-era fence; (5) CN/HK excluded pending their own construction. LLM originates nothing:
+  this entry records an operator decision on a gauntleted packet.
+
 - **2026-08-10 ~06:4xZ — ADJUDICATED** (results:
   `research/BLOCKED_ENTRY_CONDITIONAL_RESULTS_2026-08-10.md`): H1 **PASS, CONTEXT-ONLY**
   (held-out +0.572R [+0.384,+0.785]; vs placebo +0.580R [+0.390,+0.777]; registered equal-date
