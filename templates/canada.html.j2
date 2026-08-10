@@ -2420,6 +2420,7 @@
       'href': 'canada_stock.html#' ~ s.ticker, 'tk': s.ticker, 'mkt': 'ca',
       'name': s.name, 'sec': s.sector, 'sec_zh': s.sector,
       'price_txt': ('$' ~ ('%.2f'|format(s.price))) if (s.price is defined and s.price is not none) else none,
+      'show_change': true,
       'verb': _verb,
       'trigger': ({'kind': _trg_kind, 'tip_en': _trg_tip_en, 'tip_zh': _trg_tip_zh} if _trg_kind else none),
       'marks': _mk.rows[:2],

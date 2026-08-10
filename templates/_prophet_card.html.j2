@@ -36,7 +36,7 @@
    The macro is deliberately dumb: every market-specific derivation (verb mapping, stage
    mapping, flag folding, zone kind) happens in the calling board template where the row
    fields live. Callers pass a single `cx` dict:
-     href tk sym mkt price_txt name name_zh sec sec_zh flag verb edge
+     href tk sym mkt price_txt show_change name name_zh sec sec_zh flag verb edge
      edge_tip_en edge_tip_zh stage spark zone_kind zone_lo zone_hi date flags triage
      trigger — OPTIONAL {kind: 'fired'|'imminent', tip_en, tip_zh}: the fresh
        entry-trigger chip (presentation merge of the Top-setups board, 2026-07-24
@@ -63,8 +63,10 @@
        EMPTY list → an empty row that still RESERVES its height, so a board using
        marks keeps the tracker and zone rows aligned across a grid row even when one
        card has nothing to mark. Pass `none`, not `[]`, to opt out per-board.
-   Live-price contract preserved: the price pill keeps class "nb-px" + data-sym/data-mkt
-   (templates/live.js binds .nb-px[data-sym]). #}
+   Live-quote contract preserved: the price keeps class "nb-px" + data-sym/data-mkt
+   (templates/live.js binds .nb-px[data-sym]). When a caller passes show_change=true,
+   the same pill gains an adjacent "nb-chg" sibling bound to the same canonical symbol;
+   it MUST stay outside .nb-px because live.js replaces the price node's textContent. #}
 {% macro t(en, zh='') -%}<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>{%- endmacro %}
 
 {% macro pv_css() %}
@@ -174,7 +176,17 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
    light / 2.51:1 dark at 10px/800 (the worst white-on-hue chip in the estate
    audit); panel-on-ink clears 4.5 in both themes and keeps the solid identity. */
 .pv-buy .pv-chip{background:var(--pvh-ink,var(--pvh));color:var(--panel);border-color:transparent}
-.pvcard .nb-px.pv-px{background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;margin:0}
+.pvcard .pv-quote{display:inline-flex;align-items:baseline;gap:6px;background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px;white-space:nowrap}
+.pvcard .nb-px.pv-px,.pvcard .nb-chg.pv-chg{font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.35;white-space:nowrap;margin:0}
+.pvcard .nb-px.pv-px{color:var(--text)}
+.pvcard .pv-ovr>.nb-px.pv-px{background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px}
+.pvcard .pv-quote .pv-chg{color:var(--muted)}
+{# live.js injects generic literal direction colors after this stylesheet. These
+   more-specific rules deliberately win and route Prophet cards through the global
+   semantic inks, whose --up/--down bases flip for the Chinese market convention. #}
+.pvcard .pv-quote .pv-chg.up{color:var(--ink-up,var(--up))}
+.pvcard .pv-quote .pv-chg.down{color:var(--ink-down,var(--down))}
+.pvcard .pv-quote .pv-chg.stale{color:var(--muted);font-weight:700}
 .pv-bd{padding:8px 11px 9px;display:flex;flex-direction:column;min-width:0;flex:1}
 .pv-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}
 .pv-idw{display:flex;align-items:baseline;gap:6px;min-width:0;overflow:hidden}
@@ -387,7 +399,7 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes ({{ cx.flags|length }})" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ {{ cx.flags|length }}</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd">{{ t('Before you act','动手之前') }}</span>{% for _f in cx.flags %}<span class="pv-cau-row">{{ t(_f[0], _f[1]) }}</span>{% endfor %}</span></span>
       {%- endif %}
     </span>
-    {% if cx.get('price_txt') %}<span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="{{ (cx.get('sym') or cx.tk)|e }}" data-mkt="{{ cx.mkt|e }}">{{ cx.price_txt }}</span></span>{% endif %}
+    {% if cx.get('price_txt') %}<span class="pv-ov pv-ovr">{% if cx.get('show_change') %}<span class="pv-quote"><span class="nb-px pv-px" data-sym="{{ (cx.get('sym') or cx.tk)|e }}" data-mkt="{{ cx.mkt|e }}">{{ cx.price_txt }}</span><span class="nb-chg pv-chg" data-sym="{{ (cx.get('sym') or cx.tk)|e }}" data-mkt="{{ cx.mkt|e }}">—</span></span>{% else %}<span class="nb-px pv-px" data-sym="{{ (cx.get('sym') or cx.tk)|e }}" data-mkt="{{ cx.mkt|e }}">{{ cx.price_txt }}</span>{% endif %}</span>{% endif %}
   </div>
   <div class="pv-bd">
     <div class="pv-hd">

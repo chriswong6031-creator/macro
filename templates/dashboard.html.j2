@@ -15959,6 +15959,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us',
           'name': n.name, 'sec': n.sector, 'sec_zh': tr(n.sector),
           'price_txt': ('$' ~ ('%.2f'|format(n.price))) if n.get('price') is not none else none,
+          'show_change': true,
           'verb': _verb,
           'edge': (('%.0f'|format(_prs)) if _prs is not none
                    else (c.score_edge if (c and c.score_edge is defined and c.score_edge is not none) else none)),
