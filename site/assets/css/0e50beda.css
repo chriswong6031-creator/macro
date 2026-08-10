@@ -1,0 +1,174 @@
+
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1360px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:22px; margin:0 0 2px; }
+  h2 { font-size:16px; margin:0; }
+
+  /* ── header ─────────────────────────────────────────────────────────
+     Tier-1 header: h1 + a ≤14-word subtitle carrying the panel stance, then
+     the provenance strip, then ONE disclosure box. The page's long-form
+     honesty lives in that box, never stacked as micro-disclaimers. */
+  .clp-tag { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.04em;
+    color:var(--prov-ink); border:1px solid color-mix(in srgb,var(--prov) 45%,var(--line));
+    background:color-mix(in srgb,var(--prov) 12%,transparent); padding:2px 8px; border-radius:7px;
+    margin-left:8px; vertical-align:3px; }
+  .clp-lead { color:var(--muted); font-size:13px; margin:0 0 12px; max-width:940px; }
+  .clp-lead b { color:var(--text); font-weight:700; }
+  .strip { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 12px; }
+  .stat { font-size:12px; color:var(--muted); padding:5px 12px; border:1px solid var(--line);
+    border-radius:9px; background:var(--panel); }
+  .stat b { color:var(--text); font-size:13px; font-variant-numeric:tabular-nums; }
+  .stat.prov b { color:var(--muted); font-weight:600; font-size:12px; }
+  .disc { font-size:12.5px; line-height:1.6; color:var(--muted); border:1px dashed var(--line);
+    border-radius:10px; padding:11px 13px; margin:0 0 18px; max-width:960px; }
+  .disc b { color:var(--text); }
+  .disc p { margin:0 0 6px; } .disc p:last-child { margin:0; }
+
+  /* section heads (china family) */
+  .sec { display:flex; align-items:baseline; gap:10px; margin:22px 0 6px; }
+  .sec .cnt { color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .sub { color:var(--muted); font-size:12.5px; margin:0 0 10px; max-width:900px; }
+
+  /* ── CARD ───────────────────────────────────────────────────────────
+     Geometry, radii, shadow, hover lift and the 3px hue rail are lifted from
+     .pvcard in _prophet_card.html.j2 so a reader who knows the china board
+     recognises this card before reading a word of it. 246px min column is the
+     prophet board's own grid step. */
+  .clp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(246px,1fr)); gap:10px; }
+  .clp-card { position:relative; display:flex; flex-direction:column; background:var(--panel2);
+    border:1px solid var(--line); border-radius:12px; overflow:hidden; color:var(--text);
+    min-width:0; transition:transform .12s,box-shadow .12s,border-color .12s; }
+  .clp-card:hover { transform:translateY(-2px); box-shadow:0 5px 18px rgba(0,0,0,.22);
+    border-color:color-mix(in srgb,var(--pvh) 55%,var(--line)); }
+  /* LIGHT IS A DESIGN TARGET, NOT A TOKEN SWAP (DESIGN_DOCTRINE §5.8). The card's
+     dark fill is --panel2, which in light resolves to #eef1f6 against a #e8ebf1
+     canvas — a 6-unit delta, i.e. the named panel≈bg flatness bug, with no shadow
+     to rescue it. Light gets what the doctrine prescribes and what the parent
+     card's own featured rule already does: a WHITE panel on the deeper canvas,
+     lifted by a soft shadow. The footer strip then steps DOWN to --panel2 so it
+     still separates from a card that is now white. */
+  html[data-theme="light"] .clp-card { background:#fff;
+    box-shadow:0 1px 2px rgba(16,24,40,.05), 0 6px 16px -10px rgba(16,24,40,.28); }
+  html[data-theme="light"] .clp-card:hover { box-shadow:0 2px 4px rgba(16,24,40,.07),
+    0 12px 26px -12px rgba(16,24,40,.34); }
+  html[data-theme="light"] .clp-fill { background:var(--panel2); }
+  .clp-card:focus-visible { outline:2px solid var(--pvh-ink); outline-offset:2px; }
+  .clp-card::before { content:""; position:absolute; top:0; left:0; right:0; height:3px; z-index:3;
+    pointer-events:none; border-radius:12px 12px 0 0;
+    background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 12%,transparent) 90%);
+    box-shadow:0 1px 8px color-mix(in srgb,var(--pvh) 45%,transparent); }
+  /* two hues only — see the header note. --pvh is the FILL grade, --pvh-ink the
+     TEXT grade (theme.css derives the ink variants so 9.5-26px text clears AA
+     in both themes; the raw token does not in light). */
+  .clp-prov { --pvh:var(--prov); --pvh-ink:var(--prov-ink); }
+  .clp-caut { --pvh:var(--warn); --pvh-ink:var(--ink-warn,var(--warn)); }
+
+  /* hero band — the parent card's sparkline slot, carrying the probability.
+     TINT CALIBRATION follows the ratified prophet-card correction (2026-08-03):
+     dark gets a barely-there lift, light gets NO tint at all (a coloured wash
+     over #fff reads as paint). The hairline below does the separating in both. */
+  .clp-hero { padding:10px 11px 9px; border-bottom:1px solid var(--line);
+    background:color-mix(in srgb,var(--pvh) 4%,transparent); }
+  html[data-theme="light"] .clp-hero { background:transparent; }
+  .clp-hl { display:block; font-size:9.5px; font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--muted); margin:0 0 2px; }
+  .clp-fig { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .clp-p { font-size:26px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums;
+    color:var(--pvh-ink); }
+  .clp-b { font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums;
+    text-align:right; white-space:nowrap; flex:none; }
+  .clp-b b { font-weight:700; color:color-mix(in srgb,var(--muted) 45%,var(--text)); }
+
+  /* body */
+  .clp-bd { padding:8px 11px 9px; display:flex; flex-direction:column; flex:1; min-width:0; }
+  .clp-idw { display:flex; align-items:baseline; gap:6px; min-width:0; overflow:hidden; }
+  .clp-tk { font-size:13px; font-weight:800; letter-spacing:.01em; white-space:nowrap;
+    font-variant-numeric:tabular-nums; }
+  .clp-nm { font-size:10.5px; color:var(--muted); white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis; min-width:0; }
+  .clp-rung { font-size:10.5px; color:var(--muted); opacity:.85; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+
+  /* marks row — .pv-mk formula verbatim. Board chip is IDENTITY (muted); the
+     caution chips are the INSTRUCTION (warn ink). One fact per chip, so the row
+     reads as a taxonomy rather than chip spam. min-height reserves the slot so
+     a card with nothing to flag stays aligned with its neighbours. */
+  .clp-mk { display:flex; flex-wrap:wrap; align-items:center; gap:3px 4px; margin-top:5px;
+    min-width:0; min-height:18px; }
+  .clp-mk-i { font-size:9.5px; font-weight:700; line-height:1.45; padding:1px 6px; border-radius:6px;
+    white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis;
+    color:var(--muted); background:color-mix(in srgb,var(--muted) 10%,transparent);
+    border:1px solid color-mix(in srgb,var(--muted) 22%,transparent); }
+  /* the read-down chips borrow .pv-mk-blow's ink family: full-strength --ink-warn
+     on an 8% wash reads 6.89:1 dark / 4.77:1 light — 9.5px/800 is not "large
+     text", so the 3:1 allowance does not apply and the softer 15% wash fails. */
+  .clp-mk-warn { font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--ink-warn,var(--warn)); background:color-mix(in srgb,var(--warn) 8%,var(--panel));
+    border-color:color-mix(in srgb,var(--ink-warn,var(--warn)) 50%,transparent); }
+
+  /* ── LADDER RAIL (the signature) ─────────────────────────────────────
+     Occupies the parent card's lifecycle-rail slot and reuses its exact
+     geometry (6.5px dots, 2px segments), re-pointed at the thing this page is
+     actually about: the 涨停板 ladder. Solid = a limit-up already taken; the
+     hollow ring = the one Monday would add; faint = rungs beyond it. A ladder
+     genuinely IS a sequence, which is the only case where a stepped device
+     earns its place. Purely a second reading of .clp-rung above it, so it is
+     aria-hidden — the sentence is what a screen reader gets. */
+  .clp-rail { display:flex; align-items:center; margin:7px 1px 0; }
+  .clp-dot { width:6.5px; height:6.5px; border-radius:50%; background:var(--line); flex:none; }
+  .clp-seg { flex:1; height:2px; background:var(--line); opacity:.75; }
+  .clp-dot.on { background:var(--pvh); }
+  .clp-seg.on { background:color-mix(in srgb,var(--pvh) 45%,var(--line)); opacity:1; }
+  .clp-dot.next { background:transparent; box-shadow:inset 0 0 0 2px var(--pvh),
+    0 0 0 3px color-mix(in srgb,var(--pvh) 18%,transparent); }
+
+  /* footer strip — .pv-zn geometry. Repeats per card exactly as the parent's
+     zone row does; it is the one fact that decides whether the number above it
+     is reachable at all, so it rides the card, not the page footer. */
+  .clp-fill { display:flex; align-items:center; gap:5px; margin-top:auto;
+    background:color-mix(in srgb,var(--panel) 55%,var(--bg)); border-top:1px solid var(--line);
+    padding:6px 10px 7px; font-size:10.5px; color:var(--muted); white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; }
+  /* monoline mark, never an emoji glyph (DESIGN_DOCTRINE §5.8): ⚠ renders as
+     clip-art on white and drifts between headless engines. .ic-svg is scoped by
+     the host page by contract — _icons.html.j2 ships no bare rule. */
+  .clp-fill .ic-svg { width:12px; height:12px; flex:none; display:block; fill:none;
+    stroke:var(--pvh-ink); stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* ── table (Tier 3) ─────────────────────────────────────────────────── */
+  .clp-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:10px;
+    background:var(--panel); }
+  table.clp-tbl { width:100%; border-collapse:collapse; font-size:12px; }
+  .clp-tbl th { position:sticky; top:0; z-index:1; text-align:left; font-size:10px; font-weight:800;
+    letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--panel);
+    border-bottom:1px solid var(--line); padding:7px 10px; white-space:nowrap; }
+  .clp-tbl td { padding:6px 10px; border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);
+    white-space:nowrap; }
+  .clp-tbl tr:last-child td { border-bottom:0; }
+  .clp-tbl tbody tr:hover { background:color-mix(in srgb,var(--prov) 7%,transparent); }
+  .clp-tbl .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .clp-tbl .tk { font-weight:700; font-variant-numeric:tabular-nums; }
+  .clp-tbl .nm { color:var(--muted); max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+  .clp-tbl .p { font-weight:800; color:var(--prov-ink); }
+  .clp-tbl .b { color:var(--muted); }
+  .clp-tbl tr.w td.p { color:var(--ink-warn,var(--warn)); }
+
+  .clp-foot { font-size:12px; color:var(--muted); border-top:1px solid var(--line);
+    margin:18px 0 0; padding:10px 0 0; max-width:960px; }
+  .clp-foot b { color:var(--text); }
+
+  @media (max-width:680px){
+    .clp-p { font-size:23px; }
+    .clp-mk-i { font-size:10px; padding:2px 7px; }
+    .clp-fill { font-size:10px; }
+  }
+  /* The only motion on this page is the card's hover lift. Naming the exact
+     transitioned properties (not a blanket `all`) keeps the kill honest, and
+     the hover STATE survives — border and shadow still respond, only the
+     translate stops. There are no animations and no animated pseudos here. */
+  @media (prefers-reduced-motion: reduce){
+    .clp-card { transition:none; }
+    .clp-card:hover { transform:none; }
+  }
