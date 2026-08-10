@@ -15607,6 +15607,28 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
          and an old artifact takes the lane path above, byte-for-byte unchanged. #}
       {%- set _sg = namespace(any=false) -%}
       {%- for _n in _board -%}{%- if _n.get('stage') -%}{%- set _sg.any = true -%}{%- endif -%}{%- endfor -%}
+      {# ── IS THE MISSING EXTENSION READING BOARD-WIDE? (ANTICIPATION v1, 2026-08-09)
+         The per-row "Extended? Not checked" mark below identifies WHICH featured names
+         the chase-risk check could not score.  Identification is worth a chip only while
+         the answer is *some of them*: when every featured row is unknown the mark is a
+         constant printed once per card, which DESIGN_DOCTRINE Law 4 files as a defect in
+         as many words ("a constant belongs in the footer, once") — and the footer already
+         says it, in the board footnote at the end of this section.  So the mark suppresses
+         itself on an all-unknown shelf and the footnote carries the whole story.
+
+         Counted off the RENDERED rows, not off `ranking.ext_unknown_coverage`, for the
+         same reason the stage chips are (see hk.html.j2's note): a display decision must
+         agree with what the reader can see, and this branch has to hold on an artifact
+         whose `ranking` block is absent.  Missing receipt therefore fails toward
+         DISCLOSURE (counts stay 0, `_xu_allfeat` false, the mark renders), never toward
+         silence.  This is the same rule on every board — HK suppresses today because HK
+         has no extension wiring at all, and US would suppress on a total-outage night
+         like 2026-08-06; neither is special-cased by market. #}
+      {%- set _xu_c = namespace(feat=0, feat_unknown=0) -%}
+      {%- for _n in _board -%}{%- if _n.get('featured') -%}{%- set _xu_c.feat = _xu_c.feat + 1 -%}
+        {%- if _n.get('ext_unknown') -%}{%- set _xu_c.feat_unknown = _xu_c.feat_unknown + 1 -%}{%- endif -%}
+      {%- endif -%}{%- endfor -%}
+      {%- set _xu_allfeat = (_xu_c.feat > 0 and _xu_c.feat_unknown == _xu_c.feat) -%}
       {%- set _ran_rows = (_su.get('ran') or []) if _sg.any else [] -%}
       {# `basing` sits between `ran` and `blocked` (engine.us_board_rank.STAGE_ORDER):
          nothing to act on, so below every actionable bucket — but not the stand-aside
@@ -15843,19 +15865,45 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
              printed null instead (DESIGN_DOCTRINE Law 5): the absence is stated on the
              same tier as the claim it replaces, in the reader's own words, no slug.
 
-             NOT CURRENTLY RENDERED, and fixed anyway. `_prophet_card.html.j2` carries
+             THIS TIP IS STILL NOT RENDERED — `_prophet_card.html.j2` carries
              `_MK_NOTIP = ('feat', 'new')` (operator 2026-08-05 — the featured explainer
-             covered neighbouring cards), so this tip string is built and then dropped
-             on the floor; the sentence a reader actually gets is the board footnote
-             below, which is fixed too. Left correct rather than deleted because the
-             suppression is a layout decision that can be revisited, and a string that
-             comes back wrong is worse than one that comes back right. Do NOT read this
-             branch as a shipped surface — if the per-row disclosure is wanted on the
-             card, it needs a visible carrier, which is a design call, not a copy edit. #}
+             covered neighbouring cards), so the string below is built and dropped on
+             the floor. It is kept correct rather than deleted because the suppression
+             is a layout decision that can be revisited, and a string that comes back
+             wrong is worse than one that comes back right. The visible carrier the
+             disclosure needs is the `nck` chip immediately below, NOT this tip. #}
           {% set _xu = n.get('ext_unknown') %}
           {% if _feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
             'tip_en':'One of today’s top picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor)' ~ ('. How far this name has already run is unknown tonight — no extension reading came through for it, so that check was not scored.' if _xu else ' and price is not extended.') ~ ' Capped at 12 names and 4 per sector, so fewer can show. Priority order, not a return forecast.',
             'tip_zh':'今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）' ~ ('。价格拉伸程度暂无读数 —— 今晚没有取到该股的读数，这一条未参与判定。' if _xu else '、价格未过度拉伸。') ~ '全板最多12只、每个板块最多4只，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
+          {# ── THE PER-ROW CARRIER (ANTICIPATION v1 · the design call #4976 deferred).
+               ★ Featured is a claim about which checks this name passed; on an
+               `ext_unknown` row one of those checks never ran, and until now the only
+               place that said so was the board footnote's aggregate count. The reader
+               could learn that N of the picks were unmeasured but never WHICH — so the
+               mark goes on the card, immediately after the claim it qualifies. Adjacency
+               is the whole point: "★ Featured · Extended? Not checked" is one sentence.
+
+               FEATURED ROWS ONLY, deliberately, though the engine stamps `ext_unknown`
+               on every row. The extension reading feeds the featured gate; on a Wait or
+               Blocked card nothing on the card leans on it, so the mark would answer no
+               question the reader is asking (doctrine Law 1) while spending a slot in a
+               row whose median card shows one chip. It qualifies a claim, so it renders
+               only where the claim is.
+
+               SUPPRESSED WHEN THE WHOLE SHELF IS UNKNOWN — see `_xu_allfeat` above.
+
+               COPY: "Extended?" is the board's own word for this measurement (the
+               footnote below says "price not extended"), and the question mark does the
+               work no adjective can — it says the matter is open, so the chip can be
+               neither read as "this name IS extended" nor as an all-clear. Question-as-
+               label is ratified house case law (DESIGN_DOCTRINE §7, census-distilled
+               patterns). It must NOT borrow the blow-off chip's vocabulary or hue: that
+               is a different measurement with its own rates, and the copy fence above
+               keeps the two apart in both directions. #}
+          {% if _feat and _xu and not _xu_allfeat %}{% set _mk.rows = _mk.rows + [{'k':'nck','en':'Extended? Not checked','zh':'涨过头？未检查',
+            'tip_en':'One of the checks behind ★ Featured did not run for this name tonight: whether price has already run too far to be worth buying here. No reading came through, so nothing was scored — an absence, not a finding that it has. Everything else the shelf tests was scored and passed: fresh signal, entry window open, edge above zero. Tonight, judge the run-up off the chart above yourself.',
+            'tip_zh':'「★ 精选」背后有一项检查今晚没能对这只股票完成：价格是不是已经涨过头、现在买不划算。今晚没取到读数，这一条就没参与判定 —— 是「没查」，不是「查出来涨过头了」。其余几项都已判定并通过：信号新鲜、入场窗口已打开、优势为正。今晚这一项，请自己看上面的走势图判断。'}] %}{% endif %}
           {% if n.get('new') %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
             'tip_en':'This signal fired in tonight’s run — the name was not on the board yesterday.',
             'tip_zh':'该信号在今晚这一轮才触发 — 昨天不在榜上。'}] %}{% endif %}
@@ -16090,12 +16138,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
          rows and the sentence is exactly what it was; this is the common case (the
          08-06 outage put it at 100%, the live board at 0).
 
-         THIS FOOTNOTE IS THE ONLY RENDERED HOME for that disclosure, so it must not
-         point at another one. The ★ Featured chip's tooltip carries the same split
-         (see the chip above) but `_prophet_card.html.j2` suppresses it — `_MK_NOTIP`
-         holds 'feat' since operator 2026-08-05 — so a sentence here promising that
-         "each says so on its card" would be a contract nothing renders. State the
-         count, claim nothing about where else to look. #}
+         THE FOOTNOTE IS NO LONGER THE ONLY HOME (2026-08-09): the `nck` chip above
+         now names WHICH featured cards are unmeasured. The footnote is still the only
+         home for the COUNT, and the two are deliberately not cross-referenced. A
+         clause here promising "each says so on its card" would be false in exactly
+         the case this branch also fires — an all-unknown shelf, where the chip
+         suppresses itself precisely because the footnote is saying it once. Copy that
+         points elsewhere is an untested contract; state the count, claim nothing about
+         where else to look. (The ★ Featured chip's own tooltip carries the same split
+         and still renders nowhere — `_MK_NOTIP` holds 'feat' since operator
+         2026-08-05. That is why the disclosure needed a chip of its own.) #}
       {% set _xuc = ((_su.get('ranking') or {}).get('ext_unknown_coverage') or {}) %}
       {% set _xfu = _xuc.get('featured_with_unknown') or 0 %}
       <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability or return forecast. Green glow is a featured attention shelf, not an admission limit: fresh signal, entry window open, edge above zero (an absolute floor), {% if _xfu %}price not extended wherever tonight’s extension reading came through ({{ _xfu }} of the featured names have none at all, so for those nothing was checked){% else %}price not extended{% endif %}, up to 12 names and 4 per sector. Every qualifying name remains on this ranked, searchable board, and US Prophet evaluates the full eligible set. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 不是胜率，也不是收益预测。绿色高亮只是精选关注层，并非准入上限：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、{% if _xfu %}取到拉伸读数的个股价格未过度拉伸（另有{{ _xfu }}只精选个股完全没有读数，这一项未作检查）{% else %}价格未过度拉伸{% endif %}，最多12只、每个板块最多4只。所有符合条件的股票都会保留在这个可排序、可搜索的完整榜单中，US Prophet 会评估全部合格候选。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>

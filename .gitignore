@@ -395,6 +395,12 @@ data/operator/
 # pre-built so the path is safe before any data ever lands here.
 data/private/
 
+# R6.2 Options Issue Desk append-only operator records. Production defaults to
+# /var/lib/macro-api/options_issue_desk, outside the repository; this narrow
+# containment wall also protects the registered local-development path from a
+# broad git add. These rows can contain private research positions and reviews.
+/runtime-private/options_issue_desk/
+
 # Paid TuShare add-on response partitions are private, non-redistributable pilot
 # data. Never stage them through the nightly blanket `git add data/` sweep.
 # Same rule for the minute plane (Lane B) and chip-distribution store (Lane C).
