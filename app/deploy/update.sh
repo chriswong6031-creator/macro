@@ -138,6 +138,7 @@ install -d -m 0700 /var/lib/macro-market-memory/public/trusted-v1
 install -d -m 0700 /var/lib/macro-market-memory/state
 install -d -m 0700 /var/lib/macro-market-memory/state/sources
 install -d -m 0700 /var/lib/macro-market-memory/state/context-projection
+install -d -m 0700 /var/lib/macro-market-memory/state/identity-v1
 API_UNIT_UPDATED=0
 if ! cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service; then
 	if systemd-analyze verify "$APP_DIR/app/deploy/macro-api.service"; then
@@ -265,6 +266,51 @@ if [ "$MARKET_MEMORY_CONTEXT_RUN_NEEDED" -eq 1 ]; then
 		echo "macro-update: deferring Market Memory context projection — shared runtime dependencies are not current" >&2
 	elif ! systemctl start macro-market-memory-context.service; then
 		echo "macro-update: Market Memory context projection failed closed; hourly timer will retry" >&2
+	fi
+fi
+
+# W1B.2 private identity-observation publisher: network-dark, credential-free,
+# and deliberately disconnected from the API-readable trusted-v1 store. It
+# records legacy roster snapshots only as reconstruction and can admit a future
+# observation operationally only when the collector's receipt-last contract
+# authenticates the exact snapshot bytes.
+MARKET_MEMORY_IDENTITY_UNIT_UPDATED=0
+MARKET_MEMORY_IDENTITY_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-identity.service"
+	"$APP_DIR/app/deploy/macro-market-memory-identity.timer"
+)
+if ! cmp -s "${MARKET_MEMORY_IDENTITY_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-identity.service || \
+   ! cmp -s "${MARKET_MEMORY_IDENTITY_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-identity.timer; then
+	if systemd-analyze verify "${MARKET_MEMORY_IDENTITY_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_IDENTITY_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_IDENTITY_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_IDENTITY_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-market-memory-identity.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: Market Memory identity-observation units updated"
+		fi
+	else
+		echo "macro-update: refusing Market Memory identity unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+systemctl enable --now macro-market-memory-identity.timer >/dev/null 2>&1 || \
+	echo "macro-update: macro-market-memory-identity.timer could not be enabled" >&2
+
+MARKET_MEMORY_IDENTITY_RUN_NEEDED=0
+if [ "$MARKET_MEMORY_IDENTITY_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(scripts/ingest_market_memory_identity\.py|engine/neuralweb/market_memory_identity_(observation|store)\.py|lib/symbol_directory_receipts\.py|collectors/symbol_directory\.py|contracts/(market_memory/(spy_listing_(object|observation)|identity_observation_(prepared|capture_receipt|store_receipts))\.v1\.schema\.json|symbol_directory/symbol_directory_completion_receipt\.v1\.schema\.json)|data/symbol_directory/(snapshots|cik_map|receipts)/.*)$'; then
+	MARKET_MEMORY_IDENTITY_RUN_NEEDED=1
+fi
+if [ "$MARKET_MEMORY_IDENTITY_RUN_NEEDED" -eq 1 ]; then
+	if [ "$API_DEPS_OK" -ne 1 ]; then
+		echo "macro-update: deferring Market Memory identity accrual — shared runtime dependencies are not current" >&2
+	elif ! systemctl start macro-market-memory-identity.service; then
+		echo "macro-update: Market Memory identity accrual failed closed; hourly timer will retry" >&2
 	fi
 fi
 

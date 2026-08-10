@@ -1,0 +1,529 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/symbol_directory/symbol_directory_completion_receipt.v1.schema.json",
+  "title": "Symbol directory prospective completion receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "receipt_id",
+    "producer",
+    "observation_date",
+    "artifact",
+    "sources",
+    "clocks",
+    "completeness",
+    "diagnostics",
+    "evidence_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "symbol_directory.completion_receipt.v1"},
+    "profile": {"const": "symbol_directory.operational_capture.v1"},
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^sdreceipt_[a-f0-9]{64}$"
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {"const": "collectors.symbol_directory.SymbolDirectoryAdapter"},
+        "version": {"const": "symbol_directory.collector.2026-08-10.v2"}
+      }
+    },
+    "observation_date": {"$ref": "#/$defs/date"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "key",
+        "sha256",
+        "bytes",
+        "rows",
+        "parquet_schema"
+      ],
+      "properties": {
+        "kind": {
+          "enum": ["listing_snapshot", "sec_registrant_map"]
+        },
+        "key": {"type": "string", "minLength": 1, "maxLength": 160},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 268435456},
+        "rows": {"type": "integer", "minimum": 1, "maximum": 2000000},
+        "parquet_schema": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "dtype"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,63}$"
+              },
+              "dtype": {"type": "string", "minLength": 1, "maxLength": 64}
+            }
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/source"}
+    },
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collector_started_at", "collector_completed_at"],
+      "properties": {
+        "collector_started_at": {"$ref": "#/$defs/canonicalUtc"},
+        "collector_completed_at": {"$ref": "#/$defs/canonicalUtc"}
+      }
+    },
+    "completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "required_sources_complete",
+        "parse_complete",
+        "row_floor",
+        "row_floor_satisfied",
+        "pre_dedupe_rows",
+        "post_dedupe_rows",
+        "duplicate_occurrences",
+        "duplicate_key_count",
+        "source_row_counts"
+      ],
+      "properties": {
+        "status": {"const": "complete"},
+        "required_sources_complete": {"const": true},
+        "parse_complete": {"const": true},
+        "row_floor": {"type": "integer", "minimum": 1, "maximum": 2000000},
+        "row_floor_satisfied": {"const": true},
+        "pre_dedupe_rows": {"type": "integer", "minimum": 1, "maximum": 4000000},
+        "post_dedupe_rows": {"type": "integer", "minimum": 1, "maximum": 2000000},
+        "duplicate_occurrences": {"type": "integer", "minimum": 0, "maximum": 2000000},
+        "duplicate_key_count": {"type": "integer", "minimum": 0, "maximum": 2000000},
+        "source_row_counts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_id", "parsed_rows"],
+            "properties": {
+              "source_id": {"$ref": "#/$defs/sourceId"},
+              "parsed_rows": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2000000
+              }
+            }
+          }
+        }
+      }
+    },
+    "diagnostics": {
+      "oneOf": [
+        {"$ref": "#/$defs/listingDiagnostics"},
+        {"$ref": "#/$defs/registrantDiagnostics"}
+      ]
+    },
+    "evidence_policy": {
+      "const": {
+        "evidence_basis": "live_captured_source_response",
+        "artifact_integrity": "sha256_bytes_rows_ordered_schema.v1",
+        "source_response_integrity": "sha256_bytes_commitment_at_capture.v1",
+        "source_response_bytes_retained": false,
+        "source_response_replay_verifiable": false,
+        "filename_git_mtime_authoritative": false,
+        "prospective_only": true,
+        "historical_continuity_inferred": false
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lane",
+        "listing_identity_observation_eligible",
+        "sec_registrant_reference_eligible",
+        "listing_sec_identity_binding_eligible",
+        "context_only",
+        "signal_eligible",
+        "training_eligible",
+        "promotion_eligible",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_trade"
+      ],
+      "properties": {
+        "lane": {
+          "enum": ["listing_observation", "sec_registrant_reference"]
+        },
+        "listing_identity_observation_eligible": {"type": "boolean"},
+        "sec_registrant_reference_eligible": {"type": "boolean"},
+        "listing_sec_identity_binding_eligible": {"const": false},
+        "context_only": {"const": true},
+        "signal_eligible": {"const": false},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_trade": {"const": false}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "artifact": {
+            "properties": {"kind": {"const": "listing_snapshot"}},
+            "required": ["kind"]
+          }
+        },
+        "required": ["artifact"]
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "key": {"pattern": "^snapshots/[0-9]{4}-[0-9]{2}-[0-9]{2}\\.parquet$"},
+              "parquet_schema": {
+                "const": [
+                  {"name": "date", "dtype": "string"},
+                  {"name": "symbol", "dtype": "string"},
+                  {"name": "security_name", "dtype": "string"},
+                  {"name": "exchange", "dtype": "string"},
+                  {"name": "etf", "dtype": "bool"},
+                  {"name": "test_issue", "dtype": "bool"},
+                  {"name": "is_preferred", "dtype": "bool"},
+                  {"name": "source", "dtype": "string"}
+                ]
+              }
+            }
+          },
+          "sources": {
+            "minItems": 2,
+            "maxItems": 2,
+            "prefixItems": [
+              {
+                "properties": {
+                  "source_id": {"const": "nasdaq_trader.nasdaqlisted"},
+                  "requested_url": {
+                    "const": "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "source_id": {"const": "nasdaq_trader.otherlisted"},
+                  "requested_url": {
+                    "const": "https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt"
+                  }
+                }
+              }
+            ]
+          },
+          "completeness": {
+            "properties": {
+              "row_floor": {"const": 8000},
+              "source_row_counts": {
+                "minItems": 2,
+                "maxItems": 2,
+                "prefixItems": [
+                  {
+                    "properties": {
+                      "source_id": {"const": "nasdaq_trader.nasdaqlisted"}
+                    }
+                  },
+                  {
+                    "properties": {
+                      "source_id": {"const": "nasdaq_trader.otherlisted"}
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "diagnostics": {
+            "properties": {"kind": {"const": "listing_snapshot"}}
+          },
+          "authority": {
+            "properties": {
+              "lane": {"const": "listing_observation"},
+              "listing_identity_observation_eligible": {"const": true},
+              "sec_registrant_reference_eligible": {"const": false}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "artifact": {
+            "properties": {"kind": {"const": "sec_registrant_map"}},
+            "required": ["kind"]
+          }
+        },
+        "required": ["artifact"]
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "key": {"pattern": "^cik_map/[0-9]{4}-[0-9]{2}-[0-9]{2}\\.parquet$"},
+              "parquet_schema": {
+                "const": [
+                  {"name": "ticker", "dtype": "string"},
+                  {"name": "cik", "dtype": "int64"},
+                  {"name": "title", "dtype": "string"}
+                ]
+              }
+            }
+          },
+          "sources": {
+            "minItems": 1,
+            "maxItems": 1,
+            "prefixItems": [
+              {
+                "properties": {
+                  "source_id": {"const": "sec.company_tickers"},
+                  "requested_url": {
+                    "const": "https://www.sec.gov/files/company_tickers.json"
+                  }
+                }
+              }
+            ]
+          },
+          "completeness": {
+            "properties": {
+              "row_floor": {"const": 1},
+              "source_row_counts": {
+                "minItems": 1,
+                "maxItems": 1,
+                "prefixItems": [
+                  {
+                    "properties": {
+                      "source_id": {"const": "sec.company_tickers"}
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "diagnostics": {
+            "properties": {"kind": {"const": "sec_registrant_map"}}
+          },
+          "authority": {
+            "properties": {
+              "lane": {"const": "sec_registrant_reference"},
+              "listing_identity_observation_eligible": {"const": false},
+              "sec_registrant_reference_eligible": {"const": true}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "canonicalUtc": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+    },
+    "sourceId": {
+      "enum": [
+        "nasdaq_trader.nasdaqlisted",
+        "nasdaq_trader.otherlisted",
+        "sec.company_tickers"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "requested_url",
+        "response_sha256",
+        "response_bytes",
+        "response_started_at",
+        "response_completed_at",
+        "response_bytes_retained"
+      ],
+      "properties": {
+        "source_id": {"$ref": "#/$defs/sourceId"},
+        "requested_url": {
+          "type": "string",
+          "format": "uri",
+          "minLength": 12,
+          "maxLength": 256
+        },
+        "response_sha256": {"$ref": "#/$defs/sha256"},
+        "response_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 67108864
+        },
+        "response_started_at": {"$ref": "#/$defs/canonicalUtc"},
+        "response_completed_at": {"$ref": "#/$defs/canonicalUtc"},
+        "response_bytes_retained": {"const": false}
+      }
+    },
+    "listingSpyOccurrence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "symbol",
+        "security_name",
+        "exchange",
+        "etf",
+        "test_issue",
+        "is_preferred"
+      ],
+      "properties": {
+        "source_id": {"const": "nasdaq_trader.otherlisted"},
+        "symbol": {"const": "SPY"},
+        "security_name": {"type": "string", "minLength": 1, "maxLength": 512},
+        "exchange": {"const": "P"},
+        "etf": {"const": true},
+        "test_issue": {"const": false},
+        "is_preferred": {"const": false}
+      }
+    },
+    "footerDiagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "matching_line_count",
+        "line_sha256s",
+        "authoritative"
+      ],
+      "properties": {
+        "source_id": {
+          "enum": [
+            "nasdaq_trader.nasdaqlisted",
+            "nasdaq_trader.otherlisted"
+          ]
+        },
+        "matching_line_count": {"const": 1},
+        "line_sha256s": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sha256"}
+        },
+        "authoritative": {"const": false}
+      }
+    },
+    "listingDiagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "pre_dedupe_spy_occurrence_count",
+        "pre_dedupe_spy_occurrences",
+        "non_authoritative_footers"
+      ],
+      "properties": {
+        "kind": {"const": "listing_snapshot"},
+        "pre_dedupe_spy_occurrence_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "pre_dedupe_spy_occurrences": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 1,
+          "items": {"$ref": "#/$defs/listingSpyOccurrence"}
+        },
+        "non_authoritative_footers": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {
+              "allOf": [
+                {"$ref": "#/$defs/footerDiagnostic"},
+                {
+                  "properties": {
+                    "source_id": {"const": "nasdaq_trader.nasdaqlisted"}
+                  }
+                }
+              ]
+            },
+            {
+              "allOf": [
+                {"$ref": "#/$defs/footerDiagnostic"},
+                {
+                  "properties": {
+                    "source_id": {"const": "nasdaq_trader.otherlisted"}
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "registrantSpyOccurrence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "ticker", "cik", "title"],
+      "properties": {
+        "source_id": {"const": "sec.company_tickers"},
+        "ticker": {"const": "SPY"},
+        "cik": {"type": "integer", "minimum": 1, "maximum": 9999999999},
+        "title": {"type": "string", "minLength": 1, "maxLength": 512}
+      }
+    },
+    "registrantDiagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "pre_dedupe_spy_occurrence_count",
+        "pre_dedupe_spy_occurrences"
+      ],
+      "properties": {
+        "kind": {"const": "sec_registrant_map"},
+        "pre_dedupe_spy_occurrence_count": {"const": 1},
+        "pre_dedupe_spy_occurrences": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {"$ref": "#/$defs/registrantSpyOccurrence"}
+        }
+      }
+    }
+  }
+}

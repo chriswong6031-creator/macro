@@ -922,6 +922,51 @@ Prophet, options-candidate, options-episode, and outcome authority all remain
 false. Market Memory still never writes `options.signal_episode`, H+60, or
 U-CHAIN records.
 
+### 11.0.3 W1B.2 private SPY identity observations
+
+W1B.2 does not pretend that the repository contains a historical US security
+master. It adds a private, append-only observation lane for one already-frozen
+SPY/ARCX/USD canary. Each row means only `present_in_snapshot` or
+`symbol_absent_from_complete_snapshot` in one complete symbol-directory
+collection. It never infers continuity, an effective listing interval, a
+rename, a delisting, a corporate action, an issuer identity, or OCC history.
+A missing daily snapshot remains `snapshot_missing`, not evidence of absence.
+
+The collector hardening is prospective. A newly written listing snapshot may
+receive a separate completion sidecar only in the same successful collection
+transaction and only after the exact parquet has been durably published. The
+sidecar binds the normalized artifact bytes, row count, logical schema,
+collector clocks, both source-response SHA/byte commitments, and exact
+pre-dedup SPY diagnostics. Raw upstream response bodies are not retained, so
+the receipt states `retained=false` and `replay_verifiable=false`; this lane
+must not be described as authenticating retained upstream bytes. Existing
+files and skipped same-date collections never receive retroactive receipts.
+
+All pre-cutoff tracked snapshots therefore remain
+`public_reconstruction` (24 at the implementation checkpoint). Only a
+post-cutoff snapshot with its exact, strict completion receipt can become a
+`live_captured` observation. Market Memory samples availability only after the
+receipt-artifact-receipt stable read, and a create-once prepared record retains
+that first observation clock across a crash and retry. A complete receipt with
+zero SPY occurrences may establish an operational absence observation, but it
+still cannot establish a delisting or break in continuity.
+
+CIK data remains a separate SEC registrant-reference source. The collector may
+prospectively receipt-bind its normalized output, but W1B.2 does not import it
+into the listing object, local security handles, operational eligibility, or
+identity version. A later or backfilled ticker-to-CIK map therefore cannot
+upgrade or rewrite a listing observation.
+
+The ledger lives only under
+`/var/lib/macro-market-memory/state/identity-v1`. Exact source artifacts,
+listing objects, optional upstream receipts, first-clock records, captures,
+and cumulative generations are private and create-once. Private HEAD is the
+sole mutable pointer and is atomically replaced and fsynced last. The
+network-dark writer is the sole production caller. `macro-api`
+cannot read the lane, no public route or trusted-v1 feature consumes it, and
+training, promotion, ranking, gating, sizing, trading, execution, Prophet,
+options-candidate, episode, and outcome authority remain false.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -991,6 +1036,26 @@ W1B.1 trusted-canary additions:
   plus `tests/test_regime_latest_json_boundary.py` — identity/clock/source
   binding, strict projection, crash/tamper/ambiguity, deploy sandbox, and
   finite atomic-source fixtures.
+
+W1B.2 identity-observation additions:
+
+- `collectors/symbol_directory.py`,
+  `lib/symbol_directory_receipts.py`, and
+  `contracts/symbol_directory/symbol_directory_completion_receipt.v1.schema.json`
+  — prospective artifact-first/receipt-last listing and SEC registrant lanes;
+- `engine/neuralweb/market_memory_identity_observation.py` and the strict
+  `spy_listing_{object,observation}.v1` contracts — one bounded current SPY
+  listing projection with explicit reconstruction/operational basis and no
+  historical resolver claim;
+- `engine/neuralweb/market_memory_identity_store.py` and the
+  `identity_observation_*.v1` contracts — private first-clock, capture,
+  cumulative-generation, HEAD-last, and tamper-failing storage;
+- `scripts/ingest_market_memory_identity.py` and
+  `app/deploy/macro-market-memory-identity.{service,timer}` — the sole
+  Git-bound, credential-free, network-dark production writer and retry lane;
+- `tests/test_{symbol_directory_completion_receipts,market_memory_identity_observation,market_memory_identity_store,ingest_market_memory_identity,market_memory_identity_observation_deploy}.py`
+  — legacy non-upgrade, post-cutoff receipt, absence, clock, crash, tamper,
+  private-root, exact-Git, no-CIK, and zero-authority fixtures.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 

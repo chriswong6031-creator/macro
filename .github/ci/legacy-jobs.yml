@@ -1542,7 +1542,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pyyaml pandas pyarrow requests
+        run: pip install pytest pyyaml pandas pyarrow requests jsonschema
       - name: synapse registry integrity (hard gate)
         run: python3 scripts/check_synapse_registry.py
       - name: synapse read-gate — warn tier + Article-2 hard fail
@@ -1570,7 +1570,10 @@ jobs:
       - name: edgar fundamentals universe widening (W2-A — R2000 via committed constituents)
         run: python -m pytest tests/test_edgar_universe_widening.py -q
       - name: symbol-directory archival collector tests (LHB-W2c / LHB-R8)
-        run: python -m pytest tests/test_symbol_directory.py -q
+        run: >-
+          python -m pytest
+          tests/test_symbol_directory.py
+          tests/test_symbol_directory_completion_receipts.py -q
       - name: winner autopsy B-family feature column tests (LHB-W3)
         run: python -m pytest tests/test_winner_autopsy.py -q
 
@@ -6645,6 +6648,10 @@ jobs:
           tests/test_market_memory_sources.py
           tests/test_market_memory_source_deploy.py
           tests/test_market_memory_identity.py
+          tests/test_market_memory_identity_observation.py
+          tests/test_market_memory_identity_store.py
+          tests/test_market_memory_identity_observation_deploy.py
+          tests/test_ingest_market_memory_identity.py
           tests/test_market_memory_projection.py
           tests/test_market_memory_trusted.py
           tests/test_market_memory_context_deploy.py

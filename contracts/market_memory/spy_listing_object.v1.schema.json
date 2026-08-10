@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/spy_listing_object.v1.schema.json",
+  "title": "Market Memory SPY listing semantic object v1",
+  "description": "A label-free local-canary listing state. It is not a historical identity resolver and makes no continuity, delisting, rename, corporate-action, or SEC registrant claim.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "listing_object_id",
+    "subject",
+    "symbol",
+    "state",
+    "listing",
+    "semantic_limits",
+    "evidence_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.spy_listing_object.v1"},
+    "listing_object_id": {"type": "string", "pattern": "^mmidobj_[a-f0-9]{64}$"},
+    "subject": {"$ref": "#/$defs/subject"},
+    "symbol": {"const": "SPY"},
+    "state": {
+      "enum": ["present_in_snapshot", "symbol_absent_from_complete_snapshot"]
+    },
+    "listing": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/listing"}
+      ]
+    },
+    "semantic_limits": {
+      "const": {
+        "historical_identity_resolution": false,
+        "listing_continuity": false,
+        "delisting": false,
+        "rename": false,
+        "corporate_action": false,
+        "sec_registrant_binding": false
+      }
+    },
+    "evidence_policy": {
+      "const": {
+        "actual_output_only": true,
+        "identity_claim": "local_canary_anchor_only",
+        "historical_resolver": false,
+        "training_eligible": false,
+        "promotion_eligible": false,
+        "role": "context_only"
+      }
+    },
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"state": {"const": "present_in_snapshot"}}},
+      "then": {"properties": {"listing": {"$ref": "#/$defs/listing"}}}
+    },
+    {
+      "if": {"properties": {"state": {"const": "symbol_absent_from_complete_snapshot"}}},
+      "then": {"properties": {"listing": {"type": "null"}}}
+    }
+  ],
+  "$defs": {
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_id", "instrument_id", "identity_version"],
+      "properties": {
+        "subject_id": {"const": "mmsecurity_5fc37e8db34f74314b654c910ea8bacfa7de8b5d2d067f2e5421c9d5745ceb4c"},
+        "instrument_id": {"const": "mmsecurity_6f361f5bad9f06a3b2ff157585d5728f55f77198420959aadd8922d1045c3fea"},
+        "identity_version": {"const": "mmidentityv_65ec5e55473e953b55fa2d146f40e8b56dfae2e68a3df7423405db1034d16903"}
+      }
+    },
+    "listing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "security_name",
+        "source",
+        "raw_exchange_code",
+        "mic",
+        "currency",
+        "etf",
+        "test_issue",
+        "is_preferred"
+      ],
+      "properties": {
+        "security_name": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "source": {"const": "otherlisted"},
+        "raw_exchange_code": {"const": "P"},
+        "mic": {"const": "ARCX"},
+        "currency": {"const": "USD"},
+        "etf": {"const": true},
+        "test_issue": {"const": false},
+        "is_preferred": {"const": false}
+      }
+    },
+    "authority": {
+      "const": {
+        "tier": "display",
+        "horizon_role": "context",
+        "context_only": true,
+        "proposal_weight": 0,
+        "may_rank": false,
+        "may_gate": false,
+        "may_size": false,
+        "may_escalate": false,
+        "may_trade": false,
+        "may_originate": false,
+        "may_select_options_candidate": false,
+        "may_execute": false,
+        "may_write_options_episode": false,
+        "may_append_outcome": false,
+        "may_train_prophet": false
+      }
+    }
+  }
+}
