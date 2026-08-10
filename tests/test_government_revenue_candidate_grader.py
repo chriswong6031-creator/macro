@@ -6,29 +6,28 @@ one is paired with a mutation that proves the assertion can see the defect it
 claims to guard — a green assertion against an implementation that cannot fail is
 the exact class of dead guard this file is meant not to join.
 
-The lobe has zero active candidates by design. Eight historical rows were
-erroneously issued and remain in the immutable candidate ledger, but an exact
-correction quarantines them from active surfaces and the grader has never been
-called. Everything here therefore still runs against fixtures: the historical
-incident cannot manufacture prospective grader observations after the fact.
-The issuance permanently closes this registered family's amendment window, so
-any later evaluation-rule change requires a new ``family_id``.
+The lobe now has an immutable issued recovery cohort, but those rows remain
+display/context-only and the grader still has no production caller.  Everything
+here therefore runs against fixtures.  The harness existed before the first
+candidate was issued; now that issuance exists, any evaluation-rule amendment
+requires a new ``family_id`` rather than rewriting this registered family.
+Zero-candidate cases below are historical fixture probes, never claims about
+the non-empty live ledger.
 """
 from __future__ import annotations
 
 import copy
-import hashlib
+from datetime import date, datetime, timedelta, timezone
 import inspect
 import json
-from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 
 from engine.government_revenue import candidate_grader as grader
 from engine.government_revenue.candidate_grader import (
-    GRV_FA1,
     Coverage,
+    GRV_FA1,
     GraderError,
     PriceBasis,
     PricePanel,
@@ -2250,7 +2249,7 @@ def test_the_zero_candidate_state_labels_cleanly(calendar):
 
 
 def test_the_registration_registers_the_disclosure_layer_before_observation():
-    """§11 exists, is versioned, and the code/document drift guard reads it."""
+    """§11 was registered before outcome observation and remains versioned."""
     text = PREREG_PATH.read_text(encoding="utf-8")
     assert "## 11. Disclosure labels" in text
     for state in grader.DISCLOSURE_LABEL_STATES:
@@ -2259,32 +2258,31 @@ def test_the_registration_registers_the_disclosure_layer_before_observation():
         assert f"`{reason}`" in text
     family, _digest = grader.load_family_declaration(PREREG_PATH)
     assert family.version == "4.1.0"
-    # Still pre-observation, which is what makes this amendment legal at all.
+    # The dedicated grader outcome log remains empty.  Candidate issuance is
+    # pinned separately below and permanently closes the amendment window.
     live = ROOT / "data" / "government_revenue" / grader.ISSUANCE_LOG_FILENAME
     assert not live.exists() or live.stat().st_size == 0
 
 
 # ---------------------------------------------------------------------------
-# AMENDMENT-WINDOW CLOSURE WITNESS (version 4.0.0, 2026-08-08)
+# CLOSED AMENDMENT-WINDOW WITNESS (first issuance 2026-08-10)
 #
-# The eight-row 5fc incident permanently closed the candidate-issuance side of
-# this amendment window. The exact rows remain append-only audit history even
-# though the correction excludes them from active surfaces. This guard now pins
-# that closure while separately proving the grader still has no call path and no
-# grader issuance log; any future grader-rule amendment still requires a new
-# family_id rather than pretending the candidate incident never happened.
+# The original witness deliberately went red when the first candidate rows were
+# issued.  This successor freezes that transition: the eight issued rows remain
+# immutable and context-only, the grader remains uncalled, and §9 requires a new
+# family_id for any later evaluation-rule change.
 # ---------------------------------------------------------------------------
 
 
-def test_amendment_window_is_closed_and_the_grader_remains_uncalled():
-    """Pin the issued audit rows without inventing a grader observation.
+def test_amendment_window_is_closed_after_immutable_issuance_and_grader_stays_uncalled():
+    """Issued context exists, so this family may never be amended in place.
 
     Three independent witnesses, because any one of them alone is weak:
 
-    1. the committed candidate ledger is the exact eight-row incident prefix;
-    2. no issuance log exists anywhere under ``data/``; and
+    1. all eight immutable recovery candidates exist and have no authority;
+    2. no grader outcome log exists anywhere under ``data/``; and
     3. **nothing calls the grader** — no builder, script, or app module imports
-       it, so the incident cannot be misrepresented as a prospective grade.
+       it, so the issued context cannot silently acquire verdict authority.
     """
     ledger = ROOT / "data" / "government_revenue" / "candidate_ledger.jsonl"
     rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line]
@@ -2296,17 +2294,8 @@ def test_amendment_window_is_closed_and_the_grader_remains_uncalled():
         "`family_id`" in preregistration
     )
 
-    raw = ledger.read_bytes()
-    assert len(raw) >= 50_790
-    incident_prefix = raw[:50_790]
-    assert len(incident_prefix.splitlines()) == 8
-    assert incident_prefix.endswith(b"\n")
-    assert hashlib.sha256(incident_prefix).hexdigest() == (
-        "920d840a328b6be88600230f93c8353af30520172c682b25b7302fd4124f7820"
-    )
-
-    logs = sorted((ROOT / "data").rglob(grader.ISSUANCE_LOG_FILENAME))
-    assert logs == [], f"an issuance log exists: {logs}"
+    grader_logs = sorted((ROOT / "data").rglob(grader.ISSUANCE_LOG_FILENAME))
+    assert grader_logs == [], f"a grader outcome log exists: {grader_logs}"
 
     callers = []
     for area in ("engine", "scripts", "app", "admin"):
@@ -2319,8 +2308,8 @@ def test_amendment_window_is_closed_and_the_grader_remains_uncalled():
             if "candidate_grader" in path.read_text(encoding="utf-8", errors="ignore"):
                 callers.append(str(path.relative_to(ROOT)))
     assert callers == [], (
-        f"the grader has acquired callers {callers}: a produced number may exist, and an "
-        "evaluation rule amended after a number exists is a rule tuned on data"
+        f"the grader has acquired callers {callers}: context-only issuance may have gained "
+        "an unregistered path to verdict authority"
     )
 
 

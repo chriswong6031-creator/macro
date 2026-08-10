@@ -100,3 +100,29 @@ any such use disclosed per arm.
   survivor-bias reference; levels overstated by an unmeasured amount, disclosed). 15% excluded
   everywhere. **Awaiting operator notch word (20/25/30) per §4; 25% recommended for family
   consistency with the ratified blocked-entry override.** No live behavior changed by this entry.
+
+- **2026-08-10 — RATIFIED (operator: "okay ship it").** Notch = **25%** (recommended default,
+  matching the blocked-entry family; 20/30 remain one word away pre-fence). Both era-fenced builds
+  launched: **Arm T** — charting-app keeper waives the CT reclaim leg for RELIEVABLE fires only
+  (held passed, reclaim failed; implemented on branch logic, never reason-strings — the §5
+  mis-spec lesson), emitting a distinct `reclaim_override_take` class under era **`gc_v2_wo2`**;
+  hold-leg failures (HL 06-16-shaped) remain refused by design. **Arm P** — `engine/
+  signal_quality._buy_filter` waives the reclaim leg only (hold still required) for qualifying
+  names, under the packet-§7 fence **`us_prophet_v1 → us_prophet_v2`** (BOARD_DEFINITION pattern;
+  ledgers never pool). Both builds return for commissioning review before merge (authority-tier
+  change). LLM originates nothing: this entry records the operator decision on the §5-adjudicated
+  gates.
+
+- **2026-08-10 — NOTCH MOVED TO 20% FAMILY-WIDE + RETRO DISPLAY ORDER (operator).** (a) "ship it
+  under 20%": the live blocked-entry override mask moves 25→20, folded into the SAME era event as
+  the Arm-T reclaim waiver (**`gc_v2_wo2` = keeper reclaim waiver + override notch 20**, one fence
+  bump not two); the Prophet Arm-P waiver ships at 20 likewise (`us_prophet_v2`; its Arm-P@20
+  evidence row: capR +1.165, episode CI [0.123,2.527], 21 episodes, ex-COVID +0.554). The
+  reclaim-family's earlier 25 recording is SUPERSEDED by this family-wide dial move — one word
+  re-splits the families if wanted. All shipped notches passed every frozen gate. (b) Historical
+  qualifying ⊘ (and relievable keeper blocks) are RE-MARKED as full solid buy stars at glance
+  tier, per operator order, using per-notch qualifying intervals (`basket_washout_history.v1`)
+  at notch 20 — **display-only**: hover carries "re-marked under the current rule — the system
+  refused this live", history rows carry a muted "(retro)" tag, and retro fires never enter
+  position state, alerts, forward ledgers, or any scored stream (hard-boundary tests). The
+  forward ledgers remain the sole live track record; pre/post-fence never pool.
