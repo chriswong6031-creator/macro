@@ -14,17 +14,21 @@ OUT.mkdir(parents=True, exist_ok=True)
 theme_css = (ROOT / "templates" / "theme.css").read_text()
 card_j2 = (ROOT / "templates" / "_prophet_card.html.j2").read_text()
 
-# ---- token layer: :root .. end of the ink-token block (theme.css 21..246) ----
+# ---- token layer: :root .. end of the ink-token block (theme.css 21..261) ----
 # Line-indexed slices, so they move whenever theme.css does. Re-anchored 2026-08-09
 # when the W-L1 --prov/--prov-ink pair landed in the ink block (+14 lines); the pair now
 # falls INSIDE the TOKENS slice, which is the point — the mockup then reads the shipped
 # token rather than its own copy of it and the two cannot drift.
+# Re-anchored again 2026-08-10 (+15) for the --ink-pv-near comment. Note the pattern:
+# these indices move on PROSE edits inside the token block, not just structural ones,
+# and this file's comment density makes that routine — expect to re-anchor on most
+# theme.css token edits. The asserts are what keep that loud instead of silent.
 tl = theme_css.splitlines()
-assert tl[245].lstrip().startswith("--prov-ink"), "TOKENS slice moved — re-anchor it"
-TOKENS = "\n".join(tl[20:246])
+assert tl[260].lstrip().startswith("--prov-ink"), "TOKENS slice moved — re-anchor it"
+TOKENS = "\n".join(tl[20:261])
 # language visibility toggle + CJK face + body font
-assert tl[260].startswith("/* ---- language visibility"), "LANGCSS slice moved — re-anchor it"
-LANGCSS = "\n".join(tl[260:271] + tl[296:300])
+assert tl[275].startswith("/* ---- language visibility"), "LANGCSS slice moved — re-anchor it"
+LANGCSS = "\n".join(tl[275:286] + tl[311:315])
 
 # ---- .pvcard CSS verbatim from the partial's pv_css() macro ----
 m = re.search(r"\{% macro pv_css\(\) %\}\s*<style>(.*?)</style>\s*\{% endmacro %\}", card_j2, re.S)

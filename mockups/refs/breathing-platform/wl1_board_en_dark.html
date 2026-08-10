@@ -211,7 +211,22 @@ html[data-theme="light"] {
 }
 html[data-theme="light"][data-lang="zh"] {
   --ink-pv-buy:   color-mix(in srgb, var(--pv-buy)   84%, var(--text));
-  --ink-pv-near:  color-mix(in srgb, var(--pv-near)  84%, var(--text));
+  /* 70%, NOT buy's 84%: --pv-near is not the plain red. It is that red already
+     pushed 82% toward white (the zh block above), so the red rung over-states how
+     much hue this token can afford to keep. At 84% the ink measured 3.90:1 on the
+     chip tint, 4.00 on --panel2, 4.09 on the target pill and 4.41 on the zone
+     label — under AA on the Near card of EVERY prophet board (us_stocks, china,
+     hk, canada, international), which is ~a third of the cards on a normal board.
+     The EN twin already makes this compensation in the same direction (buy 62% ->
+     near 56%) for the same reason: its near hue is likewise the lighter one.
+     70% is the joint optimum of the two live constraints — it clears 4.5:1 on all
+     four ink consumers (chip 4.83 · edn 4.95 · znl 5.46 · trg 5.06) while staying
+     LIGHTER than --ink-pv-buy, which is what keeps Near reading softer than Buy.
+     Below 68% that ordering INVERTS and Near starts reading as the stronger call —
+     so the obvious "just match EN's 56%" is a legibility fix that breaks the
+     semantics. Re-measure with mockups/refs/prophet_verb_ink/probe_pv_ink.py;
+     tests/test_prophet_verb_ink_contrast.py pins the floor. */
+  --ink-pv-near:  color-mix(in srgb, var(--pv-near)  70%, var(--text));
   --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 62%, var(--text));
 }
 /* W-L1 provisional plane (research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md §4.1).
@@ -347,6 +362,9 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
   color:color-mix(in srgb,var(--prov-ink) 42%,var(--muted));
   background:color-mix(in srgb,var(--prov) 7%,transparent);
   border-color:color-mix(in srgb,var(--prov) 30%,transparent)}
+
+.pv-mk-nck{background:transparent;color:var(--muted);
+  border-style:dashed;border-color:color-mix(in srgb,var(--muted) 42%,transparent)}
 
 .pv-mk-i[data-tip-en]{cursor:help}
 .pv-stp{display:flex;align-items:center;margin:7px 1px 0}
