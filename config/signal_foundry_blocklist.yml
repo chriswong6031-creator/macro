@@ -1149,11 +1149,11 @@ entries:
       any_of:
         - 'adjusted.{0,30}price.{0,30}yahoo'
     reason: >
-      STOP-SHIP by ruling — Yahoo history stays split-adjusted even
-      with `auto_adjust=False` (rebase seam documented in
-      `collectors/_stock_ohlc.py`) and the detectors used ties-to-even
-      rounding vs the excha
-    source: '`research/CN_LIMIT_ALPHA_SOL_ADJUSTED_PRICE_STOP_SHIP_2026-08-09.md`; #5059 pared squash `dbf7454f314` + its salvage disposition (`CN_LIMIT_DATA_HEALS_2026-08-08.md` on main); reconciliation-ledger §3'
+      STOP-SHIP by ruling — #5092 withdrew this construction before
+      #5198; byte-exact recovery did not cure its split-adjusted Yahoo
+      input, ties-to-even rounding, or lack of exact exchange-limit
+      authority.
+    source: '`research/CN_LIMIT_ALPHA_SOL_ADJUSTED_PRICE_STOP_SHIP_2026-08-09.md`; #5059 pared squash `dbf7454f314`; erroneous recovery #5198 `d1e893ba92c`; reconciliation-ledger §3/§5/§6/§8 amendments (2026-08-10'
 
   - id: BL-G090
     match:
