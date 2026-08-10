@@ -1,0 +1,364 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/sensitivity_replay_plan.v1.schema.json",
+  "title": "Market Memory unmaterialized sensitivity replay plan v1",
+  "description": "Strict W1B.4A ordered open/mid/close-minus-one-microsecond sensitivity plan. Scenarios are assumptions only; no packet, context, store, reader, conclusion, or authority promotion is permitted.",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 11,
+  "maxProperties": 11,
+  "required": [
+    "schema",
+    "plan_id",
+    "uncertainty",
+    "market_session_window",
+    "plan_status",
+    "abstention_reason",
+    "cutoff_policy",
+    "scenarios",
+    "materialization_policy",
+    "claim_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.sensitivity_replay_plan.v1"},
+    "plan_id": {
+      "type": "string",
+      "minLength": 82,
+      "maxLength": 82,
+      "pattern": "^mmsensitivityplan_[a-f0-9]{64}$"
+    },
+    "uncertainty": {
+      "$ref": "https://mastermind-x.com/contracts/market_memory/event_time_uncertainty.v1.schema.json"
+    },
+    "market_session_window": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "$ref": "https://mastermind-x.com/contracts/market_memory/market_session_window.v1.schema.json"
+        }
+      ]
+    },
+    "plan_status": {"enum": ["unmaterialized", "abstained"]},
+    "abstention_reason": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "enum": [
+            "civil_date_scope",
+            "session_window_unresolved",
+            "non_session"
+          ]
+        }
+      ]
+    },
+    "cutoff_policy": {"$ref": "#/$defs/cutoffPolicy"},
+    "scenarios": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {"$ref": "#/$defs/scenario"}
+    },
+    "materialization_policy": {"$ref": "#/$defs/materializationPolicy"},
+    "claim_policy": {"$ref": "#/$defs/claimPolicy"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"plan_status": {"const": "unmaterialized"}},
+        "required": ["plan_status"]
+      },
+      "then": {
+        "properties": {
+          "abstention_reason": {"type": "null"},
+          "market_session_window": {
+            "allOf": [
+              {
+                "$ref": "https://mastermind-x.com/contracts/market_memory/market_session_window.v1.schema.json"
+              },
+              {
+                "properties": {
+                  "session_state": {
+                    "enum": ["regular_session", "early_close"]
+                  }
+                }
+              }
+            ]
+          },
+          "uncertainty": {
+            "allOf": [
+              {
+                "$ref": "https://mastermind-x.com/contracts/market_memory/event_time_uncertainty.v1.schema.json"
+              },
+              {
+                "properties": {
+                  "sensitivity_coverage": {
+                    "enum": [
+                      "partial_session_sensitivity",
+                      "session_samples_only"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "scenarios": {
+            "minItems": 3,
+            "maxItems": 3,
+            "prefixItems": [
+              {
+                "properties": {
+                  "ordinal": {"const": 0},
+                  "cutoff_scenario": {"const": "session_open"}
+                }
+              },
+              {
+                "properties": {
+                  "ordinal": {"const": 1},
+                  "cutoff_scenario": {"const": "mid_session"}
+                }
+              },
+              {
+                "properties": {
+                  "ordinal": {"const": 2},
+                  "cutoff_scenario": {"const": "session_close"}
+                }
+              }
+            ],
+            "items": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"plan_status": {"const": "abstained"}},
+        "required": ["plan_status"]
+      },
+      "then": {
+        "properties": {
+          "abstention_reason": {
+            "enum": [
+              "civil_date_scope",
+              "session_window_unresolved",
+              "non_session"
+            ]
+          },
+          "scenarios": {"maxItems": 0}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "abstention_reason": {"const": "civil_date_scope"}
+        },
+        "required": ["abstention_reason"]
+      },
+      "then": {
+        "properties": {
+          "market_session_window": {"type": "null"},
+          "uncertainty": {
+            "properties": {"replay_scope": {"const": "civil_date"}}
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"abstention_reason": {"const": "non_session"}},
+        "required": ["abstention_reason"]
+      },
+      "then": {
+        "properties": {
+          "market_session_window": {
+            "allOf": [
+              {
+                "$ref": "https://mastermind-x.com/contracts/market_memory/market_session_window.v1.schema.json"
+              },
+              {
+                "properties": {"session_state": {"const": "non_session"}}
+              }
+            ]
+          },
+          "uncertainty": {
+            "properties": {
+              "sensitivity_coverage": {"const": "none_non_session"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "abstention_reason": {"const": "session_window_unresolved"}
+        },
+        "required": ["abstention_reason"]
+      },
+      "then": {
+        "properties": {
+          "uncertainty": {
+            "properties": {
+              "sensitivity_coverage": {
+                "const": "none_session_window_unresolved"
+              }
+            }
+          },
+          "market_session_window": {"type": "null"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "minLength": 27,
+      "maxLength": 27,
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+    },
+    "cutoffPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 6,
+      "maxProperties": 6,
+      "required": [
+        "policy_version",
+        "ordered_cutoffs",
+        "midpoint_rule",
+        "close_rule",
+        "caller_supplied_cutoffs_allowed",
+        "actual_cutoff_selected"
+      ],
+      "properties": {
+        "policy_version": {
+          "const": "market_memory.open_mid_close_sensitivity.v1"
+        },
+        "ordered_cutoffs": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "prefixItems": [
+            {"const": "session_open"},
+            {"const": "mid_session"},
+            {"const": "session_close"}
+          ],
+          "items": false
+        },
+        "midpoint_rule": {"const": "floor_temporal_midpoint"},
+        "close_rule": {
+          "const": "session_close_exclusive_minus_one_microsecond"
+        },
+        "caller_supplied_cutoffs_allowed": {"const": false},
+        "actual_cutoff_selected": {"const": false}
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 6,
+      "maxProperties": 6,
+      "required": [
+        "ordinal",
+        "cutoff_scenario",
+        "assumed_event_time",
+        "as_known_at",
+        "assumed_time_role",
+        "materialization_status"
+      ],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 0, "maximum": 2},
+        "cutoff_scenario": {
+          "enum": ["session_open", "mid_session", "session_close"]
+        },
+        "assumed_event_time": {"$ref": "#/$defs/timestamp"},
+        "as_known_at": {"$ref": "#/$defs/timestamp"},
+        "assumed_time_role": {
+          "const": "sensitivity_only_not_observed_event_time"
+        },
+        "materialization_status": {"const": "unmaterialized"}
+      }
+    },
+    "materializationPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 5,
+      "maxProperties": 5,
+      "required": [
+        "packet_materialization",
+        "reader_bound",
+        "store_bound",
+        "api_bound",
+        "private_evidence_read"
+      ],
+      "properties": {
+        "packet_materialization": {"const": false},
+        "reader_bound": {"const": false},
+        "store_bound": {"const": false},
+        "api_bound": {"const": false},
+        "private_evidence_read": {"const": false}
+      }
+    },
+    "claimPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 5,
+      "maxProperties": 5,
+      "required": [
+        "sensitivity_only",
+        "point_claim_permitted",
+        "consumer_conclusion_evaluated",
+        "sampled_stability_claimed",
+        "session_samples_prove_event_occurred_in_session"
+      ],
+      "properties": {
+        "sensitivity_only": {"const": true},
+        "point_claim_permitted": {"const": false},
+        "consumer_conclusion_evaluated": {"const": false},
+        "sampled_stability_claimed": {"const": false},
+        "session_samples_prove_event_occurred_in_session": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 15,
+      "maxProperties": 15,
+      "required": [
+        "tier",
+        "horizon_role",
+        "context_only",
+        "proposal_weight",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_escalate",
+        "may_trade",
+        "may_originate",
+        "may_select_options_candidate",
+        "may_execute",
+        "may_write_options_episode",
+        "may_append_outcome",
+        "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}
