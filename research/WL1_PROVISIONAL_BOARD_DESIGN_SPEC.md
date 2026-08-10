@@ -561,14 +561,28 @@ Not a preference — the alternative is closed by measurement already on disk:
   deliberately excludes `build_prophet`. `close-pass.yml`'s header already reasons
   this out: "Bolting the board onto the end of that spine would spend the whole
   margin to publish the thing the spine does not compute."
-- **The live plane is already gated.** `app/deploy/Caddyfile:193`'s public
-  allowlist is `/live/quotes.json /live/breadth.json /live/release_publications.json
-  /live/staleness.json`. `live/prophet_live.json` is **not** on it, so it is served
-  behind the same auth gate as the dashboard page that fetches it. Enriching it
-  exposes nothing the rendered page does not already show the same reader —
-  which retires #3391 ("the real board is not free content") **for this path only**.
-  The full `us_board_provisional.json` stays non-public; it is not what the client
-  reads.
+- **The live plane is already gated.** Verified three independent ways, because
+  this is the claim the whole architecture rests on and getting it wrong would
+  publish the paid board:
+  1. `app/deploy/Caddyfile:193`'s `@vps_public_live` allowlist is exactly
+     `/live/quotes.json /live/breadth.json /live/release_publications.json
+     /live/staleness.json` — `prophet_live.json` is not on it.
+  2. It is likewise absent from the `@reg_asset` `not path` exemption list
+     (`PUBLIC-BOUNDARY-START`, ~line 338), so it falls **inside** `@reg_asset`.
+     That block's own security comment states the consequence: "Every other
+     `/live/*` artifact … remain inside `@reg_asset` below and therefore pass
+     registration + paywall checks before the external file is considered."
+  3. `prophet_live.json` appears **nowhere** in the Caddyfile — there is no
+     third rule granting it a path.
+
+  So it is served behind the same registration + paywall gate as the dashboard
+  page that fetches it, and enriching it exposes nothing the rendered page does
+  not already show that same reader. This retires #3391 ("the real board is not
+  free content") **for this path only**. The full `us_board_provisional.json`
+  stays non-public; it is not what the client reads. **If a future change adds a
+  top-level `/live/*` file_server, this reasoning dies with it** — the Caddyfile
+  already warns "Never add a top-level `/live/*` file_server", and this surface is
+  now one more reason why.
 - **One artifact, one poll, one client** is preserved: the rows ride the existing
   `board_state` key on the artifact `_plvFetch()` already polls.
 
