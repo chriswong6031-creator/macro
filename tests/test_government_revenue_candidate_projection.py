@@ -1,28 +1,33 @@
 from __future__ import annotations
 
+import json
+import shutil
 from collections import Counter
 from copy import deepcopy
 from hashlib import sha256
-import json
 from pathlib import Path
 
 import pytest
 
 from engine.government_revenue.candidates import (
     build_candidate_observations,
+    candidate_historical_suppression_entry,
     candidate_queue_content_id,
+    historical_suppression_entry_key,
+    load_candidate_issuance_correction_manifest,
+    validate_candidate_historical_suppression_binding,
+    validate_candidate_issuance_correction_binding,
 )
 from engine.government_revenue.entity_resolution import load_recipient_entity_graph
 from scripts import build_government_revenue_candidates as projection
 from tests.government_revenue_candidate_fixture import (
-    canonical_frozen_at,
-    canonical_fixture_root,
     ROOT,
+    canonical_fixture_root,
+    canonical_frozen_at,
     shifted,
     utc_date,
 )
 from tests.test_government_revenue_candidates import _award_event, _graph, _payload
-
 
 # Derived from the canonical inputs `_fixture_root` copies, never hand-typed --
 # see `tests/government_revenue_candidate_fixture` for why a wall-clock literal
@@ -36,12 +41,11 @@ BETWEEN_RUNS_KNOWN_AT = shifted(FROZEN_AT, minutes=30)
 BEFORE_FROZEN_AT = shifted(FROZEN_AT, seconds=-1)
 #: A source known after the run that reads it -- the monotonicity guard's target.
 FUTURE_KNOWN_AT = shifted(FROZEN_AT, hours=9)
-
 # The first successful post-heal materialization issued this reviewed cohort at
 # 2026-08-10T04:15:07Z.  The ledger is append-only: later rows may be added, but
-# these exact records may never be deleted, rewritten, or reclassified as
-# suppressed history.  The digest covers the complete eight-row semantic JSON,
-# independent of future appended rows and line ordering.
+# these exact records may never be deleted or rewritten. The correction changes
+# active serving state without changing their semantic JSON. The digest covers
+# the complete eight-row cohort, independent of later rows and line ordering.
 _ISSUED_RECOVERY_OBSERVATIONS = {
     "gro1-021c5d60ada8e95b6f564644": "grc1-e2e57aacdde17def7eeb01d6",
     "gro1-0909bb4f623d7708ec0cd853": "grc1-cc400940cd4e316d5b80a7b1",
@@ -52,20 +56,13 @@ _ISSUED_RECOVERY_OBSERVATIONS = {
     "gro1-b3cd3e2eab5b6af7a4bf44e4": "grc1-8d90edd35a0f32f9120ebdb4",
     "gro1-beb39cd54fc0defd9b2cd3d4": "grc1-a5d800c17e0bce45ff9a8aa8",
 }
-_ISSUED_RECOVERY_CANDIDATE_IDS = frozenset(_ISSUED_RECOVERY_OBSERVATIONS.values())
 _ISSUED_RECOVERY_COHORT_SHA256 = (
     "a6a93726a9cde15da97e5d883d6f16c7c5ab6efe0ca07eecf0e414f0bef148ab"
 )
-_DISPLAY_ONLY_AUTHORITY = {
-    "tier": "display",
-    "context_only": True,
-    "can_rank": False,
-    "can_size": False,
-    "can_gate": False,
-    "can_originate_signal": False,
-    "can_add_candidates": False,
-    "can_escalate": False,
-}
+# Frozen recovery clocks for the exact 5fc incident reconstructed below.
+CORRECTION_ACTIVATED_AT = "2026-08-10T04:35:00+00:00"
+CORRECTION_REPEAT_AT = "2026-08-10T04:36:00+00:00"
+FORWARD_DURING_ACTIVATION_AT = "2026-08-10T04:32:00+00:00"
 
 
 def _issued_recovery_cohort(rows: list[dict]) -> list[dict]:
@@ -102,6 +99,204 @@ def _artifact_bytes(root: Path) -> dict[str, bytes | None]:
         "public": root / "site/government-revenue-data/candidates.json",
     }
     return {name: path.read_bytes() if path.exists() else None for name, path in paths.items()}
+
+
+def _incident_correction_root(tmp_path: Path) -> Path:
+    """Rebuild the exact 5fc incident predecessor without reading Git history."""
+    root = canonical_fixture_root(tmp_path)
+    copied = (
+        "config/government_revenue/candidate_historical_suppressions.v1.json",
+        "config/government_revenue/candidate_issuance_corrections.v1.json",
+        "contracts/government_revenue/government_revenue_candidate.v1.schema.json",
+        "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json",
+        "contracts/government_revenue/government_revenue_candidate_historical_suppressions.v1.schema.json",
+        "contracts/government_revenue/government_revenue_candidate_issuance_corrections.v1.schema.json",
+        "data/government_revenue/candidate_ledger.jsonl",
+    )
+    for relative in copied:
+        destination = root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / relative, destination)
+    manifest, _manifest_sha = load_candidate_issuance_correction_manifest(root)
+    incident = manifest["incident"]
+    inputs = projection.validate_candidate_projection_inputs(
+        root,
+        generated_at=incident["issued_projection_generated_at"],
+    )
+    _observations, queue, _queue_id, source_health = projection._current_projection(inputs)
+    ledger = projection.load_candidate_ledger(
+        root / "data/government_revenue/candidate_ledger.jsonl"
+    )
+    queue, queue_id = projection._queue_bound_to_immutable_ledger(queue, ledger)
+    state = projection._ledger_state(
+        inputs=inputs,
+        queue=queue,
+        queue_content_id=queue_id,
+        prior=ledger,
+        ledger=ledger,
+        append_count=0,
+    )
+    status = projection._projection_status(
+        inputs=inputs,
+        queue=queue,
+        queue_content_id=queue_id,
+        ledger=ledger,
+        source_health=source_health,
+    )
+    artifact_dir = root / "data/government_revenue"
+    public_dir = root / "site/government-revenue-data"
+    public_dir.mkdir(parents=True, exist_ok=True)
+    queue_raw = projection._canonical_bytes(queue)
+    state_raw = projection._canonical_bytes(state)
+    (artifact_dir / "candidate_queue.json").write_bytes(queue_raw)
+    (artifact_dir / "candidate_projection_state.json").write_bytes(state_raw)
+    (artifact_dir / "candidate_projection_status.json").write_bytes(
+        projection._canonical_bytes(status)
+    )
+    (public_dir / "candidates.json").write_bytes(queue_raw)
+    assert queue_id == incident["issued_queue_content_id"]
+    assert sha256(queue_raw).hexdigest() == incident["issued_queue_sha256"]
+    assert sha256(state_raw).hexdigest() == incident[
+        "issued_projection_state_sha256"
+    ]
+    return root
+
+
+def _patch_incident_current_rows(
+    monkeypatch: pytest.MonkeyPatch,
+    mutate,
+) -> None:
+    """Apply one deterministic hostile edit to both pure candidate surfaces."""
+    original_observations = projection.build_candidate_observations
+    original_queue = projection.build_candidate_queue
+
+    def current_rows(latest, graph, *, generated_at):
+        rows = original_observations(latest, graph, generated_at=generated_at)
+        return mutate(deepcopy(rows), generated_at)
+
+    def observations(latest, graph, *, generated_at):
+        return current_rows(latest, graph, generated_at=generated_at)
+
+    def queue(latest, graph, *, generated_at):
+        result = original_queue(latest, graph, generated_at=generated_at)
+        rows = current_rows(latest, graph, generated_at=generated_at)
+        result["candidates"] = deepcopy(rows)
+        result["counts"] = {
+            **result["counts"],
+            "total": len(rows),
+            "exact_linked": len(rows),
+            "by_family": dict(
+                sorted(Counter(row["candidate_family"] for row in rows).items())
+            ),
+            "by_state": dict(
+                sorted(Counter(row["candidate_state"] for row in rows).items())
+            ),
+            "by_freshness": dict(
+                sorted(Counter(row["freshness"]["status"] for row in rows).items())
+            ),
+            "by_exact_link_status": {
+                "exact_linked": len(rows),
+                "mapping_needed": len(result["mapping_backlog"]),
+            },
+        }
+        result["content_id"] = candidate_queue_content_id(result)
+        return result
+
+    monkeypatch.setattr(projection, "build_candidate_observations", observations)
+    monkeypatch.setattr(projection, "build_candidate_queue", queue)
+
+
+def _rotate_candidate_source(
+    row: dict,
+    *,
+    content_sha256: str,
+    known_at: str | None = None,
+) -> dict:
+    """Restate one valid row under a different official-source content digest."""
+    prior_sha256 = row["source_event"]["source_content_id"]
+    row["source_event"]["source_content_id"] = content_sha256
+    for receipt in row["source_receipt_refs"]:
+        if receipt["content_sha256"] == prior_sha256:
+            receipt["content_sha256"] = content_sha256
+            receipt["ref_id"] = (
+                receipt["ref_id"].rsplit(":", 1)[0] + ":" + content_sha256[:16]
+            )
+            if known_at is not None:
+                receipt["known_at"] = known_at
+    row["artifact_content_ids"] = sorted(
+        content_sha256 if value == prior_sha256 else value
+        for value in row["artifact_content_ids"]
+    )
+    if known_at is not None:
+        row["known_at"] = known_at
+        row["source_event"]["known_at"] = known_at
+        row["freshness"]["event_known_at"] = known_at
+    return row
+
+
+def _install_historical_suppression_manifest(
+    root: Path,
+    rows: list[dict],
+    *,
+    reviewed_at: str = NEXT_RUN_AT,
+    extra_entries: list[dict] | None = None,
+) -> dict:
+    """Install one production-shaped reviewed manifest against the prior queue."""
+    queue = json.loads(
+        (root / "data/government_revenue/candidate_queue.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    state = json.loads(
+        (root / "data/government_revenue/candidate_projection_state.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    entries = [candidate_historical_suppression_entry(row) for row in rows]
+    entries.extend(deepcopy(extra_entries or []))
+    entries.sort(key=historical_suppression_entry_key)
+    manifest = {
+        "contract": "government_revenue.candidate_historical_suppressions.v1",
+        "schema_version": "1.0.0",
+        "reviewed_at": reviewed_at,
+        "predecessor": {
+            "queue_content_id": queue["content_id"],
+            "projection_generated_at": state["generated_at"],
+        },
+        "policy": "exact_source_identity_only",
+        "entries": entries,
+        "authority": {
+            "tier": "infrastructure",
+            "context_only": True,
+            "can_rank": False,
+            "can_size": False,
+            "can_gate": False,
+            "can_originate_signal": False,
+            "can_add_candidates": False,
+            "can_escalate": False,
+        },
+        "limitations": [
+            "Exact reviewed source identities only; no wildcard suppression.",
+            "The decision withholds historical issuance and never retimes an observation.",
+            "This manifest has no rank, sizing, gate, signal, candidate, or escalation authority.",
+        ],
+    }
+    schema_rel = Path(
+        "contracts/government_revenue/"
+        "government_revenue_candidate_historical_suppressions.v1.schema.json"
+    )
+    (root / schema_rel).parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ROOT / schema_rel, root / schema_rel)
+    manifest_path = (
+        root
+        / "config/government_revenue/candidate_historical_suppressions.v1.json"
+    )
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(
+        projection._canonical_json(manifest) + "\n",
+        encoding="utf-8",
+    )
+    return manifest
 
 
 def _candidate_projection_with_one_candidate(
@@ -378,23 +573,7 @@ def _candidate_projection_over_graph(
     return candidates_for
 
 
-def _project_empty_candidate_baseline(
-    monkeypatch: pytest.MonkeyPatch,
-    root: Path,
-) -> dict:
-    """Materialize an explicit empty synthetic source, then release its patches."""
-    _candidate_projection_over_graph(
-        monkeypatch,
-        root,
-        graph=_graph(),
-        events=[],
-    )
-    result = projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
-    monkeypatch.undo()
-    return result
-
-
-def test_current_fixture_projects_issued_queue_and_byte_identical_twins(tmp_path: Path) -> None:
+def test_current_fixture_projects_honest_source_queue_and_byte_identical_twins(tmp_path: Path) -> None:
     root = _fixture_root(tmp_path)
 
     result = projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
@@ -406,20 +585,19 @@ def test_current_fixture_projects_issued_queue_and_byte_identical_twins(tmp_path
         (root / "data/government_revenue/candidate_projection_status.json").read_text(encoding="utf-8")
     )
     assert result["status"] == "ok"
-    assert result["candidate_count"] >= len(_ISSUED_RECOVERY_CANDIDATE_IDS)
+    assert result["candidate_count"] == 8
     assert result["mapping_backlog_count"] == 21
-    assert queue["counts"]["total"] == result["candidate_count"]
+    assert queue["counts"]["total"] == 8
+    assert queue["counts"]["exact_linked"] == 8
     assert queue["counts"]["mapping_needed"] == 21
     assert queue_path.read_bytes() == public_path.read_bytes()
-    ledger = projection.load_candidate_ledger(
-        root / "data/government_revenue/candidate_ledger.jsonl"
-    )
-    assert ledger.line_count == result["candidate_count"]
-    assert _ISSUED_RECOVERY_CANDIDATE_IDS <= {
-        row["candidate_id"] for row in ledger.observations
-    }
+    assert len(
+        (root / "data/government_revenue/candidate_ledger.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ) == 8
     assert status["status"] == "ok"
-    assert status["candidate_count"] == result["candidate_count"]
+    assert status["candidate_count"] == 8
     # Source health is reported from the canonical inputs, never defaulted rosy.
     # A hand-typed literal here is the same scheduled failure this suite's fixture
     # module was written to end: the award-event rail sat at "unavailable" for days
@@ -434,61 +612,6 @@ def test_current_fixture_projects_issued_queue_and_byte_identical_twins(tmp_path
     )["procurement_workspace"]["freshness"]["award_events"]["status"]
     assert status["source_health"]["award_events_status"] == canonical_award_status
     assert status["source_health"]["status"] in {"ok", "degraded"}
-
-
-def test_issued_recovery_cohort_is_immutable_context_and_never_corrected_away() -> None:
-    """The live first issuance cannot be retroactively rewritten as withheld.
-
-    #5207 healed the schema door and the serialized live writer appended eight
-    reviewed rows before the proposed suppression control could land.  Their
-    issuance is now immutable history: preserve their complete semantic bytes,
-    keep every authority action false, and reject any later suppression or
-    correction overlay that reclassifies an already-issued source identity.
-    """
-    ledger_path = ROOT / "data/government_revenue/candidate_ledger.jsonl"
-    rows = [
-        json.loads(line)
-        for line in ledger_path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
-    cohort = _issued_recovery_cohort(rows)
-    assert {row["candidate_id"] for row in cohort} == _ISSUED_RECOVERY_CANDIDATE_IDS
-    assert _issued_recovery_cohort_sha256(rows) == _ISSUED_RECOVERY_COHORT_SHA256
-
-    for row in cohort:
-        assert row["authority"] == _DISPLAY_ONLY_AUTHORITY
-        assert row["candidate_scope"] == "government_revenue_research"
-        assert row["is_neuralweb_trade_candidate"] is False
-
-    forbidden_controls = (
-        ROOT / "config/government_revenue/candidate_historical_suppressions.v1.json",
-        ROOT / "config/government_revenue/candidate_issuance_corrections.v1.json",
-        ROOT
-        / "contracts/government_revenue/government_revenue_candidate_historical_suppressions.v1.schema.json",
-        ROOT
-        / "contracts/government_revenue/government_revenue_candidate_issuance_corrections.v1.schema.json",
-    )
-    assert not any(path.exists() for path in forbidden_controls), (
-        "active suppression/correction plumbing cannot be introduced after the reviewed "
-        "cohort has already been issued; design any future control as a new forward-only contract"
-    )
-
-    forbidden_tokens = ("candidate_historical_suppressions", "candidate_issuance_corrections")
-    production_surfaces = (
-        ROOT / "app/government_revenue.py",
-        ROOT / "engine/government_revenue/candidates.py",
-        ROOT / "scripts/build_government_revenue_candidates.py",
-        ROOT / "scripts/check_government_revenue_projection.py",
-        ROOT / ".github/workflows/government-revenue-live.yml",
-        ROOT
-        / "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json",
-        ROOT / "templates/government_revenue.html.j2",
-    )
-    for surface in production_surfaces:
-        text = surface.read_text(encoding="utf-8")
-        assert not any(token in text for token in forbidden_tokens), (
-            f"{surface.relative_to(ROOT)} resurrected a retroactive issued-row overlay"
-        )
 
 
 def test_issued_cohort_digest_ignores_later_observation_of_existing_candidate() -> None:
@@ -511,29 +634,264 @@ def test_issued_cohort_digest_ignores_later_observation_of_existing_candidate() 
     assert _issued_recovery_cohort_sha256(rows) == _ISSUED_RECOVERY_COHORT_SHA256
 
 
-def test_same_frozen_run_keeps_durable_bytes_and_remediates_one_sided_twin(tmp_path: Path) -> None:
+def test_same_frozen_run_is_idempotent_and_one_sided_twin_is_remediated(tmp_path: Path) -> None:
     root = _fixture_root(tmp_path)
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
     first = _artifact_bytes(root)
+    first_state = json.loads(first["state"])
+    assert first_state["ledger"]["append_count"] == 8
+    assert first_state["ledger"]["prior_line_count"] == 0
 
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
-    second = _artifact_bytes(root)
-    for artifact in ("ledger", "queue", "status", "public"):
-        assert second[artifact] == first[artifact]
-    first_state = json.loads(first["state"])
-    second_state = json.loads(second["state"])
-    assert {
-        key: value for key, value in second_state.items() if key != "ledger"
-    } == {key: value for key, value in first_state.items() if key != "ledger"}
-    assert second_state["ledger"]["append_count"] == 0
-    assert second_state["ledger"]["prior_line_count"] == first_state["ledger"]["line_count"]
-    assert second_state["ledger"]["prior_sha256"] == first_state["ledger"]["sha256"]
-    assert second_state["ledger"]["sha256"] == first_state["ledger"]["sha256"]
+    settled = _artifact_bytes(root)
+    settled_state = json.loads(settled["state"])
+    assert settled["ledger"] == first["ledger"]
+    assert settled["queue"] == first["queue"]
+    assert settled["public"] == first["public"]
+    assert settled["status"] == first["status"]
+    assert settled_state["ledger"]["append_count"] == 0
+    assert settled_state["ledger"]["prior_line_count"] == 8
+
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    assert _artifact_bytes(root) == settled
 
     public_path = root / "site/government-revenue-data/candidates.json"
     public_path.unlink()
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
     assert public_path.read_bytes() == (root / "data/government_revenue/candidate_queue.json").read_bytes()
+
+
+def test_exact_incident_is_quarantined_without_rewriting_history_and_activation_is_durable(
+    tmp_path: Path,
+) -> None:
+    root = _incident_correction_root(tmp_path)
+    queue_path = root / "data/government_revenue/candidate_queue.json"
+    state_path = root / "data/government_revenue/candidate_projection_state.json"
+    ledger_path = root / "data/government_revenue/candidate_ledger.jsonl"
+    incident_queue_raw = queue_path.read_bytes()
+    incident_state_raw = state_path.read_bytes()
+    incident_queue = json.loads(incident_queue_raw)
+    incident_state = json.loads(incident_state_raw)
+    incident_ledger = projection.load_candidate_ledger(ledger_path)
+    incident_ledger_raw = ledger_path.read_bytes()
+
+    uncorrected = validate_candidate_issuance_correction_binding(
+        incident_queue,
+        incident_state,
+        root=root,
+        issued_observations=incident_ledger.observations,
+        allow_exact_incident_predecessor=True,
+        queue_raw_sha256=sha256(incident_queue_raw).hexdigest(),
+        projection_state_raw_sha256=sha256(incident_state_raw).hexdigest(),
+        require_correction=True,
+    )
+    assert uncorrected["status"] == "uncorrected_incident"
+    assert uncorrected["issued_count"] == 8
+    with pytest.raises(ValueError, match="uncorrected candidate issuance incident"):
+        validate_candidate_issuance_correction_binding(
+            incident_queue,
+            incident_state,
+            root=root,
+            issued_observations=incident_ledger.observations,
+        )
+    # The older non-issuance validator remains strict: the correction is a
+    # separate audit contract, not permission to reinterpret issued rows as
+    # having been withheld.
+    with pytest.raises(ValueError, match="was issued as a candidate"):
+        validate_candidate_historical_suppression_binding(
+            incident_queue,
+            incident_state,
+            root=root,
+            current_observations=incident_queue["candidates"],
+            issued_observations=incident_ledger.observations,
+            require_manifest=True,
+        )
+
+    first = projection.project_candidate_artifacts(
+        root,
+        generated_at=CORRECTION_ACTIVATED_AT,
+    )
+    first_queue = json.loads(queue_path.read_text(encoding="utf-8"))
+    first_state = json.loads(state_path.read_text(encoding="utf-8"))
+    receipt = first_queue["coverage"][
+        "historical_candidate_issuance_correction"
+    ]
+    activation = deepcopy(receipt["activation"])
+    assert first["candidate_count"] == 0
+    assert first["append_count"] == 0
+    assert first["suppressed_historical_count"] == 0
+    assert first["quarantined_issuance_count"] == 8
+    assert first_queue["candidates"] == []
+    assert first_queue["recently_matured"] == []
+    assert first_queue["counts"]["total"] == 0
+    assert (
+        first_queue["freshness"]["exact_candidate_availability"]
+        == "quarantined_historical_issuance"
+    )
+    assert "historical_candidate_suppression" not in first_queue["coverage"]
+    assert receipt["matched_issued_count"] == 8
+    assert receipt["quarantined_count"] == 8
+    assert activation["activated_at"] == CORRECTION_ACTIVATED_AT
+    assert activation["matched_issued_count"] == 8
+    assert ledger_path.read_bytes() == incident_ledger_raw
+    assert first_state["ledger"] == {
+        "append_count": 0,
+        "byte_count": 50790,
+        "line_count": 8,
+        "prior_byte_count": 50790,
+        "prior_line_count": 8,
+        "prior_sha256": "920d840a328b6be88600230f93c8353af30520172c682b25b7302fd4124f7820",
+        "sha256": "920d840a328b6be88600230f93c8353af30520172c682b25b7302fd4124f7820",
+    }
+    assert projection.verify_candidate_artifacts(
+        root,
+        require_historical_suppression_manifest=True,
+    )["status"] == "ok"
+
+    repeated = projection.project_candidate_artifacts(
+        root,
+        generated_at=CORRECTION_REPEAT_AT,
+    )
+    repeated_queue = json.loads(queue_path.read_text(encoding="utf-8"))
+    assert repeated["candidate_count"] == 0
+    assert repeated["append_count"] == 0
+    assert repeated["quarantined_issuance_count"] == 8
+    assert ledger_path.read_bytes() == incident_ledger_raw
+    assert (
+        repeated_queue["coverage"]["historical_candidate_issuance_correction"][
+            "activation"
+        ]
+        == activation
+    )
+    assert projection.verify_candidate_artifacts(
+        root,
+        require_historical_suppression_manifest=True,
+    )["status"] == "ok"
+
+
+def test_correction_rejects_mutated_or_truncated_incident_prefix_without_writes(
+    tmp_path: Path,
+) -> None:
+    root = _incident_correction_root(tmp_path)
+    queue_path = root / "data/government_revenue/candidate_queue.json"
+    state_path = root / "data/government_revenue/candidate_projection_state.json"
+    ledger_path = root / "data/government_revenue/candidate_ledger.jsonl"
+    queue_raw = queue_path.read_bytes()
+    state_raw = state_path.read_bytes()
+    queue = json.loads(queue_raw)
+    state = json.loads(state_raw)
+    rows = list(projection.load_candidate_ledger(ledger_path).observations)
+    before = _artifact_bytes(root)
+    mutated = deepcopy(rows)
+    mutated[0]["ticker"] = "BAD"
+
+    for hostile_prefix, message in (
+        (mutated, "differs from the incident"),
+        (rows[:-1], "prefix is incomplete"),
+    ):
+        with pytest.raises(ValueError, match=message):
+            validate_candidate_issuance_correction_binding(
+                queue,
+                state,
+                root=root,
+                issued_observations=hostile_prefix,
+                allow_exact_incident_predecessor=True,
+                queue_raw_sha256=sha256(queue_raw).hexdigest(),
+                projection_state_raw_sha256=sha256(state_raw).hexdigest(),
+                require_correction=True,
+            )
+        assert _artifact_bytes(root) == before
+
+
+def test_exact_incident_raw_binding_tamper_fails_before_publication(
+    tmp_path: Path,
+) -> None:
+    root = _incident_correction_root(tmp_path)
+    queue_path = root / "data/government_revenue/candidate_queue.json"
+    queue = json.loads(queue_path.read_text(encoding="utf-8"))
+    # Keep the queue semantically valid and content-addressed, but change its
+    # raw bytes. The incident contract binds the reviewed publication artifact,
+    # not merely an equivalent JSON object.
+    queue_path.write_text(
+        json.dumps(queue, ensure_ascii=False, sort_keys=True, indent=1) + "\n",
+        encoding="utf-8",
+    )
+    before = _artifact_bytes(root)
+
+    with pytest.raises(
+        projection.CandidateProjectionError,
+        match="prior candidate reviewed-history binding is invalid",
+    ) as refusal:
+        projection.project_candidate_artifacts(
+            root,
+            generated_at=CORRECTION_ACTIVATED_AT,
+        )
+
+    assert "incident predecessor is not exact" in str(refusal.value.__cause__)
+    assert _artifact_bytes(root) == before
+
+
+def test_correction_first_activation_refuses_a_ninth_ledger_append(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = _incident_correction_root(tmp_path)
+    before = _artifact_bytes(root)
+
+    def add_forward_row(rows: list[dict], generated_at: str) -> list[dict]:
+        extra = _rotate_candidate_source(
+            deepcopy(rows[0]),
+            content_sha256="f" * 64,
+            known_at=FORWARD_DURING_ACTIVATION_AT,
+        )
+        extra["observation_id"] = "gro1-" + "f" * 24
+        extra["generated_at"] = generated_at
+        rows.append(extra)
+        return rows
+
+    _patch_incident_current_rows(monkeypatch, add_forward_row)
+    with pytest.raises(
+        projection.CandidateProjectionError,
+        match="candidate reviewed-history binding is invalid",
+    ) as refusal:
+        projection.project_candidate_artifacts(
+            root,
+            generated_at=CORRECTION_ACTIVATED_AT,
+        )
+
+    assert "activation changed the incident ledger" in str(refusal.value.__cause__)
+    assert _artifact_bytes(root) == before
+
+
+def test_same_clock_source_content_rotation_cannot_rebind_quarantined_history(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = _incident_correction_root(tmp_path)
+    projection.project_candidate_artifacts(
+        root,
+        generated_at=CORRECTION_ACTIVATED_AT,
+    )
+    before = _artifact_bytes(root)
+
+    def rotate_same_clock(rows: list[dict], _generated_at: str) -> list[dict]:
+        rows[0] = _rotate_candidate_source(
+            rows[0],
+            content_sha256="f" * 64,
+        )
+        return rows
+
+    _patch_incident_current_rows(monkeypatch, rotate_same_clock)
+    with pytest.raises(
+        projection.CandidateProjectionError,
+        match="source identity differs from the immutable ledger row",
+    ):
+        projection.project_candidate_artifacts(
+            root,
+            generated_at=CORRECTION_REPEAT_AT,
+        )
+
+    assert _artifact_bytes(root) == before
 
 
 def test_verifier_allows_generated_at_only_workspace_reassembly(tmp_path: Path) -> None:
@@ -618,71 +976,439 @@ def test_repeated_observation_keeps_immutable_row_when_envelope_clock_advances(
     assert projection.verify_candidate_artifacts(root)["status"] == "ok"
 
 
-def test_first_issuance_into_an_empty_ledger_records_historical_observations(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """An empty ledger has no issuance history, so first issuance is not a backfill.
-
-    Every broken-admission generation issued zero candidates while advancing the
-    frozen clock, and first-seen evidence clocks never move forward -- refusing
-    here wedged the serialized live lane permanently once #5086 repaired the
-    event contract (render run 31333981567).  The row keeps its honest evidence
-    ``known_at`` beside the issuing run's ``generated_at``.
-    """
-    root = _fixture_root(tmp_path)
-    _project_empty_candidate_baseline(monkeypatch, root)
-    _candidate_projection_with_one_candidate(monkeypatch, root)
-
-    result = projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
-
-    assert result["append_count"] == 1
-    ledger = projection.load_candidate_ledger(
-        root / "data/government_revenue/candidate_ledger.jsonl"
-    )
-    assert ledger.line_count == 1
-    row = ledger.observations[0]
-    assert row["generated_at"] == NEXT_RUN_AT
-    assert projection._instant(
-        row["known_at"], label="issued observation known_at"
-    ) <= projection._instant(FROZEN_AT, label="frozen clock")
-    notice = next(
-        line
-        for line in capsys.readouterr().out.splitlines()
-        if "govrev-candidate-first-issuance" in line
-    )
-    assert notice.startswith("::notice ")
-    assert row["observation_id"] in notice
-    assert projection.verify_candidate_artifacts(root)["status"] == "ok"
-
-
-def test_first_issuance_escape_arms_the_gate_once_any_row_exists(
+def test_unseen_historical_observation_cannot_backfill_after_prior_materialization(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The empty-ledger admission is one-shot: a frozen ledger refuses again."""
     root = _fixture_root(tmp_path)
-    _project_empty_candidate_baseline(monkeypatch, root)
-    _candidate_projection_over_graph(
-        monkeypatch, root, graph=_multi_row_graph(), events=[_award_event()]
-    )
-    first = projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
-    assert first["append_count"] == 1
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
     before = _artifact_bytes(root)
+    _candidate_projection_with_one_candidate(monkeypatch, root)
 
-    _candidate_projection_over_graph(
-        monkeypatch,
-        root,
-        graph=_two_issuer_graph(),
-        events=[_award_event(), _lmt_award_event(BEFORE_FROZEN_AT)],
-        as_of=utc_date(BEFORE_FROZEN_AT),
-    )
     with pytest.raises(
         projection.CandidateProjectionError,
         match="not forward of the prior frozen generated_at clock",
     ):
-        projection.project_candidate_artifacts(
-            root, generated_at=shifted(NEXT_RUN_AT, hours=1)
+        projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
+
+    assert _artifact_bytes(root) == before
+
+
+def test_reviewed_historical_source_is_withheld_without_ledger_backfill(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _fixture_root(tmp_path)
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    ledger_path = root / "data/government_revenue/candidate_ledger.jsonl"
+    before_ledger = ledger_path.read_bytes()
+    _candidate_projection_with_one_candidate(
+        monkeypatch,
+        root,
+        known_at=BEFORE_FROZEN_AT,
+    )
+    current_rows = projection.build_candidate_observations(
+        None,
+        None,
+        generated_at=NEXT_RUN_AT,
+    )
+    _install_historical_suppression_manifest(root, current_rows)
+
+    result = projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
+
+    queue = json.loads(
+        (root / "data/government_revenue/candidate_queue.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    receipt = queue["coverage"]["historical_candidate_suppression"]
+    assert result["append_count"] == 0
+    assert result["suppressed_historical_count"] == 1
+    assert ledger_path.read_bytes() == before_ledger
+    assert projection.load_candidate_ledger(ledger_path).line_count == 8
+    assert queue["candidates"] == []
+    assert queue["counts"]["total"] == 0
+    assert queue["freshness"]["exact_candidate_availability"] == "withheld_historical"
+    assert receipt["matched_count"] == receipt["manifest_entry_count"] == 1
+    assert receipt["inactive_count"] == 0
+    assert projection.verify_candidate_artifacts(root)["status"] == "ok"
+
+
+def test_historical_suppression_review_cannot_postdate_the_projection(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _fixture_root(tmp_path)
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    before = _artifact_bytes(root)
+    _candidate_projection_with_one_candidate(
+        monkeypatch,
+        root,
+        known_at=BEFORE_FROZEN_AT,
+    )
+    rows = projection.build_candidate_observations(
+        None,
+        None,
+        generated_at=NEXT_RUN_AT,
+    )
+    _install_historical_suppression_manifest(
+        root,
+        rows,
+        reviewed_at=shifted(NEXT_RUN_AT, minutes=1),
+    )
+
+    with pytest.raises(
+        projection.CandidateProjectionError,
+        match="historical suppression activation proof is invalid",
+    ):
+        projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
+
+    assert _artifact_bytes(root) == before
+
+
+def test_suppression_binding_rejects_extra_lineage_and_an_issued_exact_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _fixture_root(tmp_path)
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    _candidate_projection_with_one_candidate(
+        monkeypatch,
+        root,
+        known_at=BEFORE_FROZEN_AT,
+    )
+    rows = projection.build_candidate_observations(
+        None,
+        None,
+        generated_at=NEXT_RUN_AT,
+    )
+    _install_historical_suppression_manifest(root, rows)
+    projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
+    queue = json.loads(
+        (root / "data/government_revenue/candidate_queue.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    state = json.loads(
+        (root / "data/government_revenue/candidate_projection_state.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    stale_lineage = deepcopy(queue)
+    stale_lineage["source_content_ids"].append(
+        "candidate-suppression-manifest-sha256:" + "f" * 64
+    )
+    with pytest.raises(ValueError, match="receipt binding is invalid"):
+        validate_candidate_historical_suppression_binding(
+            stale_lineage,
+            state,
+            root=root,
+            current_observations=rows,
         )
 
+    with pytest.raises(ValueError, match="source identity was issued"):
+        validate_candidate_historical_suppression_binding(
+            queue,
+            state,
+            root=root,
+            current_observations=rows,
+            issued_observations=rows,
+        )
+
+
+def test_historical_suppression_first_activation_requires_an_exact_bijection(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _fixture_root(tmp_path)
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    before = _artifact_bytes(root)
+    _candidate_projection_with_one_candidate(
+        monkeypatch,
+        root,
+        known_at=BEFORE_FROZEN_AT,
+    )
+    current_rows = projection.build_candidate_observations(
+        None,
+        None,
+        generated_at=NEXT_RUN_AT,
+    )
+    unused = candidate_historical_suppression_entry(current_rows[0])
+    unused.update(
+        {
+            "candidate_id": "grc1-" + "f" * 24,
+            "source_event_id": unused["source_event_id"] + "-unused",
+            "source_record_id": unused["source_record_id"] + "-unused",
+            "source_content_sha256": "f" * 64,
+        }
+    )
+    _install_historical_suppression_manifest(
+        root,
+        current_rows,
+        extra_entries=[unused],
+    )
+
+    with pytest.raises(
+        projection.CandidateProjectionError,
+        match="exact manifest/row bijection",
+    ):
+        projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
+
+    assert _artifact_bytes(root) == before
+
+
+def test_inactive_receipt_cannot_forge_a_prior_activation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _fixture_root(tmp_path)
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    legacy_queue = json.loads(
+        (root / "data/government_revenue/candidate_queue.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    _candidate_projection_with_one_candidate(
+        monkeypatch,
+        root,
+        known_at=BEFORE_FROZEN_AT,
+    )
+    rows = projection.build_candidate_observations(
+        None,
+        None,
+        generated_at=NEXT_RUN_AT,
+    )
+    _install_historical_suppression_manifest(root, rows)
+    inputs = projection.validate_candidate_projection_inputs(
+        root,
+        generated_at=NEXT_RUN_AT,
+    )
+    current_rows, queue, _queue_id, _source_health = projection._current_projection(
+        inputs
+    )
+
+    with pytest.raises(
+        projection.CandidateProjectionError,
+        match="first activation lacks the exact full source bijection",
+    ):
+        projection._apply_historical_suppression_receipt(
+            queue,
+            inputs=inputs,
+            suppressed=[],
+            prior_queue=legacy_queue,
+        )
+
+    bound = projection._apply_historical_suppression_receipt(
+        queue,
+        inputs=inputs,
+        suppressed=current_rows,
+        prior_queue=legacy_queue,
+    )
+    forged = deepcopy(bound)
+    receipt = forged["coverage"]["historical_candidate_suppression"]
+    receipt["matched_count"] = 0
+    receipt["inactive_count"] = receipt["manifest_entry_count"]
+    receipt["entries"] = []
+    forged["content_id"] = candidate_queue_content_id(forged)
+    with pytest.raises(
+        ValueError,
+        match="first activation did not bind the full source bijection",
+    ):
+        validate_candidate_historical_suppression_binding(
+            forged,
+            {
+                "generated_at": NEXT_RUN_AT,
+                "queue_content_id": forged["content_id"],
+            },
+            root=root,
+        )
+
+
+def test_forward_source_revision_is_not_broadened_into_candidate_wide_suppression(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _fixture_root(tmp_path)
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    _candidate_projection_with_one_candidate(
+        monkeypatch,
+        root,
+        known_at=BEFORE_FROZEN_AT,
+    )
+    historical_rows = projection.build_candidate_observations(
+        None,
+        None,
+        generated_at=NEXT_RUN_AT,
+    )
+    manifest = _install_historical_suppression_manifest(root, historical_rows)
+    projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
+
+    monkeypatch.undo()
+    forward_at = shifted(NEXT_RUN_AT, minutes=30)
+    forward_run_at = shifted(NEXT_RUN_AT, hours=1)
+    revised = _award_event()
+    revised["change"]["known_at"] = forward_at
+    revised["award_change"]["source_identity"]["content_sha256"] = "a" * 64
+    revised["evidence"]["receipts"][0]["known_at"] = forward_at
+    revised["evidence"]["receipts"][0]["retrieved_at"] = forward_at
+    revised["evidence"]["receipts"][0]["content_sha256"] = "a" * 64
+    candidates_for = _candidate_projection_over_graph(
+        monkeypatch,
+        root,
+        graph=_graph(),
+        events=[revised],
+        as_of=utc_date(forward_at),
+    )
+    forward_row = candidates_for(forward_run_at)[0]
+    assert forward_row["candidate_id"] == manifest["entries"][0]["candidate_id"]
+    assert (
+        forward_row["source_event"]["source_content_id"]
+        != manifest["entries"][0]["source_content_sha256"]
+    )
+
+    result = projection.project_candidate_artifacts(
+        root,
+        generated_at=forward_run_at,
+    )
+
+    queue = json.loads(
+        (root / "data/government_revenue/candidate_queue.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    receipt = queue["coverage"]["historical_candidate_suppression"]
+    assert result["append_count"] == 1
+    assert result["suppressed_historical_count"] == 0
+    assert receipt["matched_count"] == 0
+    assert receipt["inactive_count"] == 1
+    assert queue["freshness"]["exact_candidate_availability"] == "available"
+    assert queue["candidates"][0]["source_event"]["source_content_id"] == "a" * 64
+    assert projection.verify_candidate_artifacts(root)["status"] == "ok"
+
+
+def test_exact_legacy_predecessor_rederives_reviewed_rows_and_rejects_neighbors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _fixture_root(tmp_path)
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    _candidate_projection_with_one_candidate(
+        monkeypatch,
+        root,
+        known_at=BEFORE_FROZEN_AT,
+    )
+    rows = projection.build_candidate_observations(
+        None,
+        None,
+        generated_at=NEXT_RUN_AT,
+    )
+    _install_historical_suppression_manifest(root, rows)
+    queue = json.loads(
+        (root / "data/government_revenue/candidate_queue.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    state = json.loads(
+        (root / "data/government_revenue/candidate_projection_state.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    legacy = validate_candidate_historical_suppression_binding(
+        queue,
+        state,
+        root=root,
+        current_observations=rows,
+        require_manifest=True,
+    )
+    assert legacy["status"] == "legacy_predecessor"
+    assert legacy["visible_reviewed_count"] == 1
+
+    neighbor = deepcopy(queue)
+    neighbor["content_id"] = "grcq1-" + "0" * 24
+    with pytest.raises(ValueError, match="omits the current suppression receipt"):
+        validate_candidate_historical_suppression_binding(
+            neighbor,
+            state,
+            root=root,
+            current_observations=rows,
+        )
+    neighbor_state = {**state, "generated_at": NEXT_RUN_AT}
+    with pytest.raises(ValueError, match="omits the current suppression receipt"):
+        validate_candidate_historical_suppression_binding(
+            queue,
+            neighbor_state,
+            root=root,
+            current_observations=rows,
+        )
+
+    unknown = deepcopy(rows[0])
+    unknown["source_event"]["source_content_id"] = "a" * 64
+    with pytest.raises(ValueError, match="no reviewed historical suppression"):
+        validate_candidate_historical_suppression_binding(
+            queue,
+            state,
+            root=root,
+            current_observations=[unknown],
+        )
+    duplicate = deepcopy(rows[0])
+    duplicate["observation_id"] = "gro1-" + "f" * 24
+    with pytest.raises(ValueError, match="duplicate a stable identity"):
+        validate_candidate_historical_suppression_binding(
+            queue,
+            state,
+            root=root,
+            current_observations=[rows[0], duplicate],
+        )
+
+
+def test_activated_manifest_can_go_inactive_but_a_changed_digest_cannot_rebind(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _fixture_root(tmp_path)
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    _candidate_projection_with_one_candidate(
+        monkeypatch,
+        root,
+        known_at=BEFORE_FROZEN_AT,
+    )
+    rows = projection.build_candidate_observations(
+        None,
+        None,
+        generated_at=NEXT_RUN_AT,
+    )
+    _install_historical_suppression_manifest(root, rows)
+    projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
+
+    monkeypatch.undo()
+    inactive_run_at = shifted(NEXT_RUN_AT, hours=1)
+    inactive = projection.project_candidate_artifacts(
+        root,
+        generated_at=inactive_run_at,
+    )
+    queue = json.loads(
+        (root / "data/government_revenue/candidate_queue.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    receipt = queue["coverage"]["historical_candidate_suppression"]
+    assert inactive["append_count"] == inactive["suppressed_historical_count"] == 0
+    assert receipt["matched_count"] == 0
+    assert receipt["inactive_count"] == 1
+    assert queue["freshness"]["exact_candidate_availability"] == "not_observed"
+    before = _artifact_bytes(root)
+
+    manifest_path = (
+        root
+        / "config/government_revenue/candidate_historical_suppressions.v1.json"
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["limitations"].append("A different review must not reuse prior activation.")
+    manifest_path.write_text(
+        projection._canonical_json(manifest) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(
+        projection.CandidateProjectionError,
+        match="prior candidate reviewed-history binding is invalid",
+    ):
+        projection.project_candidate_artifacts(
+            root,
+            generated_at=shifted(inactive_run_at, hours=1),
+        )
     assert _artifact_bytes(root) == before
 
 
@@ -690,7 +1416,7 @@ def test_unseen_observation_newer_than_prior_materialization_can_append(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     root = _fixture_root(tmp_path)
-    _project_empty_candidate_baseline(monkeypatch, root)
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
     _candidate_projection_with_one_candidate(
         monkeypatch,
         root,
@@ -703,8 +1429,8 @@ def test_unseen_observation_newer_than_prior_materialization_can_append(
     ledger = projection.load_candidate_ledger(
         root / "data/government_revenue/candidate_ledger.jsonl"
     )
-    assert ledger.line_count == 1
-    assert ledger.observations[0]["known_at"] == BETWEEN_RUNS_KNOWN_AT
+    assert ledger.line_count == 9
+    assert ledger.observations[-1]["known_at"] == BETWEEN_RUNS_KNOWN_AT
 
 
 def test_reviewed_graph_row_reordering_is_not_a_new_observation(
