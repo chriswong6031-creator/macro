@@ -73,9 +73,13 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 621, (
-        f"Expected 621 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 623, (
+        f"Expected 623 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (DRL W1 registered price-pressure-latest + price-pressure-events — the"
+        " residual-shock lobe's display artifact and PIT event ledger (#5271); the"
+        " companion bus-doc regen missed the merge and shipped in the follow-up heal"
+        " = 621->623);"
         " (Blocked-entry override registered site-basket-washout-history — the per-notch"
         " retro-marking intervals sibling of the state artifact, same builder and step"
         " = 620->621);"
