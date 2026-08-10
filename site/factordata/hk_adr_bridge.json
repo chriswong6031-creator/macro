@@ -30,7 +30,17 @@
       "lag_days": 3,
       "state": "slow"
     },
+    "BIDU": {
+      "asof": "2026-08-07",
+      "lag_days": 3,
+      "state": "slow"
+    },
     "TCOM": {
+      "asof": "2026-08-07",
+      "lag_days": 3,
+      "state": "slow"
+    },
+    "KWEB": {
       "asof": "2026-08-07",
       "lag_days": 3,
       "state": "slow"
