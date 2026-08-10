@@ -2065,6 +2065,16 @@ jobs:
           # needs the DeepSeek key here too — not only on the master_brain step below.
           # No-op (degrades to neutral) when the secret is absent.
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          # W-L1 confirmation receipt: build_site GETs the evening board
+          # (live_flow/us_board_provisional.json) to grade tonight's board against it
+          # in the same build that renders it. READ ONLY here — the render publishes
+          # nothing; the artifact is written by the reconcile step below, which is the
+          # key's single writer. r2io.get_json falls back to the public base without
+          # these, but an authenticated GET is not edge-cached, and a stale evening
+          # board would silently cost the receipt (the session check refuses it).
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           # NWS-01 (#2658) moved build_news INTO this step (pre-build_site) from the
           # parallel cluster below — the financial_news polygon/finnhub legs need the
           # provider keys HERE now, or the keyed nightly itself would ship a dark feed
@@ -2294,6 +2304,23 @@ jobs:
           # Reads only committed data; returns 0 on error.
           run_py "thematic foresight desk (build_foresight)" scripts.build_foresight
           exit 0
+      - name: publish the provisional → nightly confirmation delta (R2 artifact)
+        # W-L1. Runs HERE, after the build step, because that is the first moment
+        # site/factordata/us_standouts.json is tonight's board of record — the same
+        # document build_site just graded in-process for the render. Same function
+        # (engine.close_pass.reconcile.confirmation_receipt), same two immutable
+        # inputs, so the rendered receipt and this artifact cannot disagree about a
+        # night. Was a workflow_run job on close-pass.yml until 2026-08-10, where it
+        # could only ever fire AFTER the render it was supposed to feed.
+        # LEDGER LAW: reads two JSON documents, writes one R2 object, touches no
+        # data/ path — the nightly remains the sole writer of record.
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: python -m scripts.close_pass_reconcile
+
       - name: publish Filing Forensics private state
         # Publish only after the full workbench build returned. The publisher validates
         # gzip/schema, writes the existing PRIVATE Research Vault bucket, reads it back,

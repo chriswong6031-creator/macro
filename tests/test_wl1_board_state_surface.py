@@ -631,3 +631,188 @@ def test_no_data_writes_on_this_path():
     src = Path(board_state.__file__).read_text()
     for forbidden in ("open(", "write_text", "Path(", "requests", "urllib"):
         assert forbidden not in src, forbidden
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THE HOP — the receipt reaching the board it describes
+#
+# Everything above proves the SURFACE: given a board-state payload, the panel
+# paints the right thing, or nothing. This section proves the payload arrives.
+# It did not, for the whole life of #5148: `scripts.close_pass_reconcile`
+# published the receipt to R2 and nothing read that key, while `build_site` read
+# a `doc["board_state"]` nothing wrote — two correct halves with no hop between
+# them, so spec State 2 had never rendered once.
+#
+# THE HOP CANNOT BE A FETCH. The receipt for session N can only exist once
+# session N's board of record has landed, which is after the render that would
+# show it — so a render that READ a published receipt could only ever print
+# session N-1's arithmetic under session N's cards. The nightly therefore
+# computes its own, from the board dict it is about to render, at the one moment
+# both halves are in hand. These tests run that real chain: R2 stub →
+# confirmation_receipt → board_state_payload → build_site's attach →
+# board_state_view → rendered HTML. The only thing replaced is the network hop.
+# ─────────────────────────────────────────────────────────────────────────────
+HOP_SESSION = "2026-08-08"
+
+
+def _nightly_doc(tiers: dict, as_of: str = HOP_SESSION) -> dict:
+    """A us_standouts board of record, in the shape build_site holds it."""
+    from tests.test_dashboard_template_render import _board_row
+
+    return {
+        "as_of": as_of,
+        "eligible": len(tiers),
+        "buy": [_board_row(ticker=tk, name=f"Name {tk}", stage="live",
+                           lane="bottoming", score_rank=i + 1, display_rank=i + 1,
+                           prophet={"version": "us_prophet_v1", "score": 70 - i},
+                           signal={"tier_cascade": tier})
+                for i, (tk, tier) in enumerate(sorted(tiers.items()))],
+    }
+
+
+def _evening_board(tiers: dict, as_of: str = HOP_SESSION) -> dict:
+    """The provisional board as it has sat on R2 since ~16:25 ET."""
+    return {"as_of": as_of, "built_at": f"{as_of}T20:30:00Z",
+            "names": [{"ticker": tk, "tier_cascade": tier}
+                      for tk, tier in sorted(tiers.items())]}
+
+
+def _attach(monkeypatch, tmp_path, doc, provisional):
+    """Run build_site's real board attach with only the R2 GET replaced.
+
+    build_site is imported inside the test the way
+    tests/test_basket_integration.py imports it — a real import in this pack,
+    never a skip that would report green while proving nothing.
+    """
+    from engine.prophet_live import r2io
+
+    seen = []
+
+    def _fake_get(key, **kw):
+        seen.append(key)
+        return provisional
+
+    monkeypatch.setattr(r2io, "get_json", _fake_get)
+    import scripts.build_site as bs
+
+    return bs._attach_board_display_chips(tmp_path, doc), seen
+
+
+def _rendered_panel(doc):
+    from tests.test_dashboard_template_render import _base_vm, _env
+
+    vm = _base_vm()
+    vm["us_standouts"] = doc
+    return _panel(_env().get_template("dashboard.html.j2").render(
+        **vm, mode="stocks"))
+
+
+def test_the_nightly_computes_its_own_receipt_and_it_reaches_the_page(
+        monkeypatch, tmp_path):
+    """THE GATE (masterplan §0): the confirmation delta is published per name —
+    computed in the nightly, and rendered by the SAME build. AAA holds its tier
+    (confirmed), BBB moves tier (adjusted), CCC is gone (dropped), and DDD is a
+    nightly addition that rides beside the identity, never inside it."""
+    doc = _nightly_doc({"AAA": "T2", "BBB": "T3", "DDD": "T1"})
+    prov = _evening_board({"AAA": "T2", "BBB": "T1", "CCC": "T2"})
+    out, seen = _attach(monkeypatch, tmp_path, doc, prov)
+
+    assert seen, "the evening board was never fetched — no hop happened"
+    view = out["board_state_view"]
+    assert view["note"] == "confirmed"
+    # The arithmetic is over the PROVISIONAL population, so DDD is not in it.
+    assert (view["n_total"], view["n_confirmed"], view["n_adjusted"],
+            view["n_dropped"]) == (3, 1, 1, 1)
+    assert view["n_confirmed"] + view["n_adjusted"] + view["n_dropped"] \
+        == view["n_total"]
+    assert view["dropped"] == ["CCC"]
+
+    # …and it renders. Not "the payload is well-formed" — the reader's own line.
+    # Asserted on the classes, never on the words "Adjusted"/"已调整": both appear
+    # in the receipt line's OWN tooltip, which explains what adjusted means, so a
+    # word-match here would pass with the per-card marks entirely absent.
+    panel = _rendered_panel(out)
+    assert 'class="pbs-nv" data-bs-note="confirmed"' in panel
+    assert "confirmed overnight" in panel and "隔夜确认" in panel
+    assert panel.count("pv-mk-adj") == 1, "exactly the one name that moved"
+    assert 'data-ticker="BBB"' in panel
+
+
+def test_the_per_card_marks_ship_with_the_line_they_belong_to(monkeypatch,
+                                                              tmp_path):
+    """Spec §7 publish-together, in the DATA as well as in the template's fence.
+    Only the name the receipt calls adjusted is stamped; the confirmed name and
+    the nightly addition are left alone."""
+    doc = _nightly_doc({"AAA": "T2", "BBB": "T3", "DDD": "T1"})
+    out, _ = _attach(monkeypatch, tmp_path, doc,
+                     _evening_board({"AAA": "T2", "BBB": "T1", "CCC": "T2"}))
+    marks = {r["ticker"]: r.get("adjusted") for r in out["buy"]}
+    assert marks["BBB"] is True
+    assert not marks["AAA"] and not marks["DDD"]
+
+
+@pytest.mark.parametrize("provisional,why", [
+    (None, "a `behind` night — no evening board was published to grade"),
+    ({"as_of": "2026-08-07", "built_at": "2026-08-07T20:30:00Z",
+      "names": [{"ticker": "AAA", "tier_cascade": "T2"}]},
+     "a stale pairing — yesterday's evening board against tonight's record"),
+    ({"as_of": HOP_SESSION, "built_at": f"{HOP_SESSION}T20:30:00Z",
+      "names": [{"ticker": "AAA", "tier_cascade": "T2"},
+                {"ticker": "AAA", "tier_cascade": "T3"}]},
+     "a duplicate ticker — every count over it would be wrong"),
+])
+def test_a_pairing_the_build_cannot_vouch_for_paints_nothing(
+        monkeypatch, tmp_path, provisional, why):
+    """No receipt is better than a wrong one (spec §7). A pairing the build
+    cannot vouch for must emit NOTHING rather than figures describing a board
+    that is not on the screen — including the `behind` case, where
+    `note='confirmed'` is impossible because there was no evening board for this
+    session to confirm anything against."""
+    doc = _nightly_doc({"AAA": "T2", "BBB": "T3"})
+    out, _ = _attach(monkeypatch, tmp_path, doc, provisional)
+    assert "board_state_view" not in out, why
+    assert not any(r.get("adjusted") for r in out["buy"]), why
+
+    panel = _rendered_panel(out)
+    assert 'class="pbs-nv" data-bs-note="confirmed"' not in panel, why
+    assert "confirmed overnight" not in panel, why
+    assert "pv-mk-adj" not in panel, why
+
+
+def test_the_first_pass_board_never_wears_tonights_receipt(monkeypatch, tmp_path):
+    """build_site's FIRST pass reads the PRIOR build's us_standouts (the
+    one-build lag); only the post-build_stock_library re-render holds tonight's.
+    Both reach the page through this one attach, so the ordering safety cannot
+    be left as a comment: last night's cards carry no receipt, because the two
+    documents name different sessions."""
+    out, _ = _attach(monkeypatch, tmp_path,
+                     _nightly_doc({"AAA": "T2", "BBB": "T3"}, as_of="2026-08-07"),
+                     _evening_board({"AAA": "T2", "BBB": "T1"}))
+    assert "board_state_view" not in out
+
+    out2, _ = _attach(monkeypatch, tmp_path,
+                      _nightly_doc({"AAA": "T2", "BBB": "T3"}),
+                      _evening_board({"AAA": "T2", "BBB": "T1"}))
+    assert out2["board_state_view"]["n_total"] == 2
+
+
+def test_the_render_computes_the_receipt_and_never_fetches_a_published_one():
+    """The one-night-stale design, fenced. A render that read
+    live_flow/us_board_confirmation.json would be reading a key that cannot yet
+    exist for this session, and would paint the PREVIOUS session's figures under
+    tonight's cards. The receipt key must never appear on the render path."""
+    src = (ROOT / "scripts" / "build_site.py").read_text()
+    assert "us_board_confirmation" not in src
+    assert "board_state_for" in src, "the hop must be a computation, not a fetch"
+
+
+def test_the_delta_has_exactly_one_definition():
+    """Two producers of one receipt is how two surfaces end up disagreeing about
+    a night. The render and the published artifact both route through
+    engine.close_pass.reconcile.confirmation_receipt; neither reimplements it."""
+    import scripts.close_pass_reconcile as rc
+    from engine.close_pass import reconcile as cr
+
+    assert rc.confirmation_receipt is cr.confirmation_receipt
+    for rel in ("scripts/close_pass_reconcile.py", "scripts/build_site.py"):
+        assert "def confirmation_receipt" not in (ROOT / rel).read_text(), rel

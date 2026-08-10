@@ -647,6 +647,24 @@ lanes:
         note: StockInvest Technical Lab hub render (display-only); data-gen build_tech_lab_data wired as daily.yml/tech_lab_offrender (TLT-R2)
       - id: build_foresight
         module: scripts.build_foresight
+      - id: close_pass_reconcile
+        module: scripts.close_pass_reconcile
+        note: >
+          W-L1 provisional → nightly confirmation delta, published to
+          live_flow/us_board_confirmation.json. Runs HERE, immediately after the
+          build step, because that is the first moment
+          site/factordata/us_standouts.json is tonight's board of record. Was a
+          workflow_run job on close-pass.yml until 2026-08-10, where it fired only
+          after the nightly render it was meant to feed — the receipt was computed
+          correctly and could never be shown, and any consumer would have printed
+          last night's arithmetic under tonight's cards. build_site now computes
+          the same delta in-process for the render (close_pass_reconcile
+          .board_state_for → lib.board_state), so this step is the R2 artifact's
+          single writer, not a second opinion: same function, same two immutable
+          inputs. Reconciles or publishes nothing — a session mismatch, a
+          duplicate ticker or a non-closing sum emits no receipt rather than a
+          wrong one. Writes no data/ path; grading the record by writing to it
+          would be marking its own homework.
       - id: backfill_regime_stamps
         module: scripts.backfill_regime_stamps
         note: "nw-macro-rail R5 PR-C — regime stamp backfill on qledger rows (non-fatal); near-term yield ≈ 2 rows from regime_vector.parquet coverage"
@@ -3028,23 +3046,10 @@ lanes:
           actually in the grid, so a page showing last night's cards cannot
           render tonight's stamp.
 
-  # ── close-pass.yml / reconcile — the confirmation delta ───────────────────
-  - workflow: .github/workflows/close-pass.yml
-    job: reconcile
-    steps:
-      - id: close_pass_reconcile
-        module: scripts.close_pass_reconcile
-        note: >
-          Grades the evening board against the nightly board of record and
-          publishes the per-name confirmed/adjusted/dropped delta to
-          live_flow/us_board_confirmation.json. workflow_run on daily.yml
-          completing, so it is off the nightly's critical path by construction
-          (it cannot delay a build that already finished) and off the mac pool
-          entirely — it reads two JSON documents. Reconciles or publishes
-          nothing: n_confirmed + n_adjusted + n_dropped == n_total is checked,
-          and a session mismatch, a duplicate ticker or a non-closing sum emits
-          no receipt rather than a wrong one. Writes no data/ path; grading the
-          record by writing to it would be marking its own homework.
+  # The close-pass.yml / reconcile lane was RETIRED 2026-08-10: the confirmation
+  # delta now runs inside daily.yml / engine (see close_pass_reconcile there).
+  # A workflow_run on daily.yml completing is by construction too late to feed
+  # the nightly render, which is the receipt's only consumer.
 
 # ---------------------------------------------------------------------------
 # DIVERGENCES — declared lane-difference ledger
