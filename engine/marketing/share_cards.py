@@ -10,7 +10,6 @@ Public API (builders call this):
     CARD_VERSION                       -> int   (bump forces full regen)
     load_font(size, *, bold=False)     -> ImageFont  (never raises)
     render_ticker_card(...)            -> Image   (static identity card)
-    render_movers_card(...)            -> Image   (daily gainers/losers)
     render_screener_card(...)          -> Image   (free signal-stack screener)
     save_card(img, out_path)           -> None    (optimized PNG, ≤ ~80 KB)
     card_fingerprint(payload)          -> str     (sha1 over version + payload)
@@ -23,7 +22,7 @@ Design (brand-locked; matches engine.marketing.chart_render):
   - Directional green #4CAF50 / red #E23B3B. Footer URL mastermind-x.com in #7f97c4.
   - Signature: a faint edge-to-edge "peak line" (the logomark's up-down-up
     silhouette blown up to card scale) + a thin left gradient brand rail + a soft
-    gradient corner-wash from the brand lockup. Same frame on all three cards.
+    gradient corner-wash from the brand lockup. Same frame on both cards.
 
 Honesty (DESIGN_DOCTRINE §Law 5): cards never overclaim. The word "validated" is
 banned. The screener card carries "historical win rate — not a guarantee".
@@ -62,7 +61,6 @@ MUTED = (136, 153, 187)      # #8899bb muted label
 FAINT = (127, 151, 196)      # #7f97c4 brand-URL blue-grey
 HAIRLINE = (35, 42, 61)      # #232A3D dividers
 UP = (76, 175, 80)           # #4CAF50 green
-DOWN = (226, 59, 59)         # #E23B3B red
 
 # Gradient tile stops (logomark)
 TILE_STOPS = [
@@ -524,71 +522,7 @@ def render_ticker_card(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Card 2 — Daily movers (green/red directional columns)
-# ─────────────────────────────────────────────────────────────────────────────
-
-def _fmt_pct(pct: float) -> str:
-    # Plain hyphen-minus (not U+2212) so it renders on every font, incl. PIL's
-    # bundled CI default. The SFNS render is visually identical at card scale.
-    sign = "+" if pct >= 0 else "-"
-    return f"{sign}{abs(pct):.1f}%"
-
-
-def _draw_mover_column(
-    img: Image.Image, draw: ImageDraw.ImageDraw,
-    *, rows: list[dict], x0: int, w: int, top: int,
-    accent: tuple[int, int, int], heading: str,
-) -> None:
-    """One column (gainers or losers): heading + up to 5 ticker/pct rows."""
-    head_font = load_font(25, bold=True)
-    _tracked_text(draw, (x0, top), heading.upper(), head_font, accent, tracking=1.4)
-    # accent underline
-    draw.line([(x0, top + 38), (x0 + w, top + 38)], fill=(*accent, ), width=2)
-
-    row_h = 54
-    ry = top + 52
-    tk_font = load_font(29, bold=True)
-    pct_font = load_font(29, bold=True)
-    for row in rows[:5]:
-        tk = str(row.get("ticker", "")).upper()[:6]
-        pct = float(row.get("pct", 0.0))
-        # ticker left
-        draw.text((x0, ry + row_h / 2), tk, font=tk_font, fill=INK, anchor="lm")
-        # pct right, accent
-        draw.text((x0 + w, ry + row_h / 2), _fmt_pct(pct), font=pct_font,
-                  fill=accent, anchor="rm")
-        # thin row divider
-        draw.line([(x0, ry + row_h), (x0 + w, ry + row_h)], fill=HAIRLINE, width=1)
-        ry += row_h
-
-
-def render_movers_card(*, asof: str, gainers: list[dict], losers: list[dict]) -> Image.Image:
-    """Daily card for /movers.html. Top-5 green gainers | red losers, two columns."""
-    img, draw = _new_card()
-    _draw_brand_lockup(img, draw, MARGIN)
-
-    # Title block below the lockup (clear of the wordmark).
-    title_font = load_font(46, bold=True)
-    draw.text((MARGIN, 168), "Today’s Movers", font=title_font, fill=INK, anchor="ls")
-    # as-of stamp (single, per Law 4)
-    asof_font = load_font(22)
-    draw.text((CARD_W - MARGIN, 166), str(asof), font=asof_font, fill=MUTED, anchor="rs")
-
-    # Two columns.
-    col_top = 196
-    gutter = 72
-    col_w = (CARD_W - 2 * MARGIN - gutter) // 2
-    _draw_mover_column(img, draw, rows=gainers, x0=MARGIN, w=col_w, top=col_top,
-                       accent=UP, heading="Gainers")
-    _draw_mover_column(img, draw, rows=losers, x0=MARGIN + col_w + gutter, w=col_w,
-                       top=col_top, accent=DOWN, heading="Losers")
-
-    _draw_footer(img, draw)
-    return img
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Card 3 — Signal-stack screener (the #1 combo, in plain words)
+# Card 2 — Signal-stack screener (the #1 combo, in plain words)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def render_screener_card(

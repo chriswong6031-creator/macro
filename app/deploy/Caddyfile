@@ -276,6 +276,11 @@
 	# canonical successor instead of burning it in a noindex hop (SEO Supercharge
 	# W1b-redux ruling, research/SEO_SUPERCHARGE_MASTERPLAN_BY_FABLE.md).
 	redir /baskets_china.html /sector_central_china.html 301
+	# Daily Movers is no longer a standalone product surface. Its gainers, losers
+	# and same-direction theme read now live on the canonical US stock library.
+	# Keep the fragment in the Location header so old bookmarks land on the exact
+	# consolidated section rather than at the top of a long dossier directory.
+	redir /movers.html "/stocks/index.html#today-movers" 301
 
 	# ── Site Access Boundary ──────────────────────────────────────────────────
 	#
