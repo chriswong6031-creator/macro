@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast.v2",
-  "asof": "2026-08-09T13:04:14Z",
+  "asof": "2026-08-10T03:32:18Z",
   "display_only": true,
   "authority": {
     "can_score": false,
@@ -24,77 +24,105 @@
       "schema": 2,
       "row_type": "scored",
       "model": null,
-      "asof_night": "2026-07-16",
+      "asof_night": "2026-08-09",
       "release": "cpi_headline",
       "period": "2026-06",
       "release_date": "2026-07-14",
-      "actual": -0.4225,
-      "actual_first": -0.4225,
-      "raw_initial_print": -0.4225,
+      "actual": -0.4,
+      "actual_first": -0.4,
+      "raw_initial_print": 332.568,
+      "actual_basis": "same_release_vintage_published_proxy",
+      "actual_source": "alfred_full_vintage",
+      "actual_source_url": "https://fred.stlouisfed.org/",
+      "actual_source_sha256": "3a2cb1dd155f74386d06da0ccb2b5a38e98495bdd25646ab053f519b984fd133",
+      "actual_observed_at": "2026-08-09",
+      "actual_receipt_id": "same_vintage:3a2cb1dd155f74386d06da0c",
+      "exact_target_id": "cpi_headline_mom",
       "frozen_asof_night": "2026-07-13",
       "frozen_projection_point": 0.0818,
       "frozen_projection_p10": -0.1186,
       "frozen_projection_p25": -0.0176,
       "frozen_projection_p75": 0.2075,
       "frozen_projection_p90": 0.311,
-      "our_surprise": -0.5043,
-      "surprise_vs_naive": -0.8954,
-      "surprise_vs_trailing": -1.0819,
-      "surprise_vs_ar": -1.2853,
-      "surprise_vs_cleveland": -0.3612,
+      "our_surprise": -0.4818,
+      "surprise_vs_naive": -0.8729,
+      "surprise_vs_trailing": -1.0594,
+      "surprise_vs_ar": -1.2628,
+      "surprise_vs_cleveland": -0.3387,
       "interval_hit": false,
       "skew_hit": true,
       "projection_mode": null,
       "benchmark_trailing_key": "trailing_3m",
       "expectation_hit": false,
       "cutoff_label": "T-1",
-      "score_receipt_id": "score:0aca2d5ee9c52f923214a506",
+      "model_epoch": "champion_legacy_target_v1",
+      "target_epoch": "legacy_cross_vintage_initial_levels_v0",
+      "code_receipt": null,
       "evaluation": {
         "eligible": false,
         "excluded_defect_ids": [
           "DN-001",
-          "DN-003"
+          "DN-004"
         ],
         "basis": "structured_defect_notices_v1"
-      }
+      },
+      "frozen_prediction_id": "CPI:2026-06:first:2026-07-13:v1",
+      "score_receipt_id": "score:31b69156e248c25cda2f7932",
+      "supersedes_score_receipt_ids": [
+        "score:0aca2d5ee9c52f923214a506"
+      ]
     },
     {
       "schema": 2,
       "row_type": "scored",
       "model": null,
-      "asof_night": "2026-07-16",
+      "asof_night": "2026-08-09",
       "release": "cpi_core",
       "period": "2026-06",
       "release_date": "2026-07-14",
-      "actual": -0.0167,
-      "actual_first": -0.0167,
-      "raw_initial_print": -0.0167,
+      "actual": -0.0,
+      "actual_first": -0.0,
+      "raw_initial_print": 336.065,
+      "actual_basis": "same_release_vintage_published_proxy",
+      "actual_source": "alfred_full_vintage",
+      "actual_source_url": "https://fred.stlouisfed.org/",
+      "actual_source_sha256": "f46db46f64084e9fb18361cf1cec18d056f32fabf2f77b5f3aae31968781aebc",
+      "actual_observed_at": "2026-08-09",
+      "actual_receipt_id": "same_vintage:f46db46f64084e9fb18361cf",
+      "exact_target_id": "cpi_core_mom",
       "frozen_asof_night": "2026-07-13",
       "frozen_projection_point": 0.2167,
       "frozen_projection_p10": 0.0653,
       "frozen_projection_p25": 0.1417,
       "frozen_projection_p75": 0.2888,
       "frozen_projection_p90": 0.3549,
-      "our_surprise": -0.2334,
-      "surprise_vs_naive": -0.2248,
-      "surprise_vs_trailing": -0.2768,
-      "surprise_vs_ar": -0.2123,
-      "surprise_vs_cleveland": -0.249,
+      "our_surprise": -0.2167,
+      "surprise_vs_naive": -0.2081,
+      "surprise_vs_trailing": -0.2601,
+      "surprise_vs_ar": -0.1956,
+      "surprise_vs_cleveland": -0.2323,
       "interval_hit": false,
       "skew_hit": true,
       "projection_mode": null,
       "benchmark_trailing_key": "trailing_3m",
       "expectation_hit": false,
       "cutoff_label": "T-1",
-      "score_receipt_id": "score:c1f04edbd9c94fd74894f3f5",
+      "model_epoch": "champion_legacy_target_v1",
+      "target_epoch": "legacy_cross_vintage_initial_levels_v0",
+      "code_receipt": null,
       "evaluation": {
         "eligible": false,
         "excluded_defect_ids": [
           "DN-001",
-          "DN-003"
+          "DN-004"
         ],
         "basis": "structured_defect_notices_v1"
-      }
+      },
+      "frozen_prediction_id": "CPI_CORE:2026-06:first:2026-07-13:v1",
+      "score_receipt_id": "score:8db70a550635d6c613aeebce",
+      "supersedes_score_receipt_ids": [
+        "score:c1f04edbd9c94fd74894f3f5"
+      ]
     },
     {
       "schema": 2,
@@ -149,13 +177,20 @@
       "schema": 2,
       "row_type": "scored",
       "model": null,
-      "asof_night": "2026-08-08",
+      "asof_night": "2026-08-09",
       "release": "nfp",
       "period": "2026-07",
       "release_date": "2026-08-07",
-      "actual": -126.0,
-      "actual_first": -126.0,
-      "raw_initial_print": -126.0,
+      "actual": -23.0,
+      "actual_first": -23.0,
+      "raw_initial_print": 158858.0,
+      "actual_basis": "same_release_vintage_published_proxy",
+      "actual_source": "alfred_full_vintage",
+      "actual_source_url": "https://fred.stlouisfed.org/",
+      "actual_source_sha256": "b4db34f6bc0d578a8f89583bb46adf7520b3720a49cd6b2043d314afd8ea4daa",
+      "actual_observed_at": "2026-08-09",
+      "actual_receipt_id": "same_vintage:b4db34f6bc0d578a8f89583b",
+      "exact_target_id": "nfp_payroll_change",
       "frozen_asof_night": "2026-08-06",
       "frozen_projection_point": null,
       "frozen_projection_p10": -421.3089,
@@ -163,9 +198,9 @@
       "frozen_projection_p75": 167.0812,
       "frozen_projection_p90": 337.0669,
       "our_surprise": null,
-      "surprise_vs_naive": -109.0,
-      "surprise_vs_trailing": -241.67,
-      "surprise_vs_ar": -390.23,
+      "surprise_vs_naive": -6.0,
+      "surprise_vs_trailing": -138.67,
+      "surprise_vs_ar": -287.23,
       "surprise_vs_cleveland": null,
       "interval_hit": true,
       "skew_hit": null,
@@ -173,14 +208,21 @@
       "benchmark_trailing_key": "trailing_3m",
       "expectation_hit": null,
       "cutoff_label": "T-1",
-      "score_receipt_id": "score:8f58e6ba1e03b91d859d57cb",
+      "model_epoch": "champion_legacy_target_v1",
+      "target_epoch": "legacy_cross_vintage_initial_levels_v0",
+      "code_receipt": null,
       "evaluation": {
         "eligible": false,
         "excluded_defect_ids": [
-          "DN-003"
+          "DN-004"
         ],
         "basis": "structured_defect_notices_v1"
-      }
+      },
+      "frozen_prediction_id": "NFP:2026-07:first:2026-08-06:v1",
+      "score_receipt_id": "score:d29c247ea21e23cb049f217d",
+      "supersedes_score_receipt_ids": [
+        "score:8f58e6ba1e03b91d859d57cb"
+      ]
     },
     {
       "schema": 2,
@@ -277,6 +319,54 @@
       },
       "frozen_prediction_id": "PCE_CORE:2026-06:first:2026-07-29:v1",
       "score_receipt_id": "score:fba1228fd55e80eade98c601"
+    },
+    {
+      "schema": 2,
+      "row_type": "scored",
+      "model": null,
+      "asof_night": "2026-08-09",
+      "release": "ppi_finaldemand",
+      "period": "2026-06",
+      "release_date": "2026-07-15",
+      "actual": -0.3,
+      "actual_first": -0.3,
+      "raw_initial_print": 156.566,
+      "actual_basis": "same_release_vintage_published_proxy",
+      "actual_source": "alfred_full_vintage",
+      "actual_source_url": "https://fred.stlouisfed.org/",
+      "actual_source_sha256": "176aae27ce2a729690e4e65cdc16e0eda8b87c9dbe0f7bf50e76f6d1c7cccb10",
+      "actual_observed_at": "2026-08-09",
+      "actual_receipt_id": "same_vintage:176aae27ce2a729690e4e65c",
+      "exact_target_id": "ppi_final_demand_mom",
+      "frozen_asof_night": "2026-07-13",
+      "frozen_projection_point": 0.3579,
+      "frozen_projection_p10": -0.2341,
+      "frozen_projection_p25": 0.1664,
+      "frozen_projection_p75": 0.7296,
+      "frozen_projection_p90": 0.9552,
+      "our_surprise": -0.6579,
+      "surprise_vs_naive": -1.0431,
+      "surprise_vs_trailing": -1.2552,
+      "surprise_vs_ar": null,
+      "surprise_vs_cleveland": null,
+      "interval_hit": false,
+      "skew_hit": true,
+      "projection_mode": null,
+      "benchmark_trailing_key": "trailing_3m",
+      "expectation_hit": null,
+      "cutoff_label": "T-1",
+      "model_epoch": "champion_legacy_target_v1",
+      "target_epoch": "legacy_cross_vintage_initial_levels_v0",
+      "code_receipt": null,
+      "evaluation": {
+        "eligible": false,
+        "excluded_defect_ids": [
+          "DN-004"
+        ],
+        "basis": "structured_defect_notices_v1"
+      },
+      "frozen_prediction_id": "PPI:2026-06:first:2026-07-13:v1",
+      "score_receipt_id": "score:1e589fe05b748dfbf3301dac"
     }
   ],
   "enrichments": [
@@ -607,7 +697,7 @@
           "mf_energy_components": {
             "gasoline_mom": -2.8978170683524263,
             "energy_contrib": -0.11399949189433523,
-            "exenergy_ar": 0.15020927297625986,
+            "exenergy_ar": 0.15020927297626005,
             "gasoline_ri_weight": 2.895,
             "gamma": 0.039339782051580785,
             "n_gasoline_weeks_published": 4,
@@ -1121,7 +1211,7 @@
         "ex_ante": {
           "schema": "event_window.ex_ante.v1",
           "release_type": "NFP",
-          "asof": "2026-08-08",
+          "asof": "2026-08-09",
           "is_context_only": true,
           "display_only": true,
           "available": true,
@@ -1135,7 +1225,7 @@
             "cpi_median_se_trend": "falling",
             "revision_streak": null,
             "source_years": [],
-            "as_of": "2026-08-08",
+            "as_of": "2026-08-09",
             "display_only": true,
             "authority": false
           },
@@ -1236,7 +1326,7 @@
         "ex_ante": {
           "schema": "event_window.ex_ante.v1",
           "release_type": "NFP",
-          "asof": "2026-08-08",
+          "asof": "2026-08-09",
           "is_context_only": true,
           "display_only": true,
           "available": true,
@@ -1250,7 +1340,7 @@
             "cpi_median_se_trend": "falling",
             "revision_streak": null,
             "source_years": [],
-            "as_of": "2026-08-08",
+            "as_of": "2026-08-09",
             "display_only": true,
             "authority": false
           },
@@ -1592,7 +1682,7 @@
         "ex_ante": {
           "schema": "event_window.ex_ante.v1",
           "release_type": "NFP",
-          "asof": "2026-08-08",
+          "asof": "2026-08-09",
           "is_context_only": true,
           "display_only": true,
           "available": true,
@@ -1606,7 +1696,7 @@
             "cpi_median_se_trend": "falling",
             "revision_streak": null,
             "source_years": [],
-            "as_of": "2026-08-08",
+            "as_of": "2026-08-09",
             "display_only": true,
             "authority": false
           },
@@ -1707,7 +1797,7 @@
         "ex_ante": {
           "schema": "event_window.ex_ante.v1",
           "release_type": "NFP",
-          "asof": "2026-08-08",
+          "asof": "2026-08-09",
           "is_context_only": true,
           "display_only": true,
           "available": true,
@@ -1721,7 +1811,7 @@
             "cpi_median_se_trend": "falling",
             "revision_streak": null,
             "source_years": [],
-            "as_of": "2026-08-08",
+            "as_of": "2026-08-09",
             "display_only": true,
             "authority": false
           },
@@ -1898,7 +1988,7 @@
         "ex_ante": {
           "schema": "event_window.ex_ante.v1",
           "release_type": "NFP",
-          "asof": "2026-08-08",
+          "asof": "2026-08-09",
           "is_context_only": true,
           "display_only": true,
           "available": true,
@@ -1912,7 +2002,7 @@
             "cpi_median_se_trend": "falling",
             "revision_streak": null,
             "source_years": [],
-            "as_of": "2026-08-08",
+            "as_of": "2026-08-09",
             "display_only": true,
             "authority": false
           },
@@ -2136,7 +2226,7 @@
         "ex_ante": {
           "schema": "event_window.ex_ante.v1",
           "release_type": "NFP",
-          "asof": "2026-08-08",
+          "asof": "2026-08-09",
           "is_context_only": true,
           "display_only": true,
           "available": true,
@@ -2150,7 +2240,7 @@
             "cpi_median_se_trend": "falling",
             "revision_streak": null,
             "source_years": [],
-            "as_of": "2026-08-08",
+            "as_of": "2026-08-09",
             "display_only": true,
             "authority": false
           },
@@ -2488,7 +2578,7 @@
           "mf_energy_components": {
             "gasoline_mom": 3.6148447524304794,
             "energy_contrib": 0.14220720471091555,
-            "exenergy_ar": 0.1967150012365395,
+            "exenergy_ar": 0.19671500123653962,
             "gasoline_ri_weight": 2.895,
             "gamma": 0.039339782051580785,
             "n_gasoline_weeks_published": 1,
@@ -2897,7 +2987,7 @@
         "ex_ante": {
           "schema": "event_window.ex_ante.v1",
           "release_type": "NFP",
-          "asof": "2026-08-08",
+          "asof": "2026-08-09",
           "is_context_only": true,
           "display_only": true,
           "available": true,
@@ -2911,7 +3001,7 @@
             "cpi_median_se_trend": "falling",
             "revision_streak": null,
             "source_years": [],
-            "as_of": "2026-08-08",
+            "as_of": "2026-08-09",
             "display_only": true,
             "authority": false
           },
@@ -3084,21 +3174,13 @@
     "asof": "2026-08-09",
     "last_nightly_asof": "2026-08-09",
     "nightly_gap_days": 0,
-    "past_due_unscored": [
-      {
-        "release": "ppi_finaldemand",
-        "period": "2026-06",
-        "release_date": "2026-07-15",
-        "model": null,
-        "reason": "api_key_absent"
-      }
-    ],
+    "past_due_unscored": [],
     "enricher_staleness": {
-      "kalshi_releases_asof": "2026-08-09",
+      "kalshi_releases_asof": "2026-08-10",
       "cleveland_nowcast_asof": "2026-08-07",
       "work_stoppages_asof": "2024-10-01",
       "print_integrity_asof": "2024-01-01"
     },
-    "past_due_unscored_count": 1
+    "past_due_unscored_count": 0
   }
 }

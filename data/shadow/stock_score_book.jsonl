@@ -3001,3 +3001,5 @@
 {"date": "2026-08-07", "ticker": "LSCC", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-07", "ticker": "DAR", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-07", "ticker": "FIX", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "ABBV", "score": 50.0, "percentile": 50.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "OI", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}

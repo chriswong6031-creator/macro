@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast_scoreboard.v2",
-  "asof": "2026-08-09T13:06:05Z",
+  "asof": "2026-08-10T03:33:56Z",
   "forward_accrual_began": "2026-07-07",
   "note": "Forward-only: no backtest rows enter this scoreboard (MRI-R8). Primary metrics use evaluation-eligible rows only; all_forward preserves the immutable raw record.",
   "evaluation_basis": "clean_structured_defect_epochs_v1",
@@ -52,32 +52,32 @@
     "cpi_core:champion": {
       "n": 1,
       "excluded_n": 1,
-      "mae_ours": 0.2334
+      "mae_ours": 0.2167
     },
     "cpi_core:v3_factor": {
       "n": 1,
       "excluded_n": 1,
-      "mae_ours": 0.2175
+      "mae_ours": 0.2008
     },
     "cpi_headline:champion": {
       "n": 1,
       "excluded_n": 1,
-      "mae_ours": 0.5043
+      "mae_ours": 0.4818
     },
     "cpi_headline:cpi_bridge": {
       "n": 1,
       "excluded_n": 1,
-      "mae_ours": 0.4503
+      "mae_ours": 0.4278
     },
     "cpi_headline:mf_energy": {
       "n": 1,
       "excluded_n": 1,
-      "mae_ours": 0.2162
+      "mae_ours": 0.1937
     },
     "cpi_headline:v3_factor": {
       "n": 1,
       "excluded_n": 1,
-      "mae_ours": 0.5655
+      "mae_ours": 0.543
     },
     "nfp:champion": {
       "n": 1,
@@ -98,21 +98,25 @@
       "n": 1,
       "excluded_n": 1,
       "mae_ours": 0.1864
+    },
+    "ppi_finaldemand:champion": {
+      "n": 1,
+      "excluded_n": 1,
+      "mae_ours": 0.6579
     }
   },
   "evaluation_exclusions": {
-    "n": 10,
+    "n": 11,
     "by_defect": {
       "DN-001": 4,
       "DN-002": 1,
-      "DN-003": 8,
-      "DN-004": 2
+      "DN-004": 11
     }
   },
   "score_receipts": {
-    "raw_n": 17,
-    "canonical_n": 15,
-    "superseded_n": 2,
+    "raw_n": 26,
+    "canonical_n": 16,
+    "superseded_n": 10,
     "note": "Official actual receipts supersede same-vintage proxies and legacy calculations for evaluation; every receipt remains in the ledger."
   },
   "defect_notices": [

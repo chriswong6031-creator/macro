@@ -1,0 +1,258 @@
+{
+  "as_of": "2026-08-10",
+  "coverage": {
+    "end": "2026-08-07",
+    "note": "daily rollup covers 10 session-date(s) from 2026-07-29 to 2026-08-07; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-07-29"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-08-07",
+      "events": []
+    },
+    {
+      "date": "2026-08-06",
+      "events": [
+        {
+          "date": "2026-08-06",
+          "id": "cev-research_vault-2fe6ddd4e3c8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-eglyaiphi8v-4403b5",
+          "tickers": [],
+          "title": "Goldman Sachs: Expedia Group (EXPE) Q2'26 Earnings Review Strong Execution and B2B Momentum Drive Beat and Raise Quarter",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-05",
+      "events": [
+        {
+          "date": "2026-08-05",
+          "id": "cev-research_vault-3dd0e2f4cf3d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-tghtfv5ime3-1cfbdb",
+          "tickers": [],
+          "title": "UBS: Daily Asia",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-05",
+          "id": "cev-research_vault-868333f1e226",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-vv4eaqbkwkj-879842",
+          "tickers": [],
+          "title": "Societe Generale: 4 Aug 2026 US Equity Strategy",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-05",
+          "id": "cev-research_vault-dd581dc09dca",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-kvatyrzolpx-174a39",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM JPM US Market Intell",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-05",
+          "id": "cev-research_vault-ffe76dfaa1d8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-dmwuxfa2jd2-659cd1",
+          "tickers": [],
+          "title": "Societe Generale: Earnings Wrap Up 2Q26 reporting season Focus shifts to cash flows from capex",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-04",
+      "events": [
+        {
+          "date": "2026-08-04",
+          "id": "cev-research_vault-e2fa00b042dc",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-w1tihsut8gt-a94dcf",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM JPM US Market Intell",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-03",
+      "events": [
+        {
+          "date": "2026-08-03",
+          "id": "cev-research_vault-df7884c1dd18",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ovegn6rwo5n-3ac8f3",
+          "tickers": [],
+          "title": "UBS: Daily US",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-02",
+      "events": []
+    },
+    {
+      "date": "2026-08-01",
+      "events": []
+    },
+    {
+      "date": "2026-07-31",
+      "events": [
+        {
+          "date": "2026-07-31",
+          "id": "cev-research_vault-32f68ca29d0d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-0natz1tlzak-bf2676",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Europe Equity Research Today’s Morning Meeting",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-30",
+      "events": [
+        {
+          "date": "2026-07-30",
+          "id": "cev-regime_flip-195d6fe8d1a1",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-07-30#regime_us",
+          "tickers": [],
+          "title": "US regime: Q1 Goldilocks → Q2 Reflation",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-440862b5bab5",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-4aoajzqskpx-37ff8b",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell Afternoon Briefing 29.07",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-b7ed87c42ab2",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ehqbfjwfxxq-ad763b",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell Afternoon Briefing 29.07",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-29",
+      "events": [
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-55a143f60c32",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-kjiaumouiiu-af6784",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Europe Equity Research Today’s Morning Meeting",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-656c33b3e214",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-llcnf4qdjf0-618421",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM JPM Chips for Break",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-837a11f89077",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-tsseepkd2yv-59aabc",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM JPM US Market Intell",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-d45777a15957",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ecdyuol1ksz-d3af90",
+          "tickers": [],
+          "title": "Goldman Sachs: BXP Inc. (BXP) 2Q26 First Take Occupancy and leasing spreads rise, FY guidance raised, positive SS NOI growth",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-e3e7d01385af",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-kwrlaj6pqak-d709a8",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell Afternoon Briefing 28.07",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-ee24968a74f0",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-vfq5jj5jkwa-0dc21b",
+          "tickers": [],
+          "title": "S&T: GS Challenging Hedge Fund Performance amid Momentum",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-f461de8c5dee",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-3mq95iobemf-a48a54",
+          "tickers": [],
+          "title": "Goldman Sachs: Swissquote Group (SQN)",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-fd5b3e7384a4",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-prvolq1p2yv-245098",
+          "tickers": [],
+          "title": "Goldman Sachs: KLA Corp. (KLAC) First Take Modest upside to quarter and guidance relative to elevated expectations",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-ffc9d4a2eab0",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-0sbicmrpyjs-a01424",
+          "tickers": [],
+          "title": "Goldman Sachs: S&P Global Inc. (SPGI) Strong 2Q with Ratings and Indices offset by ongoing MI and Energy uncertainty",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}

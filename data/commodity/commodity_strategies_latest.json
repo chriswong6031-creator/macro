@@ -6,82 +6,82 @@
     "copper",
     "oil"
   ],
-  "built": "2026-08-08 16:27 UTC",
+  "built": "2026-08-10 03:12 UTC",
   "cards": [
     {
       "key": "cm_gold_swap",
       "name": "Gold Trend Swap",
-      "cagr": 8.33,
-      "sharpe": 0.71,
+      "cagr": 8.35,
+      "sharpe": 0.72,
       "maxdd": -34.1
     },
     {
       "key": "cm_gold_macro",
       "name": "Gold Macro Driver Model",
-      "cagr": 6.74,
+      "cagr": 6.76,
       "sharpe": 0.7,
       "maxdd": -25.5
     },
     {
       "key": "cm_silver_swap",
       "name": "Silver Trend Swap",
-      "cagr": 5.35,
+      "cagr": 5.36,
       "sharpe": 0.35,
       "maxdd": -75.9
     },
     {
       "key": "cm_silver_macro",
       "name": "Silver Macro + Industrial Model",
-      "cagr": 8.16,
+      "cagr": 8.17,
       "sharpe": 0.51,
       "maxdd": -54.6
     },
     {
       "key": "cm_copper_swap",
       "name": "Copper Trend Swap",
-      "cagr": 7.83,
+      "cagr": 7.85,
       "sharpe": 0.53,
       "maxdd": -50.6
     },
     {
       "key": "cm_copper_macro",
       "name": "Copper Growth & Dollar Model",
-      "cagr": 8.03,
+      "cagr": 8.04,
       "sharpe": 0.56,
       "maxdd": -38.4
     },
     {
       "key": "cm_oil_swap",
       "name": "Oil Trend Swap",
-      "cagr": 3.22,
+      "cagr": 3.24,
       "sharpe": 0.26,
       "maxdd": -44.4
     },
     {
       "key": "cm_oil_macro",
       "name": "Oil Macro Multifactor",
-      "cagr": 5.66,
+      "cagr": 5.67,
       "sharpe": 0.39,
       "maxdd": -43.5
     },
     {
       "key": "cm_gold_active",
       "name": "Gold Active (levered)",
-      "cagr": 12.24,
+      "cagr": 12.25,
       "sharpe": 0.76,
       "maxdd": -33.4
     },
     {
       "key": "cm_silver_active",
       "name": "Silver Active (levered)",
-      "cagr": 16.08,
+      "cagr": 16.09,
       "sharpe": 0.68,
       "maxdd": -64.6
     },
     {
       "key": "cm_copper_active",
       "name": "Copper Active (levered)",
-      "cagr": 9.6,
+      "cagr": 9.62,
       "sharpe": 0.54,
       "maxdd": -60.6
     }
