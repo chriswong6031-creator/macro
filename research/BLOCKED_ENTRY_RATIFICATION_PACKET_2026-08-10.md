@@ -43,8 +43,14 @@ All listed thresholds passed all four pre-frozen gates independently, so choosin
 risk-appetite decision, not selection of a lucky passer; the per-notch table exists because the
 threshold was pre-declared an operator aggressiveness choice (§7).
 
-**Exemplar admission (the coverage gate):** UEC 2026-08-03 (`uranium_miners` peer-dd −38.8%),
-HL 06-16 and 06-25 (`silver_miners` −31.6%/−40.8%) — **admitted at every threshold.** Membership
+**Exemplar admission (the coverage gate) — CORRECTED post-Gate-B (2026-08-10):** UEC 2026-08-03
+(`uranium_miners` peer-dd −38.8%) — the one live exemplar that IS a `bear_block` ⊘ fire — is
+**admitted at every threshold (in-cohort coverage 1 of 1)**. Gate B established that HL's 06-16 and
+06-25 fires were NEVER in this cohort: both feeds agree HL's monthly leg was bullish; those markers
+are keeper-`block` refusals ("counter-trend, no 200-reclaim/hold") — the RECLAIM-VETO family, which
+A1b does not govern. The packet's earlier "3 of 3" framing was wrong and is withdrawn; the HL-shaped
+complaint routes to the reclaim-veto conditional (the Prophet-side sibling construction, §0 — its
+own prereg, not this rule). Membership
 today (2026-08-07, SPY at its 252d high): 12 groups qualify at 25% (critical_minerals −51%,
 space_economy −48%, ai_neoclouds −41%, nuclear/power −35%, uranium −30%, silver −30%); 5 at 30%.
 Today is richly in-sample — the rule is live for the exact tape that motivated it.

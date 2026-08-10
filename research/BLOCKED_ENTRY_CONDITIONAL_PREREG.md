@@ -188,6 +188,20 @@ cell** — a cell whose premium dies ex-COVID is dead (F1). Gates for A1b unchan
   the signal-era fence; (5) CN/HK excluded pending their own construction. LLM originates nothing:
   this entry records an operator decision on a gauntleted packet.
 
+- **2026-08-10 — GATE B PASSED** (receipts `research/blocked_entry_study/regrade_receipts.json` +
+  `exemplars.json`): A1b reproduces on the PRODUCTION feed at 20/25/30% — every gate, both
+  clustering units, ex-COVID and LOO included (25%: cell +1.113 prod vs +1.134 local; diff +1.008
+  [0.88,1.14]; equal-date +0.495 [0.31,0.68]; 9 episodes) — on the phase-correct full-history
+  basis (local 2014-truncated tapes mis-phase 1,263 of 2,454 names; production is authoritative).
+  Coverage floor 76.0% PASS; identical 12 qualifying groups today on both bases. **Correction of
+  record:** HL 06-16/06-25 are keeper-`block` (reclaim-veto family) on BOTH feeds — never
+  `bear_block` ⊘ — so in-cohort exemplar coverage is UEC 1/1 and the packet's "3 of 3" is
+  withdrawn (packet §2 corrected). Disclosure: the design-era selector picks 30% on the
+  production basis (25% locally); the notch remains the operator's pre-declared choice and 25%
+  passes every gate on both bases. **The live `enter`-mask change is now unblocked on evidence —
+  remaining preconditions are implementation (riding `basket_washout_state`) + the signal-era
+  fence.**
+
 - **2026-08-10 ~06:4xZ — ADJUDICATED** (results:
   `research/BLOCKED_ENTRY_CONDITIONAL_RESULTS_2026-08-10.md`): H1 **PASS, CONTEXT-ONLY**
   (held-out +0.572R [+0.384,+0.785]; vs placebo +0.580R [+0.390,+0.777]; registered equal-date
