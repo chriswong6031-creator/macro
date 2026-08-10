@@ -622,6 +622,13 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'The adjusted-price (Yahoo-plane) CN limit-alpha tape; all 14 artifacts mistakenly re-landed by #5198; and their W2/W3 executable/result descendants or user-facing forward-ledger page'
+    key: KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT
+    verdict: 'STOP-SHIP by ruling — #5092 withdrew this construction before #5198; byte-exact recovery did not cure its split-adjusted Yahoo input, ties-to-even rounding, or lack of exact exchange-limit authority. This reconciliation removes the 14 re-landed paths, their direct W2/W3 scripts/receipts, and the ledger-backed picks page from the current tree; Git history remains archaeology only. Nothing from either adjusted-price vintage, either forward seed, or any derived receipt may be graded, ranked, gated, sized, alerted, traded, promoted, displayed as a current probability, or used as numerical strategy evidence. Qualitative ideas may inform a fresh preregistration, but no withdrawn tape, artifact, receipt, result, reproducer, reader, or rendered surface may be restored. REOPEN PATH: authorized unadjusted TuShare `daily` × same-key vendor `stk_limit`, integer-cent equality + exchange half-up validation, PIT full-universe/effective-date completeness receipts, and a fresh provenance-bound measurement per `research/CN_TUSHARE_FULL_A_SPINE_CONTRACT_2026-08-08.md` plus the eligibility overlay'
+    source: '`research/CN_LIMIT_ALPHA_SOL_ADJUSTED_PRICE_STOP_SHIP_2026-08-09.md`; #5059 pared squash `dbf7454f314`; erroneous recovery #5198 `d1e893ba92c`; reconciliation-ledger §3/§5/§6/§8 amendments (2026-08-10)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Ticker-cluster bootstrap CIs without time control'
     key: LAW-TIME-CLUSTERED-CI
     verdict: 'FORBIDDEN estimator — anti-conservative, effective N = months'
