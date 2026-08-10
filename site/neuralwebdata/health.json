@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.health.v1",
-  "produced_at": "2026-08-10T03:35:39.142839+00:00",
+  "produced_at": "2026-08-10T03:58:55.718990+00:00",
   "as_of": "2026-08-07",
   "overall_status": "warn",
   "lobes": [
@@ -2649,13 +2649,13 @@
     }
   ],
   "cortex": {
-    "cortex_source": "previous_run",
-    "memo_as_of": "2026-08-09T01:41:41+00:00",
+    "cortex_source": "current_run",
+    "memo_as_of": "2026-08-10T03:53:07+00:00",
     "run_status": {
-      "status": "ok",
-      "degraded": false,
-      "degradation_reason": null,
-      "model_used": "claude-opus-4-8",
+      "status": "degraded",
+      "degraded": true,
+      "degradation_reason": "model_unavailable",
+      "model_used": "claude-sonnet-4-6",
       "provider_attempts": [
         {
           "provider": "oauth",
@@ -2663,7 +2663,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdrKmfn5EbZLD1C6wXri9'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtPbr3uM2rTzazuQnDkg'}"
         },
         {
           "provider": "oauth",
@@ -2671,7 +2671,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdrKnz3T4vP3ine8Gxb6x'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtPdAbPhfiNBnaGvKZA1'}"
         },
         {
           "provider": "oauth",
@@ -2679,7 +2679,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdrKsbnPECXGpiT2YGGaW'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtPhuNVkmcfHktbzNVVa'}"
         },
         {
           "provider": "oauth",
@@ -2687,61 +2687,85 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdrL73eVVkqTde25zvUim'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtPwPX2ES6vwpHwsuVke'}"
         },
         {
           "provider": "codex",
           "model": "gpt-5.6-sol",
           "attempted": true,
-          "ok": true,
-          "error_type": null,
-          "error_message": null
+          "ok": false,
+          "error_type": "rate_limit",
+          "error_message": "429 Codex usage limit reached"
         },
         {
           "provider": "codex",
           "model": "gpt-5.6-sol",
           "attempted": true,
-          "ok": true,
-          "error_type": null,
-          "error_message": null
+          "ok": false,
+          "error_type": "rate_limit",
+          "error_message": "429 Codex usage limit reached"
         },
         {
           "provider": "codex",
           "model": "gpt-5.6-sol",
           "attempted": true,
-          "ok": true,
-          "error_type": null,
-          "error_message": null
+          "ok": false,
+          "error_type": "rate_limit",
+          "error_message": "429 Codex usage limit reached"
         },
         {
           "provider": "codex",
           "model": "gpt-5.6-sol",
           "attempted": true,
-          "ok": true,
-          "error_type": null,
-          "error_message": null
+          "ok": false,
+          "error_type": "rate_limit",
+          "error_message": "429 Codex usage limit reached"
         },
         {
-          "provider": "codex",
-          "model": "gpt-5.6-sol",
+          "provider": "oauth",
+          "model": "claude-sonnet-4-6",
           "attempted": true,
-          "ok": true,
-          "error_type": null,
-          "error_message": null
+          "ok": false,
+          "error_type": "rate_limit",
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtQ276Sjb6Efynnosutb'}"
+        },
+        {
+          "provider": "oauth",
+          "model": "claude-sonnet-4-6",
+          "attempted": true,
+          "ok": false,
+          "error_type": "rate_limit",
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtQ2GnMTHWXtKNLTSbcR'}"
+        },
+        {
+          "provider": "oauth",
+          "model": "claude-sonnet-4-6",
+          "attempted": true,
+          "ok": false,
+          "error_type": "rate_limit",
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtQ2SwHsFZSjKaoGTtUs'}"
+        },
+        {
+          "provider": "oauth",
+          "model": "claude-sonnet-4-6",
+          "attempted": true,
+          "ok": false,
+          "error_type": "rate_limit",
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdtQ2cqrbkawUdATfBRC7'}"
         }
       ],
-      "tool_call_batches": 4,
-      "individual_tool_calls": 9,
+      "tool_call_batches": 0,
+      "individual_tool_calls": 0,
       "expected_min_tool_calls": 1,
       "context_stale": false,
-      "context_as_of": "2026-08-09T01:32:52Z"
+      "context_as_of": "2026-08-10T03:34:40Z"
     },
     "probation": {
       "granted": false,
-      "n": 5,
+      "n": 8,
       "min_n": 30
     },
-    "status": "fresh"
+    "status": "degraded"
   },
   "workflow_conformance_misses": [
     {
@@ -2769,7 +2793,7 @@
     "degraded": 0,
     "not_locally_verifiable": 1,
     "unknown": 0,
-    "cortex_status": "fresh"
+    "cortex_status": "degraded"
   },
   "context_accrual": {
     "personality_forward_ledger": {
