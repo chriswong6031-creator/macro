@@ -1861,9 +1861,13 @@ def test_legacy_render_is_tag_stream_identical_to_the_base_branch():
     art = legacy_artifact()
     assert art.get("board_definition") is None and art.get("rank_by") is None
     normalized, quote_count = _without_opt_in_live_change(_render(art))
+    base_normalized, base_quote_count = _without_opt_in_live_change(
+        _render_source(base, art))
     assert quote_count == len(art["buy"]), (
         "live quote normalizer did not cover exactly one pill per legacy card")
-    mine, theirs = _tags(normalized), _tags(_render_source(base, art))
+    assert base_quote_count in (0, len(art["buy"])), (
+        "base live quote wrapper must be wholly absent or cover every legacy card")
+    mine, theirs = _tags(normalized), _tags(base_normalized)
     assert mine == theirs, "legacy render changed shape vs the base branch (%d vs %d tags)" % (
         len(mine), len(theirs))
 
