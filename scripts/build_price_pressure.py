@@ -62,6 +62,20 @@ def _resolve(args: argparse.Namespace) -> tuple[Path, Path, Path]:
 
 
 def _nightly(args: argparse.Namespace) -> int:
+    t0 = time.time()
+    root, data_dir, store = _resolve(args)
+
+    # Refuse an absent store before importing the parquet stack. The nightly
+    # contract is fail-soft even in a bare checkout, where pandas/pyarrow may not
+    # be installed; importing them first turned the intended warning into an
+    # unrelated ModuleNotFoundError and a non-zero exit.
+    if not store.exists() or not any(store.glob("*.parquet")):
+        reason = "store absent or contains no parquet bars"
+        print(f"::warning title=price-pressure-store-stale::bar store unusable at {store} "
+              f"({reason}) — artifacts left untouched", flush=True)
+        log.warning("price_pressure: refusing to run (%s)", reason)
+        return 0
+
     import pandas as pd
 
     from engine.price_pressure import artifact as pp_artifact
@@ -69,9 +83,6 @@ def _nightly(args: argparse.Namespace) -> int:
     from engine.price_pressure import detect as pp_detect
     from engine.price_pressure import panel as pp_panel
     from engine.price_pressure import pipeline as pp_pipeline
-
-    t0 = time.time()
-    root, data_dir, store = _resolve(args)
 
     pre = pp_panel.store_status(store, today=pd.Timestamp.now(tz="UTC").tz_localize(None).normalize(),
                                 stale_sessions=args.stale_sessions)

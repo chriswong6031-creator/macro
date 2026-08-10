@@ -611,7 +611,7 @@ def test_artifact_shape_authority_and_ordering(tmp_path):
     for e in down:
         for key in ("ticker", "side", "date", "ret", "resid", "resid_z",
                     "vol_multiple", "peer_basis", "peer_ret", "basket",
-                    "basket_zh", "basket_ret", "family", "state",
+                    "basket_en", "basket_zh", "basket_ret", "family", "state",
                     "state_pending", "retrace_frac", "days_open"):
             assert key in e, key
         assert e["family"] in pp_context.FAMILIES
@@ -653,6 +653,29 @@ def test_artifact_events_cap_and_more_counter(tmp_path):
     assert len(ev) == 12 and meta["total"]["down"] == 15 and meta["more"]["down"] == 3
     # Alphabetical within the day, so the 12 kept are T00..T11 — not the biggest z.
     assert [e["ticker"] for e in ev] == [f"T{i:02d}" for i in range(12)]
+
+
+def test_stale_day_never_borrows_a_today_banner(tmp_path):
+    """Historical breadth remains a fact, but it must not speak as "today"."""
+    ledger = pd.DataFrame({
+        "date": [pd.Timestamp("2020-01-02")],
+        "side": ["down"],
+        "panel_shock_count": [12.0],
+        "panel_share_z2": [0.20],
+        "spy_ret_z": [-2.0],
+    })
+    gaps = []
+    day = pp_artifact._day_block(
+        ledger,
+        tmp_path,
+        {"day_facts": {"panel_shock_count_p90": 3.0}},
+        gaps,
+        allow_live_drivers=False,
+    )
+    assert day["broad_selloff"] is True
+    assert day["banner"] is None
+    assert day["character"] is None
+    assert any("not the current day" in gap for gap in gaps)
 
 
 def test_base_rates_cells_carry_ci_episode_n_and_dates(tmp_path):

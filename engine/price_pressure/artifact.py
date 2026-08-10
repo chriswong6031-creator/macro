@@ -266,9 +266,9 @@ def _day_block(ledger: pd.DataFrame, root: Path, base_rates: dict | None,
     # NULL unless there is something live to say: a stale artifact borrowing
     # today's vocabulary is exactly the failure the freshness check above exists
     # for, and an empty banner is more honest than a confident stale one.
-    if out["broad_selloff"] is True:
+    if fresh and out["broad_selloff"] is True:
         out["banner"] = "Most of today's pressure is market-wide, not single-name."
-    elif out["broad_selloff"] is False and out["character"]:
+    elif fresh and out["broad_selloff"] is False and out["character"]:
         out["banner"] = "Today's pressure is name-by-name, not market-wide."
     return out
 

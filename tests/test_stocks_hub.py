@@ -460,6 +460,14 @@ def test_a_basket_that_moved_with_the_name_leads_the_comparison():
     assert "silver-miners" not in cde["cmp_en"], "raw slug reached the glance tier"
     assert "its sector" in cde["tip_en"], "the basis is demoted, not lost"
 
+    # The producer also carries a curated English display label. It is more
+    # informative than prettifying the stable machine key and must win when
+    # available.
+    payload = _pp()
+    payload["open_events"][0]["basket_en"] = "Silver miners (Equal-Weight)"
+    labelled = hub.pressure_band(payload, board_asof="2026-07-02")["open"][0]
+    assert labelled["cmp_en"].startswith("its Silver miners (Equal-Weight) basket")
+
     # A basket that moved the OTHER way is not evidence about this move.
     payload = _pp()
     payload["open_events"][0]["basket_ret"] = 0.02
