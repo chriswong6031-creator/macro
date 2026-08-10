@@ -1120,6 +1120,21 @@ _SNAPSHOT_KEEP_COLS = {
                "implied_vol", "iv_error", "underlying_price"],
 }
 
+# Focused-quote consumers must name this source honestly.  The snapshot greeks
+# endpoint exposes vendor snapshot bid/ask values, but it does not expose the
+# exchange, condition, or size fields needed to prove NBBO/current/executable
+# quote semantics.  These constants are descriptive truth, not a new endpoint
+# or a new collector path.
+SNAPSHOT_FIRST_ORDER_ENDPOINT = "/v3/option/snapshot/greeks/first_order"
+SNAPSHOT_FIRST_ORDER_QUOTE_LABEL = "vendor_snapshot_bid_ask"
+SNAPSHOT_FIRST_ORDER_IS_NBBO = False
+SNAPSHOT_FIRST_ORDER_IS_LIVE = False
+SNAPSHOT_FIRST_ORDER_IS_CURRENT = False
+SNAPSHOT_FIRST_ORDER_IS_EXECUTABLE = False
+SNAPSHOT_FIRST_ORDER_HAS_SIZES = False
+SNAPSHOT_FIRST_ORDER_HAS_VENUES = False
+SNAPSHOT_FIRST_ORDER_HAS_CONDITIONS = False
+
 
 def _normalize_snapshot_df(df: pd.DataFrame, keep_cols: list[str],
                            label: str) -> pd.DataFrame:
@@ -1223,7 +1238,10 @@ def snapshot_greeks(root: str, order: str = "first") -> pd.DataFrame | None:
                      implied_vol, iv_error, underlying_price)
 
     Market closed → the terminal returns last-known close-ish values (still
-    structurally valid; timestamps carry the truth).
+    structurally valid; timestamps carry the truth).  In particular, first-order
+    ``bid``/``ask`` are labelled only as ``vendor_snapshot_bid_ask``: this
+    endpoint supplies no quote sizes, venues, or conditions and therefore does
+    not prove NBBO, live, current, or executable quote semantics.
 
     Returns DataFrame: root, expiration (datetime64), strike (float, $),
     right ("C"/"P"), snapshot_ts (datetime64, from response timestamps),
@@ -1231,9 +1249,14 @@ def snapshot_greeks(root: str, order: str = "first") -> pd.DataFrame | None:
     """
     if order not in ("first", "second"):
         raise ValueError(f"order must be 'first' or 'second'; got {order!r}")
+    endpoint = (
+        SNAPSHOT_FIRST_ORDER_ENDPOINT
+        if order == "first"
+        else "/v3/option/snapshot/greeks/second_order"
+    )
     return _snapshot_get(
         root,
-        f"/v3/option/snapshot/greeks/{order}_order",
+        endpoint,
         keep_cols=_SNAPSHOT_KEEP_COLS[order],
         label=f"snapshot_greeks/{order}",
     )
