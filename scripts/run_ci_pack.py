@@ -25,16 +25,23 @@ destructive by design.  Local callers can safely use ``--validate-only``.
 from __future__ import annotations
 
 import argparse
+import functools
+import json
 import os
 import re
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Iterable
 
 import yaml
+
+# The pack runner imports only repository-owned scope metadata.  Pin the checkout
+# root unconditionally so direct script execution and importlib-based tests resolve
+# it identically; conditional pins can silently prefer an installed namesake.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 PACK_JOB_ID = "ci-pack"
@@ -45,7 +52,7 @@ ALLOWED_STEP_KEYS = {"name", "run", "uses", "with"}
 # ---------------------------------------------------------------------------
 # Changed-path scoping (2026-08-09)
 #
-# Every pull request used to run all 173 legacy jobs regardless of its diff, so
+# Every pull request used to run every legacy job regardless of its diff, so
 # a one-template PR paid for the entire engine/site/research suite: 4 packs x
 # ~30 min x every PR, against an account-wide hosted-runner pool. Measured
 # 2026-08-09: 122 runs queued, packs waiting 46-85 MINUTES for a runner.
@@ -63,28 +70,80 @@ ALLOWED_STEP_KEYS = {"name", "run", "uses", "with"}
 #
 # The residual risk is an IMPLICIT dependency: a scoped job whose tests import a
 # module the commands never name. That cannot be caught statically here, so the
-# full 173 still gate main's baseline — a missed dependency surfaces as a red
-# main rather than as a green PR that shipped a break.
+# the full manifest still audits main. That post-merge audit is not a substitute
+# for conservative PR ownership: any ambiguity below widens to a full PR run.
 # ---------------------------------------------------------------------------
 
 # A change to any of these invalidates scoping entirely: they can alter what any
 # job means, so no per-job scope can be trusted against them.
 GLOBAL_INVALIDATORS = (
+    ".github/workflows/**",
+    ".github/ci/**",
     ".github/ci/legacy-jobs.yml",
     ".github/workflows/ci.yml",
     "scripts/run_ci_pack.py",
+    "scripts/ci_scope_dependencies.py",
+    "scripts/check_ci_trigger_closure.py",
+    "scripts/audit_unrun_tests.py",
+    "config/dag.yml",
+    "config/synapse.yml",
     "conftest.py",
     "**/conftest.py",
     "requirements*.txt",
+    "**/requirements*.txt",
     "constraints*.txt",
+    "**/constraints*.txt",
     "pyproject.toml",
+    "**/pyproject.toml",
     "setup.cfg",
+    "**/setup.cfg",
     "setup.py",
+    "**/setup.py",
     "tox.ini",
+    "**/tox.ini",
     "pytest.ini",
+    "**/pytest.ini",
     "package.json",
+    "**/package.json",
     "package-lock.json",
+    "**/package-lock.json",
+    "uv.lock",
+    "**/uv.lock",
+    "poetry.lock",
+    "**/poetry.lock",
 )
+
+# Narrative files cannot alter executable behavior unless a suite explicitly
+# reads them. Such a reader's derived scope owns the file and still runs; an
+# otherwise-unowned Markdown edit must not turn a narrow code PR back into all
+# 180 jobs merely because it carries its handoff/provenance note.
+PASSIVE_UNOWNED_PATTERNS = ("**/*.md",)
+
+# A statically opaque subprocess or tree traversal must own every established
+# repository surface it could inspect.  This is deliberately broad: it keeps
+# whole-tree guards such as all-exports-resolve selected for every engine/script
+# edit, while still allowing an unrelated narrow owner to skip guards that have
+# no opaque I/O.  A new top-level directory remains unowned and therefore widens
+# the whole PR to a full run.
+OPAQUE_IO_ROOTS = (
+    "*",
+    "app/**", "admin/**", "collectors/**", "config/**", "content/**", "contracts/**",
+    "data/**", "docs/**", "engine/**", "lib/**", "ops/**", "research/**",
+    "scripts/**", "site/**", "templates/**", "tests/**", "tools/**",
+    "worker/**",
+)
+CODE_SCAN_ROOTS = (
+    "app/**", "admin/**", "collectors/**", "engine/**", "lib/**",
+    "research/**", "scripts/**", "site/**", "tests/**", "tools/**",
+    "worker/**",
+)
+ARTIFACT_SCAN_ROOTS = (
+    "config/**", "content/**", "contracts/**", "data/**", "docs/**", "ops/**",
+    "research/**", "site/**", "templates/**",
+)
+SUBPROCESS_ROOTS = tuple(sorted(set(CODE_SCAN_ROOTS) | {
+    "config/**", "contracts/**", "templates/**",
+}))
 
 # Repo paths named literally inside a job's own commands. Used to verify that a
 # declared scope covers at least the files that job demonstrably reads.
@@ -92,6 +151,7 @@ TRACKED_ROOTS = (
     "app",
     "admin",
     "config",
+    "content",
     "docs",
     "engine",
     "research",
@@ -102,6 +162,10 @@ TRACKED_ROOTS = (
 )
 SCOPE_REFERENCE_RE = re.compile(
     r"\b(?:" + "|".join(TRACKED_ROOTS) + r")/[A-Za-z0-9_./-]+"
+)
+SUITE_REFERENCE_RE = re.compile(
+    r"(?<![\w/.-])((?:[\w.-]+/)*(?:test_[\w-]+|[\w-]+_test)\.py)"
+    r"(?![\w])"
 )
 PROVIDED_ACTION_PREFIXES = (
     "actions/checkout@",
@@ -145,6 +209,7 @@ class LegacyJob:
     paths: tuple[str, ...] = ()
 
 
+@functools.lru_cache(maxsize=None)
 def _glob_to_regex(pattern: str) -> re.Pattern[str]:
     """Translate a repo-relative glob to a regex.
 
@@ -243,13 +308,168 @@ def changed_files(base_ref: str) -> list[str] | None:
     for revision in (f"{base_ref}...HEAD", f"origin/{base_ref}...HEAD"):
         try:
             result = subprocess.run(
-                ["git", "diff", "--name-only", revision],
+                [
+                    "git", "diff", "--name-status", "-z", "--find-renames",
+                    "--find-copies",
+                    revision,
+                ],
                 capture_output=True, text=True, check=True,
             )
         except (subprocess.CalledProcessError, OSError):
             continue
-        return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        # `--name-status -z` emits STATUS\0PATH\0 for ordinary changes and
+        # Rnnn/Cnnn\0OLD\0NEW\0 for renames/copies.  Both sides are load-bearing:
+        # deleting or renaming a subject must still select the job that owned its
+        # old path, while the new path must select its new owner.
+        fields = result.stdout.split("\0")
+        if fields and fields[-1] == "":
+            fields.pop()
+        changed: list[str] = []
+        index = 0
+        try:
+            while index < len(fields):
+                status = fields[index]
+                index += 1
+                if not status:
+                    raise ValueError("empty git diff status")
+                if status[0] in {"R", "C"}:
+                    changed.extend((fields[index], fields[index + 1]))
+                    index += 2
+                else:
+                    changed.append(fields[index])
+                    index += 1
+        except (IndexError, ValueError):
+            return None
+        changed = list(dict.fromkeys(path for path in changed if path))
+        # An empty PR comparison is unusual (ancestry-only rewrite, missing
+        # objects, or wrong base). It is not proof that only always-on jobs are
+        # sufficient, so widen just like a failed diff.
+        return changed or None
     return None
+
+
+def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
+    """Attach conservative runtime-derived scopes to statically legible jobs.
+
+    The legacy YAML remains the reviewable command manifest.  Scope ownership is
+    derived from the suites/scripts each command names and their first-party read
+    closure, so it cannot drift as thousands of copied YAML path rows would.
+    Opaque edges widen that job to their complete root domain; an unparseable
+    invocation returns ``None`` and remains always-on.
+    """
+    try:
+        from scripts.audit_unrun_tests import discover_suites
+        from scripts.ci_scope_dependencies import (
+            pytest_invocation_ambiguities,
+            suite_dependency_closure,
+        )
+    except (ImportError, OSError, SyntaxError) as exc:
+        return list(jobs), f"scope inference unavailable ({exc})"
+
+    suite_index: dict[str, set[str]] = {}
+    for suite in discover_suites():
+        suite_index.setdefault(suite, set()).add(suite)
+        suite_index.setdefault(suite.rsplit("/", 1)[-1], set()).add(suite)
+
+    def ambiguity_fallbacks(
+        ambiguities: Iterable[str],
+    ) -> tuple[str, ...] | None:
+        """Only opaque repository ownership blocks a scope.
+
+        A subprocess call or filesystem traversal can inspect paths static import
+        closure cannot see, so the caller owns the statically visible scan roots;
+        an unresolved scan widens to every established root. Dynamic imports own
+        every importable code root rather than guessing a particular module.
+        """
+        fallbacks: set[str] = set()
+        for item in ambiguities:
+            if "filesystem roots=" in item:
+                raw = item.split("filesystem roots=", 1)[1]
+                fallbacks.update(f"{root}/**" for root in raw.split(",") if root)
+                continue
+            if "subprocess roots=" in item:
+                raw = item.split("subprocess roots=", 1)[1]
+                fallbacks.update(f"{root}/**" for root in raw.split(",") if root)
+                continue
+            if item.endswith("filesystem code traversal"):
+                fallbacks.update(CODE_SCAN_ROOTS)
+                continue
+            if item.endswith("filesystem artifact traversal"):
+                fallbacks.update(ARTIFACT_SCAN_ROOTS)
+                continue
+            if item.endswith("filesystem glob"):
+                fallbacks.update(OPAQUE_IO_ROOTS)
+                continue
+            if item.endswith("subprocess invocation"):
+                fallbacks.update(SUBPROCESS_ROOTS)
+                continue
+            if item.endswith("dynamic import"):
+                # The target expression is opaque. Widen across every repository
+                # tree that can carry importable code, including research/tools
+                # helpers and test plugins, rather than guessing one package.
+                fallbacks.update(CODE_SCAN_ROOTS)
+                continue
+            return None
+        return tuple(sorted(fallbacks))
+
+    def infer_job_paths(definition: dict[str, Any]) -> tuple[str, ...] | None:
+        commands = [
+            str(step["run"])
+            for step in definition.get("steps", [])
+            if isinstance(step, dict)
+            and "run" in step
+            and "pip install" not in str(step["run"])
+        ]
+        owned: set[str] = set()
+        named_any = False
+        for command in commands:
+            if pytest_invocation_ambiguities(command):
+                return None
+            named_here: set[str] = set()
+            for raw in SUITE_REFERENCE_RE.findall(command):
+                token = raw[2:] if raw.startswith("./") else raw
+                named_here.update(suite_index.get(token, ()))
+            if "pytest" in command and not named_here:
+                # A pytest invocation whose collected suite cannot be enumerated is
+                # runtime discovery, not evidence for a narrow owner.
+                return None
+            for suite in named_here:
+                closure = suite_dependency_closure(suite, pytest_command=command)
+                fallbacks = ambiguity_fallbacks(closure.ambiguities)
+                if fallbacks is None:
+                    return None
+                owned.update(closure.files)
+                owned.update(fallbacks)
+                named_any = True
+
+            for reference in SCOPE_REFERENCE_RE.findall(command):
+                rel = reference.split("::", 1)[0].rstrip(".,;:'\")")
+                path = Path(rel)
+                if not path.is_file():
+                    continue
+                owned.add(rel)
+                named_any = True
+                if rel.endswith(".py"):
+                    closure = suite_dependency_closure(rel)
+                    fallbacks = ambiguity_fallbacks(closure.ambiguities)
+                    if fallbacks is None:
+                        return None
+                    owned.update(closure.files)
+                    owned.update(fallbacks)
+        return tuple(sorted(owned)) if named_any and owned else None
+
+    inferred: list[LegacyJob] = []
+    scoped = 0
+    for job in jobs:
+        paths = infer_job_paths(job.definition)
+        if paths:
+            inferred.append(
+                replace(job, paths=tuple(sorted(set(job.paths) | set(paths))))
+            )
+            scoped += 1
+        else:
+            inferred.append(replace(job, paths=()))
+    return inferred, f"derived scopes for {scoped}/{len(inferred)} jobs"
 
 
 def select_jobs(
@@ -262,6 +482,14 @@ def select_jobs(
     invalidators = [path for path in changed if _matches_any(GLOBAL_INVALIDATORS, path)]
     if invalidators:
         return jobs, f"full suite: global invalidator changed ({invalidators[0]})"
+    scoped_jobs = [job for job in jobs if job.paths]
+    unowned = [
+        path for path in changed
+        if not any(_matches_any(job.paths, path) for job in scoped_jobs)
+        and not _matches_any(PASSIVE_UNOWNED_PATTERNS, path)
+    ]
+    if unowned:
+        return jobs, f"full suite: changed path has no proven owner ({unowned[0]})"
     selected = [
         job
         for job in jobs
@@ -533,7 +761,9 @@ def _dependency_environment(
     return command_env
 
 
-def execute_pack(jobs: list[LegacyJob]) -> int:
+def execute_pack(
+    jobs: list[LegacyJob], *, shadow_predicted: frozenset[str] | None = None
+) -> int:
     """Execute a pack, continuing after failures so one run reports all reds."""
     _workspace_root()
     base_ref = os.environ.get("CI_BASE_REF", "main")
@@ -563,6 +793,18 @@ def execute_pack(jobs: list[LegacyJob]) -> int:
             if failure:
                 failures.append(failure)
                 print(f"::error::{failure}", flush=True)
+            if shadow_predicted is not None:
+                record: dict[str, object] = {
+                    "job": job.job_id,
+                    "predicted_selected": job.job_id in shadow_predicted,
+                    "status": "failed" if failure else "passed",
+                }
+                if failure:
+                    record["failure"] = failure
+                print(
+                    "CI_SCOPE_SHADOW_RESULT=" + json.dumps(record, sort_keys=True),
+                    flush=True,
+                )
     finally:
         _restore_workspace()
 
@@ -582,8 +824,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--validate-only", action="store_true")
     # Absent = run the full suite. main's baseline and workflow_dispatch pass
-    # nothing here ON PURPOSE, so the complete 173 always gate main.
+    # nothing here ON PURPOSE, so the complete manifest always audits main.
     parser.add_argument("--changed-from", default=None)
+    parser.add_argument(
+        "--scope-mode",
+        choices=("active", "shadow", "off"),
+        default=os.environ.get("CI_SCOPE_MODE", "active"),
+        help=(
+            "active selects proven owners; shadow reports the selection but runs "
+            "everything; off is the emergency full-suite kill switch"
+        ),
+    )
     args = parser.parse_args(argv)
     if args.execute and args.validate_only:
         parser.error("--execute and --validate-only are mutually exclusive")
@@ -596,8 +847,42 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     try:
         legacy = load_legacy_jobs(args.workflow)
+        scope_summary = "scope inference not needed"
         changed = changed_files(args.changed_from) if args.changed_from else None
+        invalidated = bool(
+            changed
+            and any(_matches_any(GLOBAL_INVALIDATORS, path) for path in changed)
+        )
+        if (
+            args.changed_from
+            and args.scope_mode != "off"
+            and changed is not None
+            and not invalidated
+        ):
+            legacy, scope_summary = infer_job_scopes(legacy)
         eligible, reason = select_jobs(legacy, changed)
+        predicted = eligible
+        predicted_ids = frozenset(job.job_id for job in predicted)
+        if args.scope_mode == "off" and args.changed_from:
+            eligible = legacy
+            reason = "full suite: CI_SCOPE_MODE=off"
+        elif args.scope_mode == "shadow" and args.changed_from:
+            eligible = legacy
+            reason = (
+                f"shadow full suite: predicted {len(predicted)}/{len(legacy)} jobs; "
+                f"{reason}"
+            )
+            plan = {
+                "changed_from": args.changed_from,
+                "predicted_selected": sorted(predicted_ids),
+                "predicted_skipped": sorted(
+                    job.job_id for job in legacy if job.job_id not in predicted_ids
+                ),
+            }
+            print(
+                "CI_SCOPE_SHADOW_PLAN=" + json.dumps(plan, sort_keys=True),
+                flush=True,
+            )
         # Balance across the SELECTED set, not the full manifest — otherwise a
         # scoped run would leave whole packs empty while one pack carried it all.
         packs = partition_jobs(eligible, args.pack_count)
@@ -605,7 +890,10 @@ def main(argv: list[str] | None = None) -> int:
         weights = [sum(job.weight for job in pack) for pack in packs]
         # Bare print, never a logger: a prefixing formatter makes GitHub drop the
         # annotation silently (CLAUDE.md — annotations must START the line).
-        print(f"::notice title=ci-pack-scope::{reason}", flush=True)
+        print(
+            f"::notice title=ci-pack-scope::{reason}; {scope_summary}",
+            flush=True,
+        )
         skipped = len(legacy) - len(eligible)
         if skipped:
             print(
@@ -622,7 +910,14 @@ def main(argv: list[str] | None = None) -> int:
         print("Selected jobs: " + ", ".join(job.job_id for job in selected))
         if args.validate_only or not args.execute:
             return 0
-        return execute_pack(selected)
+        return execute_pack(
+            selected,
+            shadow_predicted=(
+                predicted_ids
+                if args.scope_mode == "shadow" and args.changed_from
+                else None
+            ),
+        )
     except (ManifestError, RuntimeError, subprocess.CalledProcessError) as exc:
         print(f"ci-pack validation/execution failed: {exc}", file=sys.stderr)
         return 2

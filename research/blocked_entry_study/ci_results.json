@@ -1,0 +1,325 @@
+{
+ "meta": {
+  "B": 2000,
+  "seed": 20260810,
+  "cluster_unit": "entry_date",
+  "panel": "US",
+  "exit": "(a) stop + 252d time exit",
+  "ci": "percentile 2.5/97.5",
+  "equal_date_weighting": "mean of each date's mean R",
+  "placebo_seed_rule": "20260809 + md5(symbol)[:8] mod 100000",
+  "signal_source_sha256": "30c12a90448579d689e2a9ed405055f6c44462cf0f69347940e619d020c7384d",
+  "input_note": "event dicts regenerated via study.events_for_symbol; events_anchor0.parquet carries no a_R column",
+  "held_out_era": "entry_date > 2018-12-31"
+ },
+ "tests": {
+  "primary_m0.5_sysAB": {
+   "H1_nonsystemic_blocked_expectancy": {
+    "test": "H1 non-systemic blocked (held-out)",
+    "stat": "mean_R",
+    "point": 0.5716835317363675,
+    "ci_lo": 0.3840091895888637,
+    "ci_hi": 0.7847987190118193,
+    "n_fires": 14440,
+    "n_dates": 1519,
+    "nan_draws": 0,
+    "equal_date_mean": {
+     "stat": "mean_of_per_date_mean_R",
+     "point": 0.49151601028178094,
+     "ci_lo": 0.2843323139003449,
+     "ci_hi": 0.7540268974893132
+    },
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R",
+     "point": -1.0821531050567477,
+     "ci_lo": -1.0883700629864497,
+     "ci_hi": -1.0783309384371267
+    }
+   },
+   "H1_nonsystemic_blocked_minus_placebo": {
+    "test": "H1 non-systemic blocked - placebo (held-out)",
+    "stat": "mean_R diff (blocked - placebo)",
+    "point": 0.580254742958019,
+    "ci_lo": 0.3901477454661359,
+    "ci_hi": 0.7771013262331502,
+    "n_fires": 29307,
+    "n_dates": 1676,
+    "nan_draws": 0,
+    "n_fires_blocked": 14440,
+    "n_fires_placebo": 14867,
+    "point_blocked": 0.5716835317363677,
+    "point_placebo": -0.008571211221651347,
+    "date_support_overlap": 1480,
+    "equal_date_mean": {
+     "stat": "mean_of_per_date_mean_R diff",
+     "point": 0.4185713800785436,
+     "ci_lo": 0.15444543960883042,
+     "ci_hi": 0.7194430171045166
+    },
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": 0.06996628149762985,
+     "ci_lo": 0.060169974149400764,
+     "ci_hi": 0.07889407757956154
+    }
+   },
+   "H2_systemic_washT_minus_washF": {
+    "test": "H2 systemic: washout T - F (held-out)",
+    "stat": "mean_R diff (washT - washF)",
+    "point": -1.0025542144162185,
+    "ci_lo": -1.7292700875863383,
+    "ci_hi": -0.3671912755619493,
+    "n_fires": 3908,
+    "n_dates": 183,
+    "nan_draws": 0,
+    "n_fires_washT": 643,
+    "n_fires_washF": 3265,
+    "point_washT": 0.7877401973963393,
+    "point_washF": 1.7902944118125577,
+    "date_support_overlap": 103,
+    "equal_date_mean": {
+     "stat": "mean_of_per_date_mean_R diff",
+     "point": -0.8607996300479224,
+     "ci_lo": -1.8194922017285824,
+     "ci_hi": 0.05065431285461221
+    },
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": -0.02056398698770967,
+     "ci_lo": -0.054828237281062994,
+     "ci_hi": 0.019272824306307567
+    }
+   },
+   "POSTHOC_systemic_washF_expectancy": {
+    "test": "POST-HOC systemic/washF blocked (held-out)",
+    "stat": "mean_R",
+    "point": 1.7902944118125572,
+    "ci_lo": 1.147449209396533,
+    "ci_hi": 2.484559795318647,
+    "n_fires": 3265,
+    "n_dates": 174,
+    "nan_draws": 0,
+    "equal_date_mean": {
+     "stat": "mean_of_per_date_mean_R",
+     "point": 1.7976141554687965,
+     "ci_lo": 1.2136896846508496,
+     "ci_hi": 2.579331987424567
+    },
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R",
+     "point": -1.0133769432080009,
+     "ci_lo": -1.0298537296363137,
+     "ci_hi": -1.0050194811753694
+    }
+   },
+   "POSTHOC_sysT_minus_sysF_all_blocked": {
+    "test": "POST-HOC sysT - sysF, all blocked (held-out)",
+    "stat": "mean_R diff (sysT - sysF)",
+    "point": 1.053656335585497,
+    "ci_lo": 0.4011857010878648,
+    "ci_hi": 1.7262988780300976,
+    "n_fires": 18348,
+    "n_dates": 1702,
+    "nan_draws": 0,
+    "n_fires_sysT": 3908,
+    "n_fires_sysF": 14440,
+    "point_sysT": 1.6253398673218646,
+    "point_sysF": 0.5716835317363675,
+    "date_support_overlap": 0,
+    "equal_date_mean": {
+     "stat": "mean_of_per_date_mean_R diff",
+     "point": 1.2654400936857604,
+     "ci_lo": 0.6650631231529877,
+     "ci_hi": 1.9311816788597254
+    },
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": 0.059490780771654705,
+     "ci_lo": 0.044713676997978936,
+     "ci_hi": 0.07734422897043372
+    }
+   },
+   "POOLED_fullhistory_blocked_minus_taken": {
+    "test": "POOLED full-history blocked - taken",
+    "stat": "mean_R diff (blocked - taken)",
+    "point": -0.14770858671791742,
+    "ci_lo": -0.25821065804887494,
+    "ci_hi": -0.038807585317249316,
+    "n_fires": 104240,
+    "n_dates": 10239,
+    "nan_draws": 0,
+    "n_fires_blocked": 31929,
+    "n_fires_taken": 72311,
+    "point_blocked": 0.8271743044686145,
+    "point_taken": 0.9748828911865319,
+    "date_support_overlap": 4572,
+    "equal_date_mean": {
+     "stat": "mean_of_per_date_mean_R diff",
+     "point": -0.3198512582457511,
+     "ci_lo": -0.4597195806743601,
+     "ci_hi": -0.17451080925575796
+    },
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": -0.02674181829867761,
+     "ci_lo": -0.03154558845462027,
+     "ci_hi": -0.021613046871490457
+    }
+   }
+  },
+  "frozen_m1.0_sysA": {
+   "H1_nonsystemic_blocked_expectancy": {
+    "test": "H1 non-systemic blocked (held-out)",
+    "stat": "mean_R",
+    "point": 0.5394491207757252,
+    "ci_lo": 0.3706539042247579,
+    "ci_hi": 0.7061831572948801,
+    "n_fires": 14659,
+    "n_dates": 1542,
+    "nan_draws": 0,
+    "equal_date_mean": {
+     "stat": "mean_of_per_date_mean_R",
+     "point": 0.5135059463789117,
+     "ci_lo": 0.3418511969062604,
+     "ci_hi": 0.7218070749553079
+    },
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R",
+     "point": -1.0559260635097139,
+     "ci_lo": -1.0609750428312998,
+     "ci_hi": -1.0497899284773302
+    }
+   },
+   "H1_nonsystemic_blocked_minus_placebo": {
+    "test": "H1 non-systemic blocked - placebo (held-out)",
+    "stat": "mean_R diff (blocked - placebo)",
+    "point": 0.48314047413949485,
+    "ci_lo": 0.31569217951553136,
+    "ci_hi": 0.658390203164748,
+    "n_fires": 30050,
+    "n_dates": 1703,
+    "nan_draws": 0,
+    "n_fires_blocked": 14659,
+    "n_fires_placebo": 15391,
+    "point_blocked": 0.5394491207757253,
+    "point_placebo": 0.056308646636230406,
+    "date_support_overlap": 1503,
+    "equal_date_mean": {
+     "stat": "mean_of_per_date_mean_R diff",
+     "point": 0.3410975374682003,
+     "ci_lo": 0.10318399493132409,
+     "ci_hi": 0.58941478544718
+    },
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": 0.05360091448188742,
+     "ci_lo": 0.04664235317324174,
+     "ci_hi": 0.0633154033002408
+    }
+   },
+   "H2_systemic_washT_minus_washF": {
+    "test": "H2 systemic: washout T - F (held-out)",
+    "stat": "mean_R diff (washT - washF)",
+    "point": -0.624103736690092,
+    "ci_lo": -1.1327393417904876,
+    "ci_hi": -0.11408861387492665,
+    "n_fires": 3721,
+    "n_dates": 162,
+    "nan_draws": 0,
+    "n_fires_washT": 605,
+    "n_fires_washF": 3116,
+    "point_washT": 0.8233805451007766,
+    "point_washF": 1.4474842817908686,
+    "date_support_overlap": 91,
+    "equal_date_mean": {
+     "stat": "mean_of_per_date_mean_R diff",
+     "point": 0.044587500183728146,
+     "ci_lo": -0.8580345683206034,
+     "ci_hi": 1.205599107575239
+    },
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": -0.005774728870049595,
+     "ci_lo": -0.8324453577822968,
+     "ci_hi": 0.8235769926767991
+    }
+   },
+   "POSTHOC_systemic_washF_expectancy": {
+    "test": "POST-HOC systemic/washF blocked (held-out)",
+    "stat": "mean_R",
+    "point": 1.4474842817908686,
+    "ci_lo": 0.9187135587958275,
+    "ci_hi": 1.9680518581830937,
+    "n_fires": 3116,
+    "n_dates": 155,
+    "nan_draws": 0,
+    "equal_date_mean": {
+     "stat": "mean_of_per_date_mean_R",
+     "point": 1.3175777430514728,
+     "ci_lo": 0.9329841376734657,
+     "ci_hi": 1.756372001581103
+    },
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R",
+     "point": -1.0014265457144471,
+     "ci_lo": -1.0177072898867765,
+     "ci_hi": -0.11911171144100163
+    }
+   },
+   "POSTHOC_sysT_minus_sysF_all_blocked": {
+    "test": "POST-HOC sysT - sysF, all blocked (held-out)",
+    "stat": "mean_R diff (sysT - sysF)",
+    "point": 0.8065616967051445,
+    "ci_lo": 0.30043670214580287,
+    "ci_hi": 1.3319251860215153,
+    "n_fires": 18380,
+    "n_dates": 1704,
+    "nan_draws": 0,
+    "n_fires_sysT": 3721,
+    "n_fires_sysF": 14659,
+    "point_sysT": 1.3460108174808698,
+    "point_sysF": 0.5394491207757253,
+    "date_support_overlap": 0,
+    "equal_date_mean": {
+     "stat": "mean_of_per_date_mean_R diff",
+     "point": 1.0650716802000346,
+     "ci_lo": 0.47358801694929764,
+     "ci_hi": 1.8116190779520684
+    },
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": 0.0488964338616118,
+     "ci_lo": 0.037165953372752095,
+     "ci_hi": 0.627626463606312
+    }
+   },
+   "POOLED_fullhistory_blocked_minus_taken": {
+    "test": "POOLED full-history blocked - taken",
+    "stat": "mean_R diff (blocked - taken)",
+    "point": -0.15476957951508774,
+    "ci_lo": -0.24120594210796603,
+    "ci_hi": -0.06345457928170814,
+    "n_fires": 104392,
+    "n_dates": 10258,
+    "nan_draws": 0,
+    "n_fires_blocked": 31993,
+    "n_fires_taken": 72399,
+    "point_blocked": 0.7377380415025886,
+    "point_taken": 0.8925076210176763,
+    "date_support_overlap": 4579,
+    "equal_date_mean": {
+     "stat": "mean_of_per_date_mean_R diff",
+     "point": -0.27207883045741243,
+     "ci_lo": -0.37616901724051666,
+     "ci_hi": -0.16232098921937704
+    },
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": -0.025981259750536223,
+     "ci_lo": -0.03061537202141921,
+     "ci_hi": -0.021808214623500466
+    }
+   }
+  }
+ }
+}

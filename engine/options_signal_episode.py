@@ -1,4 +1,4 @@
-"""Point-in-time options signal episodes and H+60 outcome labels.
+"""Point-in-time options signal episodes and separately matured outcome labels.
 
 This module is the permanent, zero-authority learning seam between the live
 options tape and future model research.  It deliberately separates immutable
@@ -16,6 +16,12 @@ decision-time rows from later outcome rows:
     terminal incomplete rows are horizons that cannot exist inside the source
     session (for example a 15:20 event on a regular close).
 
+``data/options_signal_episode/outcomes_session.jsonl``
+    Immutable underlying close outcomes at EOD and 1/3/5/10 NYSE-session
+    horizons. These rows retain a compact, metric-replayable and path-committed
+    summary of their receipt-bound RTH evidence and never alter the frozen H+60
+    v1 contract.
+
 Authority is intentionally zero.  A notable live-flow event is a ``watch``
 episode, not a stock pick.  Nothing here ranks, gates, sizes, escalates, or
 originates a trade.  The live poller may add raw observation provenance to R2,
@@ -31,6 +37,7 @@ import os
 import re
 from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
+from itertools import pairwise
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -43,17 +50,30 @@ from lib import nyse_calendar
 
 EPISODE_SCHEMA = "options.signal_episode/v1"
 OUTCOME_SCHEMA = "options.signal_episode_outcome/v1"
+SESSION_OUTCOME_SCHEMA = "options.signal_episode_session_outcome/v1"
 HORIZON_MINUTES = 60
 MEASUREMENT_VERSION = "h60-aligned-bars/v1"
+SESSION_MEASUREMENT_VERSION = "session-close-aligned-bars/v1"
+SESSION_CALENDAR_BASIS = "nyse_session_window_recurring_schedule/v1"
 TRAINING_MAX_BAR_SECONDS = 60
 TRAINING_MAX_PRICE_DELAY_MINUTES = 1
 PRICE_RECEIPT_SCHEMA = "polygon.intraday_price_receipt/v1"
 PRICE_EVIDENCE_SCHEMA = "options.signal_episode_price_evidence/v1"
+SESSION_PRICE_EVIDENCE_SCHEMA = "options.signal_episode_session_price_evidence/v1"
 PRICE_BASIS = "split_adjusted_polygon_aggregate_ohlc"
 TIMESTAMP_BASIS = "aggregate_window_start_utc"
 
 EPISODE_REL = Path("options_signal_episode") / "episodes.jsonl"
 OUTCOME_REL = Path("options_signal_episode") / "outcomes_h60.jsonl"
+SESSION_OUTCOME_REL = Path("options_signal_episode") / "outcomes_session.jsonl"
+
+SESSION_HORIZONS = {
+    "eod": 0,
+    "1d": 1,
+    "3d": 3,
+    "5d": 5,
+    "10d": 10,
+}
 
 DISPOSITIONS = frozenset({"fire", "watch", "suppressed", "abstain"})
 UNDERLYING_DIRECTIONS = frozenset({"long", "short", "none"})
@@ -114,6 +134,13 @@ def _outcome_id(episode_id: str, horizon_minutes: int = HORIZON_MINUTES) -> str:
     )
 
 
+def _session_outcome_id(episode_id: str, horizon: str) -> str:
+    """One stable identity per episode/session-horizon/measurement contract."""
+    return _stable_id(
+        "oout", SESSION_OUTCOME_SCHEMA, SESSION_MEASUREMENT_VERSION, episode_id, horizon,
+    )
+
+
 def _canonical_bytes(row: dict[str, Any]) -> bytes:
     return json.dumps(
         row, ensure_ascii=False, separators=(",", ":"), sort_keys=True,
@@ -124,6 +151,14 @@ def _canonical_bytes(row: dict[str, Any]) -> bytes:
 def _canonical_price(value: object, field: str) -> float:
     """Freeze price evidence to the same eight-decimal precision as outcomes."""
     return round(_finite_float(value, field, positive=True), 8)
+
+
+def _exact_canonical_price(value: object, field: str) -> float:
+    """Reject persisted evidence that escapes the frozen eight-decimal basis."""
+    out = _exact_finite_number(value, field, positive=True)
+    if round(out, 8) != out:
+        raise ContractError(f"{field} must use the canonical eight-decimal price basis")
+    return out
 
 
 def _build_price_evidence(path: pd.DataFrame, exit_time: datetime, exit_open: float) -> dict[str, Any]:
@@ -224,6 +259,205 @@ def _validate_price_evidence(
     ret = round(exit_price / entry_price - 1.0, 8)
     mfe = round(max(*highs, entry_price, exit_price) / entry_price - 1.0, 8)
     mae = round(min(*lows, entry_price, exit_price) / entry_price - 1.0, 8)
+    return entry_price, exit_price, ret, mfe, mae
+
+
+def _build_session_price_evidence(
+    path: pd.DataFrame,
+    *,
+    target_time: datetime,
+    final_bar_time: datetime,
+    exit_close: float,
+    bar_seconds: int,
+) -> dict[str, Any]:
+    """Commit a bounded summary while fully inspecting the selected RTH path.
+
+    The ledger stores only exact metric inputs, cadence manifests, per-session
+    raw-path commitments, and a recomputable manifest-root commitment. Evidence
+    size is therefore bounded by the number of sessions. This is deliberately
+    metric-replayable and path-committed, not full-path-replayable without a
+    separately retained exact source snapshot.
+    """
+    observations: list[dict[str, Any]] = []
+    for timestamp, bar in path.iterrows():
+        observations.append({
+            "time": _iso_utc(timestamp.to_pydatetime().astimezone(timezone.utc)),
+            "open": _canonical_price(bar["open"], "session price evidence open"),
+            "high": _canonical_price(bar["high"], "session price evidence high"),
+            "low": _canonical_price(bar["low"], "session price evidence low"),
+            "close": _canonical_price(bar["close"], "session price evidence close"),
+        })
+    if not observations:
+        raise ContractError("session price evidence path cannot be empty")
+
+    sessions: list[dict[str, Any]] = []
+    for session in sorted({
+        _as_utc(observation["time"], "session evidence observation time")
+        .astimezone(ET).date()
+        for observation in observations
+    }):
+        session_observations = [
+            observation for observation in observations
+            if _as_utc(observation["time"], "session evidence observation time")
+            .astimezone(ET).date() == session
+        ]
+        first_time = _as_utc(
+            session_observations[0]["time"], "session evidence first bar time",
+        )
+        last_time = _as_utc(
+            session_observations[-1]["time"], "session evidence last bar time",
+        )
+        span_seconds = int((last_time - first_time).total_seconds())
+        if span_seconds < 0 or span_seconds % bar_seconds:
+            raise ContractError("session price evidence does not follow declared cadence")
+        expected_count = span_seconds // bar_seconds + 1
+        session_open = session_window_et(session)[0].astimezone(timezone.utc)
+        uncovered_open_seconds = int((first_time - session_open).total_seconds())
+        if uncovered_open_seconds < 0:
+            raise ContractError("session price evidence begins before the scheduled open")
+        sessions.append({
+            "session": session.isoformat(),
+            "first_bar_time": _iso_utc(first_time),
+            "last_bar_time": _iso_utc(last_time),
+            "uncovered_open_seconds": uncovered_open_seconds,
+            "observation_count": len(session_observations),
+            "expected_count": expected_count,
+            "session_path_sha256": hashlib.sha256(
+                _canonical_bytes(session_observations)
+            ).hexdigest(),
+        })
+
+    high_observation = max(observations, key=lambda item: item["high"])
+    low_observation = min(observations, key=lambda item: item["low"])
+    entry_observation = observations[0]
+    return {
+        "schema": SESSION_PRICE_EVIDENCE_SCHEMA,
+        "entry": {
+            "bar_time": entry_observation["time"],
+            "open": entry_observation["open"],
+        },
+        "exit": {
+            "bar_time": _iso_utc(final_bar_time),
+            "time": _iso_utc(target_time),
+            "close": _canonical_price(exit_close, "session price evidence exit close"),
+        },
+        "extrema": {
+            "high": {
+                "bar_time": high_observation["time"],
+                "value": high_observation["high"],
+            },
+            "low": {
+                "bar_time": low_observation["time"],
+                "value": low_observation["low"],
+            },
+        },
+        "sessions": sessions,
+        "observation_count": len(observations),
+        "manifest_root_sha256": hashlib.sha256(_canonical_bytes(sessions)).hexdigest(),
+    }
+
+
+def _validate_session_price_evidence(
+    evidence: object,
+    *,
+    entry: datetime,
+    target_time: datetime,
+    final_bar_time: datetime,
+    bar_seconds: int,
+) -> tuple[float, float, float, float, float]:
+    """Recompute all persisted metrics from the bounded evidence summary."""
+    if not isinstance(evidence, dict) or set(evidence) != {
+        "schema", "entry", "exit", "extrema", "sessions",
+        "observation_count", "manifest_root_sha256",
+    }:
+        raise ContractError("complete session outcome requires exact compact price evidence")
+    if evidence.get("schema") != SESSION_PRICE_EVIDENCE_SCHEMA:
+        raise ContractError("retained session price evidence schema is outside v1")
+    entry_observation = evidence.get("entry")
+    exit_observation = evidence.get("exit")
+    extrema = evidence.get("extrema")
+    sessions = evidence.get("sessions")
+    if (
+        not isinstance(entry_observation, dict)
+        or not isinstance(exit_observation, dict)
+        or not isinstance(extrema, dict)
+        or not isinstance(sessions, list)
+        or not sessions
+    ):
+        raise ContractError("retained session evidence requires entry, exit, extrema, and sessions")
+    if set(entry_observation) != {"bar_time", "open"}:
+        raise ContractError("retained session entry evidence has an invalid shape")
+    if set(exit_observation) != {"bar_time", "time", "close"}:
+        raise ContractError("retained session exit evidence has an invalid shape")
+    if set(extrema) != {"high", "low"}:
+        raise ContractError("retained session extrema evidence has an invalid shape")
+    if any(
+        not isinstance(extrema.get(side), dict)
+        or set(extrema[side]) != {"bar_time", "value"}
+        for side in ("high", "low")
+    ):
+        raise ContractError("retained session extrema observations have an invalid shape")
+    observation_count = evidence.get("observation_count")
+    if type(observation_count) is not int or observation_count < 1:
+        raise ContractError("retained session evidence observation_count is invalid")
+    digest = evidence.get("manifest_root_sha256")
+    if type(digest) is not str or not re.fullmatch(r"[a-f0-9]{64}", digest):
+        raise ContractError("retained session manifest-root digest is invalid")
+    expected_root_digest = hashlib.sha256(_canonical_bytes(sessions)).hexdigest()
+    if digest != expected_root_digest:
+        raise ContractError("retained session manifest-root digest is inconsistent")
+
+    entry_bar_time = _as_utc(
+        entry_observation["bar_time"], "session_price_evidence.entry.bar_time",
+    )
+    if entry_observation["bar_time"] != _iso_utc(entry_bar_time) or entry_bar_time != entry:
+        raise ContractError("retained session entry clock disagrees with the outcome")
+    entry_price = _exact_canonical_price(
+        entry_observation["open"], "session_price_evidence.entry.open",
+    )
+
+    exit_bar_time = _as_utc(exit_observation["bar_time"], "session_price_evidence.exit.bar_time")
+    exit_time = _as_utc(exit_observation["time"], "session_price_evidence.exit.time")
+    if (
+        exit_observation["bar_time"] != _iso_utc(exit_bar_time)
+        or exit_observation["time"] != _iso_utc(exit_time)
+        or exit_bar_time != final_bar_time
+        or exit_time != target_time
+    ):
+        raise ContractError("retained session exit clocks disagree with the outcome")
+    exit_price = _exact_canonical_price(
+        exit_observation["close"], "session_price_evidence.exit.close",
+    )
+    extrema_times: dict[str, datetime] = {}
+    extrema_values: dict[str, float] = {}
+    for side in ("high", "low"):
+        observation = extrema[side]
+        observed_time = _as_utc(
+            observation["bar_time"], f"session_price_evidence.extrema.{side}.bar_time",
+        )
+        if observation["bar_time"] != _iso_utc(observed_time):
+            raise ContractError("retained session extrema clocks must be canonical UTC")
+        extrema_times[side] = observed_time
+        extrema_values[side] = _exact_canonical_price(
+            observation["value"],
+            f"session_price_evidence.extrema.{side}.value",
+        )
+    if extrema_values["high"] < max(entry_price, exit_price):
+        raise ContractError("retained session high extrema contradicts entry or exit")
+    if extrema_values["low"] > min(entry_price, exit_price):
+        raise ContractError("retained session low extrema contradicts entry or exit")
+
+    _validate_session_evidence_grid(
+        evidence,
+        entry=entry,
+        target_session=target_time.astimezone(ET).date(),
+        target_time=target_time,
+        bar_seconds=bar_seconds,
+        extrema_times=extrema_times,
+    )
+    ret = round(exit_price / entry_price - 1.0, 8)
+    mfe = round(extrema_values["high"] / entry_price - 1.0, 8)
+    mae = round(extrema_values["low"] / entry_price - 1.0, 8)
     return entry_price, exit_price, ret, mfe, mae
 
 
@@ -731,6 +965,415 @@ def validate_outcome_against_episode(
         raise ContractError("terminal outcome reason disagrees with episode session clocks")
 
 
+def _session_target(session: date, horizon: str) -> tuple[int, date, datetime]:
+    if type(horizon) is not str or horizon not in SESSION_HORIZONS:
+        raise ContractError("session outcome horizon is outside the frozen vocabulary")
+    offset = SESSION_HORIZONS[horizon]
+    target_session = nyse_calendar.session_n_forward(session, offset)
+    if target_session is None:
+        raise ContractError("session outcome target cannot be resolved from the NYSE calendar")
+    _, close_et = session_window_et(target_session)
+    return offset, target_session, close_et.astimezone(timezone.utc)
+
+
+def _validate_runtime_session_evidence_grid(
+    times: list[datetime],
+    *,
+    entry: datetime,
+    target_session: date,
+    target_time: datetime,
+    bar_seconds: int,
+) -> None:
+    """Fully inspect the in-memory path before committing its bounded summary."""
+    if not times or times[0] != entry:
+        raise ContractError("session evidence must begin at the admitted entry bar")
+    cadence = timedelta(seconds=bar_seconds)
+    entry_session = entry.astimezone(ET).date()
+    expected_sessions = nyse_calendar.sessions_between(entry_session, target_session)
+    if not expected_sessions or expected_sessions[-1] != target_session:
+        raise ContractError("session evidence target range is not a valid NYSE span")
+    seen_dates = [stamp.astimezone(ET).date() for stamp in times]
+    if sorted(set(seen_dates)) != expected_sessions:
+        raise ContractError("session evidence omits or invents a target-window session")
+    max_open_gap = bar_seconds * 1.10
+    for index, session in enumerate(expected_sessions):
+        open_et, close_et = session_window_et(session)
+        open_utc = open_et.astimezone(timezone.utc)
+        close_utc = close_et.astimezone(timezone.utc)
+        stamps = [stamp for stamp in times if stamp.astimezone(ET).date() == session]
+        if not stamps or any(not (open_utc <= stamp < close_utc) for stamp in stamps):
+            raise ContractError("session evidence contains a non-RTH or empty session")
+        expected_start = entry if index == 0 else open_utc
+        if (stamps[0] - expected_start).total_seconds() > max_open_gap:
+            raise ContractError("session evidence begins after the admitted cadence gap")
+        if any(later - earlier != cadence for earlier, later in pairwise(stamps)):
+            raise ContractError("session evidence contains an interior cadence gap")
+        if not (stamps[-1] < close_utc <= stamps[-1] + cadence):
+            raise ContractError("session evidence lacks the close-covering bar")
+    if target_time != session_window_et(target_session)[1].astimezone(timezone.utc):
+        raise ContractError("session outcome target_time is not the declared scheduled close")
+
+
+def _validate_session_evidence_grid(
+    evidence: dict[str, Any],
+    *,
+    entry: datetime,
+    target_session: date,
+    target_time: datetime,
+    bar_seconds: int,
+    extrema_times: dict[str, datetime],
+) -> None:
+    """Validate compact manifests without claiming the inline path is replayable."""
+    manifests = evidence.get("sessions")
+    if not isinstance(manifests, list) or not manifests:
+        raise ContractError("session evidence requires non-empty cadence manifests")
+    entry_session = entry.astimezone(ET).date()
+    expected_sessions = nyse_calendar.sessions_between(entry_session, target_session)
+    if not expected_sessions or expected_sessions[-1] != target_session:
+        raise ContractError("session evidence target range is not a valid NYSE span")
+    if len(manifests) != len(expected_sessions):
+        raise ContractError("session evidence omits or invents a target-window session")
+    if target_time != session_window_et(target_session)[1].astimezone(timezone.utc):
+        raise ContractError("session outcome target_time is not the declared scheduled close")
+
+    cadence = timedelta(seconds=bar_seconds)
+    max_open_gap = bar_seconds * 1.10
+    total_observations = 0
+    grids: list[tuple[datetime, datetime]] = []
+    for index, (manifest, session) in enumerate(zip(manifests, expected_sessions)):
+        if not isinstance(manifest, dict) or set(manifest) != {
+            "session", "first_bar_time", "last_bar_time", "uncovered_open_seconds",
+            "observation_count", "expected_count", "session_path_sha256",
+        }:
+            raise ContractError("session evidence manifest has an invalid shape")
+        if manifest["session"] != session.isoformat():
+            raise ContractError("session evidence manifest date disagrees with its NYSE span")
+        first = _as_utc(
+            manifest["first_bar_time"], f"session_price_evidence.sessions[{index}].first_bar_time",
+        )
+        last = _as_utc(
+            manifest["last_bar_time"], f"session_price_evidence.sessions[{index}].last_bar_time",
+        )
+        if (
+            manifest["first_bar_time"] != _iso_utc(first)
+            or manifest["last_bar_time"] != _iso_utc(last)
+        ):
+            raise ContractError("session evidence manifest clocks must be canonical UTC")
+        open_et, close_et = session_window_et(session)
+        open_utc = open_et.astimezone(timezone.utc)
+        close_utc = close_et.astimezone(timezone.utc)
+        if not (open_utc <= first <= last < close_utc):
+            raise ContractError("session evidence manifest endpoints must remain inside RTH")
+        expected_start = entry if index == 0 else open_utc
+        if first < expected_start or (first - expected_start).total_seconds() > max_open_gap:
+            raise ContractError("session evidence begins after the admitted cadence gap")
+        if index == 0 and first != entry:
+            raise ContractError("session evidence first manifest must begin at entry")
+        if not (last < close_utc <= last + cadence):
+            raise ContractError("session evidence lacks the close-covering bar")
+        span_seconds = int((last - first).total_seconds())
+        if span_seconds < 0 or span_seconds % bar_seconds:
+            raise ContractError("session evidence manifest clocks violate cadence")
+        expected_count = span_seconds // bar_seconds + 1
+        observation_count = manifest.get("observation_count")
+        declared_expected = manifest.get("expected_count")
+        if (
+            type(observation_count) is not int
+            or type(declared_expected) is not int
+            or observation_count < 1
+            or observation_count != expected_count
+            or declared_expected != expected_count
+        ):
+            raise ContractError("session evidence manifest count arithmetic is inconsistent")
+        uncovered = manifest.get("uncovered_open_seconds")
+        expected_uncovered = int((first - open_utc).total_seconds())
+        if type(uncovered) is not int or uncovered != expected_uncovered:
+            raise ContractError("session evidence uncovered-open disclosure is inconsistent")
+        digest = manifest.get("session_path_sha256")
+        if type(digest) is not str or not re.fullmatch(r"[a-f0-9]{64}", digest):
+            raise ContractError("session evidence manifest digest is invalid")
+        total_observations += observation_count
+        grids.append((first, last))
+
+    if type(evidence.get("observation_count")) is not int or (
+        evidence["observation_count"] != total_observations
+    ):
+        raise ContractError("session evidence total observation_count is inconsistent")
+    exit_bar_time = _as_utc(
+        evidence["exit"]["bar_time"], "session_price_evidence.exit.bar_time",
+    )
+    if manifests[-1]["last_bar_time"] != _iso_utc(exit_bar_time):
+        raise ContractError("session evidence final manifest disagrees with exit bar")
+    for side, observed_time in extrema_times.items():
+        on_grid = any(
+            first <= observed_time <= last
+            and int((observed_time - first).total_seconds()) % bar_seconds == 0
+            for first, last in grids
+        )
+        if not on_grid:
+            raise ContractError(f"session evidence {side} extrema is outside committed grids")
+
+
+def validate_session_outcome(row: dict[str, Any]) -> None:
+    """Validate one append-only EOD/1d/3d/5d/10d close-outcome row."""
+    _validate_json_schema(
+        row, "options.signal_episode_session_outcome.v1.schema.json",
+    )
+    required = {
+        "schema", "outcome_id", "episode_id", "horizon", "horizon_sessions",
+        "status", "reason", "horizon_anchor", "target_session", "target_time",
+        "computed_at", "matured_at", "measurement", "underlying", "option",
+        "provenance", "label_authority",
+    }
+    if set(row) != required:
+        raise ContractError("session outcome fields differ from the exact v1 contract")
+    if row["schema"] != SESSION_OUTCOME_SCHEMA:
+        raise ContractError(f"session outcome schema must be {SESSION_OUTCOME_SCHEMA!r}")
+    horizon = row["horizon"]
+    if type(horizon) is not str or horizon not in SESSION_HORIZONS:
+        raise ContractError("session outcome horizon is outside the frozen vocabulary")
+    horizon_sessions = row["horizon_sessions"]
+    if type(horizon_sessions) is not int or horizon_sessions != SESSION_HORIZONS[horizon]:
+        raise ContractError("session outcome horizon_sessions disagrees with horizon")
+    if row["outcome_id"] != _session_outcome_id(str(row["episode_id"]), horizon):
+        raise ContractError("session outcome_id is not stable for its schema/version/episode/horizon")
+
+    status = row["status"]
+    if status not in ("complete", "incomplete"):
+        raise ContractError("persisted session outcomes must be complete or terminal incomplete")
+    if status == "complete" and row["reason"] is not None:
+        raise ContractError("complete session outcomes must have a null reason")
+    if status == "incomplete" and row["reason"] != "decision_after_target_close":
+        raise ContractError("terminal session outcome reason is outside v1")
+    anchor = _as_utc(row["horizon_anchor"], "horizon_anchor")
+    target_session = _as_date(row["target_session"], "target_session")
+    if type(row["target_session"]) is not str or row["target_session"] != target_session.isoformat():
+        raise ContractError("target_session must be a canonical exact date")
+    if not nyse_calendar.is_session(target_session):
+        raise ContractError("target_session is not an NYSE session")
+    target = _as_utc(row["target_time"], "target_time")
+    computed = _as_utc(row["computed_at"], "computed_at")
+    matured = _as_utc(row["matured_at"], "matured_at")
+    for field, parsed in (
+        ("horizon_anchor", anchor), ("target_time", target),
+        ("computed_at", computed), ("matured_at", matured),
+    ):
+        if row[field] != _iso_utc(parsed):
+            raise ContractError(f"{field} must be canonical UTC")
+    expected_close = session_window_et(target_session)[1].astimezone(timezone.utc)
+    if target != expected_close:
+        raise ContractError("target_time must be the declared recurring-schedule close")
+    if matured < max(target, anchor) or computed < matured:
+        raise ContractError(
+            "session outcome maturity must follow target and decision availability"
+        )
+    if row["label_authority"] != "research_only":
+        raise ContractError("session outcome label authority must remain research_only")
+
+    measurement = row["measurement"]
+    if measurement.get("version") != SESSION_MEASUREMENT_VERSION:
+        raise ContractError("session measurement.version is outside v1")
+    if measurement.get("calendar_basis") != SESSION_CALENDAR_BASIS:
+        raise ContractError("session measurement.calendar_basis is outside v1")
+    if measurement.get("kind") not in ("session_close_bar_proxy", "unavailable"):
+        raise ContractError("session measurement.kind is invalid")
+    if not isinstance(measurement.get("target_aligned"), bool):
+        raise ContractError("session measurement.target_aligned must be boolean")
+    if measurement.get("training_eligible") is not False:
+        raise ContractError("session outcomes are never training eligible in v1")
+    reasons = measurement.get("training_ineligibility_reasons")
+    if not isinstance(reasons, list) or any(type(reason) is not str or not reason for reason in reasons):
+        raise ContractError("session measurement requires exact training ineligibility reasons")
+    window = measurement.get("window")
+    if not isinstance(window, dict) or set(window) != {"start", "end"}:
+        raise ContractError("session measurement.window must contain exactly start and end")
+
+    underlying = row["underlying"]
+    provenance = row["provenance"]
+    option = row["option"]
+    if status == "complete":
+        if measurement["kind"] != "session_close_bar_proxy":
+            raise ContractError("complete session outcomes require session_close_bar_proxy")
+        if reasons != ["session_outcome_shadow_only"]:
+            raise ContractError("complete session outcomes require the frozen shadow-only reason")
+        if underlying.get("status") != "complete":
+            raise ContractError("complete session outcomes require underlying.status=complete")
+        for key in (
+            "entry_time", "exit_time", "entry_price", "exit_price", "ret", "mfe", "mae",
+            "entry_delay_minutes", "exit_delay_minutes", "bar_seconds", "path_basis", "evidence",
+        ):
+            if underlying.get(key) is None:
+                raise ContractError(f"complete session outcome missing underlying.{key}")
+        entry = _as_utc(underlying["entry_time"], "underlying.entry_time")
+        exit_ = _as_utc(underlying["exit_time"], "underlying.exit_time")
+        if underlying["entry_time"] != _iso_utc(entry) or underlying["exit_time"] != _iso_utc(exit_):
+            raise ContractError("session underlying clocks must be canonical UTC")
+        if entry < anchor or exit_ != target or entry >= exit_:
+            raise ContractError("session underlying window must run from post-anchor entry to target close")
+        if window != {"start": underlying["entry_time"], "end": underlying["exit_time"]}:
+            raise ContractError("session measurement window must equal the actual entry/exit window")
+        if measurement["target_aligned"] is not (entry == anchor):
+            raise ContractError("session target alignment disagrees with the admitted entry")
+        bar_seconds = underlying["bar_seconds"]
+        if type(bar_seconds) is not int or bar_seconds not in (60, 300, 900, 1800, 3600):
+            raise ContractError("session outcome bar_seconds is outside the supported cadence")
+        if underlying["path_basis"] != (
+            "first_admissible_bar_open_to_declared_session_close_with_observed_rth_bar_high_low_proxies"
+        ):
+            raise ContractError("session outcome path_basis is outside v1")
+
+        evidence = underlying["evidence"]
+        try:
+            final_bar_time = _as_utc(
+                evidence["exit"]["bar_time"], "session_price_evidence.exit.bar_time",
+            )
+        except (KeyError, TypeError) as exc:
+            raise ContractError("session outcome lacks final-bar evidence") from exc
+        ev_entry, ev_exit, ev_ret, ev_mfe, ev_mae = _validate_session_price_evidence(
+            evidence,
+            entry=entry,
+            target_time=target,
+            final_bar_time=final_bar_time,
+            bar_seconds=bar_seconds,
+        )
+        entry_price = _exact_finite_number(
+            underlying["entry_price"], "underlying.entry_price", positive=True,
+        )
+        exit_price = _exact_finite_number(
+            underlying["exit_price"], "underlying.exit_price", positive=True,
+        )
+        ret = _exact_finite_number(underlying["ret"], "underlying.ret")
+        mfe = _exact_finite_number(underlying["mfe"], "underlying.mfe")
+        mae = _exact_finite_number(underlying["mae"], "underlying.mae")
+        if mae < -1.0 or (
+            entry_price, exit_price, ret, mfe, mae
+        ) != (
+            ev_entry, ev_exit, ev_ret, ev_mfe, ev_mae
+        ):
+            raise ContractError("session outcome arithmetic disagrees with retained evidence")
+        entry_delay = _exact_finite_number(
+            underlying["entry_delay_minutes"], "underlying.entry_delay_minutes",
+        )
+        exit_delay = _exact_finite_number(
+            underlying["exit_delay_minutes"], "underlying.exit_delay_minutes",
+        )
+        if entry_delay < 0 or not math.isclose(
+            entry_delay,
+            (entry - anchor).total_seconds() / 60.0,
+            rel_tol=0.0,
+            abs_tol=1e-3,
+        ):
+            raise ContractError("session entry_delay_minutes disagrees with the window")
+        if exit_delay != 0:
+            raise ContractError("session close exit delay must be exactly zero")
+
+        delay = provenance.get("price_delay_minutes")
+        if type(delay) is not int or delay < 0:
+            raise ContractError("session outcomes require an exact non-negative price delay")
+        source_available = _as_utc(
+            provenance.get("source_available_at"), "provenance.source_available_at",
+        )
+        if provenance.get("source_available_at") != _iso_utc(source_available):
+            raise ContractError("session source_available_at must be canonical UTC")
+        expected_maturity = max(target + timedelta(minutes=delay), source_available)
+        if source_available < target + timedelta(minutes=delay) or matured != expected_maturity:
+            raise ContractError("session maturity must bind target-close delay and source receipt")
+        if provenance.get("source_receipt_schema") != PRICE_RECEIPT_SCHEMA:
+            raise ContractError("session source receipt schema is outside v1")
+        price_source = provenance.get("price_source")
+        if type(price_source) is not str or not price_source.strip():
+            raise ContractError("complete session outcomes require price_source")
+        digest = provenance.get("source_file_sha256")
+        if type(digest) is not str or not re.fullmatch(r"[a-f0-9]{64}", digest):
+            raise ContractError("complete session outcomes require a source digest")
+        source_rows = provenance.get("source_file_row_count")
+        if type(source_rows) is not int or source_rows < evidence["observation_count"]:
+            raise ContractError("session source row count cannot be smaller than evidence")
+        source_first = _as_utc(
+            provenance.get("source_file_first_time"), "provenance.source_file_first_time",
+        )
+        source_last = _as_utc(
+            provenance.get("source_file_last_time"), "provenance.source_file_last_time",
+        )
+        if (
+            provenance.get("source_file_first_time") != _iso_utc(source_first)
+            or provenance.get("source_file_last_time") != _iso_utc(source_last)
+        ):
+            raise ContractError("session source receipt endpoints must be canonical UTC")
+        if source_first > entry or source_last < final_bar_time or source_first > source_last:
+            raise ContractError("session source receipt does not cover retained evidence")
+        if provenance.get("adjusted") is not True or provenance.get("price_basis") != PRICE_BASIS:
+            raise ContractError("session outcome price basis is outside v1")
+        if provenance.get("timestamp_basis") != TIMESTAMP_BASIS:
+            raise ContractError("session outcome timestamp basis is outside v1")
+        price_vintage = _as_utc(provenance.get("price_vintage"), "provenance.price_vintage")
+        if provenance.get("price_vintage") != _iso_utc(price_vintage):
+            raise ContractError("session price_vintage must be canonical UTC")
+        if price_vintage != final_bar_time:
+            raise ContractError("session price_vintage must equal the final consumed bar start")
+    else:
+        if measurement["kind"] != "unavailable" or measurement["target_aligned"]:
+            raise ContractError("incomplete session outcomes require an unavailable measurement")
+        if reasons != ["outcome_incomplete"] or any(value is not None for value in window.values()):
+            raise ContractError("incomplete session outcomes require the canonical null window")
+        if underlying.get("status") != "unavailable" or any(
+            value is not None for key, value in underlying.items() if key != "status"
+        ):
+            raise ContractError("incomplete session outcomes require a null underlying block")
+        if any(value is not None for value in provenance.values()):
+            raise ContractError("incomplete session outcomes cannot invent price provenance")
+        if matured != max(target, anchor) or anchor < target:
+            raise ContractError("terminal session outcome must be clock-reproducible")
+
+    if option.get("status") != "unavailable":
+        raise ContractError("session option outcomes must remain unavailable")
+    if option.get("reason") != "no_executable_nbbo_quote_path":
+        raise ContractError("session option outcome requires the canonical unavailable reason")
+    if option.get("quote_basis") is not None or any(
+        option.get(key) is not None for key in ("ret", "mfe", "mae")
+    ):
+        raise ContractError("session option outcomes cannot carry quote or return fields")
+
+
+def validate_session_outcome_against_episode(
+    outcome: dict[str, Any], episode: dict[str, Any],
+) -> None:
+    validate_episode(episode)
+    validate_session_outcome(outcome)
+    if outcome["episode_id"] != episode["episode_id"]:
+        raise ContractError("session outcome references a different episode")
+    available = _as_utc(episode["available_at"], "episode.available_at")
+    if _as_utc(outcome["horizon_anchor"], "horizon_anchor") != available:
+        raise ContractError("session outcome horizon_anchor must equal episode.available_at")
+    session = _as_date(episode["session_date"], "episode.session_date")
+    offset, target_session, target = _session_target(session, outcome["horizon"])
+    if outcome["horizon_sessions"] != offset:
+        raise ContractError("session outcome offset disagrees with its episode join")
+    if outcome["target_session"] != target_session.isoformat():
+        raise ContractError("session outcome target_session disagrees with the NYSE horizon")
+    if _as_utc(outcome["target_time"], "target_time") != target:
+        raise ContractError("session outcome target_time disagrees with the NYSE close")
+    if outcome["status"] == "complete":
+        entry = _as_utc(outcome["underlying"]["entry_time"], "underlying.entry_time")
+        _, episode_close_et = session_window_et(session)
+        episode_close = episode_close_et.astimezone(timezone.utc)
+        if available < episode_close:
+            expected_entry_session = session
+        else:
+            expected_entry_session = nyse_calendar.session_n_forward(session, 1)
+        if expected_entry_session is None or entry.astimezone(ET).date() != expected_entry_session:
+            raise ContractError("session outcome entry is not on the first admissible session")
+        entry_open = session_window_et(expected_entry_session)[0].astimezone(timezone.utc)
+        max_entry_gap = outcome["underlying"]["bar_seconds"] * 1.10
+        if (entry - max(available, entry_open)).total_seconds() > max_entry_gap:
+            raise ContractError("session outcome entry exceeds the admitted cadence gap")
+        expected_source_file = f"{episode['ticker']}.parquet"
+        if Path(outcome["provenance"]["price_source"]).name != expected_source_file:
+            raise ContractError("session outcome price source must match the episode ticker")
+    elif outcome["horizon"] != "eod" or available < target:
+        raise ContractError("terminal session outcome is not reproducible from episode clocks")
+
+
 def episode_from_live_event(
     event: dict[str, Any],
     *,
@@ -967,6 +1610,344 @@ def _terminal_incomplete(episode: dict[str, Any], *, reason: str,
     return row
 
 
+def _terminal_session_incomplete(
+    episode: dict[str, Any],
+    *,
+    horizon: str,
+    horizon_sessions: int,
+    target_session: date,
+    target_time: datetime,
+    computed_at: datetime,
+) -> dict[str, Any]:
+    row = {
+        "schema": SESSION_OUTCOME_SCHEMA,
+        "outcome_id": _session_outcome_id(episode["episode_id"], horizon),
+        "episode_id": episode["episode_id"],
+        "horizon": horizon,
+        "horizon_sessions": horizon_sessions,
+        "status": "incomplete",
+        "reason": "decision_after_target_close",
+        "horizon_anchor": episode["available_at"],
+        "target_session": target_session.isoformat(),
+        "target_time": _iso_utc(target_time),
+        "computed_at": _iso_utc(computed_at),
+        "matured_at": _iso_utc(max(
+            target_time,
+            _as_utc(episode["available_at"], "episode.available_at"),
+        )),
+        "measurement": {
+            "version": SESSION_MEASUREMENT_VERSION,
+            "calendar_basis": SESSION_CALENDAR_BASIS,
+            "kind": "unavailable",
+            "target_aligned": False,
+            "training_eligible": False,
+            "training_ineligibility_reasons": ["outcome_incomplete"],
+            "window": {"start": None, "end": None},
+        },
+        "underlying": {
+            "status": "unavailable", "entry_time": None, "exit_time": None,
+            "entry_price": None, "exit_price": None, "ret": None,
+            "mfe": None, "mae": None, "entry_delay_minutes": None,
+            "exit_delay_minutes": None, "bar_seconds": None,
+            "path_basis": None, "evidence": None,
+        },
+        "option": {
+            "status": "unavailable", "reason": "no_executable_nbbo_quote_path",
+            "quote_basis": None, "ret": None, "mfe": None, "mae": None,
+        },
+        "provenance": {
+            "price_source": None, "price_vintage": None,
+            "price_delay_minutes": None, "source_receipt_schema": None,
+            "source_available_at": None, "source_file_sha256": None,
+            "source_file_row_count": None, "source_file_first_time": None,
+            "source_file_last_time": None, "adjusted": None,
+            "price_basis": None, "timestamp_basis": None,
+        },
+        "label_authority": "research_only",
+    }
+    validate_session_outcome(row)
+    return row
+
+
+def derive_session_outcome(
+    episode: dict[str, Any],
+    horizon: str,
+    bars: pd.DataFrame | None,
+    *,
+    computed_at: datetime,
+    price_source: str,
+    bar_seconds: int | None = None,
+    price_delay_minutes: int | None = None,
+    price_receipt: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Derive one immutable close outcome without changing the H+60 v1 seam."""
+    validate_episode(episode)
+    if not isinstance(computed_at, datetime) or computed_at.tzinfo is None:
+        raise ContractError("computed_at must be a timezone-aware datetime")
+    now = computed_at.astimezone(timezone.utc)
+    episode_session = _as_date(episode["session_date"], "session_date")
+    horizon_sessions, target_session, target_time = _session_target(episode_session, horizon)
+    available = _as_utc(episode["available_at"], "available_at")
+    if now < max(target_time, available):
+        return {
+            "status": "pending", "reason": "horizon_not_matured",
+            "episode_id": episode["episode_id"], "horizon": horizon,
+        }
+    if available >= target_time:
+        return _terminal_session_incomplete(
+            episode,
+            horizon=horizon,
+            horizon_sessions=horizon_sessions,
+            target_session=target_session,
+            target_time=target_time,
+            computed_at=now,
+        )
+    if bars is None and price_receipt is None:
+        return {
+            "status": "pending", "reason": "missing_price_receipt",
+            "episode_id": episode["episode_id"], "horizon": horizon,
+        }
+    if price_delay_minutes is not None and (
+        type(price_delay_minutes) is not int or price_delay_minutes < 0
+    ):
+        raise ContractError("price_delay_minutes must be an exact non-negative integer")
+    if bar_seconds is not None and type(bar_seconds) is not int:
+        raise ContractError("bar_seconds must be an exact integer when declared")
+    if bar_seconds not in (60, 300, 900, 1800, 3600):
+        return {
+            "status": "pending", "reason": "unknown_bar_cadence",
+            "episode_id": episode["episode_id"], "horizon": horizon,
+        }
+    frame = normalize_price_bars(bars)
+    expected_sessions = nyse_calendar.sessions_between(episode_session, target_session)
+    if len(expected_sessions) != horizon_sessions + 1:
+        raise ContractError("session horizon mapping disagrees with the NYSE calendar")
+
+    measurement_sessions: list[date] = []
+    for session in expected_sessions:
+        close_utc = session_window_et(session)[1].astimezone(timezone.utc)
+        if session == episode_session and available >= close_utc:
+            continue
+        measurement_sessions.append(session)
+    if not measurement_sessions or measurement_sessions[-1] != target_session:
+        raise ContractError("session measurement window has no admissible target session")
+
+    selected_parts: list[pd.DataFrame] = []
+    entry_time: datetime | None = None
+    final_bar_time: datetime | None = None
+    max_open_gap = bar_seconds * 1.10
+    for session_index, session in enumerate(measurement_sessions):
+        open_et, close_et = session_window_et(session)
+        open_utc = open_et.astimezone(timezone.utc)
+        close_utc = close_et.astimezone(timezone.utc)
+        session_frame = frame[
+            (frame.index >= pd.Timestamp(open_utc)) & (frame.index < pd.Timestamp(close_utc))
+        ]
+        if session_frame.empty:
+            return {
+                "status": "pending", "reason": "missing_session_bars",
+                "episode_id": episode["episode_id"], "horizon": horizon,
+            }
+        admitted_start = max(available, open_utc) if session_index == 0 else open_utc
+        start_candidates = session_frame[session_frame.index >= pd.Timestamp(admitted_start)]
+        if start_candidates.empty:
+            return {
+                "status": "pending", "reason": "missing_entry_bar",
+                "episode_id": episode["episode_id"], "horizon": horizon,
+            }
+        first_time = start_candidates.index[0].to_pydatetime().astimezone(timezone.utc)
+        if (first_time - admitted_start).total_seconds() > max_open_gap:
+            return {
+                "status": "pending", "reason": "entry_bar_gap",
+                "episode_id": episode["episode_id"], "horizon": horizon,
+            }
+        covering = session_frame[
+            (session_frame.index < pd.Timestamp(close_utc))
+            & (session_frame.index + pd.Timedelta(seconds=bar_seconds) >= pd.Timestamp(close_utc))
+        ]
+        if covering.empty:
+            return {
+                "status": "pending", "reason": "missing_session_close_bar",
+                "episode_id": episode["episode_id"], "horizon": horizon,
+            }
+        close_bar_time = covering.index[-1].to_pydatetime().astimezone(timezone.utc)
+        if close_bar_time < first_time:
+            return {
+                "status": "pending", "reason": "late_entry_after_close_bar",
+                "episode_id": episode["episode_id"], "horizon": horizon,
+            }
+        part = session_frame[
+            (session_frame.index >= pd.Timestamp(first_time))
+            & (session_frame.index <= pd.Timestamp(close_bar_time))
+        ]
+        expected_index = pd.date_range(
+            start=pd.Timestamp(first_time),
+            end=pd.Timestamp(close_bar_time),
+            freq=pd.Timedelta(seconds=bar_seconds),
+        )
+        if not part.index.equals(expected_index):
+            return {
+                "status": "pending", "reason": "measurement_path_gap",
+                "episode_id": episode["episode_id"], "horizon": horizon,
+            }
+        selected_parts.append(part)
+        if entry_time is None:
+            entry_time = first_time
+        final_bar_time = close_bar_time
+
+    assert entry_time is not None and final_bar_time is not None
+    path = pd.concat(selected_parts)
+    try:
+        _validate_runtime_session_evidence_grid(
+            [stamp.to_pydatetime().astimezone(timezone.utc) for stamp in path.index],
+            entry=entry_time,
+            target_session=target_session,
+            target_time=target_time,
+            bar_seconds=bar_seconds,
+        )
+    except ContractError:
+        return {
+            "status": "pending", "reason": "measurement_path_gap",
+            "episode_id": episode["episode_id"], "horizon": horizon,
+        }
+    if price_delay_minutes is None:
+        return {
+            "status": "pending", "reason": "unknown_price_delay",
+            "episode_id": episode["episode_id"], "horizon": horizon,
+        }
+    if not isinstance(price_source, str) or not price_source.strip():
+        raise ContractError("price_source must be a non-empty provenance string")
+    if price_receipt is None:
+        return {
+            "status": "pending", "reason": "missing_price_receipt",
+            "episode_id": episode["episode_id"], "horizon": horizon,
+        }
+    try:
+        receipt = _validated_session_price_receipt(
+            price_receipt,
+            ticker=episode["ticker"],
+            price_source=price_source,
+            bar_seconds=bar_seconds,
+            price_delay_minutes=price_delay_minutes,
+            entry=entry_time,
+            final_bar_time=final_bar_time,
+            target_time=target_time,
+        )
+    except ContractError:
+        return {
+            "status": "pending", "reason": "invalid_price_receipt",
+            "episode_id": episode["episode_id"], "horizon": horizon,
+        }
+    source_available = _as_utc(
+        receipt["source_available_at"], "price_receipt.source_available_at",
+    )
+    matured_at = max(
+        target_time + timedelta(minutes=price_delay_minutes), source_available,
+    )
+    if now < matured_at:
+        return {
+            "status": "pending", "reason": "measurement_not_available",
+            "episode_id": episode["episode_id"], "horizon": horizon,
+        }
+
+    numeric_path = path[["open", "high", "low", "close"]]
+    finite_path = numeric_path.apply(
+        lambda column: column.map(lambda value: math.isfinite(float(value)))
+    )
+    structurally_valid = (
+        finite_path.all(axis=1)
+        & (numeric_path > 0).all(axis=1)
+        & (numeric_path["high"] >= numeric_path[["open", "close", "low"]].max(axis=1))
+        & (numeric_path["low"] <= numeric_path[["open", "close", "high"]].min(axis=1))
+    )
+    if not bool(structurally_valid.all()):
+        return {
+            "status": "pending", "reason": "invalid_ohlc_bar",
+            "episode_id": episode["episode_id"], "horizon": horizon,
+        }
+    exit_close = _optional_float(path.iloc[-1].get("close"))
+    if exit_close is None or exit_close <= 0:
+        return {
+            "status": "pending", "reason": "missing_price_fields",
+            "episode_id": episode["episode_id"], "horizon": horizon,
+        }
+    evidence = _build_session_price_evidence(
+        path,
+        target_time=target_time,
+        final_bar_time=final_bar_time,
+        exit_close=exit_close,
+        bar_seconds=bar_seconds,
+    )
+    ev_entry, ev_exit, ev_ret, ev_mfe, ev_mae = _validate_session_price_evidence(
+        evidence,
+        entry=entry_time,
+        target_time=target_time,
+        final_bar_time=final_bar_time,
+        bar_seconds=bar_seconds,
+    )
+    row = {
+        "schema": SESSION_OUTCOME_SCHEMA,
+        "outcome_id": _session_outcome_id(episode["episode_id"], horizon),
+        "episode_id": episode["episode_id"],
+        "horizon": horizon,
+        "horizon_sessions": horizon_sessions,
+        "status": "complete",
+        "reason": None,
+        "horizon_anchor": episode["available_at"],
+        "target_session": target_session.isoformat(),
+        "target_time": _iso_utc(target_time),
+        "computed_at": _iso_utc(now),
+        "matured_at": _iso_utc(matured_at),
+        "measurement": {
+            "version": SESSION_MEASUREMENT_VERSION,
+            "calendar_basis": SESSION_CALENDAR_BASIS,
+            "kind": "session_close_bar_proxy",
+            "target_aligned": entry_time == available,
+            "training_eligible": False,
+            "training_ineligibility_reasons": ["session_outcome_shadow_only"],
+            "window": {"start": _iso_utc(entry_time), "end": _iso_utc(target_time)},
+        },
+        "underlying": {
+            "status": "complete",
+            "entry_time": _iso_utc(entry_time),
+            "exit_time": _iso_utc(target_time),
+            "entry_price": ev_entry,
+            "exit_price": ev_exit,
+            "ret": ev_ret,
+            "mfe": ev_mfe,
+            "mae": ev_mae,
+            "entry_delay_minutes": round((entry_time - available).total_seconds() / 60.0, 3),
+            "exit_delay_minutes": 0,
+            "bar_seconds": bar_seconds,
+            "path_basis": (
+                "first_admissible_bar_open_to_declared_session_close_with_observed_rth_bar_high_low_proxies"
+            ),
+            "evidence": evidence,
+        },
+        "option": {
+            "status": "unavailable", "reason": "no_executable_nbbo_quote_path",
+            "quote_basis": None, "ret": None, "mfe": None, "mae": None,
+        },
+        "provenance": {
+            "price_source": price_source,
+            "price_vintage": _iso_utc(final_bar_time),
+            "price_delay_minutes": price_delay_minutes,
+            "source_receipt_schema": receipt["schema"],
+            "source_available_at": receipt["source_available_at"],
+            "source_file_sha256": receipt["source_file_sha256"],
+            "source_file_row_count": receipt["row_count"],
+            "source_file_first_time": receipt["first_time"],
+            "source_file_last_time": receipt["last_time"],
+            "adjusted": receipt["adjusted"],
+            "price_basis": receipt["price_basis"],
+            "timestamp_basis": receipt["timestamp_basis"],
+        },
+        "label_authority": "research_only",
+    }
+    validate_session_outcome(row)
+    return row
+
+
 def _training_quality(
     *,
     available: datetime,
@@ -1050,6 +2031,67 @@ def _validated_price_receipt(
         raise ContractError("price receipt source window does not cover the measurement")
     if available < exit_ + timedelta(minutes=price_delay_minutes):
         raise ContractError("price receipt availability predates the consumed delayed exit")
+    return receipt
+
+
+def _validated_session_price_receipt(
+    receipt: object,
+    *,
+    ticker: str,
+    price_source: str,
+    bar_seconds: int,
+    price_delay_minutes: int,
+    entry: datetime,
+    final_bar_time: datetime,
+    target_time: datetime,
+) -> dict[str, Any]:
+    """Validate the same immutable source receipt for a close-based measurement."""
+    required = {
+        "schema", "ticker", "source_file", "source_file_sha256",
+        "source_available_at", "bar_seconds", "vendor_delay_minutes",
+        "adjusted", "price_basis", "timestamp_basis", "row_count",
+        "first_time", "last_time",
+    }
+    if not isinstance(receipt, dict) or set(receipt) != required:
+        raise ContractError("session price receipt has an invalid shape")
+    if receipt.get("schema") != PRICE_RECEIPT_SCHEMA or receipt.get("ticker") != ticker:
+        raise ContractError("session price receipt identity is outside v1")
+    source_file = receipt.get("source_file")
+    if (
+        type(source_file) is not str
+        or not source_file
+        or source_file != source_file.strip()
+        or Path(price_source).name != source_file
+    ):
+        raise ContractError("session price receipt source file disagrees with price_source")
+    digest = receipt.get("source_file_sha256")
+    if type(digest) is not str or not re.fullmatch(r"[a-f0-9]{64}", digest):
+        raise ContractError("session price receipt source digest is invalid")
+    if type(receipt.get("bar_seconds")) is not int or receipt["bar_seconds"] != bar_seconds:
+        raise ContractError("session price receipt cadence disagrees with the measurement")
+    if (
+        type(receipt.get("vendor_delay_minutes")) is not int
+        or receipt["vendor_delay_minutes"] != price_delay_minutes
+    ):
+        raise ContractError("session price receipt delay disagrees with the measurement")
+    if receipt.get("adjusted") is not True or receipt.get("price_basis") != PRICE_BASIS:
+        raise ContractError("session price receipt basis is outside v1")
+    if receipt.get("timestamp_basis") != TIMESTAMP_BASIS:
+        raise ContractError("session price receipt timestamp basis is outside v1")
+    if type(receipt.get("row_count")) is not int or receipt["row_count"] <= 0:
+        raise ContractError("session price receipt row_count must be a positive exact integer")
+    available = _as_utc(receipt.get("source_available_at"), "price_receipt.source_available_at")
+    first = _as_utc(receipt.get("first_time"), "price_receipt.first_time")
+    last = _as_utc(receipt.get("last_time"), "price_receipt.last_time")
+    for field, parsed in (
+        ("source_available_at", available), ("first_time", first), ("last_time", last),
+    ):
+        if receipt[field] != _iso_utc(parsed):
+            raise ContractError(f"session price receipt {field} must be canonical UTC")
+    if first > entry or last < final_bar_time or first > last:
+        raise ContractError("session price receipt source window does not cover the measurement")
+    if available < target_time + timedelta(minutes=price_delay_minutes):
+        raise ContractError("session price receipt availability predates target close plus delay")
     return receipt
 
 
@@ -1468,4 +2510,14 @@ def append_outcomes(path: Path, rows: Iterable[dict[str, Any]]) -> int:
         id_field="outcome_id",
         semantic_key=lambda row: (row.get("episode_id"), row.get("horizon_minutes")),
         validator=validate_outcome,
+    )
+
+
+def append_session_outcomes(path: Path, rows: Iterable[dict[str, Any]]) -> int:
+    return _append_validated(
+        path,
+        rows,
+        id_field="outcome_id",
+        semantic_key=lambda row: (row.get("episode_id"), row.get("horizon")),
+        validator=validate_session_outcome,
     )

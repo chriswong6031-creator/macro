@@ -55,7 +55,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=70725c26">
+<link rel="stylesheet" href="theme.css?v=3005a06c">
 
 <link rel="stylesheet" href="dashboard-icons.css?v=be32e541">
 <script defer src="dashboard-icons.js?v=e096076e"></script>
@@ -67,7 +67,7 @@
 <link rel="preload" as="style" href="assets/css/5e973f2b.css?v=5e973f2b">
 <link rel="preload" as="style" href="assets/css/3cff5b20.css?v=3cff5b20">
 <link rel="preload" as="style" href="assets/css/d7b2bc74.css?v=d7b2bc74">
-<link rel="preload" as="style" href="assets/css/f1ed4b62.css?v=f1ed4b62">
+<link rel="preload" as="style" href="assets/css/de489881.css?v=de489881">
 </head>
 <body class="page-canada">
 
@@ -319,7 +319,7 @@
   <div class="row">
     <h1><span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-08-07 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-08-10 03:07 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-08-07 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-08-10 08:49 UTC</span>
   </div>
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
     <a href="canada.html" style="color:var(--link);font-weight:600">← <span class="l-en">Canada macro dashboard</span><span class="l-zh">加拿大宏观看板</span></a></p>
@@ -1055,6 +1055,18 @@
 </script>
 
 
+<div class="panel" style="border-color:color-mix(in srgb,var(--warn) 40%,var(--line))">
+  <div class="row" style="gap:8px">
+    <b style="color:var(--warn)">⚠ <span class="l-en">Data health</span><span class="l-zh">数据健康</span></b>
+    <span class="muted small"><span class="l-en">some board inputs are degraded — the affected axes are suppressed, not silently filled</span><span class="l-zh">部分榜单输入已降级 — 受影响的轴已抑制，而非静默填充</span></span>
+  </div>
+  <div class="row small" style="gap:6px; margin-top:6px">
+    
+    <span class="chip off"><span class="l-en">Board ledger (append wrote 0 rows — see build log)</span><span class="l-zh">榜单账本（写入 0 行 — 查看构建日志）</span> <b>· ERROR</b> <span class="muted">(2026-08-07)</span></span>
+    
+  </div>
+</div>
+
 <div class="panel" id="standouts">
   <h2><span class="l-en">⚡ Prophet Stock Signals — TSX ripe list</span><span class="l-zh">⚡ Prophet 选股 — TSX 成熟清单</span>
     <span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">10 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 7 <span class="l-en">bottoming and turning up (not still falling)</span><span class="l-zh">筑底并开始转向（而非仍在下跌）</span></span>
@@ -1501,7 +1513,7 @@
   <div id="stocktable-wrap"></div>
   
   
-<link rel="stylesheet" href="assets/css/f1ed4b62.css?v=f1ed4b62">
+<link rel="stylesheet" href="assets/css/de489881.css?v=de489881">
 
   <div class="nb-grid-section">
   <div class="cards" data-showmore-rows="3">
@@ -1550,7 +1562,7 @@
       <span class="pv-live" hidden></span>
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (2)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 2</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span><span class="pv-cau-row"><span class="l-en">Already moving — don't chase above the zone</span><span class="l-zh">已在异动 — 勿在买区上方追高</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="CLS.TO" data-mkt="ca">$443.51</span></span>
+    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="CLS.TO" data-mkt="ca">$443.51</span><span class="nb-chg pv-chg" data-sym="CLS.TO" data-mkt="ca">—</span></span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
@@ -1604,7 +1616,7 @@
       <span class="pv-live" hidden></span>
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="SDE.TO" data-mkt="ca">$11.33</span></span>
+    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="SDE.TO" data-mkt="ca">$11.33</span><span class="nb-chg pv-chg" data-sym="SDE.TO" data-mkt="ca">—</span></span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
@@ -1660,7 +1672,7 @@
       <span class="pv-live" hidden></span>
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (2)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 2</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span><span class="pv-cau-row"><span class="l-en">Stretched vs trend — chasing risk is higher</span><span class="l-zh">相对趋势偏高 — 追高风险更大</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="ATD.TO" data-mkt="ca">$93.30</span></span>
+    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="ATD.TO" data-mkt="ca">$93.30</span><span class="nb-chg pv-chg" data-sym="ATD.TO" data-mkt="ca">—</span></span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
@@ -1714,7 +1726,7 @@
       <span class="pv-live" hidden></span>
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="EQX.TO" data-mkt="ca">$16.16</span></span>
+    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="EQX.TO" data-mkt="ca">$16.16</span><span class="nb-chg pv-chg" data-sym="EQX.TO" data-mkt="ca">—</span></span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
@@ -1768,7 +1780,7 @@
       <span class="pv-live" hidden></span>
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="NG.TO" data-mkt="ca">$10.56</span></span>
+    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="NG.TO" data-mkt="ca">$10.56</span><span class="nb-chg pv-chg" data-sym="NG.TO" data-mkt="ca">—</span></span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
@@ -1822,7 +1834,7 @@
       <span class="pv-live" hidden></span>
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (2)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 2</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span><span class="pv-cau-row"><span class="l-en">Already moving — don't chase above the zone</span><span class="l-zh">已在异动 — 勿在买区上方追高</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="POU.TO" data-mkt="ca">$30.10</span></span>
+    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="POU.TO" data-mkt="ca">$30.10</span><span class="nb-chg pv-chg" data-sym="POU.TO" data-mkt="ca">—</span></span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
@@ -1878,7 +1890,7 @@
       <span class="pv-live" hidden></span>
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (2)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 2</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span><span class="pv-cau-row"><span class="l-en">Stretched vs trend — chasing risk is higher</span><span class="l-zh">相对趋势偏高 — 追高风险更大</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="KMP-UN.TO" data-mkt="ca">$18.87</span></span>
+    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="KMP-UN.TO" data-mkt="ca">$18.87</span><span class="nb-chg pv-chg" data-sym="KMP-UN.TO" data-mkt="ca">—</span></span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
@@ -1932,7 +1944,7 @@
       <span class="pv-live" hidden></span>
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="TVK.TO" data-mkt="ca">$120.43</span></span>
+    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="TVK.TO" data-mkt="ca">$120.43</span><span class="nb-chg pv-chg" data-sym="TVK.TO" data-mkt="ca">—</span></span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
@@ -1988,7 +2000,7 @@
       <span class="pv-live" hidden></span>
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="ATRL.TO" data-mkt="ca">$88.11</span></span>
+    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="ATRL.TO" data-mkt="ca">$88.11</span><span class="nb-chg pv-chg" data-sym="ATRL.TO" data-mkt="ca">—</span></span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
@@ -2042,7 +2054,7 @@
       <span class="pv-live" hidden></span>
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="IVN.TO" data-mkt="ca">$11.53</span></span>
+    <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="IVN.TO" data-mkt="ca">$11.53</span><span class="nb-chg pv-chg" data-sym="IVN.TO" data-mkt="ca">—</span></span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
@@ -2345,6 +2357,5 @@ if (document.readyState === 'loading') {
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

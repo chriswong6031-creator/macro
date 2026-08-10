@@ -154,3 +154,38 @@ def confirmation_receipt(provisional: Mapping[str, Any] | None,
             "basis": "confluence tier of the admission gate's verdict",
         },
     }
+
+
+def board_state_payload(receipt: Mapping[str, Any] | None) -> dict | None:
+    """Project a receipt into the surface's ``board_state`` contract, or None.
+
+    ONE COMPUTATION, ONE PROJECTION. ``confirmation_receipt`` above is the only
+    place the delta is computed; this is the only place it is dressed for the
+    page. It is the exact sibling of ``board.board_state``, which does the same
+    for the PROVISIONAL side of the same surface — so neither side of the W-L1
+    contract has a second definition living somewhere a reader would not think
+    to look.
+
+    NO ``rel``. The board this grades IS the board of record, and the record has
+    no position relative to itself — the absent stamp is the spec's load-bearing
+    third state (§3). ``lib.board_state`` refuses ``rel`` server-side regardless,
+    so emitting one here would be a field that exists only to be thrown away.
+
+    ``adjusted`` rides along because the per-card ``Adjusted`` mark and the
+    receipt line it belongs to are published together or not at all (spec §7):
+    the consumer stamps the cards only after the interpreter has vouched for the
+    line, and it needs the names to do it.
+    """
+    if not receipt:
+        return None
+    return {
+        "note": "confirmed",
+        "as_of": receipt.get("as_of"),
+        "generated_at": receipt.get("built_at"),
+        "n_total": receipt.get("n_total"),
+        "n_confirmed": receipt.get("n_confirmed"),
+        "n_adjusted": receipt.get("n_adjusted"),
+        "n_dropped": receipt.get("n_dropped"),
+        "dropped": list(receipt.get("dropped") or ()),
+        "adjusted": list(receipt.get("adjusted") or ()),
+    }

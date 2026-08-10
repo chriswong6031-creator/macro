@@ -23,11 +23,17 @@ from engine.close_pass.board import (  # noqa: F401
 )
 from engine.close_pass.reconcile import (  # noqa: F401
     RECEIPT_SCHEMA,
+    board_state_payload,
     confirmation_receipt,
 )
 
+# `board_state` (board.py — the PROVISIONAL side) and `board_state_payload`
+# (reconcile.py — the CONFIRMED side) are deliberately distinct names: they are
+# two projections of two different documents, and a shared name here would
+# silently rebind one of them on import order.
 __all__ = [
     "CLOSE_DERIVED_LEGS", "LANE", "NIGHTLY_EXPECTED_BY_UTC", "OMITTED_LEGS",
-    "SCHEMA", "WEIGHT_COVERED", "RECEIPT_SCHEMA", "board_state", "build_board",
-    "close_legs", "confirmation_receipt", "valid_until",
+    "SCHEMA", "WEIGHT_COVERED", "RECEIPT_SCHEMA", "board_state",
+    "board_state_payload", "build_board", "close_legs", "confirmation_receipt",
+    "valid_until",
 ]

@@ -7,7 +7,7 @@
 # scored-path authority stays entirely with the BTC vector program — this chain is
 # context only and never touches allocation() (BTC override audit D1–D5).
 chain: real_rate_peak_crypto_rerate
-rev: 0
+rev: 1
 tier: hypothesis            # every node resolves; per-hop base rates untested until the W3 miner
 title:
   en: "Real-rate peak → crypto re-rates"
@@ -69,18 +69,37 @@ hops:
   # carry the equity read; this chain grades only the crypto channel.
 
 falsifiers:
-  # Peak refuted (same as gold chain).
-  - when: {series: "DFII10", metric: ret_bp, window: 63, op: gt, value: 15}
+  # Peak refuted (same as gold chain — rev 1 gate; measurement + rationale in the gold
+  # chain's falsifier comment and research/CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md).
+  - when:
+      all:
+        - {series: "DFII10", metric: ret_bp, window: 63, op: gt, value: 15}
+        - {series: "DFII10", metric: off_high_bp, window: 10, op: lt, value: 4}
     src: fred
-    note: "real 10y +15bp over a quarter while armed — no peak; restriction still building"
+    note: "real 10y +15bp over the quarter AND still pressing its 10-day highs while armed — restriction still building"
   # Credit stress: a rolldown born of a growth/credit scare is the flight-to-quality
   # regime, where crypto historically trades DOWN with risk, not up with duration.
+  # rev 1: "alongside the rolldown" — scoped post-rolldown.
   - when: {series: "HYG", ratio: "LQD", metric: ratio_ret, window: 22, op: lt, value: -2.0}
     src: yahoo
+    from_hop: 1
     note: "credit stress alongside the rolldown — flight-to-quality regime; the crypto duration-release hop does not apply"
   # Terminal falsifier: rolldown confirmed, BTC flat-to-down for a quarter.
+  # rev 1: terminal leg — scoped post-rolldown, same as the gold chain.
   - when: {series: "BTC-USD", metric: ret, window: 63, op: lt, value: 0}
+    from_hop: 1
     note: "real yields rolled down with BTC flat-to-down over 63d — the crypto re-rate leg is falsified"
+
+# Turn-watch annotation (rev 1) — same shared-trigger stall shape as the gold chain
+# (measured there; the trigger series is identical by design).
+stall:
+  when:
+    all:
+      - {series: "DFII10", metric: ret_bp, window: 22, op: lte, value: 5}
+      - {series: "DFII10", metric: off_high_bp, window: 10, op: gte, value: 4}
+  src: fred
+  label: {en: "At the extreme, momentum fading — watching for the turn",
+          zh: "处于极值、动能减弱——观察拐点"}
 
 null_model: "does conditioning on extreme+rolldown beat unconditional BTC momentum over the same forward windows?"
 
@@ -103,6 +122,12 @@ changelog:
   - "rev 0 (2026-08-05): authored beside real_rate_peak_gold_rerate with a shared trigger
      and a separate terminal so the weaker channel earns its own base rate. Evidence base
      printed as thin (2 clean episodes); tier hypothesis; BTC authority untouched."
+  - "rev 1 (2026-08-09): falsifier gated on off_high_bp(10) < 4 + stall turn-watch added,
+     mirroring the gold chain's measured rev 1 (shared trigger series — one measurement,
+     two chains; see the gold changelog + case study). Node tests and hops UNCHANGED;
+     credit-stress and terminal falsifiers untouched.
+     Falsifier scoping: credit-stress and terminal falsifiers carry from_hop: 1 (both
+     presuppose the rolldown)."
 
 validator_note: >
   Nodes bind to transmission_state (state.rates.*), fred/DFII10, and yahoo BTC-USD/HYG/LQD

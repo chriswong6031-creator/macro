@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import re
 import subprocess
 import sys
+from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
+
+from scripts.ci_scope_dependencies import suite_dependency_closure
 import yaml
 
 
@@ -205,21 +209,23 @@ def test_selection_fails_safe_toward_running_everything() -> None:
     A wasted runner-minute is cheap; a false green is not. These four are the
     only ways scoping can be wrong, and all four must resolve to the full suite.
     """
-    jobs = PACK.load_legacy_jobs(MANIFEST)
+    jobs, summary = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     scoped = [job for job in jobs if job.paths]
+    assert len(scoped) >= 25, summary
 
     # 1. changed set unknowable (git failed, or main's baseline passes no ref)
     assert len(PACK.select_jobs(jobs, None)[0]) == len(jobs)
     # 2. a global invalidator can change what ANY job means
     for invalidator in ("scripts/run_ci_pack.py", "tests/conftest.py",
-                        "requirements.txt", ".github/ci/legacy-jobs.yml"):
+                        "requirements.txt", "worker/requirements-dev.txt",
+                        "config/dag.yml", "config/synapse.yml",
+                        ".github/ci/legacy-jobs.yml"):
         selected, reason = PACK.select_jobs(jobs, [invalidator])
         assert len(selected) == len(jobs), f"{invalidator} must force a full run"
         assert "full suite" in reason
-    # 3. an unscoped job is always-on, so an unrelated diff still runs them all
+    # 3. an unowned path is ambiguous, so it widens to the full suite
     selected, _ = PACK.select_jobs(jobs, ["no/such/path/at/all.txt"])
-    assert len(selected) == len(jobs) - len(scoped)
-    assert all(not job.paths for job in selected)
+    assert len(selected) == len(jobs)
     # 4. a scoped job runs whenever its own scope matches
     for job in scoped:
         probe = job.paths[0].replace("**/", "").replace("**", "x").replace("*", "x")
@@ -259,6 +265,205 @@ def test_every_declared_scope_in_the_real_manifest_is_covered() -> None:
     PACK.load_legacy_jobs(MANIFEST)  # raises ManifestError on any gap
 
 
+def test_real_manifest_has_non_vacuous_derived_scopes() -> None:
+    """The mechanism shipped with 0/179 owners; the 180-job manifest must stay live."""
+    jobs, summary = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    scoped = {job.job_id: set(job.paths) for job in jobs if job.paths}
+    assert len(scoped) >= 25, summary
+    assert "unrun-government-revenue-candidate-projection" in scoped
+    assert "stock-seasonality" in scoped
+    assert "synapse-read-gate" in scoped
+    assert "falsifier-tripwires" in scoped
+    assert "tests/test_falsifier_tripwires.py" in scoped["falsifier-tripwires"]
+    assert "engine/falsifier_tripwires.py" in scoped["falsifier-tripwires"]
+    assert "lib/store.py" in scoped["falsifier-tripwires"]
+    assert "lib/config.py" in scoped["falsifier-tripwires"]
+
+
+def test_derived_closure_follows_relative_first_party_imports() -> None:
+    """Package-local imports are ownership edges, not optional implementation detail."""
+    closure = suite_dependency_closure("tests/test_admin_modules.py")
+    assert "admin/ai_cost.py" in closure.files
+    assert "admin/config_store.py" in closure.files
+    assert "admin/flags.py" in closure.files
+    assert "admin/paths.py" in closure.files
+
+    materializer = suite_dependency_closure(
+        "tests/test_capital_structure_share_count_materializer.py"
+    )
+    assert "engine/capital_structure/share_count_materializer.py" in materializer.files
+    assert "engine/capital_structure/share_count_truth.py" in materializer.files
+
+
+def test_whole_tree_glob_job_owns_every_scanned_code_root() -> None:
+    """A tree scan cannot be narrowed to the scanner suite's import closure."""
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    export_guard = next(job for job in jobs if job.job_id == "all-exports-resolve")
+    assert "engine/**" in export_guard.paths
+    assert "scripts/**" in export_guard.paths
+    assert "research/**" in export_guard.paths
+    selected, _ = PACK.select_jobs(jobs, ["engine/market_state.py"])
+    assert export_guard in selected
+
+
+def test_derived_scopes_are_startable_by_the_ci_workflow() -> None:
+    """A job owner is useless when its dependency edit cannot start ci.yml."""
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    on = _yaml(WORKFLOW).get("on") or _yaml(WORKFLOW).get(True)
+    triggers = tuple(on["pull_request"]["paths"])
+    gaps: list[tuple[str, str]] = []
+    for job in jobs:
+        for path in job.paths:
+            if any(char in path for char in "*?"):
+                if path not in triggers:
+                    gaps.append((job.job_id, path))
+            elif not PACK._matches_any(triggers, path):
+                gaps.append((job.job_id, path))
+    assert not gaps, gaps[:25]
+
+
+def test_representative_narrow_diffs_skip_at_least_one_quarter_of_jobs() -> None:
+    """The conservative first tranche must still deliver material speed."""
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    cases = {
+        "govrev": [
+            "research/GOVERNMENT_REVENUE_FORESIGHT_HANDOFF_2026-08-09.md",
+            "scripts/build_government_revenue_candidates.py",
+            "tests/test_government_revenue_candidate_projection.py",
+        ],
+        "tripwires": [
+            "data/cycle_ontology/falsifiers.json",
+            "data/cycle_ontology/tripwire_state.json",
+            "engine/falsifier_tripwires.py",
+            "tests/test_falsifier_tripwires.py",
+        ],
+    }
+    for name, changed in cases.items():
+        selected, reason = PACK.select_jobs(jobs, changed)
+        assert len(selected) <= (len(jobs) * 4) // 5, (name, len(selected), reason)
+    selected, _ = PACK.select_jobs(jobs, cases["tripwires"])
+    assert any(job.job_id == "falsifier-tripwires" for job in selected)
+
+    content, reason = PACK.select_jobs(jobs, ["content/seo/blog/example.md"])
+    assert len(content) < len(jobs), reason
+    assert any(job.job_id == "free-content-estate" for job in content)
+
+
+@pytest.mark.parametrize("graph", ["config/dag.yml", "config/synapse.yml"])
+def test_graph_metadata_is_a_global_invalidator(graph: str) -> None:
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    selected, reason = PACK.select_jobs(jobs, [graph])
+    assert len(selected) == len(jobs)
+    assert "global invalidator" in reason
+
+
+def test_passive_markdown_stays_scoped_but_unknown_root_fails_full() -> None:
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    docs, _ = PACK.select_jobs(jobs, ["research/UNOWNED_HANDOFF.md"])
+    code, reason = PACK.select_jobs(jobs, ["brand_new_root/unowned_runtime.xyz"])
+    assert len(docs) < len(jobs)
+    assert len(code) == len(jobs)
+    assert "no proven owner" in reason
+
+
+def test_name_status_diff_preserves_both_sides_of_rename(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = (
+        "R100\0engine/old.py\0engine/new.py\0"
+        "D\0config/removed.yml\0M\0tests/test_kept.py\0"
+    )
+
+    def fake_run(*args: object, **kwargs: object) -> SimpleNamespace:
+        return SimpleNamespace(stdout=payload)
+
+    monkeypatch.setattr(PACK.subprocess, "run", fake_run)
+    assert PACK.changed_files("deadbeef") == [
+        "engine/old.py",
+        "engine/new.py",
+        "config/removed.yml",
+        "tests/test_kept.py",
+    ]
+
+
+def test_name_status_diff_preserves_copy_spaces_and_unicode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = "C087\0docs/old name.md\0docs/新 name.md\0"
+    commands: list[list[str]] = []
+
+    def fake_run(command: list[str], **kwargs: object) -> SimpleNamespace:
+        commands.append(command)
+        return SimpleNamespace(stdout=payload)
+
+    monkeypatch.setattr(
+        PACK.subprocess,
+        "run",
+        fake_run,
+    )
+    assert PACK.changed_files("deadbeef") == ["docs/old name.md", "docs/新 name.md"]
+    assert "--find-copies" in commands[0]
+
+
+def test_empty_successful_diff_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        PACK.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(stdout=""),
+    )
+    assert PACK.changed_files("deadbeef") is None
+
+
+def test_scope_mode_kill_switch_defaults_and_can_be_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("CI_SCOPE_MODE", raising=False)
+    assert PACK.parse_args(["--workflow", str(MANIFEST)]).scope_mode == "active"
+    monkeypatch.setenv("CI_SCOPE_MODE", "off")
+    assert PACK.parse_args(["--workflow", str(MANIFEST)]).scope_mode == "off"
+
+
+def test_shadow_mode_emits_machine_readable_plan_and_job_results(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    definition = {"steps": [], "runs-on": "ubuntu-latest", "if": "${{ false }}"}
+    owner = PACK.LegacyJob("owner", definition, 0, 1, ("engine/**",))
+    skipped = PACK.LegacyJob("would-skip", definition, 1, 1, ("site/**",))
+    jobs = [owner, skipped]
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: jobs)
+    monkeypatch.setattr(PACK, "changed_files", lambda base: ["engine/example.py"])
+    monkeypatch.setattr(PACK, "infer_job_scopes", lambda loaded: (loaded, "test scopes"))
+    assert PACK.main([
+        "--workflow", str(MANIFEST),
+        "--changed-from", "base-sha",
+        "--scope-mode", "shadow",
+        "--validate-only",
+        "--pack-count", "1",
+    ]) == 0
+    plan_line = next(
+        line for line in capsys.readouterr().out.splitlines()
+        if line.startswith("CI_SCOPE_SHADOW_PLAN=")
+    )
+    plan = json.loads(plan_line.split("=", 1)[1])
+    assert plan["predicted_selected"] == ["owner"]
+    assert plan["predicted_skipped"] == ["would-skip"]
+
+    monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda: None)
+    monkeypatch.setattr(PACK, "_run_job", lambda *args, **kwargs: None)
+    assert PACK.execute_pack(jobs, shadow_predicted=frozenset({"owner"})) == 0
+    records = [
+        json.loads(line.split("=", 1)[1])
+        for line in capsys.readouterr().out.splitlines()
+        if line.startswith("CI_SCOPE_SHADOW_RESULT=")
+    ]
+    assert records == [
+        {"job": "owner", "predicted_selected": True, "status": "passed"},
+        {"job": "would-skip", "predicted_selected": False, "status": "passed"},
+    ]
+
+
 def test_packs_stay_balanced_over_the_selected_subset() -> None:
     """Balance must be computed on the SELECTION, not the full manifest.
 
@@ -274,7 +479,7 @@ def test_packs_stay_balanced_over_the_selected_subset() -> None:
 
 
 def test_workflow_scopes_only_pull_requests() -> None:
-    """Main's baseline must never pass --changed-from: it proves the full 173."""
+    """Main's baseline must never pass --changed-from: it runs the full manifest."""
     pack = _yaml(WORKFLOW)["jobs"]["ci-pack"]
     step = next(
         s for s in pack["steps"]
@@ -283,6 +488,15 @@ def test_workflow_scopes_only_pull_requests() -> None:
     scope_arg = str(step["env"]["CI_SCOPE_ARG"])
     assert "github.event_name == 'pull_request'" in scope_arg
     assert "--changed-from" in scope_arg
+    assert "pull_request.base.sha" in scope_arg
+    assert "github.base_ref" not in scope_arg
+    assert step["env"]["CI_SCOPE_MODE"] == "${{ vars.CI_SCOPE_MODE || 'shadow' }}"
+    on = _yaml(WORKFLOW).get("on") or _yaml(WORKFLOW).get(True)
+    pull_paths = on["pull_request"]["paths"]
+    assert "**" in pull_paths
+    assert "worker/**" in pull_paths
+    assert "content/**" in pull_paths
+    assert "wrangler.toml" in pull_paths
     assert "$CI_SCOPE_ARG" in str(step["run"])
 
 
@@ -308,18 +522,18 @@ def test_pack_command_folds_to_exactly_one_shell_command() -> None:
         assert command.rstrip().endswith("--execute")
 
 
-def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
+def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     workflow = _yaml(WORKFLOW)
     assert set(workflow["jobs"]) == {"ci-pack"}
     pack = workflow["jobs"]["ci-pack"]
-    # The pack COUNT tunes (2 -> 4 on 2026-07-28 to halve time-to-green); the
+    # The pack COUNT tunes (2 -> 4 -> 12 as hosted capacity increased); the
     # SHAPE is the contract: a small ordered matrix of balanced packs on hosted
     # runners, never one job per legacy suite (86 VMs), and the matrix must
     # agree with the --pack-count handed to the runner or some packs' jobs
     # would execute nowhere.
     matrix = pack["strategy"]["matrix"]["pack"]
     assert matrix == list(range(len(matrix)))
-    assert 2 <= len(matrix) <= 8
+    assert len(matrix) == 12
     # EVERY event runs on the hosted pool — one `runs-on`, no event-dependent routing,
     # so main's baseline and a pull request prove the packs the SAME way.
     #
@@ -328,11 +542,11 @@ def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
     # queued runs while that pool idled, and a starved main proof blocks the whole fleet
     # (`merge_on_green.main_proof` reads the newest CONCLUDED ci.yml run on main, so
     # without one the base-inherited-red refresh cannot fire). The repository then moved
-    # to the MastermindX enterprise org and hosted concurrency went 40 -> 180; the queue
-    # fell from 103 runs to 7. There is nothing left to escape, and the detour cost more
-    # than it saved: `render-linux` is FOUR runners shared with render.yml,
-    # engine-render.yml and merge-on-green.yml, so main's four packs took the entire
-    # pool and starved the sweeper that merges every armed pull request.
+    # to the MastermindX enterprise org and hosted capacity became large enough to start
+    # all twelve packs together. There is nothing left to escape, and the detour cost
+    # more than it saved: `render-linux` is FOUR runners shared with render.yml,
+    # engine-render.yml and merge-on-green.yml, so even four packs took the entire pool
+    # and starved the sweeper that merges every armed pull request.
     assert pack["runs-on"] == "ubuntu-latest"
     # The self-hosted pools are the render/nightly lanes and must never absorb CI packs.
     runs_on = " ".join(str(pack["runs-on"]).split())

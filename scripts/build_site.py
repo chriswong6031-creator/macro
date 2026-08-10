@@ -4496,12 +4496,47 @@ def _attach_board_display_chips(site: Path, doc: "dict | None") -> "dict | None"
     # DISPLAY-ONLY: nothing here reorders, re-ranks or re-admits a card (A7).
     try:
         from lib.board_state import board_state_view as _bsv
+        # THE HOP: grade THIS board against the evening board, now, in the build that
+        # is about to render it. The receipt cannot be fetched from anywhere — it can
+        # only be published after the board of record lands, so a fetched one would
+        # always describe LAST night's cards. Computing it here makes the receipt and
+        # the cards the same generation by construction, the same argument
+        # `_us_prophet_refusals` below makes for the refusal shelf.
+        # `close_pass_reconcile.board_state_for` refuses any pairing whose two halves
+        # do not name the same session, which is what makes this safe on every path
+        # that reaches here: the FIRST-pass render holds the prior build's board (no
+        # receipt — correct, those are last night's cards), the post-build_library
+        # re-render holds tonight's (receipt), and a `behind` night has no evening
+        # board to grade at all (no receipt). A pre-seeded `board_state` still wins,
+        # which is what keeps the refusal branch below reachable for a payload this
+        # build did not compute.
+        if not doc.get("board_state"):
+            try:
+                from scripts.close_pass_reconcile import board_state_for as _bsf
+                _computed = _bsf(doc)
+                if _computed:
+                    doc["board_state"] = _computed
+            except Exception as _rce:  # noqa: BLE001 — additive, never fatal
+                log.warning("W-L1 confirmation delta unavailable (%s)", _rce)
         _bs_view = _bsv(doc.get("board_state"))
         if _bs_view:
             doc["board_state_view"] = _bs_view
-            log.info("W-L1 board state: note=%s counts=%s/%s adj=%s dropped=%s",
-                     _bs_view.get("note"), _bs_view.get("n_confirmed"),
-                     _bs_view.get("n_total"), _bs_view.get("n_adjusted"),
+            # PUBLISH-TOGETHER (spec §7). The per-card `Adjusted` mark is stamped only
+            # after the interpreter has vouched for the receipt line it is a receipt
+            # FOR, so a reader can never meet a per-card delta with no line explaining
+            # what the delta is against. The template fences the mark on the same
+            # condition; belt and braces, on purpose, because the two halves going out
+            # of step is the one way this surface could mislead.
+            _adj = {t for t in ((doc.get("board_state") or {}).get("adjusted") or ())
+                    if isinstance(t, str) and t}
+            _n_marked = 0
+            for _card in (doc.get("buy") or []):
+                if _card.get("ticker") in _adj:
+                    _card["adjusted"] = True
+                    _n_marked += 1
+            log.info("W-L1 board state: note=%s counts=%s/%s adj=%s (%d marked) "
+                     "dropped=%s", _bs_view.get("note"), _bs_view.get("n_confirmed"),
+                     _bs_view.get("n_total"), _bs_view.get("n_adjusted"), _n_marked,
                      _bs_view.get("n_dropped"))
         elif doc.get("board_state"):
             # A payload that arrived and was REFUSED is worth one line in the Actions

@@ -207,5 +207,21 @@
     "b-us_sector_financials:credit.spread_regime.v1": {
       "fired_on": "2026-07-05"
     }
+  },
+  "agriculture.commodity_upcycle.v2": {
+    "version": 2,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-08-09"
+  },
+  "pgms.platinum_premium.v2": {
+    "version": 2,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-08-09"
   }
 }
