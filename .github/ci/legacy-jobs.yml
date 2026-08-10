@@ -860,7 +860,7 @@ jobs:
         run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow jsonschema fastapi httpx requests
       - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append, greek grids + walls + coverage + poller fence)
         run: python -m pytest tests/test_flow_surface.py -q
-      - name: options PIT episodes (causal clocks, durable stage, H+60 labels, R2/checkpoint integrity)
+      - name: options PIT episodes (causal clocks, durable stage, H+60 + declared-session-close proxies, R2/checkpoint integrity)
         run: python -m pytest tests/test_options_signal_episode.py -q
       - name: MSC R2.2-A Light U-CHAIN packets + monotonic R2 discovery publication
         run: python -m pytest tests/test_options_structure_intraday.py tests/test_build_options_structure_intraday.py -q
@@ -5624,6 +5624,8 @@ jobs:
         run: python -m pytest tests/test_basket_turn_grading.py tests/test_heal_basket_turn_ledger.py -q
       - name: W4 staged re-entry spine + P5 deferred-context BTC chips (dat/netliq/cascade)
         run: python -m pytest tests/test_btc_reentry.py tests/test_btc_deferred_legs.py -q
+      - name: blocked-entry basket washout display artifact (leave-one-out peer state, no authority)
+        run: python -m pytest tests/test_basket_washout_state.py -q
 
   washout-turn-organ:
     # Per-name weekly washout-turn watch lane (engine/washout_turn.py) — born from the
@@ -5805,7 +5807,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: pick lab runners + US/CN board surfaces — shipped picks, outcome ledgers, priority board
-        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_continuation_watch.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_fail_closed_freshness.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py -q
+        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_continuation_watch.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_live_change.py tests/test_prophet_card_shared.py tests/test_prophet_verb_ink_contrast.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_fail_closed_freshness.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py -q
       - name: US track-ledger era boundary and frozen pre-era evidence
         run: python -m pytest tests/test_track_ledger_era.py -q
       # Stage-analysis board + its forward ledger and session-stamp heal
@@ -6622,11 +6624,12 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest fastapi httpx numpy pandas jinja2 pyyaml requests
+        run: pip install pytest fastapi httpx numpy pandas jinja2 pyyaml requests jsonschema
       - name: canonical Market Memory temporal and shell contracts
         run: >-
           python -m pytest
           tests/test_market_memory.py
+          tests/test_market_memory_pit.py
           tests/test_build_market_memory_page.py -q
 
   group-pulse:
@@ -6819,3 +6822,26 @@ jobs:
         run: >-
           python -m pytest
           tests/test_group_linked_outsiders.py -q -rs
+
+  falsifier-tripwires:
+    # The stateful cycle-ontology falsifier engine was triggerable but its focused
+    # regression suite was named by no CI command (#5194).  Keep this as a small
+    # first-class owner so path-aware selection can remove unrelated packs without
+    # making the exact changed behavior dark.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - data/cycle_ontology/falsifiers.json
+      - data/cycle_ontology/tripwire_state.json
+      - engine/falsifier_tripwires.py
+      - tests/test_falsifier_tripwires.py
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install falsifier test dependencies
+        run: python -m pip install pytest pandas numpy pyyaml
+      - name: falsifier tripwire state and v2 gate contracts
+        run: python -m pytest tests/test_falsifier_tripwires.py -q

@@ -687,7 +687,19 @@ lanes:
           Measured 2026-08-09: ~39s over 680 graded names (budget 600s).
       - id: build_prophet
         module: scripts.build_prophet
-        note: Prophet nightly — plan refresh + ledger advancement + R2 mirror (non-fatal; display-only)
+        note: >
+          Prophet nightly — plan refresh + ledger advancement + R2 mirror (non-fatal;
+          display-only). ORDER DECISION (token seasonality_one_night_lag_accepted, decided
+          2026-08-09): build_prophet runs BEFORE build_stock_seasonality on purpose, so the
+          Prophet seasonality overlay reads the PREVIOUS night's windows. That lag is
+          informationally nil — the window family is built from COMPLETE years only, so the
+          panel changes once a year at rollover and last night's windows are identical to
+          tonight's on every night but the one after a rollover. Reordering buys nothing and
+          costs twice: build_stock_seasonality is deliberately LAST in cl_misc so its yearly
+          B=2000 recompute spike sits off the render-critical path (render budget is law), and
+          build_prophet's early band is fragile publication machinery. engine/seasonality/
+          program_watch.py reads this token as the decision record; deleting it re-opens the
+          daily-order tripwire, which is the intended behaviour if the decision is ever revisited.
       - id: build_prophet_stage_shadow
         module: scripts.build_prophet_stage_shadow
         note: >
@@ -772,6 +784,10 @@ lanes:
             - scripts.build_subsector_confluence --nasdaq
             - scripts.build_subsector_confluence --russell
             - scripts.build_cohort_metrics
+            # Blocked-entry override A1b (RATIFIED @25%) — nightly basket-washout state,
+            # display-tier support only, ~5s. daily-engine lane only: the render lanes
+            # carry no price-panel scan.
+            - scripts.build_basket_washout_state
             # Rotation Command W1 — declared to match daily.yml:753 (was live-workflow drift)
             - scripts.build_rotation_events
             # RLT-R2 Rebalance Pulse — declared to match daily.yml (off render path, display/context)
@@ -896,10 +912,12 @@ lanes:
           OIP point-in-time learning seam. Consumes only the append-only, date-keyed
           live_flow event stage (never capped feed_current), validates the monotonic
           checkpoint, freezes exact decision episodes, and accrues explicitly labeled
-          aligned-bar H+60 proxies from the existing intraday cache. All decision and
-          training authority is false; coarse/delayed measurements are
-          training_eligible=false. Runs serially after build_session_digest and advances
-          committed ledgers only in COLLECT_LANE=nightly. Non-fatal.
+          aligned-bar H+60 proxies plus separate EOD/1d/3d/5d/10d declared-session-close
+          outcomes from the same receipt-bound intraday cache. The H+60 v1 ledger
+          remains unchanged. All decision and training authority is false;
+          coarse/delayed measurements are training_eligible=false. Runs serially
+          after build_session_digest and advances all committed ledgers before the
+          source checkpoint, only in COLLECT_LANE=nightly. Non-fatal.
       - id: build_us_sector_rotation
         module: scripts.build_us_sector_rotation
         note: >

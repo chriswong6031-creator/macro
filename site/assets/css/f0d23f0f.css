@@ -1,0 +1,20 @@
+
+  .anv2-chip-tape { background:color-mix(in srgb,var(--info) 10%,var(--panel)); color:color-mix(in srgb,var(--info) 80%,var(--text)); border-color:color-mix(in srgb,var(--info) 26%,transparent); }
+  .anv2-name-link { color:inherit; text-decoration:none; }
+  .anv2-name-link:hover .l-en, .anv2-name-link:hover .l-zh { text-decoration:underline; }
+  .anv2-name-link:focus-visible { outline:2px solid var(--link); outline-offset:2px; border-radius:4px; }
+  .anv2-go { font-size:10px; opacity:.55; margin-left:3px; }
+  /* Hover-card mark — monoline (doctrine §5.8, emoji are not UI icons). The mark
+     draws from templates/_icons.html.j2 (24×24, stroke=currentColor) so it inherits
+     the tile's ink: .row-pop-mark is --link for sectors, --up for the theme variant,
+     which is where the sector/theme colour split already lives.
+     NO bare `.ic-svg {}` rule here on purpose: hosts scope their own copies (e.g.
+     sector_central.html.j2 under #si-confluence) and a global rule shipped from a
+     panel would fight its host. Explicit selectors only.
+     .row-pop-mark is deliberately NOT scoped to #act-now — theme.js clones the hover
+     card onto document.body, so an id-scoped rule would style the hidden source and
+     miss the card the reader actually sees. */
+  .row-pop-mark .ic-svg { fill:none; stroke:currentColor; stroke-width:1.8;
+    stroke-linecap:round; stroke-linejoin:round; }
+  .row-pop-mark .ic-svg { width:17px; height:17px; display:block; }
+  

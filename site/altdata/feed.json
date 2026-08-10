@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-10T03:28:42.949184+00:00",
+  "generated_utc": "2026-08-10T07:50:27.874075+00:00",
   "as_of": "2026-08-10",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -24541,162 +24541,162 @@
     ],
     "unusual_options": [
       {
-        "ticker": "FBIN",
-        "vol_oi": 0.887,
-        "mult": 6.2,
-        "put_call": 9.12,
-        "lean": "put-skew",
-        "hot": true
-      },
-      {
         "ticker": "FLYW",
-        "vol_oi": 0.164,
-        "mult": 5.55,
+        "vol_oi": 0.163,
+        "mult": 5.52,
         "put_call": 4.27,
         "lean": "put-skew",
         "hot": true
       },
       {
+        "ticker": "FBIN",
+        "vol_oi": 0.638,
+        "mult": 4.72,
+        "put_call": 9.12,
+        "lean": "put-skew",
+        "hot": true
+      },
+      {
+        "ticker": "NXPI",
+        "vol_oi": 0.514,
+        "mult": 4.4,
+        "put_call": 0.07,
+        "lean": "call-skew",
+        "hot": true
+      },
+      {
+        "ticker": "OSCR",
+        "vol_oi": 0.235,
+        "mult": 4.36,
+        "put_call": 1.17,
+        "lean": "balanced",
+        "hot": true
+      },
+      {
         "ticker": "FOUR",
-        "vol_oi": 0.222,
-        "mult": 3.89,
+        "vol_oi": 0.242,
+        "mult": 4.25,
         "put_call": 1.08,
+        "lean": "balanced",
+        "hot": true
+      },
+      {
+        "ticker": "TEAM",
+        "vol_oi": 0.381,
+        "mult": 4.16,
+        "put_call": 0.19,
+        "lean": "call-skew",
+        "hot": true
+      },
+      {
+        "ticker": "VST",
+        "vol_oi": 0.319,
+        "mult": 3.89,
+        "put_call": 0.23,
+        "lean": "call-skew",
+        "hot": true
+      },
+      {
+        "ticker": "APP",
+        "vol_oi": 0.516,
+        "mult": 3.86,
+        "put_call": 1.24,
         "lean": "balanced",
         "hot": true
       },
       {
         "ticker": "WMB",
         "vol_oi": 0.092,
-        "mult": 3.69,
+        "mult": 3.72,
         "put_call": 6.26,
         "lean": "put-skew",
         "hot": true
       },
       {
-        "ticker": "OSCR",
-        "vol_oi": 0.22,
-        "mult": 3.36,
-        "put_call": 1.15,
+        "ticker": "HUBS",
+        "vol_oi": 0.345,
+        "mult": 3.64,
+        "put_call": 0.95,
         "lean": "balanced",
-        "hot": true
-      },
-      {
-        "ticker": "APP",
-        "vol_oi": 0.444,
-        "mult": 3.33,
-        "put_call": 1.06,
-        "lean": "balanced",
-        "hot": true
-      },
-      {
-        "ticker": "VST",
-        "vol_oi": 0.268,
-        "mult": 3.25,
-        "put_call": 0.23,
-        "lean": "call-skew",
-        "hot": true
-      },
-      {
-        "ticker": "DVA",
-        "vol_oi": 0.215,
-        "mult": 3.18,
-        "put_call": 2.78,
-        "lean": "put-skew",
-        "hot": true
-      },
-      {
-        "ticker": "XYZ",
-        "vol_oi": 0.254,
-        "mult": 3.14,
-        "put_call": 0.25,
-        "lean": "call-skew",
         "hot": true
       },
       {
         "ticker": "WYNN",
-        "vol_oi": 0.155,
-        "mult": 3.06,
+        "vol_oi": 0.157,
+        "mult": 3.48,
         "put_call": 0.37,
         "lean": "call-skew",
         "hot": true
       },
       {
-        "ticker": "HUBS",
-        "vol_oi": 0.285,
-        "mult": 3.0,
-        "put_call": 0.94,
+        "ticker": "XYZ",
+        "vol_oi": 0.271,
+        "mult": 3.36,
+        "put_call": 0.25,
+        "lean": "call-skew",
+        "hot": true
+      },
+      {
+        "ticker": "DVA",
+        "vol_oi": 0.22,
+        "mult": 3.26,
+        "put_call": 2.72,
+        "lean": "put-skew",
+        "hot": true
+      },
+      {
+        "ticker": "KVYO",
+        "vol_oi": 0.139,
+        "mult": 3.03,
+        "put_call": 0.86,
         "lean": "balanced",
         "hot": true
       },
       {
         "ticker": "WH",
         "vol_oi": 0.104,
-        "mult": 2.81,
-        "put_call": 7.42,
+        "mult": 2.96,
+        "put_call": 7.43,
         "lean": "put-skew",
         "hot": false
       },
       {
-        "ticker": "KVYO",
-        "vol_oi": 0.139,
-        "mult": 2.73,
-        "put_call": 0.86,
-        "lean": "balanced",
+        "ticker": "DDOG",
+        "vol_oi": 0.324,
+        "mult": 2.87,
+        "put_call": 1.5,
+        "lean": "put-skew",
         "hot": false
       },
       {
-        "ticker": "DDOG",
-        "vol_oi": 0.288,
-        "mult": 2.55,
+        "ticker": "ETN",
+        "vol_oi": 0.204,
+        "mult": 2.42,
+        "put_call": 4.14,
+        "lean": "put-skew",
+        "hot": false
+      },
+      {
+        "ticker": "CGNX",
+        "vol_oi": 0.112,
+        "mult": 2.24,
         "put_call": 1.27,
         "lean": "balanced",
         "hot": false
       },
       {
-        "ticker": "NXPI",
-        "vol_oi": 0.354,
-        "mult": 2.44,
-        "put_call": 0.07,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "TEAM",
-        "vol_oi": 0.332,
-        "mult": 2.39,
-        "put_call": 0.09,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "ETN",
-        "vol_oi": 0.199,
-        "mult": 2.35,
-        "put_call": 4.51,
-        "lean": "put-skew",
-        "hot": false
-      },
-      {
         "ticker": "NET",
-        "vol_oi": 0.221,
-        "mult": 2.22,
-        "put_call": 0.41,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "SGML",
-        "vol_oi": 0.139,
-        "mult": 1.98,
-        "put_call": 0.96,
+        "vol_oi": 0.204,
+        "mult": 2.14,
+        "put_call": 0.75,
         "lean": "balanced",
         "hot": false
       },
       {
-        "ticker": "MHK",
-        "vol_oi": 0.39,
-        "mult": 1.96,
-        "put_call": 0.24,
+        "ticker": "DKNG",
+        "vol_oi": 0.168,
+        "mult": 2.12,
+        "put_call": 0.63,
         "lean": "call-skew",
         "hot": false
       }
@@ -27257,14 +27257,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "QQQ",
-        "mentions": 25,
-        "sentiment": 0.074
-      },
-      {
         "ticker": "MSFT",
         "mentions": 25,
         "sentiment": 0.015
+      },
+      {
+        "ticker": "QQQ",
+        "mentions": 25,
+        "sentiment": 0.074
       },
       {
         "ticker": "OKLO",
@@ -29553,7 +29553,7 @@
           "special_situation",
           "unusual_options"
         ],
-        "why": "news_sentiment: 0.9 bullish news (50 art) \u00b7 special_situation: Spin-Offs \u00b7 unusual_options: 3.25\u00d7 vol/OI, call-skew"
+        "why": "news_sentiment: 0.9 bullish news (50 art) \u00b7 special_situation: Spin-Offs \u00b7 unusual_options: 3.89\u00d7 vol/OI, call-skew"
       },
       {
         "ticker": "HCA",

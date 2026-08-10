@@ -289,9 +289,9 @@
     "source_prose": "Spot Li2CO3 breaking below CNY 70,000/t or sustained recovery above CNY 120,000/t would each refute the current deficit/oversupply positioning. All series are paywalled."
   },
   {
-    "id": "agriculture.commodity_upcycle.v1",
+    "id": "agriculture.commodity_upcycle.v2",
     "cycle": "agriculture",
-    "version": 1,
+    "version": 2,
     "direction": "refutes",
     "claim": "Corn/grain complex is in structural upcycle driven by weather and energy costs",
     "claim_zh": "玉米等谷物处在结构性上行周期，驱动来自天气和能源成本",
@@ -300,11 +300,11 @@
     "dsl": {
       "series": "yahoo:ZC=F",
       "op": "gt",
-      "value": 5.75,
+      "value": 575,
       "sustain_bars": 42
     },
     "manual": null,
-    "source_prose": "Corn futures sustained above $5.75/bu for 42 days confirms the grain upcycle thesis is intact (and thus fires as a regime-level falsifier for bearish/range views); sustained break below this level would invalidate the upcycle"
+    "source_prose": "Corn futures sustained above $5.75/bu for 42 days confirms the grain upcycle thesis is intact (and thus fires as a regime-level falsifier for bearish/range views); sustained break below this level would invalidate the upcycle. v2 re-author: yahoo:ZC=F quotes in CENTS per bushel (439.0 = $4.39/bu), so the v1 threshold of 5.75 was trivially true forever and the 2026-07-02 fire was a unit artifact, not a market fire; $5.75/bu = 575 in tape units"
   },
   {
     "id": "vol.regime_shift.v1",
@@ -538,9 +538,9 @@
     "source_prose": "Nikkei 225 sustained above 73,000 for 21 days AND USDJPY at or above 160 together confirm the yen-weak reflation cycle; TOPIX A/D breadth is an uncompiled residual"
   },
   {
-    "id": "pgms.platinum_premium.v1",
+    "id": "pgms.platinum_premium.v2",
     "cycle": "pgms",
-    "version": 1,
+    "version": 2,
     "direction": "refutes",
     "claim": "PGMs are in a supply-deficit upcycle; platinum premium vs gold and absolute level confirm",
     "claim_zh": "铂族金属处在供应缺口驱动的上行周期；铂金对黄金的溢价和绝对价位一起印证",
@@ -554,8 +554,8 @@
           "value": 1900
         },
         {
-          "series": "yahoo:PL=F",
-          "transform": "ratio:yahoo:GC=F",
+          "series": "yahoo:GC=F",
+          "transform": "ratio:yahoo:PL=F",
           "op": "lt",
           "value": 2.2
         },
@@ -567,7 +567,7 @@
       ]
     },
     "manual": null,
-    "source_prose": "Platinum above $1,900 (upcycle confirmed), or Pt/Au ratio below 2.2 (platinum outperforming on relative basis), or platinum below $1,300 (capitulation/bear market) each independently fire as regime-level falsifiers"
+    "source_prose": "Platinum above $1,900 (upcycle confirmed), or gold/platinum ratio narrowing below 2.2 (platinum outperforming on relative basis), or platinum below $1,300 (capitulation/bear market) each independently fire as regime-level falsifiers. v2 re-author: the v1 ratio leg computed PL/GC (~0.40), which is trivially below 2.2 forever, so the 2026-07-02 fire was an inverted-ratio artifact, not a market fire; the intended premium metric is GC/PL (currently ~2.48, i.e. not met)"
   },
   {
     "id": "spx.bull_cycle.v1",

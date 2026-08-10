@@ -343,3 +343,14 @@ ruling: insufficient regime history — sector-level inheritance stands).
   transmission suite green. Two structural holes named with receipts (§2.1
   one-directional library; §2.2 built-but-starved learning loop) and the last-mile map
   drawn (§2.3). Operator decisions D1–D4 open.
+- 2026-08-09 — **Peak-chain rev 1** (operator escalation: the engine narrated "no peak;
+  restriction still building" nightly through the 2026-07-31 DFII10 plateau while the
+  operator's real-rate-peak call was already paying). Falsifier gated on a new
+  `off_high_bp` grammar metric (fires only while pressing 10-session highs — measured on
+  the 5 named peaks, 2003→), arming vetoed while a falsifier is live (kills the
+  arm→fail same-night churn), `stall` turn-watch annotation added to both peak chains
+  (0.96 rolldown-within-60s under the stall shape vs 0.85 armed baseline, n printed),
+  "failed" label moved off the refutation register (en "Halted" / zh "已中止"),
+  calibration re-mined at rev 1. Full anatomy + Neural-Web design seed:
+  `research/CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md` (case-file confluence board,
+  terminal-leading evidence, condition-prose bindings, operator-conviction ledger).

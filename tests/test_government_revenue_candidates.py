@@ -205,13 +205,13 @@ def _payload(event: dict | None = None) -> dict:
     }
 
 
-def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None:
+def test_current_truth_is_eight_context_candidates_with_twenty_one_mapping_rows() -> None:
     latest = json.loads((ROOT / "data/government_revenue/latest.json").read_text(encoding="utf-8"))
     graph = json.loads((ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(encoding="utf-8"))
 
     queue = build_candidate_queue(latest, graph, generated_at=GENERATED_AT)
 
-    assert queue["counts"]["total"] == 0
+    assert queue["counts"]["total"] == 8
     assert queue["counts"]["mapping_needed"] == 21
     assert len(queue["mapping_backlog"]) == 21
     # The award-event rail activated on 2026-08-08T18:30Z (activation_state=live)
@@ -219,15 +219,26 @@ def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None
     # defense19 graph the same day. Current truth, re-verified empirically at this
     # merge (2026-08-09): the rail is read (award_events_status ok), ~500
     # award-change events are visible, all 19 defense19 issuers are reviewed --
-    # and still no event meets exact candidate eligibility, which the engine
-    # emits as not_observed. Zero candidates now has its THIRD distinct reason in
-    # this probe's history: rail unreadable -> rail read with zero award-change
-    # events -> events visible but none exact-eligible. This pin is deliberately
-    # a snapshot tripwire (per the 2026-08-08 heal): it must fire again, and be
-    # re-read by a human, the next time this state moves.
+    # and eight exact-linked, reviewed events now meet candidate eligibility.
+    # #5207 healed the last schema door and the serialized writer issued those
+    # rows at 2026-08-10T04:15Z. This remains a deliberate snapshot tripwire: a
+    # human must re-read the new cohort whenever current truth moves again.
     assert queue["freshness"]["award_events_status"] == "ok"
-    assert queue["freshness"]["exact_candidate_availability"] == "not_observed"
+    assert queue["freshness"]["exact_candidate_availability"] == "available"
     assert queue["freshness"]["recipient_graph_status"] == "ready"
+    assert all(row["authority"]["context_only"] is True for row in queue["candidates"])
+    assert all(row["authority"]["can_rank"] is False for row in queue["candidates"])
+    assert all(row["authority"]["can_size"] is False for row in queue["candidates"])
+    assert all(row["authority"]["can_gate"] is False for row in queue["candidates"])
+    assert all(
+        row["authority"]["can_originate_signal"] is False
+        for row in queue["candidates"]
+    )
+    assert all(
+        row["authority"]["can_add_candidates"] is False
+        for row in queue["candidates"]
+    )
+    assert all(row["authority"]["can_escalate"] is False for row in queue["candidates"])
     assert queue["coverage"]["reviewed_issuer_company_count"] == 19
     assert queue["coverage"]["reviewed_issuer_tickers"] == [
         "AVAV", "BA", "CW", "GD", "HEI", "HII", "HWM", "IRDM", "KTOS", "LDOS",

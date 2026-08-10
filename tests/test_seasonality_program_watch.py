@@ -142,6 +142,8 @@ def _make_root(
     validation_defines_spa: bool = False,
     synapse: str | None = _SYNAPSE_V2,
     prophet_first: bool = True,
+    dag_decision_token: bool = False,
+    dag_token_in_comment: bool = False,
 ) -> Path:
     """A tree with every watch input present, each one independently knobbed."""
     root = tmp_path / "repo"
@@ -192,6 +194,16 @@ def _make_root(
         else ["brun ss scripts.build_stock_seasonality", "brun prophet scripts.build_prophet"]
     )
     _write(root, pw.DAILY_WORKFLOW_PATH, "steps:\n  " + "\n  ".join(order) + "\n")
+
+    # The dag is where the ORDER decision is written down, so the baseline tree
+    # carries the file WITHOUT the token: undecided is the default state, and a
+    # prophet-first nightly with no decision record stays open.
+    dag = "lanes:\n  - id: build_prophet\n    note: Prophet nightly\n"
+    if dag_decision_token:
+        dag += f"    decision: {pw.DAG_ORDER_DECISION_TOKEN} (one-night lag accepted)\n"
+    if dag_token_in_comment:
+        dag += f"    # decided elsewhere: {pw.DAG_ORDER_DECISION_TOKEN}\n"
+    _write(root, pw.DAG_PATH, dag)
     return root
 
 
@@ -782,6 +794,37 @@ class TestDeferredFollowups:
     def test_daily_order_closed_when_seasonality_runs_first(self, tmp_path):
         root = _make_root(tmp_path, ledger=[], prophet_first=False)
         assert self._sub(root, "daily_workflow")["state"] == "closed"
+
+    def test_daily_order_closes_on_a_documented_decision(self, tmp_path):
+        """The follow-up asked for a DECISION, not for one particular order.
+
+        Prophet-first with the rationale written into ``config/dag.yml`` is a
+        closed follow-up: the lag is one night on a window family rebuilt from
+        COMPLETE years, so last night's windows are this night's windows on every
+        night but the one after a rollover.
+        """
+        root = _make_root(tmp_path, ledger=[], prophet_first=True, dag_decision_token=True)
+        sub = self._sub(root, "daily_workflow")
+        assert sub["state"] == "closed"
+        assert pw.DAG_ORDER_DECISION_TOKEN in sub["detail"]
+
+    def test_daily_order_stays_open_when_the_token_is_only_a_comment(self, tmp_path):
+        """A commented token is prose about a decision, not the decision.
+
+        Same discipline as the workflow scan one function up: the dag text is
+        comment-stripped first, so a ``#`` line naming the token cannot close the
+        follow-up on its own.
+        """
+        root = _make_root(tmp_path, ledger=[], prophet_first=True, dag_token_in_comment=True)
+        sub = self._sub(root, "daily_workflow")
+        assert sub["state"] == "open"
+        assert pw.DAG_ORDER_DECISION_TOKEN in sub["detail"]
+
+    def test_daily_order_stays_open_when_the_dag_is_unreadable(self, tmp_path):
+        """Fail-closed: a missing decision record is undecided, never decided."""
+        root = _make_root(tmp_path, ledger=[], prophet_first=True, dag_decision_token=True)
+        (root / pw.DAG_PATH).unlink()
+        assert self._sub(root, "daily_workflow")["state"] == "open"
 
     def test_daily_order_does_not_match_a_longer_sibling_name(self, tmp_path):
         """``build_prophet_board`` / ``build_stock_seasonality_page`` are different builders."""
