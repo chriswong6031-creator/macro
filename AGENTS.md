@@ -63,6 +63,20 @@ state disagrees with the terminal asset's tape or a scored organ (Prophet, Secto
 Intelligence), lead with the dual-read. Receipts and the design seed:
 `research/CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md`.
 
+## Adjudication coverage gate (operator 2026-08-10)
+
+Statistical rigor (prereg, held-out eras, clustered CIs) does NOT substitute for an adversarial
+pass on the CONCLUSION. Before presenting any discovered rule or promotion-bearing adjudication:
+(1) **coverage** — run the rule against the live exemplars that motivated the question AND the
+current regime, and lead with that answer (a rule that refuses all of them is not the answer,
+however clean its CIs — the SPY-altitude miss, blocked-entry study round 1); (2) **episode
+honest-N** — for state-conditioned cells report distinct EPISODES, not fires or dates, and state
+whether today's tape is in-sample of the winning cell; (3) **panel integrity** — name who is
+missing (survivorship/delistings/coverage floors) before trusting a cohort mean; deep-drawdown
+cohorts concentrate the dead; (4) **red-team** — make-or-break calls get an opus `reviewer` pass
+briefed to break the conclusion against the operator's actual use-case BEFORE the main loop
+presents it. The operator often cannot audit these calls and will not be the safety net.
+
 ## Kill-registry citations (DO_NOT_REBUILD.md)
 
 Rows in `research/DO_NOT_REBUILD.md` carry a stable `Key` column (`KILL-…` §1–2,
