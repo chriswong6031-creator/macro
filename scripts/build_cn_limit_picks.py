@@ -19,6 +19,14 @@ Names  : data/china_search/members.parquet (name_en / name_zh).  Optional — a
          the render (DESIGN_DOCTRINE Law 2: never block render on a name lookup).
 Output : site/cn_limit_picks.html
 
+AUTHORITY BOUNDARY.  ``onset_v1`` is the pre-registered tolerant working-tape
+contract: its Yahoo-derived, back-adjusted research plane is useful for a
+display-tier probability window, but it is not exact exchange-limit evidence.
+Exact legal-band classification belongs only to unadjusted TuShare ``daily``
+joined on ticker and trade date to vendor ``stk_limit``, compared in integer
+cents.  The page therefore labels the ledger as tolerant/provisional and must
+never promote its percentages into exact-limit claims.
+
 DETERMINISM.  The page carries no wall-clock stamp.  Its one as-of is the
 ledger's own newest `stamped_at_utc`, so two runs over the same ledger produce
 byte-identical HTML — verifiable with `--check`.  This is also the doctrinally
@@ -147,26 +155,26 @@ def _flags(row: dict) -> list[dict]:
         out.append({
             "en": "Trust the rung", "zh": "以板位为准",
             "tip_en": (
-                f"Deep on the ladder the model has not beaten plain history: names on this "
-                f"rung took the next limit-up {base} of the time on their own, which is the "
-                f"number to read here. The model's figure is shown for comparison, not to "
-                f"replace it."
+                f"Deep on the ladder the model has not beaten its working-tape history: "
+                f"names on this rung met the registered tolerant close criterion {base} of "
+                f"the time, which is the number to read here. The model's figure is shown "
+                f"for comparison, not to replace it."
             ),
             "tip_zh": (
-                f"进入高位连板后，模型并未跑赢历史读数：同板位个股自行再封一板的历史频率为 {base}，"
-                f"这才是此处应读的数字。模型概率仅作对照，不用于替代它。"
+                f"进入高位连板后，模型并未跑赢工作台账历史读数：同板位个股达到预注册宽容收盘口径的"
+                f"历史频率为 {base}，这才是此处应读的数字。模型概率仅作对照，不用于替代它。"
             ),
         })
     if str(row.get("board") or "") == "chinext":
         out.append({
             "en": "Read it down", "zh": "应下调",
             "tip_en": (
-                "This model runs hot on ChiNext: it has printed roughly 2.6 times more "
-                "limit-up closes on 创业板 names than actually happened. Treat the "
-                "percentage as an upper bound, not an estimate."
+                "This working-tape model runs hot on ChiNext: it has printed roughly 2.6 "
+                "times more tolerant-limit closes on 创业板 names than its registered "
+                "outcomes. Treat the percentage as an upper bound, not an estimate."
             ),
             "tip_zh": (
-                "该模型在创业板上偏高：其给出的创业板封板次数约为实际发生次数的 2.6 倍。"
+                "该工作台账模型在创业板上偏高：其给出的宽容口径封板次数约为预注册结果的 2.6 倍。"
                 "请把这个百分比当作上限，而不是估计值。"
             ),
         })
