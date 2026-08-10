@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/identity_observation_store_receipts.v1.schema.json",
+  "title": "Market Memory private identity observation store receipts v1",
+  "description": "Exact manifest, cumulative generation, or mutable HEAD receipt for the private identity-v1 store.",
+  "oneOf": [
+    {"$ref": "#/$defs/manifest"},
+    {"$ref": "#/$defs/generation"},
+    {"$ref": "#/$defs/head"}
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "authority": {
+      "const": {
+        "tier": "display",
+        "horizon_role": "context",
+        "context_only": true,
+        "proposal_weight": 0,
+        "may_rank": false,
+        "may_gate": false,
+        "may_size": false,
+        "may_escalate": false,
+        "may_trade": false,
+        "may_originate": false,
+        "may_select_options_candidate": false,
+        "may_execute": false,
+        "may_write_options_episode": false,
+        "may_append_outcome": false,
+        "may_train_prophet": false
+      }
+    },
+    "storePolicy": {
+      "const": {
+        "actual_output_only": true,
+        "accepted_pit_basis": ["live_captured", "public_reconstruction"],
+        "private_store": true,
+        "historical_resolver": false,
+        "training_eligible": false,
+        "promotion_eligible": false,
+        "role": "context_only"
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "profile", "store_id", "nonce", "listing_object_schema", "observation_schema", "prepared_record_schema", "capture_receipt_schema", "generation_schema", "evidence_policy", "authority"],
+      "properties": {
+        "schema": {"const": "market_memory.identity_observation_store_manifest.v1"},
+        "profile": {"const": "market_memory.private.spy_listing_observation.v1"},
+        "store_id": {"type": "string", "pattern": "^mmidstore_[a-f0-9]{64}$"},
+        "nonce": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+        "listing_object_schema": {"const": "market_memory.spy_listing_object.v1"},
+        "observation_schema": {"const": "market_memory.spy_listing_observation.v1"},
+        "prepared_record_schema": {"const": "market_memory.identity_observation_prepared.v1"},
+        "capture_receipt_schema": {"const": "market_memory.identity_observation_capture_receipt.v1"},
+        "generation_schema": {"const": "market_memory.identity_observation_store_generation.v1"},
+        "evidence_policy": {"$ref": "#/$defs/storePolicy"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date_partition", "source_observation_id", "capture_id", "listing_object_id", "listing_state", "pit_basis", "operational"],
+      "properties": {
+        "date_partition": {"type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "source_observation_id": {"type": "string", "pattern": "^mmidobs_[a-f0-9]{64}$"},
+        "capture_id": {"type": "string", "pattern": "^mmidscan_[a-f0-9]{64}$"},
+        "listing_object_id": {"type": "string", "pattern": "^mmidobj_[a-f0-9]{64}$"},
+        "listing_state": {"enum": ["present_in_snapshot", "symbol_absent_from_complete_snapshot"]},
+        "pit_basis": {"enum": ["live_captured", "public_reconstruction"]},
+        "operational": {"type": "boolean"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"operational": {"const": true}}},
+          "then": {"properties": {"pit_basis": {"const": "live_captured"}}}
+        },
+        {
+          "if": {"properties": {"operational": {"const": false}}},
+          "then": {"properties": {"pit_basis": {"const": "public_reconstruction"}}}
+        }
+      ]
+    },
+    "generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "profile", "store_id", "generation_id", "previous_generation_id", "captures"],
+      "properties": {
+        "schema": {"const": "market_memory.identity_observation_store_generation.v1"},
+        "profile": {"const": "market_memory.private.spy_listing_observation.v1"},
+        "store_id": {"type": "string", "pattern": "^mmidstore_[a-f0-9]{64}$"},
+        "generation_id": {"type": "string", "pattern": "^mmidgen_[a-f0-9]{64}$"},
+        "previous_generation_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^mmidgen_[a-f0-9]{64}$"}
+          ]
+        },
+        "captures": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {"$ref": "#/$defs/entry"}
+        }
+      }
+    },
+    "head": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "profile", "store_id", "generation_id", "generation_sha256", "capture_count"],
+      "properties": {
+        "schema": {"const": "market_memory.identity_observation_store_head.v1"},
+        "profile": {"const": "market_memory.private.spy_listing_observation.v1"},
+        "store_id": {"type": "string", "pattern": "^mmidstore_[a-f0-9]{64}$"},
+        "generation_id": {"type": "string", "pattern": "^mmidgen_[a-f0-9]{64}$"},
+        "generation_sha256": {"$ref": "#/$defs/sha256"},
+        "capture_count": {"type": "integer", "minimum": 0, "maximum": 4096}
+      }
+    }
+  }
+}

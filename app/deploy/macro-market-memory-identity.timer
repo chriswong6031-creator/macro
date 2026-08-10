@@ -1,0 +1,13 @@
+[Unit]
+Description=Retry private SPY Market Memory identity accrual each hour
+
+[Timer]
+OnBootSec=11min
+OnCalendar=*-*-* *:29:00 UTC
+AccuracySec=1min
+RandomizedDelaySec=120s
+Persistent=true
+Unit=macro-market-memory-identity.service
+
+[Install]
+WantedBy=timers.target
