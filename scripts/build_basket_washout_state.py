@@ -504,20 +504,18 @@ def main(argv: list[str] | None = None) -> int:
     if not a.no_history:
         t0 = time.monotonic()
         hist = build_history(dd, defs, sectors, payload)
-        if hist["names"]:
-            write_state(hist, hist_out)
-            per = {n: (sum(len(v["intervals"][str(n)]) for v in hist["names"].values()),
-                       sum(1 for v in hist["names"].values()
-                           if v["intervals"][str(n)] and v["intervals"][str(n)][-1][1] is None))
-                   for n in THRESHOLDS}
-            log.info("basket_washout_history names=%d %s (%.1fs) -> %s",
-                     len(hist["names"]),
-                     " ".join(f"{n}%:{s}iv/{o}open" for n, (s, o) in per.items()),
-                     time.monotonic() - t0, hist_out)
-        else:
-            print("::warning title=basket-washout-history-empty::no name produced a "
-                  "qualifying interval - leaving the previous history artifact in place",
-                  flush=True)
+        # An empty history is a valid result when the healthy state payload has names but
+        # none ever crossed the loosest notch.  Publish it atomically instead of leaving a
+        # previous non-empty artifact in place and falsely re-marking historical fires.
+        write_state(hist, hist_out)
+        per = {n: (sum(len(v["intervals"][str(n)]) for v in hist["names"].values()),
+                   sum(1 for v in hist["names"].values()
+                       if v["intervals"][str(n)] and v["intervals"][str(n)][-1][1] is None))
+               for n in THRESHOLDS}
+        log.info("basket_washout_history names=%d %s (%.1fs) -> %s",
+                 len(hist["names"]),
+                 " ".join(f"{n}%:{s}iv/{o}open" for n, (s, o) in per.items()),
+                 time.monotonic() - t0, hist_out)
     return 0
 
 

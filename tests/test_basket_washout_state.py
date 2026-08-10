@@ -491,6 +491,33 @@ def test_history_degrades_to_an_empty_payload_without_a_state():
     assert h["notches"] == [20, 25, 30]
 
 
+def test_main_replaces_previous_history_when_a_healthy_recompute_is_empty(
+        tmp_path, monkeypatch):
+    """No qualifying intervals is a valid current result, not permission to keep stale rows."""
+    as_of = pd.Timestamp("2026-08-07")
+    tickers = [f"U{i}" for i in range(6)]
+    defs = _defs(theme=tickers)
+    dd = _flat_group("U", 6, -0.05, as_of)
+    monkeypatch.setattr(B, "load_basket_defs", lambda _root: defs)
+    monkeypatch.setattr(B, "load_sector_map", lambda _root: {})
+    monkeypatch.setattr(B, "panel_paths", lambda _root: {t: tmp_path / t for t in tickers})
+    monkeypatch.setattr(B, "compute_drawdowns", lambda _paths, _need: dd)
+
+    out = tmp_path / "basket_washout_state.json"
+    hist_out = tmp_path / "basket_washout_history.json"
+    hist_out.write_text(json.dumps({
+        "schema": "basket_washout_history.v1",
+        "as_of": "2026-08-06",
+        "names": {"STALE": {"intervals": {"20": [["2026-01-01", None]]}}},
+    }))
+
+    assert B.main(["--data-root", str(tmp_path), "--out", str(out),
+                   "--history-out", str(hist_out)]) == 0
+    current = json.loads(hist_out.read_text())
+    assert current["as_of"] == "2026-08-07"
+    assert current["names"] == {}
+
+
 def test_module_and_payload_carry_no_banned_vocabulary():
     src = (_REPO_ROOT / "scripts" / "build_basket_washout_state.py").read_text()
     assert not _BANNED.search(src), "banned vocabulary in the builder's own copy"
