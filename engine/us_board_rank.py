@@ -359,22 +359,43 @@ STAGE_LABELS = {
 # CN's set verbatim (``engine/china_board_rank.py:116-118``); the same v1-provisional
 # caveat as the ladder above applies.
 #
-# STAGED, NOT YET LIVE — READ THIS BEFORE CONCLUDING THE WIDENING DID ANYTHING.
-# ``featured_shortfalls`` vetoes any row whose stage is not ``live``, and
-# ``stage_for`` routes bounce_wait/wait_pullback to ``setting_up`` and hold to
-# ``ran``.  So the three statuses added here clear the ENTRY-STATUS veto and are then
-# stopped by ``stage_not_live`` — today this widening changes no featured flag on any
-# board.  That is deliberate: relaxing the stage gate moves rows onto a rendered
-# shelf whose own label says "Setting up" / "Ran — don't chase", which is a surface
-# contradiction a rank module does not get to resolve alone.  CN has no stage gate on
-# featuring at all (``china_board_rank._featured_shortfalls``) — that is the
-# structural difference, and closing it is the follow-up.
-# ``tests/test_us_board_rank.py::TestFeaturedEntryStatuses`` pins BOTH halves: the
-# widened set, and the fact that it is currently inert.  That test goes red when the
-# stage gate is relaxed, which is exactly when someone should be reading this comment.
+# LIVE SINCE R2 (2026-08-09).  Until R2 this widening was INERT: ``featured_shortfalls``
+# ran its stage veto FIRST and refused anything not ``live``, while ``stage_for`` routes
+# bounce_wait/wait_pullback to ``setting_up`` and hold to ``ran``.  So all three added
+# statuses cleared the entry veto and were then stopped by the stage gate, and no
+# featured flag on any board moved.  #4976 left it that way deliberately and pinned the
+# inertness with a test, because relaxing the gate puts rows on a shelf whose own label
+# reads "Setting up" / "Ran — don't chase" — a surface question, not a rank-module one.
+# R2 (§6.9) is the ruling that answers it; see :data:`_FEATURED_STAGES`.
 _FEATURED_ENTRY_STATUSES = frozenset(
     ("bounce_wait", "wait_pullback", "hold", "buy_now", "partial")
 )
+
+# THE STAGE VETO, AFTER R2 — WHICH BUCKETS MAY REACH THE FEATURED SHELF.
+#
+# R2's ordering ruling (§6.9): status class is the FIRST gate and the stage veto only
+# prunes names the status class has already admitted.  That is an ordering change, not
+# an abdication — the stage bucket stays a veto, it simply stops being the reason a row
+# is refused when its entry status was never admissible in the first place.
+#
+# WHY THIS SET IS {live, setting_up} AND NOT CN'S "NO STAGE GATE AT ALL".
+# CN's ``_featured_shortfalls`` has no stage veto, and the parity anatomy named that as
+# the structural difference.  Adopting it wholesale would feature ``ran`` rows, and
+# ``ran``'s own rendered label is "Ran — don't chase" (:data:`STAGE_LABELS`).  A shelf
+# that promotes a row while the row's own bucket label tells the reader not to chase it
+# is a contradiction the board would be publishing about itself, so ``ran`` stays
+# vetoed.  ``basing`` and ``blocked`` stay vetoed for the older reason: both are
+# stand-aside evidence, and ``blocked``'s DOWNTREND clause is unconditional by design
+# (see :func:`stage_for`) — a falling name does not reach a featured shelf because its
+# entry status happened to read ``bounce_wait``.
+#
+# What this actually opens: ``bounce_wait`` and ``wait_pullback`` (both ``setting_up``)
+# become featurable.  ``hold`` routes to ``ran`` and stays refused — so 2 of the 3
+# statuses #4976 added are now live, and the third is still gated.  #4976's Proof 3
+# measured the honest size of the prize on the 08-07 board: of 36 patience rows, 2
+# outscore the best ``live`` row.  This is a small, real change, not a re-ranking.
+_FEATURED_STAGES = frozenset((STAGE_LIVE, STAGE_SETTING_UP))
+
 _FEATURED_TIERS = frozenset(("T1", "T2", "T3"))
 
 ZERO_SCORE_AUTHORITY = (
@@ -395,6 +416,13 @@ ZERO_SCORE_AUTHORITY = (
     # no featuring and changes no stage.  tests/test_roc_blowoff.py pins byte-identity
     # of score_rows() output with the field present vs absent.
     "blowoff_risk",
+    # R2 (2026-08-09) — the US reversal-cohort channel, stamped onto rows as
+    # ``reversal_member``.  Listed HERE, in the published disclosure, rather than left
+    # unmentioned: a reader of the artifact can check that the channel has no score
+    # authority instead of taking the docstring's word for it.  See
+    # :func:`load_reversal_cohort` for why it ships scoreless and what would have to be
+    # ruled before it could earn points.
+    "reversal_member",
 )
 
 SCORE_KIND = "transparent priority heuristic; not a calibrated return forecast"
@@ -838,6 +866,7 @@ def featured_shortfalls(
     in_blackout: bool | None = None,
     alpha_of: Callable[[Mapping[str, Any]], Any] | None = None,
     extra: Callable[[Mapping[str, Any]], Iterable[str]] | None = None,
+    bottom_watch_stage: str = STAGE_BLOCKED,
 ) -> list[str]:
     """Every reason this row may not be featured (empty list = it qualifies).
 
@@ -855,16 +884,41 @@ def featured_shortfalls(
     verdict = verdict if verdict is not None else (row.get("signal") or {})
     entry = entry if entry is not None else (row.get("entry_signal") or {})
 
-    # No ``bottom_watch_stage`` here on purpose: this asks one question — "is this row
-    # LIVE" — and both answers the parameter can produce (``basing``/``blocked``) are
-    # not, so the featured flag is provably invariant to the basing split.  Threading
-    # the parameter would add a second place the split could drift without changing a
-    # single verdict.
-    if stage_for(row, entry) != STAGE_LIVE:
-        reasons.append("stage_not_live")
+    # R2 (2026-08-09) — STATUS IS THE FIRST GATE, STAGE ONLY PRUNES WHAT IT ADMITS.
+    #
+    # These two ran in the opposite order until R2, and the order was load-bearing in a
+    # way that read as harmless.  With the stage veto first, a row was refused for
+    # ``stage_not_live`` whether or not its entry status could ever have been featured —
+    # so ``featured_blocked_by`` reported the stage as the blocker on rows whose real
+    # blocker was the status class, and the widened status set (above) could not move a
+    # single flag no matter what it contained.  Status first makes the reported reason
+    # the BINDING one, and scopes the stage veto to already-admissible names, which is
+    # what §6.9 asked for.
+    #
+    # The two gates still both bind — this is an ordering ruling, not a relaxation of
+    # who may be featured.  A row failing the status class is refused on the status and
+    # is NOT also charged a stage reason: the stage question is not asked of a name the
+    # board would never feature anyway, so answering it would be noise in the receipt.
+    #
+    # ``bottom_watch_stage`` IS threaded here, and R2 is why.  It deliberately was not
+    # before: the old veto asked one question ("is this row live"), both answers the
+    # parameter can produce (``basing``/``blocked``) were "no", and the single reason
+    # string ``stage_not_live`` was true either way — so threading it would have added a
+    # place the split could drift without changing a single verdict.  R2 names the
+    # refusing bucket in the reason, which turns the parameter into an OUTPUT the
+    # receipt depends on: left unthreaded, a basing row was refused with
+    # ``stage_blocked`` while the row itself carried ``stage: basing``, and the receipt
+    # contradicted the row it described.  The featured FLAG is still provably invariant
+    # to the split — both values remain outside :data:`_FEATURED_STAGES`.
     status = _status_of(entry)
     if status not in _FEATURED_ENTRY_STATUSES:
         reasons.append(f"entry_status_{status or 'unknown'}")
+    else:
+        stage = stage_for(row, entry, bottom_watch_stage=bottom_watch_stage)
+        if stage not in _FEATURED_STAGES:
+            # Named by the bucket that refused it, not by "not live" — after R2 there
+            # are three different refusing buckets and the receipt has to say which.
+            reasons.append(f"stage_{stage}")
 
     tier = str(verdict.get("tier_cascade") or "")
     if tier not in _FEATURED_TIERS:
@@ -936,6 +990,7 @@ def score_rows(
     alpha_of: Callable[[Mapping[str, Any]], Any] | None = None,
     featured_extra: Callable[[Mapping[str, Any]], Iterable[str]] | None = None,
     bottom_watch_stage: str = STAGE_BLOCKED,
+    reversal_cohort: Mapping[str, Any] | None = None,
 ) -> list[dict]:
     """Score, stage, feature and order a buy pool.
 
@@ -1009,9 +1064,17 @@ def score_rows(
             in_blackout=(blackout_by or {}).get(ticker),
             alpha_of=alpha_of,
             extra=featured_extra,
+            bottom_watch_stage=bottom_watch_stage,
         )
         row["_featured_shortfalls"] = shortfalls
         row["featured"] = False
+        # R2 reversal cohort — stamped on EVERY row, same rule as `ext_unknown` below:
+        # a field that appears only when true cannot be told apart from a build that
+        # never computed it.  Zero score authority (:data:`ZERO_SCORE_AUTHORITY`) — it
+        # is read by no leg above, vetoes no featuring and moves no stage.
+        cohort_read = reversal_cohort_of(ticker, reversal_cohort)
+        row["reversal_cohort"] = cohort_read
+        row["reversal_member"] = bool(cohort_read["member"])
         # Per-row extension disclosure (ANTICIPATION v1).  Stamped on EVERY row as a
         # bool, never only when true: a missing key would read as "old build" and a
         # false is a fact the same way a zero in `stage_counts` is.
@@ -1285,19 +1348,19 @@ def ranking_block(
         # build.  `unknown == n` is the 2026-08-06 shape: the extension input is out
         # and every featured row's chase-risk check is running blind.
         "ext_unknown_coverage": ext_unknown_coverage(scored),
+        # R2 (§6.9) — the reversal-cohort scarcity receipt.  `input: "absent"` means the
+        # channel had no source tonight; `members: 0` with `input: "present"` means it
+        # ran and nobody qualified.  Published every build so a quiet channel and a
+        # broken one are never the same reading.
+        "reversal_cohort_coverage": reversal_cohort_coverage(scored),
         "featured_requirements": [
-            "stage is live",
-            # Both lines are true and they bind together: the ladder admits the
-            # patience statuses, the stage gate above still only passes `live`, and
-            # `stage_for` routes bounce_wait/wait_pullback to `setting_up` and hold to
-            # `ran`.  Printed as the pair rather than as one tidy sentence because a
-            # reader comparing this board to CN's needs to see which of the two gates
-            # is the binding one.
-            "entry status is one of "
-            + ", ".join(sorted(_FEATURED_ENTRY_STATUSES))
-            + " (the patience statuses are admitted by the ladder but not yet by the "
-              "stage gate above, so today only buy_now and partial can reach the "
-              "shelf)",
+            # R2 ordering: the status class is listed FIRST because it is now asked
+            # first, and a row that fails it is not also charged a stage reason.
+            "entry status is one of " + ", ".join(sorted(_FEATURED_ENTRY_STATUSES)),
+            "stage is one of " + ", ".join(sorted(_FEATURED_STAGES))
+            + " (the stage veto is applied only to rows the entry status already "
+              "admits; `ran` stays refused because its own shelf reads don't-chase, "
+              "and `basing`/`blocked` are stand-aside evidence)",
             "confluence tier T1, T2 or T3",
             f"cross no older than {FEATURED_MAX_TICKS} ticks (a same-day cross, "
             "ticks 0, qualifies)",
@@ -1314,6 +1377,31 @@ def ranking_block(
         "membership_note": "featured is a flag and an order — the buy lane's "
                            "membership is decided by the confluence admission gate "
                            "alone and is unchanged by this ranking",
+        # R2 (2026-08-09) — THE DON'T-CHASE-AT-100 DEVIATION, CLOSED AS A CONTRACT.
+        #
+        # #4976 shipped the flat entry map and recorded what it created: "under the flat
+        # map a don't-chase `ran` stage row can reach Priority 100", chartering the
+        # stage/score interplay to R2.  This is that closure, and it deliberately does
+        # not touch a single score.
+        #
+        # The arithmetic was never wrong.  A `ran` row really can earn 100 points — the
+        # flat leg pays every admissible status alike and `ran` rows carry `hold` — and
+        # the sort has ALWAYS compared score within a bucket, because the key is
+        # `(stage_rank, -score, ticker)`: a 100-point `ran` row already sorts below
+        # every `live` row on the board.  What was missing was anywhere that SAID so, so
+        # a reader seeing "Priority 100 / Ran — don't chase" above "Priority 72 / Live
+        # now" read a board-wide comparison the board does not make.
+        #
+        # Capping or deflating the number for don't-chase buckets was the alternative
+        # and is rejected: it publishes a different number for identical evidence, which
+        # is the unmeasured published-number shift the era-stamp law exists to catch,
+        # and it corrupts the one column this module documents as a transparent
+        # heuristic.  The stage bucket stays the binding constraint — now in writing.
+        "score_scope_note": "priority orders names WITHIN a stage bucket and never "
+                            "across them — the sort is (stage, then score), so a "
+                            "high-scoring `ran` row still sits below every `live` row. "
+                            "Comparing two scores from different buckets is not a "
+                            "comparison this board makes",
         "theme_asof": _as_date(theme_asof),
     }
 
@@ -1390,6 +1478,189 @@ def _read_json(path: Path) -> Any | None:
         return json.loads(path.read_text())
     except Exception:  # noqa: BLE001 — absent/unreadable/malformed all degrade the same
         return None
+
+
+# --------------------------------------------------------------------------- #
+# reversal cohort (R2, §6.9) — display-tier membership channel, zero score authority
+# --------------------------------------------------------------------------- #
+#: The ``us_basket_turn`` states that read as a REVERSAL cohort — a basket that has
+#: fallen and is at or past the washout, as opposed to one still falling or already
+#: confirmed.  Pinned to LITERALS rather than imported from
+#: :mod:`engine.us_early_turn`, which holds the same three strings as
+#: ``WASHOUT_MATURE_STATES``.  Two reasons, and the second is the binding one: that
+#: module imports pandas and numpy, and this one documents "no pandas dependency in the
+#: scoring path" — an import here would drag the whole frame stack into every board
+#: build.  The duplication is fenced by a test that asserts the two sets are equal, so a
+#: drift is a red line rather than a silent divergence.
+REVERSAL_COHORT_STATES = frozenset(("WASHED_OUT", "BASING", "TURNING"))
+
+#: Artifact + curated-membership pair the cohort is read from, relative to the site and
+#: data roots respectively.  Same two files :func:`engine.us_early_turn.
+#: load_basket_turn_membership` reads; declared as consumer reads in config/synapse.yml.
+_REVERSAL_ARTIFACT = ("basketdata", "us_basket_turn.json")
+_REVERSAL_MEMBERSHIP = ("baskets", "membership.json")
+
+
+def load_reversal_cohort(
+    site_root: Path | str | None = None,
+    data_dir: Path | str | None = None,
+) -> dict[str, Any]:
+    """``{"input": "present"|"absent", "members": {TICKER: {...}}, ...}``.
+
+    The R2 reversal-cohort channel (§6.9): which board names sit inside a basket the
+    ``us_basket_turn`` organ currently reads as washed-out, basing or turning.
+
+    WHY THIS SHIPS SCORELESS, AND WHAT WOULD HAVE TO BE RULED TO CHANGE THAT.
+    §6.9's run order specifies this channel at CN's ``reversal_member`` weight — 10
+    points of 100.  It is stamped, disclosed and rendered here, and it earns ZERO
+    points, because paying it would require reversing four separately-pinned rulings
+    that a rank module does not get to reverse on its own:
+
+    * ``sum(SCORE_WEIGHTS.values()) == 100.0`` is pinned twice in
+      ``tests/test_us_board_rank.py`` (the dict itself, and the attainable ceiling).
+      A tenth leg either makes the published scale 110 — an unmeasured shift in every
+      score the board has ever printed — or takes 10 points off a leg that was
+      measured, which is the same problem wearing a different hat.
+    * ``sector_turn`` and ``theme`` are already in :data:`ZERO_SCORE_AUTHORITY`, and
+      the module docstring's rule is "theme membership, sector turn ... are context
+      chips only".  Basket-turn membership is that category, not an exception to it.
+    * The US board deliberately REPLACED CN's ``reversal_member`` leg with ``edge``
+      (25 pts) on measured evidence — ``research/US_BOARD_MEASUREMENT.md`` found
+      residual alpha the only positive-IC leg at every horizon.  Re-introducing the CN
+      leg re-opens that measurement; it does not inherit CN's weight by analogy.
+    * The source artifact declares its own powers, in two places that agree:
+      ``site/basketdata/us_basket_turn.json`` carries ``authority.may_rank: false``
+      (pinned by ``tests/test_us_basket_turn.py``), and ``config/synapse.yml`` declares
+      the same node ``may_rank: false`` with ``weights: none``.  Scoring off it would
+      make both declarations false.
+
+    So the channel ships the way the evidence supports today: LIVE, disclosed, and
+    carrying no authority.  Promoting it to points is an orchestrator ruling on the
+    scale question plus a synapse amendment — not a constant edit.
+
+    SCARCITY IS REPORTED, NOT SMOOTHED.  Three states are distinguished and never
+    collapsed, because they mean different things to a reader:
+    ``input: "absent"`` (neither file resolved — nothing was checked), ``input:
+    "present"`` with an empty ``members`` (checked, nobody qualified), and a populated
+    map.  A missing input never degrades into "no members" — that is the same class of
+    error as the 2026-08-06 extension blackout, where an upstream gap rendered as a
+    confident empty answer.
+    """
+    site = Path(site_root) if site_root else Path(__file__).resolve().parents[1] / "site"
+    data = Path(data_dir) if data_dir else _default_data_dir()
+
+    artifact = _read_json(site.joinpath(*_REVERSAL_ARTIFACT))
+    membership = _read_json(data.joinpath(*_REVERSAL_MEMBERSHIP))
+    if not isinstance(artifact, Mapping) or not isinstance(membership, Mapping):
+        return {
+            "input": "absent",
+            "members": {},
+            "baskets_in_cohort": 0,
+            "baskets_read": 0,
+            "as_of": None,
+            "source": "us_basket_turn",
+            "selection_era": SELECTION_ERA,
+        }
+
+    baskets = artifact.get("baskets") or {}
+    curated = (membership.get("baskets") or {})
+    in_cohort = {
+        str(basket_id): str((state or {}).get("state") or "")
+        for basket_id, state in (baskets.items() if isinstance(baskets, Mapping) else ())
+        if str((state or {}).get("state") or "") in REVERSAL_COHORT_STATES
+    }
+
+    members: dict[str, dict[str, Any]] = {}
+    for basket_id, state in in_cohort.items():
+        entry = curated.get(basket_id)
+        if not isinstance(entry, Mapping):
+            continue
+        for member in (entry.get("members") or ()):
+            ticker = str((member or {}).get("ticker") or "").upper()
+            if not ticker:
+                continue
+            # A ticker in several cohort baskets keeps ONE row.  Deterministic by
+            # basket_id so a re-run cannot reshuffle which basket a name is credited
+            # to — the same keep-first discipline the membership bridge uses.
+            prior = members.get(ticker)
+            if prior is not None and str(prior.get("basket_id") or "") <= basket_id:
+                continue
+            members[ticker] = {
+                "state": state,
+                "basket_id": basket_id,
+                "basket_name": str(entry.get("name") or basket_id),
+                "basket_name_zh": str(entry.get("name_zh") or "") or None,
+            }
+
+    return {
+        "input": "present",
+        "members": members,
+        "baskets_in_cohort": len(in_cohort),
+        "baskets_read": len(baskets) if isinstance(baskets, Mapping) else 0,
+        "as_of": _as_date(artifact.get("as_of")),
+        "source": "us_basket_turn",
+        "selection_era": SELECTION_ERA,
+    }
+
+
+def reversal_cohort_of(
+    ticker: str,
+    cohort: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """The per-row reversal-cohort reading for one ticker.
+
+    Always returns a dict, and the ``member`` key is always a real bool — the row-level
+    counterpart of the ``ext_unknown`` rule #4976 established: a disclosure field is
+    stamped on EVERY row or it reads as "old build" wherever it is missing.
+
+    ``member is False`` with ``input == "absent"`` means NOT CHECKED, and callers that
+    render this must not spell it "not in a reversal cohort".  The two are different
+    facts and the dict keeps them apart.
+    """
+    source = cohort or {}
+    present = str(source.get("input") or "absent") == "present"
+    row = ((source.get("members") or {}) if present else {}).get(str(ticker or "").upper())
+    if not present:
+        return {"member": False, "input": "absent", "state": None, "basket_id": None}
+    if not isinstance(row, Mapping):
+        return {"member": False, "input": "present", "state": None, "basket_id": None}
+    return {
+        "member": True,
+        "input": "present",
+        "state": str(row.get("state") or "") or None,
+        "basket_id": str(row.get("basket_id") or "") or None,
+        "basket_name": row.get("basket_name"),
+        "basket_name_zh": row.get("basket_name_zh"),
+    }
+
+
+def reversal_cohort_coverage(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
+    """``{input, members, n, share}`` over the rows actually scored.
+
+    The live scarcity receipt.  §6.9 charters this channel as thin by construction —
+    most names on most sessions are in no reversal cohort — so the artifact publishes
+    the count every build instead of leaving a reader to infer from absence whether the
+    channel is quiet or broken.
+    """
+    scored = list(rows)
+    members = sum(
+        1 for row in scored
+        if bool(((row.get("reversal_cohort") or {}).get("member")))
+    )
+    inputs = {
+        str((row.get("reversal_cohort") or {}).get("input") or "absent")
+        for row in scored
+    }
+    state = "present" if inputs == {"present"} else (
+        "absent" if inputs in ({"absent"}, set()) else "mixed"
+    )
+    return {
+        "input": state,
+        "members": members,
+        "n": len(scored),
+        "share": round(members / len(scored), 4) if scored else None,
+        "selection_era": SELECTION_ERA,
+    }
 
 
 def load_theme_context(

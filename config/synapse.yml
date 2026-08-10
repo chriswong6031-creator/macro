@@ -352,6 +352,7 @@ artifacts:
       - engine/spotlight.py
       - engine/theme_catalyst_binder.py
       - engine/us_basket_turn.py
+      - engine/us_board_rank.py
       - scripts/basket_coherence_audit.py
       - scripts/build_baskets.py
       - scripts/build_demand.py
@@ -3268,6 +3269,7 @@ artifacts:
     scored_path_surfaces: []
     may_rank: false
     consumers:
+      - engine/us_board_rank.py
       - scripts/build_baskets.py
     external_consumers: []
     notes: >

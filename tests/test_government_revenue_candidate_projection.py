@@ -458,19 +458,70 @@ def test_repeated_observation_keeps_immutable_row_when_envelope_clock_advances(
     assert projection.verify_candidate_artifacts(root)["status"] == "ok"
 
 
-def test_unseen_historical_observation_cannot_backfill_after_prior_materialization(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_first_issuance_into_an_empty_ledger_records_historical_observations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
+    """An empty ledger has no issuance history, so first issuance is not a backfill.
+
+    Every broken-admission generation issued zero candidates while advancing the
+    frozen clock, and first-seen evidence clocks never move forward -- refusing
+    here wedged the serialized live lane permanently once #5086 repaired the
+    event contract (render run 31333981567).  The row keeps its honest evidence
+    ``known_at`` beside the issuing run's ``generated_at``.
+    """
     root = _fixture_root(tmp_path)
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
-    before = _artifact_bytes(root)
     _candidate_projection_with_one_candidate(monkeypatch, root)
 
+    result = projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
+
+    assert result["append_count"] == 1
+    ledger = projection.load_candidate_ledger(
+        root / "data/government_revenue/candidate_ledger.jsonl"
+    )
+    assert ledger.line_count == 1
+    row = ledger.observations[0]
+    assert row["generated_at"] == NEXT_RUN_AT
+    assert projection._instant(
+        row["known_at"], label="issued observation known_at"
+    ) <= projection._instant(FROZEN_AT, label="frozen clock")
+    notice = next(
+        line
+        for line in capsys.readouterr().out.splitlines()
+        if "govrev-candidate-first-issuance" in line
+    )
+    assert notice.startswith("::notice ")
+    assert row["observation_id"] in notice
+    assert projection.verify_candidate_artifacts(root)["status"] == "ok"
+
+
+def test_first_issuance_escape_arms_the_gate_once_any_row_exists(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The empty-ledger admission is one-shot: a frozen ledger refuses again."""
+    root = _fixture_root(tmp_path)
+    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
+    _candidate_projection_over_graph(
+        monkeypatch, root, graph=_multi_row_graph(), events=[_award_event()]
+    )
+    first = projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
+    assert first["append_count"] == 1
+    before = _artifact_bytes(root)
+
+    _candidate_projection_over_graph(
+        monkeypatch,
+        root,
+        graph=_two_issuer_graph(),
+        events=[_award_event(), _lmt_award_event(BEFORE_FROZEN_AT)],
+        as_of=utc_date(BEFORE_FROZEN_AT),
+    )
     with pytest.raises(
         projection.CandidateProjectionError,
         match="not forward of the prior frozen generated_at clock",
     ):
-        projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
+        projection.project_candidate_artifacts(
+            root, generated_at=shifted(NEXT_RUN_AT, hours=1)
+        )
 
     assert _artifact_bytes(root) == before
 
