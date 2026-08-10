@@ -7,7 +7,7 @@
 # Display-tier; never scored (DNR row 45 / TXI Article 1/2). RIC's own honest null
 # stands: repricing flags RISK/context, not return — this chain narrates state.
 chain: real_rate_peak_gold_rerate
-rev: 0
+rev: 1
 tier: hypothesis            # every node resolves; per-hop base rates untested until the W3 miner
 title:
   en: "Real-rate peak → gold re-rates"
@@ -70,15 +70,44 @@ hops:
     prior: "transmission_matrix[real_10y→GC=F] IC if present, else theory (opportunity-cost channel)"
 
 falsifiers:
-  # Peak refuted: the real 10y makes a NEW push higher over a quarter while armed —
-  # the extreme was a plateau on the way up, not a peak.
-  - when: {series: "DFII10", metric: ret_bp, window: 63, op: gt, value: 15}
+  # Peak refuted: the real 10y is STILL PUSHING — a quarter's climb AND pressing its
+  # 10-session highs. rev 1 (case study 2026-08-09): the bare 63d window stayed red for
+  # 5-7+ weeks after every true peak (2018: 23/60 post-peak sessions, 2022: 36/60,
+  # 2023: 24/60 — measured 2003→), narrating "restriction still building" through the
+  # exact plateau this chain exists to catch. The off-high gate silences the post-peak
+  # tail (2023: 0/60; 2022: 8/60) within ~2 weeks of a true peak while still firing
+  # through genuine climbs. <3 and <4bp behave alike; <5 doubles the 2018/2022
+  # residuals — 4bp chosen from the peak autopsies, not from the live bar (which sits
+  # AT the boundary, off-high 4bp on 2026-08-06, and is blocked — disclosed).
+  - when:
+      all:
+        - {series: "DFII10", metric: ret_bp, window: 63, op: gt, value: 15}
+        - {series: "DFII10", metric: off_high_bp, window: 10, op: lt, value: 4}
     src: fred
-    note: "real 10y +15bp over a quarter while armed — no peak; restriction still building"
+    note: "real 10y +15bp over the quarter AND still pressing its 10-day highs while armed — restriction still building"
   # Terminal falsifier: the rolldown confirmed but gold went nowhere for a quarter —
   # the opportunity-cost channel is not transmitting (e.g. deflation-scare selling).
+  # rev 1: scoped post-rolldown — the prose presupposes the rolldown; rev-0's first-hit
+  # short-circuit masked this falsifier, and unmasked it was vetoing ARMING on gold's
+  # trailing quarter (−4.7% on 2026-08-07), which says nothing about the peak.
   - when: {series: "GC=F", metric: ret, window: 63, op: lt, value: 0}
+    from_hop: 1
     note: "real yields rolled down with gold flat-to-down over 63d — the re-rate leg is falsified"
+
+# Turn-watch annotation (rev 1) — the plateau shape, as display-only context on the ARMED
+# state: momentum faded (22d ≤ +5bp) and off the highs (≥4bp below the 10-session max).
+# Measured 2003→ on armed days: P(rolldown ≤ −12bp/22d within 60 sessions) = 0.96 under
+# this shape (n=282 overlapping days) vs 0.85 unconditional-armed (n=868) and 0.79 while
+# still pressing highs (n=247). Overlapping daily samples — effective episode n is
+# single-digit and the receipt prints as such. Never a hop, never a confirm, never scored.
+stall:
+  when:
+    all:
+      - {series: "DFII10", metric: ret_bp, window: 22, op: lte, value: 5}
+      - {series: "DFII10", metric: off_high_bp, window: 10, op: gte, value: 4}
+  src: fred
+  label: {en: "At the extreme, momentum fading — watching for the turn",
+          zh: "处于极值、动能减弱——观察拐点"}
 
 null_model: "does conditioning on extreme+rolldown beat unconditional gold momentum over the same forward windows?"
 
@@ -107,6 +136,17 @@ changelog:
      the 2003→ DFII10 store: p90-extreme + 22td −12bp rolldown = 4.7% of days (275 days ≈
      a handful of true episodes: 2006, 2008, 2011-12, 2018-19, 2022-24). Arms TONIGHT on
      the current store (pctile 0.99, restrictive) and stages the rolldown as its watch."
+  - "rev 1 (2026-08-09, operator case — research/CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md):
+     the rev-0 falsifier armed-and-failed nightly through the 2026-07-31 plateau (DFII10
+     high 2.47, then 5 sessions at/below) while gold's terminal leg was already passing —
+     a trailing 63d window is blind to a fresh peak for up to ~9 weeks. Falsifier gated on
+     off_high_bp(10) < 4 (still pressing highs); stall turn-watch annotation added
+     (0.96 vs 0.85 baseline, n printed); node tests and hops UNCHANGED, so mined base
+     rates carry over via the same-PR re-mine. Measured 2026-08-09 on the 2003→ store;
+     thresholds from the 5-peak autopsy table in the case study.
+     Same-rev follow-up: hop-scoped falsifiers (from_hop) — gating index 0 unmasked the
+     terminal falsifier at ARM time (rev-0 first-hit short-circuit had hidden it), so
+     falsifiers whose prose presupposes a hop now evaluate only once that hop has confirmed."
 
 validator_note: >
   real_rate_extreme reads the rate/inflation engine's own published percentile + regime

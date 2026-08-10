@@ -85,7 +85,7 @@ def _chain_subset(chain: dict, caveats: list) -> dict:
             if isinstance(entry, dict):
                 blast_out[flag] = _channel_subset(entry)
     label = _bilingual(chain.get("title")) or {"en": chain.get("chain"), "zh": chain.get("chain")}
-    return {
+    out: dict[str, Any] = {
         "id": chain.get("chain"),
         "label": label,
         "state": chain.get("state"),
@@ -94,6 +94,14 @@ def _chain_subset(chain: dict, caveats: list) -> dict:
         "blast": blast_out,
         "caveats": caveats,
     }
+    # TURN-WATCH annotation (display-only, present only on an open episode whose chain
+    # declares a `stall:` block). Passed through with its receipt — unlike a hop's machine
+    # `value_receipt`, this receipt IS the Tier-2 disclosure behind the plain-word chip, so
+    # the client can print the number it is claiming. Never a hop, never a confirm.
+    tw = chain.get("turn_watch")
+    if isinstance(tw, dict):
+        out["turn_watch"] = dict(tw)
+    return out
 
 
 def derive_display_subset(chain_state: dict) -> dict:

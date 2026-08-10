@@ -486,6 +486,21 @@ def evaluate_all(asof: pd.Timestamp | None = None) -> list[TripwireResult]:
     return results
 
 
+def _fired_leg_snapshot(legs: list[dict]) -> list[dict]:
+    """Compact receipts for the legs that were True at fire time.
+
+    An `any` combinator can mix confirm-direction legs and refute legs under
+    one `direction` (e.g. pgms: PL>1900 upcycle-confirmed vs PL<1300
+    capitulation) — without this snapshot a latched FIRED cannot say WHICH
+    story fired it once the tape moves on."""
+    return [
+        {k: d[k] for k in ("series", "transform", "op", "threshold", "value_now")
+         if d.get(k) is not None}
+        for d in legs
+        if d.get("result") is True
+    ]
+
+
 def persist(results: list[TripwireResult]) -> list[TripwireResult]:
     """Apply latch semantics and write state.
 
@@ -493,6 +508,10 @@ def persist(results: list[TripwireResult]) -> list[TripwireResult]:
     bumps (a human re-authors the entry with version N+1).  But `current_leg`
     always reflects the live re-evaluation (ruling A17 — "condition no longer
     met" must be visible even on a latched FIRED).
+
+    A newly-fired entry additionally records `fired_legs` — the at-fire
+    snapshot of which leg(s) were True — preserved verbatim while latched so
+    the receipt survives the tape moving on.
 
     Returns: list of NEWLY-fired tripwires (those not previously latched).
     """
@@ -511,15 +530,19 @@ def persist(results: list[TripwireResult]) -> list[TripwireResult]:
             prev_latched = False
             prev_fired_on = None
 
+        fired_legs = None
         if prev_latched and prev_fired_on:
             # already latched: stay FIRED, keep original fire date, update current_leg
             r.state = "FIRED"
             r.fired_on = prev_fired_on
             r.latched = True
+            fired_legs = prev.get("fired_legs")
         elif r.state == "FIRED":
             # newly fired this build
             r.latched = True
             newly_fired.append(r)
+            fired_legs = _fired_leg_snapshot(r.legs)
+
         # else: ARMED/MANUAL/EXPIRED/DATA_MISSING — no latch changes
 
         # persist current state
@@ -531,6 +554,8 @@ def persist(results: list[TripwireResult]) -> list[TripwireResult]:
             "current_leg": r.current_leg,
             "as_of": str(pd.Timestamp.now().date()),
         }
+        if fired_legs:
+            state[key]["fired_legs"] = fired_legs
 
     _save_state(state)
     return newly_fired
