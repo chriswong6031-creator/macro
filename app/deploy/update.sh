@@ -140,6 +140,7 @@ install -d -m 0700 /var/lib/macro-market-memory/state/sources
 install -d -m 0700 /var/lib/macro-market-memory/state/context-projection
 install -d -m 0700 /var/lib/macro-market-memory/state/identity-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/breadth-v1
+install -d -m 0700 /var/lib/macro-market-memory/state/technicals-v1
 API_UNIT_UPDATED=0
 if ! cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service; then
 	if systemd-analyze verify "$APP_DIR/app/deploy/macro-api.service"; then
@@ -312,6 +313,50 @@ if [ "$MARKET_MEMORY_IDENTITY_RUN_NEEDED" -eq 1 ]; then
 		echo "macro-update: deferring Market Memory identity accrual — shared runtime dependencies are not current" >&2
 	elif ! systemctl start macro-market-memory-identity.service; then
 		echo "macro-update: Market Memory identity accrual failed closed; hourly timer will retry" >&2
+	fi
+fi
+
+# W1B.3B private SPY raw-close technical actual-output publisher. The only
+# network access is the fixed public R2 manifest/object transaction embedded in
+# reviewed code; it has no credentials and remains disconnected from the API,
+# trusted-v1, Prophet, options, outcomes, ranking, sizing, and execution.
+MARKET_MEMORY_TECHNICALS_UNIT_UPDATED=0
+MARKET_MEMORY_TECHNICALS_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-technicals.service"
+	"$APP_DIR/app/deploy/macro-market-memory-technicals.timer"
+)
+if ! cmp -s "${MARKET_MEMORY_TECHNICALS_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-technicals.service || \
+   ! cmp -s "${MARKET_MEMORY_TECHNICALS_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-technicals.timer; then
+	if systemd-analyze verify "${MARKET_MEMORY_TECHNICALS_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_TECHNICALS_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_TECHNICALS_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_TECHNICALS_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-market-memory-technicals.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: Market Memory technical actual-output units updated"
+		fi
+	else
+		echo "macro-update: refusing Market Memory technical unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+systemctl enable --now macro-market-memory-technicals.timer >/dev/null 2>&1 || \
+	echo "macro-update: macro-market-memory-technicals.timer could not be enabled" >&2
+
+MARKET_MEMORY_TECHNICALS_RUN_NEEDED=0
+if [ "$MARKET_MEMORY_TECHNICALS_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(scripts/capture_market_memory_technicals\.py|engine/neuralweb/market_memory_technical_(observation|store)\.py|contracts/market_memory/(spy_daily_price_source_observation|spy_raw_close_ratio_snapshot|technicals_actual_output_capture_receipt|technicals_actual_output_store)\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis)\.v1\.json|lib/nyse_calendar\.py|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'; then
+	MARKET_MEMORY_TECHNICALS_RUN_NEEDED=1
+fi
+if [ "$MARKET_MEMORY_TECHNICALS_RUN_NEEDED" -eq 1 ]; then
+	if [ "$API_DEPS_OK" -ne 1 ]; then
+		echo "macro-update: deferring Market Memory technical capture — shared runtime dependencies are not current" >&2
+	elif ! systemctl start macro-market-memory-technicals.service; then
+		echo "macro-update: Market Memory technical capture failed closed; hourly timer will retry" >&2
 	fi
 fi
 

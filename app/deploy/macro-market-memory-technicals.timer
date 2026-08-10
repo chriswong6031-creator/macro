@@ -1,0 +1,13 @@
+[Unit]
+Description=Retry private Market Memory SPY technical capture each hour
+
+[Timer]
+OnBootSec=23min
+OnCalendar=*-*-* *:53:00 UTC
+AccuracySec=1min
+RandomizedDelaySec=120s
+Persistent=true
+Unit=macro-market-memory-technicals.service
+
+[Install]
+WantedBy=timers.target

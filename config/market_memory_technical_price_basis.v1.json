@@ -1,0 +1,45 @@
+{
+  "schema": "market_memory.technical_price_basis_contract.v1",
+  "source_product": "us_stocks_sip/day_aggs_v1",
+  "provider": "Massive",
+  "documentation": {
+    "url": "https://massive.com/docs/flat-files/stocks/overview?assetClass=stocks&license=personal&name=stocks_basic",
+    "reviewed_on": "2026-08-10",
+    "assertion": "provider_documents_stock_flat_files_as_unadjusted"
+  },
+  "price_basis": {
+    "basis": "provider_documented_unadjusted_flat_file",
+    "source_session_scope": "provider_daily_aggregate_eligible_trades_full_market_day",
+    "regular_session_close_authenticated": false,
+    "xnys_calendar_dates_only": true,
+    "raw_unadjusted": true,
+    "split_adjusted": false,
+    "dividend_adjusted": false,
+    "other_corporate_action_adjusted": false,
+    "economic_return": false,
+    "basis_authenticated_by_shape": false
+  },
+  "limitations": {
+    "provider_contract_not_inferred_from_bytes": true,
+    "regular_session_close_not_authenticated": true,
+    "point_in_time_corporate_actions": false,
+    "split_detection": false
+  },
+  "authority": {
+    "tier": "display",
+    "horizon_role": "context",
+    "context_only": true,
+    "proposal_weight": 0,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "may_trade": false,
+    "may_originate": false,
+    "may_select_options_candidate": false,
+    "may_execute": false,
+    "may_write_options_episode": false,
+    "may_append_outcome": false,
+    "may_train_prophet": false
+  }
+}
