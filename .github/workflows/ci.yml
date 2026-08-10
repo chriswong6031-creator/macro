@@ -635,6 +635,7 @@ on:
       - "engine/neuralweb/market_memory_trusted.py"
       - "contracts/market_memory/source_artifact_receipt.v1.schema.json"
       - "contracts/market_memory/macro_regime_snapshot.v1.schema.json"
+      - "contracts/market_memory/macro_regime_feature_object.v1.schema.json"
       - "contracts/market_memory/trusted_capture_receipt.v1.schema.json"
       - "config/market_memory_canary.v1.json"
       - "scripts/collect_release_target_vintages.py"

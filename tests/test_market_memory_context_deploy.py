@@ -5,11 +5,14 @@ from __future__ import annotations
 import ast
 import re
 import subprocess
+from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from engine.neuralweb import market_memory_trusted as trusted
+from scripts import project_market_memory_context as writer_module
 
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOY = ROOT / "app" / "deploy"
@@ -249,8 +252,8 @@ def test_update_verifies_installs_arms_and_immediately_reprojects() -> None:
 
     for trigger in (
         r"scripts/project_market_memory_context\.py",
-        r"engine/neuralweb/market_memory(_identity|_projection|_trusted)?\.py",
-        r"macro_regime_snapshot|trusted_capture_receipt",
+        r"engine/neuralweb/market_memory(_pit|_identity|_projection|_trusted)?\.py",
+        r"macro_regime_snapshot|macro_regime_feature_object|trusted_capture_receipt",
         r"config/market_memory_canary\.v1\.json",
         r"engine/run\.py",
         r"data/regime/latest\.json",
@@ -285,6 +288,82 @@ def test_projector_is_the_only_production_writer_and_uses_canonical_inputs(
     )
 
 
+def _stub_writer_inputs(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    raw_body: bytes = b"raw",
+    config: bytes = b"config",
+) -> None:
+    monkeypatch.setattr(
+        writer_module.market_memory_trusted,
+        "initialize_trusted_store",
+        lambda _root: {},
+    )
+    monkeypatch.setattr(
+        writer_module.market_memory_projection,
+        "build_macro_regime_snapshot",
+        lambda _path: {"snapshot": True},
+    )
+    monkeypatch.setattr(
+        writer_module.market_memory_projection,
+        "read_verified_macro_regime_bytes",
+        lambda _path, _snapshot: raw_body,
+    )
+    monkeypatch.setattr(
+        writer_module.market_memory_identity,
+        "build_current_spy_identity",
+        lambda **_kwargs: SimpleNamespace(config_sha256=sha256(config).hexdigest()),
+    )
+    monkeypatch.setattr(
+        writer_module.market_memory_trusted,
+        "capture_trusted_regime_context",
+        lambda *_args, **_kwargs: pytest.fail(
+            "capture must not run after checkout provenance failure"
+        ),
+    )
+
+
+def test_projector_rejects_checkout_head_change_during_stable_reads(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _stub_writer_inputs(monkeypatch)
+    commits = iter(("a" * 40, "b" * 40))
+    monkeypatch.setattr(
+        writer_module, "_repository_commit", lambda _root: next(commits)
+    )
+
+    with pytest.raises(trusted.MarketMemoryTrustedCaptureError, match="changed"):
+        writer_module.project_current_context(
+            tmp_path,
+            public_store_root=tmp_path / "public",
+            private_evidence_root=tmp_path / "private",
+        )
+
+
+@pytest.mark.parametrize("mismatch", ["regime", "config"])
+def test_projector_rejects_inputs_not_owned_by_the_pinned_checkout(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, mismatch: str
+) -> None:
+    raw_body = b"raw"
+    config = b"config"
+    _stub_writer_inputs(monkeypatch, raw_body=raw_body, config=config)
+    monkeypatch.setattr(writer_module, "_repository_commit", lambda _root: "a" * 40)
+
+    def tracked(_root: Path, _commit: str, relative_path: str) -> bytes:
+        if relative_path == "data/regime/latest.json":
+            return b"wrong" if mismatch == "regime" else raw_body
+        return b"wrong" if mismatch == "config" else config
+
+    monkeypatch.setattr(writer_module, "_tracked_bytes", tracked)
+
+    with pytest.raises(trusted.MarketMemoryTrustedCaptureError, match="owned"):
+        writer_module.project_current_context(
+            tmp_path,
+            public_store_root=tmp_path / "public",
+            private_evidence_root=tmp_path / "private",
+        )
+
+
 def test_api_uses_the_composite_reader_and_updater_restarts_its_import_closure() -> (
     None
 ):
@@ -306,6 +385,7 @@ def test_api_uses_the_composite_reader_and_updater_restarts_its_import_closure()
         if line.startswith('if [ "$API_UNIT_UPDATED"')
     )
     assert "market_memory_trusted" in restart_predicate
+    assert "market_memory_projection" in restart_predicate
 
 
 def test_public_router_has_no_raw_source_or_evidence_route() -> None:

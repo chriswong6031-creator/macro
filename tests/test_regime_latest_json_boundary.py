@@ -123,6 +123,18 @@ def test_publication_fsyncs_file_before_replace_and_directory_after(
     assert json.loads(target.read_text(encoding="utf-8")) == {"ok": True}
 
 
+def test_atomic_replacement_preserves_the_public_artifact_read_mode(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "latest.json"
+    target.write_text('{"old":true}', encoding="utf-8")
+    target.chmod(0o644)
+
+    regime_run._atomic_write_latest_json(target, {"new": True})
+
+    assert target.stat().st_mode & 0o777 == 0o644
+
+
 def test_committed_regime_latest_is_strict_finite_json() -> None:
     body = (ROOT / "data" / "regime" / "latest.json").read_text(encoding="utf-8")
     payload = json.loads(body, parse_constant=_reject_nonfinite)

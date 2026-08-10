@@ -83,6 +83,9 @@ def _raw_regime(*, growth_score: float = 0.133) -> dict:
         "freshness": {
             "asof": "2026-08-10",
             "built_at": "2026-08-10T09:55:00Z",
+            "age_days": 0,
+            "age_sessions": 0,
+            "max_age_sessions": 1,
             "stale": False,
         },
     }
@@ -388,6 +391,54 @@ def test_identical_retry_is_idempotent_and_does_not_republish(
     assert len(list(candidate.public.glob("queries/*/*.json"))) == 1
 
 
+@pytest.mark.parametrize(
+    ("target", "mutation"),
+    [
+        ("raw", "missing"),
+        ("membership", "corrupt"),
+        ("calendar", "missing"),
+        ("receipt", "corrupt"),
+    ],
+)
+def test_idempotent_retry_revalidates_all_private_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    target: str,
+    mutation: str,
+) -> None:
+    candidate = _candidate(monkeypatch, tmp_path)
+    stored = _capture(candidate)
+    receipt = stored.capture_receipt
+    evidence = receipt["source_evidence"]
+    paths = {
+        "raw": trusted._private_object_path(
+            candidate.private, "raw", evidence["raw_source_sha256"]
+        ),
+        "membership": trusted._private_object_path(
+            candidate.private,
+            "membership",
+            evidence["membership_artifact_sha256"],
+        ),
+        "calendar": trusted._private_object_path(
+            candidate.private, "calendar", evidence["calendar_artifact_sha256"]
+        ),
+        "receipt": trusted._private_receipt_path(
+            candidate.private, receipt["capture_id"]
+        ),
+    }
+    path = paths[target]
+    if mutation == "missing":
+        path.unlink()
+    else:
+        path.write_bytes(b"{}")
+    monkeypatch.setattr(
+        trusted, "_utc_now", lambda: CAPTURE_CLOCK + timedelta(seconds=5)
+    )
+
+    with pytest.raises(pit.MarketMemoryPITError):
+        _capture(candidate)
+
+
 def test_trusted_capture_receipt_schema_seals_evidence_and_authority(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -421,6 +472,32 @@ def test_trusted_capture_receipt_schema_seals_evidence_and_authority(
     for mutant in mutants:
         with pytest.raises(ValidationError):
             Draft202012Validator(schema).validate(mutant)
+
+
+def test_persisted_feature_object_matches_its_declared_contract(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _candidate(monkeypatch, tmp_path)
+    stored = _capture(candidate)
+    feature_path = (
+        candidate.public / stored.capture_receipt["feature_snapshot"]["object_key"]
+    )
+    feature = json.loads(feature_path.read_text(encoding="utf-8"))
+    schema = json.loads(
+        (
+            Path(__file__).resolve().parents[1]
+            / "contracts/market_memory/macro_regime_feature_object.v1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate(feature)
+    assert feature["schema"] == projection.FEATURE_OBJECT_SCHEMA
+    assert trusted._canonical_bytes(feature) == feature_path.read_bytes()
+    assert (
+        sha256(feature_path.read_bytes()).hexdigest()
+        == (stored.capture_receipt["feature_snapshot"]["content_sha256"])
+    )
 
 
 def test_changed_raw_or_identity_bytes_cannot_cross_any_publication_boundary(

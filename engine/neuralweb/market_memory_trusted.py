@@ -19,6 +19,7 @@ import fcntl
 import json
 import os
 import re
+import stat
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -32,6 +33,7 @@ from engine.neuralweb import market_memory, market_memory_pit
 TRUSTED_CAPTURE_RECEIPT_SCHEMA = "market_memory.trusted_capture_receipt.v1"
 TRUSTED_STORE_SCHEMA = "market_memory.trusted_store.v1"
 TRUSTED_STORE_PROFILE = "market_memory.trusted.macro_regime_canary.v1"
+_FEATURE_OBJECT_SCHEMA = "market_memory.macro_regime_feature_object.v1"
 _GENERATION_SCHEMA = "market_memory.store_generation.v1"
 _HEAD_SCHEMA = "market_memory.store_head.v1"
 _ALLOWED_OBSERVED_FEATURE_IDS = ("macro.regime_state",)
@@ -318,6 +320,108 @@ def _write_exact_bytes_create_once(
         temporary.unlink(missing_ok=True)
 
 
+def _read_exact_private_bytes(
+    root: Path,
+    path: Path,
+    *,
+    digest: str,
+    expected_bytes: int,
+    limit: int,
+    label: str,
+) -> bytes:
+    try:
+        path.relative_to(root)
+    except ValueError as exc:
+        raise market_memory_pit.MarketMemoryStoreError(
+            "trusted private read escaped its root"
+        ) from exc
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise market_memory_pit.MarketMemoryStoreError(
+            f"{label} is unavailable"
+        ) from exc
+    try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise market_memory_pit.MarketMemoryStoreError(
+                f"{label} is not a regular file"
+            )
+        if metadata.st_size <= 0 or metadata.st_size > limit:
+            raise market_memory_pit.MarketMemoryStoreError(
+                f"{label} exceeds its safe size bound"
+            )
+        chunks: list[bytes] = []
+        remaining = limit + 1
+        while remaining > 0:
+            chunk = os.read(descriptor, min(65_536, remaining))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        body = b"".join(chunks)
+    except OSError as exc:
+        raise market_memory_pit.MarketMemoryStoreError(
+            f"{label} cannot be read"
+        ) from exc
+    finally:
+        os.close(descriptor)
+    if (
+        len(body) != metadata.st_size
+        or len(body) != expected_bytes
+        or len(body) > limit
+        or sha256(body).hexdigest() != digest
+    ):
+        raise market_memory_pit.MarketMemoryStoreError(
+            f"{label} differs from its trusted capture receipt"
+        )
+    return body
+
+
+def _verify_private_evidence(
+    root: Path,
+    receipt: Mapping[str, Any],
+    *,
+    expected_raw_body: bytes | None = None,
+) -> None:
+    clean = _validate_receipt(receipt)
+    evidence = clean["source_evidence"]
+    raw_body = _read_exact_private_bytes(
+        root,
+        _private_object_path(root, "raw", evidence["raw_source_sha256"]),
+        digest=evidence["raw_source_sha256"],
+        expected_bytes=evidence["raw_source_bytes"],
+        limit=_MAX_PRIVATE_SOURCE_BYTES,
+        label="private raw regime evidence",
+    )
+    if expected_raw_body is not None and raw_body != expected_raw_body:
+        raise market_memory_pit.MarketMemoryStoreError(
+            "private raw regime evidence differs from the current exact source"
+        )
+    for category, digest_field, bytes_field in (
+        ("membership", "membership_artifact_sha256", "membership_artifact_bytes"),
+        ("calendar", "calendar_artifact_sha256", "calendar_artifact_bytes"),
+    ):
+        _read_exact_private_bytes(
+            root,
+            _private_object_path(root, category, evidence[digest_field]),
+            digest=evidence[digest_field],
+            expected_bytes=evidence[bytes_field],
+            limit=64 * 1024,
+            label=f"private {category} evidence",
+        )
+    private_receipt, private_receipt_body = market_memory_pit._read_canonical_object(
+        _private_receipt_path(root, clean["capture_id"]),
+        limit=_MAX_RECEIPT_BYTES,
+        label="private trusted capture receipt",
+    )
+    if private_receipt != clean or private_receipt_body != _canonical_bytes(clean):
+        raise market_memory_pit.MarketMemoryStoreError(
+            "private trusted capture receipt differs from public capture"
+        )
+
+
 def _new_manifest() -> dict[str, Any]:
     manifest: dict[str, Any] = {
         "schema": TRUSTED_STORE_SCHEMA,
@@ -477,6 +581,8 @@ def _load_state(root: Path) -> _TrustedStoreState:
 
 
 def _snapshot_core(snapshot: Mapping[str, Any]) -> tuple[dict[str, Any], bytes]:
+    from engine.neuralweb import market_memory_projection
+
     expected = {
         "schema",
         "snapshot_id",
@@ -495,13 +601,7 @@ def _snapshot_core(snapshot: Mapping[str, Any]) -> tuple[dict[str, Any], bytes]:
         raise MarketMemoryTrustedCaptureError(
             "macro regime snapshot fields are not canonical"
         )
-    core = {
-        "schema": snapshot["schema"],
-        "as_of": snapshot["as_of"],
-        "transform_version": snapshot["transform_version"],
-        "source_artifact": copy.deepcopy(snapshot["source_artifact"]),
-        "state": copy.deepcopy(snapshot["state"]),
-    }
+    core = market_memory_projection.macro_regime_feature_object(snapshot)
     body = _canonical_bytes(core)
     digest = sha256(body).hexdigest()
     if snapshot.get("content_sha256") != digest:
@@ -642,12 +742,9 @@ def build_trusted_packet(
             "feature_role": "decision_time_context",
             "domain": "macro",
             "status": "observed",
-            "value": {
-                "snapshot_id": clean_snapshot["snapshot_id"],
-                "schema": clean_snapshot["schema"],
-                "content_sha256": clean_snapshot["content_sha256"],
-                "as_of": clean_snapshot["as_of"],
-            },
+            "value": market_memory_projection.macro_regime_snapshot_reference(
+                clean_snapshot
+            ),
             "unit": "snapshot_ref",
             "observed_at": clean_snapshot["observed_at"],
             "pit_basis": "live_captured",
@@ -769,7 +866,7 @@ def _build_receipt(
         "object_key": f"objects/{packet_sha256[:2]}/{packet_sha256}.json",
         "feature_snapshot": {
             "snapshot_id": snapshot["snapshot_id"],
-            "schema": snapshot["schema"],
+            "schema": _FEATURE_OBJECT_SCHEMA,
             "content_sha256": feature_digest,
             "content_bytes": snapshot["content_bytes"],
             "object_key": (
@@ -876,7 +973,7 @@ def _validate_receipt(value: Mapping[str, Any]) -> dict[str, Any]:
         raise market_memory_pit.MarketMemoryStoreError(
             "trusted snapshot_id is malformed"
         )
-    if snapshot.get("schema") != "market_memory.macro_regime_snapshot.v1":
+    if snapshot.get("schema") != _FEATURE_OBJECT_SCHEMA:
         raise market_memory_pit.MarketMemoryStoreError(
             "trusted feature snapshot schema mismatch"
         )
@@ -1072,7 +1169,10 @@ def _validate_receipt_against_packet(
     )
     if macro["value"] != {
         "snapshot_id": receipt["feature_snapshot"]["snapshot_id"],
-        "schema": receipt["feature_snapshot"]["schema"],
+        # The frozen W0 registry names the logical snapshot contract.  The
+        # receipt separately names the smaller immutable feature-object
+        # storage contract; both bind the same content digest.
+        "schema": "market_memory.macro_regime_snapshot.v1",
         "content_sha256": receipt["feature_snapshot"]["content_sha256"],
         "as_of": receipt["feature_snapshot"]["as_of"],
     }:
@@ -1084,6 +1184,8 @@ def _validate_receipt_against_packet(
 def _load_stored(
     root: Path, receipt: Mapping[str, Any], *, store_id: str
 ) -> market_memory_pit.StoredMarketMemoryContext:
+    from engine.neuralweb import market_memory_projection
+
     clean_receipt = _validate_receipt(receipt)
     if clean_receipt["store_id"] != store_id:
         raise market_memory_pit.MarketMemoryStoreError(
@@ -1105,7 +1207,7 @@ def _load_stored(
     clean_packet = _validate_trusted_packet(packet)
     _validate_receipt_against_packet(clean_receipt, clean_packet)
     feature_digest = clean_receipt["feature_snapshot"]["content_sha256"]
-    _feature, feature_body = market_memory_pit._read_canonical_object(
+    feature, feature_body = market_memory_pit._read_canonical_object(
         _feature_path(root, feature_digest),
         limit=_MAX_FEATURE_BYTES,
         label="trusted feature object",
@@ -1117,6 +1219,21 @@ def _load_stored(
     if len(feature_body) != clean_receipt["feature_snapshot"]["content_bytes"]:
         raise market_memory_pit.MarketMemoryStoreError(
             "trusted feature object byte count mismatch"
+        )
+    try:
+        clean_feature = market_memory_projection.validate_macro_regime_feature_object(
+            feature
+        )
+    except market_memory_projection.MarketMemoryProjectionError as exc:
+        raise market_memory_pit.MarketMemoryStoreError(
+            "trusted feature object contract mismatch"
+        ) from exc
+    if (
+        clean_feature["schema"] != clean_receipt["feature_snapshot"]["schema"]
+        or clean_feature["as_of"] != clean_receipt["feature_snapshot"]["as_of"]
+    ):
+        raise market_memory_pit.MarketMemoryStoreError(
+            "trusted feature object differs from its capture receipt"
         )
     return market_memory_pit.StoredMarketMemoryContext(clean_packet, clean_receipt)
 
@@ -1390,6 +1507,14 @@ def capture_trusted_regime_context(
         raise MarketMemoryTrustedCaptureError(
             "raw regime source differs from the projected stable read"
         )
+    try:
+        market_memory_projection.validate_macro_regime_source_bytes(
+            raw_source_body, clean_snapshot
+        )
+    except market_memory_projection.MarketMemoryProjectionError as exc:
+        raise MarketMemoryTrustedCaptureError(
+            "raw regime source is not admissible trusted evidence"
+        ) from exc
     if not isinstance(deployed_commit, str) or not _GIT_COMMIT.fullmatch(
         deployed_commit
     ):
@@ -1425,9 +1550,15 @@ def capture_trusted_regime_context(
             feature_content_sha256=clean_snapshot["content_sha256"],
         )
         if existing_evidence is not None:
-            return TrustedFileAsKnownAtReader(public).read_stored_context_id(
+            stored = TrustedFileAsKnownAtReader(public).read_stored_context_id(
                 existing_evidence["context_id"]
             )
+            _verify_private_evidence(
+                private,
+                stored.capture_receipt,
+                expected_raw_body=raw_source_body,
+            )
+            return stored
         receipt = _build_receipt(
             store_id=state.manifest["store_id"],
             packet=packet,
@@ -1454,11 +1585,13 @@ def capture_trusted_regime_context(
                 raise MarketMemoryTrustedCaptureError(
                     "trusted query already has a different immutable capture"
                 )
-            return TrustedFileAsKnownAtReader(public).read_stored_as_known_at(
+            stored = TrustedFileAsKnownAtReader(public).read_stored_as_known_at(
                 subject=packet["subject"],
                 event_time=packet["clocks"]["event_time"],
                 as_known_at=packet["clocks"]["as_known_at"],
             )
+            _verify_private_evidence(private, stored.capture_receipt)
+            return stored
         context_path = market_memory_pit._context_path(public, packet["context_id"])
         query_path = market_memory_pit._query_path(public, receipt["query_id"])
         if query_path.exists() and not context_path.exists():
@@ -1495,20 +1628,11 @@ def capture_trusted_regime_context(
                 clean_existing,
                 store_id=state.manifest["store_id"],
             )
-            private_receipt, private_receipt_body = (
-                market_memory_pit._read_canonical_object(
-                    _private_receipt_path(private, clean_existing["capture_id"]),
-                    limit=_MAX_RECEIPT_BYTES,
-                    label="orphan private trusted capture receipt",
-                )
+            _verify_private_evidence(
+                private,
+                clean_existing,
+                expected_raw_body=raw_source_body,
             )
-            if (
-                private_receipt != clean_existing
-                or private_receipt_body != existing_body
-            ):
-                raise market_memory_pit.MarketMemoryStoreError(
-                    "private and public trusted capture receipts disagree"
-                )
             if query_path.exists() or query_path.is_symlink():
                 existing_query, existing_query_body = (
                     market_memory_pit._read_canonical_object(

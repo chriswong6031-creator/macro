@@ -977,8 +977,9 @@ W1B.1 trusted-canary additions:
   `engine/neuralweb/market_memory_identity.py` — strict current-only SPY
   membership/calendar evidence, not historical identity resolution;
 - `engine/neuralweb/market_memory_projection.py` and
-  `contracts/market_memory/macro_regime_snapshot.v1.schema.json` — bounded
-  stable read plus a finite, label-free macro-regime projection;
+  `contracts/market_memory/macro_regime_{snapshot,feature_object}.v1.schema.json`
+  — bounded stable read plus distinct validated observation metadata and a
+  content-addressed, finite, label-free macro-regime feature object;
 - `engine/neuralweb/market_memory_trusted.py` and
   `contracts/market_memory/trusted_capture_receipt.v1.schema.json` — separate
   immutable trusted store, private-evidence-first publication, exact reader,

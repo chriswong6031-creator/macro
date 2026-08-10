@@ -8,6 +8,7 @@ import json
 import os
 import re
 import subprocess
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +42,21 @@ def _repository_commit(root: Path) -> str:
     return commit
 
 
+def _tracked_bytes(root: Path, commit: str, relative_path: str) -> bytes:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "show", f"{commit}:{relative_path}"],
+            check=True,
+            capture_output=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise market_memory_trusted.MarketMemoryTrustedCaptureError(
+            f"cannot bind {relative_path} to the deployed checkout"
+        ) from exc
+    return result.stdout
+
+
 def project_current_context(
     repository_root: str | Path,
     *,
@@ -63,6 +79,7 @@ def project_current_context(
     # rejection can then fail closed without turning every unrelated W1A exact
     # lookup into an ambiguous missing-store error.
     market_memory_trusted.initialize_trusted_store(public)
+    deployed_commit = _repository_commit(root)
     regime_path = root / "data" / "regime" / "latest.json"
     config_path = root / "config" / "market_memory_canary.v1.json"
     snapshot = market_memory_projection.build_macro_regime_snapshot(regime_path)
@@ -74,13 +91,28 @@ def project_current_context(
     identity = market_memory_identity.build_current_spy_identity(
         config_path=config_path
     )
+    if _repository_commit(root) != deployed_commit:
+        raise market_memory_trusted.MarketMemoryTrustedCaptureError(
+            "deployed checkout changed during trusted context projection"
+        )
+    if _tracked_bytes(root, deployed_commit, "data/regime/latest.json") != raw_body:
+        raise market_memory_trusted.MarketMemoryTrustedCaptureError(
+            "regime source bytes are not owned by the deployed checkout"
+        )
+    tracked_config = _tracked_bytes(
+        root, deployed_commit, "config/market_memory_canary.v1.json"
+    )
+    if sha256(tracked_config).hexdigest() != identity.config_sha256:
+        raise market_memory_trusted.MarketMemoryTrustedCaptureError(
+            "canary identity config is not owned by the deployed checkout"
+        )
     stored = market_memory_trusted.capture_trusted_regime_context(
         public,
         private,
         snapshot=snapshot,
         identity_evidence=identity,
         raw_source_body=raw_body,
-        deployed_commit=_repository_commit(root),
+        deployed_commit=deployed_commit,
     )
     receipt = stored.capture_receipt
     return {

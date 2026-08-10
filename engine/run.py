@@ -82,6 +82,7 @@ def _atomic_write_latest_json(path: Path, payload: dict) -> dict:
             temporary = Path(handle.name)
             handle.write(encoded)
             handle.flush()
+            os.fchmod(handle.fileno(), 0o644)
             os.fsync(handle.fileno())
         os.replace(temporary, path)
         directory_fd = os.open(path.parent, os.O_RDONLY)

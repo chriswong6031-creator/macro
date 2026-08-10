@@ -31,12 +31,15 @@ from typing import Any
 from engine.neuralweb import market_memory
 
 SNAPSHOT_SCHEMA = "market_memory.macro_regime_snapshot.v1"
+FEATURE_OBJECT_SCHEMA = "market_memory.macro_regime_feature_object.v1"
 TRANSFORM_VERSION = "market_memory.macro_regime_transform.v1"
 SOURCE_ID = "data.regime.latest"
 SOURCE_SCHEMA_VERSION = 1
 PIT_BASIS = "live_captured"
 
 _MAX_SOURCE_BYTES = 2 * 1024 * 1024
+_MAX_SOURCE_BUILD_AGE = timedelta(hours=36)
+_MAX_SOURCE_AGE_SESSIONS = 1
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 _SNAPSHOT_ID = re.compile(r"mmsnap_[a-f0-9]{64}\Z")
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
@@ -90,6 +93,9 @@ _SNAPSHOT_FIELDS = frozenset(
         "quality",
         "authority",
     }
+)
+_FEATURE_OBJECT_FIELDS = frozenset(
+    {"schema", "as_of", "transform_version", "source_artifact", "state"}
 )
 _SOURCE_FIELDS = frozenset(
     {
@@ -427,12 +433,57 @@ def _project_state(raw: Mapping[str, Any]) -> dict[str, Any]:
 
 def _projection_core(value: Mapping[str, Any]) -> dict[str, Any]:
     return {
-        "schema": value["schema"],
+        "schema": FEATURE_OBJECT_SCHEMA,
         "as_of": value["as_of"],
         "transform_version": value["transform_version"],
         "source_artifact": copy.deepcopy(value["source_artifact"]),
         "state": copy.deepcopy(value["state"]),
     }
+
+
+def _weekday_sessions_elapsed(start: date, end: date) -> int:
+    if end < start:
+        raise MarketMemoryProjectionError("regime source asof follows its build date")
+    days = (end - start).days
+    weeks, remainder = divmod(days, 7)
+    return weeks * 5 + sum(
+        1 for offset in range(1, remainder + 1) if (start.weekday() + offset) % 7 < 5
+    )
+
+
+def _validate_source_freshness(
+    freshness: Mapping[str, Any],
+    *,
+    source_asof: date,
+    built_dt: datetime,
+    observed_dt: datetime,
+) -> None:
+    age_days = _integer(freshness.get("age_days"), field="freshness.age_days")
+    age_sessions = _integer(
+        freshness.get("age_sessions"), field="freshness.age_sessions"
+    )
+    max_age_sessions = _integer(
+        freshness.get("max_age_sessions"),
+        field="freshness.max_age_sessions",
+        maximum=_MAX_SOURCE_AGE_SESSIONS,
+    )
+    expected_days = (built_dt.date() - source_asof).days
+    expected_sessions = _weekday_sessions_elapsed(source_asof, built_dt.date())
+    if age_days != expected_days or age_sessions != expected_sessions:
+        raise MarketMemoryProjectionError(
+            "regime freshness ages do not bind its asof and build clock"
+        )
+    if (
+        freshness.get("stale") is not False
+        or age_sessions > max_age_sessions
+        or max_age_sessions != _MAX_SOURCE_AGE_SESSIONS
+    ):
+        raise MarketMemoryProjectionError("stale regime source is not admissible")
+    build_age = observed_dt - built_dt
+    if build_age < timedelta(0) or build_age > _MAX_SOURCE_BUILD_AGE:
+        raise MarketMemoryProjectionError(
+            "regime source build is too old for current trusted projection"
+        )
 
 
 def build_macro_regime_snapshot(path: str | Path) -> dict[str, Any]:
@@ -465,6 +516,12 @@ def build_macro_regime_snapshot(path: str | Path) -> dict[str, Any]:
         raise MarketMemoryProjectionError(
             "regime build/asof clock is in the projector's future"
         )
+    _validate_source_freshness(
+        freshness,
+        source_asof=source_asof,
+        built_dt=built_dt,
+        observed_dt=observed_dt,
+    )
 
     source_artifact = {
         "source_id": SOURCE_ID,
@@ -538,6 +595,14 @@ def validate_macro_regime_snapshot(value: Mapping[str, Any]) -> dict[str, Any]:
         raise MarketMemoryProjectionError(
             "macro regime source build/asof clocks do not bind the snapshot"
         )
+    if (
+        _weekday_sessions_elapsed(source_asof, built_dt.date())
+        > _MAX_SOURCE_AGE_SESSIONS
+        or observed_dt - built_dt > _MAX_SOURCE_BUILD_AGE
+    ):
+        raise MarketMemoryProjectionError(
+            "macro regime snapshot source is too old for trusted projection"
+        )
     raw_hash = source.get("raw_sha256")
     raw_bytes = source.get("raw_bytes")
     if not isinstance(raw_hash, str) or not _SHA256.fullmatch(raw_hash):
@@ -606,10 +671,52 @@ def macro_regime_snapshot_reference(value: Mapping[str, Any]) -> dict[str, str]:
     clean = validate_macro_regime_snapshot(value)
     return {
         "snapshot_id": clean["snapshot_id"],
-        "schema": clean["schema"],
+        "schema": SNAPSHOT_SCHEMA,
         "content_sha256": clean["content_sha256"],
         "as_of": clean["as_of"],
     }
+
+
+def macro_regime_feature_object(value: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the exact immutable public feature object bound by a snapshot."""
+
+    return validate_macro_regime_feature_object(
+        _projection_core(validate_macro_regime_snapshot(value))
+    )
+
+
+def validate_macro_regime_feature_object(value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the exact public content-addressed feature object."""
+
+    if not isinstance(value, Mapping) or set(value) != _FEATURE_OBJECT_FIELDS:
+        raise MarketMemoryProjectionError(
+            "macro regime feature object fields are not canonical"
+        )
+    feature = copy.deepcopy(dict(value))
+    if feature.get("schema") != FEATURE_OBJECT_SCHEMA:
+        raise MarketMemoryProjectionError("macro regime feature object schema mismatch")
+    body = _canonical_bytes(feature)
+    digest = sha256(body).hexdigest()
+    # Reuse the full snapshot consumer boundary for source, state, and temporal
+    # coherence.  Observation-only metadata intentionally is not stored in the
+    # immutable feature object; the packet and capture receipt bind it.
+    clean = validate_macro_regime_snapshot(
+        {
+            "schema": SNAPSHOT_SCHEMA,
+            "snapshot_id": f"mmsnap_{digest}",
+            "content_sha256": digest,
+            "content_bytes": len(body),
+            "as_of": feature.get("as_of"),
+            "observed_at": feature.get("as_of"),
+            "pit_basis": PIT_BASIS,
+            "transform_version": feature.get("transform_version"),
+            "source_artifact": feature.get("source_artifact"),
+            "state": feature.get("state"),
+            "quality": copy.deepcopy(_QUALITY),
+            "authority": dict(market_memory.AUTHORITY),
+        }
+    )
+    return _projection_core(clean)
 
 
 def read_verified_macro_regime_bytes(
@@ -626,21 +733,41 @@ def read_verified_macro_regime_bytes(
 
     clean = validate_macro_regime_snapshot(snapshot)
     stable = _stable_read_source(path)
+    return validate_macro_regime_source_bytes(stable.body, clean)
+
+
+def validate_macro_regime_source_bytes(
+    body: bytes, snapshot: Mapping[str, Any]
+) -> bytes:
+    """Validate exact raw bytes against a trusted snapshot without filesystem trust."""
+
+    clean = validate_macro_regime_snapshot(snapshot)
+    if not isinstance(body, bytes):
+        raise MarketMemoryProjectionError("macro regime source must be exact bytes")
     source = clean["source_artifact"]
     if (
-        len(stable.body) != source["raw_bytes"]
-        or sha256(stable.body).hexdigest() != source["raw_sha256"]
+        len(body) != source["raw_bytes"]
+        or sha256(body).hexdigest() != source["raw_sha256"]
     ):
         raise MarketMemoryProjectionError(
             "macro regime source bytes no longer match projected evidence"
         )
-    raw = _strict_json_object(stable.body)
+    raw = _strict_json_object(body)
     source_asof = _date_value(raw.get("asof"), field="asof")
     freshness = raw.get("freshness")
     if not isinstance(freshness, Mapping):
         raise MarketMemoryProjectionError("freshness must be an object")
-    _built_dt, built_at = _utc_value(
+    built_dt, built_at = _utc_value(
         freshness.get("built_at"), field="freshness.built_at"
+    )
+    observed_dt, _observed_at = _utc_value(
+        clean["observed_at"], field="snapshot observed_at"
+    )
+    _validate_source_freshness(
+        freshness,
+        source_asof=source_asof,
+        built_dt=built_dt,
+        observed_dt=observed_dt,
     )
     if (
         raw.get("date") != source_asof.isoformat()
@@ -652,10 +779,11 @@ def read_verified_macro_regime_bytes(
         raise MarketMemoryProjectionError(
             "macro regime source semantics no longer match projected evidence"
         )
-    return stable.body
+    return body
 
 
 __all__ = [
+    "FEATURE_OBJECT_SCHEMA",
     "PIT_BASIS",
     "SNAPSHOT_SCHEMA",
     "SOURCE_ID",
@@ -663,7 +791,10 @@ __all__ = [
     "TRANSFORM_VERSION",
     "MarketMemoryProjectionError",
     "build_macro_regime_snapshot",
+    "macro_regime_feature_object",
     "macro_regime_snapshot_reference",
     "read_verified_macro_regime_bytes",
+    "validate_macro_regime_feature_object",
     "validate_macro_regime_snapshot",
+    "validate_macro_regime_source_bytes",
 ]

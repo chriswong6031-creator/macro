@@ -87,6 +87,9 @@ def _raw_regime() -> dict:
         "freshness": {
             "asof": "2026-08-07",
             "built_at": "2026-08-10T01:52:29Z",
+            "age_days": 3,
+            "age_sessions": 1,
+            "max_age_sessions": 1,
             "stale": False,
         },
     }
@@ -118,7 +121,7 @@ def _canonical(value: object) -> bytes:
 
 def _content(snapshot: dict) -> dict:
     return {
-        "schema": snapshot["schema"],
+        "schema": projection.FEATURE_OBJECT_SCHEMA,
         "as_of": snapshot["as_of"],
         "transform_version": snapshot["transform_version"],
         "source_artifact": snapshot["source_artifact"],
@@ -238,6 +241,31 @@ def test_snapshot_schema_is_strict_and_accepts_the_builder(tmp_path: Path) -> No
     for mutant in mutants:
         with pytest.raises(ValidationError):
             validator.validate(mutant)
+
+
+def test_feature_object_schema_accepts_exact_persisted_projection(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "latest.json"
+    _write_source(source)
+    snapshot = projection.build_macro_regime_snapshot(source)
+    feature = projection.macro_regime_feature_object(snapshot)
+    schema = json.loads(
+        (
+            ROOT / "contracts/market_memory/macro_regime_feature_object.v1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate(feature)
+    assert feature["schema"] == projection.FEATURE_OBJECT_SCHEMA
+    assert hashlib.sha256(_canonical(feature)).hexdigest() == snapshot["content_sha256"]
+    assert projection.validate_macro_regime_feature_object(feature) == feature
+
+    mutant = copy.deepcopy(feature)
+    mutant["authority"] = {"may_trade": True}
+    with pytest.raises(ValidationError):
+        Draft202012Validator(schema).validate(mutant)
 
 
 @pytest.mark.parametrize(
@@ -395,6 +423,41 @@ def test_freshness_built_at_is_measurement_only_and_must_not_be_future(
     raw["freshness"]["built_at"] = "2026-08-06T23:59:59Z"
     _write_source(source, raw)
     with pytest.raises(projection.MarketMemoryProjectionError, match="asof follows"):
+        projection.build_macro_regime_snapshot(source)
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda raw: raw["freshness"].update({"stale": True}),
+        lambda raw: raw["freshness"].update({"age_sessions": 2}),
+        lambda raw: raw["freshness"].update({"max_age_sessions": 2}),
+        lambda raw: raw["freshness"].update({"age_days": 0}),
+        lambda raw: raw.update(
+            {
+                "asof": "2020-01-02",
+                "date": "2020-01-02",
+                "freshness": {
+                    "asof": "2020-01-02",
+                    "built_at": "2020-01-02T12:00:00Z",
+                    "age_days": 0,
+                    "age_sessions": 0,
+                    "max_age_sessions": 1,
+                    "stale": False,
+                },
+            }
+        ),
+    ],
+)
+def test_stale_or_forged_freshness_never_becomes_trusted_observed_state(
+    tmp_path: Path, mutate
+) -> None:
+    raw = _raw_regime()
+    mutate(raw)
+    source = tmp_path / "stale.json"
+    _write_source(source, raw)
+
+    with pytest.raises(projection.MarketMemoryProjectionError, match="fresh|stale|old"):
         projection.build_macro_regime_snapshot(source)
 
 
