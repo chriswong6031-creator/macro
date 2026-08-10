@@ -6848,3 +6848,36 @@ jobs:
         run: python -m pip install pytest pandas numpy pyyaml
       - name: falsifier tripwire state and v2 gate contracts
         run: python -m pytest tests/test_falsifier_tripwires.py -q
+
+  alert-zh-completeness:
+    # The zh half of every macro alert body must be fully Chinese.  Six rules
+    # interpolated an English-valued token straight into message_zh (#4700), and
+    # the cycle-falsifier body quoted a curator-written English thesis (#4712).
+    # The suite pins: no English prose in an emitted message_zh; the emitter and
+    # build_vector's backlog translator produce the SAME Chinese for the same
+    # alert; already-baked half-translated alerts_log.parquet rows still render
+    # fully Chinese through the hub's resolution.  A baselined unrun suite
+    # (config/unrun_test_baseline.json) with local-only proof until this job.
+    # TZ=UTC is inline on the run line, not a step env: — the suite has
+    # date-sensitive fixtures and `env` is not an allowed step key in the packed
+    # manifest (run_ci_pack.py ALLOWED_STEP_KEYS).
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - data/alerts/alerts_log.parquet
+      - data/cycle_ontology/falsifiers.json
+      - engine/alerts.py
+      - engine/falsifier_tripwires.py
+      - engine/i18n.py
+      - scripts/build_vector.py
+      - tests/test_alert_zh_completeness.py
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install alert-zh test dependencies (build_vector import closure)
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
+      - name: zh alert bodies fully Chinese — emitter vs backlog translator vs baked rows
+        run: TZ=UTC python -m pytest tests/test_alert_zh_completeness.py -q
