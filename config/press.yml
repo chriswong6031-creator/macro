@@ -210,7 +210,9 @@ desks:
 # All three answer **302 to /?signin=1** — the validator was FORCING every public
 # article to cite a login wall. A gated link is not a source; it is a bounce.
 # Verified 2026-07-26: /research/<slug>.html and /blog/<slug>.html return 200;
-# /radar.html, /macro.html, /us_track_record.html and /movers.html return 302.
+# /radar.html, /macro.html and /us_track_record.html returned 302. /movers.html
+# was retired into /stocks/index.html#today-movers on 2026-08-10; keep the old
+# URL outside this allowlist so public articles never cite a compatibility hop.
 #
 # The amended law (masterplan §0 W1 gate 2): the above-the-fold named+linked
 # source requirement applies ONLY to slots carrying an EXTERNAL primary source
