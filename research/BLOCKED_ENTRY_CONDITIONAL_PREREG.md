@@ -92,6 +92,39 @@ only promotion-bearing tests of this amendment):
 - Composite scores remain forbidden (DNR:KILL-REGIME-SCORECARD) — A1 and A2 are two plain
   measures adjudicated separately; no fusion, no weights.
 
+**§6 ADJUDICATION (2026-08-10 ~08:3xZ; round-2 receipts in session scratchpad
+`blocked_entry_study_r2/`, run from the committed instrument @83230a70d9d):** **A1 PASS** on both
+registered gates, both weightings (held-out cell +1.675R [1.294,2.088]; diff vs complement +1.228R
+[0.821,1.620]; equal-date diff +0.535 [0.134,0.914]; 11 episodes; episode-clustered CI
+[0.520,3.689] — ~3× wider, still >0). **A2 SPLIT → NOT promoted** (equal-date diff CI crosses 0:
+[−0.028,1.067]); keeps accruing. **sysA re-scored at 6 episodes — episode-thin; stays demoted.**
+Floor ruling: the §6 coverage floor is read FIRE-WEIGHTED (61.6% PASS — the floor's purpose is
+coverage of the adjudicated events); name-weighted 59.7% and the mapping-selection effect
+(unmapped non-index micro-caps are a weaker cohort, 0.722 vs 0.843 meanR) are disclosed — A1's
+verdict claims mapped-universe validity only. **COVERAGE-GATE FINDING (why A1-as-constructed does
+NOT ship):** at the design-selected 25% threshold A1 admits 1 of 3 computable live exemplar fires
+(UEC refused — GICS "Energy" peers dilute the uranium complex); 20% admits 2 of 3; today's
+membership is threshold-critical (25% → IT only; 30% → none). Sector is the right ALTITUDE, wrong
+PEER SET. **Survivorship: panel confirmed survivor-only**; the delisted store (199 names,
+closes-only, 83.4% absent from the panel) cannot repair a stop-based study; bias bound
+Δ ≈ −2.675p (p=20% → −0.54R); A1's episode-CI floor approximately survives; all LEVELS read
+optimistic, CONTRASTS are the more robust quantity. **Episode-clustered CIs supersede
+date-clustered for every promotion-bearing read from this point.**
+
+## §7 AMENDMENT 2 — thematic-basket peer set (frozen 2026-08-10 ~08:4xZ, before round-3 results)
+
+**A1b — basket-local systemic:** identical construction to A1 with the peer set replaced by the
+repo's own thematic-basket membership (candidates-parquet `theme_membership_ids` /
+`site/basketdata` definitions; a name's peers = its primary basket's members; names in no basket
+fall back to GICS sector; both coverages reported, fire-weighted ≥60% floor on the union).
+Threshold grid {15,20,25,30}% peer-median drawdown from 252d highs, design-era-selected by
+absolute separation as before; **exemplar admission per threshold is REPORTED, and the shipped
+threshold is an explicit operator aggressiveness choice at ratification — not a statistical
+claim.** Gates identical to A1 (held-out cell CI>0 AND diff-vs-complement CI>0, equal-date read
+alongside pooled) PLUS episode-clustered CI>0 (per §6 adjudication). Third look, labeled. **Run
+gated on the round-1 red-team resolving the gap-through-stop fill and CN limit-fill questions —
+any confirmed sim flaw is repaired first and round 3 runs on the repaired instrument.**
+
 ## §5 Ratification log
 
 - **2026-08-10 ~06:4xZ — ADJUDICATED** (results:
