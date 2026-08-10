@@ -758,6 +758,7 @@
     'counter-trend, no 200-reclaim/hold': '逆势，未收复/站稳200日',
     'counter-trend, held but no 200-reclaim': '逆势，已站稳但未收复200日',
     'counter-trend, reclaimed 200 but no next-bar hold': '逆势，已收复200日但未站稳',
+    'counter-trend, reclaim waived (basket washout)': '逆势，已站稳；同业普遍超跌，免收复200日',
     'pending confirmation': '待确认'
   };
   function lxReason(r) { return lang() === 'zh' ? (REASON_ZH[r] || r) : r; }

@@ -66,10 +66,12 @@ a { color: inherit; text-decoration: none; }
 
 /* One product face throughout; figures keep tabular alignment without switching
    the page into a terminal/mono texture. */
-.fig, .bd-v, .bd-x, .ss-v, .dir-t, .bd-tk, .r-px, .r-chg, .r-tk, .sp-lab b
+.fig, .bd-v, .bd-x, .ss-v, .dir-t, .bd-tk, .r-px, .r-chg, .r-tk, .sp-lab b,
+.th-avg, .th-pc
   { font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
 .up { color: var(--up); } .dn { color: var(--down); }
 
+.section-anchor { scroll-margin-top: 168px; }
 .sec-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 30px 2px 12px; }
 .sec-h h2 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .1em;
             text-transform: uppercase; color: var(--muted); }
@@ -229,6 +231,37 @@ a { color: inherit; text-decoration: none; }
 .bd-bar { height: 4px; border-radius: 2px; background: var(--panel2); overflow: hidden; }
 .bd-bar i { display: block; height: 100%; border-radius: 2px; }
 .bd-bar i.up { background: var(--up); } .bd-bar i.dn { background: var(--down); }
+
+/* The one useful read carried over from the retired stand-alone movers page:
+   coherent theme groups, now bounded to tickers that have a dossier here. */
+.theme-list { display: grid; gap: 10px; }
+.theme-ribbon { display: grid; grid-template-columns: minmax(210px, .55fr) minmax(0, 1.45fr);
+  gap: 18px; align-items: center; padding: 13px 15px 13px 13px;
+  background: var(--panel); border: 1px solid var(--line); border-left-width: 3px;
+  border-radius: 13px; min-width: 0; transition: border-color .14s, background .14s; }
+.theme-ribbon.up { border-left-color: var(--up); }
+.theme-ribbon.dn { border-left-color: var(--down); }
+.theme-ribbon:hover { background: var(--surf-hover); }
+.th-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline; gap: 8px; min-width: 0; }
+.th-arrow { font-size: 11px; font-weight: 800; }
+.theme-ribbon.up .th-arrow { color: var(--up); }
+.theme-ribbon.dn .th-arrow { color: var(--down); }
+.th-name { color: var(--text); font-size: 13px; font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.th-avg { font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.th-members { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.th-chip { display: inline-flex; align-items: baseline; gap: 6px; min-height: 32px;
+  padding: 6px 9px; color: var(--text); background: var(--panel2);
+  border: 1px solid var(--line); border-radius: 8px; font-size: 11.5px;
+  font-weight: 700; transition: border-color .13s, transform .13s; }
+.th-chip:hover { border-color: var(--link); transform: translateY(-1px); }
+.th-chip:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.th-pc { font-size: 10.5px; font-weight: 650; }
+@media (max-width: 720px) {
+  .theme-ribbon { grid-template-columns: 1fr; gap: 9px; }
+  .th-name { white-space: normal; }
+}
 
 .moneygrid { display: grid; gap: 14px; grid-template-columns: 348px minmax(0, 1fr);
              align-items: start; }
@@ -484,6 +517,7 @@ footer.foot { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--l
   </section>
 
 {%- set B = (hub.boards if hub else {}) %}
+<section id="today-movers" class="section-anchor">
 {%- if B %}
   {#- ═══ 3. BOARDS ══════════════════════════════════════════════════════ #}
   <div class="sec-h">
@@ -519,6 +553,36 @@ footer.foot { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--l
     {{ board(B.near_high, 'Near 52-week highs', '接近52周高点', "Within 7% of the year's high", '距年内高点7%以内') }}
     {{ board(B.near_low, 'Near 52-week lows', '接近52周低点', "Within 7% of the year's low", '距年内低点7%以内') }}
   </div>
+{%- endif %}
+</section>
+
+{%- set T = (hub.themes if hub else []) %}
+{%- if T %}
+  <section id="themes" class="section-anchor">
+    <div class="sec-h">
+      <h2>{{ t('Themes moving together', '联动主题') }}</h2>
+      <span class="sh-note">{{ t('Groups where several covered names moved the same way' ~ (' · ' ~ hub.themes_asof if hub.themes_asof else ''),
+                                  '多只覆盖个股同向异动的主题' ~ (' · ' ~ hub.themes_asof if hub.themes_asof else '')) }}</span>
+    </div>
+    <div class="theme-list">
+      {%- for th in T %}
+      <article class="theme-ribbon {{ th.tone }}">
+        <div class="th-head">
+          <span class="th-arrow" aria-hidden="true">{{ '▲' if th.tone == 'up' else '▼' }}</span>
+          <span class="th-name">{{ th.name }}</span>
+          <span class="th-avg {{ th.tone }}">{{ t('avg', '均') }} {{ th.avg_pc }}</span>
+        </div>
+        <div class="th-members">
+          {%- for m in th.members %}
+          <a class="th-chip" href="{{ m.t }}.html">
+            <span>{{ m.t }}</span><span class="th-pc {{ m.tone }}">{{ m.pc }}</span>
+          </a>
+          {%- endfor %}
+        </div>
+      </article>
+      {%- endfor %}
+    </div>
+  </section>
 {%- endif %}
 
 {%- if hub and (hub.sectors or hub.treemap) %}

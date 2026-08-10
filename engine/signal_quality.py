@@ -33,6 +33,8 @@ a high/low Chandelier ATR.
 """
 from __future__ import annotations
 
+import json
+from functools import lru_cache
 from typing import NamedTuple
 
 import numpy as np
@@ -296,8 +298,221 @@ CT_BOTH_FAIL = "counter-trend, no 200-reclaim/hold"       # legacy — both legs
 CT_RECLAIM_FAIL = "counter-trend, held but no 200-reclaim"
 CT_HOLD_FAIL = "counter-trend, reclaimed 200 but no next-bar hold"
 
+# The one reason the RATIFIED waiver below adds.  It is a FIXED literal, not an f-string:
+# `site/chart.js`'s REASON_ZH is an exact-key map whose miss path renders the raw ENGLISH
+# string to a Chinese reader (tests/test_gate_reasons_exhaustive.py::
+# TestEveryEmittedReasonStaysBilingual is the guard), so a per-name reason carrying the
+# group id and the peer drawdown could never be translated — and `gold_miners` / `-0.272065`
+# / `us_prophet_v2` are a raw slug, an untranslated stat and an internal era name, the three
+# things docs/DESIGN_DOCTRINE.md bans from rendered copy.  The receipt those numbers belong
+# in rides on the GATE VERDICT instead (`engine.signal_gate.gate()["waiver"]`), which no page
+# renders and every audit can read.
+#
+# AND IT IS DELIBERATELY NOT NAMED `CT_*`.  That prefix is a load-bearing convention, not a
+# style: `engine.china_continuation_watch` selects its whole cohort from the counter-trend
+# BLOCK family, and `tests/test_china_continuation_watch.py` enforces the set equality
+# `{every CT_* constant} == {the three strings the filter's block branches emit}` so a fourth
+# block shape added upstream reds there instead of going unswept.  This string is a TAKE.
+# Prefixing it `CT_` would have quietly enrolled an admission in a block sweep.
+RECLAIM_WAIVED = "counter-trend, reclaim waived (basket washout)"
 
-def _confirm_legs(i, sig, n, *, reclaim_veto: bool = True):
+
+# --------------------------------------------------------------------------- #
+# The ratified counter-trend RECLAIM WAIVER — Arm P, `us_prophet_v2`
+# --------------------------------------------------------------------------- #
+# WHAT THIS IS.  `research/RECLAIM_VETO_CONDITIONAL_PREREG.md` (family
+# `reclaim_veto_conditional_v1`) §4 Arm P, ADJUDICATED §5 2026-08-10 and RATIFIED the same
+# day, with the notch moved to 20% family-wide by the operator in the §5 entry "NOTCH MOVED
+# TO 20% FAMILY-WIDE".  It is the single revival path
+# `research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md` §9 left open for this leg
+# (`DNR:KILL-200DMA-RECLAIM-VETO-FLAT` — a flat drop stays killed; a REGIME-CONDITIONAL
+# relaxation behind its own prereg and era stamp is the named exception).
+#
+# WHAT IT DOES, EXACTLY.  For a US name whose basket peers are themselves washed out, the
+# counter-trend 200-day RECLAIM leg is waived.  The HOLD leg is NOT: `CT_HOLD_FAIL` and
+# `CT_BOTH_FAIL` are byte-identical to v1 under every state, and only the pure
+# `CT_RECLAIM_FAIL` branch — held passed, reclaim failed — can convert to a take.  That is
+# the boundary §5 drew and named: the motivating exemplar HL 2026-06-16 is a hold-leg
+# failure, "the basket state admits it but this construction cannot", and hold-leg
+# relaxation is a different construction needing its own prereg.  Do not widen this branch.
+#
+# EVIDENCE AT THE SHIPPED NOTCH (`research/reclaim_veto_study/arm_p_faithful.json`,
+# grid["0.20"], faithful packet path `sq.analyze` on/off): capped-R +1.165 on 832 fires /
+# 600 names, episode-clustered CI [0.123, 2.527] over 21 episodes, name-clustered CI
+# [0.924, 1.412], equal-date +0.304 CI [0.017, 0.614], difference-vs-complement CI
+# [0.861, 1.481], ex-COVID +0.554 (= the leave-one-episode-out minimum), fire-weighted
+# coverage 75.6% against the §3 floor of 60%.  Coverage gate: NEM's 2026-07-23 refusal
+# carries peer_dd −0.378 and admits.
+#
+# WHY THE ERA STAMP MOVED.  An admission change makes the old and the new board two
+# different products, so `engine.us_board_rank.BOARD_DEFINITION` goes `us_prophet_v1` ->
+# `us_prophet_v2` in the same PR and the forward ledgers never pool — the fence the packet
+# §7 specified and `hk_prophet_v2` (#4470) set the pattern for.
+
+#: The nightly artifact this waiver reads, written out as ONE literal.
+#: `scripts/check_synapse_reads.py` is a literal-path scan — a path assembled from
+#: fragments is invisible to it — and this module is the declared consumer of
+#: `site-basket-washout-state` in config/synapse.yml.
+WASHOUT_STATE_PATH = "site/factordata/basket_washout_state.json"
+WASHOUT_STATE_SCHEMA = "basket_washout_state.v1"
+
+#: The ratified notch, as the STRING key the artifact publishes under `qualifies` — never a
+#: number we re-derive.  `scripts/build_basket_washout_state._qualifies` computes the flag
+#: from the PUBLISHED (rounded) `peer_dd`, precisely so a consumer that re-derived
+#: `peer_dd <= -0.20` could not disagree with the producer on a boundary name.  Read the
+#: flag.  25 was the §5 adjudication's recommendation; the operator moved the whole family
+#: (blocked-entry override AND both reclaim arms) to 20 on 2026-08-10.  Arm P passed every
+#: frozen gate at 20, 25 and 30 — this is a dial position, not a fresh construction.
+WASHOUT_NOTCH = "20"
+
+#: PIT staleness ceiling, counted in the NAME'S OWN trading sessions between the artifact's
+#: `as_of` and the date the marker's label became knowable.
+#:
+#: NIGHTLY ORDERING (checked 2026-08-10, `.github/workflows/daily.yml`): `basket_washout`
+#: builds inside the `cl_baskets` cluster of the "regional + desk builders" step, which runs
+#: LATE — after "MTF buy-filter signals" (this module's own nightly), after the engine-core
+#: step that runs `build_site` -> `build_stock_library`, and after "Prophet nightly".  So
+#: every US consumer of this waiver reads the PRIOR night's artifact: on a healthy night
+#: `stale_sessions == 1`.  Both orderings are PIT-safe and this is the stricter of the two —
+#: the state is a published fact of a session that had already closed — but it is also the
+#: reason the ceiling is 5 rather than 1: a skipped or failed `basket_washout` night must
+#: degrade to "the peers were washed out as of Friday", not to a hard outage, and a long
+#: weekend plus one bad night is 4 sessions.  Past 5 the state no longer describes the tape
+#: the fire is firing into and the leg reverts to v1 (veto intact).
+WASHOUT_MAX_STALE_SESSIONS = 5
+
+
+class ReclaimWaiver(NamedTuple):
+    """The receipt for one waived counter-trend reclaim leg.
+
+    Never rendered: every field here is a raw slug, an untranslated stat or an internal era
+    name.  It is published on the GATE VERDICT (`engine.signal_gate.gate()["waiver"]`) and
+    deliberately NOT on the §7 marker, whose schema is closed and cross-repo — see the note
+    beside `markers.append` in :func:`analyze`.  It exists so a graded row can prove WHICH
+    state relieved it and HOW OLD that state was, which is the whole audit surface of an
+    admission change.
+    """
+    group_id: str        #: the peer group the name read through (basket id or GICS sector)
+    basis: str           #: "basket" | "sector" — which map answered
+    peer_dd: float       #: the LEAVE-ONE-OUT peer median 252-session drawdown
+    as_of: str           #: the artifact's own as_of — the PIT stamp of the state
+    notch: str           #: the qualifying notch, as published ("20")
+    stale_sessions: int  #: sessions between `as_of` and the label's knowable date
+
+
+def _washout_state_file() -> "Path":
+    """Absolute path of :data:`WASHOUT_STATE_PATH`, resolved through ``lib.config`` so a
+    relocated site dir is followed, with a repo-relative fallback for a bare checkout."""
+    from pathlib import Path
+    try:
+        from lib import config
+        return Path(config.site_dir()) / "factordata" / "basket_washout_state.json"
+    except Exception:                                              # noqa: BLE001
+        return Path(__file__).resolve().parent.parent / WASHOUT_STATE_PATH
+
+
+@lru_cache(maxsize=4)
+def _load_washout_state(path_str: str) -> dict | None:
+    """Parse the artifact once per process.  ``None`` on ANY doubt — absent, unreadable,
+    wrong schema, no `as_of`, no `names` — because every such answer must land the leg back
+    on its v1 behaviour rather than on a guess.  `analyze` runs this across the whole US
+    panel in one process, so the parse is cached; tests call
+    :func:`reset_washout_state_cache` after rewriting a fixture."""
+    from pathlib import Path
+    try:
+        raw = json.loads(Path(path_str).read_text())
+    except Exception:                                              # noqa: BLE001
+        return None
+    if not isinstance(raw, dict) or raw.get("schema") != WASHOUT_STATE_SCHEMA:
+        return None
+    if not isinstance(raw.get("names"), dict) or not isinstance(raw.get("as_of"), str):
+        return None
+    return raw
+
+
+def reset_washout_state_cache() -> None:
+    """Drop the parsed-artifact cache (tests; a long-lived service that re-reads nightly)."""
+    _load_washout_state.cache_clear()
+
+
+def washout_state() -> dict | None:
+    """The nightly basket-washout state, or ``None`` when it cannot be trusted."""
+    return _load_washout_state(str(_washout_state_file()))
+
+
+def washout_qualifier(ticker: str, *, state: dict | None = None) -> dict | None:
+    """The name's qualifying record at :data:`WASHOUT_NOTCH`, or ``None``.
+
+    Name-level only — it answers "could this name ever be waived tonight", never "is this
+    BAR waived", which is :func:`reclaim_waiver_for`'s PIT question.  Split so `analyze` can
+    do the dict work once per ticker instead of once per marker.
+
+    FENCED TO THE US TAPE.  Arm P is the Prophet US arm; prereg §1 puts CN/HK names out of
+    scope outright ("no CN/HK basket-washout state exists; their arms require their own
+    construction").  The `names` map is a US universe and would not claim `600547.SS` or
+    `0700.HK` anyway, but an accidental symbol collision must not be the only thing standing
+    between a CN board and an unratified admission change, so the market is checked first.
+    """
+    if session_anchor.market_for_ticker(ticker) != "US":
+        return None
+    st = washout_state() if state is None else state
+    if not st:
+        return None
+    rec = st.get("names", {}).get(str(ticker or "").strip().upper())
+    if not isinstance(rec, dict):
+        return None
+    if not bool((rec.get("qualifies") or {}).get(WASHOUT_NOTCH)):
+        return None
+    peer_dd, as_of = rec.get("peer_dd"), st.get("as_of")
+    if not isinstance(peer_dd, (int, float)) or not isinstance(as_of, str):
+        return None
+    return {"group_id": str(rec.get("group_id") or "?"),
+            "basis": str(rec.get("basis") or "?"),
+            "peer_dd": float(peer_dd), "as_of": as_of}
+
+
+def _sessions_since(session_index, as_of: str, known: str) -> int | None:
+    """Sessions in ``session_index`` strictly after ``as_of`` up to and including ``known``.
+
+    Counted on the NAME'S OWN calendar rather than in calendar days, so a holiday week and
+    a halted name both read honestly.  ``None`` when either stamp will not parse or the
+    index is unusable — an unanswerable staleness question is a refusal, not a zero.
+    """
+    try:
+        idx = pd.DatetimeIndex(session_index)
+        a, k = pd.Timestamp(as_of), pd.Timestamp(known)
+    except Exception:                                              # noqa: BLE001
+        return None
+    if len(idx) == 0 or pd.isna(a) or pd.isna(k):
+        return None
+    return int(idx.searchsorted(k, side="right") - idx.searchsorted(a, side="right"))
+
+
+def reclaim_waiver_for(qualifier: dict | None, known_date: str | None,
+                       session_index) -> ReclaimWaiver | None:
+    """The PIT half: does tonight's state legitimately reach THIS marker?
+
+    ``known_date`` is the first close at which the `_buy_filter` label was knowable — the
+    marker's `confirmed_date`, :data:`CONFIRM_BARS` buckets past the fire — which is the
+    "fire's known date" prereg §2 pinned the state to.  Two conditions, both fail-closed:
+
+      * ``as_of <= known_date``.  A state published AFTER the label was knowable is future
+        information; it may never relieve that label.  This is what keeps a re-scan of
+        history honest — an old fire is not retroactively waived by tonight's washout, so
+        the marker stream a rebuild produces cannot drift under the artifact.
+      * ``known_date - as_of <= WASHOUT_MAX_STALE_SESSIONS``.  See that constant.
+    """
+    if qualifier is None or not known_date:
+        return None
+    stale = _sessions_since(session_index, qualifier["as_of"], known_date)
+    if stale is None or stale < 0 or stale > WASHOUT_MAX_STALE_SESSIONS:
+        return None
+    return ReclaimWaiver(group_id=qualifier["group_id"], basis=qualifier["basis"],
+                         peer_dd=qualifier["peer_dd"], as_of=qualifier["as_of"],
+                         notch=WASHOUT_NOTCH, stale_sessions=stale)
+
+
+def _confirm_legs(i, sig, n, *, reclaim_veto: bool = True, waiver: ReclaimWaiver | None = None):
     """The post-divergence CONFIRMATION legs of :func:`_buy_filter` — the next-bar hold plus,
     for a name that is BOTH below its 200-day average and weekly-down under ``reclaim_veto``,
     the 2-bar 200-day reclaim. Returns (take: bool|None, reason).
@@ -307,6 +522,11 @@ def _confirm_legs(i, sig, n, *, reclaim_veto: bool = True):
     account instead of a first-match label. It carries no policy of its own and has no other
     caller. Every ``take`` value it returns is identical to the pre-split filter's; only the
     failure STRINGS were corrected to name the leg each branch actually tested (see above).
+
+    ``waiver`` (default ``None`` = the v1 policy, byte-identical) is the resolved
+    :class:`ReclaimWaiver` receipt for THIS bar.  It is resolved by the caller — all of the
+    artifact I/O and the PIT arithmetic live in :func:`analyze`, none of it here — and it
+    reaches exactly ONE branch below.
     """
     c, a = sig["close"], sig["above200"]
     if i + 1 >= n:
@@ -324,7 +544,13 @@ def _confirm_legs(i, sig, n, *, reclaim_veto: bool = True):
             # BOTH legs ran here, so the reason names whichever of them actually refused.
             if not held and not reclaim:
                 return False, CT_BOTH_FAIL
-            return False, (CT_RECLAIM_FAIL if held else CT_HOLD_FAIL)
+            if not held:
+                return False, CT_HOLD_FAIL
+            # The PURE reclaim failure — the hold leg PASSED and only the 2-bar reclaim
+            # refused.  This branch, and nothing else, is what the ratified waiver converts.
+            if waiver is not None:
+                return True, RECLAIM_WAIVED
+            return False, CT_RECLAIM_FAIL
         # reclaim_veto=False: the counter-trend branch keeps the SAME next-bar
         # follow-through every other name gets, and nothing else. Reason strings stay
         # accurate — no reclaim was tested, so neither outcome may mention one.
@@ -333,7 +559,8 @@ def _confirm_legs(i, sig, n, *, reclaim_veto: bool = True):
     return held, ("held confirmation" if held else HOLD_FAIL)
 
 
-def _buy_filter_full(i, sig, bear, n, *, reclaim_veto: bool = True):
+def _buy_filter_full(i, sig, bear, n, *, reclaim_veto: bool = True,
+                     waiver: ReclaimWaiver | None = None):
     """(take, reason, reasons) — the buy-filter verdict PLUS the EXHAUSTIVE ordered account.
 
     ``take`` and ``reason`` are the SAME first-match values :func:`_buy_filter` returns, and
@@ -354,18 +581,24 @@ def _buy_filter_full(i, sig, bear, n, *, reclaim_veto: bool = True):
     ``.iloc`` lookups the verdict itself costs. A leg that CANNOT be decided yet (the last 1-2
     bars, 'pending confirmation') is reported rather than silently dropped, so a one-element list
     always means 'every other leg passed', never 'we did not look'.
+
+    ``waiver`` passes straight through to :func:`_confirm_legs`.  On a VETOED bar it can only
+    remove a second block from ``reasons`` (a waived reclaim is no longer a refusal); the
+    verdict stays the hardcoded (False, veto) it always was — the divergence veto is not
+    waivable by anything in this family.
     """
     if not bear:
-        take, reason = _confirm_legs(i, sig, n, reclaim_veto=reclaim_veto)
+        take, reason = _confirm_legs(i, sig, n, reclaim_veto=reclaim_veto, waiver=waiver)
         return take, reason, [reason]
-    rest_take, rest_reason = _confirm_legs(i, sig, n, reclaim_veto=reclaim_veto)
+    rest_take, rest_reason = _confirm_legs(i, sig, n, reclaim_veto=reclaim_veto, waiver=waiver)
     reasons = [BEAR_DIV_REASON]
     if rest_take is not True:                # False = a second real block; None = undecidable
         reasons.append(rest_reason)
     return False, BEAR_DIV_REASON, reasons
 
 
-def _buy_filter(i, sig, bear, n, *, reclaim_veto: bool = True):
+def _buy_filter(i, sig, bear, n, *, reclaim_veto: bool = True,
+                waiver: ReclaimWaiver | None = None):
     """The VALIDATED buy-filter: reclaim-and-hold + bearish-div veto + 200MA bar-raiser.
     Returns (take: bool|None, reason). None = pending (last 1-2 bars can't confirm yet).
 
@@ -389,6 +622,15 @@ def _buy_filter(i, sig, bear, n, *, reclaim_veto: bool = True):
     because the US/CN drawdown validation was measured WITH it; only a board that has taken the
     era stamp for the looser policy passes False.
 
+    ``waiver`` (keyword-only, DEFAULT None = the v1 policy, byte-identical) is the RATIFIED
+    conditional relaxation of the same leg on the US tape — see the WHY block above
+    :class:`ReclaimWaiver`.  It is narrower than the flag in every direction: it needs a
+    per-name measured washout state, it needs that state to be PIT-clean for the bar, it can
+    only convert the PURE reclaim failure (the hold leg must still have PASSED), and it is
+    resolved outside this function.  ``reclaim_veto=False`` and a waiver are not alternatives
+    — HK dropped the leg flat, the US relaxes it conditionally, and the two live behind
+    different era stamps (``hk_prophet_v2`` / ``us_prophet_v2``).
+
     ⚠ MARKER-DATE GRADING IS FORBIDDEN (CN-1 masterplan §W6-CN). The ``held``/``reclaim`` tests
     below read bars i+1/i+2 — i.e. the label at bar ``i`` is knowable only in the FUTURE relative to
     ``i``. A 'take' marker therefore carries +5.7pp/10d of look-ahead (measured: +9.47%/10d 84.7%
@@ -400,7 +642,7 @@ def _buy_filter(i, sig, bear, n, *, reclaim_veto: bool = True):
     forward returns. Do NOT grade forward returns from ``marker['date']``."""
     if bear:
         return False, BEAR_DIV_REASON
-    return _confirm_legs(i, sig, n, reclaim_veto=reclaim_veto)
+    return _confirm_legs(i, sig, n, reclaim_veto=reclaim_veto, waiver=waiver)
 
 
 # ---- the legal anchor for anything measured FORWARD from a marker ------------ #
@@ -553,7 +795,8 @@ def confirmation_date(daily_close: pd.Series, marker_date, *,
 
 
 def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = None,
-            daily_low: pd.Series | None = None, *, reclaim_veto: bool = True) -> dict | None:
+            daily_low: pd.Series | None = None, *, reclaim_veto: bool = True,
+            washout_waiver: bool = True) -> dict | None:
     """Per-ticker chart-marker + state object (the site/signals/<T>.json contract, §7).
 
     Optional ``daily_high``/``daily_low`` let swing-high & bearish-divergence read
@@ -562,6 +805,15 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
 
     ``reclaim_veto`` is passed straight through to :func:`_buy_filter` (default True =
     the validated US/CN policy, unchanged). See that docstring for why HK passes False.
+
+    ``washout_waiver`` (default True = the RATIFIED ``us_prophet_v2`` policy) enables the
+    counter-trend reclaim waiver; THIS is the function that resolves it, because it is the
+    only one in the chain that knows the ticker and the daily calendar.  Pass False to
+    reproduce the v1 admission exactly — that is what the frozen packet isolation
+    (`research/prophet_us_audit/reclaim_veto_packet.py`) measures against, and it is a
+    research escape hatch, not a board setting.  It costs one dict lookup per ticker and one
+    integer compare per buy marker; on a name the artifact does not qualify (or on any
+    non-US tape) it costs the lookup alone.
 
     The 2D/3D grids are anchored to the reference session calendar of the market inferred
     from ``ticker`` (``session_anchor.market_for_ticker``, R-SQ1) — so no caller needs an
@@ -610,6 +862,13 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
     # Derive from ONE `_bucket_last_session` call so these emitted fields and the
     # standalone resolvers cannot drift apart (tests/test_signal_date_family.py).
     sessions = _bucket_last_session(daily_close, market=market)
+    # Name-level half of the reclaim waiver, resolved ONCE (see :func:`washout_qualifier`).
+    # None on every path that is not the ratified one: the flag off, the leg already dropped
+    # flat (`reclaim_veto=False`, HK — there is no reclaim test left to waive), a non-US
+    # tape, a missing/stale/unparseable artifact, or a name the state does not qualify at
+    # :data:`WASHOUT_NOTCH`.  The PIT half is per-marker, below.
+    qualifier = (washout_qualifier(ticker)
+                 if (washout_waiver and reclaim_veto) else None)
 
     def _session_str(label) -> str | None:
         """Return this bucket label's last session, disclosing null rather than guessing."""
@@ -623,8 +882,17 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
         signal_date = _session_str(idx[i])
         is_buy = bool(sig["CB"].iloc[i]) or bool(sig["revBuy"].iloc[i])
         if is_buy:
+            # `confirmed` is BOTH the emitted `confirmed_date` below and the waiver's PIT
+            # anchor — the first close at which this label was knowable (prereg §2's "fire's
+            # known date").  Derived once, from the same `_bucket_last_session` map, so the
+            # date the waiver is judged against and the date the marker publishes can never
+            # be two different days.
+            confirmed = (_session_str(idx[i + CONFIRM_BARS])
+                         if i + CONFIRM_BARS < n else None)
+            waiver = reclaim_waiver_for(qualifier, confirmed, daily_close.index)
             ok, reason, reasons = _buy_filter_full(
-                i, sig, _bear_div(i, sig["high"], macd, hi), n, reclaim_veto=reclaim_veto)
+                i, sig, _bear_div(i, sig["high"], macd, hi), n,
+                reclaim_veto=reclaim_veto, waiver=waiver)
             q = "pending" if ok is None else ("take" if ok else "block")
             m = {"date": ds, "type": "rebuy" if bool(sig["revBuy"].iloc[i]) else "buy",
                  "quality": q, "reason": reason}
@@ -636,8 +904,15 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
                 m["reasons"] = reasons
             # Append after legacy keys so the marker's published prefix stays unchanged.
             m["signal_date"] = signal_date
-            m["confirmed_date"] = (_session_str(idx[i + CONFIRM_BARS])
-                                   if i + CONFIRM_BARS < n else None)
+            m["confirmed_date"] = confirmed
+            # NO waiver key is added to the marker.  `research/signal_engine/SCHEMA.json`
+            # closes `$defs/marker` with `additionalProperties: false` and that file is a
+            # CROSS-REPO published contract (exported nightly as `golden_signals`), so the
+            # receipt lives on the gate verdict instead — `engine.signal_gate.gate()` re-
+            # derives it from this same pair of pure functions.  The audit chain is intact
+            # without widening the contract: the reason names the waiver, and the state
+            # artifact is committed to git every night, so (ticker, as_of, notch) recovers
+            # the exact peer reading that relieved any historical row.
             markers.append(m)
         elif bool(sig["CS"].iloc[i]):
             markers.append({"date": ds, "type": "sell", "signal_date": signal_date})

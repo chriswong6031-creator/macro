@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
 import os
@@ -12,6 +13,8 @@ import sys
 import pandas as pd
 import pytest
 
+from engine import chain_snapshot_completion as bucket_completion
+from engine import chain_snapshot_evidence
 from engine.options_structure_intraday import OptionsStructureIntradayError, canonical_json_bytes, index_key
 from scripts.build_options_structure_intraday import (
     EpochCollisionError,
@@ -23,10 +26,21 @@ from scripts.build_options_structure_intraday import (
     PublicationRepairNeededError,
     _atomic_write,
     _remote_object,
+    advance_publication_cursor,
+    advance_publication_scan_cursor,
+    completion_request,
     discover_roots,
     prepare_bundle,
+    publication_ack_path,
+    publication_acknowledged,
+    publication_cursor_path,
+    publication_scan_cursor_path,
+    publication_index_receipt_path,
+    read_publication_cursor,
+    read_publication_scan_cursor,
     publish_bundle,
     validate_complete_meta,
+    write_publication_ack,
     write_local_bundle,
 )
 
@@ -36,6 +50,84 @@ BUCKET = "16:00"
 OBSERVED = "2026-08-07T20:02:00Z"
 ROOTS = ("QRS", "TST")
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _completion_packet(
+    tmp_path: Path,
+    *,
+    data_root: Path | None = None,
+    session: str = SESSION,
+    bucket: str = BUCKET,
+) -> dict:
+    local = datetime.fromisoformat(f"{session}T{bucket}:10").replace(
+        tzinfo=bucket_completion.ET,
+    )
+    base = local.astimezone(timezone.utc)
+    clocks = iter([
+        base.replace(microsecond=100001),
+        (base + timedelta(seconds=10)).replace(microsecond=100002),
+        (base + timedelta(seconds=50)).replace(microsecond=100003),
+        (base + timedelta(seconds=51)).replace(microsecond=100004),
+    ])
+    results = []
+    for root in ROOTS:
+        if data_root is None:
+            bucket_content_sha256 = "a" * 64
+            oi_parquet_sha256 = "c" * 64
+        else:
+            chain_path = data_root / root / f"{session}.parquet"
+            oi_path = data_root / root / f"{session}_oi.parquet"
+            target = chain_snapshot_evidence.target_bucket_frame(
+                pd.read_parquet(chain_path),
+                root,
+                bucket,
+                dedup_key=chain_snapshot_evidence.CHAIN_SNAPSHOT_DEDUP_KEY,
+            )
+            bucket_content_sha256 = chain_snapshot_evidence.frame_content_sha256(
+                target,
+                dedup_key=chain_snapshot_evidence.CHAIN_SNAPSHOT_DEDUP_KEY,
+            )
+            oi_parquet_sha256 = chain_snapshot_evidence.file_sha256(oi_path)
+        results.append({
+            "root": root,
+            "rows": 2,
+            "total_rows": 2,
+            "oi_rows": 2,
+            "oi_total_rows": 2,
+            "error": None,
+            "completion_errors": [],
+            "bucket_rows": 2,
+            "bucket_content_sha256": bucket_content_sha256,
+            "parquet_sha256": "b" * 64,
+            "oi_parquet_sha256": oi_parquet_sha256,
+            "first_vendor_min_at": base.replace(
+                second=0, microsecond=1,
+            ).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "first_vendor_max_at": base.replace(
+                second=0, microsecond=2,
+            ).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "first_prebucket_rows": 0,
+            "first_at_or_after_bucket_rows": 2,
+            "second_clock_matched_rows": 2,
+            "second_clock_unmatched_rows": 0,
+            "quarantined": [],
+            "oi_quarantined": [],
+        })
+    with bucket_completion.locked_bucket_lease(
+        tmp_path / "receipts",
+        session_date=session,
+        bucket=bucket,
+        cadence_min=15,
+        roots=list(ROOTS),
+        now=local,
+        now_fn=lambda: next(clocks),
+    ) as lease:
+        assert lease.refresh_before_source() is not None
+        lease.record_decision(
+            bucket_completion.build_completion_summary(ROOTS, results),
+        )
+        lease.record_availability()
+        return lease.packet()
 
 
 def _chain(root: str, session: str = SESSION, bucket: str = BUCKET) -> pd.DataFrame:
@@ -86,7 +178,7 @@ def _source_tree(
     data_root = tmp_path / label
     for root in roots:
         root_dir = data_root / root
-        root_dir.mkdir(parents=True)
+        root_dir.mkdir(parents=True, exist_ok=True)
         _chain(root, session, bucket).to_parquet(root_dir / f"{session}.parquet", index=False)
         _oi(root, session).to_parquet(root_dir / f"{session}_oi.parquet", index=False)
     return data_root
@@ -214,6 +306,480 @@ def test_prepare_bundle_reads_private_parquet_and_emits_exact_key_family(tmp_pat
         packet["source_receipt"]["private_raw_parquet_published"] is False
         for packet in bundle.packets.values()
     )
+
+
+def test_completion_packet_cli_binds_exact_receipt_identity_and_clocks(tmp_path) -> None:
+    data_root = _source_tree(tmp_path)
+    packet = _completion_packet(tmp_path, data_root=data_root)
+    request = completion_request(packet)
+    assert request.session_date == SESSION
+    assert request.snapshot_bucket == BUCKET
+    assert request.roots == ROOTS
+    assert request.cadence_minutes == 15
+    assert request.observed_at == packet["decision"]["decision_at"]
+    assert request.available_at == packet["availability"]["availability_at"]
+
+    out_dir = tmp_path / "projection"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "scripts" / "build_options_structure_intraday.py"),
+            "--completion-packet-stdin",
+            "--data-root",
+            str(data_root),
+            "--out-dir",
+            str(out_dir),
+        ],
+        cwd=tmp_path,
+        input=bucket_completion.canonical_bytes(packet) + b"\n",
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr.decode()
+    assert "source_bytes=" in result.stderr.decode()
+    assert "wall_sec=" in result.stderr.decode()
+    assert "peak_rss_bytes=" in result.stderr.decode()
+    index = json.loads(
+        (out_dir / "options_structure" / "msc_intraday" / "index.json").read_text()
+    )
+    assert index["session_date"] == SESSION
+    assert index["snapshot_bucket"] == BUCKET
+    for root in ROOTS:
+        body = json.loads(
+            (
+                out_dir / "options_structure" / "msc_intraday" / root
+                / SESSION / "1600.json"
+            ).read_text()
+        )
+        assert body["clocks"]["builder_observed_at"] == request.observed_at
+        assert body["clocks"]["available_at"] == request.available_at
+        assert all(value is False for value in body["authority"].values())
+
+
+def test_completion_packet_rejects_override_laundering(tmp_path, monkeypatch) -> None:
+    packet = _completion_packet(tmp_path)
+    monkeypatch.setattr(
+        sys,
+        "stdin",
+        io.TextIOWrapper(io.BytesIO(bucket_completion.canonical_bytes(packet))),
+    )
+    from scripts import build_options_structure_intraday as builder
+
+    assert builder.main([
+        "--completion-packet-stdin",
+        "--session",
+        SESSION,
+        "--no-local",
+    ]) == 1
+
+
+def test_completion_evidence_binds_bucket_content_and_stable_oi(tmp_path) -> None:
+    data_root = _source_tree(tmp_path)
+    packet = _completion_packet(tmp_path, data_root=data_root)
+    request = completion_request(packet)
+
+    chain_path = data_root / ROOTS[0] / f"{SESSION}.parquet"
+    changed = pd.read_parquet(chain_path)
+    changed.loc[0, "bid"] = 9.9
+    changed.to_parquet(chain_path, index=False)
+    with pytest.raises(OptionsStructureIntradayError, match="bucket_content_sha256"):
+        prepare_bundle(
+            data_root,
+            roots=request.roots,
+            session_date=request.session_date,
+            snapshot_bucket=request.snapshot_bucket,
+            observed_at=request.observed_at,
+            available_at=request.available_at,
+            cadence_minutes=request.cadence_minutes,
+            completion_evidence=request.root_evidence,
+        )
+
+    data_root = _source_tree(tmp_path, label="oi-drift")
+    packet = _completion_packet(tmp_path / "oi-receipts", data_root=data_root)
+    request = completion_request(packet)
+    oi_path = data_root / ROOTS[0] / f"{SESSION}_oi.parquet"
+    changed_oi = pd.read_parquet(oi_path)
+    changed_oi.loc[0, "open_interest"] += 1
+    changed_oi.to_parquet(oi_path, index=False)
+    with pytest.raises(OptionsStructureIntradayError, match="oi_parquet_sha256"):
+        prepare_bundle(
+            data_root,
+            roots=request.roots,
+            session_date=request.session_date,
+            snapshot_bucket=request.snapshot_bucket,
+            observed_at=request.observed_at,
+            available_at=request.available_at,
+            cadence_minutes=request.cadence_minutes,
+            completion_evidence=request.root_evidence,
+        )
+
+
+def test_other_day_bucket_rows_do_not_break_exact_bucket_recovery(tmp_path) -> None:
+    data_root = _source_tree(tmp_path)
+    packet = _completion_packet(tmp_path, data_root=data_root)
+    request = completion_request(packet)
+    for root in ROOTS:
+        path = data_root / root / f"{SESSION}.parquet"
+        other_bucket = _chain(root, bucket="15:45")
+        pd.concat([pd.read_parquet(path), other_bucket], ignore_index=True).to_parquet(
+            path, index=False,
+        )
+    bundle = prepare_bundle(
+        data_root,
+        roots=request.roots,
+        session_date=request.session_date,
+        snapshot_bucket=request.snapshot_bucket,
+        observed_at=request.observed_at,
+        available_at=request.available_at,
+        cadence_minutes=request.cadence_minutes,
+        completion_evidence=request.root_evidence,
+    )
+    assert sorted(bundle.packets) == list(ROOTS)
+
+
+def test_local_publication_ack_is_deterministic_and_collision_closed(tmp_path) -> None:
+    data_root = _source_tree(tmp_path)
+    packet = _completion_packet(tmp_path, data_root=data_root)
+    request = completion_request(packet)
+    bundle = prepare_bundle(
+        data_root,
+        roots=request.roots,
+        session_date=request.session_date,
+        snapshot_bucket=request.snapshot_bucket,
+        observed_at=request.observed_at,
+        available_at=request.available_at,
+        cadence_minutes=request.cadence_minutes,
+        completion_evidence=request.root_evidence,
+    )
+    out_dir = tmp_path / "projection-ack"
+    assert publication_acknowledged(out_dir, packet) is False
+    write_local_bundle(bundle, out_dir)
+    assert publication_acknowledged(out_dir, packet) is False
+    target = write_publication_ack(out_dir, packet, bundle)
+    assert target == publication_ack_path(out_dir, packet)
+    index_receipt = publication_index_receipt_path(out_dir, packet)
+    assert index_receipt.read_bytes() == bundle.index.body
+    assert publication_acknowledged(out_dir, packet) is True
+    assert write_publication_ack(out_dir, packet, bundle) == target
+    assert read_publication_cursor(out_dir) is None
+    cursor_path = advance_publication_cursor(
+        out_dir, packet, prefix_packets=[packet], activation_session=SESSION,
+    )
+    cursor = read_publication_cursor(out_dir)
+    assert cursor_path == publication_cursor_path(out_dir)
+    assert cursor["complete_prefix_count"] == 1
+    assert advance_publication_cursor(
+        out_dir, packet, prefix_packets=[packet], activation_session=SESSION,
+    ) == cursor_path
+    with pytest.raises(PublicationError, match="activation cannot change"):
+        advance_publication_cursor(
+            out_dir,
+            packet,
+            prefix_packets=[packet],
+            activation_session="2026-08-06",
+        )
+
+    exact_cursor = cursor_path.read_bytes()
+    cursor_payload = json.loads(exact_cursor)
+    cursor_payload["ack_sha256"] = "0" * 64
+    cursor_path.write_bytes(canonical_json_bytes(cursor_payload))
+    with pytest.raises(PublicationError, match="cursor ack hash drifted"):
+        read_publication_cursor(out_dir)
+    cursor_path.write_bytes(exact_cursor)
+
+    cursor_path.write_text(json.dumps(json.loads(exact_cursor), indent=2))
+    with pytest.raises(PublicationError, match="cursor is not canonical"):
+        read_publication_cursor(out_dir)
+    cursor_path.write_bytes(exact_cursor)
+
+    scan_path = advance_publication_scan_cursor(
+        out_dir,
+        activation_session=SESSION,
+        from_session=SESSION,
+        to_session="2026-08-10",
+        sealed_session=SESSION,
+        sealed_ledger_sha256="1" * 64,
+        sealed_packets=[packet],
+    )
+    assert scan_path == publication_scan_cursor_path(out_dir)
+    scan_cursor = read_publication_scan_cursor(out_dir)
+    assert scan_cursor["sealed_complete_count"] == 1
+    assert advance_publication_scan_cursor(
+        out_dir,
+        activation_session=SESSION,
+        from_session=SESSION,
+        to_session="2026-08-10",
+        sealed_session=SESSION,
+        sealed_ledger_sha256="1" * 64,
+        sealed_packets=[packet],
+    ) == scan_path
+    exact_scan_cursor = scan_path.read_bytes()
+    scan_payload = json.loads(exact_scan_cursor)
+    scan_payload["sealed_last_ack_sha256"] = "0" * 64
+    scan_path.write_bytes(canonical_json_bytes(scan_payload))
+    with pytest.raises(PublicationError, match="acknowledgement hash drifted"):
+        read_publication_scan_cursor(out_dir)
+    scan_path.write_bytes(exact_scan_cursor)
+    scan_path.write_text(json.dumps(json.loads(exact_scan_cursor), indent=2))
+    with pytest.raises(PublicationError, match="scan cursor is not canonical"):
+        read_publication_scan_cursor(out_dir)
+    scan_path.write_bytes(exact_scan_cursor)
+
+    exact_ack = target.read_bytes()
+    target.write_text(json.dumps(json.loads(exact_ack), indent=2))
+    with pytest.raises(PublicationError, match="acknowledgement is not canonical"):
+        publication_acknowledged(out_dir, packet)
+    target.write_bytes(exact_ack)
+
+    exact_index_receipt = index_receipt.read_bytes()
+    index_receipt.write_bytes(exact_index_receipt + b"drift")
+    with pytest.raises(PublicationError, match="index receipt hash drifted"):
+        publication_acknowledged(out_dir, packet)
+    index_receipt.unlink()
+    with pytest.raises(LocalCommitUncertainError, match="local artifact durability"):
+        publication_acknowledged(out_dir, packet)
+    index_receipt.write_bytes(exact_index_receipt)
+    assert publication_acknowledged(out_dir, packet) is True
+
+    immutable = out_dir / bundle.immutable[ROOTS[0]].key
+    exact_body = immutable.read_bytes()
+    immutable.write_bytes(exact_body + b"drift")
+    with pytest.raises(PublicationError, match="local immutable object drift"):
+        publication_acknowledged(out_dir, packet)
+    immutable.write_bytes(exact_body)
+    assert publication_acknowledged(out_dir, packet) is True
+
+    payload = json.loads(target.read_text())
+    payload["completion_packet_sha256"] = "0" * 64
+    target.write_text(json.dumps(payload))
+    with pytest.raises(PublicationError, match="completion_packet_sha256 mismatch"):
+        publication_acknowledged(out_dir, packet)
+    with pytest.raises(ImmutableCollisionError, match="acknowledgement collision"):
+        write_publication_ack(out_dir, packet, bundle)
+    target.write_bytes(b'{"schema":')
+    with pytest.raises(PublicationError, match="invalid local publication"):
+        publication_acknowledged(out_dir, packet)
+
+
+def test_empty_terminal_scan_cursor_is_canonical_and_idempotent(tmp_path) -> None:
+    out_dir = tmp_path / "empty-scan-cursor"
+    target = advance_publication_scan_cursor(
+        out_dir,
+        activation_session=SESSION,
+        from_session=SESSION,
+        to_session="2026-08-10",
+        sealed_session=SESSION,
+        sealed_ledger_sha256="2" * 64,
+        sealed_packets=[],
+    )
+    payload = read_publication_scan_cursor(out_dir)
+    assert payload["sealed_complete_count"] == 0
+    assert payload["sealed_last_bucket"] is None
+    assert advance_publication_scan_cursor(
+        out_dir,
+        activation_session=SESSION,
+        from_session=SESSION,
+        to_session="2026-08-10",
+        sealed_session=SESSION,
+        sealed_ledger_sha256="2" * 64,
+        sealed_packets=[],
+    ) == target
+
+
+def test_scan_cursor_refuses_missing_non_tail_ack_in_sealed_session(
+    tmp_path,
+) -> None:
+    first_bucket = "15:45"
+    data_root = _source_tree(tmp_path, bucket=first_bucket)
+    for root in ROOTS:
+        path = data_root / root / f"{SESSION}.parquet"
+        pd.concat(
+            [pd.read_parquet(path), _chain(root, bucket=BUCKET)],
+            ignore_index=True,
+        ).to_parquet(path, index=False)
+    producer_root = tmp_path / "two-bucket-producer"
+    first = _completion_packet(
+        producer_root,
+        data_root=data_root,
+        bucket=first_bucket,
+    )
+    last = _completion_packet(
+        producer_root,
+        data_root=data_root,
+        bucket=BUCKET,
+    )
+    out_dir = tmp_path / "two-bucket-projection"
+    for packet in (first, last):
+        request = completion_request(packet)
+        bundle = prepare_bundle(
+            data_root,
+            roots=request.roots,
+            session_date=request.session_date,
+            snapshot_bucket=request.snapshot_bucket,
+            observed_at=request.observed_at,
+            available_at=request.available_at,
+            cadence_minutes=request.cadence_minutes,
+            completion_evidence=request.root_evidence,
+        )
+        write_local_bundle(bundle, out_dir)
+        write_publication_ack(out_dir, packet, bundle)
+    advance_publication_cursor(
+        out_dir,
+        first,
+        prefix_packets=[first],
+        activation_session=SESSION,
+    )
+    advance_publication_cursor(
+        out_dir,
+        last,
+        prefix_packets=[first, last],
+        activation_session=SESSION,
+    )
+    publication_ack_path(out_dir, first).unlink()
+    with pytest.raises(PublicationError, match="15:45"):
+        advance_publication_scan_cursor(
+            out_dir,
+            activation_session=SESSION,
+            from_session=SESSION,
+            to_session="2026-08-10",
+            sealed_session=SESSION,
+            sealed_ledger_sha256="3" * 64,
+            sealed_packets=[first, last],
+        )
+
+
+def test_real_two_session_catchup_ack_cursor_scan_and_retry(
+    tmp_path, monkeypatch,
+) -> None:
+    from scripts import chain_snapshot_poller as poller
+
+    second_session = "2026-08-10"
+    data_root = _source_tree(tmp_path)
+    _source_tree(tmp_path, session=second_session)
+    producer_root = tmp_path / "producer"
+    first = _completion_packet(
+        producer_root, data_root=data_root, session=SESSION,
+    )
+    second = _completion_packet(
+        producer_root, data_root=data_root, session=second_session,
+    )
+    receipt_root = producer_root / "receipts"
+    out_dir = tmp_path / "projection-real-catchup"
+    fake = FakeR2()
+    publish_calls: list[tuple[str, str]] = []
+
+    def publish(packet: dict) -> None:
+        request = completion_request(packet)
+        bundle = prepare_bundle(
+            data_root,
+            roots=request.roots,
+            session_date=request.session_date,
+            snapshot_bucket=request.snapshot_bucket,
+            observed_at=request.observed_at,
+            available_at=request.available_at,
+            cadence_minutes=request.cadence_minutes,
+            completion_evidence=request.root_evidence,
+        )
+        publish_bundle(bundle, client=fake, bucket="bucket")
+        write_local_bundle(bundle, out_dir)
+        write_publication_ack(out_dir, packet, bundle)
+        publish_calls.append((request.session_date, request.snapshot_bucket))
+
+    monkeypatch.setattr(poller, "_receipt_root_path", lambda: receipt_root)
+    monkeypatch.setattr(poller, "_options_structure_out_dir_path", lambda: out_dir)
+
+    # Crash boundary: durable remote/local acknowledgement exists, but no
+    # delivery cursor was advanced yet.
+    publish(first)
+    assert read_publication_cursor(out_dir) is None
+    recovered = poller._retry_unacknowledged_publications(
+        publish, activation_session=SESSION,
+    )
+    assert recovered["attempted"] == 0
+    assert recovered["acknowledged"] == 1
+    assert read_publication_cursor(out_dir)["session_date"] == SESSION
+
+    delivered = poller._retry_unacknowledged_publications(
+        publish, activation_session=SESSION,
+    )
+    assert delivered["attempted"] == 1
+    assert delivered["acknowledged"] == 1
+    assert delivered["scan_advanced"] == 1
+    assert delivered["remaining"] == 0
+    assert read_publication_cursor(out_dir)["session_date"] == second_session
+    assert read_publication_scan_cursor(out_dir)["scan_session"] == second_session
+
+    replay = poller._retry_unacknowledged_publications(
+        publish, activation_session=SESSION,
+    )
+    assert replay["attempted"] == 0
+    assert replay["remaining"] == 0
+    assert replay["errors"] == []
+    assert publish_calls == [(SESSION, BUCKET), (second_session, BUCKET)]
+
+
+def test_receipt_mode_ack_follows_verified_remote_and_local_success(
+    tmp_path, monkeypatch,
+) -> None:
+    from scripts import build_options_structure_intraday as builder
+
+    data_root = _source_tree(tmp_path)
+    packet = _completion_packet(tmp_path, data_root=data_root)
+    monkeypatch.setattr(
+        sys,
+        "stdin",
+        io.TextIOWrapper(io.BytesIO(bucket_completion.canonical_bytes(packet))),
+    )
+    monkeypatch.setenv("R2_BUCKET", "test-bucket")
+    monkeypatch.setattr(builder, "_r2_client", lambda: object())
+    order: list[str] = []
+    monkeypatch.setattr(
+        builder,
+        "publish_bundle",
+        lambda *_args, **_kwargs: order.append("remote_verified"),
+    )
+    monkeypatch.setattr(
+        builder,
+        "write_local_bundle",
+        lambda *_args, **_kwargs: order.append("local_verified"),
+    )
+    monkeypatch.setattr(
+        builder,
+        "write_publication_ack",
+        lambda *_args, **_kwargs: order.append("ack_durable"),
+    )
+
+    assert builder.main([
+        "--completion-packet-stdin",
+        "--data-root",
+        str(data_root),
+        "--out-dir",
+        str(tmp_path / "projection-order"),
+        "--publish",
+    ]) == 0
+    assert order == ["remote_verified", "local_verified", "ack_durable"]
+
+    order.clear()
+    monkeypatch.setattr(
+        sys,
+        "stdin",
+        io.TextIOWrapper(io.BytesIO(bucket_completion.canonical_bytes(packet))),
+    )
+
+    def remote_failure(*_args, **_kwargs):
+        order.append("remote_failed")
+        raise PublicationError("R2 unavailable")
+
+    monkeypatch.setattr(builder, "publish_bundle", remote_failure)
+    assert builder.main([
+        "--completion-packet-stdin",
+        "--data-root",
+        str(data_root),
+        "--out-dir",
+        str(tmp_path / "projection-order"),
+        "--publish",
+    ]) == 1
+    assert order == ["remote_failed"]
 
 
 def test_bare_script_help_pins_this_repo_ahead_of_hostile_pythonpath(tmp_path) -> None:

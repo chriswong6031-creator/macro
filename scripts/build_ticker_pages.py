@@ -1615,10 +1615,26 @@ def _build_hub_context(site: Path, rows: list[dict]) -> dict:
                 for s in sorted({r["sector"] for r in rows if r.get("sector")})
             ],
             "breadth": None, "stance": None, "spine": None, "boards": {},
+            "themes": [], "themes_asof": None,
             "sectors": [], "treemap": None, "top": None, "bot": None,
             "best": None, "worst": None, "map_asof": None,
         }
         ctx["hub"] = hub
+
+        # The retired /movers.html page carried one useful read the hub did not:
+        # groups of names moving together.  Keep the marketing source as the one
+        # ranking/provenance authority, then apply this render's dossier boundary
+        # before the template receives a single ticker link.
+        linkable = frozenset(r["ticker"] for r in rows)
+        try:
+            from engine.marketing.movers_source import load_movers  # noqa: PLC0415
+
+            movers_data = load_movers(site.parent)
+            hub["themes"] = _hub.theme_ribbons(movers_data, linkable=linkable)
+            hub["themes_asof"] = (movers_data or {}).get("themes_asof")
+        except Exception as e:  # noqa: BLE001
+            print(f"::warning title=stocks_hub::theme ribbons unavailable: {e}",
+                  flush=True)
 
         rets = [r["chg"] for r in rows if r.get("chg") is not None]
         br = _hub.breadth(rets)
@@ -1634,7 +1650,6 @@ def _build_hub_context(site: Path, rows: list[dict]) -> dict:
         except Exception as e:  # noqa: BLE001
             print(f"::warning title=stocks_hub::heatmap summary failed: {e}", flush=True)
 
-        linkable = frozenset(r["ticker"] for r in rows)
         best = max(rows, key=lambda r: r.get("chg") if r.get("chg") is not None else -1e9)
         worst = min(rows, key=lambda r: r.get("chg") if r.get("chg") is not None else 1e9)
 

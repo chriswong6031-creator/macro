@@ -168,6 +168,57 @@ def test_board_rows_are_toned_by_direction_not_by_metric():
     assert b["active"][0]["tone"] == "dn"
 
 
+# ── consolidated theme ribbons ──────────────────────────────────────────────
+def _theme_payload() -> dict:
+    members = [
+        {"t": ticker, "perf": {"1D": pct}, "asof": "2026-08-07"}
+        for ticker, pct in (("AAA", 8.0), ("BBB", 6.0), ("NO_PAGE", 5.0),
+                            ("CCC", 4.0), ("ALSO_MISSING", 2.0))
+    ]
+    return {
+        "themes_asof": "2026-08-07",
+        "theme_tiles": [{
+            "sector": "Artificial Intelligence",
+            "members": members,
+            "asof": "2026-08-07",
+        }],
+    }
+
+
+def test_theme_ribbons_keep_only_members_with_a_rendered_dossier():
+    ribbons = hub.theme_ribbons(
+        _theme_payload(), linkable=frozenset({"AAA", "BBB", "CCC"})
+    )
+    assert len(ribbons) == 1
+    assert ribbons[0]["name"] == "Artificial Intelligence"
+    assert ribbons[0]["avg_pc"] == "+6.00%"
+    assert ribbons[0]["asof"] == "2026-08-07"
+    assert [m["t"] for m in ribbons[0]["members"]] == ["AAA", "BBB", "CCC"]
+    assert "NO_PAGE" not in str(ribbons), "a missing dossier would become a dead chip"
+
+
+def test_theme_ribbon_disappears_when_only_one_linkable_member_survives():
+    assert hub.theme_ribbons(
+        _theme_payload(), linkable=frozenset({"AAA"})
+    ) == []
+
+
+def test_hub_builder_loads_theme_groups_independently_of_the_board_payload(
+        tmp_path, monkeypatch):
+    """The unique mover-page read must enter the actual index render context."""
+    from engine.marketing import movers_source
+
+    monkeypatch.setattr(movers_source, "load_movers", lambda _root: _theme_payload())
+    rows = [
+        _row("AAA", sector="Technology", chg=2.0),
+        _row("BBB", sector="Technology", chg=1.0),
+        _row("CCC", sector="Technology", chg=-1.0),
+    ]
+    built = _builder()._build_hub_context(tmp_path / "site", rows)["hub"]
+    assert built["themes_asof"] == "2026-08-07"
+    assert [m["t"] for m in built["themes"][0]["members"]] == ["AAA", "BBB", "CCC"]
+
+
 # ── theme-token law ─────────────────────────────────────────────────────────
 def test_treemap_fill_is_always_a_token_never_a_literal_colour():
     """The defect this page was rebuilt for: a literal colour a theme can miss.

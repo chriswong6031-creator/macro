@@ -14,6 +14,10 @@ Config block 'chain_snapshots:' in config.yml:
   cadence_min:    15    # minutes between sweep starts
   top_names:      128   # single-name roots appended after the 22 ETF anchors
   max_concurrent: 1     # HARD — live_flow poller owns 2 of the terminal's 8 during RTH
+  options_structure_r2:
+    enabled:      false # promote only after the real M1 rollout gates
+    activation_session: null # exact NYSE session floor required when enabled
+    timeout_sec:  120   # hard non-authority publisher ceiling
 
 Output layout (data/chain_snapshots/, gitignored like the other live lanes):
   {ROOT}/{YYYY-MM-DD}.parquet     — greeks rows, dedup key = (root, expiration,
@@ -32,6 +36,11 @@ Output layout (data/chain_snapshots/, gitignored like the other live lanes):
   {ROOT}/{date}.corrupt-{ts}.parquet — quarantined unreadable day frame (bytes
                                     preserved for recovery, never overwritten;
                                     surfaced in _meta.json "quarantined")
+
+After durable availability, the config-gated hook invokes the existing
+``build_options_structure_intraday`` publisher under the same producer lock.
+It emits only the governed ``options.contract_eligibility/v1`` R2 key family;
+it never selects an underlying, issues a position, or changes source truth.
 
 Sweep bucket: sweep-start ET wall time floored to the cadence grid ("HH:MM"),
 so re-runs inside the same interval dedup instead of duplicating rows.
@@ -69,6 +78,7 @@ import logging
 import math
 import os
 import re
+import subprocess
 import sys
 import tempfile
 import time
@@ -84,6 +94,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from engine import chain_snapshot_completion as completion  # noqa: E402
+from engine import chain_snapshot_evidence  # noqa: E402
 from engine.session_digest import session_window_et  # noqa: E402
 from lib import config  # noqa: E402
 from lib import nyse_calendar  # noqa: E402
@@ -104,7 +115,7 @@ RECEIPT_DIR = "_bucket_receipts"
 
 # Contract key + sweep-bucket dedup key for the per-day parquet
 CONTRACT_KEY = ["root", "expiration", "strike", "right"]
-DEDUP_KEY = CONTRACT_KEY + ["snapshot_bucket"]
+DEDUP_KEY = list(chain_snapshot_evidence.CHAIN_SNAPSHOT_DEDUP_KEY)
 
 # Second-order columns joined onto the first-order base (the second-order
 # response also carries bid/ask/IV — those come from the first-order frame).
@@ -124,6 +135,8 @@ OI_REQUIRED_COLUMNS = {
 META_MAX_ERRORS = 20
 PENDING_RETRY_SEC = 30.0
 GRID_EDGE_GUARD_SEC = 0.25
+OPTIONS_STRUCTURE_TIMEOUT_MAX_SEC = 120
+OPTIONS_STRUCTURE_CATCHUP_MAX_PER_PASS = 1
 
 
 # ── config access ─────────────────────────────────────────────────────────────
@@ -154,9 +167,132 @@ def _max_concurrent(cfg: dict) -> int:
     return value
 
 
+def _options_structure_settings(cfg: dict) -> tuple[bool, int, str | None]:
+    """Resolve the bounded Light U-CHAIN publication hook configuration."""
+    block = cfg.get("options_structure_r2", {})
+    if block is None:
+        block = {}
+    if type(block) is not dict:
+        raise ValueError("chain_snapshots.options_structure_r2 must be a mapping")
+    enabled = block.get("enabled", False)
+    if type(enabled) is not bool:
+        raise ValueError("chain_snapshots.options_structure_r2.enabled must be boolean")
+    activation_session = block.get("activation_session")
+    if activation_session is not None:
+        if type(activation_session) is not str:
+            raise ValueError(
+                "chain_snapshots.options_structure_r2.activation_session must be "
+                "a canonical NYSE session or null"
+            )
+        try:
+            parsed_activation = date.fromisoformat(activation_session)
+        except ValueError as exc:
+            raise ValueError(
+                "chain_snapshots.options_structure_r2.activation_session must be "
+                "a canonical NYSE session or null"
+            ) from exc
+        if (
+            parsed_activation.isoformat() != activation_session
+            or not nyse_calendar.is_session(parsed_activation)
+        ):
+            raise ValueError(
+                "chain_snapshots.options_structure_r2.activation_session must be "
+                "a canonical NYSE session or null"
+            )
+    if enabled and activation_session is None:
+        raise ValueError(
+            "chain_snapshots.options_structure_r2.activation_session is required "
+            "when publication is enabled"
+        )
+    timeout_sec = block.get("timeout_sec", OPTIONS_STRUCTURE_TIMEOUT_MAX_SEC)
+    if (
+        type(timeout_sec) is not int
+        or timeout_sec <= 0
+        or timeout_sec > OPTIONS_STRUCTURE_TIMEOUT_MAX_SEC
+    ):
+        raise ValueError(
+            "chain_snapshots.options_structure_r2.timeout_sec must be an exact "
+            f"integer in 1..{OPTIONS_STRUCTURE_TIMEOUT_MAX_SEC}"
+        )
+    return enabled, timeout_sec, activation_session
+
+
+def _run_options_structure_publisher(packet: dict, *, timeout_sec: int) -> None:
+    """Publish one receipt-bound bucket through the existing Light U-CHAIN CLI."""
+    completion.validate_completion_packet(packet)
+    out_dir = _options_structure_out_dir_path()
+    command = [
+        sys.executable,
+        "-m",
+        "scripts.build_options_structure_intraday",
+        "--completion-packet-stdin",
+        "--data-root",
+        str(_chain_snapshot_root_path()),
+        "--out-dir",
+        str(out_dir),
+        "--publish",
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            cwd=REPO_ROOT,
+            input=completion.canonical_bytes(packet) + b"\n",
+            capture_output=True,
+            check=False,
+            timeout=timeout_sec,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"Light U-CHAIN publisher exceeded {timeout_sec}s and was terminated"
+        ) from exc
+    if result.returncode != 0:
+        stderr = result.stderr.decode("utf-8", errors="replace").strip()
+        tail = stderr[-2000:] if stderr else "no stderr"
+        raise RuntimeError(
+            f"Light U-CHAIN publisher exited {result.returncode}: {tail}"
+        )
+    from scripts import build_options_structure_intraday as publisher
+
+    if not publisher.publication_acknowledged(out_dir, packet):
+        raise RuntimeError(
+            "Light U-CHAIN publisher returned success without its durable "
+            "R2+local acknowledgement"
+        )
+    stderr = result.stderr.decode("utf-8", errors="replace").strip()
+    receipt = stderr.splitlines()[-1][-2000:] if stderr else "builder emitted no receipt log"
+    log.info("chainsnap: Light U-CHAIN published receipt-bound bucket: %s", receipt)
+
+
+def _options_structure_completion_hook(
+    cfg: dict,
+) -> Callable[[dict], object] | None:
+    enabled, timeout_sec, activation_session = _options_structure_settings(cfg)
+    if not enabled:
+        return None
+    if activation_session is None:  # Defensive; enabled configuration rejects this.
+        raise ValueError("options structure activation session is required")
+
+    def publish(packet: dict) -> None:
+        state = completion.validate_completion_packet(packet)
+        if state.intent["session_date"] < activation_session:
+            log.info(
+                "chainsnap: Light U-CHAIN abstained before activation floor: %s/%s",
+                state.intent["session_date"],
+                state.intent["bucket"],
+            )
+            return
+        _run_options_structure_publisher(packet, timeout_sec=timeout_sec)
+
+    return publish
+
+
 def _chain_snapshot_root_path() -> Path:
     """Return the immutable, config-independent producer authority root."""
     return REPO_ROOT / "data" / OUT_DIR
+
+
+def _options_structure_out_dir_path() -> Path:
+    return REPO_ROOT / "data" / "options_structure_intraday_r2"
 
 
 def _out_root() -> Path:
@@ -304,68 +440,19 @@ def _file_sha256(path: Path, *, confirm: bool = True) -> str:
 
 
 def _target_bucket_frame(frame: pd.DataFrame, root: str, bucket: str) -> pd.DataFrame:
-    missing = [col for col in DEDUP_KEY if col not in frame.columns]
-    if missing:
-        raise RuntimeError(f"target-bucket proof is missing columns: {missing}")
-    target = frame.loc[
-        frame["root"].map(lambda value: type(value) is str and value == root)
-        & frame["snapshot_bucket"].astype(str).eq(bucket)
-    ].copy()
-    if target.empty:
-        raise RuntimeError(f"installed parquet has no {root}/{bucket} target rows")
-    if target.duplicated(subset=DEDUP_KEY).any():
-        raise RuntimeError(f"installed parquet has duplicate {root}/{bucket} target rows")
-    return target
-
-
-def _canonical_cell(value: object) -> object:
-    if value is None or value is pd.NA or value is pd.NaT:
-        return None
-    if isinstance(value, pd.Timestamp):
-        if pd.isna(value):
-            return None
-        return value.isoformat()
-    if isinstance(value, datetime):
-        return value.isoformat(timespec="microseconds")
-    if isinstance(value, date):
-        return value.isoformat()
-    if isinstance(value, bytes):
-        return {"bytes_hex": value.hex()}
-    if hasattr(value, "item"):
-        value = value.item()
-    if isinstance(value, float):
-        if math.isnan(value):
-            return None
-        if not math.isfinite(value):
-            raise RuntimeError("non-finite installed parquet value")
-        return value
-    if type(value) in {str, int, bool}:
-        return value
-    raise RuntimeError(f"unsupported installed parquet scalar: {type(value).__name__}")
+    return chain_snapshot_evidence.target_bucket_frame(
+        frame,
+        root,
+        bucket,
+        dedup_key=DEDUP_KEY,
+    )
 
 
 def _frame_content_sha256(frame: pd.DataFrame) -> str:
-    columns = sorted(str(col) for col in frame.columns)
-    ordered = frame.sort_values(
-        [col for col in DEDUP_KEY if col in frame.columns],
-        kind="stable",
-    ).reset_index(drop=True)
-    payload = {
-        "columns": columns,
-        "rows": [
-            [_canonical_cell(value) for value in row]
-            for row in ordered.loc[:, columns].itertuples(index=False, name=None)
-        ],
-    }
-    return hashlib.sha256(
-        json.dumps(
-            payload,
-            allow_nan=False,
-            ensure_ascii=True,
-            separators=(",", ":"),
-            sort_keys=True,
-        ).encode("utf-8")
-    ).hexdigest()
+    return chain_snapshot_evidence.frame_content_sha256(
+        frame,
+        dedup_key=DEDUP_KEY,
+    )
 
 
 def _atomic_install_parquet(
@@ -888,7 +975,7 @@ def _invoke_completion_hook(
     lease: completion.BucketLease,
     summary: dict,
 ) -> None:
-    """Run the disabled-by-default future seam without rewriting source truth."""
+    """Run the configured post-availability hook without rewriting source truth."""
     if completion_hook is None:
         return
     try:
@@ -904,6 +991,290 @@ def _invoke_completion_hook(
         )
 
 
+def _retry_unacknowledged_publications(
+    completion_hook: Callable[[dict], object] | None,
+    *,
+    activation_session: str | None = None,
+) -> dict:
+    """Boundedly repair complete receipts without a durable R2+local ack.
+
+    The local acknowledgement is derivative delivery state, never source
+    authority. Only already-complete validated producer packets are eligible,
+    and each pass attempts at most one oldest-missing packet so a remote outage
+    cannot consume the source lane's entire cadence budget or lose old backlog.
+    """
+    status = {
+        "max_per_pass": OPTIONS_STRUCTURE_CATCHUP_MAX_PER_PASS,
+        "complete_scanned": 0,
+        "pending_before": 0,
+        "attempted": 0,
+        "acknowledged": 0,
+        "scan_advanced": 0,
+        "remaining": 0,
+        "deep_reproofs": 0,
+        "errors": [],
+    }
+    if completion_hook is None:
+        return status
+    if activation_session is None:
+        status["remaining"] = 1
+        status["errors"].append("delivery activation_session is required")
+        return status
+    try:
+        parsed_activation = date.fromisoformat(activation_session)
+    except (TypeError, ValueError):
+        parsed_activation = None
+    if (
+        parsed_activation is None
+        or parsed_activation.isoformat() != activation_session
+        or not nyse_calendar.is_session(parsed_activation)
+    ):
+        status["remaining"] = 1
+        status["errors"].append("delivery activation_session is invalid")
+        return status
+    try:
+        from scripts import build_options_structure_intraday as publisher
+    except Exception as exc:  # noqa: BLE001 — projection imports cannot gate source
+        status["remaining"] = 1
+        status["errors"].append(f"publisher import: {exc}")
+        return status
+
+    receipt_root = _receipt_root_path()
+    if not receipt_root.is_dir():
+        return status
+    try:
+        cursor = publisher.read_publication_cursor(
+            _options_structure_out_dir_path(),
+        )
+        scan_cursor = publisher.read_publication_scan_cursor(
+            _options_structure_out_dir_path(),
+        )
+        if (
+            cursor is not None
+            and cursor["activation_session"] != activation_session
+        ):
+            raise RuntimeError(
+                "publication cursor activation does not match configuration"
+            )
+        if (
+            scan_cursor is not None
+            and scan_cursor["activation_session"] != activation_session
+        ):
+            raise RuntimeError(
+                "publication scan cursor activation does not match configuration"
+            )
+    except Exception as exc:  # noqa: BLE001 — derivative state cannot gate source
+        status["remaining"] = 1
+        status["errors"].append(f"delivery cursor: {exc}")
+        log.error(
+            "chainsnap: publication cursor preflight failed: %s",
+            exc,
+            exc_info=True,
+        )
+        return status
+
+    scan_floor = (
+        scan_cursor["scan_session"]
+        if scan_cursor is not None
+        else (
+            cursor["session_date"]
+            if cursor is not None
+            else activation_session
+        )
+    )
+    with completion.BucketCompletionStore(receipt_root) as store:
+        if scan_cursor is not None:
+            try:
+                sealed_packets, sealed_receipt = store.confirm_terminal_session_step(
+                    sealed_session=scan_cursor["sealed_session"],
+                    sealed_ledger_sha256=scan_cursor["sealed_ledger_sha256"],
+                    next_session=scan_cursor["scan_session"],
+                )
+                if (
+                    sealed_receipt["complete_count"]
+                    != scan_cursor["sealed_complete_count"]
+                    or not publisher.publication_scan_cursor_matches(
+                        _options_structure_out_dir_path(),
+                        scan_cursor,
+                        sealed_packets,
+                    )
+                ):
+                    raise RuntimeError(
+                        "publication scan cursor source/delivery binding drifted"
+                    )
+            except Exception as exc:  # noqa: BLE001 — derivative only
+                status["remaining"] = 1
+                status["errors"].append(f"scan cursor: {exc}")
+                log.error(
+                    "chainsnap: publication scan cursor preflight failed: %s",
+                    exc,
+                    exc_info=True,
+                )
+                return status
+        packets, selected_receipts, has_more_sessions = store.complete_packets_from(
+            scan_floor,
+            max_sessions=2,
+            require_start=scan_cursor is not None,
+        )
+        status["complete_scanned"] = len(packets)
+        try:
+            cursor_packet: dict | None = None
+            if cursor is not None:
+                cursor_packets = packets
+                matches = [
+                    packet for packet in cursor_packets
+                    if publisher.publication_cursor_matches(cursor, packet)
+                ]
+                if not matches:
+                    cursor_packets, _sessions, _more = store.complete_packets_from(
+                        cursor["session_date"],
+                        max_sessions=1,
+                        require_start=True,
+                    )
+                    matches = [
+                        packet for packet in cursor_packets
+                        if publisher.publication_cursor_matches(cursor, packet)
+                    ]
+                if len(matches) != 1:
+                    raise RuntimeError(
+                        "publication cursor does not identify exactly one complete packet"
+                    )
+                cursor_packet = matches[0]
+                prefix = [
+                    packet for packet in cursor_packets
+                    if (
+                        packet["intent"]["session_date"] == cursor["session_date"]
+                        and packet["intent"]["bucket"] <= cursor["snapshot_bucket"]
+                    )
+                ]
+                if not publisher.publication_cursor_prefix_matches(cursor, prefix):
+                    raise RuntimeError(
+                        "complete-packet session prefix changed before the publication cursor"
+                    )
+                status["deep_reproofs"] += 1
+                if not publisher.publication_acknowledged(
+                    _options_structure_out_dir_path(), cursor_packet,
+                ):
+                    raise RuntimeError("publication cursor acknowledgement is missing")
+        except Exception as exc:  # noqa: BLE001 — derivative state cannot gate source
+            status["remaining"] = max(1, len(packets))
+            status["errors"].append(f"delivery cursor: {exc}")
+            log.error(
+                "chainsnap: publication cursor preflight failed: %s",
+                exc,
+                exc_info=True,
+            )
+            return status
+
+        cursor_epoch = (
+            (cursor["session_date"], cursor["snapshot_bucket"])
+            if cursor is not None
+            else None
+        )
+        pending = [
+            packet for packet in packets
+            if cursor_epoch is None
+            or (
+                packet["intent"]["session_date"],
+                packet["intent"]["bucket"],
+            ) > cursor_epoch
+        ]
+        status["pending_before"] = len(pending) + int(has_more_sessions)
+        if pending:
+            packet = pending[0]
+            key = f"{packet['intent']['session_date']}/{packet['intent']['bucket']}"
+            try:
+                status["deep_reproofs"] += 1
+                already_acknowledged = publisher.publication_acknowledged(
+                    _options_structure_out_dir_path(), packet,
+                )
+                if not already_acknowledged:
+                    status["attempted"] += 1
+                    completion_hook(packet)
+                    if not publisher.publication_acknowledged(
+                        _options_structure_out_dir_path(), packet,
+                    ):
+                        raise RuntimeError(
+                            "publisher returned without durable acknowledgement"
+                        )
+                publisher.advance_publication_cursor(
+                    _options_structure_out_dir_path(),
+                    packet,
+                    prefix_packets=[
+                        item for item in packets
+                        if (
+                            item["intent"]["session_date"]
+                            == packet["intent"]["session_date"]
+                            and item["intent"]["bucket"]
+                            <= packet["intent"]["bucket"]
+                        )
+                    ],
+                    activation_session=activation_session,
+                )
+                if packet["intent"]["session_date"] > scan_floor:
+                    candidate_session = packet["intent"]["session_date"]
+                    prior_receipts = [
+                        receipt for receipt in selected_receipts
+                        if receipt["session_date"] < candidate_session
+                    ]
+                    if prior_receipts:
+                        sealed_receipt = prior_receipts[-1]
+                        publisher.advance_publication_scan_cursor(
+                            _options_structure_out_dir_path(),
+                            activation_session=activation_session,
+                            from_session=scan_floor,
+                            to_session=candidate_session,
+                            sealed_session=sealed_receipt["session_date"],
+                            sealed_ledger_sha256=sealed_receipt["ledger_sha256"],
+                            sealed_packets=[
+                                item for item in packets
+                                if item["intent"]["session_date"]
+                                == sealed_receipt["session_date"]
+                            ],
+                        )
+                        status["scan_advanced"] = 1
+                status["acknowledged"] += 1
+            except Exception as exc:  # noqa: BLE001 — source receipt stays terminal
+                status["errors"].append(f"{key}: publish: {exc}")
+                log.error(
+                    "chainsnap: bounded publication catch-up failed for %s: %s",
+                    key,
+                    exc,
+                    exc_info=True,
+                )
+        elif has_more_sessions and selected_receipts:
+            next_floor = selected_receipts[-1]["session_date"]
+            if next_floor > scan_floor:
+                try:
+                    sealed_receipt = selected_receipts[-2]
+                    publisher.advance_publication_scan_cursor(
+                        _options_structure_out_dir_path(),
+                        activation_session=activation_session,
+                        from_session=scan_floor,
+                        to_session=next_floor,
+                        sealed_session=sealed_receipt["session_date"],
+                        sealed_ledger_sha256=sealed_receipt["ledger_sha256"],
+                        sealed_packets=[
+                            item for item in packets
+                            if item["intent"]["session_date"]
+                            == sealed_receipt["session_date"]
+                        ],
+                    )
+                    status["scan_advanced"] = 1
+                except Exception as exc:  # noqa: BLE001 — derivative only
+                    status["errors"].append(f"scan cursor: {exc}")
+                    log.error(
+                        "chainsnap: publication scan cursor advance failed: %s",
+                        exc,
+                        exc_info=True,
+                    )
+        status["remaining"] = max(
+            0,
+            len(pending) - status["acknowledged"] + int(has_more_sessions),
+        )
+    return status
+
+
 def run_managed_sweep(
     roots: list[str],
     session_date: str,
@@ -917,8 +1288,7 @@ def run_managed_sweep(
 ) -> dict:
     """Run/recover one receipt-bound bucket under the sole producer lock.
 
-    The future hook is an injection seam only: production passes ``None``.  If
-    later supplied it runs synchronously under this same lock, and only after a
+    A supplied hook runs synchronously under this same lock and only after a
     durable availability receipt.  Its failure is returned in observability but
     cannot roll back the already-durable source sweep or completion receipts.
     """
@@ -1218,10 +1588,29 @@ def main(argv: list[str] | None = None) -> int:
         cfg = _cfg()
         cadence_min = completion.validate_cadence_min(cfg.get("cadence_min", 15))
         _max_concurrent(cfg)
+        _publisher_enabled, _publisher_timeout, activation_session = (
+            _options_structure_settings(cfg)
+        )
+        completion_hook = _options_structure_completion_hook(cfg)
     except Exception as exc:  # noqa: BLE001 — malformed config must fail closed
         log.error("chainsnap: invalid chain_snapshots config: %s", exc)
         return 1
     cadence_sec = cadence_min * 60
+
+    try:
+        startup_catchup = _retry_unacknowledged_publications(
+            completion_hook,
+            activation_session=activation_session,
+        )
+    except Exception as exc:  # noqa: BLE001 — corrupt complete receipt blocks publication
+        log.error("chainsnap: publication catch-up preflight failed: %s", exc,
+                  exc_info=True)
+        return 1
+    if startup_catchup["pending_before"] or startup_catchup["errors"]:
+        log.warning("chainsnap: startup publication catch-up=%s", startup_catchup)
+    if recovery_actions:
+        recovery_actions[-1]["publication_catchup"] = startup_catchup
+        _write_recovery_meta(recovery_actions, cfg, sweep_n=0)
 
     # launchd fires at 06:30 PT (09:30 ET).  Only --rth-only waits for 09:35;
     # every other outside-window invocation (including --once) creates no new
@@ -1241,8 +1630,21 @@ def main(argv: list[str] | None = None) -> int:
             return False
         if actions:
             log.warning("chainsnap: final receipt recovery actions=%s", actions)
+        try:
+            publication_catchup = _retry_unacknowledged_publications(
+                completion_hook,
+                activation_session=activation_session,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.error("chainsnap: final publication catch-up failed: %s", exc,
+                      exc_info=True)
+            return False
+        if actions:
+            actions[-1]["publication_catchup"] = publication_catchup
             _write_recovery_meta(actions, cfg, sweep_n=sweep_n)
-        return True
+        if publication_catchup["pending_before"] or publication_catchup["errors"]:
+            log.warning("chainsnap: final publication catch-up=%s", publication_catchup)
+        return not publication_catchup["errors"] and publication_catchup["remaining"] == 0
     if args.rth_only and not _within_rth(startup_now):
         wait = _pre_rth_wait_sec(startup_now)
         if wait > 0:
@@ -1281,6 +1683,7 @@ def main(argv: list[str] | None = None) -> int:
         return run_sweep(frozen_roots, frozen_session, frozen_bucket, source_cfg)
 
     sweep_n = 0
+    catchup_status = startup_catchup
     while True:
         sweep_n += 1
         now_et = _now_et()
@@ -1290,16 +1693,36 @@ def main(argv: list[str] | None = None) -> int:
         session_date = now_et.strftime("%Y-%m-%d")
         bucket = derive_bucket(now_et, cadence_min)
 
+        if sweep_n > 1:
+            try:
+                catchup_status = _retry_unacknowledged_publications(
+                    completion_hook,
+                    activation_session=activation_session,
+                )
+            except Exception as exc:  # noqa: BLE001 — source lane remains independent
+                catchup_status = {
+                    "remaining": 1,
+                    "errors": [f"catch-up preflight: {exc}"],
+                }
+                log.error("chainsnap: publication catch-up failed: %s", exc,
+                          exc_info=True)
+
         log.info("chainsnap: sweep #%d starting (date=%s bucket=%s roots=%d)",
                  sweep_n, session_date, bucket, len(roots))
 
         try:
+            ordered_completion_hook = (
+                completion_hook
+                if catchup_status.get("remaining", 0) == 0
+                else None
+            )
             summary = run_managed_sweep(
                 roots,
                 session_date,
                 bucket,
                 cfg,
                 now=now_et,
+                completion_hook=ordered_completion_hook,
                 sweep_fn=_source_sweep,
             )
         except Exception as e:  # noqa: BLE001
@@ -1314,6 +1737,7 @@ def main(argv: list[str] | None = None) -> int:
                 time.sleep(retry_delay)
             continue
 
+        summary["publication_catchup"] = catchup_status
         _write_meta(session_date, sweep_n, summary, cfg)
         log.info("chainsnap: sweep #%d ok=%d failed=%d rows+%d oi=%d sweep_sec=%.1fs",
                  sweep_n, summary["roots_ok"], summary["roots_failed"],
@@ -1321,9 +1745,10 @@ def main(argv: list[str] | None = None) -> int:
 
         if args.once:
             log.info("chainsnap: --once flag set — exiting after one sweep")
-            return 0 if summary.get("receipt_state") in {
+            source_ok = summary.get("receipt_state") in {
                 "complete", "complete_skip", "decision_recovered",
-            } else 1
+            }
+            return 0 if source_ok and _drain_before_clean_exit(sweep_n) else 1
 
         # --rth-only: self-exit at end of each sweep once outside RTH
         after_sweep = _now_et()

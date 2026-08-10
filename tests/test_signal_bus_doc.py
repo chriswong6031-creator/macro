@@ -73,9 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 620, (
-        f"Expected 620 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 621, (
+        f"Expected 621 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Blocked-entry override registered site-basket-washout-history — the per-notch"
+        " retro-marking intervals sibling of the state artifact, same builder and step"
+        " = 620->621);"
         " (Options signal episodes registered a separate immutable"
         " EOD/1d/3d/5d/10d session-outcome ledger = 619->620);"
         " (Blocked-entry A1b display support registered the nightly, display-only"

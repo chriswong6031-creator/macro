@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import io
 import json
-import os
 from pathlib import Path
 
 import pytest
@@ -21,11 +20,6 @@ from engine.marketing import share_cards as sc
 TICKER_KW = dict(
     ticker="AAPL", name="Apple Inc.", sector="Technology",
     industry="Consumer Electronics", logo_path=None,  # monogram path (no logo file)
-)
-MOVERS_KW = dict(
-    asof="Jul 18, 2026",
-    gainers=[{"ticker": "VST", "pct": 8.4}, {"ticker": "PLTR", "pct": 6.1}],
-    losers=[{"ticker": "BA", "pct": -7.9}, {"ticker": "IBM", "pct": -5.2}],
 )
 SCREENER_KW = dict(
     asof="Jul 18, 2026",
@@ -45,7 +39,6 @@ def _png_bytes(img: Image.Image) -> bytes:
 
 ALL_RENDERERS = [
     ("ticker", lambda: sc.render_ticker_card(**TICKER_KW)),
-    ("movers", lambda: sc.render_movers_card(**MOVERS_KW)),
     ("screener", lambda: sc.render_screener_card(**SCREENER_KW)),
 ]
 
@@ -126,7 +119,7 @@ def test_fingerprint_changes_on_version_bump(monkeypatch):
 
 def test_save_card_roundtrip_and_budget(tmp_path):
     out = tmp_path / "card.png"
-    sc.save_card(sc.render_movers_card(**MOVERS_KW), out)
+    sc.save_card(sc.render_ticker_card(**TICKER_KW), out)
     assert out.exists()
     im = Image.open(out)
     assert im.size == (1200, 630)
@@ -176,12 +169,12 @@ def test_save_if_changed_skip_and_regen(tmp_path):
 def test_save_if_changed_regen_when_artifact_missing(tmp_path):
     """Fingerprint present but the PNG was deleted → must re-render."""
     root, out = _root_with_out(tmp_path)
-    payload = {"type": "movers", "asof": "Jul 18, 2026"}
+    payload = {"type": "screener", "asof": "Jul 18, 2026"}
     calls = {"n": 0}
 
     def render():
         calls["n"] += 1
-        return sc.render_movers_card(**MOVERS_KW)
+        return sc.render_screener_card(**SCREENER_KW)
 
     assert sc.save_card_if_changed(payload=payload, out_path=out, render=render, root=root) is True
     out.unlink()  # artifact gone, fingerprint store still has the key
@@ -223,7 +216,6 @@ def test_write_store_atomic_overwrites_cleanly(tmp_path):
 # into a rendered string). Docstrings/comments are NOT user-facing.
 _USER_FACING_COPY = [
     "signals   ·   options flow   ·   factor profile",
-    "Today’s Movers", "GAINERS", "LOSERS",
     "SIGNAL STACK SCREENER", "wins per 10 in testing",
     "entries since", "stocks match today",
     "Historical win rate - not a guarantee.",
@@ -255,13 +247,6 @@ def test_ticker_card_empty_and_long_inputs():
         name="Berkshire Hathaway Inc. Class B Common Stock Ordinary Shares",
         sector="Financial Services", industry="Insurance—Diversified", logo_path=None,
     )
-
-
-def test_movers_card_short_lists():
-    # Fewer than 5 rows must render fine (top-5 slice tolerates short lists).
-    img = sc.render_movers_card(asof="Jul 18, 2026",
-                                gainers=[{"ticker": "VST", "pct": 8.4}], losers=[])
-    assert img.size == (1200, 630)
 
 
 def test_screener_card_long_headline_wraps():
