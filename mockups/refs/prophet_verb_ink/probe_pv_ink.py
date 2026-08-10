@@ -2,7 +2,14 @@
 
     python3 mockups/refs/prophet_verb_ink/probe_pv_ink.py
     python3 mockups/refs/prophet_verb_ink/probe_pv_ink.py --near-mix 56%   # sweep a candidate
-    python3 mockups/refs/prophet_verb_ink/probe_pv_ink.py --shoot          # + swatch PNGs
+    python3 mockups/refs/prophet_verb_ink/probe_pv_ink.py --avoid-mix 100% # ditto, dark avoid
+    python3 mockups/refs/prophet_verb_ink/probe_pv_ink.py --shoot avoid88  # + swatch PNGs
+
+Both sweep flags take the mix percentage, never a "before"/"after" word, and 100%
+is how the pass-through state is expressed — so a swept state is always named by
+the value that produced it and a crop cannot claim a side of a fix it did not
+render. ``--near-mix`` overrides the light+zh selector the Near fix edits;
+``--avoid-mix`` overrides ``:root``, the selector the dark Avoid fix edits.
 
 Why this exists as its own harness rather than a crop off a board: the defect it
 was built for is a TOKEN defect, and no shipped board carries all five verbs at
@@ -112,16 +119,27 @@ def _card_css() -> str:
     return str(mod.pv_css())  # type: ignore[attr-defined]
 
 
-def _page(theme: str, lang: str, near_mix: str | None) -> str:
+def _page(theme: str, lang: str, near_mix: str | None,
+          avoid_mix: str | None = None) -> str:
     theme_css = (ROOT / "templates" / "theme.css").read_text(encoding="utf-8")
-    override = ""
+    # Each override reuses the SELECTOR its real fix edits, appended last so it wins
+    # the tie at equal specificity. --avoid-mix therefore lands on :root, which is
+    # the dark plane (theme.css keys dark on :root, not [data-theme="dark"], because
+    # the pre-paint head script leaves data-theme ABSENT until the reader picks a
+    # theme) — so on a light page html[data-theme="light"] still correctly outranks
+    # it, exactly as it outranks the shipped declaration.
+    rules = []
     if near_mix:
-        # Same selector the fix edits, appended last so it wins the tie at equal specificity.
-        override = (
-            '<style>html[data-theme="light"][data-lang="zh"]{'
-            f"--ink-pv-near: color-mix(in srgb, var(--pv-near) {near_mix}, var(--text));"
-            "}</style>"
+        rules.append(
+            'html[data-theme="light"][data-lang="zh"]{'
+            f"--ink-pv-near: color-mix(in srgb, var(--pv-near) {near_mix}, var(--text));}}"
         )
+    if avoid_mix:
+        rules.append(
+            ":root{"
+            f"--ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) {avoid_mix}, var(--text));}}"
+        )
+    override = f"<style>{''.join(rules)}</style>" if rules else ""
     idx = 0 if lang == "en" else 1
     cards = "\n".join(
         f'''<a class="pvcard pv-{v}" data-verb="{v}">
@@ -186,7 +204,8 @@ _PROBE_JS = """
 """
 
 
-def measure(near_mix: str | None = None, shoot: str | None = None):
+def measure(near_mix: str | None = None, shoot: str | None = None,
+            avoid_mix: str | None = None):
     from playwright.sync_api import sync_playwright
 
     rows = []
@@ -195,14 +214,17 @@ def measure(near_mix: str | None = None, shoot: str | None = None):
         for lang, theme in COMBOS:
             page = browser.new_page(viewport={"width": 1340, "height": 260},
                                     device_scale_factor=2)
-            page.set_content(_page(theme, lang, near_mix), wait_until="load")
+            page.set_content(_page(theme, lang, near_mix, avoid_mix), wait_until="load")
             page.wait_for_timeout(140)
             if shoot:
                 # Named for the MIX actually rendered, never "before"/"after" —
                 # a shot whose filename asserts a state it cannot prove is how a
-                # proof crop ends up showing the wrong side of the fix.
+                # proof crop ends up showing the wrong side of the fix. The tag
+                # carries the AXIS as well as the value (avoid88, near70), because
+                # a bare percentage stops identifying the state the moment a second
+                # token is sweepable — which is now.
                 page.locator(".pvgrid").screenshot(
-                    path=str(HERE / f"pv_verbs_{lang}_{theme}_near{shoot}.png"))
+                    path=str(HERE / f"pv_verbs_{lang}_{theme}_{shoot}.png"))
             for r in page.evaluate(_PROBE_JS):
                 bg = None
                 for layer in reversed(r["bgs"]):        # bottom-up
@@ -262,13 +284,22 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--near-mix", default=None,
                     help="override --ink-pv-near's mix under light+zh, e.g. 56%%")
-    ap.add_argument("--shoot", metavar="MIXLABEL", default=None,
-                    help="also write swatch PNGs, tagged with this mix (e.g. 70)")
+    ap.add_argument("--avoid-mix", default=None,
+                    help="override --ink-pv-avoid's mix on :root (the dark plane), "
+                         "e.g. 100%% to reproduce the pre-fix pass-through")
+    ap.add_argument("--shoot", metavar="TAG", default=None,
+                    help="also write swatch PNGs tagged with the state rendered, "
+                         "axis included (e.g. avoid88, near70)")
     args = ap.parse_args()
     _CARD_CSS = _card_css()
-    label = f"--ink-pv-near @ {args.near_mix} (light+zh)" if args.near_mix else "as shipped"
+    swept = []
+    if args.near_mix:
+        swept.append(f"--ink-pv-near @ {args.near_mix} (light+zh)")
+    if args.avoid_mix:
+        swept.append(f"--ink-pv-avoid @ {args.avoid_mix} (:root / dark)")
+    label = " + ".join(swept) if swept else "as shipped"
     print(f"\n  prophet verb inks — {label}")
-    return report(measure(args.near_mix, args.shoot))
+    return report(measure(args.near_mix, args.shoot, args.avoid_mix))
 
 
 if __name__ == "__main__":

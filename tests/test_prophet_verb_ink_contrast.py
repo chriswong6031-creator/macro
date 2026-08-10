@@ -1,13 +1,29 @@
 """Prophet-card verb inks must clear WCAG AA as TEXT, in both themes and both languages.
 
-The defect this pins (found 2026-08-10): ``--ink-pv-near`` under
-``html[data-theme="light"][data-lang="zh"]`` was keyed at 84% — the rung the
-estate uses for a plain red — but the zh ``--pv-near`` hue is not a plain red, it
-is ``color-mix(--up 82%, #fff)``, a red already pushed most of the way to white.
-Mixing a nearly-white red only 84% of the way toward ``--text`` left the ink at
-3.90:1 on the chip tint and 4.00:1 on ``--panel2``: under AA on the Near card of
-every prophet board, in Chinese, in light mode. The EN twin never had the bug
-because it compensates in the same direction (buy 62% -> near 56%).
+Two defects are pinned here, both found 2026-08-10, both invisible in source.
+
+FIRST — ``--ink-pv-near`` under ``html[data-theme="light"][data-lang="zh"]`` was
+keyed at 84% — the rung the estate uses for a plain red — but the zh ``--pv-near``
+hue is not a plain red, it is ``color-mix(--up 82%, #fff)``, a red already pushed
+most of the way to white. Mixing a nearly-white red only 84% of the way toward
+``--text`` left the ink at 3.90:1 on the chip tint and 4.00:1 on ``--panel2``:
+under AA on the Near card of every prophet board, in Chinese, in light mode. The
+EN twin never had the bug because it compensates in the same direction
+(buy 62% -> near 56%).
+
+SECOND — in dark the verb-ink layer was a blanket pass-through (``--ink-pv-avoid``
+resolved to the raw ``--pv-avoid`` #e06464), on the strength of theme.css's claim
+that the raw dark inks clear 4.5:1 "on every estate surface". That measurement was
+taken against ``--bg``/``--panel``/``--panel2`` and never against a surface tinted
+with the hue's OWN colour — and ``.pv-chip`` is exactly that, a
+``color-mix(--pvh 13%, --panel)`` that is DARKER than ``--panel``. #e06464 on its
+own 13% tint measured 4.33:1. Fixed by mixing the dark avoid ink 88% toward
+``--text``; the theme.css claim was narrowed to what it actually covered.
+
+The lesson both share, and the reason the whole 5x4x4 plane is measured rather
+than the pairs someone thought to check: a contrast claim is only as wide as the
+SURFACES it was measured against, and this palette prints text on surfaces derived
+from the text's own hue.
 
 Why a test and not just the fix: nothing in the estate could SEE this. The inks
 are computed by ``color-mix`` at paint time from tokens that a language switch
@@ -54,22 +70,20 @@ AA_SMALL = 4.5
 #: (lang, theme) — dark is theme.css's :root default, so it has no own block.
 COMBOS = (("en", "light"), ("zh", "light"), ("en", "dark"), ("zh", "dark"))
 
-#: KNOWN GAP, deliberately not fixed in the PR that added this file.
+#: Carve-outs: {(lang, theme, verb, consumer): measured_ratio}. EMPTY, and that is
+#: the intended steady state — every pair on the plane clears AA today.
 #:
-#: ``en/dark avoid .pv-chip`` measures 4.33:1 — under AA, and NOT caused by the
-#: bug above: in dark the ink layer is a pass-through (``--ink-pv-avoid`` resolves
-#: to the raw ``--pv-avoid`` #e06464), and #e06464 on its own 13% tint over
-#: ``--panel`` is simply short. theme.css's own comment claims "measured raw dark
-#: inks pass 4.5:1 on every estate surface"; that claim was made against
-#: ``--panel``/``--panel2`` directly and never against a 13% tint of the hue
-#: itself, which is a darker surface than either.
+#: The mechanism is kept rather than deleted with its last entry. It exists so a
+#: defect can be pinned at its measured value (a CEILING, not an amnesty — the pair
+#: still cannot drift further) when the fix is a separate visual change that should
+#: not be folded silently into an unrelated PR. That is how
+#: ``en/dark avoid .pv-chip`` (4.33:1) was held between the PR that found it and
+#: the PR that re-keyed the dark avoid ink to 88%.
 #:
-#: It is carved out rather than fixed because the fix is a dark-mode visual change
-#: to a second, independent defect, and the change that ships alongside this file
-#: was scoped to the light+zh one. The carve-out is a CEILING, not an amnesty: the
-#: pair is asserted to stay at or above its measured value, so it cannot drift
-#: further while it waits. Delete this entry as part of fixing it.
-KNOWN_GAP = {("en", "dark", "avoid", "pv-chip"): 4.33}
+#: ``test_known_gap_entries_are_still_failing`` below is what makes an entry
+#: self-clearing: it fails the moment a carved-out pair starts passing, so a stale
+#: entry cannot survive its own fix and quietly lower that pair's floor forever.
+KNOWN_GAP: dict[tuple[str, str, str, str], float] = {}
 
 
 # --------------------------------------------------------------------------- colour
@@ -333,8 +347,11 @@ def test_zh_light_near_stays_softer_than_buy(theme_css, verbs, surfaces):
 def test_known_gap_entries_are_still_failing(theme_css, verbs, surfaces):
     """A carve-out that has been fixed must be deleted, not left to rot.
 
-    Without this, fixing ``en/dark avoid`` would leave a stale KNOWN_GAP entry
-    behind that silently lowers the floor for that pair forever.
+    Vacuous while ``KNOWN_GAP`` is empty, which is the point: it only has work to
+    do when someone carves a pair out, and then it is the thing that forces the
+    entry to be removed by the PR that fixes the pair. Without it, fixing
+    ``en/dark avoid`` would have left a stale entry behind that silently lowers
+    the floor for that pair forever.
     """
     for (lang, theme, verb, consumer), pinned in KNOWN_GAP.items():
         got = _measure(theme_css, verbs, surfaces, lang, theme, verb, consumer)
