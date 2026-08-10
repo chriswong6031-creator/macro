@@ -91,3 +91,4 @@ Descriptive sign-stability tables of E1 survivors: track W eras {2021H2–2022, 
 ## 6. Ratification log (append-only)
 
 - 2026-08-10: Frozen at charter. No results computed. (Deviations, if any, and results-time entries append below with dates.)
+- 2026-08-10 (pre-outcome deviation, data defect — trigger recorded before any label was computed): the massive store keys by TICKER and tickers are reused across corporate identities (verified: `BBBY.parquet` = old Bed Bath & Beyond through 2023, an 850-day gap, then a different company from 2025-08-29). **Rule added:** every ticker's series is split at interior gaps > 60 sessions into identity segments treated as independent names (own history floor, episodes, PIT windows truncated at segment start; nothing crosses a boundary). Segment counts printed in the summary. This is an identity repair, not a construction change; race/feature definitions are untouched.
