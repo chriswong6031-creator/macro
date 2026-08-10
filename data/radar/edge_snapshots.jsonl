@@ -9470,3 +9470,13 @@
 {"date":"2026-08-07","kind":"ticker","subject":"SNDK","ticker":"SNDK","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
 {"date":"2026-08-07","kind":"ticker","subject":"LMT","ticker":"LMT","edge_score":28,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"signal"}
 {"date":"2026-08-07","kind":"ticker","subject":"BA","ticker":"BA","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"signal"}
+{"date":"2026-08-07","kind":"basket","subject":"ai_semiconductors","ticker":"SMH","edge_score":0,"state":"CONFIRMED_UP","era":2}
+{"date":"2026-08-07","kind":"ticker","subject":"URI","ticker":"URI","edge_score":43,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"signal"}
+{"date":"2026-08-07","kind":"ticker","subject":"ACM","ticker":"ACM","edge_score":21,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"signal"}
+{"date":"2026-08-07","kind":"ticker","subject":"MKSI","ticker":"MKSI","edge_score":6,"state":"BROKEN_LAGGARD","era":2,"source":"basket_attributed"}
+{"date":"2026-08-07","kind":"ticker","subject":"ALAB","ticker":"ALAB","edge_score":0,"state":"BROKEN_LAGGARD","era":2,"source":"basket_attributed"}
+{"date":"2026-08-07","kind":"ticker","subject":"AMD","ticker":"AMD","edge_score":0,"state":"BROKEN_LAGGARD","era":2,"source":"basket_attributed"}
+{"date":"2026-08-07","kind":"ticker","subject":"ARM","ticker":"ARM","edge_score":0,"state":"BROKEN_LAGGARD","era":2,"source":"basket_attributed"}
+{"date":"2026-08-07","kind":"ticker","subject":"QCOM","ticker":"QCOM","edge_score":0,"state":"BROKEN_LAGGARD","era":2,"source":"basket_attributed"}
+{"date":"2026-08-07","kind":"ticker","subject":"AVGO","ticker":"AVGO","edge_score":0,"state":"CONFIRMED_UP","era":2,"source":"basket_attributed"}
+{"date":"2026-08-07","kind":"ticker","subject":"SMCI","ticker":"SMCI","edge_score":0,"state":"CONFIRMED_UP","era":2,"source":"basket_attributed"}

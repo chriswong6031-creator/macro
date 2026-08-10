@@ -22,10 +22,10 @@
         ],
         "matched": [],
         "matched_by_content": [],
-        "n_files_scanned": 54
+        "n_files_scanned": 59
       },
       "handoff_doc": "research/SEASONALITY_BIOCATALYST_INTEGRATION_SEAM.md",
-      "headline": "No BioCatalyst seasonality event-projection schema yet (54 contract files scanned).",
+      "headline": "No BioCatalyst seasonality event-projection schema yet (59 contract files scanned).",
       "key": "biocatalyst_event_contract",
       "operator_prompt": "The BioCatalyst seasonality event-projection contract has NOT landed yet, so the event clock stays dark and there is nothing to reconcile. Nothing to do here tonight; when it lands this tripwire fires and carries the reconciliation prompt. If you want to chase it, research/SEASONALITY_BIOCATALYST_INTEGRATION_SEAM.md names the seam and the producer session.",
       "state": "waiting",
@@ -34,7 +34,7 @@
     {
       "evidence": {
         "by_row_type": {
-          "register": 43
+          "register": 49
         },
         "closed_out_ungradable": 0,
         "earliest_pending_occurrence_end": "2026-08-12",
@@ -45,12 +45,12 @@
         "keyless_rows": 0,
         "malformed": 0,
         "path": "data/seasonality/nw_forward_ledger.jsonl",
-        "pending": 43,
+        "pending": 49,
         "pending_without_readable_end": 0,
-        "registered": 43
+        "registered": 49
       },
       "handoff_doc": "research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CONTINUATION_HANDOFF_2026-08-07.md",
-      "headline": "43 seasonality windows registered, 0 graded — the earliest pending window closes 2026-08-12.",
+      "headline": "49 seasonality windows registered, 0 graded — the earliest pending window closes 2026-08-12.",
       "key": "first_matured_grade",
       "operator_prompt": "No seasonality window has been graded yet, so there is no calibration read to run — a grade cannot exist before its window closes. Nothing to do tonight; this tripwire fires with the calibration prompt when the first one lands. Context: research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CONTINUATION_HANDOFF_2026-08-07.md.",
       "state": "waiting",
@@ -97,7 +97,7 @@
             "state": "closed"
           },
           {
-            "detail": ".github/workflows/daily.yml: build_prophet first invoked at line 2244, build_stock_seasonality first invoked at line 2523 (comments excluded; line order, which is only an ordering guarantee inside one sequential job)",
+            "detail": ".github/workflows/daily.yml: build_prophet first invoked at line 2339, build_stock_seasonality first invoked at line 3810 (comments excluded; line order, which is only an ordering guarantee inside one sequential job)",
             "key": "daily_workflow_runs_prophet_before_seasonality",
             "prompt": ".github/workflows/daily.yml runs build_prophet before build_stock_seasonality, so the Prophet lane can never read the night's fresh seasonality artifacts. Decide explicitly: either reorder the nightly, or document why the one-night lag is correct — and mirror whichever it is into config/dag.yml.",
             "state": "open"
@@ -114,7 +114,7 @@
             "state": "open"
           },
           {
-            "detail": ".github/workflows/daily.yml: build_prophet first invoked at line 2244, build_stock_seasonality first invoked at line 2523 (comments excluded; line order, which is only an ordering guarantee inside one sequential job)",
+            "detail": ".github/workflows/daily.yml: build_prophet first invoked at line 2339, build_stock_seasonality first invoked at line 3810 (comments excluded; line order, which is only an ordering guarantee inside one sequential job)",
             "key": "daily_workflow_runs_prophet_before_seasonality",
             "prompt": ".github/workflows/daily.yml runs build_prophet before build_stock_seasonality, so the Prophet lane can never read the night's fresh seasonality artifacts. Decide explicitly: either reorder the nightly, or document why the one-night lag is correct — and mirror whichever it is into config/dag.yml.",
             "state": "open"

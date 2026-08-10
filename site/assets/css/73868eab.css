@@ -1,0 +1,730 @@
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE. House tokens come from theme.css; .soft-contrast is applied to <html>
+   by theme.js for every visitor and re-tunes --bg/--panel/--panel2/--text/--line
+   — inherited automatically, NEVER re-declared here. No prefers-color-scheme
+   rule: the house has zero, and theme comes from the no-flash boot script above.
+   body top padding = the nav-gap law (scripts/check_nav_gap.py, #3324).
+   ═══════════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);
+  font-size:13.5px;line-height:1.5;margin:0;padding:18px 0 0;-webkit-font-smoothing:antialiased}
+
+/* TYPE ROLE LAW — machine-recorded facts are monospaced, human interpretation is
+   not. Never put Hanzi inside .mono (CJK falls back to a mismatched face). The
+   --font-mono token already leads with ui-monospace: never hand-roll an
+   "SF Mono"-first stack, which renders SERIF in Chrome (#3371). */
+.oew .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WORKSPACE TOKENS — the Options workspace identity.
+   --oew-accent  SLATE-INDIGO. STRUCTURE ONLY: close line, active tab, focus
+                 rings, pip fills. NEVER encodes data, never encodes direction.
+                 Non-directional on purpose — it must be unmistakable for --up or
+                 --down in BOTH languages (zh flips those two), and distinct from
+                 every sibling desk (gex=coral, flow=teal, market_structure=violet).
+   --oew-stamp   BRASS. THE RECORD INK. Exactly three uses: the session date
+                 stamp, as-of / vintage micro-labels, and the coverage label on
+                 the close line. Darker and browner than --warn so a vintage mark
+                 can never be misread as an amber warning.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.oew{
+  --oew-accent:#8e97c8;
+  --oew-stamp:#b49256;
+  --hair: color-mix(in srgb, var(--line) 72%, transparent);
+  --tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+  --ink-2: color-mix(in srgb, var(--text) 66%, transparent);
+  --ink-3: var(--muted);
+  /* stance ramp — ONE hue, intensity = urgency. Direction-STABLE and
+     deliberately NOT zh-flipped, exactly like the --pv-* prophet verbs. A
+     stance is an urgency scale, never a direction, so it never borrows
+     --up/--down. --warn is allowed for "protect" because house law already
+     treats --warn as health/danger, not price direction, and leaves it
+     un-flipped in zh. */
+  --oew-st-act:    var(--oew-accent);
+  --oew-st-ready:  var(--oew-accent);
+  --oew-st-watch:  var(--ink-2);
+  --oew-st-protect:var(--warn);
+  --oew-st-aside:  var(--muted);
+  --oew-st-ignore: var(--muted);
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:32px; --s8:44px;
+  --r-pill:999px; --r-ctl:8px; --r-panel:14px; --r-shell:14px;
+}
+html[data-theme="light"] .oew{
+  --oew-accent:#4c55a8;
+  --oew-stamp:#8a6a2e;
+  --hair: color-mix(in srgb, var(--line) 92%, transparent);
+  --ink-2: color-mix(in srgb, var(--text) 72%, transparent);
+}
+
+.oew-eyebrow{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+html[data-lang="zh"] .oew-eyebrow{letter-spacing:.02em;text-transform:none}
+.oew-wrap{max-width:1240px;margin:0 auto;padding:0 var(--s5) var(--s8)}
+@media (max-width:560px){.oew-wrap{padding:0 var(--s3) var(--s7)}}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE PERSISTENT CHROME (identity · stamp · posture console · close line · tabs).
+   This is the product: all four modes inherit it unchanged. That inheritance is
+   the entire argument for a workspace rather than four pages.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.oew-chrome{padding:var(--s6) 0 0}
+.oew-idrow{display:flex;align-items:flex-end;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s5)}
+.oew-title{margin:0;font-size:22px;font-weight:700;letter-spacing:-.015em;line-height:1.15}
+.oew-title .sub{display:block;font-size:11.5px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:3px}
+
+.oew-receipt{display:grid;grid-template-columns:minmax(196px,232px) 1fr;gap:var(--s5);align-items:stretch}
+@media (max-width:900px){.oew-receipt{grid-template-columns:1fr;gap:var(--s4)}}
+
+/* ── THE SESSION STAMP — brass, monospaced, reads as a settlement record ── */
+.oew-stampblock{border:1px solid var(--hair);border-radius:var(--r-panel);background:var(--tile);
+  padding:var(--s4) var(--s4) var(--s3);position:relative;overflow:hidden}
+.oew-stampblock::before{content:'';position:absolute;inset:0 auto 0 0;width:2px;background:var(--oew-stamp);opacity:.8}
+.oew-stamp-k{font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--oew-stamp);margin-bottom:5px}
+html[data-lang="zh"] .oew-stamp-k{letter-spacing:.03em;text-transform:none}
+.oew-stamp-date{font-size:27px;font-weight:700;line-height:1;color:var(--text)}
+.oew-stamp-closed{font-size:11px;color:var(--muted);margin-top:6px}
+.oew-stamp-rows{margin-top:var(--s3);padding-top:var(--s3);border-top:1px solid var(--hair);display:grid;gap:4px}
+.oew-stamp-row{display:flex;gap:var(--s2);font-size:11px;align-items:baseline}
+.oew-stamp-row .k{color:var(--muted)}
+.oew-stamp-row .v{margin-left:auto;color:var(--ink-2);font-weight:600}
+.oew-stamp-row .v.brass{color:var(--oew-stamp)}
+
+/* ── THE POSTURE CONSOLE — four co-displayed readings, NEVER fused ─────────
+   Four equal cells, hairline-divided, no arithmetic between them. The refusal
+   to fuse is made legible by the layout, then stated in words below. */
+.oew-console{border:1px solid var(--hair);border-radius:var(--r-panel);background:var(--panel);display:flex;flex-direction:column}
+.oew-console-grid{display:grid;grid-template-columns:repeat(4,1fr);flex:1}
+@media (max-width:760px){.oew-console-grid{grid-template-columns:repeat(2,1fr)}}
+.oew-read{padding:var(--s4);border-left:1px solid var(--hair);display:flex;flex-direction:column;gap:6px;justify-content:center}
+.oew-read:first-child{border-left:none}
+@media (max-width:760px){
+  .oew-read:nth-child(odd){border-left:none}
+  .oew-read:nth-child(n+3){border-top:1px solid var(--hair)}
+}
+.oew-read-k{display:flex;align-items:center;gap:5px}
+.oew-read-v{font-size:15px;font-weight:650;line-height:1.2;color:var(--text)}
+.oew-read-n{font-size:10.5px;color:var(--muted)}
+.oew-vetted{display:inline-grid;place-items:center;width:13px;height:13px;border-radius:50%;
+  background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok);font-size:8.5px;font-weight:900;cursor:help;flex:none}
+
+/* ── THE PIP STRIP — the atomic fill-track. The DENOMINATOR must be as visible
+      as the reading: an unfilled pip is a filled tile, not an empty outline. */
+.oew-pips{display:inline-flex;gap:3px;align-items:center;cursor:help;margin-top:2px}
+.oew-pip{width:17px;height:6px;border-radius:2px;background:color-mix(in srgb,var(--text) 13%,transparent);border:none}
+.oew-pip.on{background:var(--oew-accent)}
+.oew-pip.nul{background:transparent;border:1px dotted var(--hair);opacity:.6}
+.oew-pips.sm .oew-pip{width:9px;height:5px}
+
+.oew-nofuse{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin-top:var(--s4);font-size:12.5px;color:var(--ink-2)}
+
+/* ── STANCE CHIP — the most important words on the page ─────────────────── */
+.oew-stance{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:11.5px;font-weight:700;
+  letter-spacing:.01em;white-space:nowrap;padding:4px 11px;border-radius:var(--r-pill);border:1px solid}
+.oew-stance::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.st-act{color:#fff;background:var(--oew-st-act);border-color:var(--oew-st-act)}
+.st-ready{color:var(--oew-st-ready);border-color:color-mix(in srgb,var(--oew-st-ready) 55%,var(--hair));
+  background:color-mix(in srgb,var(--oew-st-ready) 13%,var(--tile))}
+.st-watch{color:var(--oew-st-watch);border-color:var(--hair);background:var(--tile)}
+.st-protect{color:var(--oew-st-protect);border-color:color-mix(in srgb,var(--oew-st-protect) 45%,var(--hair));
+  background:color-mix(in srgb,var(--oew-st-protect) 10%,var(--tile))}
+.st-aside{color:var(--oew-st-aside);border-color:var(--hair);background:transparent;opacity:.85}
+.st-ignore{color:var(--oew-st-ignore);border:1px solid transparent;background:transparent;opacity:.7}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ★ THE SIGNATURE — THE CLOSE LINE ★
+   A full-width rule marking the boundary between "what settled" (above) and
+   "what you do about it" (below). ITS FILLED PORTION IS THE COVERAGE NUMBER —
+   the page's most structural element carries its most important honesty fact.
+   When coverage is complete the signature is nearly silent; when data degrades
+   the hatched remainder grows and the page visibly changes. An instrument, not
+   an ornament — which is why it gets no floor, no minimum and no rounding.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.oew-closeline{position:relative;height:3px;margin-top:var(--s7);border-radius:3px;
+  background:repeating-linear-gradient(90deg,var(--line) 0 3px,transparent 3px 6px)}
+.oew-closeline::before{content:'';position:absolute;inset:0;border-radius:3px;
+  background:color-mix(in srgb,var(--line) 55%,transparent)}
+.oew-closeline::after{content:'';position:absolute;left:0;top:0;height:3px;width:var(--oew-cov,100%);
+  background:var(--oew-accent);border-radius:3px;
+  box-shadow:0 0 14px -2px color-mix(in srgb,var(--oew-accent) 70%,transparent)}
+.oew-cov-tick{position:absolute;top:-5px;left:var(--oew-cov,100%);width:2px;height:13px;background:var(--oew-stamp);border-radius:1px}
+.oew-cov-label{position:absolute;top:-21px;left:var(--oew-cov,100%);transform:translateX(-100%);
+  font-size:10px;font-weight:600;color:var(--oew-stamp);white-space:nowrap;padding-right:7px;letter-spacing:.03em}
+@media (max-width:560px){.oew-cov-label{font-size:9px}}
+
+/* ── MODE TABS — sit directly under the close line; the active tab caps it ── */
+.oew-tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin-bottom:var(--s6)}
+.oew-tabs::-webkit-scrollbar{display:none}
+.oew-tab{appearance:none;background:none;border:none;border-top:2px solid transparent;margin-top:-2px;
+  padding:11px var(--s4) 10px;font:inherit;font-size:13px;font-weight:650;color:var(--muted);cursor:pointer;
+  white-space:nowrap;flex:none;display:inline-flex;align-items:baseline;gap:6px}
+.oew-tab:hover{color:var(--text)}
+.oew-tab:focus-visible{outline:2px solid var(--oew-accent);outline-offset:-3px;border-radius:2px}
+.oew-tab .cnt{font-size:10.5px;font-weight:600;color:var(--muted);opacity:.8}
+.oew-tab[aria-selected="true"]{color:var(--text);border-top-color:var(--oew-accent)}
+.oew-tab[aria-selected="true"] .cnt{color:var(--oew-accent);opacity:1}
+
+/* ═══ PANEL SHELL — shared by every panel in every mode ═══ */
+.oew-panel{border:1px solid var(--hair);border-radius:var(--r-panel);background:var(--panel);
+  box-shadow:var(--card-shadow);margin-bottom:var(--s4);overflow:hidden}
+.oew-phead{display:flex;align-items:baseline;gap:var(--s3);flex-wrap:wrap;padding:var(--s3) var(--s4);border-bottom:1px solid var(--hair)}
+.oew-ph-title{font-size:14px;font-weight:700;margin:0;letter-spacing:-.01em}
+.oew-ph-sub{font-size:11.5px;color:var(--muted)}
+/* Wraps because the Scanner header packs a segmented control AND the CSV button
+   in here: at 375px that pair measured 319px inside a 317px header content box,
+   overhanging the padding. Most .oew-ph-right instances hold a single ? chip, so
+   the wrap only engages where the content genuinely does not fit. */
+.oew-ph-right{margin-left:auto;display:flex;align-items:center;gap:var(--s2);
+  flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.oew-pbody{padding:var(--s4)}
+.oew-pfoot{padding:10px var(--s4);border-top:1px solid var(--hair);background:var(--tile);
+  font-size:11px;color:var(--muted);display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap}
+.oew-asof{margin-left:auto;font-size:10px;color:var(--oew-stamp);opacity:.9;letter-spacing:.02em}
+/* the ? help affordance — the Tier-2 home for mechanics (LENS popover) */
+.oew-help{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;
+  border:1px solid var(--hair);color:var(--muted);font-size:9.5px;font-weight:800;cursor:help;flex:none;background:var(--tile)}
+.oew-help:hover,.oew-help:focus-visible{color:var(--text);border-color:var(--oew-accent);outline:none}
+.oew [data-tip-en]{cursor:help}
+
+/* ═══ MODE SURFACES ═══ */
+.oew-mode{display:none}
+.oew-mode.active{display:block;animation:oewIn .18s ease-out}
+@keyframes oewIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.oew-skel{padding:var(--s7) var(--s4)}
+.oew-skel-bar{height:11px;border-radius:3px;background:var(--tile);border:1px solid var(--hair);margin-bottom:10px}
+.oew-skel-note{font-size:11.5px;color:var(--muted);margin-top:var(--s4)}
+.oew-banner{display:flex;gap:var(--s3);align-items:flex-start;padding:11px var(--s4);border-radius:var(--r-ctl);
+  margin-bottom:var(--s4);font-size:12.5px;border:1px solid color-mix(in srgb,var(--warn) 35%,var(--hair));
+  background:color-mix(in srgb,var(--warn) 8%,var(--tile));color:var(--ink-2)}
+.oew-banner .ico{color:var(--warn);font-weight:900;flex:none}
+.oew-empty{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+
+/* ── BRIEF: what-changed chips ── */
+.oew-chips{display:flex;gap:var(--s2);flex-wrap:wrap}
+.oew-chg{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 11px;
+  border-radius:var(--r-pill);border:1px solid var(--hair);background:var(--tile);color:var(--ink-2)}
+.oew-chg .ar{font-size:10px;font-weight:900}
+.oew-chg .ar.u{color:var(--up)}.oew-chg .ar.d{color:var(--down)}.oew-chg .ar.f{color:var(--muted)}
+
+/* ── BRIEF: index close row ── */
+.oew-idx{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s3)}
+@media (max-width:1000px){.oew-idx{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.oew-idx{grid-template-columns:1fr}}
+.oew-ic{border:1px solid var(--hair);border-radius:var(--r-ctl);background:var(--tile);padding:var(--s3)}
+.oew-ic-top{display:flex;align-items:baseline;gap:var(--s2)}
+.oew-ic-sym{font-size:15px;font-weight:700}
+.oew-ic-px{margin-left:auto;font-size:14px;font-weight:650}
+.oew-ic-regime{font-size:13px;font-weight:650;margin-top:7px}
+.oew-ic-line{font-size:11.5px;color:var(--ink-2);margin-top:3px;line-height:1.4}
+.oew-ic-levels{display:flex;gap:var(--s3);margin-top:9px;padding-top:9px;border-top:1px solid var(--hair)}
+.oew-ic-lv{flex:1;min-width:0}
+.oew-ic-lv .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:block}
+html[data-lang="zh"] .oew-ic-lv .k{letter-spacing:.02em;text-transform:none}
+.oew-ic-lv .v{font-size:12.5px;font-weight:650;display:block;margin-top:1px}
+.oew-ic-foot{margin-top:10px;display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap}
+.oew-ic-em{font-size:11px;color:var(--muted)}
+
+/* ── BRIEF: sector bars. The bar is a PURE length encoding; the value lives in
+      its own right-aligned mono column (a value inside the fill overflows on
+      short bars and fights the fill for contrast). ── */
+.oew-sect{display:grid;gap:5px}
+.oew-sr{display:grid;grid-template-columns:118px 1fr 58px auto;gap:var(--s3);align-items:center;font-size:12px}
+@media (max-width:560px){
+  .oew-sr{grid-template-columns:92px 1fr 52px}
+  .oew-sr .tone{grid-column:2/4;justify-self:start}
+}
+.oew-sr-name{color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oew-sr-track{position:relative;height:16px;background:color-mix(in srgb,var(--text) 7%,transparent);border-radius:3px;overflow:hidden}
+.oew-sr-fill{position:absolute;inset:0 auto 0 0;border-radius:3px;min-width:2px}
+.oew-sr-fill.buy{background:color-mix(in srgb,var(--up) 62%,transparent)}
+.oew-sr-fill.sell{background:color-mix(in srgb,var(--down) 62%,transparent)}
+.oew-sr-fill.mix{background:color-mix(in srgb,var(--muted) 42%,transparent)}
+.oew-sr-val{font-size:11.5px;font-weight:650;text-align:right;color:var(--text)}
+.oew .tone{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;border:1px solid var(--hair);
+  background:var(--tile);color:var(--muted);white-space:nowrap}
+.oew .tone.buy{color:var(--up);border-color:color-mix(in srgb,var(--up) 38%,var(--hair))}
+.oew .tone.sell{color:var(--down);border-color:color-mix(in srgb,var(--down) 38%,var(--hair))}
+
+/* ── BRIEF: biggest bets.
+   The `overflow:hidden` below is CORNER-ROUNDING duty — it clips the square
+   corners of the child rows against the 1px-gap hairline grid. It is NOT an
+   overflow remedy, so the row must be made to FIT rather than be sliced: with
+   a nowrap row, `.oew-bet-r`'s nowrap chips set a min-content floor that blew
+   the auto grid track past the panel (measured 366.8px of track inside 349px
+   of panel at 375px viewport — every chip lost its right edge, and the note
+   was squeezed to one character per line). Both the row and the chip cluster
+   wrap, and every child carries min-width:0, so the cluster REFLOWS onto a
+   second line instead of being clipped. No breakpoint: chip count varies per
+   row, so the wrap has to be content-driven, not width-driven. Desktop is
+   untouched — nothing wraps until the content actually stops fitting. ── */
+.oew-bets{display:grid;gap:1px;background:var(--hair);border-radius:var(--r-ctl);overflow:hidden;border:1px solid var(--hair)}
+.oew-bet{display:flex;align-items:center;gap:var(--s3);row-gap:7px;flex-wrap:wrap;min-width:0;
+  padding:8px var(--s3);background:var(--panel);font-size:12.5px}
+.oew-bet:hover{background:var(--tile)}
+.oew-bet-sym{font-weight:700;width:56px;flex:none}
+.oew-bet-amt{font-weight:650;width:78px;flex:none}
+.oew-bet-amt.pos{color:var(--up)}.oew-bet-amt.neg{color:var(--down)}
+.oew-bet-note{color:var(--muted);font-size:11.5px;min-width:0;overflow-wrap:anywhere}
+.oew-bet-r{margin-left:auto;display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;
+  justify-content:flex-end;min-width:0}
+
+/* ── BRIEF: names-for-tomorrow rail ── */
+.oew-rail{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s3)}
+@media (max-width:860px){.oew-rail{grid-template-columns:1fr}}
+.oew-rg{border:1px solid var(--hair);border-radius:var(--r-ctl);background:var(--tile);padding:var(--s3)}
+.oew-rg-h{font-size:12px;font-weight:700;margin-bottom:3px}
+.oew-rg-s{font-size:11px;color:var(--muted);margin-bottom:9px;line-height:1.4}
+.oew-tkchips{display:flex;gap:5px;flex-wrap:wrap}
+.oew-tkchip{font-family:var(--font-mono);font-size:11.5px;font-weight:650;letter-spacing:-.01em;padding:3px 9px;
+  border-radius:5px;border:1px solid var(--hair);background:var(--panel);color:var(--text);cursor:pointer}
+.oew-tkchip:hover{border-color:var(--oew-accent);color:var(--oew-accent)}
+.oew-tkchip:focus-visible{outline:2px solid var(--oew-accent);outline-offset:1px}
+
+/* ── Terminal handoff ── */
+.oew-handoff{border:1px solid var(--hair);border-radius:var(--r-panel);
+  background:linear-gradient(100deg,color-mix(in srgb,var(--oew-accent) 11%,var(--panel)),var(--panel) 62%);
+  padding:var(--s4);display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap}
+.oew-ho-t{font-size:14px;font-weight:700}
+.oew-ho-s{font-size:12px;color:var(--ink-2);margin-top:2px;max-width:56ch;line-height:1.45}
+.oew-ho-clock{font-size:11px;color:var(--oew-stamp);margin-top:6px}
+.oew-cta{margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:7px;background:var(--oew-accent);
+  color:#fff;border:none;border-radius:var(--r-ctl);padding:10px 17px;font:inherit;font-size:13px;font-weight:650;
+  cursor:pointer;text-decoration:none}
+.oew-cta:hover{filter:brightness(1.08)}
+.oew-cta:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px}
+@media (max-width:640px){.oew-cta{margin-left:0;width:100%;justify-content:center}}
+
+/* ═══ SCANNER ═══ */
+.oew-sc-bar{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap;margin-bottom:var(--s3)}
+/* font:inherit FIRST — a <button> does NOT inherit the page face, and without
+   this the chip renders in the UA default (Arial), breaking the type role law. */
+.oew-preset{appearance:none;font:inherit;font-size:11.5px;font-weight:600;padding:5px 11px;
+  border-radius:var(--r-pill);border:1px solid var(--hair);
+  background:var(--tile);color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.oew-preset:hover{border-color:var(--oew-accent);color:var(--text)}
+.oew-preset[aria-pressed="true"]{border-color:var(--oew-accent);color:var(--oew-accent);
+  background:color-mix(in srgb,var(--oew-accent) 13%,var(--tile))}
+.oew-preset:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px}
+.oew-seg{display:inline-flex;border:1px solid var(--hair);border-radius:var(--r-ctl);overflow:hidden}
+.oew-seg button{appearance:none;border:none;background:var(--tile);color:var(--muted);font:inherit;font-size:11.5px;
+  font-weight:650;padding:6px 13px;cursor:pointer;border-left:1px solid var(--hair)}
+.oew-seg button:first-child{border-left:none}
+.oew-seg button[aria-pressed="true"]{background:color-mix(in srgb,var(--oew-accent) 17%,var(--panel));color:var(--text)}
+.oew-seg button:focus-visible{outline:2px solid var(--oew-accent);outline-offset:-2px}
+/* The wrapper MUST carry .tbl-scroll: theme.js wrapTables() auto-wraps any
+   <table> not already inside one, and a double wrap breaks the sticky header. */
+.oew-tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+table.oew-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+table.oew-tbl thead th{text-align:right;color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;
+  letter-spacing:.06em;padding:8px 10px 6px;white-space:nowrap;border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:var(--panel);z-index:2}
+html[data-lang="zh"] table.oew-tbl thead th{letter-spacing:.02em;text-transform:none;font-size:11px}
+table.oew-tbl thead th.left,table.oew-tbl thead th:first-child{text-align:left}
+table.oew-tbl tbody td{padding:7px 10px;border-bottom:1px solid var(--hair);text-align:right;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+table.oew-tbl tbody td.left,table.oew-tbl tbody td:first-child{text-align:left}
+table.oew-tbl tbody tr:hover td{background:var(--tile)}
+table.oew-tbl thead th:first-child,table.oew-tbl tbody td:first-child{position:sticky;left:0;z-index:1;background:var(--panel)}
+table.oew-tbl tbody tr:hover td:first-child{background:var(--tile)}
+/* The ticker cell is a <button> (it activates Ticker mode, it is not a link to a
+   document), so it needs a full UA reset or it ships grey chrome and an outset
+   border inside the table. */
+.oew-sc-tk{appearance:none;background:none;border:none;padding:0;font:inherit;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--text);
+  font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.oew-sc-tk .go{color:var(--oew-accent);opacity:0;font-size:11px}
+tr:hover .oew-sc-tk .go{opacity:1}
+.oew-sc-tk:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px;border-radius:3px}
+.oew-sec{color:var(--muted);font-size:11.5px}
+.oew-age{display:inline-flex;align-items:center;gap:6px;justify-content:flex-end}
+.oew-age .d{font-size:11.5px;color:var(--ink-2)}
+.oew-age .d.stale{color:var(--warn)}
+.oew-tbl .c-flow,.oew-tbl .c-pos{display:none}
+.oew-tbl[data-view="flow"] .c-ovr,.oew-tbl[data-view="pos"] .c-ovr{display:none}
+.oew-tbl[data-view="flow"] .c-flow{display:table-cell}
+.oew-tbl[data-view="pos"] .c-pos{display:table-cell}
+@media (max-width:900px){.oew-tbl .hide-sm{display:none !important}}
+/* mobile: table → row cards. Every <td> carries data-k and data-k-zh. */
+@media (max-width:560px){
+  .oew-tbl thead{display:none}
+  .oew-tbl,.oew-tbl tbody,.oew-tbl tr,.oew-tbl td{display:block;width:auto}
+  .oew-tbl tbody tr{border:1px solid var(--hair);border-radius:var(--r-ctl);background:var(--tile);
+    padding:var(--s3);margin-bottom:var(--s2)}
+  .oew-tbl tbody td{position:static !important;border:none;padding:2px 0;text-align:right;display:flex;
+    justify-content:space-between;align-items:center;gap:var(--s3);background:none !important}
+  .oew-tbl tbody td::before{content:attr(data-k);color:var(--muted);font-size:10.5px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.06em;text-align:left}
+  html[data-lang="zh"] .oew-tbl tbody td::before{content:attr(data-k-zh);letter-spacing:.02em;text-transform:none}
+  .oew-tbl tbody td:first-child{padding-bottom:7px;margin-bottom:5px;border-bottom:1px solid var(--hair);
+    justify-content:flex-start;gap:var(--s2)}
+  .oew-tbl tbody td:first-child::before,
+  html[data-lang="zh"] .oew-tbl tbody td:first-child::before{content:none}
+  .oew-tbl tbody td:first-child .oew-sec{margin-left:auto}
+}
+
+/* ═══ TICKER (the gex workbench re-homed — the ladder is #3341's ratified signature) ═══ */
+.oew-tk-head{display:flex;align-items:flex-end;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s3)}
+.oew-tk-sym{font-size:30px;font-weight:700;line-height:1}
+.oew-tk-name{font-size:12.5px;color:var(--muted)}
+.oew-tk-px{margin-left:auto;text-align:right}
+.oew-tk-px .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:block}
+html[data-lang="zh"] .oew-tk-px .k{letter-spacing:.02em;text-transform:none}
+.oew-tk-px .v{font-size:24px;font-weight:700}
+.oew-tk-regime{font-size:19px;font-weight:700;margin:0 0 5px}
+.oew-tk-say{font-size:12.5px;color:var(--ink-2);max-width:74ch;line-height:1.5}
+/* the price ladder — horizontal band, markers at each level. Its gradient uses
+   --up/--down and therefore flips in zh: correct, it encodes price direction. */
+.oew-lad{position:relative;height:96px;margin:var(--s5) 0 var(--s3)}
+.oew-lad-band{position:absolute;inset:22px 0 30px;border-radius:5px;overflow:hidden;
+  background:linear-gradient(90deg,
+    color-mix(in srgb,var(--down) 26%,transparent) 0%,
+    color-mix(in srgb,var(--down) 9%,transparent) 34%,
+    color-mix(in srgb,var(--text) 4%,transparent) 50%,
+    color-mix(in srgb,var(--up) 9%,transparent) 66%,
+    color-mix(in srgb,var(--up) 26%,transparent) 100%);
+  border:1px solid var(--hair)}
+.oew-lad-mk{position:absolute;top:22px;bottom:30px;width:3px;border-radius:2px;transform:translateX(-50%)}
+.oew-lad-mk.floor{background:var(--down)}
+.oew-lad-mk.ceil{background:var(--up)}
+.oew-lad-mk.flip{background:var(--oew-accent);width:0;border-left:2px dashed var(--oew-accent)}
+.oew-lad-mk.magnet{background:var(--orange);width:2px}
+.oew-lad-lbl{position:absolute;bottom:4px;transform:translateX(-50%);text-align:center;white-space:nowrap}
+.oew-lad-lbl .v{font-size:12px;font-weight:700;display:block}
+.oew-lad-lbl .k{font-size:9.5px;color:var(--muted);display:block}
+.oew-lad-spot{position:absolute;top:0;transform:translateX(-50%);text-align:center;white-space:nowrap}
+.oew-lad-spot .v{font-size:13px;font-weight:700;display:block}
+.oew-lad-spot .k{font-size:9px;color:var(--muted);display:block}
+.oew-lad-dot{position:absolute;top:calc(50% - 6px);width:12px;height:12px;border-radius:50%;background:var(--text);
+  transform:translateX(-50%);border:2px solid var(--panel);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--text) 40%,transparent)}
+/* Below 640px the four level labels collide on the band. The band is decorative
+   restatement — the four level ROWS carry the same numbers plus their plain-word
+   meaning — so drop the band, never the rows. */
+@media (max-width:640px){.oew-lad{display:none}}
+.oew-lvl{display:grid;gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:var(--r-ctl);overflow:hidden}
+.oew-lvrow{display:grid;grid-template-columns:auto 1fr auto auto;gap:var(--s3);align-items:center;
+  padding:9px var(--s3);background:var(--panel);font-size:12.5px}
+@media (max-width:640px){
+  .oew-lvrow{grid-template-columns:auto 1fr}
+  .oew-lvrow .oew-lv-pct,.oew-lvrow .oew-lv-px{grid-column:2;justify-self:start}
+  /* M3 fix: .oew-wcheck (§4) added real width to the Ceiling/Floor rows only.
+     .oew-lv-main .n is flex with default nowrap+shrink, so under 640px the
+     label text itself was squeezed and wrapped mid-word ("Ceiling — call
+     wall" across three lines) to make room for the pips + chip staying on
+     one line. Let items wrap as whole units instead of reflowing internally:
+     the label never breaks, and the chip drops to its own line when tight. */
+  .oew-lv-main .n{flex-wrap:wrap;row-gap:4px}
+  .oew-lv-main .n>*{flex:none}
+  .oew-lv-main .n>.oew-wcheck{margin-left:0}
+}
+.oew-lv-sw{width:9px;height:9px;border-radius:2px;flex:none}
+.oew-lv-main .n{font-weight:650;display:inline-flex;align-items:center;gap:7px}
+.oew-lv-main .s{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+.oew-lv-pct{font-size:11.5px;color:var(--muted)}
+.oew-lv-px{font-size:14px;font-weight:700}
+.oew-reads{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s3)}
+@media (max-width:900px){.oew-reads{grid-template-columns:1fr}}
+.oew-rd-v{font-size:18px;font-weight:700;margin:2px 0 5px}
+.oew-rd-s{font-size:12px;color:var(--ink-2);line-height:1.45}
+.oew-metrics{display:flex;gap:var(--s3);flex-wrap:wrap;margin-top:var(--s3)}
+.oew-mt{min-width:64px}
+.oew-mt .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:block}
+html[data-lang="zh"] .oew-mt .k{letter-spacing:.02em;text-transform:none}
+.oew-mt .v{font-size:14px;font-weight:700;display:block;margin-top:1px}
+.oew-shelf summary{cursor:pointer;font-size:12px;font-weight:650;color:var(--muted);padding:var(--s3) var(--s4);list-style:none}
+.oew-shelf summary::-webkit-details-marker{display:none}
+.oew-shelf summary::before{content:'▸ ';color:var(--oew-accent)}
+.oew-shelf[open] summary::before{content:'▾ '}
+.oew-shelf summary:hover{color:var(--text)}
+.oew-shelf summary:focus-visible{outline:2px solid var(--oew-accent);outline-offset:-2px}
+/* the summary carries a title AND a subtitle; without a weight break the two run
+   together into one unreadable sentence */
+.oew-shelf summary .oew-ph-sub{font-weight:400;color:var(--ink-3)}
+.oew-tkbar{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap;margin-bottom:var(--s3)}
+
+/* ═══ LEADERS (dot-ladder inherited from the ratified #3224 flow_leaders idiom) ═══ */
+.oew-ld{display:grid;gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:var(--r-ctl);overflow:hidden}
+.oew-ldrow{display:grid;grid-template-columns:26px 128px 108px auto 1fr;gap:var(--s3);align-items:center;
+  padding:9px var(--s3);background:var(--panel);font-size:12.5px}
+.oew-ldrow:hover{background:var(--tile)}
+.oew-ld-rank{font-family:var(--font-mono);font-size:10.5px;color:var(--muted)}
+.oew-ld-tk{display:flex;flex-direction:column;gap:1px;min-width:0}
+.oew-ld-tk .sym{font-family:var(--font-mono);font-weight:700;font-size:13px;color:var(--text);letter-spacing:-.01em}
+.oew-ld-tk .sec{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oew-ld-state{font-size:11px;font-weight:700;padding:3px 10px;border-radius:var(--r-pill);border:1px solid;
+  white-space:nowrap;text-align:center}
+.ld-lining{color:var(--oew-accent);border-color:color-mix(in srgb,var(--oew-accent) 55%,var(--hair));
+  background:color-mix(in srgb,var(--oew-accent) 14%,var(--tile))}
+.ld-crowd{color:var(--ink-2);border-color:color-mix(in srgb,var(--oew-accent) 30%,var(--hair));background:var(--tile)}
+.ld-radar{color:var(--muted);border-color:var(--hair);background:transparent}
+/* THE DOT-LADDER — one segment per confirmation. Meaning lives ONLY on hover,
+   and the hover is PER-LADDER, not per-dot: an 8px segment is far below the
+   44px touch minimum, and eight popovers to read one row is worse than one. */
+.oew-ladder{display:inline-flex;gap:3px;align-items:center;cursor:help}
+/* NAMED .oew-lseg, NOT .oew-seg — .oew-seg is the Scanner's segmented-control
+   container above, and a second .oew-seg rule here would win on source order and
+   squash that control to 7px wide. (Verified live during design.) */
+.oew-lseg{width:8px;height:18px;border-radius:2px;border:none;
+  background:color-mix(in srgb,var(--text) 13%,transparent)}
+.oew-lseg.on{background:var(--oew-accent)}
+.oew-lseg.off{background:color-mix(in srgb,var(--text) 13%,transparent)}
+.oew-lseg.nul{background:transparent;border:1px dotted var(--hair);opacity:.7}
+.oew-ld-kn{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-left:7px}
+.oew-ld-right{margin-left:auto;display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;justify-content:flex-end}
+.oew-ld-ctx{font-size:11px;color:var(--muted)}
+.oew .cau{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;border:1px solid var(--hair);
+  background:var(--tile);color:var(--muted);white-space:nowrap;cursor:help}
+.oew .cau-warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--hair));
+  background:color-mix(in srgb,var(--warn) 9%,var(--tile))}
+@media (max-width:820px){
+  .oew-ldrow{grid-template-columns:1fr auto;grid-template-areas:"t s" "l l" "r r";row-gap:7px}
+  .oew-ld-rank{display:none}
+  .oew-ld-tk{grid-area:t}.oew-ld-state{grid-area:s;justify-self:end}
+  .oew-ladder{grid-area:l}.oew-ld-right{grid-area:r;justify-content:flex-start}
+}
+.oew-etf{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:var(--s2)}
+.oew-etfc{border:1px solid var(--hair);border-radius:var(--r-ctl);background:var(--tile);padding:9px var(--s3)}
+.oew-etfc .sym{font-family:var(--font-mono);font-size:12px;font-weight:700}
+.oew-etfc .v{font-size:13px;font-weight:700;margin-top:2px}
+.oew-etfc .v.pos{color:var(--up)}.oew-etfc .v.neg{color:var(--down)}
+.oew-etfc .n{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* ═══ SECTION HEADING between panels ═══ */
+.oew-sec-h{display:flex;align-items:baseline;gap:var(--s2);margin:var(--s6) 0 var(--s3)}
+.oew-sec-h h2{font-size:12px;font-weight:700;margin:0;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+html[data-lang="zh"] .oew-sec-h h2{letter-spacing:.02em;text-transform:none;font-size:13px}
+
+@media (prefers-reduced-motion:reduce){
+  .oew *,.oew *::before,.oew *::after{animation:none !important;transition:none !important}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OIP W1 — nav front door + Ticker workbench depth
+   (research/options_estate/W1_DESIGN_SPEC.md). The filmstrip's OWN .oew-film-*
+   rules live in the shared templates/illus.css (it also renders on gex.html,
+   which does not carry this page's <style> block) — everything below is
+   options.html-only chrome: the Ticker search toolbar, the wall-check chip, the
+   two new Ticker reads, the shared empty-state shell, and the declared-cap link.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── §2.4 Ticker search/typeahead toolbar (parity with gex.html's #gx-q) ── */
+.oew-tktoolbar{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s4)}
+.oew-tksearch{position:relative;flex:1 1 260px;max-width:400px}
+.oew-tksearch .mag{position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  opacity:.55;font-size:14px;pointer-events:none;color:var(--muted)}
+.oew-tksearch input{width:100%;padding:10px 13px 10px 36px;border:1px solid var(--hair);
+  border-radius:var(--r-ctl);background:var(--tile);color:var(--text);
+  font-size:13.5px;font-family:var(--font-ui)}
+.oew-tksearch input::placeholder{color:var(--muted)}
+.oew-tksearch input:focus-visible{outline:2px solid var(--oew-accent);outline-offset:1px;
+  border-color:var(--oew-accent)}
+.oew-tksugg{position:absolute;top:112%;left:0;right:0;min-width:300px;background:var(--panel);
+  border:1px solid var(--hair);border-radius:var(--r-panel);
+  box-shadow:0 10px 30px rgba(0,0,0,.25);padding:6px;display:none;z-index:20;
+  max-height:340px;overflow-y:auto}
+.oew-tksugg.on{display:block}
+.oew-tksugg .row{display:flex;justify-content:space-between;gap:10px;padding:8px 11px;
+  cursor:pointer;border-radius:8px;align-items:center}
+.oew-tksugg .row:hover,.oew-tksugg .row.hl{background:var(--tile)}
+.oew-tksugg .row b{font-family:var(--font-mono);font-weight:700}
+.oew-tksugg .row .g{color:var(--ink-3);font-size:11.5px}
+.oew-tkhint{font-size:11px;color:var(--ink-3);white-space:nowrap}
+.oew-tkhint kbd{font-family:var(--font-mono);border:1px solid var(--hair);border-radius:4px;
+  padding:1px 5px;background:var(--tile);font-size:10px}
+@media (max-width:560px){ .oew-tkhint{display:none} }
+
+/* ── §4.3 wall-persistence cross-check chip (appended to Ceiling/Floor rows) ── */
+.oew-wcheck{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;
+  margin-left:var(--s2);padding:2px 7px;border-radius:var(--r-pill);white-space:nowrap;cursor:help}
+.oew-wcheck-yes{color:var(--oew-accent);background:color-mix(in srgb, var(--oew-accent) 12%, transparent)}
+.oew-wcheck-no{color:var(--ink-3);background:var(--tile)}
+
+/* ── §5.2 "Rich or cheap?" fill-track (the posture console's 5-pip idiom,
+   resized — it lives outside .oew-console and needs its own sizing) ── */
+.oew-rich-track{display:inline-flex;gap:3px;align-items:center;cursor:help;margin-bottom:var(--s3)}
+.oew-rich-pip{width:34px;height:8px;border-radius:2px;background:color-mix(in srgb,var(--text) 13%,transparent)}
+.oew-rich-pip.on{background:var(--oew-accent)}
+.oew-rich-band{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;margin-left:var(--s3)}
+.oew-rich-building{font-size:11.5px;color:var(--muted);font-weight:600;padding:3px 9px;border:1px dashed var(--hair);
+  border-radius:var(--r-pill)}
+
+/* ── §5.2 "Where positions built" — diverging bars, sector-bar idiom, 2 cols ── */
+.oew-pb{display:grid;grid-template-columns:1fr 1fr;gap:var(--s5)}
+@media (max-width:560px){.oew-pb{grid-template-columns:1fr;gap:var(--s4)}}
+.oew-pb-h{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}
+html[data-lang="zh"] .oew-pb-h{letter-spacing:.02em;text-transform:none}
+.oew-pb-col{display:grid;gap:6px}
+.oew-pb-row{display:grid;grid-template-columns:48px 1fr 74px;gap:var(--s2);align-items:center;font-size:12px}
+.oew-pb-row .k{font-weight:700}
+.oew-pb-row .bar-track{position:relative;height:14px;background:color-mix(in srgb,var(--text) 7%,transparent);border-radius:3px;overflow:hidden}
+.oew-pb-row .bar{position:absolute;inset:0 auto 0 0;border-radius:3px;background:color-mix(in srgb,var(--oew-accent) 62%,transparent);min-width:2px}
+.oew-pb-row .bar.unwind{background:color-mix(in srgb,var(--muted) 55%,transparent)}
+.oew-pb-row .v{text-align:right;font-weight:650}
+.oew-pb-row .v.build{color:var(--oew-accent)}
+.oew-pb-pctile{margin-top:var(--s2);padding-top:var(--s2);border-top:1px solid var(--hair);font-size:11px;color:var(--ink-3)}
+/* coverage-gap note block (reuses .oew-empty typography, adds the receipt look) */
+.oew-pb-note{font-size:12.5px;color:var(--ink-2);line-height:1.55;padding:var(--s2) 0}
+
+/* ── §5.4 .oew-notyet — the shared first-class empty-state shell ── */
+.oew-notyet{display:flex;align-items:center;gap:var(--s5);padding:var(--s2) 0}
+.oew-notyet-ghost{flex:none;width:96px;height:56px;border:1.5px dashed var(--hair);
+  border-radius:var(--r-ctl);background:
+    repeating-linear-gradient(135deg, var(--hair) 0 1px, transparent 1px 7px);
+  opacity:.55}
+.oew-notyet-cone{clip-path:polygon(0% 46%, 0% 54%, 100% 8%, 100% 92%)}
+.oew-notyet-bar{clip-path:polygon(0% 70%,22% 70%,22% 30%,44% 30%,44% 55%,66% 55%,66% 15%,88% 15%,88% 45%,100% 45%,100% 100%,0% 100%)}
+.oew-notyet-say{margin:0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:56ch}
+.oew-notyet-say em{color:var(--text);font-style:normal;font-weight:600}
+@media (max-width:560px){ .oew-notyet{flex-direction:column;align-items:flex-start;gap:var(--s3)} }
+
+/* ── §6 declared-cap link (Scanner / Leaders panel-header right area) ── */
+.oew-ph-more{font-size:11px;font-weight:600;color:var(--oew-accent);text-decoration:none;
+  white-space:nowrap;margin-left:auto}
+.oew-ph-more:hover{text-decoration:underline}
+.oew-ph-more:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px;border-radius:3px}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OIP W1.6-A — the One-Door consolidation
+   (research/options_estate/ONE_DOOR_RULING_AND_SPEC.md §2). Three new blocks:
+   FLOW mode (.oew-fl-*), the Ticker raw-structure shelf (.oew-raw-*), and the
+   Scanner's filter/sort/export controls. NOTHING here touches .oew-seg or
+   .oew-lseg — the collision case law in WORKSPACE_DESIGN_SPEC §3.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── FLOW · the deviation flag on a sector row ──
+   A mark, not a chip: the sector bar already carries the size and the tone, and
+   a second filled pill on the row would read as a second verdict. */
+.oew-fl-flag{color:var(--warn);margin-right:5px;cursor:help;font-size:11px}
+
+/* ── FLOW · theme-group tiles ── */
+.oew-fl-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s3)}
+@media (max-width:900px){.oew-fl-tiles{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){.oew-fl-tiles{grid-template-columns:1fr}}
+.oew-fl-tile{border:1px solid var(--hair);border-radius:var(--r-ctl);background:var(--tile);padding:var(--s3)}
+.oew-fl-tile .nm{font-size:12.5px;font-weight:700}
+.oew-fl-tile .v{font-size:16px;font-weight:700;margin-top:3px}
+.oew-fl-tile .v.pos{color:var(--up)}.oew-fl-tile .v.neg{color:var(--down)}
+.oew-fl-tile .chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.oew-fl-tile .sub{font-size:10.5px;color:var(--muted);margin-top:6px}
+
+/* ── FLOW · sector-ETF money grid (the .oew-etfc card, plus the horizon line) ──
+   Wider minimum than the Leaders strip the card is borrowed from: this card
+   carries a second line with two figures on it, and at 128px it wrapped
+   mid-number ("21D ~+$1.1B" split across lines), which reads as a broken value. */
+.oew-fl-etf{grid-template-columns:repeat(auto-fill,minmax(172px,1fr))}
+.oew-fl-etfh{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.01em;white-space:nowrap}
+
+/* ── FLOW · the tide. Two canvases, drawn once, never animated. ── */
+.oew-fl-tide{display:grid;grid-template-columns:1fr 1fr;gap:var(--s5)}
+@media (max-width:760px){.oew-fl-tide{grid-template-columns:1fr;gap:var(--s4)}}
+.oew-fl-cvh{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}
+html[data-lang="zh"] .oew-fl-cvh{letter-spacing:.02em;text-transform:none}
+.oew-fl-cv{position:relative;height:104px}
+.oew-fl-cv canvas{width:100%;height:100%;display:block}
+.oew-fl-read{display:flex;align-items:baseline;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s2);font-size:11.5px;color:var(--muted)}
+.oew-fl-read .net{font-size:14px;font-weight:700;color:var(--text)}
+.oew-fl-read .net.pos{color:var(--up)}.oew-fl-read .net.neg{color:var(--down)}
+/* the honest flat track the unfolded curve degrades to when no intraday record
+   exists — a labelled absence, never a blank box (spec §2.1 panel 4). */
+.oew-fl-null{height:104px;display:flex;align-items:center;justify-content:center;
+  border-radius:var(--r-ctl);font-size:11.5px;color:var(--ink-2);text-align:center;padding:0 var(--s3);
+  background:linear-gradient(var(--hair),var(--hair)) 0 50%/100% 1px no-repeat}
+
+/* ═══ TICKER · the raw-structure shelf (ported from site/gex.js) ═══
+   Hand-SVG, drawn on first <details> open from the ALREADY-fetched gex/<T>.json.
+   Every colour is a CSS var inside an inline style (`style="fill:var(--up)"`),
+   never a resolved hex: --up/--down flip in zh, and an SVG that baked its colour
+   at draw time would keep the wrong direction after the language toggle. */
+.oew-raw-item{margin-top:var(--s5)}
+.oew-raw-item:first-child{margin-top:var(--s4)}
+.oew-raw-h{font-size:12.5px;font-weight:700;margin:0 0 2px}
+.oew-raw-sub{font-size:11px;color:var(--muted);margin:0 0 var(--s2);line-height:1.45;max-width:78ch}
+.oew-raw-box{width:100%}
+.oew-raw-box svg{width:100%;height:auto;display:block}
+.oew-raw-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s5)}
+@media (max-width:820px){.oew-raw-grid{grid-template-columns:1fr}}
+.oew-raw-empty{font-size:11.5px;color:var(--ink-2);padding:var(--s3) 0}
+.oew-raw-leg{display:flex;gap:var(--s3);flex-wrap:wrap;font-size:10.5px;color:var(--muted);margin-top:var(--s2)}
+.oew-raw-leg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.oew-raw-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+table.oew-raw-tbl{width:100%;border-collapse:collapse;font-size:11.5px}
+table.oew-raw-tbl th{text-align:right;color:var(--muted);font-weight:600;font-size:10px;text-transform:uppercase;
+  letter-spacing:.06em;padding:6px 9px 5px;white-space:nowrap;border-bottom:1px solid var(--line)}
+html[data-lang="zh"] table.oew-raw-tbl th{letter-spacing:.02em;text-transform:none;font-size:10.5px}
+table.oew-raw-tbl th:first-child,table.oew-raw-tbl td:first-child{text-align:left}
+table.oew-raw-tbl td{padding:5px 9px;border-bottom:1px solid var(--hair);text-align:right;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+table.oew-raw-heat{border-collapse:collapse;font-size:10px}
+table.oew-raw-heat th{font-size:9.5px;font-weight:600;color:var(--muted);padding:3px 4px;white-space:nowrap}
+table.oew-raw-heat td{padding:3px 5px;text-align:right;font-variant-numeric:tabular-nums;
+  border:1px solid transparent;min-width:34px}
+table.oew-raw-heat td.kk{color:var(--muted);text-align:left;font-family:var(--font-mono);font-size:9.5px}
+table.oew-raw-heat tr.spotrow td{border-top-color:var(--hair);border-bottom-color:var(--hair)}
+.oew-raw-greeks{display:flex;gap:var(--s5);flex-wrap:wrap}
+.oew-raw-greeks .g{min-width:72px}
+.oew-raw-greeks .g .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:block}
+html[data-lang="zh"] .oew-raw-greeks .g .k{letter-spacing:.02em;text-transform:none}
+.oew-raw-greeks .g .v{font-size:13.5px;font-weight:700;display:block;margin-top:1px}
+.oew-raw-greeks .g .s{font-size:10px;color:var(--muted);display:block}
+
+/* ── TICKER · the options primer (ported verbatim from gex.html) ── */
+.oew-primer .oew-pbody{border-top:1px solid var(--hair)}
+.oew-primer p{margin:0 0 var(--s2);font-size:12.5px;color:var(--ink-2);line-height:1.55;max-width:76ch}
+.oew-primer ul{margin:0;padding-left:18px;display:grid;gap:6px}
+.oew-primer li{font-size:12.5px;color:var(--ink-2);line-height:1.55;max-width:76ch}
+.oew-primer b{color:var(--text)}
+
+/* ═══ SCANNER · more filters, per-column sort, CSV ═══ */
+.oew-sc-more{border-top:1px solid var(--hair)}
+.oew-sc-more summary{cursor:pointer;font-size:11.5px;font-weight:650;color:var(--muted);
+  padding:9px var(--s4);list-style:none}
+.oew-sc-more summary::-webkit-details-marker{display:none}
+.oew-sc-more summary::before{content:'▸ ';color:var(--oew-accent)}
+.oew-sc-more[open] summary::before{content:'▾ '}
+.oew-sc-more summary:hover{color:var(--text)}
+.oew-sc-more summary:focus-visible{outline:2px solid var(--oew-accent);outline-offset:-2px}
+.oew-sc-fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:var(--s3);
+  padding:0 var(--s4) var(--s4)}
+.oew-sc-f{display:flex;flex-direction:column;gap:4px;font-size:10.5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+html[data-lang="zh"] .oew-sc-f{letter-spacing:.02em;text-transform:none}
+.oew-sc-f.wide{grid-column:span 2}
+@media (max-width:560px){.oew-sc-f.wide{grid-column:span 1}}
+.oew-sc-pair{display:flex;align-items:center;gap:6px}
+.oew-sc-pair .sep{color:var(--muted)}
+.oew-sc-more input,.oew-sc-more select{width:100%;min-width:0;padding:6px 9px;border:1px solid var(--hair);
+  border-radius:var(--r-ctl);background:var(--tile);color:var(--text);font:inherit;font-size:12px;
+  font-family:var(--font-ui);font-weight:400;text-transform:none;letter-spacing:0}
+.oew-sc-more input:focus-visible,.oew-sc-more select:focus-visible{outline:2px solid var(--oew-accent);
+  outline-offset:1px;border-color:var(--oew-accent)}
+.oew-sc-more input::placeholder{color:var(--muted)}
+.oew-sc-fbar{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;padding:0 var(--s4) var(--s4)}
+.oew-sc-clear{appearance:none;font:inherit;font-size:11.5px;font-weight:600;padding:5px 11px;
+  border-radius:var(--r-pill);border:1px solid var(--hair);background:var(--tile);color:var(--ink-2);cursor:pointer}
+.oew-sc-clear:hover{border-color:var(--oew-accent);color:var(--text)}
+.oew-sc-clear:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px}
+.oew-sc-csv{appearance:none;font:inherit;font-size:11px;font-weight:650;padding:4px 11px;
+  border-radius:var(--r-pill);border:1px solid var(--hair);background:var(--tile);color:var(--ink-2);
+  cursor:pointer;white-space:nowrap}
+.oew-sc-csv:hover{border-color:var(--oew-accent);color:var(--text)}
+.oew-sc-csv:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px}
+/* the sort affordance rides aria-sort, so the arrow can never disagree with the
+   state a screen reader is told */
+table.oew-tbl thead th[data-sort]{cursor:pointer;user-select:none}
+table.oew-tbl thead th[data-sort]:hover{color:var(--text)}
+table.oew-tbl thead th[data-sort]:focus-visible{outline:2px solid var(--oew-accent);outline-offset:-2px}
+table.oew-tbl thead th[data-sort]::after{content:'';opacity:.35;margin-left:4px}
+table.oew-tbl thead th[aria-sort="ascending"]{color:var(--text)}
+table.oew-tbl thead th[aria-sort="descending"]{color:var(--text)}
+table.oew-tbl thead th[aria-sort="ascending"]::after{content:'▲';opacity:1;color:var(--oew-accent);font-size:8px}
+table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;color:var(--oew-accent);font-size:8px}
+
+/* ═══ LEADERS · the "show all N" expander ═══
+   No fetch: the rows are already client-side, so the extra rows ship hidden and
+   the button toggles one class on the list. */
+.oew-ld .oew-ldrow.oew-ld-more{display:none}
+.oew-ld.on .oew-ldrow.oew-ld-more{display:grid}
+.oew-ld-exp{appearance:none;font:inherit;font-size:11.5px;font-weight:650;width:100%;
+  padding:9px var(--s3);border:none;border-top:1px solid var(--hair);background:var(--tile);
+  color:var(--oew-accent);cursor:pointer;text-align:center}
+.oew-ld-exp:hover{background:var(--panel2)}
+.oew-ld-exp:focus-visible{outline:2px solid var(--oew-accent);outline-offset:-2px}
