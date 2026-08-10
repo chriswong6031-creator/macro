@@ -25,6 +25,7 @@ on:
       - "admin/**"
       - "collectors/**"
       - "config/**"
+      - "content/**"
       - "contracts/**"
       - "data/**"
       - "docs/**"

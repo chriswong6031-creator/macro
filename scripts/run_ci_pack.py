@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import functools
+import json
 import os
 import re
 import shutil
@@ -126,7 +127,7 @@ PASSIVE_UNOWNED_PATTERNS = ("**/*.md",)
 # the whole PR to a full run.
 OPAQUE_IO_ROOTS = (
     "*",
-    "app/**", "admin/**", "collectors/**", "config/**", "contracts/**",
+    "app/**", "admin/**", "collectors/**", "config/**", "content/**", "contracts/**",
     "data/**", "docs/**", "engine/**", "lib/**", "ops/**", "research/**",
     "scripts/**", "site/**", "templates/**", "tests/**", "tools/**",
     "worker/**",
@@ -137,7 +138,7 @@ CODE_SCAN_ROOTS = (
     "worker/**",
 )
 ARTIFACT_SCAN_ROOTS = (
-    "config/**", "contracts/**", "data/**", "docs/**", "ops/**",
+    "config/**", "content/**", "contracts/**", "data/**", "docs/**", "ops/**",
     "research/**", "site/**", "templates/**",
 )
 SUBPROCESS_ROOTS = tuple(sorted(set(CODE_SCAN_ROOTS) | {
@@ -150,6 +151,7 @@ TRACKED_ROOTS = (
     "app",
     "admin",
     "config",
+    "content",
     "docs",
     "engine",
     "research",
@@ -759,7 +761,9 @@ def _dependency_environment(
     return command_env
 
 
-def execute_pack(jobs: list[LegacyJob]) -> int:
+def execute_pack(
+    jobs: list[LegacyJob], *, shadow_predicted: frozenset[str] | None = None
+) -> int:
     """Execute a pack, continuing after failures so one run reports all reds."""
     _workspace_root()
     base_ref = os.environ.get("CI_BASE_REF", "main")
@@ -789,6 +793,18 @@ def execute_pack(jobs: list[LegacyJob]) -> int:
             if failure:
                 failures.append(failure)
                 print(f"::error::{failure}", flush=True)
+            if shadow_predicted is not None:
+                record: dict[str, object] = {
+                    "job": job.job_id,
+                    "predicted_selected": job.job_id in shadow_predicted,
+                    "status": "failed" if failure else "passed",
+                }
+                if failure:
+                    record["failure"] = failure
+                print(
+                    "CI_SCOPE_SHADOW_RESULT=" + json.dumps(record, sort_keys=True),
+                    flush=True,
+                )
     finally:
         _restore_workspace()
 
@@ -832,11 +848,21 @@ def main(argv: list[str] | None = None) -> int:
     try:
         legacy = load_legacy_jobs(args.workflow)
         scope_summary = "scope inference not needed"
-        if args.changed_from and args.scope_mode != "off":
-            legacy, scope_summary = infer_job_scopes(legacy)
         changed = changed_files(args.changed_from) if args.changed_from else None
+        invalidated = bool(
+            changed
+            and any(_matches_any(GLOBAL_INVALIDATORS, path) for path in changed)
+        )
+        if (
+            args.changed_from
+            and args.scope_mode != "off"
+            and changed is not None
+            and not invalidated
+        ):
+            legacy, scope_summary = infer_job_scopes(legacy)
         eligible, reason = select_jobs(legacy, changed)
         predicted = eligible
+        predicted_ids = frozenset(job.job_id for job in predicted)
         if args.scope_mode == "off" and args.changed_from:
             eligible = legacy
             reason = "full suite: CI_SCOPE_MODE=off"
@@ -845,6 +871,17 @@ def main(argv: list[str] | None = None) -> int:
             reason = (
                 f"shadow full suite: predicted {len(predicted)}/{len(legacy)} jobs; "
                 f"{reason}"
+            )
+            plan = {
+                "changed_from": args.changed_from,
+                "predicted_selected": sorted(predicted_ids),
+                "predicted_skipped": sorted(
+                    job.job_id for job in legacy if job.job_id not in predicted_ids
+                ),
+            }
+            print(
+                "CI_SCOPE_SHADOW_PLAN=" + json.dumps(plan, sort_keys=True),
+                flush=True,
             )
         # Balance across the SELECTED set, not the full manifest — otherwise a
         # scoped run would leave whole packs empty while one pack carried it all.
@@ -873,7 +910,14 @@ def main(argv: list[str] | None = None) -> int:
         print("Selected jobs: " + ", ".join(job.job_id for job in selected))
         if args.validate_only or not args.execute:
             return 0
-        return execute_pack(selected)
+        return execute_pack(
+            selected,
+            shadow_predicted=(
+                predicted_ids
+                if args.scope_mode == "shadow" and args.changed_from
+                else None
+            ),
+        )
     except (ManifestError, RuntimeError, subprocess.CalledProcessError) as exc:
         print(f"ci-pack validation/execution failed: {exc}", file=sys.stderr)
         return 2

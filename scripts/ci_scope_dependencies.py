@@ -30,7 +30,7 @@ from scripts.audit_unrun_tests import FIRST_PARTY, ROOT
 # is deliberately excluded there because nightly artifacts are not human-edited
 # trigger subjects.
 LITERAL_DIRS = tuple(FIRST_PARTY) + (
-    "research", "tools", "config", "templates", "contracts", "ops",
+    "research", "tools", "config", "content", "templates", "contracts", "ops",
 )
 _PATH_LITERAL = re.compile(
     r"(?:" + "|".join(LITERAL_DIRS) + r")"
@@ -38,7 +38,7 @@ _PATH_LITERAL = re.compile(
 )
 _DATA_MARKER = re.compile(r"#\s*ci-trigger-closure:\s*data\b")
 _SCAN_ROOTS = {
-    "app", "admin", "collectors", "config", "contracts", "data", "docs",
+    "app", "admin", "collectors", "config", "content", "contracts", "data", "docs",
     "engine", "lib", "ops", "research", "scripts", "site", "templates",
     "tests", "tools", "worker",
 }

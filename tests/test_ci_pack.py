@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import re
 import subprocess
 import sys
@@ -343,6 +344,10 @@ def test_representative_narrow_diffs_skip_at_least_one_quarter_of_jobs() -> None
     selected, _ = PACK.select_jobs(jobs, cases["tripwires"])
     assert any(job.job_id == "falsifier-tripwires" for job in selected)
 
+    content, reason = PACK.select_jobs(jobs, ["content/seo/blog/example.md"])
+    assert len(content) < len(jobs), reason
+    assert any(job.job_id == "free-content-estate" for job in content)
+
 
 @pytest.mark.parametrize("graph", ["config/dag.yml", "config/synapse.yml"])
 def test_graph_metadata_is_a_global_invalidator(graph: str) -> None:
@@ -418,6 +423,47 @@ def test_scope_mode_kill_switch_defaults_and_can_be_disabled(
     assert PACK.parse_args(["--workflow", str(MANIFEST)]).scope_mode == "off"
 
 
+def test_shadow_mode_emits_machine_readable_plan_and_job_results(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    definition = {"steps": [], "runs-on": "ubuntu-latest", "if": "${{ false }}"}
+    owner = PACK.LegacyJob("owner", definition, 0, 1, ("engine/**",))
+    skipped = PACK.LegacyJob("would-skip", definition, 1, 1, ("site/**",))
+    jobs = [owner, skipped]
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: jobs)
+    monkeypatch.setattr(PACK, "changed_files", lambda base: ["engine/example.py"])
+    monkeypatch.setattr(PACK, "infer_job_scopes", lambda loaded: (loaded, "test scopes"))
+    assert PACK.main([
+        "--workflow", str(MANIFEST),
+        "--changed-from", "base-sha",
+        "--scope-mode", "shadow",
+        "--validate-only",
+        "--pack-count", "1",
+    ]) == 0
+    plan_line = next(
+        line for line in capsys.readouterr().out.splitlines()
+        if line.startswith("CI_SCOPE_SHADOW_PLAN=")
+    )
+    plan = json.loads(plan_line.split("=", 1)[1])
+    assert plan["predicted_selected"] == ["owner"]
+    assert plan["predicted_skipped"] == ["would-skip"]
+
+    monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda: None)
+    monkeypatch.setattr(PACK, "_run_job", lambda *args, **kwargs: None)
+    assert PACK.execute_pack(jobs, shadow_predicted=frozenset({"owner"})) == 0
+    records = [
+        json.loads(line.split("=", 1)[1])
+        for line in capsys.readouterr().out.splitlines()
+        if line.startswith("CI_SCOPE_SHADOW_RESULT=")
+    ]
+    assert records == [
+        {"job": "owner", "predicted_selected": True, "status": "passed"},
+        {"job": "would-skip", "predicted_selected": False, "status": "passed"},
+    ]
+
+
 def test_packs_stay_balanced_over_the_selected_subset() -> None:
     """Balance must be computed on the SELECTION, not the full manifest.
 
@@ -449,6 +495,7 @@ def test_workflow_scopes_only_pull_requests() -> None:
     pull_paths = on["pull_request"]["paths"]
     assert "**" in pull_paths
     assert "worker/**" in pull_paths
+    assert "content/**" in pull_paths
     assert "wrangler.toml" in pull_paths
     assert "$CI_SCOPE_ARG" in str(step["run"])
 
