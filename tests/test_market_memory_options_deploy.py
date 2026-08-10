@@ -366,6 +366,7 @@ def test_prereq_executable_credential_state_machine(tmp_path: Path) -> None:
     credential_root = tmp_path / "credential-root"
     canonical = tmp_path / "operator.env"
     fallback = tmp_path / "fallback.env"
+    live = tmp_path / "live.env"
     harness = tmp_path / "prereqs.sh"
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
@@ -381,9 +382,9 @@ def test_prereq_executable_credential_state_machine(tmp_path: Path) -> None:
             f"CREDENTIAL_ROOT={shlex.quote(str(credential_root))}",
         )
         .replace(
-            "for source in /opt/macro/.env /etc/macro-api.env; do",
+            "for source in /opt/macro/.env /etc/macro-api.env /etc/macro-live.env; do",
             f"for source in {shlex.quote(str(canonical))} "
-            f"{shlex.quote(str(fallback))}; do",
+            f"{shlex.quote(str(fallback))} {shlex.quote(str(live))}; do",
         )
     )
     harness.write_text(source, encoding="utf-8")
@@ -494,6 +495,13 @@ esac
     assert not orphan.exists()
 
     canonical.unlink()
+    live.write_text("MASSIVE_API_KEY=live-private-token-246810\n", encoding="utf-8")
+    live.chmod(0o600)
+    live_source = run()
+    assert live_source.returncode == 0, live_source.stderr
+    assert credential.read_text(encoding="utf-8") == "live-private-token-246810\n"
+
+    live.unlink()
     absent = run()
     assert absent.returncode == 2
     assert not credential.exists()
@@ -927,6 +935,7 @@ def test_all_existing_market_memory_services_reciprocally_hide_option_root() -> 
     option_service = _text(SERVICE)
     assert "InaccessiblePaths=-/opt/macro/.env" in option_service
     assert "InaccessiblePaths=-/etc/macro-api.env" in option_service
+    assert "InaccessiblePaths=-/etc/macro-live.env" in option_service
 
 
 def test_loaded_unit_attestor_rejects_symlinks_metadata_drift_and_dropins() -> None:

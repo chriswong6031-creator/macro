@@ -46,18 +46,20 @@ LoadCredential=massive-option-oi-api-key:/etc/macro-market-memory-options/massiv
 The capture process reads the fixed file below `$CREDENTIALS_DIRECTORY`. It has
 no application environment-variable fallback and accepts no key path/value on
 argv. The prereq helper can rebind the already private VPS Massive/Polygon token
-from `/opt/macro/.env` or `/etc/macro-api.env` into this process-specific,
-root-owned mode-0400 credential source without logging it. This isolates process
+from `/opt/macro/.env`, `/etc/macro-api.env`, or the existing root-private
+`/etc/macro-live.env` into this process-specific, root-owned mode-0400
+credential source without logging it. This isolates process
 access; it does not claim the underlying provider subscription key is unique to
 this canary.
 
 For an out-of-band rotation, update the canonical root-owned, group/world-dark
-operator source (`/opt/macro/.env`, preferred, or `/etc/macro-api.env`) and let
-the next updater tick replace the derived mode-0400 systemd credential. A manual
+operator source (`/opt/macro/.env`, then `/etc/macro-api.env`, then
+`/etc/macro-live.env` in precedence order) and let the next updater tick replace
+the derived mode-0400 systemd credential. A manual
 edit to the derived credential is intentionally overwritten while a valid
-canonical source exists. If neither canonical source contains a valid private
-token, the helper removes the derived file and disarms the lane rather than
-silently retaining stale credential state. Do not paste tokens into Git, issues,
+canonical source exists. If none of the canonical sources contains a valid
+private token, the helper removes the derived file and disarms the lane rather
+than silently retaining stale credential state. Do not paste tokens into Git, issues,
 PRs, command arguments, or journal messages.
 
 The committed `research/licenses/MASSIVE_ENTITLEMENT_RECORD.md` is the reviewed

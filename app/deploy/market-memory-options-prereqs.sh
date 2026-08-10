@@ -173,7 +173,7 @@ provision_credential() {
 		die "credential root must be root:root mode 0700"
 	cleanup_credential_temps
 	[ ! -L "$CREDENTIAL_FILE" ] || die "credential source must not be a symlink"
-	for source in /opt/macro/.env /etc/macro-api.env; do
+	for source in /opt/macro/.env /etc/macro-api.env /etc/macro-live.env; do
 		extract_status=0
 		candidate=$(extract_private_key "$source") || extract_status=$?
 		if [ "$extract_status" -eq 0 ]; then
@@ -277,7 +277,7 @@ check_full_ready() {
 	file_metadata=$(stat -c '%U:%G:%a' "$CREDENTIAL_FILE") || \
 		die "cannot inspect credential file"
 	[ "$file_metadata" = 'root:root:400' ] || return 2
-	for source in /opt/macro/.env /etc/macro-api.env; do
+	for source in /opt/macro/.env /etc/macro-api.env /etc/macro-live.env; do
 		extract_status=0
 		candidate=$(extract_private_key "$source") || extract_status=$?
 		if [ "$extract_status" -eq 0 ]; then
