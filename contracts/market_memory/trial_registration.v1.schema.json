@@ -1,0 +1,266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/trial_registration.v1.schema.json",
+  "title": "Market Memory preregistered forward trial v1",
+  "description": "Strict content-addressed W2A preregistration freezing state requirements, target, marks, horizon, their exact outcome-definition digest, predictive distribution, proper score, baselines, splits, leakage controls, dependence, budget, abstention, expiry, demotion, exact implementation hashes, and zero authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 23,
+  "maxProperties": 23,
+  "required": [
+    "schema",
+    "trial_registration_id",
+    "trial_key",
+    "registered_at",
+    "state_requirements",
+    "target",
+    "marks",
+    "horizon",
+    "outcome_definition_sha256",
+    "distribution",
+    "proper_score",
+    "baselines",
+    "splits",
+    "purge",
+    "embargo",
+    "dependence",
+    "trial_budget",
+    "abstention",
+    "expiry",
+    "demotion",
+    "implementation",
+    "emission_enabled",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.trial_registration.v1"},
+    "trial_registration_id": {"type": "string", "pattern": "^mmtrial_[a-f0-9]{64}$"},
+    "trial_key": {"$ref": "#/$defs/opaque"},
+    "registered_at": {"$ref": "#/$defs/timestamp"},
+    "state_requirements": {"$ref": "#/$defs/stateRequirements"},
+    "target": {"$ref": "#/$defs/target"},
+    "marks": {"$ref": "#/$defs/marks"},
+    "horizon": {"$ref": "#/$defs/horizon"},
+    "outcome_definition_sha256": {"$ref": "#/$defs/sha256"},
+    "distribution": {"$ref": "#/$defs/distribution"},
+    "proper_score": {"$ref": "#/$defs/properScore"},
+    "baselines": {"type": "array", "minItems": 1, "maxItems": 32, "items": {"$ref": "#/$defs/baseline"}},
+    "splits": {"$ref": "#/$defs/splits"},
+    "purge": {"$ref": "#/$defs/purge"},
+    "embargo": {"$ref": "#/$defs/embargo"},
+    "dependence": {"$ref": "#/$defs/dependence"},
+    "trial_budget": {"$ref": "#/$defs/trialBudget"},
+    "abstention": {"$ref": "#/$defs/abstention"},
+    "expiry": {"$ref": "#/$defs/expiry"},
+    "demotion": {"$ref": "#/$defs/demotion"},
+    "implementation": {"$ref": "#/$defs/implementation"},
+    "emission_enabled": {"const": false},
+    "authority": {"$ref": "state_snapshot.v1.schema.json#/$defs/authority"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[a-f0-9]{64}$"},
+    "timestamp": {"type": "string", "minLength": 27, "maxLength": 27, "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"},
+    "opaque": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"},
+    "domain": {"enum": ["macro", "rates_credit", "breadth_factors", "technicals", "options", "positioning_flows", "dark_pool", "intraday_microstructure", "fundamentals", "earnings", "news_narrative", "alt_data", "prophet_context", "system_health"]},
+    "stateRequirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 4,
+      "maxProperties": 4,
+      "required": ["state_schema", "context_schema", "minimum_observed_domains", "required_observed_domains"],
+      "properties": {
+        "state_schema": {"const": "market_memory.state_snapshot.v1"},
+        "context_schema": {"const": "market_memory.as_known_at.v1"},
+        "minimum_observed_domains": {"type": "integer", "minimum": 1, "maximum": 14},
+        "required_observed_domains": {"type": "array", "maxItems": 14, "uniqueItems": true, "items": {"$ref": "#/$defs/domain"}}
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 7,
+      "maxProperties": 7,
+      "required": ["target_id", "formula", "formula_version", "value_type", "unit", "categories", "target_sha256"],
+      "properties": {
+        "target_id": {"$ref": "#/$defs/opaque"},
+        "formula": {"type": "string", "minLength": 1, "maxLength": 512},
+        "formula_version": {"$ref": "#/$defs/opaque"},
+        "value_type": {"enum": ["number", "integer", "string"]},
+        "unit": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,63}$"},
+        "categories": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/opaque"}},
+        "target_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "allOf": [
+        {"if": {"properties": {"value_type": {"const": "string"}}, "required": ["value_type"]}, "then": {"properties": {"categories": {"minItems": 2}}}},
+        {"if": {"properties": {"value_type": {"enum": ["number", "integer"]}}, "required": ["value_type"]}, "then": {"properties": {"categories": {"maxItems": 0}}}}
+      ]
+    },
+    "marks": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 4,
+      "maxProperties": 4,
+      "required": ["input_mark", "outcome_mark", "cost_convention", "benchmark"],
+      "properties": {
+        "input_mark": {"$ref": "#/$defs/opaque"},
+        "outcome_mark": {"$ref": "#/$defs/opaque"},
+        "cost_convention": {"$ref": "#/$defs/opaque"},
+        "benchmark": {"$ref": "#/$defs/opaque"}
+      }
+    },
+    "horizon": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 4,
+      "maxProperties": 4,
+      "required": ["anchor", "start_offset_seconds", "end_offset_seconds", "evaluation_offset_seconds"],
+      "properties": {
+        "anchor": {"const": "decision_cutoff"},
+        "start_offset_seconds": {"type": "integer", "minimum": 1, "maximum": 315360000},
+        "end_offset_seconds": {"type": "integer", "minimum": 2, "maximum": 315360000},
+        "evaluation_offset_seconds": {"type": "integer", "minimum": 2, "maximum": 315360000}
+      }
+    },
+    "distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 3,
+      "maxProperties": 3,
+      "required": ["kind", "quantile_levels", "categories"],
+      "properties": {
+        "kind": {"enum": ["scalar", "quantiles", "categorical"]},
+        "quantile_levels": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}},
+        "categories": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/opaque"}}
+      },
+      "allOf": [
+        {"if": {"properties": {"kind": {"const": "scalar"}}, "required": ["kind"]}, "then": {"properties": {"quantile_levels": {"maxItems": 0}, "categories": {"maxItems": 0}}}},
+        {"if": {"properties": {"kind": {"const": "quantiles"}}, "required": ["kind"]}, "then": {"properties": {"quantile_levels": {"minItems": 1}, "categories": {"maxItems": 0}}}},
+        {"if": {"properties": {"kind": {"const": "categorical"}}, "required": ["kind"]}, "then": {"properties": {"quantile_levels": {"maxItems": 0}, "categories": {"minItems": 2}}}}
+      ]
+    },
+    "properScore": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 2,
+      "maxProperties": 2,
+      "required": ["name", "orientation"],
+      "properties": {
+        "name": {"enum": ["squared_error", "absolute_error", "pinball_loss", "log_loss", "brier_score"]},
+        "orientation": {"const": "lower_is_better"}
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 3,
+      "maxProperties": 3,
+      "required": ["baseline_id", "baseline_version", "config_sha256"],
+      "properties": {
+        "baseline_id": {"$ref": "#/$defs/opaque"},
+        "baseline_version": {"$ref": "#/$defs/opaque"},
+        "config_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "splits": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 5,
+      "maxProperties": 5,
+      "required": ["development_start", "development_end", "test_start", "test_end", "live_forward_start"],
+      "properties": {
+        "development_start": {"$ref": "#/$defs/timestamp"},
+        "development_end": {"$ref": "#/$defs/timestamp"},
+        "test_start": {"$ref": "#/$defs/timestamp"},
+        "test_end": {"$ref": "#/$defs/timestamp"},
+        "live_forward_start": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+    "purge": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 3,
+      "maxProperties": 3,
+      "required": ["enabled", "before_seconds", "after_seconds"],
+      "properties": {
+        "enabled": {"const": true},
+        "before_seconds": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "after_seconds": {"type": "integer", "minimum": 0, "maximum": 1000000000}
+      }
+    },
+    "embargo": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 2,
+      "maxProperties": 2,
+      "required": ["enabled", "duration_seconds"],
+      "properties": {"enabled": {"const": true}, "duration_seconds": {"type": "integer", "minimum": 1, "maximum": 1000000000}}
+    },
+    "dependence": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 3,
+      "maxProperties": 3,
+      "required": ["keys", "clustering", "cluster_version"],
+      "properties": {
+        "keys": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/opaque"}},
+        "clustering": {"enum": ["exact_key_tuple", "effective_event_cluster"]},
+        "cluster_version": {"$ref": "#/$defs/opaque"}
+      }
+    },
+    "trialBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 3,
+      "maxProperties": 3,
+      "required": ["max_trials", "max_variants", "family_trials_already_registered"],
+      "properties": {
+        "max_trials": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "max_variants": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "family_trials_already_registered": {"type": "integer", "minimum": 0, "maximum": 999999}
+      }
+    },
+    "abstention": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 3,
+      "maxProperties": 3,
+      "required": ["required", "minimum_observed_domains", "allowed_reasons"],
+      "properties": {
+        "required": {"const": true},
+        "minimum_observed_domains": {"type": "integer", "minimum": 1, "maximum": 14},
+        "allowed_reasons": {"type": "array", "minItems": 1, "maxItems": 7, "uniqueItems": true, "items": {"enum": ["insufficient_domains", "required_domain_missing", "input_stale", "out_of_distribution", "model_unavailable", "policy_expired", "quality_gate_failed"]}}
+      }
+    },
+    "expiry": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 2,
+      "maxProperties": 2,
+      "required": ["expires_at", "action"],
+      "properties": {"expires_at": {"$ref": "#/$defs/timestamp"}, "action": {"const": "abstain"}}
+    },
+    "demotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 2,
+      "maxProperties": 2,
+      "required": ["enabled", "triggers"],
+      "properties": {
+        "enabled": {"const": true},
+        "triggers": {"type": "array", "minItems": 1, "maxItems": 7, "uniqueItems": true, "items": {"enum": ["stale_evidence", "coverage_breach", "calibration_decay", "broken_lineage", "schema_change", "source_change", "baseline_underperformance"]}}
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 3,
+      "maxProperties": 3,
+      "required": ["model_sha256", "code_sha256", "config_sha256"],
+      "properties": {
+        "model_sha256": {"$ref": "#/$defs/sha256"},
+        "code_sha256": {"$ref": "#/$defs/sha256"},
+        "config_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

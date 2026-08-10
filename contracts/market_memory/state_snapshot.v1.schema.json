@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/state_snapshot.v1.schema.json",
+  "title": "Market Memory interpretable state snapshot v1",
+  "description": "Strict W2A label-free state manifest over exact immutable W1 context bytes. Cross-record byte equality, clocks, derived coverage, and content IDs are revalidated by engine.neuralweb.market_memory_forward.",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 9,
+  "maxProperties": 9,
+  "required": [
+    "schema",
+    "state_snapshot_id",
+    "context_id",
+    "as_known_at",
+    "context_manifest",
+    "domain_states",
+    "coverage",
+    "representation_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.state_snapshot.v1"},
+    "state_snapshot_id": {"$ref": "#/$defs/stateId"},
+    "context_id": {"$ref": "#/$defs/contextId"},
+    "as_known_at": {"$ref": "#/$defs/timestamp"},
+    "context_manifest": {"$ref": "#/$defs/contextManifest"},
+    "domain_states": {
+      "type": "array",
+      "minItems": 14,
+      "maxItems": 14,
+      "prefixItems": [
+        {"$ref": "#/$defs/domainMacro"},
+        {"$ref": "#/$defs/domainRatesCredit"},
+        {"$ref": "#/$defs/domainBreadthFactors"},
+        {"$ref": "#/$defs/domainTechnicals"},
+        {"$ref": "#/$defs/domainOptions"},
+        {"$ref": "#/$defs/domainPositioningFlows"},
+        {"$ref": "#/$defs/domainDarkPool"},
+        {"$ref": "#/$defs/domainIntradayMicrostructure"},
+        {"$ref": "#/$defs/domainFundamentals"},
+        {"$ref": "#/$defs/domainEarnings"},
+        {"$ref": "#/$defs/domainNewsNarrative"},
+        {"$ref": "#/$defs/domainAltData"},
+        {"$ref": "#/$defs/domainProphetContext"},
+        {"$ref": "#/$defs/domainSystemHealth"}
+      ],
+      "items": false
+    },
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "representation_policy": {"$ref": "#/$defs/representationPolicy"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "minLength": 27,
+      "maxLength": 27,
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+    },
+    "stateId": {
+      "type": "string",
+      "minLength": 72,
+      "maxLength": 72,
+      "pattern": "^mmstate_[a-f0-9]{64}$"
+    },
+    "contextId": {
+      "type": "string",
+      "minLength": 70,
+      "maxLength": 70,
+      "pattern": "^mmctx_[a-f0-9]{64}$"
+    },
+    "sourceReceiptId": {
+      "type": "string",
+      "minLength": 70,
+      "maxLength": 70,
+      "pattern": "^mmsrc_[a-f0-9]{64}$"
+    },
+    "opaque": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"
+    },
+    "contextManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 13,
+      "maxProperties": 13,
+      "required": [
+        "context_sha256",
+        "context_bytes",
+        "store_id",
+        "generation_id",
+        "generation_sha256",
+        "identity_receipt_id",
+        "identity_version",
+        "universe_id",
+        "membership_source_receipt_id",
+        "calendar_id",
+        "calendar_version",
+        "calendar_source_receipt_id",
+        "state_snapshot_ref"
+      ],
+      "properties": {
+        "context_sha256": {"$ref": "#/$defs/sha256"},
+        "context_bytes": {"type": "integer", "minimum": 1, "maximum": 2097152},
+        "store_id": {"type": "string", "pattern": "^mmstore_[a-f0-9]{64}$"},
+        "generation_id": {"type": "string", "pattern": "^mmgeneration_[a-f0-9]{64}$"},
+        "generation_sha256": {"$ref": "#/$defs/sha256"},
+        "identity_receipt_id": {"type": "string", "pattern": "^mmidentity_[a-f0-9]{64}$"},
+        "identity_version": {"type": "string", "pattern": "^mmidentityv_[a-f0-9]{64}$"},
+        "universe_id": {"type": "string", "pattern": "^mmuniverse_[a-f0-9]{64}$"},
+        "membership_source_receipt_id": {"$ref": "#/$defs/sourceReceiptId"},
+        "calendar_id": {"type": "string", "pattern": "^mmcalendar_[a-f0-9]{64}$"},
+        "calendar_version": {"type": "string", "pattern": "^mmv_[a-f0-9]{64}$"},
+        "calendar_source_receipt_id": {"$ref": "#/$defs/sourceReceiptId"},
+        "state_snapshot_ref": {"type": "null"}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 2,
+      "maxProperties": 2,
+      "required": ["status", "imputed"],
+      "properties": {
+        "status": {"enum": ["ok", "degraded"]},
+        "imputed": {"const": false}
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 9,
+      "maxProperties": 9,
+      "required": [
+        "feature_id",
+        "value_type",
+        "value",
+        "unit",
+        "observed_at",
+        "pit_basis",
+        "transform_version",
+        "source_receipt_ids",
+        "quality"
+      ],
+      "properties": {
+        "feature_id": {"$ref": "#/$defs/opaque"},
+        "value_type": {"enum": ["string", "boolean", "integer", "number", "snapshot_ref"]},
+        "value": {"anyOf": [{"type": "string", "maxLength": 512}, {"type": "boolean"}, {"type": "integer", "minimum": -1000000000000000, "maximum": 1000000000000000}, {"type": "number", "minimum": -1000000000000000, "maximum": 1000000000000000}, {"$ref": "#/$defs/snapshotRef"}]},
+        "unit": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,63}$"},
+        "observed_at": {"$ref": "#/$defs/timestamp"},
+        "pit_basis": {"enum": ["live_captured", "source_vintage", "public_reconstructed", "recomputed_history", "current_snapshot_backfill"]},
+        "transform_version": {"$ref": "#/$defs/opaque"},
+        "source_receipt_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sourceReceiptId"}
+        },
+        "quality": {"$ref": "#/$defs/quality"}
+      },
+      "allOf": [
+        {"if": {"properties": {"value_type": {"const": "string"}}, "required": ["value_type"]}, "then": {"properties": {"value": {"type": "string"}}}},
+        {"if": {"properties": {"value_type": {"const": "boolean"}}, "required": ["value_type"]}, "then": {"properties": {"value": {"type": "boolean"}}}},
+        {"if": {"properties": {"value_type": {"const": "integer"}}, "required": ["value_type"]}, "then": {"properties": {"value": {"type": "integer", "minimum": -1000000000000000, "maximum": 1000000000000000}}}},
+        {"if": {"properties": {"value_type": {"const": "number"}}, "required": ["value_type"]}, "then": {"properties": {"value": {"type": "number", "minimum": -1000000000000000, "maximum": 1000000000000000}}}},
+        {"if": {"properties": {"value_type": {"const": "snapshot_ref"}}, "required": ["value_type"]}, "then": {"properties": {"value": {"$ref": "#/$defs/snapshotRef"}}}}
+      ]
+    },
+    "snapshotRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 4,
+      "maxProperties": 4,
+      "required": ["snapshot_id", "schema", "content_sha256", "as_of"],
+      "properties": {
+        "snapshot_id": {"type": "string", "pattern": "^mmsnap_[a-f0-9]{64}$"},
+        "schema": {"$ref": "#/$defs/opaque"},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "as_of": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+    "missingReason": {"enum": ["not_captured", "source_unavailable", "not_applicable", "quality_rejected", "outside_coverage"]},
+    "domainState": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 4,
+      "maxProperties": 4,
+      "required": ["domain", "status", "observations", "missing_reason"],
+      "properties": {
+        "domain": {"enum": ["macro", "rates_credit", "breadth_factors", "technicals", "options", "positioning_flows", "dark_pool", "intraday_microstructure", "fundamentals", "earnings", "news_narrative", "alt_data", "prophet_context", "system_health"]},
+        "status": {"enum": ["observed", "partial", "missing"]},
+        "observations": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/observation"}},
+        "missing_reason": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/missingReason"}]}
+      },
+      "allOf": [
+        {"if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]}, "then": {"properties": {"observations": {"minItems": 1}, "missing_reason": {"type": "null"}}}},
+        {"if": {"properties": {"status": {"const": "partial"}}, "required": ["status"]}, "then": {"properties": {"observations": {"minItems": 1}, "missing_reason": {"$ref": "#/$defs/missingReason"}}}},
+        {"if": {"properties": {"status": {"const": "missing"}}, "required": ["status"]}, "then": {"properties": {"observations": {"maxItems": 0}, "missing_reason": {"$ref": "#/$defs/missingReason"}}}}
+      ]
+    },
+    "domainMacro": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "macro"}}}]},
+    "domainRatesCredit": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "rates_credit"}}}]},
+    "domainBreadthFactors": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "breadth_factors"}}}]},
+    "domainTechnicals": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "technicals"}}}]},
+    "domainOptions": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "options"}}}]},
+    "domainPositioningFlows": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "positioning_flows"}}}]},
+    "domainDarkPool": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "dark_pool"}}}]},
+    "domainIntradayMicrostructure": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "intraday_microstructure"}}}]},
+    "domainFundamentals": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "fundamentals"}}}]},
+    "domainEarnings": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "earnings"}}}]},
+    "domainNewsNarrative": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "news_narrative"}}}]},
+    "domainAltData": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "alt_data"}}}]},
+    "domainProphetContext": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "prophet_context"}}}]},
+    "domainSystemHealth": {"allOf": [{"$ref": "#/$defs/domainState"}, {"properties": {"domain": {"const": "system_health"}}}]},
+    "domainName": {"enum": ["macro", "rates_credit", "breadth_factors", "technicals", "options", "positioning_flows", "dark_pool", "intraday_microstructure", "fundamentals", "earnings", "news_narrative", "alt_data", "prophet_context", "system_health"]},
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 8,
+      "maxProperties": 8,
+      "required": ["required_domains", "observed_domains", "partial_domains", "missing_domains", "n_observed_domains", "n_partial_domains", "n_missing_domains", "multi_domain"],
+      "properties": {
+        "required_domains": {"type": "array", "minItems": 14, "maxItems": 14, "prefixItems": [{"const": "macro"}, {"const": "rates_credit"}, {"const": "breadth_factors"}, {"const": "technicals"}, {"const": "options"}, {"const": "positioning_flows"}, {"const": "dark_pool"}, {"const": "intraday_microstructure"}, {"const": "fundamentals"}, {"const": "earnings"}, {"const": "news_narrative"}, {"const": "alt_data"}, {"const": "prophet_context"}, {"const": "system_health"}], "items": false},
+        "observed_domains": {"type": "array", "maxItems": 14, "uniqueItems": true, "items": {"$ref": "#/$defs/domainName"}},
+        "partial_domains": {"type": "array", "maxItems": 14, "uniqueItems": true, "items": {"$ref": "#/$defs/domainName"}},
+        "missing_domains": {"type": "array", "maxItems": 14, "uniqueItems": true, "items": {"$ref": "#/$defs/domainName"}},
+        "n_observed_domains": {"type": "integer", "minimum": 0, "maximum": 14},
+        "n_partial_domains": {"type": "integer", "minimum": 0, "maximum": 14},
+        "n_missing_domains": {"type": "integer", "minimum": 0, "maximum": 14},
+        "multi_domain": {"type": "boolean"}
+      }
+    },
+    "representationPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 5,
+      "maxProperties": 5,
+      "required": ["representation", "missingness", "context_reference", "post_event_data", "learned_representation"],
+      "properties": {
+        "representation": {"const": "interpretable_typed_observations"},
+        "missingness": {"const": "explicit_per_domain"},
+        "context_reference": {"const": "immutable_exact_bytes"},
+        "post_event_data": {"const": "forbidden"},
+        "learned_representation": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 18,
+      "maxProperties": 18,
+      "required": ["tier", "visibility", "context_only", "emission_enabled", "training_eligible", "promotion_eligible", "proposal_weight", "may_rank", "may_gate", "may_size", "may_escalate", "may_trade", "may_originate", "may_select_options_candidate", "may_execute", "may_write_options_episode", "may_append_outcome", "may_train_prophet"],
+      "properties": {
+        "tier": {"const": "research"},
+        "visibility": {"const": "private"},
+        "context_only": {"const": true},
+        "emission_enabled": {"const": false},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}
