@@ -1,0 +1,304 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/market_session_window.v1.schema.json",
+  "title": "Market Memory reviewed XNYS session-window receipt v1",
+  "description": "Strict W1B.4A schedule receipt bound to exact reviewed source bytes. It authenticates the retained schedule artifact, not actual market activity or an event time.",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 14,
+  "maxProperties": 14,
+  "required": [
+    "schema",
+    "window_id",
+    "calendar_id",
+    "market_session",
+    "session_date",
+    "source_timezone",
+    "session_state",
+    "session_open",
+    "session_close_exclusive",
+    "bounds_convention",
+    "source_evidence",
+    "quality",
+    "limitations",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.market_session_window.v1"},
+    "window_id": {"$ref": "#/$defs/windowId"},
+    "calendar_id": {"$ref": "#/$defs/calendarId"},
+    "market_session": {"const": "XNYS_REGULAR"},
+    "session_date": {"$ref": "#/$defs/date"},
+    "source_timezone": {"const": "America/New_York"},
+    "session_state": {
+      "enum": [
+        "regular_session",
+        "early_close",
+        "non_session",
+        "unresolved"
+      ]
+    },
+    "session_open": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/timestamp"}
+      ]
+    },
+    "session_close_exclusive": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/timestamp"}
+      ]
+    },
+    "bounds_convention": {"const": "lower_inclusive_upper_exclusive"},
+    "source_evidence": {"$ref": "#/$defs/sourceEvidence"},
+    "quality": {
+      "oneOf": [
+        {"$ref": "#/$defs/resolvedQuality"},
+        {"$ref": "#/$defs/unresolvedQuality"}
+      ]
+    },
+    "limitations": {"$ref": "#/$defs/limitations"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "session_state": {
+            "enum": ["regular_session", "early_close"]
+          }
+        },
+        "required": ["session_state"]
+      },
+      "then": {
+        "properties": {
+          "session_open": {"$ref": "#/$defs/timestamp"},
+          "session_close_exclusive": {"$ref": "#/$defs/timestamp"},
+          "quality": {"$ref": "#/$defs/resolvedQuality"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "session_state": {"const": "non_session"}
+        },
+        "required": ["session_state"]
+      },
+      "then": {
+        "properties": {
+          "session_open": {"type": "null"},
+          "session_close_exclusive": {"type": "null"},
+          "quality": {"$ref": "#/$defs/resolvedQuality"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "session_state": {"const": "unresolved"}
+        },
+        "required": ["session_state"]
+      },
+      "then": {
+        "properties": {
+          "session_open": {"type": "null"},
+          "session_close_exclusive": {"type": "null"},
+          "quality": {"$ref": "#/$defs/unresolvedQuality"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "date": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 10,
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "minLength": 27,
+      "maxLength": 27,
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+    },
+    "sha256": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "windowId": {
+      "type": "string",
+      "minLength": 80,
+      "maxLength": 80,
+      "pattern": "^mmsessionwindow_[a-f0-9]{64}$"
+    },
+    "calendarId": {
+      "type": "string",
+      "minLength": 75,
+      "maxLength": 75,
+      "pattern": "^mmcalendar_[a-f0-9]{64}$"
+    },
+    "opaqueRef128": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"
+    },
+    "sourceEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 9,
+      "maxProperties": 9,
+      "required": [
+        "source",
+        "source_url",
+        "schedule_version",
+        "reviewed_at",
+        "artifact_sha256",
+        "artifact_bytes",
+        "source_authentication",
+        "schedule_basis",
+        "actual_market_activity_authenticated"
+      ],
+      "properties": {
+        "source": {"const": "NYSE"},
+        "source_url": {
+          "const": "https://www.nyse.com/markets/hours-calendars"
+        },
+        "schedule_version": {"$ref": "#/$defs/opaqueRef128"},
+        "reviewed_at": {"$ref": "#/$defs/timestamp"},
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "artifact_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 524288
+        },
+        "source_authentication": {
+          "const": "exact_source_bytes_sha256_verified"
+        },
+        "schedule_basis": {"const": "reviewed_exchange_schedule"},
+        "actual_market_activity_authenticated": {"const": false}
+      }
+    },
+    "resolvedQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 5,
+      "maxProperties": 5,
+      "required": [
+        "status",
+        "flags",
+        "source_bytes_verified",
+        "session_window_resolved",
+        "actual_market_activity_authenticated"
+      ],
+      "properties": {
+        "status": {"const": "complete"},
+        "flags": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "prefixItems": [
+            {"const": "scheduled_window_not_actual_market_activity"}
+          ],
+          "items": false
+        },
+        "source_bytes_verified": {"const": true},
+        "session_window_resolved": {"const": true},
+        "actual_market_activity_authenticated": {"const": false}
+      }
+    },
+    "unresolvedQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 5,
+      "maxProperties": 5,
+      "required": [
+        "status",
+        "flags",
+        "source_bytes_verified",
+        "session_window_resolved",
+        "actual_market_activity_authenticated"
+      ],
+      "properties": {
+        "status": {"const": "unresolved"},
+        "flags": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {"const": "schedule_unresolved"},
+            {"const": "scheduled_window_not_actual_market_activity"}
+          ],
+          "items": false
+        },
+        "source_bytes_verified": {"const": true},
+        "session_window_resolved": {"const": false},
+        "actual_market_activity_authenticated": {"const": false}
+      }
+    },
+    "limitations": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 4,
+      "maxProperties": 4,
+      "required": [
+        "schedule_only",
+        "actual_market_activity_authenticated",
+        "unscheduled_interruptions_authenticated",
+        "event_time_authenticated"
+      ],
+      "properties": {
+        "schedule_only": {"const": true},
+        "actual_market_activity_authenticated": {"const": false},
+        "unscheduled_interruptions_authenticated": {"const": false},
+        "event_time_authenticated": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 15,
+      "maxProperties": 15,
+      "required": [
+        "tier",
+        "horizon_role",
+        "context_only",
+        "proposal_weight",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_escalate",
+        "may_trade",
+        "may_originate",
+        "may_select_options_candidate",
+        "may_execute",
+        "may_write_options_episode",
+        "may_append_outcome",
+        "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}
