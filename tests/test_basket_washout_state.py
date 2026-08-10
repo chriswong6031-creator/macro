@@ -327,6 +327,197 @@ _BANNED = re.compile(
     r"\bvalidated\b|\bfalsif\w*|\brefut\w*|\bthesis (?:refuted|broken)\b|证伪", re.I)
 
 
+# ------------------------------------------------- (7) history intervals (v1) --
+def _hist(defs, sectors, dd, as_of):
+    state = B.build_state(defs, sectors, dd, as_of=as_of)
+    return state, B.build_history(dd, defs, sectors, state)
+
+
+def _ramp(values, start="2026-07-01"):
+    idx = pd.bdate_range(start, periods=len(values))
+    return pd.Series([float(v) for v in values], index=idx, dtype="float64")
+
+
+def _open_at(h: dict, ticker: str, notch: str) -> bool:
+    e = h["names"].get(ticker)
+    if not e or not e["intervals"][notch]:
+        return False
+    return e["intervals"][notch][-1][1] is None
+
+
+def test_history_contract_shape():
+    as_of = pd.Timestamp("2026-08-07")
+    defs = _defs(theme=[f"U{i}" for i in range(6)])
+    dd = _flat_group("U", 6, -0.27, as_of)
+    state = B.build_state(defs, {}, dd, as_of=as_of)
+    h = B.build_history(dd, defs, {}, state)
+
+    assert set(h) == {"schema", "as_of", "notches", "notes", "names"}
+    assert h["schema"] == "basket_washout_history.v1"
+    assert h["notches"] == [20, 25, 30]
+    assert h["as_of"] == "2026-08-07"
+    assert set(h["names"]["U0"]) == {"basis", "group_id", "intervals"}
+    # -0.27 clears 20 and 25 but not 30 — and all three keys are always present
+    assert set(h["names"]["U0"]["intervals"]) == THR_KEYS
+    assert h["names"]["U0"]["intervals"]["20"] == [["2026-08-07", None]]
+    assert h["names"]["U0"]["intervals"]["25"] == [["2026-08-07", None]]
+    assert h["names"]["U0"]["intervals"]["30"] == []
+    # the honesty note is part of the contract, not decoration
+    for phrase in ("retro-applied", "TODAY's basket rosters", "INCLUSIVE", "per notch"):
+        assert phrase.lower() in h["notes"].lower()
+    assert not _BANNED.search(json.dumps(h, ensure_ascii=False))
+
+
+def test_intervals_open_and_close_exactly_at_the_notch_crossings():
+    """Five sessions: below, below, ABOVE, below, below -> two runs, the first one closed
+    at the last qualifying date (inclusive), the second open because it reaches as_of."""
+    levels = [-0.27, -0.27, -0.10, -0.27, -0.27]
+    dd = {f"U{i}": _ramp(levels) for i in range(6)}
+    as_of = dd["U0"].index[-1]
+    _, h = _hist(_defs(theme=[f"U{i}" for i in range(6)]), {}, dd, as_of)
+    idx = [str(d.date()) for d in dd["U0"].index]
+    assert h["names"]["U0"]["intervals"]["25"] == [[idx[0], idx[1]], [idx[3], None]]
+    assert h["names"]["U0"]["intervals"]["20"] == [[idx[0], idx[1]], [idx[3], None]]
+    assert h["names"]["U0"]["intervals"]["30"] == []
+
+
+def test_each_notch_is_drawn_independently_and_nests():
+    """A looser notch can only ever cover MORE dates than a tighter one — the three keys
+    are three readings of one series, so their qualifying date sets must nest 30 ⊆ 25 ⊆ 20."""
+    levels = [-0.10, -0.22, -0.27, -0.33, -0.27, -0.22]
+    dd = {f"U{i}": _ramp(levels) for i in range(6)}
+    as_of = dd["U0"].index[-1]
+    _, h = _hist(_defs(theme=[f"U{i}" for i in range(6)]), {}, dd, as_of)
+    idx = [str(d.date()) for d in dd["U0"].index]
+    iv = h["names"]["U0"]["intervals"]
+    assert iv["20"] == [[idx[1], None]]            # still under -20% on as_of -> open
+    assert iv["25"] == [[idx[2], idx[4]]]          # closed: back above -25% before as_of
+    assert iv["30"] == [[idx[3], idx[3]]]          # a single session at -0.33
+
+    def dates(spans):
+        out = set()
+        for a, b in spans:
+            hi = as_of if b is None else pd.Timestamp(b)
+            out |= {str(d.date()) for d in pd.bdate_range(a, hi)}
+        return out
+
+    assert dates(iv["30"]) <= dates(iv["25"]) <= dates(iv["20"])
+
+
+def test_history_is_leave_one_out_and_agrees_with_the_state_artifact_on_as_of():
+    """The LOO fidelity gate: on `as_of`, having an OPEN interval at a notch must mean
+    exactly the same thing as the state artifact's qualifies[notch] — every name, every
+    notch, both directions."""
+    rng = np.random.default_rng(20260810)
+    dd, members = {}, []
+    for g in range(6):
+        for i in range(7):
+            t = f"G{g}_{i}"
+            dd[t] = _ramp(rng.uniform(-0.45, -0.05, size=9))
+            members.append((g, t))
+    defs = _defs(**{f"b{g}": [t for gg, t in members if gg == g] for g in range(6)})
+    as_of = dd["G0_0"].index[-1]
+    state, h = _hist(defs, {}, dd, as_of)
+
+    for notch in sorted(THR_KEYS):
+        assert any(v["qualifies"][notch] for v in state["names"].values()), f"notch {notch}"
+        assert any(not v["qualifies"][notch] for v in state["names"].values())
+        for t, e in state["names"].items():
+            assert _open_at(h, t, notch) == e["qualifies"][notch], \
+                f"{t} @ {notch}: interval and state disagree on as_of"
+
+
+def test_history_uses_the_states_group_assignment():
+    as_of = pd.Timestamp("2026-08-07")
+    dd = _flat_group("U", 6, -0.40, as_of) | _flat_group("S", 6, -0.33, as_of)
+    defs = _defs(theme=[f"U{i}" for i in range(6)])
+    sectors = {f"S{i}": "Energy" for i in range(6)}
+    state, h = _hist(defs, sectors, dd, as_of)
+    for t, e in h["names"].items():
+        assert (e["basis"], e["group_id"]) == (state["names"][t]["basis"],
+                                               state["names"][t]["group_id"])
+    assert h["names"]["S0"]["basis"] == "sector"
+
+
+def test_names_that_never_qualify_are_omitted_not_emitted_empty():
+    as_of = pd.Timestamp("2026-08-07")
+    dd = _flat_group("U", 6, -0.05, as_of)
+    _, h = _hist(_defs(theme=[f"U{i}" for i in range(6)]), {}, dd, as_of)
+    assert h["names"] == {}
+
+
+def test_a_session_the_name_did_not_print_breaks_its_run():
+    """No print = no reading for that name that session, so the run splits rather than
+    being bridged."""
+    idx = pd.bdate_range("2026-07-01", periods=5)
+    dd = {f"U{i}": pd.Series([-0.30] * 5, index=idx, dtype="float64") for i in range(6)}
+    dd["U0"] = dd["U0"].drop(idx[2])
+    _, h = _hist(_defs(theme=[f"U{i}" for i in range(6)]), {}, dd, idx[-1])
+    assert h["names"]["U0"]["intervals"]["25"] == [
+        [str(idx[0].date()), str(idx[1].date())], [str(idx[3].date()), None]]
+    assert h["names"]["U1"]["intervals"]["25"] == [[str(idx[0].date()), None]]
+
+
+def test_a_row_under_the_peer_floor_states_nothing():
+    idx = pd.bdate_range("2026-07-01", periods=3)
+    dd = {f"U{i}": pd.Series([-0.40] * 3, index=idx, dtype="float64") for i in range(6)}
+    for i in range(3, 6):                       # only 3 members print on the middle session
+        dd[f"U{i}"] = dd[f"U{i}"].drop(idx[1])
+    _, h = _hist(_defs(theme=[f"U{i}" for i in range(6)]), {}, dd, idx[-1])
+    assert h["names"]["U0"]["intervals"]["25"] == [
+        [str(idx[0].date()), str(idx[0].date())], [str(idx[2].date()), None]]
+
+
+@pytest.mark.parametrize("k", [5, 6, 7, 8, 11, 12])
+def test_loo_matrix_matches_the_scalar_helper(k):
+    """The vectorised rank trick must be identical to the one-name-at-a-time median."""
+    rng = np.random.default_rng(1000 + k)
+    V = rng.normal(-0.3, 0.2, size=(40, k))
+    V[rng.random((40, k)) < 0.2] = np.nan
+    M = B.loo_median_matrix(V)
+    for t in range(V.shape[0]):
+        row = {f"c{j}": float(V[t, j]) for j in range(k) if np.isfinite(V[t, j])}
+        for j in range(k):
+            if not np.isfinite(V[t, j]) or len(row) < B.MIN_PEERS:
+                assert not np.isfinite(M[t, j])
+                continue
+            assert M[t, j] == pytest.approx(B.leave_one_out_median(row, f"c{j}"))
+
+
+def test_history_degrades_to_an_empty_payload_without_a_state():
+    empty = B.build_state({}, {}, {})
+    h = B.build_history({}, {}, {}, empty)
+    assert h["schema"] == "basket_washout_history.v1" and h["names"] == {}
+    assert h["notches"] == [20, 25, 30]
+
+
+def test_main_replaces_previous_history_when_a_healthy_recompute_is_empty(
+        tmp_path, monkeypatch):
+    """No qualifying intervals is a valid current result, not permission to keep stale rows."""
+    as_of = pd.Timestamp("2026-08-07")
+    tickers = [f"U{i}" for i in range(6)]
+    defs = _defs(theme=tickers)
+    dd = _flat_group("U", 6, -0.05, as_of)
+    monkeypatch.setattr(B, "load_basket_defs", lambda _root: defs)
+    monkeypatch.setattr(B, "load_sector_map", lambda _root: {})
+    monkeypatch.setattr(B, "panel_paths", lambda _root: {t: tmp_path / t for t in tickers})
+    monkeypatch.setattr(B, "compute_drawdowns", lambda _paths, _need: dd)
+
+    out = tmp_path / "basket_washout_state.json"
+    hist_out = tmp_path / "basket_washout_history.json"
+    hist_out.write_text(json.dumps({
+        "schema": "basket_washout_history.v1",
+        "as_of": "2026-08-06",
+        "names": {"STALE": {"intervals": {"20": [["2026-01-01", None]]}}},
+    }))
+
+    assert B.main(["--data-root", str(tmp_path), "--out", str(out),
+                   "--history-out", str(hist_out)]) == 0
+    current = json.loads(hist_out.read_text())
+    assert current["as_of"] == "2026-08-07"
+    assert current["names"] == {}
+
+
 def test_module_and_payload_carry_no_banned_vocabulary():
     src = (_REPO_ROOT / "scripts" / "build_basket_washout_state.py").read_text()
     assert not _BANNED.search(src), "banned vocabulary in the builder's own copy"

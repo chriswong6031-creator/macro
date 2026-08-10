@@ -14,7 +14,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | active-build-map | 1 |
 | agentic_media | 4 |
 | biopharma-seasonality-intelligence | 7 |
-| blocked-entry-override | 1 |
+| blocked-entry-override | 2 |
 | btc-vector | 6 |
 | capital-structure-intelligence | 20 |
 | causal-hypothesis-factory | 9 |
@@ -111,7 +111,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 369 |
+| display | 370 |
 | infrastructure | 155 |
 | scored | 4 |
 | shadow | 92 |
@@ -120,7 +120,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 581 |
+| git | 582 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 17 |
@@ -164,6 +164,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| site-basket-washout-history | `site/factordata/basket_washout_history.json` | json | daily-engine | display | 0 | 1 |
 | site-basket-washout-state | `site/factordata/basket_washout_state.json` | json | daily-engine | display | 0 | 1 |
 
 ### btc-vector

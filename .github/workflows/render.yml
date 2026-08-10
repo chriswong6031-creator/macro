@@ -151,7 +151,6 @@ on:
       - "scripts/build_masterminds.py"
       - "scripts/build_measurement.py"
       - "scripts/build_methodology.py"
-      - "scripts/build_movers_page.py"
       - "scripts/build_news.py"
       - "scripts/build_options_command.py"
       - "scripts/build_options_entry_state.py"

@@ -506,12 +506,12 @@ def test_a_regwall_gated_link_is_a_validator_failure():
     assert any("radar.html" in o for o in row["metrics"]["offenders"])
 
 
-@pytest.mark.parametrize("gated", [
+@pytest.mark.parametrize("non_source", [
     "/radar.html", "/macro.html", "/us_track_record.html", "/movers.html",
 ])
-def test_every_url_w1_originally_cited_now_fails(gated):
+def test_every_non_source_url_w1_originally_cited_now_fails(non_source):
     d = F.draft("A paragraph.", fold=False)
-    d["body_html"] += f'<p>See <a href="{gated}">the page</a>.</p>'
+    d["body_html"] += f'<p>See <a href="{non_source}">the page</a>.</p>'
     assert V.check_link_allowlist(d, F.slot(), F.config())["ok"] is False
 
 

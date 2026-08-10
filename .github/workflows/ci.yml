@@ -2724,7 +2724,6 @@ on:
       - "tests/test_darkpool_desk.py"
       - "tests/test_options_estate_redirect_stubs.py"
       - "tests/test_macro_signals_render.py"
-      - "tests/test_movers_page.py"
       # product-nav-icons.css is the icon authority test_nav_submenu_icons.py now
       # checks the nav partial against, so its own guard must not stay dark.
       - "tests/test_nav_icon_refresh.py"
@@ -2762,7 +2761,6 @@ on:
       - "scripts/build_chart_data.py"
       - "scripts/build_confluence_screener.py"
       - "scripts/build_darkpool_desk.py"
-      - "scripts/build_movers_page.py"
       - "scripts/build_odds.py"
       - "scripts/build_sector_map.py"
       - "scripts/build_sp500_heatmap.py"

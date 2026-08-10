@@ -239,39 +239,32 @@ def test_basket_row_template_emits_no_anchor_when_unlinked():
     assert 'href="../basket/gold_miners.html"' in linked
 
 
-# ── movers board (scripts/build_movers_page) ─────────────────────────────────
+# ── consolidated stocks-hub theme board ─────────────────────────────────────
 
-def _movers_data() -> dict:
+def _theme_movers_data() -> dict:
     return {
-        "sp500_tiles": [
-            {"t": "LIVE", "name": "Live Corp", "sector": "Technology",
-             "industry": "Software", "perf": {"1D": 6.0}},
-            {"t": "DEAD", "name": "Dead Corp", "sector": "Technology",
-             "industry": "Software", "perf": {"1D": 5.0}},
-            {"t": "DOWN", "name": "Down Inc", "sector": "Financials",
-             "industry": "Banks", "perf": {"1D": -7.0}},
-        ],
-        "theme_tiles": [],
-        "asof": "2026-07-30",
+        "themes_asof": "2026-08-07",
+        "theme_tiles": [{
+            "sector": "Software",
+            "asof": "2026-08-07",
+            "members": [
+                {"t": "LIVE", "perf": {"1D": 8.0}, "asof": "2026-08-07"},
+                {"t": "ALSO_LIVE", "perf": {"1D": 6.0}, "asof": "2026-08-07"},
+                {"t": "DEAD", "perf": {"1D": 5.0}, "asof": "2026-08-07"},
+                {"t": "ALSO_DEAD", "perf": {"1D": 4.0}, "asof": "2026-08-07"},
+            ],
+        }],
     }
 
 
-def test_movers_rows_carry_has_page():
-    from scripts.build_movers_page import build_context
+def test_consolidated_theme_board_excludes_every_missing_dossier():
+    from engine.stocks_hub import theme_ribbons
 
-    ctx = build_context(_movers_data(), linkable=frozenset({"LIVE", "DOWN"}))
-    flags = {r["ticker"]: r["has_page"]
-             for r in ctx["gainers"] + ctx["losers"]}
-    assert flags.get("LIVE") is True
-    assert flags.get("DEAD") is False, "a mover with no dossier must not be linked"
-    assert flags.get("DOWN") is True
-
-
-def test_movers_linkable_none_links_everything():
-    from scripts.build_movers_page import build_context
-
-    ctx = build_context(_movers_data())
-    assert all(r["has_page"] for r in ctx["gainers"] + ctx["losers"])
+    rows = theme_ribbons(
+        _theme_movers_data(), linkable=frozenset({"LIVE", "ALSO_LIVE"})
+    )
+    assert [m["t"] for m in rows[0]["members"]] == ["LIVE", "ALSO_LIVE"]
+    assert "DEAD" not in str(rows), "a theme member with no dossier must not be linked"
 
 
 # ── templates emit no anchor when the page is absent ─────────────────────────
@@ -304,21 +297,6 @@ def test_peer_card_template_emits_a_flat_card_not_a_link():
     assert "<a " not in out and "href=" not in out
     assert 'class="pcard pcard-off"' in out
     assert "DEAD" in out and "$5B" in out          # the information survives
-
-
-def test_movers_row_and_chip_templates_emit_no_anchor():
-    tpl = _TEMPLATES / "movers.html.j2"
-    row = _slice(tpl, '{% if m.has_page %}<a class="mv"', "{% if m.has_page %}</a>")
-    out = _render(row, m={"ticker": "DEAD", "name": "Dead Corp", "sector": "Tech",
-                          "pct": -9.06, "has_page": False},
-                  loop=type("L", (), {"index": 1})(), _gmax=10, _lmax=10)
-    assert "<a " not in out and "href=" not in out
-    assert 'class="mv mv-off"' in out and "DEAD" in out
-
-    chip = _slice(tpl, '{% if mm.has_page %}<a class="mchip"', "{% if mm.has_page %}</a>")
-    out = _render(chip, mm={"ticker": "DEAD", "pct": -13.62, "has_page": False})
-    assert "<a " not in out and "href=" not in out
-    assert 'class="mchip mchip-off"' in out and "DEAD" in out
 
 
 def test_crypto_equity_tile_template_emits_no_anchor():

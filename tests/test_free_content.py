@@ -1065,7 +1065,7 @@ class TestRenderedOutput:
         # Paths known to exist on the live site (not in site/ repo copy, but real)
         _KNOWN_LIVE_PATHS = {
             "/", "/about-research.html",
-            "/reports.html", "/movers.html", "/congress_trades.html",
+            "/reports.html", "/congress_trades.html",
             "/learn.html", "/index.html",
         }
 
@@ -1090,6 +1090,17 @@ class TestRenderedOutput:
                     ):
                         errors.append(f"{f.relative_to(_REPO)}: broken link {path}")
         assert not errors, "Broken internal links:\n" + "\n".join(errors)
+
+    def test_52_week_highs_links_to_the_consolidated_stocks_hub(self):
+        source = (_CONTENT_DIR / "learn" / "technical" / "52-week-highs.md").read_text(
+            encoding="utf-8"
+        )
+        rendered = (_SITE_DIR / "learn" / "technical" / "52-week-highs.html").read_text(
+            encoding="utf-8"
+        )
+        for page in (source, rendered):
+            assert "/stocks/index.html#today-movers" in page
+            assert "/movers.html" not in page
 
     def test_rendered_nested_runtime_assets_resolve(self):
         """Every estate page loads shared scripts from site root and never emits

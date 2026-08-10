@@ -558,6 +558,37 @@ class BucketState:
         return "intent"
 
 
+def validate_completion_packet(packet: object) -> BucketState:
+    """Validate one in-memory ``intent -> decision -> availability`` packet.
+
+    The poller passes this exact shape to its synchronous post-availability
+    hook.  Reusing the ledger validators here prevents a downstream publisher
+    from accepting a merely plausible session/bucket/root tuple that is not
+    hash-bound to the producer's append-once receipts.
+    """
+    if type(packet) is not dict or set(packet) != {
+        "intent", "decision", "availability",
+    }:
+        raise BucketStateError("invalid completion packet shape")
+    if any(type(packet.get(key)) is not dict for key in packet):
+        raise BucketStateError("completion packet records must be objects")
+
+    intent = dict(packet["intent"])
+    decision = dict(packet["decision"])
+    availability = dict(packet["availability"])
+    file_session = intent.get("session_date")
+    if type(file_session) is not str:
+        raise BucketStateError("completion packet session_date is missing")
+    _validate_intent(intent, file_session=file_session)
+    _validate_decision(decision, intent)
+    _validate_availability(availability, intent, decision)
+    return BucketState(
+        intent=intent,
+        decision=decision,
+        availability=availability,
+    )
+
+
 def decode_ledger(raw: bytes, path: Path) -> list[BucketState]:
     """Parse a complete physical ledger, rejecting every ambiguous prefix."""
     if not raw:
@@ -1163,6 +1194,174 @@ class BucketCompletionStore:
             raise BucketStateError("bucket is not in the exact complete state")
         _confirm_path_durable(self._ledger_path(current.intent["session_date"]))
         return self._load_states()[state.key]
+
+    def complete_packet(self, session_date: str, bucket: str) -> dict:
+        """Return one exact complete packet while retaining the writer lock."""
+        self._require_lock()
+        _session_date(session_date)
+        if type(bucket) is not str or not _BUCKET_RE.fullmatch(bucket):
+            raise BucketStateError("bucket must be canonical HH:MM")
+        key = (session_date, bucket)
+        state = self._load_states().get(key)
+        if state is None or state.status != "complete":
+            raise BucketStateError(f"bucket is not complete: {key}")
+        _confirm_path_durable(self._ledger_path(session_date))
+        confirmed = self._load_states().get(key)
+        if confirmed is None or confirmed.status != "complete":
+            raise BucketStateError(f"bucket completion changed during confirmation: {key}")
+        if confirmed.decision is None or confirmed.availability is None:
+            raise BucketStateError(f"bucket completion is missing its terminal prefix: {key}")
+        return {
+            "intent": dict(confirmed.intent),
+            "decision": dict(confirmed.decision),
+            "availability": dict(confirmed.availability),
+        }
+
+    def complete_packets_from(
+        self,
+        start_session: str,
+        *,
+        max_sessions: int = 2,
+        require_start: bool = False,
+    ) -> tuple[list[dict], tuple[dict, ...], bool]:
+        """Return a bounded chronological completion window.
+
+        Only ``start_session`` and the immediately following ledger are
+        decoded with the default bound.  Directory names are inspected to
+        report whether more ledgers remain, but older ledger bytes are never
+        opened or fsynced.  A prior session must be terminal before a later
+        ledger may enter the window; this makes a late completion before a
+        delivery cursor fail closed instead of silently reordering the stream.
+        """
+        self._require_lock()
+        _session_date(start_session)
+        floor = start_session
+        if type(max_sessions) is not int or max_sessions <= 0:
+            raise BucketStateError("max_sessions must be a positive exact integer")
+        paths: list[Path] = []
+        for path in sorted(self.root.glob("*.jsonl")):
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", path.stem):
+                raise BucketStateError(f"unexpected bucket receipt ledger name: {path}")
+            _session_date(path.stem)
+            if path.stem >= floor:
+                paths.append(path)
+        if require_start and (not paths or paths[0].stem != floor):
+            raise BucketStateError(
+                f"publication cursor session ledger is missing: {floor}"
+            )
+        selected = paths[:max_sessions]
+        packets: list[dict] = []
+        session_receipts: list[dict] = []
+        has_more = len(paths) > len(selected)
+        for index, path in enumerate(selected):
+            try:
+                _confirm_path_durable(path)
+                raw = path.read_bytes()
+                states = decode_ledger(raw, path)
+            except OSError as exc:
+                raise BucketStateError(
+                    f"cannot read bucket receipt ledger: {path}"
+                ) from exc
+            if index < len(selected) - 1 or has_more:
+                pending = [
+                    state.key for state in states
+                    if state.status in {"intent", "decision"}
+                ]
+                if pending:
+                    raise BucketStateError(
+                        "nonterminal receipt session precedes a later ledger: "
+                        f"{path.stem} {pending}"
+                    )
+            for state in states:
+                if state.status != "complete":
+                    continue
+                if state.decision is None or state.availability is None:
+                    raise BucketStateError(
+                        f"complete state is missing its terminal prefix: {state.key}"
+                    )
+                packets.append({
+                    "intent": dict(state.intent),
+                    "decision": dict(state.decision),
+                    "availability": dict(state.availability),
+                })
+            session_receipts.append({
+                "session_date": path.stem,
+                "ledger_sha256": hashlib.sha256(raw).hexdigest(),
+                "complete_count": sum(
+                    state.status == "complete" for state in states
+                ),
+                "terminal": not any(
+                    state.status in {"intent", "decision"} for state in states
+                ),
+            })
+        return packets, tuple(session_receipts), has_more
+
+    def confirm_terminal_session_step(
+        self,
+        *,
+        sealed_session: str,
+        sealed_ledger_sha256: str,
+        next_session: str,
+    ) -> tuple[list[dict], dict]:
+        """Re-prove one bounded scan-cursor hop against source ledger bytes."""
+        self._require_lock()
+        _session_date(sealed_session)
+        _session_date(next_session)
+        if (
+            type(sealed_ledger_sha256) is not str
+            or not _SHA256_RE.fullmatch(sealed_ledger_sha256)
+        ):
+            raise BucketStateError("sealed ledger hash is invalid")
+        if next_session <= sealed_session:
+            raise BucketStateError("terminal session step must move forward")
+        paths: list[Path] = []
+        for path in sorted(self.root.glob("*.jsonl")):
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", path.stem):
+                raise BucketStateError(f"unexpected bucket receipt ledger name: {path}")
+            _session_date(path.stem)
+            paths.append(path)
+        sealed_path = self._ledger_path(sealed_session)
+        if sealed_path not in paths:
+            raise BucketStateError(
+                f"sealed publication scan ledger is missing: {sealed_session}"
+            )
+        following = [path.stem for path in paths if path.stem > sealed_session]
+        if not following or following[0] != next_session:
+            raise BucketStateError(
+                "publication scan cursor skipped the immediate next source ledger"
+            )
+        _confirm_path_durable(sealed_path)
+        raw = sealed_path.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != sealed_ledger_sha256:
+            raise BucketStateError("sealed publication scan ledger hash drifted")
+        states = decode_ledger(raw, sealed_path)
+        pending = [
+            state.key for state in states
+            if state.status in {"intent", "decision"}
+        ]
+        if pending:
+            raise BucketStateError(
+                f"sealed publication scan ledger is nonterminal: {pending}"
+            )
+        packets: list[dict] = []
+        for state in states:
+            if state.status != "complete":
+                continue
+            if state.decision is None or state.availability is None:
+                raise BucketStateError(
+                    f"complete state is missing its terminal prefix: {state.key}"
+                )
+            packets.append({
+                "intent": dict(state.intent),
+                "decision": dict(state.decision),
+                "availability": dict(state.availability),
+            })
+        return packets, {
+            "session_date": sealed_session,
+            "ledger_sha256": sealed_ledger_sha256,
+            "complete_count": len(packets),
+            "terminal": True,
+        }
 
 
 @dataclass
