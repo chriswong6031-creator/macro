@@ -12,20 +12,20 @@
      "peak_date": "2026-07-09",
      "runup_pct": 0.4618,
      "runup_z": 2.36,
-     "drawdown_pct": 0.2347,
+     "drawdown_pct": 0.235,
      "qualified_by": "z"
     },
     "turn": {
      "low_date": "2026-07-30",
-     "off_low_pct": 0.2271,
+     "off_low_pct": 0.1949,
      "reclaimed": true
     },
     "ratio": {
-     "ratio_chg_10s": 0.0592,
+     "ratio_chg_10s": 0.0137,
      "inflected": true,
      "ratio_20s_high": false
     },
-    "asof": "2026-08-07"
+    "asof": "2026-08-10"
    }
   }
  },
