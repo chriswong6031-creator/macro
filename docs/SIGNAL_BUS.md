@@ -80,6 +80,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | personality-timing | 12 |
 | pick-lab | 3 |
 | policy-shock | 5 |
+| price-pressure | 2 |
 | prophet | 3 |
 | qualitative-intelligence | 23 |
 | rates-inflation-command | 8 |
@@ -111,8 +112,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 369 |
-| infrastructure | 157 |
+| display | 370 |
+| infrastructure | 158 |
 | scored | 5 |
 | shadow | 92 |
 
@@ -120,7 +121,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 584 |
+| git | 586 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 17 |
@@ -980,6 +981,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | flip-confirmation-snapshot | `site/flip_confirmation_data.json` | json | daily-engine | display | 1 | 0 |
 | shock-deescalation-firings | `data/reflexes/shock_deescalation/firings.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-policy-lever | `site/policy_lever.json` | json | daily-engine | display | 1 | 0 |
+
+### price-pressure
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| price-pressure-events | `data/price_pressure/events.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| price-pressure-latest | `data/price_pressure/latest.json` | json | daily-engine | display | 1 | 0 |
 
 ### prophet
 

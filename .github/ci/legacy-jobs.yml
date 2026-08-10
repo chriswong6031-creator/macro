@@ -6850,7 +6850,9 @@ jobs:
     # making the exact changed behavior dark.  The alert-ZH completeness contract
     # shares the same falsifier engine and ontology inputs, so it stays in this
     # owner as a distinct step instead of adding a second overlapping job that
-    # defeats the representative-diff scope ceiling.
+    # defeats the representative-diff scope ceiling. Price-pressure's inferred
+    # ownership closure overlaps this owner too, so its focused suite is a third
+    # distinct step here rather than another always-selected logical job.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
     paths:
       - data/alerts/alerts_log.parquet
@@ -6863,6 +6865,7 @@ jobs:
       - scripts/build_vector.py
       - tests/test_alert_zh_completeness.py
       - tests/test_falsifier_tripwires.py
+      - tests/test_price_pressure.py
     timeout-minutes: 12
     runs-on: ubuntu-latest
     steps:
@@ -6870,7 +6873,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: install falsifier and alert-zh test dependencies
+      - name: install falsifier, alert-zh, and price-pressure test dependencies
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: falsifier tripwire state and v2 gate contracts
         run: python -m pytest tests/test_falsifier_tripwires.py -q
@@ -6880,9 +6883,7 @@ jobs:
       # TZ=UTC is inline because env is not an allowed packed-manifest step key.
       - name: zh alert bodies fully Chinese — emitter vs backlog translator vs baked rows
         run: TZ=UTC python -m pytest tests/test_alert_zh_completeness.py -q
-
-  price-pressure:
-    # W1 of the Dislocation & Recovery program (DRL): engine/price_pressure/, the
+      # W1 of the Dislocation & Recovery program (DRL): engine/price_pressure/, the
     # single-name residual-shock detector and its point-in-time event ledger, plus
     # the display artifact and the market-packet block that read them.
     #
@@ -6910,17 +6911,9 @@ jobs:
     #
     # `pyarrow` is in the install line because the ledger is a parquet store;
     # `pyyaml` because lib/config.py reads config.yml at import. No `requests`:
-    # this lobe is an assembler over committed stores and makes no network call.
-    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+      # this lobe is an assembler over committed stores and makes no network call.
+      # The shared install is a strict superset of those wheels and this owner's
+      # 12-minute ceiling preserves the former standalone suite's 10-minute bound.
       - name: price-pressure detector, PIT ledger, base rates and artifact (DRL W1)
         run: >-
           python -m pytest
