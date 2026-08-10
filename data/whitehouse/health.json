@@ -1,17 +1,29 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-10T19:16:25.826192+00:00",
+  "as_of": "2026-08-10T21:02:36.850158+00:00",
   "posts_seen": 12,
-  "seen_total": 100,
-  "evaluated": 1,
-  "activated": 0,
+  "seen_total": 103,
+  "evaluated": 3,
+  "activated": 3,
   "provider": "Claude claude-opus-4-8 (subscription)",
   "gate_scores": [
     {
-      "id": "wh-2026-08-10-one-year-later-president-trump-has-delivered-on-making-d-c-safe-again",
-      "importance": 5,
-      "activated": false,
+      "id": "wh-2026-08-10-fact-sheet-president-donald-j-trump-delivers-gold-standard-childhood-vaccine-rec",
+      "importance": 72,
+      "activated": true,
       "degraded_reason": "served_by:deepseek"
+    },
+    {
+      "id": "wh-2026-08-10-delivering-gold-standard-childhood-vaccine-recommendations-for-americans",
+      "importance": 65,
+      "activated": true,
+      "degraded_reason": null
+    },
+    {
+      "id": "tw-2026-07-20-tga-build",
+      "importance": 70,
+      "activated": true,
+      "degraded_reason": null
     }
   ]
 }
