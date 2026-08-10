@@ -1,0 +1,725 @@
+{# ===========================================================================
+   WINNER HEALTH — the chart room for extended US winners  (TOP ANATOMY W1)
+   winner_health.html.j2  →  site/winner_health.html
+
+   Data: one nightly context dict `wh` (schema winner_health.v1) passed by
+   scripts/build_winner_health_page.py. Everything renders server-side; the page
+   ships NO fetch, NO chart library and NO page JS beyond the shared chrome.
+
+   Design contract: research/top_anatomy/W1_SURFACE_DESIGN_SPEC.md (visual LAW)
+   + docs/DESIGN_DOCTRINE.md (content law — wins on conflict).
+   Program: research/TOP_ANATOMY_MASTERPLAN_BY_FABLE.md §5-W1 (display gate).
+
+   Foundations (non-negotiable — spec §2):
+   - DISPLAY TIER, zero authority. No rank, no score, no gate, no sizing, no
+     composite. States are GROUPS; inside a group the order is trailing gain,
+     a fact, not a ranking. Nothing here is a buy, sell, trim or exit rule.
+   - Colour comes from theme.css tokens. The page-local MATURATION RAMP
+     (--m1..--m4) layers OVER them and never redefines a token. The ramp is
+     NON-directional on purpose (maturation is wear, not price direction), so
+     it must NOT flip under 红涨绿跌. Anything that IS directional (gains,
+     drops) routes through --ink-up / --ink-down so ZH flips it automatically.
+   - The dark plane lives on :root (NEVER html[data-theme="dark"] — a first
+     visit carries no data-theme attribute at all and that rule would match
+     nothing). Light overrides on html[data-theme="light"].
+   - Tier 1 = state + plain-word stance under hard word budgets. Every number
+     has a plain-word neighbour. Mechanics, n's, windows and provenance live in
+     LENS hovers (Tier 2). No study names, no state enums, no bare statistics.
+   - Falsifier / refutation vocabulary never appears. "validated" never appears.
+   =========================================================================== #}
+{# house pattern (china / hk / canada): plain import at the top, lens_css() once in
+   the body. `with context` is deliberately NOT used — the partial needs none. #}
+{% import "_lens.html.j2" as lens %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+
+{# ── signed percent, typographic minus. Figures only, never words. ── #}
+{% macro pc(x, dp=0) -%}
+{%- if x is not defined or x is none -%}—{%- else -%}
+{{ (('%+.' ~ dp ~ 'f') % (x * 100)) | replace('-', '−') }}%
+{%- endif -%}
+{%- endmacro %}
+
+{# ═══════════════════════════════════════════════════════════════════════════
+   THE SIGNATURE — the high-water rule.
+   Every spark is measured against the run's OWN highest close: a dashed rule
+   at that level, the price line in neutral ink, and a state-tinted UNDERWATER
+   area filling everything between the rule and the price from the session the
+   high was set. On a name still at its high the area is a sliver you cannot
+   see; on one that has changed character it is the loudest thing in the row.
+   Same picture, four readings — the page's whole thesis at 104×30.
+   Price ink is deliberately NEUTRAL: direction is communicated by the gain
+   figure beside it (--ink-up/--ink-down, which the ZH swap flips), so the
+   spark never carries two colour systems at once.
+   Static by contract (docs/ILLUSTRATIONS.md): settled data never pulses.
+   ═══════════════════════════════════════════════════════════════════════════ #}
+{% macro spark(vals, hi, w=104, h=30) -%}
+{%- set pts = (vals | reject('none') | list) if vals else [] -%}
+{%- if pts | length > 2 -%}
+  {%- set n = pts | length -%}
+  {%- set win_max = pts | max -%}
+  {%- set top = [win_max, (hi if hi is not none else win_max)] | max -%}
+  {%- set bot = pts | min -%}
+  {%- set rng = (top - bot) if (top - bot) > 0.000001 else 1 -%}
+  {%- set pad = 4 -%}
+  {%- set span = h - (2 * pad) -%}
+  {%- set y_hi = pad -%}
+  {%- set y_last = (pad + ((top - pts[-1]) / rng) * span) | round(2) -%}
+  {#- The underwater region starts the session the high was SET, not at the left
+      edge: before that the name simply had not got there yet, and shading the
+      run-up would make every extended name look equally worn. When the run's
+      high predates this window, the whole window is under it — which is itself
+      the reading, so the fill correctly starts at 0. -#}
+  {%- set hi_i = pts.index(win_max) if (top - win_max) < 0.000001 else 0 -%}
+  <svg class="sp" viewBox="0 0 {{ w }} {{ h }}" preserveAspectRatio="none" role="img" aria-hidden="true">
+    {#- the underwater area: everything between the run's own high-water rule and
+        the price. Not a magnitude bar — it is the SHAPE of how long, and how
+        far, this name has been trading under its own best close. The number
+        itself is stated in words in the row beside it. -#}
+    {%- if hi_i < (n - 1) %}
+    <path class="sp-uw" d="M{{ (hi_i / (n - 1) * w) | round(2) }},{{ y_hi }}
+      {%- for i in range(hi_i, n) %} L{{ (i / (n - 1) * w) | round(2) }},{{ (pad + ((top - pts[i]) / rng) * span) | round(2) }}{% endfor %} L{{ w }},{{ y_hi }} Z"/>
+    {%- endif %}
+    <line class="sp-hw" x1="0" y1="{{ y_hi }}" x2="{{ w }}" y2="{{ y_hi }}" vector-effect="non-scaling-stroke"/>
+    <polyline class="sp-ln" vector-effect="non-scaling-stroke" points="
+      {%- for i in range(n) %}{{ (i / (n - 1) * w) | round(2) }},{{ (pad + ((top - pts[i]) / rng) * span) | round(2) }} {% endfor -%}"/>
+    <circle class="sp-dot" cx="{{ w }}" cy="{{ y_last }}" r="2.1"/>
+  </svg>
+{%- else -%}
+  <span class="sp-null">{{ t('no history', '暂无历史') }}</span>
+{%- endif -%}
+{%- endmacro %}
+
+{# ── wear marks: 0-3 filled slots = how many things have slipped. A non-verbal
+      count that scans across 100 rows; the words sit right beside it, so this
+      is decoration for the screen reader and is hidden from it. ── #}
+{# The class is built INSIDE the attribute on purpose: emitting ` class="on"`
+   as an interpolated string ships &#34;on&#34; under autoescape, so the mark
+   silently never fills. #}
+{% macro wear(k) -%}
+<span class="wear" aria-hidden="true">{% for i in range(3) %}<i class="{{ 'on' if i < k else 'off' }}"></i>{% endfor %}</span>
+{%- endmacro %}
+
+{# ═══════════════════════════════════════════════════════════════════════════
+   ANALOG MEMORY — "in the library".
+   A LENS record card: what runs shaped like this one went on to do. Framed as
+   lived history with an honest episode-level N and a named track, never as a
+   forecast. Below the honest-N floor the card SAYS the library is too thin
+   rather than printing a rate nobody should read.
+   ═══════════════════════════════════════════════════════════════════════════ #}
+{% macro analog(a, lib) -%}
+{%- if a and a.n -%}
+{%- set thin = (a.n < 12) -%}
+<span class="lens-term lib" tabindex="0" role="button" aria-label="Similar past runs in the library">
+  <span class="l-en">{{ a.n }} like this</span><span class="l-zh">{{ a.n }} 例相似</span>
+  <span class="lens-src" data-lens-kind="record" hidden>
+    <div class="lens-hd">
+      <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5.5h5.5a2 2 0 0 1 2 2v11a1.6 1.6 0 0 0-1.6-1.6H4Z"/><path d="M20 5.5h-5.5a2 2 0 0 0-2 2v11a1.6 1.6 0 0 1 1.6-1.6H20Z"/></svg></span>
+      <span class="lens-hgroup">
+        <span class="lens-kick">{{ t('In the library', '历史资料库') }}</span>
+        <span class="lens-title">{{ t(a.n ~ ' past runs shaped like this', '资料库中 ' ~ a.n ~ ' 段形态相似的行情') }}</span>
+      </span>
+    </div>
+    {%- if thin %}
+    <div class="lens-body">{{ t('Only ' ~ a.n ~ ' past runs match this one closely enough to count — too few to read as a pattern. The count is shown so you know how thin the record is, not so you can lean on it.',
+                                '与本次行情足够相似的历史样本只有 ' ~ a.n ~ ' 段 —— 太少，不足以当作规律来看。这里把次数写出来，是为了让你知道记录有多薄，而不是让你据此下判断。') }}
+      {%- if a.track != 'W' %} {{ t('It also draws only on names with long price history, so runs that ended in a delisting are under-represented.',
+                                    '而且它只取有长期价格历史的个股，因此以退市收场的行情在样本中偏少。') }}{% endif %}</div>
+    {%- else %}
+    <div class="lensx-rows">
+      <div class="lensx-row warn">
+        <span class="lensx-k">{{ t('Fell back hard', '大幅回落') }}</span>
+        <span class="lensx-v"><span class="l-en"><b>{{ a.topped_63td }} of {{ a.n }}</b> dropped {{ lib.drawdown_pct | default(20) }}% or more from their high within three months{% if a.topped_63td %} — about 1 in {{ ((a.n / a.topped_63td) | round | int) if a.topped_63td else '—' }}{% endif %}.</span><span class="l-zh"><b>{{ a.n }} 段里有 {{ a.topped_63td }} 段</b>在三个月内从高点回落 {{ lib.drawdown_pct | default(20) }}% 或更多{% if a.topped_63td %} —— 大约每 {{ ((a.n / a.topped_63td) | round | int) if a.topped_63td else '—' }} 段有 1 段{% endif %}。</span></span>
+      </div>
+      <div class="lensx-row up">
+        <span class="lensx-k">{{ t('Kept going', '继续上行') }}</span>
+        <span class="lensx-v"><span class="l-en">The other <b>{{ a.n - a.topped_63td }}</b> carried on{% if a.median_further_gain is not none %} — a typical further gain of <b>{{ pc(a.median_further_gain) }}</b>{% endif %}.</span><span class="l-zh">其余 <b>{{ a.n - a.topped_63td }}</b> 段继续上行{% if a.median_further_gain is not none %}，典型的后续涨幅为 <b>{{ pc(a.median_further_gain) }}</b>{% endif %}。</span></span>
+      </div>
+      {%- if a.median_drop_from_high is not none %}
+      <div class="lensx-row dn">
+        <span class="lensx-k">{{ t('When they fell', '回落时') }}</span>
+        <span class="lensx-v"><span class="l-en">The typical drop from the high was <b>{{ pc(a.median_drop_from_high) }}</b>.</span><span class="l-zh">从高点回落的典型幅度是 <b>{{ pc(a.median_drop_from_high) }}</b>。</span></span>
+      </div>
+      {%- endif %}
+    </div>
+    {#- The survivorship disclosure (G0.2) lives HERE, in wrapping prose, not in
+        the receipt: receipt items are nowrap tokens and a sentence-length value
+        is silently clipped there. -#}
+    <div class="lensx-note">{{ t('This is what those runs did — history, not a forecast. Runs are matched on shape and age, never on the company or its industry.',
+                                 '这是那些行情当年走过的路 —— 是历史，不是预测。匹配只看走势形态和运行时长，与公司本身或所属行业无关。') }}
+      {%- if a.track == 'W' %} {{ t('The record includes names that later delisted.', '这份记录包含了后来退市的个股。') }}
+      {%- else %} {{ t('It draws only on names with long price history, so runs that ended in a delisting are under-represented.',
+                       '它只取有长期价格历史的个股，因此以退市收场的行情在样本中偏少。') }}{% endif %}</div>
+    {%- endif %}
+    <div class="lens-receipt">
+      <span class="r-i"><span class="r-k">N</span>{{ a.n }} {{ t('episodes', '段行情') }}</span>
+      {%- if lib.window_start and lib.window_end %}<span class="r-i"><span class="r-k">{{ t('Window', '区间') }}</span>{{ lib.window_start }} → {{ lib.window_end }}</span>{% endif %}
+      <span class="r-i"><span class="r-k">{{ t('Names', '样本') }}</span>{% if a.track == 'W' %}{{ t('whole US market', '全市场') }}{% else %}{{ t('curated', '精选池') }}{% endif %}</span>
+    </div>
+  </span>
+</span>
+{%- else -%}
+<span class="lib-null" data-tip-en="No past run in the library matches this one closely enough on shape and age to show a count." data-tip-zh="资料库里没有在形态和运行时长上足够接近的历史行情，因此不显示次数。">{{ t('no match', '无相似样本') }}</span>
+{%- endif -%}
+{%- endmacro %}
+
+{# ── one name row ── #}
+{% macro namerow(r) -%}
+<div class="row">
+  <div class="c-tk">
+    {%- if r.href %}<a class="tk" href="{{ r.href }}">{{ r.ticker }}</a>{% else %}<span class="tk">{{ r.ticker }}</span>{% endif %}
+    <span class="nm"><span class="l-en">{{ r.name | default(r.ticker) }}</span><span class="l-zh">{{ r.name_zh | default(r.name | default(r.ticker)) }}</span></span>
+  </div>
+  <div class="c-gain">
+    <span class="fig{{ ' dn' if (r.r126 is defined and r.r126 is not none and r.r126 < 0) else '' }}">{{ pc(r.r126) }}</span>
+    <span class="cap">{{ t('in six months', '近六个月') }}</span>
+  </div>
+  <div class="c-sp">{{ spark(r.spark, r.episode_high) }}</div>
+  <div class="c-legs">
+    {{ wear(r.legs | length if r.legs else 0) }}
+    {%- if r.legs %}
+    <span class="legs">
+      {%- for g in r.legs[:3] %}
+      <span class="leg"{% if g.tip_en %} data-tip-en="{{ g.tip_en }}"{% if g.tip_zh %} data-tip-zh="{{ g.tip_zh }}"{% endif %}{% endif %}><span class="l-en">{{ g.words_en }}</span><span class="l-zh">{{ g.words_zh | default(g.words_en) }}</span></span>
+      {%- endfor %}
+    </span>
+    {%- else %}
+    {#- No legs: rather than repeat one constant down 90 rows (Law 4), say the
+        one thing that still varies per name and that the spark is drawing —
+        how far this close sits under the run's own high. Computed from data
+        already on the row, so it can never fall out of sync with the picture. -#}
+    {%- set _hi = r.episode_high if r.episode_high else ((r.spark | reject('none') | list | max) if r.spark else none) -%}
+    {%- set _lo = (r.spark | reject('none') | list | last) if r.spark else none -%}
+    {%- set _off = ((_lo - _hi) / _hi) if (_hi and _lo and _hi > 0) else none -%}
+    <span class="legs clean">
+      {%- if _off is not none and _off > -0.01 -%}{{ t('sitting at its high', '正处于自身高点') }}
+      {%- elif _off is not none -%}<span class="l-en">{{ '%.0f' % (_off * -100) }}% under its high</span><span class="l-zh">低于自身高点 {{ '%.0f' % (_off * -100) }}%</span>
+      {%- else -%}{{ t('nothing has slipped', '暂无转弱迹象') }}{%- endif -%}
+    </span>
+    {%- endif %}
+  </div>
+  <div class="c-lib">{{ analog(r.analog, LIB) }}</div>
+</div>
+{%- endmacro %}
+
+{# ═══════════════════════════════════════════════════════════════════════════
+   Page-local plain-word maps. House pattern (STANCE_ZH / BAND_ZH): translate
+   engine slugs at render, never leak them, and always fall through to a safe
+   plain sentence for a slug we have not met yet.
+   ═══════════════════════════════════════════════════════════════════════════ #}
+{% set STATES = [
+  {'key':'extended_healthy', 'slug':'running', 'm':1,
+   'en':'Still running',      'zh':'仍在延续',
+   'stance_en':'Nothing to do',       'stance_zh':'无需动作',
+   'sub_en':'Big gains, still close to their highs. Nothing here has slipped yet.',
+   'sub_zh':'涨幅可观，仍在高点附近。目前没有任何环节转弱。'},
+  {'key':'extended_watch', 'slug':'wear', 'm':2,
+   'en':'Showing wear',       'zh':'势头转弱',
+   'stance_en':'Watch — don\'t chase', 'stance_zh':'观察 —— 别追高',
+   'sub_en':'Still up, but one or two things have started to slip.',
+   'sub_zh':'仍在上行，但已有一两个环节开始转弱。'},
+  {'key':'thinning', 'slug':'thinning', 'm':3,
+   'en':'Thinning out',       'zh':'买盘转薄',
+   'stance_en':'Watch closely',        'stance_zh':'密切观察',
+   'sub_en':'The move is still up, but fewer buyers are carrying it.',
+   'sub_zh':'行情仍在上行，但承接的买盘明显变少。'},
+  {'key':'breaking', 'slug':'changed', 'm':4,
+   'en':'Character changed',  'zh':'走势已变',
+   'stance_en':'Worth a review',       'stance_zh':'值得复核',
+   'sub_en':'These no longer behave the way they did on the way up.',
+   'sub_zh':'这些个股的走法，已不同于此前上行时的样子。'}
+] %}
+{% set FROTH = {
+  'euphoric_fragile':        ('the market is hot and running on few names', '市场情绪偏热，且只靠少数个股支撑'),
+  'narrowing_top':           ('the index is holding up while its leaders are being sold', '指数还稳，但领涨股正被卖出'),
+  'stealth_primed':          ('early, unclear signs under a calm surface', '平静表面下出现早期、尚不明朗的迹象'),
+  'distribution_in_progress':('large holders have been selling into strength', '大资金正在借强势派货'),
+  'euphoric_extended':       ('the market is hot, but still broad', '市场偏热，但参与面仍然广泛'),
+  'visible_stress':          ('the strain is already out in the open', '压力已经摆在明面上'),
+  'benign':                  ('calm and broad', '平静且广泛')
+} %}
+
+{% set WH = wh if (wh is defined and wh is not none) else none %}
+{% set LIB = (WH.library if (WH and WH.library) else {}) %}
+{% set ST  = (WH.states  if (WH and WH.states)  else {}) %}
+{% set N_HEALTHY  = (ST.get('extended_healthy') or []) | length %}
+{% set N_WATCH    = (ST.get('extended_watch') or []) | length %}
+{% set N_THIN     = (ST.get('thinning') or []) | length %}
+{% set N_BREAK    = (ST.get('breaking') or []) | length %}
+{% set N_MATURING = N_WATCH + N_THIN + N_BREAK %}
+{# Derived, never taken on trust: the hero must describe the board it is sitting
+   on top of. The builder's contract is that every extended name lands in exactly
+   one state list, so wh.extended_n and this sum agree; if they ever drift, the
+   headline stays true to what is actually rendered and the small print carries
+   the screen result. #}
+{% set N_EXT      = N_HEALTHY + N_MATURING %}
+{# Three honest states, each designed, none an empty table:
+   warm  — tonight's read has not landed
+   none  — nothing in the market is extended at all
+   clear — plenty extended, nothing has started to age #}
+{% set MODE = 'warm' if (not WH or WH.null_state) else ('none' if N_EXT == 0 else ('clear' if N_MATURING == 0 else 'board')) %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% include "_interfonts.html.j2" %}
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<script defer src="theme.js"></script>
+<title>Winner Health — Has Your Winner Changed Character?</title>
+{% set seo_title = 'Winner Health — how US winners are aging | Mastermind' %}
+{% set seo_desc = 'A nightly chart room for US stocks sitting on big gains near their highs, grouped by how the move is aging — in plain words, with the historical record beside every name.' %}
+{% set seo_path = 'winner_health.html' %}
+{% include "_seo_head.html.j2" %}
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   MATURATION RAMP — page-local accents, layered over theme.css tokens.
+   Slate-teal → brass → ochre → violet ash: an OXIDATION ramp, not a siren
+   ramp. Deliberately ends COOL: a winner that has changed character is no
+   longer hot, and the loudest colour on this page must never be the worst
+   state — the honest stance is "worth a review", not "panic".
+   The ramp is health/wear, NOT price direction, so it does NOT participate in
+   红涨绿跌 (same reasoning theme.css applies to --ok/--warn/--act).
+   Measured: every rung ≥4.5:1 as text on --panel/--panel2/--bg in BOTH themes,
+   and ≥4.69:1 in the hard case (the rung printed on a tint of its own hue).
+   This :root block IS the dark plane — never html[data-theme="dark"], which
+   matches nothing on a first visit (no attribute is set until a theme is saved).
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --m1:#6ba2b2;   /* Still running     — clear slate-teal */
+  --m2:#c1954f;   /* Showing wear      — brass            */
+  --m3:#c47a45;   /* Thinning out      — ochre            */
+  --m4:#9a8cb8;   /* Character changed — violet ash       */
+  --font-display:-apple-system,BlinkMacSystemFont,'SF Pro Display',Inter,system-ui,'Segoe UI',Roboto,sans-serif;
+  --hair:color-mix(in srgb,var(--text) 8%,transparent);
+  /* sentence-level secondary copy; --muted stays reserved for short labels */
+  --muted-strong:color-mix(in srgb,var(--text) 55%,var(--muted));
+}
+html[data-theme="light"]{
+  --m1:#3a6d7e; --m2:#83601f; --m3:#8a4c1f; --m4:#645786;
+}
+/* Light is a design target, not a translation (doctrine §5.8). Three things a
+   token swap gets wrong here and this block fixes:
+   · panel ≈ canvas is the flatness bug — white cards need a soft shadow to sit
+     on #f7f8fa at all;
+   · a 15% tint that reads on near-black vanishes on white, so every tinted
+     surface (underwater fill, wear-mark outline, theme segments) is lifted;
+   · a hairline that works on dark is invisible under white. */
+html[data-theme="light"] .hero,
+html[data-theme="light"] .nullhero{box-shadow:0 1px 2px rgba(20,32,64,.05),0 10px 26px -18px rgba(20,32,64,.28)}
+html[data-theme="light"] .sp-uw{opacity:.23}
+html[data-theme="light"] .wear i{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 24%,transparent)}
+html[data-theme="light"] .bar{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 15%,transparent)}
+html[data-theme="light"] .leg{border-bottom-color:color-mix(in srgb,var(--text) 34%,transparent)}
+*,*::before,*::after{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+html body{margin:0;padding-top:24px;background:var(--bg);color:var(--text);
+  font:14px/1.55 var(--font-display);-webkit-font-smoothing:antialiased}
+a{color:var(--link);text-decoration:none}
+.wrap{max-width:1260px;margin:0 auto;padding:0 26px 96px}
+@media(max-width:640px){.wrap{padding:0 14px 72px}}
+
+/* per-state accent binding — one class, four hues, everything downstream
+   reads var(--mc). Also gives every state its RULE STYLE (see .rule). */
+.m1{--mc:var(--m1)} .m2{--mc:var(--m2)} .m3{--mc:var(--m3)} .m4{--mc:var(--m4)}
+
+/* ── page header ─────────────────────────────────────────────────────────── */
+.pghead{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;
+  flex-wrap:wrap;margin:6px 0 2px}
+.kick{font-size:10.5px;font-weight:700;letter-spacing:.19em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 7px}
+.pghead h1{margin:0;font-size:27px;font-weight:800;letter-spacing:-.028em;line-height:1.14;
+  color:var(--text);font-family:var(--font-display)}
+.pghead .sub{margin:7px 0 0;font-size:13.5px;color:var(--muted-strong);max-width:50ch}
+.asof{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap;padding-top:4px}
+.asof b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+.asof .l2{display:block;margin-top:3px}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HERO — THE WEAR LADDER (signature, at page scale)
+   Four rungs. Each rung is one continuous typographic rule running from the
+   state's name to its count, and the rule's STROKE decays down the ladder:
+   solid → dashed → dotted → broken. The structure encodes the content — these
+   states are a sequence of wear, so the line that carries them wears out.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.hero{margin:22px 0 0;border:1px solid var(--line);border-radius:18px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 94%,transparent),var(--panel2));
+  padding:22px 26px 20px}
+.hero-lede{font-size:15.5px;line-height:1.5;color:var(--text);margin:0 0 20px;max-width:76ch}
+.hero-lede b{font-weight:750;font-variant-numeric:tabular-nums}
+.hero-lede .q{color:var(--muted-strong)}
+.ladder{display:grid;gap:2px}
+.rung{display:flex;align-items:center;gap:14px;padding:9px 2px;text-decoration:none;color:inherit;
+  border-radius:9px;transition:background .16s}
+.rung:hover{background:color-mix(in srgb,var(--mc) 8%,transparent)}
+.rung:focus-visible{outline:2px solid color-mix(in srgb,var(--mc) 70%,transparent);outline-offset:2px}
+.rung .n{flex:0 0 auto;min-width:2.6ch;text-align:right;font-size:23px;font-weight:700;line-height:1;
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--mc)}
+.rung .nm2{flex:0 0 auto;font-size:14.5px;font-weight:700;letter-spacing:-.012em;color:var(--text)}
+.rung .rule{flex:1 1 auto;min-width:24px;height:1px;background:var(--mc);opacity:.62}
+.rung .stance{flex:0 0 auto;font-size:12px;font-weight:600;color:var(--mc)}
+.rung.m2 .rule{background:none;
+  background-image:repeating-linear-gradient(90deg,var(--mc) 0 5px,transparent 5px 9px)}
+.rung.m3 .rule{background:none;
+  background-image:repeating-linear-gradient(90deg,var(--mc) 0 2px,transparent 2px 7px)}
+.rung.m4 .rule{background:none;
+  background-image:repeating-linear-gradient(90deg,var(--mc) 0 13px,transparent 13px 21px,
+    var(--mc) 21px 26px,transparent 26px 41px)}
+.rung.off{opacity:.42}
+.rung.off .n{color:var(--muted)}
+@media(max-width:620px){
+  .rung{flex-wrap:wrap;gap:6px 10px}
+  .rung .rule{order:9;flex-basis:100%;min-width:0}
+  .rung .stance{margin-left:auto}
+}
+
+/* ── the honest-null hero: the signature blown up. One long high-water rule,
+      price sitting on it, no gap to tint. The same picture the rows use, at
+      the size of the page — a quiet night is a finding, and it gets a design. */
+.nullhero{margin:22px 0 0;border:1px solid var(--line);border-radius:18px;overflow:hidden;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 94%,transparent),var(--panel2));
+  padding:30px 28px 26px}
+.nullhero .eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.19em;text-transform:uppercase;
+  color:var(--m1);margin:0 0 10px}
+.nullhero h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.028em;line-height:1.2;
+  color:var(--text);max-width:22ch}
+.nullhero p{margin:11px 0 0;font-size:14px;line-height:1.6;color:var(--muted-strong);max-width:56ch}
+.nullhero p b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+.flatline{margin:24px 0 2px;height:34px;position:relative}
+.flatline svg{display:block;width:100%;height:34px}
+.flatline .fl-hw{stroke:var(--m1);stroke-width:1;stroke-dasharray:3 4;opacity:.75}
+.flatline .fl-ln{fill:none;stroke:var(--muted-strong);stroke-width:1.5;stroke-linejoin:round}
+.flatline .fl-dot{fill:var(--m1)}
+.flatline .fl-cap{font:700 9px/1 var(--font-display);letter-spacing:.14em;fill:var(--m1);opacity:.85}
+/* Law 1 — a panel with nothing on it still owes the reader a stance. */
+.nullhero p.nullstance{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:20px 0 0;
+  max-width:none;font-size:13px;font-weight:650;color:var(--m1);line-height:1.5}
+.nullstance::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;
+  flex:none;align-self:center}
+.nullstance b{font-weight:650;color:inherit;white-space:nowrap}
+.nullstance span.q{font-weight:450;color:var(--muted-strong)}
+
+/* ── backdrop strip: one quiet line. Small, never a hero. ─────────────────── */
+.backdrop{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin:14px 2px 0;
+  font-size:12.5px;color:var(--muted-strong)}
+.backdrop .bk{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--muted)}
+.backdrop b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+.backdrop .sep{color:var(--line)}
+
+/* ── theme tomography ────────────────────────────────────────────────────── */
+.sec{margin:38px 0 0}
+.sec-hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 4px}
+.sec-hd h2{margin:0;font-size:16px;font-weight:750;letter-spacing:-.018em;color:var(--text)}
+.sec-hd .note{font-size:12.5px;color:var(--muted-strong)}
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(276px,1fr));gap:9px 22px;
+  margin-top:14px}
+.thm{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 12px;align-items:baseline;
+  padding:9px 0;border-bottom:1px solid var(--hair)}
+.thm .tname{font-size:13px;font-weight:650;color:var(--text);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.thm .tcount{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* honest shared scale: bar WIDTH is proportional to the largest theme, so a
+   3-name theme can never look like a 30-name theme. 1px gaps + a track border
+   keep the segments visible on white (light-parity law). */
+.bar{grid-column:1 / -1;height:7px;border-radius:2px;display:flex;gap:1px;overflow:hidden;
+  background:color-mix(in srgb,var(--text) 6%,transparent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 9%,transparent);margin-top:3px}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--m1)} .bar .b2{background:var(--m2)}
+.bar .b3{background:var(--m3)} .bar .b4{background:var(--m4)}
+.thm .tmat{font-size:11.5px;font-weight:650;font-variant-numeric:tabular-nums}
+.thm .tmat.on{color:var(--m3)} .thm .tmat.off{color:var(--muted)}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE BOARD
+   ═══════════════════════════════════════════════════════════════════════════ */
+.grp{margin:34px 0 0;scroll-margin-top:12px}
+/* the group rule-line: the state is carried ONCE here, sticky, instead of
+   being repeated as a chip on every row (Law 4 — a constant belongs in one
+   place). Sticky is what lets the rows stay chip-free. */
+.grp-hd{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;
+  padding:11px 0 9px;background:var(--bg);
+  border-bottom:1px solid color-mix(in srgb,var(--mc) 34%,var(--line))}
+.grp-hd h2{margin:0;font-size:17px;font-weight:800;letter-spacing:-.024em;color:var(--text);
+  white-space:nowrap}
+.grp-hd .rule{flex:1 1 auto;min-width:20px;height:1px;background:var(--mc);opacity:.55}
+.grp.m2 .grp-hd .rule{background:none;
+  background-image:repeating-linear-gradient(90deg,var(--mc) 0 5px,transparent 5px 9px)}
+.grp.m3 .grp-hd .rule{background:none;
+  background-image:repeating-linear-gradient(90deg,var(--mc) 0 2px,transparent 2px 7px)}
+.grp.m4 .grp-hd .rule{background:none;
+  background-image:repeating-linear-gradient(90deg,var(--mc) 0 13px,transparent 13px 21px,
+    var(--mc) 21px 26px,transparent 26px 41px)}
+.grp-hd .cnt{font-size:12px;font-weight:700;color:var(--mc);font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+.grp-sub{margin:8px 0 2px;font-size:12.5px;color:var(--muted-strong);display:flex;gap:10px;
+  align-items:baseline;flex-wrap:wrap}
+.grp-sub .stance{font-size:12px;font-weight:700;color:var(--mc);white-space:nowrap}
+.grp-sub .stance::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:currentColor;margin-right:6px;transform:translateY(-1px)}
+
+.rows{margin-top:4px}
+.row{display:grid;grid-template-columns:minmax(150px,1.15fr) 92px 104px minmax(220px,2.1fr) auto;
+  gap:16px;align-items:center;padding:11px 6px;border-bottom:1px solid var(--hair)}
+.row:hover{background:color-mix(in srgb,var(--mc) 5%,transparent)}
+.c-tk{min-width:0}
+.tk{font-size:14px;font-weight:750;letter-spacing:-.012em;color:var(--text)}
+a.tk:hover{color:var(--link)}
+.nm{display:block;font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;margin-top:1px}
+.c-gain .fig{display:block;font-size:15px;font-weight:700;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--ink-up,var(--up))}
+.c-gain .fig.dn{color:var(--ink-down,var(--down))}
+.c-gain .cap{display:block;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);margin-top:2px}
+.c-sp{color:var(--mc)}
+.sp{display:block;width:104px;height:30px;overflow:visible}
+.sp-uw{fill:currentColor;opacity:.15;stroke:none}
+.sp-hw{stroke:currentColor;stroke-width:1;stroke-dasharray:3 3;opacity:.85}
+.sp-ln{fill:none;stroke:var(--muted-strong);stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round}
+.sp-dot{fill:currentColor}
+.sp-null{font-size:11px;color:var(--muted)}
+.c-legs{display:flex;align-items:center;gap:11px;min-width:0}
+/* wear marks: how many things have slipped, 0-3, in the state's own hue.
+   The empty slot keeps its outline so an all-clear row still reads as
+   "measured and clear" rather than as a cell that failed to render. */
+.wear{flex:0 0 auto;display:inline-flex;gap:2.5px}
+.wear i{display:block;width:5px;height:13px;border-radius:1.5px;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 17%,transparent)}
+.wear i.on{background:var(--mc);box-shadow:none}
+.legs{min-width:0;font-size:12.5px;color:var(--muted-strong);line-height:1.45}
+.legs.clean{color:var(--muted)}
+.leg{cursor:help;border-bottom:1px dotted color-mix(in srgb,var(--text) 20%,transparent)}
+.leg:hover,.leg:focus-visible{color:var(--text);border-bottom-color:var(--mc)}
+.leg + .leg::before{content:"·";margin:0 7px;color:var(--line);border:none;cursor:auto}
+.c-lib{text-align:right;white-space:nowrap}
+.lib{font-size:11.5px;font-weight:650;color:var(--muted-strong);font-variant-numeric:tabular-nums}
+.lib-null{font-size:11.5px;color:var(--muted);cursor:help;
+  border-bottom:1px dotted color-mix(in srgb,var(--text) 22%,transparent)}
+
+/* mobile: the board becomes cards. Ticker + gain on one line, spark beside the
+   wear marks, legs underneath — nothing truncated, nothing side-scrolling. */
+@media(max-width:820px){
+  .row{grid-template-columns:minmax(0,1fr) auto;gap:5px 14px;padding:13px 4px;align-items:baseline}
+  .c-tk{grid-column:1;grid-row:1}
+  .c-gain{grid-column:2;grid-row:1;text-align:right}
+  .c-gain .cap{margin-top:0}
+  .c-sp{grid-column:2;grid-row:2;justify-self:end}
+  .c-legs{grid-column:1;grid-row:2;align-items:flex-start;padding-top:3px}
+  .c-lib{grid-column:1 / -1;grid-row:3;text-align:left;margin-top:2px}
+  .legs{white-space:normal}
+}
+
+/* ── footer small print: ONE line, merged. ───────────────────────────────── */
+.smallprint{margin:40px 0 0;padding-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;line-height:1.65;color:var(--muted);max-width:88ch}
+.smallprint b{color:var(--muted-strong);font-weight:650;font-variant-numeric:tabular-nums}
+
+/* ── entrance: one short stagger, no ambient loop (settled data never pulses).
+      The kill block names every animated selector AND the pseudo-elements that
+      carry the wear rules, so reduce truly means still. */
+@keyframes rise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.rise{animation:rise .46s cubic-bezier(.2,.7,.2,1) both}
+.rise.d1{animation-delay:.05s}.rise.d2{animation-delay:.12s}.rise.d3{animation-delay:.19s}
+@media(prefers-reduced-motion:reduce){
+  .rise,.rise.d1,.rise.d2,.rise.d3,
+  .rise::before,.rise::after,
+  .rung,.rung::before,.rung::after,
+  .row,.row::before,.row::after,
+  .grp-hd::before,.grp-hd::after,
+  .thm::before,.thm::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+{% include "_site_nav.html.j2" %}
+{{ lens.lens_css() }}
+
+<div class="wrap">
+
+  {# ══ page header ══ #}
+  <div class="pghead rise">
+    <div>
+      <div class="kick">{{ t('Winner Health', '持仓健康度') }}</div>
+      <h1>{{ t('Has your winner changed character?', '你的赢家，性质变了吗？') }}</h1>
+      <p class="sub">{{ t('The US names sitting on big gains near their highs, grouped by how the move is aging.',
+                          '美股中涨幅可观、仍在高位附近的个股，按行情老化的程度分组。') }}</p>
+    </div>
+    <div class="asof">
+      {% if WH and WH.data_last_day %}<span class="l-en">Priced <b>{{ WH.data_last_day }}</b></span><span class="l-zh">价格截至 <b>{{ WH.data_last_day }}</b></span>{% endif %}
+      <span class="l2">{{ t('Re-read every night', '每晚重新判读') }}</span>
+    </div>
+  </div>
+
+  {% if MODE == 'board' %}
+  {# ══ HERO — the wear ladder ══ #}
+  <section class="hero rise d1" aria-label="Tonight's board by state">
+    <div class="hero-lede">
+      <span class="l-en"><b>{{ N_MATURING }}</b> of tonight's <b>{{ N_EXT }}</b> extended names are showing wear. <span class="q">The rest are running the way they were.</span></span>
+      <span class="l-zh">今晚 <b>{{ N_EXT }}</b> 只高位强势股中，有 <b>{{ N_MATURING }}</b> 只出现转弱迹象。<span class="q">其余仍按原来的样子运行。</span></span>
+      {#- ONE explainer for the whole board. It used to sit on each group header,
+          which printed the same three rows four times — a constant repeated is
+          a constant mis-tiered (Law 4). -#}
+      {{ lens.lens(
+           kind='define',
+           ill=lens.ILL_LANES,
+           kick=('How this board is built','这块看板是怎么来的'),
+           title=('Four groups, one set of names','四个分组，同一批个股'),
+           rows=[
+             {'tone':'info','k':('Who is here','谁在这里'),
+              'v':('Every US name up a lot over six months and still close to its high. All four groups are drawn from that one set.',
+                   '所有半年涨幅可观、且仍在高点附近的美股。四个分组都来自这同一批个股。')},
+             {'tone':'info','k':('The order','排列顺序'),
+              'v':('Inside a group, the largest six-month gain comes first. That is a fact about the past — not a ranking, not a preference.',
+                   '每组内部按半年涨幅从大到小排列。那只是关于过去的事实 —— 不是排名，也不代表偏好。')},
+             {'tone':'warn','k':('Not a call','不是判断'),
+              'v':('A group describes how a move is behaving today. It is not a call, a target, or a reason to do anything on its own.',
+                   '分组描述的是当下走势的状态。它不是判断、不是目标价，本身也不构成采取任何行动的理由。')}],
+           receipt=('display only · no rank, gate or position size','仅供展示 · 不参与排序、准入或仓位')) }}
+    </div>
+    <div class="ladder">
+      {%- for s in STATES %}
+      {%- set cnt = (ST.get(s.key) or []) | length %}
+      <a class="rung m{{ s.m }}{{ ' off' if cnt == 0 else '' }}" href="#g-{{ s.slug }}">
+        <span class="n">{{ cnt }}</span>
+        <span class="nm2">{{ t(s.en, s.zh) }}</span>
+        <span class="rule" aria-hidden="true"></span>
+        <span class="stance">{{ t(s.stance_en, s.stance_zh) }}</span>
+      </a>
+      {%- endfor %}
+    </div>
+  </section>
+
+  {% elif MODE == 'clear' %}
+  {# ══ HONEST NULL — everything extended still looks the way it did ══ #}
+  <section class="nullhero rise d1" aria-label="Nothing is maturing tonight">
+    <p class="eyebrow">{{ t('Tonight', '今晚') }}</p>
+    <h2>{{ t('Nothing is maturing tonight', '今晚没有行情走向成熟') }}</h2>
+    <p><span class="l-en">All <b>{{ N_EXT }}</b> extended US names still look the way they did — none of them has started to slip. An empty board is a reading, not a gap.</span><span class="l-zh">全部 <b>{{ N_EXT }}</b> 只美股高位强势股仍与此前一样 —— 没有任何一只开始转弱。空白的看板本身就是一个判读结果，不是数据缺失。</span></p>
+    <div class="flatline" aria-hidden="true">
+      <svg viewBox="0 0 600 34" preserveAspectRatio="none" role="img">
+        <line class="fl-hw" x1="0" y1="9" x2="600" y2="9" vector-effect="non-scaling-stroke"/>
+        <polyline class="fl-ln" vector-effect="non-scaling-stroke" points="0,26 40,23 78,25 116,19 154,21 192,16 230,18 268,13 306,15 344,11 382,13 420,10 458,11 496,9 534,10 572,9 600,9"/>
+        <circle class="fl-dot" cx="597" cy="9" r="2.6"/>
+      </svg>
+    </div>
+    <p style="margin-top:6px">{{ t('The line above is the shape this board is watching for: price riding its own high-water mark with no gap underneath it.',
+                                   '上方这条线，就是本看板要盯的形态：价格贴着自己的高点运行，下方没有留出缺口。') }}</p>
+    <p class="nullstance"><b>{{ t('Nothing to do', '无需动作') }}</b>
+      <span class="q">{{ t('— a name moves down this page on its own, the night something slips.',
+                           '—— 一旦某只个股出现转弱，它当晚就会自己出现在下面的分组里。') }}</span></p>
+  </section>
+
+  {% elif MODE == 'none' %}
+  <section class="nullhero rise d1" aria-label="Nothing is extended tonight">
+    <p class="eyebrow">{{ t('Tonight', '今晚') }}</p>
+    <h2>{{ t('No US name is extended right now', '当前没有美股处于高位强势') }}</h2>
+    <p><span class="l-en">Out of <b>{{ '{:,}'.format(WH.universe_n) if (WH and WH.universe_n) else '—' }}</b> US names, none is sitting on a large six-month gain close to its high. There is no winner here to age.</span><span class="l-zh">在 <b>{{ '{:,}'.format(WH.universe_n) if (WH and WH.universe_n) else '—' }}</b> 只美股中，没有一只兼具「半年涨幅可观」和「仍在高点附近」。此时没有需要观察老化的赢家。</span></p>
+    <p class="nullstance"><b>{{ t('Nothing to watch', '暂无可观察对象') }}</b>
+      <span class="q">{{ t('— names appear here on their own, the night they qualify.',
+                           '—— 一旦有个股符合条件，它当晚就会自己出现在这里。') }}</span></p>
+  </section>
+
+  {% else %}
+  <section class="nullhero rise d1" aria-label="Tonight's read has not landed">
+    <p class="eyebrow">{{ t('Warming up', '正在预热') }}</p>
+    <h2>{{ t('Tonight\'s read has not landed yet', '今晚的判读尚未生成') }}</h2>
+    <p>{{ t('This board is rebuilt after every US close. It fills in as soon as the nightly read finishes — nothing is being withheld.',
+             '本看板在每个美股收盘后重建。夜间判读完成后即会填充 —— 没有任何内容被隐藏。') }}</p>
+  </section>
+  {% endif %}
+
+  {# ══ macro backdrop — one quiet line ══ #}
+  {% if WH and WH.macro_backdrop %}
+  {%- set bd = WH.macro_backdrop %}
+  {%- set fq = FROTH.get(bd.froth_quadrant) %}
+  {#- NOTE (parser trap): lens() emits block-level <div>s, and a <div> start tag
+      auto-closes an open <p>. Anything that hosts a lens() must be a <div>. -#}
+  <div class="backdrop rise d2">
+    <span class="bk">{{ t('Backdrop', '大环境') }}</span>
+    {%- if fq %}<span>{{ t(fq[0], fq[1]) }}</span>{% endif %}
+    {%- if fq and bd.stage3_count is not none %}<span class="sep">·</span>{% endif %}
+    {%- if bd.stage3_count is not none %}<span><span class="l-en"><b>{{ bd.stage3_count }}</b> US names already read as topping</span><span class="l-zh">已有 <b>{{ bd.stage3_count }}</b> 只美股被判为见顶阶段</span></span>{% endif %}
+    {{ lens.lens(
+         kind='read',
+         ill=lens.ILL_QUAD,
+         kick=('Where this comes from','这一行的来源'),
+         title=('The market around these names','这些个股所处的环境'),
+         rows=[
+           {'tone':'info','k':('The mood line','情绪一句话'),
+            'v':('Our market-wide froth read, said in plain words. It describes the market these winners live in — it says nothing about any one of them.',
+                 '这是我们对全市场亢奋度的判读，用大白话讲出来。它描述的是这些赢家所处的环境，与其中任何一只个股无关。')},
+           {'tone':'warn','k':('Topping count','见顶计数'),
+            'v':('How many US names the stage read already places in a topping phase — a separate, coarser read that runs weekly.',
+                 '阶段判读中已被归入见顶阶段的美股数量 —— 那是另一套更粗略的判读，每周运行一次。')}],
+         receipt=('context only · never a rank, gate or position size','仅为背景 · 不参与任何排序、准入或仓位')) }}
+  </div>
+  {% endif %}
+
+  {# ══ theme tomography ══ #}
+  {% if WH and WH.theme_counts %}
+  {%- set tmax = (WH.theme_counts | map(attribute='extended') | select('number') | list | max) if WH.theme_counts else 1 %}
+  <section class="sec rise d3" aria-label="Themes by state">
+    <div class="sec-hd">
+      <h2>{{ t('How much of each theme is aging', '各主题老化到什么程度') }}</h2>
+      <span class="note">{{ t('Counts only — the bar width is the size of the theme, so a small group can never look like a big one.',
+                              '只是计数 —— 条形的宽度代表主题的大小，小主题不会被画得跟大主题一样。') }}</span>
+    </div>
+    <div class="themes">
+      {%- for th in WH.theme_counts %}
+      {%- set tot = (th.extended or 0) %}
+      {%- set mat = (th.watch or 0) + (th.thinning or 0) + (th.breaking or 0) %}
+      {%- set clean = tot - mat if tot > mat else 0 %}
+      <div class="thm" style="--w:{{ ((tot / tmax * 100) | round(1)) if tmax else 100 }}%">
+        <span class="tname"><span class="l-en">{{ th.basket }}</span><span class="l-zh">{{ th.basket_zh | default(th.basket) }}</span></span>
+        <span class="tcount"><span class="l-en">{{ mat }} of {{ tot }}</span><span class="l-zh">{{ tot }} 只中 {{ mat }} 只</span></span>
+        <span class="bar" style="width:var(--w)" aria-hidden="true">
+          {%- if clean %}<i class="b1" style="flex:{{ clean }}"></i>{% endif %}
+          {%- if th.watch %}<i class="b2" style="flex:{{ th.watch }}"></i>{% endif %}
+          {%- if th.thinning %}<i class="b3" style="flex:{{ th.thinning }}"></i>{% endif %}
+          {%- if th.breaking %}<i class="b4" style="flex:{{ th.breaking }}"></i>{% endif %}
+        </span>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ══ THE BOARD ══ #}
+  {% if MODE == 'board' or MODE == 'clear' %}
+  {%- for s in STATES %}
+  {%- set rows = ST.get(s.key) or [] %}
+  {%- if rows %}
+  <section class="sec grp m{{ s.m }}" id="g-{{ s.slug }}" aria-label="{{ s.en }}">
+    <div class="grp-hd">
+      <h2>{{ t(s.en, s.zh) }}</h2>
+      <span class="rule" aria-hidden="true"></span>
+      <span class="cnt"><span class="l-en">{{ rows | length }} names</span><span class="l-zh">{{ rows | length }} 只</span></span>
+    </div>
+    <p class="grp-sub">
+      <span class="stance">{{ t(s.stance_en, s.stance_zh) }}</span>
+      <span>{{ t(s.sub_en, s.sub_zh) }}</span>
+    </p>
+    <div class="rows">
+      {%- for r in rows %}{{ namerow(r) }}{% endfor %}
+    </div>
+  </section>
+  {%- endif %}
+  {%- endfor %}
+  {% endif %}
+
+  {# ══ small print — ONE merged line ══ #}
+  <p class="smallprint">
+    <span class="l-en">US names only — the library counts are what similar past runs did, history rather than forecasts, and nothing on this page ranks, gates or sizes anything.{% if WH and WH.extended_n is not none and WH.universe_n %} Tonight: <b>{{ WH.extended_n }}</b> extended out of <b>{{ '{:,}'.format(WH.universe_n) }}</b> US names screened{% if WH.asof %}, read <b>{{ WH.asof }}</b>{% endif %}.{% endif %}</span>
+    <span class="l-zh">仅限美股 —— 资料库中的次数是历史上相似行情走过的路，属于历史而非预测；本页任何内容都不参与排序、准入或仓位。{% if WH and WH.extended_n is not none and WH.universe_n %}今晚：筛查 <b>{{ '{:,}'.format(WH.universe_n) }}</b> 只美股，其中 <b>{{ WH.extended_n }}</b> 只处于高位强势{% if WH.asof %}，判读日期 <b>{{ WH.asof }}</b>{% endif %}。{% endif %}</span>
+  </p>
+
+</div>
+</body>
+</html>
