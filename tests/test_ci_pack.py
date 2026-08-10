@@ -322,8 +322,8 @@ def test_derived_scopes_are_startable_by_the_ci_workflow() -> None:
     assert not gaps, gaps[:25]
 
 
-def test_representative_narrow_diffs_skip_at_least_one_quarter_of_jobs() -> None:
-    """The conservative first tranche must still deliver material speed."""
+def test_representative_narrow_diffs_skip_at_least_one_fifth_of_jobs() -> None:
+    """The conservative first tranche must still skip a whole fifth of jobs."""
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     cases = {
         "govrev": [
@@ -340,7 +340,11 @@ def test_representative_narrow_diffs_skip_at_least_one_quarter_of_jobs() -> None
     }
     for name, changed in cases.items():
         selected, reason = PACK.select_jobs(jobs, changed)
-        assert len(selected) <= (len(jobs) * 4) // 5, (name, len(selected), reason)
+        assert len(jobs) - len(selected) >= len(jobs) // 5, (
+            name,
+            len(selected),
+            reason,
+        )
     selected, _ = PACK.select_jobs(jobs, cases["tripwires"])
     assert any(job.job_id == "falsifier-tripwires" for job in selected)
 

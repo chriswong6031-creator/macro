@@ -1,0 +1,11 @@
+[
+  {
+    "id": "bitcoin.cycle_position.v1",
+    "cycle": "bitcoin",
+    "claim": "Bitcoin is in a post-halving bull cycle; on-chain and price structure confirm",
+    "claim_zh": "比特币还在减半后的牛市周期里；链上数据和价格结构互相印证",
+    "retired": "2026-08-10",
+    "superseded_by": "bitcoin.cycle_position.v2",
+    "note": "v1 refuted 2026-07-02 (sub-64,000 break) and latched in tripwire_state.json; v2 re-registers the successor thesis with NEW claim text, so this pair must stay resolvable for healing baked alert rows that quote the v1 English claim. Re-authors that keep the claim text unchanged (pgms/agriculture v2, PR #5194) do not need a row here — by_claim still resolves them."
+  }
+]

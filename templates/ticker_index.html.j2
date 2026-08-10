@@ -67,7 +67,7 @@ a { color: inherit; text-decoration: none; }
 /* One product face throughout; figures keep tabular alignment without switching
    the page into a terminal/mono texture. */
 .fig, .bd-v, .bd-x, .ss-v, .dir-t, .bd-tk, .r-px, .r-chg, .r-tk, .sp-lab b,
-.th-avg, .th-pc
+.th-avg, .th-pc, .pw-mv, .pw-cmp, .pw-leg b, .pw-asof
   { font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
 .up { color: var(--up); } .dn { color: var(--down); }
 
@@ -231,6 +231,146 @@ a { color: inherit; text-decoration: none; }
 .bd-bar { height: 4px; border-radius: 2px; background: var(--panel2); overflow: hidden; }
 .bd-bar i { display: block; height: 100%; border-radius: 2px; }
 .bd-bar i.up { background: var(--up); } .bd-bar i.dn { background: var(--down); }
+
+/* ═══ 3b. PRESSURE WATCH ═══════════════════════════════════════════════════
+   Six mover cards sit directly above this band and every one of them is
+   opportunity-shaped: biggest drops, near 52-week lows. This band answers the
+   question they provoke — "should I buy that?" — with five years of how these
+   actually ended, and the honest answer is mostly "they kept going".
+
+   So it must not read as a seventh mover card. Three deliberate differences:
+   ONE tall panel instead of a grid (a grid lets the eye start anywhere, which
+   would destroy the fixed reading order the content depends on); full-bleed
+   internal rules, which no card on this page has, so it reads as a document;
+   and no colour anywhere except the outcome bar. The record is the only thing
+   in here entitled to an opinion, so it gets the only chroma.
+   ══════════════════════════════════════════════════════════════════════════ */
+.pw { background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+      padding: 20px 22px 16px; }
+.pw-asof { margin-left: auto; font-size: 11.5px; color: var(--muted); }
+/* Rules bleed to the panel edge: a boxed divider would read as a border between
+   two cards, and these three strata are one continuous argument. */
+.pw-stratum + .pw-stratum { margin: 16px -22px 0; padding: 16px 22px 0;
+                            border-top: 1px solid var(--rule); }
+.pw-k { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
+        margin-bottom: 9px; font-size: 10.5px; font-weight: 650; color: var(--muted);
+        letter-spacing: .09em; text-transform: uppercase; }
+.pw-k em { font-style: normal; letter-spacing: .02em; text-transform: none;
+           font-weight: 600; }
+.pw-read { margin: 0; font-size: 17px; line-height: 1.45; font-weight: 650;
+           letter-spacing: -.014em; color: var(--text); max-width: 54ch; }
+.pw-note { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); max-width: 62ch;
+           line-height: 1.5; }
+.pw-note b { color: var(--text); font-weight: 650; }
+/* Law 1 — the stance gets its own line. Tucked onto the end of the null
+   sentence it landed after a line wrap, which is where a reader stops. */
+.pw-stance { margin: 7px 0 0; font-size: 13px; font-weight: 700; color: var(--text);
+             letter-spacing: -.01em; }
+.pw-warm { margin: 0; font-size: 13.5px; color: var(--muted); }
+
+/* The signature: five years of endings as one proportional bar, worst on the
+   left. Names that stopped trading lead it — they are inside the denominator,
+   and putting them first is the difference between disclosing that and burying
+   it. Direction reads through --up/--down mixes only, so zh 红涨绿跌 flips the
+   whole bar for free; "stopped trading" is hatched neutral because a delisting
+   is not a direction. */
+.pw-bar { display: flex; gap: 1px; height: 13px; margin: 15px 0 0; padding: 1px;
+          background: var(--panel2); border: 1px solid var(--line);
+          border-radius: 5px; overflow: hidden; }
+.pw-bar i { display: block; height: 100%; min-width: 2px; border-radius: 2px;
+            cursor: help; }
+.pw-s-low  { background: color-mix(in srgb, var(--down) 74%, transparent); }
+/* The neutral middle is a real outcome, not a gap in the bar — at 40% it read
+   as unpainted track against a dark panel. */
+.pw-s-mid  { background: color-mix(in srgb, var(--muted) 62%, transparent); }
+.pw-s-back { background: color-mix(in srgb, var(--up) 74%, transparent); }
+.pw-s-gone { background:
+    repeating-linear-gradient(135deg,
+      color-mix(in srgb, var(--muted) 66%, transparent) 0 2px,
+      color-mix(in srgb, var(--muted) 12%, transparent) 2px 4px); }
+.pw-leg { display: flex; flex-wrap: wrap; gap: 5px 17px; margin-top: 9px;
+          font-size: 11.5px; color: var(--muted); }
+.pw-leg span { display: inline-flex; align-items: center; gap: 6px; }
+.pw-sw { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.pw-leg b { color: var(--text); font-weight: 650; }
+
+/* Broad-selloff day. Doctrine §5.8 light pattern: quiet tint, 3px rail,
+   deepened ink — an accent-tinted block reads as a highlighter smear on white
+   without all three. */
+.pw-banner { margin: 0 0 16px; padding: 10px 13px; border-radius: 10px;
+             border: 1px solid color-mix(in srgb, var(--warn) 32%, var(--line));
+             border-left: 3px solid var(--warn);
+             background: color-mix(in srgb, var(--warn) 11%, var(--panel));
+             font-size: 12.5px; font-weight: 600; color: var(--text); }
+[data-theme="light"] .pw-banner {
+  background: color-mix(in srgb, var(--warn) 7%, var(--panel));
+  color: color-mix(in srgb, var(--warn) 34%, var(--text)); }
+
+/* Columns pack LEFT rather than stretching. With a 1fr middle column the
+   outcome sat ~1,300px from its ticker on a wide screen, which reads as two
+   disconnected lists rather than one row. The track owns the column widths and
+   each row borrows them through subgrid, so endings stay beside their events
+   AND line up with each other; without subgrid support every row simply sizes
+   its own columns, which is the same layout a row at a time. */
+.pw-rows { display: grid; gap: 1px; justify-content: start;
+           grid-template-columns: 56px minmax(0, max-content) minmax(0, max-content); }
+.pw-row { display: grid; align-items: baseline; gap: 3px 16px; padding: 7px;
+          border-radius: 8px; transition: background .12s; justify-content: start;
+          grid-column: 1 / -1; grid-template-columns: subgrid; }
+@supports not (grid-template-columns: subgrid) {
+  .pw-row { grid-template-columns: 56px minmax(0, max-content) minmax(0, max-content); }
+}
+.pw-row:hover { background: var(--surf-hover); }
+.pw-t { font-size: 12.5px; font-weight: 700; color: var(--link); }
+.pw-mv { font-size: 12.5px; color: var(--text); }
+.pw-cmp { font-size: 12px; color: var(--muted); }
+.pw-end { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+          font-size: 12px; font-weight: 650; color: var(--text); }
+.pw-chips { display: flex; flex-wrap: wrap; gap: 5px; grid-column: 3; }
+.pw-chip { font: 650 10.5px/1.5 var(--font-ui); color: var(--muted); cursor: help;
+           padding: 2px 8px; border-radius: 6px; white-space: nowrap;
+           background: var(--panel2); border: 1px solid var(--line); }
+.pw-chip.pw-st { color: var(--text);
+                 border-color: color-mix(in srgb, var(--muted) 42%, var(--line)); }
+/* Market-wide day: the single-name reads are weaker than usual, so they lose
+   their emphasis rather than their place. Demotion by ink, never by opacity —
+   a dimmed layer on white just looks broken. */
+.pw-demoted .pw-mv { color: var(--muted); font-weight: 600; }
+/* The ticker keeps enough of --link to still read as a link. Demoting it all
+   the way to --muted removed the affordance from a row that is still clickable. */
+.pw-demoted .pw-t { color: color-mix(in srgb, var(--link) 52%, var(--muted)); }
+.pw-foot { margin: 15px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.55; }
+.pw-gap { margin: 5px 0 0; font-size: 11.5px; color: var(--muted); }
+
+/* Rows inside the "?" card. theme.js owns the popover shell and ships its own
+   CSS; these are the only page-supplied pieces, and they live outside .wrap
+   because the popover is appended to <body>.
+
+   `display:block` on the body is load-bearing: .lens-body is a <span>, so it is
+   inline, and block children of an inline box ignore its horizontal padding —
+   without this every label sat flush against the card's left edge.
+
+   Labels sit ABOVE their values rather than beside them. The popover is 300px
+   at every viewport, so a label column would leave ~170px of measure and break
+   these sentences into four-word ribbons. */
+.pw-tipbody { display: block; }
+.pw-tr { display: block; padding: 7px 0;
+         border-top: 1px solid color-mix(in srgb, var(--muted) 20%, transparent); }
+.pw-tr:first-child { border-top: 0; padding-top: 0; }
+.pw-tk { display: block; font: 700 9.5px/1.7 var(--font-ui); letter-spacing: .09em;
+         text-transform: uppercase; color: var(--muted); }
+.pw-tv { display: block; font-size: 12px; line-height: 1.55; }
+
+@media (max-width: 620px) {
+  .pw { padding: 16px 15px 13px; border-radius: 14px; }
+  .pw-stratum + .pw-stratum { margin: 14px -15px 0; padding: 14px 15px 0; }
+  .pw-read { font-size: 15.5px; }
+  /* Two columns and no subgrid on a phone: the ending wraps under its event
+     rather than squeezing a third column into 320px. */
+  .pw-rows { display: block; }
+  .pw-row { grid-template-columns: 52px minmax(0, 1fr); gap: 3px 11px; }
+  .pw-end, .pw-chips { grid-column: 2; }
+}
 
 /* The one useful read carried over from the retired stand-alone movers page:
    coherent theme groups, now bounded to tickers that have a dossier here. */
@@ -555,6 +695,120 @@ footer.foot { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--l
   </div>
 {%- endif %}
 </section>
+
+{#- ═══ 3b. PRESSURE WATCH ══════════════════════════════════════════════════
+    Content order is INVERTED against the boards above on purpose: the record of
+    how these ended comes first, today's names last. "What usually happens" and
+    "what is cheap now" are different claims, the movers boards already make the
+    second one, and putting live names at the top of this band would quietly
+    turn a cautionary record into a shopping list.
+
+    Ordering inside the tracked list is recency only — never move size, never
+    how unusual the move was. engine/stocks_hub.py::_pw_recency_order owns it.
+    ══════════════════════════════════════════════════════════════════════════ #}
+{%- set P = (hub.pressure if hub else None) %}
+{%- if P %}
+<section id="pressure" class="section-anchor">
+  <div class="sec-h">
+    {#- The "?" appears only with a record behind it: in warm-up the card would
+        open on a heading and nothing else, which is worse than no affordance. #}
+    <h2>{{ t(P.title_en, P.title_zh) }}{% if P.help %}<span class="lens-q" data-lens-kind="define" tabindex="0" role="button" aria-label="How Pressure Watch is measured">?<span class="lens-src" data-lens-kind="define" hidden>
+      <span class="lens-hd">
+        <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h4l3 10h11"/><circle cx="10" cy="17" r="1.4" fill="currentColor" stroke="none"/></svg></span>
+        <span class="lens-hgroup">
+          <span class="lens-kick">{{ t(P.help.kick_en, P.help.kick_zh) }}</span>
+          <span class="lens-title">{{ t(P.help.title_en, P.help.title_zh) }}</span>
+        </span>
+      </span>
+      <span class="lens-body pw-tipbody">
+        {%- for hr in P.help.rows %}
+        <span class="pw-tr">
+          <span class="pw-tk">{{ t(hr.k_en, hr.k_zh) }}</span>
+          <span class="pw-tv">{{ t(hr.v_en, hr.v_zh) }}</span>
+        </span>
+        {%- endfor %}
+      </span>
+      <span class="lens-receipt">{{ t(P.help.receipt_en, P.help.receipt_zh) }}</span>
+    </span></span>{% endif %}</h2>
+    <span class="sh-note">{{ t(P.sub_en, P.sub_zh) }}</span>
+    {%- if P.asof %}<span class="pw-asof">{{ t('as of ' ~ P.asof, '截至 ' ~ P.asof) }}</span>{%- endif %}
+  </div>
+
+  <div class="pw">
+    {%- if P.banner %}
+    <p class="pw-banner"{% if P.banner.tip_en %} data-tip-en="{{ P.banner.tip_en }}" data-tip-zh="{{ P.banner.tip_zh }}"{% endif %}>{{ t(P.banner.en, P.banner.zh) }}</p>
+    {%- endif %}
+
+    {%- if P.mode == 'warmup' %}
+    <p class="pw-warm">{{ t(P.warm_en, P.warm_zh) }} <b>{{ t(P.stance_en, P.stance_zh) }}</b></p>
+    {%- else %}
+
+    {#- 1 · the frozen record — the band's headline content #}
+    {%- if P.base %}
+    <div class="pw-stratum">
+      <div class="pw-k">{{ t('What usually happens', '通常会怎样') }}</div>
+      <p class="pw-read">{{ t(P.base.headline_en, P.base.headline_zh) }}</p>
+      <div class="pw-bar">
+        {%- for s in P.base.segments %}
+        <i class="pw-s-{{ s.cls }}" style="flex:{{ s.w }} 1 0" data-tip-en="{{ s.tip_en }}" data-tip-zh="{{ s.tip_zh }}"></i>
+        {%- endfor %}
+      </div>
+      <div class="pw-leg">
+        {%- for s in P.base.segments %}
+        <span><i class="pw-sw pw-s-{{ s.cls }}"></i>{{ t(s.en, s.zh) }} <b>{{ s.pc }}</b></span>
+        {%- endfor %}
+      </div>
+      <p class="pw-note">{{ t(P.base.null_en, P.base.null_zh) }}</p>
+      <p class="pw-stance">{{ t(P.stance_en, P.stance_zh) }}</p>
+    </div>
+    {%- endif %}
+
+    {#- 2 · closed episodes — the proof that the record above is kept honestly #}
+    {%- if P.resolved %}
+    <div class="pw-stratum">
+      <div class="pw-k">{{ t('Recently resolved', '近期已了结') }}</div>
+      <div class="pw-rows">
+        {%- for r in P.resolved %}
+        <a class="pw-row" href="{{ r.t }}.html">
+          <span class="pw-t">{{ r.t }}</span>
+          <span class="pw-mv">{{ t(r.move_en ~ ' · ' ~ r.when_en, r.move_zh ~ ' · ' ~ r.when_zh) }}</span>
+          <span class="pw-end"><i class="pw-sw pw-s-{{ r.end_cls }}"></i>{{ t(r.end_en, r.end_zh) }}</span>
+        </a>
+        {%- endfor %}
+      </div>
+    </div>
+    {%- endif %}
+
+    {#- 3 · open events, both sides, most recent first — deliberately last #}
+    {%- if P.open %}
+    <div class="pw-stratum{{ ' pw-demoted' if P.demoted else '' }}">
+      <div class="pw-k">{{ t('Currently tracked', '正在跟踪') }}
+        <em>{{ t(P.count_en, P.count_zh) }}</em></div>
+      <div class="pw-rows">
+        {%- for e in P.open %}
+        <a class="pw-row" href="{{ e.t }}.html">
+          <span class="pw-t">{{ e.t }}</span>
+          <span class="pw-mv">{{ t(e.move_en, e.move_zh) }}{% if e.cmp_en %}
+            <span class="pw-cmp">· {{ t(e.cmp_en, e.cmp_zh) }}</span>{% endif %}</span>
+          <span class="pw-chips">
+            {%- if e.fam_en %}<span class="pw-chip" data-tip-en="{{ e.fam_tip_en }}" data-tip-zh="{{ e.fam_tip_zh }}">{{ t(e.fam_en, e.fam_zh) }}</span>{% endif %}
+            {%- if e.state_en %}<span class="pw-chip pw-st"{% if e.tip_en %} data-tip-en="{{ e.tip_en }}" data-tip-zh="{{ e.tip_zh }}"{% endif %}>{{ t(e.state_en, e.state_zh) }}</span>{% endif %}
+          </span>
+        </a>
+        {%- endfor %}
+      </div>
+    </div>
+    {%- endif %}
+
+    {#- One footnote, merged, and only where there are rows for it to qualify. #}
+    <p class="pw-foot">{{ t(P.foot_en, P.foot_zh) }}</p>
+    {%- endif %}
+    {%- for g in P.gaps %}
+    <p class="pw-gap">{{ t(g.en, g.zh) }}</p>
+    {%- endfor %}
+  </div>
+</section>
+{%- endif %}
 
 {%- set T = (hub.themes if hub else []) %}
 {%- if T %}

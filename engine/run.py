@@ -8,7 +8,11 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
+import tempfile
+from numbers import Integral, Number
+from pathlib import Path
 
 import pandas as pd
 
@@ -20,6 +24,76 @@ from engine.transition import compute_flags, state_machine_detail
 from lib import config, store
 
 log = logging.getLogger(__name__)
+
+
+def _null_nonfinite_numeric_leaves(value):
+    """Return a JSON-ready tree with nonfinite numeric values replaced by ``None``.
+
+    ``latest`` is assembled from many independently fail-isolated leaves.  A leaf may
+    therefore hand us a Python, NumPy, or Decimal nonfinite value even when every other
+    part of the regime snapshot is healthy.  JSON's ``NaN``/``Infinity`` extensions are
+    not valid JSON and strict readers reject the entire artifact, so the publication
+    boundary owns one recursive normalization pass.  Finite values and the historical
+    ``default=str`` fallback are deliberately left unchanged.
+    """
+    if isinstance(value, dict):
+        return {key: _null_nonfinite_numeric_leaves(item)
+                for key, item in value.items()}
+    if isinstance(value, list):
+        return [_null_nonfinite_numeric_leaves(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_null_nonfinite_numeric_leaves(item) for item in value)
+    if isinstance(value, Number) and not isinstance(value, (bool, Integral, complex)):
+        try:
+            if not math.isfinite(value):
+                return None
+        except (TypeError, ValueError, OverflowError):
+            # Preserve the existing default=str behavior for unusual numeric objects
+            # that do not implement the real-number protocol accepted by math.isfinite.
+            pass
+    return value
+
+
+def _atomic_write_latest_json(path: Path, payload: dict) -> dict:
+    """Publish strict ``latest.json`` via a durable same-directory atomic replace.
+
+    Encoding completes before any filesystem mutation.  The temporary file is flushed
+    and fsynced before ``os.replace`` makes it visible, then the containing directory is
+    fsynced so a successful return is also a durability acknowledgement.
+    """
+    normalized = _null_nonfinite_numeric_leaves(payload)
+    encoded = json.dumps(
+        normalized,
+        indent=2,
+        default=str,
+        allow_nan=False,
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            temporary = Path(handle.name)
+            handle.write(encoded)
+            handle.flush()
+            os.fchmod(handle.fileno(), 0o644)
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+        directory_fd = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+    return normalized
 
 
 def freshness_stamp(asof, now=None, max_age_sessions: int = 1) -> dict:
@@ -982,8 +1056,7 @@ def run(force: bool = False) -> dict:
             raise
         log.error("risk coherence assert failed to run: %s", e)
         latest["risk_coherence"] = None
-    with open(p / "latest.json", "w") as fh:
-        json.dump(latest, fh, indent=2, default=str)
+    latest = _atomic_write_latest_json(p / "latest.json", latest)
     log.info("regime %s (%s) conf=%.2f liq=%s cycle=%s transition=%s",
              label, latest["quad_name"], latest["confidence"],
              latest["liquidity_overlay"], latest["cycle_tag"], latest["transition_state"])
@@ -993,6 +1066,5 @@ def run(force: bool = False) -> dict:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     import sys
-    from pathlib import Path
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     print(json.dumps(run(), indent=2, default=str))

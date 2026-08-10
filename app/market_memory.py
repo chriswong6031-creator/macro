@@ -25,7 +25,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 
-from engine.neuralweb import market_memory, market_memory_pit
+from engine.neuralweb import market_memory, market_memory_pit, market_memory_trusted
 
 _DEFAULT_ROOT = Path(__file__).resolve().parent.parent
 _PRIVATE_HEADERS = {
@@ -128,9 +128,12 @@ def _response(
     return JSONResponse(payload, status_code=status_code, headers=private_headers)
 
 
-def _pit_reader() -> market_memory_pit.FileAsKnownAtReader:
-    root = market_memory_pit.default_store_root(_repo_root())
-    return market_memory_pit.FileAsKnownAtReader(root)
+def _pit_reader() -> market_memory_trusted.CompositeAsKnownAtReader:
+    repository = _repo_root()
+    return market_memory_trusted.CompositeAsKnownAtReader(
+        market_memory_pit.default_store_root(repository),
+        market_memory_trusted.default_trusted_store_root(repository),
+    )
 
 
 def _stored_context_response(

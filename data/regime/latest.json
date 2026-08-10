@@ -11642,7 +11642,7 @@
             "ticker": "NXT",
             "breadth": 0.83,
             "n_analysts": 12,
-            "est_chg_90d": NaN,
+            "est_chg_90d": null,
             "n_covering": 19,
             "breadth_cov": 0.5263
           },
@@ -11946,7 +11946,7 @@
             "ticker": "LDOS",
             "breadth": -0.6,
             "n_analysts": 5,
-            "est_chg_90d": NaN,
+            "est_chg_90d": null,
             "n_covering": 17,
             "breadth_cov": -0.1765
           },
@@ -11962,7 +11962,7 @@
             "ticker": "HWM",
             "breadth": 0.25,
             "n_analysts": 8,
-            "est_chg_90d": NaN,
+            "est_chg_90d": null,
             "n_covering": 18,
             "breadth_cov": 0.1111
           },
@@ -12291,7 +12291,7 @@
             "ticker": "MDT",
             "breadth": 0.2,
             "n_analysts": 5,
-            "est_chg_90d": NaN,
+            "est_chg_90d": null,
             "n_covering": 29,
             "breadth_cov": 0.0345
           },
@@ -12467,7 +12467,7 @@
             "ticker": "HWM",
             "breadth": 0.25,
             "n_analysts": 8,
-            "est_chg_90d": NaN,
+            "est_chg_90d": null,
             "n_covering": 18,
             "breadth_cov": 0.1111
           },
@@ -24334,67 +24334,67 @@
         "n": 418,
         "fwd21_avg_pct": 0.98,
         "fwd21_hit_pct": 69.4,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": null
       },
       "liquidity_contracting": {
         "n": 286,
         "fwd21_avg_pct": 0.76,
         "fwd21_hit_pct": 64.7,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": null
       },
       "quad_q3": {
         "n": 187,
         "fwd21_avg_pct": 0.1,
         "fwd21_hit_pct": 58.3,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": null
       },
       "risk_on_quads": {
         "n": 1103,
         "fwd21_avg_pct": 0.83,
         "fwd21_hit_pct": 65.1,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": null
       },
       "risk_off_quads": {
         "n": 531,
         "fwd21_avg_pct": 0.7,
         "fwd21_hit_pct": 64.0,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": null
       },
       "risk_on_stable": {
         "n": 644,
         "fwd21_avg_pct": 0.94,
         "fwd21_hit_pct": 67.1,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": null
       },
       "risk_on_warning": {
         "n": 459,
         "fwd21_avg_pct": 0.67,
         "fwd21_hit_pct": 62.3,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": null
       },
       "conditions_nfci_tightening": {
         "n": 741,
         "fwd21_avg_pct": 0.53,
         "fwd21_hit_pct": 60.9,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": null
       },
       "conditions_nfci_loosening": {
         "n": 893,
         "fwd21_avg_pct": 1.0,
         "fwd21_hit_pct": 68.0,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": null
       },
       "conditions_recession_high": {
         "n": 53,
         "fwd21_avg_pct": -0.8,
         "fwd21_hit_pct": 54.7,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": null
       },
       "conditions_recession_low": {
         "n": 1449,
         "fwd21_avg_pct": 0.95,
         "fwd21_hit_pct": 66.7,
-        "avg_worst_dd63_pct": NaN
+        "avg_worst_dd63_pct": null
       }
     },
     "honesty": "Sector picks vs the index showed no stable edge in our 2000-2026 backtest (results flip between decades) \u2014 so sector calls here are risk filters and confirmation tools, not return predictions. The exposure dial conditions are the statistically robust part.",
