@@ -6,7 +6,7 @@ options pages, which are now redirect stubs, so the flyout carries ONE options
 door plus the two neighbours that do a genuinely different job.
 
   Nav · United States
-  ├── … Daily Movers
+  ├── … Stock Dashboard
   ├── Intraday Flow Tracker        ← moved OUT of the options flyout: it is a
   │                                  live session board, not an options page
   └── Options & Market Structure ▸
@@ -56,8 +56,8 @@ def _flyout() -> str:
     """The Options & Market Structure `nav-dd nav-sub` block only.
 
     Anchored on the trigger <a>'s literal href, NOT on the comment text above it
-    — a prose phrase would also match the Daily Movers relocation comment
-    earlier in the file and would capture Sector Central's block too.
+    — a prose phrase can also appear in migration comments and capture the
+    wrong nested block.
     """
     block_start = NAV.rindex(
         '<div class="nav-dd nav-sub">',
@@ -172,16 +172,16 @@ def test_intraday_flow_left_the_options_flyout():
     )
 
 
-def test_intraday_flow_sits_directly_after_daily_movers():
+def test_intraday_flow_sits_directly_after_stock_dashboard():
     us = _us_group_outside_the_flyout()
     assert 'href="{{ NP }}intraday_flow.html"' in us, (
         "intraday_flow.html must land in the United States group itself"
     )
-    assert us.index('href="{{ NP }}movers.html"') < us.index('href="{{ NP }}intraday_flow.html"'), (
-        "intraday_flow.html must follow Daily Movers"
+    assert us.index('href="{{ NP }}us_stocks.html"') < us.index('href="{{ NP }}intraday_flow.html"'), (
+        "intraday_flow.html must follow the Stock Dashboard"
     )
     assert us.index('href="{{ NP }}intraday_flow.html"') < us.index('href="{{ NP }}stage_analysis.html"'), (
-        "intraday_flow.html must sit DIRECTLY after Daily Movers — before Stage Analysis"
+        "intraday_flow.html must sit directly after the Stock Dashboard — before Stage Analysis"
     )
 
 
@@ -212,10 +212,8 @@ def test_intraday_flow_appears_exactly_once_in_this_partial():
     assert NAV.count('href="{{ NP }}intraday_flow.html"') == 1
 
 
-def test_movers_stays_where_w1_put_it():
-    us = _us_group_outside_the_flyout()
-    assert NAV.count('href="{{ NP }}movers.html"') == 1
-    assert us.index('href="{{ NP }}us_stocks.html"') < us.index('href="{{ NP }}movers.html"')
+def test_retired_movers_page_is_not_a_navigation_destination():
+    assert 'href="{{ NP }}movers.html"' not in NAV
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -300,19 +298,22 @@ def test_js_darkpool_keeps_its_conditional_gate():
     assert sec.count("'darkpool.html'") >= 2, "darkpool.html row must carry a gate"
 
 
-def test_js_intraday_flow_moved_to_market_overview_after_movers():
+def test_js_intraday_flow_follows_stock_dashboard_in_market_overview():
     overview = _us_market_overview_section_js()
     assert "'intraday_flow.html'" in overview, (
         "intraday_flow.html must move into the JS 'Market overview' section too"
     )
-    assert overview.index("'movers.html'") < overview.index("'intraday_flow.html'"), (
-        "intraday_flow.html must follow Daily Movers, mirroring _navlinks.html.j2"
+    assert overview.index("'us_stocks.html'") < overview.index("'intraday_flow.html'"), (
+        "intraday_flow.html must follow the Stock Dashboard, mirroring _navlinks.html.j2"
     )
     assert "'intraday_flow.html'" not in _us_market_structure_section_js(), (
         "intraday_flow.html must LEAVE the options section, not be duplicated"
     )
     assert overview.count("'intraday_flow.html'") >= 2, (
         "the relocated row must keep its href gate"
+    )
+    assert "'movers.html'" not in overview, (
+        "the JS replacement menu must not restore the retired Movers destination"
     )
 
 
@@ -365,9 +366,12 @@ def test_js_rendered_us_menu_matches_the_one_door_shape():
     out = json.loads(res.stdout)
 
     full = out["full"]
-    for href in ("options.html", "movers.html", "market_structure.html",
+    for href in ("options.html", "market_structure.html",
                  "intraday_flow.html", "darkpool.html"):
         assert f'href="{href}"' in full, f"the rendered US menu lost {href}"
+    assert 'href="movers.html"' not in full, (
+        "the rendered JS menu restored the retired Movers destination"
+    )
     for retired in RETIRED_URLS:
         assert f'href="{retired}"' not in full, (
             f"the rendered US menu still links the retired {retired}"
