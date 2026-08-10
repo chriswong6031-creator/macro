@@ -147,7 +147,12 @@ def test_chinese_mode_rebinds_prophet_bullish_red_and_bearish_green():
 
     light_zh = _all_rule_bodies('html[data-theme="light"][data-lang="zh"]')
     assert "--ink-pv-buy:" in light_zh and "var(--pv-buy)   84%" in light_zh
-    assert "--ink-pv-near:" in light_zh and "var(--pv-near)  84%" in light_zh
+    # near is 70%, NOT buy's 84%: --pv-near is the red already pushed 82% toward
+    # white, so the plain-red rung left it at 3.90:1 — under AA — until 2026-08-10.
+    # This line only pins the literal; the property that actually matters (>=4.5:1
+    # on all four ink consumers, and Near staying lighter than Buy) is measured in
+    # tests/test_prophet_verb_ink_contrast.py. Change this number only alongside that.
+    assert "--ink-pv-near:" in light_zh and "var(--pv-near)  70%" in light_zh
     assert "--ink-pv-avoid:" in light_zh and "var(--pv-avoid) 62%" in light_zh
 
 
