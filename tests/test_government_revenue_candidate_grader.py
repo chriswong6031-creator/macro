@@ -6,25 +6,27 @@ one is paired with a mutation that proves the assertion can see the defect it
 claims to guard — a green assertion against an implementation that cannot fail is
 the exact class of dead guard this file is meant not to join.
 
-The lobe has zero live candidates by design (the ledger is 0 bytes and the event
-spine is unavailable), so everything here runs against fixtures. That is the
-point: the harness has to exist before the first candidate is issued, or the
-first cohort is ungradeable after the fact.
+The lobe has zero active candidates by design. Eight historical rows were
+erroneously issued and remain in the immutable candidate ledger, but an exact
+correction quarantines them from active surfaces and the grader has never been
+called. Everything here therefore still runs against fixtures: the historical
+incident cannot manufacture prospective grader observations after the fact.
 """
 from __future__ import annotations
 
 import copy
-from datetime import date, datetime, timedelta, timezone
+import hashlib
 import inspect
 import json
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 
 from engine.government_revenue import candidate_grader as grader
 from engine.government_revenue.candidate_grader import (
-    Coverage,
     GRV_FA1,
+    Coverage,
     GraderError,
     PriceBasis,
     PricePanel,
@@ -2225,35 +2227,33 @@ def test_the_registration_registers_the_disclosure_layer_before_observation():
 
 
 # ---------------------------------------------------------------------------
-# AMENDMENT-WINDOW WITNESS (version 4.0.0, 2026-08-08)
+# AMENDMENT-WINDOW CLOSURE WITNESS (version 4.0.0, 2026-08-08)
 #
-# DELETE THIS TEST IN THE PR THAT ISSUES THE FIRST ROW. It exists to make the
-# legality of the 4.0.0 amendment a CHECKED fact rather than a claim in a
-# document: §9 permits a change to a registered evaluation rule only before the
-# first observation exists, and "before the first observation" is a property of
-# the repository at a moment, which prose cannot assert and a test can.
-#
-# The moment it stops being true, this test goes red — which is the correct
-# alarm, because at that point no further amendment is legal without a new
-# family_id.
+# The eight-row 5fc incident permanently closed the candidate-issuance side of
+# this amendment window. The exact rows remain append-only audit history even
+# though the correction excludes them from active surfaces. This guard now pins
+# that closure while separately proving the grader still has no call path and no
+# grader issuance log; any future grader-rule amendment still requires a new
+# family_id rather than pretending the candidate incident never happened.
 # ---------------------------------------------------------------------------
 
 
-def test_amendment_window_the_issuance_record_is_still_empty_and_uncalled():
-    """No observation exists, so no threshold here was tuned against data.
+def test_amendment_window_is_closed_and_the_grader_remains_uncalled():
+    """Pin the issued audit rows without inventing a grader observation.
 
     Three independent witnesses, because any one of them alone is weak:
 
-    1. the committed candidate ledger is empty;
+    1. the committed candidate ledger is the exact eight-row incident prefix;
     2. no issuance log exists anywhere under ``data/``; and
     3. **nothing calls the grader** — no builder, script, or app module imports
-       it, so there is no path by which a number could have been produced,
-       looked at, and then legislated around.
+       it, so the incident cannot be misrepresented as a prospective grade.
     """
     ledger = ROOT / "data" / "government_revenue" / "candidate_ledger.jsonl"
-    assert not ledger.exists() or ledger.stat().st_size == 0, (
-        "the candidate ledger has content: the amendment window is CLOSED and §9 now "
-        "requires a new family_id rather than an amendment"
+    raw = ledger.read_bytes()
+    assert len(raw) == 50_790
+    assert len(raw.splitlines()) == 8
+    assert hashlib.sha256(raw).hexdigest() == (
+        "920d840a328b6be88600230f93c8353af30520172c682b25b7302fd4124f7820"
     )
 
     logs = sorted((ROOT / "data").rglob(grader.ISSUANCE_LOG_FILENAME))

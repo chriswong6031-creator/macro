@@ -17165,6 +17165,40 @@ artifacts:
       time-range, graph-wide, ranking, sizing, gating, signal, candidate-add, and
       escalation authority are all forbidden.
 
+  government-revenue-candidate-issuance-corrections:
+    path: config/government_revenue/candidate_issuance_corrections.v1.json
+    format: json
+    producer: scripts/build_government_revenue_candidates.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: on-demand
+    storage: git
+    asof_field: reviewed_at
+    freshness_sla_hours: 8760
+    schema: government_revenue.candidate_issuance_corrections.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [scripts/build_government_revenue_candidates.py, app/government_revenue.py, scripts/check_government_revenue_projection.py]
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Operator-reviewed exact quarantine for the eight historical candidate rows
+      erroneously published by commit 5fc18d5aac892ac61bcfdcc7ae1638c028c66781. The
+      append-only audit rows remain immutable, while only the bound row hashes and
+      official source identities are excluded from active candidate and Prophet
+      surfaces. This artifact is infrastructure and context-only. The listed builder
+      validates and binds this config but never authors or stages it; wildcard, ticker,
+      issuer, time-range, graph-wide, ranking, sizing, gating, signal, candidate-add,
+      and escalation authority are all forbidden.
+
   government-revenue-candidate-ledger:
     path: data/government_revenue/candidate_ledger.jsonl
     format: jsonl

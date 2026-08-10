@@ -37,17 +37,24 @@ from engine.government_revenue.candidates import (
     HISTORICAL_SUPPRESSION_APPLICATION_CONTRACT,
     HISTORICAL_SUPPRESSION_CONFIG_PATH,
     HISTORICAL_SUPPRESSION_SOURCE_PREFIX,
+    ISSUANCE_CORRECTION_APPLICATION_CONTRACT,
+    ISSUANCE_CORRECTION_CONFIG_PATH,
+    ISSUANCE_CORRECTION_SOURCE_PREFIX,
     build_candidate_observations,
     build_candidate_queue,
     candidate_historical_suppression_activation,
     candidate_historical_suppression_entry,
+    candidate_issuance_correction_activation,
+    candidate_issuance_correction_entry,
     candidate_latest_semantic_sha256,
     candidate_queue_content_id,
     historical_suppression_entry_key,
+    issuance_correction_entry_key,
     is_valid_candidate_payload,
     is_valid_candidate_queue,
     load_candidate_historical_suppression_manifest,
-    validate_candidate_historical_suppression_binding,
+    load_candidate_issuance_correction_manifest,
+    validate_candidate_reviewed_history_binding,
 )  # noqa: E402
 from engine.government_revenue.entity_resolution import load_recipient_entity_graph  # noqa: E402
 from engine.government_revenue.workspace import is_valid_procurement_workspace  # noqa: E402
@@ -168,6 +175,8 @@ class CandidateProjectionInputs:
     recipient_graph_digest: str
     historical_suppression_manifest: dict[str, Any] | None
     historical_suppression_sha256: str | None
+    issuance_correction_manifest: dict[str, Any] | None
+    issuance_correction_sha256: str | None
     generated_at: str
 
 
@@ -344,6 +353,10 @@ def validate_candidate_projection_inputs(
         suppression = load_candidate_historical_suppression_manifest(root)
     except ValueError as exc:
         raise CandidateProjectionError("historical candidate suppression manifest is invalid") from exc
+    try:
+        correction = load_candidate_issuance_correction_manifest(root)
+    except ValueError as exc:
+        raise CandidateProjectionError("candidate issuance correction manifest is invalid") from exc
     return CandidateProjectionInputs(
         latest=latest,
         workspace=workspace,
@@ -355,6 +368,8 @@ def validate_candidate_projection_inputs(
         recipient_graph_digest=graph_digest,
         historical_suppression_manifest=(suppression[0] if suppression else None),
         historical_suppression_sha256=(suppression[1] if suppression else None),
+        issuance_correction_manifest=(correction[0] if correction else None),
+        issuance_correction_sha256=(correction[1] if correction else None),
         generated_at=normalized_generated_at,
     )
 
@@ -416,7 +431,25 @@ def _bound_ledger_observation(
     """
     candidate_id, _known_at = _observation_key(row, label=label)
     exact = by_observation_key.get((candidate_id, _known_at))
-    return exact if exact is not None else latest_by_candidate.get(candidate_id)
+    selected = exact if exact is not None else latest_by_candidate.get(candidate_id)
+    if selected is None:
+        return None
+    try:
+        projected_source_key = historical_suppression_entry_key(
+            candidate_historical_suppression_entry(row)
+        )
+        ledger_source_key = historical_suppression_entry_key(
+            candidate_historical_suppression_entry(selected)
+        )
+    except ValueError as exc:
+        raise CandidateProjectionError(
+            f"{label} has no immutable source identity"
+        ) from exc
+    if projected_source_key != ledger_source_key:
+        raise CandidateProjectionError(
+            f"{label} source identity differs from the immutable ledger row"
+        )
+    return selected
 
 
 def _ledger_from_bytes(raw: bytes, *, label: str) -> LedgerSnapshot:
@@ -529,8 +562,8 @@ def _load_prior_ledger_and_state(
         raise CandidateProjectionError("candidate projection state exists but candidate ledger is absent")
     if not queue_path.exists():
         raise CandidateProjectionError("candidate projection state exists but candidate queue is absent")
-    _state_raw, state = _read_json_object(state_path, label="candidate projection state")
-    _queue_raw, queue = _read_json_object(queue_path, label="prior candidate queue")
+    state_raw, state = _read_json_object(state_path, label="candidate projection state")
+    queue_raw, queue = _read_json_object(queue_path, label="prior candidate queue")
     _validate_ledger_state_binding(state, ledger)
     if (
         not is_valid_candidate_queue(queue)
@@ -538,16 +571,19 @@ def _load_prior_ledger_and_state(
     ):
         raise CandidateProjectionError("prior candidate queue is detached from projection state")
     try:
-        validate_candidate_historical_suppression_binding(
+        validate_candidate_reviewed_history_binding(
             queue,
             state,
             root=root,
             allow_exact_legacy_predecessor=True,
+            allow_exact_incident_predecessor=True,
             issued_observations=ledger.observations,
+            queue_raw_sha256=sha256(queue_raw).hexdigest(),
+            projection_state_raw_sha256=sha256(state_raw).hexdigest(),
         )
     except ValueError as exc:
         raise CandidateProjectionError(
-            "prior candidate historical suppression binding is invalid"
+            "prior candidate reviewed-history binding is invalid"
         ) from exc
     return ledger, state, queue
 
@@ -798,6 +834,18 @@ def _prior_suppression_receipt(queue: Mapping[str, Any] | None) -> Mapping[str, 
     return receipt
 
 
+def _prior_correction_receipt(queue: Mapping[str, Any] | None) -> Mapping[str, Any] | None:
+    coverage = queue.get("coverage") if isinstance(queue, Mapping) else None
+    receipt = (
+        coverage.get("historical_candidate_issuance_correction")
+        if isinstance(coverage, Mapping)
+        else None
+    )
+    if receipt is not None and not isinstance(receipt, Mapping):
+        raise CandidateProjectionError("prior candidate issuance correction is malformed")
+    return receipt
+
+
 def _match_historical_suppressions(
     *,
     inputs: CandidateProjectionInputs,
@@ -809,6 +857,59 @@ def _match_historical_suppressions(
     """Split unseen observations into appendable and exactly reviewed withheld rows."""
     manifest = inputs.historical_suppression_manifest
     manifest_sha256 = inputs.historical_suppression_sha256
+    correction_manifest = inputs.issuance_correction_manifest
+    if correction_manifest is not None:
+        if manifest is None or manifest_sha256 is None:
+            raise CandidateProjectionError(
+                "candidate issuance correction lacks its original reviewed manifest"
+            )
+        if _prior_suppression_receipt(prior_queue) is not None:
+            raise CandidateProjectionError(
+                "candidate issuance correction cannot follow a non-issuance receipt"
+            )
+        correction_keys = {
+            issuance_correction_entry_key(entry)
+            for entry in correction_manifest["entries"]
+        }
+        prior_frozen_at = (
+            _instant(
+                prior_state.get("generated_at"),
+                label="prior candidate projection generated_at",
+            )
+            if prior_state is not None
+            else None
+        )
+        appendable: list[dict[str, Any]] = []
+        unknown_historical_ids: list[str] = []
+        for row in unseen:
+            known_at = _instant(
+                row.get("known_at"), label="new candidate observation known_at"
+            )
+            try:
+                stable_key = historical_suppression_entry_key(
+                    candidate_historical_suppression_entry(row)
+                )
+            except ValueError as exc:
+                raise CandidateProjectionError(
+                    "new candidate observation has no stable correction identity"
+                ) from exc
+            if stable_key in correction_keys:
+                continue
+            if prior_frozen_at is not None and known_at <= prior_frozen_at:
+                unknown_historical_ids.append(
+                    _require_text(
+                        row.get("observation_id"),
+                        label="new candidate observation id",
+                    )
+                )
+            else:
+                appendable.append(row)
+        if unknown_historical_ids:
+            raise CandidateProjectionError(
+                "new candidate observation is not forward of the prior frozen "
+                "generated_at clock: " + ", ".join(sorted(unknown_historical_ids))
+            )
+        return appendable, []
     prior_receipt = _prior_suppression_receipt(prior_queue)
     if prior_receipt is not None and manifest is None:
         raise CandidateProjectionError(
@@ -1043,6 +1144,177 @@ def _apply_historical_suppression_receipt(
     if not is_valid_candidate_queue(bound):
         raise CandidateProjectionError(
             "candidate queue is invalid after historical suppression disclosure"
+        )
+    return bound
+
+
+def _issuance_correction_rows(
+    *,
+    inputs: CandidateProjectionInputs,
+    prior: LedgerSnapshot,
+    prior_queue: Mapping[str, Any] | None,
+) -> list[dict[str, Any]]:
+    manifest = inputs.issuance_correction_manifest
+    manifest_sha256 = inputs.issuance_correction_sha256
+    if manifest is None or manifest_sha256 is None:
+        return []
+    entries = manifest.get("entries")
+    if not isinstance(entries, list) or len(prior.observations) < len(entries):
+        raise CandidateProjectionError("candidate issuance correction ledger prefix is absent")
+    rows = [deepcopy(row) for row in prior.observations[: len(entries)]]
+    if [candidate_issuance_correction_entry(row) for row in rows] != entries:
+        raise CandidateProjectionError(
+            "candidate issuance correction differs from the immutable ledger prefix"
+        )
+    prior_receipt = _prior_correction_receipt(prior_queue)
+    if (
+        prior_receipt is not None
+        and prior_receipt.get("manifest_sha256") != manifest_sha256
+    ):
+        raise CandidateProjectionError(
+            "candidate issuance correction manifest changed after activation"
+        )
+    return rows
+
+
+def _apply_issuance_correction_receipt(
+    queue: Mapping[str, Any],
+    *,
+    inputs: CandidateProjectionInputs,
+    corrected_rows: Sequence[Mapping[str, Any]],
+    prior_queue: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Quarantine exact issued rows while preserving their immutable ledger bytes."""
+    manifest = inputs.issuance_correction_manifest
+    manifest_sha256 = inputs.issuance_correction_sha256
+    if manifest is None or manifest_sha256 is None:
+        if corrected_rows:
+            raise CandidateProjectionError(
+                "candidate issuance correction rows have no reviewed manifest"
+            )
+        return deepcopy(dict(queue))
+    entries = [dict(entry) for entry in manifest["entries"]]
+    if [candidate_issuance_correction_entry(row) for row in corrected_rows] != entries:
+        raise CandidateProjectionError(
+            "candidate issuance correction is not an exact incident-ledger bijection"
+        )
+    prior_receipt = _prior_correction_receipt(prior_queue)
+    if prior_receipt is None:
+        try:
+            activation = candidate_issuance_correction_activation(
+                manifest,
+                manifest_sha256,
+                activated_at=inputs.generated_at,
+            )
+        except ValueError as exc:
+            raise CandidateProjectionError(
+                "candidate issuance correction activation proof is invalid"
+            ) from exc
+    else:
+        prior_activation = prior_receipt.get("activation")
+        if not isinstance(prior_activation, Mapping):
+            raise CandidateProjectionError(
+                "prior candidate issuance correction lacks its activation proof"
+            )
+        activation = deepcopy(dict(prior_activation))
+    corrected_keys = {
+        issuance_correction_entry_key(entry) for entry in entries
+    }
+    bound = deepcopy(dict(queue))
+    for collection_name in ("candidates", "recently_matured"):
+        rows = bound.get(collection_name)
+        if not isinstance(rows, list):
+            raise CandidateProjectionError(
+                f"candidate queue {collection_name} is invalid"
+            )
+        bound[collection_name] = [
+            row
+            for row in rows
+            if historical_suppression_entry_key(
+                candidate_historical_suppression_entry(row)
+            )
+            not in corrected_keys
+        ]
+    candidates = bound["candidates"]
+    recently_matured = bound["recently_matured"]
+    backlog = bound.get("mapping_backlog")
+    if not isinstance(backlog, list):
+        raise CandidateProjectionError("candidate queue mapping backlog is invalid")
+    bound["counts"] = _candidate_counts(candidates, backlog)
+    incident = manifest["incident"]
+    original_review = manifest["original_review"]
+    receipt = {
+        "contract": ISSUANCE_CORRECTION_APPLICATION_CONTRACT,
+        "manifest_sha256": manifest_sha256,
+        "incident_id": incident["incident_id"],
+        "original_review_manifest_sha256": original_review["manifest_sha256"],
+        "policy": "exact_issued_source_identity_only",
+        "decision": "quarantine_erroneous_historical_issuance",
+        "issued_queue_content_id": incident["issued_queue_content_id"],
+        "issued_projection_generated_at": incident[
+            "issued_projection_generated_at"
+        ],
+        "issued_ledger_sha256": incident["issued_ledger_sha256"],
+        "issued_ledger_byte_count": incident["issued_ledger_byte_count"],
+        "issued_ledger_line_count": incident["issued_ledger_line_count"],
+        "entry_count": len(entries),
+        "matched_issued_count": len(entries),
+        "quarantined_count": len(entries),
+        "entries": deepcopy(entries),
+        "activation": activation,
+    }
+    coverage = bound.get("coverage")
+    if not isinstance(coverage, dict):
+        raise CandidateProjectionError("candidate queue coverage is invalid")
+    if "historical_candidate_suppression" in coverage:
+        raise CandidateProjectionError(
+            "candidate issuance correction cannot claim historical non-issuance"
+        )
+    coverage["historical_candidate_issuance_correction"] = receipt
+    source_content_ids = bound.get("source_content_ids")
+    if not isinstance(source_content_ids, list):
+        raise CandidateProjectionError("candidate queue source content ids are invalid")
+    if any(
+        isinstance(value, str)
+        and value.startswith(HISTORICAL_SUPPRESSION_SOURCE_PREFIX)
+        for value in source_content_ids
+    ):
+        raise CandidateProjectionError(
+            "candidate issuance correction cannot retain a non-issuance source id"
+        )
+    source_content_ids.append(ISSUANCE_CORRECTION_SOURCE_PREFIX + manifest_sha256)
+    bound["source_content_ids"] = sorted(set(source_content_ids))
+    freshness = bound.get("freshness")
+    if not isinstance(freshness, dict):
+        raise CandidateProjectionError("candidate queue freshness is invalid")
+    active_rows = [*candidates, *recently_matured]
+    if active_rows:
+        freshness["exact_candidate_availability"] = "available"
+        freshness["reason"] = (
+            f"Forward-eligible exact candidates are available. {len(entries)} historical rows "
+            "issued contrary to the prior reviewed do-not-backfill decision remain "
+            "in the immutable audit ledger and are quarantined from active surfaces."
+        )
+    else:
+        freshness[
+            "exact_candidate_availability"
+        ] = "quarantined_historical_issuance"
+        freshness["reason"] = (
+            f"No forward-eligible candidate was observed. {len(entries)} historical rows issued "
+            "contrary to the prior reviewed do-not-backfill decision remain in the "
+            "immutable audit ledger and are quarantined from active candidate surfaces "
+            "by an exact correction receipt."
+        )
+    limitations = bound.get("limitations")
+    if not isinstance(limitations, list):
+        raise CandidateProjectionError("candidate queue limitations are invalid")
+    limitations.append(
+        "The exact corrected rows remain in the immutable audit ledger but are excluded from active candidate, Prophet, ranking, sizing, gating, signal, candidate-add, and escalation surfaces."
+    )
+    bound["content_id"] = candidate_queue_content_id(bound)
+    if not is_valid_candidate_queue(bound):
+        raise CandidateProjectionError(
+            "candidate queue is invalid after issuance-correction disclosure"
         )
     return bound
 
@@ -1326,18 +1598,21 @@ def verify_candidate_artifacts(
         ),
     )
     try:
-        validate_candidate_historical_suppression_binding(
+        validate_candidate_reviewed_history_binding(
             queue,
             state,
             root=root,
             allow_exact_legacy_predecessor=True,
+            allow_exact_incident_predecessor=False,
             current_observations=current_observations,
             issued_observations=ledger.observations,
             require_manifest=require_historical_suppression_manifest,
+            queue_raw_sha256=sha256(queue_raw).hexdigest(),
+            projection_state_raw_sha256=sha256(_state_raw).hexdigest(),
         )
     except ValueError as exc:
         raise CandidateProjectionError(
-            "candidate historical suppression binding is invalid"
+            "candidate reviewed-history binding is invalid"
         ) from exc
     _assert_queue_ledger_binding(queue, ledger)
     counts = queue.get("counts")
@@ -1433,12 +1708,26 @@ def project_candidate_artifacts(
         prior_state=prior_state,
         prior_queue=prior_queue,
     )
-    queue = _apply_historical_suppression_receipt(
-        queue,
-        inputs=inputs,
-        suppressed=suppressed,
-        prior_queue=prior_queue,
-    )
+    corrected_rows: list[dict[str, Any]] = []
+    if inputs.issuance_correction_manifest is not None:
+        corrected_rows = _issuance_correction_rows(
+            inputs=inputs,
+            prior=prior,
+            prior_queue=prior_queue,
+        )
+        queue = _apply_issuance_correction_receipt(
+            queue,
+            inputs=inputs,
+            corrected_rows=corrected_rows,
+            prior_queue=prior_queue,
+        )
+    else:
+        queue = _apply_historical_suppression_receipt(
+            queue,
+            inputs=inputs,
+            suppressed=suppressed,
+            prior_queue=prior_queue,
+        )
     queue_content_id = _queue_content_id(queue)
     append_raw = b"".join(_canonical_bytes(row) + b"\n" for row in appended)
     ledger = _ledger_from_bytes(prior.raw + append_raw, label="next candidate ledger")
@@ -1448,26 +1737,6 @@ def project_candidate_artifacts(
         inputs=inputs,
         issued_observation_ids=frozenset(row["observation_id"] for row in prior.observations),
     )
-    try:
-        validate_candidate_historical_suppression_binding(
-            queue,
-            {
-                "generated_at": inputs.generated_at,
-                "queue_content_id": queue_content_id,
-            },
-            root=root,
-            allow_exact_legacy_predecessor=False,
-            current_observations=observations,
-            issued_observations=ledger.observations,
-            require_exact_activation=bool(
-                inputs.historical_suppression_manifest is not None
-                and _prior_suppression_receipt(prior_queue) is None
-            ),
-        )
-    except ValueError as exc:
-        raise CandidateProjectionError(
-            "candidate historical suppression binding is invalid"
-        ) from exc
     queue_raw = _canonical_bytes(queue)
     state = _ledger_state(
         inputs=inputs,
@@ -1478,6 +1747,29 @@ def project_candidate_artifacts(
         append_count=len(appended),
     )
     _validate_ledger_state_binding(state, ledger)
+    try:
+        validate_candidate_reviewed_history_binding(
+            queue,
+            state,
+            root=root,
+            allow_exact_legacy_predecessor=False,
+            allow_exact_incident_predecessor=False,
+            current_observations=observations,
+            issued_observations=ledger.observations,
+            require_exact_activation=bool(
+                inputs.historical_suppression_manifest is not None
+                and inputs.issuance_correction_manifest is None
+                and _prior_suppression_receipt(prior_queue) is None
+            ),
+            require_manifest=bool(
+                inputs.historical_suppression_manifest is not None
+                or inputs.issuance_correction_manifest is not None
+            ),
+        )
+    except ValueError as exc:
+        raise CandidateProjectionError(
+            "candidate reviewed-history binding is invalid"
+        ) from exc
     status = _projection_status(
         inputs=inputs,
         queue=queue,
@@ -1522,6 +1814,7 @@ def project_candidate_artifacts(
         "mapping_backlog_count": status["mapping_backlog_count"],
         "append_count": len(appended),
         "suppressed_historical_count": len(suppressed),
+        "quarantined_issuance_count": len(corrected_rows),
         "ledger": dict(state["ledger"]),
         "paths": {
             "ledger": str(ledger_path),

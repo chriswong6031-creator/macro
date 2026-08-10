@@ -243,18 +243,26 @@ Acceptance gates:
 - current production API no longer says `projection_state_absent` after a successful live run; and
 - zero fabricated candidates is accepted as success.
 
-**2026-08-09 anti-backfill recovery.** The repaired canonical builder now derives
-exactly eight historical snapshot-rail rows, all first knowable before the already
-frozen empty projection. They are bound one-for-one in the operator-reviewed
-`candidate_historical_suppressions.v1.json` manifest and disclosed as
-`withheld_historical`; none is issued, retimed, or appended, and the candidate
-ledger remains byte-empty. Any unlisted historical identity still hard-fails.
-The first bound generation must carry a durable activation attestation for the
-full eight-row source bijection; later inactive-window receipts preserve those
-exact activation bytes and cannot mint or weaken that proof.
-Only a genuinely forward observation with a new exact source identity may enter
-the ledger after this boundary; the suppression has no Prophet, Neural Web,
-ranking, sizing, gating, signal, candidate-add, or escalation authority.
+**2026-08-10 anti-backfill incident and append-only correction.** The repaired
+canonical builder derives exactly eight historical snapshot-rail rows, all first
+knowable before the already frozen empty projection. The 2026-08-09 review bound
+them one-for-one in `candidate_historical_suppressions.v1.json` for non-issuance.
+That intended boundary did not reach production first: PR #5207 merged the schema
+prerequisite ahead of the recovery, activating #5193's blanket empty-ledger escape.
+Workflow run `31354784751` appended all eight rows and published them in commit
+`5fc18d5aac892ac61bcfdcc7ae1638c028c66781`.
+
+Those rows are now part of the append-only audit record and must not be deleted,
+retimed, rewritten, treated as prospective calls, or silently relabelled as if the
+issuance never happened. The operator-reviewed
+`candidate_issuance_corrections.v1.json` binds the exact eight ledger-row hashes and
+official source identities from that commit and quarantines only those rows from
+active candidate, Prophet, grading, ranking, sizing, gating, signal, candidate-add,
+and escalation surfaces. Any missing, extra, changed, or newly historical identity
+still hard-fails and requires a separate exact reviewed correction. Only a genuinely
+forward observation with a new exact source identity may become active after this
+boundary; neither the suppression nor the correction carries Neural Web or trading
+authority.
 
 Primary code:
 

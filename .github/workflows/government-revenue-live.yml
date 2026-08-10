@@ -88,6 +88,7 @@ on:
       - "engine/government_revenue/**"
       - "config/government_revenue/budget_program_reviewed_edges.v1.json"
       - "config/government_revenue/candidate_historical_suppressions.v1.json"
+      - "config/government_revenue/candidate_issuance_corrections.v1.json"
       - "config/government_revenue/idv_discovery.v1.json"
       - "lib/pages.py"
       - "scripts/ci/validate_government_revenue_award_event_bundle.py"
@@ -383,6 +384,57 @@ jobs:
           cat > "$RUNNER_TEMP/govrev-reviewed-source-guards.sh" <<'SH'
           recipient_graph_path=data/government_revenue/recipient_entity_graph.json
           historical_suppression_path=config/government_revenue/candidate_historical_suppressions.v1.json
+          historical_suppression_schema_path=contracts/government_revenue/government_revenue_candidate_historical_suppressions.v1.schema.json
+          issuance_correction_path=config/government_revenue/candidate_issuance_corrections.v1.json
+          issuance_correction_schema_path=contracts/government_revenue/government_revenue_candidate_issuance_corrections.v1.schema.json
+          reviewed_controls_fingerprint_path="$RUNNER_TEMP/govrev-reviewed-controls.sha256"
+
+          reviewed_control_paths() {
+            printf '%s\n' \
+              "$historical_suppression_path" \
+              "$historical_suppression_schema_path" \
+              "$issuance_correction_path" \
+              "$issuance_correction_schema_path"
+          }
+
+          write_reviewed_controls_fingerprint() {
+            local output_path=$1
+            local path
+            : > "$output_path"
+            while IFS= read -r path; do
+              if [ ! -f "$path" ] || ! git ls-files --error-unmatch -- "$path" >/dev/null 2>&1; then
+                echo "::error title=reviewed control missing::required reviewed control is not a tracked file: $path"
+                return 1
+              fi
+              if ! git diff --quiet -- "$path" || ! git diff --cached --quiet -- "$path"; then
+                echo "::error title=reviewed control mutation::reviewed control is dirty or staged: $path"
+                return 1
+              fi
+              printf '%s  %s\n' "$(git hash-object -- "$path")" "$path" >> "$output_path"
+            done < <(reviewed_control_paths)
+          }
+
+          snapshot_reviewed_controls() {
+            local snapshot_tmp="${reviewed_controls_fingerprint_path}.tmp"
+            write_reviewed_controls_fingerprint "$snapshot_tmp"
+            mv -f -- "$snapshot_tmp" "$reviewed_controls_fingerprint_path"
+          }
+
+          assert_reviewed_controls_unchanged() {
+            local current_tmp="${reviewed_controls_fingerprint_path}.check"
+            if [ ! -f "$reviewed_controls_fingerprint_path" ]; then
+              echo "::error title=reviewed control snapshot missing::publication cannot proceed without the initial reviewed-control fingerprint"
+              return 1
+            fi
+            write_reviewed_controls_fingerprint "$current_tmp"
+            if ! cmp -s "$reviewed_controls_fingerprint_path" "$current_tmp"; then
+              echo "::error title=reviewed control changed::a reviewed manifest or schema changed after this workflow began; a fresh workflow must own the new head"
+              diff -u "$reviewed_controls_fingerprint_path" "$current_tmp" || true
+              rm -f -- "$current_tmp"
+              return 1
+            fi
+            rm -f -- "$current_tmp"
+          }
 
           assert_recipient_graph_source_clean() {
             # Recipient attribution is a separately reviewed exact-ID input.
@@ -409,11 +461,38 @@ jobs:
               return 1
             fi
           }
+
+          assert_issuance_correction_source_clean() {
+            # This is an operator-reviewed exact correction to an append-only
+            # issuance incident. Builders may validate it, but must never
+            # author, weaken, or stage it.
+            if [ ! -f "$issuance_correction_path" ] || ! git ls-files --error-unmatch -- "$issuance_correction_path" >/dev/null 2>&1; then
+              echo "::error title=issuance correction missing::the reviewed candidate issuance correction must be committed before publication"
+              return 1
+            fi
+            if ! git diff --quiet -- "$issuance_correction_path" || ! git diff --cached --quiet -- "$issuance_correction_path"; then
+              echo "::error title=issuance correction mutation::collectors and projection builders cannot write or stage the reviewed issuance correction"
+              return 1
+            fi
+          }
           SH
+          . "$RUNNER_TEMP/govrev-reviewed-source-guards.sh"
+          snapshot_reviewed_controls
 
       - name: build Government Revenue projection
         if: ${{ steps.gate.outputs.publish == 'yes' }}
-        run: python -m scripts.build_government_revenue --live-materialization
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/govrev-reviewed-source-guards.sh"
+          assert_recipient_graph_source_clean
+          assert_historical_suppression_source_clean
+          assert_issuance_correction_source_clean
+          assert_reviewed_controls_unchanged
+          python -m scripts.build_government_revenue --live-materialization
+          assert_recipient_graph_source_clean
+          assert_historical_suppression_source_clean
+          assert_issuance_correction_source_clean
+          assert_reviewed_controls_unchanged
 
       # Checkout is pinned to main, every collector-owned source bundle is
       # verified and kept clean, and only governed source/output paths may be
@@ -713,6 +792,8 @@ jobs:
           assert_dod_budget_source_clean
           assert_recipient_graph_source_clean
           assert_historical_suppression_source_clean
+          assert_issuance_correction_source_clean
+          assert_reviewed_controls_unchanged
           assert_idv_dossier_twins
           assert_candidate_twins
           assert_optional_budget_graph_twins
@@ -808,8 +889,13 @@ jobs:
               assert_dod_budget_source_clean
               assert_recipient_graph_source_clean
               assert_historical_suppression_source_clean
+              assert_issuance_correction_source_clean
+              assert_reviewed_controls_unchanged
               python -m scripts.build_government_revenue --live-materialization
+              assert_recipient_graph_source_clean
               assert_historical_suppression_source_clean
+              assert_issuance_correction_source_clean
+              assert_reviewed_controls_unchanged
               assert_idv_dossier_twins
               assert_candidate_twins
               assert_optional_budget_graph_twins

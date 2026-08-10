@@ -1,0 +1,142 @@
+{
+  "contract": "government_revenue.candidate_issuance_corrections.v1",
+  "schema_version": "1.0.0",
+  "reviewed_at": "2026-08-10T04:30:14+00:00",
+  "original_review": {
+    "manifest_sha256": "71c3d13afeabaa2999abcc056736ae6227a9fbbf412530d3793b77f671fe3146",
+    "reviewed_at": "2026-08-09T22:01:43+00:00",
+    "predecessor_queue_content_id": "grcq1-e09cd53b590575bdd35404f6",
+    "predecessor_projection_generated_at": "2026-08-09T17:19:09.417224+00:00"
+  },
+  "incident": {
+    "incident_id": "grcii1-5fc18d5aac892ac61bcfdcc7",
+    "trigger_pr": 5207,
+    "trigger_commit_sha": "3f6d60e2b795bf03f1726b0ab1637b25f939dedd",
+    "workflow_run_id": 31354784751,
+    "workflow_job_id": 93352360150,
+    "first_issuance_notice_at": "2026-08-10T04:15:43.669352+00:00",
+    "publication_commit_sha": "5fc18d5aac892ac61bcfdcc7ae1638c028c66781",
+    "issued_queue_content_id": "grcq1-2e8add9c453a36b1b4e3b8c3",
+    "issued_projection_generated_at": "2026-08-10T04:17:26.230682+00:00",
+    "issued_queue_sha256": "30924b55f8040d2f6eb4fa124aca7255729888448a2dbdf0c00151405330f26c",
+    "issued_projection_state_sha256": "d7830aba17b2f0eed0bbf383f4e88481da863176626d4e0cca2ad5fc38d874f5",
+    "issued_ledger_sha256": "920d840a328b6be88600230f93c8353af30520172c682b25b7302fd4124f7820",
+    "issued_ledger_byte_count": 50790,
+    "issued_ledger_line_count": 8
+  },
+  "policy": "exact_issued_source_identity_only",
+  "decision": "quarantine_erroneous_historical_issuance",
+  "entries": [
+    {
+      "candidate_id": "grc1-0d9acfe1eb29619cc9b78e2d",
+      "observation_id": "gro1-a26204eaac0c2fdd4f24ed83",
+      "candidate_family": "award_obligation_change",
+      "source_event_id": "govws-1b6de531f9a92f4cd238d73b",
+      "source_record_id": "award:generated:CONT_AWD_N0002415C2114_9700_-NONE-_-NONE-",
+      "source_rail": "usaspending_award_snapshot",
+      "source_content_sha256": "ecb23b362bcd6c3fc5e06670aa26e1449e495d190db64b0cf3e833b6402a1170",
+      "observed_known_at": "2026-08-08T11:58:31.364765+00:00",
+      "issued_generated_at": "2026-08-10T04:15:07.927881+00:00",
+      "issued_row_sha256": "bb553342c2a2bda4c298732d0f29cd9bd51a45ba5755d445a00f9c6383546c63"
+    },
+    {
+      "candidate_id": "grc1-5c04549c98dc93a935b433d7",
+      "observation_id": "gro1-133526008591c002451225a5",
+      "candidate_family": "award_ceiling_change",
+      "source_event_id": "govws-e3cea3f3071a1ea734733761",
+      "source_record_id": "award:generated:CONT_AWD_N0002416C2116_9700_-NONE-_-NONE-",
+      "source_rail": "usaspending_award_snapshot",
+      "source_content_sha256": "0ba6a4a930ac2ae0cfe7fe72bcef8f1760f2a9784578704a209f487c0c647960",
+      "observed_known_at": "2026-08-08T11:58:31.364765+00:00",
+      "issued_generated_at": "2026-08-10T04:15:07.927881+00:00",
+      "issued_row_sha256": "a9e4963d5a0ec84fee0b8510604458cf768bc0bfd80e8d535d427d6a7f5fac01"
+    },
+    {
+      "candidate_id": "grc1-78d7567e22834f8e1a142b43",
+      "observation_id": "gro1-4b1c8aa4985c7283a1ead04c",
+      "candidate_family": "award_obligation_change",
+      "source_event_id": "govws-a90b574d5afed792475dacdd",
+      "source_record_id": "award:generated:CONT_AWD_N0002416C2116_9700_-NONE-_-NONE-",
+      "source_rail": "usaspending_award_snapshot",
+      "source_content_sha256": "0ba6a4a930ac2ae0cfe7fe72bcef8f1760f2a9784578704a209f487c0c647960",
+      "observed_known_at": "2026-08-08T11:58:31.364765+00:00",
+      "issued_generated_at": "2026-08-10T04:15:07.927881+00:00",
+      "issued_row_sha256": "531211d9b64fc7ff2a4ee80d2eb725e520acddb6cd11f65bd762eee0b1891fa7"
+    },
+    {
+      "candidate_id": "grc1-8d90edd35a0f32f9120ebdb4",
+      "observation_id": "gro1-b3cd3e2eab5b6af7a4bf44e4",
+      "candidate_family": "award_obligation_change",
+      "source_event_id": "govws-f9caae266c5cae8b743e4577",
+      "source_record_id": "award:generated:CONT_AWD_N0002423C2307_9700_-NONE-_-NONE-",
+      "source_rail": "usaspending_award_snapshot",
+      "source_content_sha256": "0e27b0ab49542617a7ecead12c6dba2665359b9a6872414c4d1f1a392e60c68e",
+      "observed_known_at": "2026-08-08T11:58:31.364765+00:00",
+      "issued_generated_at": "2026-08-10T04:15:07.927881+00:00",
+      "issued_row_sha256": "8af490ce0791e5e14bccf77342b151fd3de6e86099df7f308288a30302ae0bd9"
+    },
+    {
+      "candidate_id": "grc1-a5d800c17e0bce45ff9a8aa8",
+      "observation_id": "gro1-beb39cd54fc0defd9b2cd3d4",
+      "candidate_family": "award_ceiling_change",
+      "source_event_id": "govws-e2a32355a903db37c4e4a8d6",
+      "source_record_id": "award:generated:CONT_AWD_N0002415C2114_9700_-NONE-_-NONE-",
+      "source_rail": "usaspending_award_snapshot",
+      "source_content_sha256": "ecb23b362bcd6c3fc5e06670aa26e1449e495d190db64b0cf3e833b6402a1170",
+      "observed_known_at": "2026-08-08T11:58:31.364765+00:00",
+      "issued_generated_at": "2026-08-10T04:15:07.927881+00:00",
+      "issued_row_sha256": "27ed3b0c29825104c80957c8cd30c054b56dda60b8b8061d1fa9494f4246c211"
+    },
+    {
+      "candidate_id": "grc1-ab00c51be87b507bfb45e8a2",
+      "observation_id": "gro1-3ce986af15368e84192e0ba4",
+      "candidate_family": "award_ceiling_change",
+      "source_event_id": "govws-8353caf866c10a6f326e3154",
+      "source_record_id": "award:generated:CONT_AWD_N0002423C2307_9700_-NONE-_-NONE-",
+      "source_rail": "usaspending_award_snapshot",
+      "source_content_sha256": "0e27b0ab49542617a7ecead12c6dba2665359b9a6872414c4d1f1a392e60c68e",
+      "observed_known_at": "2026-08-08T11:58:31.364765+00:00",
+      "issued_generated_at": "2026-08-10T04:15:07.927881+00:00",
+      "issued_row_sha256": "819a1de5f4cf93cfe9384422870fd2a53828956aceec7c66145f639842081081"
+    },
+    {
+      "candidate_id": "grc1-cc400940cd4e316d5b80a7b1",
+      "observation_id": "gro1-0909bb4f623d7708ec0cd853",
+      "candidate_family": "award_ceiling_change",
+      "source_event_id": "govws-0f7937442482586010ceb762",
+      "source_record_id": "award:generated:CONT_AWD_N0002418C2307_9700_-NONE-_-NONE-",
+      "source_rail": "usaspending_award_snapshot",
+      "source_content_sha256": "7075414c8eb1405463baf2beb977f8c07ed9876096b505266dfdcb8e6373411d",
+      "observed_known_at": "2026-08-08T11:58:31.364765+00:00",
+      "issued_generated_at": "2026-08-10T04:15:07.927881+00:00",
+      "issued_row_sha256": "914befff87acb9e63fe9af91372ac0ab9ce6c7dbaea3769eb8974ac7d8b5b86a"
+    },
+    {
+      "candidate_id": "grc1-e2e57aacdde17def7eeb01d6",
+      "observation_id": "gro1-021c5d60ada8e95b6f564644",
+      "candidate_family": "award_obligation_change",
+      "source_event_id": "govws-a5db43ff36cbffa054aac447",
+      "source_record_id": "award:generated:CONT_AWD_N0002418C2307_9700_-NONE-_-NONE-",
+      "source_rail": "usaspending_award_snapshot",
+      "source_content_sha256": "7075414c8eb1405463baf2beb977f8c07ed9876096b505266dfdcb8e6373411d",
+      "observed_known_at": "2026-08-08T11:58:31.364765+00:00",
+      "issued_generated_at": "2026-08-10T04:15:07.927881+00:00",
+      "issued_row_sha256": "79bfbe3dda9e1e3a4b661eee2caef3b13808907c28da015367b14a6418e97923"
+    }
+  ],
+  "authority": {
+    "tier": "infrastructure",
+    "context_only": true,
+    "can_rank": false,
+    "can_size": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_add_candidates": false,
+    "can_escalate": false
+  },
+  "limitations": [
+    "This correction applies only to the eight immutable ledger rows and official source identities published by the bound incident; it authorizes no wildcard, ticker, issuer, time-range, graph, or future-source rule.",
+    "The issued rows remain byte-for-byte in the append-only audit ledger but are quarantined from active candidate, Prophet, ranking, sizing, gating, signal, candidate-add, and escalation surfaces.",
+    "Any missing, extra, changed, or newly historical source identity remains a hard publication failure and requires a separate reviewed correction."
+  ]
+}

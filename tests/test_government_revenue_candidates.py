@@ -210,13 +210,22 @@ def _payload(event: dict | None = None) -> dict:
     }
 
 
-def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None:
+def test_current_source_truth_is_eight_candidates_with_twenty_one_mapping_rows() -> None:
     latest = json.loads((ROOT / "data/government_revenue/latest.json").read_text(encoding="utf-8"))
     graph = json.loads((ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(encoding="utf-8"))
 
     queue = build_candidate_queue(latest, graph, generated_at=GENERATED_AT)
 
-    assert queue["counts"]["total"] == 0
+    # The pure source engine honestly sees the eight exact snapshot rows that
+    # #5207 made schema-valid.  Active publication is a separate boundary: the
+    # issuance-correction receipt quarantines these exact ledger rows without
+    # teaching the source engine to erase or reinterpret official evidence.
+    assert queue["counts"]["total"] == 8
+    assert queue["counts"]["exact_linked"] == 8
+    assert queue["counts"]["by_family"] == {
+        "award_ceiling_change": 4,
+        "award_obligation_change": 4,
+    }
     assert queue["counts"]["mapping_needed"] == 21
 
 
@@ -226,14 +235,11 @@ def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None
     # defense19 graph the same day. Current truth, re-verified empirically at this
     # merge (2026-08-09): the rail is read (award_events_status ok), ~500
     # award-change events are visible, all 19 defense19 issuers are reviewed --
-    # and still no event meets exact candidate eligibility, which the engine
-    # emits as not_observed. Zero candidates now has its THIRD distinct reason in
-    # this probe's history: rail unreadable -> rail read with zero award-change
-    # events -> events visible but none exact-eligible. This pin is deliberately
-    # a snapshot tripwire (per the 2026-08-08 heal): it must fire again, and be
-    # re-read by a human, the next time this state moves.
+    # and eight exact snapshot rows now meet source eligibility. They remain
+    # context-only and are quarantined by the separately reviewed publication
+    # correction; this pure-engine tripwire must never pretend the facts vanished.
     assert queue["freshness"]["award_events_status"] == "ok"
-    assert queue["freshness"]["exact_candidate_availability"] == "not_observed"
+    assert queue["freshness"]["exact_candidate_availability"] == "available"
     assert queue["freshness"]["recipient_graph_status"] == "ready"
     assert queue["coverage"]["reviewed_issuer_company_count"] == 19
     assert queue["coverage"]["reviewed_issuer_tickers"] == [

@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_revenue_candidate_issuance_corrections.v1.schema.json",
+  "title": "Government Revenue exact candidate-issuance corrections v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "schema_version",
+    "reviewed_at",
+    "original_review",
+    "incident",
+    "policy",
+    "decision",
+    "entries",
+    "authority",
+    "limitations"
+  ],
+  "properties": {
+    "contract": {
+      "const": "government_revenue.candidate_issuance_corrections.v1"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "original_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_sha256",
+        "reviewed_at",
+        "predecessor_queue_content_id",
+        "predecessor_projection_generated_at"
+      ],
+      "properties": {
+        "manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "predecessor_queue_content_id": {
+          "type": "string",
+          "pattern": "^grcq1-[a-f0-9]{24}$"
+        },
+        "predecessor_projection_generated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "incident": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "incident_id",
+        "trigger_pr",
+        "trigger_commit_sha",
+        "workflow_run_id",
+        "workflow_job_id",
+        "first_issuance_notice_at",
+        "publication_commit_sha",
+        "issued_queue_content_id",
+        "issued_projection_generated_at",
+        "issued_queue_sha256",
+        "issued_projection_state_sha256",
+        "issued_ledger_sha256",
+        "issued_ledger_byte_count",
+        "issued_ledger_line_count"
+      ],
+      "properties": {
+        "incident_id": {
+          "type": "string",
+          "pattern": "^grcii1-[a-f0-9]{24}$"
+        },
+        "trigger_pr": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "trigger_commit_sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "workflow_run_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "workflow_job_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "first_issuance_notice_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "publication_commit_sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "issued_queue_content_id": {
+          "type": "string",
+          "pattern": "^grcq1-[a-f0-9]{24}$"
+        },
+        "issued_projection_generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "issued_queue_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "issued_projection_state_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "issued_ledger_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "issued_ledger_byte_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "issued_ledger_line_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      }
+    },
+    "policy": {
+      "const": "exact_issued_source_identity_only"
+    },
+    "decision": {
+      "const": "quarantine_erroneous_historical_issuance"
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    },
+    "authority": {
+      "$ref": "#/$defs/authority"
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "observation_id",
+        "candidate_family",
+        "source_event_id",
+        "source_record_id",
+        "source_rail",
+        "source_content_sha256",
+        "observed_known_at",
+        "issued_generated_at",
+        "issued_row_sha256"
+      ],
+      "properties": {
+        "candidate_id": {
+          "type": "string",
+          "pattern": "^grc1-[a-f0-9]{24}$"
+        },
+        "observation_id": {
+          "type": "string",
+          "pattern": "^gro1-[a-f0-9]{24}$"
+        },
+        "candidate_family": {
+          "enum": [
+            "award_obligation_change",
+            "award_ceiling_change",
+            "option_exercise",
+            "new_award"
+          ]
+        },
+        "source_event_id": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 160
+        },
+        "source_record_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 640
+        },
+        "source_rail": {
+          "enum": [
+            "usaspending_award_action",
+            "usaspending_award_snapshot"
+          ]
+        },
+        "source_content_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "observed_known_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "issued_generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "issued_row_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "context_only",
+        "can_rank",
+        "can_size",
+        "can_gate",
+        "can_originate_signal",
+        "can_add_candidates",
+        "can_escalate"
+      ],
+      "properties": {
+        "tier": {"const": "infrastructure"},
+        "context_only": {"const": true},
+        "can_rank": {"const": false},
+        "can_size": {"const": false},
+        "can_gate": {"const": false},
+        "can_originate_signal": {"const": false},
+        "can_add_candidates": {"const": false},
+        "can_escalate": {"const": false}
+      }
+    }
+  }
+}

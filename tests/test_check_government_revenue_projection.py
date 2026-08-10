@@ -497,6 +497,8 @@ def test_render_metadata_replay_blocks_newer_procurement_truth_or_builder() -> N
     for path in (
         "data/government_revenue/",
         "config/government_revenue/candidate_historical_suppressions.v1.json",
+        "config/government_revenue/candidate_issuance_corrections.v1.json",
+        "contracts/government_revenue/government_revenue_candidate_issuance_corrections.v1.schema.json",
         "lib/pages.py",
         "scripts/build_government_revenue.py",
         "scripts/build_government_revenue_candidates.py",
@@ -509,37 +511,76 @@ def test_render_metadata_replay_blocks_newer_procurement_truth_or_builder() -> N
         assert path in guarded_inputs
 
 
-def test_live_lane_keeps_the_reviewed_suppression_manifest_clean_across_rebuilds() -> None:
+def test_live_lane_keeps_reviewed_candidate_controls_clean_across_rebuilds() -> None:
     source = (
         ROOT / ".github" / "workflows" / "government-revenue-live.yml"
     ).read_text(encoding="utf-8")
-    manifest = "config/government_revenue/candidate_historical_suppressions.v1.json"
-    assert manifest in source[: source.index("permissions:")]
-    assert "historical_suppression_path=" + manifest in source
-    assert source.count("assert_historical_suppression_source_clean") == 4
-
-    initial_build = source.index(
-        "python -m scripts.build_government_revenue --live-materialization"
+    controls = (
+        (
+            "config/government_revenue/candidate_historical_suppressions.v1.json",
+            "historical_suppression_path=",
+            "assert_historical_suppression_source_clean",
+        ),
+        (
+            "config/government_revenue/candidate_issuance_corrections.v1.json",
+            "issuance_correction_path=",
+            "assert_issuance_correction_source_clean",
+        ),
     )
-    initial_guard = source.index(
-        "assert_historical_suppression_source_clean",
-        initial_build,
+    initial_step = source.index("- name: build Government Revenue projection")
+    initial_build = source.index(
+        "python -m scripts.build_government_revenue --live-materialization",
+        initial_step,
     )
     retry_rebase = source.index("git pull --rebase --autostash -X theirs")
-    retry_pre_guard = source.index(
-        "assert_historical_suppression_source_clean",
-        retry_rebase,
-    )
     retry_build = source.index(
         "python -m scripts.build_government_revenue --live-materialization",
-        retry_pre_guard,
+        retry_rebase,
     )
-    retry_post_guard = source.index(
-        "assert_historical_suppression_source_clean",
-        retry_build + 1,
+    fingerprinted_controls = (
+        "config/government_revenue/candidate_historical_suppressions.v1.json",
+        "contracts/government_revenue/government_revenue_candidate_historical_suppressions.v1.schema.json",
+        "config/government_revenue/candidate_issuance_corrections.v1.json",
+        "contracts/government_revenue/government_revenue_candidate_issuance_corrections.v1.schema.json",
     )
-    assert initial_build < initial_guard < retry_rebase
-    assert retry_rebase < retry_pre_guard < retry_build < retry_post_guard
+
+    for manifest, variable, guard in controls:
+        assert manifest in source[: source.index("permissions:")]
+        assert variable + manifest in source
+        # Definition + before/after the initial build + the pre-stage check +
+        # before/after every retry rebuild.
+        assert source.count(guard) == 6
+        initial_pre_guard = source.index(guard, initial_step, initial_build)
+        initial_post_guard = source.index(guard, initial_build, retry_rebase)
+        retry_pre_guard = source.index(guard, retry_rebase, retry_build)
+        retry_post_guard = source.index(guard, retry_build + 1)
+        assert initial_step < initial_pre_guard < initial_build < initial_post_guard
+        assert retry_rebase < retry_pre_guard < retry_build < retry_post_guard
+
+    for path in fingerprinted_controls:
+        assert path in source
+    assert "git hash-object -- \"$path\"" in source
+    assert 'cmp -s "$reviewed_controls_fingerprint_path" "$current_tmp"' in source
+    assert source.count("snapshot_reviewed_controls") == 2  # definition + initial call
+    assert source.count("assert_reviewed_controls_unchanged") == 6
+    initial_pre_fingerprint = source.index(
+        "assert_reviewed_controls_unchanged", initial_step, initial_build
+    )
+    initial_post_fingerprint = source.index(
+        "assert_reviewed_controls_unchanged", initial_build, retry_rebase
+    )
+    retry_pre_fingerprint = source.index(
+        "assert_reviewed_controls_unchanged", retry_rebase, retry_build
+    )
+    retry_post_fingerprint = source.index(
+        "assert_reviewed_controls_unchanged", retry_build + 1
+    )
+    assert initial_step < initial_pre_fingerprint < initial_build < initial_post_fingerprint
+    assert retry_rebase < retry_pre_fingerprint < retry_build < retry_post_fingerprint
+
+    commit_block = source[source.index("- name: commit complete evidence projection") :]
+    for path in fingerprinted_controls:
+        assert path not in commit_block
 
 
 def _rewrite_canonical_workspace(root: Path, mutate) -> None:

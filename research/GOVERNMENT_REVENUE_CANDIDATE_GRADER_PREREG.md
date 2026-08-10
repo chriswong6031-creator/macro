@@ -32,6 +32,16 @@ registered evaluation rule — the proof that the amendment window is still open
 threshold value moved.** The pre-registration's §9 amendment law is unchanged and is now
 narrower in practice: the next issuance row closes this window permanently.*
 
+> **Post-registration incident notice (2026-08-10; non-normative).** Commit
+> `5fc18d5aac892ac61bcfdcc7ae1638c028c66781` erroneously issued eight historical
+> snapshot-rail candidate rows contrary to the already reviewed do-not-backfill
+> decision. The rows remain in the append-only candidate audit ledger and an
+> exact issuance-correction receipt quarantines them from active candidate and
+> Prophet surfaces. This permanently closes the amendment window described
+> below. It does **not** create a grader observation: the grader still has no
+> caller and no grader issuance log. This notice changes no registered family,
+> threshold, horizon, rule, or authority.
+
 Program: Government Revenue Foresight, Wave 9G
 (`research/GOVERNMENT_REVENUE_FORESIGHT_ACCOUNT_HANDOFF.md` §"Wave 9G — prospective grader
 and first preregistered family"). Candidate doctrine:
@@ -538,8 +548,7 @@ the proof that no observation existed when it was made.
 **The amendment window, stated as checkable facts (2026-08-08).** All three are asserted
 programmatically by
 `tests/test_government_revenue_candidate_grader.py::test_amendment_window_the_issuance_record_is_still_empty_and_uncalled`,
-which is registered here as a **temporary witness and is to be deleted by the PR that issues
-the first row**:
+which was registered here as a **temporary witness to the then-current tree**:
 
 1. `data/government_revenue/candidate_ledger.jsonl` is **0 bytes** in the committed tree;
 2. no `candidate_issuance_log.jsonl` exists anywhere under `data/`; and
@@ -552,6 +561,12 @@ graded, and no threshold below was chosen with knowledge of an outcome.** That i
 warrant for amending rather than minting a new `family_id`, and it expires at the first
 issuance row. The changes below make every verdict region *strictly harder* to reach, which is
 also the safe direction if this reasoning is ever found to be wrong.
+
+After the 2026-08-10 incident, that temporary witness was replaced by
+`test_amendment_window_is_closed_and_the_grader_remains_uncalled`, which pins the exact
+eight-row immutable incident prefix while continuing to prove that this grader has neither an
+issuance log nor a caller. The historical facts above remain the registration-time evidence;
+they are not a claim that the present candidate ledger is empty.
 
 **No threshold VALUE moved.** `minimum_interesting_effect`, `hit_rate_floor`,
 `confidence_level`, `min_verdict_outcome_coverage`, `planning_n_required` and every §6 gate

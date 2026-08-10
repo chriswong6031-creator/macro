@@ -12,7 +12,6 @@ import pytest
 
 from scripts import build_government_revenue
 
-
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = (ROOT / "templates" / "government_revenue.html.j2").read_text(encoding="utf-8")
 BRIEFCASE = (ROOT / "templates" / "government-revenue-briefcase.js").read_text(encoding="utf-8")
@@ -541,6 +540,29 @@ def test_runtime_distinguishes_unavailable_change_detection_from_a_quiet_tape(tm
     assert "were not issued or backfilled" in withheld["queueHtml"]
     assert "No candidate or signal was inferred" in withheld["queueHtml"]
     assert "no eligible issuer-linked event exists" not in withheld["queueHtml"]
+
+    quarantined = _run_runtime(
+        tmp_path,
+        payload,
+        workspace,
+        1_785_548_460_000,
+        candidate_rows=[],
+        exact_candidate_availability="quarantined_historical_issuance",
+        location_search="?mode=candidates",
+    )
+    assert "Historical issuance quarantined" in quarantined["queueHtml"]
+    assert (
+        "The eight affected rows remain in the immutable audit ledger but are excluded "
+        "from candidate, Prophet, ranking, sizing, gating, and signal surfaces."
+        in quarantined["queueHtml"]
+    )
+    assert "were not issued or backfilled" not in quarantined["queueHtml"]
+    assert "历史发布已隔离" in TEMPLATE
+    assert (
+        "受影响的 8 条记录仍保留在不可变审计账本中，但已从候选、Prophet、排名、仓位、门控与信号界面排除。"
+        in TEMPLATE
+    )
+    assert "Historical issuance quarantined" in SITE
 
 
 @needs_node

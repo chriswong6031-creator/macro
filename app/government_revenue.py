@@ -20,42 +20,50 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from fastapi import APIRouter, HTTPException, Query
 
+from engine.government_revenue.budget_program import (
+    BUDGET_PROGRAM_GRAPH_CONTRACT,
+    is_valid_budget_program_graph,
+)
+from engine.government_revenue.candidates import (
+    CONTRACT as CANDIDATE_CONTRACT,
+)
+from engine.government_revenue.candidates import (
+    HISTORICAL_SUPPRESSION_CONFIG_PATH,
+    HISTORICAL_SUPPRESSION_SCHEMA_PATH,
+    ISSUANCE_CORRECTION_APPLICATION_CONTRACT,
+    ISSUANCE_CORRECTION_CONFIG_PATH,
+    ISSUANCE_CORRECTION_SCHEMA_PATH,
+    build_candidate_observations,
+    candidate_latest_semantic_sha256,
+    candidate_queue_content_id,
+    is_valid_candidate_payload,
+    is_valid_candidate_queue,
+    validate_candidate_reviewed_history_binding,
+)
+from engine.government_revenue.candidates import (
+    QUEUE_CONTRACT as CANDIDATE_QUEUE_CONTRACT,
+)
 from engine.government_revenue.dossiers import (
     DOSSIER_CONTRACT,
     dossier_content_id,
     is_valid_dossier_payload,
 )
-from engine.government_revenue.subaward_dossiers import (
-    SUBAWARD_DOSSIER_CONTRACT,
-    is_valid_subaward_dossier_payload,
-    subaward_dossier_content_id,
-)
-from engine.government_revenue.budget_program import (
-    BUDGET_PROGRAM_GRAPH_CONTRACT,
-    is_valid_budget_program_graph,
+from engine.government_revenue.entity_resolution import load_recipient_entity_graph
+from engine.government_revenue.idv_bridge import (
+    award_bridge_view,
+    build_idv_bridge_payload,
+    unavailable_award_bridge_view,
 )
 from engine.government_revenue.idv_dossiers import (
     IDV_DOSSIER_CONTRACT,
     idv_dossier_content_id,
     is_valid_idv_dossier_payload,
 )
-from engine.government_revenue.idv_bridge import (
-    award_bridge_view,
-    build_idv_bridge_payload,
-    unavailable_award_bridge_view,
+from engine.government_revenue.subaward_dossiers import (
+    SUBAWARD_DOSSIER_CONTRACT,
+    is_valid_subaward_dossier_payload,
+    subaward_dossier_content_id,
 )
-from engine.government_revenue.candidates import (
-    CONTRACT as CANDIDATE_CONTRACT,
-    HISTORICAL_SUPPRESSION_CONFIG_PATH,
-    QUEUE_CONTRACT as CANDIDATE_QUEUE_CONTRACT,
-    build_candidate_observations,
-    candidate_latest_semantic_sha256,
-    candidate_queue_content_id,
-    is_valid_candidate_payload,
-    is_valid_candidate_queue,
-    validate_candidate_historical_suppression_binding,
-)
-from engine.government_revenue.entity_resolution import load_recipient_entity_graph
 from engine.government_revenue.workspace import is_valid_procurement_workspace
 
 router = APIRouter()
@@ -90,7 +98,11 @@ _CANDIDATE_STATE_PATH = _REPO / "data" / "government_revenue" / "candidate_proje
 _CANDIDATE_STATUS_PATH = _REPO / "data" / "government_revenue" / "candidate_projection_status.json"
 _CANDIDATE_REPO_ROOT = _REPO
 _CANDIDATE_SUPPRESSION_MANIFEST_PATH = _REPO / HISTORICAL_SUPPRESSION_CONFIG_PATH
+_CANDIDATE_SUPPRESSION_SCHEMA_PATH = _REPO / HISTORICAL_SUPPRESSION_SCHEMA_PATH
 _CANDIDATE_SUPPRESSION_REQUIRED = True
+_CANDIDATE_CORRECTION_MANIFEST_PATH = _REPO / ISSUANCE_CORRECTION_CONFIG_PATH
+_CANDIDATE_CORRECTION_SCHEMA_PATH = _REPO / ISSUANCE_CORRECTION_SCHEMA_PATH
+_CANDIDATE_CORRECTION_REQUIRED = True
 _CANDIDATE_SOURCE_PATHS = (
     _REPO / "data" / "government_revenue" / "latest.json",
     _REPO / "data" / "government_revenue" / "workspace.json",
@@ -543,19 +555,66 @@ def _candidate_authority_is_display_only(value: object) -> bool:
     }
 
 
-def _candidate_projection_state(paths: tuple[Path, ...]) -> tuple:
-    try:
-        stats = [path.stat() for path in paths]
-    except OSError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail="government revenue candidate projection unavailable",
-        ) from exc
-    return tuple(
-        value
-        for stat in stats
-        for value in (stat.st_mtime_ns, stat.st_size)
-    )
+def _candidate_projection_state(
+    paths: tuple[Path, ...],
+    *,
+    content_sha_paths: frozenset[Path] = frozenset(),
+) -> tuple:
+    state: list[tuple[str, int, int, str | None]] = []
+    for path in paths:
+        try:
+            before = path.stat()
+            if path in content_sha_paths:
+                raw = path.read_bytes()
+                after = path.stat()
+            else:
+                raw = None
+                after = before
+        except OSError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate projection unavailable",
+            ) from exc
+        if (
+            before.st_mtime_ns != after.st_mtime_ns
+            or before.st_size != after.st_size
+            or (raw is not None and len(raw) != after.st_size)
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate projection changed while loading",
+            )
+        state.append(
+            (
+                str(path),
+                after.st_mtime_ns,
+                after.st_size,
+                hashlib.sha256(raw).hexdigest() if raw is not None else None,
+            )
+        )
+    return tuple(state)
+
+
+def _candidate_review_config_paths() -> tuple[Path, ...]:
+    """Bind both reviewed manifests and schemas into every relevant cache key."""
+    paths: list[Path] = []
+    for required, manifest, schema in (
+        (
+            _CANDIDATE_SUPPRESSION_REQUIRED,
+            _CANDIDATE_SUPPRESSION_MANIFEST_PATH,
+            _CANDIDATE_SUPPRESSION_SCHEMA_PATH,
+        ),
+        (
+            _CANDIDATE_CORRECTION_REQUIRED,
+            _CANDIDATE_CORRECTION_MANIFEST_PATH,
+            _CANDIDATE_CORRECTION_SCHEMA_PATH,
+        ),
+    ):
+        # Optional historical test roots may predate these rails.  Once either
+        # half appears, bind both halves and fail closed on an incomplete pair.
+        if required or manifest.exists() or schema.exists():
+            paths.extend((manifest, schema))
+    return tuple(paths)
 
 
 def _candidate_projection_json(path: Path, *, label: str) -> tuple[bytes, dict]:
@@ -655,6 +714,7 @@ def _load_candidate_projection() -> dict:
     mismatch is unavailable rather than an invented empty result.
     """
     canonical, public = _CANDIDATE_QUEUE_PATHS
+    review_config_paths = _candidate_review_config_paths()
     paths = (
         canonical,
         public,
@@ -662,20 +722,19 @@ def _load_candidate_projection() -> dict:
         _CANDIDATE_STATE_PATH,
         _CANDIDATE_STATUS_PATH,
         *_CANDIDATE_SOURCE_PATHS,
-        *(
-            (_CANDIDATE_SUPPRESSION_MANIFEST_PATH,)
-            if _CANDIDATE_SUPPRESSION_REQUIRED
-            else ()
-        ),
+        *review_config_paths,
     )
-    state_key = _candidate_projection_state(paths)
+    state_key = _candidate_projection_state(
+        paths,
+        content_sha_paths=frozenset(review_config_paths),
+    )
     with _LOCK:
         if _CANDIDATE_CACHE["payload"] is not None and _CANDIDATE_CACHE["state"] == state_key:
             return _CANDIDATE_CACHE["payload"]
 
         canonical_raw, queue = _candidate_projection_json(canonical, label="queue")
         public_raw, _public_queue = _candidate_projection_json(public, label="public twin")
-        _state_raw, projection_state = _candidate_projection_json(
+        state_raw, projection_state = _candidate_projection_json(
             _CANDIDATE_STATE_PATH,
             label="projection state",
         )
@@ -808,18 +867,25 @@ def _load_candidate_projection() -> dict:
             )
             if not isinstance(current_observations, list):
                 raise ValueError("candidate source observations are invalid")
-            validate_candidate_historical_suppression_binding(
+            reviewed_history_binding = validate_candidate_reviewed_history_binding(
                 queue,
                 projection_state,
                 root=_CANDIDATE_REPO_ROOT,
                 allow_exact_legacy_predecessor=True,
+                allow_exact_incident_predecessor=False,
                 current_observations=current_observations,
                 issued_observations=rows,
+                require_manifest=(
+                    _CANDIDATE_SUPPRESSION_REQUIRED
+                    or _CANDIDATE_CORRECTION_REQUIRED
+                ),
+                queue_raw_sha256=hashlib.sha256(canonical_raw).hexdigest(),
+                projection_state_raw_sha256=hashlib.sha256(state_raw).hexdigest(),
             )
         except ValueError as exc:
             raise HTTPException(
                 status_code=503,
-                detail="government revenue candidate suppression binding mismatch",
+                detail="government revenue candidate reviewed-history binding mismatch",
             ) from exc
 
         # The ledger is keyed on graph-independent observation identity.  A
@@ -896,6 +962,7 @@ def _load_candidate_projection() -> dict:
             "ledger": rows,
             "projection_state": projection_state,
             "projection_status": projection_status,
+            "reviewed_history_binding": reviewed_history_binding,
         }
         _CANDIDATE_CACHE.update(state=state_key, payload=loaded)
         return loaded
@@ -1195,6 +1262,63 @@ def _public_candidate(row: dict) -> dict:
     return public
 
 
+def _candidate_correction_receipt(queue: dict) -> dict | None:
+    coverage = queue.get("coverage")
+    receipt = (
+        coverage.get("historical_candidate_issuance_correction")
+        if isinstance(coverage, dict)
+        else None
+    )
+    if (
+        not isinstance(receipt, dict)
+        or receipt.get("contract") != ISSUANCE_CORRECTION_APPLICATION_CONTRACT
+        or not isinstance(receipt.get("entries"), list)
+    ):
+        return None
+    return receipt
+
+
+def _candidate_correction_entry(queue: dict, row: dict) -> dict | None:
+    """Match one corrected observation, never a whole candidate identity."""
+    receipt = _candidate_correction_receipt(queue)
+    if receipt is None:
+        return None
+    candidate_id = row.get("candidate_id")
+    observation_id = row.get("observation_id")
+    matches = [
+        entry
+        for entry in receipt["entries"]
+        if isinstance(entry, dict)
+        and entry.get("candidate_id") == candidate_id
+        and entry.get("observation_id") == observation_id
+    ]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _candidate_correction_ref(queue: dict, entry: dict) -> dict:
+    receipt = _candidate_correction_receipt(queue) or {}
+    activation = receipt.get("activation")
+    return {
+        "contract": receipt.get("contract"),
+        "manifest_sha256": receipt.get("manifest_sha256"),
+        "incident_id": receipt.get("incident_id"),
+        "activation_id": (
+            activation.get("activation_id") if isinstance(activation, dict) else None
+        ),
+        "candidate_id": entry.get("candidate_id"),
+        "observation_id": entry.get("observation_id"),
+    }
+
+
+def _public_candidate_history_row(queue: dict, row: dict) -> dict:
+    public = _public_candidate(row)
+    correction = _candidate_correction_entry(queue, row)
+    if correction is not None:
+        public["publication_state"] = "quarantined_historical_issuance"
+        public["correction_ref"] = _candidate_correction_ref(queue, correction)
+    return public
+
+
 def _candidate_envelope(
     queue: dict,
     *,
@@ -1223,7 +1347,11 @@ def _candidate_envelope(
 
 
 def _candidate_rows_for_queue(queue: dict) -> list[dict]:
-    rows = [row for row in queue.get("candidates") or [] if isinstance(row, dict)]
+    rows = [
+        row
+        for row in queue.get("candidates") or []
+        if isinstance(row, dict) and _candidate_correction_entry(queue, row) is None
+    ]
     rows.sort(key=lambda row: str(row.get("candidate_id") or ""))
     rows.sort(key=lambda row: str(row.get("known_at") or ""), reverse=True)
     return rows
@@ -1604,7 +1732,7 @@ def candidate_history(
     next_offset = offset + len(page)
     return _candidate_envelope(
         queue,
-        items=[_public_candidate(row) for row in page],
+        items=[_public_candidate_history_row(queue, row) for row in page],
         total=len(rows),
         next_cursor=(
             _encode_candidate_cursor(
@@ -1631,7 +1759,46 @@ def candidate(candidate_id: str) -> dict:
     ]
     if not rows:
         raise HTTPException(status_code=404, detail="candidate not covered")
-    rows.sort(
+    active_rows = [
+        row
+        for row in list(queue.get("candidates") or [])
+        + list(queue.get("recently_matured") or [])
+        if isinstance(row, dict)
+        and row.get("candidate_id") == candidate_id
+        and _candidate_correction_entry(queue, row) is None
+    ]
+    corrected_rows = [
+        row for row in rows if _candidate_correction_entry(queue, row) is not None
+    ]
+    if corrected_rows and not active_rows:
+        corrected_rows.sort(
+            key=lambda row: (
+                str(row.get("known_at") or ""),
+                str(row.get("observation_id") or ""),
+            ),
+            reverse=True,
+        )
+        correction_entry = _candidate_correction_entry(queue, corrected_rows[0])
+        if correction_entry is None:  # pragma: no cover - guarded by corrected_rows
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate correction binding is invalid",
+            )
+        raise HTTPException(
+            status_code=410,
+            detail={
+                "code": "candidate_historical_issuance_quarantined",
+                "candidate_id": candidate_id,
+                "history_url": (
+                    f"/api/government-revenue/candidate/{candidate_id}/history"
+                ),
+                "correction_ref": _candidate_correction_ref(
+                    queue, correction_entry
+                ),
+            },
+        )
+    selected_rows = active_rows or rows
+    selected_rows.sort(
         key=lambda row: (str(row.get("known_at") or ""), str(row.get("observation_id") or "")),
         reverse=True,
     )
@@ -1642,7 +1809,7 @@ def candidate(candidate_id: str) -> dict:
         "as_of": queue.get("as_of"),
         "known_at": queue.get("known_at"),
         "generated_at": queue.get("generated_at"),
-        "candidate": _public_candidate(rows[0]),
+        "candidate": _public_candidate(selected_rows[0]),
         "history_count": len(rows),
         "freshness": queue.get("freshness"),
         "authority": queue.get("authority"),
@@ -1660,14 +1827,15 @@ def company_candidates(
     ticker = _validated_ticker(ticker)
     projection = _load_candidate_projection()
     queue = projection["queue"]
+    active_rows = _candidate_rows_for_queue(queue)
     covered_tickers = {
         row.get("ticker")
-        for row in list(queue.get("candidates") or []) + list(queue.get("mapping_backlog") or [])
+        for row in active_rows + list(queue.get("mapping_backlog") or [])
         if isinstance(row, dict)
     }
     if ticker not in covered_tickers:
         raise HTTPException(status_code=404, detail="company not covered")
-    rows = [row for row in _candidate_rows_for_queue(queue) if row.get("ticker") == ticker]
+    rows = [row for row in active_rows if row.get("ticker") == ticker]
     binding = _dossier_cursor_binding({
         "route": "company_candidates",
         "ticker": ticker,

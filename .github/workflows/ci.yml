@@ -1162,6 +1162,7 @@ on:
       # deleting the read that needs it.
       - "contracts/government_revenue/**"
       - "contracts/government_revenue/government_revenue_candidate.v1.schema.json"
+      - "contracts/government_revenue/government_revenue_candidate_issuance_corrections.v1.schema.json"
       - "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json"
       - "contracts/government_revenue/government_revenue_dossiers.v1.schema.json"
       # Subjects of the nineteen suites this PR un-darkens. They were not
@@ -1173,6 +1174,7 @@ on:
       - "contracts/government_revenue/government_procurement_workspace.v2.schema.json"
       - "contracts/government_revenue/government_subaward_dossiers.v1.schema.json"
       - "config/government_revenue/candidate_historical_suppressions.v1.json"
+      - "config/government_revenue/candidate_issuance_corrections.v1.json"
       - "config/government_revenue/idv_discovery.v1.json"
       - "contracts/marketing_publication_receipt.schema.json"
       - "research/DISLOCATION_VALIDATION.md"
