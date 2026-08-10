@@ -70,12 +70,16 @@ Grades are **us vs them** on each rubric dimension (BEAT = we are materially bet
 
 | Dim | vs Jodie.ai | vs Struct | vs Quartr | vs EarningsCall.ai | vs EquityDesk |
 |---|---|---|---|---|---|
-| R1 read assembly | *(pending §C)* | — | — | — | — |
-| R2 membership hygiene | — | — | — | — | — |
-| R3 arc answers | — | — | — | — | — |
-| R4 earnings integration | — | — | — | — | — |
-| R5 honest nulls | — | — | — | — | — |
-| R6 bilingual reach | — | — | — | — | — |
+| R1 read assembly | *(pending §C)* | — | — | *(pending §C)* | *(pending §C)* |
+| R2 membership hygiene | — | — | — | **BEAT** (no baskets at all — ad hoc 4-peer compare vs our 48/49 curated PIT baskets) | **BEAT** (vendor-confirmed "not offered") |
+| R3 arc answers | — | — | — | **BEAT** (absent) | **BEAT at group grain** (their Weinstein stages are real but per-stock; we ship the same framework as basket stage-shares PLUS washout/turn constructs they lack; N/A at their per-stock grain — we don't sell a per-stock entry screen and don't want to) |
+| R4 earnings integration | — | — | — | **BEAT at group grain** (they summarize single calls well — no rollup, no surprise-vs-consensus found; our earnings_pulse joins clock/beat/sympathy to the basket read) | **BEAT at group grain** (two-axis per-call LLM scores feed a stock screen, vendor-confirmed no group rollup) |
+| R5 honest nulls | — | — | — | **BEAT** (no coverage/floor concept anywhere) | **BEAT at surface tier, with respect** (their methodology paper honestly discloses removed features and blind spots — but the product's face is an authority claim, a hit-rate screen; ours prints n_covered and refuses thin baskets at the surface itself) |
+| R6 bilingual reach | — | — | — | **BEAT** (NOT FOUND any zh) | **BEAT** (NOT FOUND any zh; their "Asian markets" is listing coverage, not language) |
+
+**vs EarningsCall.ai:** home turf = single-call consumption (summary, chat, tone). We do not compete there — our earnings layer is structured figures + group rollup, not a call reader; a user who wants "summarize this call and let me chat with it" is buying a different job ($25/mo). Their turf does not touch ours: no baskets, no co-movement, no group anything, no cycle state, no zh. **Verdict: orthogonal home turf we concede by design; every group-grain axis is ours uncontested.**
+
+**vs EquityDesk:** home turf = a per-stock swing screen with published backtest authority. We deliberately do not sell that job (display-tier law; DNR:KILL-PSS-SR3-PARTICIPATION forbids participation-as-timing). The overlap is the Weinstein framework — theirs per-stock as an entry gate, ours as basket stage-share description — and per-call LLM reads — theirs originating scores that gate a screen, ours de-escalate-only over structured figures. **Verdict: we beat them on every group-grain axis (all vendor-confirmed absent); their authority-tier screen is a job we refuse on epistemic law, not a capability gap — the audit records it as a positioning difference, not a BEHIND.**
 
 ## §E Gaps → waves
 
