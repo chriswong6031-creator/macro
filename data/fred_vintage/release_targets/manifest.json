@@ -1,0 +1,74 @@
+{
+  "collected_at": "2026-08-10T03:31:09+00:00",
+  "dry_run": false,
+  "realtime_start": "1997-01-01",
+  "schema": "release_target_vintage_collection.v1",
+  "series": {
+    "CPIAUCSL": {
+      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/CPIAUCSL_all_vintages.parquet",
+      "period_max": "2026-06-01",
+      "period_min": "1947-01-01",
+      "periods": 953,
+      "release_dates": 374,
+      "rows": 290644,
+      "status": "written"
+    },
+    "CPILFESL": {
+      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/CPILFESL_all_vintages.parquet",
+      "period_max": "2026-06-01",
+      "period_min": "1957-01-01",
+      "periods": 833,
+      "release_dates": 374,
+      "rows": 245764,
+      "status": "written"
+    },
+    "PAYEMS": {
+      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/PAYEMS_all_vintages.parquet",
+      "period_max": "2026-07-01",
+      "period_min": "1939-01-01",
+      "periods": 1051,
+      "release_dates": 359,
+      "rows": 313139,
+      "status": "written"
+    },
+    "PCEPI": {
+      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/PCEPI_all_vintages.parquet",
+      "period_max": "2026-06-01",
+      "period_min": "1959-01-01",
+      "periods": 810,
+      "release_dates": 314,
+      "rows": 204161,
+      "status": "written"
+    },
+    "PCEPILFE": {
+      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/PCEPILFE_all_vintages.parquet",
+      "period_max": "2026-06-01",
+      "period_min": "1959-01-01",
+      "periods": 810,
+      "release_dates": 314,
+      "rows": 204161,
+      "status": "written"
+    },
+    "PPIFES": {
+      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/PPIFES_all_vintages.parquet",
+      "period_max": "2026-06-01",
+      "period_min": "2010-04-01",
+      "periods": 195,
+      "release_dates": 155,
+      "rows": 18650,
+      "status": "written"
+    },
+    "PPIFIS": {
+      "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/fred_vintage/release_targets/PPIFIS_all_vintages.parquet",
+      "period_max": "2026-06-01",
+      "period_min": "2009-11-01",
+      "periods": 200,
+      "release_dates": 155,
+      "rows": 19425,
+      "status": "written"
+    }
+  },
+  "source": "FRED/ALFRED",
+  "source_output_type": 2,
+  "status": "ok"
+}

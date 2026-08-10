@@ -1,0 +1,573 @@
+{
+  "as_of": "2026-08-10",
+  "coverage": {
+    "end": "2026-08-10",
+    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W33; 13 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-05-11"
+  },
+  "iso_week": "2026-W33",
+  "schema": "chronicle.rollup.weekly/v1",
+  "weeks": [
+    {
+      "clusters": [
+        {
+          "n_events": 574,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 282,
+          "source": "research_vault",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-08-06",
+              "id": "cev-research_vault-2fe6ddd4e3c8",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-eglyaiphi8v-4403b5",
+              "tickers": [],
+              "title": "Goldman Sachs: Expedia Group (EXPE) Q2'26 Earnings Review Strong Execution and B2B Momentum Drive Beat and Raise Quarter",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-08-05",
+              "id": "cev-research_vault-3dd0e2f4cf3d",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-tghtfv5ime3-1cfbdb",
+              "tickers": [],
+              "title": "UBS: Daily Asia",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-08-05",
+              "id": "cev-research_vault-868333f1e226",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-vv4eaqbkwkj-879842",
+              "tickers": [],
+              "title": "Societe Generale: 4 Aug 2026 US Equity Strategy",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-08-05",
+              "id": "cev-research_vault-dd581dc09dca",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-kvatyrzolpx-174a39",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM JPM US Market Intell",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-08-03",
+              "id": "cev-research_vault-df7884c1dd18",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-ovegn6rwo5n-3ac8f3",
+              "tickers": [],
+              "title": "UBS: Daily US",
+              "weight_hint": 3
+            }
+          ]
+        },
+        {
+          "n_events": 6,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "claims",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "research_vault",
+          "theme": "McElligott",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "risk_band",
+          "theme": "risk",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W32"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 487,
+          "source": "research_vault",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-07-27",
+              "id": "cev-research_vault-1ba0b6a9e9c3",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-bms7cauktyp-277d6e",
+              "tickers": [],
+              "title": "Goldman Sachs: Japan Portfolio Strategy Trigger warnings Lessons from the July August 2024 sell off",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-31",
+              "id": "cev-research_vault-32f68ca29d0d",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-0natz1tlzak-bf2676",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM Europe Equity Research Today’s Morning Meeting",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-30",
+              "id": "cev-research_vault-440862b5bab5",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-4aoajzqskpx-37ff8b",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM US Market Intell Afternoon Briefing 29.07",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-29",
+              "id": "cev-research_vault-55a143f60c32",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-kjiaumouiiu-af6784",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM Europe Equity Research Today’s Morning Meeting",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-29",
+              "id": "cev-research_vault-656c33b3e214",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-llcnf4qdjf0-618421",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM JPM Chips for Break",
+              "weight_hint": 3
+            }
+          ]
+        },
+        {
+          "n_events": 104,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 5,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": []
+        },
+        {
+          "n_events": 3,
+          "source": "risk_band",
+          "theme": "risk",
+          "top_events": []
+        },
+        {
+          "n_events": 2,
+          "source": "regime_flip",
+          "theme": "regime",
+          "top_events": [
+            {
+              "date": "2026-07-30",
+              "id": "cev-regime_flip-195d6fe8d1a1",
+              "kind": "state_flip",
+              "source": "regime_flip",
+              "source_ref": "state_log#2026-07-30#regime_us",
+              "tickers": [],
+              "title": "US regime: Q1 Goldilocks → Q2 Reflation",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-28",
+              "id": "cev-regime_flip-2c5d90609138",
+              "kind": "state_flip",
+              "source": "regime_flip",
+              "source_ref": "state_log#2026-07-28#regime_hk",
+              "tickers": [],
+              "title": "HK regime: Q3 Stagflation → Q1 Goldilocks",
+              "weight_hint": 3
+            }
+          ]
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "pce_headline",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "claims",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "pce_core",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W31"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 167,
+          "source": "research_vault",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-07-24",
+              "id": "cev-research_vault-16f61baeb104",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-srwcvprptla-0a320e",
+              "tickers": [],
+              "title": "Goldman Sachs: Global Rates Trader Priced For Surprise",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-26",
+              "id": "cev-research_vault-1b1a30ca03e5",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-5jjtogk3lv8-5fdba8",
+              "tickers": [],
+              "title": "S&T: GS Brian Garrett Weekend Prep July 26",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-24",
+              "id": "cev-research_vault-8d6e3ee6806a",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-jtzjieuwmz6-7f06bb",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM International Market Intell | Morning Briefing",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-20",
+              "id": "cev-research_vault-b4ff102eff0a",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-xynjuyjmmnl-a733fd",
+              "tickers": [],
+              "title": "Morgan Stanley: Michael Wilson Weekly Warm up Broadening Continues as Index Struggles",
+              "weight_hint": 3
+            }
+          ]
+        },
+        {
+          "n_events": 6,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 3,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 3,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": []
+        },
+        {
+          "n_events": 2,
+          "source": "risk_band",
+          "theme": "risk",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "claims",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W30"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 3,
+          "source": "risk_band",
+          "theme": "risk",
+          "top_events": []
+        },
+        {
+          "n_events": 2,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 2,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "cpi_headline",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "cpi_core",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "ppi_finaldemand",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "claims",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W29"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "claims",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "risk_band",
+          "theme": "risk",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W28"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 6,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W27"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 14,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W26"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 6,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W25"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 17,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W24"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 38,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W23"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 55,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W22"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 51,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 5,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W21"
+    },
+    {
+      "clusters": [
+        {
+          "n_events": 140,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": [
+            {
+              "date": "2026-05-14",
+              "id": "cev-earnings-0c92d841b18b",
+              "kind": "earnings",
+              "source": "earnings",
+              "source_ref": "UMAC#2026-05-14",
+              "tickers": [
+                "UMAC"
+              ],
+              "title": "Earnings: UMAC actual vs est",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-13",
+              "id": "cev-earnings-0c9841e78414",
+              "kind": "earnings",
+              "source": "earnings",
+              "source_ref": "GO#2026-05-13",
+              "tickers": [
+                "GO"
+              ],
+              "title": "Earnings: GO actual vs est",
+              "weight_hint": 2
+            }
+          ]
+        },
+        {
+          "n_events": 13,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": [
+            {
+              "date": "2026-05-15",
+              "id": "cev-earnings_call-39d4abe05c84",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:VNRX:2026Q1",
+              "tickers": [
+                "VNRX"
+              ],
+              "title": "Earnings call: VNRX Q1 FY2026 — mixed",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-12",
+              "id": "cev-earnings_call-3b00804de95c",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:SMTI:2026Q1",
+              "tickers": [
+                "SMTI"
+              ],
+              "title": "Earnings call: SMTI Q1 FY2026 — confident",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-14",
+              "id": "cev-earnings_call-4ce85d7315e5",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:CCAP:2026Q1",
+              "tickers": [
+                "CCAP"
+              ],
+              "title": "Earnings call: CCAP Q1 FY2026 — guarded",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-15",
+              "id": "cev-earnings_call-57593808e13e",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:PWCM:2026Q1",
+              "tickers": [
+                "PWCM"
+              ],
+              "title": "Earnings call: PWCM Q1 FY2026 — mixed",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-12",
+              "id": "cev-earnings_call-6751b599a3af",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:AVIR:2026Q1",
+              "tickers": [
+                "AVIR"
+              ],
+              "title": "Earnings call: AVIR Q1 FY2026 — confident",
+              "weight_hint": 2
+            }
+          ]
+        }
+      ],
+      "iso_week": "2026-W20"
+    }
+  ]
+}

@@ -8,3 +8,4 @@
 {"asof":"2026-07-31","market":"jp","state":"calm","incumbent_state":"calm","pressure_pct":0.8591,"escalated":false,"top_score":null,"dominant_scare":"incumbent:calm","graded":null,"bench_path":null}
 {"asof":"2026-08-06","data_session":"2026-08-06","session_source":"bench","market":"jp","state":"calm","incumbent_state":"calm","pressure_pct":0.6885,"escalated":false,"top_score":null,"dominant_scare":"incumbent:calm","graded":null,"bench_path":null}
 {"asof":"2026-08-07","data_session":"2026-08-07","session_source":"bench","market":"jp","state":"calm","incumbent_state":"calm","pressure_pct":0.6845,"escalated":false,"top_score":null,"dominant_scare":"incumbent:calm","graded":null,"bench_path":null}
+{"asof":"2026-08-10","data_session":"2026-08-10","session_source":"bench","market":"jp","state":"watch","incumbent_state":"watch","pressure_pct":0.6845,"escalated":false,"top_score":null,"dominant_scare":"incumbent:watch","graded":null,"bench_path":null}

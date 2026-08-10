@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_sequence.v1",
   "artifact_id": "confluence-sequence",
-  "asof": "2026-08-08",
+  "asof": "2026-08-10",
   "tier": "display",
   "is_context_only": true,
   "display_only": true,
@@ -2731,8 +2731,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-08-03",
-      "n_sessions_in_tape": 4,
+      "last_as_of": "2026-08-07",
+      "n_sessions_in_tape": 5,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3647,6 +3647,39 @@
       "last_as_of": "2026-08-05",
       "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "EL",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-07",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "ERIE",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-07",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "SPCX",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-07",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
     }
   ],
   "contradiction_pairs": [
@@ -3660,11 +3693,11 @@
     },
     {
       "pair_id": "briefing-divergences",
-      "persistence_streak": 1,
+      "persistence_streak": 0,
       "strength_slope": 0.0,
-      "state": "stable",
-      "last_as_of": "2026-08-08",
-      "n_sessions_in_tape": 22
+      "state": "gone",
+      "last_as_of": "2026-08-09",
+      "n_sessions_in_tape": 23
     },
     {
       "pair_id": "regime_vector-vs-risk_radar",
@@ -3691,9 +3724,9 @@
       "n_sessions_in_tape": 1
     }
   ],
-  "n_tape_rows": 708,
+  "n_tape_rows": 713,
   "gaps": [],
   "produced_by": "engine/neuralweb/confluence_sequence.py",
-  "produced_at": "2026-08-08T16:17:09Z",
+  "produced_at": "2026-08-10T03:28:23Z",
   "authority_check": []
 }
