@@ -6624,12 +6624,15 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest fastapi httpx numpy pandas jinja2 pyyaml requests jsonschema
+        run: pip install pytest fastapi httpx numpy pandas pyarrow jinja2 pyyaml requests jsonschema
       - name: canonical Market Memory temporal and shell contracts
         run: >-
           python -m pytest
           tests/test_market_memory.py
           tests/test_market_memory_pit.py
+          tests/test_market_memory_sources.py
+          tests/test_market_memory_source_deploy.py
+          tests/test_release_target_truth.py
           tests/test_build_market_memory_page.py -q
 
   group-pulse:

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import sys
 from pathlib import Path
 
@@ -273,6 +275,20 @@ def test_collector_requests_output_type_2_and_writes_self_identifying_store(
     ]
     output = default_vintage_path(tmp_path, "PAYEMS")
     stored = pd.read_parquet(output)
+    output_bytes = output.read_bytes()
+    manifest = json.loads(
+        (tmp_path / "data/fred_vintage/release_targets/manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert manifest["schema"] == "release_target_vintage_collection.v1"
+    assert manifest["integrity_profile"] == "release_target_artifact_sha256_bytes.v1"
+    assert manifest["completed_at"] >= manifest["collected_at"]
+    assert manifest["series"]["PAYEMS"]["artifact_bytes"] == len(output_bytes)
+    assert (
+        manifest["series"]["PAYEMS"]["artifact_sha256"]
+        == hashlib.sha256(output_bytes).hexdigest()
+    )
     assert set(stored["series"]) == {"PAYEMS"}
     assert set(stored["source_output_type"]) == {2}
     reconstructed = reconstruct_release_target(

@@ -1,0 +1,13 @@
+[Unit]
+Description=Reconcile the trusted Market Memory CPI source each hour
+
+[Timer]
+OnBootSec=7min
+OnCalendar=*-*-* *:27:00 UTC
+AccuracySec=1min
+RandomizedDelaySec=120s
+Persistent=true
+Unit=macro-market-memory-source.service
+
+[Install]
+WantedBy=timers.target
