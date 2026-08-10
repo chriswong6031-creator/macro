@@ -632,6 +632,19 @@ def test_trial_rejects_retroactive_or_empty_live_forward_window() -> None:
         )
 
 
+def test_trial_requires_the_expiry_abstention_reason() -> None:
+    trial = _trial()
+    trial["abstention"]["allowed_reasons"].remove("policy_expired")
+    _rehash(trial, field="trial_registration_id", prefix="mmtrial_")
+    with pytest.raises(
+        forward.MarketMemoryForwardContractError,
+        match="must include policy_expired",
+    ):
+        forward.validate_trial_registration(trial)
+    with pytest.raises(ValidationError):
+        _validators()["trial_registration.v1.schema.json"].validate(trial)
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [

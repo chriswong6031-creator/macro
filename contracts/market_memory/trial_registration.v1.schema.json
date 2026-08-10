@@ -228,7 +228,16 @@
       "properties": {
         "required": {"const": true},
         "minimum_observed_domains": {"type": "integer", "minimum": 1, "maximum": 14},
-        "allowed_reasons": {"type": "array", "minItems": 1, "maxItems": 7, "uniqueItems": true, "items": {"enum": ["insufficient_domains", "required_domain_missing", "input_stale", "out_of_distribution", "model_unavailable", "policy_expired", "quality_gate_failed"]}}
+        "allowed_reasons": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "contains": {"const": "policy_expired"},
+          "minContains": 1,
+          "maxContains": 1,
+          "items": {"enum": ["insufficient_domains", "required_domain_missing", "input_stale", "out_of_distribution", "model_unavailable", "policy_expired", "quality_gate_failed"]}
+        }
       }
     },
     "expiry": {

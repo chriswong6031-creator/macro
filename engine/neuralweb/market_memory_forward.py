@@ -23,6 +23,8 @@ import re
 import unicodedata
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+from fractions import Fraction
 from itertools import pairwise
 from types import MappingProxyType
 from typing import Any, Final, NoReturn
@@ -1619,6 +1621,8 @@ def _validate_abstention(value: object, *, minimum_domains: int) -> dict[str, An
         maximum=len(_ABSTENTION_REASONS),
         allowed=_ABSTENTION_REASONS,
     )
+    if "policy_expired" not in reasons:
+        _fail("abstention.allowed_reasons must include policy_expired")
     return {
         "required": True,
         "minimum_observed_domains": minimum,
@@ -1925,12 +1929,11 @@ def _validate_predictive_distribution(value: object) -> dict[str, Any]:
         clean_point = None
         if point is not None or quantiles or len(probabilities) < 2:
             _fail("categorical forecast must carry only category probabilities")
-        if not math.isclose(
-            sum(float(item["probability"]) for item in probabilities),
-            1.0,
-            rel_tol=0.0,
-            abs_tol=1e-12,
-        ):
+        probability_total = sum(
+            (Fraction(Decimal(str(item["probability"]))) for item in probabilities),
+            Fraction(0),
+        )
+        if probability_total != 1:
             _fail("forecast category probabilities must sum to one")
     return {
         "kind": kind,
