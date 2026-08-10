@@ -4940,6 +4940,15 @@ def main() -> int:
         # moves rows between rendered buckets and touches nothing else. The opt-in is
         # explicit because the shelf is a template surface and only this board has
         # built it (engine.us_board_rank.stage_for).
+        # R2 (§6.9): the reversal-cohort channel — which buy-lane names sit inside a
+        # basket the us_basket_turn organ currently reads as washed-out/basing/turning.
+        # Loaded once per build and passed in, rather than read inside the scoring
+        # pass, so the rank module stays pure and pandas-free. DISPLAY ONLY: the source
+        # declares `may_rank: false` in both its artifact and its synapse node, and the
+        # channel is listed in `ZERO_SCORE_AUTHORITY` — it earns no points, vetoes no
+        # featuring and moves no stage. A missing source reads `absent`, never
+        # "nobody qualified".
+        _reversal_cohort = us_board_rank.load_reversal_cohort()
         wide["buy"] = us_board_rank.score_rows(
             wide["buy"],
             verdict_by=sig_verdict,
@@ -4947,6 +4956,7 @@ def main() -> int:
                          for t, v in (_eb_blackout_map or {}).items()},
             board_asof=wide.get("as_of"),
             bottom_watch_stage=us_board_rank.STAGE_BASING,
+            reversal_cohort=_reversal_cohort,
         )
         wide["rank_by"] = us_board_rank.BOARD_DEFINITION
         wide["board_definition"] = us_board_rank.BOARD_DEFINITION
@@ -4958,6 +4968,11 @@ def main() -> int:
                  "(cap %d, sector cap %d)", len(wide["buy"]), _stage_ct,
                  wide["ranking"]["featured_count"],
                  us_board_rank.FEATURED_CAP, us_board_rank.SECTOR_CAP)
+        _rev_cov = wide["ranking"]["reversal_cohort_coverage"]
+        log.info("us_prophet_v1: reversal cohort input=%s — %d of %d rows in a "
+                 "washed-out/basing/turning basket (%s baskets read)",
+                 _rev_cov["input"], _rev_cov["members"], _rev_cov["n"],
+                 _reversal_cohort["baskets_read"])
 
         # Theme chips on every display lane (context, zero score authority).
         for _lane_name in ("buy", "watch", "leaders", "laggards"):

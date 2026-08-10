@@ -1686,6 +1686,11 @@ class TestTemplateRender:
         # hub.stance/hub.breadth. Pin the A-Z section instead — it is the block
         # that carries the anchors asserted above, so it cannot drift away silently.
         assert "All coverage A–Z" in html
+        assert 'placeholder="Search 2 dossiers"' in html
+        assert 'data-placeholder-en="Search 2 dossiers"' in html
+        assert 'data-placeholder-zh="搜索 2 只个股"' in html
+        assert "Search 2 dossiers / 搜索" not in html
+        assert 'document.addEventListener("langchange", syncSearchPlaceholder);' in html
 
     def test_index_template_no_validated_word(self):
         """'validated' must not appear in index page."""

@@ -508,3 +508,58 @@ One wave per session; durable state lives HERE and in the continuation handoff
 masterplan → newest receipts; verify armed PRs merged; advance the wave map. Orchestrator stays
 lean (builders grind; targeted reads only); the ONE blinded brainstormer per program has now been
 spent — future fresh-eyes spawns require a new operator order.
+
+## §10 THE PROPHET SCORING-LAYER OBJECTIVE (operator directive, 2026-08-09 night — the
+program's named consumer)
+
+**Operator's framing, distilled and binding:** the end goal is NOT a standalone limit-up
+trading rule. It is to reverse-engineer the light, small signals around limit-up candidates
+(sector, technical, washout maturity, earnings, chip structure, board ecology) and feed them
+into the **Golden Influence / Prophet pick system's SCORING mechanism** — so that Prophet's
+already-washed-out, already-high-quality picks get re-ranked by limit/blast-off propensity.
+Prophet supplies the quality floor (loss-reduction); the propensity layer supplies the
+winner-surfacing (upside-selection). Genesis case: Prophet ranked **300363.SZ #1 the day
+BEFORE its 20% board** (2026-08-07); our ledger independently carries it at 25.5% vs 13.0%
+ladder baseline on {vol-z20 3.31, run-up-5 +31.5%, sector-heat 7} — two systems seeing the
+same object through different windows, before and after ignition.
+
+**Why the program's nulls do NOT block this objective (and partly enable it):** every kill
+so far is an ENTRY-family kill — the T+1 auction prices the PURCHASE of yesterday's public
+information (access rationing, §6.4). Prophet's use case inverts the geometry: entries
+happen pre-ignition at washed-out bases, so the holder OWNS the name when it boards — the
+fillability tax and the auction-pricing null do not bind a position already held. What the
+program has proven survives as exactly what a scorer needs: real order-information (AUC
+0.775), sign-stable features, the regime dial (LEVEL instrument — trust-weighting, never
+ranking), and the ecology instruments. Per the epistemics law, non-standalone factors are
+retained as confluence inputs — this section names their consumer.
+
+**Chartered lanes (evidence-ranked; display-tier freely, gauntlet only at promotion into
+Prophet's live scorer):**
+1. **P-A: Prophet-conditional limit study.** Assemble the historical CN Prophet pick/score
+   panel (product artifacts — coordinate with the Terminal/charting-app data contracts; the
+   Golden Oracle state stream, Re-entry/grey-dot events and regime blocks, is a candidate
+   feature plane and needs a cross-repo read contract). Measure: P(board / big-day / window
+   outcomes | Prophet pick, features) vs unconditional — does washout conditioning change
+   WHICH features carry? Then the uplift battery: rank Prophet picks by candidate propensity
+   scores, day-weighted top-K precision/lift, era tables, clustered t, holdout per the
+   reconciliation §7 split. Deliverable: the feature shortlist with measured uplift on the
+   PICK universe (not the market universe).
+2. **P-B: 300363-class case decomposition.** The genesis case plus every Prophet pick that
+   boarded within H∈{1,3,5} sessions of its pick date: full footprint decomposition (our
+   f-battery + dial + ecology + chip/auction/minute planes as they land) vs matched
+   non-boarding Prophet picks. Small-n honesty mandatory (Wilson, THIN labels); this is a
+   hypothesis-generation lane feeding P-A's battery, never a promotion lane.
+3. **P-C (after minute/auction backfills):** intraday confirmation features for the scorer —
+   first-seal time, auction demand reads, wall shadows — the §8 intraday battery re-targeted
+   at scoring Prophet picks rather than standalone entry.
+
+**Target-class discipline (W3-A binding):** boards and big-days-short-of-limit are DIFFERENT
+physical objects at daily resolution (ladder ranks big-days DOWN; feature carry differs
+0.73×–3.96×). The Prophet scorer's outcome class must be pre-registered per board: on
+ChiNext/STAR a 20% board IS the blast-off; on main the scorer likely wants the WINDOW class
+(W3-A's rerating windows), not the board bit alone. Never pool them.
+
+**Promotion path:** propensity features ship display-tier into research surfaces freely;
+integration into Prophet's LIVE scoring passes the gauntlet (pre-registered gates on the
+pick universe, both forward ledgers' live grading, and the standing law that the LLM/scorer
+may only de-escalate calibrated keys — signals originate from measured artifacts only).
