@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/breadth_actual_output_capture_receipt.v1.schema.json",
+  "title": "Private breadth actual-output capture receipt v1",
+  "description": "Strict receipt for one durably prepared, freshness-admitted breadth current-tip capture. The receipt authenticates exact private source CAS bodies and remains context-only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "store_id",
+    "capture_id",
+    "prepared_id",
+    "prepared_object_key",
+    "session",
+    "revision_id",
+    "source_commit",
+    "source_bodies",
+    "source_observation",
+    "feature_object",
+    "freshness",
+    "clocks",
+    "mode",
+    "actual_output_capture",
+    "evidence_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {
+      "const": "market_memory.breadth_actual_output_capture_receipt.v1"
+    },
+    "profile": {
+      "const": "market_memory.private.breadth_factors_actual_output.v1"
+    },
+    "store_id": {
+      "type": "string",
+      "pattern": "^mmactualstore_[a-f0-9]{64}$"
+    },
+    "capture_id": {
+      "type": "string",
+      "pattern": "^mmactualcapture_[a-f0-9]{64}$"
+    },
+    "prepared_id": {
+      "type": "string",
+      "pattern": "^mmprepared_[a-f0-9]{64}$"
+    },
+    "prepared_object_key": {
+      "type": "string",
+      "pattern": "^prepared/[a-f0-9]{2}/mmprepared_[a-f0-9]{64}\\.json$"
+    },
+    "session": {"$ref": "#/$defs/date"},
+    "revision_id": {
+      "type": "string",
+      "pattern": "^mmbreadthrev_[a-f0-9]{64}$"
+    },
+    "source_commit": {
+      "type": "string",
+      "oneOf": [
+        {"pattern": "^[a-f0-9]{40}$"},
+        {"pattern": "^[a-f0-9]{64}$"}
+      ]
+    },
+    "source_bodies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "breadth_actual_output",
+        "current_constituents",
+        "canary_identity_config",
+        "xnys_calendar_module"
+      ],
+      "properties": {
+        "breadth_actual_output": {
+          "$ref": "#/$defs/sourceBody",
+          "properties": {
+            "repo_path": {"const": "data/breadth/breadth.parquet"},
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 8388608}
+          }
+        },
+        "current_constituents": {
+          "$ref": "#/$defs/sourceBody",
+          "properties": {
+            "repo_path": {"const": "data/breadth/constituents.parquet"},
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 2097152}
+          }
+        },
+        "canary_identity_config": {
+          "$ref": "#/$defs/sourceBody",
+          "properties": {
+            "repo_path": {"const": "config/market_memory_canary.v1.json"},
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 32768}
+          }
+        },
+        "xnys_calendar_module": {
+          "$ref": "#/$defs/sourceBody",
+          "properties": {
+            "repo_path": {"const": "lib/nyse_calendar.py"},
+            "bytes": {"type": "integer", "minimum": 1, "maximum": 262144}
+          }
+        }
+      }
+    },
+    "source_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_observation_id": {
+          "type": "string",
+          "pattern": "^mmbreadthsrc_[a-f0-9]{64}$"
+        },
+        "schema": {"const": "market_memory.breadth_source_observation.v1"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 131072},
+        "object_key": {
+          "type": "string",
+          "pattern": "^source_observations/[a-f0-9]{2}/mmbreadthsrc_[a-f0-9]{64}\\.json$"
+        }
+      },
+      "required": [
+        "source_observation_id",
+        "schema",
+        "sha256",
+        "bytes",
+        "object_key"
+      ]
+    },
+    "feature_object": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot_id": {
+          "type": "string",
+          "pattern": "^mmsnap_[a-f0-9]{64}$"
+        },
+        "schema": {"const": "market_memory.breadth_factors_snapshot.v1"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 131072},
+        "object_key": {
+          "type": "string",
+          "pattern": "^feature_objects/[a-f0-9]{2}/mmsnap_[a-f0-9]{64}\\.json$"
+        }
+      },
+      "required": ["snapshot_id", "schema", "sha256", "bytes", "object_key"]
+    },
+    "freshness": {"$ref": "#/$defs/freshness"},
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first_observed_at", "available_at"],
+      "properties": {
+        "first_observed_at": {"$ref": "#/$defs/utc"},
+        "available_at": {"$ref": "#/$defs/utc"}
+      }
+    },
+    "mode": {"const": "private_actual_output_current_tip"},
+    "actual_output_capture": {"const": true},
+    "evidence_policy": {"$ref": "#/$defs/evidencePolicy"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"
+    },
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "gitOid": {
+      "type": "string",
+      "oneOf": [
+        {"pattern": "^[a-f0-9]{40}$"},
+        {"pattern": "^[a-f0-9]{64}$"}
+      ]
+    },
+    "sourceBody": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo_path", "sha256", "bytes", "git_blob_oid", "object_key"],
+      "properties": {
+        "repo_path": {"type": "string"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "git_blob_oid": {"$ref": "#/$defs/gitOid"},
+        "object_key": {
+          "type": "string",
+          "pattern": "^source_bodies/[a-f0-9]{2}/[a-f0-9]{64}\\.bin$"
+        }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy",
+        "observed_utc_date",
+        "prior_session",
+        "same_day_session",
+        "same_day_not_before",
+        "accepted_session",
+        "accepted_via"
+      ],
+      "properties": {
+        "policy": {"const": "xnys_prior_session_or_same_day_after_2200z.v1"},
+        "observed_utc_date": {"$ref": "#/$defs/date"},
+        "prior_session": {"$ref": "#/$defs/date"},
+        "same_day_session": {
+          "oneOf": [{"$ref": "#/$defs/date"}, {"type": "null"}]
+        },
+        "same_day_not_before": {
+          "oneOf": [{"$ref": "#/$defs/utc"}, {"type": "null"}]
+        },
+        "accepted_session": {"$ref": "#/$defs/date"},
+        "accepted_via": {
+          "enum": ["prior_session", "same_day_after_2200z"]
+        }
+      }
+    },
+    "evidencePolicy": {
+      "const": {
+        "actual_output_only": true,
+        "current_tip_only": true,
+        "contract_validated": true,
+        "exact_source_bodies_authenticated": true,
+        "historical_constituent_point_in_time": false,
+        "current_membership_survivor_bias": true,
+        "context_only": true,
+        "training_eligible": false,
+        "promotion_eligible": false
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "horizon_role",
+        "context_only",
+        "proposal_weight",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_escalate",
+        "may_trade",
+        "may_originate",
+        "may_select_options_candidate",
+        "may_execute",
+        "may_write_options_episode",
+        "may_append_outcome",
+        "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}

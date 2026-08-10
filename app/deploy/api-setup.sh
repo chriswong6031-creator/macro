@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Slice 2 — deploy the FastAPI serving tier (macro-api) on the droplet.
 # Builds a minimal venv (NOT the heavy engine stack), installs the serving and
-# private Market Memory source/context/identity units, and starts their
+# private Market Memory source/context/identity/breadth units, and starts their
 # public-safe or API-inaccessible lanes.
 # Idempotent. Run AFTER setup.sh (which installs the Caddyfile that proxies /api/* here).
 #   bash /opt/macro/app/deploy/api-setup.sh
@@ -34,6 +34,7 @@ install -d -m 0700 /var/lib/macro-market-memory/state
 install -d -m 0700 /var/lib/macro-market-memory/state/sources
 install -d -m 0700 /var/lib/macro-market-memory/state/context-projection
 install -d -m 0700 /var/lib/macro-market-memory/state/identity-v1
+install -d -m 0700 /var/lib/macro-market-memory/state/breadth-v1
 systemd-analyze verify \
   "$APP_DIR/app/deploy/macro-api.service" \
   "$APP_DIR/app/deploy/macro-market-memory-source.service" \
@@ -41,7 +42,9 @@ systemd-analyze verify \
   "$APP_DIR/app/deploy/macro-market-memory-context.service" \
   "$APP_DIR/app/deploy/macro-market-memory-context.timer" \
   "$APP_DIR/app/deploy/macro-market-memory-identity.service" \
-  "$APP_DIR/app/deploy/macro-market-memory-identity.timer"
+  "$APP_DIR/app/deploy/macro-market-memory-identity.timer" \
+  "$APP_DIR/app/deploy/macro-market-memory-breadth.service" \
+  "$APP_DIR/app/deploy/macro-market-memory-breadth.timer"
 install -m 0644 "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-source.service" /etc/systemd/system/macro-market-memory-source.service
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-source.timer" /etc/systemd/system/macro-market-memory-source.timer
@@ -49,6 +52,8 @@ install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-context.service" /etc/s
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-context.timer" /etc/systemd/system/macro-market-memory-context.timer
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-identity.service" /etc/systemd/system/macro-market-memory-identity.service
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-identity.timer" /etc/systemd/system/macro-market-memory-identity.timer
+install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-breadth.service" /etc/systemd/system/macro-market-memory-breadth.service
+install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-breadth.timer" /etc/systemd/system/macro-market-memory-breadth.timer
 systemctl daemon-reload
 
 log "[4/5] initialize trusted context + start serving and retry timers"
@@ -60,10 +65,13 @@ systemctl start macro-market-memory-context.service || \
   log "trusted context projection failed closed; timer will retry"
 systemctl start macro-market-memory-identity.service || \
   log "private identity observation accrual failed closed; timer will retry"
+systemctl start macro-market-memory-breadth.service || \
+  log "private breadth actual-output capture failed closed; timer will retry"
 systemctl restart macro-api
 systemctl enable --now macro-market-memory-source.timer
 systemctl enable --now macro-market-memory-context.timer
 systemctl enable --now macro-market-memory-identity.timer
+systemctl enable --now macro-market-memory-breadth.timer
 
 log "[5/5] health check (local)"
 sleep 2

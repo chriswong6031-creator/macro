@@ -139,6 +139,7 @@ install -d -m 0700 /var/lib/macro-market-memory/state
 install -d -m 0700 /var/lib/macro-market-memory/state/sources
 install -d -m 0700 /var/lib/macro-market-memory/state/context-projection
 install -d -m 0700 /var/lib/macro-market-memory/state/identity-v1
+install -d -m 0700 /var/lib/macro-market-memory/state/breadth-v1
 API_UNIT_UPDATED=0
 if ! cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service; then
 	if systemd-analyze verify "$APP_DIR/app/deploy/macro-api.service"; then
@@ -311,6 +312,51 @@ if [ "$MARKET_MEMORY_IDENTITY_RUN_NEEDED" -eq 1 ]; then
 		echo "macro-update: deferring Market Memory identity accrual — shared runtime dependencies are not current" >&2
 	elif ! systemctl start macro-market-memory-identity.service; then
 		echo "macro-update: Market Memory identity accrual failed closed; hourly timer will retry" >&2
+	fi
+fi
+
+# W1B.3A private breadth actual-output publisher: network-dark,
+# credential-free, and deliberately disconnected from both trusted-v1 and the
+# API. It captures only the exact current Git-owned tip after frozen calendar,
+# identity, constituent, and freshness checks; historical rows are never
+# upgraded by this lane.
+MARKET_MEMORY_BREADTH_UNIT_UPDATED=0
+MARKET_MEMORY_BREADTH_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-breadth.service"
+	"$APP_DIR/app/deploy/macro-market-memory-breadth.timer"
+)
+if ! cmp -s "${MARKET_MEMORY_BREADTH_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-breadth.service || \
+   ! cmp -s "${MARKET_MEMORY_BREADTH_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-breadth.timer; then
+	if systemd-analyze verify "${MARKET_MEMORY_BREADTH_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_BREADTH_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_BREADTH_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_BREADTH_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-market-memory-breadth.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: Market Memory breadth actual-output units updated"
+		fi
+	else
+		echo "macro-update: refusing Market Memory breadth unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+systemctl enable --now macro-market-memory-breadth.timer >/dev/null 2>&1 || \
+	echo "macro-update: macro-market-memory-breadth.timer could not be enabled" >&2
+
+MARKET_MEMORY_BREADTH_RUN_NEEDED=0
+if [ "$MARKET_MEMORY_BREADTH_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(scripts/capture_market_memory_breadth\.py|engine/neuralweb/market_memory_(actual_output_store|breadth_observation)\.py|contracts/market_memory/breadth_(source_observation|factors_snapshot|actual_output_capture_receipt|actual_output_store)\.v1\.schema\.json|data/breadth/(breadth|constituents)\.parquet|config/market_memory_canary\.v1\.json|lib/nyse_calendar\.py)$'; then
+	MARKET_MEMORY_BREADTH_RUN_NEEDED=1
+fi
+if [ "$MARKET_MEMORY_BREADTH_RUN_NEEDED" -eq 1 ]; then
+	if [ "$API_DEPS_OK" -ne 1 ]; then
+		echo "macro-update: deferring Market Memory breadth capture — shared runtime dependencies are not current" >&2
+	elif ! systemctl start macro-market-memory-breadth.service; then
+		echo "macro-update: Market Memory breadth capture failed closed; hourly timer will retry" >&2
 	fi
 fi
 
