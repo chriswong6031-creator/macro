@@ -416,14 +416,14 @@ def test_current_fixture_projects_issued_queue_and_byte_identical_twins(tmp_path
     assert status["source_health"]["status"] in {"ok", "degraded"}
 
 
-def test_issued_recovery_cohort_is_immutable_context_and_never_suppressed() -> None:
+def test_issued_recovery_cohort_is_immutable_context_and_never_corrected_away() -> None:
     """The live first issuance cannot be retroactively rewritten as withheld.
 
     #5207 healed the schema door and the serialized live writer appended eight
     reviewed rows before the proposed suppression control could land.  Their
     issuance is now immutable history: preserve their complete semantic bytes,
-    keep every authority action false, and reject any later suppression
-    manifest that overlaps an already-issued source identity.
+    keep every authority action false, and reject any later suppression or
+    correction overlay that reclassifies an already-issued source identity.
     """
     ledger_path = ROOT / "data/government_revenue/candidate_ledger.jsonl"
     rows = [
@@ -450,15 +450,35 @@ def test_issued_recovery_cohort_is_immutable_context_and_never_suppressed() -> N
         assert row["candidate_scope"] == "government_revenue_research"
         assert row["is_neuralweb_trade_candidate"] is False
 
-    suppression_path = (
+    forbidden_controls = (
+        ROOT / "config/government_revenue/candidate_historical_suppressions.v1.json",
+        ROOT / "config/government_revenue/candidate_issuance_corrections.v1.json",
         ROOT
-        / "config/government_revenue/candidate_historical_suppressions.v1.json"
+        / "contracts/government_revenue/government_revenue_candidate_historical_suppressions.v1.schema.json",
+        ROOT
+        / "contracts/government_revenue/government_revenue_candidate_issuance_corrections.v1.schema.json",
     )
-    assert not suppression_path.exists(), (
-        "active historical-suppression plumbing cannot be introduced after the "
-        "reviewed cohort has already been issued; design any future control as a "
-        "new forward-only contract"
+    assert not any(path.exists() for path in forbidden_controls), (
+        "active suppression/correction plumbing cannot be introduced after the reviewed "
+        "cohort has already been issued; design any future control as a new forward-only contract"
     )
+
+    forbidden_tokens = ("candidate_historical_suppressions", "candidate_issuance_corrections")
+    production_surfaces = (
+        ROOT / "app/government_revenue.py",
+        ROOT / "engine/government_revenue/candidates.py",
+        ROOT / "scripts/build_government_revenue_candidates.py",
+        ROOT / "scripts/check_government_revenue_projection.py",
+        ROOT / ".github/workflows/government-revenue-live.yml",
+        ROOT
+        / "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json",
+        ROOT / "templates/government_revenue.html.j2",
+    )
+    for surface in production_surfaces:
+        text = surface.read_text(encoding="utf-8")
+        assert not any(token in text for token in forbidden_tokens), (
+            f"{surface.relative_to(ROOT)} resurrected a retroactive issued-row overlay"
+        )
 
 
 def test_same_frozen_run_keeps_durable_bytes_and_remediates_one_sided_twin(tmp_path: Path) -> None:

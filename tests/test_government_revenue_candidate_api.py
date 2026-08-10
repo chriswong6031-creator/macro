@@ -26,6 +26,19 @@ from tests.test_government_revenue_candidates import _award_event, _graph, _payl
 # see `tests/government_revenue_candidate_fixture` for why a wall-clock literal
 # here is a scheduled failure rather than a constant.
 FROZEN_AT = canonical_frozen_at()
+ROOT = Path(__file__).resolve().parents[1]
+_ISSUED_RECOVERY_CANDIDATE_IDS = frozenset(
+    {
+        "grc1-0d9acfe1eb29619cc9b78e2d",
+        "grc1-5c04549c98dc93a935b433d7",
+        "grc1-78d7567e22834f8e1a142b43",
+        "grc1-8d90edd35a0f32f9120ebdb4",
+        "grc1-a5d800c17e0bce45ff9a8aa8",
+        "grc1-ab00c51be87b507bfb45e8a2",
+        "grc1-cc400940cd4e316d5b80a7b1",
+        "grc1-e2e57aacdde17def7eeb01d6",
+    }
+)
 
 
 def _fixture_root(tmp_path: Path) -> Path:
@@ -193,6 +206,24 @@ def test_zero_candidate_generation_is_a_successful_empty_envelope_with_mapping_b
     assert len(backlog["items"]) == 2
     assert backlog["next_cursor"]
     assert all(row["issuer_attribution"] == "not_asserted" for row in backlog["items"])
+
+
+def test_live_issued_recovery_candidates_remain_200_context_not_correction_410(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An immutable issued row remains readable; it cannot acquire a correction overlay."""
+    _wire_api(ROOT, monkeypatch)
+
+    listing = _list(limit=100)
+    by_id = {row["candidate_id"]: row for row in listing["items"]}
+    assert _ISSUED_RECOVERY_CANDIDATE_IDS <= set(by_id)
+    for candidate_id in _ISSUED_RECOVERY_CANDIDATE_IDS:
+        detail = api.candidate(candidate_id)
+        history = api.candidate_history(candidate_id, cursor=None, limit=100)
+        assert detail["candidate"]["candidate_id"] == candidate_id
+        assert detail["candidate"]["authority"]["context_only"] is True
+        assert detail["candidate"]["is_neuralweb_trade_candidate"] is False
+        assert history["total"] >= 1
 
 
 def test_candidate_list_detail_history_company_and_mapping_backlog_page_against_one_exact_identity(
