@@ -1,41 +1,233 @@
 {% extends "report_base.html.j2" %}
+
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
 {% macro bl(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
-{# bilingual helpers for controlled-vocab codes + provenance tags — translate without touching data #}
-{% set _CONF_TR = [['medium-high','中高'],['low-medium','中低'],['high','高'],['medium','中'],['low','低']] %}
-{% set _BASIS_TR = [
-  ['execution slipping','执行滑期'],['headline-fragile','易受头条扰动'],['truce caveat','休战告诫'],
-  ['Miran role','Miran 角色'],['FACT','事实'],['INFERENCE','推断'],['PRIOR','先验'],['THEORY','理论'],
-  ['CORRECTED','已更正'],['CAVEAT','告诫'],['charter','章程'],['directive','指令'],['proxies','代理'],
-  ['mechanism','机制'],['read','解读'],['budget','预算'],['tariff','关税'],['ceasefire','停火'],
-  ['conflict','冲突'],['oil','油价'],['deal','协议']
+
+{% set THREAD = {
+  'fed':['Rates','利率'], 'treasury':['Treasury','财政部'], 'policy':['Policy','政策'],
+  'rotation':['Markets','市场'], 'china':['China','中国'], 'iran':['Iran','伊朗'],
+  'nato':['Defense','国防'], 'dollar':['Dollar','美元'], 'debasement':['Hard assets','硬资产']
+} %}
+{% set LEAN = {
+  'overweight':['Favoured','相对受益'], 'underweight':['Under pressure','相对承压'], 'avoid':['Avoid','回避']
+} %}
+{% set VIEW_COPY = {
+  'XLE': {
+    'en':'Energy may stay supported while Iran risk keeps oil prices elevated.',
+    'zh':'伊朗局势让油价风险偏上，能源股可能继续获得支撑。',
+    'risk_en':'A durable ceasefire and oil below $70 would weaken this view.',
+    'risk_zh':'如果停火持久、油价跌破70美元，这一判断会转弱。'
+  },
+  'XLF': {
+    'en':'Banks may benefit from Treasury-market reforms and a steeper yield curve.',
+    'zh':'国债市场改革和更陡的收益率曲线可能利好银行。',
+    'risk_en':'Recession fears and wider credit spreads could outweigh those benefits.',
+    'risk_zh':'衰退担忧和信用利差扩大可能盖过这些利好。'
+  }
+} %}
+{% set TF_COPY = {
+  'tf_comms': {
+    'en':'Possible changes to forecasts, press conferences and meeting transcripts.',
+    'zh':'可能调整经济预测、发布会和会议记录。',
+    'why_en':'Could give the chair more flexibility and markets less guidance.',
+    'why_zh':'主席可能拥有更大灵活性，市场得到的指引会减少。'
+  },
+  'tf_balance': {
+    'en':'Review of how the Fed manages its bond holdings.',
+    'zh':'审查美联储如何管理其债券持仓。',
+    'why_en':'A smaller balance sheet could also support Treasury’s bill-heavy funding.',
+    'why_zh':'更小的资产负债表也可能配合财政部偏短债的融资方式。'
+  },
+  'tf_data': {
+    'en':'Review of which economic data the Fed trusts.',
+    'zh':'审查美联储更信任哪些经济数据。',
+    'why_en':'Could change how the Fed weighs weak or delayed data.',
+    'why_zh':'可能改变美联储如何看待疲弱或滞后的数据。'
+  },
+  'tf_productivity': {
+    'en':'Study of how AI may affect growth and employment.',
+    'zh':'研究人工智能对增长和就业的影响。',
+    'why_en':'Stronger productivity could let the Fed tolerate faster growth.',
+    'why_zh':'更高的生产率可能让美联储容忍更快的增长。'
+  },
+  'tf_inflation': {
+    'en':'Review of the Fed’s inflation rules.',
+    'zh':'审查美联储的通胀规则。',
+    'why_en':'Could replace the flexible average target with a stricter 2% goal.',
+    'why_zh':'可能以更严格的2%目标取代灵活平均通胀目标。'
+  }
+} %}
+{% set LEVER_COPY = {
+  'lever_dollar_bridge': {
+    'title_en':'Strong dollar, lower rates', 'title_zh':'强美元与较低利率',
+    'en':'Bessent says the dollar can stay strong if rates fall. That depends on growth, safe-haven demand and steady Treasury buying.',
+    'zh':'贝森特认为降息时美元仍可保持强势，但这取决于增长、避险需求和稳定的美债买盘。'
+  },
+  'lever_issuance': {
+    'title_en':'More short-term Treasury bills', 'title_zh':'增发短期国库券',
+    'en':'Treasury is relying on bills instead of increasing longer-term bond sales.',
+    'zh':'财政部更依赖短期国库券，而不是增加长期国债发行。'
+  },
+  'lever_intermediation': {
+    'title_en':'More room for banks', 'title_zh':'为银行释放空间',
+    'en':'Buybacks and proposed rule changes could help banks absorb more government debt.',
+    'zh':'回购和拟议规则调整可能帮助银行承接更多政府债务。'
+  },
+  'lever_fed_nexus': {
+    'title_en':'Fed demand for Treasury bills', 'title_zh':'美联储增加短债需求',
+    'en':'The Fed is moving reinvestment from mortgage bonds into Treasury bills. The funding alignment is our interpretation.',
+    'zh':'美联储正把部分抵押债券再投资转向短期国库券；融资上的协同属于我们的解读。'
+  },
+  'lever_chips': {
+    'title_en':'Tariff on advanced chips', 'title_zh':'先进芯片关税',
+    'en':'A 25% tariff covers some high-end imported chips. No broad reshoring exemption is confirmed.',
+    'zh':'部分高端进口芯片适用25%关税，目前没有确认广泛的回流豁免。'
+  },
+  'lever_nuclear': {
+    'title_en':'Nuclear power for AI', 'title_zh':'为人工智能扩建核能',
+    'en':'Three pilot reactors met the July deadline. Larger power and fuel goals are still targets, not completed projects.',
+    'zh':'三座试点反应堆按期完成节点；更大的电力和燃料目标仍是规划，并非已完工项目。'
+  }
+} %}
+{% set THEATER_COPY = {
+  'th_china': {
+    'title_en':'China tariffs are in transition', 'title_zh':'对华关税仍在过渡',
+    'fact_en':'At the last update, the temporary tariff was nearing expiry and its replacement was not final.',
+    'fact_zh':'截至上次核实，临时关税接近到期，替代方案尚未定案。',
+    'why_en':'Chip controls remained in force; broader protection depended on a legal handoff.',
+    'why_zh':'芯片管制仍然有效；更广泛的保护取决于法律授权能否顺利交接。',
+    'market_en':'Domestic chips and minerals may keep support, but the tariff outlook was uncertain.',
+    'market_zh':'国内芯片和矿产仍可能受益，但关税前景并不确定。'
+  },
+  'th_iran': {
+    'title_en':'Iran conflict has resumed', 'title_zh':'伊朗冲突再度升级',
+    'fact_en':'The ceasefire ended July 8, U.S. strikes resumed and Hormuz traffic nearly stopped.',
+    'fact_zh':'停火于7月8日结束，美军恢复打击，霍尔木兹航运一度接近停滞。',
+    'why_en':'Oil became an upside risk again.', 'why_zh':'油价再次面临上行风险。',
+    'market_en':'Energy and defense may benefit, but the move can reverse on headlines.',
+    'market_zh':'能源和国防可能受益，但走势会随消息迅速反转。'
+  },
+  'th_nato': {
+    'title_en':'Defense spending keeps rising', 'title_zh':'国防开支持续上升',
+    'fact_en':'NATO’s long-term pledge and a larger U.S. budget point to years of higher spending.',
+    'fact_zh':'北约的长期承诺和更大的美国预算意味着国防开支可能多年上升。',
+    'why_en':'This is a funded, multi-year trend.', 'why_zh':'这是一项已有资金支持的多年趋势。',
+    'market_en':'Defense, shipbuilding and missile defense are the main areas to watch.',
+    'market_zh':'国防、造船和导弹防御是主要关注方向。'
+  },
+  'th_dollar': {
+    'title_en':'Stablecoins support Treasury demand', 'title_zh':'稳定币增加美债需求',
+    'fact_en':'The GENIUS Act creates a real T-bill demand channel. Coordinated dollar devaluation remains only a scenario.',
+    'fact_zh':'GENIUS法案带来真实的短债需求渠道；协同美元贬值仍只是一种情景。',
+    'why_en':'Current policy relies on issuance and stablecoin demand, not direct currency action.',
+    'why_zh':'当前政策依靠发债和稳定币需求，而不是直接干预汇率。',
+    'market_en':'Treasury bills and payment rails may benefit; dollar devaluation remains low odds.',
+    'market_zh':'短期国库券和支付通道可能受益；美元主动贬值的概率仍低。'
+  }
+} %}
+{% set TARGET_COPY = {
+  'Nuclear · uranium · HALEU/fuel cycle':['Nuclear & uranium','核能与铀','Government targets and completed pilot reactors support the nuclear buildout.','政府目标和已完成的试点节点支持核能建设。'],
+  'Power · grid · datacenter capex (AI compute)':['Power & grid','电力与电网','AI data centers need more power and grid equipment.','人工智能数据中心需要更多电力和电网设备。'],
+  'Domestic semiconductors / fabs':['Domestic chips','国内芯片','Tariffs protect domestic chip production but raise import costs.','关税保护国内芯片生产，但也提高进口成本。'],
+  'Financials / dealer banks':['Banks','银行','Proposed market-rule changes could free bank balance sheets.','拟议的市场规则调整可能释放银行资产负债表空间。'],
+  'Front-end Treasuries':['Treasury bills','短期国库券','Treasury issuance and Fed reinvestment support demand, while higher rates remain a risk.','财政部发债和美联储再投资支撑需求，但更高利率仍是风险。'],
+  'Defense · shipbuilding · missile defense':['Defense','国防','NATO and U.S. budgets point to years of higher spending.','北约和美国预算显示国防开支可能多年上升。'],
+  'Energy (oil & gas)':['Energy','能源','Renewed Iran conflict raises oil-supply risk. This can reverse quickly.','伊朗冲突再起推高石油供应风险，但也可能迅速反转。'],
+  'Critical minerals / rare earths':['Critical minerals','关键矿产','Onshoring supports domestic supply while the China truce eases shortages.','产业回流支持国内供应，而对华休战缓解短缺。']
+} %}
+{% set HEADWIND_COPY = {
+  'Debasement / hard-money trade (gold · silver · BTC) — bottoming watch':['Gold, silver & bitcoin','黄金、白银与比特币','Higher real yields and a strong dollar remain headwinds. A turn needs those pressures to peak.','更高的实际收益率和强美元仍是逆风；转折需要这些压力见顶。'],
+  'Import-dependent advanced-chip channels':['Imported advanced chips','进口先进芯片','Tariffs raise the cost of high-end imported chips.','关税提高高端进口芯片的成本。'],
+  'Long-duration / term-premium-sensitive':['Long-term bonds','长期债券','Lower-yield policy may help, but inflation can still overwhelm it.','压低收益率的政策可能带来帮助，但通胀仍可能盖过政策作用。'],
+  'Old transparent-guidance rates-vol strategies':['Fed-guidance strategies','依赖美联储指引的策略','Less Fed guidance may mean bigger market moves around meetings.','美联储减少指引，可能放大会议前后的市场波动。']
+} %}
+{% set MONITOR_COPY = [
+  ['Fed path and dollar pressure','利率路径与美元压力','Real yields, dollar and hike odds','实际收益率、美元与加息概率','Daily','每日'],
+  ['Stablecoin Treasury holdings','稳定币的美债持仓','Issuer reports and Treasury data','发行方报告与财政部数据','Monthly','每月'],
+  ['Fed decisions and forecasts','美联储决议与预测','Statements, press conferences and projections','声明、发布会与预测','Every meeting','每次会议'],
+  ['Treasury funding plans','财政部融资计划','Refunding plans and Treasury comments','再融资计划与财政部表态','Quarterly','每季度'],
+  ['Advanced-chip tariffs','先进芯片关税','White House updates','白宫更新','As announced','有更新时'],
+  ['Nuclear milestones','核能节点','Reactor starts and fuel releases','反应堆启动与燃料释放','As announced','有更新时'],
+  ['Bank-capital rules','银行资本规则','Fed, OCC and FDIC updates','美联储、OCC与FDIC更新','As announced','有更新时'],
+  ['Treasury clearing','国债清算','SEC rule changes','SEC规则调整','As announced','有更新时'],
+  ['Key policymakers','关键政策人物','Warsh, Bessent, Wright and Fed voters','沃什、贝森特、赖特与美联储票委','Ongoing','持续']
 ] %}
-{% set _THREAD  = {'fed':'美联储','treasury':'财政部','policy':'政策','rotation':'轮动','china':'中国','iran':'伊朗','nato':'北约','dollar':'美元','debasement':'去货币化'} %}
-{% set _TIER    = {'policy-action':'政策行动','market-outcome':'市场结果'} %}
-{% set _STATUS  = {'open':'未结','hit':'命中','miss':'落空','pending':'待定'} %}
-{% set _VERDICT = {'working':'达标','lagging':'落后','mixed':'混合'} %}
-{% set _STANCE  = {'hawkish':'鹰派','dovish':'鸽派','neutral':'中性 / 按兵','unknown':'未知'} %}
-{% set _LEAN    = {'overweight':'超配','underweight':'低配','avoid':'回避'} %}
-{% set _ACTOR   = {'FED':'美联储','ADMIN':'行政当局','POLICY':'政策','ADMIN ':'行政当局'} %}
-{% set _KIND    = {'rel_return':'相对收益核验','soft':'软性','level':'水平'} %}
-{# exact-enum: english in en-mode, mapped value in zh-mode (falls back to original) #}
-{% macro code(val, m) -%}
-<span class="l-en">{{ val }}</span><span class="l-zh">{{ m.get(val, val) }}</span>
+{% set CALL_COPY = {
+  'P1':['The Fed will change how it publishes forecasts or explains decisions by year-end.','美联储将在年底前调整预测发布或决策说明方式。'],
+  'P2':['The Fed will recommend replacing flexible average inflation targeting with a strict 2% goal by year-end.','美联储将在年底前建议用严格的2%目标取代灵活平均通胀目标。'],
+  'P3':['Warsh will keep his rate forecast private, or the dot plot will pause, through September.','沃什将至少到9月继续不公开利率预测，或暂停点阵图。'],
+  'P4':['The Fed will name at least one outside task-force expert by September.','美联储将在9月前公布至少一名外部工作组专家。'],
+  'P5':['The Fed will not cut rates at its July or September meetings.','美联储不会在7月或9月会议上降息。'],
+  'P6':['Treasury will leave longer-term auction sizes unchanged at the August refunding.','财政部将在8月再融资中维持中长期国债拍卖规模不变。'],
+  'P7':['Treasury will keep saying its goal is lower borrowing costs.','财政部将继续强调降低融资成本。'],
+  'P8':['Bank regulators will formally advance rules that make Treasury trading easier for banks.','银行监管机构将正式推进规则，为银行交易美债释放空间。'],
+  'P9':['The SEC will advance central clearing for Treasury trades.','美国证监会将推进美债交易的中央清算。'],
+  'P10':['The Fed will keep reinvesting mortgage-bond runoff into Treasury bills through 2026.','美联储将在2026年继续把抵押债券到期资金再投资于短期国库券。'],
+  'P11':['The 25% tariff on advanced chips will remain or expand through year-end.','25%的先进芯片关税将在年底前维持或扩大。'],
+  'P12':['At least one pilot reactor would reach criticality by July 4. Result: all three did.','至少一座试点反应堆将在7月4日前达到临界；结果是三座全部完成。'],
+  'P13':['The Energy Department will release at least 20 metric tons of advanced nuclear fuel by year-end.','能源部将在年底前释放至少20吨先进核燃料。'],
+  'P14':['The AI reactor program will announce a contracted or selected site by October 2027.','人工智能反应堆项目将在2027年10月前公布签约或入选场址。'],
+  'P15':['Nuclear and uranium funds will beat the S&P 500 over the next two quarters.','核能和铀基金将在未来两个季度跑赢标普500。'],
+  'P16':['Demand for Treasury bills will remain strong through August.','短期国库券需求将在8月保持强劲。'],
+  'P17':['Bank stocks will benefit when bank-capital rule changes advance.','银行资本规则调整取得进展时，银行股将受益。'],
+  'P18':['Long-term Treasuries will avoid a disorderly selloff in the second half of 2026.','长期美债将在2026年下半年避免失序抛售。'],
+  'P19':['The U.S. tariff rate on China will stay near 10% while one legal authority replaces another.','在关税法律授权切换期间，美国对华关税将维持在约10%。'],
+  'P20':['The administration will replace the struck-down tariff authority with similar protection under other laws.','政府将用其他法律延续被法院否定的关税保护。'],
+  'P21':['A separate U.S. semiconductor tariff will take effect around June 2027.','美国将于2027年6月前后实施单独的半导体关税。'],
+  'P22':['Hormuz will avoid a full closure through September. This is under pressure after traffic nearly stopped.','霍尔木兹海峡将在9月前避免完全关闭；航运近乎停摆后，这一判断已承压。'],
+  'P23':['The U.S. and Iran will not sign a comprehensive nuclear deal by September.','美国与伊朗不会在9月前签署全面核协议。'],
+  'P24':['The 2027 U.S. defense budget will rise after inflation from 2026.','扣除通胀后，美国2027财年国防预算将高于2026财年。'],
+  'P25':['NATO allies will keep the 5%-by-2035 pledge and continue raising defense budgets.','北约盟国将维持2035年前达到5%的承诺，并继续提高国防预算。'],
+  'P26':['Defense funds will beat the S&P 500 over the next two quarters.','国防基金将在未来两个季度跑赢标普500。'],
+  'P27':['Stablecoin issuers will increase their Treasury holdings materially in 2026.','稳定币发行商将在2026年显著增加美债持仓。'],
+  'P28':['No coordinated dollar-devaluation policy will be enacted by year-end.','年底前不会出台协同推动美元贬值的政策。'],
+  'P29':['Oil will stay below $100 unless Hormuz closes again. This is under pressure as traffic slows.','除非霍尔木兹海峡再次关闭，否则油价将低于100美元；航运放缓已令这一判断承压。'],
+  'P30':['Treasury will support a strong dollar without direct currency intervention through year-end.','财政部将在年底前支持强美元，但不会直接干预汇率。'],
+  'P31':['The dollar will hold up better than rate differences alone suggest as markets price easier policy.','当市场计入宽松政策时，美元表现将强于利差单独暗示的水平。'],
+  'P32':['Before the next cut, a Fed task force will create room to look through supply inflation or assume stronger productivity.','下次降息前，美联储工作组将为淡化供应型通胀或采用更高生产率假设留出空间。'],
+  'P33':['If the Fed cuts soon after the midterms with inflation above 3%, the political backlash will be milder than in 2019 or 2024.','若中期选举后不久在通胀高于3%时降息，政治反弹将弱于2019年或2024年。'],
+  'P34':['Gold will bottom when the dollar, two-year yield, real yields and hike odds peak together—before the first rate cut.','黄金将在美元、两年期收益率、实际收益率和加息概率同步见顶时触底，并早于首次降息。'],
+  'P35':['Gold will not make a new record while the Fed is easing between late 2026 and mid-2027.','在2026年底至2027年中美联储宽松期间，黄金不会创下新高。'],
+  'P36':['The 10-year real yield will peak near 2.2%–2.5% in 2026 and stay below that level in 2027.','10年期实际收益率将在2026年于2.2%至2.5%附近见顶，并在2027年保持低于该区间。'],
+  'P37':['The Fed will not cut rates at its first meeting after the November midterms.','美联储不会在11月中期选举后的首次会议上降息。'],
+  'P38':['Stablecoin Treasury holdings will approach $300B, but Fed expectations will still drive bill yields.','稳定币发行商的美债持仓将接近3000亿美元，但短债收益率仍主要受美联储预期影响。'],
+  'P39':['During a hard-asset rebound, silver and bitcoin will rise more than gold.','在硬资产反弹期间，白银和比特币的涨幅将超过黄金。'],
+  'P40':['The Fed will hold rates steady at its July 28–29 meeting.','美联储将在7月28日至29日会议上维持利率不变。'],
+  'P41':['Three-month average job growth will stay below 100,000 through the July report.','截至7月就业报告，三个月平均新增就业将保持在10万以下。'],
+  'P42':['Other tariff laws will keep the U.S. tariff wall on China near its pre-ruling level through year-end.','其他关税法律将在年底前使美国对华关税壁垒接近裁决前水平。'],
+  'P43':['Bank regulators will publish a rule easing capital treatment for Treasury trades.','银行监管机构将发布规则，放宽美债交易的资本要求。'],
+  'P44':['Under review after the ceasefire collapsed; this is not an active forecast.','停火破裂后正在复核；这不是一条有效预测。']
+} %}
+
+{% macro basis_tags(value) -%}
+  {% set s = value or '' %}
+  {% if 'FACT' in s %}<span class="pw-badge fact">{{ t('Confirmed','已确认') }}</span>{% endif %}
+  {% if 'INFERENCE' in s %}<span class="pw-badge read">{{ t('Our read','我们的解读') }}</span>{% elif 'PRIOR' in s or 'THEORY' in s %}<span class="pw-badge scenario">{{ t('Scenario','情景') }}</span>{% endif %}
+  {% if 'CORRECTED' in s %}<span class="pw-badge updated">{{ t('Updated','已更正') }}</span>{% endif %}
 {%- endmacro %}
-{# token-replace: translate recognized tokens in a free-form provenance tag, leave the rest #}
-{% macro tr(s, pairs) -%}
-{% set ns = namespace(v=s) %}{% for a, b in pairs %}{% set ns.v = ns.v|replace(a, b) %}{% endfor -%}
-<span class="l-en">{{ s }}</span><span class="l-zh">{{ ns.v }}</span>
+{% macro confidence_tag(value) -%}
+  {% set s = (value or '')|lower %}
+  {% if s.startswith('high') %}<span class="pw-meta">{{ t('High confidence','较高把握') }}</span>{% elif s.startswith('medium') %}<span class="pw-meta">{{ t('Medium confidence','中等把握') }}</span>{% else %}<span class="pw-meta">{{ t('Low confidence','较低把握') }}</span>{% endif %}
 {%- endmacro %}
-{# section header: colored thread dot + overline + display heading #}
-{% macro sec_head(anchor, dot, ovl_en, ovl_zh, h_en, h_zh) -%}
-<div class="pw-sec" id="{{ anchor }}">
-  <p class="pw-ovl"><i class="pw-dot" style="--c:{{ dot }}"></i>{{ t(ovl_en, ovl_zh) }}</p>
-  <h2>{{ t(h_en, h_zh) }}</h2>
+{% macro lean_tag(value) -%}
+  {% set labels = LEAN.get(value, [value, value]) %}
+  <span class="pw-badge {{ 'fact' if value == 'overweight' else ('warn' if value == 'underweight' else 'miss') }}">{{ bl(labels[0], labels[1]) }}</span>
+{%- endmacro %}
+{% macro status_tag(value, needs_review=false) -%}
+  {% if needs_review %}<span class="pw-badge warn">{{ t('Needs review','需要复核') }}</span>
+  {% elif value == 'hit' %}<span class="pw-badge fact">{{ t('Right','正确') }}</span>
+  {% elif value == 'miss' %}<span class="pw-badge miss">{{ t('Wrong','错误') }}</span>
+  {% else %}<span class="pw-badge neutral">{{ t('Open','待定') }}</span>{% endif %}
+{%- endmacro %}
+{% macro section_head(kicker_en, kicker_zh, title_en, title_zh, desc_en='', desc_zh='') -%}
+<div class="pw-section-head">
+  <p class="pw-eyebrow">{{ t(kicker_en, kicker_zh) }}</p>
+  <h2>{{ t(title_en, title_zh) }}</h2>
+  {% if desc_en %}<p>{{ t(desc_en, desc_zh) }}</p>{% endif %}
 </div>
 {%- endmacro %}
 
@@ -43,503 +235,343 @@
 
 {%- block head_extra %}
 {% set seo_title = "Fed & Policy Watch — Mastermind" %}
-{% set seo_desc = "The Fed's path, real-time policy expectations and what would change them — read from market prices, updated daily." %}
+{% set seo_desc = "The policy moves that matter for rates and markets, in plain language." %}
 {% set seo_path = "policy_watch.html" %}
 {%- include "_seo_head.html.j2" %}
+<link rel="preload" href="/fonts/InterDisplay-600.woff2" as="font" type="font/woff2" crossorigin>
 {%- endblock %}
 
 {% block base_css %}
-  /* ── Policy Watch — situation-desk revamp ──────────────────────────────────
-     Type roles follow the macro.html Attio trial: Inter Display carries
-     headings, state words and overlines; body stays on the shared UI stack;
-     dates, counts and percentages get tabular figures. Fonts are the same
-     self-hosted files macro.html uses (China-safe, no third-party request). */
-  @font-face { font-family:"MX Inter Display"; src:url("fonts/InterDisplay-600.woff2") format("woff2");
-               font-style:normal; font-weight:600; font-display:swap; }
-  @font-face { font-family:"MX Inter Display"; src:url("fonts/InterDisplay-700.woff2") format("woff2");
-               font-style:normal; font-weight:700; font-display:swap; }
-  :root {
-    --pw-disp: "MX Inter Display", Inter, "PingFang SC", "Hiragino Sans GB",
-      "Microsoft YaHei", "Noto Sans CJK SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    /* page accent set = the dossier's existing thread colors, promoted to tokens
-       (dark values are the base — theme.css is dark-default, light overrides) */
-    --pwa: #c77dff;   /* fed violet — the page identity */
-    --pwb: #5b8def;   /* policy blue */
-    --pwt: #3fb6c0;   /* treasury / dollar teal */
-    --pwg: #3fc07e;   /* working / hit green */
-    --pwam: #e0973a;  /* prior / caution amber */
-    --pwr: #ef6a6a;   /* miss / lagging red */
+  @font-face{font-family:"MX Inter Display";src:url("/fonts/InterDisplay-500.woff2") format("woff2");font-style:normal;font-weight:500;font-display:swap}
+  @font-face{font-family:"MX Inter Display";src:url("/fonts/InterDisplay-600.woff2") format("woff2");font-style:normal;font-weight:600;font-display:swap}
+  @font-face{font-family:"MX Inter Display";src:url("/fonts/InterDisplay-700.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap}
+  body{
+    --font-ui:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    --font-display:"MX Inter Display",Inter,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --font-data:Inter,"SF Pro Text","SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    --pw-hair:color-mix(in srgb,var(--line) 82%,transparent);
+    --pw-tile:color-mix(in srgb,var(--panel2) 86%,var(--panel));
+    --pw-ink-2:color-mix(in srgb,var(--text) 68%,transparent);
+    --pw-shadow:inset 0 1px 0 color-mix(in srgb,var(--text) 8%,transparent),0 1px 1px rgba(0,0,0,.24),0 14px 30px -18px rgba(0,0,0,.52);
+    --pw-purple:#a879e8;--pw-blue:#5b8def;--pw-teal:#3fb6c0;--pw-green:var(--up);--pw-amber:var(--warn);--pw-red:var(--down);
+    background:#0a0c11;color:var(--text);font-family:var(--font-ui);font-size:14px;line-height:1.55;font-weight:500;
+    padding:18px 18px 60px;font-synthesis:none;text-rendering:optimizeLegibility;
   }
-  html[data-theme="light"] {
-    --pwa: #8b46e0; --pwb: #3b63d4; --pwt: #147f8a; --pwg: #1f9a55; --pwam: #a8701f; --pwr: #d23f3f;
-  }
-  html { scroll-behavior:smooth; }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
-
-  /* ── hero ── */
-  .pw-hero { max-width:1060px; margin:18px auto 0; position:relative; overflow:hidden;
-             background:radial-gradient(620px 240px at 88% -30%, color-mix(in srgb, var(--pwa) 10%, transparent), transparent 70%), var(--panel);
-             border:1px solid var(--line); border-radius:16px; padding:24px 28px 22px;
-             display:grid; grid-template-columns:1.35fr .85fr 1fr; gap:14px 30px; box-shadow:var(--card-shadow, none); }
-  .pw-hero::before { content:""; position:absolute; inset:0 0 auto 0; height:3px;
-             background:linear-gradient(90deg, var(--pwa), color-mix(in srgb, var(--pwa) 12%, transparent) 60%, transparent); }
-  @media (max-width: 960px) { .pw-hero { grid-template-columns:1fr; } }
-  .pw-hero .eyebrow { font-family:var(--pw-disp); font-size:11px; font-weight:600; letter-spacing:.06em;
-             text-transform:uppercase; color:var(--pwa); margin:0 0 10px; }
-  .pw-hero h1 { font-family:var(--pw-disp); font-size:30px; font-weight:700; letter-spacing:-.02em; margin:0 0 8px; line-height:1.12; }
-  html[data-lang="zh"] .pw-hero h1, html[data-lang="zh"] .pw-hero .eyebrow, html[data-lang="zh"] .pw-ovl { letter-spacing:0; }
-  .pw-hero .lens { font-size:13px; color:var(--muted); margin:0 0 14px; line-height:1.55; max-width:46ch; }
-  .pw-chips { display:flex; flex-wrap:wrap; gap:7px; }
-  .pwc { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:6px 10px;
-         border-radius:999px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
-  .pwc b { color:var(--text); font-variant-numeric:tabular-nums; }
-  .pwc.age-ok    { color:var(--pwg); border-color:color-mix(in srgb, var(--pwg) 30%, transparent); }
-  .pwc.age-amber { color:var(--pwam); border-color:color-mix(in srgb, var(--pwam) 32%, transparent); }
-  .pwc.age-red   { color:var(--pwr); border-color:color-mix(in srgb, var(--pwr) 32%, transparent); }
-  /* stance cell */
-  .pw-ovl { font-family:var(--pw-disp); font-size:11px; font-weight:600; letter-spacing:.06em;
-            text-transform:uppercase; color:var(--muted); margin:0 0 8px; display:flex; align-items:center; gap:7px; }
-  .pw-dot { width:7px; height:7px; border-radius:50%; background:var(--c, var(--muted)); flex:0 0 auto; }
-  .pw-state { font-family:var(--pw-disp); font-size:26px; font-weight:700; letter-spacing:-.02em; margin:0 0 6px; line-height:1.15; }
-  html[data-lang="zh"] .pw-state { letter-spacing:0; }
-  .pw-state.s-down { color:var(--pwr); }
-  .pw-state.s-up { color:var(--pwg); }
-  .pw-state.s-muted { color:var(--text); }
-  .pw-since { font-size:12px; color:var(--muted); margin:0 0 8px; font-variant-numeric:tabular-nums; }
-  .pw-drv { font-size:11.5px; color:var(--muted); margin:0; line-height:1.6; }
-  /* decision clock cell */
-  .pw-clock { border-left:1px solid var(--line); padding-left:26px; }
-  @media (max-width: 960px) { .pw-clock { border-left:none; padding-left:0; border-top:1px solid var(--line); padding-top:14px; } }
-  .pw-ck-row { display:flex; align-items:baseline; gap:9px; padding:6px 0; border-bottom:1px dashed color-mix(in srgb, var(--line) 72%, transparent); }
-  .pw-ck-row:last-of-type { border-bottom:none; }
-  .pw-ck-date { font-family:var(--pw-disp); font-weight:600; font-size:12px; font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--text); }
-  .pw-ck-ev { font-size:12px; line-height:1.4; color:var(--text); opacity:.9; flex:1; min-width:0; }
-  .pw-ck-ev .imp { margin-left:6px; }
-  .pw-ck-chip { font-size:10px; font-weight:700; letter-spacing:.03em; padding:2px 7px; border-radius:6px; white-space:nowrap; }
-  .pw-ck-chip.up { color:var(--pwa); background:color-mix(in srgb, var(--pwa) 14%, transparent); }
-  .pw-ck-chip.past { color:var(--muted); background:var(--panel2); }
-  .pw-ck-note { font-size:11px; color:var(--muted); margin:8px 0 0; }
-  /* impact dots: 3/2/1 filled for high/medium/low */
-  .imp { display:inline-flex; gap:3px; align-items:center; vertical-align:middle; }
-  .imp i { width:5px; height:5px; border-radius:50%; background:color-mix(in srgb, var(--muted) 32%, transparent); }
-  .imp i.on { background:var(--pwa); }
-
-  /* ── merged notice band (divergence + staleness live here, once) ── */
-  .pw-note { max-width:1060px; margin:14px auto 0; border:1px solid color-mix(in srgb, var(--pwam) 32%, transparent);
-             border-left:3px solid var(--pwam); background:color-mix(in srgb, var(--pwam) 7%, var(--panel));
-             border-radius:12px; padding:11px 16px; font-size:13px; line-height:1.6; }
-  .pw-note p { margin:2px 0; }
-
-  /* ── on-page jump chips ── */
-  .pw-toc { max-width:1060px; margin:16px auto 0; display:flex; flex-wrap:wrap; gap:7px; }
-  .pw-toc a { font-family:var(--pw-disp); font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
-              color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:6px 12px;
-              transition:color .16s, border-color .16s; }
-  .pw-toc a:hover { color:var(--text); border-color:color-mix(in srgb, var(--text) 26%, transparent); }
-  html[data-lang="zh"] .pw-toc a { letter-spacing:0; }
-
-  .pw-wrap { max-width:1060px; margin:0 auto; }
-
-  /* ── thesis duo ── */
-  .pw-duo { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0 0; }
-  @media (max-width: 860px) { .pw-duo { grid-template-columns:1fr; } }
-  .pw-th { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 19px; box-shadow:var(--card-shadow, none); }
-  .pw-th.key { border-top:3px solid var(--pwg); }
-  .pw-th.warn { border-top:3px solid var(--pwam); }
-  .pw-th .pw-ovl { margin-bottom:9px; }
-  .pw-prose { font-size:13.5px; line-height:1.65; margin:0; display:-webkit-box; -webkit-line-clamp:8; -webkit-box-orient:vertical; overflow:hidden; }
-  .pw-prose.open { display:block; -webkit-line-clamp:unset; overflow:visible; }
-  .pw-more { appearance:none; background:none; border:none; padding:8px 0 0; cursor:pointer;
-             font:600 12px/1 var(--pw-disp); color:var(--pwa); letter-spacing:.02em; }
-  .pw-more:hover { text-decoration:underline; }
-  .pw-more .less, .pw-more.open .more { display:none; }
-  .pw-more.open .less { display:inline; }
-
-  /* ── section rhythm ── */
-  .pw-sec { border-top:1px solid var(--line); margin-top:40px; padding-top:26px; scroll-margin-top:84px; }
-  .pw-sec h2 { font-family:var(--pw-disp); font-size:20px; font-weight:600; letter-spacing:-.01em; margin:0 0 6px; }
-  html[data-lang="zh"] .pw-sec h2 { letter-spacing:0; }
-  h3.sub { font-family:var(--pw-disp); font-size:11.5px; margin:20px 0 8px; color:var(--muted);
-           text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
-  html[data-lang="zh"] h3.sub { letter-spacing:0; }
-  .lede { font-size:13.5px; line-height:1.65; }
-  .pw-lede { font-size:13px; line-height:1.6; color:var(--muted); margin:4px 0 10px; max-width:88ch; }
-
-  /* ── badges (basis / status / confidence) ── */
-  .b { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.03em; padding:2.5px 7px; border-radius:6px; white-space:nowrap; }
-  .b-fact { color:var(--pwg); background:color-mix(in srgb, var(--pwg) 13%, transparent); }
-  .b-inf  { color:var(--pwa); background:color-mix(in srgb, var(--pwa) 14%, transparent); }
-  .b-prior{ color:var(--pwam); background:color-mix(in srgb, var(--pwam) 14%, transparent); }
-  .b-open { color:var(--muted); background:var(--panel2); }
-  .b-hit  { color:var(--pwg); background:color-mix(in srgb, var(--pwg) 13%, transparent); }
-  .b-miss { color:var(--pwr); background:color-mix(in srgb, var(--pwr) 13%, transparent); }
-  .th-fed{color:var(--pwa)}.th-treasury{color:var(--pwt)}.th-policy{color:var(--pwb)}.th-rotation{color:var(--pwg)}.th-debasement{color:var(--pwam)}.th-dollar{color:var(--pwt)}
-  .conf { font-size:11px; color:var(--muted); }
-
-  /* ── panels + cards ── */
-  .pw-panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 18px; margin:12px 0; box-shadow:var(--card-shadow, none); }
-  .pw-panel .pw-ovl { margin-bottom:7px; }
-  .pw-panel.warn { border-left:3px solid var(--pwam); }
-  .pw-quote { border-left:3px solid var(--pwa); background:var(--panel2); border-radius:0 10px 10px 0;
-              padding:10px 14px; margin:12px 0; font-size:13px; line-height:1.6; }
-  .cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; margin:12px 0; }
-  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px;
-          box-shadow:var(--card-shadow, none); transition:border-color .16s; }
-  .card:hover { border-color:color-mix(in srgb, var(--text) 18%, var(--line)); }
-  .card .cn { font-family:var(--pw-disp); font-weight:600; font-size:14.5px; letter-spacing:-.01em; margin:0 0 4px; line-height:1.35; }
-  .card .cmeta { font-size:11px; color:var(--muted); margin-bottom:8px; display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
-  .card .cch { font-size:12.5px; line-height:1.55; margin:6px 0; }
-  .pw-block { margin-top:9px; padding-left:10px; border-left:2px solid var(--line); font-size:12.5px; line-height:1.55; }
-  .pw-block.read { border-left-color:var(--pwa); }
-  .pw-block.cap { border-left-color:var(--pwt); }
-  .pw-block .pw-bl { display:block; font-family:var(--pw-disp); font-size:10px; font-weight:600;
-                     letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
-  html[data-lang="zh"] .pw-block .pw-bl { letter-spacing:0; }
-  .pw-tkr { font-family:var(--pw-disp); font-weight:600; letter-spacing:0; }
-
-  /* ── tables ── */
-  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
-  table.data th { font-family:var(--pw-disp); text-align:left; padding:8px 10px; background:var(--panel2); color:var(--muted);
-                  font-weight:600; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; border-bottom:2px solid var(--line); }
-  html[data-lang="zh"] table.data th { letter-spacing:0; }
-  table.data td { padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.5; }
-  table.data tr:hover td { background:var(--panel2); }
-  table.data td .num, table.data td strong { font-variant-numeric:tabular-nums; }
-  tr.key-row td { background:color-mix(in srgb, var(--pwa) 6%, transparent); }
-  tr.key-row:hover td { background:color-mix(in srgb, var(--pwa) 10%, transparent); }
-  .k-star { color:var(--pwa); }
-  .prox { font-family:var(--pw-disp); font-weight:600; font-size:11px; letter-spacing:.01em; color:var(--text); opacity:.85; }
-  .led-stat { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 4px; }
-
-  /* ── monitor + sources ── */
-  .monitor { list-style:none; padding:0; margin:12px 0; display:grid; grid-template-columns:1fr 1fr; gap:2px 26px; }
-  @media (max-width: 760px) { .monitor { grid-template-columns:1fr; } }
-  .monitor li { margin:0; padding:8px 2px; font-size:13px; border-bottom:1px dashed color-mix(in srgb, var(--line) 72%, transparent); }
-  .monitor a { color:var(--link); }
-  .srcs { font-size:11.5px; color:var(--muted); word-break:break-word; line-height:2; }
-  .srcs a { color:var(--link); border:1px solid var(--line); border-radius:6px; padding:2px 6px; margin-right:2px; white-space:nowrap; }
-  .srcs a:hover { border-color:color-mix(in srgb, var(--link) 45%, transparent); }
+  @media(min-width:1100px){body{padding:26px max(40px,calc((100vw - 1500px)/2)) 72px}}
+  html[data-theme="light"] body{--pw-tile:#eef1f6;--pw-ink-2:color-mix(in srgb,var(--text) 72%,transparent);--pw-shadow:0 1px 2px rgba(23,32,55,.05),0 8px 24px -12px rgba(23,32,55,.12);background:#e8ebf1}
+  html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif;letter-spacing:normal}
+  .pw-shell{width:100%;max-width:1500px;margin:18px auto 0;min-width:0}
+  .pw-shell *{min-width:0}
+  .pw-shell :is(h1,h2,h3,.pw-state,.pw-card-title){font-family:var(--font-display)}
+  .pw-shell :is(.pw-date,.pw-stat strong,.pw-count,.pw-performance){font-family:var(--font-data);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+  .pw-surface,.pw-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--pw-shadow)}
+  .pw-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:28px;padding:26px 28px}
+  .pw-hero::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--pw-purple),color-mix(in srgb,var(--pw-blue) 50%,transparent) 62%,transparent)}
+  .pw-eyebrow{margin:0 0 8px;color:var(--pw-purple);font-family:var(--font-display);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  html[data-lang="zh"] .pw-eyebrow{letter-spacing:0}
+  .pw-hero h1{margin:0;font-size:32px;line-height:1.12;font-weight:700;letter-spacing:-.025em}
+  html[data-lang="zh"] .pw-hero h1{letter-spacing:0}
+  .pw-subtitle{max-width:60ch;margin:10px 0 16px;color:var(--pw-ink-2);font-size:14px}
+  .pw-chips,.pw-meta-row,.pw-toc{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+  .pw-chip,.pw-badge{display:inline-flex;align-items:center;max-width:100%;border-radius:999px;border:1px solid var(--pw-hair);background:var(--pw-tile);overflow-wrap:anywhere;white-space:normal}
+  .pw-chip{gap:5px;padding:5px 10px;color:var(--pw-ink-2);font-size:11.5px;line-height:1.2}
+  .pw-chip strong{color:var(--text)}
+  .pw-chip.stale,.pw-badge.warn{color:var(--pw-amber);border-color:color-mix(in srgb,var(--pw-amber) 42%,var(--line));background:color-mix(in srgb,var(--pw-amber) 10%,var(--panel))}
+  .pw-badge{padding:3px 8px;font-size:10.5px;font-weight:700;line-height:1.25}
+  .pw-badge.fact{color:var(--pw-green);border-color:color-mix(in srgb,var(--pw-green) 38%,var(--line));background:color-mix(in srgb,var(--pw-green) 9%,var(--panel))}
+  .pw-badge.read{color:var(--pw-purple);border-color:color-mix(in srgb,var(--pw-purple) 38%,var(--line));background:color-mix(in srgb,var(--pw-purple) 9%,var(--panel))}
+  .pw-badge.scenario,.pw-badge.updated{color:var(--pw-blue);border-color:color-mix(in srgb,var(--pw-blue) 38%,var(--line));background:color-mix(in srgb,var(--pw-blue) 9%,var(--panel))}
+  .pw-badge.miss{color:var(--pw-red);border-color:color-mix(in srgb,var(--pw-red) 38%,var(--line));background:color-mix(in srgb,var(--pw-red) 9%,var(--panel))}
+  .pw-badge.neutral{color:var(--pw-ink-2)}
+  .pw-meta{color:var(--muted);font-size:11px}
+  .pw-hero-side{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:22px;border-left:1px solid var(--pw-hair);padding-left:26px}
+  .pw-mini-title{margin:0 0 7px;color:var(--muted);font-family:var(--font-display);font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .pw-state{margin:0;color:var(--text);font-size:23px;font-weight:700;line-height:1.16;letter-spacing:-.02em}
+  .pw-state.hawkish{color:var(--pw-amber)}.pw-state.dovish{color:var(--pw-green)}
+  .pw-mini-copy{margin:7px 0 0;color:var(--pw-ink-2);font-size:12px;line-height:1.45}
+  .pw-event-list{display:grid;gap:0}
+  .pw-event{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:9px;align-items:start;padding:7px 0;border-bottom:1px solid var(--pw-hair)}
+  .pw-event:last-child{border-bottom:0}.pw-date{font-size:11.5px;font-weight:700}.pw-event-name{font-size:12px;line-height:1.35}.pw-event-note{grid-column:2/-1;margin:0;color:var(--pw-ink-2);font-size:11.5px}
+  .pw-alert{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:14px;padding:11px 15px;border:1px solid color-mix(in srgb,var(--pw-amber) 36%,var(--line));border-left:3px solid var(--pw-amber);border-radius:12px;background:color-mix(in srgb,var(--pw-amber) 7%,var(--panel));font-size:12.5px}
+  .pw-toc{margin:14px 0 0}.pw-toc .gbtn{font-family:var(--font-display);font-size:11px;text-transform:none}
+  .pw-section{scroll-margin-top:84px;margin-top:34px}
+  .pw-section-head{display:grid;grid-template-columns:auto 1fr;align-items:end;gap:0 12px;margin:0 0 13px;padding:0 0 11px;border-bottom:1px solid var(--line)}
+  .pw-section-head::before{content:"";grid-row:1/4;width:3px;height:20px;align-self:start;margin-top:3px;border-radius:2px;background:linear-gradient(180deg,var(--pw-purple),color-mix(in srgb,var(--pw-purple) 30%,transparent))}
+  .pw-section-head .pw-eyebrow{grid-column:2;margin:0 0 2px}.pw-section-head h2{grid-column:2;margin:0;font-size:19px;font-weight:700;line-height:1.3;letter-spacing:-.01em}.pw-section-head>p:last-child:not(.pw-eyebrow){grid-column:2;margin:4px 0 0;color:var(--pw-ink-2);font-size:13px}
+  .pw-glance-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .pw-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+  .pw-card{position:relative;padding:17px 18px;overflow:hidden;overflow-wrap:anywhere}.pw-card::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--card-accent,var(--pw-purple))}.pw-card.green{--card-accent:var(--pw-green)}.pw-card.blue{--card-accent:var(--pw-blue)}.pw-card.amber{--card-accent:var(--pw-amber)}.pw-card.teal{--card-accent:var(--pw-teal)}
+  .pw-card-title{margin:0;font-size:15px;font-weight:600;line-height:1.35;letter-spacing:-.01em}.pw-card p{margin:8px 0 0;color:var(--pw-ink-2);font-size:13px;line-height:1.5}.pw-card p.pw-primary{color:var(--text);font-size:13.5px}.pw-card .pw-meta-row{margin-top:10px}.pw-card-label{display:block;margin-bottom:3px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  .pw-stance{display:inline-flex;margin-top:12px;padding:5px 10px;border-radius:8px;color:var(--pw-amber);border:1px solid color-mix(in srgb,var(--pw-amber) 38%,var(--line));background:color-mix(in srgb,var(--pw-amber) 9%,var(--panel));font-size:11.5px;font-weight:700}
+  details.pw-details{margin-top:12px}.pw-details>summary{list-style:none}.pw-details>summary::-webkit-details-marker{display:none}.pw-details[open]>summary{margin-bottom:9px}.pw-detail-body{padding:11px 13px;border:1px solid var(--pw-hair);border-radius:10px;background:var(--pw-tile);color:var(--pw-ink-2);font-size:12px;line-height:1.55;overflow-wrap:anywhere}.pw-detail-body p{margin:0 0 8px;font-size:12px}.pw-detail-body p:last-child{margin-bottom:0}
+  .pw-statbar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}.pw-stat{padding:7px 10px;border:1px solid var(--pw-hair);border-radius:9px;background:var(--pw-tile);color:var(--pw-ink-2);font-size:11.5px}.pw-stat strong{color:var(--text);font-size:13px}
+  .pw-market-card .pw-examples{color:var(--text);font-family:var(--font-data);font-size:11.5px;font-weight:600;letter-spacing:.01em}.pw-performance{font-size:11.5px}
+  .pw-ledger{display:grid;gap:8px}.pw-call{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:9px 14px;align-items:start;padding:12px 14px;border:1px solid var(--pw-hair);border-radius:11px;background:var(--panel)}.pw-call-topic{color:var(--muted);font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}.pw-call-text{grid-column:1;margin:2px 0 0;color:var(--text);font-size:12.5px;line-height:1.45}.pw-call-date{font-family:var(--font-data);font-size:11.5px;white-space:nowrap}.pw-call-status{grid-column:3;grid-row:1/3}.pw-call-id{color:var(--muted);font-family:var(--font-data);font-size:10.5px}
+  .pw-monitor{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.pw-monitor-row{padding:11px 12px;border:1px solid var(--pw-hair);border-radius:10px;background:var(--pw-tile)}.pw-monitor-row strong{display:block;font-size:12.5px}.pw-monitor-row span{display:block;margin-top:3px;color:var(--pw-ink-2);font-size:11.5px}.pw-sources{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.pw-sources a{max-width:100%;overflow-wrap:anywhere}.pw-build-note{margin:13px 0 0;color:var(--muted);font-size:11px}
+  .pw-extra[hidden]{display:none!important}.pw-reveal{margin-top:12px}.pw-shell .gbtn{max-width:100%;font-family:var(--font-ui);white-space:normal;text-align:left}
+  @media(max-width:1000px){.pw-hero{grid-template-columns:1fr}.pw-hero-side{border-left:0;border-top:1px solid var(--pw-hair);padding:18px 0 0}.pw-card-grid{grid-template-columns:1fr}.pw-monitor{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:680px){.pw-shell{margin-top:14px}.pw-hero{padding:22px 18px}.pw-hero h1{font-size:28px}.pw-hero-side,.pw-glance-grid{grid-template-columns:1fr}.pw-event{grid-template-columns:58px minmax(0,1fr) auto}.pw-section{margin-top:28px}.pw-card{padding:15px 16px}.pw-monitor{grid-template-columns:1fr}.pw-call{grid-template-columns:minmax(0,1fr) auto}.pw-call-date{grid-column:1}.pw-call-status{grid-column:2;grid-row:1/4}.pw-toc{gap:6px}.pw-toc .gbtn{padding:6px 10px}}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 {% endblock %}
 
 {% block content %}
-{# decision clock feed: next 3 upcoming catalysts, else the 3 most recent past #}
-{% set _spine = catalysts.spine if catalysts and catalysts.spine else [] %}
-{% set _up = _spine | rejectattr('past') | list %}
-{% set _past = _spine | selectattr('past') | list %}
-{% set _clock = _up[:3] if _up else (_past[-3:] | reverse | list) %}
-{% set _WEIGHT = {'high':'高','medium':'中','low':'低'} %}
-{% set _WN = {'high':3,'medium':2,'low':1} %}
+{% set spine = catalysts.spine if catalysts and catalysts.spine else [] %}
+{% set upcoming = spine|rejectattr('past')|list %}
+{% set past = spine|selectattr('past')|list %}
+{% set age = dates.staleness.age_days if dates and dates.staleness else none %}
+{% set stance = fed_stance.stance if fed_stance else 'unknown' %}
+{% set divergence = scorecard.sharpest_divergence if scorecard and scorecard.sharpest_divergence else none %}
 
-<section class="pw-hero">
-  <div>
-    <p class="eyebrow">{{ t('Policy intelligence', '政策情报') }}</p>
-    <h1>{{ t('Fed & Policy Watch', '美联储与政策观察') }}</h1>
-    <p class="lens">{{ t('What policymakers do, not what they say — non-partisan · as of', '看政策制定者做什么，而非说什么 — 非党派 · 截至') }} {{ intel.as_of }}</p>
-    <div class="pw-chips">
-      {% set _resolved = counts.hit + counts.miss %}
-      <span class="pwc"><b>{{ counts.total }}</b> {{ t('calls on record', '在案判断') }}</span>
-      <span class="pwc">{{ _resolved }} {{ t('graded', '已核') }}{% if counts.hit_rate is not none %} · <b>{{ (counts.hit_rate*100)|round|int }}%</b> {{ t('landed', '命中') }}{% endif %}{% if dates and dates.overdue_predictions %} · <span class="r-neg">{{ dates.overdue_predictions }} {{ t('due', '待结') }}</span>{% endif %}</span>
-      {% if scorecard %}
-      <span class="pwc">{{ t('rotation', '轮动') }}: <span class="r-pos">{{ scorecard.rotation.working }} {{ t('working', '达标') }}</span> · <span class="r-neg">{{ scorecard.rotation.lagging }} {{ t('lagging', '落后') }}</span></span>
-      {% endif %}
-      {% if dates and dates.staleness and dates.staleness.age_days is not none %}
-      {% set _age = dates.staleness.age_days %}
-      {% set _age_cls = 'age-red' if _age > 14 else ('age-amber' if _age > 7 else 'age-ok') %}
-      <span class="pwc {{ _age_cls }}"><span class="l-en">intel {{ _age }}d old</span><span class="l-zh">情报已{{ _age }}天未更新</span></span>
-      {% endif %}
+<main class="pw-shell">
+  <section class="pw-hero pw-surface" aria-labelledby="pw-title">
+    <div>
+      <p class="pw-eyebrow">{{ t('Market policy','市场政策') }}</p>
+      <h1 id="pw-title">{{ t('Fed & Policy Watch','美联储与政策观察') }}</h1>
+      <p class="pw-subtitle">{{ t('The policy moves that matter for markets. Last verified','影响市场的政策变化。最近核实于') }} <span class="l-en">{{ verified_en }}</span><span class="l-zh">{{ verified_zh }}</span>.</p>
+      <div class="pw-chips">
+        {% if age is not none and age > 14 %}<span class="pw-chip stale">{{ t('Needs refresh','需要更新') }}</span>{% endif %}
+        <span class="pw-chip">{{ t('Facts and analysis kept separate','事实与分析分开呈现') }}</span>
+      </div>
+      <span class="pw-stance">{{ t('Watch — don’t chase','观察，不追涨') }}</span>
     </div>
-  </div>
-  {% if fed_stance and fed_stance.stance != 'unknown' %}
-  <div>
-    <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwa)"></i>{{ t('Fed stance — read from market prices', '美联储姿态 — 由市场价格读出') }}</p>
-    <p class="pw-state s-{{ fed_stance.color }}">{{ bl(fed_stance.label_en, fed_stance.label_zh) }}</p>
-    {% if fed_hist and fed_hist.days_in_stance is not none %}
-    <p class="pw-since">{{ t('for', '已持续') }} {{ fed_hist.days_in_stance }}{{ t('d', '天') }} · {{ t('since', '自') }} {{ fed_hist.since }}{% if fed_hist.changed_recently %} <span class="b b-open">{{ t('recently shifted', '近期转变') }}</span>{% endif %}</p>
-    {% endif %}
-    {% if fed_stance.drivers_en %}
-    <p class="pw-drv"><span class="l-en">{{ fed_stance.drivers_en | join(' · ') }}</span><span class="l-zh">{{ fed_stance.drivers_zh | join(' · ') }}</span></p>
-    {% endif %}
-  </div>
-  {% endif %}
-  {% if _clock %}
-  <div class="pw-clock">
-    <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwb)"></i>{{ t('Decision clock', '决议时钟') }}</p>
-    {% for c in _clock %}
-    <div class="pw-ck-row">
-      <span class="pw-ck-date">{{ c.date[5:] if c.date|length == 10 else c.date }}</span>
-      <span class="pw-ck-ev">{% if c.key %}<span class="k-star">★</span> {% endif %}{{ bl(c.event_en, c.event_zh) }}<span class="imp" aria-hidden="true">{% for i in range(3) %}<i class="{{ 'on' if i < _WN.get(c.weight, 1) }}"></i>{% endfor %}</span></span>
-      <span class="pw-ck-chip {{ 'past' if c.past else 'up' }}">{% if c.past %}{{ t('passed', '已过') }}{% elif c.days_to == 0 %}{{ t('today', '今日') }}{% elif c.days_to == 1 %}{{ t('tomorrow', '明日') }}{% elif c.days_to is not none %}{{ t('in', '剩') }} {{ c.days_to }}{{ t('d', '天') }}{% else %}{{ t('dated', '已定') }}{% endif %}</span>
+    <div class="pw-hero-side">
+      <div>
+        <p class="pw-mini-title">{{ t('Rate outlook','利率前景') }}</p>
+        {% if stance == 'hawkish' %}<p class="pw-state hawkish">{{ t('Rates may stay high','利率可能维持高位') }}</p>
+        {% elif stance == 'dovish' %}<p class="pw-state dovish">{{ t('Cuts are priced','市场已计入降息') }}</p>
+        {% elif stance == 'neutral' %}<p class="pw-state">{{ t('No change priced','市场预期利率不变') }}</p>
+        {% else %}<p class="pw-state">{{ t('No current read','暂无最新判断') }}</p>{% endif %}
+        {% if fed_hist and fed_hist.since %}<p class="pw-mini-copy">{{ t('Unchanged since','自此日期以来未变') }} {{ fed_hist.since }}{% if fed_hist.changed_recently %} · {{ t('changed recently','近期有变化') }}{% endif %}</p>{% endif %}
+      </div>
+      <div>
+        <p class="pw-mini-title">{{ t('Key dates','关键日期') }}</p>
+        {% if upcoming %}
+        <div class="pw-event-list">
+          {% for event in upcoming[:3] %}
+          <div class="pw-event">
+            <span class="pw-date">{{ event.date[5:] }}</span>
+            <span class="pw-event-name">{% if event.key %}★ {% endif %}{{ bl(event.event_en, event.event_zh) }}</span>
+            <span class="pw-badge neutral">{% if event.days_to == 0 %}{{ t('Today','今天') }}{% elif event.days_to == 1 %}{{ t('Tomorrow','明天') }}{% else %}{{ event.days_to }}{{ t('d','天') }}{% endif %}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="pw-mini-copy">{{ t('No upcoming policy dates in this update.','本次更新没有未来政策日期。') }}</p>
+        {% endif %}
+        {% if past %}
+        <details class="pw-details">
+          <summary class="gbtn gbtn-sm gbtn-quiet">{{ t('Past dates','过去日期') }}</summary>
+          <div class="pw-detail-body pw-event-list">
+            {% for event in (past[-4:]|reverse|list) %}
+            <div class="pw-event"><span class="pw-date">{{ event.date[5:] }}</span><span class="pw-event-name">{{ bl(event.event_en, event.event_zh) }}</span><span class="pw-badge neutral">{{ t('Past','已过') }}</span></div>
+            {% endfor %}
+          </div>
+        </details>
+        {% endif %}
+      </div>
     </div>
-    {% endfor %}
-    {% if not _up %}<p class="pw-ck-note">{{ t('No dated catalysts ahead — calendar refreshes with the next intel update.', '暂无未来催化剂 — 日历将随下次情报更新刷新。') }}</p>{% endif %}
+  </section>
+
+  {% if (age is not none and age > 14) or divergence %}
+  <div class="pw-alert" role="note">
+    {% if age is not none and age > 14 %}<span><strong>{{ t('Needs refresh.','需要更新。') }}</strong> {{ t('Check the latest news before acting.','采取行动前请先核对最新消息。') }}</span>{% endif %}
+    {% if divergence %}<span><strong>{{ t('Not working:','尚未奏效：') }}</strong> {{ bl(divergence.theme, divergence.theme_zh if divergence.theme_zh else divergence.theme) }} {{ t('is trailing the S&P 500.','目前跑输标普500。') }}</span>{% endif %}
   </div>
   {% endif %}
-</section>
 
-{% set _stale = dates and dates.staleness and dates.staleness.stale %}
-{% set _sd = scorecard.rotation.sharpest_divergence if scorecard and scorecard.rotation.sharpest_divergence else None %}
-{% if _sd or _stale %}
-<div class="pw-note">
-  {% if _sd %}
-  {% set _sd_zh = (intel.rotation.targeted | selectattr('theme_en', 'equalto', _sd.theme) | map(attribute='theme_zh') | first) or _sd.theme %}
-  <p>⚠ <b>{{ t('Sharpest divergence', '最大背离') }}:</b> {{ t('the map targets', '地图看好') }} <b>{{ bl(_sd.theme, _sd_zh) }}</b> {{ t('but it is lagging SPY by', '但其跑输标普') }} {{ '%.1f'|format(_sd.rel*100) }}% — {{ t('evidence against that leg of the rotation thesis.', '是对该轮动判断的反证。') }}</p>
-  {% endif %}
-  {% if _stale %}
-  <p>⏳ <b>{{ t('Intel is', '情报已') }} {{ dates.staleness.age_days }} {{ t('days old', '天未更新') }}</b> — {{ t('re-verify before acting; this layer is time-sensitive (truces, ceasefires and pending rulings move).', '行动前请重新核实；该层具时效性（休战、停火与待决裁决随时变化）。') }}</p>
-  {% endif %}
-</div>
-{% endif %}
+  <nav class="pw-toc" aria-label="Jump to section">
+    <a class="gbtn gbtn-sm gbtn-pill" href="#overview">{{ t('Quick take','快速了解') }}</a>
+    {% if desk %}<a class="gbtn gbtn-sm gbtn-pill" href="#views">{{ t('Market views','市场观点') }}</a>{% endif %}
+    <a class="gbtn gbtn-sm gbtn-pill" href="#fed">{{ t('The Fed','美联储') }}</a>
+    <a class="gbtn gbtn-sm gbtn-pill" href="#policy">{{ t('Policy moves','政策行动') }}</a>
+    <a class="gbtn gbtn-sm gbtn-pill" href="#impact">{{ t('Market impact','市场影响') }}</a>
+    <a class="gbtn gbtn-sm gbtn-pill" href="#ledger">{{ t('Calls & results','判断与结果') }}</a>
+    <a class="gbtn gbtn-sm gbtn-pill" href="#sources">{{ t('Sources','来源') }}</a>
+  </nav>
 
-<nav class="pw-toc" aria-label="On this page">
-  {% if catalysts and catalysts.spine %}<a href="#calendar">{{ t('Calendar', '日历') }}</a>{% endif %}
-  {% if desk %}<a href="#desk">{{ t('Intent desk', '意图台') }}</a>{% endif %}
-  <a href="#fed">{{ t('The Fed', '美联储') }}</a>
-  <a href="#admin">{{ t('Administration', '行政当局') }}</a>
-  <a href="#rotation">{{ t('Rotation map', '轮动地图') }}</a>
-  <a href="#ledger">{{ t('Ledger', '台账') }}</a>
-  <a href="#monitor">{{ t('Monitor', '监测') }}</a>
-  <a href="#sources">{{ t('Sources', '来源') }}</a>
-</nav>
-
-<div class="pw-wrap">
-
-  <div class="pw-duo">
-    <div class="pw-th key">
-      <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwg)"></i>{{ t('The thesis', '核心论点') }}</p>
-      <p class="pw-prose" id="pw-thesis">{{ bl(intel.thesis.en, intel.thesis.zh) }}</p>
-      <button class="pw-more" aria-expanded="false" aria-controls="pw-thesis" type="button"><span class="more">{{ t('Read the full thesis ▾', '展开全文 ▾') }}</span><span class="less">{{ t('Show less ▴', '收起 ▴') }}</span></button>
+  <section class="pw-section" id="overview">
+    {{ section_head('Quick take','快速了解','What matters now','当前重点','The short version.','先看最重要的。') }}
+    <div class="pw-glance-grid">
+      <article class="pw-card green">
+        <h3 class="pw-card-title">{{ t('Bottom line','核心结论') }}</h3>
+        <p class="pw-primary">{{ t('The Fed is staying tough on inflation while Treasury tries to lower borrowing costs and fund domestic industry.','美联储仍严控通胀，财政部则试图降低融资成本并支持国内产业。') }}</p>
+      </article>
+      <article class="pw-card amber">
+        <h3 class="pw-card-title">{{ t('What to watch','需要关注') }}</h3>
+        <p class="pw-primary">{{ t('Jobs, inflation and Treasury funding matter more than speeches. Weak growth could reopen cuts; sticky inflation could delay them.','就业、通胀和国债融资比讲话更重要。增长转弱可能重启降息，通胀黏性则会推迟行动。') }}</p>
+      </article>
     </div>
-    <div class="pw-th warn">
-      <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwam)"></i>{{ t('Narrative vs revealed interest', '叙事 vs 真实利益') }}</p>
-      <p class="pw-prose" id="pw-regime">{{ bl(intel.regime_read.en, intel.regime_read.zh) }}</p>
-      <button class="pw-more" aria-expanded="false" aria-controls="pw-regime" type="button"><span class="more">{{ t('Read the full read ▾', '展开全文 ▾') }}</span><span class="less">{{ t('Show less ▴', '收起 ▴') }}</span></button>
-    </div>
-  </div>
+    <p class="pw-build-note">{{ t('The Fed and Treasury appear aligned on lower borrowing costs, but there is no proof of a coordinated plan.','美联储与财政部似乎都希望降低融资成本，但没有证据表明双方存在协同计划。') }}</p>
+  </section>
 
-  <!-- ================= CATALYST SPINE ================= -->
-  {% if catalysts and catalysts.spine %}
-  {% set _wcls = {'high':'b-inf','medium':'b-prior','low':'b-open'} %}
-  {{ sec_head('calendar', 'var(--pwb)', 'Calendar', '日历', 'Catalyst spine — inflation to decision', '催化剂主线 — 从通胀到决议') }}
-  <p class="pw-lede">{{ bl(catalysts.intro_en, catalysts.intro_zh) }}</p>
-  <table class="data">
-    <tr><th>{{ t('Date', '日期') }}</th><th>{{ t('Event', '事件') }}</th><th>{{ t('Impact', '影响') }}</th><th>{{ t('Read', '解读') }}</th></tr>
-    {% for c in catalysts.spine %}
-    <tr{% if c.key %} class="key-row"{% endif %}>
-      <td style="white-space:nowrap">
-        <strong>{{ c.date }}</strong><br>
-        <span class="conf">{{ bl(c.when_en, c.when_zh) }}</span>
-        {% if c.days_to is not none %}<br><span class="b {{ 'b-open' if c.past else 'b-fact' }}">{% if c.past %}{{ t('passed', '已过') }}{% elif c.days_to == 0 %}{{ t('today', '今日') }}{% elif c.days_to == 1 %}{{ t('tomorrow', '明日') }}{% else %}{{ t('in', '剩') }} {{ c.days_to }}{{ t('d', '天') }}{% endif %}</span>{% endif %}
-      </td>
-      <td>{% if c.key %}<span class="k-star">★</span> {% endif %}<strong>{{ bl(c.event_en, c.event_zh) }}</strong></td>
-      <td><span class="imp" aria-hidden="true">{% for i in range(3) %}<i class="{{ 'on' if i < _WN.get(c.weight, 1) }}"></i>{% endfor %}</span> <span class="b {{ _wcls.get(c.weight, 'b-open') }}">{{ code(c.weight, _WEIGHT) }}</span></td>
-      <td>{{ bl(c.note_en, c.note_zh) }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-  <p class="conf">{{ t('★ = the catalysts that actually move the decision (June CPI → the July 28–29 FOMC). Each hot print ratchets hike odds; PCE is largely pre-figured. Context, not a signal.', '★ = 真正影响决议的催化剂（6月CPI → 7月28–29日FOMC）。每次偏热读数都上调加息概率；PCE 大体已被预定。仅供参考、并非信号。') }}</p>
-  {% endif %}
-
-  <!-- ================= INTENT DESK (LLM, accountable) ================= -->
   {% if desk %}
-  {{ sec_head('desk', 'var(--pwa)', 'Intent desk', '意图台', 'Intent Desk — accountable realpolitik leans', '意图台 — 可问责的现实政治判断') }}
-  <p class="pw-lede">{{ t('An LLM reads the sourced intel + live market state and emits dated, checkable leans (a proxy ticker vs SPY) that are scored over time. Context only — never a size or a trade; intent is a tracked hypothesis, not an oracle.',
-      '由LLM读取来源情报+实时市场状态，给出有日期、可检验的判断（某代理标的 vs SPY），并随时间评分。仅供参考——绝非仓位或交易；意图是被追踪的假设，而非神谕。') }}</p>
-  {% if desk.regime_context %}<div class="pw-quote">{{ bl(desk.regime_context, desk.regime_context_zh) }}</div>{% endif %}
-  {% if desk.track_record and desk.track_record.overall and desk.track_record.overall.n %}
-  <div class="led-stat">
-    <span class="pwc"><b>{{ desk.track_record.overall.n }}</b> {{ t('scored', '已评分') }}</span>
-    {% if desk.track_record.overall.hit_rate is not none %}<span class="pwc"><b>{{ (desk.track_record.overall.hit_rate*100)|round|int }}%</b> {{ t('held up', '至今成立') }}</span>{% endif %}
-    {% if desk.track_record.open %}<span class="pwc">{{ desk.track_record.open }} {{ t('open', '未结') }}</span>{% endif %}
-    <span class="conf">{{ bl(desk.track_record.calibration_note, desk.track_record.calibration_note_zh) }}</span>
-  </div>
-  {% endif %}
-  {% if desk.theses %}
-  <div class="cards">
-    {% for th in desk.theses %}
-    <div class="card">
-      <div class="cn"><span class="th-{{ 'fed' if th.actor=='fed' else 'policy' }}">{{ code((th.actor or 'admin')|upper, _ACTOR) }}</span> · <span class="pw-tkr">{{ th.subject }}</span> — <span class="b {{ 'b-fact' if th.lean=='overweight' else 'b-miss' }}">{{ code(th.lean, _LEAN) }}</span></div>
-      <div class="cmeta">
-        <span class="conf">{{ tr(th.conviction, _CONF_TR) }} {{ t('conviction', '置信') }}</span>
-        <span class="b b-open">{{ t('check by', '核查于') }} {{ th.check_by }}</span>
-        <span class="conf">{{ code(th.falsifier.check.kind if th.falsifier and th.falsifier.check else 'soft', _KIND) }}</span>
-      </div>
-      <div class="cch">{{ bl(th.thesis, th.thesis_zh) }}</div>
-      {% if th.dissent %}<div class="cch" style="color:var(--muted)"><b>{{ t('Dissent', '反方') }}:</b> {{ bl(th.dissent, th.dissent_zh) }}</div>{% endif %}
-      {% if th.falsifier and th.falsifier.text %}<div class="pw-block read"><span class="pw-bl">{{ t('What changes this read', '改判条件') }}</span>{{ bl(th.falsifier.text, th.falsifier.text_zh) }}</div>{% endif %}
+  <section class="pw-section" id="views">
+    {{ section_head('Market views','市场观点','Ideas we’re tracking','我们正在跟踪的观点','Early views with a clear review date.','早期观点，均设有复核日期。') }}
+    {% if desk.track_record and desk.track_record.overall and desk.track_record.overall.n %}
+    <div class="pw-statbar"><span class="pw-stat"><strong>{{ desk.track_record.overall.n }}</strong> {{ t('checked','已复核') }}</span>{% if desk.track_record.overall.hit_rate is not none %}<span class="pw-stat"><strong>{{ (desk.track_record.overall.hit_rate*100)|round|int }}%</strong> {{ t('right so far','目前正确') }}</span>{% endif %}</div>
+    {% else %}<p class="pw-build-note">{{ t('No results yet. Treat these as early ideas.','暂无结果，请将这些视为早期观点。') }}</p>{% endif %}
+    {% if desk.theses %}
+    <div class="pw-card-grid">
+      {% for view in desk.theses %}
+      {% set actor = THREAD.get('fed' if view.actor == 'fed' else 'policy', ['Policy','政策']) %}
+      {% set view_copy = VIEW_COPY.get(view.subject) %}
+      <article class="pw-card blue" data-policy-id="view-{{ loop.index }}">
+        <span class="pw-card-label">{{ bl(actor[0], actor[1]) }}</span>
+        <h3 class="pw-card-title">{{ view.subject }} · {{ lean_tag(view.lean) }}</h3>
+        <p class="pw-primary">{{ bl(view_copy.en if view_copy else brief(view.thesis, 150), view_copy.zh if view_copy else brief(view.thesis_zh, 72)) }}</p>
+        <div class="pw-meta-row"><span class="pw-chip">{{ t('Review by','复核日期') }} {{ view.check_by }}</span>{{ confidence_tag(view.conviction) }}</div>
+        {% if view.dissent or (view.falsifier and view.falsifier.text) %}
+        <details class="pw-details">
+          <summary class="gbtn gbtn-sm">{{ t('Risks & review','风险与复核条件') }}</summary>
+          <div class="pw-detail-body">
+            {% if view.dissent %}<p><strong>{{ t('Main risk:','主要风险：') }}</strong> {{ bl(view_copy.risk_en if view_copy else brief(view.dissent, 160), view_copy.risk_zh if view_copy else brief(view.dissent_zh, 80)) }}</p>{% endif %}
+            {% if view.falsifier and view.falsifier.text %}<p><strong>{{ t('What would change this:','什么会改变判断：') }}</strong> {{ bl(brief(view.falsifier.text, 170), brief(view.falsifier.text_zh, 85)) }}</p>{% endif %}
+          </div>
+        </details>
+        {% endif %}
+      </article>
+      {% endfor %}
     </div>
-    {% endfor %}
-  </div>
-  {% elif desk.degraded_reason %}
-  <div class="pw-panel warn">{{ t('Desk note pending — the LLM layer generates in CI (needs the model key).', '台注待生成 —— LLM层在CI中生成（需模型密钥）。') }} <span class="conf">({{ desk.degraded_reason }})</span></div>
-  {% endif %}
-  <p class="conf">{{ bl(desk.disclaimer, desk.disclaimer_zh) }}</p>
+    {% else %}<div class="pw-card amber"><p class="pw-primary">{{ t('Market views are unavailable today.','今天暂无市场观点。') }}</p></div>{% endif %}
+    <p class="pw-build-note">{{ t('Unproven market views—not trade instructions.','这些观点尚未得到验证，不是交易指令。') }}</p>
+  </section>
   {% endif %}
 
-  <!-- ================= THE FED ================= -->
-  {{ sec_head('fed', 'var(--pwa)', 'The Fed', '美联储', 'The Fed under Warsh', '沃什治下的美联储') }}
-  <p class="lede">{{ bl(intel.fed.profile.en, intel.fed.profile.zh) }}</p>
-
-  {% if fed_stance and fed_stance.stance != 'unknown' %}
-  {% set scls = 'b-miss' if fed_stance.color=='down' else ('b-fact' if fed_stance.color=='up' else 'b-open') %}
-  <div class="pw-panel">
-    <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwa)"></i>{{ t('Reaction function — read from market prices, not a forecast', '反应函数 — 由市场价格读出、并非预测') }}
-      <span class="b {{ scls }}">{{ bl(fed_stance.label_en, fed_stance.label_zh) }}</span>{% if fed_hist and fed_hist.days_in_stance is not none %} <span class="conf">{{ t('for', '已持续') }} {{ fed_hist.days_in_stance }}{{ t('d', '天') }} ({{ t('since', '自') }} {{ fed_hist.since }}){% if fed_hist.changed_recently %} <span class="b b-open">{{ t('recently shifted', '近期转变') }}</span>{% endif %}</span>{% endif %}</p>
-    {% if fed_stance.drivers_en %}<span class="l-en">{{ fed_stance.drivers_en | join(' · ') }}</span><span class="l-zh">{{ fed_stance.drivers_zh | join(' · ') }}</span>. {% endif %}
-    <span class="conf">{{ bl(fed_stance.note_en, fed_stance.note_zh) }}</span>
-  </div>
-  {% endif %}
-
-  {% if intel.fed.optionality_read %}
-  <div class="pw-panel warn">
-    <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwam)"></i>{{ t('Pivot infrastructure — the 6/24 read', '转向基础设施 —— 6/24 解读') }}
-      <span class="b b-inf">{{ tr(intel.fed.optionality_read.basis, _BASIS_TR) }}</span> <span class="conf">{{ tr(intel.fed.optionality_read.confidence, _CONF_TR) }}</span></p>
-    {{ bl(intel.fed.optionality_read.en, intel.fed.optionality_read.zh) }}
-  </div>
-  {% endif %}
-
-  <h3 class="sub">{{ t('Reform task forces — dated, checkable', '改革工作组 — 有日期、可检验') }}</h3>
-  <div class="cards">
-    {% for tf in intel.fed.task_forces %}
-    <div class="card">
-      <div class="cn">{{ bl(tf.name_en, tf.name_zh) }}</div>
-      <div class="cmeta">
-        <span class="b b-open">{{ t('check by', '核查于') }} {{ tf.check_by }}</span>
-        {% set td = (dates.task_forces[tf.id] if dates and dates.task_forces and tf.id in dates.task_forces else None) %}
-        {% if td and td.days_to is not none %}{% if td.overdue %}<span class="b b-miss">{{ t('overdue', '已逾期') }}</span>{% else %}<span class="conf">{{ t('in', '剩') }} {{ td.days_to }}{{ t('d', '天') }}</span>{% endif %}{% endif %}
-        <span class="b {{ 'b-fact' if 'FACT' in tf.basis else 'b-inf' }}">{{ tr(tf.basis, _BASIS_TR) }}</span>
-        <span class="conf">{{ tr(tf.confidence, _CONF_TR) }}</span>
-      </div>
-      <div class="cch">{{ bl(tf.charter_en, tf.charter_zh) }}</div>
-      <div class="pw-block read"><span class="pw-bl">{{ t('Realpolitik read', '现实政治解读') }}</span>{{ bl(tf.realpolitik_en, tf.realpolitik_zh) }}</div>
+  <section class="pw-section" id="fed">
+    {{ section_head('The Fed','美联储','Fed changes to watch','值得关注的美联储变化','Rates may stay high until inflation cools.','在通胀降温前，利率可能维持高位。') }}
+    <div class="pw-glance-grid">
+      <article class="pw-card amber"><h3 class="pw-card-title">{{ t('Current direction','当前方向') }}</h3><p class="pw-primary">{{ t('Warsh is pushing a stricter 2% target, less bond buying and less forward guidance.','沃什正推动更严格的2%目标、减少购债并减少前瞻指引。') }}</p></article>
+      <article class="pw-card blue"><h3 class="pw-card-title">{{ t('What could change','可能的变化') }}</h3><p class="pw-primary">{{ t('Rule changes could make a later pivot easier, but there is no clear rate-cut signal yet.','规则调整可能让未来转向更容易，但目前没有明确的降息信号。') }}</p></article>
     </div>
-    {% endfor %}
-  </div>
-  <p class="pw-lede">⏳ {{ bl(intel.fed.staffing_note.en, intel.fed.staffing_note.zh) }}</p>
-
-  <!-- ================= THE ADMINISTRATION ================= -->
-  {{ sec_head('admin', 'var(--pwb)', 'Administration', '行政当局', 'The Administration', '行政当局') }}
-  <p class="lede">{{ bl(intel.administration.grand_strategy.en, intel.administration.grand_strategy.zh) }}</p>
-  <p class="conf">{{ t('Decision-makers tracked', '追踪的决策者') }}: <span class="l-en">{{ intel.administration.decision_makers | join(' · ') }}</span><span class="l-zh">{{ (intel.administration.decision_makers_zh if intel.administration.decision_makers_zh else intel.administration.decision_makers) | join(' · ') }}</span></p>
-
-  <h3 class="sub">{{ t('Verified policy levers', '已核实的政策杠杆') }}</h3>
-  <div class="cards">
-    {% for lv in intel.administration.verified_levers %}
-    <div class="card">
-      <div class="cn">{{ bl(lv.title_en, lv.title_zh) }}</div>
-      <div class="cmeta">
-        <span class="b {{ 'b-fact' if lv.basis.startswith('FACT') else 'b-inf' }}">{{ tr(lv.basis, _BASIS_TR) }}</span>
-        <span class="conf">{{ tr(lv.confidence, _CONF_TR) }}</span>
-      </div>
-      <div class="cch">{{ bl(lv.detail_en, lv.detail_zh) }}</div>
+    <div class="pw-card-grid" style="margin-top:12px">
+      {% for item in intel.fed.task_forces %}
+      {% set copy = TF_COPY.get(item.id) %}
+      <article class="pw-card" data-policy-id="{{ item.id }}">
+        <h3 class="pw-card-title">{{ bl(item.name_en, item.name_zh) }}</h3>
+        <p class="pw-primary">{{ bl(copy.en if copy else brief(item.charter_en), copy.zh if copy else brief(item.charter_zh, 72)) }}</p>
+        <div class="pw-meta-row"><span class="pw-chip">{{ t('Expected by','预计完成') }} {{ item.check_by }}</span>{{ basis_tags(item.basis) }}</div>
+        {% if copy %}<details class="pw-details"><summary class="gbtn gbtn-sm">{{ t('Why it matters','为何重要') }}</summary><div class="pw-detail-body">{{ bl(copy.why_en, copy.why_zh) }}</div></details>{% endif %}
+      </article>
+      {% endfor %}
     </div>
-    {% endfor %}
-  </div>
-  <h3 class="sub">{{ t('Geopolitical theaters', '地缘政治战区') }}</h3>
-  <div class="cards">
-    {% for th in intel.administration.theaters %}
-    <div class="card">
-      <div class="cn">{{ bl(th.title_en, th.title_zh) }}</div>
-      <div class="cmeta">
-        <span class="b {{ 'b-fact' if th.basis.startswith('FACT') else 'b-prior' }}">{{ tr(th.basis, _BASIS_TR) }}</span>
-        <span class="conf">{{ tr(th.confidence, _CONF_TR) }}</span>
-      </div>
-      <div class="cch">{{ bl(th.facts_en, th.facts_zh) }}</div>
-      <div class="pw-block read"><span class="pw-bl">{{ t('Realpolitik', '现实政治') }}</span>{{ bl(th.realpolitik_en, th.realpolitik_zh) }}</div>
-      <div class="pw-block cap"><span class="pw-bl">{{ t('Capital', '资本') }}</span>{{ bl(th.capital_en, th.capital_zh) }}</div>
+    <p class="pw-build-note">{{ t('No outside experts have been named yet.','目前尚未公布外部专家名单。') }}</p>
+  </section>
+
+  <section class="pw-section" id="policy">
+    {{ section_head('Policy moves','政策行动','White House & Treasury','白宫与财政部','Keeping borrowing costs manageable while steering money toward strategic industries.','在控制融资成本的同时，把资金引向战略产业。') }}
+    <h3 class="pw-mini-title">{{ t('Moves in force','已落地的行动') }}</h3>
+    <div class="pw-card-grid">
+      {% for lever in intel.administration.verified_levers %}
+      {% set copy = LEVER_COPY.get(lever.id) %}
+      <article class="pw-card blue" data-policy-id="{{ lever.id }}">
+        <h3 class="pw-card-title">{{ bl(copy.title_en if copy else lever.title_en, copy.title_zh if copy else lever.title_zh) }}</h3>
+        <p class="pw-primary">{{ bl(copy.en if copy else brief(lever.detail_en), copy.zh if copy else brief(lever.detail_zh, 72)) }}</p>
+        <div class="pw-meta-row">{{ basis_tags(lever.basis) }}{% if 'INFERENCE' in lever.basis %}{{ confidence_tag(lever.confidence) }}{% endif %}</div>
+      </article>
+      {% endfor %}
     </div>
-    {% endfor %}
-  </div>
+    <h3 class="pw-mini-title" style="margin-top:20px">{{ t('World events that matter','重要的全球事件') }}</h3>
+    <div class="pw-card-grid">
+      {% for theater in intel.administration.theaters %}
+      {% set copy = THEATER_COPY.get(theater.id) %}
+      <article class="pw-card amber" data-policy-id="{{ theater.id }}">
+        <h3 class="pw-card-title">{{ bl(copy.title_en if copy else theater.title_en, copy.title_zh if copy else theater.title_zh) }}</h3>
+        <p class="pw-primary">{{ bl(copy.fact_en if copy else brief(theater.facts_en), copy.fact_zh if copy else brief(theater.facts_zh, 72)) }}</p>
+        <div class="pw-meta-row">{{ basis_tags(theater.basis) }}</div>
+        {% if copy %}<details class="pw-details"><summary class="gbtn gbtn-sm">{{ t('Why it matters','为何重要') }}</summary><div class="pw-detail-body"><p><strong>{{ t('Why:','原因：') }}</strong> {{ bl(copy.why_en, copy.why_zh) }}</p><p><strong>{{ t('Market impact:','市场影响：') }}</strong> {{ bl(copy.market_en, copy.market_zh) }}</p></div></details>{% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
 
-  <!-- ================= CAPITAL ROTATION ================= -->
-  {{ sec_head('rotation', 'var(--pwg)', 'Rotation', '资本轮动', 'Capital-rotation map', '资本轮动地图') }}
-  <h3 class="sub">{{ t('Targeted / protected / subsidized', '受益 / 受保护 / 受补贴') }}</h3>
-  <table class="data">
-    <tr><th>{{ t('Theme', '主题') }}</th><th>{{ t('Mechanism', '机制') }}</th><th>{{ t('Proxies', '代理标的') }}</th><th>{{ t('Realized 63d vs SPY', '近63日 vs 标普') }}</th><th>{{ t('Basis', '依据') }}</th></tr>
-    {% for r in intel.rotation.targeted %}
-    <tr>
-      <td><strong>{{ bl(r.theme_en, r.theme_zh) }}</strong></td>
-      <td>{{ bl(r.mechanism_en, r.mechanism_zh) }}</td>
-      <td class="prox">{{ r.proxies | join(' ') if r.proxies else '—' }}</td>
-      <td class="num">{% set rc = (rot.themes[r.theme_en] if rot and rot.themes and (r.theme_en in rot.themes) else None) %}{% set rh = (rot_hist[r.theme_en] if rot_hist and (r.theme_en in rot_hist) else None) %}{% if rc and rc.verdict != 'na' %}<span class="b {{ {'working':'b-fact','lagging':'b-miss','mixed':'b-open'}[rc.verdict] }}">{{ code(rc.verdict, _VERDICT) }}</span> {{ '%+.1f'|format(rc.avg_rel*100) }}%{% if rh and rh.reads %}<br><span class="conf">{{ t('working', '达标') }} {{ rh.working }}/{{ rh.reads }}</span>{% endif %}{% else %}<span class="conf">—</span>{% endif %}</td>
-      <td><span class="b {{ 'b-prior' if 'PRIOR' in r.basis else ('b-fact' if 'FACT' in r.basis else 'b-inf') }}">{{ tr(r.basis, _BASIS_TR) }}</span><br><span class="conf">{{ tr(r.confidence, _CONF_TR) }}</span></td>
-    </tr>
-    {% endfor %}
-  </table>
-  {% if rot %}<p class="conf">{{ t('Realized = mean trailing-63d return of the theme&#39;s proxies minus SPY (coincident, context-only — a persistently lagging TARGETED theme is evidence against the rotation call).', '“近63日”= 该主题代理标的过去63个交易日相对标普的平均超额收益（同步、仅供参考——长期跑输的受益主题即是对该轮动判断的反证）。') }}</p>{% endif %}
-  <h3 class="sub">{{ t('Starved / pressured', '受冷落 / 承压') }}</h3>
-  <table class="data">
-    <tr><th>{{ t('Theme', '主题') }}</th><th>{{ t('Mechanism', '机制') }}</th><th>{{ t('Proxies', '代理标的') }}</th><th>{{ t('Basis', '依据') }}</th></tr>
-    {% for r in intel.rotation.starved %}
-    <tr>
-      <td><strong>{{ bl(r.theme_en, r.theme_zh) }}</strong></td>
-      <td>{{ bl(r.mechanism_en, r.mechanism_zh) }}</td>
-      <td class="prox">{{ r.proxies | join(' ') if r.proxies else '—' }}</td>
-      <td><span class="b {{ 'b-prior' if 'PRIOR' in r.basis else ('b-fact' if 'FACT' in r.basis else 'b-inf') }}">{{ tr(r.basis, _BASIS_TR) }}</span><br><span class="conf">{{ tr(r.confidence, _CONF_TR) }}</span></td>
-    </tr>
-    {% endfor %}
-  </table>
+  <section class="pw-section" id="impact">
+    {{ section_head('Market impact','市场影响','Where policy may help or hurt','政策可能利好或利空的方向','Examples to watch—not a buy list.','仅供观察，并非买入清单。') }}
+    <h3 class="pw-mini-title">{{ t('Potential beneficiaries','可能受益') }}</h3>
+    <div class="pw-card-grid" id="pw-target-grid">
+      {% for row in intel.rotation.targeted %}
+      {% set copy = TARGET_COPY.get(row.theme_en, [row.theme_en,row.theme_zh,brief(row.mechanism_en),brief(row.mechanism_zh,72)]) %}
+      {% set current = rot.themes[row.theme_en] if rot and rot.themes and row.theme_en in rot.themes else none %}
+      <article class="pw-card green pw-market-card pw-extra" data-policy-id="target-{{ loop.index }}"{% if loop.index > 6 %} hidden{% endif %}>
+        <h3 class="pw-card-title">{{ bl(copy[0],copy[1]) }}</h3>
+        <p class="pw-primary">{{ bl(copy[2],copy[3]) }}</p>
+        <p class="pw-examples">{{ row.proxies|join(' · ') if row.proxies else '—' }}</p>
+        <div class="pw-meta-row">{% if current and current.verdict != 'na' %}<span class="pw-badge {{ 'fact' if current.verdict == 'working' else ('miss' if current.verdict == 'lagging' else 'neutral') }}">{% if current.verdict == 'working' %}{{ t('Ahead','领先') }}{% elif current.verdict == 'lagging' %}{{ t('Behind','落后') }}{% else %}{{ t('Mixed','分化') }}{% endif %}</span>{% endif %}</div>
+        {% if current and current.verdict != 'na' %}<details class="pw-details"><summary class="gbtn gbtn-sm">{{ t('Performance','表现') }}</summary><div class="pw-detail-body pw-performance">{{ t('Last 3 months vs S&P 500:','近3个月相对标普500：') }} {{ '%+.1f'|format(current.avg_rel*100) }}%. {{ t('A check, not a forecast.','这只是核对结果，不是预测。') }}</div></details>{% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    {% if intel.rotation.targeted|length > 6 %}<button class="gbtn gbtn-sm pw-reveal" type="button" data-reveal="#pw-target-grid .pw-extra[hidden]">{{ t('Show all areas','显示全部方向') }}</button>{% endif %}
+    <h3 class="pw-mini-title" style="margin-top:20px">{{ t('Potential headwinds','可能承压') }}</h3>
+    <div class="pw-card-grid">
+      {% for row in intel.rotation.starved %}
+      {% set copy = HEADWIND_COPY.get(row.theme_en, [row.theme_en,row.theme_zh,brief(row.mechanism_en),brief(row.mechanism_zh,72)]) %}
+      <article class="pw-card amber pw-market-card" data-policy-id="headwind-{{ loop.index }}"><h3 class="pw-card-title">{{ bl(copy[0],copy[1]) }}</h3><p class="pw-primary">{{ bl(copy[2],copy[3]) }}</p><p class="pw-examples">{{ row.proxies|join(' · ') if row.proxies else '—' }}</p></article>
+      {% endfor %}
+    </div>
+  </section>
 
-  <!-- ================= PREDICTION LEDGER ================= -->
-  {{ sec_head('ledger', 'var(--pwam)', 'Ledger', '台账', 'Prediction ledger — dated calls, checked on schedule', '预测台账 — 有日期的判断，按期核查') }}
-  <p class="pw-lede">{{ t('The accountability spine: each call has a measurable outcome and a check-by date. Outcomes get scored over time so this layer earns a track record instead of being vibes. Policy-action calls (high-confidence, track explicit directives) are scored separately from market-outcome calls (lower-confidence inference).',
-      '问责脊柱：每条判断都有可衡量的结果与核查日期。结果将随时间被评分，使该层积累真实战绩而非凭感觉。政策行动类判断（高置信、追踪明确指令）与市场结果类判断（低置信、属推断）分开评分。') }}</p>
-  <div class="led-stat">
-    <span class="pwc"><b>{{ counts.total }}</b> {{ t('total', '总计') }}</span>
-    <span class="pwc"><b>{{ counts.open }}</b> {{ t('open', '未结') }}</span>
-    <span class="pwc"><b{% if counts.hit %} class="r-pos"{% endif %}>{{ counts.hit }}</b> {{ t('hit', '命中') }}</span>
-    <span class="pwc"><b{% if counts.miss %} class="r-neg"{% endif %}>{{ counts.miss }}</b> {{ t('miss', '落空') }}</span>
-    {% if dates and dates.overdue_predictions %}<span class="pwc"><b>{{ dates.overdue_predictions }}</b> {{ t('past check-by', '已过核查') }}</span>{% endif %}
-    <span class="pwc">{{ counts.policy_action }} {{ t('policy-action', '政策行动') }} · {{ counts.market_outcome }} {{ t('market-outcome', '市场结果') }}</span>
-  </div>
-  <table class="data">
-    <tr><th>#</th><th>{{ t('Thread', '线索') }}</th><th>{{ t('Prediction', '预测') }}</th><th>{{ t('Check by', '核查于') }}</th><th>{{ t('Tier', '层级') }}</th><th>{{ t('Conf', '置信') }}</th><th>{{ t('Status', '状态') }}</th></tr>
-    {% for p in intel.predictions %}
-    <tr>
-      <td><strong>{{ p.id }}</strong></td>
-      <td><span class="th-{{ p.thread }}">{{ code(p.thread, _THREAD) }}</span></td>
-      <td>{{ bl(p.text_en, p.text_zh) }}</td>
-      <td style="white-space:nowrap"><span class="num">{{ p.check_by }}</span></td>
-      <td><span class="conf">{{ code(p.tier, _TIER) }}</span></td>
-      <td><span class="conf">{{ tr(p.confidence, _CONF_TR) }}</span></td>
-      <td><span class="b b-{{ p.status }}">{{ code(p.status, _STATUS) }}</span>{% set pdt = (dates.predictions[p.id] if dates and dates.predictions and p.id in dates.predictions else None) %}{% if pdt and pdt.overdue %} <span class="b b-miss">{{ t('due', '待结') }}</span>{% endif %}</td>
-    </tr>
-    {% endfor %}
-  </table>
+  <section class="pw-section" id="ledger">
+    {{ section_head('Track record','记录','Calls and results','判断与结果','Each view gets a review date, then a result.','每条判断都有复核日期和最终结果。') }}
+    <div class="pw-statbar">
+      <span class="pw-stat"><strong>{{ counts.total }}</strong> {{ t('tracked','已跟踪') }}</span>
+      <span class="pw-stat"><strong>{{ counts.open }}</strong> {{ t('open','待定') }}</span>
+      <span class="pw-stat"><strong>{{ counts.hit }}</strong> {{ t('right','正确') }}</span>
+      <span class="pw-stat"><strong>{{ counts.miss }}</strong> {{ t('wrong','错误') }}</span>
+      {% if dates and dates.overdue_predictions %}<span class="pw-stat"><strong>{{ dates.overdue_predictions }}</strong> {{ t('need review','需要复核') }}</span>{% endif %}
+    </div>
+    <div class="pw-ledger">
+      {% for call in featured_predictions %}
+      {% set topic = THREAD.get(call.thread, [call.thread,call.thread]) %}
+      {% set call_copy = CALL_COPY.get(call.id, [brief(call.text_en,180),brief(call.text_zh,90)]) %}
+      <article class="pw-call" data-policy-id="{{ call.id }}">
+        <div><span class="pw-call-topic">{{ bl(topic[0],topic[1]) }}</span> <span class="pw-call-id">{{ call.id }}</span><p class="pw-call-text">{{ bl(call_copy[0],call_copy[1]) }}</p></div>
+        <span class="pw-call-date">{{ t('Review','复核') }} {{ call.check_by }}</span>
+        <span class="pw-call-status">{{ status_tag(call.status,call.needs_review) }}</span>
+      </article>
+      {% endfor %}
+    </div>
+    <details class="pw-details">
+      <summary class="gbtn gbtn-sm">{{ t('See all calls','查看全部判断') }} ({{ counts.total }})</summary>
+      <div class="pw-detail-body pw-ledger">
+        {% for call in intel.predictions %}
+        {% set date_row = dates.predictions[call.id] if dates and dates.predictions and call.id in dates.predictions else none %}
+        {% set topic = THREAD.get(call.thread,[call.thread,call.thread]) %}
+        {% set call_copy = CALL_COPY.get(call.id, [brief(call.text_en,180),brief(call.text_zh,90)]) %}
+        <article class="pw-call" data-policy-id="full-{{ call.id }}"><div><span class="pw-call-topic">{{ bl(topic[0],topic[1]) }}</span> <span class="pw-call-id">{{ call.id }}</span><p class="pw-call-text">{{ bl(call_copy[0],call_copy[1]) }}</p></div><span class="pw-call-date">{{ call.check_by }}</span><span class="pw-call-status">{{ status_tag(call.status,(date_row.overdue if date_row else false) or call.id == 'P44') }}</span></article>
+        {% endfor %}
+      </div>
+    </details>
+  </section>
 
-  <!-- ================= MONITOR ================= -->
-  {{ sec_head('monitor', 'var(--pwt)', 'Monitor', '监测', 'Monitor — highest-signal sources', '监测 — 最高信号来源') }}
-  <ul class="monitor">
-    {% for m in intel.monitor %}
-    <li>{% if m.url %}<a href="{{ m.url }}" target="_blank" rel="noopener">{{ bl(m.name, m.name_zh) }}</a>{% else %}<strong>{{ bl(m.name, m.name_zh) }}</strong>{% endif %} — <span class="conf">{{ bl(m.who, m.who_zh) }} · {{ bl(m.cadence, m.cadence_zh) }}</span></li>
-    {% endfor %}
-  </ul>
-
-  <!-- ================= SOURCES + CAVEATS ================= -->
-  {{ sec_head('sources', 'var(--pwt)', 'Sources', '来源', 'Sources & caveats', '来源与说明') }}
-  <div class="pw-panel">
-    {{ bl(intel.caveats.en, intel.caveats.zh) }}
-  </div>
-  <p class="srcs"><strong>{{ t('Primary sources', '一手来源') }}:</strong>
-    {% for s in intel.sources %}<a href="{{ s }}" target="_blank" rel="noopener">[{{ loop.index }}]</a> {% endfor %}
-  </p>
-  <p class="conf">{{ t('Generated', '生成于') }} {{ generated_utc }} · {{ t('context only — not investment advice', '仅供参考——不构成投资建议') }}</p>
-
-</div>
+  <section class="pw-section" id="sources">
+    {{ section_head('Receipts','依据','What we watch','我们关注什么','Details only when you need them.','需要时再查看细节。') }}
+    <details class="pw-details">
+      <summary class="gbtn gbtn-sm">{{ t('Watch list','关注清单') }}</summary>
+      <div class="pw-detail-body pw-monitor">
+        {% for row in MONITOR_COPY %}<div class="pw-monitor-row"><strong>{{ bl(row[0],row[1]) }}</strong><span>{{ bl(row[2],row[3]) }} · {{ bl(row[4],row[5]) }}</span></div>{% endfor %}
+      </div>
+    </details>
+    <details class="pw-details">
+      <summary class="gbtn gbtn-sm">{{ t('Sources and limits','来源与局限') }}</summary>
+      <div class="pw-detail-body">
+        <p>{{ t('This page mixes confirmed policy facts with clearly labelled analysis. Fast-moving China and Iran items may change between updates.','本页将已确认的政策事实与明确标注的分析分开。中国和伊朗相关信息变化很快，更新之间可能出现变化。') }}</p>
+        <div class="pw-sources">
+          {% for source in source_links %}<a class="gbtn gbtn-sm gbtn-quiet" href="{{ source.url }}" target="_blank" rel="noopener">{{ source.label }}</a>{% endfor %}
+        </div>
+      </div>
+    </details>
+    <p class="pw-build-note">{{ t('Last verified','最近核实') }} <span class="l-en">{{ verified_en }}</span><span class="l-zh">{{ verified_zh }}</span> · {{ t('Built','构建于') }} {{ generated_utc }} · {{ t('For information only—not investment advice.','仅供参考，不构成投资建议。') }}</p>
+  </section>
+</main>
 {% endblock %}
 
 {% block body_scripts %}
 <script>
-(function () {
-  // thesis read-more: clamp is CSS; the button just toggles + hides itself when
-  // the paragraph already fits (short intel updates shouldn't show a dead toggle)
-  document.querySelectorAll('.pw-more').forEach(function (b) {
-    var p = document.getElementById(b.getAttribute('aria-controls'));
-    if (!p) { b.hidden = true; return; }
-    if (p.scrollHeight <= p.clientHeight + 6) { b.hidden = true; return; }
-    b.addEventListener('click', function () {
-      var open = p.classList.toggle('open');
-      b.classList.toggle('open', open);
-      b.setAttribute('aria-expanded', open ? 'true' : 'false');
+(function(){
+  document.querySelectorAll('[data-reveal]').forEach(function(button){
+    button.addEventListener('click',function(){
+      document.querySelectorAll(button.getAttribute('data-reveal')).forEach(function(item){item.hidden=false;});
+      button.remove();
     });
   });
 })();
