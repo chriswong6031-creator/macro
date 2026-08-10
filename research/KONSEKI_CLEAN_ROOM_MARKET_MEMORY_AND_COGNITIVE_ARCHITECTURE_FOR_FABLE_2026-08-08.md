@@ -967,6 +967,44 @@ cannot read the lane, no public route or trusted-v1 feature consumes it, and
 training, promotion, ranking, gating, sizing, trading, execution, Prophet,
 options-candidate, episode, and outcome authority remain false.
 
+### 11.0.4 W1B.3A private current-tip breadth actual output
+
+W1B.3A adds one private breadth actual-output lane without importing the
+repository's recomputed history as point-in-time truth. The projector pins one
+exact Git commit and stable-reads the exact committed bytes for
+`data/breadth/breadth.parquet`, the current constituent roster, the SPY canary
+config, and the reviewed XNYS calendar module. It projects only the latest
+session row: priced-member coverage, percentages above the 50- and 200-day
+averages, new highs/lows, and advancers/decliners. The historical `ad_line` is
+excluded because its current-membership recomputation cannot support a
+historical operational claim.
+
+The projection is clock-free and content-addressed. Its source and feature
+objects bind exact SHA-256, byte counts, Git blob IDs, the frozen canary IDs,
+and frozen v1 calendar/config semantics. The output remains `degraded` with
+`partial_coverage`, explicitly records current-membership survivor bias and
+partial calendar coverage, and is never exposed as a public packet or trusted
+feature. A compressed parquet cannot bypass pre-materialization row, column,
+row-group, or uncompressed-size limits, and decoded constituent strings are
+also bounded.
+
+The sole writer stores raw source bodies and canonical objects only under
+`/var/lib/macro-market-memory/state/breadth-v1`, which remains inaccessible to
+`macro-api`. The store owns availability: for a genuinely new source it samples
+one first-observed clock after detached validation, admits only the prior
+completed XNYS session or a same-day session after the conservative 22:00 UTC
+threshold, and writes a create-once prepared record before any source CAS.
+Crash recovery resumes that sealed clock even if the retry is days later, while
+an already-active idempotent retry must still prove the tip is fresh now.
+Immutable source/feature/capture/generation records land before private HEAD,
+which is the sole mutable pointer and advances last.
+
+This lane does not feed W1B.1 `trusted-v1`, the public API, Prophet, options, or
+any outcome writer. Training, promotion, ranking, gating, sizing, trading,
+execution, options-candidate, options-episode, and outcome authority remain
+false. It is one go-forward current-tip evidence accrual lane, not a repaired
+historical breadth database.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1056,6 +1094,23 @@ W1B.2 identity-observation additions:
 - `tests/test_{symbol_directory_completion_receipts,market_memory_identity_observation,market_memory_identity_store,ingest_market_memory_identity,market_memory_identity_observation_deploy}.py`
   — legacy non-upgrade, post-cutoff receipt, absence, clock, crash, tamper,
   private-root, exact-Git, no-CIK, and zero-authority fixtures.
+
+W1B.3A breadth actual-output additions:
+
+- `engine/neuralweb/market_memory_breadth_observation.py` and the strict
+  `breadth_{source_observation,factors_snapshot}.v1` contracts — pinned-Git,
+  clock-free, current-tip-only projection with frozen identity/calendar rules,
+  bounded parquet decoding, explicit survivor bias, and no historical upgrade;
+- `engine/neuralweb/market_memory_actual_output_store.py` and the strict
+  `breadth_actual_output_{capture_receipt,store}.v1` contracts — private
+  first-clock preparation, freshness admission, crash recovery, cumulative
+  generations, HEAD-last publication, and current-attempt stale detection;
+- `scripts/capture_market_memory_breadth.py` and
+  `app/deploy/macro-market-memory-breadth.{service,timer}` — the only
+  Git-pinned, credential-free, network-dark production writer and retry lane;
+- `tests/test_market_memory_breadth_{observation,store,deploy}.py` — exact Git
+  bytes, frozen-v1 drift, resource bounds, freshness, crash, tamper, private
+  roots, deploy isolation, CI closure, and zero-authority fixtures.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 

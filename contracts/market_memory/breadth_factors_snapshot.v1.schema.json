@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/breadth_factors_snapshot.v1.schema.json",
+  "title": "Market Memory clock-free current breadth factors snapshot v1",
+  "description": "Strict label-free W1B.3A feature object for breadth_factors.market_state. Its snapshot ID is derived only from the source observation, transform version, and semantic state. Capture clocks are store-owned and absent here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "snapshot_id",
+    "source_observation_id",
+    "session",
+    "transform_version",
+    "subject",
+    "state",
+    "quality",
+    "limitations",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.breadth_factors_snapshot.v1"},
+    "snapshot_id": {
+      "type": "string",
+      "pattern": "^mmsnap_[a-f0-9]{64}$"
+    },
+    "source_observation_id": {
+      "type": "string",
+      "pattern": "^mmbreadthsrc_[a-f0-9]{64}$"
+    },
+    "session": {"$ref": "#/$defs/date"},
+    "transform_version": {
+      "const": "market_memory.breadth_factors_transform.v1"
+    },
+    "subject": {"$ref": "#/$defs/subject"},
+    "state": {"$ref": "#/$defs/state"},
+    "quality": {"$ref": "#/$defs/quality"},
+    "limitations": {"$ref": "#/$defs/limitations"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "opaqueId": {
+      "type": "string",
+      "pattern": "^mm(?:security|identityv|universe|calendar)_[a-f0-9]{64}$"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "symbol",
+        "subject_id",
+        "instrument_id",
+        "identity_version",
+        "mic",
+        "currency",
+        "universe_id",
+        "calendar_id",
+        "market_session"
+      ],
+      "properties": {
+        "symbol": {"const": "SPY"},
+        "subject_id": {
+          "const": "mmsecurity_5fc37e8db34f74314b654c910ea8bacfa7de8b5d2d067f2e5421c9d5745ceb4c"
+        },
+        "instrument_id": {
+          "const": "mmsecurity_6f361f5bad9f06a3b2ff157585d5728f55f77198420959aadd8922d1045c3fea"
+        },
+        "identity_version": {
+          "const": "mmidentityv_65ec5e55473e953b55fa2d146f40e8b56dfae2e68a3df7423405db1034d16903"
+        },
+        "mic": {"const": "ARCX"},
+        "currency": {"const": "USD"},
+        "universe_id": {
+          "const": "mmuniverse_5f6904b77722f506a8d1d6f283ef69678a1ec7df3b2c1fc25cc1a15a3a4e8e6a"
+        },
+        "calendar_id": {
+          "const": "mmcalendar_a102c5367c17f9c0b4df3af5c2826824fc112935ec76e6d18d55833f53644e0c"
+        },
+        "market_session": {"const": "XNYS_REGULAR"}
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "n_members",
+        "constituent_count",
+        "priced_member_coverage",
+        "pct_above_50",
+        "pct_above_200",
+        "new_highs",
+        "new_lows",
+        "advancers",
+        "decliners"
+      ],
+      "properties": {
+        "n_members": {"type": "integer", "minimum": 400, "maximum": 600},
+        "constituent_count": {
+          "type": "integer",
+          "minimum": 400,
+          "maximum": 600
+        },
+        "priced_member_coverage": {
+          "type": "number",
+          "minimum": 0.9,
+          "maximum": 1
+        },
+        "pct_above_50": {"type": "number", "minimum": 0, "maximum": 100},
+        "pct_above_200": {"type": "number", "minimum": 0, "maximum": 100},
+        "new_highs": {"type": "integer", "minimum": 0, "maximum": 600},
+        "new_lows": {"type": "integer", "minimum": 0, "maximum": 600},
+        "advancers": {"type": "integer", "minimum": 0, "maximum": 600},
+        "decliners": {"type": "integer", "minimum": 0, "maximum": 600}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "flags",
+        "actual_output_source",
+        "current_tip_only",
+        "imputed",
+        "training_eligible",
+        "promotion_eligible"
+      ],
+      "properties": {
+        "status": {"const": "degraded"},
+        "flags": {
+          "type": "array",
+          "prefixItems": [{"const": "partial_coverage"}],
+          "items": false,
+          "minItems": 1,
+          "maxItems": 1
+        },
+        "actual_output_source": {"const": true},
+        "current_tip_only": {"const": true},
+        "imputed": {"const": false},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false}
+      }
+    },
+    "limitations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_membership_only",
+        "current_membership_survivor_bias",
+        "historical_constituent_point_in_time",
+        "calendar_coverage",
+        "calendar_partial_coverage",
+        "ad_line_excluded"
+      ],
+      "properties": {
+        "current_membership_only": {"const": true},
+        "current_membership_survivor_bias": {"const": true},
+        "historical_constituent_point_in_time": {"const": false},
+        "calendar_coverage": {"const": "full_day_closures_only"},
+        "calendar_partial_coverage": {"const": true},
+        "ad_line_excluded": {"const": true}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "horizon_role",
+        "context_only",
+        "proposal_weight",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_escalate",
+        "may_trade",
+        "may_originate",
+        "may_select_options_candidate",
+        "may_execute",
+        "may_write_options_episode",
+        "may_append_outcome",
+        "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}
