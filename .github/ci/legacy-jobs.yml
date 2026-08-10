@@ -5284,6 +5284,11 @@ jobs:
         run: python -m pytest tests/test_no_lookahead.py -q
       - name: study + trial lanes (OOS, divergence, drift, fingerprints, gauntlets)
         run: python -m pytest tests/test_a2_oos_analysis.py tests/test_construction_divergence_study.py tests/test_expect_drift_panel.py tests/test_f_hz1_study.py tests/test_falsosc_trial_v1.py tests/test_grade_breadth_divergence.py tests/test_intraday_large_cap_tech_leader_study.py tests/test_long_hold_gap_guard.py tests/test_macro_fire_context.py tests/test_options_history_gauntlet.py tests/test_per_fire_sector_benchmark.py tests/test_run_w1_sev.py tests/test_run_w2_slq.py tests/test_thesis_funnel_history.py tests/test_w3_fingerprint_stats.py -q
+      # Wired 2026-08-10 after #5267: both suites landed without any workflow
+      # owner. They pin the point-in-time research engine and the inert,
+      # display-only Winner Health template contract built from that program.
+      - name: top-anatomy truth engine + winner-health design freeze
+        run: python -m pytest tests/test_top_anatomy.py tests/test_winner_health_design_freeze.py -q
       # Pick-conditional forward distributions, waves 1 + 1.5 (wired 2026-08-06).
       # Both suites are fixture-only (CI carries no massive_stock_day parquets).
       # Wave-1's suite was named by NO run: step anywhere when it merged, so its PIT
