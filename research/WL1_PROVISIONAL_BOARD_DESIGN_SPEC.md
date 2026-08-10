@@ -539,3 +539,103 @@ Each of these looks like something to tidy up. Each is deliberate.
    otherwise the stamp becomes decoration.
 3. **`--plvc` → `--prov` consolidation** (§4.1) — worth doing, deliberately out
    of scope here so it carries its own visual proof.
+
+---
+
+## §10 The provisional CARD contract (W-L1d) — added 2026-08-09
+
+§3 State 1 says "Cards: tonight's provisional picks" and §2 says "nothing else
+changes". Those cannot both hold, and the identity gate (§0-2) is what exposed it:
+the close pass publishes **131** tickers, the rendered grid holds the nightly's
+**79**, so the stamp correctly refuses to paint and **no reader has ever seen an
+evening board.** This section resolves it. It is the commissioning side's ruling,
+answering §9 question 1.
+
+### 10.1 Publication mechanism — SETTLED: client-side render off the live plane
+
+Not a preference — the alternative is closed by measurement already on disk:
+
+- **Server-side re-render is closed.** `closing-bell.yml` is the only evening render
+  lane. Its own header measures it at **109 minutes behind an 81-minute spine,
+  landing ~17:55 ET against an 18:30 SLA** — 35 minutes of margin — and it
+  deliberately excludes `build_prophet`. `close-pass.yml`'s header already reasons
+  this out: "Bolting the board onto the end of that spine would spend the whole
+  margin to publish the thing the spine does not compute."
+- **The live plane is already gated.** `app/deploy/Caddyfile:193`'s public
+  allowlist is `/live/quotes.json /live/breadth.json /live/release_publications.json
+  /live/staleness.json`. `live/prophet_live.json` is **not** on it, so it is served
+  behind the same auth gate as the dashboard page that fetches it. Enriching it
+  exposes nothing the rendered page does not already show the same reader —
+  which retires #3391 ("the real board is not free content") **for this path only**.
+  The full `us_board_provisional.json` stays non-public; it is not what the client
+  reads.
+- **One artifact, one poll, one client** is preserved: the rows ride the existing
+  `board_state` key on the artifact `_plvFetch()` already polls.
+
+### 10.2 The score slot — no number, ever
+
+The evening board scores **40 of 100 weight points** (`signal` 30 + `runway` 10;
+`entry` 25, `edge` 25, `quality` 10 omitted). The nightly card's most prominent
+figure is a score on the 100 scale. **A provisional card must not put a number in
+that slot.** Showing 40-scale points invites a comparison against yesterday's
+numbers where every comparison is wrong, and renormalising 40→100 fabricates the
+authority the lane explicitly disclaims (`"renormalised": False` is a pinned
+payload invariant).
+
+The card partial already supports this with no new markup: `cx.edge` is checked
+`is not none`, with `cx.edge_txt` as a string fallback. So the contract is
+**`edge=None` + `edge_txt` carrying a plain-word stance**, with the label overridden
+via `edge_label_en`/`edge_label_zh`. Zero markup change, zero CSS change.
+
+### 10.3 Field-by-field — fill what is proven, omit the rest, impute nothing
+
+| Field | Ruling |
+|---|---|
+| `tk` `sym` `mkt` `href` `date` | **Fill.** Ticker, `'us'`, the nightly's own ticker-page URL pattern, `as_of`. |
+| `name` `name_zh` `sec` `sec_zh` | **Fill if a static per-ticker lookup exists** — a sector *label* is a mapping, not the sector-neutralised `edge` leg. Do not conflate them. If no lookup is reachable from this lane, omit; do not derive one. |
+| `price_txt` | **Fill** from the session close the pass already holds. |
+| `spark` | **Fill if** the sparkline generator is reachable without new inputs; else omit. |
+| `edge` | **NULL, always.** §10.2. |
+| `edge_txt` + labels | **Fill** — designer-owned copy, §10.4. |
+| `zone_*` | **OMIT** (`zone_kind='none'`). The buy zone *is* the entry ladder, which is the omitted `entry` leg. A zone here would be invented. |
+| `stage` `stage_key` | **OMIT.** Lane assignment is a nightly curation output. Consequence: the stage-filter bar must be hidden while the provisional board is mounted — a filter over absent buckets is a broken control. |
+| `trigger` | **OMIT.** Lives in the separate `top_setups` nightly artifact. |
+| `marks` | **OMIT — pass `none`, not `[]`.** §3 State 1 bans per-card marks here, and `[]` still reserves 18px of row height. |
+| `featured` `triage` | **OMIT.** Curation. |
+| `flags` | **OMIT** unless provably close-derivable. |
+| `verb` | **Constrained, not fixed** — see §10.4. |
+
+### 10.4 Designer-owned, inside a fixed boundary
+
+Exact copy and the verb mapping are **not** settled here, deliberately: copy pinned
+without being rendered is how this program has burned itself before. A `designer`
+renders these and posts crops before the wiring lands. The boundary they work
+inside is fixed:
+
+1. **No number anywhere on the card that reads on the 100 scale** (§10.2).
+2. **The verb must not be a uniform constant across the board.** Every card
+   carrying the same chip is doctrine Law 4's "constant repeated on every row" —
+   the same defect §3 State 1 already vetoes for marks. `verb='buy'` on all
+   admitted names is additionally *measurably* false: admission over-admits
+   **1.7×** and ~45% of these names are dropped by morning.
+3. **Any per-card discriminator must be derivable from `signal` and `runway`
+   alone** — those are the only two legs this lane owns. `runway` is the
+   decision-relevant one (`1 − clip01(ext_z/2)`: room left before the name is
+   extended) and maps naturally onto doctrine's "watch — don't chase".
+4. **Tier-2 hover carries the receipt**: which legs are in, which are out, and that
+   the ranking lands with the nightly. Plain words; no leg slugs, no raw stats.
+
+### 10.5 Invariants the renderer must not break
+
+- **Gate §0-2 must stay meaningful.** Today identity holds because the client
+  refuses when payload ≠ DOM. Once the client *renders* the cards, that check
+  becomes trivially true and stops protecting anything. Replace it, do not delete
+  it: the renderer paints only after a successful qualify, and re-verifies the
+  painted `data-ticker` order against the payload **after** mounting, tearing the
+  board down on mismatch. A stamp must never outlive the cards it describes.
+- **The nightly board is never mutated in place.** The provisional grid replaces
+  the grid's contents as a unit and restores on invalidation/staleness.
+- **Nothing on this path writes `data/`**, reorders, or re-ranks (§7, unchanged).
+- **`note == 'confirmed'` stays server-side only.** The client still never paints a
+  receipt (`_bsQualify` refuses it by construction); that is unchanged here.
+- **Height contract holds** (§0-4): reserved slots, no shove when the payload lands.
