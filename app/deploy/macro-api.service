@@ -8,6 +8,11 @@ WorkingDirectory=/opt/macro
 # Optional env: SUPABASE_JWT_SECRET (activates auth), SUPABASE_PROJECT_REF, etc.
 # The leading '-' makes the file optional so the service starts without it.
 EnvironmentFile=-/etc/macro-api.env
+# Canonical replacement for the historical
+# /etc/systemd/system/macro-api.service.d/ollama.conf drop-in. Keeping this in
+# the reviewed fragment preserves the optional local-model rung while allowing
+# exact drop-in-free loaded-unit attestation.
+EnvironmentFile=-/etc/macro-ollama.env
 # Shared subscription-provider pool. The Claude OAuth values remain in the
 # environment file; Codex keeps its independent refreshable login in this
 # root-only state directory so ProtectHome never blocks it.
@@ -88,6 +93,8 @@ InaccessiblePaths=-/etc/macro-biocatalyst-control.env
 # API namespace starts before the writer tree exists, then expose the tree once
 # a rolling deploy creates it underneath that still-running namespace.
 InaccessiblePaths=/var/lib/macro-market-memory/state
+InaccessiblePaths=/var/lib/macro-market-memory-options
+InaccessiblePaths=/etc/macro-market-memory-options
 InaccessiblePaths=-/etc/macro-market-memory.env
 
 [Install]

@@ -43,6 +43,8 @@ RestrictAddressFamilies=AF_UNIX
 ReadOnlyPaths=/opt/macro
 ReadWritePaths=/var/lib/macro-market-memory/public/trusted-v1
 ReadWritePaths=/var/lib/macro-market-memory/state/context-projection
+InaccessiblePaths=/var/lib/macro-market-memory-options
+InaccessiblePaths=/etc/macro-market-memory-options
 InaccessiblePaths=/var/lib/macro-market-memory/state/sources
 InaccessiblePaths=-/var/lib/macro-api
 InaccessiblePaths=-/var/lib/macro-biocatalyst
@@ -56,6 +58,7 @@ InaccessiblePaths=-/etc/macro-biocatalyst.env
 InaccessiblePaths=-/etc/macro-biocatalyst-control.env
 InaccessiblePaths=-/etc/macro-live.env
 InaccessiblePaths=-/etc/macro-market-memory.env
+InaccessiblePaths=-/etc/macro-ollama.env
 InaccessiblePaths=-/etc/macro-sentinel.env
 
 [Install]

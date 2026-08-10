@@ -15,6 +15,173 @@ APP_DIR="/opt/macro"
 # rename. Skipping is free: the next cron tick picks up whatever this run got.
 exec 9>/var/lock/macro-update.lock
 flock -n 9 || exit 0
+source "$APP_DIR/app/deploy/market-memory-options-unit-boundary.sh"
+source "$APP_DIR/app/deploy/market-memory-options-runtime-fence.sh"
+source "$APP_DIR/app/deploy/market-memory-options-dropin-migration.sh"
+
+OPTIONS_TIMER_WAS_ENABLED=0
+if systemctl is-enabled macro-market-memory-options.timer >/dev/null 2>&1; then
+	OPTIONS_TIMER_WAS_ENABLED=1
+fi
+OPTIONS_TIMER_WAS_ACTIVE=0
+if systemctl is-active macro-market-memory-options.timer >/dev/null 2>&1; then
+	OPTIONS_TIMER_WAS_ACTIVE=1
+fi
+OPTIONS_TIMER_DISARMED=0
+OPTIONS_API_FENCE_MARKER=/run/macro-api-market-memory-options-deny.ready
+OPTIONS_RECIPROCAL_FENCE_MARKER=/run/macro-market-memory-options-reciprocal-deny.ready
+OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|context|identity|breadth|technicals)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|context|identity|breadth|technicals)\.(service|timer)|scripts/__init__\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit)?)\.py))$'
+RECIPROCAL_TIMERS_PAUSED=0
+OPTIONS_DEFER_REARM_FOR_SELF_UPDATE=0
+
+# BEGIN W1B5_UNIT_STOP_HELPERS
+unit_absent_from_manager_and_disk() {
+	local unit=$1 installed=$2 load_state
+	[ ! -e "$installed" ] && [ ! -L "$installed" ] || return 1
+	load_state=$(systemctl show -p LoadState --value "$unit") || return 1
+	[ "$load_state" = not-found ]
+}
+
+stop_unit_and_verify_inactive() {
+	local unit=$1 installed=$2 active_state main_pid control_pid
+	if ! systemctl stop "$unit" >/dev/null 2>&1; then
+		unit_absent_from_manager_and_disk "$unit" "$installed" || return 1
+		return 0
+	fi
+	active_state=$(systemctl show -p ActiveState --value "$unit") || return 1
+	main_pid=$(systemctl show -p MainPID --value "$unit") || return 1
+	control_pid=$(systemctl show -p ControlPID --value "$unit") || return 1
+	case "$active_state" in
+		inactive|failed) ;;
+		*) return 1 ;;
+	esac
+	case "$unit" in
+		*.timer)
+			# Timers have no execution process. systemd therefore reports these
+			# service-only properties as empty on the production release.
+			case "$main_pid" in ""|0) ;; *) return 1 ;; esac
+			case "$control_pid" in ""|0) ;; *) return 1 ;; esac
+			;;
+		*.service)
+			[ "$main_pid" = 0 ] && [ "$control_pid" = 0 ]
+			;;
+		*) return 1 ;;
+	esac
+}
+# END W1B5_UNIT_STOP_HELPERS
+
+# BEGIN W1B5_RECIPROCAL_STOP
+stop_reciprocal_market_memory_writers() {
+	local profile service timer
+	rm -f "$OPTIONS_RECIPROCAL_FENCE_MARKER"
+	for profile in source context identity breadth technicals; do
+		service="macro-market-memory-$profile.service"
+		timer="macro-market-memory-$profile.timer"
+		if ! stop_unit_and_verify_inactive \
+			"$timer" "/etc/systemd/system/$timer"; then
+			echo "macro-update: FAILED to pause reciprocal timer $timer" >&2
+			return 1
+		fi
+		if ! stop_unit_and_verify_inactive \
+			"$service" "/etc/systemd/system/$service"; then
+			echo "macro-update: FAILED to stop reciprocal writer $service" >&2
+			return 1
+		fi
+	done
+	RECIPROCAL_TIMERS_PAUSED=1
+}
+# END W1B5_RECIPROCAL_STOP
+
+reciprocal_market_memory_units_ready() {
+	local profile
+	for profile in source context identity breadth technicals; do
+		mm_loaded_unit_ready \
+			"$APP_DIR/app/deploy/macro-market-memory-$profile.service" \
+			"/etc/systemd/system/macro-market-memory-$profile.service" \
+			"macro-market-memory-$profile.service" || return 1
+		mm_loaded_unit_ready \
+			"$APP_DIR/app/deploy/macro-market-memory-$profile.timer" \
+			"/etc/systemd/system/macro-market-memory-$profile.timer" \
+			"macro-market-memory-$profile.timer" || return 1
+	done
+}
+
+unit_repair_inputs_safe() {
+	local source unit
+	for source in "$@"; do
+		unit=$(basename "$source")
+		mm_unit_repair_inputs_safe "$source" "/etc/systemd/system/$unit" || return 1
+	done
+}
+
+# BEGIN W1B5_TIMER_DISARM
+disarm_options_timer() {
+	local unit_file_state
+	if [ "$OPTIONS_TIMER_DISARMED" -eq 1 ]; then
+		return 0
+	fi
+	if ! systemctl disable --now macro-market-memory-options.timer >/dev/null 2>&1; then
+		# Removing the marker is the secondary fail-closed fence: even if an
+		# already-loaded timer could not be stopped, its service condition fails.
+		rm -f "$OPTIONS_API_FENCE_MARKER"
+		if ! unit_absent_from_manager_and_disk \
+			macro-market-memory-options.timer \
+			/etc/systemd/system/macro-market-memory-options.timer; then
+			echo "macro-update: FAILED to disarm option-OI timer" >&2
+			return 1
+		fi
+	fi
+	if [ -e /etc/systemd/system/macro-market-memory-options.timer ]; then
+		unit_file_state=$(systemctl show -p UnitFileState --value \
+			macro-market-memory-options.timer) || return 1
+		case "$unit_file_state" in
+			disabled|masked) ;;
+			*) echo "macro-update: option-OI timer remains enabled" >&2; return 1 ;;
+		esac
+	fi
+	if ! stop_unit_and_verify_inactive \
+		macro-market-memory-options.timer \
+		/etc/systemd/system/macro-market-memory-options.timer; then
+		rm -f "$OPTIONS_API_FENCE_MARKER"
+		echo "macro-update: FAILED to stop option-OI timer" >&2
+		return 1
+	fi
+	if ! stop_unit_and_verify_inactive \
+		macro-market-memory-options.service \
+		/etc/systemd/system/macro-market-memory-options.service; then
+		rm -f "$OPTIONS_API_FENCE_MARKER"
+		echo "macro-update: FAILED to stop active option-OI writer" >&2
+		return 1
+	fi
+	OPTIONS_TIMER_DISARMED=1
+}
+# END W1B5_TIMER_DISARM
+
+# ConditionPathExists follows symlinks. Remove any forged/stale marker before
+# fetch/reset/runtime mutation so an enabled timer cannot pass the condition in
+# the window before the later full boundary reconciliation.
+if { [ -e "$OPTIONS_API_FENCE_MARKER" ] || [ -L "$OPTIONS_API_FENCE_MARKER" ]; } && \
+   ! mm_api_fence_marker_ready; then
+	disarm_options_timer
+	rm -f "$OPTIONS_API_FENCE_MARKER" "$OPTIONS_RECIPROCAL_FENCE_MARKER"
+fi
+if { [ -e "$OPTIONS_RECIPROCAL_FENCE_MARKER" ] || \
+     [ -L "$OPTIONS_RECIPROCAL_FENCE_MARKER" ]; } && \
+   ! mm_reciprocal_fence_marker_ready; then
+	disarm_options_timer
+	rm -f "$OPTIONS_API_FENCE_MARKER" "$OPTIONS_RECIPROCAL_FENCE_MARKER"
+fi
+
+# A prior tick may have reset the repo and crashed before self-installing this
+# updater. In that version-skew state the running predecessor may reconcile but
+# must not mint markers or re-arm either boundary; only a later invocation that
+# began byte-identical to the reviewed repo updater may do so.
+if ! cmp -s "$APP_DIR/app/deploy/update.sh" /usr/local/bin/macro-update; then
+	OPTIONS_DEFER_REARM_FOR_SELF_UPDATE=1
+	disarm_options_timer
+	stop_reciprocal_market_memory_writers
+fi
 
 git -C "$APP_DIR" fetch --depth 1 -q origin main
 OLD=$(git -C "$APP_DIR" rev-parse HEAD)
@@ -24,7 +191,24 @@ REPO_UPDATED=0
 RECONCILED=0
 
 if [ "$OLD" != "$NEW" ]; then
-	CHANGED=$(git -C "$APP_DIR" diff --name-only "$OLD" "$NEW" 2>/dev/null || true)
+	CHANGED=$(git -C "$APP_DIR" diff --name-only "$OLD" "$NEW")
+	# BEGIN W1B5_PRE_RESET_GUARD
+	# Git rewrites tracked files in place. Stop the credentialed writer before
+	# replacing any byte in its exact runtime/source-contract closure.
+	if grep -qE "$OPTIONS_RUNTIME_CLOSURE_REGEX" <<<"$CHANGED"; then
+		disarm_options_timer
+		rm -f "$OPTIONS_API_FENCE_MARKER"
+	fi
+	if grep -qE '^app/deploy/(update|market-memory-options-(unit-boundary|runtime-fence))\.sh$' \
+		<<<"$CHANGED"; then
+		# Bash keeps executing the predecessor inode after self-install. It may
+		# reconcile, but only the next tick's reviewed inode may re-arm the lane.
+		OPTIONS_DEFER_REARM_FOR_SELF_UPDATE=1
+	fi
+	if grep -qE "$OPTIONS_RECIPROCAL_CLOSURE_REGEX" <<<"$CHANGED"; then
+		stop_reciprocal_market_memory_writers
+	fi
+	# END W1B5_PRE_RESET_GUARD
 	git -C "$APP_DIR" reset --hard -q FETCH_HEAD
 	REPO_UPDATED=1
 
@@ -141,8 +325,63 @@ install -d -m 0700 /var/lib/macro-market-memory/state/context-projection
 install -d -m 0700 /var/lib/macro-market-memory/state/identity-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/breadth-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/technicals-v1
+# Unit verification needs the static account and empty deny anchors.  The
+# service-writable profile and credential file are provisioned only after
+# macro-api proves a new deny namespace.
+OPTIONS_RECONCILIATION_COMPLETE=0
+# BEGIN W1B5_TIMER_EXIT_GUARD
+options_fail_closed_on_exit() {
+	local status=$?
+	trap - EXIT
+	if [ "$OPTIONS_RECONCILIATION_COMPLETE" -ne 1 ]; then
+		disarm_options_timer || status=1
+		if [ "$status" -eq 0 ]; then
+			status=1
+		fi
+	fi
+	exit "$status"
+}
+trap options_fail_closed_on_exit EXIT
+# END W1B5_TIMER_EXIT_GUARD
+
+# A healthy no-op updater must not cancel and recreate the nonpersistent daily
+# timer.  Validate first; disarm only when identity/anchor repair is required.
+if ! bash "$APP_DIR/app/deploy/market-memory-options-prereqs.sh" \
+	--check-identity-only >/dev/null 2>&1; then
+	disarm_options_timer
+	bash "$APP_DIR/app/deploy/market-memory-options-prereqs.sh" --identity-only
+fi
+OPTIONS_CREDENTIAL_READY=0
 API_UNIT_UPDATED=0
-if ! cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service; then
+API_UNIT_READY=0
+
+# Production historically supplied the optional Ollama endpoint through one
+# hand-installed drop-in. The reviewed macro-api fragment now owns the same
+# EnvironmentFile line. Disarm both private writer families, then remove only
+# that exact root-owned 49-byte legacy file; any unknown override fails closed.
+if [ -e "$MM_LEGACY_API_DROPIN_DIR" ] || [ -L "$MM_LEGACY_API_DROPIN_DIR" ]; then
+	disarm_options_timer
+	stop_reciprocal_market_memory_writers
+	rm -f "$OPTIONS_API_FENCE_MARKER"
+	if ! mm_remove_exact_legacy_api_ollama_dropin; then
+		echo "macro-update: refusing unsafe legacy macro-api drop-in migration" >&2
+		exit 1
+	fi
+	systemctl daemon-reload
+	RECONCILED=1
+	echo "macro-update: migrated reviewed legacy macro-api Ollama drop-in"
+fi
+if ! mm_reviewed_unit_file_ready \
+	"$APP_DIR/app/deploy/macro-api.service" \
+	/etc/systemd/system/macro-api.service; then
+	disarm_options_timer
+	rm -f "$OPTIONS_API_FENCE_MARKER"
+	mm_unit_repair_inputs_safe \
+		"$APP_DIR/app/deploy/macro-api.service" \
+		/etc/systemd/system/macro-api.service || {
+		echo "macro-update: refusing unsafe macro-api unit repair input" >&2
+		exit 1
+	}
 	if systemd-analyze verify "$APP_DIR/app/deploy/macro-api.service"; then
 		install -m 0644 "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service
 		systemctl daemon-reload
@@ -152,6 +391,43 @@ if ! cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-ap
 	else
 		echo "macro-update: refusing macro-api unit update — systemd-analyze verify failed" >&2
 	fi
+fi
+if mm_reviewed_unit_file_ready \
+	"$APP_DIR/app/deploy/macro-api.service" \
+	/etc/systemd/system/macro-api.service && \
+   ! mm_loaded_unit_ready \
+	"$APP_DIR/app/deploy/macro-api.service" \
+	/etc/systemd/system/macro-api.service macro-api.service; then
+	disarm_options_timer
+	rm -f "$OPTIONS_API_FENCE_MARKER"
+	systemctl daemon-reload
+fi
+if mm_loaded_unit_ready \
+	"$APP_DIR/app/deploy/macro-api.service" \
+	/etc/systemd/system/macro-api.service macro-api.service; then
+	API_UNIT_READY=1
+else
+	disarm_options_timer
+	rm -f "$OPTIONS_API_FENCE_MARKER"
+	echo "macro-update: macro-api effective unit boundary is not reviewed/current" >&2
+fi
+
+# A /run receipt proves that all five pre-existing Market Memory writers were
+# stopped at least once after boot/unit drift and any later starts used the
+# exact reviewed, drop-in-free unit fragments. Its absence pauses the writers
+# before their legacy reconciliation blocks can install, enable, or start them.
+RECIPROCAL_UNITS_READY=0
+if reciprocal_market_memory_units_ready; then
+	RECIPROCAL_UNITS_READY=1
+fi
+if ! mm_reciprocal_fence_marker_ready || \
+   [ "$RECIPROCAL_UNITS_READY" -ne 1 ]; then
+	disarm_options_timer
+	stop_reciprocal_market_memory_writers
+	# Refresh manager state only after every potentially old-namespace writer
+	# is confirmed inactive. Persistent drop-ins remain visible and fail the
+	# later exact attestation; this reload repairs only ordinary stale fragments.
+	systemctl daemon-reload
 fi
 
 # Serving dependencies: reconcile against a content stamp on every cron pass,
@@ -164,6 +440,11 @@ API_REQ_STAMP=/opt/macro-api/.requirements.sha256
 API_REQ_HASH=$(sha256sum "$APP_DIR/app/requirements.txt" | cut -d' ' -f1)
 API_INSTALLED_REQ_HASH=$(cat "$API_REQ_STAMP" 2>/dev/null || true)
 if [ "$API_REQ_HASH" != "$API_INSTALLED_REQ_HASH" ]; then
+	# The option writer shares this interpreter. Never let its scheduled
+	# oneshot overlap a partially-mutated environment.
+	disarm_options_timer
+	stop_reciprocal_market_memory_writers
+	rm -f "$OPTIONS_API_FENCE_MARKER"
 	if [ -x /opt/macro-api/.venv/bin/pip ] \
 		&& /opt/macro-api/.venv/bin/pip install -q -r "$APP_DIR/app/requirements.txt"; then
 		API_REQ_TMP=$(mktemp /opt/macro-api/.requirements.XXXXXX)
@@ -189,19 +470,29 @@ MARKET_MEMORY_SOURCE_UNIT_SOURCES=(
 	"$APP_DIR/app/deploy/macro-market-memory-source.service"
 	"$APP_DIR/app/deploy/macro-market-memory-source.timer"
 )
-if ! cmp -s "${MARKET_MEMORY_SOURCE_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-source.service || \
-   ! cmp -s "${MARKET_MEMORY_SOURCE_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-source.timer; then
+if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_SOURCE_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-source.service || \
+   ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_SOURCE_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-source.timer; then
+	unit_repair_inputs_safe "${MARKET_MEMORY_SOURCE_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe source unit repair input" >&2
+		exit 1
+	}
 	if systemd-analyze verify "${MARKET_MEMORY_SOURCE_UNIT_SOURCES[@]}"; then
 		for UNIT_SOURCE in "${MARKET_MEMORY_SOURCE_UNIT_SOURCES[@]}"; do
 			UNIT=$(basename "$UNIT_SOURCE")
-			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				[ ! -L "/etc/systemd/system/$UNIT" ] || {
+					echo "macro-update: refusing symlinked unit $UNIT" >&2
+					exit 1
+				}
 				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
 				MARKET_MEMORY_SOURCE_UNIT_UPDATED=1
 			fi
 		done
 		if [ "$MARKET_MEMORY_SOURCE_UNIT_UPDATED" -eq 1 ]; then
 			systemctl daemon-reload
-			systemctl restart macro-market-memory-source.timer 2>/dev/null || true
+			if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+				systemctl restart macro-market-memory-source.timer 2>/dev/null || true
+			fi
 			RECONCILED=1
 			echo "macro-update: Market Memory trusted-source units updated"
 		fi
@@ -209,8 +500,10 @@ if ! cmp -s "${MARKET_MEMORY_SOURCE_UNIT_SOURCES[0]}" /etc/systemd/system/macro-
 		echo "macro-update: refusing Market Memory source unit update — systemd-analyze verify failed" >&2
 	fi
 fi
-systemctl enable --now macro-market-memory-source.timer >/dev/null 2>&1 || \
-	echo "macro-update: macro-market-memory-source.timer could not be enabled" >&2
+if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+	systemctl enable --now macro-market-memory-source.timer >/dev/null 2>&1 || \
+		echo "macro-update: macro-market-memory-source.timer could not be enabled" >&2
+fi
 
 # Run immediately when the reviewed writer, engine contract, or exact CPI bytes
 # advance. A failure is visible in journald and retryable by the hourly timer;
@@ -220,7 +513,9 @@ if [ "$MARKET_MEMORY_SOURCE_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE 
 	MARKET_MEMORY_SOURCE_RUN_NEEDED=1
 fi
 if [ "$MARKET_MEMORY_SOURCE_RUN_NEEDED" -eq 1 ]; then
-	if [ "$API_DEPS_OK" -ne 1 ]; then
+	if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ]; then
+		echo "macro-update: deferring Market Memory source intake until reciprocal boundary attestation" >&2
+	elif [ "$API_DEPS_OK" -ne 1 ]; then
 		echo "macro-update: deferring Market Memory source intake — shared runtime dependencies are not current" >&2
 	elif ! systemctl start macro-market-memory-source.service; then
 		echo "macro-update: Market Memory source intake failed closed; hourly timer will retry" >&2
@@ -236,19 +531,29 @@ MARKET_MEMORY_CONTEXT_UNIT_SOURCES=(
 	"$APP_DIR/app/deploy/macro-market-memory-context.service"
 	"$APP_DIR/app/deploy/macro-market-memory-context.timer"
 )
-if ! cmp -s "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-context.service || \
-   ! cmp -s "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-context.timer; then
+if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-context.service || \
+   ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-context.timer; then
+	unit_repair_inputs_safe "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe context unit repair input" >&2
+		exit 1
+	}
 	if systemd-analyze verify "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[@]}"; then
 		for UNIT_SOURCE in "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[@]}"; do
 			UNIT=$(basename "$UNIT_SOURCE")
-			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				[ ! -L "/etc/systemd/system/$UNIT" ] || {
+					echo "macro-update: refusing symlinked unit $UNIT" >&2
+					exit 1
+				}
 				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
 				MARKET_MEMORY_CONTEXT_UNIT_UPDATED=1
 			fi
 		done
 		if [ "$MARKET_MEMORY_CONTEXT_UNIT_UPDATED" -eq 1 ]; then
 			systemctl daemon-reload
-			systemctl restart macro-market-memory-context.timer 2>/dev/null || true
+			if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+				systemctl restart macro-market-memory-context.timer 2>/dev/null || true
+			fi
 			RECONCILED=1
 			echo "macro-update: Market Memory trusted-context units updated"
 		fi
@@ -256,15 +561,19 @@ if ! cmp -s "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[0]}" /etc/systemd/system/macro
 		echo "macro-update: refusing Market Memory context unit update — systemd-analyze verify failed" >&2
 	fi
 fi
-systemctl enable --now macro-market-memory-context.timer >/dev/null 2>&1 || \
-	echo "macro-update: macro-market-memory-context.timer could not be enabled" >&2
+if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+	systemctl enable --now macro-market-memory-context.timer >/dev/null 2>&1 || \
+		echo "macro-update: macro-market-memory-context.timer could not be enabled" >&2
+fi
 
 MARKET_MEMORY_CONTEXT_RUN_NEEDED=0
 if [ "$MARKET_MEMORY_CONTEXT_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(scripts/project_market_memory_context\.py|engine/neuralweb/market_memory(_pit|_identity|_projection|_trusted)?\.py|contracts/market_memory/(macro_regime_snapshot|macro_regime_feature_object|trusted_capture_receipt)\.v1\.schema\.json|config/market_memory_canary\.v1\.json|engine/run\.py|data/regime/latest\.json)$'; then
 	MARKET_MEMORY_CONTEXT_RUN_NEEDED=1
 fi
 if [ "$MARKET_MEMORY_CONTEXT_RUN_NEEDED" -eq 1 ]; then
-	if [ "$API_DEPS_OK" -ne 1 ]; then
+	if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ]; then
+		echo "macro-update: deferring Market Memory context projection until reciprocal boundary attestation" >&2
+	elif [ "$API_DEPS_OK" -ne 1 ]; then
 		echo "macro-update: deferring Market Memory context projection — shared runtime dependencies are not current" >&2
 	elif ! systemctl start macro-market-memory-context.service; then
 		echo "macro-update: Market Memory context projection failed closed; hourly timer will retry" >&2
@@ -281,19 +590,29 @@ MARKET_MEMORY_IDENTITY_UNIT_SOURCES=(
 	"$APP_DIR/app/deploy/macro-market-memory-identity.service"
 	"$APP_DIR/app/deploy/macro-market-memory-identity.timer"
 )
-if ! cmp -s "${MARKET_MEMORY_IDENTITY_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-identity.service || \
-   ! cmp -s "${MARKET_MEMORY_IDENTITY_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-identity.timer; then
+if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_IDENTITY_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-identity.service || \
+   ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_IDENTITY_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-identity.timer; then
+	unit_repair_inputs_safe "${MARKET_MEMORY_IDENTITY_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe identity unit repair input" >&2
+		exit 1
+	}
 	if systemd-analyze verify "${MARKET_MEMORY_IDENTITY_UNIT_SOURCES[@]}"; then
 		for UNIT_SOURCE in "${MARKET_MEMORY_IDENTITY_UNIT_SOURCES[@]}"; do
 			UNIT=$(basename "$UNIT_SOURCE")
-			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				[ ! -L "/etc/systemd/system/$UNIT" ] || {
+					echo "macro-update: refusing symlinked unit $UNIT" >&2
+					exit 1
+				}
 				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
 				MARKET_MEMORY_IDENTITY_UNIT_UPDATED=1
 			fi
 		done
 		if [ "$MARKET_MEMORY_IDENTITY_UNIT_UPDATED" -eq 1 ]; then
 			systemctl daemon-reload
-			systemctl restart macro-market-memory-identity.timer 2>/dev/null || true
+			if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+				systemctl restart macro-market-memory-identity.timer 2>/dev/null || true
+			fi
 			RECONCILED=1
 			echo "macro-update: Market Memory identity-observation units updated"
 		fi
@@ -301,15 +620,19 @@ if ! cmp -s "${MARKET_MEMORY_IDENTITY_UNIT_SOURCES[0]}" /etc/systemd/system/macr
 		echo "macro-update: refusing Market Memory identity unit update — systemd-analyze verify failed" >&2
 	fi
 fi
-systemctl enable --now macro-market-memory-identity.timer >/dev/null 2>&1 || \
-	echo "macro-update: macro-market-memory-identity.timer could not be enabled" >&2
+if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+	systemctl enable --now macro-market-memory-identity.timer >/dev/null 2>&1 || \
+		echo "macro-update: macro-market-memory-identity.timer could not be enabled" >&2
+fi
 
 MARKET_MEMORY_IDENTITY_RUN_NEEDED=0
 if [ "$MARKET_MEMORY_IDENTITY_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(scripts/ingest_market_memory_identity\.py|engine/neuralweb/market_memory_identity_(observation|store)\.py|lib/symbol_directory_receipts\.py|collectors/symbol_directory\.py|contracts/(market_memory/(spy_listing_(object|observation)|identity_observation_(prepared|capture_receipt|store_receipts))\.v1\.schema\.json|symbol_directory/symbol_directory_completion_receipt\.v1\.schema\.json)|data/symbol_directory/(snapshots|cik_map|receipts)/.*)$'; then
 	MARKET_MEMORY_IDENTITY_RUN_NEEDED=1
 fi
 if [ "$MARKET_MEMORY_IDENTITY_RUN_NEEDED" -eq 1 ]; then
-	if [ "$API_DEPS_OK" -ne 1 ]; then
+	if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ]; then
+		echo "macro-update: deferring Market Memory identity accrual until reciprocal boundary attestation" >&2
+	elif [ "$API_DEPS_OK" -ne 1 ]; then
 		echo "macro-update: deferring Market Memory identity accrual — shared runtime dependencies are not current" >&2
 	elif ! systemctl start macro-market-memory-identity.service; then
 		echo "macro-update: Market Memory identity accrual failed closed; hourly timer will retry" >&2
@@ -325,19 +648,29 @@ MARKET_MEMORY_TECHNICALS_UNIT_SOURCES=(
 	"$APP_DIR/app/deploy/macro-market-memory-technicals.service"
 	"$APP_DIR/app/deploy/macro-market-memory-technicals.timer"
 )
-if ! cmp -s "${MARKET_MEMORY_TECHNICALS_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-technicals.service || \
-   ! cmp -s "${MARKET_MEMORY_TECHNICALS_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-technicals.timer; then
+if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_TECHNICALS_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-technicals.service || \
+   ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_TECHNICALS_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-technicals.timer; then
+	unit_repair_inputs_safe "${MARKET_MEMORY_TECHNICALS_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe technicals unit repair input" >&2
+		exit 1
+	}
 	if systemd-analyze verify "${MARKET_MEMORY_TECHNICALS_UNIT_SOURCES[@]}"; then
 		for UNIT_SOURCE in "${MARKET_MEMORY_TECHNICALS_UNIT_SOURCES[@]}"; do
 			UNIT=$(basename "$UNIT_SOURCE")
-			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				[ ! -L "/etc/systemd/system/$UNIT" ] || {
+					echo "macro-update: refusing symlinked unit $UNIT" >&2
+					exit 1
+				}
 				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
 				MARKET_MEMORY_TECHNICALS_UNIT_UPDATED=1
 			fi
 		done
 		if [ "$MARKET_MEMORY_TECHNICALS_UNIT_UPDATED" -eq 1 ]; then
 			systemctl daemon-reload
-			systemctl restart macro-market-memory-technicals.timer 2>/dev/null || true
+			if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+				systemctl restart macro-market-memory-technicals.timer 2>/dev/null || true
+			fi
 			RECONCILED=1
 			echo "macro-update: Market Memory technical actual-output units updated"
 		fi
@@ -345,15 +678,19 @@ if ! cmp -s "${MARKET_MEMORY_TECHNICALS_UNIT_SOURCES[0]}" /etc/systemd/system/ma
 		echo "macro-update: refusing Market Memory technical unit update — systemd-analyze verify failed" >&2
 	fi
 fi
-systemctl enable --now macro-market-memory-technicals.timer >/dev/null 2>&1 || \
-	echo "macro-update: macro-market-memory-technicals.timer could not be enabled" >&2
+if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+	systemctl enable --now macro-market-memory-technicals.timer >/dev/null 2>&1 || \
+		echo "macro-update: macro-market-memory-technicals.timer could not be enabled" >&2
+fi
 
 MARKET_MEMORY_TECHNICALS_RUN_NEEDED=0
 if [ "$MARKET_MEMORY_TECHNICALS_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(scripts/capture_market_memory_technicals\.py|engine/neuralweb/market_memory_technical_(observation|store)\.py|contracts/market_memory/(spy_daily_price_source_observation|spy_raw_close_ratio_snapshot|technicals_actual_output_capture_receipt|technicals_actual_output_store)\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis)\.v1\.json|lib/nyse_calendar\.py|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'; then
 	MARKET_MEMORY_TECHNICALS_RUN_NEEDED=1
 fi
 if [ "$MARKET_MEMORY_TECHNICALS_RUN_NEEDED" -eq 1 ]; then
-	if [ "$API_DEPS_OK" -ne 1 ]; then
+	if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ]; then
+		echo "macro-update: deferring Market Memory technical capture until reciprocal boundary attestation" >&2
+	elif [ "$API_DEPS_OK" -ne 1 ]; then
 		echo "macro-update: deferring Market Memory technical capture — shared runtime dependencies are not current" >&2
 	elif ! systemctl start macro-market-memory-technicals.service; then
 		echo "macro-update: Market Memory technical capture failed closed; hourly timer will retry" >&2
@@ -370,19 +707,29 @@ MARKET_MEMORY_BREADTH_UNIT_SOURCES=(
 	"$APP_DIR/app/deploy/macro-market-memory-breadth.service"
 	"$APP_DIR/app/deploy/macro-market-memory-breadth.timer"
 )
-if ! cmp -s "${MARKET_MEMORY_BREADTH_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-breadth.service || \
-   ! cmp -s "${MARKET_MEMORY_BREADTH_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-breadth.timer; then
+if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_BREADTH_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-breadth.service || \
+   ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_BREADTH_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-breadth.timer; then
+	unit_repair_inputs_safe "${MARKET_MEMORY_BREADTH_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe breadth unit repair input" >&2
+		exit 1
+	}
 	if systemd-analyze verify "${MARKET_MEMORY_BREADTH_UNIT_SOURCES[@]}"; then
 		for UNIT_SOURCE in "${MARKET_MEMORY_BREADTH_UNIT_SOURCES[@]}"; do
 			UNIT=$(basename "$UNIT_SOURCE")
-			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				[ ! -L "/etc/systemd/system/$UNIT" ] || {
+					echo "macro-update: refusing symlinked unit $UNIT" >&2
+					exit 1
+				}
 				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
 				MARKET_MEMORY_BREADTH_UNIT_UPDATED=1
 			fi
 		done
 		if [ "$MARKET_MEMORY_BREADTH_UNIT_UPDATED" -eq 1 ]; then
 			systemctl daemon-reload
-			systemctl restart macro-market-memory-breadth.timer 2>/dev/null || true
+			if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+				systemctl restart macro-market-memory-breadth.timer 2>/dev/null || true
+			fi
 			RECONCILED=1
 			echo "macro-update: Market Memory breadth actual-output units updated"
 		fi
@@ -390,19 +737,103 @@ if ! cmp -s "${MARKET_MEMORY_BREADTH_UNIT_SOURCES[0]}" /etc/systemd/system/macro
 		echo "macro-update: refusing Market Memory breadth unit update — systemd-analyze verify failed" >&2
 	fi
 fi
-systemctl enable --now macro-market-memory-breadth.timer >/dev/null 2>&1 || \
-	echo "macro-update: macro-market-memory-breadth.timer could not be enabled" >&2
+if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+	systemctl enable --now macro-market-memory-breadth.timer >/dev/null 2>&1 || \
+		echo "macro-update: macro-market-memory-breadth.timer could not be enabled" >&2
+fi
 
 MARKET_MEMORY_BREADTH_RUN_NEEDED=0
 if [ "$MARKET_MEMORY_BREADTH_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(scripts/capture_market_memory_breadth\.py|engine/neuralweb/market_memory_(actual_output_store|breadth_observation)\.py|contracts/market_memory/breadth_(source_observation|factors_snapshot|actual_output_capture_receipt|actual_output_store)\.v1\.schema\.json|data/breadth/(breadth|constituents)\.parquet|config/market_memory_canary\.v1\.json|lib/nyse_calendar\.py)$'; then
 	MARKET_MEMORY_BREADTH_RUN_NEEDED=1
 fi
 if [ "$MARKET_MEMORY_BREADTH_RUN_NEEDED" -eq 1 ]; then
-	if [ "$API_DEPS_OK" -ne 1 ]; then
+	if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ]; then
+		echo "macro-update: deferring Market Memory breadth capture until reciprocal boundary attestation" >&2
+	elif [ "$API_DEPS_OK" -ne 1 ]; then
 		echo "macro-update: deferring Market Memory breadth capture — shared runtime dependencies are not current" >&2
 	elif ! systemctl start macro-market-memory-breadth.service; then
 		echo "macro-update: Market Memory breadth capture failed closed; hourly timer will retry" >&2
 	fi
+fi
+
+# W1B.5 private, future-only option-OI endpoint availability canary. It makes
+# exactly one bounded first-page request with a systemd credential, follows no
+# pagination, and never constructs a chain, identity, OI state, GEX, replay
+# input, or trading feature. The separate service identity and store root keep
+# credentialed response evidence outside every existing Market Memory writer
+# and the API namespace.
+MARKET_MEMORY_OPTIONS_UNIT_UPDATED=0
+OPTIONS_UNITS_READY=0
+MARKET_MEMORY_OPTIONS_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-options.service"
+	"$APP_DIR/app/deploy/macro-market-memory-options.timer"
+)
+if ! mm_reviewed_unit_file_ready \
+	"${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[0]}" \
+	/etc/systemd/system/macro-market-memory-options.service || \
+   ! mm_reviewed_unit_file_ready \
+	"${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[1]}" \
+	/etc/systemd/system/macro-market-memory-options.timer; then
+	disarm_options_timer
+	unit_repair_inputs_safe "${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe option-OI unit repair input" >&2
+		exit 1
+	}
+	if systemd-analyze verify "${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_OPTIONS_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_OPTIONS_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			RECONCILED=1
+			echo "macro-update: Market Memory option-OI canary units updated"
+		fi
+	else
+		echo "macro-update: refusing option-OI unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+if mm_reviewed_unit_file_ready \
+	"${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[0]}" \
+	/etc/systemd/system/macro-market-memory-options.service && \
+   mm_reviewed_unit_file_ready \
+	"${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[1]}" \
+	/etc/systemd/system/macro-market-memory-options.timer && \
+   { ! mm_loaded_unit_ready \
+	"${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[0]}" \
+	/etc/systemd/system/macro-market-memory-options.service \
+	macro-market-memory-options.service || \
+     ! mm_loaded_unit_ready \
+	"${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[1]}" \
+	/etc/systemd/system/macro-market-memory-options.timer \
+	macro-market-memory-options.timer; }; then
+	disarm_options_timer
+	systemctl daemon-reload
+fi
+if mm_loaded_unit_ready \
+	"${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[0]}" \
+	/etc/systemd/system/macro-market-memory-options.service \
+	macro-market-memory-options.service && \
+   mm_loaded_unit_ready \
+	"${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[1]}" \
+	/etc/systemd/system/macro-market-memory-options.timer \
+	macro-market-memory-options.timer; then
+	OPTIONS_UNITS_READY=1
+else
+	disarm_options_timer
+	echo "macro-update: option-OI effective units are not reviewed/current" >&2
+fi
+
+MARKET_MEMORY_OPTIONS_RUN_NEEDED=0
+if [ "$OPTIONS_UNITS_READY" -eq 1 ] && { \
+	[ "$MARKET_MEMORY_OPTIONS_UNIT_UPDATED" -eq 1 ] || \
+	grep -qE "$OPTIONS_RUNTIME_CLOSURE_REGEX" <<<"$CHANGED" || \
+	[ "$OPTIONS_TIMER_WAS_ENABLED" -eq 0 ]; \
+}; then
+	MARKET_MEMORY_OPTIONS_RUN_NEEDED=1
 fi
 
 # macro-api: restart ONLY when its own code changed (avoid blipping /api on every
@@ -515,29 +946,171 @@ fi
 #     schemas/implementations only and never calls run(), so those ~90 modules are
 #     NOT in the API's sys.modules. Adding them would restart /api on nearly every
 #     engine commit — exactly what this narrow list exists to prevent.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
+API_RESTART_CONFIRMED=0
+API_RESTART_NEEDED=0
+if [ "$API_UNIT_UPDATED" -eq 1 ] || ! mm_api_fence_marker_ready || grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' <<<"$CHANGED" || \
+   [ "$API_DEPS_UPDATED" -eq 1 ]; then
+	API_RESTART_NEEDED=1
+
+fi
+if [ "$API_RESTART_NEEDED" -eq 1 ]; then
+	disarm_options_timer
+	rm -f "$OPTIONS_API_FENCE_MARKER"
 	# Verified restart, not fire-and-forget: on 2026-07-30 the old one-liner
 	# (`... && systemctl restart macro-api || true`) left the API on its 5-hour-old
 	# PID after a matching deploy, and the `|| true` destroyed every trace of why.
 	# Log the PID transition, and retry once when the restart failed or the PID
 	# provably did not change — all output lands in macro-update.log.
-	if [ "$API_DEPS_OK" -ne 1 ]; then
+	if [ "$API_UNIT_READY" -ne 1 ]; then
+		echo "macro-update: macro-api restart skipped because the reviewed unit is not installed exactly" >&2
+	elif [ "$API_DEPS_OK" -ne 1 ]; then
 		echo "macro-update: macro-api restart skipped because dependency reconciliation failed" >&2
 	elif systemctl is-enabled macro-api >/dev/null 2>&1; then
+		systemctl daemon-reload
+		API_NEED_DAEMON_RELOAD=$(systemctl show -p NeedDaemonReload --value macro-api)
+		[ "$API_NEED_DAEMON_RELOAD" = no ] || {
+			echo "macro-update: macro-api manager state remains stale after daemon-reload" >&2
+			exit 1
+		}
 		PRE_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
 		API_RESTART_RC=0
 		systemctl restart macro-api || API_RESTART_RC=$?
 		POST_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
-		if [ "$API_RESTART_RC" -ne 0 ] || { [ "$POST_PID" = "$PRE_PID" ] && [ "$POST_PID" != "?" ]; }; then
+		if [ "$API_RESTART_RC" -eq 0 ] && [[ "$POST_PID" =~ ^[1-9][0-9]*$ ]] && [ "$POST_PID" != "$PRE_PID" ]; then
+			API_RESTART_CONFIRMED=1
+			echo "macro-api restarted pid $PRE_PID -> $POST_PID"
+		else
 			echo "macro-api restart ANOMALY rc=$API_RESTART_RC pid $PRE_PID -> $POST_PID; retrying once"
 			sleep 2
-			systemctl restart macro-api || echo "macro-api restart RETRY FAILED rc=$?"
-			echo "macro-api post-retry pid $(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
-		else
-			echo "macro-api restarted pid $PRE_PID -> $POST_PID"
+			API_RETRY_RC=0
+			systemctl restart macro-api || API_RETRY_RC=$?
+			FINAL_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
+			if [ "$API_RETRY_RC" -eq 0 ] && [[ "$FINAL_PID" =~ ^[1-9][0-9]*$ ]] && [ "$FINAL_PID" != "$PRE_PID" ]; then
+				API_RESTART_CONFIRMED=1
+				echo "macro-api restart retry succeeded pid $PRE_PID -> $FINAL_PID"
+			else
+				echo "macro-api restart RETRY FAILED rc=$API_RETRY_RC pid $PRE_PID -> $FINAL_PID" >&2
+			fi
 		fi
 	fi
 fi
+
+# The marker attests a verified PID transition into the installed unit that
+# hides both the disjoint raw store and its dedicated credential source.  It is
+# removed whenever that unit changes and /run clears it on reboot, so option
+# evidence cannot exist while an older API namespace remains able to read it.
+if [ "$API_RESTART_CONFIRMED" -eq 1 ] && [ "$API_UNIT_READY" -eq 1 ] && \
+   [ "$(systemctl show -p NeedDaemonReload --value macro-api)" = no ] && \
+   cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service && \
+   grep -Fxq 'InaccessiblePaths=/var/lib/macro-market-memory-options' /etc/systemd/system/macro-api.service && \
+   grep -Fxq 'InaccessiblePaths=/etc/macro-market-memory-options' /etc/systemd/system/macro-api.service; then
+	mm_write_api_fence_marker
+fi
+
+OPTIONS_API_FENCE_READY=0
+if mm_api_fence_marker_ready && \
+   [ "$API_UNIT_READY" -eq 1 ] && \
+   [ "$(systemctl show -p NeedDaemonReload --value macro-api)" = no ] && \
+   cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service && \
+   grep -Fxq 'InaccessiblePaths=/var/lib/macro-market-memory-options' /etc/systemd/system/macro-api.service && \
+   grep -Fxq 'InaccessiblePaths=/etc/macro-market-memory-options' /etc/systemd/system/macro-api.service; then
+	OPTIONS_API_FENCE_READY=1
+else
+	rm -f "$OPTIONS_API_FENCE_MARKER"
+fi
+
+RECIPROCAL_UNITS_READY=0
+if reciprocal_market_memory_units_ready; then
+	RECIPROCAL_UNITS_READY=1
+fi
+if [ "$RECIPROCAL_UNITS_READY" -ne 1 ]; then
+	disarm_options_timer
+	stop_reciprocal_market_memory_writers
+	echo "macro-update: reciprocal Market Memory units are not reviewed/current" >&2
+fi
+
+if [ "$OPTIONS_API_FENCE_READY" -eq 1 ] && \
+   [ "$RECIPROCAL_UNITS_READY" -eq 1 ] && \
+   [ "$OPTIONS_UNITS_READY" -eq 1 ]; then
+	OPTIONS_STATUS=0
+	bash "$APP_DIR/app/deploy/market-memory-options-prereqs.sh" \
+		--check-ready >/dev/null 2>&1 || OPTIONS_STATUS=$?
+	if [ "$OPTIONS_STATUS" -eq 0 ]; then
+		OPTIONS_CREDENTIAL_READY=1
+	else
+		disarm_options_timer
+		if bash "$APP_DIR/app/deploy/market-memory-options-prereqs.sh"; then
+			OPTIONS_CREDENTIAL_READY=1
+		else
+			OPTIONS_STATUS=$?
+			if [ "$OPTIONS_STATUS" -ne 2 ]; then
+				echo "macro-update: option-OI private-root provisioning failed" >&2
+				exit "$OPTIONS_STATUS"
+			fi
+			echo "macro-update: option-OI credential absent; lane remains disarmed" >&2
+		fi
+	fi
+else
+	echo "macro-update: option-OI private state not provisioned before API fence" >&2
+fi
+
+# Publish the reciprocal receipt only after the exact loaded units have been
+# re-attested. If this tick paused them, no old-namespace process is alive; any
+# later timer/service start therefore inherits the reviewed reciprocal denies.
+if [ "$RECIPROCAL_UNITS_READY" -eq 1 ] && \
+   [ "$OPTIONS_DEFER_REARM_FOR_SELF_UPDATE" -eq 0 ]; then
+	mm_write_reciprocal_fence_marker
+else
+	rm -f "$OPTIONS_RECIPROCAL_FENCE_MARKER"
+fi
+
+OPTIONS_BOUNDARY_READY=0
+if [ "$OPTIONS_CREDENTIAL_READY" -eq 1 ] && [ "$OPTIONS_UNITS_READY" -eq 1 ] && \
+   [ "$OPTIONS_API_FENCE_READY" -eq 1 ] && [ "$RECIPROCAL_UNITS_READY" -eq 1 ] && \
+   mm_reciprocal_fence_marker_ready && \
+   [ "$OPTIONS_DEFER_REARM_FOR_SELF_UPDATE" -eq 0 ]; then
+	OPTIONS_BOUNDARY_READY=1
+fi
+
+# BEGIN W1B5_TIMER_FINALIZATION
+if [ "$OPTIONS_BOUNDARY_READY" -eq 1 ]; then
+	# A deploy-triggered smoke capture happens once and before timer arming.  A
+	# failed first capture is retried only by the weekday timer, never every
+	# three-minute updater tick.
+	if [ "$MARKET_MEMORY_OPTIONS_RUN_NEEDED" -eq 1 ]; then
+		if [ "$API_DEPS_OK" -ne 1 ]; then
+			echo "macro-update: deferring option-OI canary — shared runtime dependencies are not current" >&2
+		elif ! systemctl start macro-market-memory-options.service; then
+			echo "macro-update: option-OI capture failed closed; weekday timer will retry" >&2
+		fi
+	fi
+	if [ "$OPTIONS_TIMER_WAS_ENABLED" -eq 0 ] || \
+	   [ "$OPTIONS_TIMER_WAS_ACTIVE" -eq 0 ] || \
+	   [ "$OPTIONS_TIMER_DISARMED" -eq 1 ]; then
+		# The historical latch no longer describes current state once an enable
+		# attempt begins.  Reset it so a partial enable failure is forcibly undone.
+		OPTIONS_TIMER_DISARMED=0
+		if ! systemctl enable --now macro-market-memory-options.timer >/dev/null 2>&1 || \
+		   ! systemctl is-enabled macro-market-memory-options.timer >/dev/null 2>&1 || \
+		   ! systemctl is-active macro-market-memory-options.timer >/dev/null 2>&1; then
+			disarm_options_timer
+			echo "macro-update: macro-market-memory-options.timer could not be enabled" >&2
+		fi
+	fi
+else
+	disarm_options_timer
+	echo "macro-update: option-OI lane remains disarmed until units, credential, and API fence are verified" >&2
+fi
+if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ] && \
+   [ "$RECIPROCAL_UNITS_READY" -eq 1 ] && \
+   [ "$OPTIONS_DEFER_REARM_FOR_SELF_UPDATE" -eq 0 ]; then
+	for RECIPROCAL_PROFILE in source context identity breadth technicals; do
+		systemctl start "macro-market-memory-$RECIPROCAL_PROFILE.timer"
+	done
+fi
+OPTIONS_RECONCILIATION_COMPLETE=1
+trap - EXIT
+# END W1B5_TIMER_FINALIZATION
 
 # Live-plane systemd definitions are installed by live-setup.sh. Once that setup
 # has happened, keep unit/resource/timer changes tracking main automatically.
