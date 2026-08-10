@@ -5624,6 +5624,8 @@ jobs:
         run: python -m pytest tests/test_basket_turn_grading.py tests/test_heal_basket_turn_ledger.py -q
       - name: W4 staged re-entry spine + P5 deferred-context BTC chips (dat/netliq/cascade)
         run: python -m pytest tests/test_btc_reentry.py tests/test_btc_deferred_legs.py -q
+      - name: blocked-entry basket washout display artifact (leave-one-out peer state, no authority)
+        run: python -m pytest tests/test_basket_washout_state.py -q
 
   washout-turn-organ:
     # Per-name weekly washout-turn watch lane (engine/washout_turn.py) — born from the
