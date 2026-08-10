@@ -1,0 +1,250 @@
+{
+ "meta": {
+  "B": 2000,
+  "seed": 20260810,
+  "cluster_unit": "entry_date",
+  "panel": "US",
+  "exit": "(a) stop + 252d time exit",
+  "ci": "percentile 2.5/97.5",
+  "input_note": "event dicts regenerated via study.events_for_symbol; events_anchor0.parquet carries no a_R column",
+  "held_out_era": "entry_date > 2018-12-31"
+ },
+ "tests": {
+  "primary_m0.5_sysAB": {
+   "H1_nonsystemic_blocked_expectancy": {
+    "test": "H1 non-systemic blocked (held-out)",
+    "stat": "mean_R",
+    "point": 0.5732620809456861,
+    "ci_lo": 0.39890854280189036,
+    "ci_hi": 0.7601442809678784,
+    "n_fires": 12987,
+    "n_dates": 1460,
+    "nan_draws": 0,
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R",
+     "point": -1.0827874441297913,
+     "ci_lo": -1.089818239528434,
+     "ci_hi": -1.0779426707762978
+    }
+   },
+   "H1_nonsystemic_blocked_minus_placebo": {
+    "test": "H1 non-systemic blocked - placebo (held-out)",
+    "stat": "mean_R diff (blocked - placebo)",
+    "point": 0.45892960413432415,
+    "ci_lo": 0.2511310755592451,
+    "ci_hi": 0.6647203694178656,
+    "n_fires": 26426,
+    "n_dates": 1649,
+    "nan_draws": 0,
+    "n_fires_blocked": 12987,
+    "n_fires_placebo": 13439,
+    "point_blocked": 0.5732620809456861,
+    "point_placebo": 0.11433247681136192,
+    "date_support_overlap": 1404,
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": 0.07278649895724909,
+     "ci_lo": 0.061399788981028214,
+     "ci_hi": 0.08471843862643298
+    }
+   },
+   "H2_systemic_washT_minus_washF": {
+    "test": "H2 systemic: washout T - F (held-out)",
+    "stat": "mean_R diff (washT - washF)",
+    "point": -0.8991155828444337,
+    "ci_lo": -1.6284899164727404,
+    "ci_hi": -0.20412168719698653,
+    "n_fires": 3619,
+    "n_dates": 179,
+    "nan_draws": 0,
+    "n_fires_washT": 592,
+    "n_fires_washF": 3027,
+    "point_washT": 0.8535457352216946,
+    "point_washF": 1.7526613180661283,
+    "date_support_overlap": 101,
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": -0.011030531587933545,
+     "ci_lo": -0.0522402806382996,
+     "ci_hi": 0.09723981302390981
+    }
+   },
+   "POSTHOC_systemic_washF_expectancy": {
+    "test": "POST-HOC systemic/washF blocked (held-out)",
+    "stat": "mean_R",
+    "point": 1.7526613180661283,
+    "ci_lo": 1.120740173376439,
+    "ci_hi": 2.4757680777399984,
+    "n_fires": 3027,
+    "n_dates": 170,
+    "nan_draws": 0,
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R",
+     "point": -1.0141569173735911,
+     "ci_lo": -1.0302710407680609,
+     "ci_hi": -0.9086581389434818
+    }
+   },
+   "POSTHOC_sysT_minus_sysF_all_blocked": {
+    "test": "POST-HOC sysT - sysF, all blocked (held-out)",
+    "stat": "mean_R diff (sysT - sysF)",
+    "point": 1.0323209212752071,
+    "ci_lo": 0.408091596176299,
+    "ci_hi": 1.6825269826652798,
+    "n_fires": 16606,
+    "n_dates": 1639,
+    "nan_draws": 0,
+    "n_fires_sysT": 3619,
+    "n_fires_sysF": 12987,
+    "point_sysT": 1.6055830022208932,
+    "point_sysF": 0.5732620809456861,
+    "date_support_overlap": 0,
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": 0.06680779576985363,
+     "ci_lo": 0.049593561340619076,
+     "ci_hi": 0.32478351494202695
+    }
+   },
+   "POOLED_fullhistory_blocked_minus_taken": {
+    "test": "POOLED full-history blocked - taken",
+    "stat": "mean_R diff (blocked - taken)",
+    "point": -0.1263054238409248,
+    "ci_lo": -0.2311801966772691,
+    "ci_hi": -0.019645477142961186,
+    "n_fires": 96466,
+    "n_dates": 10126,
+    "nan_draws": 0,
+    "n_fires_blocked": 29324,
+    "n_fires_taken": 67142,
+    "point_blocked": 0.8482929939303636,
+    "point_taken": 0.9745984177712884,
+    "date_support_overlap": 4407,
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": -0.027446514440991443,
+     "ci_lo": -0.032342554633783036,
+     "ci_hi": -0.02147381607639371
+    }
+   }
+  },
+  "frozen_m1.0_sysA": {
+   "H1_nonsystemic_blocked_expectancy": {
+    "test": "H1 non-systemic blocked (held-out)",
+    "stat": "mean_R",
+    "point": 0.5494682447636061,
+    "ci_lo": 0.4001949891412351,
+    "ci_hi": 0.7071818039200046,
+    "n_fires": 13170,
+    "n_dates": 1483,
+    "nan_draws": 0,
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R",
+     "point": -1.0552979224596022,
+     "ci_lo": -1.0608074703522308,
+     "ci_hi": -1.0485092627183983
+    }
+   },
+   "H1_nonsystemic_blocked_minus_placebo": {
+    "test": "H1 non-systemic blocked - placebo (held-out)",
+    "stat": "mean_R diff (blocked - placebo)",
+    "point": 0.47070475583603494,
+    "ci_lo": 0.3076256490692855,
+    "ci_hi": 0.6458798230258941,
+    "n_fires": 27057,
+    "n_dates": 1677,
+    "nan_draws": 0,
+    "n_fires_blocked": 13170,
+    "n_fires_placebo": 13887,
+    "point_blocked": 0.549468244763606,
+    "point_placebo": 0.07876348892757105,
+    "date_support_overlap": 1429,
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": 0.05398347501197254,
+     "ci_lo": 0.047141964212367334,
+     "ci_hi": 0.06447528915534685
+    }
+   },
+   "H2_systemic_washT_minus_washF": {
+    "test": "H2 systemic: washout T - F (held-out)",
+    "stat": "mean_R diff (washT - washF)",
+    "point": -0.5336052892510881,
+    "ci_lo": -1.071749924838201,
+    "ci_hi": 0.027655403886452143,
+    "n_fires": 3464,
+    "n_dates": 158,
+    "nan_draws": 0,
+    "n_fires_washT": 556,
+    "n_fires_washF": 2908,
+    "point_washT": 0.8893496233464453,
+    "point_washF": 1.4229549125975334,
+    "date_support_overlap": 89,
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": 0.1501987114724983,
+     "ci_lo": -0.5549622046731578,
+     "ci_hi": 1.0235688252796917
+    }
+   },
+   "POSTHOC_systemic_washF_expectancy": {
+    "test": "POST-HOC systemic/washF blocked (held-out)",
+    "stat": "mean_R",
+    "point": 1.4229549125975334,
+    "ci_lo": 0.9306636064116613,
+    "ci_hi": 1.9306003477837383,
+    "n_fires": 2908,
+    "n_dates": 151,
+    "nan_draws": 0,
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R",
+     "point": -0.9261369470127803,
+     "ci_lo": -1.0126327935672432,
+     "ci_hi": -0.1387688691268311
+    }
+   },
+   "POSTHOC_sysT_minus_sysF_all_blocked": {
+    "test": "POST-HOC sysT - sysF, all blocked (held-out)",
+    "stat": "mean_R diff (sysT - sysF)",
+    "point": 0.7878387057024011,
+    "ci_lo": 0.29212331813554804,
+    "ci_hi": 1.287593989564891,
+    "n_fires": 16634,
+    "n_dates": 1641,
+    "nan_draws": 0,
+    "n_fires_sysT": 3464,
+    "n_fires_sysF": 13170,
+    "point_sysT": 1.3373069504660073,
+    "point_sysF": 0.5494682447636062,
+    "date_support_overlap": 0,
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": 0.05242120465668476,
+     "ci_lo": 0.03843324229594108,
+     "ci_hi": 0.7747059161148669
+    }
+   },
+   "POOLED_fullhistory_blocked_minus_taken": {
+    "test": "POOLED full-history blocked - taken",
+    "stat": "mean_R diff (blocked - taken)",
+    "point": -0.13047448262461936,
+    "ci_lo": -0.215218324131595,
+    "ci_hi": -0.040062583414212885,
+    "n_fires": 96608,
+    "n_dates": 10146,
+    "nan_draws": 0,
+    "n_fires_blocked": 29384,
+    "n_fires_taken": 67224,
+    "point_blocked": 0.762515288033233,
+    "point_taken": 0.8929897706578523,
+    "date_support_overlap": 4413,
+    "per_date_median": {
+     "stat": "median_of_per_date_median_R diff",
+     "point": -0.025686817392261307,
+     "ci_lo": -0.0303391187459514,
+     "ci_hi": -0.0211332352044965
+    }
+   }
+  }
+ }
+}

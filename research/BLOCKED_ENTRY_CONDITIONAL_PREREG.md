@@ -74,4 +74,11 @@ Prophet-side reclaim-veto conditional: separate prereg, `us_prophet_v1→v2`, pe
 
 ## §5 Ratification log
 
-- *(empty at freeze)*
+- **2026-08-10 ~06:4xZ — ADJUDICATED** (results:
+  `research/BLOCKED_ENTRY_CONDITIONAL_RESULTS_2026-08-10.md`): H1 **PASS** (held-out +0.573R
+  [+0.399,+0.760]; vs placebo +0.459R [+0.251,+0.665]); H2 **FAIL-INVERTED** (washT−washF −0.899R
+  [−1.628,−0.204] — the wait-for-turn precondition is harmful, construction closed). Post-hoc
+  discovered rule (systemic-bear immediate entry, +1.42..+1.75R, CIs exclude 0, only
+  positive-median cell) is the promotion candidate — **awaiting operator ratification** of that
+  specific rule plus the production-feed re-grade (results §3.2) before any live `enter`-mask
+  change. No live behavior changed by this entry.
