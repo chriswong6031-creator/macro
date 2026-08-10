@@ -19,6 +19,7 @@ exec 9>/var/lock/macro-update.lock
 flock 9
 source "$APP_DIR/app/deploy/market-memory-options-unit-boundary.sh"
 source "$APP_DIR/app/deploy/market-memory-options-runtime-fence.sh"
+source "$APP_DIR/app/deploy/market-memory-options-dropin-migration.sh"
 
 unit_absent_from_manager_and_disk() {
   local unit=$1 installed=$2 load_state
@@ -94,6 +95,16 @@ for reciprocal_profile in source context identity breadth technicals; do
     exit 1
   fi
 done
+
+# Migrate only the one byte-exact reviewed legacy drop-in. Unknown files,
+# symlinks, metadata drift, or sibling drop-ins abort setup with both writer
+# families already stopped; nothing broad is deleted.
+if [ -e "$MM_LEGACY_API_DROPIN_DIR" ] || [ -L "$MM_LEGACY_API_DROPIN_DIR" ]; then
+  if ! mm_remove_exact_legacy_api_ollama_dropin; then
+    log "refusing unsafe legacy macro-api drop-in migration"
+    exit 1
+  fi
+fi
 
 log "[1/5] python venv + minimal deps"
 export DEBIAN_FRONTEND=noninteractive

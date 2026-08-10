@@ -68,6 +68,7 @@ InaccessiblePaths=-/etc/macro-biocatalyst-fixed-cohort.env
 InaccessiblePaths=-/etc/macro-biocatalyst-fixed-cohort
 InaccessiblePaths=-/etc/macro-live.env
 InaccessiblePaths=-/etc/macro-market-memory.env
+InaccessiblePaths=-/etc/macro-ollama.env
 InaccessiblePaths=-/etc/macro-sentinel.env
 InaccessiblePaths=-/etc/ssl/cf-origin.key
 

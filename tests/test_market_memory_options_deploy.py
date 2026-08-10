@@ -16,6 +16,7 @@ TIMER = DEPLOY / "macro-market-memory-options.timer"
 PREREQS = DEPLOY / "market-memory-options-prereqs.sh"
 UNIT_BOUNDARY = DEPLOY / "market-memory-options-unit-boundary.sh"
 RUNTIME_FENCE = DEPLOY / "market-memory-options-runtime-fence.sh"
+DROPIN_MIGRATION = DEPLOY / "market-memory-options-dropin-migration.sh"
 API_SERVICE = DEPLOY / "macro-api.service"
 SETUP = DEPLOY / "api-setup.sh"
 UPDATE = DEPLOY / "update.sh"
@@ -52,6 +53,7 @@ OPTION_CLOSURE_PATHS = (
     "app/deploy/market-memory-options-prereqs.sh",
     "app/deploy/market-memory-options-unit-boundary.sh",
     "app/deploy/market-memory-options-runtime-fence.sh",
+    "app/deploy/market-memory-options-dropin-migration.sh",
     "app/deploy/codex-runtime-setup.sh",
     "app/deploy/macro-market-memory-options.service",
     "app/deploy/macro-market-memory-options.timer",
@@ -124,6 +126,7 @@ def test_option_canary_deploy_shells_have_valid_syntax() -> None:
         PREREQS,
         UNIT_BOUNDARY,
         RUNTIME_FENCE,
+        DROPIN_MIGRATION,
         SETUP,
         UPDATE,
         DEPLOY / "codex-runtime-setup.sh",
@@ -540,9 +543,12 @@ def test_setup_provisions_before_api_and_conditionally_arms_option_lane() -> Non
     )
     assert setup.index("flock 9") < early_disarm
     marker_remove = setup.index('rm -f "$OPTIONS_API_FENCE_MARKER"')
+    legacy_migration = setup.index(
+        "if ! mm_remove_exact_legacy_api_ollama_dropin", marker_remove
+    )
     assert early_disarm < setup.index('log "[1/5]')
     assert marker_remove < early_disarm
-    assert early_disarm < setup.index(identity_prereq) < verify
+    assert early_disarm < legacy_migration < setup.index(identity_prereq) < verify
     for name in (
         "macro-market-memory-options.service",
         "macro-market-memory-options.timer",
@@ -630,6 +636,7 @@ def test_updater_reconciles_disarms_and_runs_exact_option_closure() -> None:
         "app/requirements.txt",
         "app/deploy/update.sh",
         "app/deploy/market-memory-options-runtime-fence.sh",
+        "app/deploy/market-memory-options-dropin-migration.sh",
         "app/deploy/macro-market-memory-source.timer",
         "scripts/capture_market_memory_option_oi.py",
         "scripts/__init__.py",
@@ -915,6 +922,11 @@ CHANGED={shlex.quote(changed)}
     neuralweb_init_trace = trace_for("engine/neuralweb/__init__.py")
     assert "stop macro-market-memory-options.service" in neuralweb_init_trace
     assert "stop macro-market-memory-source.service" in neuralweb_init_trace
+    dropin_migration_trace = trace_for(
+        "app/deploy/market-memory-options-dropin-migration.sh"
+    )
+    assert "stop macro-market-memory-options.service" in dropin_migration_trace
+    assert "stop macro-market-memory-source.service" in dropin_migration_trace
     assert trace_for("data/marketing/hot_tape_ring.jsonl") == []
 
 
@@ -932,6 +944,10 @@ def test_all_existing_market_memory_services_reciprocally_hide_option_root() -> 
         assert "InaccessiblePaths=/etc/macro-market-memory-options" in unit_text, (
             f"{unit.name} can see the process-specific credential source"
         )
+        if unit != API_SERVICE:
+            assert "InaccessiblePaths=-/etc/macro-ollama.env" in unit_text, (
+                f"{unit.name} can read the unrelated local-model environment"
+            )
     option_service = _text(SERVICE)
     assert "InaccessiblePaths=-/opt/macro/.env" in option_service
     assert "InaccessiblePaths=-/etc/macro-api.env" in option_service
@@ -948,6 +964,89 @@ def test_loaded_unit_attestor_rejects_symlinks_metadata_drift_and_dropins() -> N
     assert "NeedDaemonReload" in boundary
     assert '[ "$fragment" = "$installed" ]' in boundary
     assert '[ -z "$dropins" ]' in boundary
+
+
+def test_legacy_api_dropin_migration_is_exact_and_fail_closed(tmp_path: Path) -> None:
+    api_service = _text(API_SERVICE)
+    setup = _text(SETUP)
+    update = _text(UPDATE)
+    source_line = (
+        'source "$APP_DIR/app/deploy/market-memory-options-dropin-migration.sh"'
+    )
+    assert api_service.count("EnvironmentFile=-/etc/macro-ollama.env") == 1
+    assert source_line in setup and source_line in update
+    update_migration = update.index("if ! mm_remove_exact_legacy_api_ollama_dropin")
+    assert update_migration < update.index("if ! mm_reviewed_unit_file_ready")
+
+    dropin_dir = tmp_path / "macro-api.service.d"
+    dropin = dropin_dir / "ollama.conf"
+    helper = _text(DROPIN_MIGRATION).replace(
+        "MM_LEGACY_API_DROPIN_DIR=/etc/systemd/system/macro-api.service.d",
+        f"MM_LEGACY_API_DROPIN_DIR={shlex.quote(str(dropin_dir))}",
+    )
+    harness = tmp_path / "dropin-migration.sh"
+    harness.write_text(
+        helper + "\nmm_remove_exact_legacy_api_ollama_dropin\n", encoding="utf-8"
+    )
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_stat = fake_bin / "stat"
+    fake_stat.write_text(
+        """#!/usr/bin/env python3
+import os
+import sys
+
+if len(sys.argv) != 4 or sys.argv[1] != "-c":
+    raise SystemExit(2)
+format_string = sys.argv[2]
+value = sys.argv[3]
+info = os.stat(value, follow_symlinks=False)
+if format_string == "%s":
+    print(info.st_size)
+elif format_string == "%U:%G:%a":
+    print(f"root:root:{info.st_mode & 0o777:o}")
+else:
+    raise SystemExit(2)
+""",
+        encoding="utf-8",
+    )
+    fake_stat.chmod(0o755)
+
+    def run() -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["bash", str(harness)],
+            check=False,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PATH": f"{fake_bin}:{os.environ['PATH']}"},
+        )
+
+    dropin_dir.mkdir(mode=0o755)
+    dropin.write_text(
+        "[Service]\nEnvironmentFile=-/etc/macro-ollama.env\n", encoding="utf-8"
+    )
+    dropin.chmod(0o644)
+    migrated = run()
+    assert migrated.returncode == 0, migrated.stderr
+    assert not dropin_dir.exists()
+
+    dropin_dir.mkdir(mode=0o755)
+    dropin.write_text("[Service]\nEnvironment=UNREVIEWED=1\n", encoding="utf-8")
+    dropin.chmod(0o644)
+    rejected = run()
+    assert rejected.returncode != 0
+    assert dropin.exists()
+
+    dropin.write_text(
+        "[Service]\nEnvironmentFile=-/etc/macro-ollama.env\n", encoding="utf-8"
+    )
+    sibling = dropin_dir / "unknown.conf"
+    sibling.write_text("[Service]\nEnvironment=UNREVIEWED=1\n", encoding="utf-8")
+    sibling.chmod(0o644)
+    rejected_sibling = run()
+    assert rejected_sibling.returncode != 0
+    assert dropin.exists() and sibling.exists()
 
 
 def test_loaded_unit_attestor_executably_rejects_timer_dropin(tmp_path: Path) -> None:
