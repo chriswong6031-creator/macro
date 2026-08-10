@@ -13,9 +13,11 @@ Artifacts (published under ``data/`` and committed by the daily workflow):
     source ('nasdaqlisted' | 'otherlisted').
     Written at most once per calendar day (idempotent re-runs skip existing
     files).  A snapshot is only written when BOTH sources parse successfully
-    and the combined row count is >= 8 000 (a floor that guards against
-    truncated bodies).  Writes are durable and absent-only (temp file + fsync +
-    atomic link + parent-directory fsync).
+    and both source-specific row floors plus the combined >= 8 000 floor are
+    satisfied.  The per-source guard prevents one materially truncated body
+    from hiding behind a full response from the other source.  Writes are
+    durable and absent-only (temp file + fsync + atomic link +
+    parent-directory fsync).
 
   data/symbol_directory/cik_map/YYYY-MM-DD.parquet
     ticker, cik (int), title.  Written at most once per ISO week (the file
@@ -64,7 +66,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import pandas as pd
 import requests
@@ -72,7 +74,9 @@ import requests
 from collectors.base import Adapter, is_connection_error
 from lib import config
 from lib.symbol_directory_receipts import (
+    NASDAQ_LISTED_ARTIFACT_MIN_ROWS,
     NASDAQ_LISTED_SOURCE_ID,
+    OTHER_LISTED_ARTIFACT_MIN_ROWS,
     OTHER_LISTED_SOURCE_ID,
     SEC_TICKERS_SOURCE_ID,
     SourceFetch,
@@ -457,35 +461,44 @@ class SymbolDirectoryAdapter(Adapter):
                     snapshot_details is not None
                     and snapshot_details.source_fetches is not None
                 ):
-                    receipt = build_symbol_directory_completion_receipt(
-                        kind="listing_snapshot",
-                        observation_date=today_str,
-                        artifact_path=snap_path,
-                        source_fetches=snapshot_details.source_fetches,
-                        collector_started_at=collector_started_at,
-                        collector_completed_at=canonical_utc_now(),
-                        pre_dedupe_rows=snapshot_details.pre_dedupe_rows,
-                        duplicate_occurrences=snapshot_details.duplicate_occurrences,
-                        duplicate_key_count=snapshot_details.duplicate_key_count,
-                        source_row_counts=snapshot_details.source_row_counts,
-                        pre_dedupe_spy_occurrences=snapshot_details.spy_occurrences,
-                        non_authoritative_footers=snapshot_details.footer_diagnostics,
-                    )
-                    receipt_path = completion_receipt_path(
-                        _symdir_root(),
-                        kind="listing_snapshot",
-                        observation_date=today_str,
-                    )
-                    write_symbol_directory_completion_receipt(
-                        receipt_path,
-                        receipt,
-                        snap_path,
-                        expected_kind="listing_snapshot",
-                    )
-                    log.info(
-                        "symbol_directory: prospective snapshot receipt written %s",
-                        receipt_path,
-                    )
+                    if len(snapshot_details.spy_occurrences) != 1:
+                        log.warning(
+                            "symbol_directory: SPY occurrence count is %d; snapshot "
+                            "remains reconstruction-only and gets no completion receipt",
+                            len(snapshot_details.spy_occurrences),
+                        )
+                    else:
+                        receipt = build_symbol_directory_completion_receipt(
+                            kind="listing_snapshot",
+                            observation_date=today_str,
+                            artifact_path=snap_path,
+                            source_fetches=snapshot_details.source_fetches,
+                            collector_started_at=collector_started_at,
+                            collector_completed_at=canonical_utc_now(),
+                            pre_dedupe_rows=snapshot_details.pre_dedupe_rows,
+                            duplicate_occurrences=snapshot_details.duplicate_occurrences,
+                            duplicate_key_count=snapshot_details.duplicate_key_count,
+                            source_row_counts=snapshot_details.source_row_counts,
+                            pre_dedupe_spy_occurrences=snapshot_details.spy_occurrences,
+                            non_authoritative_footers=(
+                                snapshot_details.footer_diagnostics
+                            ),
+                        )
+                        receipt_path = completion_receipt_path(
+                            _symdir_root(),
+                            kind="listing_snapshot",
+                            observation_date=today_str,
+                        )
+                        write_symbol_directory_completion_receipt(
+                            receipt_path,
+                            receipt,
+                            snap_path,
+                            expected_kind="listing_snapshot",
+                        )
+                        log.info(
+                            "symbol_directory: prospective snapshot receipt written %s",
+                            receipt_path,
+                        )
 
         # ---- 2. Weekly CIK map (skip if already written this ISO week) ----
         cik_written = False
@@ -605,6 +618,12 @@ class SymbolDirectoryAdapter(Adapter):
     # Minimum combined row count required before writing a snapshot.
     # Live combined roster is ~11-12k; this floor guards against truncated bodies.
     _SNAPSHOT_MIN_ROWS = 8_000
+    # Independently guard both feeds.  The versioned receipt contract carries
+    # the same floors and validates exact post-dedupe counts from the parquet.
+    _SOURCE_ARTIFACT_MIN_ROWS: ClassVar[dict[str, int]] = {
+        "nasdaqlisted": NASDAQ_LISTED_ARTIFACT_MIN_ROWS,
+        "otherlisted": OTHER_LISTED_ARTIFACT_MIN_ROWS,
+    }
 
     def _collect_symbol_snapshot(
         self,
@@ -614,11 +633,12 @@ class SymbolDirectoryAdapter(Adapter):
         """Fetch nasdaqlisted.txt + otherlisted.txt and merge into one frame.
 
         Returns a DataFrame only when BOTH sources parsed successfully AND the
-        combined row count is >= _SNAPSHOT_MIN_ROWS.  If either source fails
-        (non-connection error) or the floor check fails, logs a warning and
-        returns None so the caller writes nothing for the day (a later same-day
-        rerun can then still succeed).  Connection errors are re-raised so the
-        outer run_adapter machinery handles host-down correctly.
+        combined row count is >= _SNAPSHOT_MIN_ROWS and each source retains its
+        versioned post-dedupe minimum.  If either source fails (non-connection
+        error) or a floor check fails, logs a warning and returns None so the
+        caller writes nothing for the day (a later same-day rerun can then still
+        succeed).  Connection errors are re-raised so the outer run_adapter
+        machinery handles host-down correctly.
         """
         sources = [
             (
@@ -730,6 +750,19 @@ class SymbolDirectoryAdapter(Adapter):
         # Deduplicate by symbol (prefer nasdaqlisted for NASDAQ-listed tickers)
         combined = combined.drop_duplicates(subset=["symbol"], keep="first")
         combined = combined.reset_index(drop=True)
+
+        artifact_source_counts = combined["source"].value_counts().to_dict()
+        for source_label, minimum_rows in self._SOURCE_ARTIFACT_MIN_ROWS.items():
+            artifact_rows = int(artifact_source_counts.get(source_label, 0))
+            if artifact_rows < minimum_rows:
+                log.warning(
+                    "symbol_directory: %s artifact row count %d < source floor %d — "
+                    "possible truncated body; skipping snapshot write for today",
+                    source_label,
+                    artifact_rows,
+                    minimum_rows,
+                )
+                return None
 
         if len(combined) < self._SNAPSHOT_MIN_ROWS:
             log.warning(

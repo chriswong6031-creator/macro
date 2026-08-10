@@ -31,7 +31,7 @@
       "required": ["id", "version"],
       "properties": {
         "id": {"const": "collectors.symbol_directory.SymbolDirectoryAdapter"},
-        "version": {"const": "symbol_directory.collector.2026-08-10.v2"}
+        "version": {"const": "symbol_directory.collector.2026-08-10.v3"}
       }
     },
     "observation_date": {"$ref": "#/$defs/date"},
@@ -123,10 +123,25 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["source_id", "parsed_rows"],
+            "required": [
+              "source_id",
+              "parsed_rows",
+              "artifact_rows",
+              "minimum_artifact_rows"
+            ],
             "properties": {
               "source_id": {"$ref": "#/$defs/sourceId"},
               "parsed_rows": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2000000
+              },
+              "artifact_rows": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2000000
+              },
+              "minimum_artifact_rows": {
                 "type": "integer",
                 "minimum": 1,
                 "maximum": 2000000
@@ -250,12 +265,16 @@
                 "prefixItems": [
                   {
                     "properties": {
-                      "source_id": {"const": "nasdaq_trader.nasdaqlisted"}
+                      "source_id": {"const": "nasdaq_trader.nasdaqlisted"},
+                      "artifact_rows": {"minimum": 5000},
+                      "minimum_artifact_rows": {"const": 5000}
                     }
                   },
                   {
                     "properties": {
-                      "source_id": {"const": "nasdaq_trader.otherlisted"}
+                      "source_id": {"const": "nasdaq_trader.otherlisted"},
+                      "artifact_rows": {"minimum": 6500},
+                      "minimum_artifact_rows": {"const": 6500}
                     }
                   }
                 ]
@@ -322,7 +341,9 @@
                 "prefixItems": [
                   {
                     "properties": {
-                      "source_id": {"const": "sec.company_tickers"}
+                      "source_id": {"const": "sec.company_tickers"},
+                      "artifact_rows": {"minimum": 1},
+                      "minimum_artifact_rows": {"const": 1}
                     }
                   }
                 ]
@@ -455,14 +476,10 @@
       ],
       "properties": {
         "kind": {"const": "listing_snapshot"},
-        "pre_dedupe_spy_occurrence_count": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 1
-        },
+        "pre_dedupe_spy_occurrence_count": {"const": 1},
         "pre_dedupe_spy_occurrences": {
           "type": "array",
-          "minItems": 0,
+          "minItems": 1,
           "maxItems": 1,
           "items": {"$ref": "#/$defs/listingSpyOccurrence"}
         },

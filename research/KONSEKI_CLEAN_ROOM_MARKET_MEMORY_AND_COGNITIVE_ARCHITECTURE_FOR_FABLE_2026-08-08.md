@@ -944,12 +944,13 @@ files and skipped same-date collections never receive retroactive receipts.
 
 All pre-cutoff tracked snapshots therefore remain
 `public_reconstruction` (24 at the implementation checkpoint). Only a
-post-cutoff snapshot with its exact, strict completion receipt can become a
-`live_captured` observation. Market Memory samples availability only after the
-receipt-artifact-receipt stable read, and a create-once prepared record retains
-that first observation clock across a crash and retry. A complete receipt with
-zero SPY occurrences may establish an operational absence observation, but it
-still cannot establish a delisting or break in continuity.
+post-cutoff snapshot with its exact, strict completion receipt and exactly one
+authenticated SPY row can become a `live_captured` observation. Market Memory
+samples availability only after the receipt-artifact-receipt stable read, and a
+create-once prepared record retains that first observation clock across a crash
+and retry. A zero-SPY snapshot remains reconstruction-only: row-volume floors
+cannot prove source completeness strongly enough to make operational absence,
+delisting, or continuity claims.
 
 CIK data remains a separate SEC registrant-reference source. The collector may
 prospectively receipt-bind its normalized output, but W1B.2 does not import it
