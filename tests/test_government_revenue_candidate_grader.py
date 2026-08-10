@@ -6,11 +6,13 @@ one is paired with a mutation that proves the assertion can see the defect it
 claims to guard — a green assertion against an implementation that cannot fail is
 the exact class of dead guard this file is meant not to join.
 
-The harness was committed while the lobe still had zero live candidates.  The
-first candidate rows now exist, so the temporary amendment-window witness has
-expired; the permanent grader guards continue to run against fixed fixtures.
-That ordering is the point: the harness had to exist before the first candidate
-was issued, or the first cohort would have been ungradeable after the fact.
+The lobe now has an immutable issued recovery cohort, but those rows remain
+display/context-only and the grader still has no production caller.  Everything
+here therefore runs against fixtures.  The harness existed before the first
+candidate was issued; now that issuance exists, any evaluation-rule amendment
+requires a new ``family_id`` rather than rewriting this registered family.
+Zero-candidate cases below are historical fixture probes, never claims about
+the non-empty live ledger.
 """
 from __future__ import annotations
 
@@ -39,6 +41,28 @@ PREREG_PATH = ROOT / "research" / "GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md
 _DIGEST = "a" * 64
 _APPENDED_AT = "2026-08-06T00:00:00+00:00"
 _ENTRY_INDEX = 300
+_ISSUED_RECOVERY_CANDIDATE_IDS = frozenset(
+    {
+        "grc1-0d9acfe1eb29619cc9b78e2d",
+        "grc1-5c04549c98dc93a935b433d7",
+        "grc1-78d7567e22834f8e1a142b43",
+        "grc1-8d90edd35a0f32f9120ebdb4",
+        "grc1-a5d800c17e0bce45ff9a8aa8",
+        "grc1-ab00c51be87b507bfb45e8a2",
+        "grc1-cc400940cd4e316d5b80a7b1",
+        "grc1-e2e57aacdde17def7eeb01d6",
+    }
+)
+_DISPLAY_ONLY_AUTHORITY = {
+    "tier": "display",
+    "context_only": True,
+    "can_rank": False,
+    "can_size": False,
+    "can_gate": False,
+    "can_originate_signal": False,
+    "can_add_candidates": False,
+    "can_escalate": False,
+}
 
 
 # ---------------------------------------------------------------------------
@@ -2195,7 +2219,7 @@ def test_disclosure_labels_cannot_reach_the_verdict(calendar):
 
 
 def test_the_zero_candidate_state_labels_cleanly(calendar):
-    """Zero candidates plus a calendar is an empty label census, not a crash."""
+    """A historical zero-candidate fixture is an empty label census, not a crash."""
     report = _report(
         calendar,
         _log([]),
@@ -2211,7 +2235,7 @@ def test_the_zero_candidate_state_labels_cleanly(calendar):
 
 
 def test_the_registration_registers_the_disclosure_layer_before_observation():
-    """§11 exists, is versioned, and the code/document drift guard reads it."""
+    """§11 was registered before outcome observation and remains versioned."""
     text = PREREG_PATH.read_text(encoding="utf-8")
     assert "## 11. Disclosure labels" in text
     for state in grader.DISCLOSURE_LABEL_STATES:
@@ -2220,9 +2244,67 @@ def test_the_registration_registers_the_disclosure_layer_before_observation():
         assert f"`{reason}`" in text
     family, _digest = grader.load_family_declaration(PREREG_PATH)
     assert family.version == "4.1.0"
-    # Still pre-observation, which is what makes this amendment legal at all.
+    # The dedicated grader outcome log remains empty.  Candidate issuance is
+    # pinned separately below and permanently closes the amendment window.
     live = ROOT / "data" / "government_revenue" / grader.ISSUANCE_LOG_FILENAME
     assert not live.exists() or live.stat().st_size == 0
+
+
+# ---------------------------------------------------------------------------
+# CLOSED AMENDMENT-WINDOW WITNESS (first issuance 2026-08-10)
+#
+# The original witness deliberately went red when the first candidate rows were
+# issued.  This successor freezes that transition: the eight issued rows remain
+# immutable and context-only, the grader remains uncalled, and §9 requires a new
+# family_id for any later evaluation-rule change.
+# ---------------------------------------------------------------------------
+
+
+def test_amendment_window_is_closed_after_immutable_issuance_and_grader_stays_uncalled():
+    """Issued context exists, so this family may never be amended in place.
+
+    Three independent witnesses, because any one of them alone is weak:
+
+    1. all eight immutable recovery candidates exist and have no authority;
+    2. no grader outcome log exists anywhere under ``data/``; and
+    3. **nothing calls the grader** — no builder, script, or app module imports
+       it, so the issued context cannot silently acquire verdict authority.
+    """
+    ledger = ROOT / "data" / "government_revenue" / "candidate_ledger.jsonl"
+    rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line]
+    by_id = {row["candidate_id"]: row for row in rows}
+    assert len(by_id) == len(rows), "candidate identities must remain append-only and unique"
+    assert _ISSUED_RECOVERY_CANDIDATE_IDS <= set(by_id), (
+        "the immutable recovery cohort was suppressed, deleted, or rewritten"
+    )
+    for candidate_id in _ISSUED_RECOVERY_CANDIDATE_IDS:
+        row = by_id[candidate_id]
+        assert row["authority"] == _DISPLAY_ONLY_AUTHORITY
+        assert row["is_neuralweb_trade_candidate"] is False
+
+    preregistration = " ".join(PREREG_PATH.read_text(encoding="utf-8").split())
+    assert (
+        "after the first issuance row exists, none of this may move without a new "
+        "`family_id`" in preregistration
+    )
+
+    grader_logs = sorted((ROOT / "data").rglob(grader.ISSUANCE_LOG_FILENAME))
+    assert grader_logs == [], f"a grader outcome log exists: {grader_logs}"
+
+    callers = []
+    for area in ("engine", "scripts", "app", "admin"):
+        root = ROOT / area
+        if not root.exists():
+            continue
+        for path in root.rglob("*.py"):
+            if path.name == "candidate_grader.py":
+                continue
+            if "candidate_grader" in path.read_text(encoding="utf-8", errors="ignore"):
+                callers.append(str(path.relative_to(ROOT)))
+    assert callers == [], (
+        f"the grader has acquired callers {callers}: context-only issuance may have gained "
+        "an unregistered path to verdict authority"
+    )
 
 
 # ---------------------------------------------------------------------------
