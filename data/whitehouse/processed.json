@@ -593,6 +593,12 @@
       "at": "2026-08-07T20:58:38.119723+00:00",
       "activated": true,
       "importance": 68
+    },
+    "https://www.whitehouse.gov/?p=47780": {
+      "id": "wh-2026-08-10-one-year-later-president-trump-has-delivered-on-making-d-c-safe-again",
+      "at": "2026-08-10T19:16:25.825435+00:00",
+      "activated": false,
+      "importance": 5
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
