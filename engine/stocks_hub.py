@@ -750,7 +750,11 @@ def _pw_compare_words(row: Mapping) -> tuple[str, str]:
       economically false on exactly the day it matters most;
     * with neither, the clause is omitted rather than invented.
     """
-    basket = _pw_pretty(row.get("basket"))
+    # The producer carries both the stable basket key and a curated display
+    # label. Prefer the label when present: prettifying `us_sector_materials`
+    # loses the economically useful "Materials (Equal-Weight)" wording.
+    basket = (str(row.get("basket_en") or "").strip()
+              or _pw_pretty(row.get("basket")))
     b_ret = _f(row.get("basket_ret"))
     side_down = str(row.get("side")) != "up"
 

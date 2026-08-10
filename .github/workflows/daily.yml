@@ -4733,6 +4733,27 @@ jobs:
         # Fail-open: missing source → gaps[] + null block, always exits 0.
         # Output covered by 'git add data/' in 'commit engine outputs' below.
         run: python -m scripts.build_liquidity_plumbing || echo "::warning::build_liquidity_plumbing failed (non-fatal — last committed artifact stands)"
+      - name: Price Pressure lobe (DRL W1, display-tier, non-fatal)
+        # Single-name residual shocks: the Dislocation & Recovery lobe's nightly
+        # increment. Pure aggregation over committed stores, NO network calls.
+        # Rebuilds the wide panel in memory (~45-60s measured, no cache is
+        # committed anywhere), harvests the self-healing catch-up window, appends
+        # idempotently on (ticker,date,side), re-grades every open row, and emits
+        # data/price_pressure/{events.parquet,latest.json} (schema price_pressure.v1).
+        # The LEDGER write is gated on COLLECT_LANE=nightly (house law: nightly is
+        # the sole advancer of forward ledgers); the display artifact rebuilds in
+        # any lane. Display tier, every authority boolean literal false — the
+        # underlying construction is closed as alpha
+        # (DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER) and this lobe shows that
+        # measured record as context. A missing or stale bar store prints a
+        # workflow annotation and exits 0 WITHOUT touching artifacts, so a short
+        # run can never overwrite a good ledger. The frozen base rates
+        # (data/price_pressure/base_rates.json) are produced by a manual local
+        # backfill only and are never refrozen here.
+        # Outputs covered by 'git add data/' in 'commit engine outputs' below.
+        timeout-minutes: 20
+        run: |
+          python -m scripts.build_price_pressure || echo "::warning::build_price_pressure failed (non-fatal — last committed artifact stands)"
       - name: Release Radar coherent-target vintage stores (truth substrate, non-fatal)
         # Full ALFRED output_type=2 matrices let the target engine select current
         # and prior levels from ONE release-date vintage.  They are additive to
