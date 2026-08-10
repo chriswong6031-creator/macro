@@ -2528,6 +2528,11 @@ jobs:
               "site/prophet/plans": "*.json",
               "site/prophet/states": "*.json",
               "data/prophet/origination_receipts": "*.json",
+              # §6.5 legacy shadow: month-grouped DAY parts
+              # (legacy_shadow/YYYY-MM/YYYY-MM-DD.parquet). Build-owned and
+              # append-only like the receipts; without this the accrual store
+              # is runner-local and dies with the runner.
+              "data/prophet/legacy_shadow": "*/*.parquet",
           }
 
           def digest(path: Path) -> str:
@@ -2740,6 +2745,11 @@ jobs:
               "site/prophet/plans": "*.json",
               "site/prophet/states": "*.json",
               "data/prophet/origination_receipts": "*.json",
+              # §6.5 legacy shadow: month-grouped DAY parts
+              # (legacy_shadow/YYYY-MM/YYYY-MM-DD.parquet). Build-owned and
+              # append-only like the receipts; without this the accrual store
+              # is runner-local and dies with the runner.
+              "data/prophet/legacy_shadow": "*/*.parquet",
           }
 
           def digest(path: Path) -> str:
@@ -2886,6 +2896,7 @@ jobs:
               data/prophet/ledger.jsonl|data/prophet/ledger_quarantine.json|\
               data/prophet_arena/scoreboard.json|\
               data/prophet/origination_receipts/*.json|\
+              data/prophet/legacy_shadow/*/*.parquet|\
               data/prophet_arena/price_basis_trigger_v2/C0_champion_mirror.jsonl|\
               data/prophet_arena/price_basis_trigger_v2/C1_buy_soon_first.jsonl|\
               data/prophet_arena/price_basis_trigger_v2/C3_door_w_union.jsonl|\

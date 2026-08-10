@@ -1501,8 +1501,11 @@ def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | N
           "delayed":       True,          # >= 2 sessions behind expected, or unknown
           "unknown":       False,         # True ⇒ no basis derivable; delayed fails closed
           "basis":         "panel_majority" | "board_asof" | "unknown",
-          "max_through":   "2026-08-06",  # freshest close ANY input reached (disclosure
-                                          # only — this is the number that used to lie)
+          "max_through":   "2026-08-06",  # freshest close ANY input reached, RAW and
+                                          # unclamped (disclosure only — this is the
+                                          # number that used to lie; fed from the panel's
+                                          # `through_raw` so the session clamp inside
+                                          # _panel_price_reach never deletes information)
           "inputs": {                     # per-input reach disclosure (display-only)
             "baskets_ohlcv_through": "2026-08-06",  # the cascade-gate store scan (or None)
             "panel": {...} | None,                   # _panel_price_reach() summary (or None)
@@ -1558,7 +1561,13 @@ def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | N
             except Exception:  # noqa: BLE001 — a malformed stamp never breaks the badge
                 return None
 
-        _panel_through = _iso((panel_reach or {}).get("through"))
+        # `through` is the SESSION-CLAMPED reach (a weekend bar counts as its
+        # preceding session); `through_raw` is the untouched maximum. max_through
+        # is pure disclosure, so it reads RAW — clamping the judgment must never
+        # delete the fact that some member carried a Sunday-dated bar. Panel dicts
+        # without the raw key (older artifacts, foreign callers) fall back.
+        _panel_through = _iso((panel_reach or {}).get("through_raw")
+                              or (panel_reach or {}).get("through"))
         _panel_majority = _iso((panel_reach or {}).get("majority_through"))
         _board_date = _iso(board_asof)
 
@@ -1635,31 +1644,55 @@ def _panel_price_reach(uni: "list | None",
     the only leak was the display-only donor.asof field (yahoo healed to
     08-03/04 while the wedged nightly pinned every other store at 07-31).
 
-    24/7 members are EXCLUDED from the measurement (exclude=None → the
-    config.yml yahoo.tickers.crypto block, the same set the extension-panel
-    calendar split uses): the board's staleness is judged on the NYSE session
-    calendar, and a weekend/holiday crypto bar must never claim session reach
-    for — or clear the DELAYED badge of — the equity board. (Measured on the
-    2026-08-04 checkout: 3 crypto members reached 08-04 while no equity close
-    passed 08-03.)
+    Every member's last-valid bar date is CLAMPED to the NYSE session calendar
+    (``last_session_on_or_before``) before it is counted. The board's staleness
+    is judged on the NYSE session calendar, and a weekend/holiday bar must never
+    claim session reach for — or clear the DELAYED badge of — the equity board.
+    The 24/7 exclusion below (exclude=None → the config.yml yahoo.tickers.crypto
+    block) is kept as a belt, but it is enumeration and enumeration rots: on the
+    2026-08-09 (SUNDAY) bake SIX members of 1,758 carried Sunday-dated bars past
+    the three-coin crypto list — a 24/7- or 6-day-calendar bloc no hardcoded set
+    was tracking — so ``through`` read 08-09 against the equity majority's Friday
+    08-07 and ``mixed_vintage`` went true on a board that was not actually torn.
+    Downstream that is not cosmetic: prophet_bridge refuses ALL plan origination
+    on a mixed-vintage board (#5071), so every Sunday and holiday-Monday bake
+    originated zero plans in silence. The clamp makes the enumeration moot — a
+    weekend bar counts as its preceding session — while a member genuinely stale
+    at an OLDER SESSION date still counts stale and still tears the panel.
+
+    (First measured on the 2026-08-04 checkout: 3 crypto members reached 08-04
+    while no equity close passed 08-03.)
 
     Returns a compact reach summary for the staleness block (display-only):
-      through              max last-valid close date across members (ISO)
-      majority_through     modal last-valid close date (ISO) — where the bulk
-                           of the panel actually ends
+      through              max SESSION-CLAMPED last-valid close date (ISO)
+      through_raw          max UNCLAMPED last-valid close date (ISO) — the raw
+                           disclosure ``max_through`` is computed from, so the
+                           clamp changes the judgment and never the facts
+      majority_through     modal session-clamped last-valid close date (ISO) —
+                           where the bulk of the panel actually ends
       members_at_through / members_total — how many members reach `through`
       mixed_vintage        True when the freshest date is NOT the modal date:
                            a material bloc of the panel is staler than the
                            freshest members (delisted stragglers alone never
                            trigger this — they lose the mode)
+      off_majority_tickers members whose clamped date differs from the modal
+                           date, sorted and capped at 10 — the names that make
+                           `mixed_vintage` true, so a torn board can be
+                           diagnosed from its own receipt instead of by
+                           archaeology across artifact history
     None when the panel is empty/unreadable. Never raises.
     """
     from collections import Counter
+    from lib import nyse_calendar as _nyse
     _skip = _crypto_tickers() if exclude is None else frozenset(exclude)
     _by_date: "Counter" = Counter()
+    _tickers_by_date: "dict[date, list[str]]" = {}
+    _clamp_cache: "dict[date, date]" = {}
+    _raw_max: "date | None" = None
     for _item in (uni or []):
         try:
-            if str(_item[0]) in _skip:
+            _ticker = str(_item[0])
+            if _ticker in _skip:
                 continue
             _close = _item[1]
             if _close is None:
@@ -1667,7 +1700,20 @@ def _panel_price_reach(uni: "list | None",
             _ts = _close.last_valid_index()
             if _ts is None:
                 continue
-            _by_date[pd.Timestamp(_ts).date()] += 1
+            _raw_d = pd.Timestamp(_ts).date()
+            if _raw_max is None or _raw_d > _raw_max:
+                _raw_max = _raw_d
+            _session_d = _clamp_cache.get(_raw_d)
+            if _session_d is None:
+                try:
+                    _session_d = _nyse.last_session_on_or_before(_raw_d)
+                except Exception:  # noqa: BLE001 — a calendar miss degrades to the raw
+                    # date: today's behaviour, loud and honest downstream, never
+                    # a silently invented session.
+                    _session_d = _raw_d
+                _clamp_cache[_raw_d] = _session_d
+            _by_date[_session_d] += 1
+            _tickers_by_date.setdefault(_session_d, []).append(_ticker)
         except Exception:  # noqa: BLE001 — one unreadable member never breaks the summary
             continue
     if not _by_date:
@@ -1676,12 +1722,18 @@ def _panel_price_reach(uni: "list | None",
     # modal date; ties broken toward the fresher date so a 50/50 split still
     # reports majority == through (i.e. not flagged as mixed by a coin flip)
     _majority_d = max(_by_date.items(), key=lambda kv: (kv[1], kv[0]))[0]
+    _off_majority = sorted(
+        _t for _d, _ts_list in _tickers_by_date.items() if _d != _majority_d
+        for _t in _ts_list
+    )
     return {
         "through": str(_max_d),
+        "through_raw": str(_raw_max if _raw_max is not None else _max_d),
         "majority_through": str(_majority_d),
         "members_at_through": int(_by_date[_max_d]),
         "members_total": int(sum(_by_date.values())),
         "mixed_vintage": _majority_d != _max_d,
+        "off_majority_tickers": _off_majority[:10],
     }
 
 
