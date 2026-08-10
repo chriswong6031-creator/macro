@@ -972,9 +972,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| us-basket-turn | `site/basketdata/us_basket_turn.json` | json | daily-engine | display | 1 | 0 |
+| us-basket-turn | `site/basketdata/us_basket_turn.json` | json | daily-engine | display | 5 | 0 |
+| us-basket-turn-ledger | `data/us_basket_turn/ledger.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | us-track-history | `site/factordata/us_track_history.json` | json | daily-engine | display | 1 | 0 |
-| us-basket-turn-ledger | `data/us_basket_turn/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
 ### qualitative-intelligence
 
@@ -1062,7 +1062,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| baskets-membership | `data/baskets/membership.json` | json | weekly | infrastructure | 17 | 0 |
+| baskets-membership | `data/baskets/membership.json` | json | weekly | infrastructure | 18 | 0 |
 | site-baskets-json | `site/basketdata/baskets.json` | json | daily-engine | display | 9 | 1 |
 | site-sector-pulse | `site/basketdata/sector_pulse.json` | json | daily-engine | display | 3 | 2 |
 
@@ -1248,7 +1248,7 @@ flowchart LR
     C_engine_financial_news_py["engine/financial_news.py"]
     C_engine_froth_fragility_py["engine/froth_fragility.py"]
     C_engine_news_common_py["engine/news_common.py"]
-    OVF_baskets_membership["...+13 more"]
+    OVF_baskets_membership["...+14 more"]
     P_scripts_build_stock_library_py(("scripts/build_stock_library.py"))
     A_site_us_standouts["site-us-standouts"]
     C_engine_intelligence_py["engine/intelligence.py"]

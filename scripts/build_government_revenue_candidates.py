@@ -1083,19 +1083,39 @@ def project_candidate_artifacts(
             for row in historical
             if row["candidate_id"] not in issued_candidate_ids
         ]
-        if historical_append_ids:
+        if historical_append_ids and prior.line_count:
             raise CandidateProjectionError(
                 "new candidate observation is not forward of the prior frozen "
                 "generated_at clock: " + ", ".join(sorted(historical_append_ids))
             )
-        historical_keys = {
-            _observation_key(row, label="current candidate observation") for row in historical
-        }
-        appended = [
-            row
-            for row in unseen
-            if _observation_key(row, label="current candidate observation") not in historical_keys
-        ]
+        if historical_append_ids:
+            # An EMPTY ledger has no issuance history to backfill: the frozen
+            # clock records only prior zero-candidate generations.  When the
+            # admission boundary itself was broken upstream (#5086 -- the event
+            # contract rejected every issuer impact since #4255), the first
+            # admissible candidates necessarily carry evidence clocks older than
+            # those quiet generations, and first-seen evidence clocks never move
+            # forward, so refusal here wedges the serialized lane permanently.
+            # First issuance is therefore recorded, not refused -- each row keeps
+            # its honest evidence ``known_at`` beside this run's ``generated_at``
+            # -- and the gate arms once any row exists.
+            print(
+                "::notice title=govrev-candidate-first-issuance::first issuance "
+                f"into an empty candidate ledger: {len(historical_append_ids)} "
+                "observation(s) whose evidence known_at predates the prior frozen "
+                "generation are recorded with this run's generated_at: "
+                + ", ".join(sorted(historical_append_ids)),
+                flush=True,
+            )
+        else:
+            historical_keys = {
+                _observation_key(row, label="current candidate observation") for row in historical
+            }
+            appended = [
+                row
+                for row in unseen
+                if _observation_key(row, label="current candidate observation") not in historical_keys
+            ]
     append_raw = b"".join(_canonical_bytes(row) + b"\n" for row in appended)
     ledger = _ledger_from_bytes(prior.raw + append_raw, label="next candidate ledger")
     queue, queue_content_id = _queue_bound_to_immutable_ledger(queue, ledger)
