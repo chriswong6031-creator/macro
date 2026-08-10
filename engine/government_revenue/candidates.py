@@ -30,6 +30,42 @@ from engine.government_revenue.entity_resolution import load_recipient_entity_gr
 CONTRACT = "government_revenue_candidate.v1"
 QUEUE_CONTRACT = "government_revenue_candidate_queue.v1"
 SCHEMA_VERSION = "1.0.0"
+HISTORICAL_SUPPRESSION_CONTRACT = (
+    "government_revenue.candidate_historical_suppressions.v1"
+)
+HISTORICAL_SUPPRESSION_APPLICATION_CONTRACT = (
+    "government_revenue.candidate_historical_suppression_application.v1"
+)
+HISTORICAL_SUPPRESSION_ACTIVATION_CONTRACT = (
+    "government_revenue.candidate_historical_suppression_activation.v1"
+)
+HISTORICAL_SUPPRESSION_CONFIG_PATH = Path(
+    "config/government_revenue/candidate_historical_suppressions.v1.json"
+)
+HISTORICAL_SUPPRESSION_SCHEMA_PATH = Path(
+    "contracts/government_revenue/government_revenue_candidate_historical_suppressions.v1.schema.json"
+)
+HISTORICAL_SUPPRESSION_SOURCE_PREFIX = (
+    "candidate-suppression-manifest-sha256:"
+)
+ISSUANCE_CORRECTION_CONTRACT = (
+    "government_revenue.candidate_issuance_corrections.v1"
+)
+ISSUANCE_CORRECTION_APPLICATION_CONTRACT = (
+    "government_revenue.candidate_issuance_correction_application.v1"
+)
+ISSUANCE_CORRECTION_ACTIVATION_CONTRACT = (
+    "government_revenue.candidate_issuance_correction_activation.v1"
+)
+ISSUANCE_CORRECTION_CONFIG_PATH = Path(
+    "config/government_revenue/candidate_issuance_corrections.v1.json"
+)
+ISSUANCE_CORRECTION_SCHEMA_PATH = Path(
+    "contracts/government_revenue/government_revenue_candidate_issuance_corrections.v1.schema.json"
+)
+ISSUANCE_CORRECTION_SOURCE_PREFIX = (
+    "candidate-issuance-correction-manifest-sha256:"
+)
 _HEX_SHA256 = re.compile(r"^[a-f0-9]{64}$")
 _TICKER = re.compile(r"^[A-Z][A-Z0-9.-]{0,9}$")
 #: Award-change event types this gate turns into a candidate family.
@@ -108,8 +144,855 @@ def _authority() -> dict[str, Any]:
     }
 
 
+def _historical_suppression_authority() -> dict[str, Any]:
+    """Authority of the reviewed infrastructure control, never of a candidate."""
+    return {**_authority(), "tier": "infrastructure"}
+
+
 def _canonical_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+
+
+def _no_duplicate_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def historical_suppression_entry_key(entry: Mapping[str, Any]) -> tuple[str, ...]:
+    """Return the graph/clock-independent identity of one reviewed tombstone.
+
+    ``observation_id`` and candidate ``known_at`` both move when the reviewed
+    graph is re-published.  A suppression is therefore pinned to the stable
+    candidate hypothesis plus the immutable official event/source identity.
+    """
+    if not isinstance(entry, Mapping):
+        raise ValueError("historical suppression entry must be an object")
+    fields = (
+        "candidate_id",
+        "source_event_id",
+        "source_record_id",
+        "source_rail",
+        "source_content_sha256",
+    )
+    values: list[str] = []
+    for field in fields:
+        value = entry.get(field)
+        if not isinstance(value, str) or not value:
+            raise ValueError(f"historical suppression {field} is invalid")
+        values.append(value)
+    return tuple(values)
+
+
+def candidate_historical_suppression_entry(
+    row: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Project only the immutable source identity needed for a reviewed refusal."""
+    if not isinstance(row, Mapping):
+        raise ValueError("candidate row must be an object")
+    source_event = row.get("source_event")
+    if not isinstance(source_event, Mapping):
+        raise ValueError("candidate source event is invalid")
+    entry = {
+        "candidate_id": row.get("candidate_id"),
+        "candidate_family": row.get("candidate_family"),
+        "source_event_id": source_event.get("event_id"),
+        "source_record_id": source_event.get("record_id"),
+        "source_rail": source_event.get("source_rail"),
+        "source_content_sha256": source_event.get("source_content_id"),
+        "observed_known_at": row.get("known_at"),
+        "decision": "do_not_backfill",
+        "reason_code": "pre_fix_candidate_became_visible_after_frozen_empty_projection",
+    }
+    historical_suppression_entry_key(entry)
+    if not isinstance(entry["candidate_family"], str) or not entry["candidate_family"]:
+        raise ValueError("historical suppression candidate_family is invalid")
+    if not isinstance(entry["observed_known_at"], str) or not entry["observed_known_at"]:
+        raise ValueError("historical suppression observed_known_at is invalid")
+    if _HEX_SHA256.fullmatch(entry["source_content_sha256"]) is None:
+        raise ValueError("historical suppression source_content_sha256 is invalid")
+    return entry
+
+
+def candidate_historical_suppression_activation(
+    manifest: Mapping[str, Any],
+    manifest_sha256: str,
+    *,
+    activated_at: str,
+) -> dict[str, Any]:
+    """Build the durable proof that every reviewed row matched at activation.
+
+    Current matches may later rotate out of the bounded source window.  The
+    activation proof therefore carries the original full entry set and its
+    digest forever; later receipts may report entries inactive but may never
+    mint, replace, or weaken this attestation.
+    """
+    if not isinstance(manifest, Mapping) or _HEX_SHA256.fullmatch(manifest_sha256) is None:
+        raise ValueError("historical suppression activation manifest is invalid")
+    entries = manifest.get("entries")
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("historical suppression activation entries are invalid")
+    normalized_entries = [dict(entry) for entry in entries]
+    entry_keys = [historical_suppression_entry_key(entry) for entry in normalized_entries]
+    if entry_keys != sorted(entry_keys) or len(entry_keys) != len(set(entry_keys)):
+        raise ValueError("historical suppression activation entries are not canonical")
+    reviewed_at = _instant(manifest.get("reviewed_at"))
+    activation_clock = _instant(activated_at)
+    if reviewed_at is None or activation_clock is None or activation_clock < reviewed_at:
+        raise ValueError("historical suppression activation clock is invalid")
+    predecessor = manifest.get("predecessor")
+    if not isinstance(predecessor, Mapping):
+        raise ValueError("historical suppression activation predecessor is invalid")
+    source_entry_set_sha256 = sha256(
+        _canonical_json(normalized_entries).encode("utf-8")
+    ).hexdigest()
+    payload = {
+        "contract": HISTORICAL_SUPPRESSION_ACTIVATION_CONTRACT,
+        "manifest_sha256": manifest_sha256,
+        "predecessor_queue_content_id": predecessor.get("queue_content_id"),
+        "prior_frozen_at": predecessor.get("projection_generated_at"),
+        "activated_at": activated_at,
+        "matched_entry_count": len(normalized_entries),
+        "inactive_entry_count": 0,
+        "source_entry_set_sha256": source_entry_set_sha256,
+        "entries": normalized_entries,
+    }
+    activation_id = "grcsa1-" + sha256(
+        _canonical_json(payload).encode("utf-8")
+    ).hexdigest()[:24]
+    return {**payload, "activation_id": activation_id}
+
+
+def load_candidate_historical_suppression_manifest(
+    root: Path,
+) -> tuple[dict[str, Any], str] | None:
+    """Load the optional reviewed manifest and bind its exact checked-in bytes."""
+    root = Path(root).resolve()
+    manifest_path = root / HISTORICAL_SUPPRESSION_CONFIG_PATH
+    if not manifest_path.exists():
+        return None
+    schema_path = root / HISTORICAL_SUPPRESSION_SCHEMA_PATH
+    try:
+        raw = manifest_path.read_bytes()
+        manifest = json.loads(
+            raw.decode("utf-8"), object_pairs_hook=_no_duplicate_object
+        )
+        schema = json.loads(
+            schema_path.read_text(encoding="utf-8"),
+            object_pairs_hook=_no_duplicate_object,
+        )
+        Draft202012Validator.check_schema(schema)
+        errors = sorted(
+            Draft202012Validator(
+                schema, format_checker=FormatChecker()
+            ).iter_errors(manifest),
+            key=lambda error: tuple(str(part) for part in error.absolute_path),
+        )
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        raise ValueError("historical suppression manifest or schema is unreadable") from exc
+    if errors:
+        first = errors[0]
+        location = ".".join(str(part) for part in first.absolute_path) or "root"
+        raise ValueError(
+            f"historical suppression manifest violates its schema at {location}: {first.message}"
+        )
+    if not isinstance(manifest, dict):
+        raise ValueError("historical suppression manifest must be an object")
+    if manifest.get("contract") != HISTORICAL_SUPPRESSION_CONTRACT:
+        raise ValueError("historical suppression manifest contract is invalid")
+    if manifest.get("authority") != _historical_suppression_authority():
+        raise ValueError("historical suppression manifest authority is invalid")
+    entries = manifest.get("entries")
+    predecessor = manifest.get("predecessor")
+    if not isinstance(entries, list) or not isinstance(predecessor, Mapping):
+        raise ValueError("historical suppression manifest shape is invalid")
+    keys = [historical_suppression_entry_key(entry) for entry in entries]
+    if keys != sorted(keys) or len(keys) != len(set(keys)):
+        raise ValueError("historical suppression entries must be unique and sorted")
+    predecessor_at = _instant(predecessor.get("projection_generated_at"))
+    reviewed_at = _instant(manifest.get("reviewed_at"))
+    if predecessor_at is None or reviewed_at is None or reviewed_at < predecessor_at:
+        raise ValueError("historical suppression manifest clocks are invalid")
+    for entry in entries:
+        observed_at = _instant(entry.get("observed_known_at"))
+        if observed_at is None or observed_at > predecessor_at:
+            raise ValueError(
+                "historical suppression entry is not behind the declared predecessor"
+            )
+    return manifest, sha256(raw).hexdigest()
+
+
+def issuance_correction_entry_key(entry: Mapping[str, Any]) -> tuple[str, ...]:
+    """Return the immutable official-source identity of one corrected issuance."""
+    return historical_suppression_entry_key(entry)
+
+
+def _canonical_value_sha256(value: Any) -> str:
+    try:
+        raw = json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise ValueError("candidate correction row is not canonical JSON") from exc
+    return sha256(raw).hexdigest()
+
+
+def candidate_issuance_correction_entry(row: Mapping[str, Any]) -> dict[str, Any]:
+    """Bind one immutable ledger row to its exact official-source identity."""
+    if not isinstance(row, Mapping):
+        raise ValueError("candidate correction row must be an object")
+    source_event = row.get("source_event")
+    if not isinstance(source_event, Mapping):
+        raise ValueError("candidate correction source event is invalid")
+    entry = {
+        "candidate_id": row.get("candidate_id"),
+        "observation_id": row.get("observation_id"),
+        "candidate_family": row.get("candidate_family"),
+        "source_event_id": source_event.get("event_id"),
+        "source_record_id": source_event.get("record_id"),
+        "source_rail": source_event.get("source_rail"),
+        "source_content_sha256": source_event.get("source_content_id"),
+        "observed_known_at": row.get("known_at"),
+        "issued_generated_at": row.get("generated_at"),
+        "issued_row_sha256": _canonical_value_sha256(row),
+    }
+    issuance_correction_entry_key(entry)
+    for field in (
+        "observation_id",
+        "candidate_family",
+        "observed_known_at",
+        "issued_generated_at",
+    ):
+        if not isinstance(entry[field], str) or not entry[field]:
+            raise ValueError(f"candidate correction {field} is invalid")
+    if _HEX_SHA256.fullmatch(entry["source_content_sha256"]) is None:
+        raise ValueError("candidate correction source_content_sha256 is invalid")
+    return entry
+
+
+def candidate_issuance_correction_activation(
+    manifest: Mapping[str, Any],
+    manifest_sha256: str,
+    *,
+    activated_at: str,
+) -> dict[str, Any]:
+    """Build the durable proof that all incident rows were exactly quarantined."""
+    if not isinstance(manifest, Mapping) or _HEX_SHA256.fullmatch(manifest_sha256) is None:
+        raise ValueError("candidate correction activation manifest is invalid")
+    entries = manifest.get("entries")
+    incident = manifest.get("incident")
+    if not isinstance(entries, list) or not entries or not isinstance(incident, Mapping):
+        raise ValueError("candidate correction activation shape is invalid")
+    normalized_entries = [dict(entry) for entry in entries]
+    entry_keys = [issuance_correction_entry_key(entry) for entry in normalized_entries]
+    if entry_keys != sorted(entry_keys) or len(entry_keys) != len(set(entry_keys)):
+        raise ValueError("candidate correction activation entries are not canonical")
+    reviewed_at = _instant(manifest.get("reviewed_at"))
+    activation_clock = _instant(activated_at)
+    if reviewed_at is None or activation_clock is None or activation_clock < reviewed_at:
+        raise ValueError("candidate correction activation clock is invalid")
+    issued_entry_set_sha256 = sha256(
+        _canonical_json(normalized_entries).encode("utf-8")
+    ).hexdigest()
+    payload = {
+        "contract": ISSUANCE_CORRECTION_ACTIVATION_CONTRACT,
+        "manifest_sha256": manifest_sha256,
+        "incident_id": incident.get("incident_id"),
+        "publication_commit_sha": incident.get("publication_commit_sha"),
+        "issued_queue_content_id": incident.get("issued_queue_content_id"),
+        "issued_projection_generated_at": incident.get(
+            "issued_projection_generated_at"
+        ),
+        "issued_queue_sha256": incident.get("issued_queue_sha256"),
+        "issued_projection_state_sha256": incident.get(
+            "issued_projection_state_sha256"
+        ),
+        "issued_ledger_sha256": incident.get("issued_ledger_sha256"),
+        "issued_ledger_byte_count": incident.get("issued_ledger_byte_count"),
+        "issued_ledger_line_count": incident.get("issued_ledger_line_count"),
+        "activated_at": activated_at,
+        "matched_issued_count": len(normalized_entries),
+        "issued_entry_set_sha256": issued_entry_set_sha256,
+        "entries": normalized_entries,
+    }
+    activation_id = "grcica1-" + sha256(
+        _canonical_json(payload).encode("utf-8")
+    ).hexdigest()[:24]
+    return {**payload, "activation_id": activation_id}
+
+
+def load_candidate_issuance_correction_manifest(
+    root: Path,
+) -> tuple[dict[str, Any], str] | None:
+    """Load and semantically bind the separate append-only incident correction."""
+    root = Path(root).resolve()
+    manifest_path = root / ISSUANCE_CORRECTION_CONFIG_PATH
+    if not manifest_path.exists():
+        return None
+    schema_path = root / ISSUANCE_CORRECTION_SCHEMA_PATH
+    try:
+        raw = manifest_path.read_bytes()
+        manifest = json.loads(
+            raw.decode("utf-8"), object_pairs_hook=_no_duplicate_object
+        )
+        schema = json.loads(
+            schema_path.read_text(encoding="utf-8"),
+            object_pairs_hook=_no_duplicate_object,
+        )
+        Draft202012Validator.check_schema(schema)
+        errors = sorted(
+            Draft202012Validator(
+                schema, format_checker=FormatChecker()
+            ).iter_errors(manifest),
+            key=lambda error: tuple(str(part) for part in error.absolute_path),
+        )
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        raise ValueError("candidate correction manifest or schema is unreadable") from exc
+    if errors:
+        first = errors[0]
+        location = ".".join(str(part) for part in first.absolute_path) or "root"
+        raise ValueError(
+            f"candidate correction manifest violates its schema at {location}: {first.message}"
+        )
+    if not isinstance(manifest, dict) or manifest.get("contract") != ISSUANCE_CORRECTION_CONTRACT:
+        raise ValueError("candidate correction manifest contract is invalid")
+    if manifest.get("authority") != _historical_suppression_authority():
+        raise ValueError("candidate correction manifest authority is invalid")
+    incident = manifest.get("incident")
+    original_review = manifest.get("original_review")
+    entries = manifest.get("entries")
+    if (
+        not isinstance(incident, Mapping)
+        or not isinstance(original_review, Mapping)
+        or not isinstance(entries, list)
+    ):
+        raise ValueError("candidate correction manifest shape is invalid")
+    publication_commit = incident.get("publication_commit_sha")
+    if (
+        not isinstance(publication_commit, str)
+        or incident.get("incident_id") != "grcii1-" + publication_commit[:24]
+        or incident.get("issued_ledger_line_count") != len(entries)
+    ):
+        raise ValueError("candidate correction incident identity is invalid")
+    keys = [issuance_correction_entry_key(entry) for entry in entries]
+    if keys != sorted(keys) or len(keys) != len(set(keys)):
+        raise ValueError("candidate correction entries must be unique and sorted")
+    suppression = load_candidate_historical_suppression_manifest(root)
+    if suppression is None:
+        raise ValueError("candidate correction lacks its original reviewed manifest")
+    suppression_manifest, suppression_sha256 = suppression
+    suppression_predecessor = suppression_manifest.get("predecessor")
+    if (
+        original_review.get("manifest_sha256") != suppression_sha256
+        or original_review.get("reviewed_at") != suppression_manifest.get("reviewed_at")
+        or not isinstance(suppression_predecessor, Mapping)
+        or original_review.get("predecessor_queue_content_id")
+        != suppression_predecessor.get("queue_content_id")
+        or original_review.get("predecessor_projection_generated_at")
+        != suppression_predecessor.get("projection_generated_at")
+    ):
+        raise ValueError("candidate correction original review binding is invalid")
+    reviewed_at = _instant(manifest.get("reviewed_at"))
+    issued_at = _instant(incident.get("issued_projection_generated_at"))
+    first_notice_at = _instant(incident.get("first_issuance_notice_at"))
+    if (
+        reviewed_at is None
+        or issued_at is None
+        or first_notice_at is None
+        or reviewed_at < issued_at
+        or issued_at < first_notice_at
+    ):
+        raise ValueError("candidate correction incident clocks are invalid")
+    suppression_by_key = {
+        historical_suppression_entry_key(entry): entry
+        for entry in suppression_manifest["entries"]
+    }
+    if set(keys) != set(suppression_by_key):
+        raise ValueError("candidate correction does not exactly cover the original review")
+    for entry in entries:
+        suppression_entry = suppression_by_key[issuance_correction_entry_key(entry)]
+        if (
+            entry.get("candidate_family") != suppression_entry.get("candidate_family")
+            or entry.get("observed_known_at") != suppression_entry.get("observed_known_at")
+        ):
+            raise ValueError("candidate correction entry differs from the original review")
+    return manifest, sha256(raw).hexdigest()
+
+
+def _current_historical_suppression_entries(
+    *,
+    manifest_by_key: Mapping[tuple[str, ...], Mapping[str, Any]],
+    current_observations: Sequence[Mapping[str, Any]] | None,
+    issued_observations: Sequence[Mapping[str, Any]],
+    require_observed_known_at: bool,
+) -> tuple[list[dict[str, Any]] | None, set[tuple[str, ...]]]:
+    """Re-derive the exact currently visible unissued manifest entries."""
+    if isinstance(issued_observations, (str, bytes)):
+        raise ValueError("candidate suppression issued observations are invalid")
+    issued_keys: set[tuple[str, ...]] = set()
+    for index, row in enumerate(issued_observations, start=1):
+        if not isinstance(row, Mapping):
+            raise ValueError(
+                f"candidate suppression issued observation {index} is invalid"
+            )
+        issued_keys.add(
+            historical_suppression_entry_key(
+                candidate_historical_suppression_entry(row)
+            )
+        )
+    manifest_keys = set(manifest_by_key)
+    if manifest_keys.intersection(issued_keys):
+        raise ValueError("a reviewed historical source identity was issued as a candidate")
+    if current_observations is None:
+        return None, issued_keys
+    if isinstance(current_observations, (str, bytes)):
+        raise ValueError("candidate suppression current source rows are invalid")
+    current_by_key: dict[tuple[str, ...], dict[str, Any]] = {}
+    for index, row in enumerate(current_observations, start=1):
+        if not isinstance(row, Mapping):
+            raise ValueError(
+                f"candidate suppression current source row {index} is invalid"
+            )
+        current_entry = candidate_historical_suppression_entry(row)
+        key = historical_suppression_entry_key(current_entry)
+        if key in issued_keys:
+            continue
+        if key in current_by_key:
+            raise ValueError(
+                "candidate suppression current source rows duplicate a stable identity"
+            )
+        reviewed_entry = manifest_by_key.get(key)
+        if reviewed_entry is None:
+            raise ValueError(
+                "an unissued current source row has no reviewed historical suppression"
+            )
+        comparable = dict(current_entry)
+        if not require_observed_known_at:
+            comparable["observed_known_at"] = reviewed_entry["observed_known_at"]
+        if comparable != reviewed_entry:
+            raise ValueError(
+                "candidate suppression current source identity differs from review"
+            )
+        current_by_key[key] = dict(reviewed_entry)
+    return [current_by_key[key] for key in sorted(current_by_key)], issued_keys
+
+
+def validate_candidate_historical_suppression_binding(
+    queue: Mapping[str, Any],
+    projection_state: Mapping[str, Any],
+    *,
+    root: Path,
+    allow_exact_legacy_predecessor: bool = True,
+    current_observations: Sequence[Mapping[str, Any]] | None = None,
+    issued_observations: Sequence[Mapping[str, Any]] = (),
+    require_exact_activation: bool = False,
+    require_manifest: bool = False,
+) -> dict[str, Any]:
+    """Validate manifest, current source rows, and queue disclosure as one claim."""
+    loaded = load_candidate_historical_suppression_manifest(root)
+    coverage = queue.get("coverage")
+    receipt = coverage.get("historical_candidate_suppression") if isinstance(coverage, Mapping) else None
+    source_content_ids = queue.get("source_content_ids")
+    suppression_source_ids = {
+        value
+        for value in source_content_ids
+        if isinstance(value, str)
+        and value.startswith(HISTORICAL_SUPPRESSION_SOURCE_PREFIX)
+    } if isinstance(source_content_ids, list) else set()
+    if loaded is None:
+        if require_manifest:
+            raise ValueError("candidate suppression manifest is required")
+        if receipt is not None or suppression_source_ids:
+            raise ValueError("candidate suppression lineage has no reviewed manifest")
+        return {"status": "absent"}
+
+    manifest, manifest_sha256 = loaded
+    predecessor = manifest["predecessor"]
+    manifest_entries = manifest["entries"]
+    manifest_by_key = {
+        historical_suppression_entry_key(entry): entry for entry in manifest_entries
+    }
+    expected_current_entries, _issued_keys = _current_historical_suppression_entries(
+        manifest_by_key=manifest_by_key,
+        current_observations=current_observations,
+        issued_observations=issued_observations,
+        require_observed_known_at=(require_exact_activation or receipt is None),
+    )
+    if receipt is None:
+        if (
+            allow_exact_legacy_predecessor
+            and queue.get("content_id") == predecessor["queue_content_id"]
+            and projection_state.get("generated_at")
+            == predecessor["projection_generated_at"]
+            and not suppression_source_ids
+        ):
+            return {
+                "status": "legacy_predecessor",
+                "manifest_sha256": manifest_sha256,
+                "visible_reviewed_count": len(expected_current_entries or ()),
+            }
+        raise ValueError("candidate queue omits the current suppression receipt")
+    if not isinstance(receipt, Mapping):
+        raise ValueError("candidate suppression receipt is malformed")
+    reviewed_at = _instant(manifest.get("reviewed_at"))
+    generated_at = _instant(projection_state.get("generated_at"))
+    if reviewed_at is None or generated_at is None or generated_at < reviewed_at:
+        raise ValueError("candidate suppression receipt predates its reviewed manifest")
+    matched_entries = receipt.get("entries")
+    activation = receipt.get("activation")
+    expected_source_id = HISTORICAL_SUPPRESSION_SOURCE_PREFIX + manifest_sha256
+    if (
+        receipt.get("contract") != HISTORICAL_SUPPRESSION_APPLICATION_CONTRACT
+        or receipt.get("manifest_sha256") != manifest_sha256
+        or receipt.get("policy") != "exact_source_identity_only"
+        or receipt.get("decision") != "do_not_backfill"
+        or receipt.get("predecessor_queue_content_id") != predecessor["queue_content_id"]
+        or receipt.get("prior_frozen_at") != predecessor["projection_generated_at"]
+        or receipt.get("manifest_entry_count") != len(manifest_entries)
+        or not isinstance(matched_entries, list)
+        or receipt.get("matched_count") != len(matched_entries)
+        or receipt.get("inactive_count") != len(manifest_entries) - len(matched_entries)
+        or suppression_source_ids != {expected_source_id}
+        or not isinstance(activation, Mapping)
+    ):
+        raise ValueError("candidate suppression receipt binding is invalid")
+    try:
+        expected_activation = candidate_historical_suppression_activation(
+            manifest,
+            manifest_sha256,
+            activated_at=activation.get("activated_at"),
+        )
+    except ValueError as exc:
+        raise ValueError("candidate suppression activation is invalid") from exc
+    activation_clock = _instant(activation.get("activated_at"))
+    if (
+        dict(activation) != expected_activation
+        or activation_clock is None
+        or generated_at < activation_clock
+    ):
+        raise ValueError("candidate suppression activation binding is invalid")
+    matched_keys = [historical_suppression_entry_key(entry) for entry in matched_entries]
+    if matched_keys != sorted(matched_keys) or len(matched_keys) != len(set(matched_keys)):
+        raise ValueError("candidate suppression receipt entries are not unique and sorted")
+    if any(
+        key not in manifest_by_key
+        or dict(matched_entries[index]) != dict(manifest_by_key[key])
+        for index, key in enumerate(matched_keys)
+    ):
+        raise ValueError("candidate suppression receipt is detached from its manifest")
+    if require_exact_activation and expected_current_entries is None:
+        raise ValueError("candidate suppression activation lacks current source rows")
+    if expected_current_entries is not None:
+        if [dict(entry) for entry in matched_entries] != expected_current_entries:
+            raise ValueError("candidate suppression receipt does not match current source rows")
+        if require_exact_activation and len(expected_current_entries) != len(manifest_entries):
+            raise ValueError(
+                "candidate suppression activation is not an exact manifest/source bijection"
+            )
+    if generated_at == activation_clock and (
+        [dict(entry) for entry in matched_entries]
+        != [dict(entry) for entry in manifest_entries]
+        or receipt.get("inactive_count") != 0
+    ):
+        raise ValueError(
+            "candidate suppression first activation did not bind the full source bijection"
+        )
+
+    candidates = queue.get("candidates")
+    recently_matured = queue.get("recently_matured", [])
+    freshness = queue.get("freshness")
+    if not isinstance(candidates, list) or not isinstance(recently_matured, list) or not isinstance(freshness, Mapping):
+        raise ValueError("candidate suppression queue context is invalid")
+    published_keys: set[tuple[str, ...]] = set()
+    for row in (*candidates, *recently_matured):
+        if not isinstance(row, Mapping):
+            raise ValueError("candidate suppression queue row is invalid")
+        published_keys.add(
+            historical_suppression_entry_key(
+                candidate_historical_suppression_entry(row)
+            )
+        )
+    if set(manifest_by_key).intersection(published_keys):
+        raise ValueError("a reviewed historical source identity is present in the queue")
+    availability = freshness.get("exact_candidate_availability")
+    if candidates and availability != "available":
+        raise ValueError("candidate suppression cannot hide available forward candidates")
+    if not candidates and matched_entries and availability != "withheld_historical":
+        raise ValueError("candidate suppression zero queue lacks withheld disclosure")
+    if not matched_entries and availability == "withheld_historical":
+        raise ValueError("candidate queue claims a suppression that matched no row")
+    return {
+        "status": "bound",
+        "manifest_sha256": manifest_sha256,
+        "matched_count": len(matched_entries),
+    }
+
+
+def validate_candidate_issuance_correction_binding(
+    queue: Mapping[str, Any],
+    projection_state: Mapping[str, Any],
+    *,
+    root: Path,
+    current_observations: Sequence[Mapping[str, Any]] | None = None,
+    issued_observations: Sequence[Mapping[str, Any]] = (),
+    allow_exact_incident_predecessor: bool = False,
+    queue_raw_sha256: str | None = None,
+    projection_state_raw_sha256: str | None = None,
+    require_correction: bool = False,
+) -> dict[str, Any]:
+    """Validate one exact append-only correction without weakening suppression."""
+    loaded = load_candidate_issuance_correction_manifest(root)
+    if loaded is None:
+        if require_correction:
+            raise ValueError("candidate issuance correction manifest is required")
+        return {"status": "absent"}
+    manifest, manifest_sha256 = loaded
+    incident = manifest["incident"]
+    manifest_entries = [dict(entry) for entry in manifest["entries"]]
+    entry_count = len(manifest_entries)
+    if isinstance(issued_observations, (str, bytes)):
+        raise ValueError("candidate correction issued observations are invalid")
+    issued_rows = list(issued_observations)
+    if len(issued_rows) < entry_count:
+        raise ValueError("candidate correction ledger prefix is incomplete")
+    prefix_rows = issued_rows[:entry_count]
+    if any(not isinstance(row, Mapping) for row in prefix_rows):
+        raise ValueError("candidate correction ledger prefix row is invalid")
+    prefix_entries = [candidate_issuance_correction_entry(row) for row in prefix_rows]
+    prefix_raw = b"".join(
+        json.dumps(
+            row,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+        + b"\n"
+        for row in prefix_rows
+    )
+    if (
+        prefix_entries != manifest_entries
+        or sha256(prefix_raw).hexdigest() != incident["issued_ledger_sha256"]
+        or len(prefix_raw) != incident["issued_ledger_byte_count"]
+    ):
+        raise ValueError("candidate correction ledger prefix differs from the incident")
+
+    coverage = queue.get("coverage")
+    receipt = (
+        coverage.get("historical_candidate_issuance_correction")
+        if isinstance(coverage, Mapping)
+        else None
+    )
+    suppression_receipt = (
+        coverage.get("historical_candidate_suppression")
+        if isinstance(coverage, Mapping)
+        else None
+    )
+    source_content_ids = queue.get("source_content_ids")
+    if not isinstance(source_content_ids, list):
+        raise ValueError("candidate correction queue source ids are invalid")
+    correction_source_ids = {
+        value
+        for value in source_content_ids
+        if isinstance(value, str)
+        and value.startswith(ISSUANCE_CORRECTION_SOURCE_PREFIX)
+    }
+    suppression_source_ids = {
+        value
+        for value in source_content_ids
+        if isinstance(value, str)
+        and value.startswith(HISTORICAL_SUPPRESSION_SOURCE_PREFIX)
+    }
+    if suppression_receipt is not None or suppression_source_ids:
+        raise ValueError("candidate correction cannot claim historical non-issuance")
+
+    ledger_binding = projection_state.get("ledger")
+    if not isinstance(ledger_binding, Mapping):
+        raise ValueError("candidate correction projection ledger binding is invalid")
+    if receipt is None:
+        if not allow_exact_incident_predecessor:
+            raise ValueError("uncorrected candidate issuance incident cannot be served")
+        queue_rows = queue.get("candidates")
+        if (
+            queue.get("content_id") != incident["issued_queue_content_id"]
+            or projection_state.get("generated_at")
+            != incident["issued_projection_generated_at"]
+            or ledger_binding.get("sha256") != incident["issued_ledger_sha256"]
+            or ledger_binding.get("byte_count") != incident["issued_ledger_byte_count"]
+            or ledger_binding.get("line_count") != incident["issued_ledger_line_count"]
+            or len(issued_rows) != entry_count
+            or correction_source_ids
+            or queue_raw_sha256 != incident["issued_queue_sha256"]
+            or projection_state_raw_sha256
+            != incident["issued_projection_state_sha256"]
+            or not isinstance(queue_rows, list)
+            or [candidate_issuance_correction_entry(row) for row in queue_rows]
+            != manifest_entries
+        ):
+            raise ValueError("candidate issuance incident predecessor is not exact")
+        return {
+            "status": "uncorrected_incident",
+            "manifest_sha256": manifest_sha256,
+            "issued_count": entry_count,
+        }
+
+    expected_source_id = ISSUANCE_CORRECTION_SOURCE_PREFIX + manifest_sha256
+    entries = receipt.get("entries") if isinstance(receipt, Mapping) else None
+    activation = receipt.get("activation") if isinstance(receipt, Mapping) else None
+    original_review = manifest["original_review"]
+    if (
+        not isinstance(receipt, Mapping)
+        or receipt.get("contract") != ISSUANCE_CORRECTION_APPLICATION_CONTRACT
+        or receipt.get("manifest_sha256") != manifest_sha256
+        or receipt.get("incident_id") != incident["incident_id"]
+        or receipt.get("original_review_manifest_sha256")
+        != original_review["manifest_sha256"]
+        or receipt.get("policy") != "exact_issued_source_identity_only"
+        or receipt.get("decision") != "quarantine_erroneous_historical_issuance"
+        or receipt.get("issued_queue_content_id")
+        != incident["issued_queue_content_id"]
+        or receipt.get("issued_projection_generated_at")
+        != incident["issued_projection_generated_at"]
+        or receipt.get("issued_ledger_sha256") != incident["issued_ledger_sha256"]
+        or receipt.get("issued_ledger_byte_count")
+        != incident["issued_ledger_byte_count"]
+        or receipt.get("issued_ledger_line_count")
+        != incident["issued_ledger_line_count"]
+        or receipt.get("entry_count") != entry_count
+        or receipt.get("matched_issued_count") != entry_count
+        or receipt.get("quarantined_count") != entry_count
+        or entries != manifest_entries
+        or correction_source_ids != {expected_source_id}
+        or not isinstance(activation, Mapping)
+    ):
+        raise ValueError("candidate issuance correction receipt binding is invalid")
+    try:
+        expected_activation = candidate_issuance_correction_activation(
+            manifest,
+            manifest_sha256,
+            activated_at=activation.get("activated_at"),
+        )
+    except ValueError as exc:
+        raise ValueError("candidate issuance correction activation is invalid") from exc
+    generated_at = _instant(projection_state.get("generated_at"))
+    activated_at = _instant(activation.get("activated_at"))
+    if (
+        dict(activation) != expected_activation
+        or generated_at is None
+        or activated_at is None
+        or generated_at < activated_at
+    ):
+        raise ValueError("candidate issuance correction activation binding is invalid")
+    if generated_at == activated_at and (
+        len(issued_rows) != entry_count
+        or ledger_binding.get("sha256") != incident["issued_ledger_sha256"]
+        or ledger_binding.get("byte_count") != incident["issued_ledger_byte_count"]
+        or ledger_binding.get("line_count") != incident["issued_ledger_line_count"]
+        or ledger_binding.get("append_count") != 0
+    ):
+        raise ValueError("candidate correction activation changed the incident ledger")
+    if current_observations is not None and generated_at == activated_at:
+        if isinstance(current_observations, (str, bytes)):
+            raise ValueError("candidate correction current observations are invalid")
+        reviewed = load_candidate_historical_suppression_manifest(root)
+        if reviewed is None:
+            raise ValueError("candidate correction original review is unavailable")
+        suppression_by_key = {
+            historical_suppression_entry_key(entry): entry
+            for entry in reviewed[0]["entries"]
+        }
+        current_by_key: dict[tuple[str, ...], dict[str, Any]] = {}
+        for row in current_observations:
+            current_entry = candidate_historical_suppression_entry(row)
+            key = historical_suppression_entry_key(current_entry)
+            if key not in suppression_by_key:
+                continue
+            comparable = dict(current_entry)
+            comparable["observed_known_at"] = suppression_by_key[key][
+                "observed_known_at"
+            ]
+            if comparable != suppression_by_key[key] or key in current_by_key:
+                raise ValueError("candidate correction current source identity is invalid")
+            current_by_key[key] = comparable
+        if set(current_by_key) != set(suppression_by_key):
+            raise ValueError("candidate correction activation lacks the exact source bijection")
+
+    candidates = queue.get("candidates")
+    recently_matured = queue.get("recently_matured", [])
+    freshness = queue.get("freshness")
+    if (
+        not isinstance(candidates, list)
+        or not isinstance(recently_matured, list)
+        or not isinstance(freshness, Mapping)
+    ):
+        raise ValueError("candidate correction queue context is invalid")
+    corrected_keys = {
+        issuance_correction_entry_key(entry) for entry in manifest_entries
+    }
+    for row in (*candidates, *recently_matured):
+        if not isinstance(row, Mapping):
+            raise ValueError("candidate correction queue row is invalid")
+        if historical_suppression_entry_key(
+            candidate_historical_suppression_entry(row)
+        ) in corrected_keys:
+            raise ValueError("a quarantined issuance remains on an active surface")
+    availability = freshness.get("exact_candidate_availability")
+    active_rows = [*candidates, *recently_matured]
+    if active_rows and availability != "available":
+        raise ValueError("candidate correction cannot hide forward candidates")
+    if not active_rows and availability != "quarantined_historical_issuance":
+        raise ValueError("candidate correction zero queue lacks quarantine disclosure")
+    return {
+        "status": "corrected",
+        "manifest_sha256": manifest_sha256,
+        "quarantined_count": entry_count,
+    }
+
+
+def validate_candidate_reviewed_history_binding(
+    queue: Mapping[str, Any],
+    projection_state: Mapping[str, Any],
+    *,
+    root: Path,
+    allow_exact_legacy_predecessor: bool = True,
+    allow_exact_incident_predecessor: bool = False,
+    current_observations: Sequence[Mapping[str, Any]] | None = None,
+    issued_observations: Sequence[Mapping[str, Any]] = (),
+    require_exact_activation: bool = False,
+    require_manifest: bool = False,
+    queue_raw_sha256: str | None = None,
+    projection_state_raw_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Route to non-issuance or correction without conflating their claims."""
+    if load_candidate_issuance_correction_manifest(root) is not None:
+        return validate_candidate_issuance_correction_binding(
+            queue,
+            projection_state,
+            root=root,
+            current_observations=current_observations,
+            issued_observations=issued_observations,
+            allow_exact_incident_predecessor=allow_exact_incident_predecessor,
+            queue_raw_sha256=queue_raw_sha256,
+            projection_state_raw_sha256=projection_state_raw_sha256,
+            require_correction=require_manifest,
+        )
+    return validate_candidate_historical_suppression_binding(
+        queue,
+        projection_state,
+        root=root,
+        allow_exact_legacy_predecessor=allow_exact_legacy_predecessor,
+        current_observations=current_observations,
+        issued_observations=issued_observations,
+        require_exact_activation=require_exact_activation,
+        require_manifest=require_manifest,
+    )
 
 
 def _digest(prefix: str, value: Any) -> str:
@@ -1110,8 +1993,26 @@ def _validators() -> tuple[Draft202012Validator, Draft202012Validator]:
     root = Path(__file__).resolve().parents[2]
     candidate_schema = json.loads((root / "contracts/government_revenue/government_revenue_candidate.v1.schema.json").read_text(encoding="utf-8"))
     queue_schema = json.loads((root / "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json").read_text(encoding="utf-8"))
+    suppression_schema = json.loads(
+        (
+            root
+            / "contracts/government_revenue/government_revenue_candidate_historical_suppressions.v1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    correction_schema = json.loads(
+        (
+            root
+            / "contracts/government_revenue/government_revenue_candidate_issuance_corrections.v1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
     registry = Registry().with_resource(candidate_schema["$id"], Resource.from_contents(candidate_schema))
     registry = registry.with_resource(queue_schema["$id"], Resource.from_contents(queue_schema))
+    registry = registry.with_resource(
+        suppression_schema["$id"], Resource.from_contents(suppression_schema)
+    )
+    registry = registry.with_resource(
+        correction_schema["$id"], Resource.from_contents(correction_schema)
+    )
     checker = FormatChecker()
     return (
         Draft202012Validator(candidate_schema, registry=registry, format_checker=checker),
@@ -1141,11 +2042,34 @@ def is_valid_candidate_queue(payload: Mapping[str, Any]) -> bool:
 
 
 __all__ = [
+    "HISTORICAL_SUPPRESSION_ACTIVATION_CONTRACT",
+    "HISTORICAL_SUPPRESSION_APPLICATION_CONTRACT",
+    "HISTORICAL_SUPPRESSION_CONFIG_PATH",
+    "HISTORICAL_SUPPRESSION_CONTRACT",
+    "HISTORICAL_SUPPRESSION_SCHEMA_PATH",
+    "HISTORICAL_SUPPRESSION_SOURCE_PREFIX",
+    "ISSUANCE_CORRECTION_ACTIVATION_CONTRACT",
+    "ISSUANCE_CORRECTION_APPLICATION_CONTRACT",
+    "ISSUANCE_CORRECTION_CONFIG_PATH",
+    "ISSUANCE_CORRECTION_CONTRACT",
+    "ISSUANCE_CORRECTION_SCHEMA_PATH",
+    "ISSUANCE_CORRECTION_SOURCE_PREFIX",
     "build_candidate_observations",
     "build_candidate_queue",
     "build_mapping_backlog",
+    "candidate_historical_suppression_activation",
+    "candidate_historical_suppression_entry",
+    "candidate_issuance_correction_activation",
+    "candidate_issuance_correction_entry",
     "candidate_queue_content_id",
     "candidate_latest_semantic_sha256",
+    "historical_suppression_entry_key",
+    "issuance_correction_entry_key",
     "is_valid_candidate_payload",
     "is_valid_candidate_queue",
+    "load_candidate_historical_suppression_manifest",
+    "load_candidate_issuance_correction_manifest",
+    "validate_candidate_historical_suppression_binding",
+    "validate_candidate_issuance_correction_binding",
+    "validate_candidate_reviewed_history_binding",
 ]
