@@ -1,0 +1,392 @@
+{
+ "coverage": {
+  "fire_weighted_union": 0.7563905573404107,
+  "fire_weighted_basket": 0.15630674675233971,
+  "n_heldout": 1832,
+  "n_design": 3583,
+  "passes_floor": true
+ },
+ "grid": {
+  "0.15": {
+   "design_abs_separation": 0.14122111207146937,
+   "cell_level": {
+    "n": 1177,
+    "n_names": 783,
+    "mean_R_capped10": 0.9260226482239273,
+    "mean_R_winsor99": 1.2435112701860862,
+    "mean_R_raw": 1.3988120373413553,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.18859276954325868,
+    "median_ret": -0.05669822428040039,
+    "win_rate": 0.3389974511469839,
+    "n_censored_excluded": 43,
+    "censored_mark_mean_R": 3.813404800158238
+   },
+   "complement_level": {
+    "n": 588,
+    "n_names": 471,
+    "mean_R_capped10": -0.21583550205280824,
+    "mean_R_winsor99": -0.1414654164868002,
+    "mean_R_raw": -0.0657293298818009,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.0030383955936501704,
+    "median_ret": -0.0638088753936421,
+    "win_rate": 0.14795918367346939,
+    "n_censored_excluded": 24,
+    "censored_mark_mean_R": 4.851597849337426
+   },
+   "cell_boot_cluster": {
+    "point": 0.9260226482239273,
+    "ci_lo": 0.7359486980003008,
+    "ci_hi": 1.1205053285166093,
+    "n_clusters": 1132,
+    "n_fires": 1177
+   },
+   "cell_boot_episode": {
+    "point": 0.9260226482239273,
+    "ci_lo": 0.10907409491146125,
+    "ci_hi": 2.2203758971086907,
+    "n_clusters": 18,
+    "n_fires": 1177
+   },
+   "cell_equal_date": {
+    "point": 0.09406526259556806,
+    "ci_lo": -0.13279807142183558,
+    "ci_hi": 0.35141290005191667,
+    "n_dates": 288
+   },
+   "diff_vs_complement": {
+    "point": 1.1418581502767355,
+    "ci_lo": 0.8500144721572814,
+    "ci_hi": 1.4136591341773266,
+    "n_clusters": 1670
+   },
+   "loco_loo": {
+    "full": 0.9260226482239273,
+    "n_full": 1177,
+    "ex_covid": 0.45543726618449504,
+    "n_ex_covid": 1033,
+    "n_covid": 144,
+    "covid_share_of_fires": 0.12234494477485132,
+    "covid_share_of_R": 0.5683509255725183,
+    "loo_episode_min": 0.45543726618449504,
+    "loo_episode_max": 1.3540684557807239,
+    "loo_worst_episode": 4,
+    "n_episodes": 18
+   },
+   "checks": {
+    "G1_cluster": true,
+    "G2_diff": true,
+    "G3_eqdate": false,
+    "G4_episode": true,
+    "G5_excovid": true,
+    "G6_loomin": true,
+    "G7_floor": true,
+    "G8_not_thin": true
+   },
+   "verdict": "FAIL"
+  },
+  "0.20": {
+   "design_abs_separation": 0.1298632416364527,
+   "cell_level": {
+    "n": 832,
+    "n_names": 600,
+    "mean_R_capped10": 1.164518138644484,
+    "mean_R_winsor99": 1.5517800047982548,
+    "mean_R_raw": 1.7219788037588346,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.24755995815401619,
+    "median_ret": -0.05626688212445646,
+    "win_rate": 0.36538461538461536,
+    "n_censored_excluded": 20,
+    "censored_mark_mean_R": 4.829683380076808
+   },
+   "complement_level": {
+    "n": 933,
+    "n_names": 664,
+    "mean_R_capped10": -0.00628264694501552,
+    "mean_R_winsor99": 0.12112947691554453,
+    "mean_R_raw": 0.18763832502993114,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.01906793266595961,
+    "median_ret": -0.06126035048168732,
+    "win_rate": 0.19506966773847803,
+    "n_censored_excluded": 47,
+    "censored_mark_mean_R": 3.9110869614758794
+   },
+   "cell_boot_cluster": {
+    "point": 1.164518138644484,
+    "ci_lo": 0.9238480489584734,
+    "ci_hi": 1.4118550174413542,
+    "n_clusters": 816,
+    "n_fires": 832
+   },
+   "cell_boot_episode": {
+    "point": 1.164518138644484,
+    "ci_lo": 0.12323669898526675,
+    "ci_hi": 2.5268087133466364,
+    "n_clusters": 21,
+    "n_fires": 832
+   },
+   "cell_equal_date": {
+    "point": 0.30448095599738884,
+    "ci_lo": 0.017227657433302467,
+    "ci_hi": 0.614182068524242,
+    "n_dates": 229
+   },
+   "diff_vs_complement": {
+    "point": 1.1708007855894995,
+    "ci_lo": 0.8611466885582328,
+    "ci_hi": 1.4806313260458657,
+    "n_clusters": 1667
+   },
+   "loco_loo": {
+    "full": 1.164518138644484,
+    "n_full": 832,
+    "ex_covid": 0.5536343545845513,
+    "n_ex_covid": 706,
+    "n_covid": 126,
+    "covid_share_of_fires": 0.15144230769230768,
+    "covid_share_of_R": 0.5965793277764067,
+    "loo_episode_min": 0.5536343545845513,
+    "loo_episode_max": 1.6254882903152932,
+    "loo_worst_episode": 4,
+    "n_episodes": 21
+   },
+   "checks": {
+    "G1_cluster": true,
+    "G2_diff": true,
+    "G3_eqdate": true,
+    "G4_episode": true,
+    "G5_excovid": true,
+    "G6_loomin": true,
+    "G7_floor": true,
+    "G8_not_thin": true
+   },
+   "verdict": "PASS"
+  },
+  "0.25": {
+   "design_abs_separation": 0.15694067284209257,
+   "cell_level": {
+    "n": 512,
+    "n_names": 407,
+    "mean_R_capped10": 1.6925505589641925,
+    "mean_R_winsor99": 2.2503423616003904,
+    "mean_R_raw": 2.4666743312023818,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.3522535512475011,
+    "median_ret": -0.042986897545809144,
+    "win_rate": 0.439453125,
+    "n_censored_excluded": 5,
+    "censored_mark_mean_R": 7.414050428628698
+   },
+   "complement_level": {
+    "n": 1253,
+    "n_names": 825,
+    "mean_R_capped10": 0.07696049127122478,
+    "mean_R_winsor99": 0.20818762876419125,
+    "mean_R_raw": 0.27519207055439476,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.034642017655834974,
+    "median_ret": -0.06230226050641796,
+    "win_rate": 0.2083000798084597,
+    "n_censored_excluded": 62,
+    "censored_mark_mean_R": 3.924911333028371
+   },
+   "cell_boot_cluster": {
+    "point": 1.6925505589641925,
+    "ci_lo": 1.3595552135876177,
+    "ci_hi": 2.0254448704731374,
+    "n_clusters": 507,
+    "n_fires": 512
+   },
+   "cell_boot_episode": {
+    "point": 1.6925505589641925,
+    "ci_lo": 0.20516998746299608,
+    "ci_hi": 3.046351137131084,
+    "n_clusters": 24,
+    "n_fires": 512
+   },
+   "cell_equal_date": {
+    "point": 0.6628830692884246,
+    "ci_lo": 0.26874931634960897,
+    "ci_hi": 1.0635879736537972,
+    "n_dates": 153
+   },
+   "diff_vs_complement": {
+    "point": 1.6155900676929678,
+    "ci_lo": 1.259089932250059,
+    "ci_hi": 1.985869939548384,
+    "n_clusters": 1560
+   },
+   "loco_loo": {
+    "full": 1.6925505589641925,
+    "n_full": 512,
+    "ex_covid": 0.9006051776049974,
+    "n_ex_covid": 397,
+    "n_covid": 115,
+    "covid_share_of_fires": 0.224609375,
+    "covid_share_of_R": 0.5874150950216026,
+    "loo_episode_min": 0.9006051776049974,
+    "loo_episode_max": 2.138929072527516,
+    "loo_worst_episode": 4,
+    "n_episodes": 24
+   },
+   "checks": {
+    "G1_cluster": true,
+    "G2_diff": true,
+    "G3_eqdate": true,
+    "G4_episode": true,
+    "G5_excovid": true,
+    "G6_loomin": true,
+    "G7_floor": true,
+    "G8_not_thin": true
+   },
+   "verdict": "PASS"
+  },
+  "0.30": {
+   "design_abs_separation": 0.26415263745510753,
+   "cell_level": {
+    "n": 308,
+    "n_names": 253,
+    "mean_R_capped10": 2.1385866147435584,
+    "mean_R_winsor99": 3.1778777240505067,
+    "mean_R_raw": 3.3786833104869984,
+    "median_R": -0.7177052471791964,
+    "equal_notional_mean_ret": 0.48597250761664523,
+    "median_ret": -0.03204562838466518,
+    "win_rate": 0.4805194805194805,
+    "n_censored_excluded": 0,
+    "censored_mark_mean_R": null
+   },
+   "complement_level": {
+    "n": 1457,
+    "n_names": 922,
+    "mean_R_capped10": 0.20887625560157524,
+    "mean_R_winsor99": 0.3192254036863563,
+    "mean_R_raw": 0.38923710525070737,
+    "median_R": -1.0,
+    "equal_notional_mean_ret": 0.05084470419736104,
+    "median_ret": -0.06126035048168732,
+    "win_rate": 0.23198352779684284,
+    "n_censored_excluded": 67,
+    "censored_mark_mean_R": 4.18529484762541
+   },
+   "cell_boot_cluster": {
+    "point": 2.1385866147435584,
+    "ci_lo": 1.7047156536813497,
+    "ci_hi": 2.5830963019575837,
+    "n_clusters": 305,
+    "n_fires": 308
+   },
+   "cell_boot_episode": {
+    "point": 2.1385866147435584,
+    "ci_lo": 0.16465315568764372,
+    "ci_hi": 3.513080030480857,
+    "n_clusters": 21,
+    "n_fires": 308
+   },
+   "cell_equal_date": {
+    "point": 0.963822646133196,
+    "ci_lo": 0.43116372225821686,
+    "ci_hi": 1.5356355996475313,
+    "n_dates": 101
+   },
+   "diff_vs_complement": {
+    "point": 1.929710359141983,
+    "ci_lo": 1.4518652126805818,
+    "ci_hi": 2.4175241966055796,
+    "n_clusters": 1545
+   },
+   "loco_loo": {
+    "full": 2.1385866147435584,
+    "n_full": 308,
+    "ex_covid": 1.0618877007780063,
+    "n_ex_covid": 212,
+    "n_covid": 96,
+    "covid_share_of_fires": 0.3116883116883117,
+    "covid_share_of_R": 0.658227676596783,
+    "loo_episode_min": 1.0618877007780063,
+    "loo_episode_max": 2.5036243710692685,
+    "loo_worst_episode": 4,
+    "n_episodes": 21
+   },
+   "checks": {
+    "G1_cluster": true,
+    "G2_diff": true,
+    "G3_eqdate": true,
+    "G4_episode": true,
+    "G5_excovid": true,
+    "G6_loomin": true,
+    "G7_floor": true,
+    "G8_not_thin": true
+   },
+   "verdict": "PASS"
+  }
+ },
+ "n_refusals": 7181,
+ "n_names": 1995,
+ "nem_last_refusals": [
+  {
+   "sym": "NEM",
+   "refusal_date": "2023-09-12",
+   "known_ts": "2023-09-22",
+   "entry_date": "2023-09-25",
+   "entry_px": 38.4095,
+   "graded": true,
+   "R": -1.0,
+   "ret": -0.06159077486701392,
+   "cens": false,
+   "era": "verdict",
+   "_kt": 19622,
+   "peer_dd": -0.23448407649993896,
+   "peer_src": "basket"
+  },
+  {
+   "sym": "NEM",
+   "refusal_date": "2023-10-06",
+   "known_ts": "2023-10-18",
+   "entry_date": "2023-10-19",
+   "entry_px": 37.6245,
+   "graded": true,
+   "R": -1.0,
+   "ret": -0.09569868575405727,
+   "cens": false,
+   "era": "verdict",
+   "_kt": 19648,
+   "peer_dd": -0.1712355762720108,
+   "peer_src": "basket"
+  },
+  {
+   "sym": "NEM",
+   "refusal_date": "2025-01-14",
+   "known_ts": "2025-01-27",
+   "entry_date": "2025-01-28",
+   "entry_px": 40.6994,
+   "graded": true,
+   "R": 30.455300890489223,
+   "ret": 2.1051710836031985,
+   "cens": false,
+   "era": "verdict",
+   "_kt": 20115,
+   "peer_dd": -0.12814083695411682,
+   "peer_src": "basket"
+  },
+  {
+   "sym": "NEM",
+   "refusal_date": "2026-07-23",
+   "known_ts": "2026-08-04",
+   "entry_date": "2026-08-05",
+   "entry_px": 103.78,
+   "graded": false,
+   "R": NaN,
+   "ret": NaN,
+   "cens": false,
+   "era": "verdict",
+   "_kt": 20669,
+   "peer_dd": -0.3784632384777069,
+   "peer_src": "basket"
+  }
+ ],
+ "note": "Arm P via packet path sq.analyze(on/off); BLOCK_REASON bound to CT_RECLAIM_FAIL"
+}
