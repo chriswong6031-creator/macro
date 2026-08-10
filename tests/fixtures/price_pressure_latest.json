@@ -1,0 +1,148 @@
+{
+  "schema": "price_pressure.v1",
+  "asof": "2026-07-02",
+  "authority": {
+    "can_rank": false,
+    "can_size": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_escalate": false
+  },
+  "coverage": {
+    "panel_names": 4281,
+    "sector_basis_share": 0.35,
+    "edgar_covered_share": 0.46
+  },
+  "day": {
+    "banner": null,
+    "panel_shock_count": 38
+  },
+  "base_rates": {
+    "span": ["2021-09-01", "2026-07-02"],
+    "note_en": "Prices are unadjusted for dividends, so recovery shares carry a small known downward bias. The span is a rolling five-year window and is re-frozen only by an explicit re-run.",
+    "note_zh": "价格未做分红复权，因此收复比例存在已知的小幅低估。该区间为五年滚动窗口，只有显式重跑才会重新冻结。",
+    "down": {
+      "n_events": 17511,
+      "h5_median_retrace": 0.04,
+      "h21_share_recovered": 0.21,
+      "h21_share_accepted_lower": 0.57,
+      "h21_share_delisted": 0.03
+    },
+    "up": {
+      "n_events": 12994,
+      "h5_median_retrace": 0.09,
+      "h21_share_recovered": 0.26,
+      "h21_share_accepted_lower": 0.51,
+      "h21_share_delisted": 0.02
+    }
+  },
+  "recently_resolved": [
+    {
+      "ticker": "SGMO",
+      "side": "down",
+      "date": "2026-05-02",
+      "terminal_state_21d": "ACCEPTED_LOWER_21D",
+      "ret": -0.184,
+      "resid": -0.163,
+      "family": "earnings-filing"
+    },
+    {
+      "ticker": "BEAM",
+      "side": "up",
+      "date": "2026-04-21",
+      "terminal_state_21d": "GAVE_BACK_21D",
+      "ret": 0.171,
+      "resid": 0.155,
+      "family": "other-filing"
+    },
+    {
+      "ticker": "ATRA",
+      "side": "down",
+      "date": "2026-04-09",
+      "terminal_state_21d": "DELISTED_OR_HALTED",
+      "ret": -0.291,
+      "resid": -0.268,
+      "family": "filing-coverage-unknown"
+    }
+  ],
+  "open_events": [
+    {
+      "ticker": "CDE",
+      "side": "down",
+      "date": "2026-07-01",
+      "ret": -0.119,
+      "resid": -0.098,
+      "resid_z": -4.2,
+      "vol_multiple": 6.1,
+      "peer_basis": "sector",
+      "peer_ret": -0.021,
+      "basket": "silver-miners",
+      "basket_zh": "白银矿业",
+      "basket_ret": -0.034,
+      "family": "filing-coverage-unknown",
+      "state": "HOLDING",
+      "state_pending": null,
+      "retrace_frac": 0.12,
+      "days_open": 1
+    },
+    {
+      "ticker": "ARQT",
+      "side": "down",
+      "date": "2026-06-30",
+      "ret": -0.163,
+      "resid": -0.151,
+      "resid_z": -5.1,
+      "vol_multiple": 8.4,
+      "peer_basis": "sector",
+      "peer_ret": -0.012,
+      "basket": null,
+      "basket_ret": null,
+      "family": "no-filing",
+      "state": "SLIDING",
+      "state_pending": null,
+      "retrace_frac": -0.28,
+      "days_open": 2
+    },
+    {
+      "ticker": "IONQ",
+      "side": "up",
+      "date": "2026-06-30",
+      "ret": 0.142,
+      "resid": 0.128,
+      "resid_z": 4.6,
+      "vol_multiple": 5.2,
+      "peer_basis": "market",
+      "peer_ret": 0.014,
+      "basket": null,
+      "basket_ret": null,
+      "family": "earnings-filing",
+      "state": "EXTENDING",
+      "state_pending": null,
+      "retrace_frac": -0.05,
+      "days_open": 2
+    },
+    {
+      "ticker": "VKTX",
+      "side": "up",
+      "date": "2026-06-26",
+      "ret": 0.231,
+      "resid": 0.207,
+      "resid_z": 6.3,
+      "vol_multiple": 11.2,
+      "peer_basis": "sector",
+      "peer_ret": 0.024,
+      "basket": null,
+      "basket_ret": null,
+      "family": "other-filing",
+      "state": "FADING",
+      "state_pending": "HOLDING",
+      "retrace_frac": 0.44,
+      "days_open": 4
+    }
+  ],
+  "gaps": [],
+  "provenance": {
+    "study": "reports/liquidity-shock-reversal-phase0.md",
+    "study_title": "Liquidity-shock reversal study, phase 0"
+  }
+}
