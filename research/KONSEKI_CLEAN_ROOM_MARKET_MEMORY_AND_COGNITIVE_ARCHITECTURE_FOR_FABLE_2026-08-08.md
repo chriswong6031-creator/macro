@@ -503,16 +503,21 @@ The same law applies to final EOD dark-pool aggregates, short-volume files, revi
 
 Some historical call ledgers expose an issue date, entry/contract, and later close/outcome but omit the issue time. Market Memory must not invent an intraday timestamp from row order, close time, option mark, or surrounding market movement.
 
-Wave 1 adds these receipt fields:
+Wave 1B.4A adds a separate, clock-free uncertainty envelope around the source event. It does not weaken or mutate `market_memory.as_known_at.v1`:
 
-- `event_time_precision`: `exact`, `minute`, `session`, `date`, or `interval`;
+- `event_time_precision`: `date` or `session` in the first frozen profile;
 - `event_time_lower_bound` and `event_time_upper_bound`;
 - `timestamp_inferred`: always `false` for admissible replay evidence;
-- `cutoff_scenario`: a named sensitivity cutoff such as `session_open`, `mid_session`, or `session_close`.
+- `replay_scope`: `civil_date` or `market_session`;
+- `market_session_window_id`: the exact reviewed session-window receipt when session sensitivity is admissible.
 
-If only the date is known, replay emits multiple context packets across declared within-day cutoffs. They share the same uncertainty receipt and are compared as a sensitivity set; none is promoted as the actual decision-time state. Any conclusion that changes across plausible cutoffs is timestamp-sensitive and must abstain from a point claim.
+Date precision means the entire source-local civil day `[00:00, next 00:00)`, including 23- and 25-hour DST days. It is not evidence that the event occurred during regular trading hours. A date-only event may receive partial session sensitivity only when its source contract separately fixes `replay_scope=market_session` and supplies an independently reviewed, versioned session-window receipt. Plain `civil_date`, weekends, holidays, unresolved calendars, and missing receipts do not fan out. Session precision always requires the same exact receipt.
 
-Each scenario reconstructs only what was available by that cutoff across macro/regime, technicals, breadth, options flow/campaign context, GEX/volatility/OI, news/catalysts, and alternative data. Later close, exit, premium outcome, realized P&L, and H+60 labels are forbidden from all scenario packets. The options program owns the per-contract episode and matured H+60 outcome; Market Memory owns only the referenced context reconstruction.
+The W1B.4A event reference is explicitly a caller-attested hash of a pre-decision projection. This clock-free layer neither receives nor authenticates the referenced event bytes, source-contract semantics, or the caller's replay-scope claim. Those limitations are frozen into every envelope. W1B.4B must replace that attestation with a typed, authenticated source receipt before any historical context can be materialized.
+
+W1B.4A emits only an ordered, explicitly **unmaterialized** sensitivity plan. When a session receipt is admissible its hypothetical cutoffs are exact open, temporal midpoint, and `close - 1 microsecond`; no cutoff is selected, weighted, averaged, or called the actual event time. The plan carries zero execution, ranking, gating, sizing, training, promotion, or point-claim authority. It creates no context packets, store, service, API, or private-source read.
+
+Actual `public_reconstruction` packet fanout is deferred to W1B.4B. That later phase requires an authenticated historical session schedule, historical identity/corporate-action resolution, and a separately named generation-pinned reconstruction reader. Only then may each scenario reconstruct what was available by its cutoff across the 14 canonical domains. Later close, exit, premium outcome, realized P&L, H+60 labels, direction, and management decisions remain forbidden. The options program owns the per-contract episode and matured outcome; Market Memory owns only the referenced context reconstruction.
 
 ---
 
@@ -1201,9 +1206,9 @@ Options integration extends the existing one-writer paths. The options program's
 15. requested-as-of API and product copy distinguish operational vs reconstructed;
 16. no Market Memory artifact can rank, gate, size, trade, or train Prophet.
 17. date-only event fixture preserves lower/upper time bounds and never emits an inferred exact time;
-18. date-only event fixture produces declared open/mid-session/close cutoff packets as one sensitivity set;
-19. macro/regime, technicals, breadth, options flow/campaign, GEX/vol/OI, news/catalysts, and alt-data coverage is explicit at every cutoff;
-20. issue-time context cannot contain close, exit, realized P&L, premium outcome, or H+60 fields.
+18. a reviewed market-session fixture produces exactly three ordered, unmaterialized sensitivity scenarios; a plain civil-date or unresolved-session fixture produces no session fanout;
+19. no W1B.4A artifact claims a replay packet, selected time, stability conclusion, source availability, or historical feature coverage;
+20. uncertainty inputs and plans structurally reject close, exit, realized P&L, premium outcome, H+60, direction, labels, or management decisions.
 
 ---
 
@@ -1232,7 +1237,8 @@ Options integration extends the existing one-writer paths. The options program's
 - trusted actual-output snapshot capture;
 - as-known-at feature projection;
 - macro/regime, technical, breadth, and one options-source availability pilot;
-- date/session timestamp-uncertainty envelope plus multi-cutoff sensitivity replay;
+- W1B.4A date/session timestamp-uncertainty envelope plus unmaterialized multi-cutoff sensitivity plan;
+- W1B.4B generation-pinned public-reconstruction replay only after its historical session, identity, and reader gates exist;
 - temporal-integrity fixture suite;
 - authenticated requested-as-of API.
 
