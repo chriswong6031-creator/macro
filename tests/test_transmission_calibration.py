@@ -63,6 +63,7 @@ def test_vectorized_metric_matches_pointintime(tmp_path):
     for t in (
         {"series": "AAA", "metric": "ret", "window": 60, "op": "gt", "value": 0},
         {"series": "AAA", "metric": "ret_bp", "window": 22, "op": "gt", "value": 0},
+        {"series": "AAA", "metric": "off_high_bp", "window": 10, "op": "lt", "value": 4},
         {"series": "AAA", "metric": "ma_slope", "window": 50, "lookback": 5, "op": "gt", "value": 0},
         {"series": "AAA", "vs": "BBB", "metric": "rs", "window": 63, "op": "lt", "value": 0},
         {"series": "AAA", "ratio": "BBB", "metric": "ratio_ret", "window": 22, "op": "lt", "value": 0},

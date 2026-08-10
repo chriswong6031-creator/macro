@@ -43,4 +43,16 @@
     outline-offset: 2px; border-radius: 4px; }
   .anv2-board .anv2-go { font-size: 10px; opacity: .55; margin-left: 3px; }
   .anv2-board .anv2-empty { padding: 10px 13px; color: var(--muted); font-size: 11px; }
+  /* Hover-card mark — monoline (doctrine §5.8, emoji are not UI icons). Draws from
+     templates/_icons.html.j2 (24×24, stroke=currentColor) so it inherits the tile's
+     ink (--link on .row-pop-mark).
+     NO bare `.ic-svg {}` rule here on purpose: hosts scope their own copies (e.g.
+     sector_central.html.j2 under #si-confluence) and a global rule shipped from a
+     board would fight its host. Explicit selectors only.
+     .row-pop-mark is deliberately NOT scoped to #act-now — theme.js clones the hover
+     card onto document.body, so an id-scoped rule would style the hidden source and
+     miss the card the reader actually sees. */
+  .row-pop-mark .ic-svg { fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .row-pop-mark .ic-svg { width: 17px; height: 17px; display: block; }
   
