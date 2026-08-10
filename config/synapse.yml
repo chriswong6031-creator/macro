@@ -1768,10 +1768,11 @@ artifacts:
       - engine/board_ledger.py
       - engine/qledger.py
       - engine/track_record.py
+      - scripts/build_stock_library.py
       - scripts/china_max_phase0.py
       - engine/neuralweb/evidence_clock.py
     external_consumers: []
-    notes: "Producer: engine/species_registry.py:365 sync/write. Daily mirror: species_registry.sync() in daily.yml. Additive writes from backfill scripts do not overwrite existing entries."
+    notes: "Producer: engine/species_registry.py:365 sync/write. Daily mirror: species_registry.sync() in daily.yml. Additive writes from backfill scripts do not overwrite existing entries. build_stock_library.py loads it at :2632 (config.data_dir()/species/registry.json) into the setup_compatibility entries — a real read, declared 2026-08-10 to clear the Article-2 read-gate."
 
   # --- 4 consumers ---
   hazard-model:
