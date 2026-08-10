@@ -2,6 +2,10 @@
 
 **What this is.** The post-build audit `research/GROUP_READS_MASTERPLAN_BY_FABLE.md` §7 deferred to audit time: "does this beat Jodie/Struct/Quartr/EarningsCall.ai/EquityDesk *individually*", graded on the operator's six axes. The build-out it waited on shipped and live-verified 2026-08-10 (`research/GROUP_READS_SESSION3_HANDOFF_2026-08-10.md`). Evidence: fresh competitor recon walks (2026-08-10) + a production-quality audit of our shipped surfaces against the masterplan §0 gates.
 
+**Audit tree:** `25fd99482d5613a074dea777c419cba46079c812` (2026-08-10). Findings and
+line references describe that immutable production snapshot; later heals must close them with
+their own proof rather than silently making this historical audit read as a current census.
+
 **Honesty rule for this doc.** The house null discipline applies to self-assessment: where a competitor's core job is one we do not do, the verdict says so plainly ("orthogonal — we don't compete on X") instead of inflating an adjacent capability into a win. "Beat individually" is graded as two separable claims: (1) **home turf** — for the core job that product sells, would our surface do that job well enough that a subscriber wouldn't miss them; (2) **moats** — the axes we hold that they lack. A win on (2) never silently substitutes for a loss on (1).
 
 ## §A Rubric (frozen — reuse for future re-audits)
@@ -40,8 +44,47 @@ Six dimensions, from the operator's §7 grading axes. Scale per dimension per co
 **Personas (use-cases page):** self-directed investor (hidden concentration), active trader (catch rotation pre-consensus), time-pressed trader (one screen replaces 40 charts).
 
 **Unverified/open:** sitemap carries `?market=europe/asia/crypto` params and ~800+ non-US ticker routes, but the asia param renders the US landing — multi-market coverage COULD NOT VERIFY (JS routing). No social presence findable at all (no X/LinkedIn/blog/changelog — all 404 or absent).
-### B2 Struct — PENDING RECON (identification itself part of the task)
-### B3 Quartr — PENDING RECON
+### B2 Struct (struct.news, walked 2026-08-10)
+
+**Identification:** Struct is the public editorial companion to Jodie, not a separate
+portfolio product. Its own masthead says "Powered by jodie.ai" and "Filing reads, what moved
+together, and the receipts behind it"; every story links back to company analysis on Jodie.
+The public navigation is Latest / Filing Reads / Moving Together / Filing Trends / Supply
+Chain / Daily Radar, with RSS and an archive. Source: [Struct](https://struct.news/).
+
+**Core job:** short, evidence-led company briefs that explain one filing or one observed move.
+The live front page held hundreds of filing reads and explicitly positioned the division of
+labor: "Struct explains the story once. Jodie keeps watching what changes next." It is a
+free public reading surface; monitoring converts to Jodie. It does not maintain a separate
+group membership system, group state, earnings rollup, coverage floor, or persistent group
+read. Struct therefore is useful evidence packaging and distribution, but not a home-turf
+Group Reads competitor. Public pages were English-only in this walk.
+
+### B3 Quartr (Quartr Pro + mobile + API, walked 2026-08-10)
+
+**Core job:** institutional-grade qualitative company research over first-party IR material.
+Quartr Pro joins live calls, transcripts, slides, filings, AI chat, source traceability,
+historical slide comparison, event calendar, alerts, summaries, and export across 15,000+
+companies and 65+ markets. Pro/API pricing is contact-sales; the mobile product remains free.
+Sources: [Quartr Pro](https://quartr.com/products/quartr-pro),
+[pricing/features](https://quartr.com/pricing/overview), and
+[company/coverage](https://quartr.com/about).
+
+**Group capability — real, but user-assembled.** Multiple watchlists can represent a sector,
+theme, portfolio, or peer group and feed AI chat/search/calendar; users can add or remove
+members. Quartr also supports peer-language and narrative-change work across years of IR
+material. Sources: [watchlists](https://quartr.com/features/watchlists) and
+[slide search](https://quartr.com/features/slide-search). That is materially deeper than our
+source-document layer and can answer ad-hoc cross-company questions. It is not a maintained
+PIT basket state product: the public product contract does not show a persistent group stance,
+participation/washout arc, numeric coverage floors, sympathy ledger, or bilingual group band.
+
+**Honest competitive read:** Quartr wins its home turf decisively — live global IR coverage,
+company narrative history, source-traceable qualitative search, and peer interrogation. We
+win a narrower job it does not present: an always-on, preassembled group state with explicit
+market/earnings denominators and EN/ZH refusal semantics. No Chinese-language product surface
+was found in the official public product/pricing/feature pages; that is a public-surface
+observation, not a claim about private enterprise localization.
 ### B4 EarningsCall.ai (earningscall.ai, walked 2026-08-10)
 
 **Identification note:** distinct from EarningsCall LLC / earningscall.io/.biz (a transcript/audio data-API vendor, 5,256 companies) — secondary sources blend the two; coverage counts for the .ai product are unverified.
@@ -96,14 +139,29 @@ Grades are **us vs them** on each rubric dimension (BEAT = we are materially bet
 
 | Dim | vs Jodie.ai | vs Struct | vs Quartr | vs EarningsCall.ai | vs EquityDesk |
 |---|---|---|---|---|---|
-| R1 read assembly | **PARITY today** (both genuinely assemble; their episode display is currently more credible than our 52%-degenerate rows, our stance/null architecture is stronger than their 0%-agreement groups; our F-2/F-4 correctness bugs are the blockers to BEAT) | — | — | **BEAT at group grain** (per-call summaries assemble nothing across companies) | **BEAT at group grain** (a screen card with two scores is not an assembled read) |
-| R2 membership hygiene | **BEAT** (§C: 0 dupes / 0 preferred / dead tickers stamped, vs their live zero-industrials "Industrials" group and "not yet clean" concession; our PIT back-projection debt noted — a claim they don't even attempt) | — | — | **BEAT** (no baskets at all — ad hoc 4-peer compare vs our 49 curated baskets) | **BEAT** (vendor-confirmed "not offered") |
-| R3 arc answers | **BEAT on design / GAP as shipped** (their lifecycle tags answer "is co-movement building or fading", never "is the washout done"; our construct answers the reversal question — but F-5: 39/49 print the same word, censored ages published as observations, arc unwired from stance. The moat claim is not yet earned on the tape) | — | — | **BEAT** (absent) | **BEAT at group grain** (their Weinstein stages are real but per-stock; we ship the same framework as basket stage-shares PLUS washout/turn constructs they lack; N/A at their per-stock grain — we don't sell a per-stock entry screen and don't want to) |
-| R4 earnings integration | **BEAT** (verified absent in their core product; struct.news briefs are per-company and never surface on group pages — see B2; our clock/beat/sympathy is the only group-grain earnings read between us, with yield caveats F-9e/f) | — | — | **BEAT at group grain** (they summarize single calls well — no rollup, no surprise-vs-consensus found; our earnings_pulse joins clock/beat/sympathy to the basket read) | **BEAT at group grain** (two-axis per-call LLM scores feed a stock screen, vendor-confirmed no group rollup) |
-| R5 honest nulls | **BEAT** (G0-3 PASS is our strongest dimension: printed Ns, refusal copy, P8 disclosure — vs their marketing-tier validation stats; their "not yet clean" concessions are real honesty, credited — and our F-3 enforcement gap is the asterisk we must clear) | — | — | **BEAT** (no coverage/floor concept anywhere) | **BEAT at surface tier, with respect** (their methodology paper honestly discloses removed features and blind spots — but the product's face is an authority claim, a hit-rate screen; ours prints n_covered and refuses thin baskets at the surface itself) |
-| R6 bilingual reach | **BEAT** (zh verified absent there; our band is 0 EN-only across 94 strings) | — | — | **BEAT** (NOT FOUND any zh) | **BEAT** (NOT FOUND any zh; their "Asian markets" is listing coverage, not language) |
+| R1 read assembly | **PARITY today** (both genuinely assemble; their episode display is currently more credible than our 52%-degenerate rows, our stance/null architecture is stronger than their 0%-agreement groups; our F-2/F-4 correctness bugs are the blockers to BEAT) | **BEAT at group grain** (Struct assembles concise company/file reads, not a persistent group stance) | **PARITY, different grain** (Quartr assembles source-traceable company/peer research on demand; we preassemble a narrower persistent group read) | **BEAT at group grain** (per-call summaries assemble nothing across companies) | **BEAT at group grain** (a screen card with two scores is not an assembled read) |
+| R2 membership hygiene | **BEAT** (§C: 0 dupes / 0 preferred / dead tickers stamped, vs their live zero-industrials "Industrials" group and "not yet clean" concession; our PIT back-projection debt noted — a claim they don't even attempt) | **N/A** (no separate maintained groups) | **N/A** (user-curated watchlists/peer sets, not a maintained PIT basket claim) | **BEAT** (no baskets at all — ad hoc 4-peer compare vs our 49 curated baskets) | **BEAT** (vendor-confirmed "not offered") |
+| R3 arc answers | **BEAT on design / GAP as shipped** (their lifecycle tags answer "is co-movement building or fading", never "is the washout done"; our construct answers the reversal question — but F-5: 39/49 print the same word, censored ages published as observations, arc unwired from stance. The moat claim is not yet earned on the tape) | **BEAT** (no persistent group lifecycle) | **BEAT at market arc** (Quartr tracks narrative/KPI emphasis changes, not price washout/capitulation state) | **BEAT** (absent) | **BEAT at group grain** (their Weinstein stages are real but per-stock; we ship the same framework as basket stage-shares PLUS washout/turn constructs they lack; N/A at their per-stock grain — we don't sell a per-stock entry screen and don't want to) |
+| R4 earnings integration | **BEAT** (verified absent in their core product; struct.news briefs are per-company and never surface on group pages — see B2; our clock/beat/sympathy is the only group-grain earnings read between us, with yield caveats F-9e/f) | **BEAT at group grain** (filing/earnings briefs are company stories, with no group clock or rollup) | **BEHIND on qualitative depth; BEAT on persistent group pulse** (Quartr's live calls, transcripts, first-party history, and peer queries are substantially deeper; it does not publish our fixed basket clock/beat/sympathy state) | **BEAT at group grain** (they summarize single calls well — no rollup, no surprise-vs-consensus found; our earnings_pulse joins clock/beat/sympathy to the basket read) | **BEAT at group grain** (two-axis per-call LLM scores feed a stock screen, vendor-confirmed no group rollup) |
+| R5 honest nulls | **BEAT** (G0-3 PASS is our strongest dimension: printed Ns, refusal copy, P8 disclosure — vs their marketing-tier validation stats; their "not yet clean" concessions are real honesty, credited — and our F-3 enforcement gap is the asterisk we must clear) | **BEAT at group grain** (underlying receipts are credited; no group denominator/floor contract exists) | **PARITY, different controls** (Quartr's first-party/page-level traceability is stronger source provenance; our explicit denominators/floors/refusals are stronger state-null controls) | **BEAT** (no coverage/floor concept anywhere) | **BEAT at surface tier, with respect** (their methodology paper honestly discloses removed features and blind spots — but the product's face is an authority claim, a hit-rate screen; ours prints n_covered and refuses thin baskets at the surface itself) |
+| R6 bilingual reach | **BEAT** (zh verified absent there; our band is 0 EN-only across 94 strings) | **BEAT on public surface** (Struct walk was English-only) | **BEAT on public surface** (no zh product surface found; private localization unverified) | **BEAT** (NOT FOUND any zh) | **BEAT** (NOT FOUND any zh; their "Asian markets" is listing coverage, not language) |
 
 **vs Jodie.ai (the direct rival):** home turf = market-discovered co-movement radar with filing receipts, $29/mo. Graded: we beat them on membership hygiene, group-grain earnings, surface-tier null discipline, and zh; parity on assembled-read quality today; arc is beat-on-design but degenerate as shipped (F-5) — the §1 claim "we exceed once assembled" is TRUE on architecture and NOT YET on the tape. Two capability edges of theirs we deliberately don't contest: **live-forming detection + alerts at 15-min refresh** (our cadence is nightly by render-budget law — real edge for their rotation-chaser persona, a positioning choice for us, and their numbered-Cluster substrate suggests discovery breadth we don't attempt) and **auto-discovery of novel groupings** (our theme_discovery generates candidates but curated-first is the hygiene trade we chose — it is WHY we win R2). **Answer to the operator: not yet, honestly — pending F-2/F-3/F-4/F-5/F-6 heals we are at parity-plus with a stronger foundation; after them, yes on every axis except intraday cadence, which we concede by design.**
+
+**vs Struct:** home turf = public, concise, receipt-linked company/file stories that route
+monitoring back to Jodie. That distribution/editorial job is useful and we do not ship an
+equivalent publication stream. It is not a group-state product: no maintained roster, arc,
+earnings rollup, coverage gate, or bilingual band. **Verdict: orthogonal editorial front end;
+we beat it on every actual group-state axis, while conceding its public narrative-distribution
+job by design.**
+
+**vs Quartr:** home turf = global, source-traceable qualitative IR research with live events,
+AI chat, peer/watchlist queries, and document history. **We do not beat that product and should
+not pretend to:** its company/peer qualitative depth and timeliness are materially ahead. Our
+different moat is a preassembled, persistent group-state object with market/earnings
+denominators, refusal semantics, and EN/ZH delivery. **Verdict: Quartr wins qualitative IR;
+we win the narrower ongoing group-state read it does not publicly offer. They are complements,
+not substitutes.**
 
 **vs EarningsCall.ai:** home turf = single-call consumption (summary, chat, tone). We do not compete there — our earnings layer is structured figures + group rollup, not a call reader; a user who wants "summarize this call and let me chat with it" is buying a different job ($25/mo). Their turf does not touch ours: no baskets, no co-movement, no group anything, no cycle state, no zh. **Verdict: orthogonal home turf we concede by design; every group-grain axis is ours uncontested.**
 
