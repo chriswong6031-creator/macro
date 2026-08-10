@@ -17,6 +17,7 @@ from jsonschema import Draft202012Validator, ValidationError
 from app import market_memory as api
 from engine.neuralweb import market_memory as mm
 from engine.neuralweb import market_memory_pit as pit
+from engine.neuralweb import market_memory_trusted as trusted
 from tests.test_market_memory import (
     DYNAMIC_SOURCE_RECEIPT,
     _observe_snapshot,
@@ -63,6 +64,15 @@ def _packet() -> mm.AsKnownAtContext:
         if row["receipt_id"] in identity_source_ids
     ]
     return _rebuild(packet, source_receipts=sources, feature_receipts=features)
+
+
+def _initialize_empty_trusted_api_store(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    root = tmp_path / "trusted-v1"
+    monkeypatch.setenv("MARKET_MEMORY_TRUSTED_STORE_DIR", str(root))
+    state = trusted.initialize_trusted_store(root)
+    assert state["capture_count"] == 0
 
 
 def _rebuild(packet: mm.AsKnownAtContext, **overrides: object) -> mm.AsKnownAtContext:
@@ -530,6 +540,7 @@ def test_api_exact_lookup_and_context_id_route_are_private_and_hash_bound(
 ) -> None:
     _fixed_clock(monkeypatch)
     monkeypatch.setenv("MARKET_MEMORY_CONTEXT_STORE_DIR", str(tmp_path))
+    _initialize_empty_trusted_api_store(monkeypatch, tmp_path)
     packet = _packet()
     stored = pit.capture_context(tmp_path, packet)
     client = _api_client()
@@ -556,6 +567,7 @@ def test_api_has_no_nearest_or_reconstruction_fallback(
 ) -> None:
     _fixed_clock(monkeypatch)
     monkeypatch.setenv("MARKET_MEMORY_CONTEXT_STORE_DIR", str(tmp_path))
+    _initialize_empty_trusted_api_store(monkeypatch, tmp_path)
     packet = _packet()
     pit.capture_context(tmp_path, packet)
     client = _api_client()
@@ -605,6 +617,7 @@ def test_api_context_rate_limit_is_private_and_precedes_second_store_read(
 ) -> None:
     _fixed_clock(monkeypatch)
     monkeypatch.setenv("MARKET_MEMORY_CONTEXT_STORE_DIR", str(tmp_path))
+    _initialize_empty_trusted_api_store(monkeypatch, tmp_path)
     monkeypatch.setattr(api, "_SYMBOL_USER_LIMIT", 1)
     monkeypatch.setattr(api, "_SYMBOL_PEER_LIMIT", 10)
     packet = _packet()

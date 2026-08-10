@@ -879,6 +879,49 @@ component receipts, identity/calendar evidence, and cutoff. Consequently this
 checkpoint remains ineligible for training, ranking, gating, sizing, trading,
 Prophet promotion, or options-ledger mutation.
 
+### 11.0.2 W1B.1 trusted actual-output canary
+
+W1B.1 adds the first observed feature without pretending that one current
+snapshot is historical truth. The canary stable-reads the canonical
+`data/regime/latest.json` actual output, records the exact raw SHA-256 and byte
+count, and projects only the frozen, label-free `macro.regime_state` fields.
+The raw artifact's `freshness.built_at` remains its measurement/build clock;
+Market Memory availability begins only at the projector's post-read process
+observation. The producer boundary now converts non-finite numeric leaves to
+JSON `null`, serializes with `allow_nan=false`, and publishes `latest.json`
+through a durable atomic replace so strict intake never needs to legalize
+Python's non-standard `NaN` token.
+
+This is a single current SPY/ARCX/USD market-scope canary. Its permanent IDs
+come from a strict config, while membership and XNYS calendar evidence are
+captured only for the current observation with a one-microsecond validity
+interval. The calendar and derived identity remain `degraded` with
+`partial_coverage`: the repository calendar captures full-day closures but
+does not claim complete historical early-close or unknown-one-off coverage.
+It is not a historical constituent, corporate-action, delisting, or OCC
+resolver.
+
+The publisher keeps exact raw regime, membership, and calendar bytes under
+`/var/lib/macro-market-memory/state/context-projection`, which is inaccessible
+to `macro-api`. Only the typed macro feature object, the frozen as-known-at
+packet, duplicate query/context receipts, cumulative generation, and HEAD are
+published under the separate read-only
+`/var/lib/macro-market-memory/public/trusted-v1` store. Private evidence lands
+first and public HEAD advances last. The API federates that store with W1A only
+for exact query/context matches; neither store provides nearest/latest or
+request-time recomputation, an ambiguous dual publication is an error, and a
+missing/corrupt trusted generation never silently falls through.
+
+Exactly `macro.regime_state` is observed. The other 17 frozen features,
+including every `options.*` row, remain explicit missing receipts. The capture
+authenticates exact regime output bytes and current identity/calendar
+artifacts, but explicitly records that the regime output's component source
+receipts are not yet authenticated. It is therefore actual-output context
+only: training, promotion, ranking, gating, sizing, trading, execution,
+Prophet, options-candidate, options-episode, and outcome authority all remain
+false. Market Memory still never writes `options.signal_episode`, H+60, or
+U-CHAIN records.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -927,6 +970,26 @@ W1B.0 source-evidence additions:
   `tests/test_market_memory_source_deploy.py` — exact bytes, stable reads,
   availability bounds, immutable retries/generations, tamper failure, private
   deployment, and zero-authority fixtures.
+
+W1B.1 trusted-canary additions:
+
+- `config/market_memory_canary.v1.json` and
+  `engine/neuralweb/market_memory_identity.py` — strict current-only SPY
+  membership/calendar evidence, not historical identity resolution;
+- `engine/neuralweb/market_memory_projection.py` and
+  `contracts/market_memory/macro_regime_snapshot.v1.schema.json` — bounded
+  stable read plus a finite, label-free macro-regime projection;
+- `engine/neuralweb/market_memory_trusted.py` and
+  `contracts/market_memory/trusted_capture_receipt.v1.schema.json` — separate
+  immutable trusted store, private-evidence-first publication, exact reader,
+  and conflict-failing W1A federation;
+- `scripts/project_market_memory_context.py` and
+  `app/deploy/macro-market-memory-context.{service,timer}` — the only
+  credential-free/network-dark production writer and its retry lane;
+- `tests/test_market_memory_{identity,projection,trusted,context_deploy}.py`
+  plus `tests/test_regime_latest_json_boundary.py` — identity/clock/source
+  binding, strict projection, crash/tamper/ambiguity, deploy sandbox, and
+  finite atomic-source fixtures.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 

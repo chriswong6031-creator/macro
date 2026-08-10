@@ -6632,6 +6632,11 @@ jobs:
           tests/test_market_memory_pit.py
           tests/test_market_memory_sources.py
           tests/test_market_memory_source_deploy.py
+          tests/test_market_memory_identity.py
+          tests/test_market_memory_projection.py
+          tests/test_market_memory_trusted.py
+          tests/test_market_memory_context_deploy.py
+          tests/test_regime_latest_json_boundary.py
           tests/test_release_target_truth.py
           tests/test_build_market_memory_page.py -q
 
