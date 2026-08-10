@@ -1,0 +1,14 @@
+[Unit]
+Description=Run the bounded Market Memory option-OI availability canary on weekdays
+
+[Timer]
+# This is an operational retry cadence only.  It is not evidence of the
+# provider's measurement date, publication time, market session, or freshness.
+OnCalendar=Mon..Fri *-*-* 08:20:00 America/New_York
+AccuracySec=1min
+RandomizedDelaySec=120s
+Persistent=false
+Unit=macro-market-memory-options.service
+
+[Install]
+WantedBy=timers.target

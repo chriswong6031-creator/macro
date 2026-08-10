@@ -1,16 +1,20 @@
-# W1B.3B private current-tip SPY technical actual-output publisher.  It may
-# reach only fixed public HTTPS URLs embedded in reviewed code.  It has no
-# credential/environment file, masks every repo-known application secret path,
-# and never writes the API-readable tree.
+# W1B.5 private, future-only Massive SPY option-OI endpoint availability
+# canary.  This service intentionally captures one bounded first page and never
+# follows pagination, constructs a chain, normalizes contract identity, or
+# computes an option feature.  Its credential is injected by systemd from a
+# root-owned file and is never accepted through the environment or command line.
 [Unit]
-Description=Capture private Market Memory SPY technical actual output
+Description=Capture private Market Memory option-OI availability evidence
 Wants=network-online.target
 After=local-fs.target network-online.target
 
 [Service]
 Type=oneshot
+User=macro-market-memory-options
+Group=macro-market-memory-options
 WorkingDirectory=/opt/macro
-ExecStart=/opt/macro-api/.venv/bin/python -m scripts.capture_market_memory_technicals --repository-root /opt/macro --store-root /var/lib/macro-market-memory/state/technicals-v1
+LoadCredential=massive-option-oi-api-key:/etc/macro-market-memory-options/massive-option-oi-api-key
+ExecStart=/opt/macro-api/.venv/bin/python -m scripts.capture_market_memory_option_oi --repository-root /opt/macro --store-root /var/lib/macro-market-memory-options/options-v1
 TimeoutStartSec=180
 Nice=10
 CPUWeight=20
@@ -41,20 +45,15 @@ LockPersonality=true
 SystemCallArchitectures=native
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 ReadOnlyPaths=/opt/macro
-ReadWritePaths=/var/lib/macro-market-memory/state/technicals-v1
-InaccessiblePaths=/var/lib/macro-market-memory-options
-InaccessiblePaths=/etc/macro-market-memory-options
-InaccessiblePaths=/var/lib/macro-market-memory/public
-InaccessiblePaths=/var/lib/macro-market-memory/state/sources
-InaccessiblePaths=/var/lib/macro-market-memory/state/context-projection
-InaccessiblePaths=/var/lib/macro-market-memory/state/identity-v1
-InaccessiblePaths=/var/lib/macro-market-memory/state/breadth-v1
+ReadWritePaths=/var/lib/macro-market-memory-options/options-v1
+InaccessiblePaths=/var/lib/macro-market-memory
 InaccessiblePaths=-/var/lib/macro-api
 InaccessiblePaths=-/var/lib/macro-biocatalyst
 InaccessiblePaths=-/var/lib/macro-codex
 InaccessiblePaths=-/var/lib/macro-codex-2
 InaccessiblePaths=-/var/lib/macro-codex-3
 InaccessiblePaths=-/var/lib/macro-live
+InaccessiblePaths=/etc/macro-market-memory-options
 InaccessiblePaths=-/etc/macro-admin.env
 InaccessiblePaths=-/etc/macro-api.env
 InaccessiblePaths=-/etc/macro-biocatalyst.env

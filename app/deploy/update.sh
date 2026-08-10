@@ -141,10 +141,16 @@ install -d -m 0700 /var/lib/macro-market-memory/state/context-projection
 install -d -m 0700 /var/lib/macro-market-memory/state/identity-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/breadth-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/technicals-v1
+# Unit verification needs the static account.  The sensitive state root and
+# credential are provisioned only after macro-api proves a new deny namespace.
+bash "$APP_DIR/app/deploy/market-memory-options-prereqs.sh" --identity-only
+OPTIONS_CREDENTIAL_READY=0
+OPTIONS_API_FENCE_MARKER=/run/macro-api-market-memory-options-deny.ready
 API_UNIT_UPDATED=0
 if ! cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service; then
 	if systemd-analyze verify "$APP_DIR/app/deploy/macro-api.service"; then
 		install -m 0644 "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service
+		rm -f "$OPTIONS_API_FENCE_MARKER"
 		systemctl daemon-reload
 		API_UNIT_UPDATED=1
 		RECONCILED=1
@@ -405,6 +411,55 @@ if [ "$MARKET_MEMORY_BREADTH_RUN_NEEDED" -eq 1 ]; then
 	fi
 fi
 
+# W1B.5 private, future-only option-OI endpoint availability canary. It makes
+# exactly one bounded first-page request with a systemd credential, follows no
+# pagination, and never constructs a chain, identity, OI state, GEX, replay
+# input, or trading feature. The separate service identity and store root keep
+# credentialed response evidence outside every existing Market Memory writer
+# and the API namespace.
+MARKET_MEMORY_OPTIONS_UNIT_UPDATED=0
+OPTIONS_UNITS_READY=0
+OPTIONS_TIMER_WAS_ENABLED=0
+if systemctl is-enabled macro-market-memory-options.timer >/dev/null 2>&1; then
+	OPTIONS_TIMER_WAS_ENABLED=1
+fi
+MARKET_MEMORY_OPTIONS_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-options.service"
+	"$APP_DIR/app/deploy/macro-market-memory-options.timer"
+)
+if ! cmp -s "${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-options.service || \
+   ! cmp -s "${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-options.timer; then
+	if systemd-analyze verify "${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_OPTIONS_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_OPTIONS_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			RECONCILED=1
+			echo "macro-update: Market Memory option-OI canary units updated"
+		fi
+	else
+		echo "macro-update: refusing option-OI unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+if cmp -s "${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-options.service && \
+   cmp -s "${MARKET_MEMORY_OPTIONS_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-options.timer; then
+	OPTIONS_UNITS_READY=1
+fi
+
+MARKET_MEMORY_OPTIONS_RUN_NEEDED=0
+if [ "$OPTIONS_UNITS_READY" -eq 1 ] && { \
+	[ "$MARKET_MEMORY_OPTIONS_UNIT_UPDATED" -eq 1 ] || \
+	echo "$CHANGED" | grep -qE '^(scripts/capture_market_memory_option_oi\.py|engine/neuralweb/market_memory_option_oi_observation\.py|engine/neuralweb/market_memory_option_oi_store\.py|contracts/market_memory/option_oi_probe_receipt\.v1\.schema\.json|contracts/market_memory/spy_option_oi_source_observation\.v1\.schema\.json|contracts/market_memory/option_oi_capture_receipt\.v1\.schema\.json|contracts/market_memory/option_oi_store\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$' || \
+	[ "$OPTIONS_TIMER_WAS_ENABLED" -eq 0 ]; \
+}; then
+	MARKET_MEMORY_OPTIONS_RUN_NEEDED=1
+fi
+
 # macro-api: restart ONLY when its own code changed (avoid blipping /api on every
 # site/ render commit). "Its own code" = every Python module import-cached by the
 # running uvicorn, because sys.modules pins the OLD module object for the life of
@@ -515,7 +570,8 @@ fi
 #     schemas/implementations only and never calls run(), so those ~90 modules are
 #     NOT in the API's sys.modules. Adding them would restart /api on nearly every
 #     engine commit — exactly what this narrow list exists to prevent.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
+API_RESTART_CONFIRMED=0
+if [ "$API_UNIT_UPDATED" -eq 1 ] || [ ! -f "$OPTIONS_API_FENCE_MARKER" ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
 	# Verified restart, not fire-and-forget: on 2026-07-30 the old one-liner
 	# (`... && systemctl restart macro-api || true`) left the API on its 5-hour-old
 	# PID after a matching deploy, and the `|| true` destroyed every trace of why.
@@ -528,15 +584,79 @@ if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app
 		API_RESTART_RC=0
 		systemctl restart macro-api || API_RESTART_RC=$?
 		POST_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
-		if [ "$API_RESTART_RC" -ne 0 ] || { [ "$POST_PID" = "$PRE_PID" ] && [ "$POST_PID" != "?" ]; }; then
+		if [ "$API_RESTART_RC" -eq 0 ] && [[ "$POST_PID" =~ ^[1-9][0-9]*$ ]] && [ "$POST_PID" != "$PRE_PID" ]; then
+			API_RESTART_CONFIRMED=1
+			echo "macro-api restarted pid $PRE_PID -> $POST_PID"
+		else
 			echo "macro-api restart ANOMALY rc=$API_RESTART_RC pid $PRE_PID -> $POST_PID; retrying once"
 			sleep 2
-			systemctl restart macro-api || echo "macro-api restart RETRY FAILED rc=$?"
-			echo "macro-api post-retry pid $(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
-		else
-			echo "macro-api restarted pid $PRE_PID -> $POST_PID"
+			API_RETRY_RC=0
+			systemctl restart macro-api || API_RETRY_RC=$?
+			FINAL_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
+			if [ "$API_RETRY_RC" -eq 0 ] && [[ "$FINAL_PID" =~ ^[1-9][0-9]*$ ]] && [ "$FINAL_PID" != "$PRE_PID" ]; then
+				API_RESTART_CONFIRMED=1
+				echo "macro-api restart retry succeeded pid $PRE_PID -> $FINAL_PID"
+			else
+				echo "macro-api restart RETRY FAILED rc=$API_RETRY_RC pid $PRE_PID -> $FINAL_PID" >&2
+			fi
 		fi
 	fi
+fi
+
+# The marker attests a verified PID transition into the installed unit that
+# hides both the disjoint raw store and its dedicated credential source.  It is
+# removed whenever that unit changes and /run clears it on reboot, so option
+# evidence cannot exist while an older API namespace remains able to read it.
+if [ "$API_RESTART_CONFIRMED" -eq 1 ] && \
+   grep -Fxq 'InaccessiblePaths=/var/lib/macro-market-memory-options' /etc/systemd/system/macro-api.service && \
+   grep -Fxq 'InaccessiblePaths=/etc/macro-market-memory-options' /etc/systemd/system/macro-api.service; then
+	install -m 0644 /dev/null "$OPTIONS_API_FENCE_MARKER"
+fi
+
+OPTIONS_API_FENCE_READY=0
+if [ -f "$OPTIONS_API_FENCE_MARKER" ] && [ ! -L "$OPTIONS_API_FENCE_MARKER" ] && \
+   grep -Fxq 'InaccessiblePaths=/var/lib/macro-market-memory-options' /etc/systemd/system/macro-api.service && \
+   grep -Fxq 'InaccessiblePaths=/etc/macro-market-memory-options' /etc/systemd/system/macro-api.service; then
+	OPTIONS_API_FENCE_READY=1
+fi
+
+if [ "$OPTIONS_API_FENCE_READY" -eq 1 ]; then
+	if bash "$APP_DIR/app/deploy/market-memory-options-prereqs.sh"; then
+		OPTIONS_CREDENTIAL_READY=1
+	else
+		OPTIONS_STATUS=$?
+		if [ "$OPTIONS_STATUS" -ne 2 ]; then
+			echo "macro-update: option-OI private-root provisioning failed" >&2
+			exit "$OPTIONS_STATUS"
+		fi
+		echo "macro-update: option-OI credential absent; lane remains disarmed" >&2
+	fi
+else
+	echo "macro-update: option-OI private state not provisioned before API fence" >&2
+fi
+
+OPTIONS_BOUNDARY_READY=0
+if [ "$OPTIONS_CREDENTIAL_READY" -eq 1 ] && [ "$OPTIONS_UNITS_READY" -eq 1 ] && \
+   [ "$OPTIONS_API_FENCE_READY" -eq 1 ]; then
+	OPTIONS_BOUNDARY_READY=1
+fi
+
+if [ "$OPTIONS_BOUNDARY_READY" -eq 1 ]; then
+	# A deploy-triggered smoke capture happens once and before timer arming.  A
+	# failed first capture is retried only by the weekday timer, never every
+	# three-minute updater tick.
+	if [ "$MARKET_MEMORY_OPTIONS_RUN_NEEDED" -eq 1 ]; then
+		if [ "$API_DEPS_OK" -ne 1 ]; then
+			echo "macro-update: deferring option-OI canary — shared runtime dependencies are not current" >&2
+		elif ! systemctl start macro-market-memory-options.service; then
+			echo "macro-update: option-OI capture failed closed; weekday timer will retry" >&2
+		fi
+	fi
+	systemctl enable --now macro-market-memory-options.timer >/dev/null 2>&1 || \
+		echo "macro-update: macro-market-memory-options.timer could not be enabled" >&2
+else
+	systemctl disable --now macro-market-memory-options.timer >/dev/null 2>&1 || true
+	echo "macro-update: option-OI lane remains disarmed until units, credential, and API fence are verified" >&2
 fi
 
 # Live-plane systemd definitions are installed by live-setup.sh. Once that setup

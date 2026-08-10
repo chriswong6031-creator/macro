@@ -1,0 +1,42 @@
+{
+  "schema": "market_memory.option_oi_source_config.v1",
+  "profile": "massive_spy_option_oi_first_page_availability.v1",
+  "provider": "Massive",
+  "source_product": "v3_snapshot_options_chain",
+  "request": {
+    "method": "GET",
+    "scheme": "https",
+    "host": "api.massive.com",
+    "path": "/v3/snapshot/options/SPY",
+    "query": {
+      "limit": "250"
+    },
+    "accept": "application/json",
+    "accept_encoding": "identity",
+    "authorization_source": "explicit_bearer_argument_only"
+  },
+  "provider_claim": {
+    "documentation_url": "https://massive.com/docs/rest/options/snapshots/option-chain-snapshot",
+    "reviewed_at": "2026-08-10",
+    "open_interest_basis": "end_of_last_trading_day",
+    "classification": "qualitative_only",
+    "claim_authenticated_by_response": false,
+    "measurement_date_available": false,
+    "publication_date_available": false,
+    "publication_timestamp_available": false,
+    "publication_sla_available": false
+  },
+  "scope": {
+    "source_availability_only": true,
+    "future_only": true,
+    "first_page_only": true,
+    "calendar_inference_allowed": false,
+    "expected_measurement_session_inference_allowed": false,
+    "expected_measurement_date_inference_allowed": false,
+    "permanent_contract_identity_resolution": false,
+    "contract_multiplier_parsing": false,
+    "gex_projection": false,
+    "open_interest_value_projection": false,
+    "open_interest_total_projection": false
+  }
+}

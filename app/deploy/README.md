@@ -66,6 +66,23 @@ artifacts under `/var/lib/macro-live/public`. See
 ownership, capacity, validation, and cutover details. Do not set the repository
 variable `VPS_LIVE_PRIMARY=true` until the timers have passed a full-session soak.
 
+### Private option-OI availability canary
+
+`api-setup.sh` and `macro-update` also provision the W1B.5 option-OI source
+availability canary. It uses a static non-login identity, a root-owned mode-0710
+parent plus disjoint service-owned mode-0700 profile at
+`/var/lib/macro-market-memory-options/options-v1`, and the fixed systemd
+credential `massive-option-oi-api-key`. The timer remains disabled if that
+credential cannot be safely rebound from existing private operator state, if
+the reviewed units drift, or until a verified `macro-api` PID transition has
+placed the API behind non-optional store and credential deny mounts. Sensitive
+roots are provisioned only after that API fence exists.
+
+This is intentionally one first-page source probe—not a complete chain, OI
+surface, GEX builder, replay input, or public/API feature. See
+[`docs/ops/market-memory-option-oi-canary.md`](../../docs/ops/market-memory-option-oi-canary.md)
+for scope, isolation, rotation, and live verification.
+
 ### Attach Codex to the production provider pool
 
 `api-setup.sh` and `macro-update` install the pinned official Codex CLI through

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/option_oi_store.v1.schema.json",
+  "title": "Private option-OI source-availability store manifest v1",
+  "description": "Strict manifest for the isolated future-only options-v1 first-page availability canary. It is not an option-chain, feature, replay, training, ranking, or execution store.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "store_id",
+    "nonce",
+    "profile",
+    "prepared_schema",
+    "capture_receipt_schema",
+    "source_observation_schema",
+    "probe_receipt_schema",
+    "generation_schema",
+    "head_schema",
+    "mode",
+    "evidence_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.option_oi_store.v1"},
+    "store_id": {
+      "type": "string",
+      "pattern": "^mmoptionoistore_[a-f0-9]{64}$"
+    },
+    "nonce": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "profile": {
+      "const": "market_memory.private.spy_option_oi_source_availability.v1"
+    },
+    "prepared_schema": {"const": "market_memory.option_oi_prepared.v1"},
+    "capture_receipt_schema": {
+      "const": "market_memory.option_oi_capture_receipt.v1"
+    },
+    "source_observation_schema": {
+      "const": "market_memory.spy_option_oi_source_observation.v1"
+    },
+    "probe_receipt_schema": {
+      "const": "market_memory.option_oi_probe_receipt.v1"
+    },
+    "generation_schema": {
+      "const": "market_memory.option_oi_store_generation.v1"
+    },
+    "head_schema": {"const": "market_memory.option_oi_store_head.v1"},
+    "mode": {"const": "private_future_only_source_availability"},
+    "evidence_policy": {"$ref": "#/$defs/evidencePolicy"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "evidencePolicy": {
+      "const": {
+        "source_availability_only": true,
+        "future_only": true,
+        "first_page_only": true,
+        "source_payload_contract_validated": true,
+        "exact_source_bodies_integrity_bound": true,
+        "provider_response_signed": false,
+        "raw_cas_durable_before_prepared_clock": true,
+        "prepared_self_recoverable_from_cas": true,
+        "prepared_temporaries_isolated_from_scan": true,
+        "page_complete": true,
+        "continuation_followed": false,
+        "intentionally_bounded": true,
+        "chain_complete": false,
+        "contract_universe_complete": false,
+        "atomic_chain_snapshot_verified": false,
+        "measurement_time_authenticated": false,
+        "measurement_session_authenticated": false,
+        "measurement_date_authenticated": false,
+        "permanent_contract_identity_resolved": false,
+        "contract_multiplier_assumed": false,
+        "raw_entity_body_preserved_in_private_cas": true,
+        "raw_entity_body_publicly_exposed": false,
+        "vendor_tickers_projected": false,
+        "open_interest_values_projected": false,
+        "open_interest_totals_projected": false,
+        "gex_projected": false,
+        "replay_eligible": false,
+        "feature_eligible": false,
+        "context_only": true,
+        "training_eligible": false,
+        "promotion_eligible": false
+      }
+    },
+    "authority": {
+      "const": {
+        "tier": "display",
+        "horizon_role": "context",
+        "context_only": true,
+        "proposal_weight": 0,
+        "may_rank": false,
+        "may_gate": false,
+        "may_size": false,
+        "may_escalate": false,
+        "may_trade": false,
+        "may_originate": false,
+        "may_select_options_candidate": false,
+        "may_execute": false,
+        "may_write_options_episode": false,
+        "may_append_outcome": false,
+        "may_train_prophet": false
+      }
+    }
+  }
+}
