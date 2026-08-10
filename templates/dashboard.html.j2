@@ -978,6 +978,44 @@
   .pbs-fig { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text); }
   .pbs-note .help { margin-left: 5px; vertical-align: 1px; }
   .pbs-nv[hidden] { display: none; }
+  /* ── W-L1d — WHAT THE PROVISIONAL BOARD PUTS AWAY ──────────────────────────────
+     While tonight's cards are mounted, the nightly grid, its show-more bar, the stage
+     filter and the grid/table toggle are all hidden: each of them is a view of columns
+     this board deliberately does not carry (spec §10.3 — "a filter over absent buckets
+     is a broken control", and the table has a whole score column with nothing to put in
+     it). Nothing is emptied or rebuilt — hiding is the entire mechanism, so restoring is
+     one attribute per element and the nightly board can never come back half-swapped.
+
+     It has to be a RULE and not an inline style for two independent reasons: a
+     class-level `display` out-specifies the UA [hidden] rule (the .pv-live[hidden] trap,
+     fifty lines up), AND show-more's own reflow pass rewrites .sm-bar's INLINE display
+     whenever the column count changes — so a resize would silently un-hide a bar that is
+     counting the wrong board. This is the whole CSS cost of W-L1d; the cards themselves
+     add none (spec §10.2). */
+  #us-standouts .nbgrid[hidden], #us-standouts .sm-bar[hidden],
+  #us-standouts .pbf-bar[hidden], #us-standouts .st-view-toggle[hidden],
+  #us-standouts #us-board-sub[hidden], #us-standouts .pb-fn[hidden] { display: none !important; }
+  /* ── THE CHIP RAIL — W-L1d's one geometric decision ────────────────────────────
+     The evening payload carries NO sparkline, on purpose: the sparks are 86% of the
+     artifact on a 120-second poll for a key that changes once a day, and an evening spark
+     would draw bandless anyway because the buy-zone band derives from the omitted `entry`
+     leg. So .pv-nochart's 74px reserves a chart that is not coming to THIS card — the
+     chart comes with the morning board — and an empty 74px hue wash with two chips
+     floating at the top of it reads exactly like an image that failed to load. Measured
+     on the real page before this rule existed, and it is the reason the rule exists.
+
+     Collapsing it to the chip rail's own height is the honest geometry AND the design:
+     the evening card is deliberately lighter than the morning card at every slot — no
+     score, no stage rail, no marks, no zone range, and now no chart — so a reader can see
+     at a glance that this board is holding less back than it is holding out. Do not fill
+     this space with a meter, a bar or a runway gauge: the lane owns two legs, both of
+     them already have a word on the card, and anything else here would be ornament
+     invented to cover an absence (§10.4 — the absence is the point).
+
+     Scoped to [data-provboard] so the nightly card, which does have a chart, never sees
+     it. 8px clears .pv-ov's own top offset above the chip and leaves the same below. */
+  #us-standouts .nbgrid[data-provboard] .pv-nochart,
+  #us-standouts .nbgrid[data-provboard][data-showmore-rows] .pv-nochart { height: 36px; }
   @media (max-width: 680px) {
     .pbs { font-size: 9.5px; padding: 2px 7px; }
     .pbs-note { font-size: 11px; }
@@ -15417,7 +15455,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <button id="us-st-btn-table" aria-selected="false" onclick="USStockTable._setView('table')">&#9776; <span class="l-en">Table</span><span class="l-zh">表格</span></button>
         </span>
         {% endif %}
-        {% if _su %}{% set _su_delayed = (_su.get('staleness') or {}).get('delayed') %}<span class="muted" style="font-size:11.5px">{{ _su.buy|length }} {{ t("shown ·", "已显示 ·") }} {{ _su.eligible }} {% if _su_delayed %}{{ t("setups · dots reflect prices as of " ~ ((_su.staleness or {}).get('price_through') or '?') ~ " — verify before acting.", "个形态 · 价格点位截至 " ~ ((_su.staleness or {}).get('price_through') or '?') ~ "，操作前请确认最新价格。") }}{% else %}{{ t("setups · green dot = entry open, yellow = wait for pullback.", "个形态 · 绿点＝现在可入场，黄点＝等回调。") }}{% endif %}
+        {# the id is W-L1d's hook, nothing more: this subtitle counts the nightly board and
+           spells out its dot legend, and the provisional board has neither that count nor
+           any dots to read, so the client hides it while tonight's cards are mounted. #}
+        {% if _su %}{% set _su_delayed = (_su.get('staleness') or {}).get('delayed') %}<span class="muted" id="us-board-sub" style="font-size:11.5px">{{ _su.buy|length }} {{ t("shown ·", "已显示 ·") }} {{ _su.eligible }} {% if _su_delayed %}{{ t("setups · dots reflect prices as of " ~ ((_su.staleness or {}).get('price_through') or '?') ~ " — verify before acting.", "个形态 · 价格点位截至 " ~ ((_su.staleness or {}).get('price_through') or '?') ~ "，操作前请确认最新价格。") }}{% else %}{{ t("setups · green dot = entry open, yellow = wait for pullback.", "个形态 · 绿点＝现在可入场，黄点＝等回调。") }}{% endif %}
           <span class="help">?<span class="tip tip-wide">{% if _su_delayed %}<span class="l-en">Board is delayed — prices are as of {{ ((_su.staleness or {}).get('price_through') or '?') }}. Dots and entry signals may not reflect current prices. Conviction: is this a name worth owning? Entry: verify current price before acting. Click a card for the full breakdown.</span><span class="l-zh">数据延迟 — 价格截至 {{ ((_su.staleness or {}).get('price_through') or '?') }}。绿点及入场信号可能不反映最新价格。信念：是否值得持有；入场：操作前请确认当前价格。点击卡片查看完整拆解。</span>{% else %}<span class="l-en">Each card answers two separate questions. Conviction: is this a name worth owning? Entry: is today a good price? High conviction can still mean wait for the pullback. Green dot = entry open · yellow = wait · the alpha chip ranks selection edge. Click a card for the full breakdown.</span><span class="l-zh">每张卡片回答两个独立问题。信念：是否值得持有；入场：今天价格是否合适。高信念也可能需要等回调。绿点＝入场窗口已开 · 黄点＝等待 · alpha 标记为选股优势排名。点击卡片看完整拆解。</span>{% endif %}</span></span></span>{% endif %}
         {% if not _su %}<span class="muted" style="font-size:11.5px">{{ t("Top-10 holdings per sector · grouped by cycle entry, ranked by alpha.", "各板块前十大持仓 · 按周期入场分组，以alpha排序。") }}
           {{ help("Every sector ETF’s top-10 holdings are run through the SAME price-cycle engine as the sectors. A name earns a card only when its cycle signal is decisive — a confirmed buy (BUY ZONE), an imminent turn (BOTTOMING), or a sell (TOPPING). The cycle state GROUPS the cards (it places risk — a defined entry + exit); WITHIN each group they’re ordered by the validated sector-neutral residual momentum (α — market + sector beta stripped). We Phase-0 tested blending the cycle timing INTO the rank (reports/setup-score-phase0.md, survivorship-clean S&P 500, 12y) and it did NOT improve forward returns — it diluted α — so the order rides α and the cycle/pullback is shown as risk-placement CONTEXT, not a return signal. A soft per-sector cap keeps one hot sector from crowding the board. The α / #rank / pullback line and the 👤 insider chip are context inputs, NOT standalone buy signals. Click any card for the full breakdown.", "每个板块 ETF 的前十大持仓都用与板块相同的价格周期引擎分析。只有当个股的周期信号具决定性时才会获得卡片 — 已确认买入（买入区）、即将转向（筑底）或卖出（做顶）。周期状态对卡片进行分组（它摆放风险 — 明确的入场与出场）；在每组内部，按已验证的行业中性残差动量（α — 已剥离大盘与行业 beta）排序。我们做了 Phase-0 检验，把周期择时混入排序（reports/setup-score-phase0.md，无幸存者偏差的标普500，12年），结果并未改善前瞻收益 — 反而稀释了 α — 因此排序以 α 为准，周期/回调作为风险摆位的情境展示，而非收益信号。软性的单一板块上限可避免强势板块挤占整版。卡片上的 α / #排名 / 回调一行以及 👤 内部人买入标记均为情境输入，并非独立买入信号。点击任意卡片查看完整拆解。") }}</span>{% endif %}
@@ -15441,7 +15482,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {%- if _bs and _bs.get('note') == 'confirmed' %}
         <span class="pbs-nv" data-bs-note="confirmed"><span class="l-en"><span class="pbs-fig">{{ _bs.n_confirmed }}</span> of <span class="pbs-fig">{{ _bs.n_total }}</span> confirmed overnight · <span class="pbs-fig">{{ _bs.n_adjusted }}</span> adjusted, <span class="pbs-fig">{{ _bs.n_dropped }}</span> left the board</span><span class="l-zh"><span class="pbs-fig">{{ _bs.n_total }}</span> 只中 <span class="pbs-fig">{{ _bs.n_confirmed }}</span> 只隔夜确认 · 调整 <span class="pbs-fig">{{ _bs.n_adjusted }}</span> 只，离榜 <span class="pbs-fig">{{ _bs.n_dropped }}</span> 只</span><span class="help">?<span class="tip tip-wide"><span class="l-en">Last evening's board was built from the day's closes; the overnight pass then rebuilt it with the inputs that only arrive at night. Confirmed means the name came through unchanged. Adjusted means its entry range, stage or place in the order moved — the card shows the current numbers. Left the board means it no longer meets the bar; that is not a sell instruction for a position you already hold.{% if _bs.get('dropped') %} Left the board: {{ _bs.dropped | join(', ') }}{% endif %}</span><span class="l-zh">昨晚的榜单是按当日收盘价生成的；隔夜复核会用深夜才到位的数据重算一遍。「确认」表示这只股票原样通过；「已调整」表示入场区间、阶段或排序位置有变动，卡片上显示的是最新数值；「已离榜」表示它不再达标 —— 这不是让你卖出已有仓位的指令。{% if _bs.get('dropped') %}已离榜：{{ _bs.dropped | join('、') }}{% endif %}</span></span></span></span>
         {%- endif %}
-        <span class="pbs-nv" data-bs-note="ahead" hidden><span class="l-en"><b>Get ready</b> — set from today's close, confirmed by morning.</span><span class="l-zh"><b>可以开始准备</b> — 依今日收盘价选出，明早完成确认。</span><span class="help">?<span class="tip tip-wide"><span class="l-en">The board is rebuilt from the day's closing prices as soon as the session ends, so tonight's picks are up within a couple of hours of the close instead of overnight. What makes the board is decided the same way the overnight pass decides it — but a few inputs only arrive later at night, so a name can still be adjusted or leave the board before morning. The overnight board stays the one of record; whatever changes is marked the next morning.</span><span class="l-zh">收盘后，系统会用当日收盘价重算整个榜单，因此今晚的选股在收盘后一两个小时内就能看到，不必等到半夜。入选标准与隔夜复核完全一致，只是有几项数据要到深夜才到位 —— 所以个别股票在明早之前仍可能被调整或移出榜单。隔夜榜单仍是最终依据，凡有变动，第二天早上都会标出来。</span></span></span></span>
+        <span class="pbs-nv" data-bs-note="ahead" hidden><span class="l-en"><b>Get ready</b> — set from today's close, confirmed by morning.</span><span class="l-zh"><b>可以开始准备</b> — 依今日收盘价选出，明早完成确认。</span><span class="help">?<span class="tip tip-wide"><span class="l-en">Only part of the full test can run this early. In: how strong the signal is, and how far the name has already run. Not yet in: the entry range, the edge score the cards normally show, and the setup-quality checks — those need inputs that arrive later at night. So this is a shortlist, not the ranked board: order, scores and buy zones land with the overnight pass, and a name can still be adjusted or leave before morning. Room is how far a name has left to go before it counts as stretched.</span><span class="l-zh">这个时点只能完成整套判定中的一部分。已纳入：信号强弱，以及这只股票已经走了多远。尚未纳入：入场区间、卡片上平时显示的「优势」评分，以及形态质量检查 —— 这几项都要等深夜的数据到位。所以这是一份候选名单，还不是排好序的榜单：排序、评分和买区都要等隔夜复核给出，个别股票在明早之前仍可能被调整或移出。「空间」指的是股价在被视为过度拉伸之前还剩多少余地。</span></span></span></span>
         <span class="pbs-nv" data-bs-note="behind" hidden><span class="l-en">Tonight's early update isn't in — these are last night's confirmed picks. Check a live quote before you act.</span><span class="l-zh">今晚的提前更新未到位，以下为昨晚确认的选股名单。操作前请先看一下实时报价。</span><span class="help">?<span class="tip tip-wide"><span class="l-en">Tonight's early rebuild didn't publish, so the board still shows the picks the overnight pass confirmed on the date stamped above. The overnight pass runs regardless and will refresh the board tonight. Prices on the cards are from that date, not from today.</span><span class="l-zh">今晚的提前重算没有发布，所以榜单显示的仍是上方日期那一晚确认的选股。隔夜复核照常运行，今晚会刷新榜单。卡片上的价格来自那一天，不是今天。</span></span></span></span>
         <span class="pbs-nv" data-bs-note="closed" hidden><span class="l-en">Markets are closed — these are the last confirmed picks. The board updates after the next session's close.</span><span class="l-zh">休市中，以下为最近一次确认的选股名单。下一个交易日收盘后更新。</span><span class="help">?<span class="tip tip-wide"><span class="l-en">Markets were closed today, so there is nothing new to add. The board shows the picks confirmed after the last session, and it refreshes after the next one closes.</span><span class="l-zh">今天休市，没有新的内容。榜单显示的是上一个交易日之后确认的选股，下一个交易日收盘后会刷新。</span></span></span></span>
       </div>
@@ -16150,7 +16191,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
          2026-08-05. That is why the disclosure needed a chip of its own.) #}
       {% set _xuc = ((_su.get('ranking') or {}).get('ext_unknown_coverage') or {}) %}
       {% set _xfu = _xuc.get('featured_with_unknown') or 0 %}
-      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability or return forecast. Green glow is a featured attention shelf, not an admission limit: fresh signal, entry window open, edge above zero (an absolute floor), {% if _xfu %}price not extended wherever tonight’s extension reading came through ({{ _xfu }} of the featured names have none at all, so for those nothing was checked){% else %}price not extended{% endif %}, up to 12 names and 4 per sector. Every qualifying name remains on this ranked, searchable board, and US Prophet evaluates the full eligible set. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 不是胜率，也不是收益预测。绿色高亮只是精选关注层，并非准入上限：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、{% if _xfu %}取到拉伸读数的个股价格未过度拉伸（另有{{ _xfu }}只精选个股完全没有读数，这一项未作检查）{% else %}价格未过度拉伸{% endif %}，最多12只、每个板块最多4只。所有符合条件的股票都会保留在这个可排序、可搜索的完整榜单中，US Prophet 会评估全部合格候选。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
+      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability or return forecast. Green glow is a featured attention shelf, not a cap on how many names qualify: fresh signal, entry window open, edge above zero (an absolute floor), {% if _xfu %}price not extended wherever tonight’s extension reading came through ({{ _xfu }} of the featured names have none at all, so for those nothing was checked){% else %}price not extended{% endif %}, up to 12 names and 4 per sector. Every qualifying name remains on this ranked, searchable board, and US Prophet evaluates the full eligible set. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 不是胜率，也不是收益预测。绿色高亮只是精选关注层，并非准入上限：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、{% if _xfu %}取到拉伸读数的个股价格未过度拉伸（另有{{ _xfu }}只精选个股完全没有读数，这一项未作检查）{% else %}价格未过度拉伸{% endif %}，最多12只、每个板块最多4只。所有符合条件的股票都会保留在这个可排序、可搜索的完整榜单中，US Prophet 会评估全部合格候选。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
       {% endif %}
       </div>{# end .nb-grid-section #}
       {% set _has_outcomes = us_board_outcomes and us_board_outcomes.get('rows') %}
@@ -18347,13 +18388,22 @@ function _plvFetch(){
    there is no new script tag, no new poll and no second hydration path — one client
    owns everything the live plane says about this board.
 
-   PRESENTATION-TIER FENCE (A7, spec §0-10). This block writes to EXACTLY four places,
-   all of them slots the server reserved for it: #us-standouts' own `data-boardstate`
-   attribute, the `hidden` flag on .pbs[data-bs], the `hidden` flag on
-   .pbs-nv[data-bs-note], and the text of the two .pbs-dt language spans. It never
-   touches card ordering, card membership, a verb, an edge, a stage, a zone or a count.
-   It emits NO COPY: every string is SSR-baked in both languages and this code only
-   chooses which one is unhidden.
+   PRESENTATION-TIER FENCE (A7, spec §0-10). The board-state half writes to EXACTLY four
+   places, all of them slots the server reserved for it: #us-standouts' own
+   `data-boardstate` attribute, the `hidden` flag on .pbs[data-bs], the `hidden` flag on
+   .pbs-nv[data-bs-note], and the text of the two .pbs-dt language spans. It emits NO
+   COPY: every string is SSR-baked in both languages and this code only chooses which one
+   is unhidden.
+
+   W-L1d (spec §10) adds a second, wider write — the evening CARDS — and the fence moves
+   with it rather than being quietly stretched. While the provisional board is mounted the
+   client additionally: hides the nightly .nbgrid, its .sm-bar, #us-stage-filter and
+   #us-st-view-toggle; neutralises `data-stagef` and `st-table-mode`; and inserts ONE new
+   grid element of its own. It still originates nothing (A7): the order it paints is the
+   order the payload names, and it never re-ranks, re-admits, filters, scores or drops a
+   row. Every WORD on those cards is chosen here, in both languages, and is derived from
+   the payload's `runway` alone — never from a clock, never from a cross-sectional
+   comparison the presentation tier would have had to compute.
 
    THE STAMP IS DERIVED FROM THE PAYLOAD THAT PRODUCED THE CARDS (spec §0-2). It is
    never derived from a clock, and never from the payload alone: before painting
@@ -18409,12 +18459,238 @@ function _bsQualify(s, domKey, now){
 }
 /* WL1-BOARDSTATE-CONTRACT-END */
 
+/* WL1-PROVCARD-CONTRACT-BEGIN
+   W-L1d — THE EVENING CARDS THEMSELVES. Contract: spec §10.
+
+   WHY THIS EXISTS AT ALL. The evening close pass publishes ~131 names; the rendered
+   nightly grid holds ~79. The identity gate above therefore refused every single evening
+   payload — correctly — and no reader had ever seen an evening board. §10.1 settles the
+   fix as a client render off the already-auth-gated live plane: same artifact, same poll,
+   same client. These functions are that renderer.
+
+   THE GATE ABOVE IS NOT WEAKENED BY IT, and that is the load-bearing property (§10.5).
+   `_bsQualify` is byte-unchanged: it still refuses unless the payload's ordered tickers
+   ARE the ordered tickers of the cards on the page. What changes is only that the cards
+   can now get there by being painted — and `_bsRender` paints FIRST, lets the DOM settle,
+   and only then asks `_bsQualify` what board the reader is looking at. A mount that drops,
+   reorders or half-writes a card leaves a DOM that does not match, so the stamp does not
+   paint and the board is torn back down. Two independent readbacks stand between a mount
+   and a stamp: `_pvcMount`'s own post-paint check, and `_bsQualify` re-run against the
+   settled DOM.
+
+   Everything here is PURE — string in, string out, plus one injected `env` for the mount —
+   for the same reason the block above is: tests/test_wl1_board_state_surface.py lifts this
+   slice verbatim and executes it under node, so "tears the board down on mismatch" is
+   proved by running it rather than by grepping for it. Delete the check inside `_pvcMount`
+   and a test fails. It carries its own tiny escape/bilingual helpers instead of borrowing
+   the page's `esc`/`L` so that the lifted slice stands alone under node.
+
+   COPY LIVES HERE. The payload ships facts (`signal`, `runway`, prices, names); every
+   word a reader sees is chosen in this file, in both languages, because zh copy lives in
+   templates AND builders and for these cards this renderer IS the builder. */
+
+/* ── The card's two words, and why they are those two ─────────────────────────────
+   The lane owns exactly two legs — `signal` (how strong the read is) and `runway`
+   (1 − clip01(ext_z/2): how much room is left before the name counts as stretched).
+   `runway` is the one a reader can act on, and it is also the only one that will not be
+   re-computed overnight, because its input is a closing price. So it carries the card.
+
+   `signal` is deliberately NOT shown. Every word for it is a rank word — "strong",
+   "top", "best" — and this board has no rank: the ordering lands with the nightly pass.
+   Printing a rank the lane has not earned is the exact thing §10.2 refuses a number for,
+   and a word does not make it truer. It goes in the panel's `?` receipt instead.
+
+   THE VERB IS NOT A CONSTANT (§10.4-2). `buy` is not in this vocabulary at all: the board
+   itself only says "Get ready", and a card may not out-claim the board it sits on —
+   never mind that admission over-admits 1.7× and ~45% of these names are gone by morning.
+   So the palette is {near, wait}, split on ext_z = 1 — one standard deviation of
+   extension, which is a line with a meaning and not a tuned threshold. A name with room
+   is NEAR (close, not there). A name that has already run is WAIT, which is the
+   doctrine's "watch — don't chase" said in the card's own vocabulary. */
+var PVC_ROOM_BANDS = { ample:['Ample','充足'], some:['Some','适中'], thin:['Thin','有限'] };
+var PVC_ROOM_LABEL = ['Room','空间'];
+var PVC_VERB_WORDS = { near:['Near','临近'], wait:['Wait','等待'] };
+/* byte-identical to the macro's ratified `confirm` zone copy — reused, not reworded.
+   The buy zone IS the entry ladder, which is the omitted leg; saying so with the words
+   the nightly board already uses beats inventing a second way to say "not yet". */
+var PVC_ZONE_WORDS = ['Zone sets on confirmation','买区待确认后生成'];
+var PVC_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function _pvcE(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                     .replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function _pvcL(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+
+                              (zh==null||zh===''?en:zh)+'</span>'; }
+
+/* runway 0.75 ↔ ext_z 0.5 (barely moved) · 0.50 ↔ ext_z 1.0 (a full sigma out) */
+function _pvcRoom(runway){
+  var r=runway<0?0:(runway>1?1:runway);
+  return r>=0.75?'ample':(r>=0.5?'some':'thin');
+}
+function _pvcVerb(band){ return band==='thin'?'wait':'near'; }
+
+/* The sparkline arrives as raw SVG and goes in through innerHTML. The artifact is
+   same-origin and auth-gated, which is a reason to be calm about it and not a reason to
+   skip the check — innerHTML does not run <script>, but it very much runs an SVG event
+   handler. Anything that is not a plain drawing is dropped, and a dropped spark is
+   already a supported state (the producer emits null rather than guessing). */
+function _pvcSpark(s){
+  if(typeof s!=='string'||!s||s.length>20000) return '';
+  if(s.slice(0,4).toLowerCase()!=='<svg') return '';
+  if(/<\s*(script|foreignobject|iframe|image|use|a)\b/i.test(s)) return '';
+  if(/\son[a-z]+\s*=/i.test(s)) return '';
+  if(/(javascript|data)\s*:/i.test(s)) return '';
+  return s;
+}
+/* relative site paths only — the board links to pages on this site and nowhere else */
+function _pvcHref(h){
+  if(typeof h!=='string'||!h||h.length>200) return '';
+  if(!/^[A-Za-z0-9._\/-]+$/.test(h)) return '';
+  if(h.charAt(0)==='/'||h.indexOf('..')>=0) return '';
+  return h;
+}
+
+/* PAYLOAD SELF-IDENTITY — the check that replaces "payload vs. DOM" while the client is
+   the thing putting the cards in the DOM. `cards` must be exactly parallel to `tickers`,
+   in order, complete, and every row must carry the two legs the words are derived from.
+   An `edge` that arrives at all is refused outright rather than ignored: §10.2's whole
+   point is that a 40-of-100 score must never reach the slot a reader has learned to read
+   on the 100 scale, and a structural refusal beats a rule someone has to remember. */
+function _pvcCards(b){
+  if(!b||typeof b!=='object') return null;
+  if(b.card_complete!==true) return null;
+  var t=b.tickers, cs=b.cards, i, c;
+  if(Object.prototype.toString.call(t)!=='[object Array]') return null;
+  if(Object.prototype.toString.call(cs)!=='[object Array]') return null;
+  if(!t.length||cs.length!==t.length) return null;
+  for(i=0;i<cs.length;i++){
+    c=cs[i];
+    if(!c||typeof c!=='object') return null;
+    if(!t[i]||String(c.tk||'')!==String(t[i])) return null;
+    if(typeof c.signal!=='number'||!isFinite(c.signal)) return null;
+    if(typeof c.runway!=='number'||!isFinite(c.runway)) return null;
+    if(c.edge!==undefined&&c.edge!==null) return null;
+    if(!_pvcHref(c.href)) return null;
+  }
+  return cs;
+}
+function _pvcKey(cards){
+  var out=[], i;
+  if(!cards||!cards.length) return '';
+  for(i=0;i<cards.length;i++) out.push(String(cards[i].tk));
+  return out.join('|');
+}
+
+/* One card. Deliberately SHORTER than the nightly card, and the shortness is the design:
+   no score, no lifecycle rail, no marks row, no zone range, no trigger. What the lane has
+   not earned is not drawn, so the card itself shows what is being withheld — which costs
+   nothing, adds no CSS, and cannot be mistaken for the full card at a glance.
+     · no per-card marks (§3 State 1) and no empty marks row either — `[]` still reserves
+       18px, so the row is absent rather than blank
+     · no stage rail: lane assignment is a nightly curation output, and a four-step
+       tracker with nothing lit is the same broken control as a filter over absent buckets
+     · no ◐ live slot: the strip fills those from the NIGHTLY board's zones, and hanging a
+       nightly-derived read on an evening card would cross two boards on one surface
+   A missing name or sector simply omits its line — the grid stretches its row and
+   .pv-zn's margin-top:auto keeps every zone row on one baseline, so a degraded card
+   costs alignment nothing. */
+function _pvcCardHTML(c, chg){
+  var band=_pvcRoom(c.runway), verb=_pvcVerb(band), sp=_pvcSpark(c.spark), h=[], d, mi, sym, mkt, px;
+  h.push('<a class="pvcard pv-'+verb+'" href="'+_pvcE(_pvcHref(c.href))+
+         '" data-ticker="'+_pvcE(c.tk)+'">');
+  h.push('<div class="pv-chart">');
+  h.push(sp?sp:'<div class="pv-nochart"></div>');
+  h.push('<span class="pv-ov pv-ovl"><span class="pv-chip">'+
+         _pvcL(PVC_VERB_WORDS[verb][0],PVC_VERB_WORDS[verb][1])+'</span></span>');
+  /* The quote pill copies whatever shape the NIGHTLY cards on this very page are using
+     — `chg` is measured off them, never assumed — so an evening card and a morning card
+     always carry the same pill whichever way round the two changes land. live.js binds
+     .nb-px/.nb-chg by data-sym and re-queries the document on every tick, so a pill that
+     matches gets decorated for free; the percentage has to stay an ADJACENT sibling
+     because live.js replaces the price node's textContent. */
+  if(c.price_txt){
+    sym=_pvcE(c.sym||c.tk); mkt=_pvcE(c.mkt||'us');
+    px='<span class="nb-px pv-px" data-sym="'+sym+'" data-mkt="'+mkt+'">'+
+       _pvcE(c.price_txt)+'</span>';
+    h.push('<span class="pv-ov pv-ovr">'+(chg
+      ? '<span class="pv-quote">'+px+'<span class="nb-chg pv-chg" data-sym="'+sym+
+        '" data-mkt="'+mkt+'">—</span></span>'
+      : px)+'</span>');
+  }
+  h.push('</div><div class="pv-bd"><div class="pv-hd"><span class="pv-idw"><span class="pv-tk">'+
+         _pvcE(c.tk)+'</span>');
+  if(c.name) h.push('<span class="pv-nm">'+_pvcL(_pvcE(c.name),_pvcE(c.name_zh||c.name))+'</span>');
+  /* `pv-edna` is the macro's OWN treatment for a card with no score — muted, 12px/600 —
+     and it is the right one here for the reason §10.2 exists. The card's most authoritative
+     pixel is this slot; a reader has learned to find a 0-100 ruling in it. Setting a word
+     there in the verb hue at 14px/800 refills the authority with letters instead of digits,
+     which is the same fabrication with a different alphabet. Muted says "no ruling for you
+     tonight" while still carrying a real measure. It is also the only version that clears
+     AA everywhere: the hue ink measured 3.83:1 for a Near card in zh light — a PRE-EXISTING
+     estate value, on a bare card with none of this markup, because
+     html[data-theme=light][data-lang=zh] re-keys --ink-pv-near to an 84% mix — while
+     --muted reads 5.33 dark / 6.21 light in both languages for every verb. */
+  h.push('</span><span class="pv-edge"><span class="pv-edl">'+
+         _pvcL(PVC_ROOM_LABEL[0],PVC_ROOM_LABEL[1])+'</span><span class="pv-edn pv-edna">'+
+         _pvcL(PVC_ROOM_BANDS[band][0],PVC_ROOM_BANDS[band][1])+'</span></span></div>');
+  if(c.sec) h.push('<div class="pv-ind">'+_pvcL(_pvcE(c.sec),_pvcE(c.sec_zh||c.sec))+'</div>');
+  h.push('</div><div class="pv-zn"><span class="pv-znm">'+
+         _pvcL(PVC_ZONE_WORDS[0],PVC_ZONE_WORDS[1])+'</span>');
+  d=String(c.date||'');
+  if(d.length>=10){
+    mi=parseInt(d.slice(5,7),10);
+    h.push('<span class="pv-dt">'+_pvcL(
+      _pvcE(((mi>=1&&mi<=12)?PVC_MONTHS[mi-1]:d.slice(5,7))+' '+parseInt(d.slice(8,10),10)),
+      _pvcE(d.slice(5,10)))+'</span>');
+  }
+  h.push('</div></a>');
+  return h.join('');
+}
+function _pvcGridHTML(cards, chg){
+  var h=[], i;
+  for(i=0;i<cards.length;i++) h.push(_pvcCardHTML(cards[i], chg));
+  return h.join('');
+}
+
+/* THE POST-MOUNT RE-VERIFICATION (§10.5) — the single most important line in W-L1d.
+   `env` is injected so this runs under node with no DOM: paint the grid as ONE write,
+   read the painted ticker order straight back off the result, and if it is not what was
+   asked for, restore. A stamp must never outlive the cards it describes, and the way that
+   is guaranteed is that a board which cannot prove it painted correctly does not stay up
+   long enough to be stamped. */
+function _pvcMount(env, cards){
+  var want=_pvcKey(cards);
+  if(!want) return false;
+  env.paint(_pvcGridHTML(cards, env.chg));
+  if(env.read()!==want){ env.restore(); return false; }
+  return true;
+}
+
+/* Should these cards be on the screen at all? Asked by handing the payload's OWN board to
+   the unchanged gate above: if a page showing exactly these cards would not earn the
+   `ahead` stamp — stale, expired, wrong `rel`, undated — then the cards must not be
+   painted either. Cards without a stamp is the same lie as a stamp without cards, told
+   the other way round, so both halves pass through one decision. */
+function _pvcWanted(s, now, refused){
+  if(!s||typeof s!=='object') return null;
+  var cards=_pvcCards(s.board);
+  if(!cards) return null;
+  if(refused&&String(s.generated_at||'')===refused) return null;
+  var q=_bsQualify(s, _pvcKey(cards), now);
+  if(!q||q.rel!=='ahead') return null;
+  return cards;
+}
+/* WL1-PROVCARD-CONTRACT-END */
+
 /* The identity of the board the reader is actually looking at: the ordered data-ticker
    values of every card in the grid. Read off the DOM, not off a baked claim, so it
-   describes what is on the screen no matter how it got there. */
+   describes what is on the screen no matter how it got there — which is why it reads the
+   VISIBLE grid: while the provisional board is up the nightly grid is still in the
+   document, hidden, and the cards a reader cannot see are not the board they are looking
+   at. This is also the readback the mount is verified against, so it must never be able to
+   describe two grids at once. */
 function _bsDomTickers(){
   if(!_bsPanel) return '';
-  var els=_bsPanel.querySelectorAll('.nbgrid .pvcard[data-ticker]'), out=[], i;
+  var els=_bsPanel.querySelectorAll('.nbgrid:not([hidden]) .pvcard[data-ticker]'), out=[], i;
   for(i=0;i<els.length;i++) out.push(els[i].getAttribute('data-ticker')||'');
   return out.join('|');
 }
@@ -18453,12 +18729,121 @@ function _bsApply(rel, note, label){
   if(window.upgradeHelpIcons) window.upgradeHelpIcons(_bsPanel);
 }
 
+/* ── W-L1d: the DOM half of the mount ────────────────────────────────────────────
+   The nightly grid is HIDDEN and kept, never emptied and never written into (§10.5:
+   replaced as a unit, restored as a unit). Every displaced thing is remembered in one
+   object, so teardown is a list of assignments that cannot half-finish and cannot invent
+   a state the page was never in. */
+var _pvcOn=false, _pvcStamp='', _pvcRefused='', _pvcSaved=null;
+
+function _pvcPaint(html){
+  var night=_bsPanel?_bsPanel.querySelector('.nbgrid[data-showmore-rows]'):null;
+  if(!night||!night.parentNode) return;
+  var bar=night.nextElementSibling, g, nb;
+  if(!(bar&&bar.classList&&bar.classList.contains('sm-bar'))) bar=null;
+  var trk=document.getElementById('board-track-toggle');
+  _pvcSaved={ night:night, bar:bar, trk:trk,
+              trkParent:trk?trk.parentNode:null, trkNext:trk?trk.nextSibling:null,
+              filt:document.getElementById('us-stage-filter'),
+              vt:document.getElementById('us-st-view-toggle'),
+              sub:document.getElementById('us-board-sub'),
+              fn:_bsPanel.querySelector('.pb-fn'),
+              stagef:_bsPanel.getAttribute('data-stagef'),
+              table:_bsPanel.classList.contains('st-table-mode'), grid:null };
+  night.hidden=true;
+  if(bar) bar.hidden=true;
+  if(_pvcSaved.filt) _pvcSaved.filt.hidden=true;
+  if(_pvcSaved.vt) _pvcSaved.vt.hidden=true;
+  /* THE TWO PROSE SLOTS GO TOO, and this is the part most likely to be "restored" by a
+     later reader as over-reach, so: both of them DESCRIBE THE NIGHTLY BOARD, and while
+     tonight's cards are up both descriptions are false of what is on the screen.
+       · the subtitle counts the nightly rows ("9 shown") and reads out a dot legend
+         ("green dot = entry open") for a lifecycle rail these cards do not draw;
+       · the footnote is the priority formula "for ordering this board" — this board is
+         not ordered by it — plus the green-glow featured shelf and its 12-name cap,
+         and there is no featured cohort here at all.
+     Neither is deleted or reworded; both come back untouched on teardown, and the honest
+     replacement is already one hover away, on the note line's own `?`: "this is a
+     shortlist, not the ranked board — order, scores and buy zones land with the overnight
+     pass". Hiding a true sentence about a different board beats leaving it to be read as
+     a description of this one. */
+  if(_pvcSaved.sub) _pvcSaved.sub.hidden=true;
+  if(_pvcSaved.fn) _pvcSaved.fn.hidden=true;
+  /* a stage filter left armed would keep hiding a .sm-bar that is now counting a
+     different board; the toggle's own buttons are untouched, so restoring the attribute
+     restores agreement too */
+  if(_pvcSaved.stagef) _bsPanel.setAttribute('data-stagef','all');
+  if(_pvcSaved.table) _bsPanel.classList.remove('st-table-mode');
+  /* a NEW grid element rather than new children in the old one: show-more is idempotent
+     per element (data-smInit) and closes over the children it saw at init, so re-using
+     the nightly grid would leave a bar counting cards that are no longer in it */
+  g=document.createElement('div');
+  g.className='nbgrid'; g.setAttribute('data-showmore-rows','3'); g.setAttribute('data-provboard','1');
+  g.innerHTML=html;
+  night.parentNode.insertBefore(g, night);
+  _pvcSaved.grid=g;
+  if(window.initShowMore) window.initShowMore();
+  nb=g.nextElementSibling;
+  if(trk&&nb&&nb.classList&&nb.classList.contains('sm-bar')) nb.insertBefore(trk, nb.firstChild);
+  /* live.js re-queries the document on every tick, so these pills WOULD be found on their
+     own — in up to 60 seconds. One nudge paints them now instead, so an evening card never
+     sits next to a nightly one showing a fresher price than it does. */
+  if(window.LiveQuotes&&window.LiveQuotes.refresh) try{ window.LiveQuotes.refresh(); }catch(e){}
+}
+
+function _pvcTeardown(){
+  var sv=_pvcSaved, nb;
+  _pvcSaved=null; _pvcOn=false; _pvcStamp='';
+  if(!sv) return;
+  if(sv.trk&&sv.trkParent&&sv.trk.parentNode!==sv.trkParent)
+    sv.trkParent.insertBefore(sv.trk, sv.trkNext&&sv.trkNext.parentNode===sv.trkParent?sv.trkNext:null);
+  if(sv.grid){
+    nb=sv.grid.nextElementSibling;
+    if(nb&&nb.classList&&nb.classList.contains('sm-bar')&&nb.parentNode) nb.parentNode.removeChild(nb);
+    if(sv.grid.parentNode) sv.grid.parentNode.removeChild(sv.grid);
+  }
+  if(sv.night) sv.night.hidden=false;
+  if(sv.bar) sv.bar.hidden=false;
+  if(sv.filt) sv.filt.hidden=false;
+  if(sv.vt) sv.vt.hidden=false;
+  if(sv.sub) sv.sub.hidden=false;
+  if(sv.fn) sv.fn.hidden=false;
+  if(sv.stagef) _bsPanel.setAttribute('data-stagef', sv.stagef);
+  if(sv.table) _bsPanel.classList.add('st-table-mode');
+}
+
+function _pvcEnv(){
+  return { paint:_pvcPaint, read:_bsDomTickers, restore:_pvcTeardown,
+           /* MEASURED off the nightly cards, not assumed: whether this board's quote pill
+              carries a live-change sibling is a per-board opt-in that may or may not have
+              shipped yet, and the evening board must look like the morning board either
+              way round. Read before anything is hidden, while they are still on screen. */
+           chg: !!(_bsPanel&&_bsPanel.querySelector('.nbgrid .pvcard .nb-chg[data-sym]')) };
+}
+
 /* Glue only. Anything refused by _bsQualify restores exactly what the nightly render
    said — a payload that stops qualifying must never leave a stale flip behind. */
 function _bsRender(){
   if(!_bsPanel||!_bsSsr) return;
-  var q=_bsQualify((_plvData&&typeof _plvData==='object')?_plvData.board_state:null,
-                   _bsDomTickers(), Date.now());
+  var s=(_plvData&&typeof _plvData==='object')?_plvData.board_state:null, now=Date.now(), born;
+  /* 1 — THE CARDS COME FIRST, and the DOM is settled before anything is stamped. Asking
+     `_bsQualify` before a pending teardown would let it answer about a grid that is on its
+     way out, and the stamp would land over the board that replaced it. */
+  var cards=_pvcWanted(s, now, _pvcRefused);
+  if(cards){
+    born=String(s.generated_at||'');
+    if(!(_pvcOn&&_pvcStamp===born)){
+      if(_pvcOn) _pvcTeardown();               /* a new payload replaces as a unit */
+      if(_pvcMount(_pvcEnv(), cards)){ _pvcOn=true; _pvcStamp=born; }
+      /* a payload that could not be painted correctly is not tried again — retrying it
+         every 120s would flicker the board between two states forever */
+      else _pvcRefused=born;
+    }
+  }else if(_pvcOn){ _pvcTeardown(); }
+  /* 2 — and only now, what board is the reader actually looking at? After a teardown the
+     answer is the nightly grid again, which does not match the payload, so the stamp
+     falls back to whatever the nightly render itself said. */
+  var q=_bsQualify(s, _bsDomTickers(), now);
   if(!q){ _bsApply(_bsSsr.rel, _bsSsr.note, null); return; }
   /* An `ahead` board with no note of its own must NOT keep the nightly receipt: that
      receipt describes last night's reconciliation, and printing it under a "tonight's
