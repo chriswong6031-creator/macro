@@ -98,6 +98,7 @@
       "if": {"properties": {"operational": {"const": true}}},
       "then": {
         "properties": {
+          "listing_state": {"const": "present_in_snapshot"},
           "pit_basis": {"const": "live_captured"},
           "completion_receipt": {"$ref": "#/$defs/completionReceipt"},
           "measurement_time": {"$ref": "#/$defs/utc"},

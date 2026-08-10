@@ -29,11 +29,30 @@ CompletionKind = Literal["listing_snapshot", "sec_registrant_map"]
 COMPLETION_RECEIPT_SCHEMA = "symbol_directory.completion_receipt.v1"
 COMPLETION_RECEIPT_PROFILE = "symbol_directory.operational_capture.v1"
 COMPLETION_RECEIPT_PRODUCER = "collectors.symbol_directory.SymbolDirectoryAdapter"
-COMPLETION_RECEIPT_PRODUCER_VERSION = "symbol_directory.collector.2026-08-10.v2"
+COMPLETION_RECEIPT_PRODUCER_VERSION = "symbol_directory.collector.2026-08-10.v3"
 
 NASDAQ_LISTED_SOURCE_ID = "nasdaq_trader.nasdaqlisted"
 OTHER_LISTED_SOURCE_ID = "nasdaq_trader.otherlisted"
 SEC_TICKERS_SOURCE_ID = "sec.company_tickers"
+
+# Versioned completeness floors derived from the 24 tracked daily snapshots
+# ending 2026-08-10.  Observed post-dedupe source ranges were 5,554--5,584
+# nasdaqlisted and 7,461--7,530 otherlisted; SPY's zero-based otherlisted
+# position was 6,168--6,224.  These lower bounds retain at least 10% headroom
+# for honest roster drift while failing closed on a structurally valid but
+# materially truncated response (including a historical-order prefix ending
+# before SPY).  A legitimate breach requires an explicit reviewed
+# profile/producer revision; it must never mint operational absence evidence
+# silently.
+NASDAQ_LISTED_ARTIFACT_MIN_ROWS = 5_000
+OTHER_LISTED_ARTIFACT_MIN_ROWS = 6_500
+SEC_TICKERS_ARTIFACT_MIN_ROWS = 1
+
+_SOURCE_ARTIFACT_ROW_FLOORS = {
+    NASDAQ_LISTED_SOURCE_ID: NASDAQ_LISTED_ARTIFACT_MIN_ROWS,
+    OTHER_LISTED_SOURCE_ID: OTHER_LISTED_ARTIFACT_MIN_ROWS,
+    SEC_TICKERS_SOURCE_ID: SEC_TICKERS_ARTIFACT_MIN_ROWS,
+}
 
 _MAX_RECEIPT_BYTES = 512 * 1024
 _MAX_ARTIFACT_BYTES = 256 * 1024 * 1024
@@ -189,10 +208,16 @@ def build_symbol_directory_completion_receipt(
 ) -> dict[str, Any]:
     """Build and validate a receipt for an already-durable new artifact."""
 
+    if kind == "listing_snapshot" and len(pre_dedupe_spy_occurrences) != 1:
+        raise ReceiptValidationError(
+            "operational listing receipt requires exactly one SPY occurrence"
+        )
+
     artifact_bytes = artifact_path.read_bytes()
     frame = pd.read_parquet(artifact_path)
     artifact_key = _artifact_key(kind, observation_date)
     row_floor = 8_000 if kind == "listing_snapshot" else 1
+    artifact_source_rows = _artifact_source_row_counts(kind, frame)
 
     diagnostics: dict[str, Any] = {
         "kind": kind,
@@ -260,7 +285,12 @@ def build_symbol_directory_completion_receipt(
             "duplicate_occurrences": duplicate_occurrences,
             "duplicate_key_count": duplicate_key_count,
             "source_row_counts": [
-                {"source_id": source_id, "parsed_rows": rows}
+                {
+                    "source_id": source_id,
+                    "parsed_rows": rows,
+                    "artifact_rows": artifact_source_rows.get(source_id, 0),
+                    "minimum_artifact_rows": _SOURCE_ARTIFACT_ROW_FLOORS[source_id],
+                }
                 for source_id, rows in source_row_counts
             ],
         },
@@ -500,6 +530,20 @@ def _artifact_key(kind: CompletionKind, observation_date: str) -> str:
     return f"{lane}/{observation_date}.parquet"
 
 
+def _artifact_source_row_counts(
+    kind: CompletionKind, frame: pd.DataFrame
+) -> dict[str, int]:
+    """Return artifact-verifiable post-dedupe row counts for each source."""
+
+    if kind == "sec_registrant_map":
+        return {SEC_TICKERS_SOURCE_ID: len(frame)}
+    counts = frame["source"].value_counts().to_dict()
+    return {
+        NASDAQ_LISTED_SOURCE_ID: int(counts.get("nasdaqlisted", 0)),
+        OTHER_LISTED_SOURCE_ID: int(counts.get("otherlisted", 0)),
+    }
+
+
 def _validate_clocks(value: dict[str, Any]) -> None:
     started = _parse_canonical_utc(
         value["clocks"]["collector_started_at"], field="clocks.collector_started_at"
@@ -532,7 +576,8 @@ def _validate_clocks(value: dict[str, Any]) -> None:
 
 def _validate_completeness(value: dict[str, Any], frame: pd.DataFrame) -> None:
     completeness = value["completeness"]
-    source_rows = [item["parsed_rows"] for item in completeness["source_row_counts"]]
+    source_row_counts = completeness["source_row_counts"]
+    source_rows = [item["parsed_rows"] for item in source_row_counts]
     if sum(source_rows) != completeness["pre_dedupe_rows"]:
         raise ReceiptValidationError("source row counts do not sum to pre_dedupe_rows")
     if completeness["post_dedupe_rows"] != len(frame):
@@ -549,11 +594,35 @@ def _validate_completeness(value: dict[str, Any], frame: pd.DataFrame) -> None:
     if completeness["post_dedupe_rows"] < completeness["row_floor"]:
         raise ReceiptValidationError("artifact does not satisfy the profile row floor")
     source_ids = [source["source_id"] for source in value["sources"]]
-    count_ids = [item["source_id"] for item in completeness["source_row_counts"]]
+    count_ids = [item["source_id"] for item in source_row_counts]
     if source_ids != count_ids:
         raise ReceiptValidationError(
             "source_row_counts order/identity does not match sources"
         )
+    kind = cast(CompletionKind, value["artifact"]["kind"])
+    actual_artifact_rows = _artifact_source_row_counts(kind, frame)
+    if sum(item["artifact_rows"] for item in source_row_counts) != len(frame):
+        raise ReceiptValidationError(
+            "source artifact row counts do not sum to post_dedupe_rows"
+        )
+    for item in source_row_counts:
+        source_id = item["source_id"]
+        if item["minimum_artifact_rows"] != _SOURCE_ARTIFACT_ROW_FLOORS[source_id]:
+            raise ReceiptValidationError(
+                f"source artifact row floor is not canonical: {source_id}"
+            )
+        if item["artifact_rows"] != actual_artifact_rows[source_id]:
+            raise ReceiptValidationError(
+                f"source artifact row count does not match parquet: {source_id}"
+            )
+        if item["parsed_rows"] < item["artifact_rows"]:
+            raise ReceiptValidationError(
+                f"parsed source rows are below artifact rows: {source_id}"
+            )
+        if item["artifact_rows"] < item["minimum_artifact_rows"]:
+            raise ReceiptValidationError(
+                f"source artifact rows do not satisfy completeness floor: {source_id}"
+            )
 
 
 def _validate_artifact_semantics(value: dict[str, Any], frame: pd.DataFrame) -> None:
@@ -578,16 +647,10 @@ def _validate_artifact_semantics(value: dict[str, Any], frame: pd.DataFrame) -> 
                 "listing artifact contains an unknown source label"
             )
         spy = frame[frame["symbol"] == "SPY"]
-        if len(spy) > 1:
+        if len(spy) != 1:
             raise ReceiptValidationError(
-                "listing artifact contains more than one SPY row"
+                "operational listing receipt requires exactly one artifact SPY row"
             )
-        if spy.empty:
-            if occurrences:
-                raise ReceiptValidationError(
-                    "listing receipt reports SPY but the artifact is SPY-absent"
-                )
-            return
         if len(occurrences) != 1:
             raise ReceiptValidationError(
                 "listing artifact contains SPY but its pre-dedupe diagnostic is absent"
