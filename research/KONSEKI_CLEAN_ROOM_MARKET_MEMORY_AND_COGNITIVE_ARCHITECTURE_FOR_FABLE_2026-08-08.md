@@ -811,13 +811,43 @@ Automatic quarantine/demotion on stale evidence, OOD/coverage breach, calibratio
 
 ## 11. PIT Wave 1: concrete owner map and acceptance tests
 
+### 11.0 W1A implementation checkpoint (2026-08-10)
+
+W1A starts the temporal spine without pretending that historical replay or
+trusted source federation already exists. It adds the frozen JSON Schema, an
+immutable bounded file store, a concrete exact `AsKnownAtReader`, a sole capture
+CLI, and authenticated private/no-store exact-query and context-ID reads.
+`context_id` and the SHA-256 of the exact packet bytes are independently bound.
+A hash-addressed complete generation plus atomically advanced `HEAD.json` makes
+a proven exact miss distinguishable from an unavailable or partially published
+store. There is no nearest/latest/recompute fallback.
+
+Admission is deliberately narrower than the complete Wave 1 plan:
+
+- only exact RFC3339 `operational_pit` packets captured within 15 minutes of
+  their cutoff are accepted;
+- all 18 features must be explicitly missing until trusted domain adapters can
+  authenticate the cited component bytes and publication clocks;
+- capture receipts state that source and identity artifacts are not yet
+  authenticated and that the packet is ineligible for training or promotion;
+- public reconstruction, date-only uncertainty, historical identity,
+  corporate actions/OCC resolution, labels, replay, UI, and source adapters
+  remain deferred;
+- no packet is committed merely to demonstrate the mechanism, and Market
+  Memory still never writes the options episode, H+60 outcome, board, or Prophet
+  ledgers.
+
+This is a go-forward capture/read **spine**, not completion of the Historical
+Experience Simulator and not evidence-authoritative PIT history.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
 
 - `engine/neuralweb/market_memory.py` — W0 composition, `as_known_at` schema, validator, `AsKnownAtReader` protocol, canonical domains/authority.
 - `tests/test_market_memory.py` — clock, source, missingness, tamper, label, OI/EOD leakage tests.
-- `app/market_memory.py` — current-context API only.
+- `app/market_memory.py` — current-context API plus W1A authenticated exact
+  reads; no request-time capture or reconstruction.
 - `templates/market_memory.html.j2` + `site/market_memory.*` — current-context UI with survivor-bias/PIT disclosure.
 
 Existing truth owners that Wave 1 must read rather than replace:
@@ -838,7 +868,8 @@ Wave 1 owned additions, kept in the current Neural Web read namespace:
 - `engine/neuralweb/market_memory_replay.py` — explicit actual-output, reconstructed-PIT, and counterfactual modes.
 - `scripts/capture_market_memory_context.py` — append-only actual-output packet capture with content hashes; one packet writer.
 - `data/neuralweb/market_memory/contexts/` — content-addressed derived packets, registered in `config/synapse.yml`/`docs/SIGNAL_BUS.md` only when the artifact is real.
-- `app/market_memory.py` v2 routes — authenticated requested-as-of read; no label co-mingling.
+- `app/market_memory.py` W1A routes — authenticated exact requested-as-of read;
+  no label co-mingling.
 - `tests/test_market_memory_pit.py` — vintage, identity, cutoff, missingness, one-writer, and immutability fixtures.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
@@ -878,11 +909,19 @@ Options integration extends the existing one-writer paths. The options program's
 - canonical typed temporal contract;
 - clean-room/architecture handoff.
 
-### W1 — temporal spine
+### W1A — immutable go-forward spine
+
+- frozen JSON Schema and exact packet validation;
+- bounded create-once objects/receipts plus complete generation/HEAD;
+- sole contemporaneous missing-only capture writer;
+- exact authenticated reads with no fallback;
+- explicit unauthenticated-source, no-training, no-promotion status.
+
+### W1B — trusted temporal federation and replay
 
 - identity/membership/corporate-action service;
 - append-only source receipts and vintages;
-- actual-output snapshot capture begins immediately;
+- trusted actual-output snapshot capture;
 - as-known-at feature projection;
 - macro/regime, technical, breadth, and one options-source availability pilot;
 - date/session timestamp-uncertainty envelope plus multi-cutoff sensitivity replay;
