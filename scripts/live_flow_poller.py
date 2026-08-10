@@ -923,11 +923,11 @@ def _load_oi_prev(root: str, session_date: str) -> object | None:
             session - timedelta(days=1)
         )
         for _ in range(5):
-            chain = ts.chain(str(d_prev), root.upper(), store=store)
-            if not chain.empty and "open_interest" in chain.columns:
+            oi = ts.oi_for_date(str(d_prev), root.upper(), store=store)
+            if not oi.empty and "open_interest" in oi.columns:
                 cols = [c for c in ("expiration", "strike", "right", "open_interest")
-                        if c in chain.columns]
-                out = chain[cols].dropna(subset=["open_interest"])
+                        if c in oi.columns]
+                out = oi[cols].dropna(subset=["open_interest"])
                 out.attrs["oi_vintage"] = d_prev.isoformat()
                 return out
             d_prev = nyse_calendar.last_session_on_or_before(
@@ -937,6 +937,90 @@ def _load_oi_prev(root: str, session_date: str) -> object | None:
     except Exception as e:  # noqa: BLE001
         log.debug("poller: oi_prev failed for %s: %s", root, e)
         return None
+
+
+def _peak_rss_bytes() -> int:
+    """Return the process lifetime high-water RSS in bytes."""
+    value = int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    # macOS reports bytes; Linux reports KiB.
+    if sys.platform.startswith("linux"):
+        value *= 1024
+    return value
+
+
+def _current_rss_bytes() -> int | None:
+    """Return current resident bytes without adding a runtime dependency.
+
+    Linux exposes the value through ``/proc``.  On macOS, ``proc_pidinfo`` gives
+    the same resident-size counter without spawning ``ps`` on every phase probe.
+    Unsupported hosts return ``None``; telemetry must never disturb the lane.
+    """
+    try:
+        if sys.platform.startswith("linux"):
+            statm = Path("/proc/self/statm").read_text(encoding="ascii").split()
+            if len(statm) >= 2:
+                return int(statm[1]) * int(os.sysconf("SC_PAGE_SIZE"))
+            return None
+        if sys.platform == "darwin":
+            import ctypes  # noqa: PLC0415
+
+            class _ProcTaskInfo(ctypes.Structure):
+                _fields_ = [
+                    ("virtual_size", ctypes.c_uint64),
+                    ("resident_size", ctypes.c_uint64),
+                    ("total_user", ctypes.c_uint64),
+                    ("total_system", ctypes.c_uint64),
+                    ("threads_user", ctypes.c_uint64),
+                    ("threads_system", ctypes.c_uint64),
+                    ("policy", ctypes.c_int32),
+                    ("faults", ctypes.c_int32),
+                    ("pageins", ctypes.c_int32),
+                    ("cow_faults", ctypes.c_int32),
+                    ("messages_sent", ctypes.c_int32),
+                    ("messages_received", ctypes.c_int32),
+                    ("syscalls_mach", ctypes.c_int32),
+                    ("syscalls_unix", ctypes.c_int32),
+                    ("csw", ctypes.c_int32),
+                    ("threadnum", ctypes.c_int32),
+                    ("numrunning", ctypes.c_int32),
+                    ("priority", ctypes.c_int32),
+                ]
+
+            libproc = ctypes.CDLL("/usr/lib/libproc.dylib")
+            proc_pidinfo = libproc.proc_pidinfo
+            proc_pidinfo.argtypes = [
+                ctypes.c_int, ctypes.c_int, ctypes.c_uint64,
+                ctypes.c_void_p, ctypes.c_int,
+            ]
+            proc_pidinfo.restype = ctypes.c_int
+            info = _ProcTaskInfo()
+            # PROC_PIDTASKINFO = 4 (libproc.h).
+            read_n = proc_pidinfo(
+                os.getpid(), 4, 0, ctypes.byref(info), ctypes.sizeof(info),
+            )
+            if read_n == ctypes.sizeof(info):
+                return int(info.resident_size)
+    except Exception:  # noqa: BLE001 — observability is strictly fail-soft
+        return None
+    return None
+
+
+def _log_rss_phase(phase: str, *, cycle_n: int | None = None) -> tuple[int | None, int | None]:
+    """Emit one bounded, machine-readable current/peak RSS phase sample."""
+    try:
+        current = _current_rss_bytes()
+        peak = _peak_rss_bytes()
+    except Exception as exc:  # noqa: BLE001 — telemetry cannot break the poller
+        log.debug("poller: RSS phase telemetry failed phase=%s: %s", phase, exc)
+        return None, None
+    log.info(
+        "poller: rss phase=%s cycle=%s current_rss_bytes=%s peak_rss_bytes=%s",
+        phase,
+        cycle_n if cycle_n is not None else "-",
+        current if current is not None else "unavailable",
+        peak if peak is not None else "unavailable",
+    )
+    return current, peak
 
 
 # ── surface greek OI cache (Lane G) ────────────────────────────────────────────────
@@ -1780,6 +1864,7 @@ def run_cycle(
     forced_full_day: bool = False,  # True when --date override forces full_day regardless of probe
     unusual_baseline: dict | None = None,  # flow.unusual_baseline/v1 artifact; None = fall back to heuristic
     event_stager=None,
+    cycle_n: int | None = None,  # observability only; never enters signal/state clocks
 ) -> tuple[dict, dict, dict, dict, dict]:
     """Run one poll cycle.  Returns (feed_data, heat_data, meta_data, updated_day_state, tide_day_state).
 
@@ -1811,6 +1896,7 @@ def run_cycle(
         etf_anchors_set = set(etf_anchors)
 
     cycle_t0 = time.perf_counter()
+    _log_rss_phase("pre_fetch", cycle_n=cycle_n)
 
     # FIX 2 — compute per-root start_time for time_window mode
     # For full_day mode start_time is always None (pull full day; dedup handles idempotency)
@@ -1892,6 +1978,7 @@ def run_cycle(
             observed_at = _utc_now_iso()
             fetch_results[r] = (calls_df, puts_df, observed_at)
             requests_count += 2  # two calls per root (call + put)
+    _log_rss_phase("post_fetch", cycle_n=cycle_n)
 
     # Process each root
     for root in roots:
@@ -2054,8 +2141,11 @@ def run_cycle(
         del calls_df, puts_df, result
         fetch_results[root] = (None, None, None)  # release DataFrame references
 
+    _log_rss_phase("post_oi_process", cycle_n=cycle_n)
+
     # Periodic GC after processing all roots (Item 8)
     gc.collect()
+    _log_rss_phase("post_gc", cycle_n=cycle_n)
 
     # 24h retention trim
     retention_h = int(cfg.get("retention_hours", 24))
@@ -2578,6 +2668,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 forced_full_day=bool(args.date),
                 unusual_baseline=unusual_baseline,
                 event_stager=None,
+                cycle_n=cycle_n,
             )
             # Transaction boundary: the post-cycle engine state and exact fixed-clock
             # events become durable together before the append-only learning stage.
@@ -2794,14 +2885,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         except Exception as _rs_err:  # noqa: BLE001
             log.debug("poller: run_status write failed (non-fatal): %s", _rs_err)
 
-        # Item 8 — peak-RSS logging (>2 GB triggers a meta note).
+        # Item 8 — bounded pre-publication RSS telemetry and existing >2 GB alarm.
         try:
-            rss_bytes = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-            # macOS: ru_maxrss is in bytes; Linux: kilobytes.
-            import platform as _plat  # noqa: PLC0415
-            if _plat.system() == "Linux":
-                rss_bytes *= 1024
-            if rss_bytes > RSS_WARN_BYTES:
+            _current_rss, rss_bytes = _log_rss_phase(
+                "pre_publication", cycle_n=cycle_n,
+            )
+            if rss_bytes is not None and rss_bytes > RSS_WARN_BYTES:
                 log.warning(
                     "poller: cycle #%d peak RSS %.1f GB exceeds 2 GB threshold",
                     cycle_n, rss_bytes / (1024 ** 3),
@@ -2972,6 +3061,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                            R2_PREFIX + f"archive/{hour_key}.json")
                 last_archive_write = now_ts
                 _prune_archive(s3, bucket, older_than_hours=48)
+
+        _log_rss_phase("post_publication", cycle_n=cycle_n)
 
         if args.once:
             log.info("poller: --once flag set — exiting after one cycle")

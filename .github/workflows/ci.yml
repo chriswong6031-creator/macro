@@ -435,7 +435,9 @@ on:
       - "tests/test_build_options_structure_intraday.py"
       - "scripts/live_flow_poller.py"
       - "engine/live_flow.py"
+      - "engine/thetadata_store.py"
       - "tests/test_live_flow.py"
+      - "tests/test_thetadata_store.py"
       # W0a-B chain-snapshot producer authority: strict per-bucket receipts,
       # source installer, governed schema, adversarial suite, and ops contract.
       - "engine/chain_snapshot_completion.py"

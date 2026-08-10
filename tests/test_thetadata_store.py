@@ -7,6 +7,7 @@ Fixture store: tests/fixtures/thetadata_store/
 Hand-computable values are documented inline so any off-by-one in the oi[t-1]
 shift or ΔOI computation is immediately detectable.
 """
+import logging
 import sys
 from pathlib import Path
 
@@ -109,6 +110,97 @@ def test_chain_no_lookahead_in_chain():
     oi02 = df02["open_interest"].sum()
     oi03 = df03["open_interest"].sum()
     assert oi03 > oi02
+
+
+# --------------------------------------------------------------------------- #
+# oi_for_date() — narrow PIT reader for long-lived intraday processes          #
+# --------------------------------------------------------------------------- #
+
+def test_oi_for_date_projects_filters_and_bypasses_broad_cache(monkeypatch):
+    from engine import thetadata_store as ts
+
+    seen: list[tuple[Path, dict]] = []
+    real_read = pd.read_parquet
+
+    def tracked_read(path, *args, **kwargs):
+        seen.append((Path(path), dict(kwargs)))
+        return real_read(path, *args, **kwargs)
+
+    cache_before = {key: id(value) for key, value in ts._PARQUET_CACHE.items()}
+    monkeypatch.setattr(pd, "read_parquet", tracked_read)
+
+    out = ts.oi_for_date("2019-01-03", "spy", store=_store())
+
+    expected_columns = [
+        "root", "expiration", "strike", "right", "date", "open_interest",
+    ]
+    assert list(out.columns) == expected_columns
+    assert not out.empty
+    assert out["date"].unique().tolist() == ["2019-01-03"]
+    assert len(seen) == 1
+    path, kwargs = seen[0]
+    assert path == FIXTURE_STORE / "oi" / "SPY" / "2019.parquet"
+    assert kwargs["columns"] == expected_columns
+    assert kwargs["filters"] == [
+        ("date", "==", pd.Timestamp("2019-01-03")), ("root", "==", "SPY"),
+    ]
+    assert {key: id(value) for key, value in ts._PARQUET_CACHE.items()} == cache_before
+
+
+def test_oi_for_date_repeated_multi_root_reads_do_not_mutate_cache():
+    from engine import thetadata_store as ts
+
+    cache_before = {key: id(value) for key, value in ts._PARQUET_CACHE.items()}
+    for _ in range(2):
+        assert not ts.oi_for_date("2019-01-02", "SPY", store=_store()).empty
+        assert not ts.oi_for_date("2019-01-03", "AAPL", store=_store()).empty
+    assert {key: id(value) for key, value in ts._PARQUET_CACHE.items()} == cache_before
+
+
+@pytest.mark.parametrize("bad_date", [
+    "2019-01-03T00:00:00", "20190103", "2019-1-03", "2019-02-30",
+    pd.Timestamp("2019-01-03"),
+])
+def test_oi_for_date_requires_a_real_canonical_date(bad_date):
+    from engine.thetadata_store import oi_for_date
+
+    with pytest.raises(ValueError, match="canonical YYYY-MM-DD"):
+        oi_for_date(bad_date, "SPY", store=_store())
+
+
+@pytest.mark.parametrize(("date_str", "root"), [
+    ("2019-01-03", "MSFT"),
+    ("2019-01-01", "SPY"),
+    ("2099-01-03", "SPY"),
+])
+def test_oi_for_date_missing_root_year_or_date_has_stable_empty_shape(date_str, root):
+    from engine.thetadata_store import oi_for_date
+
+    out = oi_for_date(date_str, root, store=_store())
+    assert out.empty
+    assert list(out.columns) == [
+        "root", "expiration", "strike", "right", "date", "open_interest",
+    ]
+
+
+def test_oi_for_date_defensively_dedups_selected_rows(tmp_path, caplog):
+    from engine.thetadata_store import oi_for_date
+
+    path = tmp_path / "oi" / "SPY" / "2026.parquet"
+    path.parent.mkdir(parents=True)
+    row = {
+        "root": "SPY", "expiration": "2026-09-18", "strike": 700.0,
+        "right": "C", "date": pd.Timestamp("2026-08-07"),
+        "open_interest": 123,
+    }
+    pd.DataFrame([row, row]).to_parquet(path, index=False)
+
+    with caplog.at_level(logging.WARNING):
+        out = oi_for_date("2026-08-07", "SPY", store=tmp_path)
+
+    assert len(out) == 1
+    assert out.iloc[0]["open_interest"] == 123
+    assert "dropped 1 full-row duplicates on point-in-time load" in caplog.text
 
 
 # --------------------------------------------------------------------------- #

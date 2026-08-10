@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Callable
 
@@ -56,6 +57,14 @@ log = logging.getLogger(__name__)
 # typical backtests (tens of roots) it is comfortably under 1 GB.  Call
 # clear_parquet_cache() to release all frames after a batch run.
 _PARQUET_CACHE: dict[str, pd.DataFrame] = {}
+
+# The live poller needs only one session's prior-day OI.  Keep that narrow
+# contract explicit so it cannot accidentally grow back into chain()'s three
+# full-year tiers.  The order is also the stable public return shape.
+_OI_COLUMNS = (
+    "root", "expiration", "strike", "right", "date", "open_interest",
+)
+_CANONICAL_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
 def clear_parquet_cache() -> None:
@@ -283,6 +292,72 @@ def universe(date: str | None = None, store: str | Path | None = None) -> list[s
         if f.exists():
             result.append(r)
     return result
+
+
+def oi_for_date(date: str, root: str,
+                store: str | Path | None = None) -> pd.DataFrame:
+    """Point-in-time OI rows for one exact ``(date, root)`` without broad caching.
+
+    This is the live-safe narrow reader.  It opens only
+    ``oi/{ROOT}/{YEAR}.parquet``, projects the six OI contract columns at read
+    time, and applies an exact timestamp predicate before normalising the small
+    selected frame.  It deliberately bypasses ``_load_parquets`` and never reads
+    or mutates ``_PARQUET_CACHE``: a long-lived intraday process must not retain
+    full-year EOD/OI/greeks frames merely to obtain prior-session OI.
+
+    Defensive full-row dedup remains in force for pre-2026-07-05 parquets.  A
+    missing root, year, date, or malformed file returns the stable empty shape;
+    partial historical stores are normal while backfill is in progress.
+    """
+    if not isinstance(date, str) or _CANONICAL_DATE_RE.fullmatch(date) is None:
+        raise ValueError("date must be canonical YYYY-MM-DD")
+    try:
+        stamp = pd.Timestamp(date)
+    except Exception as exc:  # noqa: BLE001 — normalise parser errors to the public contract
+        raise ValueError("date must be a real canonical YYYY-MM-DD date") from exc
+    if stamp.date().isoformat() != date:
+        raise ValueError("date must be a real canonical YYYY-MM-DD date")
+    date_str = stamp.date().isoformat()
+    root_key = root.upper()
+    path = store_root(store) / "oi" / root_key / f"{stamp.year}.parquet"
+    if not path.is_file():
+        return pd.DataFrame(columns=_OI_COLUMNS)
+
+    try:
+        frame = pd.read_parquet(
+            path,
+            columns=list(_OI_COLUMNS),
+            filters=[("date", "==", stamp), ("root", "==", root_key)],
+        )
+    except Exception as exc:  # noqa: BLE001 — partial/corrupt store degrades to absent OI
+        log.debug("skip %s: %s", path, exc)
+        return pd.DataFrame(columns=_OI_COLUMNS)
+
+    if frame.empty:
+        return pd.DataFrame(columns=_OI_COLUMNS)
+
+    # Re-prove the exact date after the parquet predicate.  This is both a
+    # defensive engine-compatibility fence and the canonical string date shape
+    # used by the rest of this store API.
+    frame = _normalise_date(frame)
+    frame = frame[
+        (frame["date"] == date_str)
+        & (frame["root"].astype(str).str.upper() == root_key)
+    ].copy()
+    if frame.empty:
+        return pd.DataFrame(columns=_OI_COLUMNS)
+
+    n_before = len(frame)
+    frame = frame.drop_duplicates().reset_index(drop=True)
+    n_dropped = n_before - len(frame)
+    if n_dropped > 0:
+        log.warning(
+            "thetadata_store: oi/%s/%s — dropped %d full-row duplicates on "
+            "point-in-time load (%d → %d rows); run "
+            "scripts/repair_thetadata_dedup.py --apply to fix the parquet on disk",
+            root_key, path.name, n_dropped, n_before, len(frame),
+        )
+    return frame.loc[:, list(_OI_COLUMNS)]
 
 
 def chain(date: str, root: str,
