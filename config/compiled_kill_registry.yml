@@ -622,6 +622,13 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'The adjusted-price (Yahoo-plane) CN event tape as exact-legal-limit AUTHORITY, and the withdrawn W1 rebuild artifacts in either vintage (71,692 Codex / 71,463 Claude): reconstructed limit bands, completeness manifest, the withdrawn onset/continuation measurements, and the withdrawn 5,352-row forward seed'
+    key: KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT
+    verdict: 'STOP-SHIP by ruling — Yahoo history stays split-adjusted even with `auto_adjust=False` (rebase seam documented in `collectors/_stock_ohlc.py`) and the detectors used ties-to-even rounding vs the exchange half-up rule; correcting rounding cannot repair an adjusted input plane. Nothing from these artifacts may rank, gate, size, alert, trade, or establish numerical strategy authority; recovery/re-land lanes must NOT restore them (a good-faith re-land was commissioned and halted 2026-08-10 precisely because this row did not exist). SCOPE: kills the LEGAL-LIMIT claim and the withdrawn artifacts only — display-tier pattern research on tolerant bar-derived detections with the limitation stamped stays lawful (W-P0 standing pattern: re-derive events from `china_stocks_raw`, any tape as cross-check only), and the search space stays open. REOPEN PATH: unadjusted TuShare `daily` × vendor `stk_limit`, integer-cent equality + half-up validation, PIT completeness receipts, per `research/CN_TUSHARE_FULL_A_SPINE_CONTRACT_2026-08-08.md` + the eligibility overlay'
+    source: '`research/CN_LIMIT_ALPHA_SOL_ADJUSTED_PRICE_STOP_SHIP_2026-08-09.md`; #5059 pared squash `dbf7454f314` + its salvage disposition (`CN_LIMIT_DATA_HEALS_2026-08-08.md` on main); reconciliation-ledger §3/§6 amendments (2026-08-10)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Ticker-cluster bootstrap CIs without time control'
     key: LAW-TIME-CLUSTERED-CI
     verdict: 'FORBIDDEN estimator — anti-conservative, effective N = months'

@@ -62,6 +62,16 @@ SPEC for the exact-plane event rebuild (their §7 integer-cent taxonomy + stk_li
 (d) final event authority = the TuShare exact-cent plane, post-backfill. Exploratory delta
 work (which repair classes move which W1–W3 numbers) is sanctioned as display-tier ore.
 
+**AMENDED 2026-08-10 — the invalidation is PRESERVED (STOP-SHIP compliance).** Discovered
+post-ledger: `research/CN_LIMIT_ALPHA_SOL_ADJUSTED_PRICE_STOP_SHIP_2026-08-09.md` (on main)
+withdrew the adjusted-plane rebuild artifacts in BOTH vintages, and #5059 was deliberately
+PARED before merge (squash `dbf7454f314` landed the zt_pool half only, with an in-squash
+salvage disposition; the 71,463 tape never reached main and never will). Ruling (a) is
+VOID — there is no "healed working tape." The standing pattern is W-P0's: re-derive events
+from `china_stocks_raw` with the tolerant detector, use any tape as cross-check only,
+stamp the adjusted-basis limitation. Rulings (b)/(c)/(d) stand. Registry row:
+`DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT`.
+
 ## §4 Universe truth — F3 upgraded from threat to measured fact
 
 Codex quantified what my receipts only stamped: the 1,842-name store covers **35.37%** of
@@ -88,7 +98,11 @@ the exact-cent grade recorded BESIDE it once the exact plane lands (never blende
 Both stacks seeded live predictions for entry session **2026-08-10**: Claude 100 rows
 (onset_v1, #5055, tolerant-grade contract) and Codex **5,352 rows** (three model versions,
 preserved seed, hash-attested). Ruling: grade BOTH Monday night, separately, per their own
-registered contracts. The advancer: **adopt the Codex engine**
+registered contracts. **AMENDED 2026-08-10 (STOP-SHIP compliance): grade the CLAUDE ledger
+only.** The Codex seed was withdrawn by its own lane's ruling
+(`DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT`) — it is preserved for archaeology, never graded
+into the program record; grading a withdrawn instrument would merge withdrawn results into
+the new plane, which the STOP-SHIP doc explicitly forbids. The advancer: **adopt the Codex engine**
 (`engine/cn_limit_alpha_ledger.py` + `scripts/advance_cn_limit_alpha_ledger.py`, preserved
 branch — it already implements stable prediction identity, exact-session grading, no-fill
 semantics, keep-first contradiction detection) with their two mandated fixes (attested
