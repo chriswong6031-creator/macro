@@ -183,6 +183,11 @@ data/edgar/sue_deep_closes.parquet
 # Summary JSON (breakdown_events_summary.json) IS committed (RUL-P10 path b).
 data/research/breakdown_events.parquet
 
+# TOPA phase-0 (top-anatomy): panel/feature caches + episode tape — Mac-local,
+# regenerable from massive_stock_day + price-ladder rungs (family top_anatomy_p0).
+# The small vintage-stamped summary JSON (top_anatomy_p0_summary.json) IS committed.
+data/research/top_anatomy_p0/
+
 # Admin dashboard: local-only secrets / GA4 service-account keys (never commit)
 admin/.env
 admin/secrets/
