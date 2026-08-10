@@ -631,6 +631,18 @@ def test_matching_counts_zero_control_cases_instead_of_hiding_them():
     assert diag["n_dropped_no_control"] == 1 and diag["n_matched"] == 0
 
 
+def test_matching_buckets_never_split_identical_values_by_row_order():
+    """Tied gates are one economic value, not artificial arm/order quantiles."""
+    f = pd.DataFrame({
+        "quarter": ["2022Q1"] * 12,
+        "r126": [1.0] * 12,
+    })
+    out = ta._bucket(f, "r126", 5, "b_r126")
+    assert out.notna().all()
+    assert out.nunique() == 1
+    assert out.iloc[0] == 0
+
+
 def _episode_delta_frame(n: int = 120, **planted) -> pd.DataFrame:
     """An episode-level Δ frame: one row per episode, keyed on its peak date."""
     peaks = pd.bdate_range("2022-01-03", periods=n, freq="7D")
@@ -763,7 +775,7 @@ def test_top_ruler_on_a_hand_built_episode():
     fires = pd.DataFrame(False, index=idx, columns=["T"])
     fires.loc[idx[2], "T"] = True      # 100 -> +100.00% remaining, 4 sessions early
     fires.loc[idx[5], "T"] = True      # 195 -> +  2.56% remaining, 1 session early
-    r = ta.top_ruler(fires, episodes, close, fwd_horizon=2)
+    r = ta.top_ruler(fires, episodes, close, fwd_horizon=2, b=50)
     assert r["n_fires"] == 2
     # per-name median of {1.0000, 0.0256}
     assert r["median_remaining_upside"] == pytest.approx((1.0 + (200.0 / 195.0 - 1.0)) / 2,
@@ -783,8 +795,21 @@ def test_top_ruler_prices_a_late_warning_worse_than_an_early_one():
         "end": idx[10], "peak_date": idx[6], "peak_close": 200.0}])
     early = pd.DataFrame(False, index=idx, columns=["T"]); early.loc[idx[1], "T"] = True
     late = pd.DataFrame(False, index=idx, columns=["T"]); late.loc[idx[5], "T"] = True
-    assert (ta.top_ruler(early, episodes, close)["median_remaining_upside"]
-            > ta.top_ruler(late, episodes, close)["median_remaining_upside"])
+    assert (ta.top_ruler(early, episodes, close, b=0)["median_remaining_upside"]
+            > ta.top_ruler(late, episodes, close, b=0)["median_remaining_upside"])
+
+
+def test_top_ruler_share_is_within_name_mean_not_boolean_median():
+    idx = _cal(8)
+    path = [100.0, 110.0, 120.0, 150.0, 180.0, 195.0, 200.0, 190.0]
+    close = pd.DataFrame({"T": pd.Series(path, index=idx)})
+    episodes = pd.DataFrame([{
+        "segment": "T", "ticker": "T", "episode_id": "T|ep", "start": idx[0],
+        "end": idx[-1], "peak_date": idx[6], "peak_close": 200.0}])
+    fires = pd.DataFrame(False, index=idx, columns=["T"])
+    fires.loc[[idx[0], idx[1], idx[5]], "T"] = True
+    r = ta.top_ruler(fires, episodes, close, b=0)
+    assert r["share_within_peak_price"] == pytest.approx(1.0 / 3.0)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -876,6 +901,44 @@ def test_equal_weight_index_is_rebased_and_composition_proof():
     # a level jump in ONE of two names moves the median return only on that bar
     assert eqw.iloc[24] == pytest.approx(eqw.iloc[0], rel=1e-12)
     assert eqw.iloc[-1] == pytest.approx(eqw.iloc[25], rel=1e-12)
+
+
+def test_relative_return_features_use_literal_cross_sectional_medians():
+    idx = _cal(300)
+    c = pd.Series(10.0 * np.exp(np.arange(300) * 0.004), index=idx)
+    bars = {"T": _bars(c.to_numpy(), idx)}
+    eqw = pd.Series(1.0, index=idx)
+    cross = pd.DataFrame({"r21": 0.07, "r63": 0.19}, index=idx)
+    d = idx[-1]
+    f = ta.feature_library(
+        bars, eqw, {"T": [d]}, cross_sectional_returns=cross)
+    assert f.loc[0, "E1f_xr63"] == pytest.approx(f.loc[0, "A2_r63"] - 0.19)
+    assert f.loc[0, "E2f_xr21"] == pytest.approx(f.loc[0, "A1_r21"] - 0.07)
+
+
+def test_b6_streak_is_bounded_inside_the_twenty_one_session_window():
+    idx = _cal(80)
+    close = np.arange(10.0, 90.0)  # 79 consecutive up days
+    f = ta.feature_library({"T": _bars(close, idx)}, pd.Series(1.0, index=idx),
+                           {"T": [idx[-1]]})
+    assert f.loc[0, "B6_max_up_streak21"] == 21
+
+
+def test_cross_sectional_median_returns_are_same_day_and_eligibility_masked():
+    idx = _cal(70)
+    close = pd.DataFrame({
+        "A": np.linspace(100, 170, 70),
+        "B": np.linspace(100, 135, 70),
+        "C": np.linspace(100, 107, 70),
+    }, index=idx)
+    eligible = pd.DataFrame(True, index=idx, columns=close.columns)
+    eligible.loc[idx[-1], "C"] = False
+    x = ta.cross_sectional_median_returns(close, eligible, windows=(63,))
+    expected = np.median([
+        close.loc[idx[-1], "A"] / close.loc[idx[-64], "A"] - 1.0,
+        close.loc[idx[-1], "B"] / close.loc[idx[-64], "B"] - 1.0,
+    ])
+    assert x.loc[idx[-1], "r63"] == pytest.approx(expected)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

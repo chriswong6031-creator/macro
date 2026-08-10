@@ -74,14 +74,13 @@ conservative, documented here, and reported upward rather than re-pinned)
     literally, with a `peak_window_censored` flag set when [peak, peak+126] is
     truncated, so censored SURVIVED episodes are never silently pooled with
     sealed ones.
-9.  RS cross-sections: `E1f`/`E2f` are computed against the supplied equal-weight
-    median index's own r63/r21 (return-of-the-median-index), not the
-    cross-sectional median of individual r63s. The index itself compounds the
-    per-day CROSS-SECTIONAL MEDIAN DAILY RETURN of that day's PIT-eligible names,
-    rebased to 1.0 at the panel's first session — a composition-change-proof
-    construction of "per-day median cumulative-return index". `rs_line = c /
-    index` is rebased to 1.0 at each segment's first bar; every E feature is a
-    ratio, an argmax lag, or a log slope, so the rebasing constant cancels.
+9.  RS cross-sections follow the two distinct frozen formulas literally:
+    `E1f`/`E2f` subtract the same-day cross-sectional median of individual r63/r21
+    values, while `E3f`–`E5f` use `rs_line = c / eqw_index`. The index compounds
+    the per-day cross-sectional median DAILY RETURN of that day's PIT-eligible
+    names and is rebased to 1.0 at the panel's first session. `rs_line` is rebased
+    at each segment's first bar; every downstream RS feature is invariant to that
+    constant.
 10. `feature_library` returns one row per requested (segment, day) with one
     column per feature — long over observations, wide over the 36 features.
     Coverage nulls are preserved as NaN and never imputed.
@@ -141,7 +140,8 @@ __all__ = [
     "MIN_FINITE_CONTROLS", "MIN_EPISODE_MONTHS", "E1B_EMBARGO_SESSIONS",
     "BOOTSTRAP_B", "FDR_Q", "FEATURES", "FEATURE_FAMILY", "FEATURE_DIRECTION",
     "FAMILY_NAMES", "segment_ticker", "identity_segment_bounds", "split_identity_segments",
-    "eligibility_mask", "equal_weight_median_index", "extended_mask", "extract_episodes",
+    "eligibility_mask", "equal_weight_median_index", "cross_sectional_median_returns",
+    "extended_mask", "extract_episodes",
     "race_labels", "episode_peaks", "feature_library", "matched_controls",
     "matched_deltas", "episode_deltas", "matched_delta_stats", "direction_tail",
     "top_ruler", "bh_fdr",
@@ -370,6 +370,28 @@ def _rolling_r2_on_t(y: np.ndarray, w: int) -> np.ndarray:
     syy = ((win - win.mean(axis=1, keepdims=True)) ** 2).sum(axis=1)
     with np.errstate(divide="ignore", invalid="ignore"):
         out[w - 1:] = np.where(syy > 0, (sxy ** 2) / (sxx * syy), np.nan)
+    return out
+
+
+def _rolling_max_true_run(a: np.ndarray, w: int) -> np.ndarray:
+    """Longest consecutive ``True`` run wholly inside each trailing window.
+
+    A cumulative streak cannot be rolled directly: when a 30-session up streak
+    enters a 21-session window, its global counter reads 30 even though the
+    longest run *inside that window* is 21.  This vectorized window scan keeps the
+    frozen B6 feature bounded by its declared 21-session lookback.
+    """
+    a = np.asarray(a, dtype=bool)
+    out = np.full(len(a), np.nan)
+    if len(a) < w:
+        return out
+    win = _win(a, w)
+    cur = np.zeros(len(win), dtype=np.int16)
+    best = np.zeros(len(win), dtype=np.int16)
+    for j in range(w):
+        cur = np.where(win[:, j], cur + 1, 0)
+        best = np.maximum(best, cur)
+    out[w - 1:] = best
     return out
 
 
@@ -801,9 +823,36 @@ def equal_weight_median_index(
     return (1.0 + med.fillna(0.0)).cumprod().rename("eqw_median_index")
 
 
+def cross_sectional_median_returns(
+    close_df: pd.DataFrame,
+    eligible: pd.DataFrame | None = None,
+    *,
+    windows: Sequence[int] = (21, 63),
+    min_names: int = 1,
+) -> pd.DataFrame:
+    """Same-day PIT medians of individual trailing returns for E1f/E2f.
+
+    The prereg distinguishes ``xr63 = r63 - median universe r63`` from the
+    equal-weight median *index* used to build ``rs_line``.  A return of that index
+    is generally not the median of individual multi-session returns, so callers
+    must carry both cross-sections.  Only names eligible on day ``d`` enter day
+    ``d``'s median; no future membership or bar is consulted.
+    """
+    out = pd.DataFrame(index=close_df.index)
+    mask = eligible.reindex_like(close_df).fillna(False) if eligible is not None else None
+    for w in windows:
+        r = close_df / close_df.shift(int(w)) - 1.0
+        if mask is not None:
+            r = r.where(mask)
+        n = r.notna().sum(axis=1)
+        out[f"r{int(w)}"] = r.median(axis=1, skipna=True).where(n >= min_names)
+    return out
+
+
 def _feature_frame(
     bars: pd.DataFrame,
     eqw: pd.Series | None,
+    cross_sectional_returns: pd.DataFrame | None,
     episodes: pd.DataFrame | None,
 ) -> pd.DataFrame:
     """Every §4.6 feature for ONE identity segment, at every bar it can be computed."""
@@ -848,12 +897,7 @@ def _feature_frame(
     f["B5_upday_rate21"] = (ret > 0).astype(float).where(ret.notna()) \
         .rolling(21, min_periods=21).mean()
     up = (ret > 0).to_numpy(dtype=bool)
-    streak = np.zeros(n, dtype=float)
-    run = 0
-    for i in range(n):
-        run = run + 1 if up[i] else 0
-        streak[i] = run
-    f["B6_max_up_streak21"] = pd.Series(streak, index=idx).rolling(21, min_periods=21).max()
+    f["B6_max_up_streak21"] = pd.Series(_rolling_max_true_run(up, 21), index=idx)
 
     # C. volatility structure
     ann = float(np.sqrt(252.0))
@@ -861,8 +905,8 @@ def _feature_frame(
     rv63 = lret.rolling(63, min_periods=63).std() * ann
     f["C1_rv21"] = rv21
     f["C2_rv21_over_rv63"] = rv21 / rv63.replace(0.0, np.nan)
-    down = lret.where(lret < 0)
-    upr = lret.where(lret > 0)
+    down = ret.where(ret < 0)
+    upr = ret.where(ret > 0)
     f["C3_semivol_ratio63"] = (down.rolling(63, min_periods=5).std()
                                / upr.rolling(63, min_periods=5).std().replace(0.0, np.nan))
     atr_pct = atr21 / c
@@ -896,7 +940,7 @@ def _feature_frame(
         vz = ((v - vbase) / v.rolling(252, min_periods=252).std().replace(0.0, np.nan))
         f["D5_corr21_volz_absret"] = vz.rolling(21, min_periods=21).corr(ret.abs())
         churn = ((v > 1.5 * vbase)
-                 & (ret.abs() < 0.5 * lret.rolling(63, min_periods=63).std()))
+                 & (ret.abs() < 0.5 * ret.rolling(63, min_periods=63).std()))
         f["D6_churn21"] = churn.astype(float).where(vbase.notna()) \
             .rolling(21, min_periods=21).mean()
     else:
@@ -910,8 +954,17 @@ def _feature_frame(
         rs = c / ew.replace(0.0, np.nan)
         first = rs.dropna()
         rs = rs / float(first.iloc[0]) if len(first) else rs   # rebased per name (cancels)
-        f["E1f_xr63"] = f["A2_r63"] - (ew / ew.shift(63) - 1.0)
-        f["E2f_xr21"] = f["A1_r21"] - (ew / ew.shift(21) - 1.0)
+        xret = cross_sectional_returns.reindex(idx) if cross_sectional_returns is not None \
+            else None
+        # Backward-compatible fallback is intentionally explicit: synthetic callers
+        # that supply only an index still get a PIT value, while the research harness
+        # always supplies the literal same-day medians pinned by §4.6.
+        med63 = (pd.to_numeric(xret["r63"], errors="coerce")
+                 if xret is not None and "r63" in xret else (ew / ew.shift(63) - 1.0))
+        med21 = (pd.to_numeric(xret["r21"], errors="coerce")
+                 if xret is not None and "r21" in xret else (ew / ew.shift(21) - 1.0))
+        f["E1f_xr63"] = f["A2_r63"] - med63
+        f["E2f_xr21"] = f["A1_r21"] - med21
         rs_lag = pd.Series(_lag_since_max(rs.to_numpy(dtype=float), 63), index=idx)
         f["E3f_rs_peak_lag"] = rs_lag
         c_lag = pd.Series(_lag_since_max(cv, 63), index=idx)
@@ -976,13 +1029,16 @@ def feature_library(
     asof_days: Mapping[str, Sequence] | pd.DataFrame,
     *,
     episodes: pd.DataFrame | None = None,
+    cross_sectional_returns: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """§4.6 — the 36 frozen features at exactly the requested (segment, day) points.
 
     ``ohlcv_by_ticker`` maps IDENTITY SEGMENT -> that segment's own bar frame
     (columns among open/high/low/close/volume). ``universe_median_index`` is the
     track's PIT equal-weight median index (see `equal_weight_median_index`);
-    ``asof_days`` is either a mapping segment -> dates or a frame with
+    ``cross_sectional_returns`` carries the same-day universe medians of r21/r63
+    used by E1f/E2f (from `cross_sectional_median_returns`); ``asof_days`` is
+    either a mapping segment -> dates or a frame with
     ``segment``/``date`` columns. ``episodes`` supplies the F-family's episode
     context; without it F1/F2/F5 are null rather than wrong.
 
@@ -1009,7 +1065,8 @@ def feature_library(
         bars = ohlcv_by_ticker.get(seg)
         if bars is None or len(bars) == 0 or len(days) == 0:
             continue
-        f = _feature_frame(bars.sort_index(), universe_median_index, eps_by_seg.get(seg))
+        f = _feature_frame(bars.sort_index(), universe_median_index,
+                           cross_sectional_returns, eps_by_seg.get(seg))
         sel = f.reindex(days)
         sel.insert(0, "date", sel.index)
         sel.insert(0, "ticker", segment_ticker(seg))
@@ -1027,10 +1084,23 @@ def feature_library(
 def _bucket(frame: pd.DataFrame, col: str, q: int, out: str) -> pd.Series:
     """Within-quarter quantile bucket; a degenerate quarter collapses to one bin."""
     def cut(s: pd.Series) -> pd.Series:
+        ans = pd.Series(np.nan, index=s.index, dtype=float)
+        finite = pd.to_numeric(s, errors="coerce").dropna()
+        if finite.empty:
+            return ans
+        if finite.nunique() == 1:
+            ans.loc[finite.index] = 0.0
+            return ans
         try:
-            return pd.qcut(s.rank(method="first"), q, labels=False, duplicates="drop")
+            # Cut the values themselves. Ranking with method="first" would split
+            # identical observations across bins based only on row/arm order, so a
+            # case and an economically identical control could become unmatchable.
+            ans.loc[finite.index] = pd.qcut(
+                finite, q, labels=False, duplicates="drop").astype(float)
+            return ans
         except ValueError:
-            return pd.Series(0, index=s.index)
+            ans.loc[finite.index] = 0.0
+            return ans
     return frame.groupby("quarter", sort=False)[col].transform(cut).rename(out)
 
 
@@ -1357,6 +1427,8 @@ def top_ruler(
     fwd_horizon: int = 63,
     peak_proximity: float = 0.05,
     time_proximity: int = 10,
+    b: int = BOOTSTRAP_B,
+    seed: int = 20260810,
 ) -> dict:
     """§2 wrong-ruler check: measure a fire set as a WARNING, not as a return.
 
@@ -1369,8 +1441,11 @@ def top_ruler(
     return against the all-EXT-days null.
 
     Every metric is computed PER BASE TICKER first and then pooled by median, so a
-    single heavily-fired name cannot carry the number. Report metrics only — no
-    test, no rank, no authority.
+    single heavily-fired name cannot carry the number. Shares use the within-name
+    mean of their boolean indicator (not its median) before the across-name median.
+    The reported intervals resample episode-peak calendar-month blocks, preserving
+    the prereg's per-name-first ruler. Report metrics only — no test, no rank, no
+    authority.
     """
     def _measure(mask: pd.DataFrame) -> pd.DataFrame:
         recs = []
@@ -1400,6 +1475,7 @@ def top_ruler(
                     recs.append({
                         "ticker": segment_ticker(col), "segment": col, "date": d,
                         "episode_id": ep["episode_id"],
+                        "peak_month": str(pd.Timestamp(pk_d).to_period("M")),
                         "remaining_upside": float(pk_c) / v[i] - 1.0,
                         "near_peak_price": bool(v[i] >= (1.0 - peak_proximity) * float(pk_c)),
                         "near_peak_time": bool(abs(pk - i) <= time_proximity),
@@ -1407,22 +1483,56 @@ def top_ruler(
                     })
         return pd.DataFrame(recs)
 
-    def _pooled(fr: pd.DataFrame, col: str) -> float:
+    def _pooled(fr: pd.DataFrame, col: str, *, share: bool = False) -> float:
         if fr.empty or col not in fr.columns:
             return float("nan")
-        per = fr.groupby("ticker")[col].median()
+        per = (fr.groupby("ticker")[col].mean() if share
+               else fr.groupby("ticker")[col].median())
         return float(per.median()) if len(per) else float("nan")
+
+    def _month_bootstrap(hit_fr: pd.DataFrame, null_fr: pd.DataFrame) -> dict:
+        """Paired episode-peak-month bootstrap of the four frozen ruler metrics."""
+        if b <= 0 or hit_fr.empty:
+            return {}
+        months = sorted(set(hit_fr.get("peak_month", ())) | set(null_fr.get("peak_month", ())))
+        if not months:
+            return {}
+        hit_by = {m: hit_fr[hit_fr["peak_month"] == m] for m in months}
+        null_by = ({m: null_fr[null_fr["peak_month"] == m] for m in months}
+                   if "peak_month" in null_fr else {m: pd.DataFrame() for m in months})
+        rng = np.random.default_rng(seed)
+        draws = {k: [] for k in (
+            "median_remaining_upside", "share_within_peak_price",
+            "share_within_peak_time", f"fwd_{fwd_horizon}_excess")}
+        for _ in range(int(b)):
+            pick = rng.choice(months, size=len(months), replace=True)
+            hs = pd.concat([hit_by[m] for m in pick], ignore_index=True)
+            ns = pd.concat([null_by[m] for m in pick], ignore_index=True) \
+                if not null_fr.empty else pd.DataFrame()
+            draws["median_remaining_upside"].append(_pooled(hs, "remaining_upside"))
+            draws["share_within_peak_price"].append(_pooled(hs, "near_peak_price", share=True))
+            draws["share_within_peak_time"].append(_pooled(hs, "near_peak_time", share=True))
+            fh, fn = _pooled(hs, "fwd_ret"), _pooled(ns, "fwd_ret")
+            draws[f"fwd_{fwd_horizon}_excess"].append(
+                fh - fn if np.isfinite(fh) and np.isfinite(fn) else np.nan)
+        out = {}
+        for key, vals in draws.items():
+            a = np.asarray(vals, dtype=float)
+            a = a[np.isfinite(a)]
+            out[f"{key}_ci"] = ([float(x) for x in np.percentile(a, [2.5, 97.5])]
+                                  if len(a) else [None, None])
+        return out
 
     hit = _measure(fires)
     null = _measure(ext_mask) if ext_mask is not None else pd.DataFrame()
     fwd_hit, fwd_null = _pooled(hit, "fwd_ret"), _pooled(null, "fwd_ret")
-    return {
+    result = {
         "n_fires": int(len(hit)),
         "n_fire_episodes": int(hit["episode_id"].nunique()) if not hit.empty else 0,
         "n_fire_names": int(hit["ticker"].nunique()) if not hit.empty else 0,
         "median_remaining_upside": _pooled(hit, "remaining_upside"),
-        "share_within_peak_price": _pooled(hit, "near_peak_price"),
-        "share_within_peak_time": _pooled(hit, "near_peak_time"),
+        "share_within_peak_price": _pooled(hit, "near_peak_price", share=True),
+        "share_within_peak_time": _pooled(hit, "near_peak_time", share=True),
         f"fwd_{fwd_horizon}_fires": fwd_hit,
         f"fwd_{fwd_horizon}_all_ext_null": fwd_null,
         f"fwd_{fwd_horizon}_excess": (fwd_hit - fwd_null
@@ -1430,4 +1540,8 @@ def top_ruler(
                                       else float("nan")),
         "n_null_days": int(len(null)),
         "null_median_remaining_upside": _pooled(null, "remaining_upside"),
+        "bootstrap_unit": "episode_peak_month",
+        "bootstrap_b": int(b),
     }
+    result.update(_month_bootstrap(hit, null))
+    return result

@@ -36,7 +36,9 @@
 
 {# ── signed percent, typographic minus. Figures only, never words. ── #}
 {% macro pc(x, dp=0) -%}
-{{ (('%+.' ~ dp ~ 'f') % ((x if x is not none else 0) * 100)) | replace('-', '−') }}%
+{%- if x is not defined or x is none -%}—{%- else -%}
+{{ (('%+.' ~ dp ~ 'f') % (x * 100)) | replace('-', '−') }}%
+{%- endif -%}
 {%- endmacro %}
 
 {# ═══════════════════════════════════════════════════════════════════════════
@@ -170,7 +172,7 @@
     <span class="nm"><span class="l-en">{{ r.name | default(r.ticker) }}</span><span class="l-zh">{{ r.name_zh | default(r.name | default(r.ticker)) }}</span></span>
   </div>
   <div class="c-gain">
-    <span class="fig{{ ' dn' if (r.r126 is not none and r.r126 < 0) else '' }}">{{ pc(r.r126) }}</span>
+    <span class="fig{{ ' dn' if (r.r126 is defined and r.r126 is not none and r.r126 < 0) else '' }}">{{ pc(r.r126) }}</span>
     <span class="cap">{{ t('in six months', '近六个月') }}</span>
   </div>
   <div class="c-sp">{{ spark(r.spark, r.episode_high) }}</div>
