@@ -7,9 +7,10 @@
   "source_delayed": false,
   "source_unknown": false,
   "source_basis": "panel_majority",
-  "source_mixed_vintage": false,
+  "source_mixed_vintage": true,
   "cadence": "nightly-EOD",
   "authority_tier": "display",
+  "selection_era": "anticipation-v1-2026-08-08",
   "gate_go": false,
   "plan_count": 137,
   "active_count": 115,
@@ -24,24 +25,857 @@
   "intake": {
     "sort_key": "us_prophet_v1 priority score desc, act_level desc, ticker asc",
     "mode": "lossless",
-    "reorigination_blocked": 1,
-    "reorigination_blocked_keys": [
-      "SOFI-BULL"
-    ],
-    "open_plan_keys": 88,
-    "admitted": 30,
-    "duplicate_id_blocked": 27,
-    "eligible_after_skips": 2,
+    "reorigination_blocked": 0,
+    "reorigination_blocked_keys": [],
+    "open_plan_keys": 90,
+    "admitted": 54,
+    "duplicate_id_blocked": 24,
+    "eligible_after_skips": 30,
     "cap": null,
     "cap_applied": false,
     "truncated": 0,
-    "validation_failed": 0,
-    "validation_failures": [],
-    "originated": 2,
+    "validation_failed": 30,
+    "validation_failures": [
+      {
+        "ticker": "BHP",
+        "id": "BHP-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "WBD",
+        "id": "WBD-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "RIO",
+        "id": "RIO-BULL-20260731",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "FN",
+        "id": "FN-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "UUUU",
+        "id": "UUUU-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+          "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+        ]
+      },
+      {
+        "ticker": "HP",
+        "id": "HP-BULL-20260731",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "DAN",
+        "id": "DAN-BULL-20260731",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "RGTI",
+        "id": "RGTI-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "GNL",
+        "id": "GNL-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "BIIB",
+        "id": "BIIB-BULL-20260731",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "HASI",
+        "id": "HASI-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "VAL",
+        "id": "VAL-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "CCJ",
+        "id": "CCJ-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+          "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+        ]
+      },
+      {
+        "ticker": "STZ",
+        "id": "STZ-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "URG",
+        "id": "URG-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+          "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+        ]
+      },
+      {
+        "ticker": "OKLO",
+        "id": "OKLO-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "HAYW",
+        "id": "HAYW-BULL-20260731",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "APG",
+        "id": "APG-BULL-20260731",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "SHEN",
+        "id": "SHEN-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+          "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+        ]
+      },
+      {
+        "ticker": "AGNT",
+        "id": "AGNT-BULL-20260406",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "EU",
+        "id": "EU-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "FBRT",
+        "id": "FBRT-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "HRMY",
+        "id": "HRMY-BULL-20260731",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "WFRD",
+        "id": "WFRD-BULL-20260731",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "ISRG",
+        "id": "ISRG-BULL-20260731",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "RES",
+        "id": "RES-BULL-20260805",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans",
+          "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+        ]
+      },
+      {
+        "ticker": "SBAC",
+        "id": "SBAC-BULL-20260731",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "MRNA",
+        "id": "MRNA-BULL-20260616",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "LECO",
+        "id": "LECO-BULL-20260731",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      },
+      {
+        "ticker": "DRI",
+        "id": "DRI-BULL-20260731",
+        "stage": "clock_provenance",
+        "errors": [
+          "us_standouts staleness.inputs.panel.mixed_vintage is true; mixed-vintage boards cannot originate plans"
+        ]
+      }
+    ],
+    "originated": 0,
     "unaccounted": 0,
     "lossless": true,
-    "all_survivors_originated": true,
-    "basis": "Admission filters and ranking are unchanged. Every admitted candidate that is neither a duplicate ID nor blocked by an open plan is attempted; there is no positional plan-origination cap. Any candidate that cannot produce a plan is listed under validation_failures. Featured-board, sector, alert and portfolio-risk controls are separate and unchanged."
+    "all_survivors_originated": false,
+    "selection_era": "anticipation-v1-2026-08-08",
+    "admitted_statuses": [
+      "bounce_wait",
+      "buy_now",
+      "hold",
+      "partial",
+      "wait_pullback"
+    ],
+    "admitted_directions": [
+      "caution",
+      "up"
+    ],
+    "buy_rows": 79,
+    "admitted_by_class": {
+      "patience": 30,
+      "confirmation": 24
+    },
+    "originated_by_class": {
+      "patience": 0,
+      "confirmation": 0,
+      "early_turn_starter": 0
+    },
+    "unknown_status": 0,
+    "unknown_status_values": [],
+    "refused_status": {
+      "buy_soon": 6
+    },
+    "refused_direction": {
+      "down": 2
+    },
+    "refused_no_entry_signal": 0,
+    "refused_band_low": 14,
+    "refused_tier": {
+      "T4": 3
+    },
+    "stale_basis_max": 3,
+    "stale_basis_skipped": [],
+    "zone_class_counts": {
+      "accumulate": 0,
+      "reset_band": 0,
+      "wait_reset": 0
+    },
+    "zone_conversion_classes": {
+      "washout": 0,
+      "pullback": 0
+    },
+    "zone_extension_unavailable": 0,
+    "wait_reset": [],
+    "early_turn_starters": [],
+    "leader_pullback_source": [],
+    "receipts": {
+      "considered": 79,
+      "planned": 0,
+      "passed": 79,
+      "open_now": 24,
+      "declined": 55,
+      "groups": [
+        {
+          "reason": "plan_not_built",
+          "en": "Cleared every check \u2014 no entry plan came together tonight",
+          "zh": "\u5404\u9879\u68c0\u67e5\u90fd\u901a\u8fc7 \u2014 \u4f46\u4eca\u665a\u6ca1\u80fd\u5f62\u6210\u5b8c\u6574\u8ba1\u5212",
+          "near": true,
+          "n": 30,
+          "names": [
+            {
+              "ticker": "BHP",
+              "name": "BHP Group (ADR)",
+              "score": 90.7,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "WBD",
+              "name": "Warner Bros Discovery Inc",
+              "score": 89.1,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "RIO",
+              "name": "Rio Tinto (ADR)",
+              "score": 88.8,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "FN",
+              "name": "Fabrinet",
+              "score": 86.3,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "UUUU",
+              "name": "Energy Fuels",
+              "score": 83.1,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "HP",
+              "name": "Helmerich & Payne, Inc.",
+              "score": 81.8,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "DAN",
+              "name": "Dana Incorporated",
+              "score": 81.4,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "RGTI",
+              "name": "Rigetti Computing",
+              "score": 81.2,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "GNL",
+              "name": "Global Net Lease, Inc.",
+              "score": 80.2,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "BIIB",
+              "name": "Biogen",
+              "score": 79.3,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "HASI",
+              "name": "Hannon Armstrong Sustainable Infrastructure Capital, Inc.",
+              "score": 79.3,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "VAL",
+              "name": "Valaris",
+              "score": 76.0,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "CCJ",
+              "name": "Cameco",
+              "score": 73.3,
+              "why": [
+                "plan_not_built"
+              ]
+            },
+            {
+              "ticker": "STZ",
+              "name": "Constellation Brands",
+              "score": 72.3,
+              "why": [
+                "plan_not_built"
+              ]
+            }
+          ]
+        },
+        {
+          "reason": "already_open",
+          "en": "Already has a plan running",
+          "zh": "\u5df2\u6709\u5728\u8dd1\u7684\u8ba1\u5212",
+          "near": true,
+          "n": 24,
+          "names": [
+            {
+              "ticker": "GPCR",
+              "name": "Structure Therapeutics",
+              "score": 90.6,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "ADAM",
+              "name": "Adamas Trust, Inc.",
+              "score": 81.3,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "BIDU",
+              "name": "Baidu (ADR)",
+              "score": 81.0,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "NGVT",
+              "name": "Ingevity, Corp.",
+              "score": 80.6,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "FCX",
+              "name": "Freeport Mcmoran Inc",
+              "score": 80.4,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "XPEL",
+              "name": "XPEL, Inc.",
+              "score": 79.9,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "WT",
+              "name": "WisdomTree Investments, Inc.",
+              "score": 79.6,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "MDB",
+              "name": "MongoDB",
+              "score": 79.3,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "NVDA",
+              "name": "Nvidia Corp",
+              "score": 78.3,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "CTS",
+              "name": "CTS Corporation",
+              "score": 75.1,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "UEC",
+              "name": "Uranium Energy",
+              "score": 75.0,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "UAL",
+              "name": "United Airlines Holdings",
+              "score": 71.3,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "TTC",
+              "name": "Toro",
+              "score": 69.0,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "FUL",
+              "name": "H.B. Fuller Company",
+              "score": 68.5,
+              "why": [
+                "already_open"
+              ]
+            }
+          ]
+        },
+        {
+          "reason": "not_ready",
+          "en": "Setting up, but the entry hasn't come",
+          "zh": "\u5f62\u6001\u5728\u8d70\uff0c\u5165\u573a\u70b9\u8fd8\u6ca1\u5230",
+          "near": true,
+          "n": 8,
+          "names": [
+            {
+              "ticker": "VSEC",
+              "name": "VSE Corporation",
+              "score": 82.2,
+              "why": [
+                "not_ready"
+              ]
+            },
+            {
+              "ticker": "ROIV",
+              "name": "Roivant Sciences",
+              "score": 82.0,
+              "why": [
+                "not_ready"
+              ]
+            },
+            {
+              "ticker": "SOFI",
+              "name": "SoFi Technologies",
+              "score": 64.0,
+              "why": [
+                "not_ready"
+              ]
+            },
+            {
+              "ticker": "ALG",
+              "name": "Alamo Group",
+              "score": 61.2,
+              "why": [
+                "not_ready"
+              ]
+            },
+            {
+              "ticker": "FSS",
+              "name": "Federal Signal Corporation",
+              "score": 57.6,
+              "why": [
+                "not_ready"
+              ]
+            },
+            {
+              "ticker": "GTES",
+              "name": "Gates Corporation",
+              "score": 54.5,
+              "why": [
+                "not_ready"
+              ]
+            },
+            {
+              "ticker": "OMC",
+              "name": "Omnicom Group",
+              "score": 34.8,
+              "why": [
+                "not_ready",
+                "grade_low"
+              ]
+            },
+            {
+              "ticker": "MSEX",
+              "name": "Middlesex Water Company",
+              "score": 15.2,
+              "why": [
+                "not_ready",
+                "grade_low"
+              ]
+            }
+          ]
+        },
+        {
+          "reason": "ran_too_far",
+          "en": "Ran too far \u2014 waiting for a pullback",
+          "zh": "\u6da8\u5f97\u592a\u6025 \u2014 \u7b49\u56de\u8c03",
+          "near": false,
+          "n": 10,
+          "names": [
+            {
+              "ticker": "IAG",
+              "name": "IAMGOLD",
+              "score": 66.2,
+              "why": [
+                "ran_too_far",
+                "conviction_low"
+              ]
+            },
+            {
+              "ticker": "M",
+              "name": "Macy's",
+              "score": 63.2,
+              "why": [
+                "ran_too_far",
+                "conviction_low"
+              ]
+            },
+            {
+              "ticker": "APH",
+              "name": "Amphenol Corp Cl A",
+              "score": 59.8,
+              "why": [
+                "ran_too_far",
+                "conviction_low"
+              ]
+            },
+            {
+              "ticker": "SKY",
+              "name": "Champion Homes, Inc.",
+              "score": 52.3,
+              "why": [
+                "ran_too_far",
+                "conviction_low"
+              ]
+            },
+            {
+              "ticker": "ANET",
+              "name": "Arista Networks Inc",
+              "score": 52.1,
+              "why": [
+                "ran_too_far",
+                "conviction_low"
+              ]
+            },
+            {
+              "ticker": "AIZ",
+              "name": "Assurant",
+              "score": 49.3,
+              "why": [
+                "ran_too_far",
+                "conviction_low"
+              ]
+            },
+            {
+              "ticker": "QNST",
+              "name": "QuinStreet, Inc.",
+              "score": 45.5,
+              "why": [
+                "ran_too_far",
+                "conviction_low"
+              ]
+            },
+            {
+              "ticker": "AMT",
+              "name": "American Tower Corp",
+              "score": 32.9,
+              "why": [
+                "ran_too_far",
+                "conviction_low"
+              ]
+            },
+            {
+              "ticker": "CL",
+              "name": "Colgate Palmolive Co",
+              "score": 26.0,
+              "why": [
+                "ran_too_far",
+                "grade_low",
+                "conviction_low"
+              ]
+            },
+            {
+              "ticker": "ELV",
+              "name": "Elevance Health Inc",
+              "score": 25.0,
+              "why": [
+                "ran_too_far",
+                "conviction_low"
+              ]
+            }
+          ]
+        },
+        {
+          "reason": "stood_down",
+          "en": "Standing aside for now",
+          "zh": "\u6682\u65f6\u56de\u907f",
+          "near": false,
+          "n": 1,
+          "names": [
+            {
+              "ticker": "TDS",
+              "name": "Telephone and Data Systems, Inc.",
+              "score": 39.7,
+              "why": [
+                "stood_down",
+                "conviction_low",
+                "pointing_down"
+              ]
+            }
+          ]
+        },
+        {
+          "reason": "grade_low",
+          "en": "Signal too weak to act on",
+          "zh": "\u4fe1\u53f7\u5f3a\u5ea6\u4e0d\u8db3\u4ee5\u884c\u52a8",
+          "near": false,
+          "n": 1,
+          "names": [
+            {
+              "ticker": "DHR",
+              "name": "Danaher Corp",
+              "score": 37.8,
+              "why": [
+                "grade_low"
+              ]
+            }
+          ]
+        },
+        {
+          "reason": "conviction_low",
+          "en": "No setup yet",
+          "zh": "\u6682\u65e0\u4e70\u70b9",
+          "near": false,
+          "n": 4,
+          "names": [
+            {
+              "ticker": "AEIS",
+              "name": "Advanced Energy",
+              "score": 95.7,
+              "why": [
+                "conviction_low"
+              ]
+            },
+            {
+              "ticker": "BC",
+              "name": "Brunswick",
+              "score": 90.2,
+              "why": [
+                "conviction_low"
+              ]
+            },
+            {
+              "ticker": "HCC",
+              "name": "Warrior Met Coal, Inc.",
+              "score": 83.9,
+              "why": [
+                "conviction_low"
+              ]
+            },
+            {
+              "ticker": "CWEN",
+              "name": "Clearway Energy, Inc. (Class C)",
+              "score": 39.6,
+              "why": [
+                "conviction_low"
+              ]
+            }
+          ]
+        },
+        {
+          "reason": "pointing_down",
+          "en": "Still heading down",
+          "zh": "\u65b9\u5411\u4ecd\u671d\u4e0b",
+          "near": false,
+          "n": 1,
+          "names": [
+            {
+              "ticker": "WMT",
+              "name": "Walmart Inc",
+              "score": 71.6,
+              "why": [
+                "pointing_down"
+              ]
+            }
+          ]
+        }
+      ],
+      "unmapped": 0,
+      "era": "anticipation-v1-2026-08-08",
+      "era_since_en": "8 Aug 2026",
+      "era_since_zh": "2026\u5e748\u67088\u65e5"
+    },
+    "leader_pullback_coverage": {
+      "map_tickers": 952,
+      "plans": 0,
+      "with_organ_state": 0,
+      "outside_organ_universe": 0,
+      "no_coverage_published": 0,
+      "licensed": 0
+    },
+    "legacy_shadow": {
+      "admitted": 30,
+      "would_have_planned": 0,
+      "cap": 12,
+      "rows_in_part": 30,
+      "authority": "none"
+    },
+    "basis": "Admission is a STATUS CLASS (ANTICIPATION A1): an entry status in admitted_statuses, a signal tone in admitted_directions, conviction band above low, and a T1-T3 signal tier. The prior act-level gate is frozen with zero authority and keeps accruing a legacy shadow ledger so the two selections can be compared on the same tape. Ranking is unchanged. Every admitted candidate that is neither a duplicate ID nor blocked by an open plan is attempted; there is no positional plan-origination cap. Any candidate that cannot produce a plan is listed under validation_failures. Every plan carries a structure-anchored entry zone; the disclosed entry price remains the point-in-time price-basis close. Featured-board, sector, alert and portfolio-risk controls are separate and unchanged."
   },
   "plan_integrity": {
     "correction_count": 373,
@@ -256,7 +1090,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "VSEC-BULL-20260805",
@@ -363,7 +1213,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "ROIV-BULL-20260805",
@@ -470,7 +1336,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "ADAM-BULL-20260626",
@@ -577,7 +1459,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "XPEL-BULL-20260805",
@@ -684,7 +1582,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "WT-BULL-20260710",
@@ -791,7 +1705,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "NGVT-BULL-20260731",
@@ -898,7 +1828,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "NVDA-BULL-20260805",
@@ -1005,7 +1951,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "FCX-BULL-20260731",
@@ -1112,7 +2074,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "MDB-BULL-20260731",
@@ -1219,7 +2197,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "SOUN-BULL-20260805",
@@ -1326,7 +2320,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CTS-BULL-20260805",
@@ -1433,7 +2443,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "UEC-BULL-20260731",
@@ -1540,7 +2566,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "UAL-BULL-20260805",
@@ -1647,7 +2689,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "TTC-BULL-20260731",
@@ -1754,7 +2812,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "FUL-BULL-20260805",
@@ -1861,7 +2935,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "AVGO-BULL-20260731",
@@ -1968,7 +3058,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "HD-BULL-20260807",
@@ -2075,7 +3181,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CMC-BULL-20260731",
@@ -2182,7 +3304,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "WS-BULL-20260731",
@@ -2289,7 +3427,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "SMR-BULL-20260731",
@@ -2396,7 +3550,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "APO-BULL-20260731",
@@ -2503,7 +3673,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "ALG-BULL-20260612",
@@ -2610,7 +3796,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "AMZN-BULL-20260731",
@@ -2717,7 +3919,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "AYI-BULL-20260731",
@@ -2824,7 +4042,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "ENR-BULL-20260731",
@@ -2931,7 +4165,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "FSS-BULL-20260728",
@@ -3038,7 +4288,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "RH-BULL-20260417",
@@ -3145,7 +4411,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "GTES-BULL-20260731",
@@ -3252,7 +4534,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "TNDM-BULL-20260624",
@@ -3342,7 +4640,23 @@
       "thesis": "TNDM \u2014 conviction 100/100 (high) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "TNDM \u2014 \u786e\u4fe1\u5ea6 100/100\uff08\u9ad8\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "APPF-BULL-20260626",
@@ -3446,7 +4760,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "PLTR-BULL-20260701",
@@ -3536,7 +4866,23 @@
       "thesis": "PLTR \u2014 conviction 90/100 (high) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Cautions: accounting warn; Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "PLTR \u2014 \u786e\u4fe1\u5ea6 90/100\uff08\u9ad8\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u8b66\u793a; \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CRM-BULL-20260706",
@@ -3573,14 +4919,14 @@
       "closed": false,
       "pulse": "34d \u00b7 triggered \u00b7 advancing cleanly",
       "pulse_zh": "34\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u987a\u5229\u63a8\u8fdb",
-      "management_confidence": 74.1,
+      "management_confidence": 74.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 192.74,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 74.1,
+        "management_confidence": 74.3,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -3630,7 +4976,23 @@
       "thesis": "CRM \u2014 conviction 87/100 (neutral) Entry grade: strong. Drivers: entry; quality. Cautions: Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "CRM \u2014 \u786e\u4fe1\u5ea6 87/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: entry; quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "PAHC-BULL-20260701",
@@ -3667,14 +5029,14 @@
       "closed": false,
       "pulse": "39d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "39\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 53.4,
+      "management_confidence": 52.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 34.29,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 53.4,
+        "management_confidence": 52.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -3724,7 +5086,23 @@
       "thesis": "PAHC \u2014 conviction 87/100 (neutral) Entry grade: solid. Drivers: entry. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "PAHC \u2014 \u786e\u4fe1\u5ea6 87/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: entry\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "PAHC-BULL-20260629",
@@ -3818,7 +5196,23 @@
       "thesis": "PAHC \u2014 conviction 86/100 (neutral) Entry grade: solid. Drivers: entry. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "PAHC \u2014 \u786e\u4fe1\u5ea6 86/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: entry\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "STEP-BULL-20260707",
@@ -3912,7 +5306,23 @@
       "thesis": "STEP \u2014 conviction 84/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "STEP \u2014 \u786e\u4fe1\u5ea6 84/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "SOFI-BULL-20260803",
@@ -3974,14 +5384,14 @@
       "closed": false,
       "pulse": "6d \u00b7 pre-trigger \u00b7 awaiting trigger",
       "pulse_zh": "6\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
-      "management_confidence": 64.1,
+      "management_confidence": 65.4,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 18.38,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 64.1,
+        "management_confidence": 65.4,
         "recommended_action": "wait",
         "components": {
           "validity": 100.0,
@@ -4041,7 +5451,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "GRAB-BULL-20260803",
@@ -4165,14 +5591,14 @@
       "closed": false,
       "pulse": "34d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "34\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 63.9,
+      "management_confidence": 64.8,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 265.21,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 63.9,
+        "management_confidence": 64.8,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -4222,7 +5648,23 @@
       "thesis": "ADBE \u2014 conviction 81/100 (neutral) Entry grade: light. Drivers: quality. Cautions: Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "ADBE \u2014 \u786e\u4fe1\u5ea6 81/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "INTU-BULL-20260706",
@@ -4316,7 +5758,23 @@
       "thesis": "INTU \u2014 conviction 81/100 (neutral) Entry grade: light. Drivers: entry; quality. Cautions: accounting watch; Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "INTU \u2014 \u786e\u4fe1\u5ea6 81/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: entry; quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8; \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "ENOV-BULL-20260703",
@@ -4353,14 +5811,14 @@
       "closed": false,
       "pulse": "37d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "37\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 54.3,
+      "management_confidence": 52.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 26.61,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 54.3,
+        "management_confidence": 52.3,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -4410,7 +5868,23 @@
       "thesis": "ENOV \u2014 conviction 80/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "MOS-BULL-20260709",
@@ -4504,7 +5978,23 @@
       "thesis": "MOS \u2014 conviction 80/100 (neutral) Entry grade: solid. Drivers: entry. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "MOS \u2014 \u786e\u4fe1\u5ea6 80/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: entry\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "ARES-BULL-20260709",
@@ -4594,7 +6084,23 @@
       "thesis": "ARES \u2014 conviction 79/100 (neutral) Entry grade: solid. Drivers: entry; quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CELH-BULL-20260525",
@@ -4631,14 +6137,14 @@
       "closed": false,
       "pulse": "76d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "76\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 44.5,
+      "management_confidence": 44.4,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 27.77,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 44.5,
+        "management_confidence": 44.4,
         "recommended_action": "wait",
         "components": {
           "validity": 23.5,
@@ -4698,7 +6204,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CELH-BULL-20260527",
@@ -4802,7 +6324,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "PI-BULL-20260703",
@@ -4839,14 +6377,14 @@
       "closed": false,
       "pulse": "37d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "37\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 58.0,
+      "management_confidence": 59.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 183.36,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 58.0,
+        "management_confidence": 59.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -4896,7 +6434,23 @@
       "thesis": "PI \u2014 conviction 79/100 (neutral) Entry grade: solid. Drivers: entry; quality; tailwind. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "PI-BULL-20260729",
@@ -4933,14 +6487,14 @@
       "closed": false,
       "pulse": "11d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "11\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 73.8,
+      "management_confidence": 74.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 183.36,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 73.8,
+        "management_confidence": 74.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -5000,7 +6554,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "PI-BULL-20260730",
@@ -5104,7 +6674,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "BSY-BULL-20260701",
@@ -5198,7 +6784,23 @@
       "thesis": "BSY \u2014 conviction 76/100 (neutral) Entry grade: solid. Drivers: entry; tailwind. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "BSY \u2014 \u786e\u4fe1\u5ea6 76/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: entry; tailwind\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "ENOV-BULL-20260706",
@@ -5292,7 +6894,23 @@
       "thesis": "ENOV \u2014 conviction 75/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "ENOV \u2014 \u786e\u4fe1\u5ea6 75/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "GPI-BULL-20260715",
@@ -5382,7 +7000,23 @@
       "thesis": "GPI \u2014 conviction 75/100 (neutral) Entry grade: strong. Cautions: earnings in 8d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "GPI \u2014 \u786e\u4fe1\u5ea6 75/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u6ce8\u610f\u4e8b\u9879: 8\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "QCOM-BULL-20260710",
@@ -5472,7 +7106,23 @@
       "thesis": "QCOM \u2014 conviction 75/100 (high) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "QCOM \u2014 \u786e\u4fe1\u5ea6 75/100\uff08\u9ad8\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "BIDU-BULL-20260731",
@@ -5653,7 +7303,23 @@
       "thesis": "EFX \u2014 conviction 73/100 (neutral) Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "EFX \u2014 \u786e\u4fe1\u5ea6 73/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "HLI-BULL-20260702",
@@ -5743,7 +7409,23 @@
       "thesis": "HLI \u2014 conviction 73/100 (neutral) Entry grade: strong. Drivers: quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "HLI \u2014 \u786e\u4fe1\u5ea6 73/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: quality\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "AZO-BULL-20260625",
@@ -5837,7 +7519,23 @@
       "thesis": "AZO \u2014 conviction 72/100 (neutral) Entry grade: strong. Cautions: Narrative basket (Consumer Discretionary (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "AZO \u2014 \u786e\u4fe1\u5ea6 72/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u6ce8\u610f\u4e8b\u9879: \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u975e\u5fc5\u9700\u6d88\u8d39\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "LMT-BULL-20260626",
@@ -5874,14 +7572,14 @@
       "closed": false,
       "pulse": "44d \u00b7 triggered \u00b7 advancing cleanly",
       "pulse_zh": "44\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u987a\u5229\u63a8\u8fdb",
-      "management_confidence": 76.8,
+      "management_confidence": 77.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 587.95,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 76.8,
+        "management_confidence": 77.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -5931,7 +7629,23 @@
       "thesis": "LMT \u2014 conviction 72/100 (neutral) Entry grade: strong. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "LMT \u2014 \u786e\u4fe1\u5ea6 72/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "MORN-BULL-20260716",
@@ -5968,14 +7682,14 @@
       "closed": false,
       "pulse": "24d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "24\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 70.6,
+      "management_confidence": 70.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 200.66,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 70.6,
+        "management_confidence": 70.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -6025,7 +7739,23 @@
       "thesis": "MORN \u2014 conviction 72/100 (neutral) Entry grade: light. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "MORN \u2014 \u786e\u4fe1\u5ea6 72/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "FDS-BULL-20260708",
@@ -6062,14 +7792,14 @@
       "closed": false,
       "pulse": "32d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "32\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 59.2,
+      "management_confidence": 60.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 285.57,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 59.2,
+        "management_confidence": 60.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -6119,7 +7849,23 @@
       "thesis": "FDS \u2014 conviction 71/100 (neutral) Entry grade: light. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "FDS \u2014 \u786e\u4fe1\u5ea6 71/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "NXST-BULL-20260629",
@@ -6156,14 +7902,14 @@
       "closed": false,
       "pulse": "41d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "41\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 58.3,
+      "management_confidence": 58.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 193.78,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 58.3,
+        "management_confidence": 58.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -6213,7 +7959,23 @@
       "thesis": "NXST \u2014 conviction 71/100 (high) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "NXST \u2014 \u786e\u4fe1\u5ea6 71/100\uff08\u9ad8\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "BDC-BULL-20260729",
@@ -6317,7 +8079,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "GPK-BULL-20260407",
@@ -6411,7 +8189,23 @@
       "thesis": "GPK \u2014 conviction 70/100 (high) Entry grade: strong. Cautions: accounting warn; parabolic \u2014 extended. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "GPK \u2014 \u786e\u4fe1\u5ea6 70/100\uff08\u9ad8\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u8b66\u793a; \u629b\u7269\u7ebf\u6025\u6da8 \u2014 \u8fc7\u70ed\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "UBER-BULL-20260623",
@@ -6501,7 +8295,23 @@
       "thesis": "UBER [TURN SIGNALED] \u2014 conviction 70/100 (neutral). Drivers: tailwind. Cautions: accounting watch. Entry grade: strong. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact.",
       "thesis_zh": "",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "HLI-BULL-20260630",
@@ -6538,14 +8348,14 @@
       "closed": true,
       "pulse": "closed \u00b7 stopped out",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u6b62\u635f\u79bb\u573a",
-      "management_confidence": 30.6,
+      "management_confidence": 30.4,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 129.0,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 30.6,
+        "management_confidence": 30.4,
         "recommended_action": "wait",
         "components": {
           "validity": 0.0,
@@ -6591,7 +8401,23 @@
       "thesis": "HLI \u2014 conviction 68/100 (neutral) Entry grade: strong. Drivers: quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "HLI \u2014 \u786e\u4fe1\u5ea6 68/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: quality\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "PATH-BULL-20260626",
@@ -6695,7 +8521,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "PRGO-BULL-20260702",
@@ -6785,7 +8627,23 @@
       "thesis": "PRGO \u2014 conviction 68/100 (neutral) Entry grade: solid. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "PRGO \u2014 \u786e\u4fe1\u5ea6 68/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "YELP-BULL-20260630",
@@ -6822,14 +8680,14 @@
       "closed": false,
       "pulse": "40d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "40\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 58.5,
+      "management_confidence": 59.7,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 25.56,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 58.5,
+        "management_confidence": 59.7,
         "recommended_action": "wait",
         "components": {
           "validity": 84.1,
@@ -6889,7 +8747,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "COIN-BULL-20260702",
@@ -6979,7 +8853,23 @@
       "thesis": "COIN [HOLD] \u2014 conviction 67/100 (neutral). Drivers: entry. Cautions: accounting watch; Narrative basket (Crypto & Digital Assets) is deteriorating \u2014 risk gate: trim / size down.. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no signal; display-tier artifact.",
       "thesis_zh": "",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "QCOM-BULL-20260709",
@@ -7069,7 +8959,23 @@
       "thesis": "QCOM \u2014 conviction 67/100 (constructive) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Cautions: accounting watch; Narrative basket (AI Semiconductors) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "APPF-BULL-20260625",
@@ -7106,14 +9012,14 @@
       "closed": false,
       "pulse": "45d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "45\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 66.2,
+      "management_confidence": 65.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 198.74,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 66.2,
+        "management_confidence": 65.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -7173,7 +9079,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CLF-BULL-20260724",
@@ -7277,7 +9199,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "FBRT-BULL-20260713",
@@ -7367,7 +9305,23 @@
       "thesis": "FBRT \u2014 conviction 64/100 (neutral) Entry grade: strong. Drivers: entry; tailwind. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "FBRT \u2014 \u786e\u4fe1\u5ea6 64/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: entry; tailwind\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "BDC-BULL-20260730",
@@ -7471,7 +9425,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CLF-BULL-20260727",
@@ -7508,14 +9478,14 @@
       "closed": false,
       "pulse": "13d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "13\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 66.0,
+      "management_confidence": 65.8,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 12.26,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 66.0,
+        "management_confidence": 65.8,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -7575,7 +9545,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "KMT-BULL-20260721",
@@ -7612,14 +9598,14 @@
       "closed": false,
       "pulse": "19d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "19\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 38.7,
+      "management_confidence": 36.8,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 33.13,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 38.7,
+        "management_confidence": 36.8,
         "recommended_action": "hold",
         "components": {
           "validity": 55.9,
@@ -7669,7 +9655,23 @@
       "thesis": "KMT \u2014 conviction 63/100 (constructive) Entry grade: strong. Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Cautions: Narrative basket (Industrial Distribution & Capital Goods) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "KMT \u2014 \u786e\u4fe1\u5ea6 63/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry\u3002 \u6ce8\u610f\u4e8b\u9879: \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u5de5\u4e1a\u5206\u9500\u4e0e\u8d44\u672c\u54c1\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "SFM-BULL-20260727",
@@ -7769,7 +9771,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "ARES-BULL-20260722",
@@ -7806,14 +9824,14 @@
       "closed": false,
       "pulse": "18d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "18\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 61.3,
+      "management_confidence": 61.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 136.85,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 61.3,
+        "management_confidence": 61.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -7873,7 +9891,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "BAH-BULL-20260724",
@@ -7910,14 +9944,14 @@
       "closed": false,
       "pulse": "16d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "16\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 62.7,
+      "management_confidence": 62.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 76.05,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 62.7,
+        "management_confidence": 62.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -7977,7 +10011,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CWK-BULL-20260724",
@@ -8081,7 +10131,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "LRN-BULL-20260605",
@@ -8171,7 +10237,23 @@
       "thesis": "LRN [HOLD] \u2014 conviction 62/100 (neutral). Drivers: quality. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact.",
       "thesis_zh": "",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "RITM-BULL-20260629",
@@ -8265,7 +10347,23 @@
       "thesis": "RITM [TURN SIGNALED] \u2014 conviction 62/100 (neutral). Drivers: entry. Cautions: accounting watch. Entry grade: strong. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact.",
       "thesis_zh": "",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CBOE-BULL-20260722",
@@ -8369,7 +10467,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "TEAM-BULL-20260724",
@@ -8473,7 +10587,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "EPAC-BULL-20260724",
@@ -8510,14 +10640,14 @@
       "closed": false,
       "pulse": "16d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "16\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 65.2,
+      "management_confidence": 66.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 37.72,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 65.2,
+        "management_confidence": 66.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -8577,7 +10707,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "MSFT-BULL-20260720",
@@ -8667,7 +10813,23 @@
       "thesis": "MSFT \u2014 conviction 60/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "MSFT \u2014 \u786e\u4fe1\u5ea6 60/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "NSSC-BULL-20260724",
@@ -8771,7 +10933,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "SONO-BULL-20260716",
@@ -8865,7 +11043,23 @@
       "thesis": "SONO \u2014 conviction 60/100 (constructive) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "SONO \u2014 \u786e\u4fe1\u5ea6 60/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry; quality\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CSR-BULL-20260729",
@@ -8902,14 +11096,14 @@
       "closed": false,
       "pulse": "11d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "11\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 55.7,
+      "management_confidence": 55.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 56.68,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 55.7,
+        "management_confidence": 55.3,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -8969,7 +11163,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "FLS-BULL-20260730",
@@ -9073,7 +11283,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "ARLO-BULL-20260724",
@@ -9177,7 +11403,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "GME-BULL-20260724",
@@ -9279,7 +11521,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "TEL-BULL-20260717",
@@ -9373,7 +11631,23 @@
       "thesis": "TEL \u2014 conviction 56/100 (constructive) Entry grade: strong. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; quality. Cautions: earnings in 1d \u2014 binary event, size down; Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "TEL \u2014 \u786e\u4fe1\u5ea6 56/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry; quality\u3002 \u6ce8\u610f\u4e8b\u9879: 1\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3; \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "JBLU-BULL-20260730",
@@ -9477,7 +11751,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "ROST-BULL-20260721",
@@ -9514,14 +11804,14 @@
       "closed": false,
       "pulse": "19d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "19\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 64.5,
+      "management_confidence": 64.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 255.23,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 64.5,
+        "management_confidence": 64.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -9571,7 +11861,23 @@
       "thesis": "ROST \u2014 conviction 55/100 (constructive) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "ROST \u2014 \u786e\u4fe1\u5ea6 55/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; quality\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "VIRT-BULL-20260618",
@@ -9675,7 +11981,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "OLED-BULL-20260724",
@@ -9779,7 +12101,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "SHOO-BULL-20260730",
@@ -9883,7 +12221,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "EQT-BULL-20260720",
@@ -9920,14 +12274,14 @@
       "closed": false,
       "pulse": "20d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 51.4,
+      "management_confidence": 51.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 51.69,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 51.4,
+        "management_confidence": 51.1,
         "recommended_action": "hold",
         "components": {
           "validity": 91.0,
@@ -9987,7 +12341,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "LPG-BULL-20260723",
@@ -10091,7 +12461,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "HSY-BULL-20260723",
@@ -10128,14 +12514,14 @@
       "closed": false,
       "pulse": "17d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "17\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 57.9,
+      "management_confidence": 59.3,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 182.35,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 57.9,
+        "management_confidence": 59.3,
         "recommended_action": "wait",
         "components": {
           "validity": 92.3,
@@ -10195,7 +12581,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "MS-BULL-20260709",
@@ -10285,7 +12687,23 @@
       "thesis": "MS \u2014 conviction 52/100 (constructive) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Cautions: accounting watch; earnings in 5d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "LPG-BULL-20260724",
@@ -10322,14 +12740,14 @@
       "closed": false,
       "pulse": "16d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "16\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 58.2,
+      "management_confidence": 58.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 45.76,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 58.2,
+        "management_confidence": 58.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -10389,7 +12807,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "PINS-BULL-20260227",
@@ -10426,14 +12860,14 @@
       "closed": false,
       "pulse": "163d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "163\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 61.7,
+      "management_confidence": 61.5,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 23.68,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 61.7,
+        "management_confidence": 61.5,
         "recommended_action": "wait",
         "components": {
           "validity": 89.3,
@@ -10493,7 +12927,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CASY-BULL-20260727",
@@ -10597,7 +13047,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CDW-BULL-20260727",
@@ -10701,7 +13167,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "AVNT-BULL-20260724",
@@ -10738,14 +13220,14 @@
       "closed": false,
       "pulse": "16d \u00b7 triggered \u00b7 advancing cleanly",
       "pulse_zh": "16\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u987a\u5229\u63a8\u8fdb",
-      "management_confidence": 79.5,
+      "management_confidence": 80.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 45.69,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 79.5,
+        "management_confidence": 80.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -10805,7 +13287,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "HR-BULL-20260717",
@@ -10842,14 +13340,14 @@
       "closed": false,
       "pulse": "23d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "23\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 47.8,
+      "management_confidence": 47.7,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 19.97,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 47.8,
+        "management_confidence": 47.7,
         "recommended_action": "wait",
         "components": {
           "validity": 66.7,
@@ -10899,7 +13397,23 @@
       "thesis": "HR \u2014 conviction 49/100 (constructive) Entry grade: strong. Drivers: earnings \u00b7 insider \u00b7 revisions; tailwind. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "HR \u2014 \u786e\u4fe1\u5ea6 49/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; tailwind\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "KWR-BULL-20260730",
@@ -11003,7 +13517,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CVI-BULL-20260713",
@@ -11097,7 +13627,23 @@
       "thesis": "CVI \u2014 conviction 48/100 (constructive) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; tailwind. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "CVI \u2014 \u786e\u4fe1\u5ea6 48/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry; tailwind\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "BA-BULL-20260702",
@@ -11199,7 +13745,23 @@
       "thesis": "BA [TURN SIGNALED] \u2014 conviction 46/100 (neutral). Drivers: entry; tailwind. Cautions: accounting warn. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact.",
       "thesis_zh": "",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "TPR-BULL-20260722",
@@ -11236,14 +13798,14 @@
       "closed": false,
       "pulse": "18d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "18\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 69.7,
+      "management_confidence": 69.8,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 162.36,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 69.7,
+        "management_confidence": 69.8,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -11303,7 +13865,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CNH-BULL-20260626",
@@ -11407,7 +13985,23 @@
         "provisional": true,
         "demoted": false,
         "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
-      }
+      },
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "LKFN-BULL-20260716",
@@ -11501,7 +14095,23 @@
       "thesis": "LKFN \u2014 conviction 43/100 (neutral) Entry grade: strong. Drivers: entry; tailwind. Cautions: earnings in 7d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "LKFN \u2014 \u786e\u4fe1\u5ea6 43/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: entry; tailwind\u3002 \u6ce8\u610f\u4e8b\u9879: 7\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "SBUX-BULL-20260702",
@@ -11595,7 +14205,23 @@
       "thesis": "SBUX [TURN SIGNALED] \u2014 conviction 42/100 (neutral). Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact.",
       "thesis_zh": "",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     },
     {
       "id": "CUBI-BULL-20260716",
@@ -11689,7 +14315,23 @@
       "thesis": "CUBI \u2014 conviction 39/100 (neutral) Entry grade: strong. Drivers: entry; tailwind. Cautions: accounting watch; earnings in 6d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
       "thesis_zh": "CUBI \u2014 \u786e\u4fe1\u5ea6 39/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: entry; tailwind\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8; 6\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
-      "stage_tilt": null
+      "stage_tilt": null,
+      "admission_class": null,
+      "entry_status": null,
+      "selection_era": null,
+      "entry_basis": null,
+      "entry_zone": null,
+      "entry_zone_state": {
+        "state": "none",
+        "filled": false,
+        "filled_date": null,
+        "expired": false,
+        "converted": false,
+        "stance": null,
+        "sessions_remaining": null,
+        "reason": "plan carries no entry zone (pre-R3 plan)"
+      },
+      "early_turn": null
     }
   ],
   "note": "DISPLAY-ONLY. All plans are display-tier artifacts. No signal has passed a forward ledger gate. The word 'validated' is forbidden in user-facing text. Nightly is the sole advancer of the forward ledger."
