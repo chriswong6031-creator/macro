@@ -53,6 +53,16 @@ motion. Change the appropriate shared family and its parity tests instead.
   work, open PRs, and <7-day activity. To park a checkout long-term, lock it:
   `git worktree lock --reason "<why>" <path>`.
 
+## Signal-state interpretation (operator 2026-08-09)
+
+An engine state machine's terminal verdict is an INSTRUMENT verdict, never a market verdict:
+a transmission chain or cycle tripwire printing "failed" means its declared windows failed,
+not that the thesis is false. Report the scope ("no 22d rolldown yet", never "no peak");
+relay a falsifier's prose note only as far as its receipt supports; and when a display-tier
+state disagrees with the terminal asset's tape or a scored organ (Prophet, Sector
+Intelligence), lead with the dual-read. Receipts and the design seed:
+`research/CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md`.
+
 ## Kill-registry citations (DO_NOT_REBUILD.md)
 
 Rows in `research/DO_NOT_REBUILD.md` carry a stable `Key` column (`KILL-…` §1–2,
