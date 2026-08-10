@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-08-09",
+  "as_of": "2026-08-10",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -28,7 +28,7 @@
       "family": "ai_semis",
       "driver": "ai_semis",
       "pathway_role": "primary",
-      "as_of": "2026-08-09",
+      "as_of": "2026-08-10",
       "direction_en": "Bubble / blow-off unwind",
       "direction_zh": "泡沫/见顶回吐",
       "confidence_ceiling": "context_only",
@@ -38,7 +38,7 @@
       "nodes": [
         {
           "node_id": "driver_ai_semis",
-          "as_of": "2026-08-09",
+          "as_of": "2026-08-10",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "ai_semis",
@@ -66,7 +66,7 @@
       "family": "rates",
       "driver": "real_rate_shock",
       "pathway_role": "alternate",
-      "as_of": "2026-08-09",
+      "as_of": "2026-08-10",
       "direction_en": "real yields falling — easing, gold & duration bid",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -76,7 +76,7 @@
       "nodes": [
         {
           "node_id": "driver_real_rate_shock",
-          "as_of": "2026-08-09",
+          "as_of": "2026-08-10",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "real_rate_shock",
@@ -96,7 +96,7 @@
         },
         {
           "node_id": "transmission_real_rate_order1",
-          "as_of": "2026-08-09",
+          "as_of": "2026-08-10",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -116,7 +116,7 @@
         },
         {
           "node_id": "transmission_real_rate_order2",
-          "as_of": "2026-08-09",
+          "as_of": "2026-08-10",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -136,7 +136,7 @@
         },
         {
           "node_id": "transmission_real_rate_order3",
-          "as_of": "2026-08-09",
+          "as_of": "2026-08-10",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",

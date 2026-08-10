@@ -1,16 +1,16 @@
 {
   "schema": "options.prophet_shadow/v1",
   "as_of": "2026-08-07",
-  "built_at": "2026-08-09T04:08:57.386403Z",
+  "built_at": "2026-08-10T02:26:37.405277Z",
   "decision_at": null,
-  "available_at": "2026-08-09T04:08:57.386403Z",
+  "available_at": "2026-08-10T02:26:37.405277Z",
   "pit_provenance": {
     "clock": "UTC",
     "decision_at_required_for_issued_portfolio": true,
     "decision_at_status": "not_available_in_current_pick_lab_contract",
     "available_at_status": "exact_projection_publication_time",
     "source_available_at": {
-      "flow_leaders": "2026-08-09T01:08:10.083216Z",
+      "flow_leaders": "2026-08-10T02:25:36.607057Z",
       "pick_lab": "2026-08-08T21:20:33.337288Z"
     },
     "promotion_ready": false,
@@ -44,7 +44,7 @@
       "order": 1,
       "symbol": "MP",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -80,7 +80,7 @@
       "order": 2,
       "symbol": "MARA",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -117,7 +117,7 @@
       "order": 3,
       "symbol": "SNDK",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -153,7 +153,7 @@
       "order": 4,
       "symbol": "LITE",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -176,8 +176,8 @@
         "gamma_regime": "long",
         "K_a": 0,
         "n_avail_a": 5,
-        "K_b": 2,
-        "n_avail_b": 3
+        "K_b": 1,
+        "n_avail_b": 2
       },
       "de_escalation": {
         "earnings_window": true,
@@ -190,7 +190,7 @@
       "order": 5,
       "symbol": "ALB",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -226,7 +226,7 @@
       "order": 6,
       "symbol": "ALHC",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -263,7 +263,7 @@
       "order": 7,
       "symbol": "TLN",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -299,7 +299,7 @@
       "order": 8,
       "symbol": "UCTT",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -335,7 +335,7 @@
       "order": 9,
       "symbol": "WDC",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -371,7 +371,7 @@
       "order": 10,
       "symbol": "MRCY",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -407,7 +407,7 @@
       "order": 11,
       "symbol": "ICHR",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -443,7 +443,7 @@
       "order": 12,
       "symbol": "AEIS",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -465,8 +465,8 @@
         "gamma_regime": "short",
         "K_a": 0,
         "n_avail_a": 5,
-        "K_b": 1,
-        "n_avail_b": 3
+        "K_b": 0,
+        "n_avail_b": 2
       },
       "de_escalation": {
         "earnings_window": true,
@@ -479,7 +479,7 @@
       "order": 13,
       "symbol": "CNC",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -515,7 +515,7 @@
       "order": 14,
       "symbol": "AVAV",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -552,7 +552,7 @@
       "order": 15,
       "symbol": "CZR",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -588,7 +588,7 @@
       "order": 16,
       "symbol": "COHU",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -624,7 +624,7 @@
       "order": 17,
       "symbol": "FBIN",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -660,7 +660,7 @@
       "order": 18,
       "symbol": "STX",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -696,7 +696,7 @@
       "order": 19,
       "symbol": "OXY",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -733,7 +733,7 @@
       "order": 20,
       "symbol": "ALGT",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -769,7 +769,7 @@
       "order": 21,
       "symbol": "GIS",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -805,7 +805,7 @@
       "order": 22,
       "symbol": "AVGO",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -841,7 +841,7 @@
       "order": 23,
       "symbol": "CRWD",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -877,7 +877,7 @@
       "order": 24,
       "symbol": "LRCX",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -913,7 +913,7 @@
       "order": 25,
       "symbol": "TFC",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -949,7 +949,7 @@
       "order": 26,
       "symbol": "PH",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -971,8 +971,8 @@
         "gamma_regime": "long",
         "K_a": 1,
         "n_avail_a": 5,
-        "K_b": 2,
-        "n_avail_b": 5
+        "K_b": 1,
+        "n_avail_b": 4
       },
       "de_escalation": {
         "earnings_window": true,
@@ -985,7 +985,7 @@
       "order": 27,
       "symbol": "XOM",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1021,7 +1021,7 @@
       "order": 28,
       "symbol": "OC",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1043,8 +1043,8 @@
         "gamma_regime": "long",
         "K_a": 1,
         "n_avail_a": 5,
-        "K_b": 1,
-        "n_avail_b": 3
+        "K_b": 0,
+        "n_avail_b": 2
       },
       "de_escalation": {
         "earnings_window": true,
@@ -1057,7 +1057,7 @@
       "order": 29,
       "symbol": "ITW",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1093,7 +1093,7 @@
       "order": 30,
       "symbol": "PNC",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1129,7 +1129,7 @@
       "order": 31,
       "symbol": "AEM",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1165,7 +1165,7 @@
       "order": 32,
       "symbol": "AEP",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1201,7 +1201,7 @@
       "order": 33,
       "symbol": "AFRM",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1237,7 +1237,7 @@
       "order": 34,
       "symbol": "AGI",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1273,7 +1273,7 @@
       "order": 35,
       "symbol": "ALAB",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1309,7 +1309,7 @@
       "order": 36,
       "symbol": "ALT",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1331,8 +1331,8 @@
         "gamma_regime": "long",
         "K_a": 0,
         "n_avail_a": 5,
-        "K_b": 1,
-        "n_avail_b": 3
+        "K_b": 0,
+        "n_avail_b": 2
       },
       "de_escalation": {
         "earnings_window": null,
@@ -1345,7 +1345,7 @@
       "order": 37,
       "symbol": "APLD",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1381,7 +1381,7 @@
       "order": 38,
       "symbol": "ARM",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1417,7 +1417,7 @@
       "order": 39,
       "symbol": "ASPI",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1453,7 +1453,7 @@
       "order": 40,
       "symbol": "ASTS",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -1490,7 +1490,7 @@
       "order": 41,
       "symbol": "AU",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1526,7 +1526,7 @@
       "order": 42,
       "symbol": "AZN",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1562,7 +1562,7 @@
       "order": 43,
       "symbol": "BLD",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1598,7 +1598,7 @@
       "order": 44,
       "symbol": "BPOP",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1634,7 +1634,7 @@
       "order": 45,
       "symbol": "BTDR",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1670,7 +1670,7 @@
       "order": 46,
       "symbol": "BTG",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1706,7 +1706,7 @@
       "order": 47,
       "symbol": "CAMT",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1742,7 +1742,7 @@
       "order": 48,
       "symbol": "CBRS",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1778,7 +1778,7 @@
       "order": 49,
       "symbol": "CCJ",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1814,7 +1814,7 @@
       "order": 50,
       "symbol": "CIFR",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -1851,7 +1851,7 @@
       "order": 51,
       "symbol": "CORZ",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1887,7 +1887,7 @@
       "order": 52,
       "symbol": "CRCL",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1923,7 +1923,7 @@
       "order": 53,
       "symbol": "CRDO",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1959,7 +1959,7 @@
       "order": 54,
       "symbol": "CRWV",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -1995,7 +1995,7 @@
       "order": 55,
       "symbol": "DKNG",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2031,7 +2031,7 @@
       "order": 56,
       "symbol": "DKS",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2067,7 +2067,7 @@
       "order": 57,
       "symbol": "DNN",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2103,7 +2103,7 @@
       "order": 58,
       "symbol": "DRS",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2139,7 +2139,7 @@
       "order": 59,
       "symbol": "EGO",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -2176,7 +2176,7 @@
       "order": 60,
       "symbol": "EQX",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2212,7 +2212,7 @@
       "order": 61,
       "symbol": "ETHA",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2248,7 +2248,7 @@
       "order": 62,
       "symbol": "EU",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2270,8 +2270,8 @@
         "gamma_regime": null,
         "K_a": 0,
         "n_avail_a": 4,
-        "K_b": 1,
-        "n_avail_b": 2
+        "K_b": 0,
+        "n_avail_b": 1
       },
       "de_escalation": {
         "earnings_window": null,
@@ -2284,7 +2284,7 @@
       "order": 63,
       "symbol": "FCNCA",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2320,7 +2320,7 @@
       "order": 64,
       "symbol": "FLYW",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2340,8 +2340,8 @@
         "oi_confirmed": false,
         "zerodte_dominated": false,
         "gamma_regime": "short",
-        "K_a": 1,
-        "n_avail_a": 5,
+        "K_a": 0,
+        "n_avail_a": 4,
         "K_b": 0,
         "n_avail_b": 2
       },
@@ -2356,7 +2356,7 @@
       "order": 65,
       "symbol": "FOUR",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2392,7 +2392,7 @@
       "order": 66,
       "symbol": "GFI",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2428,7 +2428,7 @@
       "order": 67,
       "symbol": "GLXY",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2464,7 +2464,7 @@
       "order": 68,
       "symbol": "GOLD",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2500,7 +2500,7 @@
       "order": 69,
       "symbol": "GPCR",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2536,7 +2536,7 @@
       "order": 70,
       "symbol": "GTLB",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2572,7 +2572,7 @@
       "order": 71,
       "symbol": "H",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2608,7 +2608,7 @@
       "order": 72,
       "symbol": "HEI",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2644,7 +2644,7 @@
       "order": 73,
       "symbol": "HIMS",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2680,7 +2680,7 @@
       "order": 74,
       "symbol": "HMY",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2716,7 +2716,7 @@
       "order": 75,
       "symbol": "HUBS",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2752,7 +2752,7 @@
       "order": 76,
       "symbol": "HUT",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2788,7 +2788,7 @@
       "order": 77,
       "symbol": "IAG",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2824,7 +2824,7 @@
       "order": 78,
       "symbol": "IBIT",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2860,7 +2860,7 @@
       "order": 79,
       "symbol": "INFQ",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2896,7 +2896,7 @@
       "order": 80,
       "symbol": "IONQ",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2932,7 +2932,7 @@
       "order": 81,
       "symbol": "IREN",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -2968,7 +2968,7 @@
       "order": 82,
       "symbol": "KGC",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3004,7 +3004,7 @@
       "order": 83,
       "symbol": "KVYO",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3040,7 +3040,7 @@
       "order": 84,
       "symbol": "LAC",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3076,7 +3076,7 @@
       "order": 85,
       "symbol": "LEU",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -3113,7 +3113,7 @@
       "order": 86,
       "symbol": "LNG",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -3150,7 +3150,7 @@
       "order": 87,
       "symbol": "MDB",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3186,7 +3186,7 @@
       "order": 88,
       "symbol": "MOH",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3222,7 +3222,7 @@
       "order": 89,
       "symbol": "MQ",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3243,7 +3243,7 @@
         "zerodte_dominated": false,
         "gamma_regime": "long",
         "K_a": 0,
-        "n_avail_a": 5,
+        "n_avail_a": 4,
         "K_b": 0,
         "n_avail_b": 2
       },
@@ -3258,7 +3258,7 @@
       "order": 90,
       "symbol": "MSTR",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3294,7 +3294,7 @@
       "order": 91,
       "symbol": "NBIS",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3330,7 +3330,7 @@
       "order": 92,
       "symbol": "NET",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3366,7 +3366,7 @@
       "order": 93,
       "symbol": "NNE",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3402,7 +3402,7 @@
       "order": 94,
       "symbol": "NVMI",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -3439,7 +3439,7 @@
       "order": 95,
       "symbol": "NVO",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -3476,7 +3476,7 @@
       "order": 96,
       "symbol": "NXE",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3512,7 +3512,7 @@
       "order": 97,
       "symbol": "NXT",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3548,7 +3548,7 @@
       "order": 98,
       "symbol": "OKLO",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3584,7 +3584,7 @@
       "order": 99,
       "symbol": "OKTA",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3620,7 +3620,7 @@
       "order": 100,
       "symbol": "OSCR",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3656,7 +3656,7 @@
       "order": 101,
       "symbol": "PAA",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3692,7 +3692,7 @@
       "order": 102,
       "symbol": "PCOR",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3728,7 +3728,7 @@
       "order": 103,
       "symbol": "QBTS",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3764,7 +3764,7 @@
       "order": 104,
       "symbol": "QNT",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3800,7 +3800,7 @@
       "order": 105,
       "symbol": "QUBT",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3836,7 +3836,7 @@
       "order": 106,
       "symbol": "RBRK",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3872,7 +3872,7 @@
       "order": 107,
       "symbol": "RGTI",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3908,7 +3908,7 @@
       "order": 108,
       "symbol": "RIOT",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -3945,7 +3945,7 @@
       "order": 109,
       "symbol": "RKLB",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -3981,7 +3981,7 @@
       "order": 110,
       "symbol": "S",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4017,7 +4017,7 @@
       "order": 111,
       "symbol": "SGML",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4053,7 +4053,7 @@
       "order": 112,
       "symbol": "SMR",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4089,7 +4089,7 @@
       "order": 113,
       "symbol": "SNOW",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4125,7 +4125,7 @@
       "order": 114,
       "symbol": "SOFI",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4161,7 +4161,7 @@
       "order": 115,
       "symbol": "SRRK",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4197,7 +4197,7 @@
       "order": 116,
       "symbol": "STM",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4233,7 +4233,7 @@
       "order": 117,
       "symbol": "SYM",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4269,7 +4269,7 @@
       "order": 118,
       "symbol": "TEAM",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4305,7 +4305,7 @@
       "order": 119,
       "symbol": "TENB",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4341,7 +4341,7 @@
       "order": 120,
       "symbol": "TOST",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4377,7 +4377,7 @@
       "order": 121,
       "symbol": "UAMY",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader",
         "flow_washout"
@@ -4414,7 +4414,7 @@
       "order": 122,
       "symbol": "UEC",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4450,7 +4450,7 @@
       "order": 123,
       "symbol": "UPST",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4472,8 +4472,8 @@
         "gamma_regime": "long",
         "K_a": 0,
         "n_avail_a": 5,
-        "K_b": 1,
-        "n_avail_b": 3
+        "K_b": 0,
+        "n_avail_b": 2
       },
       "de_escalation": {
         "earnings_window": null,
@@ -4486,7 +4486,7 @@
       "order": 124,
       "symbol": "UROY",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4522,7 +4522,7 @@
       "order": 125,
       "symbol": "USAR",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4558,7 +4558,7 @@
       "order": 126,
       "symbol": "UUUU",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4594,7 +4594,7 @@
       "order": 127,
       "symbol": "VIK",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4630,7 +4630,7 @@
       "order": 128,
       "symbol": "VKTX",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4666,7 +4666,7 @@
       "order": 129,
       "symbol": "WULF",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4702,7 +4702,7 @@
       "order": 130,
       "symbol": "ZS",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4738,7 +4738,7 @@
       "order": 131,
       "symbol": "AG",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4774,7 +4774,7 @@
       "order": 132,
       "symbol": "CDE",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4810,7 +4810,7 @@
       "order": 133,
       "symbol": "PAAS",
       "decision_at": null,
-      "available_at": "2026-08-09T01:08:10.083216Z",
+      "available_at": "2026-08-10T02:25:36.607057Z",
       "lanes": [
         "flow_leader"
       ],
@@ -4877,7 +4877,7 @@
           },
           "coverage": {
             "schema": "options_entry_coverage.v1",
-            "as_of": "2026-08-08",
+            "as_of": "2026-08-10",
             "n_rows": 419,
             "n_features": 31,
             "absent_stores": [],
@@ -5322,7 +5322,7 @@
     "options_entry_coverage": {
       "path": "data/options_entry/coverage.json",
       "schema": "options_entry_coverage.v1",
-      "as_of": "2026-08-08",
+      "as_of": "2026-08-10",
       "available": true,
       "error": null
     },

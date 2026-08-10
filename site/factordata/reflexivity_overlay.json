@@ -2,14 +2,14 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-08-07",
-  "generated_utc": "2026-08-09T05:06:01Z",
+  "generated_utc": "2026-08-10T02:26:37Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
     "n": 9,
-    "n_eff": 2.31,
+    "n_eff": 2.32,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 9 candidates \u2248 2.31 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 9 candidates \u2248 2.32 independent bets."
   },
   "same_thesis_groups": [
     {
@@ -253,50 +253,6 @@
       "why_en": "Same bet as AYI \u2014 Industrials (similarity 100%).",
       "why_zh": "\u4e0e AYI \u62bc\u6ce8\u76f8\u540c \u2014 Industrials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
-    "UAMY": {
-      "verdict": "new",
-      "max_similarity": 0.0,
-      "basis": "membership-only:no-beta",
-      "nearest": [
-        {
-          "ticker": "M",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:insufficient-factors",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "LITE",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:insufficient-factors",
-          "shared_groups": [],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "AYI",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:insufficient-factors",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-08-11",
-        "same_week_peers": [
-          "LITE"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer M at 0% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 M\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
-    },
     "STLD": {
       "verdict": "duplicate",
       "max_similarity": 0.9647,
@@ -338,6 +294,52 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as M \u2014 shared factor profile (similarity 96%).",
       "why_zh": "\u4e0e M \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 96%\uff09\u3002"
+    },
+    "UAMY": {
+      "verdict": "new",
+      "max_similarity": 0.3333,
+      "basis": "membership-only:no-beta",
+      "nearest": [
+        {
+          "ticker": "STLD",
+          "combined": 0.3333,
+          "membership_jaccard": 0.3333,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:insufficient-factors",
+          "shared_groups": [
+            "sector:Materials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "M",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:insufficient-factors",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "LITE",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:insufficient-factors",
+          "shared_groups": [],
+          "same_earnings_week": true
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-11",
+        "same_week_peers": [
+          "LITE"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Distinct bet \u2014 nearest peer STLD at 33% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 STLD\uff0c\u76f8\u4f3c\u5ea6 33%\u3002"
     },
     "TOL": {
       "verdict": "duplicate",
@@ -455,18 +457,18 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "M__UAMY": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
     "M__STLD": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.9647,
       "combined": 0.9647,
       "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "M__UAMY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
       "shared_groups": []
     },
     "M__TOL": {
@@ -506,18 +508,18 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "LITE__UAMY": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
     "LITE__STLD": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.1405,
       "combined": 0.1405,
       "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "LITE__UAMY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
       "shared_groups": []
     },
     "LITE__TOL": {
@@ -552,18 +554,18 @@
         "sector:Industrials"
       ]
     },
-    "AYI__UAMY": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
     "AYI__STLD": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.7774,
       "combined": 0.7774,
       "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "AYI__UAMY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
       "shared_groups": []
     },
     "AYI__TOL": {
@@ -589,18 +591,18 @@
         "sector:Industrials"
       ]
     },
-    "FSS__UAMY": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
     "FSS__STLD": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.9202,
       "combined": 0.9202,
       "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "FSS__UAMY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
       "shared_groups": []
     },
     "FSS__TOL": {
@@ -617,18 +619,18 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "VSEC__UAMY": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
     "VSEC__STLD": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.9522,
       "combined": 0.9522,
       "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "VSEC__UAMY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
       "shared_groups": []
     },
     "VSEC__TOL": {
@@ -645,11 +647,27 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "UAMY__STLD": {
-      "membership_jaccard": 0.0,
+    "STLD__UAMY": {
+      "membership_jaccard": 0.3333,
       "factor_cosine": null,
-      "combined": 0.0,
+      "combined": 0.3333,
       "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": [
+        "sector:Materials"
+      ]
+    },
+    "STLD__TOL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8618,
+      "combined": 0.8618,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "STLD__CL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.4538,
+      "combined": 0.4538,
+      "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
     "UAMY__TOL": {
@@ -664,20 +682,6 @@
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
-    "STLD__TOL": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.8618,
-      "combined": 0.8618,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "STLD__CL": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.4538,
-      "combined": 0.4538,
-      "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
     "TOL__CL": {
