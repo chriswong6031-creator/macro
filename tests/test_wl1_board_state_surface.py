@@ -900,6 +900,27 @@ def test_cards_without_a_stamp_are_refused_exactly_like_a_stamp_without_cards():
     assert got[1:] == [None] * 5
 
 
+def test_the_link_shape_the_nightly_board_already_uses_is_accepted():
+    """The US nightly card links `stock.html#AAPL`, china `china_lookup.html#…`, hk
+    `hk_lookup.html#…`. Refusing a trailing fragment would hard-refuse the whole evening
+    board over a link shape the morning board already ships — while everything that could
+    leave the site still has to be refused."""
+    ok = ["stock.html#AAPL", "stocks/AAPL.html", "china_lookup.html#600519.SS",
+          "hk_lookup.html#0700.HK", "stock.html"]
+    bad = ["https://evil.example/x", "//evil.example/x", "/absolute", "../../etc/passwd",
+           "javascript:alert(1)", "stock.html#a b", "stock.html?x=1",
+           'stock.html"onmouseover="alert(1)']
+    got = _pvc([{"fn": "cards",
+                 "board": _board(cards=[_card("TK0", href=h), _card("TK1"), _card("TK2")])}
+                for h in ok + bad])
+    assert got[:len(ok)] == ["ok"] * len(ok), list(zip(ok, got))
+    assert got[len(ok):] == [None] * len(bad), list(zip(bad, got[len(ok):]))
+    # and the accepted one lands in the markup unmangled
+    html = _pvc([{"fn": "html", "board": _board(
+        cards=[_card("TK0", href="stock.html#TK0"), _card("TK1"), _card("TK2")])}])[0]
+    assert 'href="stock.html#TK0"' in html
+
+
 def test_a_republished_but_unchanged_board_is_not_remounted():
     """`board_state` rides an artifact the live producer rewrites every ~5 minutes. Keying
     the mount on a WRITE timestamp would tear the grid down and rebuild it on every poll —

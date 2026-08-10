@@ -18541,10 +18541,15 @@ function _pvcSpark(s){
   if(/(javascript|data)\s*:/i.test(s)) return '';
   return s;
 }
-/* relative site paths only — the board links to pages on this site and nowhere else */
+/* Relative site paths only — the board links to pages on this site and nowhere else: no
+   scheme, no host, no protocol-relative `//`, no `..` escape, and nothing that is not a
+   path character. A TRAILING #fragment is allowed because it is the house pattern for
+   every prophet board (the US nightly card links `stock.html#AAPL`, china
+   `china_lookup.html#…`, hk `hk_lookup.html#…`), and refusing it would hard-refuse the
+   whole evening board over a link shape the morning board already uses. */
 function _pvcHref(h){
   if(typeof h!=='string'||!h||h.length>200) return '';
-  if(!/^[A-Za-z0-9._\/-]+$/.test(h)) return '';
+  if(!/^[A-Za-z0-9._\/-]+(#[A-Za-z0-9._-]+)?$/.test(h)) return '';
   if(h.charAt(0)==='/'||h.indexOf('..')>=0) return '';
   return h;
 }
