@@ -1,11 +1,11 @@
 {
   "n": 4,
-  "built": "2026-08-09 06:51 UTC",
+  "built": "2026-08-10 09:34 UTC",
   "cards": [
     {
       "key": "income_vector",
       "name": "China Income Vector",
-      "cagr": 7.8,
+      "cagr": 7.86,
       "sharpe": 0.95,
       "maxdd": -17.2,
       "experimental": false
