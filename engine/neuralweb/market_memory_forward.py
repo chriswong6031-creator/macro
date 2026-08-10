@@ -395,6 +395,13 @@ _STATE_FORBIDDEN_TOKENS = frozenset(
         "permission",
         "rank",
         "gate",
+        "gates",
+        "gated",
+        "gating",
+        "ungated",
+        "gatekeeper",
+        "gatekeepers",
+        "gatekeeping",
         "size",
         "trade",
         "execute",
@@ -415,7 +422,6 @@ _STATE_FORBIDDEN_COMPACT = (
     "permission",
     "rank",
     "gating",
-    "gate",
     "sizing",
     "size",
     "trading",
@@ -941,23 +947,45 @@ def _project_w1_domain_states(packet: Mapping[str, Any]) -> list[dict[str, Any]]
         observed_features = [
             feature for feature in domain_features if feature["status"] == "observed"
         ]
+        admitted_observed_features = [
+            feature
+            for feature in observed_features
+            if feature["quality"]["imputed"] is False
+        ]
+        rejected_imputed_features = [
+            feature
+            for feature in observed_features
+            if feature["quality"]["imputed"] is True
+        ]
         missing_features = [
             feature for feature in domain_features if feature["status"] == "missing"
         ]
         observations = [
             _w1_observation_projection(feature, as_known_at=as_known_at)
-            for feature in observed_features
+            for feature in admitted_observed_features
         ]
         observations.sort(key=lambda row: row["feature_id"])
-        if observations and not missing_features:
+        missing_reasons: set[str] = set()
+        if missing_features:
+            missing_reasons.add(_mapped_w1_missing_reason(missing_features))
+        if rejected_imputed_features:
+            missing_reasons.add("quality_rejected")
+        reason = next(
+            (
+                candidate
+                for candidate in _MISSING_REASON_PRIORITY
+                if candidate in missing_reasons
+            ),
+            None,
+        )
+        if observations and reason is None:
             status = "observed"
-            reason = None
         elif observations:
             status = "partial"
-            reason = _mapped_w1_missing_reason(missing_features)
         else:
             status = "missing"
-            reason = _mapped_w1_missing_reason(missing_features)
+            if reason is None:
+                _fail("W1 domain has neither admissible observations nor missingness")
         rows.append(
             {
                 "domain": domain,
