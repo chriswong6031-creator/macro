@@ -2,6 +2,16 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-08-10",
+      "tickers": [
+        "ADAM",
+        "FSS",
+        "SDGR",
+        "UEC",
+        "WFC"
+      ]
+    },
+    {
       "as_of": "2026-08-09",
       "tickers": [
         "TEAM",
@@ -55,15 +65,6 @@
       "tickers": [
         "JBLU",
         "TPR"
-      ]
-    },
-    {
-      "as_of": "2026-08-03",
-      "tickers": [
-        "AMZN",
-        "AVNT",
-        "GDDY",
-        "PEG"
       ]
     }
   ]

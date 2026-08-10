@@ -868,3 +868,114 @@ def test_truncation_disclosure_is_an_explicit_zero_never_an_absent_key():
             assert "truncated_by_cap" in counts, f"{dimension}.{identifier}"
             assert counts["truncated_by_cap"] == 0, f"{dimension}.{identifier}"
     assert is_valid_procurement_workspace(workspace)
+
+
+def test_collector_award_rail_denominators_validate_through_the_workspace_schema():
+    """The freshness envelope is a verbatim deepcopy, so the schema must admit it.
+
+    ``_freshness`` copies the award-detail ingest envelope into
+    ``freshness.recompetes`` unfiltered.  #4951 added three awards-rail
+    denominator keys to the collector and the first nightly collect that
+    carried them (2026-08-10T01:05Z) made every workspace build fail schema
+    validation — the whole Government Revenue lane, and with it the site
+    render, froze on an enumeration nobody widened.  This is the positive
+    control: the full current collector denominator shape must validate.
+    """
+    workspace = build_procurement_workspace(
+        _empty_opportunity_intelligence(),
+        _REVIEWED_COMPANIES,
+        as_of="2026-07-31",
+        known_at="2026-07-31T23:59:59Z",
+        award_freshness={
+            "status": "ok",
+            "denominators": {
+                "awards": {
+                    "entities_requested": 21,
+                    "entities_mapped": 21,
+                    "entities_configured_total": 21,
+                    "full_configured_universe": True,
+                    "queries_complete": 20,
+                    "queries_partial": 0,
+                    "queries_failed": 1,
+                    "queries_bounded_sample_complete": 20,
+                    "queries_source_exhausted": 3,
+                    "queries_truncated_by_safety_cap": 17,
+                    "queries_zero_rows_for_configured_query": 1,
+                    "queries_recipient_terms_truncated": 2,
+                    "recipient_query_terms_safety_cap": 50,
+                    "normalization_failures": 0,
+                    "records_rejected_without_identity": 0,
+                },
+                "award_detail": {
+                    "candidate_awards": 162,
+                    "attempted": 162,
+                    "succeeded": 162,
+                    "skipped_missing_generated_award_id": 0,
+                },
+            },
+        },
+        award_events=[reviewed_award_event()],
+        award_event_freshness={"status": "ok"},
+    )
+
+    assert is_valid_procurement_workspace(workspace)
+
+
+def test_collector_denominator_keys_are_declared_in_the_workspace_schema():
+    """Cross-artifact drift guard for the enumeration #4951 silently outgrew.
+
+    Every string key a workspace-reachable ``denominators`` dict literal in
+    ``collectors/usaspending_awards.py`` can emit must be declared in the
+    workspace schema's ``railMetadata`` — the envelope reaches the public
+    workspace verbatim and the schema closes it with
+    ``additionalProperties: false``.  The actions rail's denominators are
+    excluded: that ingest block is never embedded into ``freshness.recompetes``
+    (only the awards/award_detail envelope is), and its ``queries_attempted``
+    key is its marker.  A future embed of the actions rail must extend both the
+    schema and this exclusion.
+    """
+    import ast
+    import json
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parent.parent
+    tree = ast.parse(
+        (repo / "collectors" / "usaspending_awards.py").read_text(encoding="utf-8")
+    )
+    schema = json.loads(
+        (
+            repo
+            / "contracts"
+            / "government_revenue"
+            / "government_procurement_workspace.v2.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    declared = set(schema["$defs"]["railMetadata"]["properties"])
+
+    emitted: set[str] = set()
+    literals = 0
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Dict):
+            continue
+        for key, value in zip(node.keys, node.values):
+            if (
+                isinstance(key, ast.Constant)
+                and key.value == "denominators"
+                and isinstance(value, ast.Dict)
+            ):
+                keys = {
+                    entry.value
+                    for entry in value.keys
+                    if isinstance(entry, ast.Constant) and isinstance(entry.value, str)
+                }
+                if "queries_attempted" in keys:
+                    continue  # actions rail: not workspace-embedded (see docstring)
+                literals += 1
+                emitted |= keys
+
+    assert literals >= 2, "expected the awards and award_detail denominator literals"
+    undeclared = sorted(emitted - declared)
+    assert not undeclared, (
+        "collector emits workspace-reachable denominator keys the workspace "
+        f"schema does not declare: {undeclared}"
+    )

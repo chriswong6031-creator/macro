@@ -1,26 +1,26 @@
 {
-  "as_of": "2026-08-09",
+  "as_of": "2026-08-10",
   "bottleneck": {
     "accounts": [
       {
         "account": "cici",
         "author_replies": 0,
-        "contributions": 3,
+        "contributions": 2,
         "engagements": 1,
         "impressions": 1,
         "measured": 1,
         "replies_abstained": 0,
         "replies_enqueued": 0,
         "replies_sent": 0,
-        "unmeasured": 2
+        "unmeasured": 1
       },
       {
         "account": "flagship",
         "author_replies": 0,
-        "contributions": 26,
-        "engagements": 2,
-        "impressions": 296,
-        "measured": 10,
+        "contributions": 25,
+        "engagements": 1,
+        "impressions": 260,
+        "measured": 9,
         "replies_abstained": 0,
         "replies_enqueued": 0,
         "replies_sent": 0,
@@ -29,10 +29,10 @@
       {
         "account": "founder",
         "author_replies": 0,
-        "contributions": 6,
+        "contributions": 5,
         "engagements": 0,
-        "impressions": 96,
-        "measured": 4,
+        "impressions": 86,
+        "measured": 3,
         "replies_abstained": 0,
         "replies_enqueued": 0,
         "replies_sent": 0,
@@ -53,10 +53,10 @@
       {
         "account": "meagan",
         "author_replies": 0,
-        "contributions": 2,
+        "contributions": 1,
         "engagements": 0,
-        "impressions": 10,
-        "measured": 1,
+        "impressions": 0,
+        "measured": 0,
         "replies_abstained": 0,
         "replies_enqueued": 0,
         "replies_sent": 0,
@@ -78,11 +78,11 @@
       "med_adjusted": -0.047255,
       "med_impressions": 10.0,
       "med_label": 0.0,
-      "n": 22,
-      "n_labelled": 7,
+      "n": 21,
+      "n_labelled": 6,
       "n_null": 15,
       "verdict": "seeding",
-      "verdict_note": "7 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+      "verdict_note": "6 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
     },
     {
       "dims": {
@@ -102,22 +102,6 @@
     },
     {
       "dims": {
-        "account": "cici",
-        "format": "watchlist",
-        "hook_family": "content_studio",
-        "register": "persona"
-      },
-      "med_adjusted": 0.952744,
-      "med_impressions": 1.0,
-      "med_label": 1.0,
-      "n": 2,
-      "n_labelled": 1,
-      "n_null": 1,
-      "verdict": "seeding",
-      "verdict_note": "1 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
-    },
-    {
-      "dims": {
         "account": "flagship",
         "format": "theme_list",
         "hook_family": "publisher_live_movers",
@@ -125,22 +109,6 @@
       },
       "med_adjusted": -0.047255,
       "med_impressions": 93.0,
-      "med_label": 0.0,
-      "n": 2,
-      "n_labelled": 2,
-      "n_null": 0,
-      "verdict": "seeding",
-      "verdict_note": "2 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
-    },
-    {
-      "dims": {
-        "account": "founder",
-        "format": "watchlist",
-        "hook_family": "content_studio",
-        "register": "persona"
-      },
-      "med_adjusted": -0.047255,
-      "med_impressions": 38.0,
       "med_label": 0.0,
       "n": 2,
       "n_labelled": 2,
@@ -163,6 +131,22 @@
       "n_null": 1,
       "verdict": "seeding",
       "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "cici",
+        "format": "watchlist",
+        "hook_family": "content_studio",
+        "register": "persona"
+      },
+      "med_adjusted": 0.952744,
+      "med_impressions": 1.0,
+      "med_label": 1.0,
+      "n": 1,
+      "n_labelled": 1,
+      "n_null": 0,
+      "verdict": "seeding",
+      "verdict_note": "1 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
     },
     {
       "dims": {
@@ -262,13 +246,13 @@
     },
     {
       "dims": {
-        "account": "meagan",
-        "format": "macro",
+        "account": "founder",
+        "format": "watchlist",
         "hook_family": "content_studio",
-        "register": "analysis"
+        "register": "persona"
       },
       "med_adjusted": -0.047255,
-      "med_impressions": 10.0,
+      "med_impressions": 66.0,
       "med_label": 0.0,
       "n": 1,
       "n_labelled": 1,
@@ -311,7 +295,7 @@
       "thread_saturation"
     ],
     "max_supported": 1,
-    "n_labelled": 18,
+    "n_labelled": 15,
     "requested": [
       "parent_size",
       "post_age",
@@ -326,7 +310,7 @@
     "hook_family"
   ],
   "n_floor": 20,
-  "n_rows": 56,
+  "n_rows": 52,
   "n_rows_all_time": 112,
   "north_star": {
     "active": false,
@@ -347,11 +331,11 @@
         "med_adjusted": -0.047255,
         "med_impressions": 10.0,
         "med_label": 0.0,
-        "n": 47,
-        "n_labelled": 13,
+        "n": 46,
+        "n_labelled": 12,
         "n_null": 34,
         "verdict": "seeding",
-        "verdict_note": "13 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
+        "verdict_note": "12 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
       },
       {
         "angle": "level_watch",
@@ -365,40 +349,7 @@
         "verdict_note": "1 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
       },
       {
-        "angle": "process",
-        "med_adjusted": -0.047255,
-        "med_impressions": 38.0,
-        "med_label": 0.0,
-        "n": 2,
-        "n_labelled": 2,
-        "n_null": 0,
-        "verdict": "seeding",
-        "verdict_note": "2 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
-      },
-      {
-        "angle": "receipt_frame",
-        "med_adjusted": null,
-        "med_impressions": null,
-        "med_label": null,
-        "n": 2,
-        "n_labelled": 0,
-        "n_null": 2,
-        "verdict": "seeding",
-        "verdict_note": "0 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
-      },
-      {
         "angle": "event_read",
-        "med_adjusted": -0.047255,
-        "med_impressions": 10.0,
-        "med_label": 0.0,
-        "n": 1,
-        "n_labelled": 1,
-        "n_null": 0,
-        "verdict": "seeding",
-        "verdict_note": "1 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
-      },
-      {
-        "angle": "macro_read",
         "med_adjusted": -0.047255,
         "med_impressions": 10.0,
         "med_label": 0.0,
@@ -418,6 +369,28 @@
         "n_null": 1,
         "verdict": "seeding",
         "verdict_note": "0 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
+      },
+      {
+        "angle": "process",
+        "med_adjusted": -0.047255,
+        "med_impressions": 66.0,
+        "med_label": 0.0,
+        "n": 1,
+        "n_labelled": 1,
+        "n_null": 0,
+        "verdict": "seeding",
+        "verdict_note": "1 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
+      },
+      {
+        "angle": "receipt_frame",
+        "med_adjusted": null,
+        "med_impressions": null,
+        "med_label": null,
+        "n": 1,
+        "n_labelled": 0,
+        "n_null": 1,
+        "verdict": "seeding",
+        "verdict_note": "0 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
       }
     ],
     "note": "Marginal tables, one dimension at a time — NOT extra joint-cell dimensions. See labels.PROVENANCE_DIMS for the cardinality arithmetic. 'unknown' is a real bucket: an item that carried no shape/angle/trigger is counted, never dropped.",
@@ -426,45 +399,34 @@
         "med_adjusted": -0.047255,
         "med_impressions": 10.0,
         "med_label": 0.0,
-        "n": 47,
-        "n_labelled": 13,
+        "n": 46,
+        "n_labelled": 12,
         "n_null": 34,
         "shape": "unknown",
         "verdict": "seeding",
-        "verdict_note": "13 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
+        "verdict_note": "12 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
       },
       {
         "med_adjusted": -0.047255,
-        "med_impressions": 38.0,
+        "med_impressions": 66.0,
         "med_label": 0.0,
-        "n": 4,
-        "n_labelled": 2,
+        "n": 3,
+        "n_labelled": 1,
         "n_null": 2,
         "shape": "caption",
         "verdict": "seeding",
-        "verdict_note": "2 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
+        "verdict_note": "1 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
       },
       {
         "med_adjusted": -0.047255,
         "med_impressions": 10.0,
         "med_label": 0.0,
-        "n": 3,
-        "n_labelled": 2,
+        "n": 2,
+        "n_labelled": 1,
         "n_null": 1,
         "shape": "stack",
         "verdict": "seeding",
-        "verdict_note": "2 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
-      },
-      {
-        "med_adjusted": null,
-        "med_impressions": null,
-        "med_label": null,
-        "n": 1,
-        "n_labelled": 0,
-        "n_null": 1,
-        "shape": "list",
-        "verdict": "seeding",
-        "verdict_note": "0 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
+        "verdict_note": "1 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
       },
       {
         "med_adjusted": 0.952744,
@@ -483,12 +445,12 @@
         "med_adjusted": -0.047255,
         "med_impressions": 10.0,
         "med_label": 0.0,
-        "n": 55,
-        "n_labelled": 18,
-        "n_null": 37,
+        "n": 51,
+        "n_labelled": 15,
+        "n_null": 36,
         "trigger": "unknown",
         "verdict": "seeding",
-        "verdict_note": "18 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
+        "verdict_note": "15 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
       },
       {
         "med_adjusted": null,
