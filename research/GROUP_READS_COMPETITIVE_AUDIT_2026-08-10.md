@@ -43,6 +43,8 @@ Six dimensions, from the operator's §7 grading axes. Scale per dimension per co
 
 **Personas (use-cases page):** self-directed investor (hidden concentration), active trader (catch rotation pre-consensus), time-pressed trader (one screen replaces 40 charts).
 
+**Second-lane additions (struct.news walk cross-checked jodie.ai):** the `/radar` surface carries a per-group **"heat score" (observed 71–97)** alongside participation %/agreement % — a fused attention number of exactly the kind our G0-2 forbids; our counter-position is the disclosed ordering rule, provided we actually print it (§C F-1). Group pages verified to carry **no earnings data whatsoever** ("no earnings surprises, guidance updates, or upcoming earnings dates for any group members" — Gold Producers theme, direct quote). One more membership-noise sighting, low-confidence (possible extraction artifact, flagged not asserted): a "Regional Banks" theme whose fetched members were STNE/CAAP/PAGS — none of them regional banks. Their per-group episode display ("2 completed episodes across 3 active sessions", self-flagged low-sample) is nascent but real.
+
 **Unverified/open:** sitemap carries `?market=europe/asia/crypto` params and ~800+ non-US ticker routes, but the asia param renders the US landing — multi-market coverage COULD NOT VERIFY (JS routing). No social presence findable at all (no X/LinkedIn/blog/changelog — all 404 or absent).
 ### B2 Struct (struct.news, walked 2026-08-10)
 
@@ -167,7 +169,15 @@ not substitutes.**
 
 **vs EquityDesk:** home turf = a per-stock swing screen with published backtest authority. We deliberately do not sell that job (display-tier law; DNR:KILL-PSS-SR3-PARTICIPATION forbids participation-as-timing). The overlap is the Weinstein framework — theirs per-stock as an entry gate, ours as basket stage-share description — and per-call LLM reads — theirs originating scores that gate a screen, ours de-escalate-only over structured figures. **Verdict: we beat them on every group-grain axis (all vendor-confirmed absent); their authority-tier screen is a job we refuse on epistemic law, not a capability gap — the audit records it as a positioning difference, not a BEHIND.**
 
-## §E Gaps → waves (re-prioritized: correctness before expansion)
+### Overall answer to the operator
+
+The five names decompose into **one direct rival** (Jodie + its free Struct content arm) and **three primarily per-company tools** (Quartr = document infrastructure; EarningsCall.ai = call summarization; EquityDesk = stock screen). Jodie is the only direct persistent group-state rival: it plays without curated membership, a washout arc, group-grain earnings, zh, or our explicit refusal contract, and uses a fused heat score where we carry a disclosed rule.
+
+- **vs Struct: YES on the group-state job; orthogonal on editorial distribution.** Its public, receipt-linked story funnel is useful and we do not ship an equivalent publication stream.
+- **vs Quartr: split verdict, not a blanket win.** Quartr decisively wins qualitative IR research and first-party document depth; we win the narrower persistent group-state read it does not publicly offer. The products are complements.
+- **vs EarningsCall.ai / EquityDesk: YES at group grain.** Their respective home turfs — call consumption and an authority-tier stock screen — are jobs we concede by explicit design, not adjacent group-read losses.
+- **vs Jodie (with Struct): NOT YET — parity-plus on a stronger foundation.** We already beat them on membership hygiene, group-grain earnings, structural null discipline, and zh. Read assembly is parity; the arc — the axis that was the point — is beat-on-design, degenerate as shipped (F-5). Five heals (W-A…W-E) separate the honest answer from "yes on every axis except intraday cadence, which we concede by render-budget law."
+- **Pricing reality check:** they are $29/mo with a free editorial funnel; we are $75–109/mo inside a multi-organ terminal. At 3× the price the credibility bar is higher, and §C's F-2/F-4 arithmetic bugs are precisely what a $29-refugee checks first. The heals are not polish — they are the price justification. (re-prioritized: correctness before expansion)
 
 The audit reorders the backlog. The previously planned sequence (GR4 → GR0.1 → GR3-2) assumed the shipped substance was sound; §C shows the credibility risk is in what is already live. **CN/HK twins are explicitly deferred until W-A/W-B/W-C land — replicating F-2..F-6 into two more regions would triple the debt.**
 
