@@ -362,6 +362,8 @@ def test_production_api_mounts_pit_store_read_only_and_hides_writer_state(
     )
     update = (ROOT / "app" / "deploy" / "update.sh").read_text(encoding="utf-8")
     assert "install -d -m 0700 /var/lib/macro-market-memory/public" in update
+    setup = (ROOT / "app" / "deploy" / "api-setup.sh").read_text(encoding="utf-8")
+    assert "install -d -m 0700 /var/lib/macro-market-memory/public" in setup
 
 
 def test_same_operational_query_cannot_publish_conflicting_packet(
