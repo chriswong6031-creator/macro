@@ -130,22 +130,38 @@ Confirm all four landed and that `origin/main` carries
 `app/seasonality.py` before building on them.
 
 ### 2.2 The three small follow-ups this session deliberately did not bundle
-1. **`foundation.py:100` names `spa_reality_check`**; the shipped symbols are
-   `reality_check` and `spa_test`. If that manifest string is ever resolved to a
-   callable it needs a mapping. Naming-only — no behaviour depends on it today.
-2. **`config/synapse.yml`'s `notes:` block** for
-   `data-neuralweb-biopharma-seasonality-state` still describes v1 states. The
-   artifact envelope is genuinely unchanged (a `state_schema` field self-describes
-   the contents), so the registry is not lying — but the prose is stale.
-3. **The Catalyst mode's `site/stock_seasonality.html`** is render-lane-owned. The
-   `.css`/`.js` plain-copy pairs shipped; the HTML re-renders on the next lane run.
-   Verify the mode switch is live before claiming it is.
+1. **CLOSED 2026-08-09.** The manifest now declares the real API —
+   `spa_reality_check` was split into `reality_check` and `spa_test` — and
+   `foundation.SELECTION_CONTROL_SYMBOLS` maps every declared selection control
+   to the dotted symbol that implements it.
+   `test_every_declared_selection_control_resolves_to_a_defined_symbol` pins the
+   map total over the declared list and every target importable.
+2. **CLOSED (prior session).** `config/synapse.yml`'s `notes:` block for
+   `data-neuralweb-biopharma-seasonality-state` now describes the v2 per-state
+   schema and the `state_schema` envelope dispatch; the program watch reports
+   the item closed.
+3. **CLOSED 2026-08-09.** The Catalyst mode is live and verified on production
+   (`www.mastermind-x.com/stock_seasonality.html`): `?mode=catalyst` deep link
+   sets `data-sx-mode`, the in-page mode bar switches both directions
+   (Calendar clock ↔ Catalyst), and the evidence-boundary surface renders
+   correctly in all four combinations — dark+EN, light+EN, light+ZH, dark+ZH —
+   with native zh copy, current method as-of (Aug 8), and zero console errors.
+   Verified through the real settings/theme and language controls, not by
+   attribute injection.
 
-### 2.3 The workflow-order defect (W6 prerequisite)
+### 2.3 The workflow order — DECIDED 2026-08-09: prophet-first stays, lag documented
 `build_prophet` runs **before** `build_stock_seasonality`/`seasonality_shadow` in
-`daily.yml`. `prophet_bridge.py` does not depend on that order and writes nowhere,
-so nothing is broken today — but a same-night overlay needs a reviewed dependency
-change in a small rebased wiring PR. Do not bundle it with engine work.
+`daily.yml`, and that is now a documented decision rather than a defect. The lag
+is informationally nil: the window family is built from COMPLETE years only, so
+the panel changes once a year at rollover and last night's windows are identical
+to tonight's on every other night. Reordering would cost twice — the seasonality
+heavy leg is deliberately LAST in `cl_misc` (yearly B=2000 recompute spike off
+the render-critical path) and `build_prophet`'s early band is fragile publication
+machinery. The decision record is the `seasonality_one_night_lag_accepted` token
+in `config/dag.yml`'s `build_prophet` note; `program_watch._sub_daily_order`
+reads it (comment-stripped, fail-closed), so deleting the token re-opens the
+tripwire if the decision is ever revisited — e.g. if a W6 same-night overlay
+ever genuinely needs fresher-than-rollover windows.
 
 ### 2.4 What NOT to do
 - Do not flip `live_event_graph`, `live_forecasts`, or `live_screener`. Code

@@ -669,7 +669,19 @@ lanes:
           Measured 2026-08-09: ~39s over 680 graded names (budget 600s).
       - id: build_prophet
         module: scripts.build_prophet
-        note: Prophet nightly — plan refresh + ledger advancement + R2 mirror (non-fatal; display-only)
+        note: >
+          Prophet nightly — plan refresh + ledger advancement + R2 mirror (non-fatal;
+          display-only). ORDER DECISION (token seasonality_one_night_lag_accepted, decided
+          2026-08-09): build_prophet runs BEFORE build_stock_seasonality on purpose, so the
+          Prophet seasonality overlay reads the PREVIOUS night's windows. That lag is
+          informationally nil — the window family is built from COMPLETE years only, so the
+          panel changes once a year at rollover and last night's windows are identical to
+          tonight's on every night but the one after a rollover. Reordering buys nothing and
+          costs twice: build_stock_seasonality is deliberately LAST in cl_misc so its yearly
+          B=2000 recompute spike sits off the render-critical path (render budget is law), and
+          build_prophet's early band is fragile publication machinery. engine/seasonality/
+          program_watch.py reads this token as the decision record; deleting it re-opens the
+          daily-order tripwire, which is the intended behaviour if the decision is ever revisited.
       - id: build_prophet_stage_shadow
         module: scripts.build_prophet_stage_shadow
         note: >
