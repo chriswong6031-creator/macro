@@ -171,9 +171,12 @@ intraday/express lanes can rebuild displays but never advance the ledger. All
 heavy scans stay off the render path; the nightly increment touches only the
 trailing window.
 
-- `panel.py` — thin wrapper re-exporting the LSR panel build (cache-aware,
-  split-repaired, `data/massive_stock_day`). One shared cache dir with the
-  research script so backfill and nightly agree byte-for-byte.
+- `panel.py` — thin wrapper re-exporting the LSR panel build (split-repaired,
+  `data/massive_stock_day`). **The nightly rebuilds the panel in memory each
+  run** (measured 45–60s, §4.0) — no giant wide-frame cache is committed or
+  published anywhere; `--panel-cache` exists only as a local convenience for
+  the manual backfill (review finding 13). The step prints its wall time to
+  the workflow log.
 - `detect.py` — the LSR `derive()` construction verbatim: `resid = ret −
   sector_ex_self_peer(ret)` (sector map `data/breadth/ticker_sectors.parquet`),
   `resid_z = resid / rolling_σ(shifted)`, eligibility = non-split-day ∧
@@ -185,13 +188,17 @@ trailing window.
   distributions computed on the same residual it shows. The beta-regression
   counterfactual is a §8 leg, never a silent swap.
 - `context.py` — per-event PIT facts, all engine-computed: 8-K flags (±1
-  calendar day, coverage bit), **day character read from
-  `market_drivers.snapshot()`** plus panel shock breadth (no parallel shock
-  vocabulary — DNR:KILL-PARALLEL-SHOCK-CLASSIFIER; the PSS-F3 systemic-window
-  lesson is the display motive), peer basket same-day return and shock count
-  (plain facts only), 52w-low distance (house `pos52` convention), gap %,
-  volume multiple, CLV, Amihud-rel, VIX 252d percentile (FRED `VIXCLS`),
-  revisions coverage bit (accrual clock visibility from day one).
+  calendar day) + the coverage bit that gates every filing family, **numeric
+  day facts only in the ledger** (panel_shock_count, panel_share_z2,
+  spy_ret_z — counts and z's, never a categorical day taxonomy;
+  DNR:KILL-PARALLEL-SHOCK-CLASSIFIER; `market_drivers.snapshot()` vocabulary
+  is used by the LIVE artifact banner only, for the current day, fail-open —
+  its graded history is 17 rows and cannot label the backfill), sector-peer
+  and **thematic-basket** same-day returns/residuals (dated
+  `data/baskets/membership.json`; display-honesty axis, not the fence),
+  peer_basis, 52w-low distance (house `pos52` convention), gap %, volume
+  multiple, CLV, Amihud-rel, VIX 252d percentile (FRED `VIXCLS`), revisions
+  coverage bit (accrual clock visibility from day one).
 - `ledger.py` — append/advance the forward ledger (§5). Nightly-only writer
   (`nightly_advance_enabled()` gate); follows the `transmission_chains` episode
   pattern (append-only rows + idempotent same-asof re-evaluation + snapshot).
@@ -204,9 +211,12 @@ trailing window.
 - **Brain wiring:** a `_pressure_block()` in
   `engine/neuralweb/market_packet.py` (explicit registration in
   `build_packet()` + `_RENDERERS` + `_SECTION_ORDER` near the bottom — synapse
-  registration alone does NOT reach chat; govrev proves it). Tiny render (top
-  ~3 events, one line each) inside the packet's global char budget; product
-  artifact read only (CXI-R23).
+  registration alone does NOT reach chat; govrev proves it). Tiny render (~3
+  most-recent events, one line each — **recency order, never |z| order**)
+  inside the packet's global char budget; product artifact read only
+  (CXI-R23). The same PR adds one scope sentence to the analyst doctrine
+  prose (`analyst/*.md`, mtime-reloaded): the pressure display is context,
+  never a pick list, and the chat relays its stance scope verbatim.
 - `backfill.py` — one-shot historical run over the full panel span; emits the
   ledger seed (`era="backfill"`) + frozen base-rate artifact (§6). Run manually
   this session; never on CI or the render path.
@@ -235,8 +245,11 @@ catch-up below heals any local-snapshot gap.
   `data/` read-only, or `fetch_r2`), asserts its max date, and stamps the
   artifact `asof`.
 - **Sector map:** `data/breadth/ticker_sectors.parquet` (1,516 GICS names,
-  SP500+400+600) — the effective residual universe is its intersection with
-  the liquidity fence; coverage share printed in every artifact.
+  SP500+400+600). The LSR peer helper backfills unlabelled names with the
+  whole-universe mean, so **≥65% of the 4,281-name panel residualizes
+  against the market, not sector peers** — the ledger's `peer_basis` field
+  discloses this per event, the artifact prints the split, and "peers"
+  never appears on a market-basis row (review finding 6).
 - **Event context stores:** `data/edgar/earnings_8k_dates.parquet` (98,975
   rows, 1,314 tickers, 2004→) + `material_8k_events.parquet`;
   `data/earnings/earnings.parquet` (forward calendar);
@@ -262,38 +275,66 @@ catch-up below heals any local-snapshot gap.
 row per (ticker, shock date, side):
 
 - **Identity/PIT block (frozen at t0, never rewritten):** date, ticker, side,
-  era (backfill|forward), resid, resid_z, ret, peer_ret, vol_multiple,
-  txn_multiple, clv, gap, intraday_ret, amihud_rel, dollar_adv_med, price,
-  dist_52w_low, earn8k, mat8k, edgar_covered, revisions_covered,
-  day_character (from `market_drivers`), panel_shock_count, sector,
-  peer_shock_count, vix_pctile, engine_version.
+  era (backfill|gap|forward), resid, resid_z, ret, peer_ret,
+  **peer_basis ∈ {sector, market}** (the LSR peer helper falls back to the
+  whole-universe mean for unlabelled names — ~65% of the panel; the word
+  "peers" never prints on a market-basis row), **basket, basket_ret,
+  basket_resid** (thematic ex-self residual where dated
+  `data/baskets/membership.json` membership exists — a display-honesty
+  context axis, NOT the fence; the fence stays sector-basis LSR-pure),
+  vol_multiple, txn_multiple, clv, gap, intraday_ret, amihud_rel,
+  dollar_adv_med, price, dist_52w_low, earn8k, mat8k, edgar_covered,
+  revisions_covered, panel_shock_count, panel_share_z2, spy_ret_z (numeric
+  day facts only — no categorical day taxonomy in the ledger;
+  DNR:KILL-PARALLEL-SHOCK-CLASSIFIER), sector, peer_shock_count, vix_pctile,
+  engine_version.
 - **Grading block (advanced by nightly as horizons mature):** cumulative
-  forward residual at t+{1,3,5,10,21} (the LSR-native horizons, log
-  convention) plus a t+60 ledger tail, retrace fraction of the t0 residual at
-  each horizon (log-space: `fwd_h / (−log1p(r0))`), max adverse/favorable
-  residual excursion, days-to-50%-retrace (null until/if hit), state (§5.1),
-  state_updated, closed_at. Rows also carry `episode_id` (a follow-up shock
-  landing within 5 sessions of an open same-side event joins that episode;
-  base rates count first-shock-of-episode rows) and `followup_shock`.
-- **Honesty invariants:** a horizon field is null until its window has fully
-  elapsed (no partial peeking into the grading block); closed rows are
-  immutable; every nightly run logs how many rows it advanced/closed
-  (nulls printed, not hidden).
+  forward residual at t+{1,3,5,10,21} (LSR-native horizons) plus a t+60
+  ledger tail **explicitly marked beyond the measured record**; retrace
+  fraction at each horizon in one consistent space
+  (`retrace_frac_h = fwd_h / (−log1p(clip(resid_t0)))`, numerator the LSR
+  log-residual cumulative — same transform both sides of the ratio; up-side
+  mirrors with the sign flipped); max adverse/favorable excursion;
+  `days_to_first_100pct_retrace` (non-absorbing observational field — **no
+  early close, ever**; every row grades at its fixed windows); per-horizon
+  freshness flags `first_in_h` (no same-side shock in the prior h sessions —
+  the horizon-h base-rate tables use only `first_in_h` rows, so collapse
+  scales with the window being graded); state (§5.1), state_updated,
+  closed_at.
+- **Honesty invariants:** horizon grading fields are null until their window
+  has fully elapsed; the display state is separate and explicitly "realized
+  path as of last close" (as-of stamped) — the two are different fields with
+  different contracts, stated in the schema. Closed rows are immutable. Rows
+  whose bars stop >10 sessions before the store max are graded
+  `DELISTED_OR_HALTED` **inside the terminal denominator** (losers never
+  leave the table); rows merely calendar-censored (window not yet elapsed at
+  store end) stay open and are counted as open. Every nightly run logs rows
+  advanced/closed/opened (nulls printed, not hidden).
 
 ### §5.1 Lifecycle states (descriptive, windows-not-certainties)
 
-`SHOCK` (t0) → `SLIDING` (further ≤ −0.5σ cumulative residual since t0) /
-`HOLDING` (within ±0.5σ band) / `RETRACING` (recovered ≥ 33% of t0 residual) →
-terminal `terminal_state_60d`: `RECOVERED` (≥ 80% retraced), `PARTIAL`
-(33–80%), `ACCEPTED_LOWER` (< 33% retraced — the market kept the lower price;
-avoid-evidence only, never a short thesis), or earlier `RECLAIMED` if 100%
-retraced before t+60 (row closes on the day it happens). Non-terminal flips
-require the condition to hold **two consecutive closes**
-(DNR:KILL-ONE-TICK-ESCALATION); the first close shows as a pending badge, never
-a flipped state. States are computed from realized residual paths only — no
-prediction, no score. Thresholds are display taxonomy, not tuned alpha (they
-slice the same frozen distributions §6 publishes; changing them is a display
-decision).
+Display states are **exhaustive by construction** on the running retrace
+fraction (no σ-band dead zones): down side `SHOCK` (t0) → `SLIDING`
+(frac ≤ −0.15 — still making residual lows) / `HOLDING`
+(−0.15 < frac < 0.33) / `RETRACING` (frac ≥ 0.33); up side mirrors as
+`EXTENDING` / `HOLDING` / `FADING` on the sign-flipped fraction. Display-state
+flips require **two consecutive closes** in the new bucket
+(DNR:KILL-ONE-TICK-ESCALATION); the first close sets `state_pending`, never a
+flip.
+
+**Terminals are window-end grades, not flips** (so no one-tick escalation
+exists on an irreversible transition): the primary terminal is
+`terminal_state_21d` — the LAW-REVERSION-RULER-aligned ~monthly capture window
+inside the measured record — with values `RECOVERED_21D` (frac ≥ 0.8),
+`PARTIAL_21D` (0.33–0.8), `ACCEPTED_LOWER_21D` (< 0.33; avoid-evidence only,
+never a short thesis; up-side mirror `KEPT/PARTIAL/GAVE_BACK`), or
+`DELISTED_OR_HALTED`. `terminal_state_60d` is graded identically as a
+secondary ledger tail, labeled beyond-the-measured-record. **There is no early
+close**: a 100% retrace on day 3 sets `days_to_first_100pct_retrace=3` and the
+row still grades at both windows (upside-only path censoring was a review
+BLOCKER). States are computed from realized residual paths only — no
+prediction, no score. Thresholds are display taxonomy, not tuned alpha
+(changing them is a display decision).
 
 ## §6 Frozen base-rate artifact (the honesty layer)
 
@@ -301,22 +342,42 @@ decision).
 only by an explicit re-run (never silently by nightly):
 
 - Retrace-fraction distributions (quartiles) and terminal-state shares by
-  **family × horizon**, families = {earnings-8K, material-8K, no-filing,
-  systemic-day, contagion-heavy}, down side primary.
-- Episode honest-N per cell (distinct ticker-episodes; overlapping shock days
-  within t+5 of an open event of the same name collapse into one episode).
+  **family × horizon**, families = {earnings-filing, other-filing, no-filing
+  — the last defined ONLY within EDGAR-covered names — and
+  **filing-coverage-unknown** for the ~54% of the panel EDGAR does not track
+  (review BLOCKER: "no filing" and "not covered" must never conflate)}.
+  Headline horizons 5d and 21d; both sides published, down primary. No
+  systemic-day/contagion families (no historical day-taxonomy exists;
+  numeric day facts stay per-event context — review finding 9).
+- **Every cell ships a date-block-bootstrap CI** (the LSR inference scheme),
+  with n_events, episode honest-N (per-horizon `first_in_h` rows), and
+  **n_dates** (shocks bunch on market days; 200 episodes can be 3 selloff
+  days). The artifact and report print, verbatim-adjacent: *"family-level
+  differences in forward outcomes were measured and are null (0/10
+  contrasts) — DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER; families are
+  shown as context, not separation."* The surface never contrasts families.
+- Truncated/dead rows appear **inside the tables** as the
+  `DELISTED_OR_HALTED` terminal share plus an open-rows count per cell —
+  never a prose footnote.
 - Coverage + survivorship statement embedded: unadjusted-store caveats,
-  split-repair ineligibility policy, EDGAR coverage share of events, span
-  (2021-07..present — **five years, not twenty**; stated plainly), and the
-  known small dividend bias direction.
+  split-repair ineligibility policy, EDGAR coverage share of events,
+  peer-basis split (sector vs market share), the **exact frozen span**
+  (rolling store — a later re-run drops the oldest era, so the rates are
+  span-bound and stamped; **five years, not twenty**, stated plainly), and
+  the known small dividend bias direction.
 - A `provenance` block citing LSR-P0's report numbers this display leans on
   (continuation is modal; the residual recovery that exists is sub-cost) so
   surface copy is regenerable from receipts.
 - An `exemplars` block reading out the motivating episodes as facts, per the
   adjudication coverage gate (operator 2026-08-10) — the study leads with how
   the motivating exemplars actually read under the shipped construction:
-  - **CDE 2026-08 (idiosyncratic type):** the construction's home case — a
-    single-name earnings shock against quiet peers. Postdates the frozen
+  - **CDE 2026-08 (idiosyncratic type):** the construction's home case — but
+    the review measured two honesty traps the design now carries fixes for:
+    CDE is **not EDGAR-covered** (its chip must read "filings not tracked",
+    never "no filing"), and its GICS peer set is the 77-name Materials sector
+    (chemicals/steel — so on a silver-complex selloff the "peers implied"
+    line would be economically false; the **basket residual** vs the silver/
+    precious-metals basket carries the honest framing). Postdates the frozen
     store snapshot (2026-07-02, §4.1); the nightly **self-healing catch-up**
     (re-harvest from the ledger's own max date forward, min ~15 sessions,
     capped ~90, idempotent by (ticker,date,side)) picks it into the ledger on
@@ -335,11 +396,18 @@ only by an explicit re-run (never silently by nightly):
 ## §7 Promotion gauntlet (pre-registered now, walked later or never)
 
 Nothing in DRL ranks, sizes, or gates anything until, on the **forward ledger
-only** (rows accrued after W1 ships — the backfill is context, not evidence):
-- A named, frozen claim (e.g. "family F retraces ≥ X% by t+20 at rate ≥ p vs
+only** (rows accrued after W1 ships — backfill and gap eras are context, not
+evidence):
+- A named, frozen claim (e.g. "family F retraces ≥ X% by t+21 at rate ≥ p vs
   base") with CIs excluding the base rate under date-block bootstrap;
-- Episode honest-N ≥ 200 forward episodes in the claimed cell;
-- Both regime halves (VIX above/below median) hold sign;
+- Episode honest-N ≥ 200 forward episodes **across ≥ 40 distinct trading
+  dates** in the claimed cell (shock arrivals are date-clustered; an episode
+  floor alone can be three selloff days);
+- For **level claims**: both regime halves (VIX above/below median) hold
+  sign. For **gradient claims** (a monotone change across regimes — the §8
+  R4 lead *changes sign* by construction): a pre-registered direct
+  difference test with frozen breakpoints instead; sign-stability across
+  halves is explicitly the wrong gate there (review finding 14);
 - An adversarial reviewer pass (opus) on the exact claim text;
 - And the claim is not a re-tuning of the LSR-killed construction (checked
   against DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER's scope clause by name).
@@ -377,23 +445,35 @@ loaded fail-soft in `scripts/build_ticker_pages.py::_build_hub_context()`
 crash). Both files are mapped to the `macro` render region — a band render is
 minutes, not a full bake. A standalone page is deferred until the band earns it.
 
-Band anatomy (doctrine tiers):
-- **Structural honesty (not just copy):** the band shows **both sides** —
-  down-pressure and up-pressure events — so it reads as a pressure lens, not
-  a dip-buy screen; and on systemic days (from `market_drivers` day
-  character + panel shock breadth) the band leads with a **broad-selloff
-  banner** ("most of today's pressure is market-wide, not single-name") and
-  demotes single-name rows to context. This is the structural answer to
-  "implicit buy list", ahead of any wording.
-- **Tier 1 per row:** ticker + one line — "fell 9.8% on 6× volume; peers
-  implied −2.1%" — a family chip (earnings filing / other filing / no filing
-  found / broad-selloff day, from `market_drivers` + 8-K facts), and for
-  tracked events a state chip (holding / still sliding / retracing 42% /
-  reclaimed). Stance line for the band (not per row): plain-word honest read
-  from §6 — e.g. "shocks like these kept sliding more often than they
-  recovered in the following week — watch, don't chase." The words "bounce",
-  "dead-cat", "giveback" are banned vocabulary (#2208); "manipulated" never
-  appears anywhere.
+Band anatomy (doctrine tiers). **Content order is inverted by design (review
+finding 12): the band's primary object is the RESOLVED ledger, not today's
+dips** — "here is what usually happens" is a different artifact from "here is
+what is cheap now":
+1. **What usually happens** — the frozen §6 base-rate read in plain words,
+   including the null honesty ("in five years of these shocks, the slide
+   continued more often than it recovered; what filing type it was made no
+   measurable difference").
+2. **Recently resolved** — the last few closed episodes and how they actually
+   ended (terminal grades, both sides), the band's proof-of-honesty.
+3. **Currently tracked** — open events, **both sides, unordered by any
+   signal: most-recent-first then ticker** (ordering by |z| would be the
+   ranking authority the artifact denies — review finding 11), capped, each
+   with its family chip and display state.
+- **Structural honesty (not just copy):** both sides always; on broad-selloff
+  days (live `market_drivers` read + panel shock breadth) the band leads with
+  a banner ("most of today's pressure is market-wide, not single-name") and
+  demotes single-name rows.
+- **Tier 1 per row:** ticker + one line — "fell 9.8% on 6× volume" plus the
+  honest comparison: "peers implied −2.1%" ONLY when peer_basis=sector; "vs
+  the market" when market-basis; and for basket members whose basket also
+  fell, the basket framing leads ("fell with its silver-miner basket").
+  Family chips: earnings filing / other filing / no filing on record /
+  **"filings not tracked for this name"** (never "no filing" for uncovered
+  names — review BLOCKER 2). State chips from §5.1 (holding / still sliding /
+  retracing 42%), with the row's family base rate given priority over its own
+  progress. Stance line for the band: watch-don't-chase phrasing from §6.
+  The words "bounce", "dead-cat", "giveback" are banned vocabulary (#2208);
+  "manipulated" never appears anywhere.
 - **Tier 2 (`?` help-tip on the band h2 + `data-tip-en/zh` per chip):** residual
   z, volume multiple, ADV floor, EDGAR coverage share, VIX regime percentile,
   base-rate table cell (family × horizon, with episode N and span 2021-07..),
@@ -442,6 +522,32 @@ Band anatomy (doctrine tiers):
 - **Open PRs:** #5204 (peak-chain falsifier gates) and #5197 (us-basket-turn
   synapse readers) are the nearest lanes; neither touches the files above.
 - **Reuse commitments:** LSR-P0 panel/residual machinery (imported),
-  `market_drivers.snapshot()` day vocabulary, house `pos52` convention,
-  `engine/ledger_lane.py` gating, `transmission_chains` episode pattern,
-  `engine.group_flow._causal_z` z convention where new z fields appear.
+  `market_drivers.snapshot()` day vocabulary (live banner only), house
+  `pos52` convention, `engine/ledger_lane.py` gating, `transmission_chains`
+  episode pattern, `engine.group_flow._causal_z` z convention where new z
+  fields appear.
+
+## §12 Red-team adjudication log (2026-08-10)
+
+An adversarial opus review of this plan (pre-build, per the adjudication
+coverage gate) returned 4 BLOCKER + 10 MAJOR/MINOR findings; all were
+accepted and folded in above, with two refinements:
+- The **fence stays sector-basis LSR-pure** (base-rate consistency); the
+  reviewer's two-basis proposal ships as the basket **context/display** axis
+  (§5), not a second fence.
+- The systemic-day/contagion base-rate families are **dropped** (no
+  historical day taxonomy exists) rather than rebuilt mechanically; numeric
+  day facts stay per-event context and the live banner keys off
+  `market_drivers` (finding 9's fallback arm).
+Key accepted structural changes: coverage-gated filing families +
+`filing-coverage-unknown` (B2), `DELISTED_OR_HALTED` inside terminal
+denominators (B3), no early close + fixed-window terminals at 21d primary
+(B4+F10), exhaustive frac-based display states (F7), per-horizon `first_in_h`
+honest-N + distinct-date floors (F8), CI'd family cells + printed
+null-contrast sentence (F5), peer_basis disclosure (F6), recency-only
+ordering everywhere (F11), resolved-ledger-first band inversion (F12),
+no committed panel cache + measured step time (F13), level-vs-gradient
+promotion gates (F14), MU printed as a measured non-fire (B1 arm), CDE
+basket-honesty framing (B1 arm). The review also *measured* MU's worst
+April-2025 residual z at −2.44 (never crosses the −3 fence) — §6's scope
+statement is empirical twice over.
