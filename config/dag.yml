@@ -766,6 +766,10 @@ lanes:
             - scripts.build_subsector_confluence --nasdaq
             - scripts.build_subsector_confluence --russell
             - scripts.build_cohort_metrics
+            # Blocked-entry override A1b (RATIFIED @25%) — nightly basket-washout state,
+            # display-tier support only, ~5s. daily-engine lane only: the render lanes
+            # carry no price-panel scan.
+            - scripts.build_basket_washout_state
             # Rotation Command W1 — declared to match daily.yml:753 (was live-workflow drift)
             - scripts.build_rotation_events
             # RLT-R2 Rebalance Pulse — declared to match daily.yml (off render path, display/context)

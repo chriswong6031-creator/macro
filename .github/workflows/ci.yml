@@ -3022,6 +3022,7 @@ on:
       - "tests/test_pick_lab_render.py"
       - "tests/test_pick_lab_runner.py"
       - "tests/test_prophet_card_shared.py"
+      - "tests/test_prophet_verb_ink_contrast.py"
       - "tests/test_stock_board_v2.py"
       - "tests/test_track_ledger_emitters.py"
       - "tests/test_us_board_fail_closed_freshness.py"
