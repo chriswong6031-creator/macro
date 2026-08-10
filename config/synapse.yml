@@ -18271,3 +18271,74 @@ artifacts:
       added/removed dates (the basis the masterplan §2.10 ex-ante receipt used), and
       members_asof applies them WITHIN the resolved snapshot so a read between two
       snapshots is correct rather than merely nearest-neighbour.
+
+  # --- Price Pressure lobe (DRL W1) — display-tier single-name residual shocks ---
+
+  price-pressure-latest:
+    path: data/price_pressure/latest.json
+    format: json
+    producer: scripts/build_price_pressure.py
+    known_extra_writers: []
+    owner_program: price-pressure
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: price_pressure.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/market_packet.py
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: >
+      Display snapshot of the Dislocation & Recovery lobe (DRL): single US names whose
+      price moved further than their sector peers explain, with the point-in-time facts
+      of that moment and how far the residual has come back since. Every authority
+      boolean is a literal false (can_rank / can_size / can_gate / can_originate_signal
+      / can_escalate) and the payload carries its own scope sentence, because the
+      underlying construction is CLOSED as selection alpha or an entry veto
+      (DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER, LSR-P0: information separation
+      0/10, microstructure 3/36, veto 0/6, and the real unconditional reversal breaks
+      even at 14.2bp/leg). The lobe ships that measured record as context; any promotion
+      walks the masterplan §7 gauntlet on forward-era ledger rows only. Lists inside the
+      artifact are ordered most-recent-first then ticker — never by size of move, which
+      would be the ranking the authority block denies. Fail-open: a missing source adds
+      a gaps[] note rather than dropping the file. Masterplan:
+      research/DISLOCATION_RECOVERY_LOBE_MASTERPLAN_BY_FABLE.md.
+
+  price-pressure-events:
+    path: data/price_pressure/events.parquet
+    format: parquet
+    producer: scripts/build_price_pressure.py
+    known_extra_writers: []
+    owner_program: price-pressure
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_price_pressure.py
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: >
+      The point-in-time event ledger behind price-pressure-latest — one row per
+      (ticker, shock date, side), unique on that key. Two blocks with different
+      contracts: an identity block frozen at t0 (nothing in it is computable from a
+      later bar) and a grading block the nightly advances as windows mature, where a
+      horizon field stays null until its window has FULLY elapsed. Advanced only by the
+      nightly lane (engine.ledger_lane.nightly_advance_enabled); intraday lanes may
+      rebuild the display but never write here. era distinguishes the frozen historical
+      seed (backfill), rows the self-healing catch-up picked up late (gap), and rows
+      seen on their own night (forward) — §7 evidence is forward-era only, so era is
+      never rewritten. Names that stop trading keep their rows and grade
+      DELISTED_OR_HALTED inside the terminal shares: resolution-conditioned denominators
+      delete losers. Sibling artifact data/price_pressure/base_rates.json is frozen by
+      the manual backfill only and is never refrozen by the nightly.

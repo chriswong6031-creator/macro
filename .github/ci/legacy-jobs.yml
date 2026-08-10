@@ -6848,3 +6848,48 @@ jobs:
         run: python -m pip install pytest pandas numpy pyyaml
       - name: falsifier tripwire state and v2 gate contracts
         run: python -m pytest tests/test_falsifier_tripwires.py -q
+
+  price-pressure:
+    # W1 of the Dislocation & Recovery program (DRL): engine/price_pressure/, the
+    # single-name residual-shock detector and its point-in-time event ledger, plus
+    # the display artifact and the market-packet block that read them.
+    #
+    # WHY THIS SUITE IS WORTH A JOB. The lobe imports its whole construction from
+    # scripts/research_liquidity_shock_reversal.py, because the frozen base rates
+    # it publishes were measured THERE — a re-typed copy of the residual math would
+    # drift silently and quietly invalidate every published table. The parity test
+    # calls BOTH paths on one synthetic fixture and compares them field by field,
+    # so the seam cannot be swapped for a lookalike without going red.
+    #
+    # The rest of the suite pins the honesty invariants a display-tier ledger dies
+    # without: the identity block does not move when t0+1 bars are POISONED; a
+    # horizon field is null until its window has fully elapsed; there is NO early
+    # close (a 100% retrace on day 3 still grades at 21d and 60d — closing on the
+    # good news is upside-only path censoring); a name whose bars stop grades
+    # DELISTED_OR_HALTED *inside* the terminal denominator; the nightly-lane gate
+    # actually gates the write; era stamps (backfill / gap / forward) are never
+    # rewritten and a backfill refuses to touch accrued forward rows; and every
+    # emitted list is recency-then-ticker, never |z| — ordering by size of move
+    # would be the ranking the artifact's authority block says it cannot do.
+    #
+    # Everything runs on a SYNTHETIC panel in tmp_path: CI has no
+    # data/massive_stock_day (20k vendor parquets, R2-homed), and a test that
+    # needed the real store would be a test that never runs.
+    #
+    # `pyarrow` is in the install line because the ledger is a parquet store;
+    # `pyyaml` because lib/config.py reads config.yml at import. No `requests`:
+    # this lobe is an assembler over committed stores and makes no network call.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: price-pressure detector, PIT ledger, base rates and artifact (DRL W1)
+        run: >-
+          python -m pytest
+          tests/test_price_pressure.py -q -rs

@@ -329,6 +329,10 @@ _REGIONS: tuple[_Region, ...] = (
 _SECTION_ORDER: tuple[str, ...] = (
     "HEADER", "TAPE", "CURVE", "FLAGS", "SHOCK", "EVENTS", "DRIVERS",
     "RATES", "VOL", "BREADTH", "LEADERS", "REGIONAL", "CROSSASSET", "CNBOARD", "DESK", "WATCH",
+    # PRESSURE sits LAST on purpose: it is single-name display context, so it is
+    # the first thing the char budget should drop. Appending here changes no
+    # existing section's drop priority.
+    "PRESSURE",
 )
 _NEVER_DROP: frozenset[str] = frozenset({"HEADER", "TAPE"})
 
@@ -792,6 +796,74 @@ def _shock_block(raw: object) -> dict | None:
             "expires": str(raw.get("expires") or "").strip()}
 
 
+#: Plain words for the price-pressure display states.  The doctrine forbids a raw
+#: ALL-CAPS machine token in the prose, and these tokens would otherwise walk
+#: straight into an answer.
+_PRESSURE_STATE_WORDS: dict[str, str] = {
+    "SHOCK": "just hit", "SLIDING": "still sliding", "HOLDING": "holding",
+    "RETRACING": "retracing", "EXTENDING": "still extending", "FADING": "fading",
+}
+PRESSURE_ROWS = 3
+
+
+def _pressure_block(root: Path, gaps: list[str]) -> dict | None:
+    """Single-name price-pressure context from ``data/price_pressure/latest.json``.
+
+    Product artifact only (CXI-R23) — this reads the same display file the site
+    band reads, never the lobe's internals.  Rows arrive from the producer in
+    recency-then-ticker order and are taken in that order: re-sorting them by
+    size of move here would recreate the ranking the artifact's authority block
+    says it cannot do.  Display tier: nothing here ranks, sizes or gates.
+    """
+    raw = _read_json(root / "data" / "price_pressure" / "latest.json",
+                     gaps, "price_pressure")
+    if not isinstance(raw, dict):
+        return None
+    events = [e for e in (raw.get("open_events") or []) if isinstance(e, dict)]
+    down = [e for e in events if str(e.get("side")) == "down"]
+    up = [e for e in events if str(e.get("side")) == "up"]
+    if not down and not up:
+        return None
+    rows = []
+    for e in down[:PRESSURE_ROWS]:
+        tic = str(e.get("ticker") or "").strip()
+        if not tic:
+            continue
+        ret = _f(e.get("ret"))
+        vol = _f(e.get("vol_multiple"))
+        state = _PRESSURE_STATE_WORDS.get(str(e.get("state") or ""), "")
+        frac = _f(e.get("retrace_frac"))
+        if state == "retracing" and frac is not None:
+            state = f"retracing {frac * 100:.0f}%"
+        rows.append({
+            "ticker": tic,
+            "move": _signed(ret * 100, 1, "%") if ret is not None else None,
+            "vol": f"{vol:.0f}x volume" if vol is not None else None,
+            "vs": {"sector peers": "peers", "the market": "market"}.get(
+                str(e.get("comparison") or "").strip(),
+                str(e.get("comparison") or "").strip() or None),
+            "family": str(e.get("family_label") or "").strip() or None,
+            "state": state or None,
+        })
+    if not rows:
+        return None
+    day = raw.get("day") if isinstance(raw.get("day"), dict) else {}
+    br = raw.get("base_rates") if isinstance(raw.get("base_rates"), dict) else {}
+    down_br = br.get("down") if isinstance(br.get("down"), dict) else {}
+    meta = raw.get("open_events_meta") if isinstance(raw.get("open_events_meta"), dict) else {}
+    totals = meta.get("total") if isinstance(meta.get("total"), dict) else {}
+    return {
+        "asof": str(raw.get("asof") or "").strip(),
+        "rows": rows,
+        "n_down": int(totals.get("down") or len(down)),
+        "n_up": int(totals.get("up") or len(up)),
+        "broad_selloff": bool(day.get("broad_selloff")) if day.get("broad_selloff") is not None else None,
+        "still_lower": _f(down_br.get("h21_share_still_lower")),
+        "horizon_d": br.get("terminal_horizon_d"),
+        "scope": str(raw.get("scope") or "").strip(),
+    }
+
+
 def _rates_block(raw: object) -> dict | None:
     if not isinstance(raw, dict):
         return None
@@ -1181,6 +1253,12 @@ def build_packet(root: Path) -> dict:
                 packet["watch"] = watch
         except Exception as exc:  # noqa: BLE001
             gaps.append(f"desk: build failed ({type(exc).__name__})")
+        try:
+            pressure = _pressure_block(root, gaps)
+            if pressure:
+                packet["pressure"] = pressure
+        except Exception as exc:  # noqa: BLE001
+            gaps.append(f"pressure: build failed ({type(exc).__name__})")
     except Exception as exc:  # noqa: BLE001
         log.debug("market_packet: build_packet failed (%s)", exc)
         gaps.append(f"packet: build failed ({type(exc).__name__})")
@@ -1684,6 +1762,42 @@ def _render_cn_board(p: dict) -> str:
     return "\n".join(lines)
 
 
+def _render_pressure(p: dict) -> str:
+    """'PRESSURE (2026-08-07): 14 names down, 6 up' + up to 3 one-liners.
+
+    Deliberately small (~350 chars): this is context under everything else in the
+    packet, and it is the LAST section, so it is the first to be dropped when the
+    budget bites.  No ALL-CAPS state token reaches the prose (protocol HONESTY),
+    and the artifact's own scope sentence rides along so the model relays the
+    limit rather than inventing one.
+    """
+    pr = p["pressure"]
+    stamp = _stamp(pr.get("asof"))
+    counts = _SEP.join(x for x in (
+        f"{pr['n_down']} down" if pr.get("n_down") else None,
+        f"{pr['n_up']} up" if pr.get("n_up") else None,
+    ) if x)
+    head = f"PRESSURE ({stamp}): " if stamp else "PRESSURE: "
+    lines = [head + (counts or "single-name moves beyond what peers explain")]
+    if pr.get("broad_selloff"):
+        lines[0] += " — mostly market-wide, not single-name"
+    for r in pr.get("rows") or []:
+        lead = ", ".join(x for x in (r.get("move"), r.get("vol")) if x)
+        if r.get("vs"):
+            lead = f"{lead} vs {r['vs']}" if lead else f"vs {r['vs']}"
+        bits = ", ".join(x for x in (lead or None, r.get("family")) if x)
+        tail = f" — {r['state']}" if r.get("state") else ""
+        if bits:
+            lines.append(f"{r['ticker']} {bits}{tail}")
+    sl = pr.get("still_lower")
+    if sl is not None and pr.get("horizon_d"):
+        lines.append(f"Past shocks like these: {sl * 100:.0f}% still below at "
+                     f"{pr['horizon_d']} sessions.")
+    if pr.get("scope"):
+        lines.append(_clip(pr["scope"], 160))
+    return "\n".join(lines)
+
+
 _RENDERERS: dict[str, object] = {
     "TAPE": ("tape", _render_tape),
     "CURVE": ("curve", _render_curve),
@@ -1700,6 +1814,7 @@ _RENDERERS: dict[str, object] = {
     "CNBOARD": ("cnboard", _render_cn_board),
     "DESK": ("desk", _render_desk),
     "WATCH": ("watch", _render_watch),
+    "PRESSURE": ("pressure", _render_pressure),
 }
 
 

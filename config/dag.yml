@@ -1161,6 +1161,33 @@ lanes:
                    data/treasury/tga.parquet,
                    data/treasury_auctions/auctions.parquet]
           outputs: [data/neuralweb/liquidity_plumbing.json]
+      - id: build_price_pressure
+        module: scripts.build_price_pressure
+        note: >
+          non-fatal; Price Pressure lobe (DRL W1, price_pressure.v1) — single US
+          names whose move outran what their sector peers explain, with the
+          point-in-time facts of that moment and how far each residual has come
+          back since. Pure aggregation over committed stores, no network calls.
+          Rebuilds the wide panel in memory (~45-60s measured; no panel cache is
+          committed anywhere) and harvests a self-healing catch-up window, so a
+          night that ran against a lagging store snapshot is picked up the next
+          night, idempotently on (ticker,date,side). The LEDGER append is gated on
+          COLLECT_LANE=nightly (engine.ledger_lane) — any lane may rebuild the
+          display, only the nightly may advance the ledger. A missing or stale bar
+          store prints a workflow annotation and exits 0 WITHOUT touching
+          artifacts. Display tier, every authority boolean literal false: the
+          underlying construction is closed as selection alpha
+          (DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER) and this lobe ships that
+          measured record as context. data/price_pressure/base_rates.json is
+          frozen by a manual local backfill only and is never rewritten here.
+          inputs: [data/massive_stock_day/, data/breadth/ticker_sectors.parquet,
+                   data/edgar/earnings_8k_dates.parquet,
+                   data/edgar/material_8k_events.parquet,
+                   data/baskets/membership.json, data/yahoo/SPY.parquet,
+                   data/fred/VIXCLS.parquet, data/revisions/history.parquet,
+                   data/price_pressure/base_rates.json]
+          outputs: [data/price_pressure/events.parquet,
+                    data/price_pressure/latest.json]
       - id: collect_release_target_vintages
         module: scripts.collect_release_target_vintages
         note: >
