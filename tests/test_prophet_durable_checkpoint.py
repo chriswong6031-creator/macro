@@ -425,6 +425,32 @@ def test_build_emits_a_hashed_closed_allowlist_delta_manifest() -> None:
     assert "site/stockdata/prophet_arena.json" not in run
 
 
+def test_legacy_shadow_parts_are_checkpointed_like_the_receipts() -> None:
+    """R6 (2026-08-10): the §6.5 legacy-shadow accrual store must survive the
+    runner.
+
+    The 2026-08-09 nightly wrote data/prophet/legacy_shadow/2026-08/
+    2026-08-09.parquet (intake receipt legacy_shadow.rows_in_part: 30) and it
+    never reached git: the engine tail's `git reset -q -- data/prophet`
+    unstages the whole root, so the hash-guarded checkpoint manifest is the
+    ONLY publication path — and the store was not registered in it. Registered
+    here on exactly the origination_receipts terms: hashed into both the
+    baseline and post-build snapshots, and inside the closed allowlist the
+    checkpoint stages from.
+    """
+    build_run = _step(PROPHET_STEP)["run"]
+    checkpoint_run = _step(CHECKPOINT_STEP)["run"]
+
+    # Month-grouped DAY parts: legacy_shadow/YYYY-MM/YYYY-MM-DD.parquet.
+    assert build_run.count('"data/prophet/legacy_shadow": "*/*.parquet"') == 2
+    assert "data/prophet/legacy_shadow/*/*.parquet" in checkpoint_run
+    # Same closed allowlist the receipts pass through — not a whole-root add.
+    case_allowlist = checkpoint_run.split('case "$rel" in', 1)[1].split("*)", 1)[0]
+    assert "data/prophet/legacy_shadow/*/*.parquet" in case_allowlist
+    # Append-only correction ledgers stay out, as before.
+    assert "plan_corrections" not in case_allowlist
+
+
 def test_origination_receipt_freezes_exact_rows_and_ranked_price_staleness() -> None:
     run = _step(PROPHET_STEP)["run"]
     snapshot_i = run.index('"schema": "prophet.origination_source_snapshot/v1"')
