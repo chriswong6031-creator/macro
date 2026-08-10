@@ -182,6 +182,13 @@ MUST_RESTART = [
     "app/requirements.txt",
     "app/deploy/macro-api.service",
     "config/site_access.yml",
+    # Private Issue Desk router import-caches both its engine and strict schemas.
+    "engine/options_issue_desk.py",
+    "contracts/options/options.issue_desk.v1.schema.json",
+    "contracts/options/options.issue_desk_proposal.v1.schema.json",
+    "contracts/options/options.issue_desk_decision.v1.schema.json",
+    "contracts/options/options.issue_receipt.v1.schema.json",
+    "lib/nyse_calendar.py",
     # research vault serving layer — imported at MODULE level by app/research.py.
     # These were the 2026-07-26 gap: download caps / anti-scrape limits / watermark
     # policy deployed to the VPS and stayed dead until an unrelated app/ change.

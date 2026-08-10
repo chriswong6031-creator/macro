@@ -57,7 +57,8 @@
      marks — OPTIONAL list of {k, en, zh, tip_en?, tip_zh?}: the sub-line chip row
        between the sector and the lifecycle tracker. `k` picks the visual weight:
        'feat' (filled green, the strongest), 'new' (accent outline), 'warm'
-       (amber — a context event just turned), 'lane' / 'theme' (plain muted).
+       (amber — a context event just turned), 'lane' / 'theme' (plain muted),
+       'nck' (hollow dashed — the one chip that reports an ABSENCE, see its rule).
        ABSENT key → no row at all, card height unchanged (every non-US board).
        EMPTY list → an empty row that still RESERVES its height, so a board using
        marks keeps the tracker and zone rows aligned across a grid row even when one
@@ -251,6 +252,29 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
   color:color-mix(in srgb,var(--prov-ink) 42%,var(--muted));
   background:color-mix(in srgb,var(--prov) 7%,transparent);
   border-color:color-mix(in srgb,var(--prov) 30%,transparent)}
+{# 'nck' — THE ABSENCE CHIP (ANTICIPATION v1 per-row carrier, 2026-08-09).  Every
+   other mark in this row states something that IS true of the name: it is featured,
+   it is new, its theme turned, its 12-day move hit an extreme.  This one marks a
+   slot where a reading should have been and wasn't — so it is drawn as the OUTLINE
+   of a chip: no fill at all, a dashed hairline, muted ink.  The form is the message,
+   and it needs no new hue; the featured aura is where this card spends its colour
+   (Chanel's rule — take one accessory off).
+
+   Dashed is BORROWED, not invented: .pv-trg-soon already uses a dashed border on
+   this card for "pending, not settled".  Same grammar, one level quieter.
+
+   Sentence case is load-bearing.  feat / new / adj / blow are UPPERCASE badges;
+   this one inherits .pv-mk-i's untransformed case so it reads as a note rather
+   than a label — which is exactly what it is.  Do not add text-transform here.
+
+   Contrast is the row's established floor, not a new claim: .pv-mk-i already ships
+   raw var(--muted) ink for `lane` chips, over a 10% muted wash.  Dropping the wash
+   moves the backdrop AWAY from the ink in BOTH themes (the wash lightens a dark
+   panel and darkens a light one), so this chip reads at or above the shipped lane
+   chip everywhere.  Never "tidy" it by giving it a tint — the missing fill is the
+   whole idea. #}
+.pv-mk-nck{background:transparent;color:var(--muted);
+  border-style:dashed;border-color:color-mix(in srgb,var(--muted) 42%,transparent)}
 {# a marks chip carrying a data-tip is a hover target, not a link — say so #}
 .pv-mk-i[data-tip-en]{cursor:help}
 .pv-stp{display:flex;align-items:center;margin:7px 1px 0}

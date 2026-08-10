@@ -73,11 +73,13 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 617, (
-        f"Expected 617 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 619, (
+        f"Expected 619 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (Government Revenue registered the operator-reviewed, exact-source"
-        " historical non-issuance control = 616->617);"
+        " historical non-issuance control = 618->619);"
+        " (Private Options Issue Desk registered separate operator-only append-only"
+        " proposal and decision ledgers = 616->618);"
         " (Filing Forensics offrender-lane heal, deferred from #4986, registered"
         " fundamental-forensics-disclosure-bundle — the scheduled SEC lane's published"
         " render input; current main carried 615 artifacts while this pin still said"
