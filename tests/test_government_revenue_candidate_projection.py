@@ -63,6 +63,10 @@ _ISSUED_RECOVERY_COHORT_SHA256 = (
 CORRECTION_ACTIVATED_AT = "2026-08-10T04:35:00+00:00"
 CORRECTION_REPEAT_AT = "2026-08-10T04:36:00+00:00"
 FORWARD_DURING_ACTIVATION_AT = "2026-08-10T04:32:00+00:00"
+_INCIDENT_FIXTURE_DIRECTORY = (
+    ROOT
+    / "tests/fixtures/government_revenue/issuance_incident_5fc18d5"
+)
 
 
 def _issued_recovery_cohort(rows: list[dict]) -> list[dict]:
@@ -102,7 +106,7 @@ def _artifact_bytes(root: Path) -> dict[str, bytes | None]:
 
 
 def _incident_correction_root(tmp_path: Path) -> Path:
-    """Rebuild the exact 5fc incident predecessor without reading Git history."""
+    """Install the exact raw 5fc incident predecessor from bounded fixtures."""
     root = canonical_fixture_root(tmp_path)
     copied = (
         "config/government_revenue/candidate_historical_suppressions.v1.json",
@@ -119,46 +123,38 @@ def _incident_correction_root(tmp_path: Path) -> Path:
         shutil.copy2(ROOT / relative, destination)
     manifest, _manifest_sha = load_candidate_issuance_correction_manifest(root)
     incident = manifest["incident"]
-    inputs = projection.validate_candidate_projection_inputs(
-        root,
-        generated_at=incident["issued_projection_generated_at"],
-    )
-    _observations, queue, _queue_id, source_health = projection._current_projection(inputs)
     ledger = projection.load_candidate_ledger(
         root / "data/government_revenue/candidate_ledger.jsonl"
     )
-    queue, queue_id = projection._queue_bound_to_immutable_ledger(queue, ledger)
-    state = projection._ledger_state(
-        inputs=inputs,
-        queue=queue,
-        queue_content_id=queue_id,
-        prior=ledger,
-        ledger=ledger,
-        append_count=0,
-    )
-    status = projection._projection_status(
-        inputs=inputs,
-        queue=queue,
-        queue_content_id=queue_id,
-        ledger=ledger,
-        source_health=source_health,
-    )
-    artifact_dir = root / "data/government_revenue"
-    public_dir = root / "site/government-revenue-data"
-    public_dir.mkdir(parents=True, exist_ok=True)
-    queue_raw = projection._canonical_bytes(queue)
-    state_raw = projection._canonical_bytes(state)
-    (artifact_dir / "candidate_queue.json").write_bytes(queue_raw)
-    (artifact_dir / "candidate_projection_state.json").write_bytes(state_raw)
-    (artifact_dir / "candidate_projection_status.json").write_bytes(
-        projection._canonical_bytes(status)
-    )
-    (public_dir / "candidates.json").write_bytes(queue_raw)
-    assert queue_id == incident["issued_queue_content_id"]
+    # apply_patch-managed text fixtures carry one repository newline.  The
+    # reviewed publication blobs did not, so remove exactly that transport byte
+    # before checking or installing the raw incident artifacts.
+    queue_fixture = (_INCIDENT_FIXTURE_DIRECTORY / "candidate_queue.json").read_bytes()
+    state_fixture = (
+        _INCIDENT_FIXTURE_DIRECTORY / "candidate_projection_state.json"
+    ).read_bytes()
+    assert queue_fixture.endswith(b"\n")
+    assert state_fixture.endswith(b"\n")
+    queue_raw = queue_fixture[:-1]
+    state_raw = state_fixture[:-1]
+    queue = json.loads(queue_raw)
+    state = json.loads(state_raw)
+
     assert sha256(queue_raw).hexdigest() == incident["issued_queue_sha256"]
     assert sha256(state_raw).hexdigest() == incident[
         "issued_projection_state_sha256"
     ]
+    assert queue["content_id"] == incident["issued_queue_content_id"]
+    assert candidate_queue_content_id(queue) == incident["issued_queue_content_id"]
+    assert state["queue_content_id"] == incident["issued_queue_content_id"]
+    projection._validate_ledger_state_binding(state, ledger)
+
+    artifact_dir = root / "data/government_revenue"
+    public_dir = root / "site/government-revenue-data"
+    public_dir.mkdir(parents=True, exist_ok=True)
+    (artifact_dir / "candidate_queue.json").write_bytes(queue_raw)
+    (artifact_dir / "candidate_projection_state.json").write_bytes(state_raw)
+    (public_dir / "candidates.json").write_bytes(queue_raw)
     return root
 
 
