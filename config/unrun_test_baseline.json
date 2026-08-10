@@ -343,7 +343,6 @@
   "tests/test_factor_seasonality.py",
   "tests/test_factor_series.py",
   "tests/test_factors_page_render.py",
-  "tests/test_falsifier_tripwires.py",
   "tests/test_fear_greed.py",
   "tests/test_fed_path.py",
   "tests/test_federal_register.py",
