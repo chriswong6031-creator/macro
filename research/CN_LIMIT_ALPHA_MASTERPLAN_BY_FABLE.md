@@ -1,5 +1,19 @@
 # CN LIMIT-MOVE ALPHA — program masterplan (Fable orchestration)
 
+Status: **superseded; STOP-SHIP (2026-08-10)**
+
+Authority: `none_research_display_only`
+
+**DO NOT EXECUTE THE HISTORICAL WAVE MAP OR CITE ITS NUMBERS.** The adjusted-price
+construction beneath the Wave-1 through Wave-3 measurements was withdrawn by
+`research/CN_LIMIT_ALPHA_SOL_ADJUSTED_PRICE_STOP_SHIP_2026-08-09.md`. The numeric
+results, receipts, recovery commands, grading directions, and promotion queue below are
+retained only as historical context; they are not evidence and cannot seed a new ledger.
+`DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT` and the amended reconciliation ledger govern on
+conflict. Qualitative construction ideas may inform a fresh preregistration only after an
+authorized unadjusted TuShare `daily` plus same-key `stk_limit` exact-cent substrate and
+point-in-time completeness proof exist.
+
 **Program home.** Commissioned by operator order 2026-08-08; chartered in
 `research/CN_LIMIT_ALPHA_FABLE_HANDOFF_2026-08-08.md` (PR #4972). Orchestration: Fable main
 loop plans/adjudicates; Opus `builder` lanes measure in isolated worktrees; ONE blinded Fable

@@ -21,16 +21,19 @@ Private inputs for every requested root:
 
 - `data/chain_snapshots/{ROOT}/{SESSION}.parquet`
 - `data/chain_snapshots/{ROOT}/{SESSION}_oi.parquet`
-- `data/chain_snapshots/_meta.json`
+- `data/chain_snapshots/_bucket_receipts/{SESSION}.jsonl` (live hook authority)
+- `data/chain_snapshots/_meta.json` (standalone/manual compatibility only)
 
-The poller meta receipt must name the same session and bucket, report
-`roots_failed == 0`, report `roots_ok == universe_n`, and bind the exact root-set
-identities in a canonical `roots` array. Counters are genuine JSON integers, not
-coerced strings, floats, or booleans. Until the later poller hook writes that
-exact-root attestation, the standalone publisher deliberately fails closed rather
-than infer completeness from directory count. Any missing, malformed,
-swapped-while-read, duplicate-contract, or partial root fails the whole
-publication before a discovery marker changes.
+The production hook accepts only the producer's exact append-once
+`intent -> decision -> availability` packet. Runtime validation re-proves its
+schema, deterministic IDs and hashes, exact root list, cadence, source-completion
+counters, decision clock, and availability clock before the builder starts. It
+then re-proves each requested bucket's installed row count/content digest and
+the stable OI row count/file digest against the per-root decision evidence. The
+legacy standalone/manual CLI still accepts `_meta.json`, but production never
+uses that mutable bridge. Any missing, malformed, swapped-while-read,
+duplicate-contract, or partial root fails the whole publication before a
+discovery marker changes.
 
 R2 keys:
 
@@ -151,6 +154,12 @@ R2 publication requires the standard `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`,
 `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET` environment variables plus `--publish`.
 No credentials are written to artifacts or logs.
 
+The poller invokes the same CLI with `--completion-packet-stdin`; that mode
+rejects `--session`, `--bucket`, `--roots`, `--meta`, and `--observed-at`
+overrides so a caller cannot launder receipt identity. The receipt's
+`decision_at` becomes `builder_observed_at`; its later `availability_at` remains
+the packet availability clock.
+
 Publication order is load-bearing:
 
 1. Build and strict-JSON validate every root locally.
@@ -158,6 +167,12 @@ Publication order is load-bearing:
 3. Compare-and-swap the complete global `index.json` manifest. This is the only
    authoritative discovery commit.
 4. Repair derivative per-root current pointers after that commit.
+5. Commit the monotonic local mirror.
+6. Only after steps 1–5 succeed, write a deterministic local-only publication
+   acknowledgement under
+   `options_structure/msc_intraday/_publication_receipts/{SESSION}/{HHMM}.json`
+   plus an immutable sibling `{HHMM}.index.json` containing the exact committed
+   index bytes.
 
 The index and currents share one strict monotonic epoch law: an older target is
 rejected or safely superseded, identical bytes at the same epoch are idempotent,
@@ -183,6 +198,43 @@ uncertainty is repairable without rewriting evidence. With `--publish`, R2
 commits before the local mirror advances, so an older delayed build cannot
 regress local discovery after R2 rejects it.
 
+The acknowledgement binds the exact completion-packet hash and receipt IDs,
+completion result hash, index key/hash, and every immutable object key/hash/byte
+count/packet ID. Replay re-hashes the immutable local objects and saved index,
+revalidates the index ID/object receipts, and requires canonical ack bytes. It is
+derivative delivery state, not a new R2 key, source store, signal
+contract, or authority surface. It uses the same temp-write, file-fsync, atomic
+replace, and parent-directory-fsync law. Missing acknowledgement always means
+retry; exact bytes are re-fsynced and accepted idempotently, while malformed or
+different bytes fail closed.
+
+Two canonical, local-only cursors live beside the acknowledgements. The
+activation-bound `cursor.json` identifies one exact delivered packet, hashes its
+durable ack bytes, and binds the complete-packet prefix for that session. It may
+advance by exactly one packet; a new session resets the session prefix to one.
+The `scan_cursor.json` bounds source-ledger work without claiming delivery. It
+may advance only across the immediate next source ledger after re-proving the
+sealed ledger SHA-256, terminal state, complete count/prefix, and last ack hash
+(or exact zero-complete state). A cumulative ack-prefix hash re-proves every
+acknowledgement in the bounded sealed session, so a missing/corrupt non-tail ack
+cannot be hidden by a valid tail. Exact replay is idempotent. A cursor missing
+before its first durable write is normal crash state; a missing scan cursor is
+recovered from the activation-bound delivery cursor. Torn, noncanonical,
+hash-drifted, skipped-ledger, or activation-drifted cursor state suppresses
+projection and is surfaced for repair. Historical cursor loss after a newer
+index/cursor advanced remains the clone-loss STOP below. None creates an R2 key
+or source/model authority.
+
+The entire local projection mirror, including every ack/index sibling plus
+`_publication_receipts/cursor.json` and `scan_cursor.json`, must be
+clone-swap preserved while the poller is stopped with an exact path-size-SHA
+manifest. It is explicitly gitignored and is never a public artifact. Missing
+ack bytes before commit are normal retry state. Missing/corrupt historical ack
+bytes after a newer index advances are an operator-reconciliation STOP, not
+permission to regress the index: compare the immutable saved index receipt,
+local packets, and remote R2 objects/current index before restoring exact backup
+bytes or applying a separately reviewed repair.
+
 ## Focused verification
 
 ```bash
@@ -204,34 +256,60 @@ rollback or deletion, partial pointer repair, concurrent newer-pointer
 preservation, six-digit microsecond identity without truncation, and local-mirror
 monotonicity/crash durability including post-rename retry recovery.
 
-## Later production hook (not wired in R2.2-A core)
+## Production completion hook
 
-The safer hook is an optional/config-gated synchronous call inside
-`scripts/chain_snapshot_poller.py` only after the producer has durably appended a
-per-bucket completion receipt with the exact root set, session, bucket, stable
-logical clock, and source identities. The current mutable `_meta.asof` is rewritten
-on same-bucket retries while Parquet is existing-row-wins, so it is not an honest
-immutable-packet clock and the live hook remains **NO-GO** until that receipt
-exists. A separate launchd schedule would still have to infer identity, can race
-an atomic Parquet replacement, and can drift into a partial cycle.
+`scripts/chain_snapshot_poller.py` now owns one optional/config-gated synchronous
+call to this existing builder. It runs under the producer writer lock, only after
+durable availability, and passes the exact completion packet over stdin. There is
+no second scheduler, raw store, producer, root resolver, or clock. A completed
+same-bucket retry invokes the same immutable/CAS publisher idempotently. If the
+startup receipt drain turns a decision-only tail into availability after RTH,
+the poller reacquires the producer lock after config validation and publishes
+that exact recovered packet before exiting; it never strands a completed close
+bucket merely because source admission has ended.
 
-The future hook must satisfy these tests before enablement:
+Crash and transient-failure recovery uses no second workflow. Under the existing
+producer lock, an exact immutable `activation_session` excludes all older
+receipts, and each pass decodes only the sealed checkpoint ledger, current scan
+session, immediate next ledger, and at most one distinct delivery-cursor ledger
+(four ledger decodes/pass worst case, independent of retained history). It skips
+exact acknowledged deliveries, attempts at most one missing acknowledgement,
+and advances one source-hash-bound terminal/no-complete session at a time. The
+publisher cursor binds activation forever; changing it after first delivery is
+a STOP, not a backfill control. A cursor/ack error suppresses projection but
+does not recast, rank, or reject source truth. The work is synchronous under the
+writer lock, so it may delay the next source start by bounded scan/reproof time
+and at most the configured publisher timeout; M1 rollout must gate total lock
+hold rather than call the retry non-gating. An older unacknowledged projection
+still suppresses newer projection attempts until ordered catch-up clears it;
+the global index is never asked to regress. At normal or early close, backlog
+causes a nonzero exit so the existing launchd `KeepAlive.SuccessfulExit=false`
+policy retries it. Replay rebuilds the exact bundle, revalidates the source
+receipt, and re-proves the R2/local object bytes before acknowledging.
 
-1. A 150/150 sweep calls the publisher once with the exact poller root list,
-   session, bucket, cadence, and append-once completion receipt.
-2. Any `roots_failed > 0` skips publication and leaves the authoritative index
-   and derivative currents unchanged.
-3. Publisher exception or timeout is logged but does not change the successful
-   collection result or `--once` exit status.
-4. A half-day bucket after 13:00 ET never attempts publication.
-5. The hook is disabled by default and makes zero R2 calls when disabled.
-6. A real full-universe dry run records source bytes, wall time, and peak RSS.
+Code defaults the hook off when the config block is absent. Canonical production
+config deliberately keeps `chain_snapshots.options_structure_r2.enabled: false`
+and `activation_session: null` until target-host dependencies and credentials,
+a real full-universe M1 runtime/RSS baseline, a safe multi-run latency series,
+and an accumulated-ledger writer-lock timing gate are recorded. Promotion sets
+one exact current/future NYSE activation session before first enabled launch and
+never changes it while the cursor tree exists. When
+promoted, the hard `timeout_sec <= 120` terminates the subprocess at that ceiling;
+exceptions, nonzero exits, missing credentials, and timeouts are logged into the
+poller observability path but cannot roll back availability or change a successful
+source receipt. Partial sweeps and incomplete elapsed buckets never invoke it;
+post-close publication requires the exact recovered availability packet above.
 
-The Aug-07 source volume reported by operations is about 2.5 GB by the close. The
-publisher's close-of-day runtime is not yet measured in this worktree because that
-private store is not mounted here; a planning expectation is roughly 30–90 seconds
-on the M1 local SSD, and the enablement budget should be p95 under 120 seconds so it
-cannot consume a meaningful fraction of the 15-minute collection interval. If the
-measured p95 misses that budget, add a producer-owned per-bucket row-group/light
-sidecar rather than introducing an independently scheduled reader that races the
-poller. Publication failure must always remain non-fatal to collection.
+Focused tests prove exact receipt transport, default-off zero calls, partial-root
+abstention, source-evidence drift rejection, override refusal, timeout
+containment, normal/early-close decision-tail recovery, transient retry,
+crash-after-availability catch-up, acknowledgement idempotency, monotonic R2
+reuse, activation drift refusal, ack-written/cursor-not-advanced recovery,
+terminal-empty session progress, bounded two-ledger decoding, cursor
+corruption/missing-ledger containment, and all-false authority. Each successful builder run logs `source_bytes`,
+`wall_sec`, and `peak_rss_bytes`; the first real full-universe M1 run is one
+baseline sample, not p95. Only a subsequent multi-run series may establish p95.
+If observed p95
+reaches the 120-second ceiling, keep publication non-authoritative and add a
+producer-owned per-bucket row-group/light sidecar rather than an independently
+scheduled reader that races the poller.

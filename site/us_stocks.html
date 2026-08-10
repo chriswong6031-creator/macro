@@ -81,7 +81,7 @@
 <link rel="stylesheet" href="dashboard-icons.css?v=be32e541">
 <script defer src="dashboard-icons.js?v=e096076e"></script>
 
-<link rel="stylesheet" href="assets/css/9f1080c0.css?v=9f1080c0">
+<link rel="stylesheet" href="assets/css/552d9a8e.css?v=552d9a8e">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=65bba21c">
 <link rel="preload" as="style" href="assets/css/2658e187.css?v=2658e187">
@@ -2805,12 +2805,13 @@
           <button id="us-st-btn-table" aria-selected="false" onclick="USStockTable._setView('table')">&#9776; <span class="l-en">Table</span><span class="l-zh">表格</span></button>
         </span>
         
-        <span class="muted" style="font-size:11.5px">78 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 144 <span class="l-en">setups · green dot = entry open, yellow = wait for pullback.</span><span class="l-zh">个形态 · 绿点＝现在可入场，黄点＝等回调。</span>
+        
+        <span class="muted" id="us-board-sub" style="font-size:11.5px">78 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 144 <span class="l-en">setups · green dot = entry open, yellow = wait for pullback.</span><span class="l-zh">个形态 · 绿点＝现在可入场，黄点＝等回调。</span>
           <span class="help">?<span class="tip tip-wide"><span class="l-en">Each card answers two separate questions. Conviction: is this a name worth owning? Entry: is today a good price? High conviction can still mean wait for the pullback. Green dot = entry open · yellow = wait · the alpha chip ranks selection edge. Click a card for the full breakdown.</span><span class="l-zh">每张卡片回答两个独立问题。信念：是否值得持有；入场：今天价格是否合适。高信念也可能需要等回调。绿点＝入场窗口已开 · 黄点＝等待 · alpha 标记为选股优势排名。点击卡片看完整拆解。</span></span></span></span>
         
       </div>
       <div class="pbs-note">
-        <span class="pbs-nv" data-bs-note="ahead" hidden><span class="l-en"><b>Get ready</b> — set from today's close, confirmed by morning.</span><span class="l-zh"><b>可以开始准备</b> — 依今日收盘价选出，明早完成确认。</span><span class="help">?<span class="tip tip-wide"><span class="l-en">The board is rebuilt from the day's closing prices as soon as the session ends, so tonight's picks are up within a couple of hours of the close instead of overnight. What makes the board is decided the same way the overnight pass decides it — but a few inputs only arrive later at night, so a name can still be adjusted or leave the board before morning. The overnight board stays the one of record; whatever changes is marked the next morning.</span><span class="l-zh">收盘后，系统会用当日收盘价重算整个榜单，因此今晚的选股在收盘后一两个小时内就能看到，不必等到半夜。入选标准与隔夜复核完全一致，只是有几项数据要到深夜才到位 —— 所以个别股票在明早之前仍可能被调整或移出榜单。隔夜榜单仍是最终依据，凡有变动，第二天早上都会标出来。</span></span></span></span>
+        <span class="pbs-nv" data-bs-note="ahead" hidden><span class="l-en"><b>Get ready</b> — set from today's close, confirmed by morning.</span><span class="l-zh"><b>可以开始准备</b> — 依今日收盘价选出，明早完成确认。</span><span class="help">?<span class="tip tip-wide"><span class="l-en">Only part of the full test can run this early. In: how strong the signal is, and how far the name has already run. Not yet in: the entry range, the edge score the cards normally show, and the setup-quality checks — those need inputs that arrive later at night. So this is a shortlist, not the ranked board: order, scores and buy zones land with the overnight pass, and a name can still be adjusted or leave before morning. Room is how far a name has left to go before it counts as stretched — "Not checked" means that reading did not arrive for this one.</span><span class="l-zh">这个时点只能完成整套判定中的一部分。已纳入：信号强弱，以及这只股票已经走了多远。尚未纳入：入场区间、卡片上平时显示的「优势」评分，以及形态质量检查 —— 这几项都要等深夜的数据到位。所以这是一份候选名单，还不是排好序的榜单：排序、评分和买区都要等隔夜复核给出，个别股票在明早之前仍可能被调整或移出。「空间」指的是股价在被视为过度拉伸之前还剩多少余地；标注「未检查」表示这只股票没有取到这项读数。</span></span></span></span>
         <span class="pbs-nv" data-bs-note="behind" hidden><span class="l-en">Tonight's early update isn't in — these are last night's confirmed picks. Check a live quote before you act.</span><span class="l-zh">今晚的提前更新未到位，以下为昨晚确认的选股名单。操作前请先看一下实时报价。</span><span class="help">?<span class="tip tip-wide"><span class="l-en">Tonight's early rebuild didn't publish, so the board still shows the picks the overnight pass confirmed on the date stamped above. The overnight pass runs regardless and will refresh the board tonight. Prices on the cards are from that date, not from today.</span><span class="l-zh">今晚的提前重算没有发布，所以榜单显示的仍是上方日期那一晚确认的选股。隔夜复核照常运行，今晚会刷新榜单。卡片上的价格来自那一天，不是今天。</span></span></span></span>
         <span class="pbs-nv" data-bs-note="closed" hidden><span class="l-en">Markets are closed — these are the last confirmed picks. The board updates after the next session's close.</span><span class="l-zh">休市中，以下为最近一次确认的选股名单。下一个交易日收盘后更新。</span><span class="help">?<span class="tip tip-wide"><span class="l-en">Markets were closed today, so there is nothing new to add. The board shows the picks confirmed after the last session, and it refreshes after the next one closes.</span><span class="l-zh">今天休市，没有新的内容。榜单显示的是上一个交易日之后确认的选股，下一个交易日收盘后会刷新。</span></span></span></span>
       </div>
@@ -4470,7 +4471,7 @@
     <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="38.1" width="96.0" height="1.2" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="38.1" x2="240" y2="38.1" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="39.3" x2="240" y2="39.3" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,17.4 3.8,16.6 7.6,13.3 11.4,17.3 15.2,10.1 19.0,15.0 22.9,20.5 26.7,18.9 30.5,18.9 34.3,20.6 38.1,23.3 41.9,25.7 45.7,26.3 49.5,24.2 53.3,22.7 57.1,20.5 61.0,22.5 64.8,19.5 68.6,22.3 72.4,20.9 76.2,29.9 80.0,31.6 83.8,30.3 87.6,32.7 91.4,33.7 95.2,33.9 99.0,33.2 102.9,36.0 106.7,36.8 110.5,36.7 114.3,36.7 118.1,37.8 121.9,39.4 125.7,42.0 129.5,41.8 133.3,36.4 137.1,34.9 141.0,32.4 144.8,35.6 148.6,34.9 152.4,36.4 156.2,32.6 160.0,32.7 163.8,32.7 167.6,35.5 171.4,38.1 175.2,36.9 179.0,35.9 182.9,39.8 186.7,38.0 190.5,39.1 194.3,39.6 198.1,39.7 201.9,41.1 205.7,41.1 209.5,41.4 213.3,41.1 217.1,39.6 221.0,37.1 224.8,35.8 228.6,36.1 232.4,37.1 236.2,38.3 240.0,38.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,17.4 3.8,16.6 7.6,13.3 11.4,17.3 15.2,10.1 19.0,15.0 22.9,20.5 26.7,18.9 30.5,18.9 34.3,20.6 38.1,23.3 41.9,25.7 45.7,26.3 49.5,24.2 53.3,22.7 57.1,20.5 61.0,22.5 64.8,19.5 68.6,22.3 72.4,20.9 76.2,29.9 80.0,31.6 83.8,30.3 87.6,32.7 91.4,33.7 95.2,33.9 99.0,33.2 102.9,36.0 106.7,36.8 110.5,36.7 114.3,36.7 118.1,37.8 121.9,39.4 125.7,42.0 129.5,41.8 133.3,36.4 137.1,34.9 141.0,32.4 144.8,35.6 148.6,34.9 152.4,36.4 156.2,32.6 160.0,32.7 163.8,32.7 167.6,35.5 171.4,38.1 175.2,36.9 179.0,35.9 182.9,39.8 186.7,38.0 190.5,39.1 194.3,39.6 198.1,39.7 201.9,41.1 205.7,41.1 209.5,41.4 213.3,41.1 217.1,39.6 221.0,37.1 224.8,35.8 228.6,36.1 232.4,37.1 236.2,38.3 240.0,38.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="38.1" r="2.6" fill="var(--up)"/></svg>
     <span class="pv-ov pv-ovl"><span class="pv-chip"><span class="l-en">Buy</span><span class="l-zh">买入</span></span>
       <span class="pv-live" hidden></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">Reports in 8 d</span><span class="l-zh">8日后公布业绩</span></span></span></span>
+      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (2)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 2</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">Earnings in 8 days. The result can override the setup, so size down.</span><span class="l-zh">8 天后公布财报。业绩结果可能压过技术形态，宜减小仓位。</span></span><span class="pv-cau-row"><span class="l-en">Reports in 8 d</span><span class="l-zh">8日后公布业绩</span></span></span></span>
     </span>
     <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="BIDU" data-mkt="us">$109.71</span><span class="nb-chg pv-chg" data-sym="BIDU" data-mkt="us">—</span></span></span>
   </div>
@@ -5965,7 +5966,7 @@
     <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="11.3" width="96.0" height="4.1" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="11.3" x2="240" y2="11.3" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="15.3" x2="240" y2="15.3" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,29.3 3.8,31.9 7.6,35.0 11.4,35.4 15.2,39.4 19.0,38.5 22.9,42.0 26.7,40.8 30.5,39.5 34.3,35.4 38.1,33.8 41.9,34.1 45.7,35.4 49.5,31.7 53.3,30.0 57.1,32.1 61.0,35.3 64.8,34.9 68.6,34.2 72.4,34.5 76.2,34.1 80.0,34.7 83.8,28.7 87.6,30.0 91.4,26.3 95.2,25.1 99.0,24.4 102.9,20.7 106.7,25.6 110.5,22.1 114.3,26.0 118.1,27.1 121.9,17.7 125.7,16.7 129.5,14.7 133.3,13.7 137.1,12.7 141.0,13.7 144.8,10.1 148.6,13.8 152.4,16.6 156.2,21.1 160.0,19.9 163.8,17.5 167.6,20.7 171.4,20.4 175.2,18.5 179.0,15.1 182.9,19.8 186.7,22.8 190.5,23.5 194.3,23.6 198.1,27.0 201.9,22.8 205.7,21.2 209.5,16.9 213.3,20.1 217.1,22.6 221.0,23.3 224.8,19.2 228.6,15.0 232.4,12.5 236.2,14.4 240.0,11.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,29.3 3.8,31.9 7.6,35.0 11.4,35.4 15.2,39.4 19.0,38.5 22.9,42.0 26.7,40.8 30.5,39.5 34.3,35.4 38.1,33.8 41.9,34.1 45.7,35.4 49.5,31.7 53.3,30.0 57.1,32.1 61.0,35.3 64.8,34.9 68.6,34.2 72.4,34.5 76.2,34.1 80.0,34.7 83.8,28.7 87.6,30.0 91.4,26.3 95.2,25.1 99.0,24.4 102.9,20.7 106.7,25.6 110.5,22.1 114.3,26.0 118.1,27.1 121.9,17.7 125.7,16.7 129.5,14.7 133.3,13.7 137.1,12.7 141.0,13.7 144.8,10.1 148.6,13.8 152.4,16.6 156.2,21.1 160.0,19.9 163.8,17.5 167.6,20.7 171.4,20.4 175.2,18.5 179.0,15.1 182.9,19.8 186.7,22.8 190.5,23.5 194.3,23.6 198.1,27.0 201.9,22.8 205.7,21.2 209.5,16.9 213.3,20.1 217.1,22.6 221.0,23.3 224.8,19.2 228.6,15.0 232.4,12.5 236.2,14.4 240.0,11.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="11.2" r="2.6" fill="var(--up)"/></svg>
     <span class="pv-ov pv-ovl"><span class="pv-chip"><span class="l-en">Buy</span><span class="l-zh">买入</span></span>
       <span class="pv-live" hidden></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (2)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 2</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">Reports in 8 d</span><span class="l-zh">8日后公布业绩</span></span><span class="pv-cau-row"><span class="l-en">Options ceiling 1.2% above (as of 2026-08-07) — price tends to stall where dealer hedging is heaviest</span><span class="l-zh">上方1.2%有期权天花板（截至2026-08-07） — 价格倾向在做市商对冲最重处停滞</span></span></span></span>
+      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (3)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 3</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">Earnings in 8 days. The result can override the setup, so size down.</span><span class="l-zh">8 天后公布财报。业绩结果可能压过技术形态，宜减小仓位。</span></span><span class="pv-cau-row"><span class="l-en">Reports in 8 d</span><span class="l-zh">8日后公布业绩</span></span><span class="pv-cau-row"><span class="l-en">Options ceiling 1.2% above (as of 2026-08-07) — price tends to stall where dealer hedging is heaviest</span><span class="l-zh">上方1.2%有期权天花板（截至2026-08-07） — 价格倾向在做市商对冲最重处停滞</span></span></span></span>
     </span>
     <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="HD" data-mkt="us">$355.62</span><span class="nb-chg pv-chg" data-sym="HD" data-mkt="us">—</span></span></span>
   </div>
@@ -6888,7 +6889,7 @@
     <span class="pv-ov pv-ovl"><span class="pv-chip"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
       <span class="pv-trg" data-tip-en="Fresh entry trigger — it fired in the last few days and momentum is still building. A conviction card plus a fresh trigger is the strongest read on this board — but the main chip still rules: if this card says Wait, price has already run past the zone; don&#39;t chase." data-tip-zh="新的入场触发 — 最近几天刚刚触发，动量还在往上走。信念卡片加上新触发，是本板最强的组合 — 但主标签仍然是最终判断：如果卡片写的是「等待」，说明价格已经冲过买点区，不要追。">⚡ <span class="l-en">Triggered</span><span class="l-zh">已触发</span></span>
       <span class="pv-live" hidden></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (3)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 3</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">Already moving. Don&#39;t chase above the buy zone.</span><span class="l-zh">已在异动。不要在买区上方追高。</span></span><span class="pv-cau-row"><span class="l-en">Reports in 8 d</span><span class="l-zh">8日后公布业绩</span></span><span class="pv-cau-row"><span class="l-en">Sector stance is cautious. This is a single-stock trigger, not a sector call.</span><span class="l-zh">板块态度为谨慎。个股信号，非板块判断。</span></span></span></span>
+      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (4)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 4</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">Earnings in 8 days. The result can override the setup, so size down.</span><span class="l-zh">8 天后公布财报。业绩结果可能压过技术形态，宜减小仓位。</span></span><span class="pv-cau-row"><span class="l-en">Already moving. Don&#39;t chase above the buy zone.</span><span class="l-zh">已在异动。不要在买区上方追高。</span></span><span class="pv-cau-row"><span class="l-en">Reports in 8 d</span><span class="l-zh">8日后公布业绩</span></span><span class="pv-cau-row"><span class="l-en">Sector stance is cautious. This is a single-stock trigger, not a sector call.</span><span class="l-zh">板块态度为谨慎。个股信号，非板块判断。</span></span></span></span>
     </span>
     <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="BHP" data-mkt="us">$90.41</span><span class="nb-chg pv-chg" data-sym="BHP" data-mkt="us">—</span></span></span>
   </div>
@@ -7304,7 +7305,7 @@
     <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><line x1="144.0" y1="35.0" x2="240" y2="35.0" stroke="var(--warn)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="35.5" x2="240" y2="35.5" stroke="var(--warn)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,21.7 3.8,22.1 7.6,19.4 11.4,20.8 15.2,14.9 19.0,10.1 22.9,12.4 26.7,14.5 30.5,16.7 34.3,18.2 38.1,14.2 41.9,14.2 45.7,16.4 49.5,15.8 53.3,17.6 57.1,19.0 61.0,22.0 64.8,14.4 68.6,12.1 72.4,13.1 76.2,22.1 80.0,21.9 83.8,25.5 87.6,26.1 91.4,25.9 95.2,23.1 99.0,20.7 102.9,25.3 106.7,25.7 110.5,26.7 114.3,22.5 118.1,25.7 121.9,27.2 125.7,27.3 129.5,31.4 133.3,31.1 137.1,27.8 141.0,29.2 144.8,33.8 148.6,33.7 152.4,36.8 156.2,35.7 160.0,35.4 163.8,36.6 167.6,36.2 171.4,35.4 175.2,35.1 179.0,37.6 182.9,35.9 186.7,34.3 190.5,31.1 194.3,32.5 198.1,32.1 201.9,36.1 205.7,36.6 209.5,38.6 213.3,42.0 217.1,39.6 221.0,40.0 224.8,38.0 228.6,30.8 232.4,31.6 236.2,29.6 240.0,27.8 240,42" fill="var(--warn)" opacity="0.12" stroke="none"/><polyline points="0.0,21.7 3.8,22.1 7.6,19.4 11.4,20.8 15.2,14.9 19.0,10.1 22.9,12.4 26.7,14.5 30.5,16.7 34.3,18.2 38.1,14.2 41.9,14.2 45.7,16.4 49.5,15.8 53.3,17.6 57.1,19.0 61.0,22.0 64.8,14.4 68.6,12.1 72.4,13.1 76.2,22.1 80.0,21.9 83.8,25.5 87.6,26.1 91.4,25.9 95.2,23.1 99.0,20.7 102.9,25.3 106.7,25.7 110.5,26.7 114.3,22.5 118.1,25.7 121.9,27.2 125.7,27.3 129.5,31.4 133.3,31.1 137.1,27.8 141.0,29.2 144.8,33.8 148.6,33.7 152.4,36.8 156.2,35.7 160.0,35.4 163.8,36.6 167.6,36.2 171.4,35.4 175.2,35.1 179.0,37.6 182.9,35.9 186.7,34.3 190.5,31.1 194.3,32.5 198.1,32.1 201.9,36.1 205.7,36.6 209.5,38.6 213.3,42.0 217.1,39.6 221.0,40.0 224.8,38.0 228.6,30.8 232.4,31.6 236.2,29.6 240.0,27.8" fill="none" stroke="var(--warn)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="27.8" r="2.6" fill="var(--warn)"/></svg>
     <span class="pv-ov pv-ovl"><span class="pv-chip"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
       <span class="pv-live" hidden></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (5)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 5</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">Accounting quality is worth a second look.</span><span class="l-zh">财务质量值得再核查一次。</span></span><span class="pv-cau-row"><span class="l-en">Earnings in 8 days. The result can override the setup, so size down.</span><span class="l-zh">8 天后公布财报。业绩结果可能压过技术形态，宜减小仓位。</span></span><span class="pv-cau-row"><span class="l-en">Already moving. Don&#39;t chase above the buy zone.</span><span class="l-zh">已在异动。不要在买区上方追高。</span></span><span class="pv-cau-row"><span class="l-en">Reports in 7 d</span><span class="l-zh">7日后公布业绩</span></span><span class="pv-cau-row"><span class="l-en">Sector stance is cautious. This is a single-stock trigger, not a sector call.</span><span class="l-zh">板块态度为谨慎。个股信号，非板块判断。</span></span></span></span>
+      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (5)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 5</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd"><span class="l-en">Before you act</span><span class="l-zh">动手之前</span></span><span class="pv-cau-row"><span class="l-en">Accounting quality is worth a second look.</span><span class="l-zh">财务质量值得再核查一次。</span></span><span class="pv-cau-row"><span class="l-en">Earnings in 7 days. The result can override the setup, so size down.</span><span class="l-zh">7 天后公布财报。业绩结果可能压过技术形态，宜减小仓位。</span></span><span class="pv-cau-row"><span class="l-en">Already moving. Don&#39;t chase above the buy zone.</span><span class="l-zh">已在异动。不要在买区上方追高。</span></span><span class="pv-cau-row"><span class="l-en">Reports in 7 d</span><span class="l-zh">7日后公布业绩</span></span><span class="pv-cau-row"><span class="l-en">Sector stance is cautious. This is a single-stock trigger, not a sector call.</span><span class="l-zh">板块态度为谨慎。个股信号，非板块判断。</span></span></span></span>
     </span>
     <span class="pv-ov pv-ovr"><span class="pv-quote"><span class="nb-px pv-px" data-sym="FN" data-mkt="us">$562.38</span><span class="nb-chg pv-chg" data-sym="FN" data-mkt="us">—</span></span></span>
   </div>
@@ -13133,7 +13134,7 @@
             <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="1.8" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="9.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="31.9" width="14.2" height="8.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="37.1" width="14.2" height="2.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="8.1" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="165.6" y="20.0" width="14.2" height="20.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">7</text><rect x="185.3" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="190.9" y="37.3" width="14.2" height="2.7" rx="1.5" style="fill:var(--up);opacity:1"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">8</text><rect x="216.2" y="40.0" width="14.2" height="11.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="20.2" width="14.2" height="19.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="20.0" width="14.2" height="20.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="28.4" width="14.2" height="11.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.2%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-1.0%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+0.8%</td><td>43%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.6%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.3%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.8%</td><td>39%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+2.0%</td><td>68%</td><td class="muted">28</td></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.3%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-1.2%</td><td>44%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+2.0%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.0%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.2%</td><td>70%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
-        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2202</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2202</span></td>
+        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2201</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2201</span></td>
       </tr>
       
       <tr>
@@ -13158,7 +13159,7 @@
             <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="30.6" width="14.2" height="9.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="8.1" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="28.5" width="14.2" height="11.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="23.4" width="14.2" height="16.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="20.9" width="14.2" height="19.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="31.5" width="14.2" height="8.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="165.6" y="28.5" width="14.2" height="11.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">7</text><rect x="185.3" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="190.9" y="31.4" width="14.2" height="8.6" rx="1.5" style="fill:var(--up);opacity:1"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">8</text><rect x="216.2" y="40.0" width="14.2" height="17.6" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="16.2" width="14.2" height="23.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="36.8" width="14.2" height="3.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+1.1%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-0.9%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.3%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+1.9%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+2.1%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="pos">+1.0%</td><td>50%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.3%</td><td>64%</td><td class="muted">28</td></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+1.0%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-2.0%</td><td>48%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+2.9%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.7%</td><td>74%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+0.4%</td><td>56%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
-        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2202</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2202</span></td>
+        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2201</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2201</span></td>
       </tr>
       
       <tr>
@@ -13183,7 +13184,7 @@
             <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="30.8" width="14.2" height="9.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="27.0" width="14.2" height="13.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="22.2" width="14.2" height="17.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="36.6" width="14.2" height="3.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="165.6" y="35.8" width="14.2" height="4.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">7</text><rect x="185.3" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="190.9" y="40.0" width="14.2" height="4.0" rx="1.5" style="fill:var(--down);opacity:1"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">8</text><rect x="216.2" y="40.0" width="14.2" height="6.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="31.8" width="14.2" height="8.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="25.2" width="14.2" height="14.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="32.1" width="14.2" height="7.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+1.1%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="pos">+1.6%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+2.2%</td><td>71%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+3.2%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.4%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.1%</td><td>50%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+0.5%</td><td>61%</td><td class="muted">28</td></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="neg">-0.5%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-0.8%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.0%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+1.8%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.0%</td><td>63%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
-        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2202</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2202</span></td>
+        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2201</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2201</span></td>
       </tr>
       
       <tr>
@@ -13208,7 +13209,7 @@
             <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="6.2" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="30.9" width="14.2" height="9.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="30.6" width="14.2" height="9.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="19.5" width="14.2" height="20.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="38.7" width="14.2" height="1.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="4.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="165.6" y="29.6" width="14.2" height="10.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">7</text><rect x="185.3" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="190.9" y="40.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--down);opacity:1"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">8</text><rect x="216.2" y="40.0" width="14.2" height="17.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="27.9" width="14.2" height="12.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="28.1" width="14.2" height="11.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.9%</td><td>43%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="pos">+1.3%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.3%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.9%</td><td>68%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.2%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.6%</td><td>43%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.4%</td><td>50%</td><td class="muted">28</td></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="neg">-0.0%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-2.4%</td><td>41%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.7%</td><td>56%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+3.6%</td><td>81%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.7%</td><td>67%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
-        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2202</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2202</span></td>
+        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2201</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2201</span></td>
       </tr>
       
       <tr>
@@ -13233,7 +13234,7 @@
             <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="6.8" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="37.3" width="14.2" height="2.7" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="25.6" width="14.2" height="14.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="23.7" width="14.2" height="16.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="34.1" width="14.2" height="5.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="2.7" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="165.6" y="24.1" width="14.2" height="15.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">7</text><rect x="185.3" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="190.9" y="33.6" width="14.2" height="6.4" rx="1.5" style="fill:var(--up);opacity:1"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">8</text><rect x="216.2" y="40.0" width="14.2" height="9.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="20.8" width="14.2" height="19.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="33.1" width="14.2" height="6.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.5%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="pos">+0.2%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.1%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+1.2%</td><td>68%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.5%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.2%</td><td>43%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.2%</td><td>64%</td><td class="muted">28</td></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.5%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-0.7%</td><td>44%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.5%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.0%</td><td>74%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+0.5%</td><td>63%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
-        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2202</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2202</span></td>
+        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2201</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2201</span></td>
       </tr>
       
       <tr>
@@ -13258,7 +13259,7 @@
             <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="34.6" width="14.2" height="5.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="3.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="28.7" width="14.2" height="11.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="17.7" width="14.2" height="22.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="37.4" width="14.2" height="2.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="165.6" y="24.8" width="14.2" height="15.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">7</text><rect x="185.3" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="190.9" y="38.3" width="14.2" height="1.7" rx="1.5" style="fill:var(--up);opacity:1"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">8</text><rect x="216.2" y="40.0" width="14.2" height="6.7" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="26.4" width="14.2" height="13.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="29.7" width="14.2" height="10.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+0.6%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-0.4%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.3%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.5%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.3%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.1%</td><td>54%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.7%</td><td>68%</td><td class="muted">28</td></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.2%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-0.8%</td><td>44%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.5%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.9%</td><td>78%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.2%</td><td>78%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
-        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2202</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2202</span></td>
+        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.0% vs SPY · 50% up · n=2201</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2201</span></td>
       </tr>
       
       <tr>
@@ -13283,7 +13284,7 @@
             <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="3.2" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="36.2" width="14.2" height="3.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="32.3" width="14.2" height="7.7" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="19.9" width="14.2" height="20.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="35.0" width="14.2" height="5.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="1.7" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="165.6" y="28.8" width="14.2" height="11.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">7</text><rect x="185.3" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="190.9" y="37.4" width="14.2" height="2.6" rx="1.5" style="fill:var(--up);opacity:1"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">8</text><rect x="216.2" y="40.0" width="14.2" height="8.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="31.4" width="14.2" height="8.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="30.5" width="14.2" height="9.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.4%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="pos">+0.5%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.0%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.7%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.7%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.2%</td><td>46%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.5%</td><td>71%</td><td class="muted">28</td></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.3%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-1.1%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.1%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+3.5%</td><td>78%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.3%</td><td>70%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
-        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.2% vs SPY · 49% up · n=2347</span><span class="l-zh">对SPY -0.2% · 49% 上涨 · n=2347</span></td>
+        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.2% vs SPY · 49% up · n=2348</span><span class="l-zh">对SPY -0.2% · 49% 上涨 · n=2348</span></td>
       </tr>
       
       <tr>
@@ -15344,13 +15345,22 @@ function _plvFetch(){
    there is no new script tag, no new poll and no second hydration path — one client
    owns everything the live plane says about this board.
 
-   PRESENTATION-TIER FENCE (A7, spec §0-10). This block writes to EXACTLY four places,
-   all of them slots the server reserved for it: #us-standouts' own `data-boardstate`
-   attribute, the `hidden` flag on .pbs[data-bs], the `hidden` flag on
-   .pbs-nv[data-bs-note], and the text of the two .pbs-dt language spans. It never
-   touches card ordering, card membership, a verb, an edge, a stage, a zone or a count.
-   It emits NO COPY: every string is SSR-baked in both languages and this code only
-   chooses which one is unhidden.
+   PRESENTATION-TIER FENCE (A7, spec §0-10). The board-state half writes to EXACTLY four
+   places, all of them slots the server reserved for it: #us-standouts' own
+   `data-boardstate` attribute, the `hidden` flag on .pbs[data-bs], the `hidden` flag on
+   .pbs-nv[data-bs-note], and the text of the two .pbs-dt language spans. It emits NO
+   COPY: every string is SSR-baked in both languages and this code only chooses which one
+   is unhidden.
+
+   W-L1d (spec §10) adds a second, wider write — the evening CARDS — and the fence moves
+   with it rather than being quietly stretched. While the provisional board is mounted the
+   client additionally: hides the nightly .nbgrid, its .sm-bar, #us-stage-filter and
+   #us-st-view-toggle; neutralises `data-stagef` and `st-table-mode`; and inserts ONE new
+   grid element of its own. It still originates nothing (A7): the order it paints is the
+   order the payload names, and it never re-ranks, re-admits, filters, scores or drops a
+   row. Every WORD on those cards is chosen here, in both languages, and is derived from
+   the payload's `runway` alone — never from a clock, never from a cross-sectional
+   comparison the presentation tier would have had to compute.
 
    THE STAMP IS DERIVED FROM THE PAYLOAD THAT PRODUCED THE CARDS (spec §0-2). It is
    never derived from a clock, and never from the payload alone: before painting
@@ -15406,12 +15416,285 @@ function _bsQualify(s, domKey, now){
 }
 /* WL1-BOARDSTATE-CONTRACT-END */
 
+/* WL1-PROVCARD-CONTRACT-BEGIN
+   W-L1d — THE EVENING CARDS THEMSELVES. Contract: spec §10.
+
+   WHY THIS EXISTS AT ALL. The evening close pass publishes ~131 names; the rendered
+   nightly grid holds ~79. The identity gate above therefore refused every single evening
+   payload — correctly — and no reader had ever seen an evening board. §10.1 settles the
+   fix as a client render off the already-auth-gated live plane: same artifact, same poll,
+   same client. These functions are that renderer.
+
+   THE GATE ABOVE IS NOT WEAKENED BY IT, and that is the load-bearing property (§10.5).
+   `_bsQualify` is byte-unchanged: it still refuses unless the payload's ordered tickers
+   ARE the ordered tickers of the cards on the page. What changes is only that the cards
+   can now get there by being painted — and `_bsRender` paints FIRST, lets the DOM settle,
+   and only then asks `_bsQualify` what board the reader is looking at. A mount that drops,
+   reorders or half-writes a card leaves a DOM that does not match, so the stamp does not
+   paint and the board is torn back down. Two independent readbacks stand between a mount
+   and a stamp: `_pvcMount`'s own post-paint check, and `_bsQualify` re-run against the
+   settled DOM.
+
+   Everything here is PURE — string in, string out, plus one injected `env` for the mount —
+   for the same reason the block above is: tests/test_wl1_board_state_surface.py lifts this
+   slice verbatim and executes it under node, so "tears the board down on mismatch" is
+   proved by running it rather than by grepping for it. Delete the check inside `_pvcMount`
+   and a test fails. It carries its own tiny escape/bilingual helpers instead of borrowing
+   the page's `esc`/`L` so that the lifted slice stands alone under node.
+
+   COPY LIVES HERE. The payload ships facts (`signal`, `runway`, prices, names); every
+   word a reader sees is chosen in this file, in both languages, because zh copy lives in
+   templates AND builders and for these cards this renderer IS the builder. */
+
+/* ── The card's two words, and why they are those two ─────────────────────────────
+   The lane owns exactly two legs — `signal` (how strong the read is) and `runway`
+   (1 − clip01(ext_z/2): how much room is left before the name counts as stretched).
+   `runway` is the one a reader can act on, and it is also the only one that will not be
+   re-computed overnight, because its input is a closing price. So it carries the card.
+
+   `signal` is deliberately NOT shown. Every word for it is a rank word — "strong",
+   "top", "best" — and this board has no rank: the ordering lands with the nightly pass.
+   Printing a rank the lane has not earned is the exact thing §10.2 refuses a number for,
+   and a word does not make it truer. It goes in the panel's `?` receipt instead.
+
+   THE VERB IS NOT A CONSTANT (§10.4-2). `buy` is not in this vocabulary at all: the board
+   itself only says "Get ready", and a card may not out-claim the board it sits on —
+   never mind that admission over-admits 1.7× and ~45% of these names are gone by morning.
+   So the palette is {near, wait}, split on ext_z = 1 — one standard deviation of
+   extension, which is a line with a meaning and not a tuned threshold. A name with room
+   is NEAR (close, not there). A name that has already run is WAIT, which is the
+   doctrine's "watch — don't chase" said in the card's own vocabulary. */
+var PVC_ROOM_BANDS = { ample:['Ample','充足'], some:['Some','适中'], thin:['Thin','有限'],
+  /* THE NULL, PRINTED (doctrine Law 5). The engine's ranking leg scores an unmeasured
+     extension as 0.0 — fail-closed, and right for ORDERING — but 0.0 also happens to be
+     what a name sitting two full sigma out scores, so a card that binned both the same
+     way would tell a reader "this one has run" about a name nobody measured. That is a
+     claim, not a caution. It gets its own words instead, and the producer must send
+     `runway: null` rather than 0.0 for it (see _pvcCards). Roughly 5 of 79 rows on the
+     live artifact are this case, so it is a state a reader meets most nights. */
+  unknown:['Not checked','未检查'] };
+var PVC_ROOM_LABEL = ['Room','空间'];
+var PVC_VERB_WORDS = { near:['Near','临近'], wait:['Wait','等待'] };
+/* byte-identical to the macro's ratified `confirm` zone copy — reused, not reworded.
+   The buy zone IS the entry ladder, which is the omitted leg; saying so with the words
+   the nightly board already uses beats inventing a second way to say "not yet". */
+var PVC_ZONE_WORDS = ['Zone sets on confirmation','买区待确认后生成'];
+var PVC_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function _pvcE(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                     .replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function _pvcL(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+
+                              (zh==null||zh===''?en:zh)+'</span>'; }
+
+/* runway 0.75 ↔ ext_z 0.5 (barely moved) · 0.50 ↔ ext_z 1.0 (a full sigma out).
+   A null runway is "nobody measured this", NOT "no room" — see PVC_ROOM_BANDS.unknown. */
+function _pvcRoom(runway){
+  if(typeof runway!=='number'||!isFinite(runway)) return 'unknown';
+  var r=runway<0?0:(runway>1?1:runway);
+  return r>=0.75?'ample':(r>=0.5?'some':'thin');
+}
+/* Only a MEASURED name with room earns the forward-leaning verb. Unknown routes to the
+   cautious side — the ratified rule for unknown states (#2206, the plain-English lanes) —
+   so an unchecked name reads "Wait · Room: Not checked": don't chase it, and here is why
+   we are not telling you more than that. */
+function _pvcVerb(band){ return (band==='ample'||band==='some')?'near':'wait'; }
+
+/* The sparkline arrives as raw SVG and goes in through innerHTML. The artifact is
+   same-origin and auth-gated, which is a reason to be calm about it and not a reason to
+   skip the check — innerHTML does not run <script>, but it very much runs an SVG event
+   handler. Anything that is not a plain drawing is dropped, and a dropped spark is
+   already a supported state (the producer emits null rather than guessing). */
+function _pvcSpark(s){
+  if(typeof s!=='string'||!s||s.length>20000) return '';
+  if(s.slice(0,4).toLowerCase()!=='<svg') return '';
+  /* `set` and `animate` can write an attribute — including an event handler — onto
+     another element, so element-name filtering has to cover them; `style` can pull in a
+     remote stylesheet with @import. */
+  if(/<\s*\/?\s*(script|foreignobject|iframe|image|use|a|set|animate\w*|style|handler)\b/i.test(s)) return '';
+  /* SEPARATOR CLASS, not \s: `/` is a valid attribute separator inside a start tag, so
+     `<svg/onload=alert(1)>` parses exactly as `<svg onload=alert(1)>` and a \s-anchored
+     pattern waves it straight through. Verified under node before and after. Hyphens too
+     — `on-` prefixed handlers are not a thing, but the class costs nothing and a future
+     one would not slip. */
+  if(/[\s\/"'`]on[a-z-]+\s*=/i.test(s)) return '';
+  if(/(javascript|vbscript|data)\s*:/i.test(s)) return '';
+  if(/@import|&#|\\x3c|<!\[CDATA\[/i.test(s)) return '';
+  return s;
+}
+/* Relative site paths only — the board links to pages on this site and nowhere else: no
+   scheme, no host, no protocol-relative `//`, no `..` escape, and nothing that is not a
+   path character. A TRAILING #fragment is allowed because it is the house pattern for
+   every prophet board (the US nightly card links `stock.html#AAPL`, china
+   `china_lookup.html#…`, hk `hk_lookup.html#…`), and refusing it would hard-refuse the
+   whole evening board over a link shape the morning board already uses. */
+function _pvcHref(h){
+  if(typeof h!=='string'||!h||h.length>200) return '';
+  if(!/^[A-Za-z0-9._\/-]+(#[A-Za-z0-9._-]+)?$/.test(h)) return '';
+  if(h.charAt(0)==='/'||h.indexOf('..')>=0) return '';
+  return h;
+}
+
+/* PAYLOAD SELF-IDENTITY — the check that replaces "payload vs. DOM" while the client is
+   the thing putting the cards in the DOM. `cards` must be exactly parallel to `tickers`,
+   in order, complete, and every row must carry the two legs the words are derived from.
+   An `edge` that arrives at all is refused outright rather than ignored: §10.2's whole
+   point is that a 40-of-100 score must never reach the slot a reader has learned to read
+   on the 100 scale, and a structural refusal beats a rule someone has to remember. */
+function _pvcCards(b){
+  if(!b||typeof b!=='object') return null;
+  if(b.card_complete!==true) return null;
+  var t=b.tickers, cs=b.cards, i, c;
+  if(Object.prototype.toString.call(t)!=='[object Array]') return null;
+  if(Object.prototype.toString.call(cs)!=='[object Array]') return null;
+  if(!t.length||cs.length!==t.length) return null;
+  for(i=0;i<cs.length;i++){
+    c=cs[i];
+    if(!c||typeof c!=='object') return null;
+    if(!t[i]||String(c.tk||'')!==String(t[i])) return null;
+    if(typeof c.signal!=='number'||!isFinite(c.signal)) return null;
+    /* `runway` is the one leg allowed to be NULL, and the distinction is load-bearing:
+       null means the extension reading did not arrive for this name, which the card says
+       in words. A producer that collapses that to 0.0 turns "not checked" into "already
+       run" — a measurement the lane never made — so the null has to survive the wire. */
+    if(!(c.runway===null||(typeof c.runway==='number'&&isFinite(c.runway)))) return null;
+    if(c.edge!==undefined&&c.edge!==null) return null;
+    if(!_pvcHref(c.href)) return null;
+  }
+  return cs;
+}
+function _pvcKey(cards){
+  var out=[], i;
+  if(!cards||!cards.length) return '';
+  for(i=0;i<cards.length;i++) out.push(String(cards[i].tk));
+  return out.join('|');
+}
+
+/* One card. Deliberately SHORTER than the nightly card, and the shortness is the design:
+   no score, no lifecycle rail, no marks row, no zone range, no trigger. What the lane has
+   not earned is not drawn, so the card itself shows what is being withheld — which costs
+   nothing, adds no CSS, and cannot be mistaken for the full card at a glance.
+     · no per-card marks (§3 State 1) and no empty marks row either — `[]` still reserves
+       18px, so the row is absent rather than blank
+     · no stage rail: lane assignment is a nightly curation output, and a four-step
+       tracker with nothing lit is the same broken control as a filter over absent buckets
+     · no ◐ live slot: the strip fills those from the NIGHTLY board's zones, and hanging a
+       nightly-derived read on an evening card would cross two boards on one surface
+   A missing name or sector simply omits its line — the grid stretches its row and
+   .pv-zn's margin-top:auto keeps every zone row on one baseline, so a degraded card
+   costs alignment nothing. */
+function _pvcCardHTML(c, chg){
+  var band=_pvcRoom(c.runway), verb=_pvcVerb(band), sp=_pvcSpark(c.spark),
+      h=[], d, mi, dd, sym, mkt, px;
+  h.push('<a class="pvcard pv-'+verb+'" href="'+_pvcE(_pvcHref(c.href))+
+         '" data-ticker="'+_pvcE(c.tk)+'">');
+  h.push('<div class="pv-chart">');
+  h.push(sp?sp:'<div class="pv-nochart"></div>');
+  h.push('<span class="pv-ov pv-ovl"><span class="pv-chip">'+
+         _pvcL(PVC_VERB_WORDS[verb][0],PVC_VERB_WORDS[verb][1])+'</span></span>');
+  /* The quote pill copies whatever shape the NIGHTLY cards on this very page are using
+     — `chg` is measured off them, never assumed — so an evening card and a morning card
+     always carry the same pill whichever way round the two changes land. live.js binds
+     .nb-px/.nb-chg by data-sym and re-queries the document on every tick, so a pill that
+     matches gets decorated for free; the percentage has to stay an ADJACENT sibling
+     because live.js replaces the price node's textContent. */
+  if(c.price_txt){
+    sym=_pvcE(c.sym||c.tk); mkt=_pvcE(c.mkt||'us');
+    px='<span class="nb-px pv-px" data-sym="'+sym+'" data-mkt="'+mkt+'">'+
+       _pvcE(c.price_txt)+'</span>';
+    h.push('<span class="pv-ov pv-ovr">'+(chg
+      ? '<span class="pv-quote">'+px+'<span class="nb-chg pv-chg" data-sym="'+sym+
+        '" data-mkt="'+mkt+'">—</span></span>'
+      : px)+'</span>');
+  }
+  h.push('</div><div class="pv-bd"><div class="pv-hd"><span class="pv-idw"><span class="pv-tk">'+
+         _pvcE(c.tk)+'</span>');
+  if(c.name) h.push('<span class="pv-nm">'+_pvcL(_pvcE(c.name),_pvcE(c.name_zh||c.name))+'</span>');
+  /* `pv-edna` is the macro's OWN treatment for a card with no score — muted, 12px/600 —
+     and it is the right one here for the reason §10.2 exists. The card's most authoritative
+     pixel is this slot; a reader has learned to find a 0-100 ruling in it. Setting a word
+     there in the verb hue at 14px/800 refills the authority with letters instead of digits,
+     which is the same fabrication with a different alphabet. Muted says "no ruling for you
+     tonight" while still carrying a real measure. It is also the only version that clears
+     AA everywhere: the hue ink measured 3.83:1 for a Near card in zh light — a PRE-EXISTING
+     estate value, on a bare card with none of this markup, because
+     html[data-theme=light][data-lang=zh] re-keys --ink-pv-near to an 84% mix — while
+     --muted reads 5.33 dark / 6.21 light in both languages for every verb. */
+  h.push('</span><span class="pv-edge"><span class="pv-edl">'+
+         _pvcL(PVC_ROOM_LABEL[0],PVC_ROOM_LABEL[1])+'</span><span class="pv-edn pv-edna">'+
+         _pvcL(PVC_ROOM_BANDS[band][0],PVC_ROOM_BANDS[band][1])+'</span></span></div>');
+  if(c.sec) h.push('<div class="pv-ind">'+_pvcL(_pvcE(c.sec),_pvcE(c.sec_zh||c.sec))+'</div>');
+  h.push('</div><div class="pv-zn"><span class="pv-znm">'+
+         _pvcL(PVC_ZONE_WORDS[0],PVC_ZONE_WORDS[1])+'</span>');
+  d=String(c.date||'');
+  if(d.length>=10){
+    mi=parseInt(d.slice(5,7),10);
+    dd=parseInt(d.slice(8,10),10);
+    /* both halves NaN-guarded, not just the month: `Aug NaN` on a malformed date is the
+       kind of thing that reaches a screenshot before it reaches a bug report */
+    h.push('<span class="pv-dt">'+_pvcL(
+      _pvcE((mi>=1&&mi<=12&&dd>=1&&dd<=31)
+            ? PVC_MONTHS[mi-1]+' '+dd
+            : d.slice(5,10)),
+      _pvcE(d.slice(5,10)))+'</span>');
+  }
+  h.push('</div></a>');
+  return h.join('');
+}
+function _pvcGridHTML(cards, chg){
+  var h=[], i;
+  for(i=0;i<cards.length;i++) h.push(_pvcCardHTML(cards[i], chg));
+  return h.join('');
+}
+
+/* THE POST-MOUNT RE-VERIFICATION (§10.5) — the single most important line in W-L1d.
+   `env` is injected so this runs under node with no DOM: paint the grid as ONE write,
+   read the painted ticker order straight back off the result, and if it is not what was
+   asked for, restore. A stamp must never outlive the cards it describes, and the way that
+   is guaranteed is that a board which cannot prove it painted correctly does not stay up
+   long enough to be stamped. */
+function _pvcMount(env, cards){
+  var want=_pvcKey(cards);
+  if(!want) return false;
+  env.paint(_pvcGridHTML(cards, env.chg));
+  if(env.read()!==want){ env.restore(); return false; }
+  return true;
+}
+
+/* Should these cards be on the screen at all? Asked by handing the payload's OWN board to
+   the unchanged gate above: if a page showing exactly these cards would not earn the
+   `ahead` stamp — stale, expired, wrong `rel`, undated — then the cards must not be
+   painted either. Cards without a stamp is the same lie as a stamp without cards, told
+   the other way round, so both halves pass through one decision. */
+function _pvcWanted(s, now, refused){
+  if(!s||typeof s!=='object') return null;
+  var cards=_pvcCards(s.board);
+  if(!cards) return null;
+  if(refused&&_pvcId(s, cards)===refused) return null;
+  var q=_bsQualify(s, _pvcKey(cards), now);
+  if(!q||q.rel!=='ahead') return null;
+  return cards;
+}
+/* WHICH BOARD IS MOUNTED — the board's own identity, deliberately NOT `generated_at`.
+   `board_state` rides an artifact the live producer rewrites every ~5 minutes, so keying
+   the mount on a write timestamp would tear the grid down and rebuild it on every poll:
+   a flicker under a reader, their "show more" expansion reset each time, and a leaked
+   resize listener per rebuild. The board is the same board while its as-of and its ordered
+   tickers are the same, and a board that has not changed has nothing to re-paint. */
+function _pvcId(s, cards){
+  return String((s.board&&s.board.as_of)||'')+'#'+_pvcKey(cards);
+}
+/* WL1-PROVCARD-CONTRACT-END */
+
 /* The identity of the board the reader is actually looking at: the ordered data-ticker
    values of every card in the grid. Read off the DOM, not off a baked claim, so it
-   describes what is on the screen no matter how it got there. */
+   describes what is on the screen no matter how it got there — which is why it reads the
+   VISIBLE grid: while the provisional board is up the nightly grid is still in the
+   document, hidden, and the cards a reader cannot see are not the board they are looking
+   at. This is also the readback the mount is verified against, so it must never be able to
+   describe two grids at once. */
 function _bsDomTickers(){
   if(!_bsPanel) return '';
-  var els=_bsPanel.querySelectorAll('.nbgrid .pvcard[data-ticker]'), out=[], i;
+  var els=_bsPanel.querySelectorAll('.nbgrid:not([hidden]) .pvcard[data-ticker]'), out=[], i;
   for(i=0;i<els.length;i++) out.push(els[i].getAttribute('data-ticker')||'');
   return out.join('|');
 }
@@ -15450,12 +15733,123 @@ function _bsApply(rel, note, label){
   if(window.upgradeHelpIcons) window.upgradeHelpIcons(_bsPanel);
 }
 
+/* ── W-L1d: the DOM half of the mount ────────────────────────────────────────────
+   The nightly grid is HIDDEN and kept, never emptied and never written into (§10.5:
+   replaced as a unit, restored as a unit). Every displaced thing is remembered in one
+   object, so teardown is a list of assignments that cannot half-finish and cannot invent
+   a state the page was never in. */
+var _pvcOn=false, _pvcStamp='', _pvcRefused='', _pvcSaved=null;
+
+function _pvcPaint(html){
+  /* :not([data-provboard]) is load-bearing, not belt-and-braces: the provisional grid
+     carries data-showmore-rows too AND is inserted BEFORE the nightly one, so it wins
+     document order — a second paint that ran without a teardown first would otherwise
+     save the provisional grid as "the nightly board" and lose the real one for good. */
+  var night=_bsPanel?_bsPanel.querySelector('.nbgrid[data-showmore-rows]:not([data-provboard])'):null;
+  if(!night||!night.parentNode) return;
+  var bar=night.nextElementSibling, g;
+  if(!(bar&&bar.classList&&bar.classList.contains('sm-bar'))) bar=null;
+  /* NB: no #board-track-toggle handling here. It is pinned into the show-more bar by
+     theme.js's pinBoardTrackToggle, but the element no longer renders at all (see the
+     template's own note above .pb-trk) — carrying re-parent/restore branches for an id
+     that is never in the document is dead code that reviews as if it does something. */
+  _pvcSaved={ night:night, bar:bar,
+              filt:document.getElementById('us-stage-filter'),
+              vt:document.getElementById('us-st-view-toggle'),
+              sub:document.getElementById('us-board-sub'),
+              fn:_bsPanel.querySelector('.pb-fn'),
+              stagef:_bsPanel.getAttribute('data-stagef'),
+              table:_bsPanel.classList.contains('st-table-mode'), grid:null };
+  night.hidden=true;
+  if(bar) bar.hidden=true;
+  if(_pvcSaved.filt) _pvcSaved.filt.hidden=true;
+  if(_pvcSaved.vt) _pvcSaved.vt.hidden=true;
+  /* THE TWO PROSE SLOTS GO TOO, and this is the part most likely to be "restored" by a
+     later reader as over-reach, so: both of them DESCRIBE THE NIGHTLY BOARD, and while
+     tonight's cards are up both descriptions are false of what is on the screen.
+       · the subtitle counts the nightly rows ("9 shown") and reads out a dot legend
+         ("green dot = entry open") for a lifecycle rail these cards do not draw;
+       · the footnote is the priority formula "for ordering this board" — this board is
+         not ordered by it — plus the green-glow featured shelf and its 12-name cap,
+         and there is no featured cohort here at all.
+     Neither is deleted or reworded; both come back untouched on teardown, and the honest
+     replacement is already one hover away, on the note line's own `?`: "this is a
+     shortlist, not the ranked board — order, scores and buy zones land with the overnight
+     pass". Hiding a true sentence about a different board beats leaving it to be read as
+     a description of this one. */
+  if(_pvcSaved.sub) _pvcSaved.sub.hidden=true;
+  if(_pvcSaved.fn) _pvcSaved.fn.hidden=true;
+  /* a stage filter left armed would keep hiding a .sm-bar that is now counting a
+     different board; the toggle's own buttons are untouched, so restoring the attribute
+     restores agreement too */
+  if(_pvcSaved.stagef) _bsPanel.setAttribute('data-stagef','all');
+  if(_pvcSaved.table) _bsPanel.classList.remove('st-table-mode');
+  /* a NEW grid element rather than new children in the old one: show-more is idempotent
+     per element (data-smInit) and closes over the children it saw at init, so re-using
+     the nightly grid would leave a bar counting cards that are no longer in it */
+  g=document.createElement('div');
+  g.className='nbgrid'; g.setAttribute('data-showmore-rows','3'); g.setAttribute('data-provboard','1');
+  g.innerHTML=html;
+  night.parentNode.insertBefore(g, night);
+  _pvcSaved.grid=g;
+  if(window.initShowMore) window.initShowMore();
+  /* live.js re-queries the document on every tick, so these pills WOULD be found on their
+     own — in up to 60 seconds. One nudge paints them now instead, so an evening card never
+     sits next to a nightly one showing a fresher price than it does. */
+  if(window.LiveQuotes&&window.LiveQuotes.refresh) try{ window.LiveQuotes.refresh(); }catch(e){}
+}
+
+function _pvcTeardown(){
+  var sv=_pvcSaved, nb;
+  _pvcSaved=null; _pvcOn=false; _pvcStamp='';
+  if(!sv) return;
+  if(sv.grid){
+    nb=sv.grid.nextElementSibling;
+    if(nb&&nb.classList&&nb.classList.contains('sm-bar')&&nb.parentNode) nb.parentNode.removeChild(nb);
+    if(sv.grid.parentNode) sv.grid.parentNode.removeChild(sv.grid);
+  }
+  if(sv.night) sv.night.hidden=false;
+  if(sv.bar) sv.bar.hidden=false;
+  if(sv.filt) sv.filt.hidden=false;
+  if(sv.vt) sv.vt.hidden=false;
+  if(sv.sub) sv.sub.hidden=false;
+  if(sv.fn) sv.fn.hidden=false;
+  if(sv.stagef) _bsPanel.setAttribute('data-stagef', sv.stagef);
+  if(sv.table) _bsPanel.classList.add('st-table-mode');
+}
+
+function _pvcEnv(){
+  return { paint:_pvcPaint, read:_bsDomTickers, restore:_pvcTeardown,
+           /* MEASURED off the nightly cards, not assumed: whether this board's quote pill
+              carries a live-change sibling is a per-board opt-in that may or may not have
+              shipped yet, and the evening board must look like the morning board either
+              way round. Read before anything is hidden, while they are still on screen. */
+           chg: !!(_bsPanel&&_bsPanel.querySelector('.nbgrid .pvcard .nb-chg[data-sym]')) };
+}
+
 /* Glue only. Anything refused by _bsQualify restores exactly what the nightly render
    said — a payload that stops qualifying must never leave a stale flip behind. */
 function _bsRender(){
   if(!_bsPanel||!_bsSsr) return;
-  var q=_bsQualify((_plvData&&typeof _plvData==='object')?_plvData.board_state:null,
-                   _bsDomTickers(), Date.now());
+  var s=(_plvData&&typeof _plvData==='object')?_plvData.board_state:null, now=Date.now(), born;
+  /* 1 — THE CARDS COME FIRST, and the DOM is settled before anything is stamped. Asking
+     `_bsQualify` before a pending teardown would let it answer about a grid that is on its
+     way out, and the stamp would land over the board that replaced it. */
+  var cards=_pvcWanted(s, now, _pvcRefused);
+  if(cards){
+    born=_pvcId(s, cards);
+    if(!(_pvcOn&&_pvcStamp===born)){
+      if(_pvcOn) _pvcTeardown();               /* a DIFFERENT board replaces as a unit */
+      if(_pvcMount(_pvcEnv(), cards)){ _pvcOn=true; _pvcStamp=born; }
+      /* a board that could not be painted correctly is not tried again — retrying it
+         every 120s would flicker the grid between two states forever */
+      else _pvcRefused=born;
+    }
+  }else if(_pvcOn){ _pvcTeardown(); }
+  /* 2 — and only now, what board is the reader actually looking at? After a teardown the
+     answer is the nightly grid again, which does not match the payload, so the stamp
+     falls back to whatever the nightly render itself said. */
+  var q=_bsQualify(s, _bsDomTickers(), now);
   if(!q){ _bsApply(_bsSsr.rel, _bsSsr.note, null); return; }
   /* An `ahead` board with no note of its own must NOT keep the nightly receipt: that
      receipt describes last night's reconciliation, and printing it under a "tonight's

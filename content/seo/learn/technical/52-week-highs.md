@@ -10,8 +10,8 @@ updated: 2026-07-20
 related:
   lessons: [technical/market-breadth]
   live:
-    - {href: /movers.html, label: "Live movers board"}
-cta: {href: /movers.html, label: "See today's 52-week high movers"}
+    - {href: /stocks/index.html#today-movers, label: "Live movers board"}
+cta: {href: /stocks/index.html#today-movers, label: "See today's 52-week high movers"}
 ---
 <div class="callout lead">
 <span class="co-h">Learning objective</span>
@@ -62,7 +62,7 @@ Distance from high (%) = (current price − 52wk high) / 52wk high × 100
 
 <p>The momentum-persistence logic assumes relatively normal market conditions. In broad market selloffs, stocks making new 52-week highs lose their overhead-supply advantage because the whole market is creating new supply of sellers. In thin or illiquid names, a single print can establish a false 52-week high that disappears on the next session. And in stocks where the 52-week high was set during a one-day earnings spike that was subsequently retraced, the level may not represent any meaningful supply zone — it is an artifact of a single event, not a prolonged price acceptance.</p>
 
-<p>The live movers board tracks names printing new highs and lows across today's session, with volume context: <a href="/movers.html">see today's 52-week high movers</a>.</p>
+<p>The live movers board tracks names printing new highs and lows across today's session, with volume context: <a href="/stocks/index.html#today-movers">see today's 52-week high movers</a>.</p>
 
 <h2>Related</h2>
 <ul>

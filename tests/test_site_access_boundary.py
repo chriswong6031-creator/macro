@@ -82,6 +82,17 @@ def test_caddy_public_boundary_matches_policy_exactly():
     assert _caddy_public_exclusions() == expected
 
 
+def test_retired_movers_route_redirects_to_the_consolidated_hub_section():
+    redirect_lines = [
+        line.strip()
+        for line in CADDY.splitlines()
+        if line.strip().startswith("redir /movers.html ")
+    ]
+    assert redirect_lines == [
+        'redir /movers.html "/stocks/index.html#today-movers" 301'
+    ]
+
+
 def test_html_documents_are_never_registration_gated():
     """The registration wall must not be reachable from any HTML serving path.
 

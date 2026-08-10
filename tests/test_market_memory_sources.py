@@ -728,7 +728,8 @@ def test_source_state_is_not_exposed_to_api_or_public_site(tmp_path: Path) -> No
 
     assert not any("source" in path for path in route_paths)
     assert "market_memory_sources" not in api_source
-    assert "InaccessiblePaths=-/var/lib/macro-market-memory/state" in api_unit
+    assert "InaccessiblePaths=/var/lib/macro-market-memory/state" in api_unit
+    assert "InaccessiblePaths=-/var/lib/macro-market-memory/state" not in api_unit
     assert not list((ROOT / "site").glob("**/source_receipts"))
     assert not list((ROOT / "site.served").glob("**/source_receipts"))
 
