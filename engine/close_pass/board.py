@@ -102,8 +102,13 @@ CARD_FIELDS = (
 #: The subset a card cannot be RENDERED without. A row that cannot fill all of
 #: them leaves the board projection entirely rather than shipping half-filled
 #: under a `card_complete: true` flag — see `build_board`'s ruling.
-CARD_REQUIRED = ("tk", "sym", "mkt", "href", "name", "price_txt",
-                 "signal", "runway")
+#:
+#: `runway` IS DELIBERATELY NOT HERE. A null runway is a legitimate display
+#: value meaning "not checked", which the client renders as such; requiring it
+#: would delete ~5 of 79 live rows from the board over a fact the card is able
+#: to state plainly. `signal` is required because it has no unmeasured case —
+#: `signal_value` reads the verdict this pass just computed.
+CARD_REQUIRED = ("tk", "sym", "mkt", "href", "name", "price_txt", "signal")
 
 #: The nightly's OWN ticker-page URL, read out of `templates/dashboard.html.j2`'s
 #: pv_card call site (`'href': 'stock.html#' ~ n.ticker`) rather than invented. A
@@ -162,6 +167,10 @@ def card_row(row: Mapping[str, Any],
     this pass covers 40, so publishing it beside a card would read as the
     nightly's score and would not be it. The client gets the two legs that ARE
     computed, on their own [0,1] scale, and derives its own words from them.
+
+    `runway` may be NULL — meaning no extension reading existed, which the
+    client renders as "not checked" rather than as thin room. `close_legs` owns
+    that distinction and explains why it is not `0.0`.
 
     `spark` SHIPS NULL, AND THE REASON IS THE POLL, NOT THE PIXEL (ruling
     2026-08-09). Measured at the real board width of 131 rows, the `board_state`
@@ -267,32 +276,67 @@ def board_state(payload: Mapping[str, Any], *, rel: str = "ahead") -> dict:
 
 
 def close_legs(verdict: Mapping[str, Any] | None,
-               ext: Mapping[str, Any] | None) -> dict[str, float]:
+               ext: Mapping[str, Any] | None) -> dict[str, float | None]:
     """The close-derived legs, scored by the board's OWN leg functions.
 
     ``ext`` is one ``engine.extension.extension_signals`` row; its ``ext_z`` and
     the antichase flag derived from it are the whole of ``runway``'s input.
+
+    ``runway`` IS NULL WHEN NOTHING MEASURED IT, AND THAT IS NOT THE SAME AS 0.
+    ``us_board_rank.runway_value`` returns ``0.0`` for three different facts —
+    no extension reading at all, an antichase-blocked row, and a genuinely
+    extended one. For a SCORE that collapse is exactly right: zero points is
+    zero points, and the fail-closed rule is deliberate. For a DISPLAY it is a
+    false statement, because the client reads a low runway as "thin room" and
+    would tell a reader a name is stretched when nobody measured it.
+
+    So the unmeasured case is separated back out HERE rather than in
+    ``runway_value``: ``0.0`` remains the correct score for all three, and
+    changing that function would move the nightly's own arithmetic across every
+    US board row. The split costs the score nothing — see ``_points``.
+
+    THE ANTICHASE CASE IS NOT A THIRD FACT IN THIS LANE, so it needs no third
+    answer: the flag is not read from an upstream pass, it is DERIVED two lines
+    below as ``ext_z > EXT_Z_FULL`` — true exactly when the name is genuinely
+    extended, which is the case that honestly means "no room left". It scores
+    and displays ``0.0``. If a real upstream antichase signal is ever fed into
+    this lane, it becomes a genuinely third fact and must be re-decided here.
     """
     ext = ext or {}
+    # ONE predicate for "is there an extension reading at all", borrowed from
+    # the scorer rather than restated, so `unmeasured` cannot come to mean one
+    # thing here and another there. It rejects None, NaN, inf, bools and
+    # non-numeric garbage alike — the last of which the previous `float(...)`
+    # call would have raised on.
+    ext_z = us_board_rank._finite_float(ext.get("ext_z"))
     row = {
-        "ext_z": ext.get("ext_z"),
+        "ext_z": ext_z,
         # Derived here rather than read: the builder stamps this field far
         # downstream, and a close-pass row has not been through that pass. Same
         # threshold, named from the same constant, so the two cannot drift.
         "antichase_shadow_blocked": (
-            None if ext.get("ext_z") is None
-            else bool(float(ext["ext_z"]) > us_board_rank.EXT_Z_FULL)
+            None if ext_z is None else bool(ext_z > us_board_rank.EXT_Z_FULL)
         ),
     }
     return {
         "signal": round(us_board_rank.signal_value(verdict), 6),
-        "runway": round(us_board_rank.runway_value(row), 6),
+        # A measured 0.0 (fully extended) still ships 0.0 — the fix separates
+        # "unmeasured" from "no room", it does not null everything that is low.
+        "runway": (None if ext_z is None
+                   else round(us_board_rank.runway_value(row), 6)),
     }
 
 
-def _points(legs: Mapping[str, float]) -> float:
-    """Legs in [0,1] → points, on the board's real weights (never renormalised)."""
-    return round(sum(us_board_rank.SCORE_WEIGHTS[k] * float(v)
+def _points(legs: Mapping[str, float | None]) -> float:
+    """Legs in [0,1] → points, on the board's real weights (never renormalised).
+
+    A NULL DISPLAY LEG STILL SCORES 0.0, so this returns exactly what it
+    returned before `close_legs` learned to say "unmeasured": the ordering,
+    `points` and `provisional_rank` are unchanged by that distinction. The
+    display fact and the score leg are different questions that happen to share
+    a number, and only the display one moved.
+    """
+    return round(sum(us_board_rank.SCORE_WEIGHTS[k] * (0.0 if v is None else float(v))
                      for k, v in legs.items()), 4)
 
 

@@ -684,6 +684,96 @@ def test_an_optional_field_is_null_and_never_guessed():
     assert payload["consumer_contract"]["card_complete"] is True
 
 
+def test_an_unmeasured_runway_ships_null_and_never_a_zero():
+    """`runway_value` returns 0.0 for THREE different facts — no extension
+    reading, an antichase-blocked row, and a genuinely extended one. That
+    collapse is correct for a SCORE and false for a DISPLAY: the client reads a
+    low runway as thin room, so a 0.0 here would tell a reader a name is
+    stretched when nobody measured it. ~5 of 79 live rows.
+
+    The unmeasured forms are all of them — absent, None, NaN, inf and garbage —
+    because `_finite_float` is the one predicate both sides use.
+    """
+    for ext in ({}, {"ext_z": None}, {"ext_z": float("nan")},
+                {"ext_z": float("inf")}, {"ext_z": "n/a"}, {"ext_z": True}):
+        legs = CB.close_legs(verdict(), ext)
+        assert legs["runway"] is None, ext
+        # ...and it reaches the card as null, not as a dropped row: the name is
+        # still on the board, it just says it was not checked.
+        payload = CB.build_board({"AAA": verdict()}, {"AAA": ext},
+                                 session=SESSION, built_at=NOW,
+                                 adjustment_by={"AAA": "split_and_dividend_adjusted"},
+                                 display_by=display(("AAA",)))
+        card = CB.board_state(payload)["board"]["cards"][0]
+        assert card["tk"] == "AAA" and card["runway"] is None, ext
+
+
+def test_a_genuinely_extended_name_still_ships_a_real_zero():
+    """The other half, and the reason the fix cannot be "null everything low":
+    a name WITH an extension reading that says it is fully extended has a
+    measured 0.0 runway, and 0.0 is the true display value — there really is no
+    room left. Null there would hide a fact the pass actually established.
+    """
+    fully = CB.close_legs(verdict(), {"ext_z": us_board_rank.EXT_Z_FULL})
+    assert fully["runway"] == 0.0
+    beyond = CB.close_legs(verdict(), {"ext_z": us_board_rank.EXT_Z_FULL + 3.0})
+    assert beyond["runway"] == 0.0
+    # Unextended and mid-range still score normally.
+    assert CB.close_legs(verdict(), {"ext_z": 0.0})["runway"] == 1.0
+    assert 0.0 < CB.close_legs(verdict(), {"ext_z": 1.0})["runway"] < 1.0
+
+
+def test_the_antichase_case_is_not_a_third_fact_in_this_lane():
+    """The lane does not READ an antichase flag, it DERIVES one as
+    `ext_z > EXT_Z_FULL` — so it is true exactly when the name is genuinely
+    extended, which is the case that honestly means "no room left". It gets
+    0.0, not null, and this test is the record of that ruling.
+
+    If a real upstream antichase signal is ever fed in, it becomes a genuinely
+    third fact and this test should fail loudly enough to force a re-decision.
+    """
+    src = (ROOT / "engine" / "close_pass" / "board.py").read_text(encoding="utf-8")
+    body = src.split("def close_legs(")[1].split("\ndef ")[0]
+    assert 'bool(ext_z > us_board_rank.EXT_Z_FULL)' in body
+    # Derived, never read off the ext row.
+    assert 'ext.get("antichase_shadow_blocked")' not in body
+    blocked = CB.close_legs(verdict(), {"ext_z": us_board_rank.EXT_Z_FULL + 1.0})
+    assert blocked["runway"] == 0.0 and blocked["runway"] is not None
+
+
+def test_the_display_null_does_not_move_the_score_by_one_bit():
+    """THE invariance gate. `points` and `provisional_rank` must be exactly what
+    they were before `close_legs` learned to say "unmeasured" — a null DISPLAY
+    leg still scores 0.0. Checked against `us_board_rank`'s own functions on the
+    same rows, which still collapse all three cases to 0.0, so this compares the
+    published score against the pre-change arithmetic rather than against a
+    number copied out of the new implementation.
+    """
+    ext_by = {"AAA": {"ext_z": 0.2},                  # measured, lots of room
+              "BBB": {},                              # UNMEASURED -> null display
+              "CCC": {"ext_z": 9.0},                  # measured, fully extended
+              "DDD": {"ext_z": float("nan")}}         # UNMEASURED -> null display
+    tickers = tuple(ext_by)
+    payload = CB.build_board(
+        {t: verdict() for t in tickers}, ext_by, session=SESSION, built_at=NOW,
+        adjustment_by={t: "split_and_dividend_adjusted" for t in tickers})
+
+    for row in payload["names"]:
+        raw = {"ext_z": ext_by[row["ticker"]].get("ext_z")}
+        raw["antichase_shadow_blocked"] = None
+        expected = round(
+            us_board_rank.SCORE_WEIGHTS["signal"] * us_board_rank.signal_value(verdict())
+            + us_board_rank.SCORE_WEIGHTS["runway"] * us_board_rank.runway_value(raw), 4)
+        assert row["points"] == expected, row["ticker"]
+
+    # The unmeasured names score 0 on runway and therefore rank BELOW the
+    # measured one that has room — unchanged, and the null never floated them up.
+    ranked = [(r["ticker"], r["provisional_rank"]) for r in payload["names"]]
+    assert ranked[0] == ("AAA", 1)
+    assert [t for t, _ in ranked] == ["AAA", "BBB", "CCC", "DDD"]
+    assert [r["legs"]["runway"] for r in payload["names"]] == [0.9, None, 0.0, None]
+
+
 def test_every_required_field_is_one_the_row_actually_carries():
     assert set(CB.CARD_REQUIRED) <= set(CB.CARD_FIELDS)
     assert set(CB.CARD_FIELDS) == {
@@ -1113,7 +1203,18 @@ def test_the_antichase_threshold_is_the_boards_own_constant():
     assert us_board_rank.EXT_Z_FULL == 2.0
     assert CB.close_legs(verdict(), {"ext_z": 2.4})["runway"] == 0.0
     assert CB.close_legs(verdict(), {"ext_z": 1.0})["runway"] == 0.5
-    assert CB.close_legs(verdict(), {"ext_z": None})["runway"] == 0.0   # fail-closed
+    # FAIL-CLOSED IS A PROPERTY OF THE SCORE, AND IT STILL HOLDS. An unmeasured
+    # extension earns zero points, exactly as before; what changed is that the
+    # DISPLAY leg no longer states "no room" about a name nobody measured — see
+    # test_an_unmeasured_runway_ships_null_and_never_a_zero. The assertion moved
+    # from the leg to the points because that is where the rule actually lives.
+    unmeasured = CB.close_legs(verdict(), {"ext_z": None})
+    assert unmeasured["runway"] is None
+    # Scores identically to an explicit 0.0, and contributes nothing but the
+    # signal leg — an unmeasured extension earns zero, never the best case.
+    assert CB._points(unmeasured) == CB._points({**unmeasured, "runway": 0.0})
+    assert CB._points(unmeasured) == round(
+        us_board_rank.SCORE_WEIGHTS["signal"] * unmeasured["signal"], 4)
 
 
 def test_no_zero_score_authority_input_is_read():
