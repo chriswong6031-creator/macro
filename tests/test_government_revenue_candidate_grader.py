@@ -11,6 +11,8 @@ display/context-only and the grader still has no production caller.  Everything
 here therefore runs against fixtures.  The harness existed before the first
 candidate was issued; now that issuance exists, any evaluation-rule amendment
 requires a new ``family_id`` rather than rewriting this registered family.
+Zero-candidate cases below are historical fixture probes, never claims about
+the non-empty live ledger.
 """
 from __future__ import annotations
 
@@ -2217,7 +2219,7 @@ def test_disclosure_labels_cannot_reach_the_verdict(calendar):
 
 
 def test_the_zero_candidate_state_labels_cleanly(calendar):
-    """Zero candidates plus a calendar is an empty label census, not a crash."""
+    """A historical zero-candidate fixture is an empty label census, not a crash."""
     report = _report(
         calendar,
         _log([]),
