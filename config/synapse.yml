@@ -352,6 +352,7 @@ artifacts:
       - engine/spotlight.py
       - engine/theme_catalyst_binder.py
       - engine/us_basket_turn.py
+      - engine/us_board_rank.py
       - scripts/basket_coherence_audit.py
       - scripts/build_baskets.py
       - scripts/build_demand.py
@@ -3268,7 +3269,11 @@ artifacts:
     scored_path_surfaces: []
     may_rank: false
     consumers:
+      - engine/us_board_rank.py
+      - engine/us_early_turn.py
+      - engine/us_turn_watch.py
       - scripts/build_baskets.py
+      - scripts/build_turn_watch.py
     external_consumers: []
     notes: >
       W1-D (research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md G0.6). Port of
@@ -3311,7 +3316,8 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     may_rank: false
-    consumers: []
+    consumers:
+      - scripts/check_ledger_advance.py
     external_consumers: []
     notes: >
       W1-D. PIT forward ledger for US basket washout-lifecycle states — one row per

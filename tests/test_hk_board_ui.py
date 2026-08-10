@@ -813,6 +813,61 @@ def test_an_hk_featured_row_without_an_extension_reading_says_so_on_the_board(pr
     assert "本榜暂无拉伸读数，价格拉伸程度未作检查" in prio_html
 
 
+# --------------------------------------------------------------------------- #
+# The per-row absence mark — wired here, suppressed here, and why
+# --------------------------------------------------------------------------- #
+
+_NCK_MARK = '<span class="pv-mk-i pv-mk-nck"'
+
+
+def test_hk_suppresses_the_per_row_absence_mark_because_the_gap_is_total(prio_html):
+    """The US board marks WHICH featured names lost the chase-risk reading.  HK lost
+    it on all of them, so here the mark would be the same chip on every green card —
+    the per-row repetition of a constant DESIGN_DOCTRINE Law 4 files as a defect ("a
+    constant belongs in the footer, once").  The board note above is that footer, and
+    it already says it.
+
+    The rule is keyed on the DATA, not on the market: it reads "is every featured row
+    unknown?" off the rendered rows, which is why the sibling test below can turn the
+    mark on by changing one row and nothing else.  Absence is asserted on the full
+    markup string, never the bare class token — `.pv-mk-nck`'s CSS ships on every
+    render (harness law).
+    """
+    su = shapes_fixture()
+    featured = [r for r in su["buy"] if r.get("featured") and r.get("stage") == "live"]
+    assert featured, "no featured live card — the claim below would be vacuous"
+    assert all(r.get("ext_unknown") is True for r in featured), (
+        "a featured HK row carries an extension reading — the suppression premise is "
+        "gone and this test no longer describes the board")
+    assert _NCK_MARK not in prio_html, (
+        "every HK pick is unmeasured, so a per-row mark is noise, not information")
+
+
+def test_the_hk_absence_mark_is_wired_and_appears_the_moment_the_gap_is_partial():
+    """GUARD THE GUARD.  The suppression test above passes identically whether the
+    mark is deliberately suppressed or was never wired into this template at all —
+    the exact tautology this file's §G4 note was rewritten to avoid.  So: give ONE
+    featured row an extension reading and nothing else, and the mark must appear on
+    the rows that still have none.  That is the day-HK-gets-wired case, proven now.
+    """
+    su = shapes_fixture()
+    featured = [r for r in su["buy"] if r.get("featured") and r.get("stage") == "live"]
+    assert len(featured) >= 2, (
+        "need two featured live cards to make one measured and one not")
+    featured[0]["ext_unknown"] = False
+    html = _render(su)
+
+    unknown = [r for r in featured if r.get("ext_unknown")]
+    assert unknown, "fixture must keep an unmeasured pick"
+    assert _NCK_MARK in html, "the HK carrier is not wired — suppression proves nothing"
+    assert ('<span class="l-en">Extended? Not checked</span>'
+            '<span class="l-zh">涨过头？未检查</span>') in html
+    # One mark per still-unmeasured pick, and none for the one that now has a reading.
+    assert html.count(_NCK_MARK) == len(unknown)
+    # The engine's field name never reaches the page (banned raw slug, doctrine Law 2).
+    assert "ext_unknown" not in html
+
+
 def test_featured_glow_lands_only_on_featured_rows(prio_html):
     su = shapes_fixture()
     feat = {r["ticker"] for r in su["buy"] if r.get("featured")}

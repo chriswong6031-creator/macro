@@ -295,7 +295,8 @@ body.cs-page.cs-modal-open { overflow: hidden; }
 
 .cs-scrim { position: fixed; z-index: 1000; inset: 0; background: rgba(0, 0, 0, .45); }
 .cs-loading { display: flex; align-items: center; justify-content: center; min-height: 150px; color: var(--cs-muted); font-size: 11px; gap: 8px; }
-.cs-loading span { width: 8px; height: 8px; border-radius: 50%; background: var(--cs-cyan); box-shadow: 0 0 0 0 color-mix(in srgb, var(--cs-cyan) 40%, transparent); animation: cs-pulse 1.4s ease-out infinite; }
+.cs-loading-dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--cs-cyan); box-shadow: 0 0 0 0 color-mix(in srgb, var(--cs-cyan) 40%, transparent); animation: cs-pulse 1.4s ease-out infinite; }
+.cs-loading-copy { min-width: 0; }
 
 .cs-page :focus-visible { outline: 2px solid var(--cs-cyan); outline-offset: 3px; }
 @keyframes cs-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cs-cyan) 42%, transparent); } 75%, 100% { box-shadow: 0 0 0 8px transparent; } }
@@ -343,5 +344,5 @@ body.cs-page.cs-modal-open { overflow: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
   .cs-evidence-drawer { transition: none; }
-  .cs-loading span { animation: none; }
+  .cs-loading-dot { animation: none; }
 }

@@ -595,7 +595,9 @@ class TestBasingStage:
         by_ticker = {r["ticker"]: r for r in scored}
         assert by_ticker["BASE"]["stage"] == "basing"
         assert by_ticker["BASE"]["featured"] is False
-        assert "stage_not_live" in by_ticker["BASE"]["featured_blocked_by"]
+        # R2 names the refusing bucket rather than "not live": after the relax there
+        # are three buckets that can refuse and the receipt has to say which one did.
+        assert "stage_basing" in by_ticker["BASE"]["featured_blocked_by"]
         # …and it still sorts below the actionable row despite the better score.
         assert [r["ticker"] for r in scored] == ["OK", "BASE"]
 
@@ -633,8 +635,11 @@ class TestBasingStage:
         assert {r["ticker"] for r in after if r["stage"] == "blocked"} == {"KNIFE"}
 
         # Membership is untouched, and matched BY TICKER every row is identical
-        # except `stage` and the two position stamps.
-        _positional = {"stage", "display_rank", "score_rank"}
+        # except `stage`, the two position stamps, and the stage TOKEN inside
+        # `featured_blocked_by` (R2: the veto reason names the refusing bucket, so for
+        # a bottom-watch row it moves with the bucket exactly as `stage` does — the
+        # featured FLAG below is what must not move, and it does not).
+        _positional = {"stage", "display_rank", "score_rank", "featured_blocked_by"}
         by_before = {r["ticker"]: r for r in before}
         by_after = {r["ticker"]: r for r in after}
         assert set(by_before) == set(by_after)
@@ -643,6 +648,13 @@ class TestBasingStage:
             assert rhs["stage"] == ("basing" if tk in moved else lhs["stage"]), tk
             assert {k: v for k, v in lhs.items() if k not in _positional} == {
                 k: v for k, v in rhs.items() if k not in _positional}, tk
+            # The excluded field is not waved through: the flag is identical, and the
+            # ONLY reason that may differ is the stage token.
+            assert lhs["featured"] == rhs["featured"], tk
+            assert ([r for r in (lhs.get("featured_blocked_by") or [])
+                     if not r.startswith("stage_")]
+                    == [r for r in (rhs.get("featured_blocked_by") or [])
+                        if not r.startswith("stage_")]), tk
 
         # The new sequence is exactly the old rows re-grouped by the new bucket rank.
         assert [r["ticker"] for r in after] == [
@@ -853,14 +865,13 @@ class TestFeatured:
 # ---------------------------------------------------------------------------
 
 class TestFeaturedEntryStatuses:
-    """The featured entry set is CN's from 2026-08-08 — and it is currently INERT.
+    """The featured entry set is CN's from 2026-08-08, and R2 (2026-08-09) made it LIVE.
 
-    Both halves are pinned here on purpose.  Widening the set without relaxing the
-    stage gate changes no featured flag on any board, which is the "emitted kind with
-    no decider" shape: a constant that reviews as a behaviour change and produces
-    nothing.  Rather than leave that silent, the inertness is a test — so the day the
-    stage gate is relaxed, THIS is what goes red and the reader is pointed straight at
-    the follow-up instead of discovering the coupling from a board diff.
+    #4976 widened the set and left it inert behind a stage veto that ran FIRST and
+    passed only `live`; the inertness was pinned by a test whose docstring said it
+    would go red the day the follow-up landed.  This is that day, and these are the
+    replacement pins: which statuses the widening actually opened, and which of them
+    the stage veto still refuses.
     """
 
     def test_the_set_is_chinas(self):
@@ -875,25 +886,55 @@ class TestFeaturedEntryStatuses:
         reasons = ubr.featured_shortfalls(_row("A", status=status, ext_z=0.0))
         assert f"entry_status_{status}" not in reasons
 
-    @pytest.mark.parametrize("status,stage", [
-        ("bounce_wait", ubr.STAGE_SETTING_UP),
-        ("wait_pullback", ubr.STAGE_SETTING_UP),
-        ("hold", ubr.STAGE_RAN),
-    ])
-    def test_but_the_stage_gate_still_stops_it(self, status, stage):
-        """DELIBERATE NON-REPAIR — this test FAILS WHEN THE FOLLOW-UP LANDS.
-
-        `stage_for` routes the patience statuses off `live`, and `featured_shortfalls`
-        vetoes anything not `live`.  CN has no stage gate on featuring at all, which is
-        the structural difference the parity anatomy named.  Relaxing it moves rows
-        onto a shelf whose own label reads "Setting up" / "Ran — don't chase", so it is
-        a SURFACE decision, not a rank-module one, and it is not taken here.
-        """
+    @pytest.mark.parametrize("status", ["bounce_wait", "wait_pullback"])
+    def test_the_setting_up_patience_statuses_are_now_featurable(self, status):
+        """R2: the widening stops being inert for the two `setting_up` statuses."""
         row = _row("A", status=status, ext_z=0.0)
-        assert ubr.stage_for(row) == stage
-        assert "stage_not_live" in ubr.featured_shortfalls(row)
+        assert ubr.stage_for(row) == ubr.STAGE_SETTING_UP
+        assert ubr.featured_shortfalls(row) == []
+        scored = ubr.score_rows([row], board_asof="2026-07-31")
+        assert scored[0]["featured"] is True
+
+    def test_but_hold_is_still_refused_because_ran_means_dont_chase(self):
+        """The relax is {live, setting_up}, NOT CN's "no stage gate at all".
+
+        `hold` routes to `ran`, whose own rendered shelf label is "Ran — don't chase".
+        Featuring a row while its bucket tells the reader not to chase it is a
+        contradiction the board would publish about itself, so `ran` stays vetoed —
+        and the receipt names the bucket that refused it, not a generic "not live".
+        """
+        row = _row("A", status="hold", ext_z=0.0)
+        assert ubr.stage_for(row) == ubr.STAGE_RAN
+        assert "stage_ran" in ubr.featured_shortfalls(row)
         scored = ubr.score_rows([row], board_asof="2026-07-31")
         assert scored[0]["featured"] is False
+
+    def test_status_is_the_first_gate_and_stage_only_prunes_what_it_admits(self):
+        """THE R2 ORDERING RULING, at its own grain.
+
+        A row whose entry status was never featurable is refused on the STATUS and is
+        not also charged a stage reason.  Before R2 the stage veto ran first and
+        reported `stage_not_live` on such a row, so `featured_blocked_by` named a gate
+        that was not the binding one.  This is the assertion that fails on the old
+        ordering: `watch` is a `setting_up` status, so the old code emitted BOTH
+        reasons and the new code emits only the status.
+        """
+        row = _row("A", status="watch", ext_z=0.0)
+        reasons = ubr.featured_shortfalls(row)
+        assert reasons == ["entry_status_watch"]
+        assert not any(r.startswith("stage_") for r in reasons)
+
+    def test_an_admissible_status_in_a_stand_aside_bucket_is_still_refused(self):
+        """The pruning half: status admission does not survive blocked/basing.
+
+        `stage_for`'s DOWNTREND clause is unconditional by design — a falling name does
+        not reach the featured shelf because its entry status happens to read
+        `bounce_wait`.  R2 reordered the gates; it did not delete one.
+        """
+        row = _row("A", status="bounce_wait", ext_z=0.0,
+                   state="DECLINE", label="DOWNTREND", dir="down")
+        assert ubr.stage_for(row) == ubr.STAGE_BLOCKED
+        assert "stage_blocked" in ubr.featured_shortfalls(row)
 
     @pytest.mark.parametrize("status", ["buy_soon", "extended", "topping", "watch",
                                         "await_confluence", "avoid"])
@@ -2074,6 +2115,218 @@ class TestArtifactOrderConsumers:
 
 
 # ---------------------------------------------------------------------------
+# 8b. R2 (§6.9) — reversal cohort channel + the score-scope contract
+# ---------------------------------------------------------------------------
+
+def _cohort_fixture(tmp_path, *, states, members):
+    """Write a minimal us_basket_turn artifact + curated membership pair."""
+    site = tmp_path / "site"
+    data = tmp_path / "data"
+    (site / "basketdata").mkdir(parents=True)
+    (data / "baskets").mkdir(parents=True)
+    (site / "basketdata" / "us_basket_turn.json").write_text(json.dumps({
+        "schema": "us_basket_turn.v1",
+        "as_of": "2026-08-07",
+        "baskets": {bid: {"state": st} for bid, st in states.items()},
+    }))
+    (data / "baskets" / "membership.json").write_text(json.dumps({
+        "baskets": {
+            bid: {"name": f"{bid} basket", "name_zh": "测试组合",
+                  "members": [{"ticker": t} for t in tickers]}
+            for bid, tickers in members.items()
+        }
+    }))
+    return site, data
+
+
+class TestReversalCohortChannel:
+    """R2's binary membership channel — LIVE, disclosed, and carrying no score.
+
+    The channel is sourced from the ``us_basket_turn`` organ, which declares
+    ``may_rank: false`` in BOTH its artifact and its config/synapse.yml node.  These
+    tests pin the two things that keeps honest: it earns no points, and a missing
+    input is never smoothed into "nobody qualified".
+    """
+
+    def test_a_cohort_basket_makes_its_members_members(self, tmp_path):
+        site, data = _cohort_fixture(
+            tmp_path,
+            states={"uranium": "TURNING", "megacap": "CONFIRMED"},
+            members={"uranium": ["UEC", "CCJ"], "megacap": ["AAPL"]})
+        cohort = ubr.load_reversal_cohort(site_root=site, data_dir=data)
+        assert cohort["input"] == "present"
+        assert set(cohort["members"]) == {"UEC", "CCJ"}
+        assert cohort["members"]["UEC"]["state"] == "TURNING"
+        assert cohort["baskets_in_cohort"] == 1
+        assert cohort["baskets_read"] == 2
+
+    @pytest.mark.parametrize("state", sorted(ubr.REVERSAL_COHORT_STATES))
+    def test_every_cohort_state_admits(self, tmp_path, state):
+        site, data = _cohort_fixture(tmp_path, states={"b": state},
+                                     members={"b": ["AAA"]})
+        assert ubr.load_reversal_cohort(site_root=site, data_dir=data)["members"]
+
+    @pytest.mark.parametrize("state", ["CONFIRMED", "FALLING", "NONE", ""])
+    def test_a_non_cohort_state_admits_nobody(self, tmp_path, state):
+        site, data = _cohort_fixture(tmp_path, states={"b": state},
+                                     members={"b": ["AAA"]})
+        cohort = ubr.load_reversal_cohort(site_root=site, data_dir=data)
+        assert cohort["input"] == "present"
+        assert cohort["members"] == {}
+
+    def test_the_state_vocabulary_matches_the_organ_that_emits_it(self):
+        """The duplication fence.
+
+        :data:`ubr.REVERSAL_COHORT_STATES` re-types three literals that
+        ``engine.us_early_turn`` also holds, because importing that module here would
+        drag pandas into a scoring path this one documents as pandas-free.  Copying is
+        allowed; DRIFTING is not, and this is the line that catches it.
+        """
+        from engine import us_early_turn
+
+        assert ubr.REVERSAL_COHORT_STATES == us_early_turn.WASHOUT_MATURE_STATES
+
+    # -- scarcity honesty ---------------------------------------------------
+    def test_a_missing_input_reads_absent_and_never_zero_members(self, tmp_path):
+        """THE SCARCITY RULE, and the one this channel exists to get right.
+
+        "No source tonight" and "the source ran and nobody qualified" are different
+        facts.  Collapsing them is the 2026-08-06 extension blackout in miniature: an
+        upstream gap rendered as a confident empty answer.
+        """
+        cohort = ubr.load_reversal_cohort(site_root=tmp_path / "nope",
+                                          data_dir=tmp_path / "nope")
+        assert cohort["input"] == "absent"
+        assert cohort["members"] == {}
+        read = ubr.reversal_cohort_of("AAA", cohort)
+        assert read == {"member": False, "input": "absent",
+                        "state": None, "basket_id": None}
+
+    def test_present_but_empty_is_a_different_reading_from_absent(self, tmp_path):
+        site, data = _cohort_fixture(tmp_path, states={"b": "FALLING"},
+                                     members={"b": ["AAA"]})
+        present = ubr.load_reversal_cohort(site_root=site, data_dir=data)
+        absent = ubr.load_reversal_cohort(site_root=tmp_path / "nope",
+                                          data_dir=tmp_path / "nope")
+        assert present["members"] == absent["members"] == {}
+        assert ubr.reversal_cohort_of("AAA", present)["input"] == "present"
+        assert ubr.reversal_cohort_of("AAA", absent)["input"] == "absent"
+
+    def test_a_thin_day_publishes_the_count_rather_than_hiding_it(self, tmp_path):
+        site, data = _cohort_fixture(tmp_path, states={"b": "TURNING"},
+                                     members={"b": ["AAA"]})
+        cohort = ubr.load_reversal_cohort(site_root=site, data_dir=data)
+        scored = ubr.score_rows(
+            [_row("AAA", ext_z=0.0), _row("BBB", ext_z=0.0), _row("CCC", ext_z=0.0)],
+            board_asof="2026-07-31", reversal_cohort=cohort)
+        cov = ubr.reversal_cohort_coverage(scored)
+        assert cov["members"] == 1 and cov["n"] == 3
+        assert cov["share"] == pytest.approx(1 / 3, abs=1e-4)
+        assert cov["input"] == "present"
+        assert ubr.ranking_block(scored)["reversal_cohort_coverage"] == cov
+
+    def test_an_empty_board_does_not_divide_by_zero(self):
+        cov = ubr.reversal_cohort_coverage([])
+        assert cov["members"] == 0 and cov["n"] == 0 and cov["share"] is None
+
+    # -- stamping + zero authority -----------------------------------------
+    def test_every_row_is_stamped_even_when_nobody_qualifies(self):
+        """Same rule as `ext_unknown`: a field stamped only when true cannot be told
+        apart from a build that never computed it."""
+        scored = ubr.score_rows([_row("AAA", ext_z=0.0)], board_asof="2026-07-31")
+        assert scored[0]["reversal_member"] is False
+        assert scored[0]["reversal_cohort"]["input"] == "absent"
+
+    def test_the_channel_is_declared_scoreless_in_the_published_artifact(self):
+        assert "reversal_member" in ubr.ZERO_SCORE_AUTHORITY
+        assert "reversal_member" not in ubr.SCORE_WEIGHTS
+        block = ubr.ranking_block([])
+        assert "reversal_member" in block["zero_score_authority"]
+
+    def test_membership_changes_no_score_no_stage_and_no_featured_flag(self, tmp_path):
+        """The zero-authority claim, tested as BEHAVIOUR rather than as a list entry.
+
+        The same pool scored with and without the cohort must differ in exactly the two
+        disclosure fields.  A leg that quietly read the channel would show up here.
+        """
+        site, data = _cohort_fixture(tmp_path, states={"b": "TURNING"},
+                                     members={"b": ["AAA", "BBB"]})
+        cohort = ubr.load_reversal_cohort(site_root=site, data_dir=data)
+
+        def _pool():
+            return [_row("AAA", ext_z=0.0, alpha=2.0),
+                    _row("BBB", ext_z=0.5, alpha=1.0, status="bounce_wait"),
+                    _row("CCC", ext_z=1.0, alpha=3.0)]
+
+        without = ubr.score_rows(_pool(), board_asof="2026-07-31")
+        with_ = ubr.score_rows(_pool(), board_asof="2026-07-31",
+                               reversal_cohort=cohort)
+        assert [r["ticker"] for r in without] == [r["ticker"] for r in with_]
+        assert any(r["reversal_member"] for r in with_), "fixture must mark somebody"
+        _disclosure = {"reversal_member", "reversal_cohort"}
+        for lhs, rhs in zip(without, with_):
+            assert {k: v for k, v in lhs.items() if k not in _disclosure} == {
+                k: v for k, v in rhs.items() if k not in _disclosure}, lhs["ticker"]
+
+    def test_the_era_stamp_travels_with_the_channel(self, tmp_path):
+        """Era-stamp law: a published number that could shift carries the regime that
+        produced it, so a forward-ledger row is readable against its own era."""
+        assert ubr.reversal_cohort_coverage([])["selection_era"] == ubr.SELECTION_ERA
+        cohort = ubr.load_reversal_cohort(site_root=tmp_path / "nope",
+                                          data_dir=tmp_path / "nope")
+        assert cohort["selection_era"] == ubr.SELECTION_ERA
+
+    def test_a_ticker_in_two_cohort_baskets_keeps_one_deterministic_row(self, tmp_path):
+        site, data = _cohort_fixture(
+            tmp_path, states={"zz": "TURNING", "aa": "WASHED_OUT"},
+            members={"zz": ["DUP"], "aa": ["DUP"]})
+        first = ubr.load_reversal_cohort(site_root=site, data_dir=data)
+        second = ubr.load_reversal_cohort(site_root=site, data_dir=data)
+        assert first["members"]["DUP"] == second["members"]["DUP"]
+        assert first["members"]["DUP"]["basket_id"] == "aa"
+
+
+class TestScoreScopeContract:
+    """R2 rider — the don't-chase-at-100 deviation #4976 recorded and deferred here."""
+
+    def test_a_high_scoring_ran_row_still_sits_below_every_live_row(self):
+        """The deviation reproduced, then shown to be harmless to the ORDER.
+
+        A `ran` row really can outscore a `live` one — the flat entry leg pays every
+        admissible status alike.  What must hold is that the sort never lets that
+        number cross a bucket boundary.
+        """
+        rows = [_row("RAN", status="hold", alpha=9.0, tier="T2", ticks=0, ext_z=0.0),
+                _row("LIVE", status="buy_now", alpha=-0.5, tier="T3", ticks=5)]
+        scored = ubr.score_rows(rows, board_asof="2026-07-31")
+        by = {r["ticker"]: r for r in scored}
+        assert by["RAN"]["stage"] == "ran" and by["LIVE"]["stage"] == "live"
+        assert by["RAN"]["prophet"]["score"] > by["LIVE"]["prophet"]["score"], (
+            "fixture must reproduce the deviation or this proves nothing")
+        assert [r["ticker"] for r in scored] == ["LIVE", "RAN"]
+
+    def test_the_artifact_says_the_score_is_bucket_scoped(self):
+        """The fix itself: the contradiction was a missing STATEMENT, not a wrong
+        number, so the repair is a published contract and not a re-scored column."""
+        note = ubr.ranking_block([])["score_scope_note"]
+        assert "WITHIN a stage bucket" in note
+        assert "never" in note.lower()
+
+    def test_the_score_column_itself_is_not_deflated_by_its_bucket(self):
+        """Deliberate non-repair: capping a don't-chase row's score would publish a
+        different number for identical evidence.  The same legs pay the same points in
+        every bucket, and that is checked rather than assumed."""
+        live = ubr.score_rows([_row("A", status="buy_now", alpha=1.0, ext_z=0.0)],
+                              board_asof="2026-07-31")[0]
+        ran = ubr.score_rows([_row("A", status="hold", alpha=1.0, ext_z=0.0)],
+                             board_asof="2026-07-31")[0]
+        assert live["stage"] == "live" and ran["stage"] == "ran"
+        for leg in ("signal", "edge", "runway", "quality"):
+            assert live["prophet"]["points"][leg] == ran["prophet"]["points"][leg]
+        assert live["prophet"]["points"]["entry"] == ran["prophet"]["points"]["entry"]
+
+
+# ---------------------------------------------------------------------------
 # 9. fixture integration — the committed artifacts, end to end
 # ---------------------------------------------------------------------------
 
@@ -2225,14 +2478,22 @@ class TestCommittedArtifactIntegration:
         assert all(by_before[t]["stage"] == "blocked" for t in moved)
         assert all(by_after[t]["stage"] == "basing" for t in moved)
 
-        # Matched by ticker, every stamped field but `stage` and the two position
-        # stamps is identical — the split re-groups the board, it does not re-score it.
-        _positional = {"stage", "display_rank", "score_rank"}
+        # Matched by ticker, every stamped field but `stage`, the two position stamps
+        # and the stage token in `featured_blocked_by` is identical — the split
+        # re-groups the board, it does not re-score it.  (R2 made the veto reason name
+        # the refusing bucket, so it moves with the bucket; the flag still must not.)
+        _positional = {"stage", "display_rank", "score_rank", "featured_blocked_by"}
         assert set(by_before) == set(by_after)
         for tk, lhs in by_before.items():
+            rhs = by_after[tk]
             assert {k: v for k, v in lhs.items() if k not in _positional} == {
-                k: v for k, v in by_after[tk].items()
+                k: v for k, v in rhs.items()
                 if k not in _positional}, tk
+            assert lhs["featured"] == rhs["featured"], tk
+            assert ([r for r in (lhs.get("featured_blocked_by") or [])
+                     if not r.startswith("stage_")]
+                    == [r for r in (rhs.get("featured_blocked_by") or [])
+                        if not r.startswith("stage_")]), tk
         assert [r["ticker"] for r in after] == [
             r["ticker"] for r in sorted(
                 before,
@@ -2274,14 +2535,25 @@ class TestCommittedArtifactIntegration:
             1 for r in rows
             if "ext_z_unknown" in (r.get("featured_blocked_by") or ()))
 
-    def test_every_featured_row_is_actionable_today(self, scored):
+    def test_every_featured_row_is_forward_looking(self, scored):
+        """R2 widened this from `live` only to {live, setting_up}.
+
+        The invariant that matters is unchanged and is what this asserts: nothing on
+        the featured shelf comes from a bucket that tells the reader to stand aside or
+        not to chase.  `ran`, `basing` and `blocked` are all still refused — see
+        :data:`engine.us_board_rank._FEATURED_STAGES` for why the relax stopped there
+        instead of adopting CN's no-stage-gate-at-all.
+        """
         _board, rows = scored
         for r in (r for r in rows if r["featured"]):
-            assert r["stage"] == "live"
-            assert r["entry_signal"]["status"] in ("buy_now", "partial")
+            assert r["stage"] in ubr._FEATURED_STAGES, r["ticker"]
+            assert r["entry_signal"]["status"] in ubr._FEATURED_ENTRY_STATUSES
             assert float(r["alpha"]) >= 0
             assert r["signal"]["tier_cascade"] in ("T1", "T2", "T3")
             assert r["signal"]["ticks"] is not None and r["signal"]["ticks"] <= 2
+        assert not any(r["featured"] for r in rows
+                       if r["stage"] in (ubr.STAGE_RAN, ubr.STAGE_BASING,
+                                         ubr.STAGE_BLOCKED))
 
     def test_a_same_day_cross_is_featurable_on_real_data(self, scored):
         """The ticks==0 trap, pinned against production rows: the 07-31 board carries
