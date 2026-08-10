@@ -22,6 +22,10 @@ log "[2/5] pinned Codex runtime"
 bash "$APP_DIR/app/deploy/codex-runtime-setup.sh"
 
 log "[3/5] systemd unit"
+# The unit's Market Memory bind is deliberately non-optional and read-only.
+# Provision it before installation so a fresh host fails closed without making
+# the first service start impossible.
+install -d -m 0700 /var/lib/macro-market-memory/public
 install -m 0644 "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service
 systemctl daemon-reload
 
