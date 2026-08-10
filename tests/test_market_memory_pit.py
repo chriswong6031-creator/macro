@@ -354,7 +354,8 @@ def test_production_api_mounts_pit_store_read_only_and_hides_writer_state(
         "/var/lib/macro-market-memory/public" in unit
     )
     assert "ReadOnlyPaths=/var/lib/macro-market-memory/public" in unit
-    assert "InaccessiblePaths=-/var/lib/macro-market-memory/state" in unit
+    assert "InaccessiblePaths=/var/lib/macro-market-memory/state" in unit
+    assert "InaccessiblePaths=-/var/lib/macro-market-memory/state" not in unit
     assert "InaccessiblePaths=-/etc/macro-market-memory.env" in unit
     assert (
         pit.default_store_root("/opt/macro")
@@ -362,8 +363,16 @@ def test_production_api_mounts_pit_store_read_only_and_hides_writer_state(
     )
     update = (ROOT / "app" / "deploy" / "update.sh").read_text(encoding="utf-8")
     assert "install -d -m 0700 /var/lib/macro-market-memory/public" in update
+    assert "install -d -m 0700 /var/lib/macro-market-memory/state" in update
+    assert update.index(
+        "install -d -m 0700 /var/lib/macro-market-memory/state"
+    ) < update.index("API_UNIT_UPDATED=0")
     setup = (ROOT / "app" / "deploy" / "api-setup.sh").read_text(encoding="utf-8")
     assert "install -d -m 0700 /var/lib/macro-market-memory/public" in setup
+    assert "install -d -m 0700 /var/lib/macro-market-memory/state" in setup
+    assert setup.index(
+        "install -d -m 0700 /var/lib/macro-market-memory/state"
+    ) < setup.index("systemd-analyze verify")
 
 
 def test_same_operational_query_cannot_publish_conflicting_packet(
