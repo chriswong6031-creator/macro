@@ -100,6 +100,35 @@ fresh checks decide on a later sweep. If it has not, the existing green still
 means what it said. That is the operator's chosen option — NOT strict
 up-to-date-with-main, which would serialise a 60-PR queue into days.
 
+A MERGED PULL REQUEST CAN DELIVER NOTHING (measured 2026-08-09). Every gate above
+judges the head's CHECKS; none of them ever asked whether the head still contains
+the pull request's WORK. Four armed pull requests (#5055 #5061 #5078 #5091) sat
+through a day of update-branch/refresh cycles and came out with their branch heads
+clobbered to content-identical-with-main — #5055's head at merge time,
+6f9a7f63bfb, contained none of its files. Their checks were honestly green (they
+tested what was effectively main's own content), the freshness gate was satisfied,
+and the sweeper squash-merged EMPTY diffs: merge commits 455130e4faa, e7564f0fc7b,
+db48f1d6aa9 and 0ae4270c76a all carry empty diffstats, the PRs read MERGED, and
+zero files landed. (#5074, merged in the same drain, was NOT a phantom — its
+squash landed a deliberately amended floor guard.) That is the worst outcome this
+lane can produce, because it READS as success — the loss surfaced only when a
+human verified the files on main by content, and recovery re-landed 14 files
+byte-exact in #5198.
+
+So `sweep_pull` now refuses ANY armed pull request whose live `base...head`
+compare is EMPTY — unconditionally, immediately before the irreversible step. An
+earlier draft of this invariant keyed on a DISAGREEMENT instead: live diff empty
+while the PR's materialised files view still names files. The recovery lane
+measured that shape VACUOUS — GitHub recomputes the files view against the
+clobbered head, so all four phantoms' files lists read 0 files pre-merge and the
+disagreement never occurs. Emptiness alone is the signal, and refusing on it
+costs nothing: no legitimate armed pull request has an empty diff, because
+squash-merging one records MERGED while delivering nothing — a phantom at worst,
+a pointless no-op at best. The refusal labels `merge-blocked` and explains once,
+naming the head SHA so the owner can find the good pre-clobber commit (or close
+a genuinely empty pull request). See `live_diff_file_count` for the mechanism
+and `update_branch` for the likely clobber source.
+
 THE SWEEPER CAN STARVE ITSELF (measured 2026-08-07). Everything above spends API
 calls without ever asking how many are left. `READ_TOKEN` is the job's own
 `GITHUB_TOKEN`, whose Actions quota is **1,000 requests per hour PER REPOSITORY**
@@ -217,6 +246,14 @@ MERGE_BLOCKED_LABEL = "merge-blocked"
 MAIN_RED_REPAIR_LABEL = "main-red-repair"
 BASELINE_WORKFLOW = "integration-baseline.yml"
 WORKFLOWS_DIR = Path(__file__).resolve().parents[1] / ".github" / "workflows"
+# A workflow-level catch-all is allowed to START the selector so a brand-new
+# repository root cannot bypass CI.  It is not, by itself, evidence that every
+# file affects every check.  Treating ``**`` as a tested-surface entry makes any
+# main commit overlap every pull request and recreates the strict update-branch
+# livelock that the freshness gate was built to avoid.  ``load_pr_gates`` keeps
+# this provenance separately and the decision below fails closed only when a
+# path is covered by the catch-all and by no more specific ownership entry.
+START_ONLY_PATH_PATTERNS = frozenset({"**"})
 # The conclusions that count as "this check did not fail". `neutral` and
 # `skipped` are the shapes a path-filtered or deliberately-inert job publishes.
 #
@@ -258,13 +295,15 @@ MAX_PULLS_PER_SWEEP = 25
 # last fifth of the bucket to the OTHER lanes that read main with GITHUB_TOKEN —
 # a merge sweeper starving render.yml would just move the outage.
 RATE_LIMIT_FLOOR = 200
-# Stop MID-sweep below this. Covers the in-flight pull request's remaining writes
-# (merge, label, comment, delete-ref) plus the calls that can be spent between two
-# budget polls, so the stop is clean rather than a 403 half-way through.
+# Stop MID-sweep below this. Covers the in-flight pull request's remaining reads
+# and writes (the pre-merge live-compare read, merge, label, comment, delete-ref)
+# plus the calls that can be spent between two budget polls, so the stop is clean
+# rather than a 403 half-way through.
 RATE_LIMIT_RESERVE = 60
 # Poll `GET /rate_limit` every N evaluated pull requests rather than every one. It
-# costs no core budget but it is still a round trip; at <=5 calls per pull request
-# the reserve above comfortably covers the at-most-25 calls spent between polls.
+# costs no core budget but it is still a round trip; at <=6 calls per pull request
+# (the clobbered-head compare read is the sixth) the reserve above comfortably
+# covers the at-most-30 calls spent between polls.
 BUDGET_RECHECK_EVERY = 5
 # Each `update-branch` is a write AND a fresh CI run on a saturated pool (36-91
 # minutes, 8 self-hosted runners). The base-inherited-red path makes most of a red
@@ -663,7 +702,8 @@ def load_pr_gates(workflows_dir: Path = WORKFLOWS_DIR) -> list[dict[str, Any]]:
         likely cause is a sparse-checkout that stopped fetching it, and a surface
         derived from nothing is the no-op-that-reviews-as-protection this gate
         exists to avoid;
-      * no PR-triggered workflow declares a `paths:` filter at all — same reason;
+      * no PR-triggered workflow declares a specific (non-catch-all) path at all
+        — same reason;
       * a filter contains a `!` negation, which `gh_path_filter` does not model.
         Refusing loudly beats mis-evaluating a surface nobody re-derived.
     """
@@ -689,21 +729,41 @@ def load_pr_gates(workflows_dir: Path = WORKFLOWS_DIR) -> list[dict[str, Any]]:
             continue
         trigger = block.get("pull_request")
         patterns = None
+        start_only_patterns: list[str] = []
         if isinstance(trigger, dict) and isinstance(trigger.get("paths"), list):
-            patterns = [str(entry) for entry in trigger["paths"]]
-            negated = [entry for entry in patterns if entry.startswith(NEGATION_PREFIX)]
+            declared_patterns = [str(entry) for entry in trigger["paths"]]
+            negated = [
+                entry for entry in declared_patterns if entry.startswith(NEGATION_PREFIX)
+            ]
             if negated:
                 raise RuntimeError(
                     f"{path.name} uses `!` negation in on.pull_request.paths "
                     f"({negated[0]}), which the shared matcher does not model"
                 )
-        gates.append({"workflow": path.name, "patterns": patterns})
+            start_only_patterns = [
+                entry
+                for entry in declared_patterns
+                if entry in START_ONLY_PATH_PATTERNS
+            ]
+            patterns = [
+                entry
+                for entry in declared_patterns
+                if entry not in START_ONLY_PATH_PATTERNS
+            ]
+        gates.append(
+            {
+                "workflow": path.name,
+                "patterns": patterns,
+                "start_only_patterns": start_only_patterns,
+            }
+        )
 
     if not gates:
         raise RuntimeError(f"no on.pull_request workflow found under {workflows_dir}")
-    if not any(gate["patterns"] is not None for gate in gates):
+    if not any(gate["patterns"] for gate in gates):
         raise RuntimeError(
-            f"no PR-triggered workflow under {workflows_dir} declares a paths filter"
+            f"no PR-triggered workflow under {workflows_dir} declares a paths "
+            "filter with a specific non-catch-all entry"
         )
     return gates
 
@@ -908,8 +968,23 @@ class ProofFreshness:
             if files and all(name.startswith(PIPELINE_TREES) for name in files):
                 continue  # a render/nightly bake, not an edit
             for name in files:
+                matched_specific = False
+                matched_start_only = False
                 for gate in self.gates:
-                    candidates.update(matching_patterns(name, gate["patterns"]))
+                    matches = matching_patterns(name, gate["patterns"])
+                    candidates.update(matches)
+                    matched_specific = matched_specific or bool(matches)
+                    matched_start_only = matched_start_only or bool(
+                        matching_patterns(
+                            name, gate.get("start_only_patterns") or []
+                        )
+                    )
+                if matched_start_only and not matched_specific:
+                    return True, (
+                        f"main commit {commit['sha'][:12]} touched {name}, which is "
+                        "covered only by a workflow start catch-all and has no "
+                        "specific tested-surface owner"
+                    )
 
         if not candidates:
             return False, (
@@ -2015,6 +2090,49 @@ def delete_head_ref(repo: str, pull: dict[str, Any], token: str) -> None:
     )
 
 
+def live_diff_file_count(repo: str, pull: dict[str, Any], token: str) -> int | None:
+    """File count of the LIVE three-dot compare `base...head`. None when unreadable.
+
+    This is the GROUND-TRUTH answer to "what would this squash merge apply",
+    computed from the refs as they stand NOW. The pull request's own `files` view
+    is deliberately NOT consulted as a cross-check: an earlier draft of the
+    invariant keyed on live-vs-view disagreement, and the recovery lane measured
+    that shape vacuous — GitHub recomputes the files view against a clobbered
+    head, so all four 2026-08-09 phantoms' files lists read 0 files pre-merge and
+    a disagreement never occurs. Emptiness of this compare alone is the signal
+    `sweep_pull` refuses on.
+
+    Cost: one READ_TOKEN GET per pull request that reaches the merge step, inside
+    RATE_LIMIT_RESERVE's headroom. `per_page=1` bounds the commits array; `files`
+    rides the first page, and only its EMPTINESS is consulted, so GitHub's
+    300-file truncation cannot flip the answer (truncation needs >=300 files, and
+    any answer above zero already means "proceed").
+
+    The head side is the exact SHA this sweep judged, not the branch name: the
+    checks and the freshness gate were both computed for that SHA, and a branch
+    that moved since is a different question (the next sweep's). The base side
+    falls back to "main" when the listing payload carried no base ref — every
+    armed pull request here targets main, and a wrong-base compare can only make
+    the diff LARGER, which reads "proceed", i.e. the pre-invariant behaviour.
+    """
+    head_sha = str((pull.get("head") or {}).get("sha") or "")
+    if not head_sha:
+        return None
+    base_ref = str((pull.get("base") or {}).get("ref") or "main")
+    basehead = f"{urllib.parse.quote(base_ref, safe='/')}...{head_sha}"
+    status, payload = _request(
+        "GET",
+        f"{GITHUB_API}/repos/{repo}/compare/{basehead}?per_page=1",
+        token,
+    )
+    if status >= 400 or not isinstance(payload, dict):
+        return None
+    files = payload.get("files")
+    if not isinstance(files, list):
+        return None
+    return len(files)
+
+
 def already_settled(repo: str, number: Any, token: str) -> tuple[bool, str]:
     """Did this pull request already merge (or close) out from under this sweep?
 
@@ -2078,6 +2196,29 @@ def update_branch(repo: str, pull: dict[str, Any], token: str) -> bool:
     three-day-old one. Nothing here weakens the merge gate — an updated head is
     unproven until its fresh checks conclude, and the next sweep judges it on
     those.
+
+    NOT the clobber vector, for the record (the 2026-08-09 phantom merges). When
+    four armed heads were found clobbered to content-identical-with-main after a
+    day of refresh cycles, this call was the obvious suspect — it is the thing
+    that keeps touching armed heads. It is exonerated by its own failure mode:
+    GitHub's server-side update-branch NEVER auto-resolves a conflict, it answers
+    422 and the caller falls through to `merge-blocked`, so it can add merge
+    commits but cannot invent a resolution that takes main's side. The likely
+    source is the fleet's LOCAL refresh work between sweeps — a session resolves
+    a refresh/rebase conflict in a worktree and force-pushes — where two known
+    mechanisms produce exactly this shape: (a) bulk conflict auto-resolution
+    taking main wholesale (`-X theirs` / `checkout --theirs`-style) during
+    backlog drains, and/or (b) `git rerere` replaying a SIBLING pull request's
+    "take main's version" resolution onto a different conflict in the same file,
+    marker-free and status-clean (measured 2026-08-07 on #4821/#4822;
+    `rerere.enabled` is false at repo level now, but the shared `.git/rr-cache` —
+    worktrees share `.git` — still carries those recorded resolutions, and any
+    worktree or `-c` override that re-enables it replays them). Either way the
+    head ends content-identical with main, its checks go green on main's own
+    content, and only the live compare can tell — which is why the
+    clobbered-head invariant in `sweep_pull` sits at the merge itself, not here.
+    The clobber mechanism is deliberately NOT fixed in this file: it lives in the
+    fleet's local tooling, and the invariant makes it non-catastrophic.
     """
     number = pull.get("number")
     status, body = _request(
@@ -2362,6 +2503,77 @@ def sweep_pull(
     if stale:
         return reprove(repo, pull, reason, read_token, merge_token, budget)
     print(f"PR #{number}: proof still current — {reason}.", flush=True)
+
+    # THE CLOBBERED-HEAD INVARIANT (the 2026-08-09 phantom merges: #5055 #5061
+    # #5078 #5091 — module docstring; #5074 in the same drain was not one).
+    # Everything above judged the head's CHECKS; nothing asked whether the head
+    # still CONTAINS the pull request's work. A head clobbered to content-
+    # identical-with-main during refresh cycles is green for free — its checks
+    # tested main's own content — and squash-merging it creates an empty commit
+    # that reads MERGED while zero files land. The refusal is UNCONDITIONAL on an
+    # empty live diff: the earlier disagreement shape (empty live diff while the
+    # PR's files view still names files) was measured vacuous, because GitHub
+    # recomputes the files view against the clobbered head — all four phantoms
+    # read 0 files pre-merge. And no legitimate armed pull request has an empty
+    # diff: merging one records MERGED while delivering nothing, so blocking
+    # costs nothing. One live compare, after every cheaper gate has passed and
+    # immediately before the irreversible step. Likely clobber source:
+    # `update_branch`'s docstring.
+    live_files = live_diff_file_count(repo, pull, read_token)
+    if live_files is None:
+        # Fail closed WITHOUT accusing: a broken read must never become
+        # permission to merge, but a blip is not evidence of a clobber either —
+        # and `mark_blocked`'s comment is one-shot, so a false accusation would
+        # be the one that sticks. Armed, unlabeled, retried next sweep.
+        _annotate(
+            "warning",
+            "merge-on-green",
+            f"PR #{number}: the live base...head compare could not be read, so "
+            "the clobbered-head invariant cannot run — not merging on partial "
+            "information. Left armed for the next sweep.",
+        )
+        return "error"
+    if live_files == 0:
+        added = mark_blocked(
+            repo,
+            pull,
+            (
+                "`merge-on-green` sweeper: **not merging.** Every check "
+                "concluded clean, but the live `base...head` compare for this "
+                "pull request is EMPTY: squash-merging it would create an empty "
+                "commit that reads MERGED while delivering nothing. No "
+                "legitimate armed pull request has an empty diff, so the "
+                "sweeper refuses unconditionally.\n\n"
+                "The usual cause is a CLOBBERED HEAD — the 2026-08-09 phantom "
+                "merges (#5055 #5061 #5078 #5091): a refresh-cycle conflict "
+                "resolution took main wholesale (and/or a `git rerere` replay "
+                "of a sibling's resolution), leaving the branch head "
+                "content-identical with main, so its checks passed on main's "
+                "own content and GitHub's recomputed files view read 0 files. "
+                f"Head at refusal time: `{head_sha}`. The good content "
+                "survives at this branch's PRE-CLOBBER commits — walk the "
+                "branch's `git log`/reflog (or a parked worktree) for the last "
+                "head whose `base...head` diff matches this pull request's "
+                "intent, force-push the branch back to it, and the next sweep "
+                "judges the restored head on its fresh checks (the label stays "
+                "armed).\n\n"
+                "If instead this pull request is GENUINELY empty — its content "
+                "already landed via a sibling, or it never had any — close it "
+                "rather than merge it: an empty squash records a MERGED state "
+                "that delivered nothing, which is exactly the record this "
+                "refusal exists to prevent."
+            ),
+            merge_token,
+        )
+        _annotate(
+            "warning",
+            "merge-on-green",
+            f"PR #{number}: live base...head diff is EMPTY — head "
+            f"{head_sha[:12]} carries no changes against main (clobbered head, "
+            "or a superseded/empty pull request); merge refused. "
+            + ("Labeled merge-blocked." if added else "Already labeled merge-blocked."),
+        )
+        return "empty-diff"
 
     status, body = _request(
         "PUT",
