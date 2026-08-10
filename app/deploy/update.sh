@@ -56,7 +56,18 @@ stop_unit_and_verify_inactive() {
 		inactive|failed) ;;
 		*) return 1 ;;
 	esac
-	[ "$main_pid" = 0 ] && [ "$control_pid" = 0 ]
+	case "$unit" in
+		*.timer)
+			# Timers have no execution process. systemd therefore reports these
+			# service-only properties as empty on the production release.
+			case "$main_pid" in ""|0) ;; *) return 1 ;; esac
+			case "$control_pid" in ""|0) ;; *) return 1 ;; esac
+			;;
+		*.service)
+			[ "$main_pid" = 0 ] && [ "$control_pid" = 0 ]
+			;;
+		*) return 1 ;;
+	esac
 }
 # END W1B5_UNIT_STOP_HELPERS
 

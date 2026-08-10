@@ -768,7 +768,12 @@ systemctl() {{
             [ "$TIMER_ACTIVE" -eq 1 ] && printf '%s\n' active || printf '%s\n' inactive
           fi
           ;;
-        MainPID|ControlPID) printf '%s\n' 0 ;;
+        MainPID|ControlPID)
+          case "$5" in
+            *.timer) printf '\n' ;;
+            *) printf '%s\n' 0 ;;
+          esac
+          ;;
         UnitFileState)
           [ "$TIMER_ENABLED" -eq 1 ] && printf '%s\n' enabled || printf '%s\n' disabled
           ;;
@@ -885,7 +890,12 @@ CHANGED={shlex.quote(changed)}
       if [ "$1" = show ]; then
         case "$3" in
           ActiveState) printf '%s\\n' inactive ;;
-          MainPID|ControlPID) printf '%s\\n' 0 ;;
+          MainPID|ControlPID)
+            case "$5" in
+              *.timer) printf '\\n' ;;
+              *) printf '%s\\n' 0 ;;
+            esac
+            ;;
           UnitFileState) printf '%s\\n' disabled ;;
           LoadState) printf '%s\\n' loaded ;;
         esac
