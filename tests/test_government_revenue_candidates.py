@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import Counter
 from copy import deepcopy
-from hashlib import sha256
 import json
 from pathlib import Path
 
@@ -12,14 +11,10 @@ from engine.government_revenue.candidates import (
     build_candidate_observations,
     build_candidate_queue,
     build_mapping_backlog,
-    candidate_historical_suppression_activation,
-    candidate_historical_suppression_entry,
     candidate_queue_content_id,
-    historical_suppression_entry_key,
     is_valid_candidate_payload,
     is_valid_candidate_queue,
 )
-from scripts.build_government_revenue import build_payload
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -210,31 +205,40 @@ def _payload(event: dict | None = None) -> dict:
     }
 
 
-def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None:
+def test_current_truth_is_eight_context_candidates_with_twenty_one_mapping_rows() -> None:
     latest = json.loads((ROOT / "data/government_revenue/latest.json").read_text(encoding="utf-8"))
     graph = json.loads((ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(encoding="utf-8"))
 
     queue = build_candidate_queue(latest, graph, generated_at=GENERATED_AT)
 
-    assert queue["counts"]["total"] == 0
+    assert queue["counts"]["total"] == 8
     assert queue["counts"]["mapping_needed"] == 21
-
-
     assert len(queue["mapping_backlog"]) == 21
     # The award-event rail activated on 2026-08-08T18:30Z (activation_state=live)
     # after days of reporting unavailable, and Wave 9D published the reviewed
     # defense19 graph the same day. Current truth, re-verified empirically at this
     # merge (2026-08-09): the rail is read (award_events_status ok), ~500
     # award-change events are visible, all 19 defense19 issuers are reviewed --
-    # and still no event meets exact candidate eligibility, which the engine
-    # emits as not_observed. Zero candidates now has its THIRD distinct reason in
-    # this probe's history: rail unreadable -> rail read with zero award-change
-    # events -> events visible but none exact-eligible. This pin is deliberately
-    # a snapshot tripwire (per the 2026-08-08 heal): it must fire again, and be
-    # re-read by a human, the next time this state moves.
+    # and eight exact-linked, reviewed events now meet candidate eligibility.
+    # #5207 healed the last schema door and the serialized writer issued those
+    # rows at 2026-08-10T04:15Z. This remains a deliberate snapshot tripwire: a
+    # human must re-read the new cohort whenever current truth moves again.
     assert queue["freshness"]["award_events_status"] == "ok"
-    assert queue["freshness"]["exact_candidate_availability"] == "not_observed"
+    assert queue["freshness"]["exact_candidate_availability"] == "available"
     assert queue["freshness"]["recipient_graph_status"] == "ready"
+    assert all(row["authority"]["context_only"] is True for row in queue["candidates"])
+    assert all(row["authority"]["can_rank"] is False for row in queue["candidates"])
+    assert all(row["authority"]["can_size"] is False for row in queue["candidates"])
+    assert all(row["authority"]["can_gate"] is False for row in queue["candidates"])
+    assert all(
+        row["authority"]["can_originate_signal"] is False
+        for row in queue["candidates"]
+    )
+    assert all(
+        row["authority"]["can_add_candidates"] is False
+        for row in queue["candidates"]
+    )
+    assert all(row["authority"]["can_escalate"] is False for row in queue["candidates"])
     assert queue["coverage"]["reviewed_issuer_company_count"] == 19
     assert queue["coverage"]["reviewed_issuer_tickers"] == [
         "AVAV", "BA", "CW", "GD", "HEI", "HII", "HWM", "IRDM", "KTOS", "LDOS",
@@ -254,37 +258,6 @@ def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None
     ) == ["BWXT", "GE"]
     assert all(row["issuer_attribution"] == "not_asserted" for row in queue["mapping_backlog"])
     assert is_valid_candidate_queue(queue)
-
-
-def test_reviewed_historical_manifest_exactly_matches_the_current_canonical_rebuild() -> None:
-    """The reviewed eight are derived truth, not a hand-transcribed allowlist."""
-    payload = build_payload(root=ROOT)
-    graph = json.loads(
-        (ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    rows = build_candidate_observations(
-        payload,
-        graph,
-        generated_at=payload["generated_at"],
-    )
-    manifest = json.loads(
-        (
-            ROOT
-            / "config/government_revenue/candidate_historical_suppressions.v1.json"
-        ).read_text(encoding="utf-8")
-    )
-    entries = sorted(
-        (candidate_historical_suppression_entry(row) for row in rows),
-        key=historical_suppression_entry_key,
-    )
-
-    assert len(rows) == len(entries) == len(manifest["entries"]) == 8
-    assert entries == manifest["entries"]
-    assert {row["source_event"]["source_rail"] for row in rows} == {
-        "usaspending_award_snapshot"
-    }
 
 
 def test_exact_receipt_bound_reviewed_event_builds_one_context_candidate() -> None:
@@ -507,54 +480,6 @@ def test_queue_is_deterministic_and_never_an_investment_rank() -> None:
     assert first["coverage"]["reviewed_issuer_tickers"] == ["NOC"]
     assert first["display_sort"]["is_investment_rank"] is False
     assert first["authority"]["can_rank"] is False
-
-
-def test_queue_schema_keeps_committed_v1_compatible_and_admits_typed_suppression_receipt() -> None:
-    legacy = build_candidate_queue(
-        _payload(_award_event()),
-        _graph(),
-        generated_at=GENERATED_AT,
-    )
-    assert "historical_candidate_suppression" not in legacy["coverage"]
-    assert is_valid_candidate_queue(legacy)
-
-    manifest_path = (
-        ROOT
-        / "config/government_revenue/candidate_historical_suppressions.v1.json"
-    )
-    manifest_raw = manifest_path.read_bytes()
-    manifest = json.loads(manifest_raw)
-    typed = deepcopy(legacy)
-    typed["coverage"]["historical_candidate_suppression"] = {
-        "contract": "government_revenue.candidate_historical_suppression_application.v1",
-        "manifest_sha256": sha256(manifest_raw).hexdigest(),
-        "policy": "exact_source_identity_only",
-        "decision": "do_not_backfill",
-        "predecessor_queue_content_id": manifest["predecessor"]["queue_content_id"],
-        "prior_frozen_at": manifest["predecessor"]["projection_generated_at"],
-        "manifest_entry_count": len(manifest["entries"]),
-        "matched_count": len(manifest["entries"]),
-        "inactive_count": 0,
-        "entries": deepcopy(manifest["entries"]),
-        "activation": candidate_historical_suppression_activation(
-            manifest,
-            sha256(manifest_raw).hexdigest(),
-            activated_at=manifest["reviewed_at"],
-        ),
-    }
-    typed["source_content_ids"].append(
-        "candidate-suppression-manifest-sha256:" + sha256(manifest_raw).hexdigest()
-    )
-    typed["source_content_ids"].sort()
-    typed["content_id"] = candidate_queue_content_id(typed)
-    assert is_valid_candidate_queue(typed)
-
-    malformed = deepcopy(typed)
-    del malformed["coverage"]["historical_candidate_suppression"]["entries"][0][
-        "source_event_id"
-    ]
-    malformed["content_id"] = candidate_queue_content_id(malformed)
-    assert not is_valid_candidate_queue(malformed)
 
 
 def test_queue_content_id_excludes_delivery_clock_but_detects_data_mutation() -> None:

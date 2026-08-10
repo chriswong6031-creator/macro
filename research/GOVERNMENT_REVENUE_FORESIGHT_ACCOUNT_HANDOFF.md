@@ -243,19 +243,6 @@ Acceptance gates:
 - current production API no longer says `projection_state_absent` after a successful live run; and
 - zero fabricated candidates is accepted as success.
 
-**2026-08-09 anti-backfill recovery.** The repaired canonical builder now derives
-exactly eight historical snapshot-rail rows, all first knowable before the already
-frozen empty projection. They are bound one-for-one in the operator-reviewed
-`candidate_historical_suppressions.v1.json` manifest and disclosed as
-`withheld_historical`; none is issued, retimed, or appended, and the candidate
-ledger remains byte-empty. Any unlisted historical identity still hard-fails.
-The first bound generation must carry a durable activation attestation for the
-full eight-row source bijection; later inactive-window receipts preserve those
-exact activation bytes and cannot mint or weaken that proof.
-Only a genuinely forward observation with a new exact source identity may enter
-the ledger after this boundary; the suppression has no Prophet, Neural Web,
-ranking, sizing, gating, signal, candidate-add, or escalation authority.
-
 Primary code:
 
 - `collectors/usaspending_awards.py`

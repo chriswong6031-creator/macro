@@ -144,11 +144,7 @@ def _assert_workspace_admits_its_award_events(workspace: dict[str, Any]) -> None
         raise ProjectionDriftError(message)
 
 
-def validate_projection(
-    root: Path = _ROOT,
-    *,
-    require_candidate_suppression_manifest: bool = True,
-) -> dict[str, Any]:
+def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
     """Validate canonical/public twins and the compact first-paint shell."""
 
     root = root.resolve()
@@ -197,9 +193,6 @@ def validate_projection(
         candidate_projection = build_government_revenue_candidates.verify_candidate_artifacts(
             root,
             mirror_public=False,
-            require_historical_suppression_manifest=(
-                require_candidate_suppression_manifest
-            ),
         )
     except build_government_revenue_candidates.CandidateProjectionError as exc:
         raise ProjectionDriftError(

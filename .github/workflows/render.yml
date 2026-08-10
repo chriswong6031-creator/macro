@@ -1348,7 +1348,6 @@ jobs:
             fi
             GOVREV_PROJECTION_INPUTS=(
               data/government_revenue/
-              config/government_revenue/candidate_historical_suppressions.v1.json
               lib/pages.py
               scripts/build_government_revenue.py
               scripts/build_government_revenue_candidates.py

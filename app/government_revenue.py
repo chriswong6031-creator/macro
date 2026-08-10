@@ -46,14 +46,11 @@ from engine.government_revenue.idv_bridge import (
 )
 from engine.government_revenue.candidates import (
     CONTRACT as CANDIDATE_CONTRACT,
-    HISTORICAL_SUPPRESSION_CONFIG_PATH,
     QUEUE_CONTRACT as CANDIDATE_QUEUE_CONTRACT,
-    build_candidate_observations,
     candidate_latest_semantic_sha256,
     candidate_queue_content_id,
     is_valid_candidate_payload,
     is_valid_candidate_queue,
-    validate_candidate_historical_suppression_binding,
 )
 from engine.government_revenue.entity_resolution import load_recipient_entity_graph
 from engine.government_revenue.workspace import is_valid_procurement_workspace
@@ -88,9 +85,6 @@ _CANDIDATE_QUEUE_PATHS = (
 _CANDIDATE_LEDGER_PATH = _REPO / "data" / "government_revenue" / "candidate_ledger.jsonl"
 _CANDIDATE_STATE_PATH = _REPO / "data" / "government_revenue" / "candidate_projection_state.json"
 _CANDIDATE_STATUS_PATH = _REPO / "data" / "government_revenue" / "candidate_projection_status.json"
-_CANDIDATE_REPO_ROOT = _REPO
-_CANDIDATE_SUPPRESSION_MANIFEST_PATH = _REPO / HISTORICAL_SUPPRESSION_CONFIG_PATH
-_CANDIDATE_SUPPRESSION_REQUIRED = True
 _CANDIDATE_SOURCE_PATHS = (
     _REPO / "data" / "government_revenue" / "latest.json",
     _REPO / "data" / "government_revenue" / "workspace.json",
@@ -662,11 +656,6 @@ def _load_candidate_projection() -> dict:
         _CANDIDATE_STATE_PATH,
         _CANDIDATE_STATUS_PATH,
         *_CANDIDATE_SOURCE_PATHS,
-        *(
-            (_CANDIDATE_SUPPRESSION_MANIFEST_PATH,)
-            if _CANDIDATE_SUPPRESSION_REQUIRED
-            else ()
-        ),
     )
     state_key = _candidate_projection_state(paths)
     with _LOCK:
@@ -800,27 +789,6 @@ def _load_candidate_projection() -> dict:
                 status_code=503,
                 detail="government revenue candidate source generation mismatch",
             )
-        try:
-            current_observations = build_candidate_observations(
-                latest,
-                recipient_graph,
-                generated_at=queue.get("generated_at"),
-            )
-            if not isinstance(current_observations, list):
-                raise ValueError("candidate source observations are invalid")
-            validate_candidate_historical_suppression_binding(
-                queue,
-                projection_state,
-                root=_CANDIDATE_REPO_ROOT,
-                allow_exact_legacy_predecessor=True,
-                current_observations=current_observations,
-                issued_observations=rows,
-            )
-        except ValueError as exc:
-            raise HTTPException(
-                status_code=503,
-                detail="government revenue candidate suppression binding mismatch",
-            ) from exc
 
         # The ledger is keyed on graph-independent observation identity.  A
         # reviewed-graph edit mints a new `observation_id` for a candidate that is

@@ -215,7 +215,6 @@ MUST_RESTART = [
     "engine/government_revenue/idv_dossiers.py",
     "engine/government_revenue/subaward_dossiers.py",
     "contracts/government_revenue/government_revenue_candidate.v1.schema.json",
-    "contracts/government_revenue/government_revenue_candidate_historical_suppressions.v1.schema.json",
     "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json",
     # ...and the schemas their validators pin with lru_cache(maxsize=1): read
     # once, held for the life of the process, so a merged schema-only change
@@ -316,9 +315,6 @@ MUST_NOT_RESTART = [
     # without a restart; the v1 procurement generation is nightly-only
     "contracts/government_revenue/government_budget_program_graph.v1.schema.json",
     "contracts/government_revenue/government_procurement_event.v1.schema.json",
-    # API candidate cache includes this exact path's mtime/size and re-hashes
-    # the manifest on every cache miss; config review does not need a restart.
-    "config/government_revenue/candidate_historical_suppressions.v1.json",
     # nightly-only marketing modules — the package is named, not globbed
     "engine/marketing/seo_director.py",
     "engine/marketing/social_publisher.py",
@@ -778,7 +774,6 @@ def test_pinned_schema_probe_is_not_vacuous():
     assert "contracts/government_revenue/government_subaward_dossiers.v1.schema.json" in pinned
     # single full-path literal (candidates.py) — the pair the regex carried first
     assert "contracts/government_revenue/government_revenue_candidate.v1.schema.json" in pinned
-    assert "contracts/government_revenue/government_revenue_candidate_historical_suppressions.v1.schema.json" in pinned
     # workspace validators pin the current (v2) procurement generation
     assert "contracts/government_revenue/government_procurement_workspace.v2.schema.json" in pinned
     # un-cached reads self-heal per call and must stay OUT, else the narrow

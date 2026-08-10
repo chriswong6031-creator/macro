@@ -20,12 +20,6 @@ from tests.government_revenue_candidate_fixture import (
     canonical_fixture_root,
 )
 from tests.test_government_revenue_candidates import _award_event, _graph, _payload
-from tests.test_government_revenue_candidate_projection import (
-    BEFORE_FROZEN_AT,
-    NEXT_RUN_AT,
-    _candidate_projection_with_one_candidate,
-    _install_historical_suppression_manifest,
-)
 
 
 # Derived from the canonical inputs `_fixture_root` copies, never hand-typed --
@@ -71,9 +65,12 @@ def _materialize(
     monkeypatch: pytest.MonkeyPatch,
     *,
     exact: bool = False,
+    empty: bool = False,
     leaked_observed_change: bool = False,
 ) -> None:
     """Publish a real temp generation, with exact rows only where a route needs them."""
+    if exact and empty:
+        raise ValueError("candidate API fixture cannot be both exact and empty")
     if exact:
         (root / "data/government_revenue/recipient_entity_graph.json").write_text(
             projection._canonical_json(_graph()),
@@ -109,18 +106,41 @@ def _materialize(
 
         monkeypatch.setattr(projection, "build_candidate_observations", exact_observations)
         monkeypatch.setattr(projection, "build_candidate_queue", exact_queue)
+    elif empty:
+        original_queue = projection.build_candidate_queue
+
+        def empty_observations(*_args, **_kwargs):
+            return []
+
+        def empty_queue(latest, graph, *, generated_at):
+            queue = original_queue(latest, graph, generated_at=generated_at)
+            queue["candidates"] = []
+            queue["counts"] = {
+                **queue["counts"],
+                "total": 0,
+                "exact_linked": 0,
+                "by_family": {},
+                "by_state": {},
+                "by_freshness": {},
+                "by_exact_link_status": {
+                    "exact_linked": 0,
+                    "mapping_needed": len(queue["mapping_backlog"]),
+                },
+            }
+            queue["freshness"] = {
+                **queue["freshness"],
+                "exact_candidate_availability": "not_observed",
+            }
+            queue["content_id"] = candidate_queue_content_id(queue)
+            return queue
+
+        monkeypatch.setattr(projection, "build_candidate_observations", empty_observations)
+        monkeypatch.setattr(projection, "build_candidate_queue", empty_queue)
     projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
 
 
 def _wire_api(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     paths = _artifact_paths(root)
-    monkeypatch.setattr(api, "_CANDIDATE_REPO_ROOT", root)
-    monkeypatch.setattr(
-        api,
-        "_CANDIDATE_SUPPRESSION_MANIFEST_PATH",
-        root / "config/government_revenue/candidate_historical_suppressions.v1.json",
-    )
-    monkeypatch.setattr(api, "_CANDIDATE_SUPPRESSION_REQUIRED", False)
     monkeypatch.setattr(api, "_CANDIDATE_QUEUE_PATHS", (paths["queue"], paths["public"]))
     monkeypatch.setattr(api, "_CANDIDATE_LEDGER_PATH", paths["ledger"])
     monkeypatch.setattr(api, "_CANDIDATE_STATE_PATH", paths["state"])
@@ -159,7 +179,7 @@ def test_zero_candidate_generation_is_a_successful_empty_envelope_with_mapping_b
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     root = _fixture_root(tmp_path)
-    _materialize(root, monkeypatch)
+    _materialize(root, monkeypatch, empty=True)
     _wire_api(root, monkeypatch)
 
     listing = _list(limit=1)
@@ -173,54 +193,6 @@ def test_zero_candidate_generation_is_a_successful_empty_envelope_with_mapping_b
     assert len(backlog["items"]) == 2
     assert backlog["next_cursor"]
     assert all(row["issuer_attribution"] == "not_asserted" for row in backlog["items"])
-
-
-def test_api_serves_bound_withheld_receipt_and_manifest_change_or_removal_invalidates_cache(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    root = _fixture_root(tmp_path)
-    projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
-    _candidate_projection_with_one_candidate(
-        monkeypatch,
-        root,
-        known_at=BEFORE_FROZEN_AT,
-    )
-    rows = projection.build_candidate_observations(
-        None,
-        None,
-        generated_at=NEXT_RUN_AT,
-    )
-    _install_historical_suppression_manifest(root, rows)
-    projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
-    _wire_api(root, monkeypatch)
-    monkeypatch.setattr(api, "_CANDIDATE_SUPPRESSION_REQUIRED", True)
-    monkeypatch.setattr(
-        api,
-        "build_candidate_observations",
-        lambda *_args, **_kwargs: deepcopy(rows),
-    )
-
-    first = _list(limit=1)
-    receipt = first["coverage"]["historical_candidate_suppression"]
-    assert first["total"] == 0
-    assert first["freshness"]["exact_candidate_availability"] == "withheld_historical"
-    assert receipt["matched_count"] == 1
-    assert receipt["inactive_count"] == 0
-
-    manifest_path = api._CANDIDATE_SUPPRESSION_MANIFEST_PATH
-    original = manifest_path.read_bytes()
-    manifest = json.loads(original)
-    manifest["limitations"].append("A changed review must mint a new bound queue receipt.")
-    manifest_path.write_text(
-        projection._canonical_json(manifest) + "\n",
-        encoding="utf-8",
-    )
-    _assert_http_error(lambda: _list(limit=1), 503)
-
-    manifest_path.write_bytes(original)
-    assert _list(limit=1)["total"] == 0
-    manifest_path.unlink()
-    _assert_http_error(lambda: _list(limit=1), 503)
 
 
 def test_candidate_list_detail_history_company_and_mapping_backlog_page_against_one_exact_identity(
@@ -299,7 +271,7 @@ def test_candidate_cache_fails_closed_when_bound_workspace_advances(
     root = _fixture_root(tmp_path)
     _materialize(root, monkeypatch)
     _wire_api(root, monkeypatch)
-    assert _list()["total"] == 0
+    assert _list()["total"] > 0
 
     workspace_path = root / "data/government_revenue/workspace.json"
     workspace = json.loads(workspace_path.read_text(encoding="utf-8"))
@@ -428,7 +400,7 @@ def test_candidate_cache_reset_isolates_temp_projection_roots(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     empty_root = _fixture_root(tmp_path / "empty")
-    _materialize(empty_root, monkeypatch)
+    _materialize(empty_root, monkeypatch, empty=True)
     _wire_api(empty_root, monkeypatch)
     assert _list(limit=1)["total"] == 0
 

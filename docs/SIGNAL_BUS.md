@@ -36,7 +36,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
 | fundamental-forensics | 3 |
-| government-revenue-foresight | 41 |
+| government-revenue-foresight | 40 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
@@ -111,7 +111,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 368 |
-| infrastructure | 156 |
+| infrastructure | 155 |
 | scored | 4 |
 | shadow | 91 |
 
@@ -119,7 +119,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 580 |
+| git | 579 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 17 |
@@ -422,7 +422,6 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | government-revenue-latest | `data/government_revenue/latest.json` | json | intraday | display | 3 | 1 |
 | government-revenue-award-action-versions | `data/government_revenue/award_action_versions.parquet` | parquet | collect | infrastructure | 3 | 0 |
 | government-revenue-award-event-snapshots | `data/government_revenue/award_event_snapshots.parquet` | parquet | collect | infrastructure | 3 | 0 |
-| government-revenue-candidate-historical-suppressions | `config/government_revenue/candidate_historical_suppressions.v1.json` | json | on-demand | infrastructure | 3 | 0 |
 | government-revenue-recipient-entity-graph | `data/government_revenue/recipient_entity_graph.json` | json | on-demand | infrastructure | 3 | 0 |
 | government-revenue-subaward-collection-receipts | `data/government_revenue/subaward_collection_receipts.jsonl` | jsonl | collect | infrastructure | 3 | 0 |
 | government-revenue-subaward-projection-state | `data/government_revenue/subaward_projection_state.json` | json | collect | infrastructure | 3 | 0 |

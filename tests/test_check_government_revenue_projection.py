@@ -11,7 +11,7 @@ from scripts import build_government_revenue, build_government_revenue_candidate
 from scripts.check_government_revenue_projection import (
     ProjectionDriftError,
     _assert_workspace_admits_its_award_events,
-    validate_projection as _validate_projection,
+    validate_projection,
 )
 from engine.government_revenue.workspace import build_procurement_workspace
 from engine.government_revenue.dossiers import build_dossier_payload
@@ -28,14 +28,6 @@ RENDER_LANES = (
     ROOT / ".github" / "workflows" / "render.yml",
     ROOT / ".github" / "workflows" / "engine-render.yml",
 )
-
-
-def validate_projection(root: Path) -> dict:
-    """Synthetic roots predate this one reviewed production-only manifest."""
-    return _validate_projection(
-        root,
-        require_candidate_suppression_manifest=False,
-    )
 
 
 def _porcelain_rebase_at(lane: Path, source: str) -> int:
@@ -179,21 +171,6 @@ def test_projection_fence_accepts_one_canonical_compact_generation(tmp_path: Pat
     assert result["subaward_dossier_content_id"].startswith("grsd1-")
     assert result["subaward_dossiers"] == 0
     assert result["html_bytes"] < build_government_revenue.RAW_HTML_BUDGET_BYTES
-
-
-def test_production_projection_fence_requires_the_reviewed_suppression_manifest(
-    tmp_path: Path,
-) -> None:
-    _generation(tmp_path)
-
-    with pytest.raises(
-        ProjectionDriftError,
-        match="candidate projection is invalid",
-    ):
-        _validate_projection(
-            tmp_path,
-            require_candidate_suppression_manifest=True,
-        )
 
 
 def test_projection_fence_accepts_source_owned_candidate_ui_before_first_materialization(
@@ -496,7 +473,6 @@ def test_render_metadata_replay_blocks_newer_procurement_truth_or_builder() -> N
     assert '"${GOVREV_PROJECTION_INPUTS[@]}"' in condition
     for path in (
         "data/government_revenue/",
-        "config/government_revenue/candidate_historical_suppressions.v1.json",
         "lib/pages.py",
         "scripts/build_government_revenue.py",
         "scripts/build_government_revenue_candidates.py",
@@ -507,39 +483,6 @@ def test_render_metadata_replay_blocks_newer_procurement_truth_or_builder() -> N
         "scripts/check_template_site_sync.py",
     ):
         assert path in guarded_inputs
-
-
-def test_live_lane_keeps_the_reviewed_suppression_manifest_clean_across_rebuilds() -> None:
-    source = (
-        ROOT / ".github" / "workflows" / "government-revenue-live.yml"
-    ).read_text(encoding="utf-8")
-    manifest = "config/government_revenue/candidate_historical_suppressions.v1.json"
-    assert manifest in source[: source.index("permissions:")]
-    assert "historical_suppression_path=" + manifest in source
-    assert source.count("assert_historical_suppression_source_clean") == 4
-
-    initial_build = source.index(
-        "python -m scripts.build_government_revenue --live-materialization"
-    )
-    initial_guard = source.index(
-        "assert_historical_suppression_source_clean",
-        initial_build,
-    )
-    retry_rebase = source.index("git pull --rebase --autostash -X theirs")
-    retry_pre_guard = source.index(
-        "assert_historical_suppression_source_clean",
-        retry_rebase,
-    )
-    retry_build = source.index(
-        "python -m scripts.build_government_revenue --live-materialization",
-        retry_pre_guard,
-    )
-    retry_post_guard = source.index(
-        "assert_historical_suppression_source_clean",
-        retry_build + 1,
-    )
-    assert initial_build < initial_guard < retry_rebase
-    assert retry_rebase < retry_pre_guard < retry_build < retry_post_guard
 
 
 def _rewrite_canonical_workspace(root: Path, mutate) -> None:

@@ -1172,7 +1172,6 @@ on:
       - "contracts/government_revenue/government_procurement_event.v2.schema.json"
       - "contracts/government_revenue/government_procurement_workspace.v2.schema.json"
       - "contracts/government_revenue/government_subaward_dossiers.v1.schema.json"
-      - "config/government_revenue/candidate_historical_suppressions.v1.json"
       - "config/government_revenue/idv_discovery.v1.json"
       - "contracts/marketing_publication_receipt.schema.json"
       - "research/DISLOCATION_VALIDATION.md"

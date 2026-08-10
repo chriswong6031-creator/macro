@@ -87,7 +87,6 @@ on:
       - "collectors/dod_budget.py"
       - "engine/government_revenue/**"
       - "config/government_revenue/budget_program_reviewed_edges.v1.json"
-      - "config/government_revenue/candidate_historical_suppressions.v1.json"
       - "config/government_revenue/idv_discovery.v1.json"
       - "lib/pages.py"
       - "scripts/ci/validate_government_revenue_award_event_bundle.py"
@@ -372,45 +371,6 @@ jobs:
           )
           PY
 
-      # Keep the reusable reviewed-config guard in the job temp directory so
-      # the publication step stays below GitHub's 21,000-character run limit.
-      # RUNNER_TEMP persists across steps in this job; the helper is sourced by
-      # the commit/retry shell below and never becomes a repository artifact.
-      - name: stage reviewed source guards
-        if: ${{ steps.gate.outputs.publish == 'yes' }}
-        run: |
-          set -euo pipefail
-          cat > "$RUNNER_TEMP/govrev-reviewed-source-guards.sh" <<'SH'
-          recipient_graph_path=data/government_revenue/recipient_entity_graph.json
-          historical_suppression_path=config/government_revenue/candidate_historical_suppressions.v1.json
-
-          assert_recipient_graph_source_clean() {
-            # Recipient attribution is a separately reviewed exact-ID input.
-            # Neither collectors nor builders may infer or stage it.
-            if [ ! -f "$recipient_graph_path" ] || ! git ls-files --error-unmatch -- "$recipient_graph_path" >/dev/null 2>&1; then
-              echo "::error title=recipient graph missing::the canonical reviewed recipient graph must be committed before publication"
-              return 1
-            fi
-            if ! git diff --quiet -- "$recipient_graph_path" || ! git diff --cached --quiet -- "$recipient_graph_path"; then
-              echo "::error title=recipient graph mutation::collectors and projection builders cannot write or stage the curated recipient graph"
-              return 1
-            fi
-          }
-
-          assert_historical_suppression_source_clean() {
-            # This is an operator-reviewed exact non-issuance decision. The
-            # builder validates and binds it, but must never author or stage it.
-            if [ ! -f "$historical_suppression_path" ] || ! git ls-files --error-unmatch -- "$historical_suppression_path" >/dev/null 2>&1; then
-              echo "::error title=historical suppression missing::the reviewed candidate suppression manifest must be committed before publication"
-              return 1
-            fi
-            if ! git diff --quiet -- "$historical_suppression_path" || ! git diff --cached --quiet -- "$historical_suppression_path"; then
-              echo "::error title=historical suppression mutation::collectors and projection builders cannot write or stage the reviewed suppression manifest"
-              return 1
-            fi
-          }
-          SH
-
       - name: build Government Revenue projection
         if: ${{ steps.gate.outputs.publish == 'yes' }}
         run: python -m scripts.build_government_revenue --live-materialization
@@ -424,8 +384,6 @@ jobs:
         run: |
           set -euo pipefail
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
-          . "$RUNNER_TEMP/govrev-reviewed-source-guards.sh"
-          # The sourced guards prove collectors and projection builders cannot write or stage reviewed inputs.
           PUSH_LABEL="government-revenue evidence"
           if ! push_on_main_ok; then exit 0; fi
           git config user.name "dashboard-bot"
@@ -455,6 +413,7 @@ jobs:
             data/government_revenue/dod_budget_collection_receipts.jsonl
             data/government_revenue/dod_budget_projection_state.json
           )
+          recipient_graph_path=data/government_revenue/recipient_entity_graph.json
 
           assert_award_event_bundle() {
             local present=0 tracked=0 path
@@ -703,6 +662,20 @@ jobs:
             fi
           }
 
+          assert_recipient_graph_source_clean() {
+            # Recipient attribution is a separately reviewed exact-ID input.
+            # Neither the SAM collector nor the projection builder may curate,
+            # infer, or stage it from fuzzy discovery rows.
+            if [ ! -f "$recipient_graph_path" ] || ! git ls-files --error-unmatch -- "$recipient_graph_path" >/dev/null 2>&1; then
+              echo "::error title=recipient graph missing::the canonical reviewed recipient graph must be committed before publication"
+              return 1
+            fi
+            if ! git diff --quiet -- "$recipient_graph_path" || ! git diff --cached --quiet -- "$recipient_graph_path"; then
+              echo "::error title=recipient graph mutation::collectors and projection builders cannot write or stage the curated recipient graph"
+              return 1
+            fi
+          }
+
           assert_award_event_bundle
           assert_award_event_source_clean
           assert_subaward_bundle
@@ -712,7 +685,6 @@ jobs:
           assert_dod_budget_bundle
           assert_dod_budget_source_clean
           assert_recipient_graph_source_clean
-          assert_historical_suppression_source_clean
           assert_idv_dossier_twins
           assert_candidate_twins
           assert_optional_budget_graph_twins
@@ -807,9 +779,7 @@ jobs:
               assert_dod_budget_bundle
               assert_dod_budget_source_clean
               assert_recipient_graph_source_clean
-              assert_historical_suppression_source_clean
               python -m scripts.build_government_revenue --live-materialization
-              assert_historical_suppression_source_clean
               assert_idv_dossier_twins
               assert_candidate_twins
               assert_optional_budget_graph_twins

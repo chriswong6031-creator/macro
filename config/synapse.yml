@@ -17133,38 +17133,6 @@ artifacts:
       object is embedded in award-event freshness; every rank, size, gate, signal-origin,
       candidate-add, and escalation authority is false.
 
-  government-revenue-candidate-historical-suppressions:
-    path: config/government_revenue/candidate_historical_suppressions.v1.json
-    format: json
-    producer: scripts/build_government_revenue_candidates.py
-    known_extra_writers: []
-    owner_program: government-revenue-foresight
-    cadence: on-demand
-    storage: git
-    asof_field: reviewed_at
-    freshness_sla_hours: 8760
-    schema: government_revenue.candidate_historical_suppressions.v1
-    tier: infrastructure
-    horizon_role: context
-    weights: none
-    scored_path_surfaces: []
-    consumers: [scripts/build_government_revenue_candidates.py, app/government_revenue.py, scripts/check_government_revenue_projection.py]
-    external_consumers: []
-    authority:
-      can_rank: false
-      can_size: false
-      can_gate: false
-      can_originate_signal: false
-      can_add_candidates: false
-      can_escalate: false
-    notes: >
-      Operator-reviewed exact non-issuance control for the one legacy anti-backfill
-      boundary. The listed builder validates the manifest and materializes its bounded
-      receipt but never authors or stages this config. Rules bind immutable candidate,
-      event, record, rail, and source-content identities; wildcard, ticker, issuer,
-      time-range, graph-wide, ranking, sizing, gating, signal, candidate-add, and
-      escalation authority are all forbidden.
-
   government-revenue-candidate-ledger:
     path: data/government_revenue/candidate_ledger.jsonl
     format: jsonl

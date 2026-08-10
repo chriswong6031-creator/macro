@@ -528,20 +528,6 @@ def test_runtime_distinguishes_unavailable_change_detection_from_a_quiet_tape(tm
     assert "No exact-linked changes yet" in quiet["queueHtml"]
     assert "Exact change detection unavailable" not in quiet["queueHtml"]
 
-    withheld = _run_runtime(
-        tmp_path,
-        payload,
-        workspace,
-        1_785_548_460_000,
-        candidate_rows=[],
-        exact_candidate_availability="withheld_historical",
-        location_search="?mode=candidates",
-    )
-    assert "Historical exact rows withheld" in withheld["queueHtml"]
-    assert "were not issued or backfilled" in withheld["queueHtml"]
-    assert "No candidate or signal was inferred" in withheld["queueHtml"]
-    assert "no eligible issuer-linked event exists" not in withheld["queueHtml"]
-
 
 @needs_node
 def test_runtime_restores_async_candidate_deep_link_selection(tmp_path: Path) -> None:

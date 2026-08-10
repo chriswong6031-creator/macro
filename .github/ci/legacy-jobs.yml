@@ -5230,28 +5230,12 @@ jobs:
       - name: SBIR/STTR progression evidence lane — collector + engine rail (#5012)
         run: python -m pytest tests/test_sbir_awards.py -q
 
-  unrun-government-revenue-candidate-api:
-    # The API fixtures exercise manifest-cache invalidation and the full
-    # queue/state/status binding. Keep them separate from the slower projection
-    # matrix so neither failure domain can consume the other's 15-minute budget.
-    if: ${{ false }}
-    timeout-minutes: 15
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: install candidate contract dependencies
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
-      - name: candidate API contract fixtures
-        run: python -m pytest tests/test_government_revenue_candidate_api.py -q
-
   unrun-government-revenue-candidate-projection:
-    # The projection matrix is the slower half of the candidate contract. It
-    # passed locally in under six minutes but the combined API/projection lane
-    # reached 42/44 tests before its 15-minute hosted timeout. A separate bounded
-    # lane restores runner margin without weakening or hiding either suite.
+    # The candidate API/projection fixtures exercise the full contract and are
+    # intentionally isolated from the broad ownership lane above.  They were
+    # the long pole in the old eight-minute job; a separate bounded lane keeps
+    # both failure domains visible instead of masking every Government Revenue
+    # suite behind one timeout.
     if: ${{ false }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -5262,8 +5246,8 @@ jobs:
           python-version: "3.12"
       - name: install candidate contract dependencies
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
-      - name: candidate projection contract fixtures
-        run: python -m pytest tests/test_government_revenue_candidate_projection.py -q
+      - name: candidate API + projection contract fixtures
+        run: python -m pytest tests/test_government_revenue_candidate_api.py tests/test_government_revenue_candidate_projection.py -q
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
