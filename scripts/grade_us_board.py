@@ -1448,7 +1448,111 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
                             "n_rows_excluded": _n_excluded, "basis": _ERA_BASIS}}
     board_dates = sorted({b["as_of"] for b in boards})
     graded_dates = sorted(df["as_of"].unique().tolist())
-    per_horizon = {}
+    # ── ERA PARTITION (us_prophet_v1 -> v2, 2026-08-10) ──────────────────────
+    # An admission change makes the old and the new board two different products, and a
+    # track record is a claim about ONE instrument.  Every graded row already carries the
+    # stamp it was published under (`rank_by`, written from
+    # engine.us_board_rank.BOARD_DEFINITION by scripts/build_stock_library), but the
+    # aggregates below used to run over the whole frame — so the file would have published
+    # one headline hit-rate mixing a board that REFUSED washed-out counter-trend names with
+    # a board that admits them.  `rank_by_of_matured_boards` disclosed the mixture without
+    # undoing it, which is a footnote, not a fence.
+    #
+    # The fix mirrors engine.cn_prophet_audit.loser_telemetry, the CN sibling that already
+    # states the rule: "Definitions are NEVER pooled."  `definitions` carries one fully
+    # independent per_horizon block per stamp, and the top-level `per_horizon` — the key
+    # site/factordata/us_board_track.json is pinned on, read by
+    # engine.calibration_hub._standout_track_row and scripts/build_track_record_page — is
+    # SCOPED to exactly one of them, never a pooled recomputation.
+    stamps = (df["rank_by"].map(_norm_definition) if "rank_by" in df.columns
+              else pd.Series(_LEGACY_ERA, index=df.index))
+    definitions = []
+    for definition in sorted(stamps.unique()):
+        slice_ = df[stamps == definition]
+        definitions.append({
+            "board_definition": definition,
+            "graded_dates": sorted(slice_["as_of"].astype(str).unique().tolist()),
+            "graded_rows_total": int(len(slice_)),
+            "per_horizon": _per_horizon(slice_),
+        })
+    definitions.sort(key=lambda d: (d["graded_dates"][0] if d["graded_dates"] else "",
+                                    d["board_definition"]))
+    headline = _headline_definition(definitions)
+    per_horizon = next((d["per_horizon"] for d in definitions
+                        if d["board_definition"] == headline), {})
+    era_scope = {
+        "board_definition": headline,
+        "live_board_definition": _live_definition(),
+        # True when the headline is NOT the era the board publishes today — the state the
+        # first nights after an era bump are in, before any v2 row has matured.  Disclosed
+        # rather than papered over: the alternative is a headline that silently borrows the
+        # superseded product's record, which is the pooling this partition exists to stop.
+        "headline_is_superseded": headline != _live_definition(),
+        "definitions_present": [d["board_definition"] for d in definitions],
+        "pooled": False,
+        "note": ("per_horizon describes ONE board_definition; every era's own block is in "
+                 "`definitions`. Eras are never pooled — an admission change makes two "
+                 "different products (research/RECLAIM_VETO_CONDITIONAL_PREREG.md §4, "
+                 "research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md §7)."),
+    }
+    return _assemble_track(
+        df=df, boards=boards, board_dates=board_dates, graded_dates=graded_dates,
+        survivorship=survivorship, n_excluded=_n_excluded,
+        per_horizon=per_horizon, definitions=definitions, era_scope=era_scope)
+
+
+#: Pre-version spellings that ARE the legacy era.  Mirrors
+#: engine.cn_prophet_audit.norm_definition — without it a null stamp opens its own phantom
+#: 'nan' block and splits one era's sample in two.  ``alpha`` is the US board's own
+#: pre-us_prophet_v1 spelling (scripts/build_stock_library backfills `rank_by="alpha"` on
+#: rows that predate the priority ranker), so it is a real era name and is NOT folded in.
+_LEGACY_ERA = "legacy"
+_LEGACY_STAMPS = frozenset({"", "none", "nan", "<na>", "null", "legacy"})
+
+
+def _norm_definition(value) -> str:
+    """Normalise a stored ``rank_by`` to the era name this ledger partitions on."""
+    text = "" if value is None else str(value).strip()
+    return _LEGACY_ERA if text.lower() in _LEGACY_STAMPS else text
+
+
+def _live_definition() -> str:
+    """The era the board publishes TONIGHT, read from the producer — never a literal.
+
+    Imported lazily so this module keeps working (and this file keeps grading) if the
+    engine package is unavailable in a stripped environment; an unreadable producer
+    degrades to the legacy name, which only ever makes `headline_is_superseded` MORE
+    conservative."""
+    try:
+        from engine.us_board_rank import BOARD_DEFINITION
+        return str(BOARD_DEFINITION)
+    except Exception:                                              # noqa: BLE001
+        return _LEGACY_ERA
+
+
+def _headline_definition(definitions: list[dict]) -> str | None:
+    """Which single era the top-level `per_horizon` describes.
+
+    The LIVE stamp when it has graded rows — the board's record should be the record of
+    the board it is.  Otherwise the NEWEST era present, by first graded date: on the nights
+    between an era bump and its first matured row the live block is empty, and publishing an
+    empty headline there would read as an outage rather than as a young product.  Either
+    way the answer is ONE era, named in `era_scope`, so the two can never mix.
+    """
+    if not definitions:
+        return None
+    live = _live_definition()
+    if any(d["board_definition"] == live for d in definitions):
+        return live
+    return definitions[-1]["board_definition"]
+
+
+def _per_horizon(df: pd.DataFrame) -> dict:
+    """The per-horizon aggregate block for ONE era's graded rows.
+
+    Extracted verbatim from build_track so the same computation can run per definition;
+    it holds no policy of its own and every number it returns is unchanged."""
+    per_horizon: dict = {}
     for h in HORIZONS:
         hh = df[df["horizon"] == h]
         if hh.empty:
@@ -1529,7 +1633,15 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
             if len(top5) and len(base) else None,
         }
         per_horizon[f"h{h}"] = block
+    return per_horizon
 
+
+def _assemble_track(*, df, boards, board_dates, graded_dates, survivorship, n_excluded,
+                    per_horizon, definitions, era_scope) -> dict:
+    """The published `us_board_track.json` payload.  Key order and every existing key are
+    preserved — `definitions`/`era_scope` are strictly additive, and `per_horizon` keeps
+    its name and shape (it is now one era's block instead of a pooled one)."""
+    _n_excluded = n_excluded
     return {
         "generated": dt.datetime.now(dt.timezone.utc).isoformat(),
         "source": "git-archaeology + forward snapshots (unioned, de-duped on as_of)",
@@ -1575,7 +1687,15 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
             "by_smartmoney uses Q1-2026 13F (~45-day lag); by_insider_cluster uses 6-month "
             "rolling Form-4 window. All W3 strata are DISPLAY-ONLY context; no return "
             "claims until wave-8 forward-ledger accrual matures.",
+            "ERA PARTITION: `per_horizon` describes the ONE board_definition named in "
+            "`era_scope`, never a pool. An admission change makes the old and new board "
+            "different products, so their forward records are reported side by side in "
+            "`definitions` and never summed into one headline.",
         ],
+        # One independent per_horizon block per era stamp found in the graded rows, ordered
+        # by first graded date. Definitions are NEVER pooled (cn_prophet_audit's rule).
+        "definitions": definitions,
+        "era_scope": era_scope,
         "per_horizon": per_horizon,
     }
 
