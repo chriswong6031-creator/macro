@@ -3431,6 +3431,10 @@ chain_snapshots:
   cadence_min: 15           # minutes between sweep starts (RTH 09:35-16:00 ET)
   top_names: 128            # single-name roots appended after the 22 ETF anchors (~150 roots)
   max_concurrent: 1         # HARD — live_flow poller owns 2 of the terminal's 8 slots during RTH; this lane gets 1. NEVER raise without explicit Fable adjudication.
+  options_structure_r2:
+    enabled: false           # promote only after real M1 full-universe baseline + safe latency/RSS series; descriptive/zero-authority only
+    activation_session: null # exact NYSE session floor required when enabled; older complete receipts are explicitly out of scope
+    timeout_sec: 120         # hard subprocess ceiling; publication failure never recasts source success
   # etf_anchors: []         # defaults to 22 anchors (see chain_snapshot_poller._resolve_universe)
 
 # Committed-data-freeze tripwire — folded into the dead-man's-switch heartbeat

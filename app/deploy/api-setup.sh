@@ -28,21 +28,33 @@ log "[3/5] systemd units + private Market Memory state"
 # the first service start impossible.
 install -d -m 0700 /var/lib/macro-market-memory
 install -d -m 0700 /var/lib/macro-market-memory/public
+install -d -m 0700 /var/lib/macro-market-memory/public/trusted-v1
 install -d -m 0700 /var/lib/macro-market-memory/state
 install -d -m 0700 /var/lib/macro-market-memory/state/sources
+install -d -m 0700 /var/lib/macro-market-memory/state/context-projection
 systemd-analyze verify \
   "$APP_DIR/app/deploy/macro-api.service" \
   "$APP_DIR/app/deploy/macro-market-memory-source.service" \
-  "$APP_DIR/app/deploy/macro-market-memory-source.timer"
+  "$APP_DIR/app/deploy/macro-market-memory-source.timer" \
+  "$APP_DIR/app/deploy/macro-market-memory-context.service" \
+  "$APP_DIR/app/deploy/macro-market-memory-context.timer"
 install -m 0644 "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-source.service" /etc/systemd/system/macro-market-memory-source.service
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-source.timer" /etc/systemd/system/macro-market-memory-source.timer
+install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-context.service" /etc/systemd/system/macro-market-memory-context.service
+install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-context.timer" /etc/systemd/system/macro-market-memory-context.timer
 systemctl daemon-reload
 
-log "[4/5] start serving tier + trusted-source timer"
+log "[4/5] initialize trusted context + start serving and retry timers"
 systemctl enable macro-api >/dev/null 2>&1 || true
+# This oneshot initializes a complete empty trusted generation before strict
+# projection. A source rejection is retryable and cannot make the API store
+# incomplete or cause a nearest/current fallback.
+systemctl start macro-market-memory-context.service || \
+  log "trusted context projection failed closed; timer will retry"
 systemctl restart macro-api
 systemctl enable --now macro-market-memory-source.timer
+systemctl enable --now macro-market-memory-context.timer
 
 log "[5/5] health check (local)"
 sleep 2

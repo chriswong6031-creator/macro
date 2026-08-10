@@ -409,6 +409,20 @@ jobs:
       # one leg — if that drifts, a research file starts overstating the veto's cost.
       - name: W-F reclaim-veto flip-isolation construction
         run: python -m pytest tests/test_us_reclaim_veto_packet.py -q
+      # The RATIFIED sibling of the packet above (us_prophet_v2, 2026-08-10): the
+      # counter-trend reclaim WAIVER, its PIT/staleness rules, its fail-closed fallbacks,
+      # and the era fence us_prophet_v1 -> us_prophet_v2. Registered HERE deliberately: the
+      # suite is hermetic (it writes its own washout artifact to tmp_path and points the
+      # loader at it, because riding the committed site/factordata artifact would be a
+      # SCHEDULED red — the waiver's PIT window is five sessions wide around a stamp that
+      # moves every night), so it needs no caches, exactly like the job's other steps. Deps
+      # are covered by the install line above: pandas/numpy for the frames, pyyaml for
+      # lib.config AND for the synapse-registry assertion; engine.us_board_rank is pure
+      # stdlib. Cost ~2s. It is also the ONLY registered guard on the new reason string's
+      # Chinese row — tests/test_gate_reasons_exhaustive.py owns the general bilingual
+      # completeness check but is itself named by no run: step in any workflow.
+      - name: reclaim-veto conditional waiver — Arm P @20 + the us_prophet_v2 era fence
+        run: python -m pytest tests/test_us_reclaim_waiver_prophet_v2.py -q
       # The two research/-RESIDENT suites, wired 2026-08-06 — UNRUN from birth: named by
       # no run: step in any workflow, so nothing ever executed them in CI. (They were
       # triggerable — research/**/*.py in ci.yml starts this workflow — which is the
@@ -6632,6 +6646,11 @@ jobs:
           tests/test_market_memory_pit.py
           tests/test_market_memory_sources.py
           tests/test_market_memory_source_deploy.py
+          tests/test_market_memory_identity.py
+          tests/test_market_memory_projection.py
+          tests/test_market_memory_trusted.py
+          tests/test_market_memory_context_deploy.py
+          tests/test_regime_latest_json_boundary.py
           tests/test_release_target_truth.py
           tests/test_build_market_memory_page.py -q
 
@@ -6834,6 +6853,7 @@ jobs:
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
     paths:
       - data/cycle_ontology/falsifiers.json
+      - data/cycle_ontology/falsifiers_retired.json
       - data/cycle_ontology/tripwire_state.json
       - engine/falsifier_tripwires.py
       - tests/test_falsifier_tripwires.py
@@ -6848,3 +6868,37 @@ jobs:
         run: python -m pip install pytest pandas numpy pyyaml
       - name: falsifier tripwire state and v2 gate contracts
         run: python -m pytest tests/test_falsifier_tripwires.py -q
+
+  alert-zh-completeness:
+    # The zh half of every macro alert body must be fully Chinese.  Six rules
+    # interpolated an English-valued token straight into message_zh (#4700), and
+    # the cycle-falsifier body quoted a curator-written English thesis (#4712).
+    # The suite pins: no English prose in an emitted message_zh; the emitter and
+    # build_vector's backlog translator produce the SAME Chinese for the same
+    # alert; already-baked half-translated alerts_log.parquet rows still render
+    # fully Chinese through the hub's resolution.  A baselined unrun suite
+    # (config/unrun_test_baseline.json) with local-only proof until this job.
+    # TZ=UTC is inline on the run line, not a step env: — the suite has
+    # date-sensitive fixtures and `env` is not an allowed step key in the packed
+    # manifest (run_ci_pack.py ALLOWED_STEP_KEYS).
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    paths:
+      - data/alerts/alerts_log.parquet
+      - data/cycle_ontology/falsifiers.json
+      - data/cycle_ontology/falsifiers_retired.json
+      - engine/alerts.py
+      - engine/falsifier_tripwires.py
+      - engine/i18n.py
+      - scripts/build_vector.py
+      - tests/test_alert_zh_completeness.py
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install alert-zh test dependencies (build_vector import closure)
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
+      - name: zh alert bodies fully Chinese — emitter vs backlog translator vs baked rows
+        run: TZ=UTC python -m pytest tests/test_alert_zh_completeness.py -q

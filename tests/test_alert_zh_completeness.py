@@ -315,12 +315,42 @@ def test_leaky_rule_set_matches_the_translator_coverage():
 # English and so leaks even when the claim is Chinese.
 # --------------------------------------------------------------------------- #
 FALSIFIERS_JSON = ROOT / "data" / "cycle_ontology" / "falsifiers.json"
+FALSIFIERS_RETIRED_JSON = ROOT / "data" / "cycle_ontology" / "falsifiers_retired.json"
 
 
 def _registry() -> list[dict]:
     if not FALSIFIERS_JSON.exists():
         pytest.skip("falsifiers.json not present")
     return json.loads(FALSIFIERS_JSON.read_text(encoding="utf-8"))
+
+
+def _retired_registry() -> list[dict]:
+    """Claim pairs kept alive only so baked alert rows stay healable.
+
+    Deliberately NOT folded into `_registry()`: the property tests above sweep
+    the LIVE registry (every row must carry claim_zh, drive the emitter, and
+    name a cycle in the vocabulary), and a retired row is not a live falsifier —
+    it has no dsl, no direction, and never fires again.  It is a translation
+    fallback, so only the lookup below sees it.
+    """
+    if not FALSIFIERS_RETIRED_JSON.exists():
+        return []
+    return json.loads(FALSIFIERS_RETIRED_JSON.read_text(encoding="utf-8"))
+
+
+def _entry(fid: str) -> dict:
+    """The registry row for `fid`, live first, then retired.
+
+    A row re-authored in place (v1 → v2) leaves the log holding rows keyed to
+    the retired id, so a test that builds one of those rows has to be able to
+    reach the retired pair — the same resolution order the healer itself uses.
+    """
+    for row in list(_registry()) + list(_retired_registry()):
+        if row.get("id") == fid:
+            return row
+    raise AssertionError(
+        f"{fid} is in neither falsifiers.json nor falsifiers_retired.json — a "
+        "baked alert row keyed to it can no longer be healed")
 
 
 def _as_fired(entry: dict) -> TripwireResult:
@@ -496,6 +526,11 @@ def test_translator_reads_both_logged_message_shapes():
 # rebuild outranks the stored value). One row per case — every cycle read-change
 # row shares alert_view's generic plain_en, so the feed's concept-dedupe
 # collapses two of them into a single card.
+#
+# bitcoin.cycle_position.v1 is RETIRED (re-authored to .v2 on 2026-08-10 with new
+# claim text) and is resolved out of falsifiers_retired.json — which is the point
+# of the case: the live registry can no longer answer for it by id OR by claim,
+# so the row only heals if the retired pairs are merged into both maps.
 _BAKED_ROW_SHAPES = {
     "stored-half-translated": ("long-bonds.bear_steepener.v1", True),
     "pre-zh-column": ("bitcoin.cycle_position.v1", False),
@@ -508,10 +543,12 @@ def test_hub_feed_heals_baked_cycle_read_change_rows(monkeypatch, shape):
     import scripts.build_vector as bv
 
     fid, has_stored_zh = _BAKED_ROW_SHAPES[shape]
-    entry = next(e for e in _registry() if e["id"] == fid)
+    entry = _entry(fid)
+    # A retired pair carries no `coverage` (it never fires again); the token only
+    # rides the stripped metadata suffix, so any value exercises the same path.
     en_msg = (
         f"Cycle read-change condition HIT — {entry['cycle']}: "
-        f"'{entry['claim']}' (coverage: {entry['coverage']}, "
+        f"'{entry['claim']}' (coverage: {entry.get('coverage', 'full')}, "
         "direction: cuts against the read).")
     stored_zh = (f"周期改判条件触发 — {entry['cycle']}：'{entry['claim']}'（与原判断相反）。"
                  if has_stored_zh else "")
@@ -530,3 +567,118 @@ def test_hub_feed_heals_baked_cycle_read_change_rows(monkeypatch, shape):
         f"      leaked: {_english_prose_in(detail_zh)}")
     assert "周期改判条件触发" in detail_zh, "the sanctioned register wording was lost"
     assert entry["claim_zh"] in detail_zh, "the authored zh claim is not the one served"
+
+
+# --------------------------------------------------------------------------- #
+# Retired claim pairs.
+#
+# Re-authoring a row in place (v1 → v2, the #5194 convention) is the house way to
+# register a successor thesis, and it deletes the old id.  While the successor
+# keeps the SAME claim text the healer still resolves the baked row by_claim —
+# which is why the pgms/agriculture renames were invisible here.  bitcoin's v2
+# changed the claim text too, so BOTH lookups went dark at once and the English
+# thesis reached the Chinese feed.  falsifiers_retired.json is the fix, and these
+# pin each half of it.
+# --------------------------------------------------------------------------- #
+_RETIRED_BITCOIN_V1 = "bitcoin.cycle_position.v1"
+
+
+def _retired_entry(fid: str) -> dict:
+    for row in _retired_registry():
+        if row.get("id") == fid:
+            return row
+    pytest.skip(f"{fid} not present in falsifiers_retired.json")
+
+
+def test_retired_pair_heals_a_baked_row_by_id():
+    """by_id path — the id is gone from the live registry, so only retired answers."""
+    entry = _retired_entry(_RETIRED_BITCOIN_V1)
+    assert not any(e["id"] == _RETIRED_BITCOIN_V1 for e in _registry()), (
+        f"{_RETIRED_BITCOIN_V1} is live again — this test no longer proves the "
+        "retired lookup, move it to a genuinely retired id")
+
+    msg = (f"Cycle read-change condition HIT — {entry['cycle']}: "
+           f"'{entry['claim']}' (coverage: full, direction: cuts against the read).")
+    zh = _translate_macro_detail(msg, f"cycle_falsifier_fired:{_RETIRED_BITCOIN_V1}")
+
+    assert zh, "the translator dropped a retired-id row entirely"
+    assert entry["claim_zh"] in zh, (
+        "the retired pair's authored Chinese was not served — the baked row's "
+        f"English claim leaks instead:\n  {zh}")
+    assert entry["claim"] not in zh, f"the English claim survived into the zh body:\n  {zh}"
+    assert not _english_prose_in(zh), f"{zh}\n      leaked: {_english_prose_in(zh)}"
+
+
+def test_retired_pair_heals_a_baked_row_by_claim_with_no_rule():
+    """by_claim path — the oldest rows reach the translator with no rule to hand.
+
+    This is the half a claim-text-preserving rename would have kept working on
+    its own; with bitcoin v2's new claim text it survives only through retired.
+    """
+    entry = _retired_entry(_RETIRED_BITCOIN_V1)
+    live_claims = {str(e.get("claim")) for e in _registry()}
+    assert entry["claim"] not in live_claims, (
+        "the retired claim text is still live — by_claim would resolve without "
+        "the retired file, so this test would pass for the wrong reason")
+
+    msg = (f"Cycle read-change condition HIT — {entry['cycle']}: "
+           f"'{entry['claim']}' (coverage: full, direction: cuts against the read).")
+    zh = _translate_macro_detail(msg, "")
+
+    assert zh, "the translator dropped a retired-claim row with no rule"
+    assert entry["claim_zh"] in zh, (
+        f"by_claim did not reach the retired pair:\n  {zh}")
+    assert not _english_prose_in(zh), f"{zh}\n      leaked: {_english_prose_in(zh)}"
+
+
+def test_live_registry_outranks_a_colliding_retired_row(tmp_path, monkeypatch):
+    """A retired copy must never shadow the current registry, in either map.
+
+    Retirement is append-only bookkeeping and nothing prunes it, so the day an
+    id or a claim string is reused the live row is the one a reader must see.
+    """
+    import scripts.build_vector as bv
+
+    onto = tmp_path / "data" / "cycle_ontology"
+    onto.mkdir(parents=True)
+    (onto / "falsifiers.json").write_text(json.dumps([{
+        "id": "collide.v1", "cycle": "bitcoin", "version": 1,
+        "direction": "refutes", "claim": "shared claim text",
+        "claim_zh": "现行注册表的中文", "coverage": "full",
+    }], ensure_ascii=False), encoding="utf-8")
+    (onto / "falsifiers_retired.json").write_text(json.dumps([{
+        "id": "collide.v1", "cycle": "bitcoin", "claim": "shared claim text",
+        "claim_zh": "已退役的旧中文", "retired": "2026-08-10",
+    }], ensure_ascii=False), encoding="utf-8")
+
+    monkeypatch.setattr(bv.config, "ROOT", tmp_path)
+    bv._falsifier_registry.cache_clear()
+    try:
+        by_id, by_claim = bv._falsifier_registry()
+        assert by_id["collide.v1"]["claim_zh"] == "现行注册表的中文", (
+            "a retired row shadowed the live registry by id")
+        assert by_claim["shared claim text"]["claim_zh"] == "现行注册表的中文", (
+            "a retired row shadowed the live registry by claim text")
+    finally:
+        bv._falsifier_registry.cache_clear()
+
+
+def test_missing_retired_file_falls_back_to_the_live_registry(tmp_path, monkeypatch):
+    """No retired file is the pre-existing state, not an error."""
+    import scripts.build_vector as bv
+
+    onto = tmp_path / "data" / "cycle_ontology"
+    onto.mkdir(parents=True)
+    (onto / "falsifiers.json").write_text(json.dumps([{
+        "id": "solo.v1", "cycle": "bitcoin", "claim": "only live",
+        "claim_zh": "只有现行的",
+    }], ensure_ascii=False), encoding="utf-8")
+
+    monkeypatch.setattr(bv.config, "ROOT", tmp_path)
+    bv._falsifier_registry.cache_clear()
+    try:
+        by_id, by_claim = bv._falsifier_registry()
+        assert set(by_id) == {"solo.v1"}
+        assert set(by_claim) == {"only live"}
+    finally:
+        bv._falsifier_registry.cache_clear()

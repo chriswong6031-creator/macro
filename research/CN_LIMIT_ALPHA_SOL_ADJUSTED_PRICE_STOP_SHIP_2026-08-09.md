@@ -39,3 +39,17 @@ Exact-limit research may be rerun only after all of the following exist together
 
 Until then, the prior construction and ORE ideas are context for future research
 only. They are not evidence that an implementable edge exists.
+
+## Enforcement amendment — 2026-08-10
+
+#5198 later restored 14 byte-exact Wave-1 artifacts without reopening the substrate
+adjudication. Their direct W2/W3 scripts and receipts then became executable again, and
+#5205 published a research-preview page from the restored forward ledger. That recovery was
+not a validation event: the inputs, rounding, and authority defects above were unchanged.
+
+The reconciliation enforcing `DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT` removes the restored
+Wave-1 paths, every direct executable/result descendant that requires them, and the
+ledger-backed rendered page. The historical continuation handoffs are tombstones and the
+masterplan is explicitly superseded. Git history preserves the archaeology; the current
+tree must not preserve runnable recovery commands, numerical receipts, readers, or a public
+surface that can make the withdrawn probabilities appear current.
