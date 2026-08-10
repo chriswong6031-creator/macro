@@ -14,19 +14,30 @@ import pandas as pd
 import pytest
 
 from engine.options_signal_episode import (
-    ContractError,
     PRICE_BASIS,
     PRICE_RECEIPT_SCHEMA,
+    SESSION_HORIZONS,
     TIMESTAMP_BASIS,
+    ContractError,
     append_episodes,
     append_outcomes,
-    derive_h60_outcome as _derive_h60_outcome,
+    append_session_outcomes,
     episode_from_live_event,
     load_jsonl,
     validate_episode,
     validate_outcome,
     validate_outcome_against_episode,
+    validate_session_outcome,
+    validate_session_outcome_against_episode,
 )
+from engine.options_signal_episode import (
+    derive_h60_outcome as _derive_h60_outcome,
+)
+from engine.options_signal_episode import (
+    derive_session_outcome as _derive_session_outcome,
+)
+from engine.session_digest import session_window_et
+from lib import nyse_calendar
 
 
 def _event(**overrides) -> dict:
@@ -145,6 +156,121 @@ def derive_h60_outcome(episode, bars, **kwargs):
             price_delay_minutes=kwargs["price_delay_minutes"],
         )
     return _derive_h60_outcome(episode, bars, **kwargs)
+
+
+def _fixture_session_price_receipt(
+    episode: dict,
+    horizon: str,
+    bars: pd.DataFrame,
+    *,
+    price_source: str,
+    bar_seconds: int,
+    price_delay_minutes: int,
+    source_available_at: datetime | None = None,
+) -> dict:
+    frame = bars.copy().sort_index()
+    index = pd.to_datetime(frame.index, utc=True)
+    target_session = nyse_calendar.session_n_forward(
+        datetime.fromisoformat(episode["session_date"]).date(), SESSION_HORIZONS[horizon],
+    )
+    assert target_session is not None
+    target_time = session_window_et(target_session)[1].astimezone(timezone.utc)
+    available = source_available_at or target_time + timedelta(minutes=price_delay_minutes)
+    return {
+        "schema": PRICE_RECEIPT_SCHEMA,
+        "ticker": episode["ticker"],
+        "source_file": Path(price_source).name,
+        "source_file_sha256": hashlib.sha256(b"fixture-session-price-source").hexdigest(),
+        "source_available_at": available.isoformat().replace("+00:00", "Z"),
+        "bar_seconds": bar_seconds,
+        "vendor_delay_minutes": price_delay_minutes,
+        "adjusted": True,
+        "price_basis": PRICE_BASIS,
+        "timestamp_basis": TIMESTAMP_BASIS,
+        "row_count": len(frame),
+        "first_time": index.min().to_pydatetime().astimezone(timezone.utc).isoformat().replace(
+            "+00:00", "Z"
+        ),
+        "last_time": index.max().to_pydatetime().astimezone(timezone.utc).isoformat().replace(
+            "+00:00", "Z"
+        ),
+    }
+
+
+def derive_session_outcome(episode, horizon, bars, **kwargs):
+    if (
+        "price_receipt" not in kwargs
+        and isinstance(bars, pd.DataFrame)
+        and not bars.empty
+        and type(kwargs.get("bar_seconds")) is int
+        and type(kwargs.get("price_delay_minutes")) is int
+    ):
+        kwargs["price_receipt"] = _fixture_session_price_receipt(
+            episode,
+            horizon,
+            bars,
+            price_source=kwargs["price_source"],
+            bar_seconds=kwargs["bar_seconds"],
+            price_delay_minutes=kwargs["price_delay_minutes"],
+        )
+    return _derive_session_outcome(episode, horizon, bars, **kwargs)
+
+
+def _session_bars(
+    episode: dict,
+    horizon: str,
+    *,
+    bar_seconds: int = 1800,
+    tail_sessions: int = 0,
+) -> pd.DataFrame:
+    start = datetime.fromisoformat(episode["session_date"]).date()
+    target = nyse_calendar.session_n_forward(start, SESSION_HORIZONS[horizon] + tail_sessions)
+    assert target is not None
+    sessions = nyse_calendar.sessions_between(start, target)
+    stamps: list[pd.Timestamp] = []
+    for session in sessions:
+        open_et, close_et = session_window_et(session)
+        stamps.extend(pd.date_range(
+            open_et.astimezone(timezone.utc),
+            close_et.astimezone(timezone.utc) - timedelta(seconds=bar_seconds),
+            freq=pd.Timedelta(seconds=bar_seconds),
+        ))
+    values = [100.0 + index * 0.05 for index in range(len(stamps))]
+    return pd.DataFrame(
+        {
+            "open": values,
+            "high": [value + 1.0 for value in values],
+            "low": [value - 1.0 for value in values],
+            "close": [value + 0.25 for value in values],
+        },
+        index=pd.DatetimeIndex(stamps),
+    )
+
+
+def _polygon_hourly_session_bars(
+    episode: dict,
+    horizon: str,
+) -> pd.DataFrame:
+    """Production Polygon shape: UTC-hour buckets, not NYSE-open-aligned."""
+    start = datetime.fromisoformat(episode["session_date"]).date()
+    target = nyse_calendar.session_n_forward(start, SESSION_HORIZONS[horizon])
+    assert target is not None
+    stamps: list[pd.Timestamp] = []
+    for session in nyse_calendar.sessions_between(start, target):
+        open_et, close_et = session_window_et(session)
+        first = pd.Timestamp(open_et.astimezone(timezone.utc)).ceil("h")
+        final = pd.Timestamp(close_et.astimezone(timezone.utc)) - timedelta(hours=1)
+        stamps.extend(pd.date_range(first, final, freq="h"))
+    values = [100.0 + index * 0.25 for index in range(len(stamps))]
+    return pd.DataFrame(
+        {
+            "open": values,
+            "high": [value + 1.0 for value in values],
+            "low": [value - 1.0 for value in values],
+            "close": [value + 0.5 for value in values],
+        },
+        index=pd.DatetimeIndex(stamps),
+    )
 
 
 def _write_receipted_price_source(
@@ -2350,6 +2476,40 @@ def test_builder_persists_clock_terminal_outcome_without_reading_price_cache(
     assert outcomes[0]["reason"] == "horizon_crosses_session_close"
 
 
+def test_builder_caches_one_session_snapshot_error_across_all_horizons(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    from scripts import build_options_signal_episode as builder
+
+    late_event = _event(
+        id="late-h60-terminal-session-retry",
+        ts="2026-07-02T19:10:00Z",
+        observed_at="2026-07-02T19:11:00Z",
+        decision_at="2026-07-02T19:11:00Z",
+        available_at="2026-07-02T19:11:00Z",
+        source_snapshot_asof="2026-07-02T19:11:00Z",
+    )
+    reads = 0
+
+    def corrupt_snapshot(*_args, **_kwargs):
+        nonlocal reads
+        reads += 1
+        raise ContractError("invalid price snapshot for TEST: injected")
+
+    monkeypatch.setattr(builder, "_price_snapshot", corrupt_snapshot)
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    summary = builder.run(
+        root_dir=tmp_path,
+        stages_by_session={"2026-07-02": _stage_records(late_event)},
+        computed_at=datetime(2026, 7, 20, 22, 0, tzinfo=timezone.utc),
+    )
+    assert reads == 1
+    assert summary["outcomes_terminal_incomplete"] == 1
+    assert summary["session_outcomes_pending"] == 5
+    assert summary["session_pending_reasons"] == {"invalid_price_receipt": 5}
+    assert (tmp_path / "data/options_signal_episode/checkpoint.json").exists()
+
+
 def test_builder_still_rejects_present_malformed_price_receipt(
     tmp_path: Path, monkeypatch,
 ) -> None:
@@ -2541,6 +2701,7 @@ def test_options_pit_engine_and_adversarial_suites_are_ci_wired() -> None:
     manifest = (repo / ".github/ci/legacy-jobs.yml").read_text()
     for required in (
         '"engine/options_signal_episode.py"',
+        '"contracts/options/options.signal_episode_session_outcome.v1.schema.json"',
         '"engine/live_flow.py"',
         '"tests/test_options_signal_episode.py"',
         '"tests/test_live_flow.py"',
@@ -2548,6 +2709,25 @@ def test_options_pit_engine_and_adversarial_suites_are_ci_wired() -> None:
         assert required in workflow
     assert "python -m pytest tests/test_options_signal_episode.py -q" in manifest
     assert "python -m pytest tests/test_live_flow.py -q" in manifest
+
+
+def test_session_outcome_registry_has_one_writer_no_authority_consumers() -> None:
+    yaml = pytest.importorskip("yaml")
+    repo = Path(__file__).resolve().parents[1]
+    registry = yaml.safe_load((repo / "config/synapse.yml").read_text())
+    artifact = registry["artifacts"]["options-signal-episode-session-outcomes"]
+    assert artifact["producer"] == "scripts/build_options_signal_episode.py"
+    assert artifact["known_extra_writers"] == []
+    assert artifact["consumers"] == ["scripts/build_options_signal_episode.py"]
+    assert artifact["external_consumers"] == []
+    assert artifact["tier"] == "shadow"
+    notes = artifact["notes"].lower()
+    for fence in (
+        "training_eligible is always false",
+        "no rank",
+        "prophet consumer is registered",
+    ):
+        assert fence in notes
 
 
 def test_builder_stage_date_mismatch_is_atomic_and_does_not_checkpoint(
@@ -2849,6 +3029,705 @@ def test_checkpoint_rejects_every_malformed_existing_session(
             checkpoint, "2026-07-02", _stage_records(), dry_run=False,
         )
     assert checkpoint.read_text() == original
+
+
+def test_session_outcome_schema_and_runtime_validator_are_strict() -> None:
+    jsonschema = pytest.importorskip("jsonschema")
+    episode = _episode()
+    bars = _session_bars(episode, "eod")
+    row = derive_session_outcome(
+        episode,
+        "eod",
+        bars,
+        computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+    )
+    validate_session_outcome(row)
+    validate_session_outcome_against_episode(row, episode)
+    schema = json.loads((
+        Path(__file__).resolve().parents[1]
+        / "contracts/options/options.signal_episode_session_outcome.v1.schema.json"
+    ).read_text())
+    jsonschema.Draft202012Validator.check_schema(schema)
+    jsonschema.Draft202012Validator(
+        schema, format_checker=jsonschema.FormatChecker(),
+    ).validate(row)
+
+    extra = copy.deepcopy(row)
+    extra["unexpected"] = True
+    with pytest.raises(ContractError, match="schema validation"):
+        validate_session_outcome(extra)
+    wrong_mapping = copy.deepcopy(row)
+    wrong_mapping["horizon_sessions"] = 1
+    with pytest.raises(ContractError, match="schema validation|disagrees"):
+        validate_session_outcome(wrong_mapping)
+    for coerced in (True, 0.0):
+        wrong_type = copy.deepcopy(row)
+        wrong_type["horizon_sessions"] = coerced
+        with pytest.raises(ContractError, match="horizon_sessions"):
+            validate_session_outcome(wrong_type)
+    noncanonical = copy.deepcopy(row)
+    noncanonical["target_time"] = "2026-07-02T20:00:00+00:00"
+    with pytest.raises(ContractError, match="canonical UTC"):
+        validate_session_outcome(noncanonical)
+    forged_id = copy.deepcopy(row)
+    forged_id["outcome_id"] = "oout_" + "0" * 24
+    with pytest.raises(ContractError, match="not stable"):
+        validate_session_outcome(forged_id)
+    wrong_calendar = copy.deepcopy(row)
+    wrong_calendar["measurement"]["calendar_basis"] = "authoritative_exchange_calendar/v1"
+    with pytest.raises(ContractError, match="schema validation|calendar_basis"):
+        validate_session_outcome(wrong_calendar)
+    for coerced in (True, 10.0):
+        wrong_manifest_count = copy.deepcopy(row)
+        evidence = wrong_manifest_count["underlying"]["evidence"]
+        evidence["sessions"][0]["expected_count"] = coerced
+        evidence["manifest_root_sha256"] = hashlib.sha256(json.dumps(
+            evidence["sessions"],
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode()).hexdigest()
+        with pytest.raises(ContractError, match="schema validation|count arithmetic"):
+            validate_session_outcome(wrong_manifest_count)
+
+
+def test_session_horizons_use_real_sessions_holidays_and_early_close() -> None:
+    episode = _episode()
+    one_day = derive_session_outcome(
+        episode,
+        "1d",
+        _session_bars(episode, "1d"),
+        computed_at=datetime(2026, 7, 6, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+    )
+    assert one_day["target_session"] == "2026-07-06"
+    assert one_day["target_time"] == "2026-07-06T20:00:00Z"
+    assert one_day["horizon_sessions"] == 1
+
+    early_episode = _episode(
+        id="early-close-horizon",
+        ts="2026-11-25T15:30:00Z",
+        observed_at="2026-11-25T15:31:00Z",
+        decision_at="2026-11-25T15:31:00Z",
+        available_at="2026-11-25T15:31:00Z",
+        source_snapshot_asof="2026-11-25T15:31:00Z",
+        exp="2026-12-18",
+        dte=23,
+        oi_vintage="2026-11-24",
+    )
+    early = derive_session_outcome(
+        early_episode,
+        "1d",
+        _session_bars(early_episode, "1d"),
+        computed_at=datetime(2026, 11, 27, 19, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+    )
+    assert early["target_session"] == "2026-11-27"
+    assert early["target_time"] == "2026-11-27T18:00:00Z"
+    assert early["underlying"]["evidence"]["exit"]["bar_time"] == (
+        "2026-11-27T17:30:00Z"
+    )
+
+
+def test_session_hourly_production_shape_discloses_open_stub_and_close_proxy() -> None:
+    regular_episode = _episode(
+        id="hourly-regular",
+        ts="2026-07-02T13:31:00Z",
+        observed_at="2026-07-02T13:32:00Z",
+        decision_at="2026-07-02T13:32:00Z",
+        available_at="2026-07-02T13:32:00Z",
+        source_snapshot_asof="2026-07-02T13:32:00Z",
+    )
+    regular_bars = _polygon_hourly_session_bars(regular_episode, "eod")
+    regular = derive_session_outcome(
+        regular_episode,
+        "eod",
+        regular_bars,
+        computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=3600,
+        price_delay_minutes=15,
+    )
+    manifest = regular["underlying"]["evidence"]["sessions"][0]
+    assert regular_bars.index.strftime("%H:%M").tolist() == [
+        "14:00", "15:00", "16:00", "17:00", "18:00", "19:00",
+    ]
+    assert regular["underlying"]["entry_time"] == "2026-07-02T14:00:00Z"
+    assert regular["underlying"]["evidence"]["exit"]["bar_time"] == (
+        "2026-07-02T19:00:00Z"
+    )
+    assert manifest["uncovered_open_seconds"] == 1800
+    assert manifest["observation_count"] == manifest["expected_count"] == 6
+
+    early_episode = _episode(
+        id="hourly-modeled-early-close",
+        ts="2026-11-27T14:31:00Z",
+        observed_at="2026-11-27T14:32:00Z",
+        decision_at="2026-11-27T14:32:00Z",
+        available_at="2026-11-27T14:32:00Z",
+        source_snapshot_asof="2026-11-27T14:32:00Z",
+        exp="2026-12-18",
+        dte=21,
+        oi_vintage="2026-11-25",
+    )
+    early_bars = _polygon_hourly_session_bars(early_episode, "eod")
+    early = derive_session_outcome(
+        early_episode,
+        "eod",
+        early_bars,
+        computed_at=datetime(2026, 11, 27, 19, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=3600,
+        price_delay_minutes=15,
+    )
+    assert early_bars.index.strftime("%H:%M").tolist() == ["15:00", "16:00", "17:00"]
+    assert early["target_time"] == "2026-11-27T18:00:00Z"
+    assert early["underlying"]["evidence"]["exit"]["bar_time"] == (
+        "2026-11-27T17:00:00Z"
+    )
+    assert early["underlying"]["evidence"]["sessions"][0][
+        "uncovered_open_seconds"
+    ] == 1800
+    assert derive_session_outcome(
+        early_episode,
+        "eod",
+        early_bars.drop(early_bars.index[-1]),
+        computed_at=datetime(2026, 11, 27, 19, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=3600,
+        price_delay_minutes=15,
+    )["reason"] == "missing_session_close_bar"
+
+
+def test_session_opening_gaps_and_missing_declared_close_bar_remain_pending() -> None:
+    episode = _episode()
+    one_minute = _session_bars(episode, "1d", bar_seconds=60)
+    first_admitted = pd.Timestamp(episode["available_at"])
+    missing_entry_span = one_minute.drop(pd.date_range(
+        first_admitted, first_admitted + timedelta(minutes=3), freq="min",
+    ))
+    assert derive_session_outcome(
+        episode,
+        "1d",
+        missing_entry_span,
+        computed_at=datetime(2026, 7, 6, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=60,
+        price_delay_minutes=15,
+    )["reason"] == "entry_bar_gap"
+
+    target_session = nyse_calendar.session_n_forward(
+        datetime.fromisoformat(episode["session_date"]).date(), 1,
+    )
+    assert target_session is not None
+    target_open = session_window_et(target_session)[0].astimezone(timezone.utc)
+    missing_next_open = one_minute.drop(pd.date_range(
+        target_open, target_open + timedelta(minutes=3), freq="min",
+    ))
+    assert derive_session_outcome(
+        episode,
+        "1d",
+        missing_next_open,
+        computed_at=datetime(2026, 7, 6, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=60,
+        price_delay_minutes=15,
+    )["reason"] == "entry_bar_gap"
+
+    regular_hourly = _polygon_hourly_session_bars(episode, "eod")
+    assert derive_session_outcome(
+        episode,
+        "eod",
+        regular_hourly.drop(regular_hourly.index[-1]),
+        computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=3600,
+        price_delay_minutes=15,
+    )["reason"] == "missing_session_close_bar"
+
+
+def test_session_outcome_waits_for_target_close_and_receipt_availability() -> None:
+    episode = _episode()
+    bars = _session_bars(episode, "eod")
+    early = derive_session_outcome(
+        episode,
+        "eod",
+        bars,
+        computed_at=datetime(2026, 7, 2, 19, 59, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+    )
+    assert early == {
+        "status": "pending", "reason": "horizon_not_matured",
+        "episode_id": episode["episode_id"], "horizon": "eod",
+    }
+    receipt = _fixture_session_price_receipt(
+        episode,
+        "eod",
+        bars,
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+        source_available_at=datetime(2026, 7, 2, 20, 45, tzinfo=timezone.utc),
+    )
+    not_known = _derive_session_outcome(
+        episode,
+        "eod",
+        bars,
+        computed_at=datetime(2026, 7, 2, 20, 30, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+        price_receipt=receipt,
+    )
+    assert not_known["reason"] == "measurement_not_available"
+    matured = _derive_session_outcome(
+        episode,
+        "eod",
+        bars,
+        computed_at=datetime(2026, 7, 2, 20, 45, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+        price_receipt=receipt,
+    )
+    assert matured["matured_at"] == "2026-07-02T20:45:00Z"
+
+
+def test_session_clock_terminal_is_only_late_eod_and_needs_no_price_source() -> None:
+    episode = _episode(
+        id="late-durable-eod",
+        ts="2026-07-02T19:50:00Z",
+        observed_at="2026-07-02T19:51:00Z",
+        decision_at="2026-07-02T19:51:00Z",
+        available_at="2026-07-02T20:01:00Z",
+        source_snapshot_asof="2026-07-02T20:01:00Z",
+    )
+    before_decision_available = _derive_session_outcome(
+        episode,
+        "eod",
+        None,
+        computed_at=datetime(2026, 7, 2, 20, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+    )
+    assert before_decision_available["status"] == "pending"
+    assert before_decision_available["reason"] == "horizon_not_matured"
+
+    outcome = _derive_session_outcome(
+        episode,
+        "eod",
+        None,
+        computed_at=datetime(2026, 7, 2, 20, 5, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+    )
+    assert outcome["status"] == "incomplete"
+    assert outcome["reason"] == "decision_after_target_close"
+    assert outcome["matured_at"] == episode["available_at"]
+    assert set(outcome["provenance"].values()) == {None}
+    validate_session_outcome_against_episode(outcome, episode)
+
+    inverted = copy.deepcopy(outcome)
+    inverted["computed_at"] = "2026-07-02T20:00:00Z"
+    inverted["matured_at"] = "2026-07-02T20:00:00Z"
+    with pytest.raises(ContractError, match="decision availability"):
+        validate_session_outcome(inverted)
+
+    next_session = derive_session_outcome(
+        episode,
+        "1d",
+        _session_bars(episode, "1d"),
+        computed_at=datetime(2026, 7, 6, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+    )
+    assert next_session["status"] == "complete"
+    assert next_session["underlying"]["entry_time"] == "2026-07-06T13:30:00Z"
+    assert next_session["underlying"]["exit_time"] == "2026-07-06T20:00:00Z"
+    validate_session_outcome_against_episode(next_session, episode)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("ticker", "OTHER"),
+        ("source_file", "OTHER.parquet"),
+        ("source_file_sha256", "not-a-digest"),
+        ("price_basis", "unadjusted"),
+        ("timestamp_basis", "aggregate_window_end_utc"),
+        ("adjusted", False),
+        ("bar_seconds", 3600),
+        ("vendor_delay_minutes", 16),
+        ("row_count", 0),
+        ("first_time", "2026-07-02T16:00:00Z"),
+        ("last_time", "2026-07-02T19:00:00Z"),
+        ("source_available_at", "2026-07-02T20:14:00Z"),
+    ],
+)
+def test_session_outcome_refuses_mismatched_receipt_fields(field: str, value) -> None:
+    episode = _episode()
+    bars = _session_bars(episode, "eod")
+    receipt = _fixture_session_price_receipt(
+        episode,
+        "eod",
+        bars,
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+    )
+    receipt[field] = value
+    pending = _derive_session_outcome(
+        episode,
+        "eod",
+        bars,
+        computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+        price_receipt=receipt,
+    )
+    assert pending["status"] == "pending"
+    assert pending["reason"] == "invalid_price_receipt"
+
+
+def test_session_outcome_compact_evidence_replays_metrics_and_rejects_path_gaps() -> None:
+    episode = _episode()
+    bars = _session_bars(episode, "eod")
+    row = derive_session_outcome(
+        episode,
+        "eod",
+        bars,
+        computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+    )
+    evidence = row["underlying"]["evidence"]
+    assert row["underlying"]["entry_time"] == "2026-07-02T15:00:00Z"
+    assert row["underlying"]["exit_time"] == "2026-07-02T20:00:00Z"
+    assert evidence["exit"] == {
+        "bar_time": "2026-07-02T19:30:00Z",
+        "time": "2026-07-02T20:00:00Z",
+        "close": bars.iloc[-1]["close"],
+    }
+    assert evidence["entry"] == {"bar_time": "2026-07-02T15:00:00Z", "open": 100.15}
+    assert evidence["observation_count"] == 10
+    assert evidence["sessions"] == [{
+        "session": "2026-07-02",
+        "first_bar_time": "2026-07-02T15:00:00Z",
+        "last_bar_time": "2026-07-02T19:30:00Z",
+        "uncovered_open_seconds": 5400,
+        "observation_count": 10,
+        "expected_count": 10,
+        "session_path_sha256": evidence["sessions"][0]["session_path_sha256"],
+    }]
+    selected = bars[
+        (bars.index >= pd.Timestamp("2026-07-02T15:00:00Z"))
+        & (bars.index <= pd.Timestamp("2026-07-02T19:30:00Z"))
+    ]
+    canonical_observations = [{
+        "time": timestamp.isoformat().replace("+00:00", "Z"),
+        "open": round(float(bar["open"]), 8),
+        "high": round(float(bar["high"]), 8),
+        "low": round(float(bar["low"]), 8),
+        "close": round(float(bar["close"]), 8),
+    } for timestamp, bar in selected.iterrows()]
+    assert evidence["sessions"][0]["session_path_sha256"] == hashlib.sha256(json.dumps(
+        canonical_observations,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode()).hexdigest()
+    assert evidence["manifest_root_sha256"] == hashlib.sha256(json.dumps(
+        evidence["sessions"], ensure_ascii=False, separators=(",", ":"), sort_keys=True,
+        allow_nan=False,
+    ).encode()).hexdigest()
+    assert row["underlying"]["ret"] == pytest.approx(
+        bars.iloc[-1]["close"] / bars[bars.index >= pd.Timestamp("2026-07-02T14:31:00Z")].iloc[0]["open"] - 1
+    )
+    for mutate, error, refresh_root in (
+        (
+            lambda value: value["underlying"]["evidence"]["entry"].__setitem__(
+                "open", round(value["underlying"]["evidence"]["entry"]["open"] + 0.01, 8),
+            ),
+            "arithmetic disagrees",
+            False,
+        ),
+        (
+            lambda value: value["underlying"]["evidence"]["extrema"]["high"].__setitem__(
+                "value",
+                round(
+                    value["underlying"]["evidence"]["extrema"]["high"]["value"] + 0.01,
+                    8,
+                ),
+            ),
+            "arithmetic disagrees",
+            False,
+        ),
+        (
+            lambda value: value["underlying"]["evidence"]["sessions"][0].__setitem__(
+                "observation_count", 9,
+            ),
+            "count arithmetic",
+            True,
+        ),
+        (
+            lambda value: value["underlying"]["evidence"]["sessions"][0].__setitem__(
+                "uncovered_open_seconds", 0,
+            ),
+            "uncovered-open",
+            True,
+        ),
+        (
+            lambda value: value["underlying"]["evidence"].__setitem__(
+                "manifest_root_sha256", "0" * 64,
+            ),
+            "manifest-root digest is inconsistent",
+            False,
+        ),
+    ):
+        tampered = copy.deepcopy(row)
+        mutate(tampered)
+        if refresh_root:
+            compact = tampered["underlying"]["evidence"]
+            compact["manifest_root_sha256"] = hashlib.sha256(json.dumps(
+                compact["sessions"], ensure_ascii=False, separators=(",", ":"), sort_keys=True,
+                allow_nan=False,
+            ).encode()).hexdigest()
+        with pytest.raises(ContractError, match=error):
+            validate_session_outcome(tampered)
+
+    high_bars = bars + 9_900.0
+    high_price_drift = derive_session_outcome(
+        episode,
+        "eod",
+        high_bars,
+        computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+    )
+    high_price_drift["underlying"]["entry_price"] += 0.000001
+    with pytest.raises(ContractError, match="arithmetic disagrees"):
+        validate_session_outcome(high_price_drift)
+    for field in ("entry_price", "exit_price", "ret", "mfe", "mae"):
+        one_unit_drift = copy.deepcopy(row)
+        one_unit_drift["underlying"][field] += 0.00000001
+        with pytest.raises(ContractError, match="arithmetic disagrees"):
+            validate_session_outcome(one_unit_drift)
+    ninth_decimal = copy.deepcopy(row)
+    ninth_decimal["underlying"]["evidence"]["entry"]["open"] += 0.000000001
+    with pytest.raises(ContractError, match="canonical eight-decimal"):
+        validate_session_outcome(ninth_decimal)
+
+    missing = bars.drop(bars.index[4])
+    assert derive_session_outcome(
+        episode,
+        "eod",
+        missing,
+        computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+    )["reason"] == "measurement_path_gap"
+    corrupt = bars.copy()
+    corrupt.loc[corrupt.index[3], "high"] = 1.0
+    assert derive_session_outcome(
+        episode,
+        "eod",
+        corrupt,
+        computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+    )["reason"] == "invalid_ohlc_bar"
+
+
+def test_session_outcome_ignores_post_target_tail_with_same_receipt() -> None:
+    episode = _episode()
+    baseline_bars = _session_bars(episode, "eod")
+    with_tail = _session_bars(episode, "eod", tail_sessions=1)
+    receipt = _fixture_session_price_receipt(
+        episode,
+        "eod",
+        with_tail,
+        price_source="fixture/TEST.parquet",
+        bar_seconds=1800,
+        price_delay_minutes=15,
+    )
+    kwargs = {
+        "computed_at": datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
+        "price_source": "fixture/TEST.parquet",
+        "bar_seconds": 1800,
+        "price_delay_minutes": 15,
+        "price_receipt": receipt,
+    }
+    baseline = _derive_session_outcome(episode, "eod", baseline_bars, **kwargs)
+    replay = _derive_session_outcome(episode, "eod", with_tail, **kwargs)
+    assert replay == baseline
+
+
+def test_session_compact_evidence_size_is_bounded_at_one_minute_ten_days() -> None:
+    episode = _episode()
+    bars = _session_bars(episode, "10d", bar_seconds=60)
+    computed_at = datetime(2026, 7, 20, 22, 0, tzinfo=timezone.utc)
+    rows = [
+        derive_session_outcome(
+            episode,
+            horizon,
+            bars,
+            computed_at=computed_at,
+            price_source="fixture/TEST.parquet",
+            bar_seconds=60,
+            price_delay_minutes=15,
+        )
+        for horizon in SESSION_HORIZONS
+    ]
+    encoded = [json.dumps(
+        row, ensure_ascii=False, separators=(",", ":"), sort_keys=True, allow_nan=False,
+    ).encode() for row in rows]
+    ten_day = rows[-1]["underlying"]["evidence"]
+    assert ten_day["observation_count"] > 4_000
+    assert len(ten_day["sessions"]) == 11
+    assert "path" not in ten_day
+    assert len(encoded[-1]) < 8_000
+    assert sum(map(len, encoded)) < 30_000
+
+
+def test_all_session_horizons_have_independent_idempotent_semantic_keys(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    episode = _episode()
+    bars = _session_bars(episode, "10d")
+    computed_at = datetime(2026, 7, 20, 22, 0, tzinfo=timezone.utc)
+    rows = [
+        derive_session_outcome(
+            episode,
+            horizon,
+            bars,
+            computed_at=computed_at,
+            price_source="fixture/TEST.parquet",
+            bar_seconds=1800,
+            price_delay_minutes=15,
+        )
+        for horizon in SESSION_HORIZONS
+    ]
+    assert [row["horizon"] for row in rows] == list(SESSION_HORIZONS)
+    assert [row["outcome_id"] for row in rows] == [
+        "oout_b77f802b7e9f049fe70f4a00",
+        "oout_caf0a51b8f1a3a1dd757729f",
+        "oout_fe043c1096f9d7836cccb268",
+        "oout_aee63492487e3c6b4bee2f31",
+        "oout_658e05daceb6ea0d5ba53baa",
+    ]
+    assert all(row["measurement"]["training_eligible"] is False for row in rows)
+    assert all(row["option"]["status"] == "unavailable" for row in rows)
+    path = tmp_path / "outcomes_session.jsonl"
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    assert append_session_outcomes(path, rows + copy.deepcopy(rows)) == 5
+    assert append_session_outcomes(path, rows) == 0
+    for original in rows:
+        drift = copy.deepcopy(original)
+        drift["provenance"]["price_source"] = "other/TEST.parquet"
+        validate_session_outcome(drift)
+        with pytest.raises(ContractError, match="conflicting append payload"):
+            append_session_outcomes(path, [drift])
+
+
+def test_session_append_failure_keeps_checkpoint_last_and_h60_bytes_stable(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    from scripts import build_options_signal_episode as builder
+
+    data = tmp_path / "data"
+    intraday = data / "intraday"
+    intraday.mkdir(parents=True)
+    episode = _episode()
+    frame = _session_bars(episode, "10d")
+    target_session = nyse_calendar.session_n_forward(
+        datetime.fromisoformat(episode["session_date"]).date(), 10,
+    )
+    assert target_session is not None
+    target_close = session_window_et(target_session)[1].astimezone(timezone.utc)
+    computed_at = target_close + timedelta(hours=1)
+    _write_receipted_price_source(
+        intraday,
+        frame,
+        source_available_at=(target_close + timedelta(minutes=15)).isoformat().replace(
+            "+00:00", "Z"
+        ),
+        bar_seconds=1800,
+        delay_minutes=15,
+    )
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    real_append = builder.append_session_outcomes
+
+    def fail_session_append(*_args, **_kwargs):
+        raise ContractError("injected session ledger failure")
+
+    monkeypatch.setattr(builder, "append_session_outcomes", fail_session_append)
+    with pytest.raises(ContractError, match="injected session ledger failure"):
+        builder.run(
+            root_dir=tmp_path,
+            stages_by_session={"2026-07-02": _stage_records()},
+            computed_at=computed_at,
+        )
+    ledger = data / "options_signal_episode"
+    assert not (ledger / "checkpoint.json").exists()
+    assert not (ledger / "outcomes_session.jsonl").exists()
+    episode_bytes = (ledger / "episodes.jsonl").read_bytes()
+    h60_bytes = (ledger / "outcomes_h60.jsonl").read_bytes()
+    h60_id = load_jsonl(ledger / "outcomes_h60.jsonl")[0]["outcome_id"]
+
+    monkeypatch.setattr(builder, "append_session_outcomes", real_append)
+    replay = builder.run(
+        root_dir=tmp_path,
+        stages_by_session={"2026-07-02": _stage_records()},
+        computed_at=computed_at,
+    )
+    assert replay["episodes_appended"] == 0
+    assert replay["outcomes_appended"] == 0
+    assert replay["session_outcomes_appended"] == 5
+    assert (ledger / "episodes.jsonl").read_bytes() == episode_bytes
+    assert (ledger / "outcomes_h60.jsonl").read_bytes() == h60_bytes
+    assert load_jsonl(ledger / "outcomes_h60.jsonl")[0]["outcome_id"] == h60_id
+    assert len(load_jsonl(ledger / "outcomes_session.jsonl")) == 5
+    assert (ledger / "checkpoint.json").exists()
+
+
+def test_h60_v1_id_and_canonical_bytes_are_frozen() -> None:
+    episode = _episode()
+    outcome = derive_h60_outcome(
+        episode,
+        _bars(
+            ("2026-07-02T15:00:00Z", 100.0, 104.0, 98.0, 102.0),
+            ("2026-07-02T16:00:00Z", 103.0, 105.0, 101.0, 104.0),
+        ),
+        computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
+        price_source="fixture",
+        bar_seconds=3600,
+        price_delay_minutes=15,
+    )
+    encoded = json.dumps(
+        outcome, ensure_ascii=False, separators=(",", ":"), sort_keys=True,
+        allow_nan=False,
+    ).encode()
+    assert outcome["schema"] == "options.signal_episode_outcome/v1"
+    assert outcome["outcome_id"] == "oout_2a558932c692c26734be3917"
+    assert len(encoded) == 1989
+    assert hashlib.sha256(encoded).hexdigest() == (
+        "1167252ede715d0b1909007cdf7466da0c8bf1cfd3eceb21e8870035633837ff"
+    )
 
 
 def test_builder_consumes_partial_session_extension_and_rejects_shrink(

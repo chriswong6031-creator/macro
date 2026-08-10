@@ -14786,13 +14786,16 @@ artifacts:
       Causal sidecar for the mutable Polygon intraday parquet cache. It binds the
       exact parquet filename and SHA-256 to a post-fsync source-availability clock,
       cadence, vendor delay, split-adjusted price basis, timestamp basis, row count
-      and coverage endpoints. The H+60 builder reads receipt-before, the exact
+      and coverage endpoints. The sole outcome builder reads receipt-before, the exact
       parquet bytes, then receipt-after and fails visibly on any claimed-receipt
       mismatch. An absent receipt, including a legacy cache not yet refreshed by
       the receipt-aware collector, remains a per-ticker retryable source gap.
-      Complete outcome rows retain the
-      exact consumed OHLC path plus exit open inline, so later cache correction or
-      eviction cannot rewrite an immutable label. This receipt carries no signal,
+      Complete H+60 rows retain the exact consumed OHLC path plus exit open inline;
+      complete session rows instead retain compact metric inputs, per-session
+      cadence/open-stub manifests, raw-path leaf commitments, and a recomputable
+      manifest root. Session evidence is metric-replayable and path-committed,
+      not full-path-replayable absent a separately retained exact source snapshot.
+      This receipt carries no signal,
       training, rank, gate, size, trade, publication, or Prophet authority.
 
   polygon-intraday-price-cache:
@@ -14815,12 +14818,15 @@ artifacts:
     external_consumers: []
     notes: >
       Mutable, overlap-corrected split-adjusted Polygon aggregate cache used for
-      underlying H+60 measurement. The builder may consume a byte version only
+      underlying H+60 and session-close measurements. The builder may consume a
+      byte version only
       when the adjacent polygon.intraday_price_receipt/v1 sidecar binds that exact
       file digest, cadence, delay, bases, availability clock and coverage. Complete
-      outcomes retain their exact consumed path inline; the cache alone is never
-      immutable evidence and carries no model, training, rank, gate, size, trade,
-      publication, or Prophet authority.
+      H+60 outcomes retain their exact consumed path inline. Session outcomes use
+      bounded metric-replayable/path-committed evidence; the mutable cache is not
+      a durable full-path replay archive. The cache alone is never immutable
+      evidence and carries no model, training, rank, gate, size, trade, publication,
+      or Prophet authority.
 
   options-signal-episodes:
     path: data/options_signal_episode/episodes.jsonl
@@ -14879,6 +14885,40 @@ artifacts:
       terminal session-boundary gaps are recorded incomplete. Option PnL stays
       unavailable until an executable bid/ask quote path exists. All decision
       authority remains false and only the nightly lane may append rows.
+
+  options-signal-episode-session-outcomes:
+    path: data/options_signal_episode/outcomes_session.jsonl
+    format: jsonl
+    producer: scripts/build_options_signal_episode.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: computed_at
+    freshness_sla_hours: 30
+    schema: options.signal_episode_session_outcome/v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_options_signal_episode.py
+    external_consumers: []
+    notes: >
+      Separate immutable EOD/1d/3d/5d/10d underlying outcomes keyed to the
+      existing point-in-time option-flow episodes. Horizons advance by exact
+      NYSE sessions and target the declared close under
+      nyse_session_window_recurring_schedule/v1, including modeled recurring
+      early closes but no one-off exchange-schedule authority. Each complete row
+      binds one Polygon receipt and stores exact entry/exit and observed-extrema
+      metric inputs plus per-session cadence/count/open-stub manifests, raw-path
+      leaf commitments, and a recomputable manifest root. Hourly/coarse MFE/MAE
+      are observed-path proxies; missing, gapped, or unmatured evidence stays
+      retryable and a schedule/source mismatch yields no close label.
+      Option outcomes remain unavailable, training_eligible is always false,
+      label_authority is research_only, and no rank, gate, size, trade, issue,
+      publication, Neural Web, or Prophet consumer is registered. The existing
+      builder is the sole writer and only the nightly lane may append rows.
 
   options-signal-episode-checkpoint:
     path: data/options_signal_episode/checkpoint.json

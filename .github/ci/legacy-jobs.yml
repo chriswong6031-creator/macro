@@ -860,7 +860,7 @@ jobs:
         run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow jsonschema fastapi httpx requests
       - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append, greek grids + walls + coverage + poller fence)
         run: python -m pytest tests/test_flow_surface.py -q
-      - name: options PIT episodes (causal clocks, durable stage, H+60 labels, R2/checkpoint integrity)
+      - name: options PIT episodes (causal clocks, durable stage, H+60 + declared-session-close proxies, R2/checkpoint integrity)
         run: python -m pytest tests/test_options_signal_episode.py -q
       - name: MSC R2.2-A Light U-CHAIN packets + monotonic R2 discovery publication
         run: python -m pytest tests/test_options_structure_intraday.py tests/test_build_options_structure_intraday.py -q

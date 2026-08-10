@@ -3946,11 +3946,13 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.build_session_digest || echo "::warning::build_session_digest non-fatal failure"
-      - name: OIP PIT — durable option episodes + aligned H+60 proxy accrual
+      - name: OIP PIT — durable episodes + H+60 and declared-session-close proxy accrual
         # Consumes only the date-keyed live_flow/events/{DATE}.jsonl raw stage,
-        # never capped/overwritten feed_current. The monotonic checkpoint and both
-        # committed JSONL ledgers advance only in COLLECT_LANE=nightly. Hourly Polygon
-        # measurements remain explicitly training-ineligible; all authority is false.
+        # never capped/overwritten feed_current. The monotonic checkpoint and all three
+        # committed JSONL ledgers advance only in COLLECT_LANE=nightly. H+60 v1 stays
+        # frozen; EOD/1d/3d/5d/10d close rows accrue separately from the same exact
+        # Polygon receipt. Session outcomes and coarse H+60 measurements remain
+        # explicitly training-ineligible; all authority is false.
         # Serial after session digest while the restored intraday cache is present.
         # This is the sole nightly advancer and its independent inputs remain valid
         # when an unrelated earlier renderer fails.

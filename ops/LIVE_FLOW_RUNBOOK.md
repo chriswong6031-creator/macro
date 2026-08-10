@@ -91,7 +91,7 @@ appends only the missing availability receipt.
 
 #### Nightly consumer and replay ownership
 
-The `OIP PIT — durable option episodes + aligned H+60 proxy accrual` step in
+The `OIP PIT — durable episodes + H+60 and declared-session-close proxy accrual` step in
 `.github/workflows/daily.yml` runs `scripts/build_options_signal_episode.py`
 after the session digest. It is the sole advancer of these committed artifacts:
 
@@ -99,7 +99,12 @@ after the session digest. It is the sole advancer of these committed artifacts:
   episodes;
 - `data/options_signal_episode/outcomes_h60.jsonl` — later H+60 aligned-bar
   proxy measurements, containing only complete and terminal-incomplete rows;
-  pending attempts are not persisted and are retried on a later nightly; and
+  pending attempts are not persisted and are retried on a later nightly;
+- `data/options_signal_episode/outcomes_session.jsonl` — separate immutable
+  EOD/1d/3d/5d/10d underlying close outcomes. Each horizon is an exact NYSE
+  session offset from the episode session; the exit is the declared target-session
+  close under `nyse_session_window_recurring_schedule/v1` (including modeled
+  recurring early closes), not a fabricated bar open; and
 - `data/options_signal_episode/checkpoint.json` — per-session record count and
   canonical-record append-prefix SHA-256 (not the raw-byte publication digest).
 
@@ -114,14 +119,14 @@ advancement; dry runs and other lanes may derive a report but cannot append.
 Replay older than the 64-session live catch-up window belongs to an explicit
 offline/research restore job. It must consume preserved date-keyed raw stages,
 write separate replay outputs, and never mutate the live R2 keys, the live
-checkpoint, or `feed_current`. Coarse/delayed H+60 proxies stay labeled
-training-ineligible, and every episode retains zero trade, pick, ranking, sizing,
-gating, escalation, and Prophet-training authority.
+checkpoint, or `feed_current`. Coarse/delayed H+60 proxies and every session
+outcome stay training-ineligible. Every episode and outcome retains zero trade,
+pick, ranking, sizing, gating, escalation, and Prophet-training authority.
 
 #### Receipt-bound Polygon price evidence
 
-Price-dependent H+60 accrual consumes a pair restored together by the Actions
-cache under `data/intraday/`:
+Price-dependent H+60 and session-close accrual consume a pair restored together
+by the Actions cache under `data/intraday/`:
 
 - `<TICKER>.parquet` — the mutable, overlap-corrected adjusted bar cache; and
 - `<TICKER>.parquet.receipt.json` — its
@@ -137,11 +142,38 @@ A legacy parquet with no receipt is never consumed: that ticker remains
 explicitly pending as `missing_price_receipt` until a receipt-aware collector
 refreshes it, while other tickers and the raw-stage checkpoint can advance. A
 present receipt with no source, torn/duplicate-key JSON, a changed receipt, or a
-source digest/basis mismatch is an integrity stop for any price-dependent
-episode. Session-close terminal outcomes are resolved before cache acquisition
-and therefore remain invariant to all cache states. Every complete outcome
-retains the exact canonical `[entry, exit)` OHLC observations plus the exit open,
-row count, and digest inline, so a later cache correction cannot rewrite it.
+source digest/basis mismatch is never consumed. Existing price-dependent H+60
+accrual keeps its hard integrity stop; if H+60 was already resolved solely from
+clocks, a newly mature session horizon records `invalid_price_receipt` as
+retryable rather than retroactively invalidating that H+60 append.
+Session-close terminal outcomes are resolved before cache acquisition and
+therefore remain invariant to all cache states. Every complete H+60 outcome
+retains the exact canonical `[entry, exit)` OHLC observations plus the exit open.
+Every complete session outcome instead retains bounded evidence: exact
+entry/exit and timestamped observed-extrema metric inputs, plus ordered
+per-session manifests with cadence-span counts, first/last bar times,
+`uncovered_open_seconds`, creation-time raw-path leaf commitments, and a
+recomputable manifest root. Session rows are metric-replayable and
+path-committed, not full-path-replayable without a separately retained exact
+source snapshot; this v1 creates no durable CAS/R2 path archive. For session
+rows, the receipt must cover the final bar start and cannot become available
+before the declared scheduled close plus delay.
+
+Session horizons are exactly `eod`, `1d`, `3d`, `5d`, and `10d`, mapped to NYSE
+offsets `0`, `1`, `3`, `5`, and `10` by
+`lib.nyse_calendar.session_n_forward`. Entry is the first regular-session bar
+open at or after `episode.available_at`. Each included session must have a
+complete declared-cadence selected span and a bar covering its declared close;
+the first admitted bar may be at most `1.10 * bar_seconds` after the applicable
+availability/open clock. The manifest discloses the opening stub (1,800 seconds
+for the current UTC-clock-aligned Polygon hourly regular-session shape).
+Overnight, weekend, and holiday gaps are expected; an interior RTH gap or an
+unmodeled schedule/source close mismatch stays pending. Hourly/coarse MFE/MAE
+are observed-path proxies, not full-RTH extrema. The calendar basis includes the
+repository's recurring early-close model but is not an authoritative one-off
+exchange schedule. The source checkpoint advances only after episodes, H+60
+rows, and session rows have all appended successfully; replay is byte-idempotent
+if a later step fails.
 
 Offline diagnosis reads files only; it must not invoke the live poller:
 

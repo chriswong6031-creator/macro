@@ -422,6 +422,7 @@ on:
       - "scripts/build_polygon_intraday.py"
       - "contracts/options/options.signal_episode.v1.schema.json"
       - "contracts/options/options.signal_episode_outcome.v1.schema.json"
+      - "contracts/options/options.signal_episode_session_outcome.v1.schema.json"
       - "contracts/options/polygon.intraday_price_receipt.v1.schema.json"
       - "tests/test_options_signal_episode.py"
       - "tests/test_polygon_intraday.py"

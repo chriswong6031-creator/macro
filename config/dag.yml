@@ -878,10 +878,12 @@ lanes:
           OIP point-in-time learning seam. Consumes only the append-only, date-keyed
           live_flow event stage (never capped feed_current), validates the monotonic
           checkpoint, freezes exact decision episodes, and accrues explicitly labeled
-          aligned-bar H+60 proxies from the existing intraday cache. All decision and
-          training authority is false; coarse/delayed measurements are
-          training_eligible=false. Runs serially after build_session_digest and advances
-          committed ledgers only in COLLECT_LANE=nightly. Non-fatal.
+          aligned-bar H+60 proxies plus separate EOD/1d/3d/5d/10d declared-session-close
+          outcomes from the same receipt-bound intraday cache. The H+60 v1 ledger
+          remains unchanged. All decision and training authority is false;
+          coarse/delayed measurements are training_eligible=false. Runs serially
+          after build_session_digest and advances all committed ledgers before the
+          source checkpoint, only in COLLECT_LANE=nightly. Non-fatal.
       - id: build_us_sector_rotation
         module: scripts.build_us_sector_rotation
         note: >
