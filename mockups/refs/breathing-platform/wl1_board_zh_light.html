@@ -159,8 +159,12 @@ html[data-theme="light"][data-lang="zh"] {
    pages print them as 9–15px text. These tokens are the text-safe form.
 
    Shape: --ink-mix-* holds the share of the STATE hue kept in the ink; the rest
-   is --text. Dark keeps 100% (ink ≡ raw token → dark renders byte-identical —
-   measured raw dark inks pass 4.5:1 on every estate surface). Light percentages
+   is --text. Dark keeps 100% (ink ≡ raw token → dark renders byte-identical).
+   Caveat (2026-08-10): the "raw dark inks pass 4.5:1 on every estate surface"
+   measurement behind that 100% covered --panel/--panel2. An ink printed on a TINT
+   OF ITS OWN HUE is a surface it never checked — the first one measured, the
+   prophet avoid chip, came in at 4.33:1 and needed its own rung (see the prophet
+   block below). Dark pass-through is a default, not a proof. Light percentages
    are keyed to HUE, not token name — green sits high in luminance and needs far
    more darkening than red — and are adopted verbatim from the W3 calibration so
    the estate and the SI workspace speak one vocabulary: measured on the worst
@@ -201,7 +205,18 @@ html[data-theme="light"][data-lang="zh"] {
    twin below re-keys the percentages after bullish becomes red and bearish green. */
 :root {
   --ink-pv-buy: var(--pv-buy); --ink-pv-near: var(--pv-near);
-  --ink-pv-wait: var(--pv-wait); --ink-pv-avoid: var(--pv-avoid);
+  --ink-pv-wait: var(--pv-wait);
+  /* avoid is the one dark verb ink that is NOT a pass-through. .pv-chip prints the
+     ink on a 13% tint of its OWN hue (#32242a), not on --panel, and raw --pv-avoid
+     #e06464 on that tint measured 4.33:1 — under AA, in the DEFAULT theme, on the
+     Avoid card of every prophet board. 88% is the smallest rung already in this
+     file's vocabulary (--ink-mix-act/link/info) that clears it with margin:
+     chip 4.77 · trg 5.04 · edn 5.17 · znl 5.85, at 0.5° off the raw hue, so Avoid
+     still reads as the same red. zh dark rides the same rung on the green --down
+     hue (chip 5.56 -> 5.94). Light is untouched — it has its own rungs below.
+     Pinned by tests/test_prophet_verb_ink_contrast.py; re-measure the whole matrix
+     with mockups/refs/prophet_verb_ink/probe_pv_ink.py. */
+  --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 88%, var(--text));
 }
 html[data-theme="light"] {
   --ink-pv-buy:   color-mix(in srgb, var(--pv-buy)   62%, var(--text));
@@ -319,7 +334,15 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
    light / 2.51:1 dark at 10px/800 (the worst white-on-hue chip in the estate
    audit); panel-on-ink clears 4.5 in both themes and keeps the solid identity. */
 .pv-buy .pv-chip{background:var(--pvh-ink,var(--pvh));color:var(--panel);border-color:transparent}
-.pvcard .nb-px.pv-px{background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;margin:0}
+.pvcard .pv-quote{display:inline-flex;align-items:baseline;gap:6px;background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px;white-space:nowrap}
+.pvcard .nb-px.pv-px,.pvcard .nb-chg.pv-chg{font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.35;white-space:nowrap;margin:0}
+.pvcard .nb-px.pv-px{color:var(--text)}
+.pvcard .pv-ovr>.nb-px.pv-px{background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px}
+.pvcard .pv-quote .pv-chg{color:var(--muted)}
+
+.pvcard .pv-quote .pv-chg.up{color:var(--ink-up,var(--up))}
+.pvcard .pv-quote .pv-chg.down{color:var(--ink-down,var(--down))}
+.pvcard .pv-quote .pv-chg.stale{color:var(--muted);font-weight:700}
 .pv-bd{padding:8px 11px 9px;display:flex;flex-direction:column;min-width:0;flex:1}
 .pv-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}
 .pv-idw{display:flex;align-items:baseline;gap:6px;min-width:0;overflow:hidden}

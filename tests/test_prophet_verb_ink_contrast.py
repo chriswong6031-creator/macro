@@ -54,22 +54,24 @@ AA_SMALL = 4.5
 #: (lang, theme) — dark is theme.css's :root default, so it has no own block.
 COMBOS = (("en", "light"), ("zh", "light"), ("en", "dark"), ("zh", "dark"))
 
-#: KNOWN GAP, deliberately not fixed in the PR that added this file.
+#: Pairs that measure under AA and are deliberately carved out, as
+#: ``(lang, theme, verb, consumer) -> measured ratio``.
 #:
-#: ``en/dark avoid .pv-chip`` measures 4.33:1 — under AA, and NOT caused by the
-#: bug above: in dark the ink layer is a pass-through (``--ink-pv-avoid`` resolves
-#: to the raw ``--pv-avoid`` #e06464), and #e06464 on its own 13% tint over
-#: ``--panel`` is simply short. theme.css's own comment claims "measured raw dark
-#: inks pass 4.5:1 on every estate surface"; that claim was made against
-#: ``--panel``/``--panel2`` directly and never against a 13% tint of the hue
-#: itself, which is a darker surface than either.
+#: EMPTY, and worth keeping that way: all 80 pairs clear AA (worst 4.57:1).
 #:
-#: It is carved out rather than fixed because the fix is a dark-mode visual change
-#: to a second, independent defect, and the change that ships alongside this file
-#: was scoped to the light+zh one. The carve-out is a CEILING, not an amnesty: the
-#: pair is asserted to stay at or above its measured value, so it cannot drift
-#: further while it waits. Delete this entry as part of fixing it.
-KNOWN_GAP = {("en", "dark", "avoid", "pv-chip"): 4.33}
+#: The one entry this file shipped with was ``en/dark avoid .pv-chip`` at 4.33:1 —
+#: an independent second defect, not the light+zh bug this file was written for.
+#: In dark the verb ink layer was a pass-through, so ``--ink-pv-avoid`` resolved to
+#: raw ``--pv-avoid`` #e06464, and that hue on its own 13% tint over ``--panel``
+#: (#32242a) is simply short. Closed 2026-08-10 by giving dark ``--ink-pv-avoid``
+#: an 88% rung of its own in theme.css's prophet block; the chip now measures 4.77.
+#:
+#: An entry here is a CEILING, not an amnesty:
+#: ``test_known_gap_entries_are_still_failing`` asserts each one is STILL failing,
+#: so a carve-out that gets fixed must be deleted rather than left behind to
+#: silently lower that pair's floor forever. While this registry is empty that test
+#: is vacuous BY CONSTRUCTION — it guards the next carve-out, not a current one.
+KNOWN_GAP = {}
 
 
 # --------------------------------------------------------------------------- colour

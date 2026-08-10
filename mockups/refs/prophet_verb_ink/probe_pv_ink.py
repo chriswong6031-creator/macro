@@ -202,7 +202,7 @@ def measure(near_mix: str | None = None, shoot: str | None = None):
                 # a shot whose filename asserts a state it cannot prove is how a
                 # proof crop ends up showing the wrong side of the fix.
                 page.locator(".pvgrid").screenshot(
-                    path=str(HERE / f"pv_verbs_{lang}_{theme}_near{shoot}.png"))
+                    path=str(HERE / f"pv_verbs_{lang}_{theme}_{shoot}.png"))
             for r in page.evaluate(_PROBE_JS):
                 bg = None
                 for layer in reversed(r["bgs"]):        # bottom-up
@@ -262,8 +262,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--near-mix", default=None,
                     help="override --ink-pv-near's mix under light+zh, e.g. 56%%")
-    ap.add_argument("--shoot", metavar="MIXLABEL", default=None,
-                    help="also write swatch PNGs, tagged with this mix (e.g. 70)")
+    ap.add_argument("--shoot", metavar="LABEL", default=None,
+                    help="also write swatch PNGs tagged with this label; name it for "
+                         "the TOKEN and MIX actually rendered (e.g. near70, avoid88)")
     args = ap.parse_args()
     _CARD_CSS = _card_css()
     label = f"--ink-pv-near @ {args.near_mix} (light+zh)" if args.near_mix else "as shipped"
