@@ -12977,6 +12977,61 @@ artifacts:
       is explicitly not an issued model-portfolio position; portfolio construction is
       a separate future artifact and ledger.
 
+  options-issue-desk-private-proposals:
+    path: runtime-private/options_issue_desk/proposals.jsonl
+    format: jsonl
+    producer: engine/options_issue_desk.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: on-demand
+    storage: gitignored-local
+    asof_field: available_at
+    freshness_sla_hours: null
+    schema: options.issue_desk_proposal/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - app/options_issue_desk.py
+    external_consumers:
+      - terminal:options-issue-desk-private-proxy
+    notes: >
+      R6.2-A private operator research-plan proposal ledger. Runtime location is
+      OPTIONS_ISSUE_DESK_STATE_DIR (or MACRO_API_STATE_DIR/options_issue_desk),
+      not this illustrative registry path; the directory is 0700 and JSONL ledgers
+      plus lock are 0600. GET may append immutable PENDING_REVIEW snapshots of existing
+      BULL Macro plans in source order. Never public site, git, R2, Supabase, ranker,
+      gate, allocator or broker; authority is explicit all-false. It consumes only
+      bounded display context from Options Prophet, vol regime and optional per-root GEX.
+
+  options-issue-desk-private-decisions:
+    path: runtime-private/options_issue_desk/decisions.jsonl
+    format: jsonl
+    producer: engine/options_issue_desk.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: on-demand
+    storage: gitignored-local
+    asof_field: available_at
+    freshness_sla_hours: null
+    schema: options.issue_desk_decision/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - app/options_issue_desk.py
+    external_consumers:
+      - terminal:options-issue-desk-private-proxy
+    notes: >
+      R6.2-A immutable operator decision ledger. POST appends a reviewer-stamped
+      REJECTED row or an operator-attested ISSUED research-plan row only after exact
+      OCC/NBBO/risk/portfolio-fit validation and capacity replay. Never public site,
+      git, R2, Supabase, ranker, gate, allocator, broker or model-training input;
+      authority is explicit all-false. Exact executable receipts originate only from
+      the authenticated operator, not Options Alpha or Macro candidate scoring.
+
   pick-lab-longhold-ledger:
     path: site/labdata/pick_lab_longhold.json
     format: json

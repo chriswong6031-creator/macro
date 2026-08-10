@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:mastermind:options:issue-receipt:v1",
+  "title": "Operator-attested Options Issue Receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "underlying", "option", "risk", "portfolio_fit"],
+  "properties": {
+    "schema": {"const": "options.issue_receipt/v1"},
+    "underlying": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference", "trigger", "no_chase", "stop", "t1", "t2",
+        "t1_fraction", "t2_fraction", "minimum_hold_days", "horizon_days",
+        "starter_allowed", "add_rule", "invalidation"
+      ],
+      "properties": {
+        "reference": {"type": "number", "exclusiveMinimum": 0},
+        "trigger": {"type": "number", "exclusiveMinimum": 0},
+        "no_chase": {"type": "number", "exclusiveMinimum": 0},
+        "stop": {"type": "number", "exclusiveMinimum": 0},
+        "t1": {"type": "number", "exclusiveMinimum": 0},
+        "t2": {"type": "number", "exclusiveMinimum": 0},
+        "t1_fraction": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "t2_fraction": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "minimum_hold_days": {"type": "integer", "minimum": 1},
+        "horizon_days": {"type": "integer", "minimum": 1},
+        "starter_allowed": {"type": "boolean"},
+        "add_rule": {"type": "string", "minLength": 1, "maxLength": 512},
+        "invalidation": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "occ_symbol", "right", "strike", "expiry", "quantity", "premium",
+        "nbbo_bid", "nbbo_ask", "nbbo_mid", "quote_at", "quote_source",
+        "receipt_sha256", "spread", "spread_pct"
+      ],
+      "properties": {
+        "occ_symbol": {"type": "string", "pattern": "^[A-Z0-9]{1,6}[0-9]{6}C[0-9]{8}$"},
+        "right": {"const": "C"},
+        "strike": {"type": "number", "exclusiveMinimum": 0},
+        "expiry": {"type": "string", "format": "date"},
+        "quantity": {"type": "integer", "minimum": 1},
+        "premium": {"type": "number", "exclusiveMinimum": 0},
+        "nbbo_bid": {"type": "number", "exclusiveMinimum": 0},
+        "nbbo_ask": {"type": "number", "exclusiveMinimum": 0},
+        "nbbo_mid": {"type": "number", "exclusiveMinimum": 0},
+        "quote_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+        "quote_source": {"type": "string", "minLength": 1, "maxLength": 128},
+        "receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "spread": {"type": "number", "exclusiveMinimum": 0},
+        "spread_pct": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.2}
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allocation_weight", "loss_at_stop_weight", "cash_after_weight", "disclosure"],
+      "properties": {
+        "allocation_weight": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.25},
+        "loss_at_stop_weight": {"type": "number", "minimum": 0, "maximum": 1},
+        "cash_after_weight": {"type": "number", "minimum": 0, "maximum": 1},
+        "disclosure": {"type": "string", "minLength": 1, "maxLength": 1024}
+      }
+    },
+    "portfolio_fit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["regime_alignment", "sleeve", "correlation_cluster", "cooldown_clear", "event_risk_clear"],
+      "properties": {
+        "regime_alignment": {"const": "ALIGNED"},
+        "sleeve": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,32}$"},
+        "correlation_cluster": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,32}$"},
+        "cooldown_clear": {"const": true},
+        "event_risk_clear": {"const": true}
+      }
+    }
+  }
+}
