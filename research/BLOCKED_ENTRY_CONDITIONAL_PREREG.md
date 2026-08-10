@@ -202,6 +202,19 @@ cell** — a cell whose premium dies ex-COVID is dead (F1). Gates for A1b unchan
   remaining preconditions are implementation (riding `basket_washout_state`) + the signal-era
   fence.**
 
+- **2026-08-10 — ARTIFACT FIDELITY RULINGS (PR #5237, `basket_washout_state.v1`):** (a) the
+  `names` map must use **LEAVE-ONE-OUT** peer medians, matching the gauntleted `r3_axes.py`
+  construction — the builder's first cut used non-LOO, which is systematically more permissive for
+  the fired name; ruled and ordered fixed pre-merge (UEC −0.333 LOO vs −0.387 non-LOO, both clear
+  25%). (b) **Roster-drift disclosure:** the canonical `data/baskets/membership.json` rosters
+  differ from the study's parsed cohorts for some groups (uranium 10 vs 8 members → deeper;
+  robotics 12 vs cohort → shallower; four baskets the study's parser never formed now exist). The
+  canonical roster implements the RATIFIED construction ("primary basket's members") more
+  faithfully than the study's approximation, so it governs — and the forward ledger grades the
+  AS-SHIPPED rule, which is the binding test from night one. (c) Unrelated inherited red
+  (`check_synapse_reads` Article-2, `species-registry` undeclared on main) claimed as its own
+  minimal heal PR to unblock the lane.
+
 - **2026-08-10 ~06:4xZ — ADJUDICATED** (results:
   `research/BLOCKED_ENTRY_CONDITIONAL_RESULTS_2026-08-10.md`): H1 **PASS, CONTEXT-ONLY**
   (held-out +0.572R [+0.384,+0.785]; vs placebo +0.580R [+0.390,+0.777]; registered equal-date
