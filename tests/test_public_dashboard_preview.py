@@ -97,31 +97,15 @@ def test_prophet_ran_rows_go_through_the_same_cap_as_the_cards():
     assert ".dash-tw-row,.pbr-r" in js
 
 
-def test_theme_strip_ticker_lists_collapse_to_counts_for_anon_and_free():
-    """The themes-in-favour strip printed, per theme, WHICH of today's board names sit
-    in it — the gated tickers themselves, in plain text above the blur. The theme name
-    is context and stays; the ticker list collapses to a count."""
+def test_retired_prophet_theme_strip_has_no_preview_adapter_left_behind():
+    """Prophet no longer repeats the full Theme Heat panel in a mini-strip, so the
+    preview script must not keep a dead, separately drifting membership adapter."""
     js = (ROOT / "templates" / "tier_preview.js").read_text()
     dash = (ROOT / "templates" / "dashboard.html.j2").read_text()
-
-    # emitter side: the list, and the "+N" tail the count has to absorb.
-    assert '<span class="pbt-tk">' in dash
-    assert 'class="pbt-more"' in dash
-
-    fn = js[js.index("function applyThemeTickers()"):js.index("function placeSurfaceGates(")]
-    assert '"#us-standouts .pbt-tk"' in fn
-    # isFinite(cap) is true for anon (1) AND free (3), false only for paid.
-    assert "var gated = isFinite(state.cap);" in fn
-    # reversible in-page: an upgrade must restore the names without a reload.
-    assert "data-mx-old-html" in fn and "list.innerHTML = stashed;" in fn
-    # bilingual, per the EN/ZH UI law
-    assert '<span class="l-en">' in fn and '<span class="l-zh">' in fn
-    # the theme NAME is not touched — only the ticker list.
-    assert "pbt-nm" not in fn
-
-    # and it runs even when the grid itself was short enough not to trip the cap.
-    apply_fn = js[js.index("function apply()"):js.index("function setTier(")]
-    assert "applyThemeTickers();" in apply_fn
+    for retired in ("pbt-tk", "pbt-more", "applyThemeTickers", "themeNameCount"):
+        assert retired not in dash
+        assert retired not in js
+    assert "applyTapeMembers();" in js  # the real Theme Heat preview contract remains
 
 
 def test_pricing_copy_matches_preview_limits_and_drops_china_pitch():

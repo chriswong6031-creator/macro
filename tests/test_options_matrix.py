@@ -14,6 +14,7 @@ Test coverage:
 """
 from __future__ import annotations
 
+import json
 import math
 import tempfile
 from pathlib import Path
@@ -934,3 +935,442 @@ def test_levels_flip_is_never_derived_from_strike_aggregates():
         precomputed_flip=101.25,
     )
     assert threaded["gamma_flip"] == 101.25
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 17. UNUSUAL — PIT-safe per-cell-side trailing-volume baseline
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _build_unusual_matrix(
+    tmp_path: Path,
+    prior_sessions: list[tuple[str, int | None, int | None]],
+    *,
+    current_call: int | None = 300,
+    current_put: int | None = 300,
+    future_sessions: list[tuple[str, int | None, int | None]] | None = None,
+    other_cell_sessions: list[tuple[str, int | None, int | None]] | None = None,
+    asof: str = "2026-01-06",
+) -> tuple[dict, dict]:
+    """Build one deterministic cell with caller-controlled EOD history.
+
+    Each session tuple is ``(date, call_volume, put_volume)``; ``None`` means
+    the side was absent while ``0`` means an explicitly observed zero. Parquets
+    are split by calendar year so tests exercise the real cross-year loader
+    rather than handing a pre-joined frame to a private helper.
+    """
+    root = "SPY"
+    expiry = "2026-02-20"
+    strike = 500.0
+    store = tmp_path / "theta_store"
+
+    oi_dir = store / "oi" / root
+    oi_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        {
+            "root": root, "expiration": expiry, "strike": strike,
+            "right": "C", "date": asof, "open_interest": 4000,
+        },
+        {
+            "root": root, "expiration": expiry, "strike": strike,
+            "right": "P", "date": asof, "open_interest": 3000,
+        },
+    ]).to_parquet(oi_dir / f"{pd.Timestamp(asof).year}.parquet", index=False)
+
+    greeks_dir = store / "greeks" / root
+    greeks_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([{
+        "root": root, "expiration": expiry, "strike": strike, "right": "C",
+        "date": asof, "implied_vol": 0.20, "underlying_price": 500.0,
+        "delta": 0.5, "theta": -0.1, "vega": 0.2, "rho": 0.0,
+        "iv_error": 0.0,
+    }]).to_parquet(greeks_dir / f"{pd.Timestamp(asof).year}.parquet", index=False)
+
+    all_sessions = [
+        *prior_sessions,
+        (asof, current_call, current_put),
+        *(future_sessions or []),
+    ]
+    eod_rows: list[dict] = []
+    for session_date, call_vol, put_vol in all_sessions:
+        for right, volume in (("C", call_vol), ("P", put_vol)):
+            if volume is None:
+                continue
+            eod_rows.append({
+                "root": root,
+                "expiration": expiry,
+                "strike": strike,
+                "right": right,
+                "date": session_date,
+                "open": 1.0,
+                "high": 1.0,
+                "low": 1.0,
+                "close": 1.0,
+                "volume": volume,
+                "count": 1,
+            })
+
+    # Optional dense history for a different exact cell.  This lets regression
+    # tests prove that a sparse target cell is not truncated by global/root-wide
+    # market dates before its own last-N observed sessions are selected.
+    for session_date, call_vol, put_vol in other_cell_sessions or []:
+        for right, volume in (("C", call_vol), ("P", put_vol)):
+            if volume is None:
+                continue
+            eod_rows.append({
+                "root": root,
+                "expiration": expiry,
+                "strike": 550.0,
+                "right": right,
+                "date": session_date,
+                "open": 1.0,
+                "high": 1.0,
+                "low": 1.0,
+                "close": 1.0,
+                "volume": volume,
+                "count": 1,
+            })
+
+    eod_dir = store / "eod" / root
+    eod_dir.mkdir(parents=True, exist_ok=True)
+    eod = pd.DataFrame(eod_rows)
+    for year, year_rows in eod.groupby(pd.to_datetime(eod["date"]).dt.year):
+        year_rows.to_parquet(eod_dir / f"{int(year)}.parquet", index=False)
+
+    from engine.thetadata_store import clear_parquet_cache
+    clear_parquet_cache()
+    payload = build_matrix(root, store=str(store), asof=asof)
+    target = [
+        cell for cell in payload["cells"]
+        if cell["strike"] == strike and cell["expiry"] == expiry
+    ]
+    assert len(target) == 1, f"Expected one {strike}/{expiry} cell, got {target}"
+    return payload, target[0]
+
+
+def test_unusual_sides_are_independent_at_threshold_and_cross_year(tmp_path):
+    """Calls and puts keep separate histories, medians, ratios, and statuses.
+
+    Calls land exactly at 3x while puts land at raw 2.999x.  The history crosses
+    New Year, exercising the prior-year parquet read as well as the inclusive
+    threshold and the non-rounding classification boundary.
+    """
+    dates = [
+        "2025-12-19", "2025-12-22", "2025-12-23", "2025-12-24",
+        "2025-12-26", "2025-12-29", "2025-12-30", "2025-12-31",
+        "2026-01-02", "2026-01-05",
+    ]
+    prior = [(date, 100, 1000) for date in dates]
+
+    payload, cell = _build_unusual_matrix(
+        tmp_path,
+        prior,
+        current_call=300,
+        current_put=2999,
+    )
+
+    assert cell["unusual"] == {
+        "call": {
+            "ratio": 3.0,
+            "median_vol_30d": 100.0,
+            "samples": 10,
+            "status": "unusual",
+        },
+        "put": {
+            "ratio": 2.99,
+            "median_vol_30d": 1000.0,
+            "samples": 10,
+            "status": "normal",
+        },
+    }
+    # UNUSUAL remains descriptive data, never a scoring or authority promotion.
+    assert payload["authority_tier"] == "display"
+    assert payload.get("training_eligible") is not True
+    assert not payload.get("scored", False)
+    assert (payload.get("heat_seeker") or {}).get("lens") != "UNUSUAL"
+
+
+def test_unusual_side_requires_10_strictly_prior_observations(tmp_path):
+    """A nine-sample call side stays null despite as-of and future rows.
+
+    Puts have ten valid prior observations and therefore remain available.  If
+    either planted non-prior row leaks into the call baseline, the call side
+    incorrectly clears the sample gate and this discrimination test fails.
+    """
+    dates = list(
+        pd.bdate_range(end="2026-01-05", periods=10).strftime("%Y-%m-%d")
+    )
+    prior = [
+        (date, 100 if index < 9 else None, 100)
+        for index, date in enumerate(dates)
+    ]
+
+    _, cell = _build_unusual_matrix(
+        tmp_path,
+        prior,
+        current_call=300,
+        current_put=300,
+        future_sessions=[("2026-01-07", 100, 100)],
+    )
+
+    assert cell["unusual"] == {
+        "call": None,
+        "put": {
+            "ratio": 3.0,
+            "median_vol_30d": 100.0,
+            "samples": 10,
+            "status": "unusual",
+        },
+    }
+
+
+def test_unusual_zero_median_nulls_only_that_side(tmp_path):
+    """Ten explicit zeros fund samples but cannot fund a ratio denominator."""
+    dates = pd.bdate_range(end="2026-01-05", periods=10).strftime("%Y-%m-%d")
+    prior = [(date, 0, 50) for date in dates]
+
+    _, cell = _build_unusual_matrix(
+        tmp_path,
+        prior,
+        current_call=300,
+        current_put=150,
+    )
+
+    assert cell["unusual"] == {
+        "call": None,
+        "put": {
+            "ratio": 3.0,
+            "median_vol_30d": 50.0,
+            "samples": 10,
+            "status": "unusual",
+        },
+    }
+
+
+def test_unusual_distinguishes_absent_current_side_from_explicit_zero(tmp_path):
+    """Missing current data is null; an observed zero is a real 0x normal read."""
+    dates = pd.bdate_range(end="2026-01-05", periods=10).strftime("%Y-%m-%d")
+    prior = [(date, 100, 100) for date in dates]
+
+    _, cell = _build_unusual_matrix(
+        tmp_path / "one_side_observed",
+        prior,
+        current_call=None,
+        current_put=0,
+    )
+    assert cell["unusual"] == {
+        "call": None,
+        "put": {
+            "ratio": 0.0,
+            "median_vol_30d": 100.0,
+            "samples": 10,
+            "status": "normal",
+        },
+    }
+
+    _, all_absent = _build_unusual_matrix(
+        tmp_path / "neither_side_observed",
+        prior,
+        current_call=None,
+        current_put=None,
+    )
+    assert all_absent["unusual"] is None
+
+
+def test_unusual_sparse_side_cannot_reach_before_30_root_sessions(tmp_path):
+    """A sparse side cannot extend a nominal 30-session window backward.
+
+    Calls have 15 observations across 60 market dates, but only seven land in
+    the latest 30 root EOD sessions established by a dense peer cell.  Reaching
+    farther back would mislabel a variable-length history as ``median_vol_30d``.
+    """
+    global_dates = list(
+        pd.bdate_range(end="2026-01-05", periods=60).strftime("%Y-%m-%d")
+    )
+    sparse_target = [(date, 100, None) for date in global_dates[::4]]
+    dense_other_cell = [(date, 20, 30) for date in global_dates]
+
+    _, cell = _build_unusual_matrix(
+        tmp_path,
+        sparse_target,
+        current_call=300,
+        current_put=None,
+        other_cell_sessions=dense_other_cell,
+    )
+
+    assert cell["unusual"] is None
+
+
+def test_unusual_volume_rows_dedupe_quarantine_and_reject_invalid_values():
+    """Canonical projected identities are unique, whole, and signing-safe.
+
+    Rows one and two differ outside the six projected reader columns, so they
+    must collapse as one exact projected duplicate.  P/PUT rows with different
+    volumes canonicalize to the same identity and must both be quarantined.
+    Negative, fractional, NaN, and infinite volumes are invalid observations.
+    """
+    from engine.options_matrix import _normalise_volume_rows
+
+    frame = pd.DataFrame([
+        # Exact projected duplicate despite different non-projected fields.
+        {"date": "2025-12-31", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "CALL", "volume": 100, "close": 1.0},
+        {"date": "2025-12-31", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "CALL", "volume": 100, "close": 9.0},
+        # Same canonical identity, conflicting cumulative EOD values: quarantine.
+        {"date": "2026-01-02", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "P", "volume": 50},
+        {"date": "2026-01-02", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "PUT", "volume": 60},
+        # A separate valid long-form put proves side and mill normalization.
+        {"date": "2026-01-05", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "put", "volume": 70},
+        {"date": "2025-12-22", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "C", "volume": -1},
+        {"date": "2025-12-23", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "C", "volume": 1.5},
+        {"date": "2025-12-24", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "C", "volume": float("nan")},
+        {"date": "2025-12-26", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "C", "volume": float("inf")},
+    ])
+
+    rows, stats = _normalise_volume_rows(frame)
+
+    assert stats == {
+        "input_rows": 9,
+        "invalid_rows": 4,
+        "exact_duplicates_dropped": 1,
+        "collision_keys_quarantined": 1,
+    }
+    assert rows[
+        ["date", "expiration", "strike", "strike_mills", "right", "volume"]
+    ].to_dict("records") == [
+        {
+            "date": "2025-12-31",
+            "expiration": "2026-02-20",
+            "strike": 500.125,
+            "strike_mills": 500125,
+            "right": "C",
+            "volume": 100,
+        },
+        {
+            "date": "2026-01-05",
+            "expiration": "2026-02-20",
+            "strike": 500.125,
+            "strike_mills": 500125,
+            "right": "P",
+            "volume": 70,
+        },
+    ]
+
+
+def test_unusual_narrow_history_reader_does_not_touch_parquet_cache(tmp_path):
+    """The projected PIT reader filters its cohort without cache retention."""
+    from engine import thetadata_store
+
+    store = tmp_path / "theta_store"
+    eod_dir = store / "eod" / "SPY"
+    eod_dir.mkdir(parents=True)
+    rows = pd.DataFrame([
+        # The two rows that should survive.
+        {"root": "SPY", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "CALL", "date": "2025-12-31", "volume": 100},
+        {"root": "SPY", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "PUT", "date": "2026-01-05", "volume": 70},
+        # Strict-PIT, root, strike, and expiration exclusions.
+        {"root": "SPY", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "C", "date": "2026-01-06", "volume": 999},
+        {"root": "SPY", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "C", "date": "2026-01-07", "volume": 999},
+        {"root": "QQQ", "expiration": "2026-02-20", "strike": 500.125,
+         "right": "C", "date": "2026-01-05", "volume": 999},
+        {"root": "SPY", "expiration": "2026-02-20", "strike": 550.0,
+         "right": "C", "date": "2026-01-05", "volume": 999},
+        {"root": "SPY", "expiration": "2026-01-05", "strike": 500.125,
+         "right": "C", "date": "2026-01-05", "volume": 999},
+        {"root": "SPY", "expiration": "2026-04-01", "strike": 500.125,
+         "right": "C", "date": "2026-01-05", "volume": 999},
+    ])
+    for year, year_rows in rows.groupby(pd.to_datetime(rows["date"]).dt.year):
+        year_rows.to_parquet(eod_dir / f"{int(year)}.parquet", index=False)
+
+    cache_before = {
+        key: id(value) for key, value in thetadata_store._PARQUET_CACHE.items()
+    }
+    sessions = thetadata_store.eod_sessions_before(
+        "2026-01-06", "SPY", limit=30, store=store,
+    )
+    history = thetadata_store.eod_volume_history_before(
+        "2026-01-06",
+        "SPY",
+        strike_min=500.0,
+        strike_max=501.0,
+        expiration_max="2026-03-01",
+        store=store,
+    )
+    cache_after = {
+        key: id(value) for key, value in thetadata_store._PARQUET_CACHE.items()
+    }
+
+    assert cache_after == cache_before
+    assert sessions == ["2025-12-31", "2026-01-05"]
+    assert list(history.columns) == [
+        "root", "expiration", "strike", "right", "date", "volume",
+    ]
+    assert history[["date", "right", "volume"]].to_dict("records") == [
+        {"date": "2025-12-31", "right": "CALL", "volume": 100},
+        {"date": "2026-01-05", "right": "PUT", "volume": 70},
+    ]
+
+
+@pytest.mark.parametrize(
+    ("unusual", "call_vol", "authority", "needle"),
+    [
+        ({"call": None, "put": None}, 300, "display", "neither side"),
+        ({"call": {"ratio": 3.0}, "put": None}, 300, "display", "exact"),
+        ({"call": {"ratio": float("nan"), "median_vol_30d": 100.0,
+                    "samples": 10, "status": "unusual"}, "put": None},
+         300, "display", "ratio"),
+        ({"call": {"ratio": 3.0, "median_vol_30d": 0.0,
+                    "samples": 10, "status": "unusual"}, "put": None},
+         300, "display", "median_vol_30d"),
+        ({"call": {"ratio": 3.0, "median_vol_30d": 100.0,
+                    "samples": 9, "status": "unusual"}, "put": None},
+         300, "display", "samples"),
+        ({"call": {"ratio": 3.0, "median_vol_30d": 100.0,
+                    "samples": 10, "status": "normal"}, "put": None},
+         300, "display", "status"),
+        ({"call": {"ratio": 3.0, "median_vol_30d": 100.0,
+                    "samples": 10, "status": "unusual"}, "put": None},
+         None, "display", "call_vol"),
+        ({"call": {"ratio": 3.0, "median_vol_30d": 100.0,
+                    "samples": 10, "status": "unusual"}, "put": None},
+         300, "scored", "authority_tier"),
+    ],
+)
+def test_unusual_validator_rejects_malformed_or_promoted_payloads(
+    unusual, call_vol, authority, needle,
+):
+    payload = {
+        "schema": "options_structure.matrix/v1",
+        "asof": "2026-01-06T00:00:00+00:00",
+        "root": "SPY",
+        "authority_tier": authority,
+        "cells": [{
+            "strike": 500.0,
+            "expiry": "2026-02-20",
+            "call_vol": call_vol,
+            "put_vol": None,
+            "unusual": unusual,
+        }],
+    }
+    errors = validate_matrix(payload)
+    assert any(needle in error for error in errors), errors
+
+
+def test_options_matrix_example_tracks_live_unusual_contract():
+    example = json.loads(
+        (_REPO / "site/options_structure/examples/matrix.json").read_text()
+    )
+    assert validate_matrix(example) == []
+    assert set(example["cells"][0]["unusual"]) == {"call", "put"}
