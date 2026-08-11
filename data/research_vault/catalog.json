@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-11T21:36:56.316466+00:00",
-  "count": 948,
+  "generated_at": "2026-08-11T21:51:27.761036+00:00",
+  "count": 949,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -136,6 +136,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bco5esaj1dl-bd2ff1",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T22:19:08Z",
+      "summary_points": [
+        "**Strong US earnings momentum**: 87% of S&P 500 companies beat Q2 earnings, median Russell 3000 growth at 15% (strongest since 2021), sustaining risk-on trade amid Fed rate moderation.",
+        "**Fed Policy Outlook**: July CPI key data; base case holds rates unchanged this year as labor market easing (payroll miss, revisions) outweighs tightening fears, supporting short/medium bonds.",
+        "**Geopolitical & Gold Dynamics**: Iran negotiations temper flare-up risk, but Strait of Hormuz delays threaten oil volatility; gold rallies 7.4% weekly (strongest since Jan) on easing rate expectations, targeting $5,000/oz by 2027.",
+        "**US Treasury yields falling**: 10Y/2Y yields down 1/5 basis points (1D/5D), signaling rate cut expectations, pressuring bonds and equities."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
