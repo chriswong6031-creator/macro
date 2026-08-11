@@ -46,10 +46,25 @@ W2 TIER-WIDENING ARMS (`--w2-arm`, `research/top_anatomy/TOPA_W2_PREREG.md`)
   claim lives) — a §5 coverage gate that leads the result, five one-sided
   confirmatory legs, and the other 31 features as exploratory. No engine change.
 
+PHASE-1 CONTROL CONSTRUCTIONS (`--p1-panel/--p1-construction`,
+`research/top_anatomy/TOPA_PHASE1_PREREG.md`)
+  The same pipeline again with ONE moved variable one layer further down: how
+  CONTROL observations are selected and stratified. AM (anchor-matched) restricts
+  control candidate days to fresh 63d highs and draws ONE day per continued episode;
+  DM (duration-matched) adds an episode-age tercile stratum to the frozen W4 key and
+  draws episode-first too. Three panels (the phase-0 primary cohort and W2's two
+  DISJOINT cohorts) x two constructions = six runs, three registered legs each, the
+  construction's own matching leg printed as an ungraded diagnostic, mandatory era
+  stratification, printed sensitivities and the full 36-feature exploratory table.
+  No engine change: the cases, features, snapshots, collapse and bootstrap are the
+  frozen phase-0 chain.
+
 Run:
   python -m scripts.research_top_anatomy_phase0 --data-root <primary>/data
   python -m scripts.research_top_anatomy_phase0 --data-root <...> --track W --quick 300
   python -m scripts.research_top_anatomy_phase0 --data-root <...> --w2-arm r63
+  python -m scripts.research_top_anatomy_phase0 --data-root <...> \\
+      --p1-panel r63_disjoint --p1-construction am --allow-stale
 """
 from __future__ import annotations
 
@@ -58,6 +73,7 @@ import json
 import subprocess
 import sys
 import time
+from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
@@ -188,6 +204,7 @@ def _finish_panel(
     *,
     residual_up_ratio_break: float | None = None,
     ext_variant: str | None = None,
+    p1_construction: str | None = None,
 ) -> dict:
     """Identity-segment a per-ticker store, widen it, and cache the frames.
 
@@ -199,6 +216,13 @@ def _finish_panel(
     definition entered this content". Anything a caller builds downstream of an EXT
     mask (episodes, races, cases, matching, estimates) must pass its arm name, and
     `_load_cached` then refuses a cache built under a different one.
+
+    ``p1_construction`` is the same statement one layer further down for phase-1
+    (`TOPA_PHASE1_PREREG.md` §2): the AM / DM control constructions move how control
+    observations are SELECTED and STRATIFIED, which is downstream of the EXT mask
+    again, so a panel is honestly `None` while anything built downstream of the
+    control layer must carry its construction key. The check is present-and-equal in
+    both keys, so no construction can read another construction's artifacts.
     """
     calendar = pd.DatetimeIndex(sorted({d for b in bars.values() for d in b.index}))
     gap_segs = ta.split_identity_segments(bars, calendar)
@@ -235,6 +259,7 @@ def _finish_panel(
                                          if not panel["split_day"].empty else 0),
             "residual_up_ratio_break": residual_up_ratio_break,
             "ext_variant": ext_variant,
+            "p1_construction": p1_construction,
             "n_tickers_residual_up_split": len(residual_split),
             "n_residual_up_breaks": int(len(segs) - len(gap_segs))}
     if residual_up_ratio_break is not None:
@@ -271,6 +296,7 @@ def _load_cached(
     *,
     residual_up_ratio_break: float | None = None,
     ext_variant: str | None = None,
+    p1_construction: str | None = None,
 ) -> dict | None:
     if not (cache / "meta.json").exists():
         return None
@@ -296,6 +322,17 @@ def _load_cached(
         say(f"cache at {cache} was built under extension variant "
             f"{meta.get('ext_variant')!r}, this run needs {ext_variant!r} — rebuilding "
             "rather than reading an arm's episodes/races/cases off another arm's mask")
+        return None
+    # Phase-1 construction keying (TOPA_PHASE1_PREREG §2), the same shape one layer
+    # down. `None` is the STAMPED value of a panel: control SELECTION never enters
+    # panel content, so every panel ever written is honestly `None` and phase-0/W2
+    # keep their cache hits unchanged. A caller asking for a construction's
+    # downstream cache mismatches a panel-only cache and rebuilds; two constructions
+    # can never read each other's control pools, matchings or estimates.
+    if meta.get("p1_construction") != p1_construction:
+        say(f"cache at {cache} was built under phase-1 construction "
+            f"{meta.get('p1_construction')!r}, this run needs {p1_construction!r} — "
+            "rebuilding rather than reading one construction's controls off another's")
         return None
     missing = [c for c in _REQUIRED_PANEL_LEGS
                if not (cache / f"panel_{c}.parquet").exists()]
@@ -2614,6 +2651,1072 @@ def w2_grade(panels: dict) -> dict:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# PHASE 1 — anchor-matched (AM) and duration-matched (DM) control constructions
+# research/top_anatomy/TOPA_PHASE1_PREREG.md
+#
+# The ONLY moved variable is how CONTROL observations are selected and stratified
+# (prereg §1). Episodes, races, peaks, features, the {21,10,5} case snapshots, the
+# episode-first median collapse, the episode-peak-month block bootstrap and every
+# floor are the frozen phase-0/W2 machinery, called here unchanged.
+# ══════════════════════════════════════════════════════════════════════════════
+P1_FAMILY = "top_anatomy_p1"
+P1_PREREG = "research/top_anatomy/TOPA_PHASE1_PREREG.md"
+#: §1 — the two purpose-built control constructions.
+P1_CONSTRUCTIONS = ("am", "dm")
+#: §4 — the three panels, each already constructed by phase-0 (PRIMARY) or W2 (the
+#: two DISJOINT cohorts). `(ext variant, restrict to the arm's DISJOINT episodes)`.
+P1_PANEL_SPEC: dict[str, tuple[str, bool]] = {
+    "primary": ("primary", False),
+    "r63_disjoint": ("r63", True),
+    "atrz_disjoint": ("atrz", True),
+}
+P1_PANELS: tuple[str, ...] = tuple(P1_PANEL_SPEC)
+#: §2 — fresh seed, declared before any phase-1 number existed.
+P1_SEED = 20260811
+#: §3 — three registered legs per construction, one-sided in the phase-0/W2 OBSERVED
+#: direction. These are NOT `ta.FEATURE_DIRECTION` (F1/F3/B3 separate AGAINST the
+#: engine's declared side — that is what `WRONG_SIGN_EXHIBITS` records), so the
+#: declared side rides here and the engine's own two-sided q is carried under its
+#: own name, exactly as W2 does.
+P1_REGISTERED: dict[str, tuple[tuple[str, int], ...]] = {
+    "am": (("F1_episode_age", -1), ("B3_rsi14_chg10", +1), ("B2_rsi14", +1)),
+    "dm": (("F3_days_since_63d_high", -1), ("B3_rsi14_chg10", +1), ("B2_rsi14", +1)),
+}
+#: §1 — the leg each construction MATCHES ON, printed and never graded.
+P1_DIAGNOSTIC: dict[str, str] = {"am": "F3_days_since_63d_high",
+                                 "dm": "F1_episode_age"}
+#: §3 — the phase-0 run-3 / W2 anchors the phase-1 estimate is read against.
+P1_ANCHORS: dict[str, dict[str, float]] = {
+    "primary": {"F1_episode_age": -9.6875, "F3_days_since_63d_high": -2.25,
+                "B3_rsi14_chg10": 1.4174, "B2_rsi14": 1.2915},
+    "r63_disjoint": {"F1_episode_age": -2.2, "F3_days_since_63d_high": -2.25,
+                     "B3_rsi14_chg10": 2.23, "B2_rsi14": 3.87},
+    "atrz_disjoint": {"F1_episode_age": -17.0, "F3_days_since_63d_high": -2.75,
+                      "B3_rsi14_chg10": 4.67, "B2_rsi14": 3.92},
+}
+#: §3 — W2's duration-UNMATCHED B2 interval on each disjoint panel. The registered
+#: reading is whether the phase-1 estimate falls inside it (never a grade).
+P1_B2_W2_INTERVAL: dict[str, tuple[float, float]] = {
+    "r63_disjoint": (2.56, 5.25), "atrz_disjoint": (2.80, 4.79)}
+#: §5 floors. The peak-month floor is inherited (`ta.MIN_EPISODE_MONTHS`); the
+#: matched-episode floor is NEW, because AM's fresh-high restriction shrinks the
+#: control pool and a thin cell must say so rather than print a directional claim.
+P1_MIN_MATCHED_EPISODES = 100
+#: §5 — below this match rate a cell carries MATCH-STARVED alongside its grade.
+P1_MATCH_STARVED_RATE = 0.50
+#: §1 — AM restricts control CANDIDATE days to fresh 63d closing highs.
+P1_AM_FRESH_HIGH_MAX = 0
+#: §5 sensitivities (printed, non-binding).
+P1_AM_TOLERANCE_SENSITIVITY = 2
+P1_NN_CAP_SENSITIVITY = 8
+#: §5 — three contiguous calendar blocks of as-equal-as-possible peak-month counts.
+P1_N_ERA_BLOCKS = 3
+#: §6 — 12 h across all six (panel x construction) runs.
+P1_WALL_LIMIT_SECONDS = 12 * 3600
+#: The DM stratum: episode age at the anchor day, cut into terciles over the panel's
+#: POOLED candidate set (case anchor days + control candidate days).
+P1_AGE_FEATURE = "F1_episode_age"
+#: The AM restriction reads the SAME rolling-63d closing-high lag the F3 feature is.
+P1_FRESH_HIGH_FEATURE = "F3_days_since_63d_high"
+
+
+def _p1_wall_exceeded(wave_start: float) -> bool:
+    return (time.time() - wave_start) > P1_WALL_LIMIT_SECONDS
+
+
+def _p1_deferral(panel: str, construction: str, where: str, wave_start: float,
+                 unrun: Sequence[str]) -> dict:
+    """§6 declared fallback — name the unrun cells, never cap and never subsample."""
+    hrs = (time.time() - wave_start) / 3600.0
+    msg = (f"phase-1 {panel}/{construction} passed the declared "
+           f"{P1_WALL_LIMIT_SECONDS / 3600:.0f} h wave wall at {hrs:.2f} h ({where}); "
+           "prereg §6 defers the remaining cells with the reason printed rather than "
+           "capping or subsampling them")
+    say(f"[P1 {panel}/{construction}] DEFERRED — {msg}")
+    return {"deferred": True, "wall_hours": hrs,
+            "wall_limit_hours": P1_WALL_LIMIT_SECONDS / 3600.0,
+            "stopped_at": where, "reason": msg, "unrun_cells": list(unrun),
+            "subsampled": False, "capped": False}
+
+
+def p1_era_blocks(peak_months: Sequence[str],
+                  n_blocks: int = P1_N_ERA_BLOCKS) -> list[dict]:
+    """§5 — the panel's peak-months in ``n_blocks`` CONTIGUOUS calendar blocks.
+
+    Block membership is a PANEL property, computed from the panel's topped
+    E1-eligible episodes before any control construction exists, so AM and DM report
+    the same era cells and the two are readable side by side. Sizes are as equal as
+    possible with the remainder in the earliest blocks (`np.array_split`'s rule), the
+    blocks are contiguous and disjoint, and their union is every peak-month the panel
+    has. Edges are printed; a panel with fewer months than blocks yields fewer blocks
+    rather than an empty one.
+    """
+    months = sorted({str(m) for m in peak_months})
+    if not months:
+        return []
+    parts = [list(p) for p in np.array_split(np.array(months, dtype=object),
+                                             min(n_blocks, len(months)))]
+    out = []
+    for i, part in enumerate(parts):
+        if not part:
+            continue
+        lo = pd.Period(part[0], freq="M")
+        hi = pd.Period(part[-1], freq="M")
+        out.append({
+            "block": i + 1,
+            "name": f"era{i + 1}",
+            "first_peak_month": str(lo),
+            "last_peak_month": str(hi),
+            "n_peak_months": len(part),
+            "peak_months": [str(m) for m in part],
+            "start_date": str(lo.start_time.date()),
+            "end_date": str(hi.end_time.date()),
+        })
+    return out
+
+
+def p1_eras_for_e4(blocks: Sequence[dict]) -> tuple[tuple[str, str, str], ...]:
+    """The `_e4` era shape (name, lo, hi) from the phase-1 blocks — one definition."""
+    return tuple((b["name"], b["start_date"], b["end_date"]) for b in blocks)
+
+
+def p1_episode_first_draw(cand: pd.DataFrame, *, seed: int) -> pd.DataFrame:
+    """§1 — exactly ONE qualifying day per continued episode, drawn with the seed.
+
+    This is mechanism (2)'s sampling half. Under the frozen phase-0/W2 pool EVERY
+    qualifying EXT day of every continued episode is a control candidate, so a long
+    episode contributes proportionally more candidates than a short one and
+    "older-looking controls" is what that geometry produces on its own. Drawing one
+    day per EPISODE makes the candidate unit the episode, which is the unit the
+    estimate is already collapsed to.
+
+    Deterministic in ``seed``: the frame is sorted on (episode_id, segment, date)
+    first, so the draw cannot inherit row order from an upstream groupby.
+    """
+    if cand.empty:
+        return cand
+    c = cand.sort_values(["episode_id", "segment", "date"],
+                         kind="mergesort").reset_index(drop=True)
+    rng = np.random.default_rng(seed)
+    c["_draw"] = rng.random(len(c))
+    keep = c.groupby("episode_id", sort=False)["_draw"].idxmax()
+    return c.loc[sorted(keep)].drop(columns=["_draw"]).reset_index(drop=True)
+
+
+def p1_control_candidates(race: pd.DataFrame, dtp: pd.DataFrame, feats: pd.DataFrame,
+                          *, construction: str, seed: int,
+                          fresh_high_max: int | None = P1_AM_FRESH_HIGH_MAX,
+                          episode_first: bool = True) -> tuple[pd.DataFrame, dict]:
+    """The moved variable (§1): the control candidate pool under one construction.
+
+    Starts from the frozen population — every CONTINUED-labelled EXT day on the
+    panel — keys each candidate day to its episode through `dtp` (one row per EXT day
+    inside an episode, so no interval join and no day assigned twice), and carries
+    the anchor-freshness / episode-age readings from the panel's own feature frame.
+
+    AM then restricts to FRESH-HIGH days (``days_since_63d_high <= fresh_high_max``,
+    the primary registration being ``== 0``); DM restricts no day. Both draw
+    episode-first unless ``episode_first`` is False (the §5 day-weighted sensitivity,
+    which reproduces the W2 sampling geometry for continuity).
+
+    Returns the pool plus the census every cell has to print.
+    """
+    base = race[race["label"] == "CONTINUED"][["segment", "ticker", "date"]].copy()
+    census: dict = {
+        "construction": construction,
+        "n_continued_ext_days": int(len(base)),
+        "frozen_pool_definition": ("phase-0 §4.5: every CONTINUED-labelled EXT day on "
+                                   "the panel is a control candidate"),
+    }
+    if base.empty:
+        census.update({"n_with_episode_key": 0, "n_after_restriction": 0,
+                       "n_candidates": 0, "n_candidate_episodes": 0})
+        return base.assign(case_id=pd.Series(dtype=str)), census
+    key = dtp[["segment", "date", "episode_id"]].drop_duplicates(["segment", "date"])
+    cand = base.merge(key, on=["segment", "date"], how="left")
+    census["n_without_episode_key"] = int(cand["episode_id"].isna().sum())
+    cand = cand[cand["episode_id"].notna()].copy()
+    census["n_with_episode_key"] = int(len(cand))
+    cand = _pick(feats[["segment", "date", P1_FRESH_HIGH_FEATURE, P1_AGE_FEATURE]], cand)
+    census["n_candidate_episodes_before_restriction"] = int(cand["episode_id"].nunique())
+    census["fresh_high_coverage"] = _num(cand[P1_FRESH_HIGH_FEATURE].notna().mean())
+    census["episode_age_coverage"] = _num(cand[P1_AGE_FEATURE].notna().mean())
+    if construction == "am":
+        census["restriction"] = (
+            f"AM: control candidate days restricted to {P1_FRESH_HIGH_FEATURE} <= "
+            f"{fresh_high_max} (the rolling-63d closing-high lag the F3 feature is)")
+        census["fresh_high_max"] = fresh_high_max
+        cand = cand[cand[P1_FRESH_HIGH_FEATURE].notna()
+                    & (cand[P1_FRESH_HIGH_FEATURE] <= float(fresh_high_max))]
+    else:
+        census["restriction"] = ("DM: no day-level restriction — the construction "
+                                 "moves the MATCHING KEY (episode-age tercile), not "
+                                 "the candidate day set")
+        census["fresh_high_max"] = None
+    census["n_after_restriction"] = int(len(cand))
+    census["n_candidate_episodes_after_restriction"] = int(cand["episode_id"].nunique()) \
+        if not cand.empty else 0
+    census["restriction_retention_rate"] = _num(
+        len(cand) / census["n_with_episode_key"]) if census["n_with_episode_key"] else None
+    if episode_first:
+        cand = p1_episode_first_draw(cand, seed=seed)
+        census["sampling"] = ("episode-first: ONE qualifying day per continued "
+                              "episode, drawn with the frozen seed BEFORE matching")
+    else:
+        census["sampling"] = ("day-weighted (the frozen W2 geometry), printed as the "
+                              "§5 sensitivity so the sampling switch's own "
+                              "contribution is visible")
+    census["episode_first"] = bool(episode_first)
+    census["seed"] = int(seed)
+    census["n_candidates"] = int(len(cand))
+    census["n_candidate_episodes"] = int(cand["episode_id"].nunique()) if not cand.empty \
+        else 0
+    if not cand.empty:
+        cand = cand.reset_index(drop=True)
+        cand["case_id"] = ["p%d" % i for i in range(len(cand))]
+    return cand, census
+
+
+def p1_age_terciles(pooled: pd.Series) -> tuple[list[float], dict]:
+    """§1 — the DM stratum's tercile edges, cut on the panel's POOLED candidate set.
+
+    "Pooled" is the prereg's own word: the case anchor days AND the control candidate
+    days, so neither arm's age distribution alone sets the cut. Edges are printed;
+    a degenerate distribution collapses to one stratum rather than raising.
+    """
+    v = pd.to_numeric(pooled, errors="coerce").dropna()
+    info: dict = {"n_pooled": int(len(v)),
+                  "definition": ("episode age at the anchor day; tercile edges cut on "
+                                 "the pooled case-anchor + control-candidate set")}
+    if v.empty:
+        info.update({"edges": [], "degenerate": True,
+                     "reason": "no finite episode ages in the pooled set"})
+        return [], info
+    edges = [float(v.quantile(q)) for q in (1.0 / 3.0, 2.0 / 3.0)]
+    uniq = sorted({round(e, 12) for e in edges})
+    info["edges"] = edges
+    info["degenerate"] = bool(len(uniq) < len(edges))
+    info["pooled_age_quantiles"] = {"p33": _num(edges[0]), "p67": _num(edges[1]),
+                                    "min": _num(v.min()), "max": _num(v.max()),
+                                    "median": _num(v.median())}
+    return edges, info
+
+
+def p1_assign_age_tercile(values: pd.Series, edges: Sequence[float]) -> pd.Series:
+    """Tercile membership under the printed edges; a null age is a null stratum."""
+    v = pd.to_numeric(values, errors="coerce")
+    if not len(edges):
+        return pd.Series(np.where(v.notna(), 0.0, np.nan), index=v.index, dtype=float)
+    out = pd.Series(np.nan, index=v.index, dtype=float)
+    out[v.notna()] = 0.0
+    for e in edges:
+        out[v.notna() & (v > float(e))] += 1.0
+    return out
+
+
+def p1_matched_controls(cases: pd.DataFrame, control_candidates: pd.DataFrame, *,
+                        stratum_col: str | None = None,
+                        max_controls: int = ta.MAX_CONTROLS) -> tuple[pd.DataFrame, dict]:
+    """The frozen W4 key, optionally PLUS one stratum column (§1's DM move).
+
+    The binning is the engine's own `_bucket` on the engine's own key — quarter x
+    r126 quintile x rv63 tercile x dvol tercile, cut WITHIN CALENDAR QUARTER over the
+    union of the two arms — so the phase-1 edges are the frozen edges and adding a
+    stratum does not silently re-cut them (running `ta.matched_controls` once per
+    stratum WOULD re-cut them, which is a second moved variable). With
+    ``stratum_col=None`` this reproduces `ta.matched_controls` exactly, and
+    `test_p1_matching_reproduces_the_frozen_matcher_without_a_stratum` pins that
+    equality so the two can never drift.
+
+    Returns ``(pairs, diag)`` in `ta.matched_controls`'s shape, plus the stratum name.
+    """
+    need = {"case_id", "segment", "ticker", "date", "r126", "rv63", "dvol21"}
+    if stratum_col:
+        need = need | {stratum_col}
+    for nm, fr in (("cases", cases), ("control_candidates", control_candidates)):
+        missing = need - set(fr.columns)
+        if missing:
+            raise ValueError(f"{nm} is missing columns: {sorted(missing)}")
+    if cases.empty or control_candidates.empty:
+        return (pd.DataFrame(columns=["case_id", "segment", "ticker", "date",
+                                      "control_segment", "control_ticker",
+                                      "control_date"]),
+                {"n_cases": int(len(cases)), "n_matched": 0,
+                 "n_dropped_no_control": int(len(cases)), "n_pairs": 0,
+                 "stratum": stratum_col})
+    ca = cases.copy()
+    co = control_candidates.copy()
+    ca["_arm"], co["_arm"] = "case", "control"
+    both = pd.concat([ca, co], ignore_index=True)
+    both["quarter"] = pd.PeriodIndex(pd.to_datetime(both["date"]), freq="Q").astype(str)
+    both["b_r126"] = ta._bucket(both, "r126", 5, "b_r126")
+    both["b_rv63"] = ta._bucket(both, "rv63", 3, "b_rv63")
+    both["b_dvol"] = ta._bucket(both, "dvol21", 3, "b_dvol")
+    key = ["quarter", "b_r126", "b_rv63", "b_dvol"] + ([stratum_col] if stratum_col
+                                                       else [])
+    ca = both[both["_arm"] == "case"]
+    co = both[both["_arm"] == "control"]
+    pools = {k: g for k, g in co.groupby(key, sort=False)}
+
+    rows, dropped = [], []
+    for _, case in ca.iterrows():
+        pool = pools.get(tuple(case[k] for k in key))
+        if pool is None or pool.empty:
+            dropped.append(case["case_id"])
+            continue
+        pool = pool[pool["ticker"] != case["ticker"]]
+        if pool.empty:
+            dropped.append(case["case_id"])
+            continue
+        d1 = (pool["r126"] - case["r126"]).abs().to_numpy(dtype=float)
+        d2 = (pool["rv63"] - case["rv63"]).abs().to_numpy(dtype=float)
+        order = np.lexsort((d2, d1))[:max_controls]
+        for j in order:
+            ctrl = pool.iloc[int(j)]
+            rows.append({
+                "case_id": case["case_id"], "segment": case["segment"],
+                "ticker": case["ticker"], "date": case["date"],
+                "control_segment": ctrl["segment"], "control_ticker": ctrl["ticker"],
+                "control_date": ctrl["date"],
+                "d_r126": float(ctrl["r126"] - case["r126"]),
+                "d_rv63": float(ctrl["rv63"] - case["rv63"]),
+                "quarter": case["quarter"], "b_r126": case["b_r126"],
+                "b_rv63": case["b_rv63"], "b_dvol": case["b_dvol"],
+            })
+    pairs = pd.DataFrame(rows)
+    n_matched = int(pairs["case_id"].nunique()) if not pairs.empty else 0
+    diag = {
+        "n_cases": int(len(ca)), "n_matched": n_matched,
+        "n_dropped_no_control": int(len(dropped)),
+        "dropped_case_ids": [str(x) for x in dropped[:50]],
+        "n_pairs": int(len(pairs)),
+        "controls_per_case_mean": (float(len(pairs) / n_matched) if n_matched else 0.0),
+        "stratum": stratum_col,
+        "max_controls": int(max_controls),
+    }
+    return pairs, diag
+
+
+def p1_confirmatory_table(stats: pd.DataFrame, construction: str, *,
+                          b: int) -> list[dict]:
+    """§3 — the construction's three registered legs, one-sided, BH over exactly 3.
+
+    Same derivation as W2 (`w2_one_sided_p` reads the declared-direction tail off the
+    same block-bootstrap draws), and the same discipline about the engine's own
+    two-sided within-letter-family q: it is carried under an explicit name and is NOT
+    what grades a leg. The multiplicity family is the (panel x construction) triple.
+    """
+    rows = []
+    for feat, direction in P1_REGISTERED[construction]:
+        r = stats[stats["feature"] == feat] if not stats.empty else stats
+        if r is None or r.empty:
+            rows.append({"feature": feat, "declared_direction": direction,
+                         "reason_absent": "feature not present in the panel's deltas"})
+            continue
+        r = r.iloc[0].to_dict()
+        med = float(r["median_delta"])
+        p1 = w2_one_sided_p(float(r["p_value"]), med, direction, b=b)
+        rows.append({
+            "feature": feat, "family": r["family"], "declared_direction": direction,
+            "n_episodes": int(r["n_episodes"]), "n_blocks": int(r["n_blocks"]),
+            "coverage": _num(r["coverage"]),
+            "meets_coverage_floor": bool(r["interpretable"]),
+            "median_delta": _num(med), "ci_lo": _num(r["ci_lo"]),
+            "ci_hi": _num(r["ci_hi"]),
+            "ci_excludes_zero": bool((r["ci_lo"] > 0) or (r["ci_hi"] < 0)),
+            "sign_matches_declared": bool((direction > 0 and med > 0)
+                                          or (direction < 0 and med < 0)),
+            "p_value_two_sided": _num(r["p_value"]),
+            "p_value_one_sided": _num(p1),
+            "q_value_two_sided_all36_letter_family": _num(r["q_value"]),
+            "ticker_ci_lo": _num(r["ticker_ci_lo"]),
+            "ticker_ci_hi": _num(r["ticker_ci_hi"]),
+        })
+    have = [r for r in rows if r.get("p_value_one_sided") is not None]
+    if have:
+        q = ta.bh_fdr(np.array([r["p_value_one_sided"] for r in have], dtype=float))
+        for r, qv in zip(have, q):
+            r["q_value_one_sided"] = _num(qv)
+            r["passes_q"] = bool(np.isfinite(qv) and qv <= ta.FDR_Q)
+    for r in rows:
+        r.setdefault("q_value_one_sided", None)
+        r.setdefault("passes_q", False)
+    return rows
+
+
+def p1_exploratory_table(stats: pd.DataFrame, construction: str) -> dict:
+    """§3 exploratory — the FULL 36-feature table, two-sided BH within letter family.
+
+    The whole table is emitted, never a survivor list alone (the W2 lesson: a
+    sign-gated survivor list hides wrong-sign replications). The construction's three
+    registered legs are PRINTED with their numbers and marked, but they are removed
+    from the BH step: they are declared as their own one-sided family of three, and
+    leaving them in the letter families would spend their trial budget twice. Grade
+    is capped at EXPLORATORY-DISCOVERY and printed unranked — no phase-1 result
+    creates or upgrades a registration.
+    """
+    reg = {f for f, _ in P1_REGISTERED[construction]}
+    if stats is None or stats.empty:
+        return {"n_features": 0, "table": [], "separating": [],
+                "registered_legs_excluded_from_bh": sorted(reg)}
+    e = stats.copy()
+    e["registered_in_this_construction"] = e["feature"].isin(reg)
+    e["q_value_p1_exploratory"] = np.nan
+    expl = e[~e["registered_in_this_construction"]]
+    for _fam, g in expl.groupby("family", sort=False):
+        e.loc[g.index, "q_value_p1_exploratory"] = ta.bh_fdr(
+            g["p_value"].to_numpy(dtype=float))
+    ci_excl = (e["ci_lo"] > 0) | (e["ci_hi"] < 0)
+    sign_ok = np.where(e["direction"] > 0, e["median_delta"] > 0,
+                       np.where(e["direction"] < 0, e["median_delta"] < 0, True))
+    e["separates"] = (ci_excl & pd.Series(sign_ok, index=e.index)
+                      & (e["q_value_p1_exploratory"] <= ta.FDR_Q) & e["interpretable"]
+                      & (e["n_blocks"] >= ta.MIN_EPISODE_MONTHS)
+                      & ~e["registered_in_this_construction"]).astype(bool)
+    e["grade"] = ""
+    e = e.sort_values(["family", "feature"], ignore_index=True)
+    return {
+        "ranked": False,
+        "bh_family": ("letter family, over the features NOT registered in this "
+                      "construction; the registered three are printed here but graded "
+                      "in the one-sided confirmatory family of 3"),
+        "grade_cap": "EXPLORATORY-DISCOVERY (unranked on every phase-1 panel)",
+        "n_features": int(len(e)),
+        "n_separating": int(e["separates"].sum()),
+        "separating": sorted(e.loc[e["separates"], "feature"]),
+        "read_the_full_table_not_this_list": (
+            "the `separating` list is sign-gated; every phase-1 read comes off "
+            "`table`, which carries all 36 features whatever their sign"),
+        "registered_legs_excluded_from_bh": sorted(reg),
+        "table": _records(e),
+    }
+
+
+def p1_era_cells(ep_deltas: pd.DataFrame, features: Sequence[str],
+                 blocks: Sequence[dict], *, b: int, seed: int) -> dict:
+    """§5 — per-era point estimate + CI for every registered leg, on the panel blocks.
+
+    Runs with NO minimum-N gate: a thin era prints its N and a null estimate rather
+    than vanishing (nulls printed, not hidden). Blocks come from `p1_era_blocks`, so
+    the cells are the panel's, not the construction's.
+    """
+    out: dict = {"bootstrap_b": int(b), "unit": "distinct episodes",
+                 "blocks": [dict(bl) for bl in blocks], "cells": {}}
+    if ep_deltas is None or ep_deltas.empty or not blocks:
+        out["note"] = "no matched episodes to stratify"
+        return out
+    d = ep_deltas.copy()
+    d["_month"] = pd.to_datetime(d["peak_date"]).dt.to_period("M").astype(str)
+    for bl in blocks:
+        sub = d[d["_month"].isin(set(bl["peak_months"]))]
+        rows = (_records(ta.matched_delta_stats(sub, list(features), b=b, seed=seed,
+                                                coverage_floor=COVERAGE_FLOOR))
+                if not sub.empty else [])
+        by_feat = {r["feature"]: r for r in rows}
+        for feat in features:
+            r = by_feat.get(feat, {})
+            out["cells"].setdefault(feat, []).append({
+                "block": bl["block"], "name": bl["name"],
+                "first_peak_month": bl["first_peak_month"],
+                "last_peak_month": bl["last_peak_month"],
+                "n_episodes": int(r.get("n_episodes", 0) or 0),
+                "median_delta": _num(r.get("median_delta")),
+                "ci_lo": _num(r.get("ci_lo")), "ci_hi": _num(r.get("ci_hi")),
+                "n_blocks": int(r.get("n_blocks", 0) or 0),
+            })
+    return out
+
+
+def p1_b2_era_fade(era_cells: dict, feature: str = "B2_rsi14") -> dict:
+    """§5 — the phase-0 fence check on every B2 cell: does the magnitude FADE by era?"""
+    cells = (era_cells or {}).get("cells", {}).get(feature, [])
+    mags = [(c["name"], (abs(c["median_delta"])
+                         if c["median_delta"] is not None else None)) for c in cells]
+    have = [m for _, m in mags if m is not None]
+    fades = bool(len(have) >= 2 and all(a > b for a, b in zip(have, have[1:])))
+    return {
+        "feature": feature,
+        "magnitude_by_era": [{"name": n, "abs_median_delta": _num(m)} for n, m in mags],
+        "n_eras_with_an_estimate": len(have),
+        "fades_era_over_era": fades,
+        "check": ("phase-0 fence: a magnitude that shrinks monotonically era over era "
+                  "is the signature the fence exists to surface; printed either way "
+                  "and never a grade"),
+    }
+
+
+def p1_grade_cell(row: dict, *, n_matched_episodes: int, n_topped_episodes: int,
+                  era_cells: Sequence[dict], construction_failure: bool) -> dict:
+    """§3/§5 — the cell's grade, its floors, its era caveat and its match-rate caveat.
+
+    Floors first (a floor miss is P1-UNDERPOWERED and makes NO directional claim
+    whatever the estimate looks like), then the declared sign AND one-sided BH
+    q <= 0.10. The ERA-CAVEAT modifier fires when a SUPPORTED cell's LATEST era block
+    point estimate is wrong-signed; MATCH-STARVED rides alongside any grade.
+    """
+    direction = int(row.get("declared_direction", 0))
+    n_cell = int(row.get("n_episodes") or 0)
+    n_months = int(row.get("n_blocks") or 0)
+    months_ok = n_months >= ta.MIN_EPISODE_MONTHS
+    episodes_ok = n_cell >= P1_MIN_MATCHED_EPISODES
+    floors_met = bool(months_ok and episodes_ok)
+    passes = bool(row.get("sign_matches_declared") and row.get("passes_q"))
+    grade = ("P1-UNDERPOWERED" if not floors_met else
+             "P1-SUPPORTED" if passes else "P1-NOT-SUPPORTED")
+    latest = era_cells[-1] if era_cells else None
+    latest_med = latest.get("median_delta") if latest else None
+    latest_wrong = bool(
+        grade == "P1-SUPPORTED" and latest_med is not None and direction != 0
+        and not ((direction > 0 and latest_med > 0) or (direction < 0 and latest_med < 0)))
+    if latest_wrong:
+        grade = "P1-SUPPORTED-ERA-CAVEAT"
+    match_rate = (float(n_matched_episodes / n_topped_episodes)
+                  if n_topped_episodes else None)
+    out = {
+        "grade": grade,
+        "floors": {
+            "n_distinct_peak_months": n_months,
+            "min_peak_months_required": ta.MIN_EPISODE_MONTHS,
+            "meets_peak_month_floor": bool(months_ok),
+            "n_matched_topped_episodes_this_cell": n_cell,
+            "min_matched_episodes_required": P1_MIN_MATCHED_EPISODES,
+            "meets_matched_episode_floor": bool(episodes_ok),
+            "floors_met": floors_met,
+        },
+        "match_rate": _num(match_rate),
+        "match_rate_definition": ("matched topped episodes / topped E1-eligible "
+                                  "episodes on this panel, after the construction's "
+                                  "control restriction"),
+        "match_starved": bool(match_rate is not None
+                              and match_rate < P1_MATCH_STARVED_RATE),
+        "latest_era_wrong_sign": latest_wrong,
+        "latest_era_median_delta": _num(latest_med),
+    }
+    out["grade_with_construction_modifier"] = (
+        "P1-UNDERPOWERED-BY-CONSTRUCTION-FAILURE" if construction_failure else grade)
+    out["construction_failure"] = bool(construction_failure)
+    return out
+
+
+def p1_matching_diagnostic(construction: str, panel: str,
+                           stats: pd.DataFrame, case_ages: dict,
+                           control_ages: dict) -> dict:
+    """§1 — the leg the construction MATCHES ON, printed prominently and never graded.
+
+    Under AM that is `F3`: control candidate days are pinned to a fresh 63d high, so
+    the topped-minus-control anchor gap must COLLAPSE toward zero relative to the
+    phase-0/W2 anchor. A non-collapse means the construction did not do what it was
+    built to do, and the mechanical reading below is what the adjudicator applies —
+    it is stated here, in the plumbing commit, BEFORE any phase-1 number exists.
+    Under DM that is `F1`, printed as the stratification diagnostic.
+    """
+    feat = P1_DIAGNOSTIC[construction]
+    anchor = P1_ANCHORS.get(panel, {}).get(feat)
+    r = (stats[stats["feature"] == feat] if stats is not None and not stats.empty
+         else None)
+    r = r.iloc[0].to_dict() if r is not None and not r.empty else {}
+    med = _num(r.get("median_delta"))
+    ratio = (abs(med) / abs(anchor) if med is not None and anchor not in (None, 0)
+             else None)
+    collapsed = bool(ratio is not None and ratio < 1.0)
+    return {
+        "feature": feat,
+        "role": ("AM matching variable — the anchor asymmetry this construction "
+                 "removes" if construction == "am" else
+                 "DM stratification variable — episode age, coarsely matched"),
+        "graded": False,
+        "median_delta": med,
+        "ci_lo": _num(r.get("ci_lo")), "ci_hi": _num(r.get("ci_hi")),
+        "n_episodes": int(r.get("n_episodes", 0) or 0),
+        "anchor_delta": _num(anchor),
+        "abs_ratio_to_anchor": _num(ratio),
+        "collapsed_by_magnitude": collapsed,
+        "collapse_rule": ("mechanical reading declared in the plumbing commit: "
+                          "|phase-1 delta| < |phase-0/W2 anchor delta| on the same "
+                          "panel. Printed as a reading, never as a grade — the G0.5 "
+                          "adjudicator owns the artifact-vs-anatomy call"),
+        "construction_failure_if_not_collapsed": bool(construction == "am"),
+        "case_anchor_ages": case_ages,
+        "control_anchor_ages": control_ages,
+    }
+
+
+def p1_out_json(panel: str, construction: str, quick: int | None = None) -> Path:
+    """§6 deliverable path — panel AND construction ride in the FILENAME."""
+    return _REPO / (f"data/research/top_anatomy_p1_{panel}_{construction}_summary"
+                    + (f"_quick{quick}" if quick else "") + ".json")
+
+
+def p1_estimate(cases: pd.DataFrame, pool: pd.DataFrame, feats: pd.DataFrame,
+                eps: pd.DataFrame, *, construction: str, seed: int, b: int,
+                stratum_col: str | None, max_controls: int = ta.MAX_CONTROLS,
+                features: Sequence[str] = ta.FEATURES) -> dict:
+    """One matched estimate: match -> per-case deltas -> episode-first -> bootstrap.
+
+    Everything after the matching call is the frozen phase-0 chain, called with no
+    substitutions, so a sensitivity and the registered cell differ only where the
+    prereg says they differ.
+    """
+    if construction == "am" and stratum_col is None:
+        pairs, diag = ta.matched_controls(cases, pool, max_controls=max_controls)
+        diag = dict(diag)
+        diag["stratum"] = None
+        diag["max_controls"] = int(max_controls)
+        diag["matcher"] = "engine.top_anatomy.matched_controls (frozen W4 key)"
+    else:
+        pairs, diag = p1_matched_controls(cases, pool, stratum_col=stratum_col,
+                                          max_controls=max_controls)
+        diag["matcher"] = ("harness p1_matched_controls — the frozen W4 key on the "
+                           "engine's own bucketer, plus the declared stratum")
+    if pairs.empty:
+        return {"matching": diag, "null_reason": "no matched pairs", "stats": None,
+                "ep_deltas": None}
+    case_deltas = ta.matched_deltas(pairs, feats)
+    ep_deltas = ta.episode_deltas(case_deltas, cases, eps)
+    stats = ta.matched_delta_stats(ep_deltas, list(features), b=b, seed=seed,
+                                   coverage_floor=COVERAGE_FLOOR)
+    n_months = (int(pd.to_datetime(ep_deltas["peak_date"]).dt.to_period("M").nunique())
+                if not ep_deltas.empty else 0)
+    return {
+        "matching": diag, "stats": stats, "ep_deltas": ep_deltas,
+        "pairs": pairs, "case_deltas": case_deltas,
+        "e1": {
+            "aggregation": "episode-first (median over the episode's {21,10,5} snapshots)",
+            "bootstrap_b": int(b), "seed": int(seed),
+            "n_case_sets": int(len(case_deltas)), "n_episodes": int(len(ep_deltas)),
+            "n_distinct_peak_months": n_months,
+            "min_peak_months_required": ta.MIN_EPISODE_MONTHS,
+            "min_finite_controls": ta.MIN_FINITE_CONTROLS,
+            "feature_coverage_floor": COVERAGE_FLOOR,
+            "snapshots_per_episode": (_describe(ep_deltas["n_snapshots"])
+                                      if not ep_deltas.empty else _describe([])),
+        },
+    }
+
+
+def p1_sensitivity(name: str, why: str, *, cases: pd.DataFrame, race: pd.DataFrame,
+                   dtp: pd.DataFrame, feats: pd.DataFrame, gates: pd.DataFrame,
+                   eps: pd.DataFrame, construction: str, seed: int, b: int,
+                   fresh_high_max: int | None, episode_first: bool,
+                   stratum_col: str | None, age_edges: Sequence[float],
+                   max_controls: int) -> dict:
+    """§5 — one printed, NON-BINDING sensitivity: point estimates + CIs, B declared."""
+    pool, census = p1_control_candidates(race, dtp, feats, construction=construction,
+                                         seed=seed, fresh_high_max=fresh_high_max,
+                                         episode_first=episode_first)
+    pool = _pick(gates, pool).dropna(subset=["r126", "rv63", "dvol21"])
+    if stratum_col and not pool.empty:
+        pool[stratum_col] = p1_assign_age_tercile(pool[P1_AGE_FEATURE], age_edges)
+    out: dict = {"name": name, "why": why, "binding": False, "bootstrap_b": int(b),
+                 "candidate_census": census}
+    if pool.empty:
+        out["null_reason"] = "no control candidates under this sensitivity"
+        return out
+    est = p1_estimate(cases, pool, feats, eps, construction=construction, seed=seed,
+                      b=b, stratum_col=stratum_col, max_controls=max_controls)
+    out["matching"] = est["matching"]
+    if est.get("stats") is None:
+        out["null_reason"] = est.get("null_reason", "no estimate")
+        return out
+    out["e1"] = est["e1"]
+    out["table"] = p1_confirmatory_table(est["stats"], construction, b=b)
+    diag_feat = P1_DIAGNOSTIC[construction]
+    r = est["stats"][est["stats"]["feature"] == diag_feat]
+    out["diagnostic"] = ({"feature": diag_feat,
+                          "median_delta": _num(r.iloc[0]["median_delta"]),
+                          "ci_lo": _num(r.iloc[0]["ci_lo"]),
+                          "ci_hi": _num(r.iloc[0]["ci_hi"])} if not r.empty else None)
+    return out
+
+
+def run_p1(panel_name: str, construction: str, panel: dict, meta: dict, *, seed: int,
+           quick: bool, n_files: int = 0, wave_start: float) -> dict:
+    """One (panel x construction) cell block, end to end (prereg §1–§5).
+
+    Panel -> EXT mask -> episodes/races/peaks -> (DISJOINT restriction) -> features ->
+    the construction's control pool -> matching -> episode-first estimate -> the three
+    registered cells, the matching diagnostic, era blocks, sensitivities and the full
+    36-feature exploratory table.
+    """
+    variant, restrict_disjoint = P1_PANEL_SPEC[panel_name]
+    tag = f"P1 {panel_name}/{construction}"
+    close = panel["close"]
+    volume = panel.get("volume")
+    dvol = (close * volume).reindex_like(close) \
+        if volume is not None and not volume.empty \
+        else pd.DataFrame(np.nan, index=close.index, columns=close.columns)
+    raw_close, raw_dvol = panel.get("raw_close"), panel.get("raw_dvol")
+    split_day = panel.get("split_day")
+    floors = {"raw_close_df": raw_close if raw_close is not None and not raw_close.empty
+              else None,
+              "raw_dollar_vol_df": raw_dvol if raw_dvol is not None and not raw_dvol.empty
+              else None,
+              "split_day_df": split_day if split_day is not None and not split_day.empty
+              else None}
+    b = ta.BOOTSTRAP_B if not quick else 400
+    out: dict = {"panel": panel_name, "construction": construction, "track": "W",
+                 "ext_variant": variant, "restricted_to_disjoint_episodes":
+                 restrict_disjoint, "panel_meta": dict(meta)}
+    out["panel_meta"].update({
+        "n_sessions": int(close.shape[0]), "n_segments": int(close.shape[1]),
+        "first_session": str(close.index.min().date()) if len(close) else None,
+        "last_session": str(close.index.max().date()) if len(close) else None,
+        "floors_on_raw_prints": floors["raw_close_df"] is not None,
+        "panel_cache_shared_with_phase0": True,
+        "panel_cache_sharing_basis": (
+            "panel content is upstream of every EXT mask AND of every control "
+            "construction; the identity stamp refuses anything downstream of either"),
+    })
+
+    elig = ta.eligibility_mask(close, dvol, **floors)
+    min_cross_names = 20 if not quick else 1
+    eqw = ta.equal_weight_median_index(close, elig, min_names=min_cross_names)
+    cross_returns = ta.cross_sectional_median_returns(close, elig,
+                                                      min_names=min_cross_names)
+    out["prefix_parity_gate"] = assert_prefix_parity(
+        panel, f"P1-{panel_name}-{construction}", eqw, cross_returns)
+    out["prefix_parity_gate"]["note"] = (
+        "the §3 repair gate is a PANEL property; it is upstream of both the EXT mask "
+        "and the control construction, so this receipt is about the repair")
+
+    say(f"[{tag}] EXT mask (variant={variant})")
+    ext = ta.extended_mask(close, dvol, variant=variant, high_df=panel.get("high"),
+                           low_df=panel.get("low"), **floors)
+    ext_primary = (ext if variant == "primary" else
+                   ta.extended_mask(close, dvol, variant="primary",
+                                    high_df=panel.get("high"), low_df=panel.get("low"),
+                                    **floors))
+    out["ext"] = {
+        "variant": variant, "n_ext_days": int(ext.to_numpy().sum()),
+        "n_ext_days_primary": int(ext_primary.to_numpy().sum()),
+        "n_ext_days_shared_with_primary": int((ext & ext_primary).to_numpy().sum()),
+        "n_eligible_days": int(elig.to_numpy().sum()),
+        "n_segments_with_ext": int((ext.sum() > 0).sum()),
+    }
+    out["census"] = _instrument_census(panel, ext, elig, n_files)
+    if out["ext"]["n_ext_days"] == 0:
+        out["null_reason"] = "no EXT days under this panel's mask"
+        return out
+
+    say(f"[{tag}] episodes / races / peaks")
+    episodes = ta.extract_episodes(ext, close)
+    race = ta.race_labels(close, ext)
+    episodes, dtp = ta.episode_peaks(close, episodes, ext)
+
+    ids = None
+    if restrict_disjoint:
+        say(f"[{tag}] §4 DISJOINT episode assignment vs the phase-0 primary EXT-day set")
+        overlap = w2_episode_overlap(ext, ext_primary, close, episodes)
+        counts = overlap["overlap_class"].value_counts().to_dict() \
+            if not overlap.empty else {}
+        ids = set(overlap.loc[overlap["overlap_class"] == "DISJOINT", "episode_id"])
+        out["episode_census"] = {
+            "n_episodes": int(len(episodes)),
+            "n_disjoint": int(counts.get("DISJOINT", 0)),
+            "n_partial_overlap": int(counts.get("PARTIAL_OVERLAP", 0)),
+            "n_fully_shared": int(counts.get("FULLY_SHARED", 0)),
+            "definition": ("DISJOINT = the episode's arm EXT-day set shares ZERO "
+                           "(segment, session) days with the phase-0 primary set — "
+                           "the W2 classification, reused, never re-derived"),
+        }
+    sl = w2_panel_slice("DISJOINT" if restrict_disjoint else "FULL", ids, race, dtp,
+                        ext, close)
+    race, dtp = sl["race"], sl["dtp"]
+    ep_ids = set(dtp["episode_id"]) if not dtp.empty else set()
+    eps = episodes[episodes["episode_id"].isin(ep_ids)] if sl["restricted"] else episodes
+    e1_eps = eps[~eps["micro"]]
+    topped_eps = e1_eps[e1_eps["outcome"] == "TOPPED"]
+    out["episodes"] = {
+        "n_episodes": int(len(eps)), "n_e1_eligible": int(len(e1_eps)),
+        "n_topped_e1_eligible": int(len(topped_eps)),
+        "n_names": int(eps["ticker"].nunique()) if len(eps) else 0,
+        "outcomes": ({k: int(v) for k, v in eps["outcome"].value_counts().to_dict().items()}
+                     if len(eps) else {}),
+    }
+    say(f"[{tag}] {len(eps)} episodes, {len(topped_eps)} TOPPED and E1-eligible")
+    if topped_eps.empty or race.empty:
+        out["null_reason"] = "no TOPPED E1-eligible episodes on this panel"
+        return out
+
+    peak_months = sorted(pd.to_datetime(topped_eps["peak_date"]).dt.to_period("M")
+                         .astype(str).unique())
+    blocks = p1_era_blocks(peak_months)
+    out["era_blocks"] = {
+        "n_blocks": len(blocks), "blocks": blocks,
+        "n_panel_peak_months": len(peak_months),
+        "rule": (f"the panel's topped-episode peak-months in {P1_N_ERA_BLOCKS} "
+                 "CONTIGUOUS calendar blocks of as-equal-as-possible month counts; "
+                 "computed from the PANEL, so AM and DM report the same cells"),
+        "union_covers_every_panel_peak_month": bool(
+            sorted(m for bl in blocks for m in bl["peak_months"]) == peak_months),
+    }
+
+    dtp_e1 = dtp[dtp["episode_id"].isin(set(e1_eps["episode_id"]))]
+    topped_ids = set(topped_eps["episode_id"])
+    cases = dtp_e1[dtp_e1["episode_id"].isin(topped_ids)
+                   & dtp_e1["days_to_peak"].isin(ta.CASE_OFFSETS)].copy()
+    cases["offset"] = cases["days_to_peak"]
+    cases["case_id"] = cases["episode_id"] + "@" + cases["offset"].astype(str)
+    out["cases"] = {
+        "n_cases": int(len(cases)), "n_case_episodes": int(cases["episode_id"].nunique()),
+        "per_offset": {int(k): int(v) for k, v in
+                       cases["offset"].value_counts().to_dict().items()},
+        "case_anchor": ("the FROZEN phase-0 §4.5 snapshots at days_to_peak in "
+                        f"{list(ta.CASE_OFFSETS)} — phase-1 moves the CONTROL side "
+                        "only, so the case anchor is untouched"),
+    }
+
+    say(f"[{tag}] features on the panel's EXT days")
+    need = race[["segment", "ticker", "date"]].drop_duplicates(["segment", "date"])
+    bars = _segment_bars(panel, sorted(set(need["segment"])))
+    feats = ta.feature_library(bars, eqw, need[["segment", "date"]], episodes=episodes,
+                               cross_sectional_returns=cross_returns)
+    out["feature_panel"] = {
+        "n_rows": int(len(feats)), "n_segments": int(need["segment"].nunique()),
+        "keyed_by": "ext_variant (the F family is episode-anchored)",
+        "shared_across_constructions": True,
+        "sharing_basis": ("a control CONSTRUCTION selects and stratifies control "
+                          "observations; it does not enter any feature value, so the "
+                          "feature panel's identity is the EXT variant and rebuilding "
+                          "it per construction would recompute identical numbers"),
+    }
+    out["feature_coverage"] = {f: float(feats[f].notna().mean())
+                               for f in ta.FEATURES if f in feats.columns}
+    out["features_below_coverage_floor"] = sorted(
+        f for f, c in out["feature_coverage"].items() if c < COVERAGE_FLOOR)
+
+    gates = _gate_context(close, dvol)
+    cases = _pick(gates, cases).dropna(subset=["r126", "rv63", "dvol21"])
+    cases = _pick(feats[["segment", "date", P1_AGE_FEATURE, P1_FRESH_HIGH_FEATURE]],
+                  cases)
+    out["cases"]["n_cases_with_gates"] = int(len(cases))
+    out["cases"]["case_anchor_freshness"] = _describe(cases[P1_FRESH_HIGH_FEATURE])
+    out["cases"]["case_anchor_episode_age"] = _describe(cases[P1_AGE_FEATURE])
+
+    if _p1_wall_exceeded(wave_start):
+        out["deferral"] = _p1_deferral(panel_name, construction, "before the control "
+                                       "construction", wave_start,
+                                       [f for f, _ in P1_REGISTERED[construction]])
+        return out
+
+    say(f"[{tag}] control candidates ({construction})")
+    pool, census = p1_control_candidates(race, dtp, feats, construction=construction,
+                                         seed=seed)
+    pool = _pick(gates, pool).dropna(subset=["r126", "rv63", "dvol21"])
+    census["n_candidates_with_gates"] = int(len(pool))
+    census["n_candidate_episodes_with_gates"] = int(pool["episode_id"].nunique()) \
+        if not pool.empty else 0
+    out["control_construction"] = census
+    if pool.empty:
+        out["null_reason"] = "no control candidates survive this construction"
+        return out
+
+    stratum_col, age_edges = None, []
+    if construction == "dm":
+        pooled = pd.concat([cases[P1_AGE_FEATURE], pool[P1_AGE_FEATURE]],
+                           ignore_index=True)
+        age_edges, age_info = p1_age_terciles(pooled)
+        stratum_col = "b_age"
+        cases[stratum_col] = p1_assign_age_tercile(cases[P1_AGE_FEATURE], age_edges)
+        pool[stratum_col] = p1_assign_age_tercile(pool[P1_AGE_FEATURE], age_edges)
+        age_info["case_stratum_counts"] = {
+            str(k): int(v) for k, v in
+            cases[stratum_col].value_counts(dropna=False).sort_index().to_dict().items()}
+        age_info["control_stratum_counts"] = {
+            str(k): int(v) for k, v in
+            pool[stratum_col].value_counts(dropna=False).sort_index().to_dict().items()}
+        age_info["n_cases_with_null_stratum"] = int(cases[stratum_col].isna().sum())
+        out["dm_age_stratum"] = age_info
+        say(f"[{tag}] DM age-tercile edges {[round(e, 3) for e in age_edges]}")
+
+    say(f"[{tag}] matching {len(cases)} cases vs {len(pool)} candidates")
+    est = p1_estimate(cases, pool, feats, eps, construction=construction, seed=seed,
+                      b=b, stratum_col=stratum_col)
+    out["matching"] = est["matching"]
+    out["matching"]["bin_edges"] = ("quintile/tercile edges cut WITHIN CALENDAR "
+                                    "QUARTER over this panel's own case+candidate "
+                                    "union (prereg §2: bins are population-relative)")
+    if est.get("stats") is None:
+        out["null_reason"] = est.get("null_reason", "no matched pairs")
+        return out
+    stats, ep_deltas = est["stats"], est["ep_deltas"]
+    out["e1"] = est["e1"]
+    say(f"[{tag}] matched {out['matching']['n_matched']}/{out['matching']['n_cases']} "
+        f"cases -> {len(ep_deltas)} episodes / "
+        f"{out['e1']['n_distinct_peak_months']} peak-months")
+
+    registered = [f for f, _ in P1_REGISTERED[construction]]
+    diag_feat = P1_DIAGNOSTIC[construction]
+    legs = registered + [diag_feat]
+    era = p1_era_cells(ep_deltas, legs, blocks, b=b, seed=seed)
+    out["era_cells"] = era
+    ctrl_days = est["pairs"][["control_segment", "control_date"]].drop_duplicates()
+    ctrl_days.columns = ["segment", "date"]
+    ctrl_feats = _pick(feats[["segment", "date", P1_AGE_FEATURE,
+                              P1_FRESH_HIGH_FEATURE]], ctrl_days)
+    out["diagnostic"] = p1_matching_diagnostic(
+        construction, panel_name, stats,
+        {"fresh_high_lag": _describe(cases[P1_FRESH_HIGH_FEATURE]),
+         "episode_age": _describe(cases[P1_AGE_FEATURE])},
+        {"fresh_high_lag": _describe(ctrl_feats[P1_FRESH_HIGH_FEATURE]),
+         "episode_age": _describe(ctrl_feats[P1_AGE_FEATURE])})
+    failure = bool(construction == "am"
+                   and not out["diagnostic"]["collapsed_by_magnitude"])
+
+    table = p1_confirmatory_table(stats, construction, b=b)
+    n_topped = int(len(topped_eps))
+    cells = []
+    for row in table:
+        graded = p1_grade_cell(row, n_matched_episodes=int(len(ep_deltas)),
+                               n_topped_episodes=n_topped,
+                               era_cells=era["cells"].get(row["feature"], []),
+                               construction_failure=failure)
+        cells.append({**row, **graded, "panel": panel_name,
+                      "construction": construction,
+                      "anchor_delta": _num(P1_ANCHORS.get(panel_name, {})
+                                           .get(row["feature"])),
+                      "era": era["cells"].get(row["feature"], [])})
+    out["registered_cells"] = {
+        "family": ("BH-FDR q <= 0.10 within this (panel x construction) family of "
+                   f"exactly {len(P1_REGISTERED[construction])}"),
+        "q_threshold": ta.FDR_Q,
+        "one_sided_derivation": (w2_one_sided_p.__doc__ or "").strip().split("\n")[0],
+        "grades": ("P1-SUPPORTED / P1-NOT-SUPPORTED / P1-UNDERPOWERED per prereg §3; "
+                   "P1-SUPPORTED-ERA-CAVEAT when the latest era block is wrong-signed"),
+        "table": cells,
+    }
+    out["b2_era_fade_fence"] = p1_b2_era_fade(era)
+    if panel_name in P1_B2_W2_INTERVAL:
+        lo, hi = P1_B2_W2_INTERVAL[panel_name]
+        b2 = next((c for c in cells if c["feature"] == "B2_rsi14"), None)
+        med = b2.get("median_delta") if b2 else None
+        out["b2_anchor_comparison"] = {
+            "w2_duration_unmatched_ci": [lo, hi],
+            "p1_median_delta": _num(med),
+            "inside_w2_interval": bool(med is not None and lo <= med <= hi),
+            "point_estimate_ratio_to_w2_anchor": _num(
+                med / P1_ANCHORS[panel_name]["B2_rsi14"]
+                if med is not None and P1_ANCHORS[panel_name]["B2_rsi14"] else None),
+            "reading": ("registered READING, never a grade (prereg §3): inside -> "
+                        "duration/anchor artifacts do not explain W2's confirmation; "
+                        "below-but-supported -> a partial artifact share, quantified "
+                        "as the same-design point-estimate ratio"),
+        }
+    out["exploratory"] = p1_exploratory_table(stats, construction)
+
+    say(f"[{tag}] E3/E4 era + dollar-volume sign stability on every registered leg")
+    out["e4_sign_stability"] = _e4(ep_deltas, gates, cases, legs,
+                                   p1_eras_for_e4(blocks), seed=seed, quick=quick)
+
+    out["sensitivities"] = []
+    sens_specs = []
+    if construction == "am":
+        sens_specs.append(dict(
+            name=f"am_fresh_high_tolerance_{P1_AM_TOLERANCE_SENSITIVITY}",
+            why=(f"§5: AM fresh-high tolerance {P1_FRESH_HIGH_FEATURE} <= "
+                 f"{P1_AM_TOLERANCE_SENSITIVITY} (the registration is == "
+                 f"{P1_AM_FRESH_HIGH_MAX})"),
+            fresh_high_max=P1_AM_TOLERANCE_SENSITIVITY, episode_first=True,
+            max_controls=ta.MAX_CONTROLS))
+    else:
+        sens_specs.append(dict(
+            name="dm_day_weighted_sampling",
+            why=("§5: DM with the W2-style DAY-WEIGHTED candidate sampling, printed "
+                 "for continuity so the sampling switch's own contribution is visible"),
+            fresh_high_max=None, episode_first=False, max_controls=ta.MAX_CONTROLS))
+    sens_specs.append(dict(
+        name=f"nn_cap_{P1_NN_CAP_SENSITIVITY}",
+        why=f"§5: NN cap {P1_NN_CAP_SENSITIVITY} (the frozen cap is {ta.MAX_CONTROLS})",
+        fresh_high_max=(P1_AM_FRESH_HIGH_MAX if construction == "am" else None),
+        episode_first=True, max_controls=P1_NN_CAP_SENSITIVITY))
+    for spec in sens_specs:
+        if _p1_wall_exceeded(wave_start):
+            out["sensitivity_deferral"] = _p1_deferral(
+                panel_name, construction, f"before sensitivity {spec['name']}",
+                wave_start, [spec["name"] for spec in sens_specs])
+            break
+        say(f"[{tag}] sensitivity {spec['name']}")
+        out["sensitivities"].append(p1_sensitivity(
+            spec["name"], spec["why"], cases=cases, race=race, dtp=dtp, feats=feats,
+            gates=gates, eps=eps, construction=construction, seed=seed, b=b,
+            fresh_high_max=spec["fresh_high_max"],
+            episode_first=spec["episode_first"], stratum_col=stratum_col,
+            age_edges=age_edges, max_controls=spec["max_controls"]))
+    return out
+
+
+def _main_p1(a, *, quick: bool) -> int:
+    """The `--p1-panel/--p1-construction` entry point: one cell block, one summary."""
+    panel_name, construction = a.p1_panel, a.p1_construction
+    if a.track not in ("W", "both"):
+        raise SystemExit("phase-1 runs track W only (prereg §2) — drop --track or pass W")
+    wave_start = a.p1_wave_start_epoch if a.p1_wave_start_epoch else _T0
+    prereg = _REPO / P1_PREREG
+    cache = a.data_root / CACHE_SUBDIR / (f"W_quick{a.quick}" if quick else "W")
+    default_out = _REPO / "data/research/top_anatomy_p0_summary.json"
+    out_json = a.out_json if a.out_json != default_out \
+        else p1_out_json(panel_name, construction, a.quick)
+    summary = {
+        "family": P1_FAMILY,
+        "panel": panel_name,
+        "construction": construction,
+        "run_date": pd.Timestamp.now("UTC").strftime("%Y-%m-%d"),
+        "run_timestamp_utc": pd.Timestamp.now("UTC").isoformat(),
+        "git_sha": _git_sha(),
+        "prereg": P1_PREREG,
+        "prereg_frozen": "2026-08-11",
+        "prereg_sha256": _sha256(prereg),
+        "prereg_frozen_commit": _last_commit_for(P1_PREREG),
+        "phase0_prereg": "research/top_anatomy/TOPA_PHASE0_PREREG.md",
+        "w2_prereg": W2_PREREG,
+        "phase0_summary": "data/research/top_anatomy_p0_summary.json",
+        "seed": a.seed,
+        "quick": a.quick,
+        "bootstrap_b": ta.BOOTSTRAP_B if not quick else 400,
+        "track": "W",
+        "artifact_layout": ("one summary per (panel x construction): "
+                            "data/research/top_anatomy_p1_<panel>_<construction>"
+                            "_summary.json — six files for the six runs"),
+        "reproduce": ("python -m scripts.research_top_anatomy_phase0 "
+                      f"--data-root {a.data_root} --p1-panel {panel_name} "
+                      f"--p1-construction {construction}"
+                      + (f" --quick {a.quick}" if quick else "")
+                      + (" --allow-stale" if a.allow_stale else "")),
+        # Prereg §2 pins the phase-0 tape vintage, which is now past #5319's
+        # 20-trading-session refusal bar, so a phase-1 run needs --allow-stale and the
+        # printed banner is the receipt that the vintage is CHOSEN. Refreshing the
+        # store instead would break the prereg.
+        "vintage_is_prereg_declared": True,
+        "vintage_note": ("prereg §2 pins the phase-0/W2 tape vintage (2026-07-02); "
+                         "--allow-stale is how that choice is declared post-#5319, "
+                         "and no phase-1 claim is about today's market"),
+        "allow_stale": bool(a.allow_stale),
+        "engine_frozen": ("engine/top_anatomy.py is byte-frozen at main for this wave; "
+                          "every phase-1 move lives in this harness"),
+        "moved_variable": ("control observation SELECTION and STRATIFICATION only "
+                           "(prereg §1); episodes, races, peaks, features, the "
+                           "{21,10,5} case snapshots, the episode-first collapse and "
+                           "the episode-peak-month block bootstrap are unchanged"),
+        "tier": ("research/display tier, zero scored authority; AVOID-not-SHORT; "
+                 "no rank, no size, no gate, no exit rule"),
+        "wall_limit_seconds": P1_WALL_LIMIT_SECONDS,
+        "wave_start_epoch": float(wave_start),
+    }
+    built = build_panel_w(a.data_root, cache, quick=a.quick, allow_stale=a.allow_stale)
+    n_files = _source_file_count(a.data_root, "W", a.quick)
+    summary["result"] = run_p1(panel_name, construction, built["panel"], built["meta"],
+                               seed=a.seed, quick=quick, n_files=n_files,
+                               wave_start=wave_start)
+    summary["wall_seconds"] = time.time() - _T0
+    summary["wave_elapsed_seconds"] = time.time() - wave_start
+    out_json.parent.mkdir(parents=True, exist_ok=True)
+    out_json.write_text(json.dumps(summary, indent=2, default=str))
+    say(f"wrote {out_json}")
+    say(f"done in {summary['wall_seconds']:.0f}s")
+    return 0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # report
 # ══════════════════════════════════════════════════════════════════════════════
 def _fmt(x, nd: int = 4) -> str:
@@ -3683,6 +4786,18 @@ def main(argv=None) -> int:
     ap.add_argument("--w2-arm", choices=W2_ARMS, default=None,
                     help="run the W2 tier-widening arm instead of phase-0 "
                          f"({W2_PREREG}); track W only, writes its own summary")
+    ap.add_argument("--p1-panel", choices=P1_PANELS, default=None,
+                    help="run the phase-1 anchor-matched wave on one panel "
+                         f"({P1_PREREG}); needs --p1-construction, track W only")
+    ap.add_argument("--p1-construction", choices=P1_CONSTRUCTIONS, default=None,
+                    help="phase-1 control construction: am = anchor-matched "
+                         "(fresh-high control days, episode-first draw), dm = "
+                         "duration-matched (episode-age tercile stratum, "
+                         "episode-first draw); needs --p1-panel")
+    ap.add_argument("--p1-wave-start-epoch", type=float, default=None,
+                    help="unix epoch the 12 h phase-1 WAVE wall is measured from "
+                         "(prereg §6 is a wave budget across all six runs, not a "
+                         "per-process one); defaults to this process's start")
     ap.add_argument("--w2-roster-read", type=Path, default=None,
                     help="add the POST-HOC vintage-date roster read for "
                          f"{W2_ROSTER_READ_FEATURE} to an already-written W2 arm "
@@ -3698,14 +4813,29 @@ def main(argv=None) -> int:
                     default=_REPO / "data/research/top_anatomy_p0_summary.json")
     ap.add_argument("--out-report", type=Path,
                     default=_REPO / "reports/top-anatomy-phase0.md")
-    ap.add_argument("--seed", type=int, default=20260810)
+    ap.add_argument("--seed", type=int, default=None,
+                    help="default 20260810 (phase-0/W2); the phase-1 path defaults to "
+                         f"{P1_SEED}, the fresh seed prereg §2 declared before any "
+                         "phase-1 number existed")
     a = ap.parse_args(argv)
 
     quick = a.quick is not None
+    p1 = bool(a.p1_panel or a.p1_construction)
+    if p1 and not (a.p1_panel and a.p1_construction):
+        raise SystemExit("--p1-panel and --p1-construction are one flag pair: a panel "
+                         "without a construction names no control population, and a "
+                         "construction without a panel names no cohort")
+    if a.seed is None:
+        a.seed = P1_SEED if p1 else 20260810
     if a.w2_roster_read is not None:
         if not a.w2_arm:
             raise SystemExit("--w2-roster-read needs --w2-arm to name the arm")
         return _main_w2_roster_read(a, quick=quick)
+    if p1:
+        if a.w2_arm:
+            raise SystemExit("--p1-panel and --w2-arm are different waves; the "
+                             "phase-1 panels already name their W2 arm")
+        return _main_p1(a, quick=quick)
     if a.w2_arm:
         return _main_w2(a, quick=quick)
     cache_root = a.data_root / CACHE_SUBDIR
