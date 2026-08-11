@@ -5064,8 +5064,13 @@ jobs:
       # raises ImportError("`Import lxml` failed") without it. Verified against a
       # venv holding exactly this list — beautifulsoup4 alone does not satisfy
       # read_html's default flavor. It is a first-class dep (requirements.txt).
+      # jsonschema is required (not optional): the THS scrape receipt is a CONTRACT
+      # artifact (contracts/baskets_china_ths/scrape_receipt.v1.schema.json) and its
+      # test validates every receipt shape against the committed schema rather than
+      # against a hand-copied field list — a test that asserted its own idea of the
+      # shape would go green while the schema and the writer drifted apart.
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 lxml openpyxl scikit-learn
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 lxml openpyxl scikit-learn jsonschema
       - name: china + hk + canada library builders and their manifests
         run: python -m pytest tests/test_w0_5_10_8.py tests/test_hk_closes_fallback.py tests/test_canada_branch_b.py tests/test_stock_library_manifests.py tests/test_stocktable_hk_data.py -q
       - name: china intel/analog/facet organs + fx context render
@@ -5095,6 +5100,22 @@ jobs:
       # answer. Every test in this file drives the real entry point with only CN_LANE set.
       - name: CN membership-PIT lane gate — fail-closed, on the production call path
         run: python -m pytest tests/test_cn_membership_pit_lane_gate.py -q
+      # GMI W1a — the PRODUCER the two steps above never had. The scraper and the
+      # seeder appeared in NO workflow, so membership.json froze on 2026-06-30 and the
+      # PIT store held two snapshots for six weeks while the nightly --snapshot step ran
+      # green ~35 nights, dedup-skipping every one. These three suites guard the fix and,
+      # more importantly, the three ways it can go quiet again: complete-or-fail
+      # promotion (a partial dump would read to the seeder as vanished boards), the US
+      # suite's own lane gate (per-suite now, so a foreign nightly must be refused in
+      # BOTH directions), and the tripwire that makes a stalled plane impossible to
+      # mistake for a healthy deduping one. Steps are split so a red names which of the
+      # three broke. TZ=UTC because the writers stamp UTC dates the tests read back.
+      - name: THS weekly re-scrape — receipts, complete-or-fail promotion, PIT ingest
+        run: TZ=UTC python -m pytest tests/test_ths_weekly_rescrape.py -q
+      - name: US basket PIT membership store + per-suite lane gate
+        run: TZ=UTC python -m pytest tests/test_us_basket_membership_pit.py -q
+      - name: membership snapshot freshness tripwire — cadence, source, coherence
+        run: TZ=UTC python -m pytest tests/test_membership_snapshot_freshness.py -q
 
   unrun-data-plane:
     # R2 transport, accrual audits and the ledger-advance guards.

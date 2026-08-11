@@ -30,6 +30,7 @@ import logging
 import time
 from datetime import date
 from io import StringIO
+from pathlib import Path
 
 import pandas as pd
 import requests
@@ -222,7 +223,7 @@ def concept_members(code: str, session: requests.Session | None = None) -> list[
 
 
 def snapshot(theme_names: list[str], as_of: str | None = None,
-             resume: bool = True) -> dict:
+             resume: bool = True, snap_dir: "Path | str | None" = None) -> dict:
     """Fetch members for the given THS concept names and write a dated raw snapshot — RESUMABLE.
 
     THS IP-throttles bursts, so a single run rarely fetches every theme: this saves progress after
@@ -230,6 +231,16 @@ def snapshot(theme_names: list[str], as_of: str | None = None,
     stops early so a later run can pick up where it left off. With `resume=True` (default) it loads
     today's existing snapshot and skips themes already resolved — so running it a few times across
     cool-downs accumulates full coverage. Each theme uses a fresh session + fresh `v` cookie.
+
+    `snap_dir` overrides where the dated file is written (default: the canonical
+    data/baskets_china_ths/snapshots/). It exists because progress is persisted after EVERY theme,
+    so a run killed mid-scrape leaves a PARTIAL dated file wherever it was writing — and a partial
+    dated file in the canonical directory is exactly what `ThsTruncated` exists to prevent one
+    theme at a time: the seed step reads the newest dated file as the authoritative board list, so
+    unfetched themes there read as mass exits (and, for the auto-imported taxonomy, as vanished
+    baskets). `scripts/scrape_ths_weekly.py` therefore scrapes into a STAGING directory and
+    promotes the file into the canonical one only once every theme resolved — complete-or-fail at
+    the run level, mirroring this module's complete-or-fail at the theme level.
 
     Returns {theme_name: [{ticker,name}, …]} for every theme resolved so far (this run + prior).
     """
@@ -239,7 +250,7 @@ def snapshot(theme_names: list[str], as_of: str | None = None,
         return {}
 
     as_of = as_of or date.today().isoformat()
-    snap_dir = _DATA / "snapshots"
+    snap_dir = Path(snap_dir) if snap_dir is not None else _DATA / "snapshots"
     snap_dir.mkdir(parents=True, exist_ok=True)
     snap_p = snap_dir / f"{as_of}.json"
 
