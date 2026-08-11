@@ -1040,6 +1040,30 @@ def run_backfill(
     duplicate_ids, duplicate_note = already_published_ids(
         healed, baseline_plans, expected=intake.get("duplicate_id_blocked"),
     )
+    # §0.4 REACHES THE DUPLICATES TOO. A duplicate id whose incumbent was recorded
+    # ON OR AFTER the cutoff is not "the same episode published by an EARLIER bake" —
+    # it is a name the LIVE lane won inside the collision window, and it belongs in
+    # the disclosure as such. Filing it as a benign duplicate would hide exactly the
+    # overlap §0.4 exists to make visible (measured: once the 2026-08-10 nightly
+    # landed, twelve of the counterfactual names moved from `minted` into this
+    # bucket and would otherwise have vanished from the record).
+    #
+    # It is a SEPARATE list rather than an extra `collided` entry because the
+    # disposition identity is an accounting of the ELIGIBLE population, and a
+    # duplicate never reaches it — folding these in would break arithmetic that has
+    # to stay checkable.
+    duplicate_live_wins: list[dict[str, Any]] = []
+    for plan_id in duplicate_ids:
+        incumbent = baseline_plans.get(plan_id) or {}
+        recorded = plan_recorded_on(incumbent) or ""
+        if recorded >= LIVE_WINS_FROM:
+            duplicate_live_wins.append({
+                "plan_id": plan_id,
+                "ticker": incumbent.get("asset"),
+                "reason": "live_origination_wins_duplicate_id",
+                "live_recorded_at": recorded,
+            })
+    duplicate_live_wins.sort(key=lambda row: str(row["plan_id"]))
 
     counts = {
         "buy_rows": intake.get("buy_rows"),
@@ -1120,6 +1144,10 @@ def run_backfill(
             "count": intake.get("duplicate_id_blocked"),
             "plan_ids": duplicate_ids,
             "note": duplicate_note,
+            # The §0.4 subset: duplicates the LIVE lane won inside the collision
+            # window, rather than episodes an earlier bake had already published.
+            "live_wins_within_window": duplicate_live_wins,
+            "live_wins_within_window_count": len(duplicate_live_wins),
         },
         "never_reconstructed": {
             "dates": ["2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06"],

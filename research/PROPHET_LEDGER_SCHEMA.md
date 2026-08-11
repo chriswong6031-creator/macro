@@ -223,7 +223,21 @@ the suite red on arrival, and needs its own operator authority, its own disclosu
 row and its own dated addendum here — deleting the test is not the remedy.
 
 **Producer.** `scripts/backfill_prophet_outage.py`, a one-off that refuses to run
-twice: the disclosure artifact is its idempotence lock.
+twice: the disclosure artifact as committed on HEAD is its idempotence lock (reading
+the working tree would let an uncommitted delete quietly unlock the lane). Before
+merging, `--verify-collisions` re-derives the collision set against fresh
+`origin/main` and exits nonzero on any name that went live in the meantime — §0.4's
+window closes at MERGE, not at execution.
+
+**Execution marker.** When the replay has actually run and its artifacts are
+committed, add a line to this addendum that begins at column 0 with
+`executed_window:` followed by the window id.
+`tests/test_prophet_outage_backfill.py` keys on exactly that shape — unindented, so
+that this paragraph describing the convention cannot itself be mistaken for the
+claim. Once the marker is present the suite REQUIRES
+`data/prophet/backfill_disclosures.json` to exist, closing the direction where the
+docs assert an execution that left nothing behind. The marker is NOT yet set: as of
+this commit the replay has been dry-run only.
 
 ---
 
