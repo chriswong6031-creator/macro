@@ -219,8 +219,8 @@ _COPY_TEMPLATES: dict[tuple[str, str], tuple[str, str]] = {
     ),
     ("chart", "educational"): (
         "{ticker}, what the chart shows",
-        "{ticker} at {entry}. The chart carries the trend, the level, and "
-        "where the volume traded.",
+        "{ticker} at {entry}. The frame draws the trend, the {entry} line, "
+        "and where the volume traded.",
     ),
     ("chart", "fast, reactive"): (
         "{ticker} chart, quick",

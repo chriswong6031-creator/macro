@@ -4277,6 +4277,50 @@ _V5_META_PATTERNS: tuple[tuple[str, str], ...] = (
 #: information a timestamped post does not already carry.
 _V5_STALE_TIME_RE = re.compile(r"\bso far today\b", re.IGNORECASE)
 
+# THE ORACLE TEASE (CMO review of the v5 build, 2026-08-11). The SECOND
+# degenerate register this doctrine produced, and it arrived the same way the
+# first one did: a style law with no positive requirement becomes a generator.
+# Banning "I" removed the narrator and left portentous vagueness as the lazy
+# optimum, so ~4 of 10 samples in the first v5 pass gestured at a payoff while
+# withholding it: "The chart carries the rest of it", "One thing is still
+# absent before it triggers. The market provides it or it does not", "The
+# closest matches went a particular way", "The group reads differently from
+# that starting point".
+#
+# THE RULE: A TAIL NAMES ITS PAYOFF. A number, a level, a dated precedent, a
+# counted breadth, or a condition the packet actually names. A deterministic
+# template renders over every ticker, so it may only name a payoff through a
+# TOKEN the packet fills or a statement true by construction of the kind; where
+# neither exists, the tail states the absence concretely ("No corroborated
+# driver on the tape for it yet") instead of pointing at a hidden one.
+#
+# PHRASE FAMILIES, NOT A SHAPE RULE. A blanket "the last sentence must contain a
+# digit" would reject doctrine exemplar 1, whose closer is "The most-traded
+# price of the summer is now underneath" — digit-free and the strongest line in
+# the set. Each pattern below is a shipped tell from the v5 sample review.
+_V5_TEASE_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("the chart carries the rest",
+     r"(?:charts?|pictures?|frames?)\s+(?:carries|carry|says|does)\s+the rest"
+     r"|carries the rest of it|the rest is on the (?:chart|frame|picture)"),
+    ("withheld condition",
+     r"\bthe missing piece\b|\bone thing is (?:still )?(?:absent|missing|carrying)\b"
+     r"|\bone thing left to do\b"),
+    ("the market provides it or it does not", r"\bor it does not\b"),
+    ("a particular way", r"\ba (?:particular|certain) way\b"),
+    ("reads differently", r"\breads? differently\b"),
+    ("says which", r"\bsays which\b|\bpicks the direction\b|\bwhich is which\b"),
+    ("that is the part", r"\bthat is the part\b|\bthe part that matters\b"),
+    ("worth knowing", r"\bworth (?:knowing|a look)\b"),
+    ("tells you something",
+     r"\b(?:saying|says|tells you|meant|means) something\b"),
+    ("filler tail",
+     r"\bwhere it stands right now\b|\blive right now\b|\bon the tape right now\b"),
+    ("that is all of it",
+     r"\bgenuinely all\b|\ball there is so far\b"),
+    ("vague deixis",
+     r"\bdifferent fact from\b|\bhave not answered it\b"),
+)
+
 #: A dollar figure the reader has to count digits on. Traders write $7.6B, never
 #: $7,639,791,784 (census: 10-digit market-cap figures shipping on the wire).
 #: A figure that already carries a K/M/B/T suffix, or a word unit ("$200
@@ -4333,6 +4377,19 @@ def voice_v5_violations(text: str, ctx: dict | None = None) -> list[str]:
         if re.search(pattern, raw, re.IGNORECASE):
             out.append(f"meta-language '{label}': the post talks about itself "
                        f"instead of about the market")
+            break
+
+    # The oracle tease. Applies to the WIRE too: a relay may carry a source's
+    # pronoun and a source's question mark, but nothing licenses the desk's own
+    # copy to gesture at a payoff it is not printing.
+    for label, pattern in _V5_TEASE_PATTERNS:
+        if re.search(pattern, raw, re.IGNORECASE):
+            out.append(
+                f"oracle tease '{label}': the tail points at a payoff instead "
+                f"of printing one. Name it: the number, the level, the dated "
+                f"precedent, the counted breadth, or the condition the packet "
+                f"gives you"
+            )
             break
 
     if _V5_STALE_TIME_RE.search(raw):
@@ -4565,7 +4622,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} back in the base",
             "{top_fact}. {entry} is the level the base is built on. Bases like "
-            "this fail more often than they hold, and the level says which.",
+            "this fail more often than they hold, and {entry} is the number "
+            "that separates the two.",
         ),
         (
             "{cashtag} at {entry}",
@@ -4574,7 +4632,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | the level is {entry}",
-            "{top_fact}. Price is at {entry}. The chart carries the rest of it.",
+            "{top_fact}. Price is at {entry}, and that level is support until "
+            "a close takes it out.",
         ),
     ],
 
@@ -4621,8 +4680,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} at {entry} in the group",
-            "{top_fact}. Price is at {entry}. The neighbours have been leaning "
-            "this way for weeks.",
+            "{top_fact}. Price is at {entry}. The group read starts from that "
+            "level, not from the name.",
         ),
         (
             "{cashtag} | the group got there first",
@@ -4671,8 +4730,9 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "close, and the close is the only vote that counts.",
         ),
         (
-            "{cashtag}, right now",
-            "{top_fact}. The level is {entry}. The chart carries the rest.",
+            "{cashtag} at {entry}, live",
+            "{top_fact}. The level is {entry}. A close under {entry} and the "
+            "move was noise.",
         ),
         (
             "{cashtag} triggering at {entry}",
@@ -4715,7 +4775,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | {entry} is the line",
-            "{top_fact}. Sitting right at {entry}. The picture carries the rest.",
+            "{top_fact}. Sitting right at {entry}, the line drawn across the "
+            "frame.",
         ),
         (
             "{cashtag} keeps coming back to {entry}",
@@ -4729,7 +4790,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} this week",
-            "{top_fact}. Price at {entry}. The chart says it in one picture.",
+            "{top_fact}. Price at {entry}, the line this frame is drawn "
+            "around.",
         ),
     ],
 
@@ -4737,7 +4799,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("chart", "dry, receipts-forward"): [
         (
             "{ticker} chart",
-            "{cashtag}: {top_fact}. Level {entry}. The rest is on the chart.",
+            "{cashtag}: {top_fact}. {entry} is the line drawn on it.",
         ),
         (
             "{cashtag} | no spin",
@@ -4781,14 +4843,14 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # ── chart / educational ───────────────────────────────────────────────────
     ("chart", "educational"): [
         (
-            "{ticker}, the one thing on this chart",
+            "{ticker}, and the number on it",
             "{cashtag}: {top_fact}. {entry} keeps mattering because everyone is "
             "looking at the same number.",
         ),
         (
-            "{ticker} | one thing to notice",
-            "{top_fact}. That is most of why {cashtag} at {entry} is on the "
-            "chart at all.",
+            "{ticker} | what {entry} is doing",
+            "{top_fact}. {cashtag} is at {entry}, and that is the level the "
+            "chart is drawn around.",
         ),
         (
             "What {ticker}'s chart is quietly saying",
@@ -4813,8 +4875,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{ticker} | fast look",
-            "{cashtag}: {top_fact}. {entry} is the level, and it is live right "
-            "now.",
+            "{cashtag}: {top_fact}. Price is at {entry}, the line drawn on "
+            "the frame.",
         ),
         (
             "{ticker} | tape check",
@@ -5055,9 +5117,9 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "pretend for another week.",
         ),
         (
-            "The one macro driver in this group",
-            "{top_fact} One thing is carrying it. Everything else is "
-            "commentary.",
+            "The macro driver this group trades",
+            "{top_fact} That print is the one the group trades off. Everything "
+            "else is commentary.",
         ),
     ],
     ("macro", "educational"): [
@@ -5103,13 +5165,12 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("macro", "pattern/history"): [
         (
             "This macro setup has a precedent",
-            "{top_fact} There is a parallel worth knowing before the crowd "
-            "rediscovers it.",
+            "{top_fact} Precedent starts from that number, not from the "
+            "commentary around it.",
         ),
         (
             "Last time the data looked like this",
-            "{top_fact} The closest matches went a particular way. Precedent, "
-            "not destiny.",
+            "{top_fact} Precedent is a count, not a forecast.",
         ),
         (
             "The rhyme, not a prediction",
@@ -5324,8 +5385,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("theme_list", "specialist"): [
         (
             "{theme_name} does not move like this on nothing",
-            "{cashtag_list}\nA whole group going at once is a different fact "
-            "from one name going. {top_fact} {theme_question}",
+            "{cashtag_list}\nBreadth, not one name: the whole group printed "
+            "the same direction. {top_fact} {theme_question}",
         ),
         (
             "{theme_name} | pressure across the group",
@@ -5337,7 +5398,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} | the group is saying something",
+            "{theme_name} | breadth did the work",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
     ],
@@ -5382,7 +5443,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ],
     ("theme_list", "pattern/history"): [
         (
-            "The last time {theme_name} moved like this it meant something",
+            "{theme_name} has moved this cleanly before",
             "{cashtag_list}\nGroup moves this clean have marked turns before. "
             "{top_fact} {theme_question}",
         ),
@@ -5433,7 +5494,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | {mover_pct}, and the state underneath",
-            "{top_fact} {mover_state}. That is the part with work behind it.",
+            "{top_fact} {mover_state}. That state is computed off the name's "
+            "own daily bars.",
             ("needs_state",),
         ),
         (
@@ -5495,7 +5557,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | {mover_pct}",
-            "{top_fact} The number is all there is so far.",
+            "{top_fact} The move is the only confirmed fact so far.",
             ("no_state",),
         ),
         (
@@ -5525,8 +5587,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("mover", "specialist"): [
         (
             "{cashtag} {mover_pct} | the starting point",
-            "{top_fact} {mover_state}. The group reads differently from that "
-            "starting point.",
+            "{top_fact} {mover_state}. That close is the level the rest of "
+            "the space now trades against.",
             ("needs_state",),
         ),
         (
@@ -5543,7 +5605,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | {mover_pct}, group context",
-            "{top_fact} Chart below. The neighbours have not answered it.",
+            "{top_fact} Chart below. No corroborated driver, and no group "
+            "read yet.",
             ("no_state", "needs_chart"),
         ),
         (
@@ -5555,7 +5618,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} | leadership check",
             "{top_fact} A group leader printing range highs either pulls the "
-            "rest along or it does not, and that answer comes fast.",
+            "rest of the space to its own highs within days, or it prints "
+            "them alone.",
             ("breakout_only",),
         ),
         (
@@ -5574,8 +5638,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("mover", "educational"): [
         (
             "{cashtag} {mover_pct} | the state it landed in",
-            "{top_fact} {mover_state}. A one-day move reads differently "
-            "depending on that.",
+            "{top_fact} {mover_state}. That close is what the move has to be "
+            "read against.",
             ("needs_state",),
         ),
         (
@@ -5592,7 +5656,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "How a move like {cashtag} gets read",
-            "{top_fact} What it changes is not established yet, and a guess "
+            "{top_fact} No source corroborates a reason yet, and a guess "
             "would be worse than the gap.",
             ("no_state",),
         ),
@@ -5630,7 +5694,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("mover", "fast, reactive"): [
         (
             "{cashtag} {mover_pct} 👀",
-            "{top_fact} {mover_state}. That is where it stands right now.",
+            "{top_fact} {mover_state}.",
             ("needs_state",),
         ),
         (
@@ -5645,7 +5709,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | {mover_pct}, fast look",
-            "{top_fact} Big number, and that is genuinely all of it so far.",
+            "{top_fact} The percentage is confirmed. The reason is not.",
             ("no_state",),
         ),
         (
@@ -5691,7 +5755,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} {mover_pct} today | no precedent count yet",
-            "{top_fact} The history on moves this size is unfinished work.",
+            "{top_fact} The precedent count on moves this size is not in yet.",
             ("no_state",),
         ),
         (
@@ -5717,7 +5781,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{cashtag} | endgame tape",
             "{top_fact} Declines this mature often end on a day that looks "
             "exactly like this one. They also sometimes keep going. The "
-            "reclaim is what says which.",
+            "first close back above the prior swing high is the reclaim.",
             ("capitulation_only",),
         ),
     ],
@@ -5766,9 +5830,9 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("watchlist_runaway", "specialist"): [
         (
             "{cashtag} is trading well above the published level",
-            "{top_fact} Price up here has already paid for the part of the "
-            "move that happened. The pullback into the level is the part that "
-            "carries a stop.",
+            "{top_fact} Price up here has already paid for the move that "
+            "happened. The pullback into the published level is the only "
+            "entry with a stop behind it.",
         ),
     ],
     ("watchlist_runaway", "educational"): [
@@ -5781,8 +5845,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("watchlist_runaway", "fast, reactive"): [
         (
             "{cashtag} blew through the level",
-            "{top_fact} Now it defends the level or it does not. The first "
-            "retest says which move this was.",
+            "{top_fact} A retest that holds makes the level support. A "
+            "retest that fails makes the run a squeeze.",
         ),
     ],
     ("watchlist_runaway", "pattern/history"): [
@@ -5829,13 +5893,14 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "the session it happens.",
         ),
         (
-            "{cashtag} has one thing left to do",
+            "What finishes the {cashtag} base",
             "{top_fact} The base is unfinished. What finishes it is a close "
-            "through the level that survives the next session.",
+            "through {entry} that survives the next session.",
         ),
         (
             "{cashtag} is the closest name on the list",
-            "{top_fact} Closest to triggering. More when it goes.",
+            "{top_fact} Closest on the list to a close through {entry}. The "
+            "post comes when that close does.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
@@ -5935,8 +6000,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "What keeps a name on the list",
-            "{top_fact} {cashtag} stays on the list until the missing piece "
-            "shows up. Rushing does not make it show up faster.",
+            "{top_fact} {cashtag} stays on the list until it closes through "
+            "{entry}. Rushing does not make that close come sooner.",
         ),
         (
             "Why the near-misses get published",
@@ -5944,9 +6009,9 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{cashtag} is this week's.",
         ),
         (
-            "The missing piece on {cashtag}",
-            "{top_fact} One thing is still absent before it triggers. The "
-            "market provides it or it does not.",
+            "What {cashtag} still has to do",
+            "{top_fact} The condition is a close through {entry} that holds "
+            "into the next session. Until that close it is a name on a list.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
@@ -5977,7 +6042,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} is at its level",
-            "{top_fact} Near the number. Nothing has triggered.",
+            "{top_fact} Price is at {entry}. Nothing has triggered.",
         ),
         (
             "{cashtag} close to going",
@@ -6008,12 +6073,13 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "Old shapes showing up in {cashtag}",
-            "{top_fact} It has analogs with a record. No trigger yet.",
+            "{top_fact} Prior instances of this shape sit on the same chart. "
+            "No close through {entry} yet.",
         ),
         (
             "{cashtag} rhyming with an old base",
-            "{top_fact} This shape has resolved both ways. The level picks the "
-            "direction.",
+            "{top_fact} This shape has resolved both ways. A close through "
+            "{entry} is the version that counts.",
         ),
         (
             "{cashtag} | a base with a memory",
@@ -6134,7 +6200,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "Cutting through today's noise",
-            "{top_fact} Loud day. The part that matters is quieter, as usual.",
+            "{top_fact} Everything else today was commentary.",
         ),
     ],
     ("event", "fast, reactive"): [
@@ -6164,8 +6230,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "This one has a precedent",
-            "{top_fact} The closest matches went a particular way. Worth a "
-            "look before the hot takes harden.",
+            "{top_fact} Comparable sessions get counted before the takes "
+            "harden.",
         ),
         (
             "What happened after the last one",
@@ -6192,7 +6258,7 @@ _CHART_VOICE_FILLER: dict[str, str] = {
     "specialist": "This group's names are at an inflection point",
     "educational": "Read the trend before you read the headlines",
     "fast, reactive": "Tape doesn't lie, and it's setting up",
-    "pattern/history": "This chart shape has a history worth knowing",
+    "pattern/history": "The same shape appears earlier in this frame",
 }
 
 # Filler for theme_list when top_fact is empty (theme agg context)
@@ -6201,7 +6267,7 @@ _THEME_VOICE_FILLER: dict[str, str] = {
     "dry, receipts-forward": "Group-wide move, noted.",
     "specialist": "The whole group is moving together today.",
     "educational": "When a whole group moves at once, notice.",
-    "fast, reactive": "Whole group's on the tape right now.",
+    "fast, reactive": "Every name in the group moved together today.",
     "pattern/history": "This group has moved like this before.",
 }
 
@@ -6218,7 +6284,7 @@ _MOVER_VOICE_FILLER: dict[str, str] = {
     "dry, receipts-forward": "Big move, chart below. Number's above.",
     "specialist": "Biggest move in the group today.",
     "educational": "A real single-day move worth studying.",
-    "fast, reactive": "Biggest mover on the tape right now.",
+    "fast, reactive": "Biggest single-day move on the tape today.",
     "pattern/history": "A move this size has precedent worth checking.",
 }
 

@@ -68,6 +68,33 @@ FIRST_PERSON_EXEMPT = ("we publish",)
 BANNED_CLOSERS = ("watching, no position", "levels, not advice", "not advice")
 BANNED_SUBSTRINGS = ("so far today",)
 
+#: THE ORACLE TEASE (CMO review, 2026-08-11). The second degenerate register the
+#: doctrine produced: banning the narrator left portentous vagueness as the lazy
+#: optimum, and ~4 of 10 samples in the first v5 pass gestured at a payoff while
+#: withholding it. Written out INDEPENDENTLY of `copywriter._V5_TEASE_PATTERNS`
+#: on purpose — a census that just calls the guard it is auditing proves only
+#: that the guard runs, and deleting a pattern there would silently disarm this
+#: file too (memory: mirrored-guard-test-is-vacuous-on-indirection).
+TEASE_FAMILIES: tuple[tuple[str, str], ...] = (
+    ("carries the rest",
+     r"(?:charts?|pictures?|frames?)\s+(?:carries|carry|says|does)\s+the rest"
+     r"|carries the rest of it|the rest is on the (?:chart|frame|picture)"),
+    ("withheld condition",
+     r"\bthe missing piece\b|\bone thing is (?:still )?(?:absent|missing|carrying)\b"
+     r"|\bone thing left to do\b"),
+    ("provides it or it does not", r"\bor it does not\b"),
+    ("a particular way", r"\ba (?:particular|certain) way\b"),
+    ("reads differently", r"\breads? differently\b"),
+    ("says which", r"\bsays which\b|\bpicks the direction\b|\bwhich is which\b"),
+    ("that is the part", r"\bthat is the part\b|\bthe part that matters\b"),
+    ("worth knowing", r"\bworth (?:knowing|a look)\b"),
+    ("tells you something", r"\b(?:saying|says|tells you|meant|means) something\b"),
+    ("filler tail",
+     r"\bwhere it stands right now\b|\blive right now\b|\bon the tape right now\b"),
+    ("that is all of it", r"\bgenuinely all\b|\ball there is so far\b"),
+    ("vague deixis", r"\bdifferent fact from\b|\bhave not answered it\b"),
+)
+
 
 def _strings(value, depth: int = 0):
     """Every string inside a nested bank/tuple/dict/list, flattened."""
@@ -106,6 +133,9 @@ def _v5_hits(text: str) -> list[str]:
     for ch, name in (("—", "em dash"), ("–", "en dash")):
         if ch in text:
             out.append(name)
+    for label, pattern in TEASE_FAMILIES:
+        if re.search(pattern, text, re.IGNORECASE):
+            out.append(f"oracle tease {label!r}")
     return out
 
 
@@ -272,6 +302,59 @@ def test_validate_copy_rejects_a_synthetic_v4_post():
     hits = cw.validate_copy(V4_SYNTHETIC[0], V4_SYNTHETIC[1], _ctx())
     assert any("first person" in h for h in hits), hits
     assert any("banned closer" in h for h in hits), hits
+
+
+TEASE_SYNTHETIC = (
+    "$NVDA is close",
+    "One thing is missing here. The market provides it or it does not.",
+)
+
+
+def test_validate_copy_rejects_a_synthetic_oracle_tease_post():
+    """The second degenerate register, and the reason a style law needs a
+    POSITIVE requirement: removing the narrator made vagueness the lazy
+    optimum. This is the CMO's own sample line."""
+    hits = cw.validate_copy(TEASE_SYNTHETIC[0], TEASE_SYNTHETIC[1],
+                            _ctx(type="watchlist"))
+    assert any("oracle tease" in h for h in hits), hits
+
+
+@pytest.mark.parametrize("tail", [
+    "The chart carries the rest of it.",
+    "The closest matches went a particular way.",
+    "The group reads differently from that starting point.",
+    "209 is the level, and it is live right now.",
+    "The level picks the direction.",
+    "There is a parallel worth knowing before the crowd rediscovers it.",
+    "Big number, and that is genuinely all of it so far.",
+    "A whole group going at once is a different fact from one name going.",
+])
+def test_each_tease_family_is_rejected_wherever_it_lands(tail):
+    assert cw.voice_v5_violations(f"$NVDA held 209. {tail}",
+                                  {"type": "chart"}) != [], tail
+
+
+def test_the_tease_screen_is_phrase_families_not_a_digit_rule():
+    """NO blanket "the last sentence must carry a number" rule, and this is the
+    fixture that would break under one: doctrine exemplar 1 closes on "The
+    most-traded price of the summer is now underneath" — digit-free, and the
+    strongest line in the set. A shape rule here would delete the target."""
+    digit_free_closer = (
+        "$NVDA closed above 209 for the first time in three weeks. That level "
+        "capped four rallies since June. The most-traded price of the summer "
+        "is now underneath."
+    )
+    assert cw.voice_v5_violations(digit_free_closer, {"type": "chart"}) == []
+    assert not re.search(r"\d", digit_free_closer.rsplit(".", 2)[-2])
+
+
+def test_the_tease_screen_applies_to_the_wire_too():
+    """The wire's exemption is scoped to the pronoun and the question mark: a
+    relay carries a source's words, and nothing licenses the DESK's own copy to
+    point at a payoff it is not printing."""
+    tease = "Guidance cut. The chart carries the rest of it."
+    assert any("oracle tease" in h
+               for h in cw.voice_v5_violations(tease, {"type": "breaking"})), tease
 
 
 def test_validate_copy_rejects_a_rhetorical_question_on_every_analytical_kind():

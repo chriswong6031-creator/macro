@@ -108,10 +108,20 @@ Generation-side. The gates only backstop these.
 7. **No headline restating**: the body never repeats the hook's fact verbatim.
 8. **No internal taxonomy slugs as English** ("Commodities Metals" becomes
    "Metals & miners").
-9. **Numbers written the way traders write them.** $1.0M not $1000K; 199k not
-   "199 thousand"; -10.3% keeps its sign; market-cap and market-value figures
-   humanized to three significant figures; big figures rounded to the digit
-   that matters.
+9. **Numbers written the way traders write them.** $1.0M not $1000K; -10.3%
+   keeps its sign; market-cap and market-value figures humanized to three
+   significant figures; big figures rounded to the digit that matters.
+
+   **One documented exception, and it is an anti-fabrication exception rather
+   than a style choice.** `market_facts._claims_level_words` deliberately emits
+   "203 thousand" rather than the natural "203k", because
+   `copywriter._extract_number_tokens` cannot see a `k`-suffixed figure at all
+   (no word boundary before the "k"), so an invented "213k" would clear the
+   whitelist screen untouched while "203 thousand" is checked. The register
+   loses and the invention gate wins, every time. Closing it properly means
+   teaching the number tokenizer the `k`/`m` suffixes FIRST, with its own
+   mutation test, and only then switching the producer. Until that lands,
+   spelled-out thousands are legal in macro print copy and nowhere else.
 10. **Emoji are functional only.** `mastermind_news` may keep 🔴 as a severity
     flag on genuine alerts. Every other account ships zero.
 
@@ -122,6 +132,45 @@ Generation-side. The gates only backstop these.
 not
 
 > I trust it only above 209.
+
+---
+
+## The positive requirement: a tail names its payoff
+
+A style law with no positive requirement is a generator for the next
+degenerate register. Banning the narrator removed the interiority and left
+portentous vagueness as the lazy optimum, so the first v5 build grew the
+**oracle tease**: a tail that gestures at a payoff while withholding it.
+Measured on that build's own samples, roughly four in ten carried one.
+
+> The chart carries the rest of it.
+> One thing is still absent before it triggers. The market provides it or it does not.
+> The closest matches went a particular way.
+> The group reads differently from that starting point.
+
+**The rule.** A tail names its payoff: a number, a level, a dated precedent, a
+counted breadth, or a condition the packet actually names.
+
+> Below 209 the volume shelf is gone.
+> The condition is a close through 209 that holds into the next session.
+> Runs this long have happened 14 times since 2020, and day nine closed green in 9 of them.
+> Breadth inside the group: 19 of 22 green.
+
+**A template may only name what it can know.** A deterministic template renders
+over every ticker, so its payoff comes from a token the packet fills
+(`{entry}`, `{mover_state}`, `{top_fact}`) or from a statement true by
+construction of the kind (the published level, the close through it, the
+retest). **Where the packet names no condition, the template is ineligible for
+that item** and the tail states the absence concretely instead of pointing at a
+hidden payoff: "No corroborated driver on the tape for it yet", never "the
+market provides it or it does not".
+
+This is **phrase families, not a shape rule**. A blanket "the last sentence
+must carry a number" would delete exemplar 1, whose closer is "The most-traded
+price of the summer is now underneath" — digit-free, and the strongest line in
+the set. `copywriter._V5_TEASE_PATTERNS` is the enumerated list, and
+`tests/test_marketing_voice_v5.py` carries its own independent copy so deleting
+a pattern cannot silently disarm the census.
 
 ---
 
@@ -281,6 +330,12 @@ time:
 - "so far today"
 - meta-language ("the context the number needs", "the setup", "worth
   watching")
+- the oracle-tease phrase families ("the chart carries the rest", "the missing
+  piece", "or it does not", "a particular way", "reads differently", "says
+  which", "worth knowing", "says something", "genuinely all"), which apply to
+  the wire as well: a relay may carry a source's pronoun and a source's
+  question mark, but nothing licenses the desk's own copy to point at a payoff
+  it is not printing
 - exclamation marks and topic hashtags
 - raw dollar figures past five digits, which must arrive humanized
 
@@ -290,7 +345,7 @@ interrogative tail is bait, with no first-person exemption.
 
 **2. `tests/test_marketing_voice_v5.py` is the census-by-content ratchet.** It
 sweeps every bank, exemplar, and `example_lines` literal in the post lanes for
-first-person tokens and question marks. The screen in item 1 catches copy the
+first-person tokens, question marks and the oracle-tease families. The screen in item 1 catches copy the
 model writes; this catches copy a HUMAN writes into a new deterministic bank,
 which is how the register got in the first time. A gate that only inspects
 model output cannot see a template.
