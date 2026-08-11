@@ -622,12 +622,30 @@ def decide_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
     # succeeded" holds for all of them without naming any. Widening
     # `is_spurious_check` would have fixed #4779 and not the next one.
     #
-    # This cannot block an ordinary path-filtered PR. ci.yml is `paths:`-filtered at
-    # the WORKFLOW level, so a non-matching PR gets no run at all and was already
-    # `unproven` before this line existed; `ci-pack`'s only job-level `if:` is
-    # `action != 'closed'`, which is true for every event that opens or updates a
-    # pull request. A head with real packs therefore carries real successes, and a
-    # mixed head (one success + one path-skipped pack) still reads `clean`.
+    # This cannot block an ordinary path-filtered PR, and that argument survived the
+    # dynamic-matrix conversion (2026-08-11) — but it now rests on a DIFFERENT job,
+    # so read it as rewritten rather than as unchanged. ci.yml is still `paths:`-
+    # filtered at the WORKFLOW level, so a non-matching PR gets no run at all and was
+    # already `unproven` before this line existed. What changed is inside the run.
+    # `ci-pack`'s only job-level `if:` used to be `action != 'closed'`, true for every
+    # event that opens or updates a pull request, so all twelve packs launched on
+    # every head and a head with real packs necessarily carried real successes. It now
+    # ALSO carries `needs.ci-plan.outputs.has_work == 'true'`, so a PR whose changed
+    # paths select no legacy job publishes NO pack success at all — under the old
+    # argument that head would be permanently `unproven`, which would make the no-work
+    # fast path the one shape that can never merge.
+    #
+    # `ci-gate` IS THE ANCHOR that replaces the pack. `ci-plan` runs on every
+    # non-closed event, and `ci-gate` is `if: always() && action != 'closed'` with
+    # `needs: [ci-plan, ci-pack]`, so both publish a real conclusion whatever the
+    # matrix did — and on the no-work path `ci-gate` exits 0 on the planner's
+    # AFFIRMATIVE proof, so it concludes `success`, not `skipped`. Every head CI
+    # actually looked at therefore carries at least one genuine pass, pack or no pack.
+    # A mixed head (one selected pack green beside a path-skipped one) still reads
+    # `clean`, and a head publishing only a SUBSET of `ci-pack-*` is clean on that
+    # subset: an unselected pack is ABSENT, not failing, and nothing below enumerates
+    # the names it expects to see. Pinned in `tests/test_merge_on_green.py` under
+    # "the DYNAMIC pack matrix (Wave B)".
     if not any(run.get("conclusion") == "success" for run in considered):
         return "unproven", []
     return "clean", []
@@ -1623,6 +1641,21 @@ def ensure_integration_baseline(repo: str, token: str, baseline_state: str) -> s
 #: refreshable for exactly the same reason a pack red is. The FIRST entry is the anchor:
 #: it supplies the reported head sha, and it is the workflow `ensure_main_baseline`
 #: dispatches, because it is the one with no `push` trigger to dispatch itself.
+#:
+#: THE TWO SIDES PUBLISH DIFFERENT PACK SETS since the dynamic-matrix conversion
+#: (2026-08-11), and that asymmetry is load-bearing rather than a defect to tidy away.
+#: A pull request now publishes only the `ci-pack-*` its changed paths selected — any
+#: subset of the twelve, sometimes none at all — because `ci-pack` is gated on
+#: `needs.ci-plan.outputs.has_work`. Main is proven by a `workflow_dispatch`, which
+#: passes no `--changed-from`, so the planner has no changed set, widens to the full
+#: suite by the fail-safe rule, and still runs all twelve. That asymmetry is exactly
+#: what keeps the base-inherited-red refresh viable: a PR can only go red on a name
+#: main's baseline also publishes, so `bad_names <= clean_names` still has something to
+#: be a subset OF. Narrow main's baseline to a changed set and this mechanism goes
+#: quiet with no red anywhere to show for it — the 2026-08-08 backlog shape, arrived at
+#: from the other direction. `ci-gate` is the stable AGGREGATE name, published on every
+#: non-closed event by both sides; it is the one to hand branch protection or an
+#: external controller, since no individual `ci-pack-N` is guaranteed to appear.
 MAIN_PROOF_WORKFLOWS = ("ci.yml", "fences.yml")
 MAIN_BASELINE_WORKFLOW = MAIN_PROOF_WORKFLOWS[0]
 #: How many completed runs to look back through, per workflow, for one that CONCLUDED.
@@ -1687,11 +1720,15 @@ MAIN_BASELINE_MIN_INTERVAL_MINUTES = 30
 #: keeps `skipped` and must not be narrowed), but on main it means the job did not run,
 #: and treating that as proof would excuse a red on a check that produced no verdict.
 #: Costs nothing today: every real job on main's newest ci.yml + fences.yml runs
-#: (`ci-pack-0..3`, `fence-pack`, `self-mod-fence`, `capability-broker`, `grader-manifest`)
-#: is `success`; the only `skipped` entries are the fork-fallback jobs, which GitHub
-#: reports under their UNEVALUATED `name:` expression and so can never collide with a real
-#: check name. That accident is exactly why this must be pinned rather than left implicit —
-#: the first statically-named conditional job added to either workflow would end it.
+#: (`ci-plan`, all twelve `ci-pack-*`, `ci-gate`, `fence-pack`, `self-mod-fence`,
+#: `capability-broker`, `grader-manifest`) is `success`; the only `skipped` entries are
+#: the fork-fallback jobs, which GitHub reports under their UNEVALUATED `name:`
+#: expression and so can never collide with a real check name. That accident is exactly
+#: why this must be pinned rather than left implicit — the first statically-named
+#: conditional job added to either workflow would end it. Main still publishes all
+#: twelve packs because its baseline is a `workflow_dispatch` with no `--changed-from`
+#: (see MAIN_PROOF_WORKFLOWS); a PULL REQUEST may publish any subset, but a pack that
+#: never launched there is a name absent from the head, not a `skipped` job here.
 PROOF_CLEAN_CONCLUSIONS = {"success"}
 
 
