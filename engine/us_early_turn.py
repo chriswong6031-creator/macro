@@ -1091,6 +1091,23 @@ def assess_early_turn(
         # that says which lane a row is reading from.
         "setup_geometry": geometry,
         "stage": STAGE_EARLY if union.get("fired") else None,
+        # ── TWO SURFACES, ONE READ (operator ruling 2026-08-11) ──────────────────
+        # The WATCH DECK is the recall tier (§6.9 R8: it optimizes recall + context
+        # density, not precision), so it carries EVERY union fire with no context
+        # licensing — the measured coverage/lead numbers are naked-union numbers and a
+        # gated deck would silently under-deliver them.
+        # STARTER-PLAN ORIGINATION is the larger authority step and keeps the context
+        # licence exactly as it was: `fired` is unchanged and is still what mints a plan.
+        # The licence is not hidden by the split — it rides on the row as a stated fact.
+        "deck_admitted": bool(union.get("fired")),
+        "plan_licensed": fired,
+        "licensing": {
+            "licensed": fired,
+            "reason": (reason if fired else
+                       ("no licensing context — carried on the watch deck, but a starter "
+                        "plan needs a washout-mature basket or a leader pullback")
+                       if union.get("fired") else reason),
+        },
         "daily": daily,
         "two_day": two_day,
         "washout": washout,

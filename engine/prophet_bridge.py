@@ -257,6 +257,29 @@ STAGE_SIZING_COPY = {
 }
 
 
+#: The watch deck is the RECALL tier and carries every union fire; only some of those are
+#: licensed to mint a starter plan. The licence is shown as a context chip rather than
+#: silently splitting the surfaces — a reader can see which rows are watch-only and why.
+LICENCE_YES_EN = "Licensed for a starter plan"
+LICENCE_YES_ZH = "可开立试仓计划"
+LICENCE_NO_EN = "Watch only — not licensed for a starter plan"
+LICENCE_NO_ZH = "仅观察 — 尚不可开立试仓计划"
+LICENCE_NO_WHY_EN = "needs a washed-out basket or a leader pullback behind it"
+LICENCE_NO_WHY_ZH = "需要板块已完成洗盘，或属于龙头回调"
+
+
+def starter_licence_chip(licensing: Mapping[str, Any] | None) -> dict[str, Any]:
+    """The one chip that keeps the two-surface split honest on the deck."""
+    if not isinstance(licensing, Mapping) or licensing.get("licensed") is None:
+        return {}
+    if licensing.get("licensed"):
+        return {"licensed": True,
+                "chip": {"en": LICENCE_YES_EN, "zh": LICENCE_YES_ZH}}
+    return {"licensed": False,
+            "chip": {"en": LICENCE_NO_EN, "zh": LICENCE_NO_ZH},
+            "why": {"en": LICENCE_NO_WHY_EN, "zh": LICENCE_NO_WHY_ZH}}
+
+
 def setup_geometry_texture(geometry: Mapping[str, Any] | None,
                            stage: str | None = None) -> dict[str, Any]:
     """Deck copy for the early lane's geometry score.
@@ -4155,6 +4178,9 @@ def originate_plans(
     plans: list[dict] = []
     stale_basis_skipped: list[str] = []
     early_turn_plans: list[str] = []
+    #: The recall-tier roster: every union fire, whether or not it is licensed to mint a
+    #: starter plan. A superset of `early_turn_plans` by construction.
+    early_turn_watch: list[str] = []
     wait_reset_plans: list[str] = []
     for b, ticker, formation_date, plan_id in candidates:
         direction = "BULL"  # all dir="up" entries
@@ -4286,6 +4312,11 @@ def originate_plans(
         # zone_conversion_class; the board's `coiled.washout_ctx` flag is deliberately
         # NOT an input (measured near-constant — see zone_conversion_class).
         washout_ctx = bool((early.get("washout") or {}).get("washout_context"))
+        # The WATCH DECK is the recall tier and carries every union fire, licensed or not
+        # (operator ruling 2026-08-11). Plan ORIGINATION below is unchanged and stays
+        # context-licensed — the two surfaces are populated from one read, never merged.
+        if early.get("deck_admitted"):
+            early_turn_watch.append(ticker)
         if early.get("fired"):
             candidate_class = ADMISSION_CLASS_EARLY_TURN
             early_turn_plans.append(ticker)
@@ -4530,6 +4561,11 @@ def originate_plans(
                 "geometry_texture": setup_geometry_texture(
                     early.get("setup_geometry"), early.get("stage")),
                 "basket_context_chip": (early.get("washout") or {}).get("state"),
+                # Which surface this row is on, stated rather than inferred.
+                "deck_admitted": bool(early.get("deck_admitted")),
+                "plan_licensed": bool(early.get("plan_licensed")),
+                "licensing": early.get("licensing"),
+                "licensing_chip": starter_licence_chip(early.get("licensing")),
             },
         }
 
@@ -4671,6 +4707,9 @@ def originate_plans(
         }
         intake_stats["wait_reset"] = sorted(wait_reset_plans)
         intake_stats["early_turn_starters"] = sorted(early_turn_plans)
+        # The recall-tier roster, printed BESIDE the licensed one so the gap between what
+        # the deck watches and what mints a plan is a visible number, never an inference.
+        intake_stats["early_turn_watch"] = sorted(early_turn_watch)
         # A starved extension read fails OPEN for the anti-chase guard (a name we could
         # not measure keeps its board zone), so the count is printed rather than left to
         # be inferred from a silent zero — the #4979 ext_z blackout in miniature.

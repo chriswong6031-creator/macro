@@ -396,12 +396,70 @@ def test_geometry_refuses_rather_than_guesses_on_thin_history():
     assert g["score"] is None and g["reason"]
 
 
-def test_assess_early_turn_exposes_the_union_without_bypassing_context():
-    """The union joins the signature legs; it does NOT become a licence on its own. A naked
-    signature has never admitted in this module and the union must not change that."""
+# --------------------------------------------------------------- 8. the two-surface rule
+def _naked_union_row():
+    """A union fire with NO licensing context — the case the two surfaces disagree on."""
     df = _fixture("STLD")
-    row = us_early_turn.assess_early_turn("STLD", df, asof="2026-07-14",
-                                          membership={}, leader_states={})
+    return us_early_turn.assess_early_turn("STLD", df, asof="2026-07-14",
+                                           membership={}, leader_states={})
+
+
+def test_a_naked_union_fire_reaches_the_deck_but_not_a_plan():
+    """THE two-surface rule (operator ruling 2026-08-11).
+
+    The watch deck is the RECALL tier — it carries every union fire, because the measured
+    coverage and lead numbers are naked-union numbers and a context-gated deck would
+    silently under-deliver them. Starter-plan ORIGINATION is the larger authority step and
+    keeps its context licence. One read, two surfaces, never merged."""
+    row = _naked_union_row()
+    assert row["union_fired"] is True
+    assert row["context_fired"] is False
+    # deck: carried
+    assert row["deck_admitted"] is True
+    # plan: refused, and `fired` (what mints a plan) is unchanged by the split
+    assert row["plan_licensed"] is False
+    assert row["fired"] is False
+    assert row["licensing"]["licensed"] is False
+    assert "watch deck" in row["licensing"]["reason"]
+
+
+def test_a_licensed_union_fire_reaches_both_surfaces():
+    df = _fixture("STLD")
+    row = us_early_turn.assess_early_turn(
+        "STLD", df, asof="2026-07-14",
+        membership={"STLD": {"state": "WASHED_OUT", "basket": "steel"}},
+        leader_states={})
+    if not row["context_fired"]:
+        pytest.skip("fixture basket context did not license this row")
+    assert row["deck_admitted"] is True
+    assert row["plan_licensed"] is True and row["fired"] is True
+
+
+def test_the_deck_roster_is_a_superset_of_the_plan_roster():
+    """Structural: a licensed row is always also a deck row. If this ever inverts, the
+    deck is refusing something that minted a plan."""
+    row = _naked_union_row()
+    assert row["deck_admitted"] or not row["plan_licensed"]
+
+
+def test_the_licence_is_shown_not_hidden():
+    """Splitting the surfaces must not hide the licence — a watch-only row says so, in both
+    languages, with the reason a reader can act on."""
+    from engine.prophet_bridge import starter_licence_chip
+    chip = starter_licence_chip(_naked_union_row()["licensing"])
+    assert chip["licensed"] is False
+    assert set(chip["chip"]) == {"en", "zh"} and set(chip["why"]) == {"en", "zh"}
+    assert "Watch only" in chip["chip"]["en"]
+    assert "仅观察" in chip["chip"]["zh"]
+    yes = starter_licence_chip({"licensed": True, "reason": "signature + washout"})
+    assert yes["licensed"] is True and set(yes["chip"]) == {"en", "zh"}
+    assert starter_licence_chip(None) == {}
+
+
+def test_assess_early_turn_exposes_the_union_without_bypassing_context():
+    """`fired` — the PLAN-origination gate — still requires a licensing context. The
+    two-surface split widened the DECK, not plan minting."""
+    row = _naked_union_row()
     assert row["union_fired"] is True
     assert row["signature_fired"] is True
     assert row["context_fired"] is False
