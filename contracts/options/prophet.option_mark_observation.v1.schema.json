@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mastermind-x.com/contracts/options/prophet.option_mark_observation.v1.schema.json",
   "title": "Prospective Prophet exact-option mark observation",
-  "description": "An immutable, content-addressed observation of vendor-snapshot bid/ask marks for every open Prophet plan carrying an option contract. Mark change is not trade P&L, no position is assumed, and the artifact has no rank, gate, sizing, issue, trade, Prophet, Neural Web, training, or execution authority.",
+  "description": "A host-private immutable prerequisite mark-path observation for every open Prophet plan carrying an option contract. Bid/ask is trade-paired, aged from its distinct quote clock, and never claims NBBO, current, live, executable, fill, trade P&L, or lifecycle outcome semantics.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -10,6 +10,7 @@
     "observation_id",
     "observed_at_utc",
     "session_date",
+    "storage",
     "prophet_index",
     "source",
     "previous",
@@ -29,7 +30,7 @@
         "observation_id": {"type": "string", "pattern": "^pom_obs_[a-f0-9]{64}$"},
         "key": {
           "type": "string",
-          "pattern": "^prophet/option_mark_observations/v1/[0-9]{4}-[0-9]{2}-[0-9]{2}/pom_obs_[a-f0-9]{64}\\.json$"
+          "pattern": "^observations/[0-9]{4}-[0-9]{2}-[0-9]{2}/pom_obs_[a-f0-9]{64}\\.json$"
         },
         "sha256": {"$ref": "#/$defs/sha256"},
         "bytes": {"type": "integer", "minimum": 1}
@@ -77,19 +78,33 @@
     "quote": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["label", "bid", "ask", "mid", "last", "ts_utc", "age_seconds"],
+      "required": [
+        "label",
+        "bid",
+        "ask",
+        "mid",
+        "last",
+        "quote_ts_utc",
+        "trade_ts_utc",
+        "source_sequence",
+        "quote_age_seconds",
+        "trade_age_seconds"
+      ],
       "properties": {
-        "label": {"const": "vendor_snapshot_bid_ask"},
+        "label": {"const": "trade_paired_bid_ask"},
         "bid": {"type": "number", "minimum": 0},
         "ask": {"type": "number", "exclusiveMinimum": 0},
         "mid": {"type": "number", "exclusiveMinimum": 0},
         "last": {"type": ["number", "null"], "minimum": 0},
-        "ts_utc": {"type": "string", "format": "date-time"},
-        "age_seconds": {
+        "quote_ts_utc": {"type": "string", "format": "date-time"},
+        "trade_ts_utc": {"type": "string", "format": "date-time"},
+        "source_sequence": {"type": "integer"},
+        "quote_age_seconds": {
           "type": "integer",
           "minimum": 0,
           "maximum": 1800
-        }
+        },
+        "trade_age_seconds": {"type": "integer", "minimum": 0}
       }
     },
     "entryMark": {
@@ -110,6 +125,16 @@
     "observation_id": {"type": "string", "pattern": "^pom_obs_[a-f0-9]{64}$"},
     "observed_at_utc": {"type": "string", "format": "date-time"},
     "session_date": {"type": "string", "format": "date"},
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visibility", "public_discovery", "public_redistribution"],
+      "properties": {
+        "visibility": {"const": "host_private"},
+        "public_discovery": {"const": false},
+        "public_redistribution": {"const": false}
+      }
+    },
     "prophet_index": {
       "type": "object",
       "additionalProperties": false,
@@ -130,20 +155,30 @@
         "endpoint",
         "quote_label",
         "maximum_quote_age_seconds",
+        "latest_selection",
         "nbbo",
         "live",
         "executable",
-        "fill"
+        "fill",
+        "size_retained",
+        "venue_retained",
+        "condition_retained"
       ],
       "properties": {
-        "provider": {"const": "thetadata_v3"},
-        "endpoint": {"const": "trade_quote"},
-        "quote_label": {"const": "vendor_snapshot_bid_ask"},
+        "provider": {"const": "licensed_options_history_feed"},
+        "endpoint": {"const": "history_trade_quote"},
+        "quote_label": {"const": "trade_paired_bid_ask"},
         "maximum_quote_age_seconds": {"const": 1800},
+        "latest_selection": {
+          "const": "max_quote_timestamp_then_trade_timestamp_then_sequence"
+        },
         "nbbo": {"const": false},
         "live": {"const": false},
         "executable": {"const": false},
-        "fill": {"const": false}
+        "fill": {"const": false},
+        "size_retained": {"const": false},
+        "venue_retained": {"const": false},
+        "condition_retained": {"const": false}
       }
     },
     "previous": {
@@ -192,7 +227,7 @@
           "mark_change_reason",
           "mark_change_from_plan_pct",
           "mark_change_basis",
-          "lifecycle"
+          "plan_state_context"
         ],
         "properties": {
           "plan": {
@@ -224,7 +259,11 @@
               "SOURCE_UNAVAILABLE",
               "QUOTE_SHAPE_INVALID",
               "QUOTE_AFTER_OBSERVATION",
+              "TRADE_AFTER_OBSERVATION",
+              "QUOTE_AFTER_TRADE",
               "QUOTE_WRONG_SESSION",
+              "TRADE_WRONG_SESSION",
+              "QUOTE_OUTSIDE_RTH",
               "QUOTE_TOO_OLD"
             ]
           },
@@ -250,22 +289,25 @@
               "SOURCE_UNAVAILABLE",
               "QUOTE_SHAPE_INVALID",
               "QUOTE_AFTER_OBSERVATION",
+              "TRADE_AFTER_OBSERVATION",
+              "QUOTE_AFTER_TRADE",
               "QUOTE_WRONG_SESSION",
+              "TRADE_WRONG_SESSION",
+              "QUOTE_OUTSIDE_RTH",
               "QUOTE_TOO_OLD",
               "ENTRY_MARK_UNAVAILABLE",
               "ENTRY_MARK_BASIS_UNVERIFIED"
             ]
           },
           "mark_change_from_plan_pct": {"type": ["number", "null"], "minimum": -100},
-          "mark_change_basis": {"const": "plan_eod_mid_to_vendor_snapshot_mid"},
-          "lifecycle": {
+          "mark_change_basis": {"const": "plan_eod_mid_to_trade_paired_mid"},
+          "plan_state_context": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["state", "position_assumed", "trade_pnl_claim"],
+            "required": ["state", "position_assumed"],
             "properties": {
               "state": {"enum": ["watch_only_pre_trigger", "display_plan_active"]},
-              "position_assumed": {"const": false},
-              "trade_pnl_claim": {"const": false}
+              "position_assumed": {"const": false}
             }
           }
         },
@@ -312,15 +354,21 @@
       "required": [
         "mark_change_only",
         "not_trade_pnl",
+        "not_lifecycle_outcome",
+        "prerequisite_mark_path_only",
         "no_position_assumed",
-        "no_size_venue_or_condition_receipt",
+        "no_provider_observed_entry_or_exit",
+        "source_size_venue_and_condition_intentionally_discarded",
         "prospective_from_first_observation_only"
       ],
       "properties": {
         "mark_change_only": {"const": true},
         "not_trade_pnl": {"const": true},
+        "not_lifecycle_outcome": {"const": true},
+        "prerequisite_mark_path_only": {"const": true},
         "no_position_assumed": {"const": true},
-        "no_size_venue_or_condition_receipt": {"const": true},
+        "no_provider_observed_entry_or_exit": {"const": true},
+        "source_size_venue_and_condition_intentionally_discarded": {"const": true},
         "prospective_from_first_observation_only": {"const": true}
       }
     },

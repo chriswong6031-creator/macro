@@ -2,10 +2,11 @@
 
 Reads active Prophet plans from the canonical R2 index in publish mode (local checkout
 first, then R2, for debug builds), binds each defined option_contract to an exact OCC
-identity, and pulls one bounded-age quote per contract from ThetaData v3.  Every open
-option plan is accounted for in an immutable prospective evidence observation before
-the mutable prophet.live_marks/v1 discovery object advances.  The evidence is mark
-change only: it assumes no position or fill and has no execution or product authority.
+identity, and pulls one bounded-age trade-paired quote per contract.  Every open option
+plan is accounted for in a host-private immutable prospective observation before the
+mutable public prophet.live_marks/v1 object advances.  The evidence is a prerequisite
+mark path only: it assumes no position, provider-observed entry, exit, or fill and has
+no execution or product authority.
 
 RTH behaviour
 -------------
@@ -18,13 +19,13 @@ when the R2 file is absent or old.
 Per-contract error handling
 ---------------------------
 Any single-contract ThetaData failure → skip that contract, log a warning, continue.
-Any global error (index load, R2 publish) → log, exit 0 (no crash-loop).
+Any global error (index load, private evidence, R2 publish) → log, exit 0.
 
 Usage
 -----
     python -m scripts.build_prophet_marks [--publish] [--dry-run]
 
-    --publish   Write to R2 (requires R2_* env vars).
+    --publish   Write private evidence locally, then current marks to R2.
     --dry-run   Print the payload to stdout; do not write to R2.
     (no flag)   Build payload + write local JSON to /tmp/prophet_marks_debug.json;
                 do not publish to R2.
@@ -36,6 +37,10 @@ Environment variables
     R2_SECRET_ACCESS_KEY R2 secret
     R2_BUCKET            R2 bucket name (default: mastermindx)
     PROPHET_INDEX_URL    Override for the R2 fallback URL (optional)
+    PROPHET_OPTION_EVIDENCE_STATE_ROOT
+                         Host-private 0700 evidence root (optional)
+    PROPHET_OPTION_EVIDENCE_SCHEMA_PATH
+                         Runtime observation schema override (testing only)
 
 AUTHORITY NOTE
 --------------
@@ -45,17 +50,21 @@ The word "validated" is forbidden in user-facing text (CI-enforced).
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 from datetime import date, datetime, time as dtime, timezone
 from decimal import Decimal, InvalidOperation
+import fcntl
 from hashlib import sha256
 import json
 import logging
 import math
 import os
+from pathlib import Path
 import re
+import secrets
+import stat
 import sys
 import urllib.request
-from pathlib import Path
 from typing import Any
 
 # ── repo path ─────────────────────────────────────────────────────────────────
@@ -74,7 +83,8 @@ SCHEMA = "prophet.live_marks/v1"
 R2_KEY = "live_flow/prophet_marks.json"
 EVIDENCE_SCHEMA = "prophet.option_mark_observation/v1"
 EVIDENCE_POINTER_SCHEMA = "prophet.option_mark_pointer/v1"
-EVIDENCE_PREFIX = "prophet/option_mark_observations/v1"
+EVIDENCE_HEAD_SCHEMA = "prophet.option_mark_local_head/v1"
+EVIDENCE_PREFIX = "observations"
 MAX_QUOTE_AGE_SECONDS = 30 * 60
 R2_FALLBACK_URL = os.environ.get(
     "PROPHET_INDEX_URL",
@@ -85,9 +95,20 @@ R2_FALLBACK_URL = os.environ.get(
 _RTH_OPEN  = dtime(9, 30, 0)
 _RTH_CLOSE = dtime(16, 0, 0)
 
+DEFAULT_EVIDENCE_STATE_ROOT = (
+    Path.home() / ".mastermind_private" / "prophet_option_mark_observations_v1"
+)
+DEFAULT_EVIDENCE_SCHEMA_PATH = (
+    _REPO
+    / "contracts"
+    / "options"
+    / "prophet.option_mark_observation.v1.schema.json"
+)
+
 _ROOT_RE = re.compile(r"^[A-Z0-9]{1,6}$")
 _OBSERVATION_ID_RE = re.compile(r"^pom_obs_[a-f0-9]{64}$")
 _SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
+_EVIDENCE_VALIDATOR: tuple[Path, Any] | None = None
 
 
 def _authority_block() -> dict[str, bool]:
@@ -106,7 +127,7 @@ def _authority_block() -> dict[str, bool]:
 
 
 def _canonical_json_bytes(payload: object) -> bytes:
-    """Strict bytes used by content identities and immutable R2 objects."""
+    """Strict bytes used by content identities and durable evidence objects."""
     return (
         json.dumps(
             payload,
@@ -122,7 +143,61 @@ def _canonical_json_bytes(payload: object) -> bytes:
 def _utc_iso(value: datetime) -> str:
     if value.tzinfo is None or value.utcoffset() is None:
         raise ValueError("timestamp must be timezone-aware")
-    return value.astimezone(timezone.utc).isoformat(timespec="seconds")
+    return value.astimezone(timezone.utc).isoformat(timespec="microseconds")
+
+
+def _source_utc_iso(value: datetime) -> str:
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError("source timestamp must be timezone-aware")
+    return value.astimezone(timezone.utc).isoformat(timespec="microseconds")
+
+
+def _evidence_schema_validator() -> Any:
+    """Load the mandatory runtime contract; missing validation fails closed."""
+    global _EVIDENCE_VALIDATOR
+
+    schema_path = Path(
+        os.environ.get(
+            "PROPHET_OPTION_EVIDENCE_SCHEMA_PATH",
+            str(DEFAULT_EVIDENCE_SCHEMA_PATH),
+        )
+    )
+    if _EVIDENCE_VALIDATOR is not None and _EVIDENCE_VALIDATOR[0] == schema_path:
+        return _EVIDENCE_VALIDATOR[1]
+    try:
+        from jsonschema import Draft202012Validator, FormatChecker
+
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        validator = Draft202012Validator(
+            schema,
+            format_checker=FormatChecker(),
+        )
+    except Exception as exc:  # noqa: BLE001 - validator is a publication fence
+        raise ValueError(
+            f"option mark observation schema unavailable: {schema_path}: {exc}"
+        ) from exc
+    _EVIDENCE_VALIDATOR = (schema_path, validator)
+    return validator
+
+
+def _validate_evidence_schema(observation: dict[str, object]) -> None:
+    try:
+        errors = sorted(
+            _evidence_schema_validator().iter_errors(observation),
+            key=lambda error: "/".join(str(item) for item in error.path),
+        )
+    except ValueError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - validator execution fails closed
+        raise ValueError(f"option mark observation schema check failed: {exc}") from exc
+    if errors:
+        summary = "; ".join(
+            f"{'/'.join(str(item) for item in error.path) or '<root>'}: "
+            f"{error.message}"
+            for error in errors[:8]
+        )
+        raise ValueError(f"option mark observation schema check failed: {summary}")
 
 # ---------------------------------------------------------------------------
 # RTH guard
@@ -322,13 +397,15 @@ def _extract_active_plans(index: dict) -> list[dict]:
 def _fetch_contract_quote(
     asset: str, right: str, expiry: str, strike: float, session_date: date
 ) -> dict | None:
-    """Pull the latest trade_quote row for ONE specific option contract today.
+    """Pull one deterministic latest trade-paired row for an exact contract.
 
     Uses collectors.thetadata.trade_quote with start_date=end_date=today.
     Per-contract (specific expiry+strike) is accepted by ThetaData v3 for
     current-day (unlike wildcard-exp bulk which is rejected — see #1774).
 
-    Returns dict with bid, ask, mid, last, ts_utc — or None if no data.
+    Latest means max quote clock, then trade clock, then exact source sequence.
+    Conflicting rows at the same complete key abstain instead of inheriting frame
+    order.  Both source clocks are retained; bid/ask age is always the quote clock.
     """
     try:
         from collectors import thetadata as td
@@ -359,32 +436,46 @@ def _fetch_contract_quote(
         )
         return None
 
-    # Take the latest row by trade_timestamp (df is already time-ordered)
-    row = df.iloc[-1]
-    bid  = _safe_float(row.get("bid"))
-    ask  = _safe_float(row.get("ask"))
-    last = _safe_float(row.get("price"))
+    candidates: list[tuple[tuple[datetime, datetime, int], dict[str, object]]] = []
+    for row in df.to_dict(orient="records"):
+        try:
+            quote_at = _source_datetime(row.get("quote_timestamp"))
+            trade_at = _source_datetime(row.get("trade_timestamp"))
+            sequence = _source_sequence(row.get("sequence"))
+        except ValueError as exc:
+            # A row with no orderable source clocks could be newer than every valid
+            # row.  Refuse the whole response instead of silently selecting around it.
+            log.warning(
+                "prophet_marks: unorderable trade_quote row for %s: %s",
+                asset,
+                exc,
+            )
+            return None
+        projected = {
+            "bid": _safe_float(row.get("bid")),
+            "ask": _safe_float(row.get("ask")),
+            "last": _safe_float(row.get("price")),
+            "quote_ts_utc": _source_utc_iso(quote_at),
+            "trade_ts_utc": _source_utc_iso(trade_at),
+            "source_sequence": sequence,
+        }
+        candidates.append(((quote_at, trade_at, sequence), projected))
 
-    # ts_utc: use trade_timestamp if available.
-    # trade_timestamp from ThetaData v3 carries fractional seconds, e.g.
-    # '2026-07-02T06:30:16.218' (ET-naive) — _to_utc_iso handles this via
-    # datetime.fromisoformat (Python 3.11+).
-    ts_raw = row.get("trade_timestamp") or row.get("date")
-    try:
-        ts_utc = _to_utc_iso(ts_raw)
-    except Exception as _ts_exc:  # noqa: BLE001
+    if not candidates:
+        return None
+    latest_key = max(key for key, _payload in candidates)
+    finalists = [payload for key, payload in candidates if key == latest_key]
+    fingerprints = {_canonical_json_bytes(payload) for payload in finalists}
+    if len(fingerprints) != 1:
         log.warning(
-            "prophet_marks: could not parse trade_timestamp %r — quote refused: %s",
-            ts_raw, _ts_exc,
+            "prophet_marks: conflicting latest trade_quote rows for %s %s %s %.3f",
+            asset,
+            right,
+            expiry,
+            strike,
         )
         return None
-
-    return {
-        "bid":    bid,
-        "ask":    ask,
-        "last":   last,
-        "ts_utc": ts_utc,
-    }
+    return finalists[0]
 
 
 def _safe_float(v: Any) -> float | None:
@@ -399,13 +490,25 @@ def _safe_float(v: Any) -> float | None:
         return None
 
 
+def _source_sequence(value: object) -> int:
+    if isinstance(value, bool) or value is None:
+        raise ValueError("missing source sequence")
+    try:
+        parsed = Decimal(str(value))
+    except (InvalidOperation, ValueError) as exc:
+        raise ValueError("malformed source sequence") from exc
+    if not parsed.is_finite() or parsed != parsed.to_integral_value():
+        raise ValueError("malformed source sequence")
+    return int(parsed)
+
+
 def _validated_quote(
     raw: object,
     *,
     observed_at: datetime,
     session_date: date,
 ) -> tuple[dict[str, object] | None, str | None]:
-    """Admit a same-session, bounded-age vendor snapshot or abstain."""
+    """Admit a same-session RTH trade-paired bid/ask or explicitly abstain."""
     if observed_at.tzinfo is None or observed_at.utcoffset() is None:
         raise ValueError("observation timestamp must be timezone-aware")
     if not isinstance(raw, dict):
@@ -416,46 +519,58 @@ def _validated_quote(
     if bid is None or ask is None or ask <= 0 or ask < bid:
         return None, "QUOTE_SHAPE_INVALID"
 
-    ts_raw = raw.get("ts_utc")
-    if not isinstance(ts_raw, str):
+    quote_ts_raw = raw.get("quote_ts_utc")
+    trade_ts_raw = raw.get("trade_ts_utc")
+    if not isinstance(quote_ts_raw, str) or not isinstance(trade_ts_raw, str):
         return None, "QUOTE_SHAPE_INVALID"
     try:
-        quote_at = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
+        quote_at = _source_datetime(quote_ts_raw)
+        trade_at = _source_datetime(trade_ts_raw)
+        source_sequence = _source_sequence(raw.get("source_sequence"))
     except ValueError:
         return None, "QUOTE_SHAPE_INVALID"
-    if quote_at.tzinfo is None or quote_at.utcoffset() is None:
-        return None, "QUOTE_SHAPE_INVALID"
-    quote_at = quote_at.astimezone(timezone.utc)
     observed = observed_at.astimezone(timezone.utc)
     if quote_at > observed:
         return None, "QUOTE_AFTER_OBSERVATION"
-    if quote_at.astimezone(ET).date() != session_date:
+    if trade_at > observed:
+        return None, "TRADE_AFTER_OBSERVATION"
+    if quote_at > trade_at:
+        return None, "QUOTE_AFTER_TRADE"
+    quote_et = quote_at.astimezone(ET)
+    if quote_et.date() != session_date:
         return None, "QUOTE_WRONG_SESSION"
+    if trade_at.astimezone(ET).date() != session_date:
+        return None, "TRADE_WRONG_SESSION"
+    quote_time = quote_et.time().replace(tzinfo=None)
+    if not (_RTH_OPEN <= quote_time < _RTH_CLOSE):
+        return None, "QUOTE_OUTSIDE_RTH"
     exact_age_seconds = (observed - quote_at).total_seconds()
     if exact_age_seconds > MAX_QUOTE_AGE_SECONDS:
         return None, "QUOTE_TOO_OLD"
-    age_seconds = int(exact_age_seconds)
+    quote_age_seconds = int(exact_age_seconds)
+    trade_age_seconds = int((observed - trade_at).total_seconds())
     return {
-        "label": "vendor_snapshot_bid_ask",
+        "label": "trade_paired_bid_ask",
         "bid": bid,
         "ask": ask,
         "mid": round((bid + ask) / 2, 4),
         "last": last,
-        "ts_utc": _utc_iso(quote_at),
-        "age_seconds": age_seconds,
+        "quote_ts_utc": _source_utc_iso(quote_at),
+        "trade_ts_utc": _source_utc_iso(trade_at),
+        "source_sequence": source_sequence,
+        "quote_age_seconds": quote_age_seconds,
+        "trade_age_seconds": trade_age_seconds,
     }, None
 
 
-def _to_utc_iso(ts: Any) -> str:
-    """Convert a timestamp value to UTC ISO string.
+def _source_datetime(ts: Any) -> datetime:
+    """Convert an exact source timestamp to UTC without discarding precision.
 
     Handles:
       - datetime objects (tz-aware or tz-naive; naive assumed ET)
       - ISO-like strings including fractional seconds (e.g. '2026-07-02T06:30:16.218')
         and TZ offsets (e.g. '...−04:00'), which is the real ThetaData trade_timestamp
         format (confirmed collectors/thetadata.py line 1045).
-      - Bare date strings 'YYYY-MM-DD' (treated as midnight ET).
-
     Naive strings are treated as ET before converting to UTC.
     """
     if ts is None:
@@ -464,9 +579,9 @@ def _to_utc_iso(ts: Any) -> str:
         if ts.tzinfo is None:
             # Assume ET (ThetaData timestamps are ET-naive)
             ts = ts.replace(tzinfo=ET)
-        return ts.astimezone(timezone.utc).isoformat(timespec="seconds")
+        return ts.astimezone(timezone.utc)
     s = str(ts).strip()
-    if not s:
+    if not s or "T" not in s:
         raise ValueError("empty timestamp string")
     # Primary path: datetime.fromisoformat handles fractional seconds and TZ offsets
     # on Python 3.11+ (this repo runs 3.12).  Naive strings are treated as ET.
@@ -474,17 +589,9 @@ def _to_utc_iso(ts: Any) -> str:
         dt = datetime.fromisoformat(s)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=ET)
-        return dt.astimezone(timezone.utc).isoformat(timespec="seconds")
-    except ValueError:
-        pass
-    # Fallback: bare date 'YYYY-MM-DD' (fromisoformat handles this, but be explicit)
-    try:
-        dt = datetime.strptime(s[:10], "%Y-%m-%d")
-        dt = dt.replace(tzinfo=ET)
-        return dt.astimezone(timezone.utc).isoformat(timespec="seconds")
-    except ValueError:
-        pass
-    raise ValueError(f"cannot parse timestamp: {ts!r}")
+        return dt.astimezone(timezone.utc)
+    except ValueError as exc:
+        raise ValueError(f"cannot parse timestamp: {ts!r}") from exc
 
 
 def _plan_evidence_row(
@@ -590,11 +697,10 @@ def _plan_evidence_row(
         "mark_change_status": mark_change_status,
         "mark_change_reason": mark_change_reason,
         "mark_change_from_plan_pct": mark_change_pct,
-        "mark_change_basis": "plan_eod_mid_to_vendor_snapshot_mid",
-        "lifecycle": {
+        "mark_change_basis": "plan_eod_mid_to_trade_paired_mid",
+        "plan_state_context": {
             "state": lifecycle_state,
             "position_assumed": False,
-            "trade_pnl_claim": False,
         },
     }
 
@@ -668,6 +774,11 @@ def _build_observation(
         "observation_id": None,
         "observed_at_utc": observed_at_utc,
         "session_date": session_date,
+        "storage": {
+            "visibility": "host_private",
+            "public_discovery": False,
+            "public_redistribution": False,
+        },
         "prophet_index": {
             "schema": index.get("schema"),
             "asof": index_asof,
@@ -676,14 +787,20 @@ def _build_observation(
             "source_url": R2_FALLBACK_URL,
         },
         "source": {
-            "provider": "thetadata_v3",
-            "endpoint": "trade_quote",
-            "quote_label": "vendor_snapshot_bid_ask",
+            "provider": "licensed_options_history_feed",
+            "endpoint": "history_trade_quote",
+            "quote_label": "trade_paired_bid_ask",
             "maximum_quote_age_seconds": MAX_QUOTE_AGE_SECONDS,
+            "latest_selection": (
+                "max_quote_timestamp_then_trade_timestamp_then_sequence"
+            ),
             "nbbo": False,
             "live": False,
             "executable": False,
             "fill": False,
+            "size_retained": False,
+            "venue_retained": False,
+            "condition_retained": False,
         },
         "previous": previous,
         "coverage": coverage,
@@ -691,8 +808,11 @@ def _build_observation(
         "limitations": {
             "mark_change_only": True,
             "not_trade_pnl": True,
+            "not_lifecycle_outcome": True,
+            "prerequisite_mark_path_only": True,
             "no_position_assumed": True,
-            "no_size_venue_or_condition_receipt": True,
+            "no_provider_observed_entry_or_exit": True,
+            "source_size_venue_and_condition_intentionally_discarded": True,
             "prospective_from_first_observation_only": True,
         },
         "authority": _authority_block(),
@@ -776,40 +896,7 @@ def _r2_client():
         return None
 
 
-def _r2_error(exc: Exception) -> tuple[str, int]:
-    response = getattr(exc, "response", None)
-    if not isinstance(response, dict):
-        return "", 0
-    error = response.get("Error")
-    metadata = response.get("ResponseMetadata")
-    code = str(error.get("Code") or "") if isinstance(error, dict) else ""
-    try:
-        status = int(metadata.get("HTTPStatusCode") or 0) if isinstance(metadata, dict) else 0
-    except (TypeError, ValueError):
-        status = 0
-    return code, status
-
-
-def _r2_not_found(exc: Exception) -> bool:
-    code, status = _r2_error(exc)
-    return status == 404 or code in {"404", "NoSuchKey", "NotFound"}
-
-
-def _r2_precondition(exc: Exception) -> bool:
-    code, status = _r2_error(exc)
-    return status in {409, 412} or code in {
-        "409",
-        "412",
-        "ConditionalRequestConflict",
-        "PreconditionFailed",
-    }
-
-
-def _read_r2_object(
-    client: Any,
-    bucket: str,
-    key: str,
-) -> tuple[bytes, str | None]:
+def _read_r2_bytes(client: Any, bucket: str, key: str) -> bytes:
     response = client.get_object(Bucket=bucket, Key=key)
     stream = response.get("Body")
     if stream is None or not hasattr(stream, "read"):
@@ -820,14 +907,7 @@ def _read_r2_object(
     size = response.get("ContentLength")
     if isinstance(size, int) and size != len(body):
         raise ValueError(f"R2 {key} content length mismatch")
-    etag = response.get("ETag")
-    if etag is not None and (not isinstance(etag, str) or not etag.strip()):
-        raise ValueError(f"R2 {key} returned malformed ETag")
-    return body, etag
-
-
-def _read_r2_bytes(client: Any, bucket: str, key: str) -> bytes:
-    return _read_r2_object(client, bucket, key)[0]
+    return body
 
 
 def _validate_pointer(pointer: object) -> dict[str, object]:
@@ -846,9 +926,11 @@ def _validate_pointer(pointer: object) -> dict[str, object]:
         raise ValueError("option mark evidence pointer id is malformed")
     if (
         not isinstance(key, str)
-        or not key.startswith(f"{EVIDENCE_PREFIX}/")
-        or not key.endswith(f"/{observation_id}.json")
-        or ".." in key
+        or not re.fullmatch(
+            rf"{EVIDENCE_PREFIX}/\d{{4}}-\d{{2}}-\d{{2}}/"
+            rf"{re.escape(observation_id)}\.json",
+            key,
+        )
     ):
         raise ValueError("option mark evidence pointer key is malformed")
     if not isinstance(digest, str) or not _SHA256_RE.fullmatch(digest):
@@ -858,92 +940,238 @@ def _validate_pointer(pointer: object) -> dict[str, object]:
     return dict(pointer)
 
 
-def _load_previous_pointer(
-    client: Any,
-    bucket: str,
-) -> tuple[dict[str, object] | None, str | None]:
-    """Return the verified chain head and current-object ETag for a CAS update."""
+def _private_state_root() -> Path:
+    raw = os.environ.get(
+        "PROPHET_OPTION_EVIDENCE_STATE_ROOT",
+        str(DEFAULT_EVIDENCE_STATE_ROOT),
+    )
+    root = Path(raw).expanduser()
+    if not root.is_absolute() or root in {Path("/"), Path.home()}:
+        raise ValueError("private option mark evidence root must be a narrow absolute path")
+    root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    _require_private_directory(root)
+    return root
+
+
+def _require_private_directory(path: Path) -> None:
     try:
-        current_body, current_etag = _read_r2_object(client, bucket, R2_KEY)
-    except Exception as exc:  # noqa: BLE001
-        if _r2_not_found(exc):
-            return None, None
+        info = path.lstat()
+    except OSError as exc:
+        raise ValueError(f"private evidence directory unavailable: {path}: {exc}") from exc
+    if (
+        not stat.S_ISDIR(info.st_mode)
+        or stat.S_ISLNK(info.st_mode)
+        or info.st_uid != os.getuid()
+        or stat.S_IMODE(info.st_mode) != 0o700
+    ):
+        raise ValueError(f"private evidence directory is not caller-owned 0700: {path}")
+
+
+def _ensure_private_directory(path: Path) -> None:
+    path.mkdir(mode=0o700, exist_ok=True)
+    _require_private_directory(path)
+
+
+def _read_private_file(path: Path, *, required: bool = True) -> bytes | None:
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(path, flags)
+    except FileNotFoundError:
+        if not required:
+            return None
+        raise ValueError(f"private evidence file is missing: {path}") from None
+    except OSError as exc:
+        raise ValueError(f"private evidence file unavailable: {path}: {exc}") from exc
+    try:
+        info = os.fstat(fd)
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_uid != os.getuid()
+            or stat.S_IMODE(info.st_mode) != 0o600
+            or info.st_nlink != 1
+            or info.st_size <= 0
+            or info.st_size > 2 * 1024 * 1024
+        ):
+            raise ValueError(f"private evidence file is not caller-owned 0600: {path}")
+        body = b""
+        while len(body) < info.st_size:
+            chunk = os.read(fd, info.st_size - len(body))
+            if not chunk:
+                break
+            body += chunk
+        if len(body) != info.st_size or os.read(fd, 1):
+            raise ValueError(f"private evidence file length changed during read: {path}")
+        return body
+    finally:
+        os.close(fd)
+
+
+def _write_all(fd: int, body: bytes) -> None:
+    offset = 0
+    while offset < len(body):
+        written = os.write(fd, body[offset:])
+        if written <= 0:
+            raise OSError("short private evidence write")
+        offset += written
+
+
+def _fsync_directory(path: Path) -> None:
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    fd = os.open(path, flags)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def _write_private_immutable(path: Path, body: bytes) -> None:
+    flags = (
+        os.O_WRONLY
+        | os.O_CREAT
+        | os.O_EXCL
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    try:
+        fd = os.open(path, flags, 0o600)
+    except FileExistsError:
+        existing = _read_private_file(path)
+        if existing != body:
+            raise ValueError("immutable private option mark evidence collision")
+        return
+    created = True
+    try:
+        os.fchmod(fd, 0o600)
+        _write_all(fd, body)
+        os.fsync(fd)
+    except Exception:
+        os.close(fd)
+        if created:
+            path.unlink(missing_ok=True)
         raise
-    if current_etag is None:
-        raise ValueError("current Prophet marks object has no ETag")
+    else:
+        os.close(fd)
+    _fsync_directory(path.parent)
+    if _read_private_file(path) != body:
+        raise ValueError("immutable private option mark evidence readback mismatch")
+
+
+def _write_private_head(root: Path, body: bytes) -> None:
+    target = root / "current.json"
+    temporary = root / f".current.{os.getpid()}.{secrets.token_hex(8)}.tmp"
+    flags = (
+        os.O_WRONLY
+        | os.O_CREAT
+        | os.O_EXCL
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    fd = os.open(temporary, flags, 0o600)
     try:
-        current = json.loads(current_body.decode("utf-8"))
+        os.fchmod(fd, 0o600)
+        _write_all(fd, body)
+        os.fsync(fd)
+    except Exception:
+        os.close(fd)
+        temporary.unlink(missing_ok=True)
+        raise
+    else:
+        os.close(fd)
+    try:
+        os.replace(temporary, target)
+        _fsync_directory(root)
+    finally:
+        temporary.unlink(missing_ok=True)
+    if _read_private_file(target) != body:
+        raise ValueError("private option mark evidence head readback mismatch")
+
+
+@contextmanager
+def _private_ledger_lock(root: Path):
+    lock_path = root / ".ledger.lock"
+    flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(lock_path, flags, 0o600)
+    try:
+        os.fchmod(fd, 0o600)
+        info = os.fstat(fd)
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_uid != os.getuid()
+            or stat.S_IMODE(info.st_mode) != 0o600
+            or info.st_nlink != 1
+        ):
+            raise ValueError("private evidence lock is not caller-owned 0600")
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+
+
+def _private_observation_path(
+    root: Path,
+    pointer: dict[str, object],
+    *,
+    create_parents: bool,
+) -> Path:
+    key = str(pointer["key"])
+    parts = key.split("/")
+    if len(parts) != 3:
+        raise ValueError("private option mark evidence key depth is malformed")
+    observations = root / parts[0]
+    session = observations / parts[1]
+    directory_check = (
+        _ensure_private_directory
+        if create_parents
+        else _require_private_directory
+    )
+    directory_check(observations)
+    directory_check(session)
+    return session / parts[2]
+
+
+def _load_previous_pointer(root: Path) -> dict[str, object] | None:
+    head_body = _read_private_file(root / "current.json", required=False)
+    if head_body is None:
+        return None
+    try:
+        head = json.loads(head_body.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ValueError("current Prophet marks object is not valid JSON") from exc
-    if not isinstance(current, dict) or current.get("schema") != SCHEMA:
-        raise ValueError("current Prophet marks schema mismatch")
-    if "evidence" not in current:
-        return None, current_etag
-    pointer = _validate_pointer(current.get("evidence"))
-    previous_body = _read_r2_bytes(client, bucket, str(pointer["key"]))
-    if len(previous_body) != pointer["bytes"]:
-        raise ValueError("previous option mark evidence byte count mismatch")
+        raise ValueError("private option mark evidence head is invalid JSON") from exc
+    if (
+        not isinstance(head, dict)
+        or set(head) != {"schema", "evidence"}
+        or head.get("schema") != EVIDENCE_HEAD_SCHEMA
+        or _canonical_json_bytes(head) != head_body
+    ):
+        raise ValueError("private option mark evidence head shape is malformed")
+    pointer = _validate_pointer(head.get("evidence"))
+    previous_body = _read_private_file(
+        _private_observation_path(root, pointer, create_parents=False)
+    )
+    if previous_body is None or len(previous_body) != pointer["bytes"]:
+        raise ValueError("previous private option mark evidence byte count mismatch")
     if sha256(previous_body).hexdigest() != pointer["sha256"]:
-        raise ValueError("previous option mark evidence digest mismatch")
+        raise ValueError("previous private option mark evidence digest mismatch")
     try:
         previous = json.loads(previous_body.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ValueError("previous option mark evidence is not valid JSON") from exc
-    if not isinstance(previous, dict) or previous.get("schema") != EVIDENCE_SCHEMA:
-        raise ValueError("previous option mark evidence identity mismatch")
-    if _canonical_json_bytes(previous) != previous_body:
-        raise ValueError("previous option mark evidence identity mismatch")
+        raise ValueError("previous private option mark evidence is invalid JSON") from exc
+    if not isinstance(previous, dict) or _canonical_json_bytes(previous) != previous_body:
+        raise ValueError("previous private option mark evidence identity mismatch")
+    _validate_evidence_schema(previous)
     if _observation_pointer(previous) != pointer:
-        raise ValueError("previous option mark evidence pointer mismatch")
-    return pointer, current_etag
+        raise ValueError("previous private option mark evidence pointer mismatch")
+    return pointer
 
 
-def _publish_immutable_observation(
-    client: Any,
-    bucket: str,
-    pointer: dict[str, object],
-    body: bytes,
-) -> None:
-    try:
-        client.put_object(
-            Bucket=bucket,
-            Key=pointer["key"],
-            Body=body,
-            ContentType="application/json",
-            CacheControl="public, max-age=31536000, immutable",
-            Metadata={
-                "sha256": str(pointer["sha256"]),
-                "schema": EVIDENCE_SCHEMA,
-                "observation-id": str(pointer["observation_id"]),
-                "immutable": "true",
-            },
-            IfNoneMatch="*",
-        )
-    except Exception as exc:  # noqa: BLE001
-        if not _r2_precondition(exc):
-            raise
-        existing = _read_r2_bytes(client, bucket, str(pointer["key"]))
-        if existing != body:
-            raise ValueError("immutable option mark evidence collision") from exc
-    verified = _read_r2_bytes(client, bucket, str(pointer["key"]))
-    if verified != body:
-        raise ValueError("immutable option mark evidence readback mismatch")
-
-
-def _publish_r2(
-    payload: dict,
+def _publish_private_observation(
     *,
     index: dict,
+    payload: dict,
     evidence_rows: list[dict[str, object]],
-) -> dict | None:
-    """Publish immutable evidence first, then the current discoverability pointer."""
-    client = _r2_client()
-    if client is None:
-        log.warning("prophet_marks: R2 client unavailable — skipping publish")
-        return None
-    bucket = os.environ.get("R2_BUCKET", "mastermindx")
-    try:
-        previous, current_etag = _load_previous_pointer(client, bucket)
+) -> dict[str, object]:
+    root = _private_state_root()
+    with _private_ledger_lock(root):
+        previous = _load_previous_pointer(root)
         observation = _build_observation(
             index=index,
             observed_at_utc=str(payload["asof_utc"]),
@@ -952,43 +1180,63 @@ def _publish_r2(
             coverage=dict(payload["coverage"]),
             previous=previous,
         )
+        _validate_evidence_schema(observation)
         pointer = _observation_pointer(observation)
-        observation_body = _canonical_json_bytes(observation)
-        _publish_immutable_observation(client, bucket, pointer, observation_body)
+        body = _canonical_json_bytes(observation)
+        _write_private_immutable(
+            _private_observation_path(root, pointer, create_parents=True),
+            body,
+        )
+        head = {
+            "schema": EVIDENCE_HEAD_SCHEMA,
+            "evidence": pointer,
+        }
+        _write_private_head(root, _canonical_json_bytes(head))
+        return pointer
 
-        published = dict(payload)
-        published["evidence"] = pointer
-        current_body = _canonical_json_bytes(published)
-        current_put = {
-            "Bucket": bucket,
-            "Key": R2_KEY,
-            "Body": current_body,
-            "ContentType": "application/json",
-            "CacheControl": "public, max-age=15, must-revalidate",
-            "Metadata": {
+
+def _publish_r2(
+    payload: dict,
+    *,
+    index: dict,
+    evidence_rows: list[dict[str, object]],
+) -> dict | None:
+    """Persist host-private evidence first, then replace public current marks."""
+    client = _r2_client()
+    if client is None:
+        log.warning("prophet_marks: R2 client unavailable — skipping publish")
+        return None
+    bucket = os.environ.get("R2_BUCKET", "mastermindx")
+    try:
+        pointer = _publish_private_observation(
+            index=index,
+            payload=payload,
+            evidence_rows=evidence_rows,
+        )
+        current_body = _canonical_json_bytes(payload)
+        client.put_object(
+            Bucket=bucket,
+            Key=R2_KEY,
+            Body=current_body,
+            ContentType="application/json",
+            CacheControl="public, max-age=15, must-revalidate",
+            Metadata={
                 "sha256": sha256(current_body).hexdigest(),
                 "schema": SCHEMA,
-                "evidence-observation-id": str(pointer["observation_id"]),
+                "private-evidence": "not-published",
             },
-        }
-        if current_etag is None:
-            current_put["IfNoneMatch"] = "*"
-        else:
-            current_put["IfMatch"] = current_etag
-        client.put_object(
-            **current_put,
         )
         if _read_r2_bytes(client, bucket, R2_KEY) != current_body:
             raise ValueError("current Prophet marks readback mismatch")
         log.info(
-            "prophet_marks: published evidence %s then current → R2 %s/%s",
+            "prophet_marks: persisted host-private evidence %s then current → R2 %s/%s",
             pointer["observation_id"],
             bucket,
             R2_KEY,
         )
-        return published
+        return payload
     except Exception as exc:  # noqa: BLE001
-        log.warning("prophet_marks: R2 evidence publication failed: %s", exc)
+        log.warning("prophet_marks: private evidence/current publication failed: %s", exc)
         return None
 
 
@@ -1038,7 +1286,7 @@ def build_marks(publish: bool = False, dry_run: bool = False) -> dict | None:
         pass  # fall through to publish empty marks
 
     # 4. Determine session date (today in ET)
-    cycle_started_at = datetime.now(timezone.utc).replace(microsecond=0)
+    cycle_started_at = datetime.now(timezone.utc)
     session_date = cycle_started_at.astimezone(ET).date()
 
     # 5. Fetch once per exact contract, while accounting for every active option plan.
@@ -1077,7 +1325,7 @@ def build_marks(publish: bool = False, dry_run: bool = False) -> dict | None:
         # Availability is observed only after every vendor call returned. Capturing
         # this before polling would make a legitimately newer returned row look like
         # a future quote and would understate source age on slow calls.
-        observed_at = datetime.now(timezone.utc).replace(microsecond=0)
+        observed_at = datetime.now(timezone.utc)
         quote_cache = {
             occ: _validated_quote(
                 raw,
@@ -1096,8 +1344,14 @@ def build_marks(publish: bool = False, dry_run: bool = False) -> dict | None:
                 quote, quote_reason = quote_cache[occ]
                 if quote is not None:
                     marks[occ] = {
-                        key: quote[key]
-                        for key in ("bid", "ask", "mid", "last", "ts_utc")
+                        "bid": quote["bid"],
+                        "ask": quote["ask"],
+                        "mid": quote["mid"],
+                        "last": quote["last"],
+                        # Backwards-compatible consumer freshness clock is now the
+                        # quote clock; the paired trade clock remains additive.
+                        "ts_utc": quote["quote_ts_utc"],
+                        "trade_ts_utc": quote["trade_ts_utc"],
                     }
                     log.info(
                         "prophet_marks: plan=%s occ=%s bid=%.2f ask=%.2f age=%ss",
@@ -1105,7 +1359,7 @@ def build_marks(publish: bool = False, dry_run: bool = False) -> dict | None:
                         occ,
                         float(quote["bid"]),
                         float(quote["ask"]),
-                        quote["age_seconds"],
+                        quote["quote_age_seconds"],
                     )
                 else:
                     log.warning(
@@ -1158,7 +1412,7 @@ def build_marks(publish: bool = False, dry_run: bool = False) -> dict | None:
             evidence_rows=evidence_rows,
         )
         if published is None:
-            log.error("prophet_marks: evidence/current R2 publication failed")
+            log.error("prophet_marks: private evidence/current publication failed")
             return None
         payload = published
     else:

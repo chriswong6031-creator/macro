@@ -260,17 +260,17 @@ this commit the replay has been dry-run only.
 | `session_date` | string | ISO-8601 date of the current trading session (ET date at publish time) |
 | `marks` | object | Map from OCC option symbol string → mark object (see below); may be empty `{}` |
 | `coverage` | object | Accounting receipt for canonical plans, unique contracts, source calls, available marks, and explicit abstentions |
-| `evidence` | object | Content-addressed pointer to the immutable `prophet.option_mark_observation/v1` written before this discovery head |
 
 ## Mark object (values in `marks`)
 
 | Field | Type | Description |
 |---|---|---|
-| `bid` | float | Vendor-snapshot bid from ThetaData trade_quote, rounded to 4 decimal places |
-| `ask` | float | Vendor-snapshot ask from ThetaData trade_quote, rounded to 4 decimal places |
+| `bid` | float | Trade-paired bid from the licensed history feed, rounded to 4 decimal places |
+| `ask` | float | Trade-paired ask from the licensed history feed, rounded to 4 decimal places |
 | `mid` | float | `(bid + ask) / 2`, rounded to 4 dp; crossed, missing, non-positive-ask, and over-age rows abstain instead of publishing a mark |
 | `last` | float \| null | Last trade price (`price` column), rounded to 4 dp |
-| `ts_utc` | string | ISO-8601 UTC timestamp of the **trade** that supplied the vendor snapshot (from ThetaData `trade_timestamp`); an absent or unparsable source timestamp abstains and never substitutes publish time |
+| `ts_utc` | string | ISO-8601 UTC **quote timestamp** for bid/ask freshness; an absent, unparsable, non-RTH, non-causal, wrong-session, or over-age clock abstains and never substitutes publish time |
+| `trade_ts_utc` | string | ISO-8601 UTC timestamp of the paired trade, retained separately from the quote clock |
 
 ## OCC symbol key format
 
@@ -280,7 +280,7 @@ Example: `BA    260918C00220000` = BA 220.00-strike call expiring 2026-09-18.
 
 ## Consumer contract
 
-- Additive `coverage` and `evidence` fields must be ignored by legacy consumers.
+- The additive `coverage` field must be ignored by legacy consumers.
 - `ts_utc` is always present and parseable as ISO-8601 UTC.
 - When the R2 file is absent, >30 min stale, or `asof_utc` is outside RTH, the
   Item C overlay must fall back to EOD marks and display a staleness indicator.
@@ -289,17 +289,25 @@ Example: `BA    260918C00220000` = BA 220.00-strike call expiring 2026-09-18.
 
 ## Prospective exact-option evidence
 
-Every admitted RTH cycle publishes canonical JSON under
-`prophet/option_mark_observations/v1/<session>/<observation_id>.json` with
-`If-None-Match: *`, reads it back byte-for-byte, and only then conditionally advances
-the mutable head using the prior object's ETag. The artifact accounts for every open
-plan carrying `option_contract`, records invalid/source/freshness abstentions, and
-links to the verified predecessor. Its mark-change value compares the plan's entry
-premium only when explicitly labeled `freshness="EOD mark"` with the same OCC
-contract's bounded-age vendor-snapshot mid.
+Before the mutable public marks object advances, every admitted RTH cycle writes a
+schema-checked canonical observation to a caller-owned `0700` directory on the
+publisher host. Observation and head files are `0600`; observations are exclusively
+created, content-addressed, read back, and linked to the verified predecessor before
+the head advances atomically. The public object does not expose the private pointer,
+history, provider brand, or storage path.
 
-This value is not trade P&L. No position, fill, NBBO, live, executable, rank, gate,
-sizing, issue, Prophet, Neural Web, training, or execution authority is claimed.
+The private artifact accounts for every open plan carrying `option_contract` and
+records contract, source, clock, and entry-basis abstentions. It retains quote and
+trade clocks separately, deterministically selects by quote clock then trade clock
+then sequence, and ages bid/ask from an RTH quote clock. Although upstream includes
+size, venue/exchange, and condition fields, this bounded artifact intentionally
+discards them. Its mark change compares the plan's entry premium only when explicitly
+labeled `freshness="EOD mark"` with the same OCC contract's trade-paired mid.
+
+This is a prerequisite mark path, not trade P&L or a lifecycle outcome. It contains no
+position, provider-observed entry, provider-observed exit, fill, NBBO, live,
+executable, rank, gate, sizing, issue, Prophet, Neural Web, training, or execution
+authority.
 The strict contract is
 `contracts/options/prophet.option_mark_observation.v1.schema.json`; the frozen claim
 boundary is `research/options_estate/PROPHET_OPTION_MARK_OBSERVATIONS.md`.

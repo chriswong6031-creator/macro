@@ -1336,9 +1336,10 @@ def _available_option_quote() -> dict:
     return {
         "bid": 2.91,
         "ask": 3.05,
-        "mid": 2.98,
         "last": 2.91,
-        "ts_utc": "2026-08-11T13:45:43+00:00",
+        "quote_ts_utc": "2026-08-11T13:45:43.000000+00:00",
+        "trade_ts_utc": "2026-08-11T13:45:45.000000+00:00",
+        "source_sequence": 8,
     }
 
 
@@ -1387,13 +1388,27 @@ def test_prophet_option_mark_observation_is_schema_clean_and_not_pnl():
     errors = sorted(validator.iter_errors(observation), key=lambda e: list(e.path))
     assert errors == []
     assert row["mark_change_from_plan_pct"] == 65.5556
-    assert row["lifecycle"] == {
+    assert row["plan_state_context"] == {
         "state": "watch_only_pre_trigger",
         "position_assumed": False,
-        "trade_pnl_claim": False,
     }
+    assert row["quote"]["label"] == "trade_paired_bid_ask"
+    assert row["quote"]["quote_age_seconds"] == 857
+    assert row["quote"]["trade_age_seconds"] == 855
+    assert row["quote"]["source_sequence"] == 8
+    assert observation["storage"] == {
+        "visibility": "host_private",
+        "public_discovery": False,
+        "public_redistribution": False,
+    }
+    assert observation["source"]["provider"] == "licensed_options_history_feed"
+    assert observation["source"]["size_retained"] is False
+    assert observation["source"]["venue_retained"] is False
+    assert observation["source"]["condition_retained"] is False
     assert not any(observation["authority"].values())
     assert observation["limitations"]["not_trade_pnl"] is True
+    assert observation["limitations"]["not_lifecycle_outcome"] is True
+    assert observation["limitations"]["no_provider_observed_entry_or_exit"] is True
     assert observation["limitations"]["prospective_from_first_observation_only"] is True
     pointer = prophet_marks._observation_pointer(observation)
     assert pointer["key"].endswith(f"/{observation['observation_id']}.json")
@@ -1490,16 +1505,43 @@ def test_prophet_marks_quote_guard_rejects_wrong_clock_and_bad_market_shape():
     session = date(2026, 8, 11)
     cases = [
         (
-            {**_available_option_quote(), "ts_utc": "2026-08-11T14:00:01+00:00"},
+            {
+                **_available_option_quote(),
+                "quote_ts_utc": "2026-08-11T14:00:01+00:00",
+                "trade_ts_utc": "2026-08-11T14:00:01+00:00",
+            },
             "QUOTE_AFTER_OBSERVATION",
         ),
         (
-            {**_available_option_quote(), "ts_utc": "2026-08-10T19:59:00+00:00"},
+            {
+                **_available_option_quote(),
+                "trade_ts_utc": "2026-08-11T14:00:01+00:00",
+            },
+            "TRADE_AFTER_OBSERVATION",
+        ),
+        (
+            {
+                **_available_option_quote(),
+                "quote_ts_utc": "2026-08-11T13:50:00+00:00",
+                "trade_ts_utc": "2026-08-11T13:49:59+00:00",
+            },
+            "QUOTE_AFTER_TRADE",
+        ),
+        (
+            {
+                **_available_option_quote(),
+                "quote_ts_utc": "2026-08-10T19:59:00+00:00",
+                "trade_ts_utc": "2026-08-10T19:59:01+00:00",
+            },
             "QUOTE_WRONG_SESSION",
         ),
         (
-            {**_available_option_quote(), "ts_utc": "2026-08-11T13:29:59+00:00"},
-            "QUOTE_TOO_OLD",
+            {
+                **_available_option_quote(),
+                "quote_ts_utc": "2026-08-11T13:29:59+00:00",
+                "trade_ts_utc": "2026-08-11T13:29:59+00:00",
+            },
+            "QUOTE_OUTSIDE_RTH",
         ),
         ({**_available_option_quote(), "bid": 4.0, "ask": 3.0}, "QUOTE_SHAPE_INVALID"),
         ({**_available_option_quote(), "bid": float("inf")}, "QUOTE_SHAPE_INVALID"),
@@ -1510,6 +1552,101 @@ def test_prophet_marks_quote_guard_rejects_wrong_clock_and_bad_market_shape():
         )
         assert quote is None
         assert actual == reason
+
+    too_old, too_old_reason = prophet_marks._validated_quote(
+        _available_option_quote(),
+        observed_at=datetime(2026, 8, 11, 15, 0, tzinfo=timezone.utc),
+        session_date=session,
+    )
+    assert too_old is None
+    assert too_old_reason == "QUOTE_TOO_OLD"
+
+
+def test_prophet_marks_selects_latest_trade_paired_quote_deterministically(
+    monkeypatch,
+):
+    assert prophet_marks._source_sequence("-1") == -1
+
+    class FakeFrame:
+        empty = False
+
+        def __init__(self, rows):
+            self.rows = rows
+
+        def to_dict(self, *, orient):
+            assert orient == "records"
+            return list(self.rows)
+
+    rows = [
+        {
+            "quote_timestamp": "2026-08-11T09:45:42.900",
+            "trade_timestamp": "2026-08-11T09:45:45.100",
+            "sequence": 99,
+            "bid": 2.8,
+            "ask": 2.9,
+            "price": 2.85,
+        },
+        {
+            "quote_timestamp": "2026-08-11T09:45:43.000",
+            "trade_timestamp": "2026-08-11T09:45:45.000",
+            "sequence": 7,
+            "bid": 2.91,
+            "ask": 3.05,
+            "price": 2.91,
+        },
+        {
+            "quote_timestamp": "2026-08-11T09:45:43.000",
+            "trade_timestamp": "2026-08-11T09:45:45.000",
+            "sequence": 8,
+            "bid": 2.92,
+            "ask": 3.06,
+            "price": 2.93,
+        },
+    ]
+
+    import collectors
+
+    class FakeThetaData:
+        @staticmethod
+        def trade_quote(**_kwargs):
+            return FakeFrame(reversed(rows))
+
+    monkeypatch.setattr(collectors, "thetadata", FakeThetaData, raising=False)
+    selected = prophet_marks._fetch_contract_quote(
+        "SOFI", "C", "2026-10-16", 16.0, date(2026, 8, 11)
+    )
+
+    assert selected == {
+        "bid": 2.92,
+        "ask": 3.06,
+        "last": 2.93,
+        "quote_ts_utc": "2026-08-11T13:45:43.000000+00:00",
+        "trade_ts_utc": "2026-08-11T13:45:45.000000+00:00",
+        "source_sequence": 8,
+    }
+
+    class ConflictingThetaData:
+        @staticmethod
+        def trade_quote(**_kwargs):
+            return FakeFrame(
+                [
+                    rows[-1],
+                    {**rows[-1], "bid": 9.99},
+                ]
+            )
+
+    monkeypatch.setattr(
+        collectors,
+        "thetadata",
+        ConflictingThetaData,
+        raising=False,
+    )
+    assert (
+        prophet_marks._fetch_contract_quote(
+            "SOFI", "C", "2026-10-16", 16.0, date(2026, 8, 11)
+        )
+        is None
+    )
 
 
 class _MarkR2Error(RuntimeError):
@@ -1563,7 +1700,8 @@ def _published_mark_payload(at: str) -> dict:
                 "ask": 3.05,
                 "mid": 2.98,
                 "last": 2.91,
-                "ts_utc": "2026-08-11T13:45:43+00:00",
+                "ts_utc": "2026-08-11T13:45:43.000000+00:00",
+                "trade_ts_utc": "2026-08-11T13:45:45.000000+00:00",
             }
         },
         "coverage": {
@@ -1599,10 +1737,26 @@ def _published_mark_row() -> dict:
     )
 
 
-def test_prophet_marks_r2_publication_is_immutable_then_backwards_linked(monkeypatch):
+def _private_mark_head(root: Path) -> tuple[dict, dict, Path]:
+    head = json.loads((root / "current.json").read_bytes())
+    pointer = head["evidence"]
+    observation_path = root / pointer["key"]
+    observation = json.loads(observation_path.read_bytes())
+    return pointer, observation, observation_path
+
+
+def test_prophet_marks_publication_keeps_backwards_linked_evidence_host_private(
+    monkeypatch,
+    tmp_path,
+):
     client = _FakeMarkR2()
     index = _option_mark_index()
     rows = [_published_mark_row()]
+    private_root = tmp_path / "private-option-marks"
+    monkeypatch.setenv(
+        "PROPHET_OPTION_EVIDENCE_STATE_ROOT",
+        str(private_root),
+    )
     monkeypatch.setattr(prophet_marks, "_r2_client", lambda: client)
 
     first = prophet_marks._publish_r2(
@@ -1611,13 +1765,23 @@ def test_prophet_marks_r2_publication_is_immutable_then_backwards_linked(monkeyp
         evidence_rows=rows,
     )
     assert first is not None
-    first_pointer = first["evidence"]
-    assert client.puts[0]["Key"] == first_pointer["key"]
-    assert client.puts[0]["IfNoneMatch"] == "*"
-    assert client.puts[1]["Key"] == prophet_marks.R2_KEY
-    assert client.puts[1]["IfNoneMatch"] == "*"
-    first_observation = json.loads(client.objects[first_pointer["key"]])
+    assert "evidence" not in first
+    assert len(client.puts) == 1
+    assert client.puts[0]["Key"] == prophet_marks.R2_KEY
+    assert "IfNoneMatch" not in client.puts[0]
+    assert "IfMatch" not in client.puts[0]
+    assert b"evidence" not in client.objects[prophet_marks.R2_KEY]
+    assert b"thetadata" not in client.objects[prophet_marks.R2_KEY].lower()
+
+    first_pointer, first_observation, first_path = _private_mark_head(private_root)
     assert first_observation["previous"] is None
+    assert first_observation["storage"]["visibility"] == "host_private"
+    assert first_observation["storage"]["public_redistribution"] is False
+    assert private_root.stat().st_mode & 0o777 == 0o700
+    assert (private_root / "observations").stat().st_mode & 0o777 == 0o700
+    assert first_path.parent.stat().st_mode & 0o777 == 0o700
+    assert (private_root / "current.json").stat().st_mode & 0o777 == 0o600
+    assert first_path.stat().st_mode & 0o777 == 0o600
 
     second = prophet_marks._publish_r2(
         _published_mark_payload("2026-08-11T14:05:00+00:00"),
@@ -1625,40 +1789,32 @@ def test_prophet_marks_r2_publication_is_immutable_then_backwards_linked(monkeyp
         evidence_rows=rows,
     )
     assert second is not None
-    second_pointer = second["evidence"]
+    assert "evidence" not in second
+    assert len(client.puts) == 2
+    assert all(item["Key"] == prophet_marks.R2_KEY for item in client.puts)
+    second_pointer, second_observation, _second_path = _private_mark_head(private_root)
     assert second_pointer["observation_id"] != first_pointer["observation_id"]
-    assert client.puts[3]["IfMatch"] == (
-        '"' + hashlib.sha256(client.puts[1]["Body"]).hexdigest() + '"'
-    )
-    second_observation = json.loads(client.objects[second_pointer["key"]])
     assert second_observation["previous"] == first_pointer
-    assert json.loads(client.objects[prophet_marks.R2_KEY])["evidence"] == second_pointer
+    assert "evidence" not in json.loads(client.objects[prophet_marks.R2_KEY])
 
 
-def test_prophet_marks_r2_refuses_a_corrupt_existing_chain_head(monkeypatch):
+def test_prophet_marks_refuses_a_corrupt_private_chain_head(monkeypatch, tmp_path):
     client = _FakeMarkR2()
-    client.objects[prophet_marks.R2_KEY] = json.dumps(
-        {
-            "schema": prophet_marks.SCHEMA,
-            "asof_utc": "2026-08-11T13:55:00+00:00",
-            "session_date": "2026-08-11",
-            "marks": {},
-            "evidence": {
-                "schema": prophet_marks.EVIDENCE_POINTER_SCHEMA,
-                "observation_id": "pom_obs_" + "a" * 64,
-                "key": (
-                    prophet_marks.EVIDENCE_PREFIX
-                    + "/2026-08-11/pom_obs_"
-                    + "a" * 64
-                    + ".json"
-                ),
-                "sha256": "b" * 64,
-                "bytes": 99,
-            },
-        }
-    ).encode("utf-8")
-    original = client.objects[prophet_marks.R2_KEY]
+    private_root = tmp_path / "private-option-marks"
+    monkeypatch.setenv(
+        "PROPHET_OPTION_EVIDENCE_STATE_ROOT",
+        str(private_root),
+    )
     monkeypatch.setattr(prophet_marks, "_r2_client", lambda: client)
+    assert prophet_marks._publish_r2(
+        _published_mark_payload("2026-08-11T13:55:00+00:00"),
+        index=_option_mark_index(),
+        evidence_rows=[_published_mark_row()],
+    ) is not None
+    original = client.objects[prophet_marks.R2_KEY]
+    put_count = len(client.puts)
+    _pointer, _observation, observation_path = _private_mark_head(private_root)
+    observation_path.write_bytes(observation_path.read_bytes() + b"tamper")
 
     assert (
         prophet_marks._publish_r2(
@@ -1669,43 +1825,43 @@ def test_prophet_marks_r2_refuses_a_corrupt_existing_chain_head(monkeypatch):
         is None
     )
     assert client.objects[prophet_marks.R2_KEY] == original
+    assert len(client.puts) == put_count
 
 
-def test_prophet_marks_r2_refuses_a_forged_content_identity(monkeypatch):
+def test_prophet_marks_refuses_a_forged_private_content_identity(
+    monkeypatch,
+    tmp_path,
+):
     client = _FakeMarkR2()
     index = _option_mark_index()
     row = _published_mark_row()
-    observation = prophet_marks._build_observation(
-        index=index,
-        observed_at_utc="2026-08-11T13:55:00+00:00",
-        session_date="2026-08-11",
-        rows=[row],
-        coverage=_published_mark_payload(
-            "2026-08-11T13:55:00+00:00"
-        )["coverage"],
-        previous=None,
+    private_root = tmp_path / "private-option-marks"
+    monkeypatch.setenv(
+        "PROPHET_OPTION_EVIDENCE_STATE_ROOT",
+        str(private_root),
     )
-    observation["rows"][0]["mark_change_from_plan_pct"] = 999.0
-    body = prophet_marks._canonical_json_bytes(observation)
-    pointer = {
-        "schema": prophet_marks.EVIDENCE_POINTER_SCHEMA,
-        "observation_id": observation["observation_id"],
-        "key": (
-            f"{prophet_marks.EVIDENCE_PREFIX}/2026-08-11/"
-            f"{observation['observation_id']}.json"
-        ),
-        "sha256": hashlib.sha256(body).hexdigest(),
-        "bytes": len(body),
-    }
-    client.objects[pointer["key"]] = body
-    client.objects[prophet_marks.R2_KEY] = prophet_marks._canonical_json_bytes(
-        {
-            **_published_mark_payload("2026-08-11T13:55:00+00:00"),
-            "evidence": pointer,
-        }
-    )
-    original = client.objects[prophet_marks.R2_KEY]
     monkeypatch.setattr(prophet_marks, "_r2_client", lambda: client)
+    assert prophet_marks._publish_r2(
+        _published_mark_payload("2026-08-11T13:55:00+00:00"),
+        index=index,
+        evidence_rows=[row],
+    ) is not None
+    original = client.objects[prophet_marks.R2_KEY]
+    put_count = len(client.puts)
+    pointer, observation, observation_path = _private_mark_head(private_root)
+    observation["rows"][0]["mark_change_from_plan_pct"] = 99.0
+    body = prophet_marks._canonical_json_bytes(observation)
+    observation_path.write_bytes(body)
+    pointer["sha256"] = hashlib.sha256(body).hexdigest()
+    pointer["bytes"] = len(body)
+    (private_root / "current.json").write_bytes(
+        prophet_marks._canonical_json_bytes(
+            {
+                "schema": prophet_marks.EVIDENCE_HEAD_SCHEMA,
+                "evidence": pointer,
+            }
+        )
+    )
 
     assert (
         prophet_marks._publish_r2(
@@ -1716,3 +1872,32 @@ def test_prophet_marks_r2_refuses_a_forged_content_identity(monkeypatch):
         is None
     )
     assert client.objects[prophet_marks.R2_KEY] == original
+    assert len(client.puts) == put_count
+
+
+def test_prophet_marks_runtime_schema_failure_prevents_any_publication(
+    monkeypatch,
+    tmp_path,
+):
+    client = _FakeMarkR2()
+    private_root = tmp_path / "private-option-marks"
+    monkeypatch.setenv(
+        "PROPHET_OPTION_EVIDENCE_STATE_ROOT",
+        str(private_root),
+    )
+    monkeypatch.setenv(
+        "PROPHET_OPTION_EVIDENCE_SCHEMA_PATH",
+        str(tmp_path / "missing-observation-schema.json"),
+    )
+    monkeypatch.setattr(prophet_marks, "_EVIDENCE_VALIDATOR", None)
+    monkeypatch.setattr(prophet_marks, "_r2_client", lambda: client)
+
+    assert prophet_marks._publish_r2(
+        _published_mark_payload("2026-08-11T14:00:00+00:00"),
+        index=_option_mark_index(),
+        evidence_rows=[_published_mark_row()],
+    ) is None
+    assert client.puts == []
+    assert prophet_marks.R2_KEY not in client.objects
+    assert not (private_root / "current.json").exists()
+    assert not (private_root / "observations").exists()
