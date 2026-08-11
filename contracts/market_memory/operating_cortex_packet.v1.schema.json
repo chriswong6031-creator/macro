@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/operating_cortex_packet.v1.schema.json",
+  "title": "Market Memory synthetic Operating Cortex packet v1",
+  "description": "Content-addressed structural attention packet over an exact W4A retrieval record and caller-supplied synthetic evidence bytes. Citations establish byte-span closure only, never entailment or authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 21,
+  "maxProperties": 21,
+  "required": [
+    "schema", "operating_cortex_packet_id", "operating_cortex_registration_id",
+    "retrieval_registration_id", "episodic_retrieval_record_id", "trial_registration_id",
+    "assembled_at", "episode_scope", "source_manifests", "evidence_cards", "claim_inputs",
+    "attention_queue", "contradictions", "missingness", "falsifier_audit",
+    "citation_projection", "scorecards", "input_profile", "claims", "emission_enabled",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.operating_cortex_packet.v1"},
+    "operating_cortex_packet_id": {"type": "string", "pattern": "^mmcortexpacket_[a-f0-9]{64}$"},
+    "operating_cortex_registration_id": {"type": "string", "pattern": "^mmcortexregistration_[a-f0-9]{64}$"},
+    "retrieval_registration_id": {"type": "string", "pattern": "^mmretrievalregistration_[a-f0-9]{64}$"},
+    "episodic_retrieval_record_id": {"type": "string", "pattern": "^mmepisodicretrieval_[a-f0-9]{64}$"},
+    "trial_registration_id": {"type": "string", "pattern": "^mmtrial_[a-f0-9]{64}$"},
+    "assembled_at": {"$ref": "#/$defs/timestamp"},
+    "episode_scope": {"type": "array", "minItems": 1, "maxItems": 33, "uniqueItems": true, "items": {"$ref": "#/$defs/forecastId"}},
+    "source_manifests": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/sourceManifest"}},
+    "evidence_cards": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/evidenceCard"}},
+    "claim_inputs": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/claimInput"}},
+    "attention_queue": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/attention"}},
+    "contradictions": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/contradiction"}},
+    "missingness": {"type": "array", "minItems": 1, "maxItems": 33, "items": {"$ref": "#/$defs/missingness"}},
+    "falsifier_audit": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/falsifierAudit"}},
+    "citation_projection": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/claimProjection"}},
+    "scorecards": {"$ref": "#/$defs/scorecards"},
+    "input_profile": {"const": "synthetic_fixture_only"},
+    "claims": {"$ref": "operating_cortex_registration.v1.schema.json#/$defs/claims"},
+    "emission_enabled": {"const": false},
+    "authority": {"$ref": "state_snapshot.v1.schema.json#/$defs/authority"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[a-f0-9]{64}$"},
+    "timestamp": {"type": "string", "minLength": 27, "maxLength": 27, "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"},
+    "opaque": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"},
+    "forecastId": {"type": "string", "pattern": "^mmforecast_[a-f0-9]{64}$"},
+    "q18": {"type": "string", "minLength": 20, "maxLength": 20, "pattern": "^(?:0\\.[0-9]{18}|1\\.0{18})$"},
+    "opaqueList8": {"type": "array", "maxItems": 8, "uniqueItems": true, "items": {"$ref": "#/$defs/opaque"}},
+    "kindList16": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/opaque"}},
+    "sourceManifest": {
+      "type": "object", "additionalProperties": false, "minProperties": 3, "maxProperties": 3,
+      "required": ["source_id", "source_sha256", "byte_length"],
+      "properties": {"source_id": {"$ref": "#/$defs/opaque"}, "source_sha256": {"$ref": "#/$defs/sha256"}, "byte_length": {"type": "integer", "minimum": 1, "maximum": 65536}}
+    },
+    "citation": {
+      "type": "object", "additionalProperties": false, "minProperties": 2, "maxProperties": 2,
+      "required": ["byte_start", "byte_end"],
+      "properties": {"byte_start": {"type": "integer", "minimum": 0, "maximum": 65535}, "byte_end": {"type": "integer", "minimum": 1, "maximum": 65536}}
+    },
+    "components": {
+      "type": "object", "additionalProperties": false, "minProperties": 6, "maxProperties": 6,
+      "required": ["freshness", "source_quality", "episode_relevance", "contradiction_relevance", "missingness_relevance", "falsifier_relevance"],
+      "properties": {
+        "freshness": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]},
+        "source_quality": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]},
+        "episode_relevance": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]},
+        "contradiction_relevance": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]},
+        "missingness_relevance": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]},
+        "falsifier_relevance": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]}
+      }
+    },
+    "evidenceCard": {
+      "type": "object", "additionalProperties": false, "minProperties": 9, "maxProperties": 9,
+      "required": ["evidence_id", "episode_forecast_id", "evidence_kind", "source_id", "source_sha256", "citations", "stance", "contradiction_group_id", "salience_components"],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/opaque"},
+        "episode_forecast_id": {"$ref": "#/$defs/forecastId"},
+        "evidence_kind": {"$ref": "#/$defs/opaque"},
+        "source_id": {"$ref": "#/$defs/opaque"},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "citations": {"type": "array", "maxItems": 8, "items": {"$ref": "#/$defs/citation"}},
+        "stance": {"enum": ["supports", "challenges", "neutral"]},
+        "contradiction_group_id": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/opaque"}]},
+        "salience_components": {"$ref": "#/$defs/components"}
+      }
+    },
+    "claimInput": {
+      "type": "object", "additionalProperties": false, "minProperties": 5, "maxProperties": 5,
+      "required": ["claim_id", "episode_forecast_id", "evidence_ids", "required_evidence_kinds", "falsifier_evidence_ids"],
+      "properties": {
+        "claim_id": {"$ref": "#/$defs/opaque"},
+        "episode_forecast_id": {"$ref": "#/$defs/forecastId"},
+        "evidence_ids": {"type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": {"$ref": "#/$defs/opaque"}},
+        "required_evidence_kinds": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/opaque"}},
+        "falsifier_evidence_ids": {"$ref": "#/$defs/opaqueList8"}
+      }
+    },
+    "attention": {
+      "type": "object", "additionalProperties": false, "minProperties": 5, "maxProperties": 5,
+      "required": ["evidence_id", "episode_forecast_id", "salience_score", "status", "reason"],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/opaque"}, "episode_forecast_id": {"$ref": "#/$defs/forecastId"},
+        "salience_score": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]},
+        "status": {"enum": ["scored", "abstained"]},
+        "reason": {"oneOf": [{"type": "null"}, {"const": "missing_salience_component"}]}
+      }
+    },
+    "contradiction": {
+      "type": "object", "additionalProperties": false, "minProperties": 4, "maxProperties": 4,
+      "required": ["contradiction_group_id", "supports_evidence_ids", "challenges_evidence_ids", "status"],
+      "properties": {"contradiction_group_id": {"$ref": "#/$defs/opaque"}, "supports_evidence_ids": {"$ref": "#/$defs/opaqueList8"}, "challenges_evidence_ids": {"$ref": "#/$defs/opaqueList8"}, "status": {"const": "structural_conflict"}}
+    },
+    "missingness": {
+      "type": "object", "additionalProperties": false, "minProperties": 5, "maxProperties": 5,
+      "required": ["episode_forecast_id", "required_evidence_kinds", "supplied_required_evidence_kinds", "missing_required_evidence_kinds", "scope"],
+      "properties": {"episode_forecast_id": {"$ref": "#/$defs/forecastId"}, "required_evidence_kinds": {"$ref": "#/$defs/kindList16"}, "supplied_required_evidence_kinds": {"$ref": "#/$defs/kindList16"}, "missing_required_evidence_kinds": {"$ref": "#/$defs/kindList16"}, "scope": {"const": "supplied_synthetic_evidence_only"}}
+    },
+    "falsifierAudit": {
+      "type": "object", "additionalProperties": false, "minProperties": 6, "maxProperties": 6,
+      "required": ["claim_id", "registered_falsifier_evidence_ids", "supplied_falsifier_evidence_ids", "missing_falsifier_evidence_ids", "status", "generation"],
+      "properties": {"claim_id": {"$ref": "#/$defs/opaque"}, "registered_falsifier_evidence_ids": {"$ref": "#/$defs/opaqueList8"}, "supplied_falsifier_evidence_ids": {"$ref": "#/$defs/opaqueList8"}, "missing_falsifier_evidence_ids": {"$ref": "#/$defs/opaqueList8"}, "status": {"enum": ["not_registered", "complete", "incomplete"]}, "generation": {"const": "never_generated"}}
+    },
+    "citationRef": {
+      "type": "object", "additionalProperties": false, "minProperties": 5, "maxProperties": 5,
+      "required": ["evidence_id", "source_id", "source_sha256", "byte_start", "byte_end"],
+      "properties": {"evidence_id": {"$ref": "#/$defs/opaque"}, "source_id": {"$ref": "#/$defs/opaque"}, "source_sha256": {"$ref": "#/$defs/sha256"}, "byte_start": {"type": "integer", "minimum": 0, "maximum": 65535}, "byte_end": {"type": "integer", "minimum": 1, "maximum": 65536}}
+    },
+    "claimProjection": {
+      "type": "object", "additionalProperties": false, "minProperties": 6, "maxProperties": 6,
+      "required": ["claim_id", "episode_forecast_id", "status", "withholding_reason", "citation_refs", "entailment"],
+      "properties": {"claim_id": {"$ref": "#/$defs/opaque"}, "episode_forecast_id": {"$ref": "#/$defs/forecastId"}, "status": {"enum": ["available", "withheld"]}, "withholding_reason": {"oneOf": [{"type": "null"}, {"enum": ["evidence_reference_missing", "required_evidence_kind_missing", "citation_not_closed", "falsifier_reference_missing"]}]}, "citation_refs": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/citationRef"}}, "entailment": {"const": "not_evaluated"}}
+    },
+    "scorecards": {
+      "type": "object", "additionalProperties": false, "minProperties": 2, "maxProperties": 2,
+      "required": ["structural_unsupported_rate", "attention_quality"],
+      "properties": {
+        "structural_unsupported_rate": {"type": "object", "additionalProperties": false, "required": ["status", "value_decimal", "numerator", "denominator", "scope"], "properties": {"status": {"enum": ["computed", "abstained"]}, "value_decimal": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]}, "numerator": {"type": "integer", "minimum": 0, "maximum": 128}, "denominator": {"type": "integer", "minimum": 0, "maximum": 128}, "scope": {"const": "supplied_synthetic_claims_only"}}},
+        "attention_quality": {"const": {"status": "not_evaluated", "value": null, "reason": "no_labeled_attention_outcomes"}}
+      }
+    }
+  }
+}
