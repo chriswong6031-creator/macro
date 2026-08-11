@@ -452,19 +452,20 @@ def _leaderboard() -> dict | None:
         d = max(x["TRADE_DATE"] for x in rows)
         return [x for x in rows if x["TRADE_DATE"] == d]
 
-    def row(x: dict, field: str) -> dict:
-        return {"code": x.get("SECURITY_CODE"), "name": x.get("SECURITY_NAME"),
+    def row(x: dict, field: str, val_key: str) -> dict:
+        name = x.get("SECURITY_NAME")  # Eastmoney has no separate EN name; name_zh==name
+        return {"ticker": x.get("SECURITY_CODE"), "name": name, "name_zh": name,
                 "chg": round(float(x.get("CHANGE_RATE") or 0), 2),
-                "val": round(float(x.get(field) or 0) / 1e8, 2)}   # 亿
+                val_key: round(float(x.get(field) or 0) / 1e8, 2)}   # 亿
 
     nb, sb = latest(nb), latest(sb)
     date = (nb or sb)[0]["TRADE_DATE"][:10] if (nb or sb) else None
     nb.sort(key=lambda x: -(x.get("DEAL_AMT") or 0))                 # foreign turnover
     sb.sort(key=lambda x: -(x.get("NET_BUY_AMT") or 0))             # mainland net
     return {"date": date,
-            "nb": [row(x, "DEAL_AMT") for x in nb[:8]],
-            "sb_buy": [row(x, "NET_BUY_AMT") for x in sb[:6]],
-            "sb_sell": [row(x, "NET_BUY_AMT") for x in
+            "northbound_turnover": [row(x, "DEAL_AMT", "turnover") for x in nb[:8]],
+            "southbound_buy": [row(x, "NET_BUY_AMT", "net") for x in sb[:6]],
+            "southbound_sell": [row(x, "NET_BUY_AMT", "net") for x in
                         sorted(sb, key=lambda x: (x.get("NET_BUY_AMT") or 0))[:4]]}
 
 
