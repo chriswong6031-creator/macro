@@ -1,0 +1,419 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/research/momoedge_oracle_completion_benchmark_prereg.v1.schema.json",
+  "title": "Frozen MomoEdge catch-up and surpass completion benchmark",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "registration", "benchmark"],
+  "properties": {
+    "schema": {"const": "momoedge.completion_benchmark_prereg/v1"},
+    "registration": {"$ref": "#/$defs/registration"},
+    "benchmark": {"$ref": "#/$defs/benchmark"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "id": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,80}$"},
+    "snake": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,100}$"},
+    "nonemptyString": {"type": "string", "minLength": 1, "maxLength": 2000},
+    "stringArray": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/nonemptyString"}
+    },
+    "registration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registered_at",
+        "repository",
+        "baseline_commit",
+        "effective_freeze_rule",
+        "canonicalization",
+        "benchmark_digest_sha256"
+      ],
+      "properties": {
+        "registered_at": {"type": "string", "format": "date-time"},
+        "repository": {"const": "mastermindx-market-intelligence/macro"},
+        "baseline_commit": {"$ref": "#/$defs/commit"},
+        "effective_freeze_rule": {
+          "const": "later_of_registered_at_and_first_origin_main_commit_containing_exact_benchmark_digest"
+        },
+        "canonicalization": {"const": "json_utf8_sort_keys_compact_no_ascii_escape/v1"},
+        "benchmark_digest_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "sourceReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "schema", "captured_at", "authorization_validated"],
+      "properties": {
+        "path": {"$ref": "#/$defs/nonemptyString"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "schema": {"$ref": "#/$defs/nonemptyString"},
+        "captured_at": {"type": "string", "format": "date-time"},
+        "authorization_validated": {"const": true}
+      }
+    },
+    "competitorMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "history_records",
+        "headline_wins",
+        "headline_win_rate_pct",
+        "headline_total_alpha_pct",
+        "headline_definition",
+        "option_records",
+        "option_return_observed_records",
+        "reconstructed_visible_option_sum_pct",
+        "visible_positive_returns",
+        "visible_zero_returns",
+        "visible_negative_returns",
+        "reconstruction_is_track_record"
+      ],
+      "properties": {
+        "history_records": {"type": "integer", "minimum": 0},
+        "headline_wins": {"type": "integer", "minimum": 0},
+        "headline_win_rate_pct": {"type": "number", "minimum": 0, "maximum": 100},
+        "headline_total_alpha_pct": {"type": "number"},
+        "headline_definition": {"$ref": "#/$defs/nonemptyString"},
+        "option_records": {"type": "integer", "minimum": 0},
+        "option_return_observed_records": {"type": "integer", "minimum": 0},
+        "reconstructed_visible_option_sum_pct": {"type": "number"},
+        "visible_positive_returns": {"type": "integer", "minimum": 0},
+        "visible_zero_returns": {"type": "integer", "minimum": 0},
+        "visible_negative_returns": {"type": "integer", "minimum": 0},
+        "reconstruction_is_track_record": {"const": false}
+      }
+    },
+    "competitorBaseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_receipt", "metrics", "use_policy", "limitations"],
+      "properties": {
+        "source_receipt": {"$ref": "#/$defs/sourceReceipt"},
+        "metrics": {"$ref": "#/$defs/competitorMetrics"},
+        "use_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["feature_definition", "historical_context", "prospective_return_gate"],
+          "properties": {
+            "feature_definition": {"const": true},
+            "historical_context": {"const": true},
+            "prospective_return_gate": {"const": false}
+          }
+        },
+        "limitations": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "ledgerBaseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "row_count", "prospective_row_count", "authority"],
+      "properties": {
+        "path": {"$ref": "#/$defs/nonemptyString"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "row_count": {"type": "integer", "minimum": 0},
+        "prospective_row_count": {"type": "integer", "minimum": 0},
+        "authority": {"enum": ["research_only", "display_only", "shadow"]}
+      }
+    },
+    "liveObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_id",
+        "url",
+        "observed_at",
+        "response_sha256",
+        "schema_or_status",
+        "facts",
+        "claim_use"
+      ],
+      "properties": {
+        "observation_id": {"$ref": "#/$defs/snake"},
+        "url": {"type": "string", "format": "uri"},
+        "observed_at": {"type": "string", "format": "date-time"},
+        "response_sha256": {"$ref": "#/$defs/sha256"},
+        "schema_or_status": {"$ref": "#/$defs/nonemptyString"},
+        "facts": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonemptyString"}
+        },
+        "claim_use": {"const": "registration_baseline_only_not_completion_evidence"}
+      }
+    },
+    "ourBaseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit", "ledgers", "live_observations", "claim_state"],
+      "properties": {
+        "commit": {"$ref": "#/$defs/commit"},
+        "ledgers": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {"$ref": "#/$defs/ledgerBaseline"}
+        },
+        "live_observations": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {"$ref": "#/$defs/liveObservation"}
+        },
+        "claim_state": {"const": "not_complete_no_prospective_return_cohort"}
+      }
+    },
+    "phaseFence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "retrospective_phase",
+        "prospective_phase",
+        "prospective_clock_field",
+        "prospective_digest_field",
+        "retrospective_may_define_features",
+        "retrospective_may_satisfy_return_gate",
+        "missing_or_mismatched_phase_action"
+      ],
+      "properties": {
+        "retrospective_phase": {"const": "retrospective_discovery"},
+        "prospective_phase": {"const": "prospective_after_benchmark_freeze"},
+        "prospective_clock_field": {"const": "decision_available_at"},
+        "prospective_digest_field": {"const": "benchmark_digest_sha256"},
+        "retrospective_may_define_features": {"const": true},
+        "retrospective_may_satisfy_return_gate": {"const": false},
+        "missing_or_mismatched_phase_action": {"const": "exclude_and_count_as_incomplete"}
+      }
+    },
+    "criterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["criterion_id", "pass_condition", "evidence_required"],
+      "properties": {
+        "criterion_id": {"$ref": "#/$defs/id"},
+        "pass_condition": {"$ref": "#/$defs/nonemptyString"},
+        "evidence_required": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate_id", "stage", "all_required", "criteria"],
+      "properties": {
+        "gate_id": {"$ref": "#/$defs/id"},
+        "stage": {"enum": ["catch_up", "surpass"]},
+        "all_required": {"const": true},
+        "criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/criterion"}
+        }
+      }
+    },
+    "completionRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "catch_up_requires",
+        "surpass_requires_catch_up",
+        "surpass_requires",
+        "goal_complete_state",
+        "partial_substitution_allowed",
+        "current_state_at_registration"
+      ],
+      "properties": {
+        "catch_up_requires": {"$ref": "#/$defs/stringArray"},
+        "surpass_requires_catch_up": {"const": true},
+        "surpass_requires": {"$ref": "#/$defs/stringArray"},
+        "goal_complete_state": {"const": "surpass"},
+        "partial_substitution_allowed": {"const": false},
+        "current_state_at_registration": {"const": "not_complete"}
+      }
+    },
+    "quoteBasis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_class",
+        "nbbo_required",
+        "entry_side",
+        "exit_side",
+        "max_quote_available_lag_sec",
+        "fee_per_contract_per_side_usd",
+        "contracts_per_observation",
+        "return_formula",
+        "mid_last_eod_substitution_allowed"
+      ],
+      "properties": {
+        "source_class": {"const": "licensed_opra_nbbo_with_event_and_available_clocks"},
+        "nbbo_required": {"const": true},
+        "entry_side": {"const": "first_valid_ask_at_or_after_trigger"},
+        "exit_side": {
+          "const": "first_valid_bid_at_or_after_terminal_event_with_1555_et_expiry_liquidation"
+        },
+        "max_quote_available_lag_sec": {"type": "integer", "minimum": 1, "maximum": 3600},
+        "fee_per_contract_per_side_usd": {"type": "number", "minimum": 0, "maximum": 10},
+        "contracts_per_observation": {"const": 1},
+        "return_formula": {
+          "const": "100*((100*exit_bid-fee)-(100*entry_ask+fee))/(100*entry_ask+fee)"
+        },
+        "mid_last_eod_substitution_allowed": {"const": false}
+      }
+    },
+    "cohort": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "session_scope",
+        "minimum_covered_sessions",
+        "minimum_closed_exact_option_outcomes_per_system",
+        "minimum_capture_coverage_ratio",
+        "maximum_authenticated_capture_gap_sec",
+        "same_window_required",
+        "open_outcomes_at_cutoff"
+      ],
+      "properties": {
+        "session_scope": {"const": "NYSE_RTH_sessions_after_effective_freeze"},
+        "minimum_covered_sessions": {"type": "integer", "minimum": 20, "maximum": 504},
+        "minimum_closed_exact_option_outcomes_per_system": {"type": "integer", "minimum": 30, "maximum": 1000},
+        "minimum_capture_coverage_ratio": {"type": "number", "minimum": 0.8, "maximum": 1},
+        "maximum_authenticated_capture_gap_sec": {"type": "integer", "minimum": 60, "maximum": 3600},
+        "same_window_required": {"const": true},
+        "open_outcomes_at_cutoff": {"const": "retained_open_not_counted_closed"}
+      }
+    },
+    "statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primary_metric",
+        "resampling_unit",
+        "block_length_sessions",
+        "bootstrap_replicates",
+        "random_seed",
+        "confidence_level",
+        "primary_pass_rule",
+        "downside_metric",
+        "downside_noninferiority_margin_pct_points",
+        "downside_pass_rule",
+        "headline_win_rate_role"
+      ],
+      "properties": {
+        "primary_metric": {"const": "mean_net_exact_option_return_pct_difference_ours_minus_momoedge"},
+        "resampling_unit": {"const": "issue_session_stationary_block_bootstrap"},
+        "block_length_sessions": {"type": "integer", "minimum": 2, "maximum": 20},
+        "bootstrap_replicates": {"type": "integer", "minimum": 1000, "maximum": 1000000},
+        "random_seed": {"type": "integer", "minimum": 1},
+        "confidence_level": {"type": "number", "exclusiveMinimum": 0.5, "exclusiveMaximum": 1},
+        "primary_pass_rule": {"const": "lower_confidence_bound_strictly_greater_than_zero"},
+        "downside_metric": {"const": "tenth_percentile_net_exact_option_return_pct"},
+        "downside_noninferiority_margin_pct_points": {"type": "number", "minimum": 0, "maximum": 50},
+        "downside_pass_rule": {"const": "ours_greater_than_or_equal_to_momoedge_minus_margin"},
+        "headline_win_rate_role": {"const": "reported_context_only_not_a_pass_threshold"}
+      }
+    },
+    "prospectiveProtocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase_fence",
+        "competitor_capture",
+        "inclusion_requirements",
+        "exclusion_reasons",
+        "quote_basis",
+        "cohort",
+        "statistics",
+        "retuning_policy"
+      ],
+      "properties": {
+        "phase_fence": {"$ref": "#/$defs/phaseFence"},
+        "competitor_capture": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["authentication", "raw_storage", "tracked_output", "session_coverage_rule"],
+          "properties": {
+            "authentication": {"const": "user_controlled_authorized_subscription"},
+            "raw_storage": {"const": "private_outside_git"},
+            "tracked_output": {"const": "aggregate_privacy_preserving_receipt_only"},
+            "session_coverage_rule": {"const": "exclude_session_from_both_systems_when_capture_gap_exceeds_limit"}
+          }
+        },
+        "inclusion_requirements": {"$ref": "#/$defs/stringArray"},
+        "exclusion_reasons": {"$ref": "#/$defs/stringArray"},
+        "quote_basis": {"$ref": "#/$defs/quoteBasis"},
+        "cohort": {"$ref": "#/$defs/cohort"},
+        "statistics": {"$ref": "#/$defs/statistics"},
+        "retuning_policy": {"const": "any_selector_lifecycle_quote_or_metric_change_starts_a_new_version_and_new_forward_cohort"}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "signal_origination",
+        "prophet_promotion",
+        "neural_web_promotion",
+        "automatic_training",
+        "brokerage",
+        "completion_receipt_promotes_authority",
+        "direction_without_nbbo",
+        "llm_role"
+      ],
+      "properties": {
+        "tier": {"const": "research_only"},
+        "signal_origination": {"const": false},
+        "prophet_promotion": {"const": false},
+        "neural_web_promotion": {"const": false},
+        "automatic_training": {"const": false},
+        "brokerage": {"const": false},
+        "completion_receipt_promotes_authority": {"const": false},
+        "direction_without_nbbo": {"const": "soft_context_only"},
+        "llm_role": {"const": "narrate_and_deescalate_only_never_originate_rank_or_escalate"}
+      }
+    },
+    "benchmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "question",
+        "baselines",
+        "completion_rule",
+        "catch_up_gates",
+        "surpass_gates",
+        "prospective_return_protocol",
+        "authority"
+      ],
+      "properties": {
+        "question": {"$ref": "#/$defs/nonemptyString"},
+        "baselines": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["momoedge", "mastermindx"],
+          "properties": {
+            "momoedge": {"$ref": "#/$defs/competitorBaseline"},
+            "mastermindx": {"$ref": "#/$defs/ourBaseline"}
+          }
+        },
+        "completion_rule": {"$ref": "#/$defs/completionRule"},
+        "catch_up_gates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/gate"}
+        },
+        "surpass_gates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/gate"}
+        },
+        "prospective_return_protocol": {"$ref": "#/$defs/prospectiveProtocol"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    }
+  }
+}
