@@ -18,9 +18,10 @@ This document is the design of record for the backfill PR. §0 gates are the
    NOT reconstructed (see §2 refusal). 2026-08-10 forward belongs to the live
    nightly.
 2. **Vintage-pinned inputs, receipted.** The replay reads the genuine
-   `as_of=2026-08-07` board (post-heal staleness block) pinned by commit SHA,
-   and a plans-baseline pinned by commit SHA, both recorded in the backfill
-   receipt. No input is "whatever is on disk".
+   `as_of=2026-08-07` board (post-heal staleness block), plus the event-time
+   plans baseline, each pinned by commit SHA. A separately pinned current
+   plans baseline supplies collision authority. All three SHAs are recorded in
+   the backfill receipt; no input is "whatever is on disk".
 3. **Provenance on every minted row.** Each backfilled plan carries
    `origination_mode: "outage_backfill_2026_08_09"` plus
    `backfill_executed_at` (real wall date) alongside the normal era stamps
@@ -69,12 +70,17 @@ This document is the design of record for the backfill PR. §0 gates are the
 
 ## §1 Why recorded_at=2026-08-09 is the honest reconstruction
 
-- The 2026-08-09 22:59Z bake ACTUALLY RAN the current intake end-to-end:
-  79 buys → 54 admitted → 30 eligible → 30 refused, all at
-  `clock_provenance` on `panel.mixed_vintage=true` — receipted
-  (`data/prophet/origination_receipts/31292839484-*.json`, intake receipt
-  rows_in_part=30). The counterfactual "fix present" flips exactly one
-  poisoned input; everything else is the receipted live path.
+- The 2026-08-09 22:59Z scheduled bake (run `31340764145`, engine job
+  `93332847126`) ACTUALLY RAN the current intake end-to-end: 79 buys → 54
+  admitted → 30 eligible → 30 refused, all at `clock_provenance` on
+  `panel.mixed_vintage=true`. The durable checkpoint
+  `8421e4783f141248656c850bfd61d1e15a6aeb97` receipts the exact 30 identities
+  and errors in `site/prophet/index.json:intake.validation_failures`, with
+  `intake.legacy_shadow.rows_in_part=30`. (The similarly dated
+  `data/prophet/origination_receipts/31292839484-*.json` belongs to an earlier
+  workflow-dispatch run that originated two plans; it is NOT this refusal
+  receipt.) The counterfactual "fix present" flips exactly one poisoned input;
+  everything else is the receipted live path.
 - The board it read is still on main (`site/factordata/us_standouts.json`,
   `as_of=2026-08-07`), and the 2026-08-10 closing-bell render re-derived its
   staleness block through the healed `_panel_price_reach`:
@@ -125,15 +131,22 @@ to run twice — idempotence via the disclosure artifact):
 1. Inputs (all pinned, passed as SHAs on the CLI, recorded in the receipt):
    - `--board-commit <sha>`: commit on main whose
      `site/factordata/us_standouts.json` is the healed 08-07 board.
-   - `--plans-baseline <sha>`: commit on main AFTER the 2026-08-10 nightly
-     checkpoint (for the collision set = plans originated live since 08-09).
+   - `--event-baseline-commit <sha>`: the plan set at the scheduled event's
+     checkout (`5d06ee689...`), used for duplicate/open-plan suppression so the
+     replay can reproduce the receipted 30-row refusal population.
+   - `--collision-baseline-commit <sha>`: main AFTER the 2026-08-10 nightly
+     checkpoint (the plans originated live since the event).
 2. Extract the pinned board to a temp path; run the intake through
    `originate_plans(asof="2026-08-09", standouts_path=<pinned board>, ...)`
-   — via a thin wrapper, NOT by editing build_prophet's constants; plans
-   baseline = `_load_existing_plans` on the checkout (post-bake main).
-3. Post-process originated plans: inject `origination_mode`,
-   `backfill_executed_at`; drop collisions per §0.4 into the disclosure's
-   `collided` list; write surviving plans to `site/prophet/plans/` +
+   — via a thin wrapper, NOT by editing build_prophet's constants. Its
+   `existing_ids` and `active_keys` MUST come from the pinned event baseline,
+   not the executing checkout or collision baseline: `originate_plans`
+   suppresses those rows before returning them, which would erase the full
+   weekend counterfactual set from disclosure.
+3. Compare the replay output with the separately loaded collision baseline;
+   inject `origination_mode` and `backfill_executed_at` into survivors, and
+   put collisions per §0.4 into the disclosure's `collided` list. Write
+   surviving plans to `site/prophet/plans/` +
    origination receipt to `data/prophet/origination_receipts/` (same format
    as the nightly's) + `data/prophet/backfill_disclosures.json`.
 4. NEVER write: `data/prophet/ledger.jsonl` (nightly advances it),
