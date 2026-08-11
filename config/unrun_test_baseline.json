@@ -548,7 +548,6 @@
   "tests/test_marketing_lane_rerun.py",
   "tests/test_marketing_links.py",
   "tests/test_marketing_macro_print_tier.py",
-  "tests/test_marketing_market_clock.py",
   "tests/test_marketing_metrics_poll_quota.py",
   "tests/test_marketing_mover_stance.py",
   "tests/test_marketing_next_review.py",
