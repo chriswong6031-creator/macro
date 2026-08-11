@@ -691,7 +691,11 @@ var GR_ARC_ZH={'Washing out':'出清中','Washed out':'已出清','Turning':'转
 // Agreement is a NET LEAN over the members that are moving (|up-down| / moving), not a
 // head count — so it is spoken as a band and the raw figure is demoted to small print.
 function grAgreeWord(a){
-  if(a==null) return ['—','—'];
+  // A refused agreement must never surface as a dash placeholder — that exact shape
+  // shipped "Up — —" once. The headline path drops the band on null before calling
+  // this, so today the arm is unreachable; it returns words so any future caller
+  // that reaches it degrades to a refusal, not to punctuation.
+  if(a==null) return ['not enough moving to read','在动个股太少，暂无读数'];
   if(a>=0.7)  return ['almost all the same way','几乎完全同向'];
   if(a>=0.4)  return ['mostly the same way','多数同向'];
   if(a>=0.15) return ['split','存在分歧'];
