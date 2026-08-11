@@ -7,10 +7,11 @@ everything below. That document remains the canonical description of the
 
 **Opening instruction for the next session:**
 
-> Read this handoff. The only thing blocking Wave 0B is four missing GitHub
-> secrets — verify whether they now exist before doing anything else. If they
-> do, dispatch `attested-history-aapl-seed.yml` and run the Wave 0B chain in
-> §5. If they do not, stop and tell the operator; there is no path around it.
+> Read this handoff. All six GitHub secrets now exist. Rerun
+> `attested-history-aapl-seed.yml` from `main` after the value-free credential
+> diagnostic repair lands. The run will identify the rejected writer field
+> without printing its value; correct that field, then run the Wave 0B chain in
+> §5. Do not debug acquisition before the writer store passes admission.
 
 ---
 
@@ -19,10 +20,10 @@ everything below. That document remains the canonical description of the
 | Item | State | Evidence |
 |---|---|---|
 | Wave 0A — dedicated reader, code | **live verified** | `app/forensics.py` on main binds `build_attested_history_store` (2 refs), **0** `research_vault` refs; live API healthy; `/api/forensics/state` → 401 fails closed |
-| Wave 0A — credential binding | **NOT done** | 4 of 6 secrets absent (§2). An earlier claim that this was done was **wrong** — see §4.1 |
+| Wave 0A — credential binding | **PARTIAL** | All 6 GitHub secrets exist; VPS delivery is not yet live-verified (§2, §4.1) |
 | Dedicated R2 bucket | **created 2026-08-11** | `mastermind-attested-history-prod`, account `641d31a6bc84bccd90f347ac753275b3` (§3) |
-| Seed run | **never succeeded** | Two attempts: `31170827673` cancelled (0 artifacts), `31312195264` failed at `environment-boundary` |
-| Wave 0B | **blocked** | Needs a successful seed first |
+| Seed run | **never succeeded** | `31528819923` attempts 1–2 reached `writer-store` and rejected the writer parent before R2 I/O; 0 artifacts |
+| Wave 0B | **blocked** | Needs a valid writer parent and successful seed first |
 | Waves 1–8 | **not started** | Strictly sequential behind 0B |
 
 `main` was green as of 2026-08-08T10:38Z. Repo has **moved** to
@@ -33,22 +34,25 @@ everything below. That document remains the canonical description of the
 ## §1 WHAT THE BLOCKER ACTUALLY IS
 
 The seed has never produced a single artifact. Not because the pipeline is
-broken — **the pipeline is proven good** (§4.2) — but because four of the six
-required GitHub secrets do not exist.
+broken — **the pipeline is proven good** (§4.2) — but because the protected
+writer parent is rejected by local credential-format admission before the
+first R2 request.
 
-Verified 2026-08-11 against the API, positive-controlled (the endpoint lists
-67 repo secrets fine, so an empty result is a real absence, not a permissions
-artifact):
+Verified 2026-08-11:
 
-- repo scope — 67 secrets, **zero** beginning `R2_`
+- repo scope — all four `R2_ATTESTED_HISTORY_*` reader/address names exist
 - org scope — 0 secrets
 - environment `attested-history-seed` — exactly 2, both `..._SEED_...`,
   updated `2026-08-11T03:27:33Z` / `03:27:39Z` (the operator rotated these to
   the new bucket's token)
+- run `31528819923` attempt 1 rejected at `writer-store`; after correcting the
+  endpoint secret from a bare host to the required HTTPS URL, attempt 2
+  rejected at the same stage. The remaining rejected field is therefore in
+  the protected writer parent and must be named by the sanitized diagnostic.
 
 ---
 
-## §2 THE FOUR MISSING SECRETS — EXACT VALUES
+## §2 THE SIX SECRETS — CURRENT SCOPES AND VALUES
 
 All four at **repository** scope. Not environment scope: the operator workflow
 (`attested-history-operator.yml`) declares no `environment:`, so environment
@@ -56,7 +60,7 @@ secrets are invisible to it.
 
 | Secret | Value |
 |---|---|
-| `R2_ATTESTED_HISTORY_ENDPOINT` | `641d31a6bc84bccd90f347ac753275b3.r2.cloudflarestorage.com` |
+| `R2_ATTESTED_HISTORY_ENDPOINT` | `https://641d31a6bc84bccd90f347ac753275b3.r2.cloudflarestorage.com` |
 | `R2_ATTESTED_HISTORY_BUCKET` | `mastermind-attested-history-prod` |
 | `R2_ATTESTED_HISTORY_READONLY_ACCESS_KEY_ID` | *(read-only R2 token's key id)* |
 | `R2_ATTESTED_HISTORY_READONLY_SECRET_ACCESS_KEY` | *(read-only R2 token's secret)* |
@@ -67,9 +71,9 @@ Already present (environment `attested-history-seed`, do not move them):
 
 **Format rules — all three enforced by regex, all three easy to get wrong:**
 
-- endpoint: `^[a-f0-9]{32}\.r2\.cloudflarestorage\.com$` — **bare host**. No
-  `https://`, no trailing slash, no `/bucket` path. The full console URL is
-  REJECTED; this was verified by running the repo's own validator.
+- endpoint: `^https://[a-f0-9]{32}\.r2\.cloudflarestorage\.com$` — HTTPS URL,
+  with no trailing slash and no `/bucket` path. The earlier bare-host
+  instruction was wrong: the production credential signer rejects it.
 - bucket: `^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$` — lowercase.
 - access key: `^[A-Za-z0-9]{16,128}$`.
 
@@ -81,13 +85,13 @@ secrets present.
 To verify without reading values:
 
 ```bash
-gh api repos/mastermindx-market-intelligence/macro/actions/secrets \
-  --jq '[.secrets[].name | select(test("ATTESTED";"i"))] | .[]'
+gh api --paginate repos/mastermindx-market-intelligence/macro/actions/secrets \
+  --jq '.secrets[].name | select(test("ATTESTED";"i"))'
 ```
 
-Expect all four names. If the output is empty, first confirm
-`.total_count` is ~67 — an empty result with a working endpoint is a real
-absence; an empty result from a broken query is not.
+Expect all four names. `--paginate` is mandatory: the repository has more than
+one API page of secrets, and inspecting only page 1 falsely reported them
+absent during this continuation.
 
 ---
 
@@ -141,10 +145,10 @@ is empty. With the four secrets absent it delivered nothing for them, exited
 reports "not configured" rather than crashing. Green workflow, healthy
 service, **zero credentials bound**.
 
-**This is unfixed.** Once the four secrets exist, `deploy-api-secrets.yml`
-will finally deliver them — but the silent-skip remains, so any future missing
-value produces another hollow green. Worth fixing: make the workflow fail
-loudly when an expected name resolves empty.
+The repair now requires each of the four dedicated reader/address inputs before
+building or delivering the VPS env. A future missing value fails the workflow
+loudly with the variable name and never prints the value. This must still be
+verified by a successful delivery run and live API behavior after merge.
 
 ### 4.2 The seed pipeline is proven good — do not debug it
 
