@@ -1,0 +1,1589 @@
+{
+  "advisory_only": true,
+  "collected_at": "2026-08-11T13:24:20.082810+00:00",
+  "file_collisions": [
+    {
+      "pr_a": 5333,
+      "pr_b": 5343,
+      "protected_collision": true,
+      "repo": "mastermindx-market-intelligence/macro",
+      "shared_count": 4,
+      "shared_files": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md"
+      ]
+    },
+    {
+      "pr_a": 5331,
+      "pr_b": 5343,
+      "protected_collision": true,
+      "repo": "mastermindx-market-intelligence/macro",
+      "shared_count": 1,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ]
+    },
+    {
+      "pr_a": 5331,
+      "pr_b": 5345,
+      "protected_collision": true,
+      "repo": "mastermindx-market-intelligence/macro",
+      "shared_count": 1,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ]
+    },
+    {
+      "pr_a": 5333,
+      "pr_b": 5338,
+      "protected_collision": true,
+      "repo": "mastermindx-market-intelligence/macro",
+      "shared_count": 1,
+      "shared_files": [
+        ".github/workflows/daily.yml"
+      ]
+    },
+    {
+      "pr_a": 5338,
+      "pr_b": 5343,
+      "protected_collision": true,
+      "repo": "mastermindx-market-intelligence/macro",
+      "shared_count": 1,
+      "shared_files": [
+        ".github/workflows/daily.yml"
+      ]
+    },
+    {
+      "pr_a": 5343,
+      "pr_b": 5345,
+      "protected_collision": true,
+      "repo": "mastermindx-market-intelligence/macro",
+      "shared_count": 1,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ]
+    }
+  ],
+  "gates": [],
+  "merged_days": 14,
+  "repositories": [
+    {
+      "base_branch": "main",
+      "base_sha": "2585bf41b88343df047bc6befca5d9c5da191bec",
+      "key": "macro",
+      "open_prs": [
+        {
+          "branch": "claude/org-migration-refs",
+          "conflict": false,
+          "dependencies": [],
+          "draft": false,
+          "files": [
+            "app/deploy/terminal-data-setup.sh"
+          ],
+          "files_count": 1,
+          "files_truncated": false,
+          "merge_state": "UNSTABLE",
+          "number": 5340,
+          "protected_paths": [
+            "app/deploy/terminal-data-setup.sh"
+          ],
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "deploy: repoint terminal-data-setup's repo URL comment to the org",
+          "updated_at": "2026-08-11T13:20:48Z",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5340"
+        },
+        {
+          "branch": "codex/runtime-truth-manifest-20260811",
+          "conflict": false,
+          "dependencies": [],
+          "draft": false,
+          "files": [
+            ".github/ci/legacy-jobs.yml",
+            ".github/workflows/ci.yml",
+            "admin/deploy/setup-admin.sh",
+            "admin/runtime_state.py",
+            "admin/server.py",
+            "app/deploy/update.sh",
+            "config/production_topology.yml",
+            "contracts/runtime/mastermind.runtime_state.v1.schema.json",
+            "docs/PRODUCTION_RUNTIME_TRUTH.md",
+            "lib/project_runtime_state.py",
+            "scripts/build_project_runtime_state.py",
+            "tests/test_admin_server.py",
+            "tests/test_deploy_update_self_heal.py",
+            "tests/test_project_runtime_state.py"
+          ],
+          "files_count": 14,
+          "files_truncated": false,
+          "merge_state": "UNSTABLE",
+          "number": 5345,
+          "protected_paths": [
+            ".github/ci/legacy-jobs.yml",
+            ".github/workflows/ci.yml",
+            "app/deploy/update.sh"
+          ],
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "ops: add private project runtime truth",
+          "updated_at": "2026-08-11T13:19:54Z",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5345"
+        },
+        {
+          "branch": "claude/prophet-us-early-admission-bakeoff",
+          "conflict": false,
+          "dependencies": [],
+          "draft": false,
+          "files": [
+            "research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md",
+            "research/prophet_us_audit/EARLY_ADMISSION_BAKEOFF_2026-08-11.md",
+            "research/prophet_us_audit/early_admission_bakeoff.py",
+            "research/prophet_us_audit/early_admission_bakeoff_episodes.parquet",
+            "research/prophet_us_audit/early_admission_bakeoff_results.json",
+            "research/prophet_us_audit/early_admission_bakeoff_stops.parquet"
+          ],
+          "files_count": 6,
+          "files_truncated": false,
+          "merge_state": "UNSTABLE",
+          "number": 5339,
+          "protected_paths": [],
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "research(prophet-us): early-admission construction bake-off \u2014 \u00a76.8(a)/(b) replays + stop-anchored ruler",
+          "updated_at": "2026-08-11T13:17:12Z",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5339"
+        },
+        {
+          "branch": "claude/topa-w2-tier-widening",
+          "conflict": false,
+          "dependencies": [],
+          "draft": false,
+          "files": [
+            "data/research/top_anatomy_w2_atrz_summary.json",
+            "data/research/top_anatomy_w2_r63_summary.json",
+            "reports/top-anatomy-w2.md",
+            "research/TOP_ANATOMY_MASTERPLAN_BY_FABLE.md",
+            "research/top_anatomy/TOPA_PHASE0_PREREG.md",
+            "research/top_anatomy/TOPA_W2_PREREG.md",
+            "scripts/research_top_anatomy_phase0.py",
+            "tests/test_top_anatomy.py"
+          ],
+          "files_count": 8,
+          "files_truncated": false,
+          "merge_state": "UNSTABLE",
+          "number": 5334,
+          "protected_paths": [],
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "topa-w2: tier-widening wave \u2014 B2 confirms cross-tier, A4 reverses, F1/F3/B3 ore body replicates 4/4 panels (G0.5 PRESENTABLE)",
+          "updated_at": "2026-08-11T13:13:23Z",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5334"
+        },
+        {
+          "branch": "claude/biocatalyst-forward-clock-20260811",
+          "conflict": false,
+          "dependencies": [],
+          "draft": false,
+          "files": [
+            "config/biocatalyst_closed_beta_source_manifest.yml",
+            "config/biocatalyst_launch_slo_manifest.yml",
+            "config/biocatalyst_sources.yml",
+            "contracts/biocatalyst/biocatalyst_closed_beta_source_manifest.v1.schema.json",
+            "data/biocatalyst/fixtures/biocatalyst_launch_slo_manifest.v1.valid.json",
+            "scripts/biocatalyst_family_clock_activation.py",
+            "tests/fixtures/biocatalyst/ctgov_fixed_cohort.v1.valid.json",
+            "tests/test_biocatalyst_f0_delta_and_closed_beta_manifest.py",
+            "tests/test_biocatalyst_m0a_clock_activation.py",
+            "tests/test_biocatalyst_record_history_enablement.py",
+            "tests/test_biocatalyst_source_registry.py",
+            "tests/test_launch_slo_evidence_verifier.py",
+            "tests/test_sector_intelligence_contracts.py"
+          ],
+          "files_count": 13,
+          "files_truncated": false,
+          "merge_state": "UNSTABLE",
+          "number": 5336,
+          "protected_paths": [],
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "feat(biocatalyst): arm bounded family clocks",
+          "updated_at": "2026-08-11T13:11:02Z",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5336"
+        },
+        {
+          "branch": "claude/gmi-w1b-theme-graph-spine",
+          "conflict": false,
+          "dependencies": [],
+          "draft": false,
+          "files": [
+            ".github/ci/legacy-jobs.yml",
+            ".github/workflows/daily.yml",
+            "config/cn_limit_rules.yml",
+            "config/dag.yml",
+            "config/house_law_checks.yml",
+            "config/synapse.yml",
+            "config/theme_crosswalk.yml",
+            "config/theme_graph_identity_breaks.yml",
+            "contracts/theme_graph/README.md",
+            "contracts/theme_graph/cn_limit_rules.v1.schema.json",
+            "contracts/theme_graph/edges.v1.schema.json",
+            "contracts/theme_graph/evidence.v1.schema.json",
+            "contracts/theme_graph/nodes.v1.schema.json",
+            "data/theme_graph/_meta.json",
+            "data/theme_graph/edges.parquet",
+            "data/theme_graph/evidence.parquet",
+            "data/theme_graph/nodes.parquet",
+            "docs/HOUSE_LAW_CI_GUARD_SUITE.md",
+            "docs/SIGNAL_BUS.md",
+            "engine/theme_graph/__init__.py",
+            "engine/theme_graph/identity.py",
+            "engine/theme_graph/materialize.py",
+            "engine/theme_graph/store.py",
+            "research/GLOBAL_MARKET_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+            "research/theme_graph/SOURCE_CONTINUATION_DIRECTIVE_2026-08-11.md",
+            "scripts/build_theme_graph.py",
+            "scripts/check_theme_graph_contracts.py",
+            "scripts/seed_china_ths_baskets.py",
+            "tests/test_cn_limit_rules.py",
+            "tests/test_signal_bus_doc.py",
+            "tests/test_theme_graph_contracts.py",
+            "tests/test_theme_graph_crosswalk.py",
+            "tests/test_theme_graph_identity.py",
+            "tests/test_theme_graph_materialize.py",
+            "tests/test_ths_weekly_rescrape.py"
+          ],
+          "files_count": 35,
+          "files_truncated": false,
+          "merge_state": "UNSTABLE",
+          "number": 5343,
+          "protected_paths": [
+            ".github/ci/legacy-jobs.yml",
+            ".github/workflows/daily.yml",
+            "config/dag.yml",
+            "config/synapse.yml",
+            "docs/SIGNAL_BUS.md",
+            "scripts/check_theme_graph_contracts.py"
+          ],
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "gmi(w1b): theme-graph semantic spine \u2014 bitemporal nodes/edges/evidence + crosswalk CN family + seeder shape discrimination + CN limit-rule registry",
+          "updated_at": "2026-08-11T13:09:06Z",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5343"
+        },
+        {
+          "branch": "claude/nightly-output-publication-repair-20260810",
+          "conflict": false,
+          "dependencies": [],
+          "draft": false,
+          "files": [
+            ".github/workflows/daily.yml",
+            "tests/test_push_retry.py"
+          ],
+          "files_count": 2,
+          "files_truncated": false,
+          "merge_state": "UNSTABLE",
+          "number": 5338,
+          "protected_paths": [
+            ".github/workflows/daily.yml"
+          ],
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "fix(nightly): make engine output loss fail closed",
+          "updated_at": "2026-08-11T13:07:29Z",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5338"
+        },
+        {
+          "branch": "codex/prophet-marks-et-scheduler-20260811",
+          "conflict": false,
+          "dependencies": [],
+          "draft": true,
+          "files": [
+            "ops/launchd/com.mastermind.prophetmarks.plist",
+            "ops/launchd/run_prophet_marks_loop.sh",
+            "tests/test_build_options_prophet.py"
+          ],
+          "files_count": 3,
+          "files_truncated": false,
+          "merge_state": "UNSTABLE",
+          "number": 5344,
+          "protected_paths": [],
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "fix(prophet): make marks schedule timezone neutral",
+          "updated_at": "2026-08-11T13:00:25Z",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5344"
+        },
+        {
+          "branch": "claude/govrev-fixture-margin-clamp",
+          "conflict": false,
+          "dependencies": [],
+          "draft": false,
+          "files": [
+            ".github/ci/legacy-jobs.yml",
+            "tests/government_revenue_candidate_fixture.py",
+            "tests/test_government_revenue_candidate_fixture.py",
+            "tests/test_government_revenue_candidate_projection.py"
+          ],
+          "files_count": 4,
+          "files_truncated": false,
+          "merge_state": "UNSTABLE",
+          "number": 5331,
+          "protected_paths": [
+            ".github/ci/legacy-jobs.yml"
+          ],
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "tests(govrev): clamp vintage-derived negative clock offsets above the newest source instant",
+          "updated_at": "2026-08-11T12:53:21Z",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5331"
+        },
+        {
+          "branch": "claude/pressure-ledger-r2b",
+          "conflict": true,
+          "dependencies": [],
+          "draft": false,
+          "files": [
+            ".github/workflows/daily.yml",
+            ".gitignore",
+            "config/dag.yml",
+            "config/synapse.yml",
+            "data/price_pressure/events.parquet",
+            "docs/SIGNAL_BUS.md",
+            "engine/price_pressure/ledger.py",
+            "research/DRL_CONTINUATION_HANDOFF_2026-08-10.md",
+            "scripts/build_price_pressure.py",
+            "scripts/publish_r2.py",
+            "tests/test_price_pressure.py",
+            "tests/test_publish_r2.py"
+          ],
+          "files_count": 12,
+          "files_truncated": false,
+          "merge_state": "DIRTY",
+          "number": 5333,
+          "protected_paths": [
+            ".github/workflows/daily.yml",
+            "config/dag.yml",
+            "config/synapse.yml",
+            "docs/SIGNAL_BUS.md"
+          ],
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "fix(price-pressure): cold-runner store restore + R2-canonical event ledger (successor to #5322)",
+          "updated_at": "2026-08-11T10:54:45Z",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5333"
+        }
+      ],
+      "open_prs_truncated": false,
+      "recently_merged": [
+        {
+          "branch": "codex/flow-cadence-truth-20260811",
+          "merged_at": "2026-08-11T13:05:38Z",
+          "number": 5342,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "Flow: publish source-clock and cadence truth",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5342"
+        },
+        {
+          "branch": "codex/prophet-marks-runner-root-20260811",
+          "merged_at": "2026-08-11T12:50:35Z",
+          "number": 5341,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "fix(prophet): run marks publisher from deployed checkout",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5341"
+        },
+        {
+          "branch": "codex/integration-baseline-checkout-timeout-20260811",
+          "merged_at": "2026-08-11T11:55:56Z",
+          "number": 5335,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "Let the main integration baseline finish checkout",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5335"
+        },
+        {
+          "branch": "claude/gmi-w1a-ths-pit",
+          "merged_at": "2026-08-11T11:44:10Z",
+          "number": 5337,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "gmi(w1a): revive THS PIT snapshot cadence + US membership snapshots + freshness tripwire + 42-organ disposition sweep",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5337"
+        },
+        {
+          "branch": "codex/options-signal-campaign-20260811",
+          "merged_at": "2026-08-11T10:34:04Z",
+          "number": 5332,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "options: add frozen campaign cohort ledger",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5332"
+        },
+        {
+          "branch": "claude/prophet-outage-backfill-repin-verified",
+          "merged_at": "2026-08-11T10:01:36Z",
+          "number": 5305,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "prophet(us): force-majeure outage backfill \u2014 receipt-exact 2026-08-09 replay (rev-1, supersedes #5294)",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5305"
+        },
+        {
+          "branch": "claude/dag-fetch-r2-declarations",
+          "merged_at": "2026-08-11T09:57:52Z",
+          "number": 5327,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "dag: declare every daily.yml fetch_r2 re-invocation; red vanished re-invocations in the conformance differ",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5327"
+        },
+        {
+          "branch": "claude/mog-red-leaves-a-marker",
+          "merged_at": "2026-08-11T09:56:25Z",
+          "number": 5320,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "merge-on-green: a fresh red must always leave a visible marker (#5291)",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5320"
+        },
+        {
+          "branch": "claude/eb-chip-session-anchor",
+          "merged_at": "2026-08-11T09:52:54Z",
+          "number": 5307,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "fix(us-board): anchor the display-tier earnings chip to the board session (host-clock determinism)",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5307"
+        },
+        {
+          "branch": "claude/massive-local-staleness-tripwire",
+          "merged_at": "2026-08-11T09:49:35Z",
+          "number": 5319,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "feat(massive_stock_day): refuse local research reads of a stale mirror",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5319"
+        },
+        {
+          "branch": "claude/prophet-reconstructed-disclosure",
+          "merged_at": "2026-08-11T09:42:43Z",
+          "number": 5301,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "prophet(us): plain-word disclosure for reconstructed plans (chip + receipt + footnote, EN/ZH)",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5301"
+        },
+        {
+          "branch": "claude/prophet-backfill-design-rev1",
+          "merged_at": "2026-08-11T09:38:09Z",
+          "number": 5304,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "docs(prophet-us): backfill design rev-1 \u2014 restore review-corrected input adjudication",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5304"
+        },
+        {
+          "branch": "claude/metrics-poll-rationing",
+          "merged_at": "2026-08-11T09:38:00Z",
+          "number": 5306,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "marketing: posting outbids telemetry \u2014 single-fire the metrics poll, cap it at 8 calls",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5306"
+        },
+        {
+          "branch": "claude/calcbench-wave0b-handoff",
+          "merged_at": "2026-08-11T09:37:45Z",
+          "number": 5308,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "docs(calcbench): Wave 0B handoff \u2014 the blocker is four secrets, not the pipeline",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5308"
+        },
+        {
+          "branch": "claude/bio-handoff-to-codex",
+          "merged_at": "2026-08-11T09:37:39Z",
+          "number": 5310,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "docs(biocatalyst): return handoff to Codex \u2014 what is done, what is not, and one correction",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5310"
+        },
+        {
+          "branch": "claude/biocatalyst-c2-20260811",
+          "merged_at": "2026-08-11T09:37:32Z",
+          "number": 5328,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "BioCatalyst: add governed Capital Structure PIT adapter",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5328"
+        },
+        {
+          "branch": "claude/opportunity-timeline-20260810",
+          "merged_at": "2026-08-11T09:37:25Z",
+          "number": 5329,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "Publish durable opportunity receipts for Terminal",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5329"
+        },
+        {
+          "branch": "claude/gmi-theme-graph-w0",
+          "merged_at": "2026-08-11T09:35:35Z",
+          "number": 5326,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "GMI Theme Graph W0 \u2014 phase-0 adjudication masterplan (next TIL chapter: rail + waves, not a lobe)",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5326"
+        },
+        {
+          "branch": "codex/market-memory-w7-promotion-audit-20260811",
+          "merged_at": "2026-08-11T09:10:54Z",
+          "number": 5330,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "Add fail-closed Market Memory promotion audit",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5330"
+        },
+        {
+          "branch": "codex/release-radar-coherent-target-wave2-20260810",
+          "merged_at": "2026-08-11T08:22:57Z",
+          "number": 5321,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "Release Radar: add coherent CPI truth substrate",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5321"
+        },
+        {
+          "branch": "codex/options-episode-durable-landing-20260811-v2",
+          "merged_at": "2026-08-11T08:00:33Z",
+          "number": 5324,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "feat(options): durably land PIT episode evidence",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5324"
+        },
+        {
+          "branch": "codex/market-memory-w6a-rf-adapter-20260811",
+          "merged_at": "2026-08-11T07:54:48Z",
+          "number": 5325,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "Add the proposed-only Market Memory research handoff",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5325"
+        },
+        {
+          "branch": "codex/momoedge-prism-unusual-20260810",
+          "merged_at": "2026-08-11T07:21:28Z",
+          "number": 5315,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "feat(options): add PIT per-side PRISM unusual lens",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5315"
+        },
+        {
+          "branch": "codex/market-memory-w5a-cortex-20260810",
+          "merged_at": "2026-08-11T06:44:57Z",
+          "number": 5312,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "Add the synthetic Operating Cortex conformance layer",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5312"
+        },
+        {
+          "branch": "claude/biocatalyst-completion-20260810",
+          "merged_at": "2026-08-11T06:42:00Z",
+          "number": 5311,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "fix(biocatalyst): publish across sandbox mount boundary",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5311"
+        },
+        {
+          "branch": "claude/us-prophet-human-copy-20260810",
+          "merged_at": "2026-08-11T06:38:58Z",
+          "number": 5316,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "Make US Prophet copy human and keep earnings setups visible",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5316"
+        },
+        {
+          "branch": "claude/top-anatomy-w1-winner-health",
+          "merged_at": "2026-08-11T06:10:01Z",
+          "number": 5298,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "feat(winner-health): W1 display surface \u2014 nightly maturation states + Winner Health page (TOPA)",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5298"
+        },
+        {
+          "branch": "docs/massive-mirror-staleness-topa",
+          "merged_at": "2026-08-11T06:07:23Z",
+          "number": 5300,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "docs(topa): primary-checkout massive_stock_day mirror is frozen \u2014 fetch_r2 before local passes",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5300"
+        },
+        {
+          "branch": "claude/top-anatomy-p0-results",
+          "merged_at": "2026-08-11T06:06:08Z",
+          "number": 5297,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "research(top-anatomy): phase-0 results \u2014 reconciled instrument, run-3 headline + repair/cross-check arms",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5297"
+        },
+        {
+          "branch": "claude/us-board-basing-gate-20260810",
+          "merged_at": "2026-08-11T06:05:16Z",
+          "number": 5318,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "test(us-board): repair rendered-fixture CI drift",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5318"
+        },
+        {
+          "branch": "codex/refine-macro-release-modal-20260810",
+          "merged_at": "2026-08-11T05:59:06Z",
+          "number": 5313,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "Refine Macro release-detail modal",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5313"
+        },
+        {
+          "branch": "codex/us-candidate-pool-contract-drift-20260811",
+          "merged_at": "2026-08-11T04:34:00Z",
+          "number": 5314,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "Register the US candidate-pool contract disclosure",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5314"
+        },
+        {
+          "branch": "codex/market-memory-w4a-retrieval-20260811T000948Z",
+          "merged_at": "2026-08-11T04:15:40Z",
+          "number": 5309,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "feat: add synthetic episodic retrieval conformance",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5309"
+        },
+        {
+          "branch": "codex/market-memory-breadth-fixture-drift-20260810",
+          "merged_at": "2026-08-11T03:32:11Z",
+          "number": 5299,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "test: decouple breadth fixtures from nightly tip",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5299"
+        },
+        {
+          "branch": "claude/marketing-voice-v5",
+          "merged_at": "2026-08-11T02:32:52Z",
+          "number": 5291,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "marketing voice v5: the read is in the selection, not a performed reaction",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5291"
+        },
+        {
+          "branch": "prophet-us-candidate-pool-lanes",
+          "merged_at": "2026-08-11T02:29:39Z",
+          "number": 5295,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "prophet(us): lossless candidate-pool lanes + dated pool store (CN-parity, display-tier)",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5295"
+        },
+        {
+          "branch": "claude/pressure-vix-completion",
+          "merged_at": "2026-08-11T02:19:53Z",
+          "number": 5292,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "feat(price-pressure): \u00a710.1 VIXCLS stamp-completion pass + immutable receipts",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5292"
+        },
+        {
+          "branch": "codex/market-memory-w3a-live-availability-20260810",
+          "merged_at": "2026-08-11T02:09:51Z",
+          "number": 5296,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "Repair W3 playback catalog store readiness",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5296"
+        },
+        {
+          "branch": "claude/prophet-outage-backfill-design",
+          "merged_at": "2026-08-11T01:14:08Z",
+          "number": 5289,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "docs(prophet-us): outage backfill design of record (operator force-majeure 2026-08-11)",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5289"
+        },
+        {
+          "branch": "claude/drl-r4-prereg-amendment-2",
+          "merged_at": "2026-08-11T01:02:03Z",
+          "number": 5288,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "research: make the R4 prereg PIT-safe and power-honest",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5288"
+        },
+        {
+          "branch": "claude/marketing-liveness-tripwire",
+          "merged_at": "2026-08-11T00:50:51Z",
+          "number": 5287,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "marketing: liveness tripwire \u2014 a dead publisher can no longer run green",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5287"
+        },
+        {
+          "branch": "codex/market-memory-w3a-playback-prep-20260810",
+          "merged_at": "2026-08-11T00:40:27Z",
+          "number": 5286,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "Prepare exact operational playback catalog",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5286"
+        },
+        {
+          "branch": "claude/drl-r4-vix-prereg",
+          "merged_at": "2026-08-11T00:24:34Z",
+          "number": 5285,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "research: register R4 VIX-gradient prereg (DRL \u00a78 leg 1)",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5285"
+        },
+        {
+          "branch": "codex/market-memory-w2b1-scoring-20260810",
+          "merged_at": "2026-08-10T23:59:42Z",
+          "number": 5284,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "feat: add synthetic per-event scoring contracts",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5284"
+        },
+        {
+          "branch": "codex/market-memory-w2a-forward-contracts-20260810",
+          "merged_at": "2026-08-10T22:48:09Z",
+          "number": 5283,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "feat: seal private forward evaluation contracts",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5283"
+        },
+        {
+          "branch": "codex/market-memory-w1b5-rollout-bridge-20260810",
+          "merged_at": "2026-08-10T22:15:59Z",
+          "number": 5282,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "fix: harden option OI rollout reconciliation",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5282"
+        },
+        {
+          "branch": "codex/fix-market-memory-timer-stop-20260810",
+          "merged_at": "2026-08-10T21:28:43Z",
+          "number": 5281,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "fix: accept processless systemd timer state",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5281"
+        },
+        {
+          "branch": "codex/fix-market-memory-options-dropin-20260810",
+          "merged_at": "2026-08-10T21:25:34Z",
+          "number": 5280,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "fix: unblock private option OI canary deployment",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5280"
+        },
+        {
+          "branch": "codex/market-memory-w1b5-options-20260810",
+          "merged_at": "2026-08-10T21:09:53Z",
+          "number": 5279,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "feat: add private option OI availability canary",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5279"
+        },
+        {
+          "branch": "codex/market-memory-w1b4-uncertainty-20260810",
+          "merged_at": "2026-08-10T18:38:41Z",
+          "number": 5278,
+          "repo": "mastermindx-market-intelligence/macro",
+          "title": "feat(market-memory): add timestamp uncertainty plan",
+          "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5278"
+        }
+      ],
+      "recently_merged_truncated": true,
+      "repo": "mastermindx-market-intelligence/macro"
+    },
+    {
+      "base_branch": "master",
+      "base_sha": "eb5216452d17822b76c6d1177e3761f8477dfa95",
+      "key": "terminal",
+      "open_prs": [
+        {
+          "branch": "claude/live-options-alert-sources-20260811",
+          "conflict": false,
+          "dependencies": [],
+          "draft": true,
+          "files": [
+            "docs/pr-crops/options-alert-source-truth/desktop-en-market-wide.png",
+            "docs/pr-crops/options-alert-source-truth/mobile-en-market-wide.png",
+            "docs/pr-crops/options-alert-source-truth/tablet-zh-market-wide.png",
+            "ingest/alerts_engine.py",
+            "terminal/app/(shell)/alerts/page.tsx",
+            "terminal/app/api/alerts/route.ts",
+            "terminal/components/AlertsView.tsx",
+            "terminal/e2e/alerts-options-responsive.spec.ts",
+            "terminal/lib/__tests__/alertsRoute.test.ts",
+            "terminal/lib/__tests__/optionsAlerts.test.ts",
+            "terminal/lib/optionsAlerts.ts",
+            "tests/test_alerts_options.py"
+          ],
+          "files_count": 12,
+          "files_truncated": false,
+          "merge_state": "BLOCKED",
+          "number": 397,
+          "protected_paths": [],
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(alerts): evaluate options against live sources",
+          "updated_at": "2026-08-11T13:19:12Z",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/397"
+        },
+        {
+          "branch": "codex/flow-freshness-truth-20260811",
+          "conflict": false,
+          "dependencies": [],
+          "draft": true,
+          "files": [
+            "terminal/app/observatory.css",
+            "terminal/components/OptionsHubView.tsx",
+            "terminal/components/flowdesk/FeedPane.tsx",
+            "terminal/components/flowdesk/FlowDeskView.tsx",
+            "terminal/components/flowdesk/FlowFreshnessReceipt.tsx",
+            "terminal/components/flowdesk/WatchlistRail.tsx",
+            "terminal/e2e/flow-freshness-responsive.spec.ts",
+            "terminal/e2e/options-ia-responsive.spec.ts",
+            "terminal/lib/__tests__/flowFreshness.test.ts",
+            "terminal/lib/flowFreshness.ts",
+            "terminal/lib/flowStream.ts",
+            "terminal/lib/flowdeskStrings.ts",
+            "terminal/playwright.config.ts",
+            "terminal/public/data/chain_heat_fixture.json",
+            "terminal/public/data/enrich_fixture.json",
+            "terminal/public/data/flow_fixture.json"
+          ],
+          "files_count": 16,
+          "files_truncated": false,
+          "merge_state": "CLEAN",
+          "number": 396,
+          "protected_paths": [],
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(flow): show measured source freshness truth",
+          "updated_at": "2026-08-11T12:45:21Z",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/396"
+        },
+        {
+          "branch": "claude/fin-followups-364",
+          "conflict": false,
+          "dependencies": [
+            {
+              "pr": 364,
+              "repo": "mastermindx-market-intelligence/mastermind-terminal",
+              "source": "pr_body",
+              "status": "recently_merged"
+            }
+          ],
+          "draft": false,
+          "files": [
+            "ingest/backfill_fund_statements_massive.py",
+            "ingest/massive_financials.py",
+            "terminal/components/StockAnalysis.tsx",
+            "terminal/components/fin/EarningsPage.tsx",
+            "terminal/components/fin/OverviewPage.tsx",
+            "terminal/lib/__tests__/finStatementMath.test.ts",
+            "terminal/lib/__tests__/hkCumulativeReporting.test.ts",
+            "terminal/lib/finSeries.ts",
+            "terminal/lib/finStatementMath.ts",
+            "tests/test_massive_financials.py"
+          ],
+          "files_count": 10,
+          "files_truncated": false,
+          "merge_state": "BEHIND",
+          "number": 370,
+          "protected_paths": [],
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(financials): one normalization point for every income surface, HK reporting style verified, vendor sort off a null column",
+          "updated_at": "2026-08-09T03:38:34Z",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/370"
+        }
+      ],
+      "open_prs_truncated": false,
+      "recently_merged": [
+        {
+          "branch": "claude/readme-orientation-20260811",
+          "merged_at": "2026-08-11T12:27:27Z",
+          "number": 395,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "docs: correct Terminal repository orientation",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/395"
+        },
+        {
+          "branch": "claude/org-migration-refs",
+          "merged_at": "2026-08-11T11:56:08Z",
+          "number": 394,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "org-migration: repoint repo references to the mastermindx-market-intelligence org",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/394"
+        },
+        {
+          "branch": "claude/strange-mestorf-0afa1a",
+          "merged_at": "2026-08-11T10:01:10Z",
+          "number": 393,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(chart): dead-on-load hover \u2014 gate ChartPanel's post-touch guards on a touch having happened",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/393"
+        },
+        {
+          "branch": "claude/oracle-bottom-entry-20260810",
+          "merged_at": "2026-08-11T08:52:07Z",
+          "number": 392,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "Surface early bottom entries and durable Prophet receipts",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/392"
+        },
+        {
+          "branch": "codex/momoedge-prism-unusual-rail-20260811",
+          "merged_at": "2026-08-11T07:36:02Z",
+          "number": 391,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(options): expose exact-side unusual volume receipts",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/391"
+        },
+        {
+          "branch": "claude/musing-hawking-40957a",
+          "merged_at": "2026-08-11T06:04:14Z",
+          "number": 390,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(prophet): route SignalCard \"vs plan\" P&L label through the bilingual string table",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/390"
+        },
+        {
+          "branch": "claude/prophet-origination-disclosure-20260810",
+          "merged_at": "2026-08-11T05:35:44Z",
+          "number": 388,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "prophet: render reconstruction disclosure from row data (chip + tier-2)",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/388"
+        },
+        {
+          "branch": "claude/cn-premarket-mobile-timeframes-20260810",
+          "merged_at": "2026-08-11T04:01:04Z",
+          "number": 389,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "Wire A-share auction price and restore mobile timeframes",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/389"
+        },
+        {
+          "branch": "claude/indicator-prim-hit-test-20260810",
+          "merged_at": "2026-08-11T01:26:02Z",
+          "number": 387,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(chart): drag-safe premium-suite prim tooltips \u2014 hit-tested, pointer-events removed",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/387"
+        },
+        {
+          "branch": "claude/options-portfolio-watchlists-r5-20260810",
+          "merged_at": "2026-08-10T20:12:48Z",
+          "number": 386,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(portfolio): switch existing watchlists",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/386"
+        },
+        {
+          "branch": "claude/options-put-call-history-r5-20260810",
+          "merged_at": "2026-08-10T19:02:31Z",
+          "number": 385,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(options): add put-call OI history",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/385"
+        },
+        {
+          "branch": "claude/options-flow-derived-boards-20260810",
+          "merged_at": "2026-08-10T18:11:21Z",
+          "number": 384,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(options): add honest 0DTE and largest-event boards",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/384"
+        },
+        {
+          "branch": "claude/options-seven-category-ia-stage-a-20260810",
+          "merged_at": "2026-08-10T17:14:30Z",
+          "number": 383,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(options): seven-category R5 information architecture",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/383"
+        },
+        {
+          "branch": "claude/options-screener-csv-export-20260810",
+          "merged_at": "2026-08-10T16:22:15Z",
+          "number": 382,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(options): export active screener view to CSV",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/382"
+        },
+        {
+          "branch": "claude/washout-history-pull",
+          "merged_at": "2026-08-10T15:10:17Z",
+          "number": 381,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(ingest): run the washout-history bridge in the nightly (retro marks were 0)",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/381"
+        },
+        {
+          "branch": "claude/options-tape-csv-export-20260810",
+          "merged_at": "2026-08-10T15:05:50Z",
+          "number": 380,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(options): export filtered Tape as safe CSV",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/380"
+        },
+        {
+          "branch": "claude/marker-tooltip-revival",
+          "merged_at": "2026-08-10T14:22:32Z",
+          "number": 379,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(chart): revive marker tooltips \u2014 hit-tested markers, drag-safe (5 shipped tooltips rendered to nobody)",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/379"
+        },
+        {
+          "branch": "claude/reclaim-waiver-keeper",
+          "merged_at": "2026-08-10T12:43:23Z",
+          "number": 378,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(oracle): keeper reclaim waiver + notch 20 + retro projection (era gc_v2_wo2)",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/378"
+        },
+        {
+          "branch": "claude/buttery-y-axis-zoom-20260810",
+          "merged_at": "2026-08-10T11:23:41Z",
+          "number": 377,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(chart): make price-axis zoom smooth and unbounded",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/377"
+        },
+        {
+          "branch": "claude/washout-override-live-mask",
+          "merged_at": "2026-08-10T10:42:33Z",
+          "number": 376,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(oracle): live washout-override enter mask + gc_v2_wo1 signal-era fence",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/376"
+        },
+        {
+          "branch": "claude/washout-override-display",
+          "merged_at": "2026-08-10T09:25:28Z",
+          "number": 375,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(oracle): washout-override display class + forward ledger for ratified blocked entries",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/375"
+        },
+        {
+          "branch": "claude/mobile-search-live-quotes-20260809",
+          "merged_at": "2026-08-10T05:15:19Z",
+          "number": 374,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(terminal): show live quotes in mobile search watchlist",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/374"
+        },
+        {
+          "branch": "claude/live-rt-second-bars",
+          "merged_at": "2026-08-10T03:25:56Z",
+          "number": 363,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(terminal): live second bars with reactive candle updates",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/363"
+        },
+        {
+          "branch": "claude/options-issue-desk-r62-20260809",
+          "merged_at": "2026-08-10T02:08:58Z",
+          "number": 373,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(options): add private operator Issue Desk lane",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/373"
+        },
+        {
+          "branch": "claude/options-prophet-foundation-20260808",
+          "merged_at": "2026-08-09T07:50:07Z",
+          "number": 371,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(options): add responsive Options Alpha shadow lane",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/371"
+        },
+        {
+          "branch": "claude/e2e-dodge-settle-20260808",
+          "merged_at": "2026-08-09T06:34:07Z",
+          "number": 372,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "test(terminal): settle the two dodge/maximize e2e assertions instead of racing them",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/372"
+        },
+        {
+          "branch": "claude/merge-on-green",
+          "merged_at": "2026-08-09T02:58:25Z",
+          "number": 369,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "ci: add fail-closed merge-on-green controller",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/369"
+        },
+        {
+          "branch": "claude/reconcile-levels-board",
+          "merged_at": "2026-08-09T02:40:17Z",
+          "number": 368,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(terminal): reconcile and ship the Levels gamma weather map",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/368"
+        },
+        {
+          "branch": "claude/oracle-gradient-upgrade",
+          "merged_at": "2026-08-09T01:27:09Z",
+          "number": 366,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "Upgrade Oracle and Research Desk state gradients",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/366"
+        },
+        {
+          "branch": "claude/massive-financials",
+          "merged_at": "2026-08-09T01:26:54Z",
+          "number": 364,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(financials): deep statement history from Massive (17y AAPL), revenue history tab, and two live-data defect fixes",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/364"
+        },
+        {
+          "branch": "claude/r0d-terminal-v2-delta-spec",
+          "merged_at": "2026-08-09T01:26:37Z",
+          "number": 358,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "docs(terminal): Company Intelligence v2 delta spec + reference compositions (R0-D)",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/358"
+        },
+        {
+          "branch": "claude/responsive-terminal-chrome-20260808",
+          "merged_at": "2026-08-08T23:36:08Z",
+          "number": 367,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(terminal): make dense chrome width-aware",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/367"
+        },
+        {
+          "branch": "claude/hk-o1-truth-labeling",
+          "merged_at": "2026-08-08T11:11:34Z",
+          "number": 365,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(oracle): truth-in-labeling \u2014 structure stops, blocked setups, PIT prices (HK-O1)",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/365"
+        },
+        {
+          "branch": "claude/spcx-terminal-options-e4d44c",
+          "merged_at": "2026-08-08T05:30:45Z",
+          "number": 362,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(options): SPCX in the options root picker",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/362"
+        },
+        {
+          "branch": "claude/topbar-volume-live",
+          "merged_at": "2026-08-07T21:58:22Z",
+          "number": 361,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(shell+chart): today's volume and today's candle, not last night's",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/361"
+        },
+        {
+          "branch": "claude/ticker-price-change-bug-728df9",
+          "merged_at": "2026-08-07T21:28:56Z",
+          "number": 360,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(quotes): serve today's session, not last night's manifest (SKY 91.52 \u2192 94.66)",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/360"
+        },
+        {
+          "branch": "claude/terminal-zh",
+          "merged_at": "2026-08-07T06:09:19Z",
+          "number": 359,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "i18n(zh): natural Chinese in the Terminal, and translate what was never localised",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/359"
+        },
+        {
+          "branch": "claude/crosshair-price-label-visibility-f5b008",
+          "merged_at": "2026-08-06T06:58:55Z",
+          "number": 356,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix: three operator-reported bugs \u2014 crosshair label hidden, no-data symbol keeping the last chart, clipped add-to-list picker",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/356"
+        },
+        {
+          "branch": "claude/washout-turn-chip",
+          "merged_at": "2026-08-06T06:03:55Z",
+          "number": 357,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(card): weekly washout-turn dual-read row beside the Oracle/Desk verdicts",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/357"
+        },
+        {
+          "branch": "claude/chinese-ticker-screenshot-bug-21e787",
+          "merged_at": "2026-08-05T02:37:24Z",
+          "number": 355,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(chart): snapshot header ticker + HK intraday session bars",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/355"
+        },
+        {
+          "branch": "claude/stoch-rsi-color-settings-cc3a90",
+          "merged_at": "2026-08-05T01:43:22Z",
+          "number": 354,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(chart): indicator directional colors follow the Up/Down setting",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/354"
+        },
+        {
+          "branch": "claude/chart-right-buffer",
+          "merged_at": "2026-08-04T01:52:11Z",
+          "number": 353,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "Fix chart right-side buffer on ticker load",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/353"
+        },
+        {
+          "branch": "claude/fix-extended-hours-price-baselines",
+          "merged_at": "2026-08-03T23:24:32Z",
+          "number": 352,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "Fix regular and after-hours price baselines after daily roll",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/352"
+        },
+        {
+          "branch": "claude/reset-chart-view-normalize-20260803",
+          "merged_at": "2026-08-03T13:37:24Z",
+          "number": 351,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "Fix chart reset viewport normalization",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/351"
+        },
+        {
+          "branch": "claude/surface-granularity-fixes-20260803",
+          "merged_at": "2026-08-03T11:56:34Z",
+          "number": 350,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(surface): archived-session honesty, stale-root guards, repaint audit (review fixes for #346)",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/350"
+        },
+        {
+          "branch": "claude/vibrant-banach-e481e2",
+          "merged_at": "2026-08-03T08:18:05Z",
+          "number": 349,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(options): /options?tab= deep-links seed synchronously (kill the flaky post-mount hop)",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/349"
+        },
+        {
+          "branch": "claude/eloquent-allen-ed782a",
+          "merged_at": "2026-08-03T07:56:36Z",
+          "number": 347,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "fix(options): Exposure desk content collapsed to 0px on phones/tablets",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/347"
+        },
+        {
+          "branch": "claude/surface-granularity-20260803",
+          "merged_at": "2026-08-03T07:31:46Z",
+          "number": 346,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(surface): percentile-normalized field + level/regime/OI\u0394 overlays (kill the bland)",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/346"
+        },
+        {
+          "branch": "claude/prism-exposure-merge-20260803",
+          "merged_at": "2026-08-03T07:27:23Z",
+          "number": 344,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "feat(options): \u00a75.3 \u2014 merge PRISM into Exposure (matrix view + confluence + heat-seeker), retire the PRISM tab",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/344"
+        },
+        {
+          "branch": "claude/shandong-gold-signal-blocking-2147c5",
+          "merged_at": "2026-08-03T07:01:57Z",
+          "number": 345,
+          "repo": "mastermindx-market-intelligence/mastermind-terminal",
+          "title": "Washout-bottom visibility: blocked-entry verdict, CN desk parity, washout-reversal prereg + evidence",
+          "url": "https://github.com/mastermindx-market-intelligence/mastermind-terminal/pull/345"
+        }
+      ],
+      "recently_merged_truncated": true,
+      "repo": "mastermindx-market-intelligence/mastermind-terminal"
+    },
+    {
+      "base_branch": "master",
+      "base_sha": "26b31066f4a850445b1bd25c4ee45d4f59938537",
+      "key": "mastermind",
+      "open_prs": [
+        {
+          "branch": "codex/us-brain-rebuild-019fe4e5",
+          "conflict": false,
+          "dependencies": [],
+          "draft": false,
+          "files": [
+            ".claude/agents/deep-reasoner.md",
+            ".claude/agents/narrative-analyst.md",
+            ".claude/agents/quant-coder.md",
+            ".claude/agents/signal-scout.md",
+            ".codex/agents/deep-reasoner.toml",
+            ".codex/agents/default.toml",
+            ".codex/agents/explorer.toml",
+            ".codex/agents/narrative-analyst.toml",
+            ".codex/agents/quant-coder.toml",
+            ".codex/agents/signal-scout.toml",
+            ".codex/agents/worker.toml",
+            ".codex/config.toml",
+            ".github/workflows/ci.yml",
+            ".gitignore",
+            "MAINTENANCE.md",
+            "app/main.py",
+            "app/scheduler.py",
+            "app/static/chat.js",
+            "app/static/index.html",
+            "app/web.py",
+            "bot/autonomous.py",
+            "bot/china.py",
+            "bot/daily.py",
+            "bot/decision_rows.py",
+            "bot/derisk.py",
+            "bot/etf.py",
+            "bot/heavyweight.py",
+            "bot/hk.py",
+            "bot/overnight.py",
+            "bot/phase2.py",
+            "bot/settle.py",
+            "brain/advisor.py",
+            "brain/autonomous_mcp.py",
+            "brain/bot_mcp.py",
+            "brain/china_mcp.py",
+            "brain/cli_bridge.py",
+            "brain/client.py",
+            "brain/codex_bridge.py",
+            "brain/codex_mcp_stdio.py",
+            "brain/decision_submission.py",
+            "brain/etf_mcp.py",
+            "brain/flagship_desk_mcp.py",
+            "brain/heavyweight_mcp.py",
+            "brain/hk_mcp.py",
+            "brain/improvement_agenda.py",
+            "brain/intake.py",
+            "brain/mastermind_ai.py",
+            "brain/nw_reflection.py",
+            "brain/portfolio_intelligence.py",
+            "brain/portfolio_learning.py",
+            "bridge/macro_snapshot.py",
+            "config/agents.yml",
+            "config/authority_map.yml",
+            "config/doctrine.yml",
+            "docs/PORTFOLIO_V2_FORWARD_EVALUATION_2026-08-11.md",
+            "docs/US_BOARD_AUDIT_AND_PORTFOLIO_V2_2026-08-08.md",
+            "ops/mastermind-codex.config.toml",
+            "portfolio/advisor_trade.py",
+            "portfolio/firm_allocator.py",
+            "portfolio/firm_exposure.py",
+            "portfolio/forward_evaluation.py",
+            "portfolio/paper_account.py",
+            "portfolio/prophet_feed.py",
+            "portfolio/registry.py",
+            "portfolio/safety.py",
+            "portfolio/trade_history.py",
+            "scripts/deploy_code_to_vps.sh",
+            "scripts/fill_pending_now.py",
+            "scripts/run_cio.py",
+            "tests/conftest.py",
+            "tests/incident_replays/test_incident_2026_07_02.py",
+            "tests/test_advisor_chat.py",
+            "tests/test_advisor_proposal_lifecycle.py",
+            "tests/test_autonomous_leak_fix.py",
+            "tests/test_autonomous_portfolio.py",
+            "tests/test_bear.py",
+            "tests/test_china_book.py",
+            "tests/test_cli_bridge.py",
+            "tests/test_codex_bridge.py",
+            "tests/test_cost_telemetry.py",
+            "tests/test_daily.py",
+            "tests/test_decision_submission_v2.py",
+            "tests/test_deploy_lag.py",
+            "tests/test_deploy_provenance.py",
+            "tests/test_derisk.py",
+            "tests/test_derisk_severity.py",
+            "tests/test_desk_e2e.py",
+            "tests/test_etf_book.py",
+            "tests/test_execution_quote_gap.py",
+            "tests/test_firm_exposure.py",
+            "tests/test_forward_evaluation.py",
+            "tests/test_governance_ledger.py",
+            "tests/test_heavyweight.py",
+            "tests/test_intake_rework_sources.py",
+            "tests/test_lesson_application_trace.py",
+            "tests/test_macro_snapshot_privacy.py",
+            "tests/test_mastermind_ai.py",
+            "tests/test_mw1_guardrails.py",
+            "tests/test_overnight.py",
+            "tests/test_paper_account.py"
+          ],
+          "files_count": 100,
+          "files_truncated": true,
+          "merge_state": "UNSTABLE",
+          "number": 15,
+          "protected_paths": [
+            ".github/workflows/ci.yml",
+            "bridge/macro_snapshot.py",
+            "config/agents.yml",
+            "config/authority_map.yml",
+            "config/doctrine.yml",
+            "ops/mastermind-codex.config.toml",
+            "portfolio/firm_exposure.py",
+            "scripts/deploy_code_to_vps.sh"
+          ],
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "Rebuild Mastermind portfolio brains and archive legacy US boards",
+          "updated_at": "2026-08-11T13:22:55Z",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/15"
+        }
+      ],
+      "open_prs_truncated": false,
+      "recently_merged": [
+        {
+          "branch": "codex/readme-orientation-20260811",
+          "merged_at": "2026-08-11T12:15:35Z",
+          "number": 17,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "docs: replace stale Phase 0 orientation",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/17"
+        },
+        {
+          "branch": "claude/org-migration-refs",
+          "merged_at": "2026-08-11T11:37:55Z",
+          "number": 16,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "org-migration: repoint macro submodule + refresh remote to the org",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/16"
+        },
+        {
+          "branch": "claude/snapshot-privacy-7386b8",
+          "merged_at": "2026-08-02T00:40:31Z",
+          "number": 14,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "privacy: whitelist-project public snapshot positions (RUL-CL-6b)",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/14"
+        },
+        {
+          "branch": "codex/native-market-benchmarks-20260730",
+          "merged_at": "2026-07-31T03:21:46Z",
+          "number": 13,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "Use native benchmarks for regional books",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/13"
+        },
+        {
+          "branch": "codex/critical-first-paint-20260730",
+          "merged_at": "2026-07-31T02:35:52Z",
+          "number": 12,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "Speed up critical portfolio paint",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/12"
+        },
+        {
+          "branch": "codex/initial-load-live-marks-20260730",
+          "merged_at": "2026-07-31T02:19:04Z",
+          "number": 11,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "Add session-aware live portfolio marks and faster cold loading",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/11"
+        },
+        {
+          "branch": "codex/dashboard-navigation-performance-20260730",
+          "merged_at": "2026-07-31T01:23:29Z",
+          "number": 10,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "perf(ui): accelerate dashboard navigation",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/10"
+        },
+        {
+          "branch": "codex/mobile-readiness-019fb582",
+          "merged_at": "2026-07-31T00:34:01Z",
+          "number": 9,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "Make the Mastermind site fully responsive",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/9"
+        },
+        {
+          "branch": "codex/historical-etf-name-019fb567",
+          "merged_at": "2026-07-31T00:29:07Z",
+          "number": 8,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "Name archived KRE portfolio trades",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/8"
+        },
+        {
+          "branch": "codex/security-name-fallbacks-019fb567",
+          "merged_at": "2026-07-31T00:24:24Z",
+          "number": 7,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "Fix remaining US security-name gaps",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/7"
+        },
+        {
+          "branch": "codex/adaptive-card-summary-019fb582",
+          "merged_at": "2026-07-31T00:18:27Z",
+          "number": 6,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "fix(ui): make brain summaries adapt to available space",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/6"
+        },
+        {
+          "branch": "codex/china-names-019fb567",
+          "merged_at": "2026-07-31T00:14:37Z",
+          "number": 3,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "Show security names across every portfolio",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/3"
+        },
+        {
+          "branch": "codex/market-view-context-precision-20260730",
+          "merged_at": "2026-07-31T00:12:51Z",
+          "number": 5,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "Add precise Macro context adapters to Market View",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/5"
+        },
+        {
+          "branch": "codex/fix-ci-packaging-20260730",
+          "merged_at": "2026-07-31T00:06:56Z",
+          "number": 4,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "Fix CI package installation",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/4"
+        },
+        {
+          "branch": "codex/recover-current-workspace-20260730",
+          "merged_at": "2026-07-30T23:57:29Z",
+          "number": 1,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "Recover and validate current Mastermind application build",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/1"
+        },
+        {
+          "branch": "codex/github-collaboration-workflow",
+          "merged_at": "2026-07-30T23:49:47Z",
+          "number": 2,
+          "repo": "mastermindx-market-intelligence/Mastermind",
+          "title": "Enforce isolated PR workflow and clean VPS releases",
+          "url": "https://github.com/mastermindx-market-intelligence/Mastermind/pull/2"
+        }
+      ],
+      "recently_merged_truncated": false,
+      "repo": "mastermindx-market-intelligence/Mastermind"
+    }
+  ],
+  "schema": "project_active_builds.v1",
+  "summary": {
+    "conflicts": 1,
+    "file_collisions": 6,
+    "open_prs": 14,
+    "recently_merged": 116,
+    "repositories": [
+      {
+        "base_branch": "main",
+        "conflicts": 1,
+        "dependency_edges": 0,
+        "file_collisions": 6,
+        "open_prs": 10,
+        "protected_prs": 6,
+        "recently_merged": 50,
+        "repo": "mastermindx-market-intelligence/macro"
+      },
+      {
+        "base_branch": "master",
+        "conflicts": 0,
+        "dependency_edges": 1,
+        "file_collisions": 0,
+        "open_prs": 3,
+        "protected_prs": 0,
+        "recently_merged": 50,
+        "repo": "mastermindx-market-intelligence/mastermind-terminal"
+      },
+      {
+        "base_branch": "master",
+        "conflicts": 0,
+        "dependency_edges": 0,
+        "file_collisions": 0,
+        "open_prs": 1,
+        "protected_prs": 1,
+        "recently_merged": 16,
+        "repo": "mastermindx-market-intelligence/Mastermind"
+      }
+    ],
+    "repository_count": 3
+  }
+}

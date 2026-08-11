@@ -64,6 +64,7 @@ projects:
       - id: repo-active-build-map
         roots:
           - docs/ACTIVE_BUILD_MAP.md
+          - docs/PROJECT_ACTIVE_BUILD_MAP.md
         authority_class: A4
         visibility: shared
         chunker: markdown_sections
