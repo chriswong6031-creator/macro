@@ -5866,6 +5866,14 @@ jobs:
         run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py tests/test_heal_candidates_archetype.py -q
       - name: US entry-status full-population remeasurement
         run: python -m pytest tests/test_us_entry_status_remeasure.py -q
+      # The candidate-pool lanes ride this job because they ride this STORE: the nine
+      # pool_* columns are appended to the very candidates parquet the suites above
+      # guard, and the graduation annotations are a read back out of it. Its
+      # TestNoAuthorityLeak is the fence that keeps a display tier out of admission —
+      # a static token sweep, an import-closure walk and a behavioural invariance
+      # check on prophet_bridge.select_candidates.
+      - name: US candidate-pool lanes (lossless partition + store columns + no authority leak)
+        run: python -m pytest tests/test_us_candidate_lanes.py -q
       # The candidates store this job guards is TRACKED IN A PUBLIC REPO, and
       # context_api.context_frame flattens each dimension's whole `value` dict
       # with no allowlist — so a dimension that grows a paid body ships it to
