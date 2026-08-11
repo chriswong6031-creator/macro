@@ -41,6 +41,7 @@ EVENT_SCHEMA = "prophet.option_shadow_lifecycle_event/v1"
 EVENT_POINTER_SCHEMA = "prophet.option_shadow_lifecycle_pointer/v1"
 STATE_SCHEMA = "prophet.option_shadow_lifecycle_state/v1"
 ACTIVATION_BOUNDARY_SCHEMA = "prophet.option_shadow_lifecycle_activation_boundary/v1"
+ADVANCE_BOUNDARY_SCHEMA = "prophet.option_shadow_lifecycle_advance_boundary/v1"
 LEDGER_SNAPSHOT_RECEIPT_SCHEMA = "prophet.canonical_ledger_snapshot_receipt/v1"
 EVENT_PREFIX = "events"
 
@@ -115,6 +116,7 @@ _SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 _GIT_COMMIT_RE = re.compile(r"^[a-f0-9]{40,64}$")
 _EVENT_ID_RE = re.compile(r"^posle_[a-f0-9]{64}$")
 _STATE_ID_RE = re.compile(r"^posls_[a-f0-9]{64}$")
+_ADVANCE_BOUNDARY_ID_RE = re.compile(r"^poslxb_[a-f0-9]{64}$")
 
 
 def _canonical_json_bytes(payload: object) -> bytes:
@@ -621,6 +623,23 @@ def _verify_ledger_prefix(body: bytes, cursor: object) -> dict[str, object]:
     return checked
 
 
+def _ledger_snapshot_at_receipt(
+    body: bytes,
+    receipt: object,
+) -> tuple[bytes, list[dict[str, object]], dict[str, object]]:
+    checked = _verify_ledger_prefix(body, receipt)
+    prefix = body[: int(checked["bytes"])]
+    rows = _ledger_rows(prefix)
+    expected = _ledger_receipt(
+        prefix,
+        rows,
+        source_commit=str(checked["source_commit"]),
+    )
+    if expected != checked:
+        raise ValueError("canonical Prophet ledger boundary receipt is inconsistent")
+    return prefix, rows, checked
+
+
 def _ledger_paths(
     lifecycle_root: Path,
     *,
@@ -757,6 +776,9 @@ def sync_canonical_ledger(
         boundary = _load_activation_boundary(lifecycle_root)
         if state is not None:
             _verify_ledger_prefix(body, state["ledger_cursor"])
+            pending_advance = _load_advance_boundary(lifecycle_root, state)
+            if pending_advance is not None:
+                _verify_ledger_prefix(body, pending_advance["ledger_boundary"])
         elif boundary is not None:
             _verify_ledger_prefix(body, boundary["ledger_boundary"])
 
@@ -898,6 +920,108 @@ def _load_or_create_activation_boundary(
     _new_mark_observations(mark_root, current_mark_pointer, boundary_pointer)
     _verify_ledger_prefix(ledger_body, boundary["ledger_boundary"])
     return boundary, boundary_observation
+
+
+def _advance_boundary_identity(boundary: dict[str, object]) -> str:
+    identity = dict(boundary)
+    identity.pop("boundary_id", None)
+    return "poslxb_" + sha256(_canonical_json_bytes(identity)).hexdigest()
+
+
+def _validate_advance_boundary(boundary: object) -> dict[str, object]:
+    required = {
+        "schema",
+        "boundary_id",
+        "base_state_id",
+        "mark_boundary",
+        "mark_boundary_observed_at_utc",
+        "ledger_boundary",
+    }
+    if not isinstance(boundary, dict) or set(boundary) != required:
+        raise ValueError("option shadow lifecycle advance boundary is malformed")
+    boundary_id = boundary.get("boundary_id")
+    base_state_id = boundary.get("base_state_id")
+    if (
+        boundary.get("schema") != ADVANCE_BOUNDARY_SCHEMA
+        or not isinstance(boundary_id, str)
+        or not _ADVANCE_BOUNDARY_ID_RE.fullmatch(boundary_id)
+        or boundary_id != _advance_boundary_identity(boundary)
+        or not isinstance(base_state_id, str)
+        or not _STATE_ID_RE.fullmatch(base_state_id)
+    ):
+        raise ValueError("option shadow lifecycle advance boundary identity is malformed")
+    mark_chain._validate_pointer(boundary.get("mark_boundary"))
+    observed = boundary.get("mark_boundary_observed_at_utc")
+    if not isinstance(observed, str) or not observed:
+        raise ValueError("option shadow lifecycle advance mark clock is malformed")
+    _validate_ledger_receipt(boundary.get("ledger_boundary"))
+    return deepcopy(boundary)
+
+
+def _make_advance_boundary(
+    *,
+    state: dict[str, object],
+    mark_pointer: dict[str, object],
+    mark_observation: dict[str, object],
+    ledger_receipt: dict[str, object],
+) -> dict[str, object]:
+    boundary: dict[str, object] = {
+        "schema": ADVANCE_BOUNDARY_SCHEMA,
+        "boundary_id": None,
+        "base_state_id": state["state_id"],
+        "mark_boundary": mark_pointer,
+        "mark_boundary_observed_at_utc": mark_observation["observed_at_utc"],
+        "ledger_boundary": ledger_receipt,
+    }
+    boundary["boundary_id"] = _advance_boundary_identity(boundary)
+    return _validate_advance_boundary(boundary)
+
+
+def _advance_boundary_path(root: Path, state: dict[str, object]) -> Path:
+    state_id = state.get("state_id")
+    if not isinstance(state_id, str) or not _STATE_ID_RE.fullmatch(state_id):
+        raise ValueError("option shadow lifecycle base state id is malformed")
+    return root / "advance_boundaries" / f"{state_id}.json"
+
+
+def _load_advance_boundary(
+    root: Path,
+    state: dict[str, object],
+) -> dict[str, object] | None:
+    body = mark_chain._read_private_file(
+        _advance_boundary_path(root, state),
+        required=False,
+    )
+    if body is None:
+        return None
+    try:
+        boundary = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("option shadow lifecycle advance boundary is invalid JSON") from exc
+    if not isinstance(boundary, dict) or _canonical_json_bytes(boundary) != body:
+        raise ValueError("option shadow lifecycle advance boundary is not canonical JSON")
+    checked = _validate_advance_boundary(boundary)
+    if checked["base_state_id"] != state["state_id"]:
+        raise ValueError("option shadow lifecycle advance boundary base state mismatch")
+    return checked
+
+
+def _write_advance_boundary(
+    root: Path,
+    state: dict[str, object],
+    boundary: dict[str, object],
+) -> None:
+    checked = _validate_advance_boundary(boundary)
+    if checked["base_state_id"] != state["state_id"]:
+        raise ValueError("option shadow lifecycle advance boundary base state mismatch")
+    directory = root / "advance_boundaries"
+    mark_chain._ensure_private_directory(directory)
+    mark_chain._write_private_immutable(
+        _advance_boundary_path(root, state),
+        _canonical_json_bytes(checked),
+    )
+    if _load_advance_boundary(root, state) != checked:
+        raise ValueError("option shadow lifecycle advance boundary readback mismatch")
 
 
 def _state_identity(state: dict[str, object]) -> str:
@@ -1750,24 +1874,64 @@ def advance_lifecycle(
             ledger_body=ledger_body,
             ledger_rows=rows,
         )
-        old_ledger_cursor = _verify_ledger_prefix(ledger_body, state["ledger_cursor"])
-        if len(rows) < int(old_ledger_cursor["row_count"]):
+        advance_boundary = _load_advance_boundary(lifecycle_root, state)
+        if advance_boundary is None:
+            advance_mark_pointer = current_mark_pointer
+            advance_mark_observation = current_mark
+            advance_ledger_body = ledger_body
+            advance_rows = rows
+            advance_ledger_receipt = ledger_receipt
+        else:
+            advance_mark_pointer = mark_chain._validate_pointer(
+                advance_boundary["mark_boundary"]
+            )
+            advance_mark_observation = _load_mark_observation(
+                mark_root,
+                advance_mark_pointer,
+            )
+            if (
+                advance_mark_observation.get("observed_at_utc")
+                != advance_boundary["mark_boundary_observed_at_utc"]
+            ):
+                raise ValueError("option shadow lifecycle advance mark clock mismatch")
+            _new_mark_observations(
+                mark_root,
+                current_mark_pointer,
+                advance_mark_pointer,
+            )
+            (
+                advance_ledger_body,
+                advance_rows,
+                advance_ledger_receipt,
+            ) = _ledger_snapshot_at_receipt(
+                ledger_body,
+                advance_boundary["ledger_boundary"],
+            )
+
+        old_ledger_cursor = _verify_ledger_prefix(
+            advance_ledger_body,
+            state["ledger_cursor"],
+        )
+        if len(advance_rows) < int(old_ledger_cursor["row_count"]):
             raise ValueError("canonical Prophet ledger row count moved backwards")
         new_marks = _new_mark_observations(
             mark_root,
-            current_mark_pointer,
+            advance_mark_pointer,
             state["mark_cursor"],
         )
         new_ledger_rows = list(
-            enumerate(rows[int(old_ledger_cursor["row_count"]):], start=int(old_ledger_cursor["row_count"]) + 1)
+            enumerate(
+                advance_rows[int(old_ledger_cursor["row_count"]):],
+                start=int(old_ledger_cursor["row_count"]) + 1,
+            )
         )
         previously_closed_ids = {
             str(row["id"])
-            for row in rows[: int(old_ledger_cursor["row_count"])]
+            for row in advance_rows[: int(old_ledger_cursor["row_count"])]
         }
         current_closes = {
             str(row["id"]): str(row["close_date"])
-            for row in rows[int(old_ledger_cursor["row_count"]):]
+            for row in advance_rows[int(old_ledger_cursor["row_count"]):]
         }
         all_closed_ids = previously_closed_ids | set(current_closes)
 
@@ -1870,10 +2034,10 @@ def advance_lifecycle(
                 plan_id=plan_id,
                 ledger_row=ledger_row,
                 ledger_row_ordinal=ordinal,
-                ledger_receipt=ledger_receipt,
+                ledger_receipt=advance_ledger_receipt,
                 enrollment_pointer=enrollments[plan_id],
                 enrollment_event=pending_enrollments.get(plan_id),
-                mark_chain_head=current_mark_pointer,
+                mark_chain_head=advance_mark_pointer,
                 latest_state=latest_marks[plan_id],
                 previous=lifecycle_head,
             )
@@ -1886,14 +2050,18 @@ def advance_lifecycle(
         candidate = _make_state(
             activation=state["activation"],
             lifecycle_head=lifecycle_head,
-            mark_cursor=current_mark_pointer,
-            ledger_cursor=ledger_receipt,
+            mark_cursor=advance_mark_pointer,
+            ledger_cursor=advance_ledger_receipt,
             enrollments=enrollments,
             terminals=terminals,
             latest_marks=latest_marks,
         )
 
         if candidate == state:
+            if advance_boundary is not None:
+                raise ValueError(
+                    "durable option shadow lifecycle advance boundary did not advance state"
+                )
             return {
                 "status": "unchanged",
                 "event_count": 0,
@@ -1902,21 +2070,31 @@ def advance_lifecycle(
                 "state_id": state["state_id"],
                 "lifecycle_head": state["lifecycle_head"]["event_id"],
                 "mark_cursor": state["mark_cursor"]["observation_id"],
-                "ledger_row_count": ledger_receipt["row_count"],
+                "ledger_row_count": advance_ledger_receipt["row_count"],
             }
 
         # Validate every candidate event and the complete state before the first write.
         for event in events:
             _validate_event_schema(event)
         _validate_state_shape(candidate)
+        expected_boundary = _make_advance_boundary(
+            state=state,
+            mark_pointer=advance_mark_pointer,
+            mark_observation=advance_mark_observation,
+            ledger_receipt=advance_ledger_receipt,
+        )
+        if advance_boundary is None:
+            _write_advance_boundary(lifecycle_root, state, expected_boundary)
+        elif advance_boundary != expected_boundary:
+            raise ValueError("option shadow lifecycle advance boundary source mismatch")
         _write_events(lifecycle_root, events)
         _validate_event_chain(lifecycle_root, candidate)
         _validate_source_references(
             lifecycle_root=lifecycle_root,
             mark_root=mark_root,
             state=candidate,
-            ledger_body=ledger_body,
-            ledger_rows=rows,
+            ledger_body=advance_ledger_body,
+            ledger_rows=advance_rows,
         )
         _write_state(lifecycle_root, candidate)
         if _load_state(lifecycle_root) != candidate:
@@ -1934,7 +2112,7 @@ def advance_lifecycle(
             "state_id": candidate["state_id"],
             "lifecycle_head": candidate["lifecycle_head"]["event_id"],
             "mark_cursor": candidate["mark_cursor"]["observation_id"],
-            "ledger_row_count": ledger_receipt["row_count"],
+            "ledger_row_count": advance_ledger_receipt["row_count"],
         }
 
 

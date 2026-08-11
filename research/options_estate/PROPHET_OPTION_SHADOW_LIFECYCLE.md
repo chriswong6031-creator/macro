@@ -115,6 +115,10 @@ readback blocks the lifecycle; the stale checkout copy is never a fallback.
   backwards before the current state advances atomically;
 - `activation_boundary.json`: a private immutable transaction marker that freezes the
   first source cursors across a crash, even if either source advances before retry;
+- `advance_boundaries/<base_state_id>.json`: a private immutable per-state transaction
+  marker written only after the candidate validates and before its first event write;
+  it pins the exact mark head and ledger receipt so a crash retry adopts byte-identical
+  enrollment/terminal events even after either source advances;
 - current state: content-identified and cross-checked against the complete event chain;
 - retries: source-derived event bytes are deterministic, so an event written before a
   failed state swap is safely adopted on retry rather than duplicated.
@@ -151,6 +155,8 @@ Advancement must fail closed, without moving either cursor, when any of these oc
   enrollment;
 - a new canonical row is malformed, duplicated, future-reversed, or already claims an
   option result;
+- a pending per-state source boundary is not an ancestor/prefix of current sources or
+  does not reproduce the exact candidate transaction;
 - runtime event-schema validation fails; or
 - an immutable event path collides with different bytes.
 

@@ -2715,6 +2715,105 @@ def test_option_shadow_lifecycle_crash_retry_adopts_identical_event(
     )
 
 
+def test_option_shadow_terminal_crash_retry_adopts_pinned_boundary_after_sources_advance(
+    monkeypatch,
+    tmp_path,
+):
+    mark_root, lifecycle_root, ledger_path, _ = _prepare_enrolled_lifecycle(
+        monkeypatch,
+        tmp_path,
+    )
+    terminal_mark_pointer, _ = _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:10:00+00:00",
+        session_date="2026-08-11",
+        phase="at_t1",
+        mid=3.3,
+    )
+    _lifecycle_append_close(ledger_path)
+    state_before = (lifecycle_root / "current.json").read_bytes()
+    original_write_state = option_lifecycle._write_state
+
+    def fail_state(*_args, **_kwargs):
+        raise OSError("injected terminal state swap failure")
+
+    monkeypatch.setattr(option_lifecycle, "_write_state", fail_state)
+    with pytest.raises(OSError, match="terminal state swap"):
+        option_lifecycle.advance_lifecycle(
+            lifecycle_root=lifecycle_root,
+            mark_root=mark_root,
+            ledger_path=ledger_path,
+        )
+    assert (lifecycle_root / "current.json").read_bytes() == state_before
+    event_files_before = {
+        path.name: path.read_bytes()
+        for path in (lifecycle_root / "events").rglob("posle_*.json")
+    }
+    assert len(event_files_before) == 3
+    assert len(_lifecycle_events(lifecycle_root)) == 2
+    base_state_id = json.loads(state_before)["state_id"]
+    boundary_path = (
+        lifecycle_root / "advance_boundaries" / f"{base_state_id}.json"
+    )
+    assert boundary_path.is_file()
+    boundary_before = boundary_path.read_bytes()
+
+    # Both mutable sources advance before retry. The retry must consume only the
+    # immutable source boundary from the first attempt, then adopt the orphan event.
+    _lifecycle_append_close(
+        ledger_path,
+        plan_id="UNRELATED-CLOSED",
+        close_date="2026-08-11",
+    )
+    later_mark_pointer, _ = _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:15:00+00:00",
+        session_date="2026-08-11",
+        phase="at_t1",
+        mid=3.8,
+    )
+    assert later_mark_pointer != terminal_mark_pointer
+
+    monkeypatch.setattr(option_lifecycle, "_write_state", original_write_state)
+    recovered = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert recovered["terminal_count"] == 1
+    assert recovered["ledger_row_count"] == 1
+    assert boundary_path.read_bytes() == boundary_before
+    event_files_after = {
+        path.name: path.read_bytes()
+        for path in (lifecycle_root / "events").rglob("posle_*.json")
+    }
+    assert event_files_after == event_files_before
+    reachable = _lifecycle_events(lifecycle_root)
+    assert len(reachable) == len(event_files_after) == 3
+    assert {f"{event['event_id']}.json" for event in reachable} == set(
+        event_files_after
+    )
+    terminal = reachable[-1]
+    assert terminal["payload"]["terminal_mark"]["mark"]["mark_observation"] == (
+        terminal_mark_pointer
+    )
+    assert terminal["payload"]["shadow_return"][
+        "shadow_mark_to_mark_return_pct"
+    ] == 10.0
+
+    caught_up = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert caught_up["status"] == "advanced"
+    assert caught_up["event_count"] == 0
+    assert caught_up["ledger_row_count"] == 2
+    assert len(list((lifecycle_root / "events").rglob("posle_*.json"))) == 3
+
+
 def test_option_shadow_sync_installs_exact_current_main_receipt_before_activation(
     monkeypatch,
     tmp_path,
