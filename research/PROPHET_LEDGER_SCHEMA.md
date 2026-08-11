@@ -182,10 +182,30 @@ from the R6 audit stay refused).
 `origination_mode: "outage_backfill_2026_08_09"` and `backfill_executed_at` (the real
 wall date of the write), alongside its normal era stamps — `selection_era` is
 UNCHANGED, because the selection rule did not change, only the moment of writing did.
-Both fields are whitelisted onto the `site/prophet/index.json` row, so any
-track-record, calibration or Prophet-training aggregate can split or exclude these
-rows without reading the per-plan files. A plan minted by this lane WITHOUT the stamp
-is a defect.
+The stamp is carried onto three surfaces, and it needs all three: the per-plan file,
+the `site/prophet/index.json` row, and — at close — the **forward-ledger row itself**.
+The ledger one is the load-bearing one. It is the substrate every rate, calibration
+number and Prophet-training input is ultimately computed over, and a consumer reading
+`ledger.jsonl` directly never sees an index row, so a stamp that stopped at the index
+would leave the cohort unsplittable exactly where splitting matters most. On all three
+surfaces the key is ABSENT on a live row rather than present-and-null: absent means
+live, which keeps today's artifacts byte-identical while nothing is reconstructed. A
+plan minted by this lane WITHOUT the stamp is a defect.
+
+**What the published record does with them.** `record_summary` does NOT drop these
+rows from `win_rate`/`avg_result_pct`. They were graded by the nightly on their own
+real bars, so the honest treatment is an ADDITIVE split, not a fourth exclusion: the
+record gains `n_reconstructed`, `reconstructed_ids` and a bilingual note naming the
+cohort, and the headline numbers are unchanged. Ratified 2026-08-11; shipped in
+#5301. The exclusions are elsewhere and are narrower on purpose:
+
+* **Marketing surfaces hard-exclude them** (`engine/marketing/receipt_source.py`,
+  `allies.py`, `content_studio.py`). A reconstructed pick may never be presented as a
+  live historical call under any framing — that would be a claim about the past that
+  is not true, regardless of how the row graded.
+* **`prophet_stage_shadow`'s tilt cohort excludes them.** That block is read BACK into
+  live geometry (`_stage_tilt_demoted` → `plan_horizon_days`), which is the one place a
+  reconstructed row would stop being display-tier and start steering live picks.
 
 **Where the exception is enumerated.** `data/prophet/backfill_disclosures.json` — the
 window, the authority, the pinned input SHAs (board commit + plans baseline), the

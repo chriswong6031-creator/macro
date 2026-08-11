@@ -1,5 +1,5 @@
 {
- "asof": "2026-08-09",
+ "asof": "2026-08-10",
  "audit": "stocks",
  "config": {
   "price_max_gap_days": 4,
@@ -19,14 +19,14 @@
   "stocks_stale_calendar_days": 7,
   "email_alerts": false
  },
- "n": 239,
+ "n": 240,
  "n_failed": 0,
  "fail_pct": 0.0,
  "n_flags": 0,
  "universes": [
   {
    "name": "stocks",
-   "n": 239,
+   "n": 240,
    "n_failed": 0,
    "fail_pct": 0.0,
    "n_flags": 0,
@@ -36,10 +36,10 @@
    "flags": []
   }
  ],
- "expected_session": "2026-08-07",
+ "expected_session": "2026-08-10",
  "threshold_calendar_days": 7,
  "totals": {
-  "fresh": 239,
+  "fresh": 240,
   "stale_live": 0,
   "stale_dead": 0,
   "missing": 0,

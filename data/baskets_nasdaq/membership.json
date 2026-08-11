@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-08-10",
+ "as_of": "2026-08-11",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -40,12 +40,12 @@
      "name": "Texas Instruments Inc"
     },
     {
-     "ticker": "MRVL",
-     "name": "Marvell Technology Inc"
-    },
-    {
      "ticker": "ADI",
      "name": "Analog Devices Inc"
+    },
+    {
+     "ticker": "MRVL",
+     "name": "Marvell Technology Inc"
     },
     {
      "ticker": "QCOM",
@@ -86,16 +86,16 @@
      "name": "Adobe Inc"
     },
     {
-     "ticker": "CDNS",
-     "name": "Cadence Design Systems Inc"
+     "ticker": "DDOG",
+     "name": "Datadog Inc"
     },
     {
      "ticker": "INTU",
      "name": "Intuit Inc"
     },
     {
-     "ticker": "DDOG",
-     "name": "Datadog Inc"
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "ADSK",
@@ -200,12 +200,12 @@
      "name": "PDD Holdings Inc ADR"
     },
     {
-     "ticker": "DASH",
-     "name": "DoorDash Inc"
-    },
-    {
      "ticker": "MELI",
      "name": "MercadoLibre Inc"
+    },
+    {
+     "ticker": "DASH",
+     "name": "DoorDash Inc"
     }
    ]
   },
@@ -214,11 +214,11 @@
    "sector": "Internet & Platforms",
    "members": [
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
@@ -290,12 +290,12 @@
    "sector": "Semis & Silicon",
    "members": [
     {
-     "ticker": "STX",
-     "name": "Seagate Technology Holdings Plc"
-    },
-    {
      "ticker": "SNDK",
      "name": "Sandisk Corp"
+    },
+    {
+     "ticker": "STX",
+     "name": "Seagate Technology Holdings Plc"
     },
     {
      "ticker": "WDC",
@@ -334,12 +334,12 @@
    "sector": "Software & Cloud",
    "members": [
     {
-     "ticker": "RKLB",
-     "name": "Rocket Lab Corp"
-    },
-    {
      "ticker": "AXON",
      "name": "Axon Enterprise Inc"
+    },
+    {
+     "ticker": "RKLB",
+     "name": "Rocket Lab Corp"
     },
     {
      "ticker": "KTOS",
@@ -394,12 +394,12 @@
      "name": "Texas Instruments Inc"
     },
     {
-     "ticker": "MRVL",
-     "name": "Marvell Technology Inc"
-    },
-    {
      "ticker": "ADI",
      "name": "Analog Devices Inc"
+    },
+    {
+     "ticker": "MRVL",
+     "name": "Marvell Technology Inc"
     },
     {
      "ticker": "QCOM",
@@ -462,12 +462,12 @@
      "name": "AAOI"
     },
     {
-     "ticker": "STX",
-     "name": "Seagate Technology Holdings Plc"
-    },
-    {
      "ticker": "SNDK",
      "name": "Sandisk Corp"
+    },
+    {
+     "ticker": "STX",
+     "name": "Seagate Technology Holdings Plc"
     },
     {
      "ticker": "WDC",
@@ -528,16 +528,16 @@
      "name": "Adobe Inc"
     },
     {
-     "ticker": "CDNS",
-     "name": "Cadence Design Systems Inc"
+     "ticker": "DDOG",
+     "name": "Datadog Inc"
     },
     {
      "ticker": "INTU",
      "name": "Intuit Inc"
     },
     {
-     "ticker": "DDOG",
-     "name": "Datadog Inc"
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "ADSK",
@@ -572,12 +572,12 @@
      "name": "Copart Inc"
     },
     {
-     "ticker": "RKLB",
-     "name": "Rocket Lab Corp"
-    },
-    {
      "ticker": "AXON",
      "name": "Axon Enterprise Inc"
+    },
+    {
+     "ticker": "RKLB",
+     "name": "Rocket Lab Corp"
     },
     {
      "ticker": "KTOS",
@@ -610,11 +610,11 @@
    "name_zh": "互联网与平台",
    "members": [
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
@@ -630,12 +630,12 @@
      "name": "PDD Holdings Inc ADR"
     },
     {
-     "ticker": "DASH",
-     "name": "DoorDash Inc"
-    },
-    {
      "ticker": "MELI",
      "name": "MercadoLibre Inc"
+    },
+    {
+     "ticker": "DASH",
+     "name": "DoorDash Inc"
     },
     {
      "ticker": "TMUS",

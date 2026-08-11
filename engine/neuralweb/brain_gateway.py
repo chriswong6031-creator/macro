@@ -2719,6 +2719,13 @@ def _tool_get_house_view(params: dict, root: Path) -> dict:
                     "signal_date_basis": p.get("signal_date_basis"),
                     "signal_provisional": p.get("signal_provisional"),
                     "source_marker_date": p.get("source_marker_date"),
+                    # HOW the plan came to exist (§0.6f). The chat layer must be able
+                    # to CAVEAT a reconstructed pick rather than narrate it as a call
+                    # made on the day — a field the projection drops is a caveat the
+                    # model cannot make. None on every live plan; the row also carries
+                    # finished bilingual copy in `origination_note` when set.
+                    "origination_mode": p.get("origination_mode"),
+                    "origination_note": p.get("origination_note"),
                 }
                 for p in plans
             ]

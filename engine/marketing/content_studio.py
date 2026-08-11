@@ -3470,6 +3470,19 @@ def content_plan(
 
     Returns the frozen dict structure with envelope fields caller will stamp.
     """
+    # ── Reconstructed plans never enter the marketing population (§0.6d) ───────
+    # A plan rebuilt after the 2026-08-09 outage did not exist on the day its
+    # recorded_at names, so presenting it as a call the desk made — in a receipt, a
+    # chart, a starved-receipt alarm, or a per-account pool — would be a claim about
+    # the past that is not true. Five separate sites downstream read `plans` for
+    # receipt purposes; filtering the PARAMETER once is what makes it impossible for
+    # a sixth to be added without the exclusion. Non-receipt uses lose nothing:
+    # today's population contains no reconstructed rows at all, and after the replay
+    # the excluded rows are exactly the ones no marketing surface may show.
+    from engine.prophet_bridge import is_reconstructed  # noqa: PLC0415
+
+    plans = [p for p in (plans or []) if not is_reconstructed(p)]
+
     from engine.marketing.chart_render import (
         chart_cta_enabled,
         macd_cross,

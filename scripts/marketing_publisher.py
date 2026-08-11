@@ -1999,6 +1999,16 @@ def main(argv: list[str] | None = None) -> int:
         pt_generated, pt_dropped,
     )
     if bool(args.live) and not kill_on:
+        # THE ANNOTATION IS THE POINT, and it has to be a bare print. This
+        # downgrade spoke only through `log` until 2026-08-10, and house law
+        # (CLAUDE.md, "GitHub annotations must START the line") is exactly about
+        # why that was silence: the logger prefixes the line, GitHub only parses
+        # `::` at column 0, so the Actions UI showed NOTHING while the lane
+        # dry-ran ~30 sweeps a day for five days (08-06→08-10) and posted
+        # nothing. The log line stays for the step log; this is the one that
+        # reaches the summary.
+        print("::warning title=marketing-dark::kill-switch off — this sweep "
+              "DRY-RUNs and posts nothing", flush=True)
         log.warning("--live passed but MARKETING_PUBLISH_ENABLED is not set — "
                     "refusing to post; running as DRY-RUN")
 
