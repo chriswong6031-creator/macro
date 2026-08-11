@@ -259,6 +259,8 @@ if __name__ == "__main__":
 WT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(WT_ROOT))
 
+from collectors.massive_stock_day import (          # noqa: E402
+    StaleLocalMirrorError, check_local_mirror_freshness)
 from engine import synthetic_control as sc          # noqa: E402
 from engine import validation as V                  # noqa: E402
 from engine.index_changes import classify_cohort, load_gate, pit_history   # noqa: E402
@@ -1580,6 +1582,10 @@ def main() -> int:
     ap.add_argument("--max-names", type=int, default=None, help="cap store reads (smoke)")
     ap.add_argument("--skip-ledger", action="store_true")
     ap.add_argument("--no-write", action="store_true", help="compute, print, write nothing")
+    ap.add_argument("--allow-stale", action="store_true",
+                    help="run against a local massive_stock_day mirror 20+ trading "
+                         "sessions behind (refused by default — the mirror does not "
+                         "self-update, so the numbers would be as of its frozen date)")
     args = ap.parse_args()
 
     t_start = time.time()
@@ -1595,6 +1601,13 @@ def main() -> int:
         print("  No numbers are produced. This is a data-reach failure, not a result.")
         return 2
     print(f"[data] store {store}")
+    # The ladder proves the store is REACHABLE, never that it is CURRENT: a local tree
+    # is a mirror of the R2-canonical store and nothing refreshes it in place.
+    try:
+        check_local_mirror_freshness(store, entrypoint="scripts/synthetic_control_phase0.py",
+                                     allow_stale=args.allow_stale)
+    except StaleLocalMirrorError:
+        sys.exit(2)   # the banner already printed the lag and the fix command
     data_dir = WT_ROOT / "data"
 
     if not args.skip_ledger:

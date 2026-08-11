@@ -304,7 +304,6 @@ families:
       blockers:
         - required_source_not_activation_eligible
         - reviewed_point_in_time_company_identity_contract
-        - versioned_internal_pit_adapter_with_unavailable_state_semantics
 
   partnership_event:
     description: A licensing, option, collaboration, or return event that changes who owns or funds an asset-indication program.

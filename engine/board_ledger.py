@@ -642,7 +642,7 @@ def grade(market: str) -> dict:
     Returns a dict with keys:
         market, n_calls, n_graded, n_suspended, n_unstamped, survivorship,
         board_definition (the newest stamped era, None for a legacy pool),
-        by_horizon: {h: [{date, ticker, board_pos, group, edge_z, board_definition,
+        by_horizon: {h: [{date, ticker, board_pos, group, edge_z, board_definition, entry_date,
                           fwd_ret, bench_ret, excess_ret, suspended}, ...]}
 
     GRADING IS NOT SCOPED BY DEFINITION — every matured row is still graded and
@@ -714,6 +714,7 @@ def grade(market: str) -> dict:
                     "group": row.get("group"),
                     "edge_z": _float_or_none(row.get("edge_z")),
                     "board_definition": _definition_or_none(row.get("board_definition")),
+                    "entry_date": str(fill_date.date()),
                     "fwd_ret": None,
                     "bench_ret": None,
                     "excess_ret": None,
@@ -739,6 +740,7 @@ def grade(market: str) -> dict:
                 "group": row.get("group"),
                 "edge_z": _float_or_none(row.get("edge_z")),
                 "board_definition": _definition_or_none(row.get("board_definition")),
+                "entry_date": str(fill_date.date()),
                 "fwd_ret": name_ret,
                 "bench_ret": bench_ret,
                 "excess_ret": excess,

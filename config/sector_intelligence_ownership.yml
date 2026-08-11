@@ -1,7 +1,7 @@
 schema: sector_intelligence_ownership.v1
-effective_at: "2026-08-03T16:36:06Z"
+effective_at: "2026-08-11T06:57:31Z"
 status: f0_reconciled_partial_freeze
-reconciled_against_commit: e124f4ed2edcf77a82295c78f4feabc6c3e7bc90
+reconciled_against_commit: 22cf8a9f8f54e341e2efb63c6d5c6984476252db
 
 policy:
   one_writer_required: true
@@ -35,9 +35,10 @@ runtime_controls:
       BIOCATALYST_R2_RETENTION_CONFIRMED: "cannot authorize prospective collection"
 
 # These names freeze cross-plane compatibility slots; they do not create a
-# second writer or make a blocked dependency available. Only the current trial
-# read API and the private, in-process earnings transcript context bundle are
-# usable by BioCatalyst today; every generic cross-domain slot remains blocked.
+# second writer or make a blocked dependency available. The current trial read
+# API, private transcript context, and private Capital Structure event-state
+# adapter are usable by BioCatalyst today; every other cross-domain slot remains
+# blocked.
 # The shared-plane fixture proves the modules/contracts/statuses remain what
 # this registry claims.
 read_adapters:
@@ -147,23 +148,29 @@ read_adapters:
 
   biocatalyst_capital_structure_pit_adapter.v1:
     canonical_owner: capital_structure
-    implementation_state: blocked_current_projection_has_no_biocatalyst_pit_adapter
-    module: null
-    callable: null
-    available_dependency:
-      module: app.capital_structure
-      routes:
-        - /api/capital-structure/v1/coverage
-        - /api/capital-structure/v1/overview
-        - /api/capital-structure/v1/issuers/resolve
-        - /api/capital-structure/v1/issuers/{issuer_id}
-        - /api/capital-structure/v1/issuers/{issuer_id}/events
-      output_contract: capital_structure.projection_bundle.v1
-      transport: authenticated_site_full_private_no_store
-      scope: current_observed_filing_state_without_cash_runway_or_dilution
+    implementation_state: implemented_private_in_process_event_state_only
+    module: engine.capital_structure.biocatalyst_pit_adapter
+    callable: read_biocatalyst_capital_structure_pit
+    route_prefix: null
+    routes: []
+    input_identity: caller_supplied_sec_issuer_id_and_timezone_aware_as_of
+    output_contracts:
+      - biocatalyst_capital_structure_pit_read.v1
+    transport: private_in_process_receipted_context_only_no_store
+    point_in_time_scope: verified_owner_generation_system_time_one_issuer
+    available_dependency: null
     compatibility_fixture: data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json
-    biocatalyst_eligible: false
-    blocker: versioned_internal_pit_adapter_with_unavailable_state_semantics
+    biocatalyst_eligible: true
+    limitations:
+      - caller_supplied_sec_issuer_id_only
+      - event_state_only
+      - explicit_owner_generation_coverage_only
+      - no_cash_burn_runway_or_dilution_calculation
+      - no_identity_resolution
+      - no_model_or_signal_authority
+      - no_negative_issuer_coverage_conclusion
+      - private_in_process_only
+    blocker: null
 
 # B0a froze the source-fact lanes needed by the NCT Trial Capsule; B4D advances
 # only their official-API prospective observation and public read-model seams.
@@ -441,7 +448,6 @@ b0_closure:
     - generic_company_identity_executable_contract
     - complete_market_data_security_master_registration
     - corporate_documents_and_spans_executable_contract
-    - capital_structure_biocatalyst_pit_read_adapter
   unblocked_scope:
     - source_canonical_nct_identity
     - clinicaltrials_raw_receipts

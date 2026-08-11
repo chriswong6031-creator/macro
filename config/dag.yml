@@ -1100,6 +1100,9 @@ lanes:
       - id: grade_us_board
         module: scripts.grade_us_board
         args: [--nightly]
+      - id: build_opportunity_timeline
+        module: scripts.build_opportunity_timeline
+        note: "Durable display-only Prophet candidate and reversal-watch receipts for Terminal; runs after grade_us_board so tonight's US board snapshot is included."
       - id: grade_bottom_calls
         module: scripts.grade_bottom_calls
         args: [--nightly]

@@ -547,3 +547,61 @@ class TestPostedIsNotProofItWentOut:
         src = pathlib.Path("scripts/build_marketing.py").read_text(encoding="utf-8")
         assert "unconfirmed_sends" in src
         assert "send_confirmed=" in src
+
+
+class TestPostingOutbidsTelemetry:
+    """`marketing-publish.yml` polls metrics on the SAME Buffer token and the
+    SAME 24h quota the publisher posts with, so every telemetry call is a post
+    the desk may not get to make.
+
+    2026-08-11: the once-daily gate was hour-only, and `date -u +%H` reads "13"
+    for the whole hour — so BOTH the 13:00Z and the 13:30Z sweep polled, at 2x
+    the per-run cap. Run 31453875632 is the receipt: a live post attempt came
+    back `429 retry after 37768s`, and 02:56Z + 37768s = 13:25Z, the minute the
+    previous day's poll rolls out of Buffer's rolling 24h window. Buffer named
+    whose calls were in the way of the post.
+
+    (tests/test_marketing_metrics_poll_quota.py pins the poller's own two
+    bounds — stop-on-429 and cap-the-run — but is baselined in
+    config/unrun_test_baseline.json, i.e. no CI job runs it. These three live
+    here so the ruling has a guard that actually executes.)
+    """
+
+    WF = Path(__file__).resolve().parents[1] / ".github/workflows/marketing-publish.yml"
+
+    def _poll_step(self) -> dict:
+        import yaml
+
+        steps = yaml.safe_load(self.WF.read_text(encoding="utf-8"))["jobs"]["publish"]["steps"]
+        return [s for s in steps if "poll post metrics" in str(s.get("name", ""))][0]
+
+    def test_the_daily_gate_bounds_the_minute_not_only_the_hour(self):
+        """THE PIN. An hour-only gate is a TWICE-daily gate: the cron sweeps at
+        :00 and :30 both report hour 13."""
+        run = self._poll_step()["run"]
+        assert "date -u +%H" in run and '"13"' in run, \
+            "the poll must still be gated to one hour a day"
+        assert "date -u +%M" in run, \
+            "an hour-only gate admits both the 13:00Z and the 13:30Z sweep"
+        assert "-ge 25" in run, (
+            "the minute bound must exclude the 13:30Z sweep — sweeps land at :00 "
+            "and :30 plus up to ~15 min of Actions drift, so <25 admits only :00")
+
+    def test_a_breaking_post_now_dispatch_spends_nothing_on_telemetry(self):
+        """A `post_now` click is an operator trying to get ONE post out NOW.
+        Every other manual dispatch still polls."""
+        step = self._poll_step()
+        assert "post_now_item" in str((step.get("env") or {}).get("POST_NOW_ITEM", "")), \
+            "the step must see the breaking-dispatch input to be able to skip on it"
+        run = step["run"]
+        assert "POST_NOW_ITEM" in run and "exit 0" in run
+        assert run.index("POST_NOW_ITEM") < run.index("github.event_name"), (
+            "the post_now bail must precede the schedule clock branch — otherwise "
+            "a breaking dispatch at 13:0xZ polls anyway")
+
+    def test_the_per_run_call_cap_stays_well_under_the_daily_allowance(self):
+        import scripts.marketing_metrics_poll as MP
+
+        assert MP._MAX_CALLS_PER_RUN <= 8, (
+            "the publisher shares this token; a telemetry cap large enough to "
+            "matter is a posting outage waiting for a busy day")
