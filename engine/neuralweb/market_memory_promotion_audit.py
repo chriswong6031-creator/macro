@@ -11,6 +11,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
 import re
 from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
@@ -122,6 +123,7 @@ def _fail(message: str) -> NoReturn:
 def canonical_json_bytes(value: object) -> bytes:
     """Return the one finite canonical JSON representation admitted by W7."""
 
+    _walk_json(value)
     try:
         body = json.dumps(
             value,
@@ -173,6 +175,13 @@ def _walk_json(value: object, *, depth: int = 0) -> int:
     elif type(value) is list:
         for child in value:
             nodes += _walk_json(child, depth=depth + 1)
+    elif value is None or type(value) in {str, int, bool}:
+        pass
+    elif type(value) is float:
+        if not math.isfinite(value):
+            _fail("feature-promotion audit contains a non-finite number")
+    else:
+        _fail("feature-promotion audit contains a non-JSON value")
     if nodes > _MAX_JSON_NODES:
         _fail("feature-promotion audit exceeds its JSON node bound")
     return nodes

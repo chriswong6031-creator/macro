@@ -302,6 +302,77 @@ def test_exact_loader_rejects_duplicate_noncanonical_nonbytes_and_bounds() -> No
         audit.load_feature_promotion_audit_json(bytearray(exact))  # type: ignore[arg-type]
 
 
+def test_runtime_rejects_tuple_and_container_subclass_morphology() -> None:
+    class ListSubclass(list):
+        pass
+
+    class DictSubclass(dict):
+        pass
+
+    tuple_features = _artifact()
+    tuple_features["features"] = tuple(tuple_features["features"])
+
+    tuple_gates = _artifact()
+    tuple_gates["features"][0]["gates"] = tuple(tuple_gates["features"][0]["gates"])
+
+    list_subclass = _artifact()
+    list_subclass["features"] = ListSubclass(list_subclass["features"])
+
+    dict_subclass = _artifact()
+    dict_subclass["features"][0] = DictSubclass(dict_subclass["features"][0])
+
+    for hostile in (tuple_features, tuple_gates, list_subclass, dict_subclass):
+        with pytest.raises(
+            audit.MarketMemoryPromotionAuditContractError, match="non-JSON value"
+        ):
+            audit.validate_feature_promotion_audit(hostile)
+        with pytest.raises(
+            audit.MarketMemoryPromotionAuditContractError, match="non-JSON value"
+        ):
+            audit.canonical_json_bytes(hostile)
+
+
+def test_canonical_json_rejects_scalar_subclasses_and_nonfinite_numbers() -> None:
+    class StringSubclass(str):
+        pass
+
+    class IntegerSubclass(int):
+        pass
+
+    class FloatSubclass(float):
+        pass
+
+    for hostile in (
+        StringSubclass("missing"),
+        IntegerSubclass(18),
+        FloatSubclass(0.0),
+    ):
+        with pytest.raises(
+            audit.MarketMemoryPromotionAuditContractError, match="non-JSON value"
+        ):
+            audit.canonical_json_bytes(hostile)
+
+    string_subclass = _artifact()
+    string_subclass["features"][0]["feature_id"] = StringSubclass(
+        string_subclass["features"][0]["feature_id"]
+    )
+    integer_subclass = _artifact()
+    integer_subclass["counts"]["feature_count"] = IntegerSubclass(18)
+    float_subclass = _artifact()
+    float_subclass["authority"]["proposal_weight"] = FloatSubclass(0.0)
+    for hostile in (string_subclass, integer_subclass, float_subclass):
+        with pytest.raises(
+            audit.MarketMemoryPromotionAuditContractError, match="non-JSON value"
+        ):
+            audit.validate_feature_promotion_audit(hostile)
+
+    for hostile in (float("nan"), float("inf"), float("-inf")):
+        with pytest.raises(
+            audit.MarketMemoryPromotionAuditContractError, match="non-finite number"
+        ):
+            audit.canonical_json_bytes(hostile)
+
+
 def test_exact_loader_wraps_oversized_json_integer_as_contract_error() -> None:
     hostile = b'{"oversized_integer":' + b"1" * 4301 + b"}"
     with pytest.raises(
