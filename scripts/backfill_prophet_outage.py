@@ -35,6 +35,14 @@ WHAT IT WRITES / NEVER WRITES (§3.4).
 IDEMPOTENCE.  The disclosure artifact IS the lock: a second run over a window that
 is already recorded refuses instead of double-minting.
 
+RUN IT FROM A COMPLETE CHECKOUT.  The pinned board and the plan baseline are read out
+of git and are therefore host-independent, but ``originate_plans`` also reads the
+WORKING TREE for its enrichments: the stage-tilt inputs (``data/stage_analysis/``,
+``data/regime/latest.json``) set each plan's leash and therefore ``horizon_days``, and
+the ThetaData store supplies ``option_contract``.  A sparse agent worktree without
+``data/`` silently produces leash-1.0, option-free plans — valid JSON, wrong artifact.
+Compare a dry run's output against expectations before passing ``--execute``.
+
 Run (dry run — prints the would-mint set, writes nothing):
 
     python3 -m scripts.backfill_prophet_outage \\
@@ -857,6 +865,25 @@ def main(argv: list[str] | None = None) -> int:
     repo = Path(args.repo).resolve()
     executed_at = datetime.now(timezone.utc).isoformat()
 
+    # Resolve the option store exactly as the nightly does (build_prophet.py:1492).
+    # WITHOUT this the replay would hand originate_plans None and every minted plan
+    # would carry option_contract: null — not "the receipted live path with one
+    # poisoned input flipped", but a second, silent difference. Optional enrichment,
+    # so a missing store degrades loudly rather than refusing.
+    from engine.thetadata_store import resolve_thetadata_store  # noqa: PLC0415
+
+    resolved_store = resolve_thetadata_store(
+        required=False, purpose="backfill_prophet_outage option-resolution")
+    if resolved_store is None:
+        print(
+            "::warning title=prophet-backfill-no-option-store::no ThetaData store "
+            "resolves — every backfilled plan will carry option_contract: null, "
+            "which the 2026-08-09 live path would NOT have done. Run this from a "
+            "checkout with the store (or set THETADATA_STORE) unless you intend "
+            "option-free plans.",
+            flush=True,
+        )
+
     try:
         result = run_backfill(
             repo,
@@ -864,6 +891,7 @@ def main(argv: list[str] | None = None) -> int:
             plans_baseline=args.plans_baseline,
             executed_at=executed_at,
             execute=bool(args.execute),
+            thetadata_store=str(resolved_store) if resolved_store else None,
         )
     except BackfillRefused as exc:
         # Bare print at line start (house law): a logger prefix makes GitHub drop it.
