@@ -250,8 +250,10 @@ def test_the_main_baseline_is_fast_bounded_and_runs_the_merge_train_contract():
     runs_on = " ".join(str(job["runs-on"]).split())
     assert "render-linux" in runs_on
     assert "ubuntu-latest" in runs_on
-    assert int(job["timeout-minutes"]) == 12
+    assert int(job["timeout-minutes"]) == 30
     source = BASELINE_WORKFLOW.read_text(encoding="utf-8")
+    assert "60k tracked paths" in source
+    assert "former 12-minute" in source
     assert "tests/test_merge_on_green.py" in source
     assert "scripts/check_skip_only_suites.py" in source
 
@@ -3665,7 +3667,7 @@ def test_the_baseline_main_push_escapes_the_hosted_queue_only_on_main():
         for context in expected
     } == expected
     assert "macstudio" not in runs_on
-    assert int(job["timeout-minutes"]) == 12
+    assert int(job["timeout-minutes"]) == 30
 
 
 def test_the_self_hosted_baseline_clears_sparse_checkout_before_checkout():
