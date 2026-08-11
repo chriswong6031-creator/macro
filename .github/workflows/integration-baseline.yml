@@ -77,7 +77,13 @@ jobs:
     # An off-main dispatch must never execute inside the persistent
     # production-adjacent runner workspace.
     runs-on: ${{ github.ref == 'refs/heads/main' && fromJSON('["self-hosted","render-linux"]') || 'ubuntu-latest' }}
-    timeout-minutes: 12
+    # The source tree now contains roughly 60k tracked paths.  On the persistent
+    # render-linux runner, checkout@v4 must update that full index before the
+    # control-plane tests can start; two consecutive post-merge proofs were
+    # cancelled at the former 12-minute whole-job ceiling while still inside
+    # checkout.  Keep every gate below unchanged and bound the complete job at
+    # 30 minutes so a real failure still terminates promptly.
+    timeout-minutes: 30
     steps:
       # A self-hosted runner reuses its workspace.  A prior sparse checkout in
       # the same directory can leave core.sparseCheckout enabled, after which
