@@ -5,6 +5,8 @@ Focus: level math is correct, copy is compliant (no advice lexicon, one cashtag,
 """
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from engine.marketing import weekend_levels as wl
@@ -199,6 +201,73 @@ def test_every_frame_cites_the_level_its_card_draws():
             assert ph in frame, (
                 f"{state} frame formats no {ph} (would cite a level the "
                 f"card does not draw): {frame!r}")
+
+
+#: The Voice Doctrine v5 bans (2026-08-11), as one screen. `\bI\b` stays
+#: case-SENSITIVE (a lower-case "i" is an enumeration letter, not the pronoun);
+#: the rest is case-insensitive because a pronoun is capitalised exactly when it
+#: opens the sentence, which is the commonest place for it.
+_V5_FIRST_PERSON = re.compile(
+    r"\bI\b|I'm|I'd|I'll|I've|\b(?:my|mine|myself|me|we|us|our|ours)\b")
+_V5_FIRST_PERSON_CI = re.compile(
+    r"\b(?:my|mine|myself|me|we|us|our|ours)\b", re.IGNORECASE)
+
+
+def _v5_violations(line: str) -> list[str]:
+    out = []
+    if _V5_FIRST_PERSON.search(line) or _V5_FIRST_PERSON_CI.search(line):
+        out.append("first person: the subject of the sentence is the market")
+    if "?" in line:
+        out.append("question mark: the post states, it does not ask")
+    if "!" in line:
+        out.append("exclamation mark")
+    if "#" in line:
+        out.append("hashtag")
+    if "—" in line or "–" in line:
+        out.append("em/en dash (house dash tell)")
+    return out
+
+
+def test_every_frame_and_headline_is_v5_clean():
+    """THE VOICE-DOCTRINE-v5 SWEEP over both deterministic pools (2026-08-11).
+
+    Fails pre-v5 on 27 of the 36 body frames: every state's bank put the AUTHOR
+    in the sentence ("Nothing broken here, and I'd rather respect that than
+    argue with it", "Good for anyone already in; I'm not paying up here", "{s50}
+    is the level I want reclaimed"). v5's one-line thesis is that the read is in
+    the SELECTION, not in a performed reaction — this lane already chose which
+    tickers get a weekend post, so the sentence's job is to say what the tape
+    did. No first person, no questions, no exclamation marks, no dash tells.
+
+    The uncomputed-stance screen rides along ON THE BODY FRAMES because the two
+    rules fail together in practice: a narrator with feelings about a level is
+    one word away from telling the reader what to do about it. It is NOT applied
+    to `_HEADLINES`, and that scoping is a finding rather than a convenience:
+    `copywriter.uncomputed_stance` over-fires on "$T is not finding buyers",
+    reading the noun "buyers" as a trade decision inside a prescriptive frame.
+    That headline states what the tape did and prescribes nothing, so the
+    detector is wrong there; widening this screen would force a rewrite of
+    compliant copy to satisfy a false positive that belongs to the detector's
+    own descriptive-noun strip.
+    """
+    from engine.marketing.copywriter import uncomputed_stance
+
+    bad: list[str] = []
+    for pool_name, pool in (("_FRAMES", wl._FRAMES), ("_HEADLINES", wl._HEADLINES)):
+        for state, entries in pool.items():
+            assert len(entries) == 6, f"{pool_name}[{state}] has {len(entries)}"
+            for i, entry in enumerate(entries):
+                rendered = (entry.replace("$T", "$AVGO")
+                            .replace("{wk_cap}", "Up 2% on the week")
+                            .replace("{wk}", "up 2% on the week")
+                            .replace("{s20}", "98.00").replace("{s50}", "95.00")
+                            .replace("{lo}", "80.00").replace("{px}", "100.00"))
+                for v in _v5_violations(entry):
+                    bad.append(f"{pool_name}[{state}][{i}] {entry!r}: {v}")
+                if pool_name == "_FRAMES":
+                    for v in uncomputed_stance(rendered)[:1]:
+                        bad.append(f"{pool_name}[{state}][{i}] {entry!r}: {v[:110]}")
+    assert not bad, "\n".join(bad)
 
 
 def test_floor_copy_passes_the_language_bar():

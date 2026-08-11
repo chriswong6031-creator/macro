@@ -12,6 +12,7 @@ from app import market_memory as api
 from engine.neuralweb import market_memory_pit as pit
 from engine.neuralweb import market_memory_playback as playback
 from engine.neuralweb import market_memory_trusted as trusted
+from scripts import initialize_market_memory_w1a as w1a_initializer
 from tests.test_market_memory_pit import (
     CAPTURED_AT,
     _api_client,
@@ -20,6 +21,8 @@ from tests.test_market_memory_pit import (
     _packet,
     _rebuild,
 )
+from tests.test_market_memory_trusted import _candidate as _trusted_candidate
+from tests.test_market_memory_trusted import _capture as _capture_trusted
 
 
 @pytest.fixture(autouse=True)
@@ -124,6 +127,47 @@ def test_api_catalog_is_private_page_bound_and_resolves_exact_context(
         '"score"',
     ):
         assert forbidden not in serialized
+
+
+def test_api_catalog_serves_trusted_capture_with_empty_initialized_w1a(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _trusted_candidate(monkeypatch, tmp_path)
+    stored = _capture_trusted(candidate)
+    w1a_root = tmp_path / "public"
+    # Reproduce the production ordering: trusted-v1 already exists while the
+    # top-level W1A root is still only a directory with a child profile.
+    initialized = w1a_initializer.initialize_w1a_store(w1a_root)
+    assert initialized["capture_count"] == 0
+    monkeypatch.setenv("MARKET_MEMORY_CONTEXT_STORE_DIR", str(w1a_root))
+    monkeypatch.setenv("MARKET_MEMORY_TRUSTED_STORE_DIR", str(candidate.public))
+    before = {
+        path.relative_to(w1a_root): path.read_bytes()
+        for path in w1a_root.rglob("*")
+        if path.is_file()
+    }
+
+    response = _api_client().get(_catalog_url(stored.packet))
+
+    assert response.status_code == 200
+    _assert_private(response)
+    payload = response.json()
+    assert [row["capture_count"] for row in payload["generations"]] == [0, 1]
+    assert payload["selection"]["returned"] == 1
+    assert payload["entries"][0]["context_id"] == stored.packet["context_id"]
+    assert payload["entries"][0]["capture_provenance"] == [
+        {
+            "profile": trusted.TRUSTED_STORE_PROFILE,
+            "capture_id": stored.capture_receipt["capture_id"],
+            "captured_at": stored.capture_receipt["captured_at"],
+        }
+    ]
+    after = {
+        path.relative_to(w1a_root): path.read_bytes()
+        for path in w1a_root.rglob("*")
+        if path.is_file()
+    }
+    assert after == before
 
 
 def test_api_catalog_continuation_pins_both_immutable_generations(

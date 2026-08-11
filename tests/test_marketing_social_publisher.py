@@ -843,8 +843,8 @@ def test_no_channel_old_item_expires_to_quarantined(monkeypatch, tmp_path):
     # reaches the expiry, which is the rule this test is about.
     item_id = _seed_approved_item(
         tmp_path, as_of="2026-07-14", kind="education",
-        text="Sizing off the stop instead of the conviction is the habit I "
-             "keep having to relearn.")
+        text="Sizing off the stop instead of conviction fixes the risk "
+             "before the trade.")
 
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,

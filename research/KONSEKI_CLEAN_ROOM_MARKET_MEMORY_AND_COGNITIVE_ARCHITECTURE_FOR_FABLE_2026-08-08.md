@@ -1245,6 +1245,17 @@ origin signatures. Every action-authority bit remains false,
 `context_only=true`, and ranking, gating, sizing, trading, execution, training,
 promotion, forecast, and outcome use remain disconnected.
 
+Route readiness also requires two complete generation spines even when one is
+empty. The trusted projector already owns trusted-v1 initialization; deployment
+now separately creates or authenticates W1A manifest/empty-genesis/HEAD metadata
+before API start or restart because W1A has no scheduled capture writer. This
+does not fabricate a context, receipt, query, packet, or opportunity. Only the
+deterministic empty-initialization prefix may be completed after interruption;
+capture-bearing namespace partials, generation-metadata tamper, unowned entries,
+unsafe modes or links, or unwritable state abort readiness. Packet bytes remain
+closure-validated only for returned playback rows, and readers retain no
+missing-HEAD fallback or request-time materialization path.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1407,6 +1418,9 @@ W3A operational playback preparation additions:
 - pinned-generation readers in `market_memory_pit.py` and
   `market_memory_trusted.py` — complete HEAD-to-genesis authentication with no
   crash-orphan, nearest, latest, or reconstruction fallback;
+- `scripts/initialize_market_memory_w1a.py` plus deploy reconciliation — the
+  sole metadata-only W1A genesis owner, run before API readiness and never from
+  a request path;
 - `app/market_memory.py` — the site-full, private/no-store, rate- and
   concurrency-bounded playback catalog read route; no writer or new store;
 - `tests/test_market_memory_playback.py` and
