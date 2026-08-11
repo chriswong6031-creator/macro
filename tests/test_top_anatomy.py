@@ -1475,3 +1475,36 @@ def test_w2_forwards_the_stale_mirror_override_to_the_panel_build():
     # argparse must actually expose both W2 and the override on one parser.
     ap_src = inspect.getsource(rh.main)
     assert '"--w2-arm"' in ap_src and '"--allow-stale"' in ap_src
+
+
+def test_w2_roster_read_is_marked_post_hoc_and_reads_the_ruler_threshold():
+    """The post-hoc roster read must declare its standing and never invent a threshold.
+
+    It was requested after the arms reported, so it carries no confirmatory standing
+    whatever it shows. Two things must hold: the block says so in the artifact, and
+    the fire threshold is READ from the arm's own DISJOINT ruler leg rather than
+    recomputed — a recomputed threshold would quietly answer a different question
+    than the ruler does.
+    """
+    panel = {"close": pd.DataFrame()}
+    # No DISJOINT ruler leg for the feature -> the read declines instead of guessing.
+    out = rh.w2_vintage_roster_read(
+        "r63", panel, {"panels": {"DISJOINT": {"ruler": {"legs": {}}}}},
+        seed=1, quick=True)
+    assert out["post_hoc"] is True
+    assert out["threshold_available"] is False
+    assert rh.W2_ROSTER_READ_FEATURE in out["reason"]
+    assert "provenance" in out and "registered" in out["provenance"]
+    # A leg WITHOUT a threshold is equally refused (a null is not a bar).
+    out2 = rh.w2_vintage_roster_read(
+        "r63", panel,
+        {"panels": {"DISJOINT": {"ruler": {"legs": {rh.W2_ROSTER_READ_FEATURE:
+                                                    {"threshold": None}}}}}},
+        seed=1, quick=True)
+    assert out2["threshold_available"] is False
+
+
+def test_w2_roster_read_cli_requires_the_arm_it_is_writing_into():
+    """`--w2-roster-read` without `--w2-arm` cannot know which arm it is amending."""
+    with pytest.raises(SystemExit):
+        rh.main(["--data-root", "/nonexistent", "--w2-roster-read", "/tmp/x.json"])

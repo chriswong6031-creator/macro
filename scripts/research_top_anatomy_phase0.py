@@ -2403,6 +2403,173 @@ def run_w2_arm(arm: str, panel: dict, meta: dict, data_root: Path, *, seed: int,
     return out
 
 
+#: The leg the G0.5 red-team asks a current-cohort question about. Phase-0's review
+#: demanded the same read for D3; W2's confirmed leg is B2, so B2 is what gets read.
+W2_ROSTER_READ_FEATURE = "B2_rsi14"
+
+
+def w2_vintage_roster_read(arm: str, panel: dict, arm_result: dict, *, seed: int,
+                           quick: bool,
+                           feature: str = W2_ROSTER_READ_FEATURE) -> dict:
+    """POST-HOC descriptive read: where the vintage-date roster sits on one leg.
+
+    Display-tier reporting, computed AFTER the confirmatory results were read and
+    therefore carrying no confirmatory standing whatever it shows — it answers "what
+    does the discovered leg say about the cohort that exists on the vintage date",
+    which is the current-cohort question phase-0's G0.5 red-team asked of D3.
+
+    Three levels are put side by side on ONE construction: the roster's own value on
+    the vintage date, the DISJOINT panel's topped-episode value, and that panel's
+    matched-control value. Case and control levels are aggregated exactly as §4.5
+    aggregates the contrast — per case the control arm is the MEAN of its finite
+    controls, then each episode collapses to the median over its {21,10,5}
+    snapshots, then the median is taken across DISTINCT EPISODES — so the two are on
+    the same footing as the Δ the arm reports, not a snapshot-pooled lookalike.
+
+    The fire threshold is READ from the arm's own DISJOINT ruler leg rather than
+    recomputed, so "at or beyond" means the same thing here as it does in the ruler.
+    Feature values come from `ta.feature_library`; no statistic here re-implements a
+    feature the engine already owns.
+    """
+    close = panel["close"]
+    volume = panel.get("volume")
+    dvol = (close * volume).reindex_like(close) if volume is not None and not volume.empty \
+        else pd.DataFrame(np.nan, index=close.index, columns=close.columns)
+    floors = {k: (v if v is not None and not v.empty else None) for k, v in
+              (("raw_close_df", panel.get("raw_close")),
+               ("raw_dollar_vol_df", panel.get("raw_dvol")),
+               ("split_day_df", panel.get("split_day")))}
+    out: dict = {
+        "post_hoc": True, "arm": arm, "feature": feature,
+        "provenance": ("computed AFTER the confirmatory results for this arm were "
+                       "read, at the commissioning session's request; descriptive "
+                       "display-tier reporting, not a registered quantity and not "
+                       "part of the prereg's declared test set"),
+        "tier": "research/display tier; no rank, no size, no gate, no exit rule",
+    }
+    leg = ((arm_result.get("panels", {}).get("DISJOINT", {}).get("ruler", {}) or {})
+           .get("legs", {}) or {}).get(feature)
+    if not leg or leg.get("threshold") is None:
+        out["threshold_available"] = False
+        out["reason"] = (f"{feature} carries no DISJOINT ruler leg on this arm, so "
+                         "there is no fire threshold to read the roster against")
+        return out
+
+    thr, tail = float(leg["threshold"]), float(leg["control_tail"])
+    say(f"[W2 {arm}] post-hoc roster read on {feature} "
+        f"(DISJOINT ruler threshold {thr:.4f}, control tail {tail:.2f})")
+    elig = ta.eligibility_mask(close, dvol, **floors)
+    min_cross = 20 if not quick else 1
+    eqw = ta.equal_weight_median_index(close, elig, min_names=min_cross)
+    xr = ta.cross_sectional_median_returns(close, elig, min_names=min_cross)
+    ext = ta.extended_mask(close, dvol, variant=arm, high_df=panel.get("high"),
+                           low_df=panel.get("low"), **floors)
+    prim = ta.extended_mask(close, dvol, variant="primary", high_df=panel.get("high"),
+                            low_df=panel.get("low"), **floors)
+    episodes = ta.extract_episodes(ext, close)
+    race = ta.race_labels(close, ext)
+    episodes, dtp = ta.episode_peaks(close, episodes, ext)
+    ov = w2_episode_overlap(ext, prim, close, episodes)
+    ids = set(ov.loc[ov["overlap_class"] == "DISJOINT", "episode_id"])
+    need = race[["segment", "ticker", "date"]].drop_duplicates(["segment", "date"])
+    feats = ta.feature_library(_segment_bars(panel, sorted(set(need["segment"]))), eqw,
+                               need[["segment", "date"]], episodes=episodes,
+                               cross_sectional_returns=xr)
+
+    # ── the vintage-date roster ──────────────────────────────────────────────
+    asof = close.index.max()
+    row = ext.loc[asof]
+    live = list(row.index[row.fillna(False).to_numpy(dtype=bool)])
+    r = feats[(feats["date"] == asof) & (feats["segment"].isin(live))]
+    vals = pd.to_numeric(r[feature], errors="coerce")
+    finite = vals.dropna()
+    fires = (finite >= thr) if tail >= 0.5 else (finite <= thr)
+    out.update({
+        "vintage_date": str(pd.Timestamp(asof).date()),
+        "threshold_available": True,
+        "fire_threshold": thr, "control_tail": tail,
+        "fires_when": "at or above" if tail >= 0.5 else "at or below",
+        "threshold_source": ("this arm's DISJOINT-panel ruler leg for the feature — "
+                             "read, not recomputed"),
+        "n_roster_segments": len(live),
+        "n_roster_names": len({ta.segment_ticker(s) for s in live}),
+        "n_roster_with_finite_feature": int(len(finite)),
+        "n_roster_at_or_beyond_threshold": int(fires.sum()),
+        "share_roster_at_or_beyond_threshold": (
+            round(float(fires.mean()), 4) if len(finite) else None),
+        "share_denominator": "roster segments carrying a finite feature value",
+        "roster_names_at_or_beyond_threshold": sorted(
+            r.loc[fires[fires].index, "ticker"].astype(str)) if bool(fires.any()) else [],
+    })
+
+    # ── the DISJOINT panel's own two levels, on the §4.5 aggregation ─────────
+    sl = w2_panel_slice("DISJOINT", ids, race, dtp, ext, close)
+    d_dtp, d_race = sl["dtp"], sl["race"]
+    eps = episodes[episodes["episode_id"].isin(set(d_dtp["episode_id"]))]
+    e1_eps = eps[~eps["micro"]]
+    topped = set(e1_eps.loc[e1_eps["outcome"] == "TOPPED", "episode_id"])
+    d_e1 = d_dtp[d_dtp["episode_id"].isin(set(e1_eps["episode_id"]))]
+    cases = d_e1[d_e1["episode_id"].isin(topped)
+                 & d_e1["days_to_peak"].isin(ta.CASE_OFFSETS)].copy()
+    cases["case_id"] = cases["episode_id"] + "@" + cases["days_to_peak"].astype(str)
+    pool = d_race[d_race["label"] == "CONTINUED"][["segment", "ticker", "date"]].copy()
+    pool["case_id"] = ["p%d" % i for i in range(len(pool))]
+    gates = _gate_context(close, dvol)
+    cases = _pick(gates, cases).dropna(subset=["r126", "rv63", "dvol21"])
+    pool = _pick(gates, pool).dropna(subset=["r126", "rv63", "dvol21"])
+    pairs, diag = ta.matched_controls(cases, pool)
+
+    def _episode_first(frame: pd.DataFrame, col: str) -> tuple[float | None, int]:
+        """Episode-first median of a LEVEL: snapshots -> episode median -> across."""
+        if frame.empty:
+            return None, 0
+        per_ep = frame.groupby("episode_id")[col].median()
+        per_ep = per_ep[np.isfinite(per_ep)]
+        return ((float(per_ep.median()), int(len(per_ep))) if len(per_ep) else (None, 0))
+
+    fp = feats.copy()
+    fp["date"] = pd.to_datetime(fp["date"])
+    key = fp.set_index(["segment", "date"])[feature]
+    key = key[~key.index.duplicated(keep="first")]
+    case_lv = cases[["episode_id", "segment", "date"]].copy()
+    case_lv["date"] = pd.to_datetime(case_lv["date"])
+    case_lv[feature] = key.reindex(
+        pd.MultiIndex.from_arrays([case_lv["segment"], case_lv["date"]])).to_numpy()
+    case_med, n_case_eps = _episode_first(case_lv, feature)
+
+    ctrl_med, n_ctrl_eps = None, 0
+    if not pairs.empty:
+        p = pairs.copy()
+        p["control_date"] = pd.to_datetime(p["control_date"])
+        p[feature] = key.reindex(pd.MultiIndex.from_arrays(
+            [p["control_segment"], p["control_date"]])).to_numpy()
+        # §4.5: the control arm of a matched set is the MEAN of its finite controls.
+        per_case = p.groupby("case_id")[feature].mean().rename(feature).reset_index()
+        per_case = per_case.merge(cases[["case_id", "episode_id"]], on="case_id",
+                                  how="left")
+        ctrl_med, n_ctrl_eps = _episode_first(per_case, feature)
+
+    out["levels"] = {
+        "aggregation": ("episode-first: per case the control arm is the mean of its "
+                        "finite controls, each episode collapses to the median over "
+                        "its {21,10,5} snapshots, then the median across episodes"),
+        "vintage_roster_median": (float(finite.median()) if len(finite) else None),
+        "disjoint_topped_episode_median": case_med,
+        "disjoint_matched_control_median": ctrl_med,
+        "n_roster_finite": int(len(finite)),
+        "n_disjoint_topped_episodes": n_case_eps,
+        "n_disjoint_control_episodes": n_ctrl_eps,
+        "n_matched_cases": int(diag.get("n_matched", 0)),
+    }
+    lv = out["levels"]
+    say(f"[W2 {arm}] roster {feature} median {lv['vintage_roster_median']} vs DISJOINT "
+        f"topped {lv['disjoint_topped_episode_median']} vs matched-control "
+        f"{lv['disjoint_matched_control_median']}; "
+        f"{out['n_roster_at_or_beyond_threshold']}/{out['n_roster_with_finite_feature']} "
+        "roster names at or beyond the ruler threshold")
+    return out
+
+
 def _w2_deferral(arm: str, where: str) -> dict:
     """§6 declared fallback — print the deferral, never a silent cap or a subsample."""
     hrs = (time.time() - _T0) / 3600.0
@@ -3410,6 +3577,35 @@ def w2_out_json(arm: str, quick: int | None = None) -> Path:
                     + (f"_quick{quick}" if quick else "") + ".json")
 
 
+def _main_w2_roster_read(a, *, quick: bool) -> int:
+    """`--w2-roster-read`: add the post-hoc roster read to an ALREADY-WRITTEN summary.
+
+    Kept as its own mode rather than folded into `run_w2_arm` for one reason: the
+    read was requested AFTER the arms had reported, and a run that emitted it inline
+    would present it as part of the preregistered output. Injecting it under a
+    `post_hoc` key from a named command keeps the artifact reproducible AND keeps its
+    standing legible — the block says what it is, and so does the command that made it.
+    """
+    arm = a.w2_arm
+    path = a.w2_roster_read
+    summary = json.loads(path.read_text())
+    if summary.get("arm") != arm:
+        raise SystemExit(f"{path} is arm {summary.get('arm')!r}, not {arm!r}")
+    cache = a.data_root / CACHE_SUBDIR / (f"W_quick{a.quick}" if quick else "W")
+    built = build_panel_w(a.data_root, cache, quick=a.quick, allow_stale=a.allow_stale)
+    block = w2_vintage_roster_read(arm, built["panel"], summary["arm_result"],
+                                   seed=a.seed, quick=quick)
+    block["computed_at_utc"] = pd.Timestamp.now("UTC").isoformat()
+    block["computed_at_git_sha"] = _git_sha()
+    block["reproduce"] = ("python -m scripts.research_top_anatomy_phase0 --data-root "
+                          f"{a.data_root} --w2-arm {arm} --w2-roster-read {path}"
+                          + (" --allow-stale" if a.allow_stale else ""))
+    summary["vintage_roster_b2_read"] = block
+    path.write_text(json.dumps(summary, indent=2, default=str))
+    say(f"wrote the post-hoc roster read into {path}")
+    return 0
+
+
 def _main_w2(a, *, quick: bool) -> int:
     """The `--w2-arm` entry point: track W, one arm, one summary, no report prose."""
     arm = a.w2_arm
@@ -3487,6 +3683,11 @@ def main(argv=None) -> int:
     ap.add_argument("--w2-arm", choices=W2_ARMS, default=None,
                     help="run the W2 tier-widening arm instead of phase-0 "
                          f"({W2_PREREG}); track W only, writes its own summary")
+    ap.add_argument("--w2-roster-read", type=Path, default=None,
+                    help="add the POST-HOC vintage-date roster read for "
+                         f"{W2_ROSTER_READ_FEATURE} to an already-written W2 arm "
+                         "summary (needs --w2-arm); descriptive, never a registered "
+                         "quantity")
     ap.add_argument("--allow-stale", action="store_true",
                     help="run track W against a local massive_stock_day mirror that is "
                          "20+ trading sessions behind (refused by default; the banner "
@@ -3501,6 +3702,10 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
 
     quick = a.quick is not None
+    if a.w2_roster_read is not None:
+        if not a.w2_arm:
+            raise SystemExit("--w2-roster-read needs --w2-arm to name the arm")
+        return _main_w2_roster_read(a, quick=quick)
     if a.w2_arm:
         return _main_w2(a, quick=quick)
     cache_root = a.data_root / CACHE_SUBDIR
