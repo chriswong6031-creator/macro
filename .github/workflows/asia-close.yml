@@ -47,6 +47,7 @@ jobs:
     timeout-minutes: 60    # ≥ MAX_FLOOR_WAIT (45m hold) + slack
     outputs:
       run: ${{ steps.decide.outputs.run }}
+      weekly: ${{ steps.decide.outputs.weekly }}
     steps:
       - name: decide (no checkout needed — pure GitHub API + clock)
         id: decide
@@ -58,9 +59,25 @@ jobs:
           from datetime import datetime, timezone
 
           def out(decision, reason):
+              # `weekly` gates the ths_rescrape job below (GMI W1a). It lives here rather
+              # than as a step inside that job so the job is SKIPPED outright on the other
+              # six days: this repo has only THREE runner slots, and a job that starts just
+              # to read a clock still takes one. A GitHub `if:` expression cannot ask what
+              # day it is, so the clock has to be read by something — and this step is
+              # already reading it. Written on EVERY exit path, decision or not.
+              #
+              # SATURDAY UTC. Every cron above is daily (`* * *`), so weekend slots fire and
+              # exactly one reaches here per UTC day. Saturday because the A-share week is
+              # closed (settled boards), and because a ~2h scrape is cheapest for us and for
+              # the vendor on a quiet day. Fire lag cannot move the day: the latest slot
+              # (11:15 UTC) plus the worst measured lag (+233m) lands ~15:08 UTC, and the
+              # only hold this gate performs ends at the 08:25 UTC floor — neither crosses
+              # midnight.
+              weekly = datetime.now(timezone.utc).isoweekday() == 6
               with open(os.environ["GITHUB_OUTPUT"], "a") as f:
                   f.write(f"run={'true' if decision else 'false'}\n")
-              print(f"::notice title=asia-close gate::run={decision} — {reason}")
+                  f.write(f"weekly={'true' if weekly else 'false'}\n")
+              print(f"::notice title=asia-close gate::run={decision} (weekly={weekly}) — {reason}")
               with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
                   f.write(f"gate: `run={decision}` — {reason}\n")
               sys.exit(0)
@@ -238,6 +255,17 @@ jobs:
       # collection that landed every other store.
       - name: tushare plane freshness tripwire (advisory)
         run: python3 scripts/check_tushare_freshness.py
+      # Same failure CLASS, one plane over, and it already happened: the THS
+      # point-in-time membership store held exactly two snapshots (2026-06-30 and
+      # 2026-07-08) while `build_baskets_china_ths --snapshot` ran green ~35 nights in
+      # a row. The step was healthy; its INPUT was frozen, because the scraper and the
+      # seeder that refresh membership.json appeared in no workflow at all. A
+      # content-deduped writer with a frozen input and a writer that was never wired
+      # leave the identical trace on disk — nothing — so this grades three separate
+      # axes: did the writer run (_cadence.json), did a COMPLETE scrape land (receipts),
+      # and did the side-cars reach the queryable parquet. Advisory (exit 0).
+      - name: membership snapshot freshness tripwire (advisory)
+        run: python3 scripts/check_membership_snapshot_freshness.py
       - name: commit collected asia data
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
@@ -850,3 +878,89 @@ jobs:
       - name: timings ledger + 85% budget tripwire (W2)
         if: always()
         run: bash scripts/ci/nightly_timings_finish.sh 165
+
+  ths_rescrape:
+    # WEEKLY 同花顺 concept-board re-scrape — the missing PRODUCER of the CN membership plane.
+    #
+    # WHY A NEW JOB AND NOT A STEP IN `asia`. The scrape is ~2h of deliberately paced HTTP
+    # (collectors/china_ths_concepts.py: 4.0s between boards, 1.2s between member pages —
+    # THS IP-throttles bursts hard, and those constants are tuned against that). The `asia`
+    # job is capped at 165m against a ~110m steady state; adding two hours inside it would
+    # blow the cap, and that cap kills MID-CHAIN — every run 07-03..07-10 died there and
+    # eight days of CN/HK builders were dead while the runs read "cancelled", not "failed".
+    # So this rides its own job, its own timeout, and its own concurrency group, in
+    # PARALLEL with `asia` rather than in front of it: nothing on the dashboard path waits
+    # on the vendor.
+    #
+    # WHY IT EXISTS AT ALL. `grep -rn "scrape_ths_concepts\|seed_china_ths_baskets" \
+    # .github/workflows/` returned EMPTY: the scraper and the seeder were in no workflow,
+    # so data/baskets_china_ths/membership.json froze on 2026-06-30 and the PIT store held
+    # two snapshots eight days apart — while `build_baskets_china_ths --snapshot` ran green
+    # ~35 nights in a row, dedup-skipping every one of them because its input never moved.
+    #
+    # COMPLETE-OR-FAIL (GMI masterplan G0.4). The scrape runs into a staging directory and
+    # is promoted into data/baskets_china_ths/snapshots/ only when EVERY board resolved. A
+    # partial dump there would be read by the seeder's auto-import loop as "those boards no
+    # longer exist" and silently delete their baskets. A partial attempt leaves a
+    # `complete: false` receipt, no side-car, and its staged progress for the next attempt.
+    # WHEN IT FIRES: Saturday UTC, once — `needs.gate.outputs.weekly`, computed in the
+    # gate job above (see the `out()` comment there for why the day is decided in a job
+    # that is already reading the clock, and why fire lag cannot move it). On the other
+    # six days this job is SKIPPED at the job level and takes no runner slot at all.
+    needs: gate
+    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.weekly == 'true'
+    concurrency:
+      # Its OWN lane, not pipeline-asia: this must never queue behind (or in front of) the
+      # ~110m dashboard job. Both commit data/; the rebase-retry push loop below is what
+      # makes concurrent commits to main race-safe, exactly as in the `asia` job.
+      group: pipeline-asia-ths-rescrape
+      cancel-in-progress: false
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 190   # scrape budget is 150m (--budget-minutes below); the rest is
+                           # checkout + deps + the commit/push loop. The script's own wall
+                           # budget is the real bound — the job cap is only the backstop.
+    steps:
+      # W2 telemetry, same two steps as every instrumented self-hosted job (the start mark
+      # goes BEFORE checkout because checkout alone has run 3s→14.5m on this 14k-file tree,
+      # and the job cap kills the same clock the ledger has to measure).
+      - name: timings — job start mark (W2)
+        run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
+      - uses: actions/checkout@v4
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - name: install deps
+        run: pip install -r requirements.txt
+      - name: weekly THS concept re-scrape (receipted, complete-or-fail)
+        env:
+          CN_LANE: asia   # the ONE lane allowed to advance the membership PIT parquet
+                          # (engine/basket_membership_pit._lane_ok, fail-closed, keep-FIRST
+                          # per snapshot_date — whoever stamps a date owns it forever).
+        run: |
+          python -m scripts.scrape_ths_weekly --budget-minutes 150 --max-passes 4 \
+            || echo "::warning title=ths rescrape failed::scripts.scrape_ths_weekly exited non-zero; a receipt should still record the attempt. The scrape is complete-or-fail, so nothing partial was promoted; check_membership_snapshot_freshness catches a persistent outage."
+      - name: commit THS scrape artifacts
+        run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/baskets_china_ths/
+          if git diff --cached --quiet; then echo "no THS scrape changes"; else
+            git commit -m "data: ths concept re-scrape $(date -u +%F)"
+            push_retry_init "ths scrape"
+            while push_attempt; do
+              git fetch origin main || true
+              if git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
+                if push_do; then echo "pushed ths scrape (attempt $PUSH_ATTEMPT)"; push_won; break; fi
+              fi
+              push_abort_rebase
+              push_backoff
+            done
+            push_lost
+          fi
+      - name: timings ledger + 85% budget tripwire (W2)
+        if: always()
+        run: bash scripts/ci/nightly_timings_finish.sh 190

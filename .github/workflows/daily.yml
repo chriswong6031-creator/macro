@@ -3784,6 +3784,18 @@ jobs:
           }
           cl_baskets() {
             brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
+            # GMI W1a: point-in-time US basket membership. data/baskets/membership.json is a
+            # single MUTABLE document and basket_freeze stores only membership HASHES, so
+            # before this there was no way to answer "who was in this basket on that date"
+            # for the US suite at all. Content-deduped (a dated side-car only when membership
+            # changed) + keep-first in the parquet, so a re-run is a no-op; the cadence stamp
+            # is rewritten every run so a deduping writer and an unwired one look different
+            # on disk. NIGHTLY ONLY — the PIT store is append-only and keep-FIRST per
+            # snapshot_date, so whoever stamps a date owns it forever (COLLECT_LANE=nightly,
+            # job-level env above, is the fail-closed gate). Deliberately NOT added to
+            # closing-bell / earlyclose / engine-render / render: those are data/-discarding
+            # lanes and nightly is the sole advancer.
+            brun baskets_snapshot "US basket membership snapshot (build_baskets --snapshot)" scripts.build_baskets --snapshot
             brun subsector_conf "subsector confluence desk + double-gated funnel (build_subsector_confluence)" scripts.build_subsector_confluence
             brun subsector_conf_ndx "nasdaq-100 subsector confluence desk (build_subsector_confluence --nasdaq)" scripts.build_subsector_confluence --nasdaq
             brun subsector_conf_rut "russell-2000 subsector confluence desk (build_subsector_confluence --russell)" scripts.build_subsector_confluence --russell
@@ -3902,7 +3914,7 @@ jobs:
           # check_builder_failstreaks, which globs *.rc and so catches a >=2-night
           # streak regardless of ORDER) — but a FIRST failure still passed silently,
           # with no log and no step-summary line for the TXI W1 chain tracker.
-          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics basket_washout rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow program_watch stage_analysis stage_analysis_page top_maturation winner_health_page"
+          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets baskets_snapshot subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics basket_washout rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow program_watch stage_analysis stage_analysis_page top_maturation winner_health_page"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
@@ -3919,6 +3931,15 @@ jobs:
             fi
           done
           exit 0
+      # Runs AFTER the band that contains `build_baskets --snapshot`, so it grades THIS
+      # run's stamp rather than last night's. The plane it watches can die with every
+      # signal green: both snapshot writers are content-deduped, so "membership has not
+      # changed" and "the writer has been unwired for a month" leave the identical trace
+      # on disk (nothing) — which is how the THS PIT store sat at 2 snapshots for six
+      # weeks while its nightly step ran green ~35 nights running. Advisory (exit 0):
+      # a cold membership plane must not red a nightly that landed every other store.
+      - name: membership snapshot freshness tripwire (advisory)
+        run: python3 scripts/check_membership_snapshot_freshness.py
       - name: builder fail-streak escalation (consecutive-night freeze detector)
         # brun() (above) BY DESIGN never aborts on a broken builder — but that makes a
         # builder failing MANY CONSECUTIVE nightlies look identical to a one-off at a
