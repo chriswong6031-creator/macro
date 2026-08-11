@@ -2903,6 +2903,7 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
     )
     assert "push_on_main_ok || exit 0" in checkpoint_block
     assert "push_metadata_replay_commit" in checkpoint_block
+    assert 'git reset --mixed "$OIP_PARENT"' in checkpoint_block
     assert 'git add -- "${OIP_LEDGER_PATHS[@]}"' in checkpoint_block
     assert 'push_staged_clean "${OIP_LEDGER_PATHS[@]}"' in checkpoint_block
 
@@ -2932,6 +2933,7 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
         campaign_checkpoint_block
     )
     assert "push_metadata_replay_commit" in campaign_checkpoint_block
+    assert 'git reset --mixed "$OIP_PARENT"' in campaign_checkpoint_block
     assert 'git add -- "${OIP_CAMPAIGN_PATHS[@]}"' in campaign_checkpoint_block
     expected_campaign_paths = {
         "data/options_signal_campaign/campaigns.jsonl",
@@ -2945,6 +2947,19 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
         line.strip() for line in declared_campaign.splitlines() if line.strip()
     } == expected_campaign_paths
     assert "data/options_signal_episode/campaigns.jsonl" not in campaign_checkpoint_block
+
+    broad_start = workflow.index("      - name: commit engine outputs")
+    broad_end = workflow.index(
+        "      - name: assemble machine-consumable feeds", broad_start
+    )
+    broad_block = workflow[broad_start:broad_end]
+    for owned_path in expected_paths | expected_campaign_paths:
+        assert owned_path in broad_block
+    assert "OIP_NARROW_PATHS=(" in broad_block
+    assert 'git checkout HEAD -- "${OIP_TRACKED_PATHS[@]}"' in broad_block
+    assert 'git reset -q -- "${OIP_NARROW_PATHS[@]}"' in broad_block
+    assert "git clean -fd -- data/options_signal_campaign" in broad_block
+    assert "data/options_signal_episode/campaigns.jsonl" not in broad_block
 
     final_gate = workflow.index(
         "      - name: OIP PIT — fail closed after unrelated rendering completes"

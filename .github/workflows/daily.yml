@@ -4144,7 +4144,11 @@ jobs:
             push_backoff
           done
           push_lost
-          echo "::error title=options PIT checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the four ledgers remain only in the local engine commit fallback"
+          # Do not let the later broad engine push smuggle this failed narrow
+          # publication. Move only this runner-local commit back to its captured
+          # parent; the broad commit also restores/unstages the owned paths.
+          git reset --mixed "$OIP_PARENT"
+          echo "::error title=options PIT checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the narrow publication was rolled back locally and the run will stay red"
           exit 1
       - name: OIP campaign v2 — checkpoint the exact three canonical ledgers
         id: options_signal_campaign_publish
@@ -4232,7 +4236,11 @@ jobs:
             push_backoff
           done
           push_lost
-          echo "::error title=options campaign checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the three ledgers remain only in the local engine commit fallback"
+          # A failed narrow publisher must remain unpublished even though the
+          # later engine step stages data/ broadly. Return this runner-local
+          # commit to its captured parent; the broad exclusion removes leftovers.
+          git reset --mixed "$OIP_PARENT"
+          echo "::error title=options campaign checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the narrow publication was rolled back locally and the run will stay red"
           exit 1
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
@@ -5465,6 +5473,32 @@ jobs:
           # templates/ would abort the commit and lose the whole render rather than
           # just the stamp. Staging site/ keeps its hard-fail semantics.
           git add templates/ 2>/dev/null || true
+          # OIP episode and campaign ledgers have immediate, exact-path publishers
+          # above. Never let this broad data/ commit bypass a refused, skipped, or
+          # failed narrow publication. Paths already committed locally by a winning
+          # publisher are restored from HEAD; uncommitted canonical-v2 additions are
+          # removed from this disposable runner only. The legacy v1 campaigns file is
+          # intentionally absent: no active builder is allowed to touch it at all.
+          OIP_NARROW_PATHS=(
+            data/options_signal_episode/checkpoint.json
+            data/options_signal_episode/episodes.jsonl
+            data/options_signal_episode/outcomes_h60.jsonl
+            data/options_signal_episode/outcomes_session.jsonl
+            data/options_signal_campaign/campaigns.jsonl
+            data/options_signal_campaign/outcomes.jsonl
+            data/options_signal_campaign/checkpoint.json
+          )
+          OIP_TRACKED_PATHS=()
+          for OIP_PATH in "${OIP_NARROW_PATHS[@]}"; do
+            if git cat-file -e "HEAD:$OIP_PATH" 2>/dev/null; then
+              OIP_TRACKED_PATHS+=("$OIP_PATH")
+            fi
+          done
+          if [ "${#OIP_TRACKED_PATHS[@]}" -gt 0 ]; then
+            git checkout HEAD -- "${OIP_TRACKED_PATHS[@]}"
+          fi
+          git reset -q -- "${OIP_NARROW_PATHS[@]}"
+          git clean -fd -- data/options_signal_campaign
           # Prophet has an earlier, provenance-checked SOLE git publisher. Never
           # let this broad commit re-stage its local tree: if the checkpoint
           # withheld on an off-main/provenance/same-path race, a later `-X theirs`

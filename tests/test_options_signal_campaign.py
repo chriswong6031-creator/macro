@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+import engine.options_signal_campaign as campaign_engine
 from lib import nyse_calendar
 
 from engine.options_signal_campaign import (
@@ -345,6 +346,81 @@ def test_crash_before_checkpoint_replays_byte_idempotently_and_checkpoint_is_las
         path: (root / path).read_bytes()
         for path in (CAMPAIGNS_PATH, OUTCOMES_PATH, CHECKPOINT_PATH)
     }
+
+
+def test_replay_validation_is_linear_and_byte_preserving(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    episodes = [
+        _episode(
+            f"linear-{index}",
+            f"2026-08-10T14:{index:02d}:00Z",
+            strike=225.0 + index,
+        )
+        for index in range(24)
+    ]
+    root = _root(tmp_path, episodes, h60=[_h60(row) for row in episodes])
+    run(root_dir=root)
+    frozen = {
+        path: (root / path).read_bytes()
+        for path in (CAMPAIGNS_PATH, OUTCOMES_PATH, CHECKPOINT_PATH)
+    }
+
+    episode_validations = 0
+    source_map_builds = 0
+    real_validate_episode = campaign_engine.validate_episode
+    real_source_maps = campaign_engine._source_outcome_maps
+
+    def counted_episode(row: dict) -> None:
+        nonlocal episode_validations
+        episode_validations += 1
+        real_validate_episode(row)
+
+    def counted_source_maps(*args, **kwargs):
+        nonlocal source_map_builds
+        source_map_builds += 1
+        return real_source_maps(*args, **kwargs)
+
+    monkeypatch.setattr(campaign_engine, "validate_episode", counted_episode)
+    monkeypatch.setattr(campaign_engine, "_source_outcome_maps", counted_source_maps)
+    replay = campaign_engine.run(root_dir=root)
+
+    assert replay["campaign_revisions_appended"] == 0
+    assert replay["campaign_outcomes_appended"] == 0
+    assert episode_validations == len(episodes)
+    assert source_map_builds == 1
+    assert frozen == {
+        path: (root / path).read_bytes()
+        for path in (CAMPAIGNS_PATH, OUTCOMES_PATH, CHECKPOINT_PATH)
+    }
+
+
+def test_linear_replay_preserves_each_historical_outcome_prefix(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    first = _episode("prefix-first", "2026-08-10T14:02:00Z")
+    root = _root(tmp_path, [first], h60=[_h60(first)])
+    run(root_dir=root)
+
+    second = _episode("prefix-second", "2026-08-10T14:05:00Z")
+    _write_jsonl(
+        root / "data/options_signal_episode/episodes.jsonl", [first, second]
+    )
+    _write_jsonl(
+        root / "data/options_signal_episode/outcomes_h60.jsonl",
+        [_h60(first), _h60(second)],
+    )
+    run(root_dir=root)
+    outcomes = _read_jsonl(root / OUTCOMES_PATH)
+    assert outcomes[0]["source_outcome_prefix"]["records"] == 1
+    assert outcomes[-1]["source_outcome_prefix"]["records"] == 2
+    frozen = (root / OUTCOMES_PATH).read_bytes()
+
+    replay = run(root_dir=root)
+    assert replay["campaign_outcomes_appended"] == 0
+    assert (root / OUTCOMES_PATH).read_bytes() == frozen
 
 
 def test_outcome_uses_final_member_clock_exact_anchor_and_reference_only_coverage(

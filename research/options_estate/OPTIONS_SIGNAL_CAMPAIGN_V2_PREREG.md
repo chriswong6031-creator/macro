@@ -85,7 +85,9 @@ The workflow publishes those exact three files in a narrow metadata replay.
 Episode publication separately owns exactly episodes, H+60 outcomes, session
 outcomes, and the episode checkpoint. A late visible gate fails the engine job
 if either builder or either narrow publisher fails, after unrelated rendering
-has had a chance to finish.
+has had a chance to finish. A failed narrow push resets its runner-local commit,
+and the broad engine commit restores/unstages all seven owned paths rather than
+smuggling a refused append through `git add data/`.
 
 ## Required falsifiers and promotion gate
 

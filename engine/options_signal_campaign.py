@@ -243,7 +243,31 @@ def _receipt(snapshot: LedgerSnapshot, count: int | None = None) -> dict[str, An
     return {"path": snapshot.label, "records": records, "prefix_sha256": _sha256(raw)}
 
 
-def _verify_receipt(receipt: object, snapshot: LedgerSnapshot, expected_path: str) -> int:
+PrefixCache = dict[tuple[int, int], LedgerSnapshot]
+
+
+def _prefix_snapshot(
+    snapshot: LedgerSnapshot,
+    count: int,
+    cache: PrefixCache | None = None,
+) -> LedgerSnapshot:
+    if count == snapshot.count:
+        return snapshot
+    key = (id(snapshot), count)
+    if cache is not None and key in cache:
+        return cache[key]
+    prefix = snapshot.prefix(count)
+    if cache is not None:
+        cache[key] = prefix
+    return prefix
+
+
+def _verify_receipt(
+    receipt: object,
+    snapshot: LedgerSnapshot,
+    expected_path: str,
+    cache: PrefixCache | None = None,
+) -> int:
     if not isinstance(receipt, dict) or set(receipt) != {"path", "records", "prefix_sha256"}:
         raise CampaignContractError("prefix receipt shape is invalid")
     if receipt["path"] != expected_path or snapshot.label != expected_path:
@@ -254,7 +278,7 @@ def _verify_receipt(receipt: object, snapshot: LedgerSnapshot, expected_path: st
     digest = receipt["prefix_sha256"]
     if type(digest) is not str or not re.fullmatch(r"[a-f0-9]{64}", digest):
         raise CampaignContractError("prefix receipt digest is invalid")
-    if _sha256(snapshot.prefix_raw(count)) != digest:
+    if _prefix_snapshot(snapshot, count, cache).sha256 != digest:
         raise CampaignContractError(f"ledger prefix changed: {expected_path}")
     return count
 
@@ -484,13 +508,19 @@ def _validated_episode_groups(snapshot: LedgerSnapshot) -> dict[GroupKey, list[L
     return groups
 
 
-def _campaign_against_source(row: dict[str, Any], episodes: LedgerSnapshot) -> None:
+def _campaign_against_source(
+    row: dict[str, Any],
+    episodes: LedgerSnapshot,
+    groups: dict[GroupKey, list[LedgerRow]],
+    prefix_cache: PrefixCache,
+) -> None:
     validate_campaign(row)
-    count = _verify_receipt(row["source_episode_prefix"], episodes, EPISODES_PATH)
-    prefix = episodes.prefix(count)
-    groups = _validated_episode_groups(prefix)
+    count = _verify_receipt(
+        row["source_episode_prefix"], episodes, EPISODES_PATH, prefix_cache
+    )
+    prefix = _prefix_snapshot(episodes, count, prefix_cache)
     group = _group_from_payload(row["group"])
-    members = groups.get(group)
+    members = [item for item in groups.get(group, []) if item.ordinal <= count]
     if not members:
         raise CampaignContractError("campaign group is absent from its source prefix")
     expected = _campaign_payload(group, members, prefix, None)
@@ -519,12 +549,17 @@ def _campaign_against_source(row: dict[str, Any], episodes: LedgerSnapshot) -> N
 def _campaign_history(
     existing: LedgerSnapshot,
     episodes: LedgerSnapshot,
+    *,
+    groups: dict[GroupKey, list[LedgerRow]] | None = None,
+    prefix_cache: PrefixCache | None = None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    source_groups = groups if groups is not None else _validated_episode_groups(episodes)
+    cache = prefix_cache if prefix_cache is not None else {}
     revisions: dict[str, dict[str, Any]] = {}
     latest: dict[str, dict[str, Any]] = {}
     for item in existing.rows:
         row = item.value
-        _campaign_against_source(row, episodes)
+        _campaign_against_source(row, episodes, source_groups, cache)
         revision_id = row["campaign_revision_id"]
         if revision_id in revisions:
             raise CampaignContractError("duplicate campaign revision")
@@ -554,12 +589,11 @@ def _campaign_history(
     return revisions, latest
 
 
-def derive_campaign_revisions(
+def _derive_campaign_revisions_from_groups(
     episodes: LedgerSnapshot,
-    existing: LedgerSnapshot,
+    groups: dict[GroupKey, list[LedgerRow]],
+    latest: dict[str, dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    _revisions, latest = _campaign_history(existing, episodes)
-    groups = _validated_episode_groups(episodes)
     fresh: list[dict[str, Any]] = []
     for group in sorted(groups):
         members = groups[group]
@@ -584,12 +618,27 @@ def derive_campaign_revisions(
     return fresh
 
 
+def derive_campaign_revisions(
+    episodes: LedgerSnapshot,
+    existing: LedgerSnapshot,
+) -> list[dict[str, Any]]:
+    groups = _validated_episode_groups(episodes)
+    _revisions, latest = _campaign_history(existing, episodes, groups=groups)
+    return _derive_campaign_revisions_from_groups(episodes, groups, latest)
+
+
 def _source_outcome_maps(
     episodes: LedgerSnapshot,
     h60: LedgerSnapshot,
     session: LedgerSnapshot,
+    *,
+    episode_groups: dict[GroupKey, list[LedgerRow]] | None = None,
 ) -> tuple[dict[str, LedgerRow], dict[tuple[str, str], LedgerRow]]:
-    episode_rows = _validated_episode_groups(episodes)
+    episode_rows = (
+        episode_groups
+        if episode_groups is not None
+        else _validated_episode_groups(episodes)
+    )
     episode_by_id = {
         item.value["episode_id"]: item.value
         for members in episode_rows.values()
@@ -678,6 +727,7 @@ def _campaign_outcome_payload(
     source_snapshot: LedgerSnapshot,
     h60_map: dict[str, LedgerRow],
     session_map: dict[tuple[str, str], LedgerRow],
+    source_record_limit: int | None = None,
 ) -> dict[str, Any]:
     anchor_member = campaign["members"][-1]
     row = source.value
@@ -691,7 +741,10 @@ def _campaign_outcome_payload(
         member_source = _outcome_source_for_horizon(
             horizon, member["episode_id"], h60_map, session_map
         )
-        if member_source is None:
+        if member_source is None or (
+            source_record_limit is not None
+            and member_source.ordinal > source_record_limit
+        ):
             missing.append(member["episode_id"])
             continue
         references.append(
@@ -804,6 +857,9 @@ def _campaign_outcome_against_sources(
     episodes: LedgerSnapshot,
     h60: LedgerSnapshot,
     session: LedgerSnapshot,
+    h60_map: dict[str, LedgerRow],
+    session_map: dict[tuple[str, str], LedgerRow],
+    prefix_cache: PrefixCache,
 ) -> None:
     validate_campaign_outcome(row)
     campaign = campaign_by_revision.get(row["campaign_revision_id"])
@@ -812,20 +868,23 @@ def _campaign_outcome_against_sources(
     horizon = row["horizon"]
     snapshot = h60 if horizon == "h60" else session
     expected_path = H60_PATH if horizon == "h60" else SESSION_PATH
-    count = _verify_receipt(row["source_outcome_prefix"], snapshot, expected_path)
-    source_prefix = snapshot.prefix(count)
-    h60_map, session_map = _source_outcome_maps(
-        episodes,
-        source_prefix if horizon == "h60" else h60.prefix(0),
-        source_prefix if horizon != "h60" else session.prefix(0),
+    count = _verify_receipt(
+        row["source_outcome_prefix"], snapshot, expected_path, prefix_cache
     )
+    source_prefix = _prefix_snapshot(snapshot, count, prefix_cache)
     anchor = _outcome_source_for_horizon(
         horizon, campaign["members"][-1]["episode_id"], h60_map, session_map
     )
-    if anchor is None:
+    if anchor is None or anchor.ordinal > count:
         raise CampaignContractError("campaign outcome anchor is absent from its prefix")
     expected = _campaign_outcome_payload(
-        campaign, horizon, anchor, source_prefix, h60_map, session_map
+        campaign,
+        horizon,
+        anchor,
+        source_prefix,
+        h60_map,
+        session_map,
+        source_record_limit=count,
     )
     if row != expected:
         raise CampaignContractError("campaign outcome differs from its receipt-bound source")
@@ -837,12 +896,26 @@ def _outcome_history(
     episodes: LedgerSnapshot,
     h60: LedgerSnapshot,
     session: LedgerSnapshot,
+    *,
+    h60_map: dict[str, LedgerRow] | None = None,
+    session_map: dict[tuple[str, str], LedgerRow] | None = None,
+    prefix_cache: PrefixCache | None = None,
 ) -> dict[tuple[str, str], dict[str, Any]]:
+    if h60_map is None or session_map is None:
+        h60_map, session_map = _source_outcome_maps(episodes, h60, session)
+    cache = prefix_cache if prefix_cache is not None else {}
     rows: dict[tuple[str, str], dict[str, Any]] = {}
     for item in existing.rows:
         row = item.value
         _campaign_outcome_against_sources(
-            row, campaign_by_revision, episodes, h60, session
+            row,
+            campaign_by_revision,
+            episodes,
+            h60,
+            session,
+            h60_map,
+            session_map,
+            cache,
         )
         key = (row["campaign_revision_id"], row["horizon"])
         if key in rows:
@@ -851,18 +924,14 @@ def _outcome_history(
     return rows
 
 
-def derive_campaign_outcomes(
+def _derive_campaign_outcomes_from_maps(
     campaigns: LedgerSnapshot,
-    existing: LedgerSnapshot,
-    episodes: LedgerSnapshot,
+    existing_rows: dict[tuple[str, str], dict[str, Any]],
+    h60_map: dict[str, LedgerRow],
+    session_map: dict[tuple[str, str], LedgerRow],
     h60: LedgerSnapshot,
     session: LedgerSnapshot,
 ) -> tuple[list[dict[str, Any]], int]:
-    campaign_by_revision, _latest = _campaign_history(campaigns, episodes)
-    existing_rows = _outcome_history(
-        existing, campaign_by_revision, episodes, h60, session
-    )
-    h60_map, session_map = _source_outcome_maps(episodes, h60, session)
     fresh: list[dict[str, Any]] = []
     pending = 0
     for campaign_item in campaigns.rows:
@@ -887,6 +956,34 @@ def derive_campaign_outcomes(
                 )
             )
     return fresh, pending
+
+
+def derive_campaign_outcomes(
+    campaigns: LedgerSnapshot,
+    existing: LedgerSnapshot,
+    episodes: LedgerSnapshot,
+    h60: LedgerSnapshot,
+    session: LedgerSnapshot,
+) -> tuple[list[dict[str, Any]], int]:
+    episode_groups = _validated_episode_groups(episodes)
+    h60_map, session_map = _source_outcome_maps(
+        episodes, h60, session, episode_groups=episode_groups
+    )
+    campaign_by_revision, _latest = _campaign_history(
+        campaigns, episodes, groups=episode_groups
+    )
+    existing_rows = _outcome_history(
+        existing,
+        campaign_by_revision,
+        episodes,
+        h60,
+        session,
+        h60_map=h60_map,
+        session_map=session_map,
+    )
+    return _derive_campaign_outcomes_from_maps(
+        campaigns, existing_rows, h60_map, session_map, h60, session
+    )
 
 
 def _load_checkpoint(path: Path) -> dict[str, Any] | None:
@@ -1016,16 +1113,40 @@ def _plan(repo_root: Path) -> CampaignPlan:
     campaigns = load_ledger(repo_root / CAMPAIGNS_PATH, CAMPAIGNS_PATH)
     outcomes = load_ledger(repo_root / OUTCOMES_PATH, OUTCOMES_PATH)
     checkpoint = _load_checkpoint(repo_root / CHECKPOINT_PATH)
-    _validated_episode_groups(episodes)
-    _source_outcome_maps(episodes, h60, session)
-    campaign_history, _latest = _campaign_history(campaigns, episodes)
-    _outcome_history(outcomes, campaign_history, episodes, h60, session)
+    prefix_cache: PrefixCache = {}
+    episode_groups = _validated_episode_groups(episodes)
+    h60_map, session_map = _source_outcome_maps(
+        episodes, h60, session, episode_groups=episode_groups
+    )
+    campaign_history, latest = _campaign_history(
+        campaigns,
+        episodes,
+        groups=episode_groups,
+        prefix_cache=prefix_cache,
+    )
+    existing_outcomes = _outcome_history(
+        outcomes,
+        campaign_history,
+        episodes,
+        h60,
+        session,
+        h60_map=h60_map,
+        session_map=session_map,
+        prefix_cache=prefix_cache,
+    )
     _verify_checkpoint(checkpoint, episodes, h60, session, campaigns, outcomes)
 
-    new_campaigns = derive_campaign_revisions(episodes, campaigns)
+    new_campaigns = _derive_campaign_revisions_from_groups(
+        episodes, episode_groups, latest
+    )
     campaigns_after = _append_snapshot(campaigns, new_campaigns)
-    new_outcomes, pending = derive_campaign_outcomes(
-        campaigns_after, outcomes, episodes, h60, session
+    new_outcomes, pending = _derive_campaign_outcomes_from_maps(
+        campaigns_after,
+        existing_outcomes,
+        h60_map,
+        session_map,
+        h60,
+        session,
     )
     outcomes_after = _append_snapshot(outcomes, new_outcomes)
     next_checkpoint = _build_checkpoint(
