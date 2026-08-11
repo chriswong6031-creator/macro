@@ -153,6 +153,15 @@ def _rehash_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
     return hostile
 
 
+def _generic_candidate() -> dict[str, Any]:
+    first_line = (
+        (ROOT / "data" / "research_factory" / "candidates.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()[0]
+    )
+    return json.loads(first_line)
+
+
 def test_canonical_candidate_enums_are_extended_as_one_conforming_tuple() -> None:
     assert adapter.MARKET_MEMORY_CANDIDATE_SOURCE in rf_schema.SOURCES
     assert adapter.MARKET_MEMORY_CANDIDATE_TYPE in rf_schema.CANDIDATE_TYPES
@@ -168,12 +177,7 @@ def test_canonical_candidate_enums_are_extended_as_one_conforming_tuple() -> Non
 
 
 def test_generic_rf_ingest_rejects_relabelled_legacy_row_without_conformance() -> None:
-    first_line = (
-        (ROOT / "data" / "research_factory" / "candidates.jsonl")
-        .read_text(encoding="utf-8")
-        .splitlines()[0]
-    )
-    hostile = json.loads(first_line)
+    hostile = _generic_candidate()
     hostile.update(
         source="market_memory",
         candidate_type="market_memory_candidate",
@@ -395,6 +399,149 @@ def test_generic_rf_ingest_rejects_partial_market_memory_discriminator_tuple(
     hostile[field] = value
     violations = rf_schema.validate_candidate(hostile)
     assert any("discriminator tuple must be exact" in row for row in violations)
+
+
+def test_generic_candidate_without_reserved_market_memory_marker_is_unchanged() -> None:
+    generic = _generic_candidate()
+    generic["artifacts"] = {
+        "generic_conformance": {
+            "authority_granted": True,
+            "action_authority": {"may_trade": True},
+        }
+    }
+    assert rf_schema.validate_candidate(generic) == []
+
+
+@pytest.mark.parametrize(
+    ("marker_name", "field", "value"),
+    [
+        ("source", "source", "market_memory"),
+        ("candidate_type", "candidate_type", "market_memory_candidate"),
+        ("domain", "domain", "market_memory"),
+        ("candidate_id", "candidate_id", "rf-market-memory-relabeled"),
+        ("spec_ref", "spec_ref", "mmrfspec_relabeled"),
+        (
+            "hypothesis",
+            "hypothesis",
+            (
+                "Conformance candidate for frozen Market Memory trial "
+                "synthetic.spy.close.v1; no retrieval or evaluation result is claimed."
+            ),
+        ),
+        (
+            "mechanism",
+            "mechanism",
+            (
+                "Read-only pointer to an exact W2A preregistration; W4 retrieval "
+                "and W5 evaluation evidence are deferred."
+            ),
+        ),
+        (
+            "failure_modes",
+            "expected_failure_modes",
+            ["w4_retrieval_not_available", "w5_evaluation_not_run"],
+        ),
+        (
+            "evaluation_plan",
+            "evaluation_plan",
+            {
+                "status": "not_run",
+                "primary_metric": None,
+                "horizon_d": None,
+                "min_n": None,
+                "fdr_scope": None,
+                "expected_half_life_d": None,
+                "defaulted": False,
+                "source": "market_memory_w2a_preregistration",
+            },
+        ),
+        (
+            "flags",
+            "flags",
+            ["market_memory_context_only", "w4_join_deferred", "w5_join_deferred"],
+        ),
+        (
+            "conformance_key",
+            "artifacts",
+            {
+                "market_memory_conformance": {
+                    "authority_granted": True,
+                    "action_authority": {"may_trade": True},
+                }
+            },
+        ),
+        (
+            "conformance_schema",
+            "artifacts",
+            {
+                "renamed": {
+                    "schema": "research_factory.market_memory_candidate_conformance.v1",
+                    "authority_granted": True,
+                    "action_authority": {"may_trade": True},
+                }
+            },
+        ),
+        (
+            "spec_schema",
+            "artifacts",
+            {
+                "renamed": {
+                    "schema": "research_factory.market_memory_candidate_spec.v1",
+                    "authority_granted": True,
+                    "action_authority": {"may_trade": True},
+                }
+            },
+        ),
+    ],
+)
+def test_each_reserved_market_memory_marker_owns_and_blocks_generic_ledger_write(
+    tmp_path: Path, marker_name: str, field: str, value: object
+) -> None:
+    hostile = _generic_candidate()
+    hostile["artifacts"] = {
+        "generic_conformance": {
+            "authority_granted": True,
+            "action_authority": {"may_trade": True},
+        }
+    }
+    hostile[field] = copy.deepcopy(value)
+
+    violations = rf_schema.validate_candidate(hostile)
+    assert any("Market Memory structural projection" in row for row in violations)
+    assert any("discriminator tuple must be exact" in row for row in violations)
+
+    path = tmp_path / f"{marker_name}.jsonl"
+    with pytest.raises(ValueError, match="failed schema validation"):
+        rf_ledger.append_row(path, hostile, validate_fn=rf_schema.validate_candidate)
+    assert not path.exists()
+
+
+def test_fully_relabelled_market_memory_candidate_cannot_regain_authority_or_write(
+    tmp_path: Path,
+) -> None:
+    hostile = _candidate()
+    hostile.update(
+        source="human",
+        candidate_type="external_idea",
+        domain="macro",
+    )
+    conformance = hostile["artifacts"]["market_memory_conformance"]
+    conformance["authority_granted"] = True
+    conformance["action_authority"]["may_trade"] = True
+
+    violations = rf_schema.validate_candidate(hostile)
+    assert any("discriminator tuple must be exact" in row for row in violations)
+    assert any(
+        "authority_granted must remain zero authority" in row for row in violations
+    )
+    assert any(
+        "action_authority must remain zero authority" in row for row in violations
+    )
+
+    path = tmp_path / "fully-relabelled.jsonl"
+    with pytest.raises(ValueError, match="failed schema validation"):
+        rf_ledger.append_row(path, hostile, validate_fn=rf_schema.validate_candidate)
+    assert not path.exists()
 
 
 @pytest.mark.parametrize(

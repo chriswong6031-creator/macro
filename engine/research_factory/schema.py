@@ -296,6 +296,35 @@ _MARKET_MEMORY_MECHANISM = (
 _MARKET_MEMORY_HYPOTHESIS_MAX_BYTES = 512
 _MARKET_MEMORY_MECHANISM_MAX_BYTES = 256
 _MARKET_MEMORY_MAX_BYTES = 256 * 1024
+_MARKET_MEMORY_CONFORMANCE_SCHEMA = (
+    "research_factory.market_memory_candidate_conformance.v1"
+)
+_MARKET_MEMORY_SPEC_SCHEMA = "research_factory.market_memory_candidate_spec.v1"
+_MARKET_MEMORY_RESERVED_PREFIXES = (
+    ("candidate_id", "rf-market-memory-"),
+    ("spec_ref", "mmrfspec_"),
+)
+_MARKET_MEMORY_RESERVED_TOP_LEVEL = {
+    "expected_failure_modes": [
+        "w4_retrieval_not_available",
+        "w5_evaluation_not_run",
+    ],
+    "evaluation_plan": {
+        "status": "not_run",
+        "primary_metric": None,
+        "horizon_d": None,
+        "min_n": None,
+        "fdr_scope": None,
+        "expected_half_life_d": None,
+        "defaulted": False,
+        "source": "market_memory_w2a_preregistration",
+    },
+    "flags": [
+        "market_memory_context_only",
+        "w4_join_deferred",
+        "w5_join_deferred",
+    ],
+}
 
 
 def _market_memory_object(
@@ -376,6 +405,78 @@ def _market_memory_real_canonical_utc(value: object) -> bool:
     )
 
 
+def _has_market_memory_reserved_schema(value: object) -> bool:
+    """Return whether an artifacts tree carries a W6A-owned schema marker."""
+
+    pending = [value]
+    visited: set[int] = set()
+    while pending:
+        current = pending.pop()
+        if type(current) not in {dict, list}:
+            continue
+        identity = id(current)
+        if identity in visited:
+            continue
+        visited.add(identity)
+        if type(current) is dict:
+            schema = current.get("schema")
+            if type(schema) is str and schema in {
+                _MARKET_MEMORY_CONFORMANCE_SCHEMA,
+                _MARKET_MEMORY_SPEC_SCHEMA,
+            }:
+                return True
+            pending.extend(current.values())
+        else:
+            pending.extend(current)
+    return False
+
+
+def _is_market_memory_owned_candidate(row: dict) -> bool:
+    """Claim W6A ownership from any reserved identity or subtype marker.
+
+    Ownership must not depend only on the three generic enum fields.  Otherwise
+    a caller can relabel those fields while retaining the content-addressed W6A
+    identity and conformance payload, then have generic admission persist a
+    Market Memory-shaped row with positive authority.
+    """
+
+    supplied = (row.get("source"), row.get("candidate_type"), row.get("domain"))
+    if any(
+        type(value) is str and value == marker
+        for value, marker in zip(supplied, _MARKET_MEMORY_TRIPLE)
+    ):
+        return True
+
+    for field, prefix in _MARKET_MEMORY_RESERVED_PREFIXES:
+        value = row.get(field)
+        if type(value) is str and value.startswith(prefix):
+            return True
+
+    hypothesis = row.get("hypothesis")
+    if (
+        type(hypothesis) is str
+        and _MARKET_MEMORY_HYPOTHESIS_RE.fullmatch(hypothesis) is not None
+    ):
+        return True
+    mechanism = row.get("mechanism")
+    if type(mechanism) is str and mechanism == _MARKET_MEMORY_MECHANISM:
+        return True
+
+    for field, expected in _MARKET_MEMORY_RESERVED_TOP_LEVEL.items():
+        if _market_memory_exact_json(row.get(field), expected):
+            return True
+
+    artifacts = row.get("artifacts")
+    if type(artifacts) is dict:
+        if any(
+            type(key) is str and key == "market_memory_conformance" for key in artifacts
+        ):
+            return True
+        if _has_market_memory_reserved_schema(artifacts):
+            return True
+    return False
+
+
 def _validate_market_memory_candidate_structure(
     row: dict, errs: list[str], label: str
 ) -> None:
@@ -386,7 +487,7 @@ def _validate_market_memory_candidate_structure(
         type(value) is str and value == marker
         for value, marker in zip(supplied, _MARKET_MEMORY_TRIPLE)
     )
-    if not any(discriminator_matches):
+    if not _is_market_memory_owned_candidate(row):
         return
     mm_label = f"{label}: Market Memory structural projection"
     if not all(discriminator_matches):
@@ -429,9 +530,8 @@ def _validate_market_memory_candidate_structure(
     exact_top_level = {
         "status": "proposed",
         "claim_shape": None,
-        "expected_failure_modes": [
-            "w4_retrieval_not_available",
-            "w5_evaluation_not_run",
+        "expected_failure_modes": _MARKET_MEMORY_RESERVED_TOP_LEVEL[
+            "expected_failure_modes"
         ],
         "decay_conditions": [],
         "falsifiers": [],
@@ -440,26 +540,13 @@ def _validate_market_memory_candidate_structure(
             "family": None,
             "declared_at": None,
         },
-        "evaluation_plan": {
-            "status": "not_run",
-            "primary_metric": None,
-            "horizon_d": None,
-            "min_n": None,
-            "fdr_scope": None,
-            "expected_half_life_d": None,
-            "defaulted": False,
-            "source": "market_memory_w2a_preregistration",
-        },
+        "evaluation_plan": _MARKET_MEMORY_RESERVED_TOP_LEVEL["evaluation_plan"],
         "lineage": {
             "respin_of": None,
             "superseded_by": None,
             "refinement_generation": 0,
         },
-        "flags": [
-            "market_memory_context_only",
-            "w4_join_deferred",
-            "w5_join_deferred",
-        ],
+        "flags": _MARKET_MEMORY_RESERVED_TOP_LEVEL["flags"],
         "transition_log": [],
     }
     for field, expected in exact_top_level.items():
@@ -494,9 +581,7 @@ def _validate_market_memory_candidate_structure(
     )
     if conformance is None:
         return
-    if conformance.get("schema") != (
-        "research_factory.market_memory_candidate_conformance.v1"
-    ):
+    if conformance.get("schema") != _MARKET_MEMORY_CONFORMANCE_SCHEMA:
         errs.append(f"{mm_label}: conformance schema is not canonical")
     zero_authority = {
         "authority_granted": False,
@@ -529,7 +614,7 @@ def _validate_market_memory_candidate_structure(
     )
     if spec is None:
         return
-    if spec.get("schema") != "research_factory.market_memory_candidate_spec.v1":
+    if spec.get("schema") != _MARKET_MEMORY_SPEC_SCHEMA:
         errs.append(f"{mm_label}: spec schema is not canonical")
     trial_id = spec.get("trial_registration_id")
     if type(trial_id) is not str or not _MARKET_MEMORY_TRIAL_ID_RE.fullmatch(trial_id):
