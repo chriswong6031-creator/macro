@@ -6943,6 +6943,7 @@ jobs:
       - scripts/export_top_anatomy_library.py
       - tests/test_alert_zh_completeness.py
       - tests/test_falsifier_tripwires.py
+      - tests/test_massive_local_staleness.py
       - tests/test_price_pressure.py
       - tests/test_top_anatomy.py
       - tests/test_top_maturation.py
@@ -7006,6 +7007,12 @@ jobs:
       # Phase-0 contract.  The derived scope follows its engine/script/read closure.
       - name: TOP ANATOMY point-in-time engine and preregistration contracts
         run: python -m pytest tests/test_top_anatomy.py -q
+      # Local research entrypoints must refuse a massive_stock_day mirror frozen
+      # past the declared trading-session ceiling while staying inert in Actions.
+      # The packed selector derives this suite's full import/path-literal closure,
+      # so collector, calendar, and all four wired entrypoint edits select this owner.
+      - name: massive-stock-day local mirror staleness tripwire
+        run: python -m pytest tests/test_massive_local_staleness.py -q
       # Nightly display-only consumer of the frozen TOP ANATOMY library. Keep
       # its point-in-time state machine and generated page beside the research
       # owner so changes to either side cannot leave the shipped read dark.
