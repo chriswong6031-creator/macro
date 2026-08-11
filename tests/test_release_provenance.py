@@ -285,6 +285,95 @@ class TestComputeCoverageFlags:
         result = compute_coverage_flags(proj, ledger_path=ledger)
         assert result["model_maturity"] == 2
 
+    def test_model_maturity_keeps_champion_and_shadow_evidence_separate(self, tmp_path):
+        from engine.release_provenance import compute_coverage_flags
+
+        ledger = tmp_path / "ledger.jsonl"
+        rows = [
+            {
+                "row_type": "scored",
+                "release": "cpi_core",
+                "period": "2026-05",
+                "frozen_asof_night": "2026-06-10",
+                "model": None,
+            },
+            {
+                "row_type": "scored",
+                "release": "cpi_core",
+                "period": "2026-05",
+                "frozen_asof_night": "2026-06-10",
+                "model": "coherent_ridge_v1",
+            },
+            {
+                "row_type": "scored",
+                "release": "cpi_core",
+                "period": "2026-06",
+                "frozen_asof_night": "2026-07-13",
+                "model": "coherent_ridge_v1",
+            },
+        ]
+        _write_ledger(ledger, rows)
+
+        champion = _make_projection(release="cpi_core")
+        coherent = {**champion, "model": "coherent_ridge_v1"}
+
+        assert compute_coverage_flags(champion, ledger)["model_maturity"] == 1
+        assert compute_coverage_flags(coherent, ledger)["model_maturity"] == 2
+
+    def test_model_maturity_requires_declared_model_and_target_epochs(self, tmp_path):
+        from engine.release_provenance import compute_coverage_flags
+
+        ledger = tmp_path / "ledger.jsonl"
+        base = {
+            "row_type": "scored",
+            "release": "cpi_core",
+            "model": "coherent_ridge_v1",
+        }
+        _write_ledger(ledger, [
+            {
+                **base,
+                "period": "2026-03",
+                "frozen_asof_night": "2026-04-09",
+                "model_epoch": "coherent_ridge_v1",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+            },
+            {
+                **base,
+                "period": "2026-04",
+                "frozen_asof_night": "2026-05-11",
+                "model_epoch": "coherent_ridge_v2",
+                "target_epoch": "alfred_same_release_vintage_proxy_v1",
+            },
+            {
+                **base,
+                "period": "2026-05",
+                "frozen_asof_night": "2026-06-10",
+                "model_epoch": "coherent_ridge_v1",
+                "target_epoch": "official_first_print_v1",
+            },
+            {
+                **base,
+                "period": "2026-06",
+                "frozen_asof_night": "2026-07-13",
+            },
+        ])
+
+        projection = {
+            **_make_projection(release="cpi_core"),
+            "model": "coherent_ridge_v1",
+            "model_epoch": "coherent_ridge_v1",
+            "target_epoch": "alfred_same_release_vintage_proxy_v1",
+        }
+        assert compute_coverage_flags(projection, ledger)["model_maturity"] == 1
+
+        # Pre-epoch callers remain compatible: absent projection epochs do not
+        # retroactively segment their historical lane.
+        legacy_projection = {
+            **_make_projection(release="cpi_core"),
+            "model": "coherent_ridge_v1",
+        }
+        assert compute_coverage_flags(legacy_projection, ledger)["model_maturity"] == 4
+
     def test_model_maturity_counts_superseded_score_once(self, tmp_path):
         from engine.release_provenance import compute_coverage_flags
 
