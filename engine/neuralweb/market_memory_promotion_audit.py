@@ -90,8 +90,8 @@ _PRIVATE_LIMITATIONS = (
 _WAVE_EVIDENCE = (
     {"wave": "W2", "status": "synthetic_only"},
     {"wave": "W4", "status": "synthetic_only"},
-    {"wave": "W5", "status": "not_shipped"},
-    {"wave": "W6", "status": "not_shipped"},
+    {"wave": "W5", "status": "not_operational_promotion_evidence"},
+    {"wave": "W6", "status": "not_operational_promotion_evidence"},
 )
 _TOP_LEVEL_FIELDS = frozenset(
     {

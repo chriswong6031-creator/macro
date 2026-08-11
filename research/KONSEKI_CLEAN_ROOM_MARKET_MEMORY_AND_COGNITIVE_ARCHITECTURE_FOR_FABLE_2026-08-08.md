@@ -1266,9 +1266,10 @@ OI canary is one bounded source-availability page without a complete, dated,
 atomic chain state. None can be substituted for a canonical observed feature.
 
 At the frozen 2026-08-11 checkpoint, W2 and W4 evidence is synthetic-only,
-while W5 and W6 are not shipped as operational promotion evidence. A later
-code shipment would remain dormant/synthetic for this purpose until it accrues
-owner-authenticated operational evidence; it cannot rewrite this audit. There
+while W5 and W6 are classified `not_operational_promotion_evidence`. This is a
+durable evidence classification, not a shipment-state assertion: dormant or
+synthetic code remains insufficient until it accrues owner-authenticated
+operational evidence, and later shipment cannot rewrite this audit. There
 is no operational forward sample size, calibration evidence, clustered
 dependence interval, incremental value after existing Prophet information, or
 shadow-forward evidence. Consequently G0-G7 cannot pass for any feature. The

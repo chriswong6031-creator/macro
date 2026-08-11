@@ -156,8 +156,8 @@ def test_private_limits_wave_state_absent_evidence_and_exclusions_are_honest() -
     assert artifact["wave_evidence"] == [
         {"wave": "W2", "status": "synthetic_only"},
         {"wave": "W4", "status": "synthetic_only"},
-        {"wave": "W5", "status": "not_shipped"},
-        {"wave": "W6", "status": "not_shipped"},
+        {"wave": "W5", "status": "not_operational_promotion_evidence"},
+        {"wave": "W6", "status": "not_operational_promotion_evidence"},
     ]
     assert artifact["absent_evidence"] == [
         "operational_forward_n",
@@ -175,6 +175,18 @@ def test_private_limits_wave_state_absent_evidence_and_exclusions_are_honest() -
         "synapse_registration",
         "training_consumption",
     ]
+
+
+def test_w5_w6_evidence_status_never_encodes_shipment_state() -> None:
+    statuses = {row["wave"]: row["status"] for row in _artifact()["wave_evidence"]}
+    expected = "not_operational_promotion_evidence"
+    assert statuses["W5"] == expected
+    assert statuses["W6"] == expected
+    assert all(
+        token not in statuses[wave]
+        for wave in ("W5", "W6")
+        for token in ("ship", "deploy", "release")
+    )
 
 
 def test_exact_forward_authority_and_every_capability_remain_false() -> None:

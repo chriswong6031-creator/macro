@@ -70,8 +70,8 @@
       "const": [
         {"wave": "W2", "status": "synthetic_only"},
         {"wave": "W4", "status": "synthetic_only"},
-        {"wave": "W5", "status": "not_shipped"},
-        {"wave": "W6", "status": "not_shipped"}
+        {"wave": "W5", "status": "not_operational_promotion_evidence"},
+        {"wave": "W6", "status": "not_operational_promotion_evidence"}
       ]
     },
     "absent_evidence": {"const": ["operational_forward_n", "calibration_evidence", "clustered_dependence_intervals", "incremental_value_after_prophet", "shadow_forward_evidence"]},
