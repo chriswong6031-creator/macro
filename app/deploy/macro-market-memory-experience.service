@@ -4,7 +4,7 @@
 [Unit]
 Description=Accrue the private preregistered SPY Market Memory experience ledger
 After=local-fs.target macro-market-memory-source.service macro-market-memory-context.service macro-market-memory-identity.service macro-market-memory-breadth.service macro-market-memory-technicals.service
-Conflicts=macro-market-memory-source.service macro-market-memory-context.service macro-market-memory-identity.service macro-market-memory-breadth.service macro-market-memory-technicals.service macro-market-memory-options.service
+Conflicts=macro-market-memory-options.service
 
 [Service]
 Type=oneshot

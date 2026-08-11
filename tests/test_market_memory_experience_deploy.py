@@ -456,15 +456,15 @@ def test_experience_timer_is_exact_and_calendar_is_not_the_denominator() -> None
     assert "never this timer" in timer
 
 
-def test_experience_and_option_writers_have_reciprocal_runtime_boundaries() -> None:
+def test_only_option_writer_is_mutually_exclusive_with_experience() -> None:
     experience = _text(SERVICE)
     options = _text(OPTIONS_SERVICE)
-    expected_siblings = {
-        *(f"macro-market-memory-{profile}.service" for profile in SIBLING_PROFILES),
-        "macro-market-memory-options.service",
+    expected_owners = {
+        f"macro-market-memory-{profile}.service" for profile in SIBLING_PROFILES
     }
-    assert set(_setting_values(experience, "Conflicts")[0].split()) == expected_siblings
-    expected_owners = expected_siblings - {"macro-market-memory-options.service"}
+    assert _setting_values(experience, "Conflicts") == [
+        "macro-market-memory-options.service"
+    ]
     assert expected_owners <= set(_setting_values(experience, "After")[0].split())
     assert "macro-market-memory-options.service" not in _setting_values(
         experience, "After"
@@ -478,6 +478,13 @@ def test_experience_and_option_writers_have_reciprocal_runtime_boundaries() -> N
     assert "source context identity breadth technicals experience" in _text(
         RUNTIME_FENCE
     )
+
+    for profile in (*SIBLING_PROFILES, "production-records"):
+        sibling = _text(DEPLOY / f"macro-market-memory-{profile}.service")
+        sibling_conflicts = set(
+            " ".join(_setting_values(sibling, "Conflicts")).split()
+        )
+        assert "macro-market-memory-experience.service" not in sibling_conflicts
 
     for profile in SIBLING_PROFILES:
         sibling = _text(DEPLOY / f"macro-market-memory-{profile}.service")
