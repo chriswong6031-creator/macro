@@ -418,3 +418,32 @@ jobs:
 
           echo "::warning::marketing-publish: could not push ledger after 5 attempts (non-fatal)"
           exit 0
+
+      - name: liveness tripwire
+        # THE OBSERVER FOR "NOTHING CAME OUT". 2026-08-06 Buffer's plan locked
+        # (429s); 08-08 MARKETING_PUBLISH_ENABLED went to 0, correctly, while the
+        # backend refused; Buffer was fixed and NOBODY RE-ARMED. For five days
+        # this workflow ran on schedule, concluded GREEN on every sweep, and
+        # posted nothing — because a dry-run sweep is a successful sweep and no
+        # check anywhere asked "when did we last actually post?".
+        #
+        # scripts/marketing_liveness_tripwire.py asks it: armed + silent deep in
+        # the posting window is an ::error and a red sweep; disarmed longer than
+        # a day is a ::warning every sweep plus one ::error at 13:00Z, so a
+        # kill-switch left off has to be re-decided out loud once a day instead
+        # of quietly becoming the new default.
+        #
+        # `always()` IS LOAD-BEARING: a sweep that died in `run publisher` is
+        # precisely the sweep whose silence needs reporting, and this step is
+        # last — AFTER the ledger commit — so a red tripwire can never cost the
+        # ledger its push. The step only reads two files and prints; it posts
+        # nothing, approves nothing and writes nothing.
+        #
+        # Skipped on a recall dispatch, like the publisher step: that run exists
+        # to STOP posts, so "no posts went out" is its success condition.
+        if: ${{ always() && !(github.event_name == 'workflow_dispatch' && inputs.recall_pending) }}
+        env:
+          # Same repo VARIABLE as the job env above, restated here so the one
+          # input this alarm reads is visible at the step that reads it.
+          MARKETING_PUBLISH_ENABLED: ${{ vars.MARKETING_PUBLISH_ENABLED }}
+        run: python -m scripts.marketing_liveness_tripwire
