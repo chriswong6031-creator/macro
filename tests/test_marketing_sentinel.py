@@ -2343,6 +2343,8 @@ def _pg_run(monkeypatch, root: Path, fake, *, voice_gate: bool = False) -> int:
         # tests/test_marketing_voice_laws.py.
         monkeypatch.setattr(pub, "_queued_voice_violations",
                             lambda text, kind="", **_: [])
+        monkeypatch.setattr(pub, "_voice_v5_violations",
+                            lambda text, ctx=None: [])
     return pub.main(["--live", "--root", str(root),
                      "--now", _PG_NOW.strftime("%Y-%m-%dT%H:%M:%SZ")])
 
