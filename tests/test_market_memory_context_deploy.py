@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import re
 import stat
 import subprocess
@@ -443,6 +444,75 @@ def test_w1a_initializer_rejects_symlink_permission_and_tamper(
     assert w1a_initializer.main(["--store", str(store)]) == 2
     assert "HEAD" in capsys.readouterr().err
     assert head.read_bytes() == before
+
+
+def test_w1a_initializer_rejects_unowned_namespace_hardlinks_and_mode_drift(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    unknown_root = tmp_path / "unknown"
+    unknown_root.mkdir(mode=0o700)
+    unknown = unknown_root / "unexpected"
+    unknown.write_bytes(b"unowned")
+    unknown.chmod(0o600)
+    before = unknown.read_bytes()
+    assert w1a_initializer.main(["--store", str(unknown_root)]) == 2
+    assert "unowned file" in capsys.readouterr().err
+    assert unknown.read_bytes() == before
+
+    orphan_root = tmp_path / "orphan"
+    assert w1a_initializer.main(["--store", str(orphan_root)]) == 0
+    capsys.readouterr()
+    (orphan_root / "HEAD.json").unlink()
+    orphan = orphan_root / "generations" / "ff" / f"mmgeneration_{'f' * 64}.json"
+    orphan.parent.mkdir(mode=0o700)
+    orphan.write_bytes(b"{}")
+    orphan.chmod(0o600)
+    before_orphan = orphan.read_bytes()
+    assert w1a_initializer.main(["--store", str(orphan_root)]) == 2
+    assert "unowned" in capsys.readouterr().err
+    assert orphan.read_bytes() == before_orphan
+    assert not (orphan_root / "HEAD.json").exists()
+
+    hardlink_root = tmp_path / "hardlink"
+    assert w1a_initializer.main(["--store", str(hardlink_root)]) == 0
+    capsys.readouterr()
+    hardlink = tmp_path / "HEAD.hardlink"
+    os.link(hardlink_root / "HEAD.json", hardlink)
+    assert w1a_initializer.main(["--store", str(hardlink_root)]) == 2
+    assert "hardlinked" in capsys.readouterr().err
+
+    mode_root = tmp_path / "mode"
+    assert w1a_initializer.main(["--store", str(mode_root)]) == 0
+    capsys.readouterr()
+    generation = next((mode_root / "generations").rglob("*.json"))
+    generation.chmod(0o666)
+    assert w1a_initializer.main(["--store", str(mode_root)]) == 2
+    assert "mode is not 0600" in capsys.readouterr().err
+
+
+def test_w1a_initializer_rejects_symlinked_ancestor_and_preserves_trusted_child(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    real_parent = tmp_path / "real"
+    real_parent.mkdir(mode=0o700)
+    alias = tmp_path / "alias"
+    alias.symlink_to(real_parent, target_is_directory=True)
+    assert w1a_initializer.main(["--store", str(alias / "public")]) == 2
+    assert "symlinked ancestor" in capsys.readouterr().err
+    assert list(real_parent.iterdir()) == []
+
+    store = tmp_path / "with-trusted"
+    store.mkdir(mode=0o700)
+    trusted_root = store / "trusted-v1"
+    trusted_root.mkdir(mode=0o700)
+    sentinel = trusted_root / "separate-owner-sentinel"
+    sentinel.write_bytes(b"trusted owner bytes")
+    sentinel.chmod(0o600)
+    before = sentinel.read_bytes()
+    assert w1a_initializer.main(["--store", str(store)]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["capture_count"] == 0
+    assert sentinel.read_bytes() == before
 
 
 def _stub_writer_inputs(

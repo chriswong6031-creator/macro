@@ -1251,9 +1251,10 @@ now separately creates or authenticates W1A manifest/empty-genesis/HEAD metadata
 before API start or restart because W1A has no scheduled capture writer. This
 does not fabricate a context, receipt, query, packet, or opportunity. Only the
 deterministic empty-initialization prefix may be completed after interruption;
-capture-bearing partial, tampered, symlinked, or unwritable state aborts
-readiness, and readers retain no missing-HEAD fallback or request-time
-materialization path.
+capture-bearing namespace partials, generation-metadata tamper, unowned entries,
+unsafe modes or links, or unwritable state abort readiness. Packet bytes remain
+closure-validated only for returned playback rows, and readers retain no
+missing-HEAD fallback or request-time materialization path.
 
 ### 11.1 File ownership
 
