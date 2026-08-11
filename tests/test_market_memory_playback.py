@@ -26,6 +26,19 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = (
     ROOT / "contracts" / "market_memory" / "operational_playback_catalog.v1.schema.json"
 )
+W3A_CI_PATHS = (
+    "app/market_memory.py",
+    "app/deploy/update.sh",
+    "engine/neuralweb/market_memory_pit.py",
+    "engine/neuralweb/market_memory_playback.py",
+    "engine/neuralweb/market_memory_trusted.py",
+    "contracts/market_memory/operational_playback_catalog.v1.schema.json",
+    "tests/test_market_memory_pit.py",
+    "tests/test_market_memory_playback.py",
+    "tests/test_market_memory_playback_api.py",
+    "tests/test_market_memory_trusted.py",
+    "research/KONSEKI_CLEAN_ROOM_MARKET_MEMORY_AND_COGNITIVE_ARCHITECTURE_FOR_FABLE_2026-08-08.md",
+)
 
 
 def _utc(value: datetime) -> str:
@@ -274,6 +287,17 @@ def test_returned_packet_reads_have_an_aggregate_byte_bound(
         playback.read_operational_playback_catalog(
             reader=reader, subject=stored.packet["subject"]
         )
+
+
+def test_w3a_contract_runtime_and_tests_share_the_market_memory_ci_gate() -> None:
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    jobs = (ROOT / ".github/ci/legacy-jobs.yml").read_text(encoding="utf-8")
+    lane = jobs.split("  market-memory-contract:", 1)[1].split("\n  group-pulse:", 1)[0]
+
+    for path in W3A_CI_PATHS:
+        assert f'      - "{path}"' in workflow, f"missing W3A CI trigger: {path}"
+    assert "tests/test_market_memory_playback.py" in lane
+    assert "tests/test_market_memory_playback_api.py" in lane
 
 
 def test_unequal_same_query_packets_across_stores_fail_closed(

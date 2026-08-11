@@ -1202,6 +1202,48 @@ evaluation clock. A production opportunity schedule and completeness receipt,
 prospectively sealed real baselines, outcome adapters, dependence-aware cohort
 inference, and any promotion decision remain later evidence-gated work.
 
+### 11.0.9 W3A generation-pinned operational playback catalog
+
+W3A exposes a bounded catalog of exact `operational_pit` captures already
+published by W1A and the W1B.1 trusted canary. It does not reconstruct a
+requested date, search for a nearest or latest state, materialize a new packet,
+or read any private evidence root. Each row contains only opaque capture and
+context identifiers, capture clocks, the exact packet digest, and the fourteen
+domain statuses; feature values, source evidence, labels, outcomes, scores,
+filesystem paths, and object keys remain absent.
+
+Each store generation is accepted only when it is the authenticated current
+HEAD or a reachable append-only ancestor. The reader walks the complete bounded
+chain to empty genesis, rejects crash-orphan generations, cycles, rewrites,
+missing ancestors, owner drift, and byte-budget overflow, and reauthenticates
+the duplicate receipt before subject selection. The W1A HEAD is pinned first
+and the trusted HEAD second. That ordered pair is explicit and immutable for
+pagination, but the two independent publications are never called an atomic
+cross-store snapshot.
+
+Rows merge only on exact `query_id`. Unequal context or packet commitments are
+a hard integrity error. An identical dual publication retains both capture
+provenances, and every returned provenance packet is owner-loaded and required
+to have identical canonical bytes before the catalog may claim returned-entry
+packet closure. Off-page packets are deliberately not loaded. Offset pages are
+stable only when both exact generation IDs are supplied; an unpinned request
+must begin at offset zero, and its continuation recipe repeats the subject,
+limit, ordered generation pair, and next offset. The content-addressed catalog
+ID and strong ETag bind the complete page representation rather than merely the
+generation pair.
+
+The site-full authenticated `/api/market-memory/v1/playback/catalog` route is
+private/no-store, rate- and concurrency-bounded, and distinguishes malformed
+selection, unreachable pins, and store-integrity failures. Existing
+`/context/{context_id}` remains a current-HEAD content-ID resolver, not a
+pinned-generation playback guarantee. W3A proves completeness only for the two
+pinned receipt indexes and only validates packets on the returned page. It does
+not prove an opportunity population, historical coverage, an options chain or
+OI plane, cross-store atomicity, externally authenticated capture clocks, or
+origin signatures. Every action-authority bit remains false,
+`context_only=true`, and ranking, gating, sizing, trading, execution, training,
+promotion, forecast, and outcome use remain disconnected.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1354,6 +1396,21 @@ W2B1 synthetic scoring additions:
   Decimal fixtures, prospective-fit and dependency joins, outcome correction,
   infinity, tamper, loader-bound, import-fence, and no-aggregate/no-skill
   fixtures.
+
+W3A operational playback additions:
+
+- `engine/neuralweb/market_memory_playback.py` and the strict
+  `operational_playback_catalog.v1` contract — bounded exact-generation
+  enumeration, deterministic dual-store merge, immutable paired pagination,
+  returned-packet closure, content-addressed pages, and zero authority;
+- pinned-generation readers in `market_memory_pit.py` and
+  `market_memory_trusted.py` — complete HEAD-to-genesis authentication with no
+  crash-orphan, nearest, latest, or reconstruction fallback;
+- `app/market_memory.py` — the site-full, private/no-store, rate- and
+  concurrency-bounded playback catalog read route; no writer or new store;
+- `tests/test_market_memory_playback.py` and
+  `tests/test_market_memory_playback_api.py` — ancestry, tamper, resource,
+  dual-provenance, pagination, schema/runtime, auth, cache, and no-leak guards.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 
