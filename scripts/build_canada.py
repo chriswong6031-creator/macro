@@ -528,12 +528,20 @@ def _benchmark_card() -> dict | None:
         return None
     close = df["close"].dropna()
     a = analyze(close, market="CA")
+    # signed DISTANCE from the 200-day average, off the SAME series already read here —
+    # no extra store read, no new series. The shared Risk Radar dialog's Leading tile
+    # reads "N% above/below its 200-day average"; `above200` alone cannot say how
+    # stretched. Same field name and formula the sibling builders publish
+    # (build_china.py / build_hk.py `dist200`).
+    ma200 = float(close.tail(200).mean()) if len(close) >= 200 else None
     return {"name": "S&P/TSX Composite", "ticker": mi,
             "mtf_json": json.dumps(a["mtf"]),
             "state": a["ladder"].get("state"), "label": a["ladder"].get("label"),
             "dc_day": a["cycle"].get("dc_day"), "dc_band": a["cycle"].get("dc_band"),
             "ic_week": a["cycle"].get("ic_week"), "ic_band": a["cycle"].get("ic_band"),
             "price": round(float(close.iloc[-1]), 2),
+            "dist200": (round(100 * (float(close.iloc[-1]) / ma200 - 1), 1)
+                        if ma200 else None),
             "chg": round(100 * (close.iloc[-1] / close.iloc[-2] - 1), 2)}
 
 
@@ -867,6 +875,329 @@ def _append_ms_score_log(latest_date, ms_snap: dict | None) -> None:
     combined.sort_values("date").reset_index(drop=True).to_parquet(p, index=False)
 
 
+# ── Risk Radar dialog view-model (templates/_risk_radar_dlg.html.j2) ─────────────────
+# DISPLAY ASSEMBLY ONLY. Every value below is READ from a store some other engine step
+# already computed — nothing here derives a statistic, scores anything, or gates
+# anything. Each payload sits in its own try/except so a store that is missing, stale
+# or malformed drops ONE section instead of the page (the macro renders every section
+# conditionally, so an omitted key is an honest absence, never an error).
+# The ctx schema is the shared CN/HK/CA contract — see the header of
+# templates/_risk_radar_dlg.html.j2 before changing a key name.
+# Assembly mirrors scripts/build_china.py `_radar_dlg_vm` (W1 of
+# research/RISK_RADAR_COUNTRY_PORT_MASTERPLAN.md); only the per-market payloads differ.
+
+# The overlay's own per-factor read, said in plain words. `risk` is the engine's word
+# (on / off / neutral); this only renames it for a reader who does not speak "risk-on".
+_CA_FACTOR_READ = {
+    "on":      ("supportive", "支撑", "up"),
+    "off":     ("a drag", "拖累", "down"),
+    "neutral": ("neutral", "中性", "muted"),
+}
+
+
+def _ca_scope_fx_context(radar: dict | None) -> None:
+    """Drop the offshore-yuan basis from a Canadian radar's fx_context, in place.
+
+    `lib.forex_link.attach_fx_context` is written for the China board, so it always
+    carries `cnh_basis_bps` / `cnh_basis_state` alongside the dollar direction. On a
+    Canadian page that is a foreign market's datum: nothing here is priced off the
+    offshore yuan, and the shared `.rrx` card reads `cnh_basis_state` / `cnh_basis_bps`
+    straight into its own "Yuan pressure" row (the Risk Radar dialog suppresses that
+    row in CSS, but the numbers would still ride in the page's markup). Only the
+    dollar's own direction — a leg this radar actually fires on — crosses over.
+
+    The visible half of the same rule lives in `_radar_dlg_vm`, which hands the dialog
+    a dollar-only `ctx.fx`. Never raises.
+    """
+    try:
+        fx = (radar or {}).get("fx_context")
+        if isinstance(fx, dict):
+            fx.pop("cnh_basis_bps", None)
+            fx.pop("cnh_basis_state", None)
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
+
+
+def _rd_word(value, bands):
+    """Pick the (en, zh, tone) triple whose threshold `value` clears. `bands` is an
+    ordered [(threshold, en, zh, tone), ...] high-to-low; the last entry is the floor."""
+    if value is None:
+        return None
+    for thr, en, zh, tone in bands:
+        if value >= thr:
+            return (en, zh, tone)
+    return None
+
+
+def _radar_dlg_vm(vm: dict, latest: dict) -> dict:
+    """Assemble the `radar_dlg` ctx the shared Risk Radar dialog consumes on canada.html.
+
+    Reads ONLY values already on the view-model / in already-built stores:
+      leading   benchmark card (dist200, off the TSX series it already reads) + the
+                radar's own dominant firing leg
+      overseas  market_state.radar.contagion   (data/contagion_links/latest.json)
+      track     market_state.radar.track       (site/riskdata/scorecard.json markets.ca)
+      calendar  OMITTED — Canada has no event-calendar engine (masterplan §3)
+      chips     latest.liquidity_overlay (BoC) + pair.usdcad
+      factors   overlay.factors (WTI / gold / copper-gold) + overlay.terms_of_trade
+                + breadth participation
+      leaders   OMITTED rows — no Canadian leaders ledger yet, so an honest absence line
+      fx        market_state.radar.fx_context  (lib/forex_link, newly wired this pass)
+    """
+    ctx: dict = {}
+    rd = ((vm.get("market_state") or {}).get("radar")) or {}
+
+    # ── one as-of for the whole dialog ────────────────────────────────────────────
+    try:
+        ctx["asof"] = str(latest.get("date") or "")[:10] or None
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Plain-word profile caveat. NOT CA_PROFILE.caveat_en verbatim: that string is
+    # written for the engine's own audience ("the lightest read and emerging-only",
+    # "least US-coupled of the three", "breadth breakdown") — internal framing and
+    # vocabulary that Tier 1 bans (DESIGN_DOCTRINE Law 2). Same substance, said the
+    # way a reader can use it.
+    ctx["caveat_en"] = ("The Toronto market follows commodities more than Wall Street, so "
+                        "these drivers nudge it rather than drive it — the lightest of our "
+                        "three country reads.")
+    ctx["caveat_zh"] = ("多伦多市场更多跟随大宗商品，而非美股，因此这些驱动因素只是推力而非主导——"
+                        "在三个市场读数中最轻。")
+
+    # ── Leading tile: benchmark stretch vs its 200-day average + the loudest leg ──
+    try:
+        dist = (vm.get("benchmark") or {}).get("dist200")
+        leg = None
+        for s in (rd.get("scares") or []):
+            if s.get("label_en") == rd.get("label_en") and s.get("firing_legs"):
+                leg = (s["firing_legs"][0] or {}).get("leg")
+                break
+        # Under half a percent the tile would print "0% above its 200-day average" — a
+        # number that says nothing (DESIGN_DOCTRINE Law 3). Drop the figure and let the
+        # benchmark line carry the meaning; the macro renders bench_en/zh alone whenever
+        # stretch_pct is absent.
+        bench_en, bench_zh = "The TSX", "多伦多综指"
+        if dist is not None and abs(dist) < 0.5:
+            bench_en = "The TSX is sitting right on its 200-day average"
+            bench_zh = "多伦多综指正贴在200日均线上"
+            dist = None
+        if dist is not None or leg:
+            ctx["leading"] = {
+                "bench_en": bench_en, "bench_zh": bench_zh,
+                "stretch_pct": dist, "leg": leg,
+                "tip_en": ("Where the index sits against its own 200-day average. "
+                           "The further above, the more there is to give back."),
+                "tip_zh": "指数当前点位相对自身200日均线的位置。高出越多，可回吐的空间越大。",
+            }
+    except Exception as e:  # noqa: BLE001 — one tile, never the page
+        log.warning("radar_dlg leading tile skipped (%s)", e)
+
+    # ── Overseas tile: imported pressure (contagion links) ────────────────────────
+    try:
+        cg = rd.get("contagion") or {}
+        if cg.get("level"):
+            exp = []
+            for e in (cg.get("top_exporters") or [])[:3]:
+                dd = e.get("dd21")
+                if e.get("name_en") and dd is not None:
+                    exp.append((e["name_en"], e.get("name_zh") or e["name_en"], round(dd * 100)))
+            ctx["overseas"] = {
+                "level": cg.get("level"),
+                "line_en": cg.get("line_en"), "line_zh": cg.get("line_zh"),
+                "tip_en": ("How far the markets that trade with Canada have fallen from "
+                           "their own recent highs: "
+                           + " · ".join(f"{n} {d}% off" for n, _z, d in exp)) if exp else None,
+                "tip_zh": ("与加拿大关联最深的市场距各自近期高点的回撤："
+                           + "；".join(f"{z} {d}%" for _n, z, d in exp)) if exp else None,
+            }
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg overseas tile skipped (%s)", e)
+
+    # ── Track-record tile: this market's own graded ledger, past year ─────────────
+    try:
+        al = (((rd.get("track") or {}).get("windows") or {}).get("y1") or {}).get("alerts") or {}
+        if al:
+            ctx["track"] = {"n": al.get("n") or 0, "tp": al.get("tp") or 0,
+                            "hit_rate": al.get("hit_rate")}
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg track tile skipped (%s)", e)
+
+    # NO calendar payload: Canada has no event-calendar engine (china_event_calendar /
+    # hk_event_calendar have no CA sibling), so the key is omitted entirely and the tile
+    # simply does not render. An empty diary tile would be a worse lie than no tile.
+
+    # ── Context chips: the central bank's stance + the currency ───────────────────
+    chips = []
+    try:
+        liq = str(latest.get("liquidity_overlay") or "").strip().lower()
+        # Words + tone are the page's own (canada.html.j2 "BoC stance" card), so the
+        # chip and the card can never disagree.
+        _stance = {
+            "expanding":   ("Easing", "宽松", "up",
+                            "Money is getting easier — a tailwind for the TSX.",
+                            "资金面转松——对多伦多市场构成顺风。"),
+            "contracting": ("Tightening", "收紧", "down",
+                            "Money is getting tighter — a rate headwind.",
+                            "资金面收紧——利率端构成逆风。"),
+            "neutral":     ("On hold", "暂停", "muted",
+                            "No move either way — watch the data for the next one.",
+                            "暂无动作——观察数据等待下一步。"),
+        }.get(liq)
+        if _stance:
+            chips.append({
+                "label_en": "Policy stance", "label_zh": "政策取向",
+                "value_en": _stance[0], "value_zh": _stance[1], "tone": _stance[2],
+                "tip_en": _stance[3], "tip_zh": _stance[4],
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg boc chip skipped (%s)", e)
+    try:
+        fx = (vm.get("pair") or {}).get("usdcad") or {}
+        lvl, chg = fx.get("level"), fx.get("chg_20d_pct")
+        if lvl is not None:
+            # USD/CAD is Canadian dollars per US dollar, so a FALL is a FIRMER loonie.
+            # Same words and the same direction test the page's own USD/CAD tile already
+            # uses (canada.html.j2:1344) — the chip can never contradict the tile.
+            if chg is None or abs(chg) < 0.25:
+                d_en, d_zh, tone = "steady", "持平", "muted"
+            elif chg < 0:
+                d_en, d_zh, tone = "firm", "走强", "up"
+            else:
+                d_en, d_zh, tone = "soft", "走弱", "down"
+            chips.append({
+                "label_en": "Canadian dollar", "label_zh": "加元",
+                "value_en": f"{lvl:.4f}, {d_en}", "value_zh": f"{lvl:.4f}，{d_zh}",
+                "tone": tone,
+                "tip_en": ("Canadian dollars per US dollar"
+                           + (f", {chg:+.1f}% over the last month" if chg is not None else "")
+                           + " — a falling rate means a firmer Canadian dollar, which "
+                             "usually means commodities are bid."),
+                "tip_zh": ("每美元兑加元的汇率"
+                           + (f"，近一个月 {chg:+.1f}%" if chg is not None else "")
+                           + "——数值下行代表加元走强，通常意味着大宗商品需求旺盛。"),
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg cad chip skipped (%s)", e)
+    if chips:
+        ctx["policy_chips"] = chips
+
+    # ── Country factor rows: the commodity complex + how broadly the market moves ─
+    factors = []
+    ov = vm.get("overlay") or {}
+    try:
+        fmap = {f.get("key"): f for f in (ov.get("factors") or []) if isinstance(f, dict)}
+        # (overlay key, EN label, ZH label, value formatter)
+        for key, l_en, l_zh, fmt in (
+            ("oil",  "Oil (WTI)",     "原油（WTI）", lambda v: f"${v:,.0f}"),
+            ("gold", "Gold",          "黄金",        lambda v: f"${v:,.0f}"),
+        ):
+            f = fmap.get(key) or {}
+            lvl = f.get("level")
+            if lvl is None:
+                continue
+            r_en, r_zh, tone = _CA_FACTOR_READ.get(f.get("risk") or "neutral",
+                                                   _CA_FACTOR_READ["neutral"])
+            factors.append({
+                "label_en": l_en, "label_zh": l_zh, "value": fmt(float(lvl)),
+                "read_en": r_en, "read_zh": r_zh, "tone": tone,
+                # no bar: a price has no honest 0-100 scale to draw against, and a
+                # made-up ceiling is the vetoed fake-magnitude-bar idiom.
+                "pct": None,
+                "tip_en": ("Energy and materials are about a third of the Toronto market, "
+                           "so their prices move the index directly."),
+                "tip_zh": "能源与材料约占多伦多市场三分之一，其价格直接带动指数。",
+            })
+        # Copper vs gold: the level is a four-decimal ratio nobody quotes, so the row
+        # carries its 20-session MOVE — a number a reader can actually hold — from the
+        # pair-ratio snapshot the page already computes.
+        cg_f = fmap.get("copper_gold") or {}
+        cg_p = (vm.get("pair") or {}).get("copper_gold") or {}
+        cg_chg = cg_p.get("chg_20d_pct")
+        if cg_f.get("level") is not None or cg_chg is not None:
+            r_en, r_zh, tone = _CA_FACTOR_READ.get(cg_f.get("risk") or "neutral",
+                                                   _CA_FACTOR_READ["neutral"])
+            factors.append({
+                "label_en": "Copper vs gold", "label_zh": "铜金比",
+                "value": (f"{cg_chg:+.1f}%" if cg_chg is not None else None),
+                "read_en": r_en, "read_zh": r_zh, "tone": tone, "pct": None,
+                "tip_en": ("Copper priced against gold over the last 20 sessions — money "
+                           "moving toward copper says growth, toward gold says shelter."),
+                "tip_zh": ("近20个交易日铜相对黄金的比值变化——资金流向铜代表看好增长，"
+                           "流向黄金代表避险。"),
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg commodity rows skipped (%s)", e)
+    try:
+        br = vm.get("breadth") or {}
+        pct = br.get("pct_above_200")
+        if pct is not None:
+            pct = float(pct)
+            # Words are the page's own participation card (canada.html.j2 breadth card):
+            # broad confirms the move, thin means rallies are fragile.
+            w = _rd_word(pct, [(60, "broad", "普遍", "up"),
+                               (40, "mixed", "参半", "warn"),
+                               (0, "thin", "偏窄", "down")]) or ("—", "—", "muted")
+            factors.append({
+                "label_en": "Participation", "label_zh": "参与度",
+                "value": f"{pct:.0f}%", "read_en": w[0], "read_zh": w[1], "tone": w[2],
+                # an honest 0-100 scale — this one earns its bar
+                "pct": int(round(pct)),
+                "tip_en": ("Share of Toronto names trading above their own 200-day average. "
+                           "Broad participation confirms a move; a thin one makes rallies "
+                           "fragile. The risk ladder above scores how unusual this reading "
+                           "is against this market's own history, so the two can differ."),
+                "tip_zh": ("多伦多市场中股价高于自身200日均线的个股占比。参与广泛可确认行情；"
+                           "参与面窄则反弹脆弱。上方风险梯度衡量的是该读数相对本市场历史的异常程度，"
+                           "两者可能不同。"),
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg breadth row skipped (%s)", e)
+    if factors:
+        ctx["factors"] = factors
+    # The commodity complex in one plain line — the masterplan's tailwind / headwind pin,
+    # off the overlay's own terms_of_trade tag (no new arithmetic).
+    try:
+        tot = ov.get("terms_of_trade")
+        if tot == "improving":
+            ctx["factors_note_en"] = ("Taken together the commodity complex is a tailwind for "
+                                      "Canada right now.")
+            ctx["factors_note_zh"] = "整体来看，大宗商品目前对加拿大构成顺风。"
+        elif tot == "deteriorating":
+            ctx["factors_note_en"] = ("Taken together the commodity complex is a headwind for "
+                                      "Canada right now.")
+            ctx["factors_note_zh"] = "整体来看，大宗商品目前对加拿大构成逆风。"
+        elif tot == "mixed":
+            ctx["factors_note_en"] = ("The commodity complex is pulling both ways — no clear "
+                                      "push either direction.")
+            ctx["factors_note_zh"] = "大宗商品多空交织——暂无明确方向性推动。"
+    except Exception:  # noqa: BLE001
+        pass
+
+    # ── Leaders: no Canadian leaders ledger exists yet — say so, plainly ──────────
+    # `rows` is deliberately omitted (not empty-listed): the macro falls through to the
+    # absence line, which is the honest form. When a CA leaders ledger ships, add rows
+    # here and the absence disappears on its own.
+    ctx["leaders"] = {
+        "absent_en": "Leader coverage building — breadth carries the read for now.",
+        "absent_zh": "龙头数据积累中——当前以广度为主要读数。",
+    }
+
+    # ── FX context (attached to the radar by lib/forex_link above) ────────────────
+    # Canada-scoped projection: attach_fx_context also carries the offshore-yuan basis,
+    # which is China's read and has no business on a Canadian page — passing the raw
+    # payload would print a "Yuan pressure" row here. Only the dollar's own direction
+    # (and its staleness stamp) crosses over.
+    try:
+        _fx = rd.get("fx_context") or {}
+        if _fx.get("usd_dir"):
+            ctx["fx"] = {"usd_dir": _fx.get("usd_dir"), "as_of": _fx.get("as_of"),
+                         "stale": _fx.get("stale"), "built_date": _fx.get("built_date")}
+    except Exception:  # noqa: BLE001
+        pass
+
+    return ctx
+
+
 def main() -> int:
     try:
         from engine.canada_run import run
@@ -1013,6 +1344,27 @@ def main() -> int:
                         vm["market_state"]["radar"]["contagion"] = _blk
             except Exception:  # noqa: BLE001 — additive, never fatal
                 pass
+            # MSX-1 FX context attach — post-transform, mirrors the CGL block above and
+            # build_china.py / build_hk.py verbatim. NEW on this page (W2 of
+            # research/RISK_RADAR_COUNTRY_PORT_MASTERPLAN.md): the Canada board never
+            # read data/forex/latest.json, so the Risk Radar dialog had no dollar read
+            # even though the dollar is one of the radar's own firing legs.
+            # attach_fx_context is pair-agnostic — it lifts the dollar's own direction
+            # out of the transmission block, so no new config key is needed for CAD.
+            # Absent forex data → no attach (never blocks the build); stale=True when
+            # the forex asof predates the page's as_of.
+            try:
+                if vm.get("market_state") and isinstance(
+                    (vm["market_state"] or {}).get("radar"), dict
+                ):
+                    from lib import forex_link as _fxl  # noqa: PLC0415
+                    _fxl.attach_fx_context(
+                        vm["market_state"]["radar"],
+                        page_asof=str(latest.get("date", "") or ""),
+                    )
+                    _ca_scope_fx_context(vm["market_state"]["radar"])
+            except Exception:  # noqa: BLE001 — additive, never fatal
+                pass
         except Exception as e:  # noqa: BLE001 — additive panel, never fatal
             log.error("canada market_state failed (%s); skipping", e)
             vm["market_state"] = None
@@ -1115,6 +1467,16 @@ def main() -> int:
         vm["ca_aibrief_href"] = next(
             (n for n in ("canada_aibrief.html", "aibrief_canada.html")
              if (site / n).exists()), None)
+
+        # ── Risk Radar dialog ctx (templates/_risk_radar_dlg.html.j2) ────────
+        # Assembled LAST: it reads market_state, the benchmark card, the overlay,
+        # pair ratios and breadth, so every one of them must already be on the vm.
+        # Display-only; absent-safe section by section.
+        try:
+            vm["radar_dlg"] = _radar_dlg_vm(vm, latest)
+        except Exception as _rdlg_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("canada radar_dlg ctx failed (%s); dialog renders core only", _rdlg_e)
+            vm["radar_dlg"] = {}
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)

@@ -52,14 +52,31 @@ def test_every_rule_has_meta_and_conviction():
 
 
 def test_every_anchor_resolves_to_a_panel():
-    """Each non-empty alert anchor must exist as an id= in templates/hk.html.j2 so the
-    'View panel ↓' jump never scrolls to a dead anchor (caught the data-health orphan)."""
+    """Each non-empty alert anchor must exist as an id= on the RENDERED hk page so the
+    'View panel ↓' jump never scrolls to a dead anchor (caught the data-health orphan).
+
+    Scope widened 2026-08-11 (W2 of research/RISK_RADAR_COUNTRY_PORT_MASTERPLAN.md):
+    `#hkx-dlg-risk` is now emitted by the shared country Risk Radar dialog
+    (_risk_radar_dlg.html.j2), whose shell id is DERIVED from the market key
+    (`id="{{ _did }}"`) — so no grep of the sources can see it, however many imports it
+    follows. The macro is rendered here instead and its output joins the haystack, which
+    makes the guard stronger than before: rename the derivation and this reds.
+    """
+    from jinja2 import Environment, FileSystemLoader
+
     from lib import config
-    tpl = (config.ROOT / "templates" / "hk.html.j2").read_text()
+    tdir = config.ROOT / "templates"
+    haystack = [(tdir / "hk.html.j2").read_text()]
+    env = Environment(loader=FileSystemLoader(str(tdir)), autoescape=False)
+    haystack.append(env.from_string(
+        '{% import "_risk_radar_dlg.html.j2" as rrd %}{{ rrd.risk_radar_dlg("hk") }}'
+    ).render())
+    blob = "\n".join(haystack)
     for rule, meta in al.ALERT_META.items():
         anchor = meta.get("anchor")
         if anchor:
-            assert f'id="{anchor}"' in tpl, f"{rule} anchor #{anchor} has no panel in hk.html.j2"
+            assert f'id="{anchor}"' in blob, \
+                f"{rule} anchor #{anchor} has no panel in hk.html.j2 or its partials"
 
 
 def test_log_and_dedup_idempotent(tmp_path, monkeypatch):

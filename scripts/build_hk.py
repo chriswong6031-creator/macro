@@ -582,6 +582,13 @@ def _funding_vm(latest: dict) -> dict | None:
     # peg state from the global snapshot
     gv = latest.get("global_snapshot") or {}
     out["peg"] = gv.get("peg")
+    # HKMA publishes on its own schedule, so this frame routinely lags the page by
+    # several sessions. Stamp the date it actually ends on so a consumer can disclose
+    # it rather than pass an old rate off as today's (same index already read above).
+    try:
+        out["asof"] = str(h.index.max())[:10]
+    except Exception:  # noqa: BLE001
+        out["asof"] = None
     return out
 
 
@@ -817,6 +824,11 @@ def _hk_index_health() -> list[dict]:
             "dd": round(100 * (px / hi52 - 1), 1),
             "above50": bool(px >= ma50),
             "above200": (bool(px >= ma200) if ma200 == ma200 else None),
+            # signed DISTANCE from the 200-day average, not just the side of it. The
+            # shared Risk Radar dialog's Leading tile reads "N% above/below its 200-day
+            # average"; `above200` alone cannot say how stretched. Same px/ma200 already
+            # computed above — no extra series read. (Mirrors build_china.py.)
+            "dist200": (round(100 * (px / ma200 - 1), 1) if ma200 == ma200 and ma200 else None),
             "rsi": round(r) if r == r else None,
         })
     return out
@@ -893,6 +905,349 @@ def _hk_track_record_vm() -> dict | None:
         out["horizons"] = horizons
 
     return out
+
+
+# ── Risk Radar dialog view-model (templates/_risk_radar_dlg.html.j2) ─────────────────
+# DISPLAY ASSEMBLY ONLY. Every value below is READ from a store some other engine step
+# already computed — nothing here derives a statistic, scores anything, or gates
+# anything. Each payload sits in its own try/except so a store that is missing, stale
+# or malformed drops ONE section instead of the page (the macro renders every section
+# conditionally, so an omitted key is an honest absence, never an error).
+# The ctx schema is the shared CN/HK/CA contract — see the header of
+# templates/_risk_radar_dlg.html.j2 before changing a key name.
+# Assembly mirrors scripts/build_china.py `_radar_dlg_vm` (W1 of
+# research/RISK_RADAR_COUNTRY_PORT_MASTERPLAN.md); only the per-market payloads differ.
+
+# The linked-rate band, as the HK page already draws it (the peg bar in hk.html.j2 lays
+# a marker at (level - 7.75) / 0.10). Published HKMA convertibility levels, not a stat.
+_HK_PEG_WEAK, _HK_PEG_STRONG = 7.85, 7.75
+
+
+def _rd_word(value, bands):
+    """Pick the (en, zh, tone) triple whose threshold `value` clears. `bands` is an
+    ordered [(threshold, en, zh, tone), ...] high-to-low; the last entry is the floor."""
+    if value is None:
+        return None
+    for thr, en, zh, tone in bands:
+        if value >= thr:
+            return (en, zh, tone)
+    return None
+
+
+def _radar_dlg_vm(vm: dict, latest: dict) -> dict:
+    """Assemble the `radar_dlg` ctx the shared Risk Radar dialog consumes on hk.html.
+
+    Reads ONLY values already on the view-model / in already-built stores:
+      leading   index_health ^HSI row (dist200) + the radar's own dominant firing leg
+      overseas  market_state.radar.contagion      (data/contagion_links/latest.json)
+      track     market_state.radar.track          (site/riskdata/scorecard.json markets.hk)
+      calendar  vm['event_strip']                 (engine/hk_event_calendar.py)
+      chips     funding.peg (global_snapshot) + funding.hibor_on / hibor_on_chg20
+      factors   vhsi + internals.southbound + cbbc_map.bellwethers
+      leaders   vm['setups'].leaders + the hk_leadership cohort chip's plain state words
+      fx        market_state.radar.fx_context     (lib/forex_link)
+    """
+    ctx: dict = {}
+    rd = ((vm.get("market_state") or {}).get("radar")) or {}
+
+    # ── one as-of for the whole dialog ────────────────────────────────────────────
+    try:
+        ctx["asof"] = str(latest.get("date") or "")[:10] or None
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Plain-word profile caveat. NOT HK_PROFILE.caveat_en verbatim: that string is
+    # written for the engine's own audience ("US-coupling", "the external legs",
+    # "recent-era only") — internal vocabulary that Tier 1 bans (DESIGN_DOCTRINE Law 2).
+    # Same substance, said the way a reader can use it.
+    ctx["caveat_en"] = ("Hong Kong's pullbacks are mostly imported — US rates and the dollar, "
+                        "which the currency link passes straight through.")
+    ctx["caveat_zh"] = "香港的回撤多为外部输入——美债利率与美元，经联系汇率直接传导。"
+
+    # ── Leading tile: benchmark stretch vs its 200-day average + the loudest leg ──
+    try:
+        row = next((r for r in (vm.get("index_health") or [])
+                    if r.get("ticker") == "^HSI"), None)
+        dist = row.get("dist200") if row else None
+        leg = None
+        for s in (rd.get("scares") or []):
+            if s.get("label_en") == rd.get("label_en") and s.get("firing_legs"):
+                leg = (s["firing_legs"][0] or {}).get("leg")
+                break
+        # Under half a percent the tile would print "0% below its 200-day average" —
+        # a number that says nothing (DESIGN_DOCTRINE Law 3). Drop the figure and let
+        # the benchmark line carry the whole meaning instead; the macro renders
+        # bench_en/zh alone whenever stretch_pct is absent.
+        bench_en, bench_zh = "Hang Seng", "恒生指数"
+        if dist is not None and abs(dist) < 0.5:
+            bench_en = "Hang Seng is sitting right on its 200-day average"
+            bench_zh = "恒生指数正贴在200日均线上"
+            dist = None
+        if dist is not None or leg:
+            ctx["leading"] = {
+                "bench_en": bench_en, "bench_zh": bench_zh,
+                "stretch_pct": dist, "leg": leg,
+                "tip_en": ("Where the index sits against its own 200-day average. "
+                           "The further above, the more there is to give back."),
+                "tip_zh": "指数当前点位相对自身200日均线的位置。高出越多，可回吐的空间越大。",
+            }
+    except Exception as e:  # noqa: BLE001 — one tile, never the page
+        log.warning("radar_dlg leading tile skipped (%s)", e)
+
+    # ── Overseas tile: imported pressure (contagion links) ────────────────────────
+    try:
+        cg = rd.get("contagion") or {}
+        if cg.get("level"):
+            exp = []
+            for e in (cg.get("top_exporters") or [])[:3]:
+                dd = e.get("dd21")
+                if e.get("name_en") and dd is not None:
+                    exp.append((e["name_en"], e.get("name_zh") or e["name_en"], round(dd * 100)))
+            ctx["overseas"] = {
+                "level": cg.get("level"),
+                "line_en": cg.get("line_en"), "line_zh": cg.get("line_zh"),
+                "tip_en": ("How far the markets that trade with Hong Kong have fallen from "
+                           "their own recent highs: "
+                           + " · ".join(f"{n} {d}% off" for n, _z, d in exp)) if exp else None,
+                "tip_zh": ("与香港关联最深的市场距各自近期高点的回撤："
+                           + "；".join(f"{z} {d}%" for _n, z, d in exp)) if exp else None,
+            }
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg overseas tile skipped (%s)", e)
+
+    # ── Track-record tile: this market's own graded ledger, past year ─────────────
+    try:
+        al = (((rd.get("track") or {}).get("windows") or {}).get("y1") or {}).get("alerts") or {}
+        if al:
+            ctx["track"] = {"n": al.get("n") or 0, "tp": al.get("tp") or 0,
+                            "hit_rate": al.get("hit_rate")}
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg track tile skipped (%s)", e)
+
+    # ── Calendar tile: next high-impact releases. Display-only listing. ───────────
+    try:
+        rows = list(vm.get("event_strip") or []) or list(vm.get("calendar") or [])
+        cal = [{"date": r.get("date"), "name_en": r.get("name_en"),
+                "name_zh": r.get("name_zh"), "importance": r.get("importance")}
+               for r in rows[:3] if r.get("date") and r.get("name_en")]
+        if cal:
+            ctx["calendar"] = cal
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg calendar tile skipped (%s)", e)
+
+    # ── Context chips: the currency link + what borrowing costs are doing ─────────
+    chips = []
+    fund = vm.get("funding") or {}
+    try:
+        peg = (fund.get("peg") or {}) if isinstance(fund.get("peg"), dict) else {}
+        lvl = peg.get("level")
+        if lvl is not None:
+            lvl = float(lvl)
+            # Distance to the WEAK side of the band — the edge that matters for risk:
+            # that is where the HKMA buys HK dollars and drains the cash the market runs
+            # on. Arithmetic on the published band the page already draws, not a new stat.
+            gap = round(100 * (_HK_PEG_WEAK - lvl) / _HK_PEG_WEAK, 2)
+            # thresholds are the page's own (hk.html.j2 peg card: >7.83 warn, <7.77 strong)
+            if lvl > 7.83:
+                tone = "down"
+            elif lvl < 7.77:
+                tone = "muted"
+            else:
+                tone = "up"
+            # Inside a tenth of a percent the figure is noise — say where it IS rather
+            # than print "0.1% from the weak edge" for a rate already sitting on it.
+            if gap <= 0.1:
+                v_en, v_zh = f"{lvl:.4f} · at the weak edge", f"{lvl:.4f} · 已在弱方"
+            else:
+                v_en = f"{lvl:.4f} · {gap:.2f}% from the weak edge"
+                v_zh = f"{lvl:.4f} · 距弱方 {gap:.2f}%"
+            chips.append({
+                "label_en": "Peg distance", "label_zh": "联汇偏离",
+                "value_en": v_en, "value_zh": v_zh,
+                "tone": tone,
+                "tip_en": ("The HK dollar is held between 7.75 and 7.85 per US dollar. At the "
+                           "weak edge the central bank buys HK dollars back, which drains the "
+                           "cash the market runs on — so the closer to 7.85, the tighter money "
+                           "can get."),
+                "tip_zh": ("港元被限定在每美元 7.75 至 7.85 之间。触及弱方时金管局会买入港元，"
+                           "系统内资金随之减少——越接近 7.85，资金面越可能收紧。"),
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg peg chip skipped (%s)", e)
+    try:
+        on, chg = fund.get("hibor_on"), fund.get("hibor_on_chg20")
+        if on is not None:
+            # `hibor_on_chg20` is already computed in _funding_vm (20-session change in
+            # the overnight rate). Turning its sign into a word is display wording, not
+            # a new statistic — same treatment build_china.py gives USD/CNH's chg_pct.
+            if chg is None or abs(chg) < 0.10:
+                d_en, d_zh, tone = "steady", "持平", "muted"
+            elif chg > 0:
+                d_en, d_zh, tone = "rising", "上行", "down"
+            else:
+                d_en, d_zh, tone = "easing", "回落", "up"
+            # The HKMA frame publishes on its own schedule and routinely trails the page
+            # by several sessions. The date rides the hover (Tier 2 receipt) rather than
+            # adding a second as-of stamp to the dialog — one as-of is house law.
+            f_as = fund.get("asof")
+            p_as = str(latest.get("date") or "")[:10]
+            lag_en = f" Reading as of {f_as}." if (f_as and p_as and f_as < p_as) else ""
+            lag_zh = f"该读数截至 {f_as}。" if (f_as and p_as and f_as < p_as) else ""
+            chips.append({
+                "label_en": "Borrowing cost", "label_zh": "拆借成本",
+                "value_en": f"{on:.2f}%, {d_en}", "value_zh": f"{on:.2f}%，{d_zh}",
+                "tone": tone,
+                "tip_en": ("Overnight HIBOR — what banks charge each other for cash in Hong "
+                           "Kong" + (f", {chg:+.2f} points over the last month" if chg is not None
+                                     else "")
+                           + ". Dearer cash is a headwind for shares." + lag_en),
+                "tip_zh": ("隔夜 HIBOR——香港银行间的隔夜拆借利率"
+                           + (f"，近一个月变动 {chg:+.2f} 个百分点" if chg is not None else "")
+                           + "。资金成本上升对股市构成逆风。" + lag_zh),
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg hibor chip skipped (%s)", e)
+    if chips:
+        ctx["policy_chips"] = chips
+
+    # ── Country factor rows: how fearful, who is buying, how levered the tape is ──
+    factors = []
+    try:
+        vh = vm.get("vhsi") or {}
+        lvl, pct = vh.get("level"), vh.get("pctile")
+        if lvl is not None:
+            # Cut points are the PAGE'S OWN (hk.html.j2 Mood & Fear dial: ≥75 fear
+            # elevated, ≤25 greed elevated, else normal). Inventing a second set of
+            # thresholds for the same series would put two verdicts on one page.
+            # Low fear is not comfort on a risk surface — it is complacency, so the
+            # quiet end is amber, not green.
+            if pct is None:
+                w = ("—", "—", "muted")
+            elif pct >= 75:
+                w = ("fear elevated", "恐慌偏高", "down")
+            elif pct <= 25:
+                w = ("greed elevated", "贪婪偏高", "warn")
+            else:
+                w = ("normal", "正常", "muted")
+            factors.append({
+                "label_en": "Fear gauge", "label_zh": "恐慌指数",
+                "value": f"{lvl:.1f}", "read_en": w[0], "read_zh": w[1], "tone": w[2],
+                "pct": int(pct) if isinstance(pct, (int, float)) else None,
+                "tip_en": ("VHSI — what options traders are paying for protection on the Hang "
+                           "Seng. Higher means more demand for downside cover."),
+                "tip_zh": "VHSI——恒指期权隐含波动率。数值越高，说明市场为下跌保护付出的代价越大。",
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg vhsi row skipped (%s)", e)
+    try:
+        sb = (vm.get("internals") or {}).get("southbound") or {}
+        # _internals_vm already scales net / cum_20d from ¥ millions into 亿 — the unit
+        # the rest of this page prints. Do NOT divide again here.
+        cum, days = sb.get("cum_20d"), sb.get("pos_days_20")
+        if cum is not None:
+            if days is not None and days >= 12:
+                w = ("buying", "净买入", "up")
+            elif days is not None and days <= 7:
+                w = ("selling", "净卖出", "down")
+            else:
+                w = ("mixed", "进出参半", "muted")
+            factors.append({
+                "label_en": "Southbound flow", "label_zh": "南向资金",
+                "value": f"{'+' if cum >= 0 else '−'}¥{abs(cum):,.0f}亿",
+                "read_en": w[0], "read_zh": w[1], "tone": w[2],
+                "tip_en": ("Mainland money into Hong Kong over the last 20 sessions"
+                           + (f", net buyers on {days} of them" if days is not None else "")
+                           + ". Hong Kong's steadiest source of demand — a cushion, not a "
+                             "buy signal."),
+                "tip_zh": ("近20个交易日内地资金流入港股的净额"
+                           + (f"，其中 {days} 日为净买入" if days is not None else "")
+                           + "。这是港股最稳定的需求来源——是托底，而非买入信号。"),
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg southbound row skipped (%s)", e)
+    try:
+        cb = ((vm.get("cbbc_map") or {}).get("bellwethers") or [])
+        top = next((b for b in cb if b.get("ticker") == "^HSI"), (cb[0] if cb else None))
+        st = (top or {}).get("leverage_state")
+        ratio = (top or {}).get("bull_bear_ratio")
+        if st and st != "no_data" and ratio is not None:
+            # Read-words are the page's own (hk.html.j2 "Leverage bets" card); the froth
+            # band is the engine's own label suffix, not a threshold invented here.
+            if "froth" in st:
+                r_en, r_zh, tone = "crowded", "拥挤", "warn"
+            elif "bear" in st:
+                r_en, r_zh, tone = "lean bearish", "偏空", "muted"
+            elif "bull" in st:
+                r_en, r_zh, tone = "lean bullish", "偏多", "muted"
+            else:
+                r_en, r_zh, tone = "balanced", "均衡", "muted"
+            factors.append({
+                "label_en": "Leverage bets", "label_zh": "杠杆仓位",
+                # no bar: a bull:bear ratio has no honest 0-100 scale to draw against,
+                # and a made-up ceiling is the vetoed fake-magnitude-bar idiom.
+                "value": f"{ratio:.2f}×", "read_en": r_en, "read_zh": r_zh,
+                "tone": tone, "pct": None,
+                "tip_en": ("Bull versus bear leveraged certificates outstanding on the Hang "
+                           "Seng (CBBC). Above 1 means more bets on the way up. When one side "
+                           "gets crowded, a move that way unwinds faster."),
+                "tip_zh": ("恒指牛证与熊证未平仓量之比（牛熊证）。大于 1 表示看涨押注更多。"
+                           "一侧过度拥挤时，行情朝该方向运行会加速平仓。"),
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg cbbc row skipped (%s)", e)
+    if factors:
+        ctx["factors"] = factors
+    # The honest absence this market owes the reader: HK_PROFILE carries no breadth
+    # history (engine/risk_radar_intl.py: breadth_group=None), so "how broadly the market
+    # is falling" — the leg that does most of the work on the China and Canada reads —
+    # is simply not measurable here. Said in plain words, not as jargon.
+    ctx["factors_note_en"] = ("Hong Kong has no long record of how broadly the market falls, "
+                              "so this read leans on the outside drivers above rather than on "
+                              "local breadth.")
+    ctx["factors_note_zh"] = ("港股缺乏足够长的市场广度历史，因此本读数以上述外部驱动因素为主，"
+                              "而非本地广度。")
+
+    # ── Leaders: the board's own leader cohort + the mega-cap participation read ──
+    try:
+        su = vm.get("setups") or {}
+        rows = []
+        for i, s in enumerate(list(su.get("leaders") or [])[:6]):
+            if not isinstance(s, dict) or not s.get("ticker"):
+                continue
+            nm = str(s.get("name") or "").strip() or s["ticker"]
+            # Name only — no sector. `sector` is an English-only string on these rows,
+            # so appending one gives the ZH view "药明康德 · Healthcare & Pharma":
+            # untranslated English inside Chinese copy (DESIGN_DOCTRINE §5.5).
+            rows.append({
+                "ticker": s["ticker"], "name_en": nm, "name_zh": s.get("name_zh") or nm,
+                "value": f"#{i + 1}", "pct": None, "tone": "muted",
+            })
+        line_en = line_zh = None
+        try:
+            from engine.hk_board_rank import leadership_chip  # noqa: PLC0415
+            chip = leadership_chip(su.get("leadership"))
+            if chip:
+                # the chip's own glance-tier wording — the raw state slug never renders
+                line_en, line_zh = chip.get("state_en"), chip.get("state_zh")
+        except Exception:  # noqa: BLE001
+            pass
+        if rows or line_en:
+            ctx["leaders"] = {
+                "line_en": line_en, "line_zh": line_zh, "rows": rows,
+                "absent_en": "Coverage building — no names on the leader board today.",
+                "absent_zh": "数据积累中 — 今日龙头榜暂无名单。",
+            }
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg leaders skipped (%s)", e)
+
+    # ── FX context (already attached to the radar by lib/forex_link) ──────────────
+    try:
+        if rd.get("fx_context"):
+            ctx["fx"] = rd["fx_context"]
+    except Exception:  # noqa: BLE001
+        pass
+
+    return ctx
 
 
 def main() -> int:
@@ -1420,6 +1775,16 @@ def main() -> int:
         except Exception as _vd_e:  # noqa: BLE001 — additive, never fatal
             log.error("hk stocks: 1D velocity desk load failed (%s); skipping", _vd_e)
             vm["hk_1d_velocity_desk"] = None
+
+        # ── Risk Radar dialog ctx (templates/_risk_radar_dlg.html.j2) ────────
+        # Assembled LAST: it reads market_state, index_health, funding, internals,
+        # vhsi, cbbc_map, the calendar and the standout board, so every one of them
+        # must already be on the vm. Display-only; absent-safe section by section.
+        try:
+            vm["radar_dlg"] = _radar_dlg_vm(vm, latest)
+        except Exception as _rdlg_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("hk radar_dlg ctx failed (%s); dialog renders core only", _rdlg_e)
+            vm["radar_dlg"] = {}
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)

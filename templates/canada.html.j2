@@ -1,6 +1,7 @@
 {% import "_prophet_card.html.j2" as pv %}
 {% import "_decision_card.html.j2" as dc %}
 {% import "_lens.html.j2" as lens %}
+{% import "_risk_radar_dlg.html.j2" as rrd %}{# shared country Risk Radar dialog (CN/HK/CA) #}
 {% from "_icons.html.j2" import icon %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
@@ -1510,11 +1511,23 @@
   {% set _risk_state = (_rr.get('state') if _rr else 'calm') %}
   {% set _show_risk = _risk_state in ('caution', 'elevated', 'risk-off') %}
   {% if _show_risk %}
-  <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-risk')" style="border-color:color-mix(in srgb,var(--down) 35%,transparent)">
-    <div class="cax-ctitle">{{ t('Pullback Risk','回撤风险') }} <span class="cax-alert-pill" style="background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down)">{{ t('HIGH','高') }}</span></div>
+  {# SEVERITY comes from the radar's own state, not from a literal (fixed 2026-08-11, W2
+     of research/RISK_RADAR_COUNTRY_PORT_MASTERPLAN.md). This card is shown for THREE
+     states — caution, elevated and risk-off — and used to shout "HIGH" in red for all
+     three, so a caution read wore a risk-off face. Same three-tier ladder china.html.j2
+     already moved to: caution → amber CAUTION, elevated → ELEVATED, risk-off → HIGH.
+     Colour rides the zh-flipping --warn / --down tokens only (never a literal hex), so
+     the pullback family keeps flipping together under 红涨绿跌. #}
+  {% set _rr_sev_col  = 'var(--warn)' if _risk_state == 'caution' else 'var(--down)' %}
+  {% set _rr_sev_bg   = 'color-mix(in srgb,var(--warn) 16%,transparent)' if _risk_state == 'caution' else 'color-mix(in srgb,var(--down) 16%,transparent)' %}
+  {% set _rr_sev_bord = 'color-mix(in srgb,var(--warn) 35%,transparent)' if _risk_state == 'caution' else 'color-mix(in srgb,var(--down) 35%,transparent)' %}
+  {% set _rr_sev_en   = 'HIGH' if _risk_state == 'risk-off' else ('ELEVATED' if _risk_state == 'elevated' else 'CAUTION') %}
+  {% set _rr_sev_zh   = '高' if _risk_state == 'risk-off' else ('偏高' if _risk_state == 'elevated' else '谨慎') %}
+  <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-risk')" style="border-color:{{ _rr_sev_bord }}">
+    <div class="cax-ctitle">{{ t('Pullback Risk','回撤风险') }} <span class="cax-alert-pill" style="background:{{ _rr_sev_bg }};color:{{ _rr_sev_col }}">{{ t(_rr_sev_en, _rr_sev_zh) }}</span></div>
     {% if _rr_score is not none %}
-    <div class="cax-bignum" style="color:var(--down)">{{ _rr_score }}<span style="font-size:14px;color:var(--muted)"> /100</span></div>
-    <div class="cax-bigsub" style="color:var(--down)">{{ t(_rr.get('label_en') or '', _rr.get('label_zh') or '') }}</div>
+    <div class="cax-bignum" style="color:{{ _rr_sev_col }}">{{ _rr_score }}<span style="font-size:14px;color:var(--muted)"> /100</span></div>
+    <div class="cax-bigsub" style="color:{{ _rr_sev_col }}">{{ t(_rr.get('label_en') or '', _rr.get('label_zh') or '') }}</div>
     {% endif %}
     {% if _rr_p21 is not none %}<div class="cax-kv"><span class="k">{{ t('≥5% dip odds','≥5%回撤概率') }}</span><span class="v">{{ (_rr_p21*100)|round|int }}%</span></div>{% endif %}
     <div class="cax-foot">{{ t(_rr_do_en or 'High pullback risk — size down, watch alerts.', _rr_do_zh or '回撤风险高 — 缩仓，关注警报。') }}</div>
@@ -1762,36 +1775,22 @@
   </div>
 </div>
 
-<!-- Pullback Risk dialog -->
-<div class="cax-dlg" id="cax-dlg-risk">
-  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
-  <div class="cax-dlg-panel">
-    <div class="cax-dlg-head">
-      <span class="cax-dlg-title">{{ t('Pullback Risk Radar','回撤风险雷达') }}</span>
-      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
-    </div>
-    <div class="cax-dlg-body">
-      {% if _rr_score is not none %}
-      <div class="cax-eyebrow">{{ t('CA External Risk Monitor','加拿大外部风险监控') }}</div>
-      <div style="font-size:28px;font-weight:750;color:var(--act)">{{ _rr_score }}<span style="font-size:14px;color:var(--muted)">/100</span></div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">{{ t(_rr.get('label_en') or _rr_do_en, _rr.get('label_zh') or _rr_do_zh) }}</div>
-      {% for leg in (_rr.get('scares') or []) %}
-      <div class="cax-frow">
-        <span>{{ t(leg.get('label_en') or leg.get('scare',''), leg.get('label_zh') or leg.get('scare','')) }}</span>
-        <div class="cax-fbar"><i style="width:{{ leg.score|round|int }}%;background:var(--act)"></i></div>
-        <span class="cax-fscore cax-tt-dn">{{ leg.score|round|int }}</span>
-      </div>
-      {% endfor %}
-      {% if _rr_p21 is not none %}
-      <div style="margin-top:12px;font-size:12.5px">{{ t('~%d%% ≥5%% pullback probability within 21d'|format((_rr_p21*100)|round|int), '未来21日内≥5%%回撤概率约%d%%'|format((_rr_p21*100)|round|int)) }}</div>
-      {% endif %}
-      {% if _rr.get('caveat_en') %}<div class="cax-receipt">{{ t(_rr.caveat_en, _rr.get('caveat_zh') or _rr.caveat_en) }}</div>{% endif %}
-      {% else %}
-      <div style="font-size:12px;color:var(--muted)">{{ t('No radar data available.','暂无雷达数据。') }}</div>
-      {% endif %}
-    </div>
-  </div>
-</div>
+{# ── Pullback Risk dialog — SHARED partial (_risk_radar_dlg.html.j2), 2026-08-11.
+   Replaces the thin cax-only body (a bare score, a scare bar list and one odds line)
+   with the full US-style Risk Radar modal cloned from #dlg-risk: headline ladder ->
+   embedded .rrx card -> signal tiles (TSX vs 200-day, overseas pressure, our own track
+   record) -> risk ladder -> BoC + Canadian-dollar chips -> the commodity complex and
+   participation rows -> the honest leaders absence -> the dollar backdrop (fx_context,
+   newly wired in scripts/build_canada.py this pass) -> ONE merged as-of + footnote.
+   NO calendar tile: Canada has no event-calendar engine, so the payload is omitted and
+   the tile does not render (masterplan §3).
+   The macro emits the whole .cax-dlg shell keyed 'cax-dlg-risk', so BOTH entry points
+   (the hero "Full risk detail" popover link and the Pullback Risk rack card) and the
+   page's own caxCloseDlg / Escape / backdrop-click keep working unchanged. ctx is
+   assembled in scripts/build_canada.py as vm['radar_dlg'] from EXISTING stores only;
+   each section is absent-safe, so a store that failed to read renders nothing rather
+   than an empty titled block. #}
+{{ rrd.risk_radar_dlg('ca', _rr, (_rr.get('scares') if _rr else none), (radar_dlg if radar_dlg is defined else none)) }}
 
 <!-- What To Do / Playbook dialog -->
 <div class="cax-dlg" id="cax-dlg-playbook">

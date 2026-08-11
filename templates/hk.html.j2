@@ -1,6 +1,7 @@
 {% import "_prophet_card.html.j2" as pv %}
 {% import "_decision_card.html.j2" as dc %}
 {% import "_lens.html.j2" as lens %}
+{% import "_risk_radar_dlg.html.j2" as rrd %}{# shared country Risk Radar dialog (CN/HK/CA) #}
 {% from "_icons.html.j2" import icon %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
@@ -2692,62 +2693,20 @@
     </div>
   </div>
 
-  {# dlg-risk: Pullback Risk #}
-  <div class="hkx-dlg" id="hkx-dlg-risk">
-    <div class="hkx-dlg-backdrop" onclick="hkxCloseDlg()"></div>
-    <div class="hkx-dlg-panel">
-      <div class="hkx-dlg-head"><span class="hkx-dlg-title">{{ t('Chance of a Pullback — what\'s inside','回撤概率 — 详细内容') }}</span><button class="hkx-dlg-close" onclick="hkxCloseDlg()">×</button></div>
-      <div class="hkx-dlg-body">
-        <div class="hkx-plain">{{ t('How likely a sharp drop is over the next few weeks, and why. It reads what has already turned — it doesn\'t predict.','未来几周出现急跌的可能性及原因。读取已经转向的内容 — 不是预测。') }}</div>
-        {% if ms is defined and ms and ms.radar is defined and ms.radar %}
-        {% set _rad = ms.radar %}
-        <div class="hkx-eyebrow">{{ t('Top scare factors','主要担忧因素') }}</div>
-        {% if _rad.scares is defined %}
-        {% for s in _rad.scares %}
-        <div class="hkx-frow">
-          <span>{{ t(s.label_en, s.label_zh) }}</span>
-          <span><div class="hkx-fbar"><i style="width:{{ s.score }}%;background:var(--down)"></i></div></span>
-          <span class="hkx-fscore" style="color:var(--down)">{{ s.band if s.band is defined else '' }}</span>
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% if _rad.dd21 is defined and _rad.dd21 %}
-        <div class="hkx-sep"></div>
-        <div class="hkx-kv"><span class="hkx-k">{{ t('21-day drawdown chance (≥5%)','21日回撤概率（≥5%）') }}</span><span class="hkx-v" style="color:var(--down)">{{ (_rad.dd21 * 100)|round|int }}%</span></div>
-        {% if _rad.dd_lift is defined %}<div class="hkx-kv"><span class="hkx-k">{{ t('vs normal','对比正常') }}</span><span class="hkx-v">{{ '%.1fx'|format(_rad.dd_lift) }} {{ t('normal risk','正常风险') }}</span></div>{% endif %}
-        {% if _rad.do_en is defined %}<div class="hkx-kv"><span class="hkx-k">{{ t('Action','操作') }}</span><span class="hkx-v">{{ t(_rad.do_en, _rad.do_zh or _rad.do_en) }}</span></div>{% endif %}
-        {% endif %}
-        {% else %}
-        <p style="font-size:12px;color:var(--muted)">{{ t('Building…','积累中…') }}</p>
-        {% endif %}
-        {# FX context row-pair (MSX-1, Tier-2, adjacent to CGL pattern).
-           Guard: entire block absent when _rad.fx_context is not present.
-           Dual-span l-en/l-zh; no title= translated text; no <svg><text> spans. #}
-        {% if _rad is defined and _rad and _rad.fx_context is defined and _rad.fx_context %}
-        {% set _fxc = _rad.fx_context %}
-        <div class="hkx-sep"></div>
-        {%- set _cnh_st = _fxc.cnh_basis_state if _fxc.cnh_basis_state is defined else none -%}
-        {%- set _cnh_en = 'Offshore yuan: outflow pressure' if _cnh_st == 'outflow_stress' else ('Offshore yuan: inflow bid' if _cnh_st == 'inflow' else 'Offshore yuan: no unusual pressure') -%}
-        {%- set _cnh_zh = '离岸人民币：资金外流压力' if _cnh_st == 'outflow_stress' else ('离岸人民币：资金流入' if _cnh_st == 'inflow' else '离岸人民币：无异常压力') -%}
-        {%- set _usd = _fxc.usd_dir if _fxc.usd_dir is defined else none -%}
-        {%- set _usd_en = 'Dollar rising — headwind for EM' if _usd == 'strengthening' else ('Dollar falling — tailwind for EM' if _usd == 'weakening' else 'Dollar: mixed') -%}
-        {%- set _usd_zh = '美元走强 — 新兴市场逆风' if _usd == 'strengthening' else ('美元走弱 — 新兴市场顺风' if _usd == 'weakening' else '美元：方向混乱') -%}
-        <div class="hkx-kv"><span class="hkx-k">{{ t('Yuan pressure','人民币压力') }}</span>
-          <span class="hkx-v"><span class="l-en">{{ _cnh_en }}</span><span class="l-zh">{{ _cnh_zh }}</span>
-          {%- if _fxc.cnh_basis_bps is defined and _fxc.cnh_basis_bps is not none %} <span class="hkx-nchip">{{ '%.0f'|format(_fxc.cnh_basis_bps) }}bp</span>{%- endif -%}
-          </span>
-        </div>
-        <div class="hkx-kv"><span class="hkx-k">{{ t('Dollar direction','美元方向') }}</span>
-          <span class="hkx-v"><span class="l-en">{{ _usd_en }}</span><span class="l-zh">{{ _usd_zh }}</span></span>
-        </div>
-        {%- if _fxc.stale is defined and _fxc.stale and _fxc.built_date is defined and _fxc.built_date %}
-        <div style="font-size:9.5px;color:var(--muted)"><span class="l-en">FX data as of {{ _fxc.built_date }}</span><span class="l-zh">外汇数据截至 {{ _fxc.built_date }}</span></div>
-        {%- endif %}
-        {% endif %}
-        <div class="hkx-receipt">{{ t('Display-only risk gauge. HK\'s swings come mostly from outside — global moves, not local problems.','仅供展示的风险计。香港波动主要来自外部 — 全球走势，而非本地问题。') }}</div>
-      </div>
-    </div>
-  </div>
+  {# ── dlg-risk: Pullback Risk — SHARED partial (_risk_radar_dlg.html.j2), 2026-08-11.
+     Replaces the thin hkx-only body (scare bar list + odds KVs + hand-rolled FX rows)
+     with the full US-style Risk Radar modal cloned from #dlg-risk: headline ladder ->
+     embedded .rrx card -> signal tiles (Hang Seng vs 200-day, overseas pressure, our own
+     track record, the release diary) -> risk ladder -> peg + borrowing-cost chips ->
+     HK factor rows (fear gauge, southbound, leverage bets) + the plain-word breadth
+     absence -> leader cohort -> FX -> ONE merged as-of + footnote.
+     The macro emits the whole .hkx-dlg shell keyed 'hkx-dlg-risk', so BOTH entry points
+     (the hero risk popover's "See the full risk read" link and the can_force-gated rack
+     card) and the page's own hkxCloseDlg / Escape / backdrop-click keep working
+     unchanged. ctx is assembled in scripts/build_hk.py as vm['radar_dlg'] from EXISTING
+     stores only; each section is absent-safe, so a store that failed to read renders
+     nothing rather than an empty titled block. #}
+{{ rrd.risk_radar_dlg('hk', (ms.radar if (ms is defined and ms) else none), ((ms.radar.scares if (ms.radar is defined and ms.radar) else none) if (ms is defined and ms) else none), (radar_dlg if radar_dlg is defined else none)) }}
 
   {# dlg-markets: Markets & Heatmap #}
   <div class="hkx-dlg" id="hkx-dlg-markets">
