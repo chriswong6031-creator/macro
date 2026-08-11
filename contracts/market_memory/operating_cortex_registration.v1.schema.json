@@ -96,7 +96,7 @@
         "withholding_precedence": {
           "const": [
             "evidence_reference_missing", "evidence_reference_mismatch",
-            "required_evidence_kind_missing", "citation_not_closed",
+            "required_evidence_kind_missing",
             "semantic_entailment_not_evaluated"
           ]
         }

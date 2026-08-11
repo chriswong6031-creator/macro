@@ -1318,8 +1318,10 @@ trade rank.
 Contradictions are structural support-versus-challenge groups on an exact
 subject and claim key. Missingness means absent from the supplied synthetic
 evidence, not absent from the world. Falsifiers are audited but never invented.
-Claims without complete compatible citation closure are withheld with a
-deterministic reason, while structurally closed claims remain explicitly
+Malformed or hash-mismatched source/span citation closure aborts packet
+construction. Claims with no evidence references, structurally incompatible
+references, or a missing preregistered evidence kind are withheld with a
+deterministic reason; structurally closed claims remain explicitly
 semantic-entailment-not-evaluated. The unsupported-claim scorecard is structural
 only, and attention quality is permanently `not_evaluated` because no
 preregistered attention outcomes exist.

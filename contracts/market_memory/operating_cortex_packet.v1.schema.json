@@ -207,7 +207,7 @@
     "withholdingReason": {
       "enum": [
         "evidence_reference_missing", "evidence_reference_mismatch",
-        "required_evidence_kind_missing", "citation_not_closed",
+        "required_evidence_kind_missing",
         "semantic_entailment_not_evaluated"
       ]
     },
@@ -247,7 +247,7 @@
               "withholding_reason": {
                 "enum": [
                   "evidence_reference_missing", "evidence_reference_mismatch",
-                  "required_evidence_kind_missing", "citation_not_closed"
+                  "required_evidence_kind_missing"
                 ]
               },
               "citation_ids": {"maxItems": 0}
@@ -257,16 +257,15 @@
       ]
     },
     "countsByReason": {
-      "type": "object", "additionalProperties": false, "minProperties": 4, "maxProperties": 4,
+      "type": "object", "additionalProperties": false, "minProperties": 3, "maxProperties": 3,
       "required": [
         "evidence_reference_missing", "evidence_reference_mismatch",
-        "required_evidence_kind_missing", "citation_not_closed"
+        "required_evidence_kind_missing"
       ],
       "properties": {
         "evidence_reference_missing": {"type": "integer", "minimum": 0, "maximum": 128},
         "evidence_reference_mismatch": {"type": "integer", "minimum": 0, "maximum": 128},
-        "required_evidence_kind_missing": {"type": "integer", "minimum": 0, "maximum": 128},
-        "citation_not_closed": {"type": "integer", "minimum": 0, "maximum": 128}
+        "required_evidence_kind_missing": {"type": "integer", "minimum": 0, "maximum": 128}
       }
     },
     "unsupportedClaimScorecard": {

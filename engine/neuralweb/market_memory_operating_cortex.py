@@ -140,20 +140,41 @@ _FORBIDDEN_WORDS = frozenset(
     {
         "action",
         "actions",
+        "add",
+        "added",
+        "adding",
+        "adds",
         "authority",
         "authoritative",
         "bearish",
+        "bearishness",
         "bullish",
+        "bullishness",
         "buy",
         "buying",
         "buys",
+        "close",
+        "closed",
+        "closes",
+        "closing",
         "direction",
         "directions",
         "escalate",
+        "escalated",
+        "escalates",
+        "escalating",
         "execute",
         "executed",
+        "executes",
+        "executing",
         "execution",
+        "exit",
+        "exited",
+        "exiting",
+        "exits",
         "forecast",
+        "forecasted",
+        "forecasting",
         "forecasts",
         "gate",
         "gated",
@@ -164,10 +185,15 @@ _FORBIDDEN_WORDS = frozenset(
         "label",
         "labels",
         "long",
+        "longed",
+        "longing",
+        "longs",
         "loss",
         "losses",
         "originate",
         "originated",
+        "originates",
+        "originating",
         "origination",
         "outcome",
         "outcomes",
@@ -181,25 +207,42 @@ _FORBIDDEN_WORDS = frozenset(
         "profits",
         "promote",
         "promoted",
+        "promotes",
+        "promoting",
         "promotion",
         "prophet",
         "rank",
         "ranked",
         "ranking",
+        "ranks",
         "recommendation",
         "recommendations",
         "recommend",
         "recommended",
+        "recommending",
+        "recommends",
         "return",
+        "returned",
+        "returning",
         "returns",
+        "select",
+        "selected",
+        "selecting",
+        "selects",
         "sell",
         "selling",
         "sells",
         "short",
+        "shorted",
+        "shorting",
+        "shorts",
         "size",
         "sized",
         "sizing",
+        "sizes",
         "target",
+        "targeted",
+        "targeting",
         "targets",
         "trade",
         "traded",
@@ -208,6 +251,21 @@ _FORBIDDEN_WORDS = frozenset(
         "train",
         "trained",
         "training",
+        "trains",
+        "trim",
+        "trimmed",
+        "trimming",
+        "trims",
+        "underweight",
+        "veto",
+        "vetoed",
+        "vetoes",
+        "vetoing",
+        "write",
+        "writes",
+        "writing",
+        "wrote",
+        "overweight",
     }
 )
 _FORBIDDEN_COMPACT = frozenset(
@@ -470,11 +528,20 @@ def _match(value: object, pattern: re.Pattern[str], *, field: str) -> str:
     return value
 
 
-def _semantic_forms(text: str) -> tuple[set[str], str]:
+def _semantic_forms(text: str) -> tuple[set[str], str, set[str]]:
     normalized = unicodedata.normalize("NFKC", text)
     camel_split = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", normalized)
-    words = re.findall(r"[a-z0-9]+", camel_split.casefold())
-    return set(words), "".join(words)
+    ordered_words = re.findall(r"[a-z0-9]+", camel_split.casefold())
+    words = set(ordered_words)
+    compact = "".join(ordered_words)
+    contiguous_forms: set[str] = set()
+    for start in range(len(ordered_words)):
+        joined = ""
+        for end in range(start, len(ordered_words)):
+            joined += ordered_words[end]
+            contiguous_forms.add(joined)
+            contiguous_forms.add(re.sub(r"(?:v)?[0-9]+\Z", "", joined))
+    return words, compact, contiguous_forms
 
 
 def _compound_forms(words: set[str]) -> set[str]:
@@ -486,16 +553,27 @@ def _compound_forms(words: set[str]) -> set[str]:
 
 
 def _opaque(value: object, *, field: str) -> str:
-    if type(value) is str:
-        words, compact = _semantic_forms(value)
-        if (
-            words & _FORBIDDEN_WORDS
-            or any(token in compact for token in _FORBIDDEN_COMPACT)
-            or _compound_forms(words) & _FORBIDDEN_COMPOUNDS
-        ):
-            _fail(f"{field} contains a forbidden action or authority token")
-    text = _match(value, _OPAQUE, field=field)
-    return text
+    if type(value) is not str:
+        _fail(f"{field} is not canonical")
+    try:
+        raw = value.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        raise MarketMemoryOperatingCortexContractError(
+            f"{field} is not canonical"
+        ) from exc
+    if len(raw) > 256:
+        _fail(f"{field} exceeds its UTF-8 byte bound")
+    words, compact, contiguous_forms = _semantic_forms(value)
+    if (
+        words & _FORBIDDEN_WORDS
+        or contiguous_forms & _FORBIDDEN_WORDS
+        or any(token in compact for token in _FORBIDDEN_COMPACT)
+        or contiguous_forms & _FORBIDDEN_COMPACT
+        or contiguous_forms & _FORBIDDEN_COMPOUNDS
+        or _compound_forms(words) & _FORBIDDEN_COMPOUNDS
+    ):
+        _fail(f"{field} contains a forbidden action or authority token")
+    return _match(value, _OPAQUE, field=field)
 
 
 def _dependency_opaque(value: object, *, field: str) -> str:
@@ -626,7 +704,6 @@ def _fixed_citation_policy() -> dict[str, Any]:
             "evidence_reference_missing",
             "evidence_reference_mismatch",
             "required_evidence_kind_missing",
-            "citation_not_closed",
             "semantic_entailment_not_evaluated",
         ],
     }
@@ -668,10 +745,11 @@ def build_operating_cortex_registration(
         minimum=1,
         maximum=_MAX_KINDS,
     )
+    safe_registration_key = _opaque(registration_key, field="registration_key")
     payload: dict[str, Any] = {
         "schema": OPERATING_CORTEX_REGISTRATION_SCHEMA,
         "operating_cortex_registration_id": "",
-        "registration_key": registration_key,
+        "registration_key": safe_registration_key,
         "registered_at": registered_at,
         "retrieval_registration_id": joined["retrieval_registration_id"],
         "trial_registration_id": joined["trial_registration_id"],
@@ -1407,7 +1485,6 @@ _STRUCTURAL_REASONS = (
     "evidence_reference_missing",
     "evidence_reference_mismatch",
     "required_evidence_kind_missing",
-    "citation_not_closed",
 )
 
 
@@ -1433,8 +1510,6 @@ def _citation_projection(
         present_kinds = {row["evidence_kind"] for row in referenced if row is not None}
         if reason is None and not set(required_kinds) <= present_kinds:
             reason = "required_evidence_kind_missing"
-        if reason is None and any(row.get("citation") is None for row in referenced):
-            reason = "citation_not_closed"
         structurally_included = reason is None
         rows.append(
             {

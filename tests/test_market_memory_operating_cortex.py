@@ -471,7 +471,6 @@ def test_frozen_top_level_and_row_matrices_are_exact_and_schema_valid() -> None:
             "evidence_reference_missing",
             "evidence_reference_mismatch",
             "required_evidence_kind_missing",
-            "citation_not_closed",
             "semantic_entailment_not_evaluated",
         ],
     }
@@ -888,7 +887,6 @@ def test_structural_unsupported_scorecard_and_attention_quality_are_exact() -> N
             "evidence_reference_missing": 1,
             "evidence_reference_mismatch": 1,
             "required_evidence_kind_missing": 1,
-            "citation_not_closed": 0,
         },
         "structural_unsupported_rate_q18": "0.600000000000000000",
     }
@@ -965,6 +963,19 @@ def test_zero_claims_has_null_rate_and_zero_evidence_refs_are_accepted() -> None
         "contextforecast",
         "nowexecute",
         "maybuyv2",
+        "buyv2",
+        "authorityv2",
+        "tradev2",
+        "a.ction",
+        "auth.ority",
+        "tr-ade",
+        "forecastingSignal",
+        "executingNow",
+        "promotingCandidate",
+        "recommends",
+        "ranks",
+        "sizes",
+        "trains",
         "ｂｕｙｉｎｇＳｉｇｎａｌ",
     ],
 )
@@ -984,6 +995,19 @@ def test_action_and_authority_morphology_is_rejected_from_caller_codes(
             producer_code_sha256="a" * 64,
             producer_config_sha256="b" * 64,
         )
+
+
+def test_every_forbidden_word_rejects_versions_and_intra_token_splits() -> None:
+    for word in sorted(cortex._FORBIDDEN_WORDS):
+        variants = [f"{word}v2"]
+        variants.extend(
+            f"{word[:index]}.{word[index:]}" for index in range(1, len(word))
+        )
+        for variant in variants:
+            with pytest.raises(
+                cortex.MarketMemoryOperatingCortexContractError, match="forbidden"
+            ):
+                cortex._opaque(variant, field="hostile")
 
 
 def test_morphology_applies_to_source_refs_kinds_claim_keys_and_falsifier_codes() -> (
@@ -1470,7 +1494,7 @@ def test_packet_and_registration_schema_reject_wrong_q18_extra_and_authority() -
         for row in packet["citation_projection"]
         if row["status"] == "included_structural_only"
     )
-    included["withholding_reason"] = "citation_not_closed"
+    included["withholding_reason"] = "evidence_reference_missing"
     with pytest.raises(ValidationError):
         _validate_schema("operating_cortex_packet.v1.schema.json", packet)
 
@@ -1599,6 +1623,20 @@ def test_resource_depth_node_string_evidence_claim_and_kind_bounds_fail_closed()
         cortex.MarketMemoryOperatingCortexContractError, match="256 bytes"
     ):
         cortex.validate_operating_cortex_registration_record(registration)
+
+    fixture = _fixture()
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="UTF-8 byte bound"
+    ):
+        cortex.build_operating_cortex_registration(
+            retrieval_registration=fixture["retrieval_registration"],
+            trial_registration=fixture["trial"],
+            registration_key="x" * 4096,
+            registered_at="2026-08-01T19:00:00.000000Z",
+            required_evidence_kinds=["macro_fact"],
+            producer_code_sha256="a" * 64,
+            producer_config_sha256="b" * 64,
+        )
 
     fixture = _fixture()
     fixture["build_kwargs"]["evidence_inputs"] = fixture["evidence_inputs"] * 11
