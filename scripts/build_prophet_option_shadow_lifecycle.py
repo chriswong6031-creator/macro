@@ -1723,8 +1723,10 @@ def advance_lifecycle(
             str(row["id"]): str(row["close_date"])
             for row in rows[int(old_ledger_cursor["row_count"]):]
         }
+        all_closed_ids = previously_closed_ids | set(current_closes)
 
         enrollments = deepcopy(state["enrollments"])
+        durable_enrollment_ids = set(enrollments)
         terminals = deepcopy(state["terminals"])
         latest_marks = deepcopy(state["latest_marks"])
         lifecycle_head = _validate_event_pointer(state["lifecycle_head"])
@@ -1759,7 +1761,7 @@ def advance_lifecycle(
                         latest_marks[plan_id]["contract_drift"] = True
                 close_date = current_closes.get(plan_id)
                 eligible = (
-                    plan_id not in previously_closed_ids
+                    (plan_id in enrollments or plan_id not in all_closed_ids)
                     and (
                         close_date is None
                         or str(observation["session_date"]) <= close_date
@@ -1802,7 +1804,7 @@ def advance_lifecycle(
 
         for ordinal, ledger_row in new_ledger_rows:
             plan_id = str(ledger_row["id"])
-            if plan_id not in enrollments or plan_id in terminals:
+            if plan_id not in durable_enrollment_ids or plan_id in terminals:
                 continue
             event = _terminal_event(
                 lifecycle_root=lifecycle_root,

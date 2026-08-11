@@ -49,6 +49,12 @@ already-closed rows abstain. The enrollment mark is labeled
 `first_fresh_post_trigger_trade_paired_mid`; `position_assumed=false` and
 `provider_observed_entry=false` are permanent.
 
+Ledger advancement is evaluated before mark eligibility. If a plan's canonical close
+is first observed in the same source delta as its first otherwise-eligible mark, that
+plan never enrolls; the processor will not infer that the mark preceded the close.
+Only enrollments already durable in the prior lifecycle state may consume a new close
+row and terminalize.
+
 ## Terminal receipt
 
 Only a new append-only `prophet.ledger/v1` row is canonical close authority. For an
@@ -134,6 +140,8 @@ Advancement must fail closed, without moving either cursor, when any of these oc
 - canonical ledger no longer extends the exact stored prefix;
 - canonical snapshot/receipt source, exact-main commit, path, digest, mode, or
   readback is invalid;
+- a same-advance close is allowed to create and immediately terminalize a hindsight
+  enrollment;
 - a new canonical row is malformed, duplicated, future-reversed, or already claims an
   option result;
 - runtime event-schema validation fails; or

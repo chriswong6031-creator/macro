@@ -2315,6 +2315,70 @@ def test_option_shadow_lifecycle_is_prospective_and_enrolls_once(
         assert node.stat().st_mode & 0o777 == expected
 
 
+def test_option_shadow_lifecycle_never_enrolls_a_plan_first_seen_closed_in_same_delta(
+    monkeypatch,
+    tmp_path,
+):
+    mark_root = tmp_path / "private-marks"
+    lifecycle_root = _lifecycle_private_dir(tmp_path / "private-lifecycle")
+    ledger_path = _lifecycle_ledger(tmp_path / "ledger.jsonl")
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:00:00+00:00",
+        session_date="2026-08-11",
+        phase="pre_trigger",
+    )
+    activated = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert activated["status"] == "activated"
+
+    # Adversarial ordering: the canonical close becomes visible before the plan's
+    # first fresh post-trigger mark, while both are new to the same advancement.
+    _lifecycle_append_close(ledger_path, close_date="2026-08-11")
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:05:00+00:00",
+        session_date="2026-08-11",
+        phase="triggered_pre_t1",
+        mid=3.0,
+    )
+    refused = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert refused["enrollment_count"] == 0
+    assert refused["terminal_count"] == 0
+    state = _lifecycle_state(lifecycle_root)
+    assert state["enrollments"] == {}
+    assert state["terminals"] == {}
+    assert [event["event_kind"] for event in _lifecycle_events(lifecycle_root)] == [
+        "activation_boundary"
+    ]
+
+    # Once the close is durable in the cursor, later fresh marks remain ineligible.
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:10:00+00:00",
+        session_date="2026-08-11",
+        phase="triggered_pre_t1",
+        mid=3.1,
+    )
+    still_refused = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert still_refused["enrollment_count"] == 0
+    assert _lifecycle_state(lifecycle_root)["enrollments"] == {}
+
+
 def test_option_shadow_terminal_uses_latest_same_session_mid_without_writing_ledger(
     monkeypatch,
     tmp_path,
