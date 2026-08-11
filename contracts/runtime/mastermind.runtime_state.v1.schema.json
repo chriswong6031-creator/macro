@@ -1,0 +1,461 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/runtime/mastermind.runtime_state.v1.schema.json",
+  "title": "Mastermind-X private runtime state",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "project_id",
+    "environment",
+    "visibility",
+    "checked_at",
+    "valid_until",
+    "collector_mode",
+    "topology_version",
+    "coverage",
+    "releases",
+    "services",
+    "scheduled_systems",
+    "data_planes",
+    "bridges",
+    "storage",
+    "providers",
+    "summary",
+    "issues"
+  ],
+  "properties": {
+    "schema": {"const": "mastermind.runtime_state.v1"},
+    "project_id": {"const": "mastermind-x"},
+    "environment": {"const": "production"},
+    "visibility": {"enum": ["private_authenticated", "admin_vps_only"]},
+    "checked_at": {"type": "string", "format": "date-time"},
+    "valid_until": {"type": "string", "format": "date-time"},
+    "collector_mode": {"enum": ["local", "vps", "admin", "fixture"]},
+    "topology_version": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "releases": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/release"}
+    },
+    "services": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/service"}
+    },
+    "scheduled_systems": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/scheduledSystem"}
+    },
+    "data_planes": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/dataPlane"}
+    },
+    "bridges": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/bridge"}
+    },
+    "storage": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/storage"}
+    },
+    "providers": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/provider"}
+    },
+    "summary": {"$ref": "#/$defs/summary"},
+    "issues": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/issue"}
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "maxLength": 120
+    },
+    "shortText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "nullableShortText": {
+      "oneOf": [
+        {"$ref": "#/$defs/shortText"},
+        {"type": "null"}
+      ]
+    },
+    "nullableSha": {
+      "oneOf": [
+        {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        {"type": "null"}
+      ]
+    },
+    "nullableDateTime": {
+      "oneOf": [
+        {"type": "string", "format": "date-time"},
+        {"type": "null"}
+      ]
+    },
+    "nullableTemporal": {
+      "oneOf": [
+        {"type": "string", "format": "date"},
+        {"type": "string", "format": "date-time"},
+        {"type": "null"}
+      ]
+    },
+    "runtimeState": {
+      "enum": [
+        "healthy",
+        "degraded",
+        "failed",
+        "stale",
+        "missing",
+        "indeterminate",
+        "not_due",
+        "ran_no_change",
+        "in_progress",
+        "disabled",
+        "operator_armed"
+      ]
+    },
+    "runOutcome": {
+      "enum": [
+        "succeeded",
+        "ran_no_change",
+        "failed",
+        "skipped",
+        "warning",
+        "in_progress",
+        "indeterminate"
+      ]
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "repo",
+        "expected_branch",
+        "deployed_sha",
+        "canonical_branch_sha",
+        "runtime_sha",
+        "state",
+        "deployment_lag",
+        "runtime_match",
+        "runtime_match_policy"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "repo": {"$ref": "#/$defs/id"},
+        "expected_branch": {"$ref": "#/$defs/shortText"},
+        "deployed_sha": {"$ref": "#/$defs/nullableSha"},
+        "canonical_branch_sha": {"$ref": "#/$defs/nullableSha"},
+        "runtime_sha": {"$ref": "#/$defs/nullableSha"},
+        "state": {"$ref": "#/$defs/runtimeState"},
+        "deployment_lag": {
+          "oneOf": [
+            {"type": "integer", "minimum": 0},
+            {"type": "null"}
+          ]
+        },
+        "runtime_match": {"type": ["boolean", "null"]},
+        "runtime_match_policy": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "maxLength": 64
+        },
+        "observed_at": {"$ref": "#/$defs/nullableDateTime"}
+      }
+    },
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "state", "substate", "restart_count", "last_start"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Za-z0-9@_.-]+\\.(?:service|timer)$", "maxLength": 160},
+        "state": {
+          "enum": [
+            "active",
+            "inactive",
+            "failed",
+            "activating",
+            "deactivating",
+            "reloading",
+            "maintenance",
+            "not_found",
+            "indeterminate",
+            "unknown"
+          ]
+        },
+        "substate": {"$ref": "#/$defs/nullableShortText"},
+        "restart_count": {
+          "oneOf": [
+            {"type": "integer", "minimum": 0},
+            {"type": "null"}
+          ]
+        },
+        "last_start": {"$ref": "#/$defs/nullableDateTime"}
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "repo", "owner", "kind", "host_class", "state", "units", "health_state"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "repo": {"$ref": "#/$defs/id"},
+        "owner": {"$ref": "#/$defs/id"},
+        "kind": {"enum": ["web_service", "api_service", "worker", "scheduler"]},
+        "host_class": {"enum": ["vps"]},
+        "state": {"$ref": "#/$defs/runtimeState"},
+        "units": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/unit"}
+        },
+        "health_state": {"$ref": "#/$defs/runtimeState"},
+        "observed_at": {"$ref": "#/$defs/nullableDateTime"}
+      }
+    },
+    "scheduledSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "repo",
+        "owner",
+        "kind",
+        "host_class",
+        "state",
+        "last_run",
+        "last_success",
+        "next_expected",
+        "run_outcome"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "repo": {"$ref": "#/$defs/id"},
+        "owner": {"$ref": "#/$defs/id"},
+        "kind": {"enum": ["systemd_timer", "scheduler_api", "artifact", "release_match", "cron"]},
+        "host_class": {"enum": ["vps", "github_actions"]},
+        "state": {"$ref": "#/$defs/runtimeState"},
+        "last_run": {"$ref": "#/$defs/nullableDateTime"},
+        "last_success": {"$ref": "#/$defs/nullableDateTime"},
+        "next_expected": {"$ref": "#/$defs/nullableDateTime"},
+        "run_outcome": {"$ref": "#/$defs/runOutcome"},
+        "observed_at": {"$ref": "#/$defs/nullableDateTime"}
+      }
+    },
+    "safeScalar": {
+      "oneOf": [
+        {"type": "string", "maxLength": 256},
+        {"type": "number"},
+        {"type": "boolean"},
+        {"type": "null"}
+      ]
+    },
+    "safeMetrics": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "consecutive_met",
+          "fallback_attempts",
+          "fallback_successes",
+          "fresh",
+          "fresh_partial",
+          "missing",
+          "not_locally_verifiable",
+          "primary_attempts",
+          "primary_successes",
+          "row_count",
+          "sessions_required",
+          "stale",
+          "total_lobes"
+        ]
+      },
+      "additionalProperties": {"type": ["number", "boolean", "null"]}
+    },
+    "dataPlane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "repo", "owner", "state", "as_of", "observed_at", "freshness_basis", "metrics"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "repo": {"$ref": "#/$defs/id"},
+        "owner": {"$ref": "#/$defs/id"},
+        "state": {"$ref": "#/$defs/runtimeState"},
+        "as_of": {"$ref": "#/$defs/nullableTemporal"},
+        "observed_at": {"$ref": "#/$defs/nullableDateTime"},
+        "freshness_basis": {"$ref": "#/$defs/nullableShortText"},
+        "metrics": {"$ref": "#/$defs/safeMetrics"}
+      }
+    },
+    "bridge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "producer_repo",
+        "consumer_repo",
+        "owner",
+        "authority",
+        "state",
+        "as_of",
+        "observed_at",
+        "freshness_basis"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "producer_repo": {"$ref": "#/$defs/id"},
+        "consumer_repo": {"$ref": "#/$defs/id"},
+        "owner": {"$ref": "#/$defs/id"},
+        "authority": {
+          "enum": [
+            "display_only",
+            "context_only",
+            "governed_context",
+            "operational",
+            "sanitized_observability",
+            "unresolved"
+          ]
+        },
+        "state": {"$ref": "#/$defs/runtimeState"},
+        "as_of": {"$ref": "#/$defs/nullableTemporal"},
+        "observed_at": {"$ref": "#/$defs/nullableDateTime"},
+        "freshness_basis": {"$ref": "#/$defs/nullableShortText"}
+      }
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "repo",
+        "owner",
+        "kind",
+        "state",
+        "as_of",
+        "observed_at",
+        "expected_schema",
+        "observed_schema"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "repo": {"$ref": "#/$defs/id"},
+        "owner": {"$ref": "#/$defs/id"},
+        "kind": {"enum": ["object_store", "database", "filesystem"]},
+        "state": {"$ref": "#/$defs/runtimeState"},
+        "as_of": {"$ref": "#/$defs/nullableTemporal"},
+        "observed_at": {"$ref": "#/$defs/nullableDateTime"},
+        "expected_schema": {"$ref": "#/$defs/nullableShortText"},
+        "observed_schema": {"$ref": "#/$defs/nullableShortText"}
+      }
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "repo",
+        "owner",
+        "state",
+        "observed_at",
+        "primary_state",
+        "fallback_state",
+        "metrics"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "repo": {"$ref": "#/$defs/id"},
+        "owner": {"$ref": "#/$defs/id"},
+        "state": {"$ref": "#/$defs/runtimeState"},
+        "observed_at": {"$ref": "#/$defs/nullableDateTime"},
+        "primary_state": {"$ref": "#/$defs/runtimeState"},
+        "fallback_state": {"$ref": "#/$defs/runtimeState"},
+        "metrics": {"$ref": "#/$defs/safeMetrics"}
+      }
+    },
+    "stateCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "healthy": {"type": "integer", "minimum": 0},
+        "degraded": {"type": "integer", "minimum": 0},
+        "failed": {"type": "integer", "minimum": 0},
+        "stale": {"type": "integer", "minimum": 0},
+        "missing": {"type": "integer", "minimum": 0},
+        "indeterminate": {"type": "integer", "minimum": 0},
+        "not_due": {"type": "integer", "minimum": 0},
+        "ran_no_change": {"type": "integer", "minimum": 0},
+        "in_progress": {"type": "integer", "minimum": 0},
+        "disabled": {"type": "integer", "minimum": 0},
+        "operator_armed": {"type": "integer", "minimum": 0}
+      }
+    },
+    "sectionCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["releases", "services", "scheduled_systems", "data_planes", "bridges", "storage", "providers"],
+      "properties": {
+        "releases": {"type": "integer", "minimum": 0},
+        "services": {"type": "integer", "minimum": 0},
+        "scheduled_systems": {"type": "integer", "minimum": 0},
+        "data_planes": {"type": "integer", "minimum": 0},
+        "bridges": {"type": "integer", "minimum": 0},
+        "storage": {"type": "integer", "minimum": 0},
+        "providers": {"type": "integer", "minimum": 0}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "expected_by_kind", "reported_by_kind", "missing_ids", "evidence_gap_ids", "unresolved_owner_ids"],
+      "properties": {
+        "state": {"enum": ["complete", "degraded"]},
+        "expected_by_kind": {"$ref": "#/$defs/sectionCounts"},
+        "reported_by_kind": {"$ref": "#/$defs/sectionCounts"},
+        "missing_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "evidence_gap_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "unresolved_owner_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["releases", "services", "scheduled_systems", "data_planes", "bridges", "storage", "providers"],
+      "properties": {
+        "releases": {"$ref": "#/$defs/stateCounts"},
+        "services": {"$ref": "#/$defs/stateCounts"},
+        "scheduled_systems": {"$ref": "#/$defs/stateCounts"},
+        "data_planes": {"$ref": "#/$defs/stateCounts"},
+        "bridges": {"$ref": "#/$defs/stateCounts"},
+        "storage": {"$ref": "#/$defs/stateCounts"},
+        "providers": {"$ref": "#/$defs/stateCounts"}
+      }
+    },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component_type", "component_id", "state", "owner"],
+      "properties": {
+        "component_type": {"enum": ["release", "service", "scheduled_system", "data_plane", "bridge", "storage", "provider", "releases", "services", "scheduled_systems", "data_planes", "bridges", "providers"]},
+        "component_id": {"$ref": "#/$defs/id"},
+        "state": {"$ref": "#/$defs/runtimeState"},
+        "owner": {"$ref": "#/$defs/id"}
+      }
+    }
+  }
+}
