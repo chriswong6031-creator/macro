@@ -32,6 +32,16 @@ _SCHEMA_DIRECTORIES = (
     Path("contracts/sector_intelligence"),
     Path("contracts/biocatalyst"),
 )
+# Shared owner schemas may be referenced by registered cross-plane contracts
+# without becoming sector-intelligence contract ids themselves.  The allowlist
+# is explicit: broad discovery of contracts/*.json would silently enlarge the
+# registry's trust boundary.
+_SUPPORT_SCHEMA_PATHS = (
+    (
+        Path("contracts/capital_structure_projection.schema.json"),
+        "https://mastermind-x.com/contracts/capital_structure_projection.schema.json",
+    ),
+)
 _DRAFT_2020_12_URIS = frozenset(
     (
         "https://json-schema.org/draft/2020-12/schema",
@@ -429,6 +439,93 @@ def _discover_records(repo_root: Path | str | None = None) -> dict[str, _SchemaR
         records[record.contract_id] = record
         uri_paths[record.schema_uri] = record.path
     return records
+
+
+def _discover_support_resources(
+    repo_root: Path | str | None = None,
+    *,
+    required_schema_uris: frozenset[str] = frozenset(),
+) -> dict[str, Mapping[str, Any]]:
+    """Load the explicit shared-schema allowlist for external ``$ref`` only."""
+
+    root = Path(repo_root) if repo_root is not None else _default_repo_root()
+    try:
+        root = root.resolve(strict=True)
+    except OSError as exc:
+        raise ContractRegistryError(f"repository root is unavailable: {root}") from exc
+    resources: dict[str, Mapping[str, Any]] = {}
+    for relative, expected_schema_uri in _SUPPORT_SCHEMA_PATHS:
+        if expected_schema_uri not in required_schema_uris:
+            continue
+        declared = root / relative
+        try:
+            path = declared.resolve(strict=True)
+        except OSError as exc:
+            raise ContractRegistryError(
+                f"required support schema is unavailable: {relative.as_posix()}"
+            ) from exc
+        if declared.is_symlink() or not path.is_file() or not _is_relative_to(path, root):
+            raise ContractRegistryError(
+                f"unsafe support schema path: {_display_path(declared, root)}"
+            )
+        shown = _display_path(path, root)
+        try:
+            raw = path.read_bytes()
+            schema = json.loads(raw.decode("utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise ContractRegistryError(
+                f"cannot load support schema {shown}: {exc}"
+            ) from exc
+        if not isinstance(schema, dict):
+            raise ContractRegistryError(
+                f"support schema {shown} must contain a JSON object"
+            )
+        if schema.get("$schema") not in _DRAFT_2020_12_URIS:
+            raise ContractRegistryError(
+                f"support schema {shown} must declare JSON Schema Draft 2020-12"
+            )
+        digest = hashlib.sha256(raw).digest()
+        if digest not in _CHECKED_SCHEMA_DIGESTS:
+            try:
+                Draft202012Validator.check_schema(schema)
+            except Exception as exc:
+                raise ContractRegistryError(
+                    f"invalid Draft 2020-12 support schema {shown}: {exc}"
+                ) from exc
+            _CHECKED_SCHEMA_DIGESTS.add(digest)
+        schema_uri = schema.get("$id")
+        if (
+            not isinstance(schema_uri, str)
+            or not _is_jsonschema_uri(schema_uri)
+            or not urlsplit(schema_uri).scheme
+        ):
+            raise ContractRegistryError(
+                f"support schema {shown} must declare an absolute URI in $id"
+            )
+        if schema_uri != expected_schema_uri:
+            raise ContractRegistryError(
+                f"support schema {shown} must declare $id {expected_schema_uri!r}"
+            )
+        if schema_uri in resources:
+            raise ContractRegistryError(f"duplicate support schema $id {schema_uri!r}")
+        resources[schema_uri] = schema
+    return resources
+
+
+def _external_schema_reference_uris(value: object) -> set[str]:
+    """Return absolute document URIs referenced anywhere in one schema."""
+
+    references: set[str] = set()
+    if isinstance(value, Mapping):
+        reference = value.get("$ref")
+        if isinstance(reference, str) and not reference.startswith("#"):
+            references.add(reference.split("#", 1)[0])
+        for child in value.values():
+            references.update(_external_schema_reference_uris(child))
+    elif isinstance(value, list):
+        for child in value:
+            references.update(_external_schema_reference_uris(child))
+    return references
 
 
 def discover_contract_schemas(
@@ -3903,10 +4000,41 @@ class ContractRegistry:
             Path(repo_root).resolve() if repo_root is not None else _default_repo_root().resolve()
         )
         self._records = _discover_records(self.repo_root)
+        owned_uris = {record.schema_uri for record in self._records.values()}
+        referenced_uris = set().union(
+            *(
+                _external_schema_reference_uris(record.schema)
+                for record in self._records.values()
+            )
+        )
+        support_allowlist = {
+            schema_uri for _, schema_uri in _SUPPORT_SCHEMA_PATHS
+        }
+        unsupported_references = sorted(
+            referenced_uris - owned_uris - support_allowlist
+        )
+        if unsupported_references:
+            raise ContractRegistryError(
+                "owned contract references unsupported external schema: "
+                f"{unsupported_references[0]!r}"
+            )
+        support_resources = _discover_support_resources(
+            self.repo_root,
+            required_schema_uris=frozenset(referenced_uris & support_allowlist),
+        )
+        overlap = sorted(owned_uris & set(support_resources))
+        if overlap:
+            raise ContractRegistryError(
+                f"support schema duplicates registered contract $id: {overlap[0]!r}"
+            )
         resources = [
             (record.schema_uri, Resource.from_contents(record.schema))
             for record in self._records.values()
         ]
+        resources.extend(
+            (schema_uri, Resource.from_contents(schema))
+            for schema_uri, schema in support_resources.items()
+        )
         self._reference_registry = Registry().with_resources(resources)
 
     @property

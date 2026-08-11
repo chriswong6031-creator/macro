@@ -66,6 +66,8 @@ import pandas as pd
 _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 
+from collectors.massive_stock_day import (  # noqa: E402
+    StaleLocalMirrorError, check_local_mirror_freshness)
 from engine import price_ladder, top_anatomy as ta  # noqa: E402
 from scripts.replay_standout_pipeline import split_adjust  # noqa: E402
 
@@ -546,7 +548,8 @@ def preserved_contamination(path: Path, live_reason: str | None = None) -> dict 
     return out
 
 
-def build_panel_w(data_root: Path, cache: Path, *, quick: int | None = None) -> dict:
+def build_panel_w(data_root: Path, cache: Path, *, quick: int | None = None,
+                  allow_stale: bool = False) -> dict:
     """Track W: split-repaired, identity-segmented wide OHLCV from `massive_stock_day`.
 
     The pre-filter is a strict SUPERSET of §3 eligibility — a name is dropped only
@@ -555,6 +558,16 @@ def build_panel_w(data_root: Path, cache: Path, *, quick: int | None = None) -> 
     than the 261 a single EXT day needs). Dropping on a per-day floor here would
     silently delete the population the study exists to measure.
     """
+    # The store is R2-canonical and a local copy is an unmaintained mirror: this
+    # track read a mirror frozen at 2026-07-02 for 5.5 weeks (audit 2026-08-10).
+    # BEFORE the cache short-circuit — a cache built from a frozen store is equally
+    # poisoned, and the cache hit is exactly the path that never touches the files.
+    try:
+        check_local_mirror_freshness(
+            data_root, entrypoint="scripts/research_top_anatomy_phase0.py",
+            allow_stale=allow_stale)
+    except StaleLocalMirrorError:
+        sys.exit(2)   # the banner names the lag and the fix; nothing to add
     cached = _load_cached(cache, residual_up_ratio_break=W_RESIDUAL_UP_RATIO_BREAK)
     if cached is not None:
         say(f"track W: panel cache hit at {cache} "
@@ -3430,14 +3443,29 @@ def _main_w2(a, *, quick: bool) -> int:
                        "(prereg §2), not an omission"),
         "reproduce": ("python -m scripts.research_top_anatomy_phase0 "
                       f"--data-root {a.data_root} --w2-arm {arm}"
-                      + (f" --quick {a.quick}" if quick else "")),
+                      + (f" --quick {a.quick}" if quick else "")
+                      + (" --allow-stale" if a.allow_stale else "")),
+        # The W2 tape is DELIBERATELY the phase-0 vintage (prereg §2: "the SAME
+        # vintage as phase-0 — tier definition is the only moved variable"; §7
+        # re-verified it at 2026-07-02 and accepted same-vintage comparability as a
+        # feature). #5319's local-mirror refusal fires at 20 trading sessions
+        # behind, which that vintage now is, so a W2 re-run needs --allow-stale —
+        # the guard's banner is the receipt that the staleness is chosen, not
+        # unnoticed. Refreshing the store instead would BREAK the prereg.
+        "vintage_is_prereg_declared": True,
+        "vintage_note": ("prereg §2 pins the phase-0 tape vintage; post-#5319 a "
+                         "re-run requires --allow-stale, and the printed banner is "
+                         "the receipt that the vintage is chosen rather than stale "
+                         "by accident"),
+        "allow_stale": bool(a.allow_stale),
         "engine_frozen": ("engine/top_anatomy.py is byte-frozen at main for this wave; "
                           "the arms are its existing extended_mask(variant=...) masks"),
         "tier": ("research/display tier, zero scored authority; AVOID-not-SHORT; "
                  "no rank, no size, no gate, no exit rule"),
         "wall_limit_seconds": W2_WALL_LIMIT_SECONDS,
     }
-    built = build_panel_w(a.data_root, cache, quick=a.quick)
+    built = build_panel_w(a.data_root, cache, quick=a.quick,
+                          allow_stale=a.allow_stale)
     n_files = _source_file_count(a.data_root, "W", a.quick)
     summary["arm_result"] = run_w2_arm(arm, built["panel"], built["meta"], a.data_root,
                                        seed=a.seed, quick=quick, n_files=n_files)
@@ -3459,6 +3487,12 @@ def main(argv=None) -> int:
     ap.add_argument("--w2-arm", choices=W2_ARMS, default=None,
                     help="run the W2 tier-widening arm instead of phase-0 "
                          f"({W2_PREREG}); track W only, writes its own summary")
+    ap.add_argument("--allow-stale", action="store_true",
+                    help="run track W against a local massive_stock_day mirror that is "
+                         "20+ trading sessions behind (refused by default; the banner "
+                         "still prints and the numbers are as of the mirror's date). "
+                         "REQUIRED by --w2-arm: W2 pins the phase-0 vintage on purpose "
+                         "(prereg §2), and that mirror is now past the refusal bar")
     ap.add_argument("--out-json", type=Path,
                     default=_REPO / "data/research/top_anatomy_p0_summary.json")
     ap.add_argument("--out-report", type=Path,
@@ -3483,7 +3517,8 @@ def main(argv=None) -> int:
         "reproduce": ("python -m scripts.research_top_anatomy_phase0 "
                       f"--data-root {a.data_root}"
                       + (f" --track {a.track}" if a.track != "both" else "")
-                      + (f" --quick {a.quick}" if quick else "")),
+                      + (f" --quick {a.quick}" if quick else "")
+                      + (" --allow-stale" if a.allow_stale else "")),
         "tier": ("research/display tier, zero scored authority; AVOID-not-SHORT; "
                  "no rank, no size, no gate, no exit rule"),
         "tracks": {},
@@ -3526,7 +3561,8 @@ def main(argv=None) -> int:
     for tk in tracks:
         cache = cache_root / (f"W_quick{a.quick}" if (tk == "W" and quick) else
                               f"D_quick{a.quick}" if (tk == "D" and quick) else tk)
-        built = (build_panel_w(a.data_root, cache, quick=a.quick) if tk == "W"
+        built = (build_panel_w(a.data_root, cache, quick=a.quick,
+                               allow_stale=a.allow_stale) if tk == "W"
                  else build_panel_d(a.data_root, cache, quick=a.quick))
         n_files = _source_file_count(a.data_root, tk, a.quick)
         summary["tracks"][tk] = run_track(tk, built["panel"], built["meta"],

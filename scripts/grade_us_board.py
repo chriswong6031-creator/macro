@@ -2491,6 +2491,7 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
     # ticker appeared on (freshest sector / rank / tier).
     board_days: dict[str, set[str]] = {}
     meta_by_tk: dict[str, dict] = {}
+    definition_by_admission: dict[tuple[str, str], str] = {}
     n_boards_predefinition = 0
     for b in boards:
         as_of_str = b.get("as_of", "")
@@ -2509,6 +2510,10 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
             day.add(tk)
             meta_by_tk[tk] = {"sector": r.get("sector"), "rank": r.get("position"),
                               "tier": r.get("align_tier")}
+            # The board definition belongs to the admission DATE, not to the
+            # ticker's latest appearance.  A name can span an era boundary or
+            # leave and re-enter under another selection instrument.
+            definition_by_admission[(as_of_str, tk)] = _norm_definition(b.get("rank_by"))
 
     bench_ser = None
     if etfs is not None and BENCH in getattr(etfs, "columns", []):
@@ -2538,6 +2543,8 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
             "st": "unscored", "m": False,
             "rk": m.get("rank"), "tr": m.get("tier"), "fl": [],
             "xr": "no price data",
+            "ed": None,
+            "bd": definition_by_admission.get((d0, tk)),
         }
 
     for ep in _ts.build_episodes(board_days):
@@ -2581,6 +2588,8 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
                 "e": None, "l": None, "p": None, "x": None, "dy": None,
                 "st": "onboard", "m": False,
                 "rk": m.get("rank"), "tr": m.get("tier"), "fl": [], "xr": None,
+                "ed": None,
+                "bd": definition_by_admission.get((d0, tk)),
             })
             continue
 
@@ -2609,6 +2618,8 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
             "rk": m.get("rank"), "tr": m.get("tier"),
             "fl": [],
             "xr": sc.get("exit_reason"),
+            "ed": sc.get("entry_date"),
+            "bd": definition_by_admission.get((d0, tk)),
         })
 
     summary = _ts.summarize(scored, metric="pnl", n_inflight=n_inflight,

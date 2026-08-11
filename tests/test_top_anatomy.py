@@ -1454,3 +1454,24 @@ def test_w2_harness_carries_no_directional_or_exit_language():
     for banned in ("validated", "sell signal", "go short", "short position",
                    "stop loss", "stop-loss", "take profit", "price target"):
         assert banned not in src, f"forbidden phrase in the harness: {banned!r}"
+
+
+def test_w2_forwards_the_stale_mirror_override_to_the_panel_build():
+    """#5319's refusal must reach the W2 path — and W2 must be able to override it.
+
+    The W2 tape is DELIBERATELY the phase-0 vintage (TOPA_W2_PREREG §2/§7), which
+    is now past the 20-trading-session refusal bar, so a `--w2-arm` run that did not
+    thread `--allow-stale` through would `sys.exit(2)` inside `build_panel_w` and the
+    wave could not be re-run at all. Threading it the other way — hardcoding
+    `allow_stale=True` — would delete the guard for this entrypoint. This pins the
+    CLI flag to the call, so neither failure mode can ship silently.
+    """
+    import inspect
+    src = inspect.getsource(rh._main_w2)
+    assert "allow_stale=a.allow_stale" in src, \
+        "the W2 path must forward the CLI flag, never hardcode the override"
+    assert "allow_stale=True" not in src, "W2 may not switch the guard off by fiat"
+    assert "allow_stale" in inspect.signature(rh.build_panel_w).parameters
+    # argparse must actually expose both W2 and the override on one parser.
+    ap_src = inspect.getsource(rh.main)
+    assert '"--w2-arm"' in ap_src and '"--allow-stale"' in ap_src

@@ -124,6 +124,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sys
 import time
 from datetime import date, timedelta
 from pathlib import Path
@@ -153,6 +154,35 @@ STATE_VERSION = 2
 # quality.massive_min_files and publish_r2._DATA_DIR_MIN_FILES — the same floor
 # fences the write side here and the upload side there.
 _MIN_STORE_FILES = 100
+
+# ── local-mirror staleness thresholds (LOCAL research reads only) ────────────
+# A local data/massive_stock_day tree is a MIRROR of the R2-canonical store and
+# NOTHING refreshes it in place: only the nightly collect lane restores from R2,
+# upserts the new sessions, and publishes the delta back.  The primary checkout's
+# copy froze at latest_date 2026-07-02 and TOPA phase-0 read that frozen tape for
+# 5.5 weeks without a word (audit 2026-08-10).  The CI-side tripwires
+# (scripts/audit_massive_store.py, audit_r2's strict manifest anchor) never see a
+# local read, so the local entrypoints need their own.
+#
+# WARN at a working week behind — a mirror that missed a nightly is ordinary; one
+# that missed five sessions is being neglected.  REFUSE at a month of sessions:
+# past that the tape is a different market, and every number printed against it is
+# a study of history sold as a study of now.
+LOCAL_STALE_WARN_SESSIONS = 5
+LOCAL_STALE_REFUSE_SESSIONS = 20
+
+# The one command that heals it.  Quoted verbatim in the banner: a warning the
+# reader cannot act on is a warning they learn to scroll past.
+LOCAL_MIRROR_FIX_CMD = "python -m scripts.fetch_r2 --dirs massive_stock_day --workers 24"
+
+# Banner dedupe, keyed on the RESOLVED store dir: one banner per process per store.
+# The refusal is evaluated on every call regardless — deduping the raise would let a
+# second reader through on the first one's silence.
+_STALE_BANNER_SEEN: set[str] = set()
+
+
+class StaleLocalMirrorError(RuntimeError):
+    """A local massive_stock_day mirror is too far behind to answer an honest question."""
 
 
 # ── store paths ─────────────────────────────────────────────────────────────
@@ -325,6 +355,104 @@ def _write_manifest(n_tickers: int, latest_date: date | None,
     _manifest_path().write_text(json.dumps(manifest, indent=2))
     log.info("massive_stock_day: manifest updated — %d tickers, latest %s",
              n_tickers, latest_date)
+
+
+# ── local mirror freshness (LOCAL research entrypoints) ──────────────────────
+def _stale_banner(store_dir: Path, latest: date, lag: int, expected: date,
+                  entrypoint: str, *, refusing: bool, allow_stale: bool) -> str:
+    """The loud multi-line body.  Plain text, never a GitHub annotation: this check
+    is inert in CI by construction, and one caller (pick_forward_dist_phase1_har)
+    calls logging.disable(CRITICAL) at __main__, so a logged warning would vanish."""
+    verdict = ("REFUSING TO RUN" if refusing else
+               "PROCEEDING UNDER --allow-stale" if allow_stale else
+               "WARNING")
+    bar = "=" * 78
+    tail = ("  Deliberately studying the frozen tape?  re-run with --allow-stale."
+            if refusing else
+            f"  Proceeding under --allow-stale: every number below is AS OF {latest},\n"
+            "  not as of today.  Say so wherever the output is quoted."
+            if allow_stale else
+            "  Refresh before you quote anything from this run.")
+    return "\n".join((
+        "",
+        bar,
+        f"  STALE LOCAL massive_stock_day MIRROR — {verdict}",
+        "-" * 78,
+        f"  store            {store_dir}",
+        f"  manifest says    latest_date {latest}",
+        f"  behind by        {lag} completed trading session(s)",
+        f"  expected last    {expected}  (last COMPLETED US session)",
+        f"  entrypoint       {entrypoint}",
+        "-" * 78,
+        "  The store is R2-CANONICAL.  A local tree is a MIRROR and does NOT",
+        "  self-update — only the nightly collect lane restores it, upserts the new",
+        "  sessions, and publishes the delta back.  A frozen mirror answers every",
+        "  question silently and wrongly: the primary checkout sat at 2026-07-02 for",
+        "  5.5 weeks and TOPA phase-0 read it the whole time (audit 2026-08-10).",
+        "",
+        f"  REFRESH IT:  {LOCAL_MIRROR_FIX_CMD}",
+        tail,
+        bar,
+        "",
+    ))
+
+
+def check_local_mirror_freshness(data_root, *, entrypoint: str,
+                                 allow_stale: bool = False, now=None) -> int | None:
+    """Warn (>=5 sessions) or refuse (>=20) when a LOCAL mirror of the store is stale.
+
+    `data_root` may be either the data root or the `massive_stock_day` dir itself
+    (run_rule_replay passes --massive-dir, which is the store dir).  Returns the lag
+    in completed trading sessions, or None when there is nothing to check: an Actions
+    lane, an absent store, or a manifest that cannot be read.
+
+    NOT a CI gate.  Every Actions lane returns None immediately — the nightly collect
+    job legitimately opens the store mid-refresh, and DNR:KILL-NIGHTLY-HARD-GATE stands.
+    The refusal exists only for local research entrypoints, and only ones that hand the
+    operator an --allow-stale override.
+    """
+    # COLLECT_LANE is set job-level in daily.yml; GITHUB_ACTIONS covers every other
+    # Actions lane.  A mid-refresh store is exactly what the collector is there to fix.
+    if os.environ.get("COLLECT_LANE") or os.environ.get("GITHUB_ACTIONS"):
+        return None
+
+    p = Path(data_root)
+    store_dir = p if p.name == "massive_stock_day" else p / "massive_stock_day"
+    if not store_dir.is_dir():
+        # Nothing to be stale.  The read itself owns that failure (each caller
+        # already halts on an unreachable store) — crying here would be noise.
+        return None
+
+    try:
+        latest = date.fromisoformat(
+            json.loads((store_dir / "_manifest.json").read_text())["latest_date"])
+    except Exception:   # noqa: BLE001 — missing, truncated, null latest_date, bad type
+        print(f"massive_stock_day: freshness UNVERIFIABLE at {store_dir} — no readable "
+              f"_manifest.json latest_date, so {entrypoint} is reading a store of "
+              f"unknown vintage.  Refresh with: {LOCAL_MIRROR_FIX_CMD}",
+              file=sys.stderr, flush=True)
+        return None
+
+    # Function-local import: keeps the nightly collect lane's module import surface
+    # unchanged (this file is imported by the collector registry on every lane).
+    from lib import nyse_calendar
+
+    lag = nyse_calendar.sessions_behind(latest, now)
+    refusing = lag >= LOCAL_STALE_REFUSE_SESSIONS and not allow_stale
+    if lag >= LOCAL_STALE_WARN_SESSIONS:
+        key = str(store_dir.resolve())
+        if key not in _STALE_BANNER_SEEN:
+            _STALE_BANNER_SEEN.add(key)
+            print(_stale_banner(store_dir, latest, lag,
+                                nyse_calendar.expected_last_session(now), entrypoint,
+                                refusing=refusing, allow_stale=allow_stale),
+                  file=sys.stderr, flush=True)
+    if refusing:
+        raise StaleLocalMirrorError(
+            f"local massive_stock_day mirror at {store_dir} is {lag} trading sessions "
+            f"behind (latest_date {latest}); refresh with `{LOCAL_MIRROR_FIX_CMD}` or "
+            f"re-run with --allow-stale")
+    return lag
 
 
 def _scan_store_days() -> set[date]:
