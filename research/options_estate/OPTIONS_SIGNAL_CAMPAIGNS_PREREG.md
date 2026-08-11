@@ -5,10 +5,16 @@ durable 2026-08-10 episode corpus was inspected. The rule freeze is exactly
 `2026-08-11T08:22:28Z`.
 
 The initial backfill is therefore in-sample retrospective discovery, not forward
-evidence and not validation. Every initial row is labeled
-`evidence_phase=retrospective_discovery`. Only rows formed at or after the exact
-rule-freeze clock are labeled `prospective_after_rule_freeze`; future evaluation
-must stratify the phases and exclude retrospective rows from prospective claims.
+evidence and not validation. All eight preserved rows are labeled
+`evidence_phase=retrospective_discovery`. The former pre-retirement phase
+vocabulary remains part of the frozen schema, but no future v1 row may be emitted
+or counted as prospective evidence.
+
+Retirement amendment (2026-08-11): publication stopped after the preserved
+eight-row retrospective cohort. The writer and publisher described below are
+historical initial-publication mechanics, not current authority. No active job
+may append this v1 ledger; canonical revisions use the separately preregistered
+v2 namespace.
 
 ## Purpose and authority
 
@@ -101,8 +107,12 @@ outcomes, session outcomes, and campaigns.
   rows are prospective-after-freeze, and any mismatched phase label fails.
 - Premium: fractional, non-finite, or unsafe rounded-dollar totals fail closed.
 - Concurrency: duplicate appends produce one row; conflicting appends fail.
-- Corpus: the committed campaign ledger must equal a fresh recomputation from
-  the committed episode and H+60 ledgers. The expected row count is never pinned.
+- Corpus: the retired ledger is pinned to exactly 8 rows, 10,492 bytes, and
+  SHA-256 `db326f5c772ab417c43b8579ad50abb0434916922bda3a13c2da5b8303813910`.
+  Each preserved row must still replay from its historical qualifying source
+  prefix. Later episodes may create additional qualifying v1-shaped groups in a
+  diagnostic recomputation, but they must neither append to the frozen ledger nor
+  make its exact-byte audit compare against the growing source census.
 
 ## Explicit exclusions
 
