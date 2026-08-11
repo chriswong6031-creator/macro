@@ -2440,12 +2440,11 @@ class TestCommittedArtifactIntegration:
         """G0.3 at board grain: the committed board through score_rows with and
         without the basing opt-in.
 
-        The witness is injected rather than hoped for.  The 2026-07-31 artifact
-        happens to carry no BOTTOM WATCH buy row, so reading this fixture as-is would
-        pass on an engine that had never learned the state — the vacuous form of this
-        guard.  The board's own ledger says the state IS routine (41 buy-lane rows
-        over 13 of the 17 board days ending 07-31), so one real row is relabelled to
-        the state the ledger shows and the assertions below refuse an empty split.
+        The witness is injected rather than hoped for: one eligible row that is not
+        already BOTTOM WATCH is relabelled to the state the ledger shows.  A committed
+        artifact may also carry natural BOTTOM WATCH rows, so the assertions below
+        require every eligible row in the resulting pool to move while refusing an
+        empty split.
 
         The non-buy lanes are asserted as OBJECTS, not counts: score_rows is never
         handed watch/leaders/laggards/ran, and this is the test that says so.
@@ -2468,14 +2467,15 @@ class TestCommittedArtifactIntegration:
             # than on behaviour. That is what happened when the nightly re-bake left ORA
             # (the board's only blocked-status buy row, 1 of 62) last: this test picked
             # `raw[-1]` and reddened main while the shelf worked correctly.
-            # Pick the LAST row whose status cannot pre-empt the split, and refuse to
-            # run rather than silently witness nothing.
+            # Pick the LAST non-BOTTOM-WATCH row whose status cannot pre-empt the
+            # split, and refuse to run rather than silently witness nothing.
             idx = next((i for i in range(len(raw) - 1, -1, -1)
                         if ubr._status_of(raw[i].get("entry_signal"))
-                        not in ubr._BLOCKED_STATUSES), None)
+                        not in ubr._BLOCKED_STATUSES
+                        and not ubr.is_bottom_watch(raw[i])), None)
             assert idx is not None, (
-                "every buy row carries a blocked/exit/avoid entry status, so no row can "
-                "witness the basing split — the fixture, not the shelf, is the problem")
+                "no non-BOTTOM-WATCH buy row can witness the basing split — the "
+                "fixture, not the shelf, is the problem")
             raw[idx].update({"state": "BOTTOM WATCH", "label": "NEARING A LOW",
                              "dir": "down"})
             raw[idx].pop("label_zh", None)
@@ -2487,6 +2487,14 @@ class TestCommittedArtifactIntegration:
 
         raw_before, witness = _pool()
         raw_after, _ = _pool()
+        expected_moved = {
+            r["ticker"] for r in raw_before
+            if ubr.is_bottom_watch(r)
+            and ubr._status_of(r.get("entry_signal"))
+            not in ubr._BLOCKED_STATUSES
+        }
+        assert witness in expected_moved, (
+            "injected witness must be eligible for the basing split")
         before = ubr.score_rows(raw_before, verdict_by=verdicts,
                                 board_asof=board["as_of"])
         after = ubr.score_rows(raw_after, verdict_by=verdicts,
@@ -2501,7 +2509,7 @@ class TestCommittedArtifactIntegration:
 
         moved = {t for t in by_before
                  if by_before[t]["stage"] != by_after[t]["stage"]}
-        assert moved == {witness}
+        assert moved == expected_moved
         assert all(by_before[t]["stage"] == "blocked" for t in moved)
         assert all(by_after[t]["stage"] == "basing" for t in moved)
 
