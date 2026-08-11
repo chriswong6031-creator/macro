@@ -278,6 +278,8 @@ def _replay(repo: Path, sha: str, *, event_sha: str | None = None,
     # Unit groups below isolate writer/collision/passthrough behavior with tiny
     # candidate sets. Production cannot take this shortcut: the CLI always loads and
     # validates checkpoint 8421e478, covered by TestAuthorizedRefusalFence.
+    theta_store = repo / "_theta_fixture"
+    (theta_store / "eod").mkdir(parents=True, exist_ok=True)
     with (
         patch.object(
             bf, "_load_authorized_refusal_checkpoint",
@@ -292,6 +294,7 @@ def _replay(repo: Path, sha: str, *, event_sha: str | None = None,
             collision_baseline_commit=collision_sha,
             executed_at=executed_at,
             execute=execute,
+            thetadata_store=str(theta_store),
         )
 
 
@@ -711,6 +714,32 @@ class TestDeterminismAndIdempotence:
         with pytest.raises(bf.BackfillRefused, match="tracked working tree is not clean"):
             _replay(repo, sha)
 
+    def test_missing_thetadata_store_refuses_instead_of_warning_only(self, tmp_path):
+        repo, _sha = _pinned_repo(tmp_path, buys=[_buy_row("AAA")])
+        with pytest.raises(bf.BackfillRefused, match="ThetaData store is required"):
+            bf._source_manifest(
+                repo, thetadata_store=None, candidate_tickers=["AAA"],
+            )
+
+    def test_local_source_manifest_hashes_exact_theta_files(self, tmp_path):
+        import hashlib
+
+        repo, _sha = _pinned_repo(tmp_path, buys=[_buy_row("AAA")])
+        store = tmp_path / "theta"
+        source = store / "eod" / "AAA" / "2026.parquet"
+        source.parent.mkdir(parents=True)
+        source.write_bytes(b"exact-test-source")
+
+        manifest = bf._source_manifest(
+            repo, thetadata_store=str(store), candidate_tickers=["AAA"],
+        )
+        receipt = manifest["thetadata_store"]["files"]["AAA"]["eod"]
+        assert receipt["state"] == "available"
+        assert receipt["tracking"] == "host_local"
+        assert receipt["size_bytes"] == len(b"exact-test-source")
+        assert receipt["sha256"] == hashlib.sha256(b"exact-test-source").hexdigest()
+        assert manifest["thetadata_store"]["files"]["AAA"]["oi"]["state"] == "absent"
+
 
 # ===========================================================================
 # 5. AUTHORIZED REFUSAL FENCE — exact run/checkpoint/partition/population
@@ -860,12 +889,15 @@ class TestOriginationReceipt:
             "executing_commit": collision_sha,
         }
         assert enrichment["all_inputs_content_pinned"] is False
-        assert enrichment["host_local_sources"]["thetadata_store"] == {
-            "resolved_path": None,
-            "content_fingerprint": None,
-            "content_pinned": False,
+        assert enrichment["all_available_local_files_fingerprinted"] is True
+        manifest = enrichment["source_manifest"]
+        assert manifest["schema"] == "prophet.outage_enrichment_sources/v1"
+        assert manifest["thetadata_store"]["tier_states"]["eod"] is True
+        assert len(enrichment["source_manifest_sha256"]) == 64
+        assert manifest["equitydesk_earnings_calls"]["source_state"] in {
+            "available", "unavailable",
         }
-        assert "does not claim" in enrichment["reproducibility_note"]
+        assert "current-engine enrichment replay" in enrichment["reproducibility_note"]
         source = result["receipt"]["source_refusal_receipt"]
         assert source["run_id"] == bf.REFUSAL_RUN_ID
         assert source["checkpoint_commit"] == event_sha

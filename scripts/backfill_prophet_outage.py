@@ -9,8 +9,10 @@ WHAT THIS REPLAYS.  The 2026-08-09 22:59Z Sunday bake ran the current intake end
 end and refused all 30 eligible candidates at ``clock_provenance`` because the board
 it read carried a poisoned ``staleness.inputs.panel.mixed_vintage=true``.  #5241
 healed ``_panel_price_reach``; the SAME board, re-derived, carries
-``mixed_vintage: false``.  The counterfactual therefore flips exactly one poisoned
-input and leaves every other gate to run on its own terms.
+``mixed_vintage: false``. That flips the one proven population-blocking input.
+The exact 30 identities remain event-receipted, while their post-selection plan
+enrichments deliberately come from the operator-ordered current engine and are
+separately content-receipted at execution.
 
 WHAT THIS IS NOT.  It is not a general backfill harness, it does not reconstruct
 2026-08-03→08-06 (standing ruling ``us-board-frozen-alpha-2026-08`` in
@@ -40,11 +42,12 @@ commit-pinned trees, but ``originate_plans`` also reads the WORKING TREE for its
 enrichments: the stage-tilt inputs (``data/stage_analysis/``,
 ``data/regime/latest.json``) set each plan's leash and therefore ``horizon_days``, and
 the ThetaData store supplies ``option_contract``.  The tracked tree must therefore be
-clean and is bound to the executing commit in both artifacts.  Host-local sources are
-named but not content-pinned, so neither artifact claims all-input reproducibility. A
-sparse agent worktree without ``data/`` silently produces leash-1.0, option-free plans
-— valid JSON, wrong artifact. Compare a dry run against expectations before
-``--execute``.
+clean and is bound to the executing commit in both artifacts. Every host-local file
+the plan path can read (ThetaData, the EquityDesk EC source, local price rungs and IV
+summaries) is recorded as present/absent and SHA-256 fingerprinted when present. The
+manifest is checked again after origination so a source cannot change mid-run. A
+sparse checkout or missing ThetaData store refuses instead of minting plausible but
+wrong artifacts.
 
 Run (dry run — prints the would-mint set, writes nothing):
 
@@ -61,6 +64,7 @@ import argparse
 import hashlib
 import json
 import logging
+import os
 import subprocess
 import sys
 import tempfile
@@ -216,6 +220,16 @@ def require_tracked_worktree_clean(repo: Path) -> None:
     changes cannot silently alter that context.  Untracked host-local sources are
     disclosed separately and are deliberately not represented as commit-pinned.
     """
+    sparse = subprocess.run(
+        ["git", "config", "--bool", "core.sparseCheckout"],
+        cwd=repo, capture_output=True, text=True,
+    )
+    if sparse.returncode == 0 and sparse.stdout.strip().lower() == "true":
+        raise BackfillRefused(
+            "sparse checkout cannot execute the replay; current-engine tracked "
+            "enrichments must come from a complete checkout"
+        )
+
     status = str(_git(
         repo, "status", "--porcelain=v1", "--untracked-files=no",
     )).strip()
@@ -226,6 +240,171 @@ def require_tracked_worktree_clean(repo: Path) -> None:
             "tracked working tree is not clean; enrichment cannot be bound to one "
             f"executing commit ({changed}{suffix})"
         )
+
+
+def _display_source_path(repo: Path, path: Path) -> str:
+    """Stable, publishable path: repo-relative, then ``$HOME``, then absolute."""
+    lexical = path.expanduser().absolute()
+    try:
+        return str(lexical.relative_to(repo.expanduser().resolve()))
+    except ValueError:
+        pass
+    try:
+        return "$HOME/" + str(lexical.relative_to(Path.home().resolve()))
+    except ValueError:
+        return str(lexical)
+
+
+def _file_source_receipt(repo: Path, path: Path) -> dict[str, Any]:
+    """Existence + bytes receipt for one enrichment source.
+
+    The stat is checked around the streaming hash. A file being rewritten while it
+    is receipted is a refusal, not a best-effort digest of two versions.
+    """
+    lexical = path.expanduser().absolute()
+    displayed = _display_source_path(repo, lexical)
+    try:
+        rel = lexical.relative_to(repo.resolve())
+    except ValueError:
+        rel = None
+    tracked = False
+    if rel is not None:
+        probe = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", "--", str(rel)],
+            cwd=repo, capture_output=True,
+        )
+        tracked = probe.returncode == 0
+
+    if not lexical.is_file():
+        return {
+            "path": displayed,
+            "state": "absent",
+            "tracking": "tracked" if tracked else "host_local",
+            "size_bytes": None,
+            "sha256": None,
+        }
+
+    try:
+        before = lexical.stat()
+        digest = hashlib.sha256()
+        with lexical.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        after = lexical.stat()
+    except OSError as exc:
+        raise BackfillRefused(f"cannot fingerprint enrichment source {displayed}: {exc}") from exc
+    if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
+        raise BackfillRefused(
+            f"enrichment source changed while it was fingerprinted: {displayed}"
+        )
+    resolved = lexical.resolve()
+    receipt = {
+        "path": displayed,
+        "state": "available",
+        "tracking": "tracked" if tracked else "host_local",
+        "size_bytes": int(after.st_size),
+        "sha256": digest.hexdigest(),
+    }
+    if resolved != lexical:
+        receipt["resolved_path"] = _display_source_path(repo, resolved)
+    return receipt
+
+
+def _source_manifest(
+    repo: Path, *, thetadata_store: str | None, candidate_tickers: list[str],
+) -> dict[str, Any]:
+    """Receipt every non-commit input the current plan path can consume.
+
+    Commit-tracked files are already bound by ``executing_commit`` and the clean-tree
+    fence. This manifest focuses on the local/private seams that Git cannot bind.
+    Present files are content-hashed; absent files are explicitly named so a starved
+    source cannot masquerade as an honest negative.
+    """
+    if not thetadata_store:
+        raise BackfillRefused(
+            "ThetaData store is required for outage replay option resolution; "
+            "warning-only option-free execution is forbidden"
+        )
+    store = Path(thetadata_store).expanduser().resolve()
+    tiers = ("eod", "oi", "greeks")
+    if not store.is_dir() or not any((store / tier).is_dir() for tier in tiers):
+        raise BackfillRefused(
+            f"ThetaData store {store} is missing or contains no eod/oi/greeks tier"
+        )
+
+    theta_files = {
+        ticker: {
+            tier: _file_source_receipt(
+                repo, store / tier / ticker / f"{BACKFILL_ASOF[:4]}.parquet",
+            )
+            for tier in tiers
+        }
+        for ticker in candidate_tickers
+    }
+
+    # These are the untracked/local rungs read by _load_price_history,
+    # _load_stage_tilt_inputs and _structure_receipt. Tracked fallbacks remain pinned
+    # by executing_commit; recording every local rung also proves when it was absent.
+    plan_price_files = {
+        ticker: {
+            rung: _file_source_receipt(_REPO, _REPO / rung / f"{ticker}.parquet")
+            for rung in ("data/baskets/ohlcv", "data/stocks")
+        }
+        for ticker in candidate_tickers
+    }
+    iv_rank_files = {
+        ticker: _file_source_receipt(
+            _REPO, _REPO / "data" / "polygon_gex" / f"summary_{ticker}.parquet",
+        )
+        for ticker in candidate_tickers
+    }
+
+    from engine import prophet_stage_inputs as psi  # noqa: PLC0415
+
+    ec_receipt = _file_source_receipt(_REPO, psi.ec_source_path())
+    ec_receipt["source_state"] = (
+        "available" if ec_receipt["state"] == "available" else "unavailable"
+    )
+
+    earnings_override = os.environ.get("EARNINGS_EVIDENCE_CONTEXT_DIR", "").strip()
+    earnings_source: dict[str, Any]
+    if earnings_override:
+        context_dir = Path(earnings_override).expanduser().resolve()
+        if not context_dir.is_dir():
+            raise BackfillRefused(
+                "EARNINGS_EVIDENCE_CONTEXT_DIR is set but is not a readable directory"
+            )
+        files = sorted(path for path in context_dir.rglob("*.json") if path.is_file())
+        if len(files) > 2048:
+            raise BackfillRefused(
+                "earnings evidence override contains more than 2048 JSON files; "
+                "refusing an unbounded local-source receipt"
+            )
+        earnings_source = {
+            "mode": "local_override",
+            "path": _display_source_path(_REPO, context_dir),
+            "files": [_file_source_receipt(_REPO, path) for path in files],
+        }
+    else:
+        earnings_source = {
+            "mode": "private_store_runtime",
+            "path": None,
+            "note": "returned packets are content-bound by plan-level earnings receipts",
+        }
+
+    return {
+        "schema": "prophet.outage_enrichment_sources/v1",
+        "candidate_tickers": list(candidate_tickers),
+        "thetadata_store": {
+            "path": _display_source_path(repo, store),
+            "tier_states": {tier: (store / tier).is_dir() for tier in tiers},
+            "files": theta_files,
+        },
+        "equitydesk_earnings_calls": ec_receipt,
+        "plan_price_files": plan_price_files,
+        "iv_rank_files": iv_rank_files,
+        "earnings_evidence": earnings_source,
+    }
 
 
 def require_ancestor(repo: Path, older: str, newer: str, *, relation: str) -> None:
@@ -670,11 +849,6 @@ def run_backfill(
 
     require_tracked_worktree_clean(repo)
     executing_sha = resolve_commit(repo, "HEAD")
-    enrichment_context = _enrichment_context(
-        executing_sha=executing_sha,
-        thetadata_store=thetadata_store,
-    )
-
     board_sha = resolve_commit(repo, board_commit)
     event_baseline_sha = resolve_commit(repo, event_baseline_commit)
     collision_baseline_sha = resolve_commit(repo, collision_baseline_commit)
@@ -685,6 +859,15 @@ def run_backfill(
     board = json.loads(board_blob.decode("utf-8"))
 
     refusal_checkpoint = _load_authorized_refusal_checkpoint(repo)
+    candidate_tickers = sorted({
+        str(plan_id).rsplit("-BULL-", 1)[0]
+        for plan_id in refusal_checkpoint["refusal_plan_ids"]
+    })
+    source_manifest_before = _source_manifest(
+        repo,
+        thetadata_store=thetadata_store,
+        candidate_tickers=candidate_tickers,
+    )
     checkpoint_sha = str(refusal_checkpoint["checkpoint_commit"])
     require_ancestor(
         repo, event_baseline_sha, checkpoint_sha,
@@ -746,6 +929,21 @@ def run_backfill(
         )
 
     _validate_replay_population(refusal_checkpoint, intake, minted_raw)
+    source_manifest_after = _source_manifest(
+        repo,
+        thetadata_store=thetadata_store,
+        candidate_tickers=candidate_tickers,
+    )
+    if source_manifest_after != source_manifest_before:
+        raise BackfillRefused(
+            "a local enrichment source changed during origination; refusing a "
+            "receipt that cannot name one exact input state"
+        )
+    enrichment_context = _enrichment_context(
+        executing_sha=executing_sha,
+        source_manifest=source_manifest_before,
+        replayed_plans=minted_raw,
+    )
 
     minted: list[dict[str, Any]] = []
     collided: list[dict[str, Any]] = []
@@ -802,7 +1000,7 @@ def run_backfill(
 
     receipt_id = _receipt_id(
         board_sha, event_baseline_sha, collision_baseline_sha,
-        executing_sha, refusal_checkpoint, minted,
+        executing_sha, enrichment_context, refusal_checkpoint, minted,
     )
     disclosure_row: dict[str, Any] = {
         "id": WINDOW_ID,
@@ -961,31 +1159,52 @@ def _quarantined_plan_ids_at(repo: Path, commit: str) -> set[str]:
 
 
 def _enrichment_context(
-    *, executing_sha: str, thetadata_store: str | None,
+    *, executing_sha: str, source_manifest: dict[str, Any],
+    replayed_plans: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    """Describe the non-authority context without overstating reproducibility."""
-    resolved_store = (
-        str(Path(thetadata_store).expanduser().resolve())
-        if thetadata_store else None
-    )
+    """Bind tracked inputs, local file receipts and output-level private receipts."""
+    earnings_outputs: list[dict[str, Any]] = []
+    option_outputs: list[dict[str, Any]] = []
+    for plan in sorted(replayed_plans, key=lambda row: str(row.get("asset") or "")):
+        ticker = str(plan.get("asset") or "").strip().upper()
+        earnings = plan.get("earnings_evidence_context")
+        earnings_outputs.append({
+            "ticker": ticker,
+            "state": "available" if isinstance(earnings, dict) else "unavailable",
+            "receipts": (
+                dict(earnings.get("receipts") or {})
+                if isinstance(earnings, dict) else None
+            ),
+        })
+        option = plan.get("option_contract")
+        option_outputs.append({
+            "ticker": ticker,
+            "state": "resolved" if isinstance(option, dict) else "unavailable",
+            "expiry": option.get("expiry") if isinstance(option, dict) else None,
+            "strike": option.get("strike") if isinstance(option, dict) else None,
+            "right": option.get("right") if isinstance(option, dict) else None,
+        })
+
     return {
         "tracked_worktree": {
             "clean": True,
             "executing_commit": executing_sha,
         },
-        "host_local_sources": {
-            "thetadata_store": {
-                "resolved_path": resolved_store,
-                "content_fingerprint": None,
-                "content_pinned": False,
-            },
+        "source_manifest": source_manifest,
+        "source_manifest_sha256": _canonical_sha256(source_manifest),
+        "engine_output_receipts": {
+            "earnings_evidence": earnings_outputs,
+            "option_contracts": option_outputs,
         },
+        "all_available_local_files_fingerprinted": True,
         "all_inputs_content_pinned": False,
         "reproducibility_note": (
-            "Selection/collision authority is commit-pinned and tracked enrichment "
-            "code/data is bound to executing_commit. Host-local or untracked "
-            "enrichment content is not fingerprinted; this receipt does not claim "
-            "a byte-identical replay from commits alone."
+            "The exact event population and collision authority are commit-pinned; "
+            "tracked enrichment code/data is bound to executing_commit; every "
+            "available local file the plan path can read is SHA-256 receipted and "
+            "checked stable across the run. Remote private-store results are bound "
+            "by their plan-level receipts. This remains a current-engine enrichment "
+            "replay, not an event-time byte-identical reconstruction."
         ),
     }
 
@@ -995,6 +1214,7 @@ def _receipt_id(
     event_baseline_sha: str,
     collision_baseline_sha: str,
     executing_sha: str,
+    enrichment_context: dict[str, Any],
     refusal_checkpoint: dict[str, Any],
     minted: list[dict],
 ) -> str:
@@ -1006,6 +1226,7 @@ def _receipt_id(
             event_baseline_sha,
             collision_baseline_sha,
             executing_sha,
+            str(enrichment_context["source_manifest_sha256"]),
             str(refusal_checkpoint["checkpoint_commit"]),
             str(refusal_checkpoint["validation_failures_sha256"]),
             *(str(plan.get("id")) for plan in minted),
@@ -1225,25 +1446,14 @@ def main(argv: list[str] | None = None) -> int:
     executed_at = datetime.now(timezone.utc).isoformat()
 
     # Resolve the option store exactly as the nightly does (build_prophet.py:1492).
-    # WITHOUT this the replay would hand originate_plans None and every minted plan
-    # would carry option_contract: null — not "the receipted live path with one
-    # poisoned input flipped", but a second, silent difference. Optional enrichment,
-    # so a missing store degrades loudly rather than refusing.
+    # Unlike the ordinary display-tier path, this one-off cannot degrade to an
+    # option-free artifact: §0 requires the current engine's local sources to be
+    # resolved and receipted, not warning-only.
     from engine.thetadata_store import resolve_thetadata_store  # noqa: PLC0415
 
-    resolved_store = resolve_thetadata_store(
-        required=False, purpose="backfill_prophet_outage option-resolution")
-    if resolved_store is None:
-        print(
-            "::warning title=prophet-backfill-no-option-store::no ThetaData store "
-            "resolves — every backfilled plan will carry option_contract: null, "
-            "which the 2026-08-09 live path would NOT have done. Run this from a "
-            "checkout with the store (or set THETADATA_STORE) unless you intend "
-            "option-free plans.",
-            flush=True,
-        )
-
     try:
+        resolved_store = resolve_thetadata_store(
+            required=True, purpose="backfill_prophet_outage option-resolution")
         result = run_backfill(
             repo,
             board_commit=args.board_commit,
@@ -1253,7 +1463,7 @@ def main(argv: list[str] | None = None) -> int:
             execute=bool(args.execute),
             thetadata_store=str(resolved_store) if resolved_store else None,
         )
-    except BackfillRefused as exc:
+    except (BackfillRefused, RuntimeError) as exc:
         # Bare print at line start (house law): a logger prefix makes GitHub drop it.
         print(f"::error title=prophet-backfill-refused::{exc}", flush=True)
         return 2
