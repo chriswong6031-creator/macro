@@ -417,6 +417,11 @@ Until all five: display tier, everywhere, forever.
 
 1. **R4-gradient prereg** — "down-shock continuation weakens as market
    liquidity tightens": frozen VIX breakpoints, forward-ledger graded.
+   **REGISTERED 2026-08-10** → `research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md`
+   (VIXCLS trailing-252d percentile, calm < 0.5 vs stressed ≥ 0.8 — the LSR-P0
+   reopener sighting's own cells, disclosed and frozen ex ante; R4-A h=5
+   replication + R4-B h=21 conjunctive product claim; stressed arm accrues
+   nothing at the current calm tape — check floors each session, never grade early).
 2. **Revisions firewall clock** — re-test information separation when
    `data/revisions/history.parquet` covers ≥ ~2y of events (≈2028+).
 3. **Tape-grade exhaustion** — when the tick plane exposes signed
