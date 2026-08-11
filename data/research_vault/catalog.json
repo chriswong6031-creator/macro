@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-11T22:36:33.656144+00:00",
-  "count": 951,
+  "generated_at": "2026-08-11T23:06:40.378857+00:00",
+  "count": 952,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -136,6 +136,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lwx52b2fpsp-b07ab0",
+      "title": "market monitor",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T23:42:00Z",
+      "summary_points": [
+        "**Earnings Momentum**: S&P 500 EPS growth at 45% YoY (Q2), 80% of companies beat profit margin estimates, Energy sector +122% YoY.",
+        "**CPI Data Release**: US CPI YoY (Aug 12) at 3.4% near consensus (vs prior 3.5%), signaling potential Fed policy shifts and equity/fixed income volatility.",
+        "**AI Monetization**: 33% YoY S&P 500 earnings growth (strongest post-crisis), Microsoft/Amazon driving 50% capex growth in 2027 via AI spending.",
+        "**Corporate Credit Risk**: Elevated US HY Corp Spread (264 bps) and US IG Corp Spread (286 bps), necessitating defensive fixed income positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
