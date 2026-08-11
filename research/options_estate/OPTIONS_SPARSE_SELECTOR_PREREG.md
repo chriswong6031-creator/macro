@@ -6,7 +6,7 @@ Machine receipt:
 `research/options_estate/sparse_selector_preregistration_receipt_v1.json`
 
 Receipt SHA-256:
-`8a95ac6a4e2a3b0f37bea12c5460fef9ab005b93f1750e941910895387478f68`
+`8c0f2323f9d7006f00d61b0487aa8b80dbeabe3f5bb59cdbe5ae0ae3a9154b76`
 
 Frozen MomoEdge benchmark digest:
 `20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42`
@@ -53,10 +53,19 @@ explicitly **not** a covered-session receipt and does not satisfy the frozen
 
 A later governed implementation may admit only
 `options.signal_campaign/v2` rows first observed after both the selector freeze
-and the benchmark freeze. The effective selector freeze is the later of the
-registration clock and the first `origin/main` commit containing the exact rule
-digest. That selector freeze remains explicitly unresolved while this receipt
-is a draft. Version 1 rows remain ineligible forever.
+and the benchmark freeze. The selector boundary is preregistered at
+`2026-08-12T13:30:00Z`, the next NYSE session open after the final campaign-v2
+dependency landed on `origin/main` and the integrated selector rule was
+finalized. The exact selector rule digest must itself reach `origin/main` before
+that boundary. Its first-main commit cannot be self-referenced by these same
+content-identified bytes, so those two audit fields remain honestly null in the
+premerge receipt. If the hosting precondition misses the boundary, this version
+stays in global abstention and a new version with a later NYSE boundary is
+required. It may not backdate or reinterpret any row as prospective.
+
+The campaign-v2 source contract uses the same `2026-08-12T13:30:00Z` forward
+boundary. Every source row before it is retrospective and permanently excluded
+from this selector cohort; every legacy v1 row remains ineligible forever.
 
 Observation time cannot make an old row prospective. A candidate must have
 `formed_at == members[-1].available_at`, and both immutable source clocks must
@@ -134,10 +143,14 @@ The durable mark prerequisite from #5350, Market Memory receipt path from #5353,
 and lifecycle contract from #5355 are merged zero-authority inputs. The live
 lifecycle has an activation head but no durable enrollment because the observed
 BA quote was stale, so it contributes no eligible proposal. Campaign-v2 #5362
-is still an unmerged draft dependency. This PR must remain draft and merge-blocked
-until #5362 lands and its final `origin/main` schema and implementation bytes are
-integrated and receipted. Until then, there is no satisfiable campaign source and
-the only valid output remains global abstention.
+is merged at `d8e290032710d84e538c32af0d58358a16407c88`. This registration binds its
+final `origin/main` schema as 7,177 bytes / SHA-256
+`65ce2f0fe1cb16dfca58949a85562645be4a41eb454b5ce243c16011c8a251a3`
+and runtime as 46,774 bytes / SHA-256
+`f5d0a83c7fd35ee219aad448cef7384df98e1ee04b87d36ae631b0d273e4310c`.
+Any dependency drift forces abstention. The current activation snapshot still
+has no prospective candidate, no decision, and no authority; the only valid
+output remains global abstention.
 
 ## Required falsifiers before activation
 

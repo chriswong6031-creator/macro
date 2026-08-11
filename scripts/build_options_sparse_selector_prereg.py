@@ -23,6 +23,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 BENCHMARK_PATH = Path("research/momoedge/completion_benchmark_prereg_v1.json")
 BENCHMARK_SCHEMA_PATH = Path(
     "contracts/research/momoedge_oracle_completion_benchmark_prereg.v1.schema.json"
@@ -31,6 +32,10 @@ LEGACY_CAMPAIGN_PATH = Path("data/options_signal_episode/campaigns.jsonl")
 LEGACY_CAMPAIGN_SCHEMA_PATH = Path(
     "contracts/options/options.signal_campaign.v1.schema.json"
 )
+CAMPAIGN_V2_SCHEMA_PATH = Path(
+    "contracts/options/options.signal_campaign.v2.schema.json"
+)
+CAMPAIGN_V2_IMPLEMENTATION_PATH = Path("engine/options_signal_campaign.py")
 RECEIPT_PATH = Path(
     "research/options_estate/sparse_selector_preregistration_receipt_v1.json"
 )
@@ -72,8 +77,32 @@ BENCHMARK_BASELINE_COMMIT = "e1100ee158a8b18576bbc6130276ef6f8becd373"
 BENCHMARK_FIRST_MAIN_COMMIT = "c46daec89ce2f25bdff85200eaf29f6de3e1572e"
 BENCHMARK_FIRST_MAIN_COMMITTED_AT = "2026-08-11T15:47:06Z"
 BENCHMARK_EFFECTIVE_FREEZE_AT = "2026-08-11T15:47:06Z"
-REGISTERED_AT = "2026-08-11T18:51:16Z"
+REGISTERED_AT = "2026-08-11T21:36:23Z"
 REPOSITORY = "mastermindx-market-intelligence/macro"
+CAMPAIGN_V2_SOURCE_COMMIT = "d8e290032710d84e538c32af0d58358a16407c88"
+SELECTOR_EFFECTIVE_FREEZE_AT = "2026-08-12T13:30:00Z"
+SELECTOR_EFFECTIVE_FREEZE_SESSION = "2026-08-12"
+SELECTOR_EFFECTIVE_FREEZE_RULE = (
+    "preregistered_next_nyse_session_open_after_finalized_rule_head_with_"
+    "origin_main_before_boundary/v1"
+)
+
+CAMPAIGN_V2_CONTRACT_RECEIPTS = [
+    {
+        "role": "campaign_v2_schema",
+        "path": CAMPAIGN_V2_SCHEMA_PATH.as_posix(),
+        "file_sha256": "65ce2f0fe1cb16dfca58949a85562645be4a41eb454b5ce243c16011c8a251a3",
+        "file_bytes": 7_177,
+        "source_commit": CAMPAIGN_V2_SOURCE_COMMIT,
+    },
+    {
+        "role": "campaign_v2_runtime",
+        "path": CAMPAIGN_V2_IMPLEMENTATION_PATH.as_posix(),
+        "file_sha256": "f5d0a83c7fd35ee219aad448cef7384df98e1ee04b87d36ae631b0d273e4310c",
+        "file_bytes": 46_774,
+        "source_commit": CAMPAIGN_V2_SOURCE_COMMIT,
+    },
+]
 
 CONTEXT_REFERENCE_CONTRACT_RECEIPTS = [
     {
@@ -158,7 +187,7 @@ CAMPAIGN_V2_POLICIES = {
     "member_order": "available-at-then-episode-id/v1",
     "revision": "strict-source-prefix-extension/v1",
     "outcome_anchor": "final-member-availability/v1",
-    "frozen_at": "2026-08-11T13:24:00Z",
+    "frozen_at": "2026-08-12T13:30:00Z",
 }
 CAMPAIGN_V2_RULE_SHA256 = hashlib.sha256(
     json.dumps(
@@ -208,8 +237,18 @@ SELECTOR_RULE: dict[str, Any] = {
     "rule_id": "sparse_exact_option_truth_gate/v1",
     "version_fence": {
         "registered_at": REGISTERED_AT,
-        "effective_freeze_rule": (
-            "later_of_registered_at_and_first_origin_main_commit_containing_exact_rule_digest"
+        "effective_freeze_rule": SELECTOR_EFFECTIVE_FREEZE_RULE,
+        "selector_effective_freeze_at": SELECTOR_EFFECTIVE_FREEZE_AT,
+        "selector_effective_freeze_nyse_session": SELECTOR_EFFECTIVE_FREEZE_SESSION,
+        "source_campaign_effective_freeze_at": CAMPAIGN_V2_POLICIES["frozen_at"],
+        "origin_main_hosting_requirement": (
+            "exact_rule_digest_must_be_on_origin_main_before_effective_freeze"
+        ),
+        "origin_main_requirement_failure_action": (
+            "global_abstain_new_version_and_future_nyse_boundary_required"
+        ),
+        "pre_effective_source_policy": (
+            "retrospective_global_abstain_permanently_ineligible"
         ),
         "benchmark_digest_sha256": BENCHMARK_DIGEST,
         "benchmark_effective_freeze_at": BENCHMARK_EFFECTIVE_FREEZE_AT,
@@ -222,11 +261,12 @@ SELECTOR_RULE: dict[str, Any] = {
         "source_phase": "prospective_after_rule_freeze",
         "source_rule_sha256": CAMPAIGN_V2_RULE_SHA256,
         "source_contract_registration": {
-            "state": "pending_origin_main_dependency",
+            "state": "merged_origin_main_dependency_bound",
             "dependency_pull_request": 5362,
+            "dependency_merge_commit": CAMPAIGN_V2_SOURCE_COMMIT,
             "required_before_any_candidate": True,
-            "exact_schema_full_file_receipt": None,
-            "exact_implementation_full_file_receipt": None,
+            "exact_schema_full_file_receipt": CAMPAIGN_V2_CONTRACT_RECEIPTS[0],
+            "exact_implementation_full_file_receipt": CAMPAIGN_V2_CONTRACT_RECEIPTS[1],
             "dependency_absence_or_failure_action": "abstain",
         },
         "source_clock": "first_selector_observed_available_at",
@@ -642,10 +682,18 @@ def validate_campaign_v2_time_fence(
     selector_freeze = _canonical_utc(
         selector_effective_freeze_at, "selector effective freeze"
     )
+    frozen_selector_freeze = _canonical_utc(
+        SELECTOR_EFFECTIVE_FREEZE_AT, "registered selector effective freeze"
+    )
+    source_campaign_freeze = _canonical_utc(
+        CAMPAIGN_V2_POLICIES["frozen_at"], "source campaign effective freeze"
+    )
     registered = _canonical_utc(REGISTERED_AT, "selector registered_at")
     if selector_freeze < registered:
         _fail("selector effective freeze cannot predate registration")
-    effective = max(benchmark_freeze, selector_freeze)
+    if selector_freeze != frozen_selector_freeze:
+        _fail("selector effective freeze differs from the frozen registration")
+    effective = max(benchmark_freeze, selector_freeze, source_campaign_freeze)
     if formed < effective or final_available < effective:
         _fail("candidate source clocks predate the effective freeze")
     observed = _canonical_utc(
@@ -834,6 +882,11 @@ def build_receipt(repo_root: str | Path = ROOT) -> dict[str, Any]:
     root = Path(repo_root).resolve()
     _validate_file_receipts(
         root,
+        CAMPAIGN_V2_CONTRACT_RECEIPTS,
+        label="campaign v2 schema/runtime contract",
+    )
+    _validate_file_receipts(
+        root,
         CONTEXT_REFERENCE_CONTRACT_RECEIPTS,
         label="Market Memory context-reference contract",
     )
@@ -997,10 +1050,22 @@ def build_receipt(repo_root: str | Path = ROOT) -> dict[str, Any]:
             "selector_rule_component_sha256s": rule_components,
             "selector_effective_freeze": {
                 "rule": rule["version_fence"]["effective_freeze_rule"],
-                "state": "pending_origin_main_registration",
+                "state": "preregistered_future_nyse_boundary",
+                "nyse_session_date": SELECTOR_EFFECTIVE_FREEZE_SESSION,
+                "timezone": "America/New_York",
+                "boundary": "session_open_lower_inclusive",
                 "first_origin_main_commit_containing_rule_digest": None,
                 "first_origin_main_commit_committed_at": None,
-                "effective_freeze_at": None,
+                "origin_main_hosting_requirement": rule["version_fence"][
+                    "origin_main_hosting_requirement"
+                ],
+                "origin_main_requirement_failure_action": rule["version_fence"][
+                    "origin_main_requirement_failure_action"
+                ],
+                "pre_effective_source_policy": rule["version_fence"][
+                    "pre_effective_source_policy"
+                ],
+                "effective_freeze_at": SELECTOR_EFFECTIVE_FREEZE_AT,
             },
         },
         "selector_rule": rule,

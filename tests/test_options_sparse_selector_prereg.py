@@ -23,6 +23,7 @@ from scripts.build_options_sparse_selector_prereg import (
     BENCHMARK_PATH,
     BENCHMARK_REGISTERED_AT,
     BENCHMARK_SCHEMA_PATH,
+    CAMPAIGN_V2_CONTRACT_RECEIPTS,
     CAMPAIGN_V2_POLICIES,
     CAMPAIGN_V2_RULE_SHA256,
     CONTEXT_REFERENCE_CONTRACT_RECEIPTS,
@@ -33,6 +34,9 @@ from scripts.build_options_sparse_selector_prereg import (
     RECEIPT_PATH,
     RECEIPT_SCHEMA_PATH,
     REGISTERED_AT,
+    SELECTOR_EFFECTIVE_FREEZE_AT,
+    SELECTOR_EFFECTIVE_FREEZE_RULE,
+    SELECTOR_EFFECTIVE_FREEZE_SESSION,
     RegistrationError,
     build_receipt,
     canonical_bytes,
@@ -60,6 +64,7 @@ def _minimal_repo(tmp_path: Path) -> Path:
         LEGACY_CAMPAIGN_PATH,
         LEGACY_CAMPAIGN_SCHEMA_PATH,
         RECEIPT_SCHEMA_PATH,
+        *(Path(item["path"]) for item in CAMPAIGN_V2_CONTRACT_RECEIPTS),
         *(Path(item["path"]) for item in CONTEXT_REFERENCE_CONTRACT_RECEIPTS),
         *(Path(item["path"]) for item in LIFECYCLE_CONTRACT_RECEIPTS),
         *(Path(item["path"]) for item in NYSE_CLOCK_CONTRACT_RECEIPTS),
@@ -226,11 +231,23 @@ def test_registration_binds_complete_benchmark_and_every_rule_component() -> Non
         "source_campaign_rule_sha256": CAMPAIGN_V2_RULE_SHA256,
     }
     assert registration["selector_effective_freeze"] == {
-        "rule": "later_of_registered_at_and_first_origin_main_commit_containing_exact_rule_digest",
-        "state": "pending_origin_main_registration",
+        "rule": SELECTOR_EFFECTIVE_FREEZE_RULE,
+        "state": "preregistered_future_nyse_boundary",
+        "nyse_session_date": SELECTOR_EFFECTIVE_FREEZE_SESSION,
+        "timezone": "America/New_York",
+        "boundary": "session_open_lower_inclusive",
         "first_origin_main_commit_containing_rule_digest": None,
         "first_origin_main_commit_committed_at": None,
-        "effective_freeze_at": None,
+        "origin_main_hosting_requirement": (
+            "exact_rule_digest_must_be_on_origin_main_before_effective_freeze"
+        ),
+        "origin_main_requirement_failure_action": (
+            "global_abstain_new_version_and_future_nyse_boundary_required"
+        ),
+        "pre_effective_source_policy": (
+            "retrospective_global_abstain_permanently_ineligible"
+        ),
+        "effective_freeze_at": SELECTOR_EFFECTIVE_FREEZE_AT,
     }
 
 
@@ -286,13 +303,23 @@ def test_empty_denominator_is_reconciled_without_claiming_sparse_gate() -> None:
 def test_future_rule_freezes_sparse_no_quota_exactly_one_policy() -> None:
     rule = build_receipt(ROOT)["selector_rule"]
     assert rule["candidate_manifest"]["source_contract_registration"] == {
-        "state": "pending_origin_main_dependency",
+        "state": "merged_origin_main_dependency_bound",
         "dependency_pull_request": 5362,
+        "dependency_merge_commit": "d8e290032710d84e538c32af0d58358a16407c88",
         "required_before_any_candidate": True,
-        "exact_schema_full_file_receipt": None,
-        "exact_implementation_full_file_receipt": None,
+        "exact_schema_full_file_receipt": CAMPAIGN_V2_CONTRACT_RECEIPTS[0],
+        "exact_implementation_full_file_receipt": CAMPAIGN_V2_CONTRACT_RECEIPTS[1],
         "dependency_absence_or_failure_action": "abstain",
     }
+    assert rule["version_fence"]["effective_freeze_rule"] == (
+        SELECTOR_EFFECTIVE_FREEZE_RULE
+    )
+    assert rule["version_fence"]["selector_effective_freeze_at"] == (
+        SELECTOR_EFFECTIVE_FREEZE_AT
+    )
+    assert rule["version_fence"]["pre_effective_source_policy"] == (
+        "retrospective_global_abstain_permanently_ineligible"
+    )
     assert rule["candidate_manifest"]["manifest_before_decisions"] is True
     assert rule["candidate_manifest"]["first_observed_revision_frozen"] is True
     assert rule["decisions"]["actions"] == ["abstain", "propose"]
@@ -304,6 +331,27 @@ def test_future_rule_freezes_sparse_no_quota_exactly_one_policy() -> None:
     assert rule["decisions"]["proposal_semantics"] == (
         "private_research_review_only_not_issued_plan"
     )
+
+
+def test_campaign_v2_dependency_is_the_exact_final_merged_contract() -> None:
+    from engine.options_signal_campaign import RULE_FROZEN_AT
+
+    assert RULE_FROZEN_AT == CAMPAIGN_V2_POLICIES["frozen_at"] == (
+        SELECTOR_EFFECTIVE_FREEZE_AT
+    )
+    schema = json.loads(
+        (ROOT / CAMPAIGN_V2_CONTRACT_RECEIPTS[0]["path"]).read_text()
+    )
+    assert schema["properties"]["policies"]["properties"]["frozen_at"] == {
+        "const": SELECTOR_EFFECTIVE_FREEZE_AT
+    }
+    for file_receipt in CAMPAIGN_V2_CONTRACT_RECEIPTS:
+        raw = (ROOT / file_receipt["path"]).read_bytes()
+        assert len(raw) == file_receipt["file_bytes"]
+        assert hashlib.sha256(raw).hexdigest() == file_receipt["file_sha256"]
+        assert file_receipt["source_commit"] == (
+            "d8e290032710d84e538c32af0d58358a16407c88"
+        )
 
 
 def test_future_rule_requires_exact_contract_and_all_truth_receipts() -> None:
@@ -351,26 +399,26 @@ def _future_campaign(*, formed_at: str, final_available_at: str) -> dict:
 
 def test_campaign_time_fence_accepts_only_immutable_post_freeze_source_clocks() -> None:
     campaign = _future_campaign(
-        formed_at="2026-08-11T19:00:00Z",
-        final_available_at="2026-08-11T19:00:00Z",
+        formed_at="2026-08-12T13:30:00Z",
+        final_available_at="2026-08-12T13:30:00Z",
     )
     validate_campaign_v2_time_fence(
         campaign,
-        first_selector_observed_available_at="2026-08-11T19:00:01Z",
-        selector_effective_freeze_at="2026-08-11T19:00:00Z",
+        first_selector_observed_available_at="2026-08-12T13:30:01Z",
+        selector_effective_freeze_at=SELECTOR_EFFECTIVE_FREEZE_AT,
     )
 
 
 def test_delayed_observation_cannot_admit_a_pre_freeze_campaign() -> None:
     campaign = _future_campaign(
-        formed_at="2026-08-11T18:59:59Z",
-        final_available_at="2026-08-11T18:59:59Z",
+        formed_at="2026-08-12T13:29:59Z",
+        final_available_at="2026-08-12T13:29:59Z",
     )
     with pytest.raises(RegistrationError, match="source clocks predate"):
         validate_campaign_v2_time_fence(
             campaign,
             first_selector_observed_available_at="2026-08-12T18:00:00Z",
-            selector_effective_freeze_at="2026-08-11T19:00:00Z",
+            selector_effective_freeze_at=SELECTOR_EFFECTIVE_FREEZE_AT,
         )
 
 
@@ -378,16 +426,22 @@ def test_delayed_observation_cannot_admit_a_pre_freeze_campaign() -> None:
     ("formed_at", "final_available_at", "selector_freeze", "message"),
     [
         (
-            "2026-08-11T19:00:00Z",
-            "2026-08-11T19:00:01Z",
-            "2026-08-11T19:00:00Z",
+            "2026-08-12T13:30:00Z",
+            "2026-08-12T13:30:01Z",
+            SELECTOR_EFFECTIVE_FREEZE_AT,
             "must equal",
         ),
         (
-            "2026-08-11T19:00:00Z",
-            "2026-08-11T19:00:00Z",
-            "2026-08-11T18:00:00Z",
+            "2026-08-12T13:30:00Z",
+            "2026-08-12T13:30:00Z",
+            "2026-08-11T21:00:00Z",
             "cannot predate registration",
+        ),
+        (
+            "2026-08-13T13:30:00Z",
+            "2026-08-13T13:30:00Z",
+            "2026-08-13T13:30:00Z",
+            "differs from the frozen registration",
         ),
     ],
 )
@@ -403,7 +457,7 @@ def test_campaign_time_fence_rejects_mismatched_or_unregistered_clocks(
                 formed_at=formed_at,
                 final_available_at=final_available_at,
             ),
-            first_selector_observed_available_at="2026-08-11T19:01:00Z",
+            first_selector_observed_available_at="2026-08-13T13:31:00Z",
             selector_effective_freeze_at=selector_freeze,
         )
 
@@ -592,6 +646,17 @@ def test_lifecycle_rule_binds_the_actual_merged_state_mapping_and_contract_bytes
         raw = (ROOT / file_receipt["path"]).read_bytes()
         assert len(raw) == file_receipt["file_bytes"]
         assert hashlib.sha256(raw).hexdigest() == file_receipt["file_sha256"]
+
+
+@pytest.mark.parametrize("receipt_index", [0, 1])
+def test_campaign_v2_dependency_byte_drift_fails_closed(
+    tmp_path: Path, receipt_index: int
+) -> None:
+    root = _minimal_repo(tmp_path)
+    path = root / CAMPAIGN_V2_CONTRACT_RECEIPTS[receipt_index]["path"]
+    path.write_bytes(path.read_bytes() + b"\n")
+    with pytest.raises(RegistrationError, match="full-file receipt drift"):
+        build_receipt(root)
 
 
 def test_every_authority_and_promotion_claim_is_false() -> None:

@@ -42,7 +42,7 @@
         "selector_effective_freeze"
       ],
       "properties": {
-        "registered_at": {"const": "2026-08-11T18:51:16Z"},
+        "registered_at": {"const": "2026-08-11T21:36:23Z"},
         "repository": {"const": "mastermindx-market-intelligence/macro"},
         "benchmark": {
           "type": "object",
@@ -103,18 +103,36 @@
           "required": [
             "rule",
             "state",
+            "nyse_session_date",
+            "timezone",
+            "boundary",
             "first_origin_main_commit_containing_rule_digest",
             "first_origin_main_commit_committed_at",
+            "origin_main_hosting_requirement",
+            "origin_main_requirement_failure_action",
+            "pre_effective_source_policy",
             "effective_freeze_at"
           ],
           "properties": {
             "rule": {
-              "const": "later_of_registered_at_and_first_origin_main_commit_containing_exact_rule_digest"
+              "const": "preregistered_next_nyse_session_open_after_finalized_rule_head_with_origin_main_before_boundary/v1"
             },
-            "state": {"const": "pending_origin_main_registration"},
+            "state": {"const": "preregistered_future_nyse_boundary"},
+            "nyse_session_date": {"const": "2026-08-12"},
+            "timezone": {"const": "America/New_York"},
+            "boundary": {"const": "session_open_lower_inclusive"},
             "first_origin_main_commit_containing_rule_digest": {"type": "null"},
             "first_origin_main_commit_committed_at": {"type": "null"},
-            "effective_freeze_at": {"type": "null"}
+            "origin_main_hosting_requirement": {
+              "const": "exact_rule_digest_must_be_on_origin_main_before_effective_freeze"
+            },
+            "origin_main_requirement_failure_action": {
+              "const": "global_abstain_new_version_and_future_nyse_boundary_required"
+            },
+            "pre_effective_source_policy": {
+              "const": "retrospective_global_abstain_permanently_ineligible"
+            },
+            "effective_freeze_at": {"const": "2026-08-12T13:30:00Z"}
           }
         }
       }
@@ -140,6 +158,12 @@
           "required": [
             "registered_at",
             "effective_freeze_rule",
+            "selector_effective_freeze_at",
+            "selector_effective_freeze_nyse_session",
+            "source_campaign_effective_freeze_at",
+            "origin_main_hosting_requirement",
+            "origin_main_requirement_failure_action",
+            "pre_effective_source_policy",
             "benchmark_digest_sha256",
             "benchmark_effective_freeze_at",
             "prospective_phase",
@@ -147,9 +171,21 @@
             "rule_change_policy"
           ],
           "properties": {
-            "registered_at": {"const": "2026-08-11T18:51:16Z"},
+            "registered_at": {"const": "2026-08-11T21:36:23Z"},
             "effective_freeze_rule": {
-              "const": "later_of_registered_at_and_first_origin_main_commit_containing_exact_rule_digest"
+              "const": "preregistered_next_nyse_session_open_after_finalized_rule_head_with_origin_main_before_boundary/v1"
+            },
+            "selector_effective_freeze_at": {"const": "2026-08-12T13:30:00Z"},
+            "selector_effective_freeze_nyse_session": {"const": "2026-08-12"},
+            "source_campaign_effective_freeze_at": {"const": "2026-08-12T13:30:00Z"},
+            "origin_main_hosting_requirement": {
+              "const": "exact_rule_digest_must_be_on_origin_main_before_effective_freeze"
+            },
+            "origin_main_requirement_failure_action": {
+              "const": "global_abstain_new_version_and_future_nyse_boundary_required"
+            },
+            "pre_effective_source_policy": {
+              "const": "retrospective_global_abstain_permanently_ineligible"
             },
             "benchmark_digest_sha256": {"const": "20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42"},
             "benchmark_effective_freeze_at": {"const": "2026-08-11T15:47:06Z"},
@@ -180,14 +216,27 @@
           "properties": {
             "source_schema": {"const": "options.signal_campaign/v2"},
             "source_phase": {"const": "prospective_after_rule_freeze"},
-            "source_rule_sha256": {"const": "dc10b850b460bd5042e84e491ee15e80fc2f5b7409281f31d28569fafcb894fd"},
+            "source_rule_sha256": {"const": "6ff5cc16a74bf27807b3c8540b31794a6d9c54aec8fc152edc02602d646ad7f6"},
             "source_contract_registration": {
               "const": {
-                "state": "pending_origin_main_dependency",
+                "state": "merged_origin_main_dependency_bound",
                 "dependency_pull_request": 5362,
+                "dependency_merge_commit": "d8e290032710d84e538c32af0d58358a16407c88",
                 "required_before_any_candidate": true,
-                "exact_schema_full_file_receipt": null,
-                "exact_implementation_full_file_receipt": null,
+                "exact_schema_full_file_receipt": {
+                  "role": "campaign_v2_schema",
+                  "path": "contracts/options/options.signal_campaign.v2.schema.json",
+                  "file_sha256": "65ce2f0fe1cb16dfca58949a85562645be4a41eb454b5ce243c16011c8a251a3",
+                  "file_bytes": 7177,
+                  "source_commit": "d8e290032710d84e538c32af0d58358a16407c88"
+                },
+                "exact_implementation_full_file_receipt": {
+                  "role": "campaign_v2_runtime",
+                  "path": "engine/options_signal_campaign.py",
+                  "file_sha256": "f5d0a83c7fd35ee219aad448cef7384df98e1ee04b87d36ae631b0d273e4310c",
+                  "file_bytes": 46774,
+                  "source_commit": "d8e290032710d84e538c32af0d58358a16407c88"
+                },
                 "dependency_absence_or_failure_action": "abstain"
               }
             },
