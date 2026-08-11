@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/spy_experience_registration.v1.schema.json",
+  "title": "Market Memory SPY experience registration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "registration_id", "content_sha256", "content_bytes", "spec"],
+  "properties": {
+    "schema": {"const": "market_memory.spy_experience_registration.v1"},
+    "registration_id": {"type": "string", "pattern": "^mmspyexpreg_[a-f0-9]{64}$"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "content_bytes": {"type": "integer", "minimum": 1, "maximum": 65536},
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile", "subject", "activation_session", "calendar", "cutoff",
+        "state_inputs", "decision_state_projection", "capacity_preflight", "auditability", "outcome", "population", "evidence_policy", "claims", "authority"
+      ],
+      "properties": {
+        "profile": {"const": "market_memory.private.spy_experience_accrual.v1"},
+        "subject": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["symbol", "subject_id", "instrument_id", "identity_version", "mic", "currency"],
+          "properties": {
+            "symbol": {"const": "SPY"},
+            "subject_id": {"const": "mmsecurity_5fc37e8db34f74314b654c910ea8bacfa7de8b5d2d067f2e5421c9d5745ceb4c"},
+            "instrument_id": {"const": "mmsecurity_6f361f5bad9f06a3b2ff157585d5728f55f77198420959aadd8922d1045c3fea"},
+            "identity_version": {"const": "mmidentityv_65ec5e55473e953b55fa2d146f40e8b56dfae2e68a3df7423405db1034d16903"},
+            "mic": {"const": "ARCX"},
+            "currency": {"const": "USD"}
+          }
+        },
+        "activation_session": {"const": "2026-08-17"},
+        "calendar": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner_path", "owner_sha256", "calendar_id", "market_session", "expected_opportunity_rule"],
+          "properties": {
+            "owner_path": {"const": "lib/nyse_calendar.py"},
+            "owner_sha256": {"const": "7c9167fd416babb64c3067ae7e6237615011ad79e26d826e57005486496410ce"},
+            "calendar_id": {"const": "mmcalendar_a102c5367c17f9c0b4df3af5c2826824fc112935ec76e6d18d55833f53644e0c"},
+            "market_session": {"const": "XNYS_REGULAR"},
+            "expected_opportunity_rule": {"const": "first_126_xnys_sessions_on_or_after_activation.v1"}
+          }
+        },
+        "cutoff": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rule", "following_calendar_days", "window_opens_utc_time", "admission_window_seconds", "actual_cutoff", "clock_model", "head_observation_model", "aba_adversary_model", "owner_pair_retry_interval_seconds", "owner_pair_max_attempts", "unstable_pair_policy"],
+          "properties": {
+            "rule": {"const": "first_same_head_sandwich_observation_in_fixed_window"},
+            "following_calendar_days": {"const": 1},
+            "window_opens_utc_time": {"const": "04:30:00Z"},
+            "admission_window_seconds": {"const": 900},
+            "actual_cutoff": {"const": "local_pin_observed_at_no_later_than_deadline"},
+            "clock_model": {"const": "session_ordinal_only_no_fabricated_market_close_timestamp"},
+            "head_observation_model": {"const": "same_authenticated_head_before_and_after_local_sample_under_monotone_append_only_owner_protocol"},
+            "aba_adversary_model": {"const": "transient_a_to_b_to_a_between_reads_not_detectable_v1"},
+            "owner_pair_retry_interval_seconds": {"const": 30},
+            "owner_pair_max_attempts": {"const": 31},
+            "unstable_pair_policy": {"const": "retry_within_window_then_missed_owner_pair_not_stable_by_deadline"}
+          }
+        },
+        "state_inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "trusted_profile", "macro_feature_id", "macro_session_field",
+            "technical_profile", "technical_session_field", "same_session_required",
+            "published_generation_ancestry_required", "max_owner_generation_capture_count", "capture_clock_not_after_cutoff",
+            "publication_proof", "owner_protocol_assumption", "opportunity_selection",
+            "opportunity_selection_scope", "trusted_selection_clock_field",
+            "technical_selection_clock_field", "opportunity_owner_clock_ordering",
+            "opportunity_equal_clock_policy", "state_semantics", "fallback_allowed"
+          ],
+          "properties": {
+            "trusted_profile": {"const": "market_memory.trusted.macro_regime_canary.v1"},
+            "macro_feature_id": {"const": "macro.regime_state"},
+            "macro_session_field": {"const": "source_artifact.source_asof"},
+            "technical_profile": {"const": "market_memory.private.spy_raw_technical_actual_output.v1"},
+            "technical_session_field": {"const": "feature_object.session"},
+            "same_session_required": {"const": true},
+            "published_generation_ancestry_required": {"const": true},
+            "max_owner_generation_capture_count": {"const": 256},
+            "capture_clock_not_after_cutoff": {"const": true},
+            "publication_proof": {"const": "same_authenticated_head_observed_before_and_after_local_sample"},
+            "owner_protocol_assumption": {"const": "monotone_append_only_content_addressed_head"},
+            "opportunity_selection": {"const": "earliest_distinct_owner_observation_exact_session.v1"},
+            "opportunity_selection_scope": {"const": "exact_subject_exact_session_within_authenticated_generation"},
+            "trusted_selection_clock_field": {"const": "captured_at"},
+            "technical_selection_clock_field": {"const": "first_observed_at"},
+            "opportunity_owner_clock_ordering": {"const": "parsed_utc_instant_ascending_then_capture_id_lexicographic_ascending"},
+            "opportunity_equal_clock_policy": {"const": "abstain_owner_capture_clock_tie_no_selection"},
+            "state_semantics": {"const": "narrow_owner_reference_pair_not_w2a_or_combined_domain_state"},
+            "fallback_allowed": {"const": false}
+          }
+        },
+        "decision_state_projection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "projection_version", "source_transform_version", "source_feature_id",
+            "coordinates", "numeric_conversion", "numeric_scale_denominators_q18",
+            "categorical_mismatch", "distance_arithmetic", "missingness",
+            "categorical_unknown_policy", "future_w4_consumption"
+          ],
+          "properties": {
+            "projection_version": {"const": "market_memory.spy_regime_decision_state_projection.v1"},
+            "source_transform_version": {"const": "market_memory.macro_regime_transform.v1"},
+            "source_feature_id": {"const": "macro.regime_state"},
+            "coordinates": {
+              "type": "array",
+              "prefixItems": [
+                {"const": "growth_score.q18"}, {"const": "inflation_score.q18"},
+                {"const": "quad"}, {"const": "liquidity_overlay"}, {"const": "cycle_tag"}
+              ],
+              "items": false, "minItems": 5, "maxItems": 5
+            },
+            "numeric_conversion": {"const": "exact_source_binary64_integer_ratio_half_even_q18"},
+            "numeric_scale_denominators_q18": {
+              "type": "object", "additionalProperties": false,
+              "required": ["growth_score.q18", "inflation_score.q18"],
+              "properties": {
+                "growth_score.q18": {"const": "2.000000000000000000"},
+                "inflation_score.q18": {"const": "2.000000000000000000"}
+              }
+            },
+            "categorical_mismatch": {
+              "type": "object", "additionalProperties": false,
+              "required": ["equal", "unequal", "fields"],
+              "properties": {
+                "equal": {"const": 0}, "unequal": {"const": 1},
+                "fields": {
+                  "type": "array",
+                  "prefixItems": [
+                    {"const": "quad"}, {"const": "liquidity_overlay"}, {"const": "cycle_tag"}
+                  ],
+                  "items": false, "minItems": 3, "maxItems": 3
+                }
+              }
+            },
+            "distance_arithmetic": {
+              "type": "object", "additionalProperties": false,
+              "required": ["decimal_context_precision", "rounding", "numeric_delta", "categorical_delta", "sum", "sqrt"],
+              "properties": {
+                "decimal_context_precision": {"const": 64},
+                "rounding": {"const": "ROUND_HALF_EVEN"},
+                "numeric_delta": {"const": "(q18_query-q18_candidate)/2.000000000000000000"},
+                "categorical_delta": {"const": "0_if_equal_else_1"},
+                "sum": {"const": "five_squared_deltas_no_intermediate_quantization"},
+                "sqrt": {"const": "decimal_sqrt_then_quantize_once_q18"}
+              }
+            },
+            "missingness": {"const": "fail_closed_no_imputation"},
+            "categorical_unknown_policy": {"const": "projection_unavailable_non_scoreable_opportunity_unchanged"},
+            "future_w4_consumption": {"const": "exact_persisted_opportunity_projection_only"}
+          }
+        },
+        "capacity_preflight": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_owner_generation_capture_count", "trusted_future_captures", "technical_future_captures", "revision_reserve", "rule", "failure"],
+          "properties": {
+            "max_owner_generation_capture_count": {"const": 256},
+            "trusted_future_captures": {"const": 126},
+            "technical_future_captures": {"const": 136},
+            "revision_reserve": {"const": 32},
+            "rule": {"const": "current_count_plus_future_plus_reserve_lte_max"},
+            "failure": {"const": "pilot_no_go_before_any_w2c_write"}
+          }
+        },
+        "auditability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["warning_owner_capture_count", "checkpoint_migration_required_before_owner_count", "v2_acceptance_requirement", "indefinite_v1_auditability"],
+          "properties": {
+            "warning_owner_capture_count": {"const": 320},
+            "checkpoint_migration_required_before_owner_count": {"const": 384},
+            "v2_acceptance_requirement": {"const": "reload_every_v1_pilot_source_ref_from_authenticated_checkpoint_or_delta"},
+            "indefinite_v1_auditability": {"const": false}
+          }
+        },
+        "outcome": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "horizon_sessions", "target", "formula", "source", "price_basis",
+            "input_encoding", "exact_decimal_encoding", "quantization", "rounding",
+            "economic_return", "corporate_action_adjusted", "missing_target_policy",
+            "late_target_policy", "clock_tie_policy", "maturity_owner_miss_policy",
+            "target_maturity_window_rule", "initial_maturity_persisted_view_recovery",
+            "initial_maturity_persisted_view_equal_clock_policy", "revision_selection", "correction_policy",
+            "final_tail_xnys_sessions", "final_tail_sunset_session",
+            "correction_observation_window_rule",
+            "terminal_census_window_opens_at", "terminal_census_deadline_at", "terminal_marker_policy"
+          ],
+          "properties": {
+            "horizon_sessions": {"const": 5},
+            "target": {"const": "spy.raw_unadjusted_daily_aggregate_close_ratio"},
+            "formula": {"const": "target_capture.feature.state.end_close/sealed_anchor_capture.feature.state.end_close"},
+            "source": {"const": "owner_validated_technical_capture_feature_marks"},
+            "price_basis": {"const": "raw_unadjusted_daily_aggregate_close"},
+            "input_encoding": {"const": "ieee754_binary64_exact_hex_and_integer_ratio"},
+            "exact_decimal_encoding": {"const": "python_decimal_from_float_exact"},
+            "quantization": {"const": "q18"},
+            "rounding": {"const": "exact_integer_ratio_half_even"},
+            "economic_return": {"const": false},
+            "corporate_action_adjusted": {"const": false},
+            "missing_target_policy": {"const": "append_unavailable_at_maturity_cutoff"},
+            "late_target_policy": {"const": "append_late_source_resolution_preserve_unavailable_revision"},
+            "clock_tie_policy": {"const": "append_censored_no_capture_selection"},
+            "maturity_owner_miss_policy": {"const": "append_censored_preserve_late_resolution_chain"},
+            "target_maturity_window_rule": {"const": "target_session_following_calendar_day_same_registered_window"},
+            "initial_maturity_persisted_view_recovery": {"const": "earliest_distinct_in_window_pair_observed_at.v1"},
+            "initial_maturity_persisted_view_equal_clock_policy": {"const": "fail_closed_ambiguous_no_generation_selection"},
+            "revision_selection": {"const": "owner_observed_revision_chain.v1"},
+            "correction_policy": {"const": "strictly_later_owner_observation_active_predecessor_chain"},
+            "final_tail_xnys_sessions": {"const": 5},
+            "final_tail_sunset_session": {"const": "2027-03-02"},
+            "correction_observation_window_rule": {"const": "daily_0430_0445z_from_target_maturity_window_through_terminal_date_inclusive"},
+            "terminal_census_window_opens_at": {"const": "2027-03-03T04:30:00Z"},
+            "terminal_census_deadline_at": {"const": "2027-03-03T04:45:00Z"},
+            "terminal_marker_policy": {"const": "immutable_final_population_receipt_then_no_write"}
+          }
+        },
+        "population": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["dispositions", "one_row_per_expected_session", "timely_abstention_is_final", "late_unsealed_disposition", "pilot_expected_sessions", "sunset_session", "final_target_session", "correction_sunset_session", "terminal_census_date", "renewal_requirement"],
+          "properties": {
+            "dispositions": {
+              "type": "array",
+              "prefixItems": [
+                {"const": "admitted"}, {"const": "abstained"}, {"const": "missed"}
+              ],
+              "items": false,
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "one_row_per_expected_session": {"const": true},
+            "timely_abstention_is_final": {"const": true},
+            "late_unsealed_disposition": {"const": "missed"},
+            "pilot_expected_sessions": {"const": 126},
+            "sunset_session": {"const": "2027-02-16"},
+            "final_target_session": {"const": "2027-02-23"},
+            "correction_sunset_session": {"const": "2027-03-02"},
+            "terminal_census_date": {"const": "2027-03-03"},
+            "renewal_requirement": {"const": "authenticated_checkpoint_or_delta_generations_before_v2"}
+          }
+        },
+        "evidence_policy": {"$ref": "#/$defs/evidencePolicy"},
+        "claims": {"$ref": "#/$defs/claims"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    }
+  },
+  "$defs": {
+    "evidencePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prospective_only", "historical_backfill_allowed", "actual_output_only",
+        "population_receipt_required", "training_eligible", "promotion_eligible",
+        "external_clock_authenticated", "aba_resistance_authenticated", "calendar_session_derivation_authenticated"
+      ],
+      "properties": {
+        "prospective_only": {"const": true},
+        "historical_backfill_allowed": {"const": false},
+        "actual_output_only": {"const": true},
+        "population_receipt_required": {"const": true},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false},
+        "external_clock_authenticated": {"const": false},
+        "aba_resistance_authenticated": {"const": false},
+        "calendar_session_derivation_authenticated": {"const": true}
+      }
+    },
+    "claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["external_clock_authenticated", "aba_resistance_authenticated", "calendar_session_derivation_authenticated"],
+      "properties": {
+        "external_clock_authenticated": {"const": false},
+        "aba_resistance_authenticated": {"const": false},
+        "calendar_session_derivation_authenticated": {"const": true}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier", "horizon_role", "context_only", "proposal_weight", "may_rank",
+        "may_gate", "may_size", "may_escalate", "may_trade", "may_originate",
+        "may_select_options_candidate", "may_execute", "may_write_options_episode",
+        "may_append_outcome", "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}
