@@ -9198,7 +9198,7 @@ rulings:
     local_id: "RF-3"
     short_name: "naming-candidate-type-field-claim-shape-reserved-for-metabol"
     title: "Naming: candidate_type field; claim_shape reserved for metabolism enum"
-    ruling: "The factory taxonomy field is `candidate_type` (oracle_compound|cortex_hypothesis|alpha_family|species|external_idea). `claim_shape` is RESERVED for the metabolism enum, copied verbatim from the metabolism-issued row when present, never invented by the factory."
+    ruling: "The factory taxonomy field is `candidate_type` (oracle_compound|cortex_hypothesis|alpha_family|species|external_idea|cycle_pattern_rule|market_memory_candidate). `claim_shape` is RESERVED for the metabolism enum, copied verbatim from the metabolism-issued row when present, never invented by the factory."
     status: "active_law"
     object_kind: "data_contract"
     owner_program: "research-factory"
@@ -9214,8 +9214,8 @@ rulings:
     fdr_family: null
     precedence_rank: 2
     source_doc: "research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md"
-    source_quote: "- **RF-3 — Naming.** The factory taxonomy field is **`candidate_type`** (`oracle_compound|cortex_hypothesis|alpha_family|species|external_idea`). `claim_shape` is RESERVED for the metabolism enum, copied verbatim from the metabolism-issued row when present, never invented by the factory."
-    source_pr: 1629
+    source_quote: "- **RF-3 — Naming.** The factory taxonomy field is **`candidate_type`** (`oracle_compound|cortex_hypothesis|alpha_family|species|external_idea|cycle_pattern_rule|market_memory_candidate`). `claim_shape` is RESERVED for the metabolism enum, copied verbatim from the metabolism-issued row when present, never invented by the factory."
+    source_pr: 5325
     supersedes: []
     superseded_by: []
     nondelegable: false
@@ -9225,6 +9225,8 @@ rulings:
       - "metabolism enum"
       - "oracle_compound"
       - "cortex_hypothesis"
+      - "cycle_pattern_rule"
+      - "market_memory_candidate"
       - "factory taxonomy"
     aliases:
       - "RF-NAMING"
