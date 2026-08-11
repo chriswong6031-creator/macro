@@ -1,0 +1,366 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "market_memory.options_signal_episode_production_record/v1",
+  "title": "Market Memory options signal episode production record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "record_id", "record_class", "source_identity", "temporal",
+    "era", "subject", "facts", "provenance", "missingness", "evidence",
+    "authority", "grading_ruler"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.options_signal_episode_production_record/v1"},
+    "record_id": {"type": "string", "pattern": "^mmprodrecord_[a-f0-9]{64}$"},
+    "record_class": {"const": "options.signal_episode/v1"},
+    "source_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["episode_id", "source", "source_event_id", "source_record_sha256"],
+      "properties": {
+        "episode_id": {"type": "string", "pattern": "^osep_[a-f0-9]{24}$"},
+        "source": {"type": "string", "minLength": 1},
+        "source_event_id": {"type": "string", "minLength": 1},
+        "source_record_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "temporal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effective_at", "observed_at", "decision_at", "source_available_at",
+        "known_at", "captured_at", "published_at", "contract_frozen_at",
+        "store_activated_at"
+      ],
+      "properties": {
+        "effective_at": {"$ref": "#/$defs/timestamp"},
+        "observed_at": {"$ref": "#/$defs/timestamp"},
+        "decision_at": {"$ref": "#/$defs/timestamp"},
+        "source_available_at": {"$ref": "#/$defs/timestamp"},
+        "known_at": {"$ref": "#/$defs/timestamp"},
+        "captured_at": {"$ref": "#/$defs/timestamp"},
+        "published_at": {"anyOf": [{"$ref": "#/$defs/timestamp"}, {"type": "null"}]},
+        "contract_frozen_at": {"const": "2026-08-11T12:02:48Z"},
+        "store_activated_at": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+    "era": {"enum": ["pre_activation_actual_output", "production_forward"]},
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ticker", "contract", "identity_basis", "permanent_contract_identity"],
+      "properties": {
+        "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]+$"},
+        "contract": {"$ref": "#/$defs/contract"},
+        "identity_basis": {"const": "owner_episode_plus_observed_contract_tuple/v1"},
+        "permanent_contract_identity": {"const": false}
+      }
+    },
+    "facts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "feature_snapshot"],
+      "properties": {
+        "decision": {"$ref": "#/$defs/decision"},
+        "feature_snapshot": {"$ref": "#/$defs/features"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_program", "owner_producer", "owner_schema", "source_artifact_path",
+        "source_artifact_sha256", "source_artifact_bytes", "source_commit",
+        "source_row_index", "owner_source_artifact", "owner_source_snapshot_asof",
+        "source_record"
+      ],
+      "properties": {
+        "owner_program": {"const": "options-intelligence-program"},
+        "owner_producer": {"const": "scripts.build_options_signal_episode"},
+        "owner_schema": {"const": "options.signal_episode/v1"},
+        "source_artifact_path": {"const": "data/options_signal_episode/episodes.jsonl"},
+        "source_artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "source_artifact_bytes": {"type": "integer", "minimum": 1, "maximum": 50331648},
+        "source_commit": {"type": "string", "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$"},
+        "source_row_index": {"type": "integer", "minimum": 0, "maximum": 24999},
+        "owner_source_artifact": {"type": "string", "minLength": 1},
+        "owner_source_snapshot_asof": {"$ref": "#/$defs/timestamp"},
+        "source_record": {"$ref": "#/$defs/owner_episode"}
+      }
+    },
+    "missingness": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "reason"],
+        "properties": {
+          "field": {
+            "enum": [
+              "source_record.published_at",
+              "source_record.feature_snapshot.dte",
+              "source_record.feature_snapshot.vol_gt_prior_oi"
+            ]
+          },
+          "reason": {
+            "enum": [
+              "owner_did_not_publish_a_separate_clock",
+              "owner_source_value_missing",
+              "prior_open_interest_not_available"
+            ]
+          }
+        }
+      }
+    },
+    "evidence": {"$ref": "#/$defs/evidence"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "grading_ruler": {"$ref": "#/$defs/grading_ruler"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["right", "expiration", "strike"],
+      "properties": {
+        "right": {"enum": ["C", "P"]},
+        "expiration": {"type": "string", "format": "date"},
+        "strike": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "owner_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "may_originate", "may_rank", "may_gate", "may_size", "may_escalate",
+        "may_trade", "may_publish_pick", "may_train_prophet"
+      ],
+      "properties": {
+        "may_originate": {"const": false},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_publish_pick": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "reason", "underlying_direction", "option_action", "authority"],
+      "properties": {
+        "disposition": {"enum": ["fire", "watch", "suppressed", "abstain"]},
+        "reason": {"type": "string", "minLength": 1},
+        "underlying_direction": {"enum": ["long", "short", "none"]},
+        "option_action": {"enum": ["buy", "sell", "none"]},
+        "authority": {"$ref": "#/$defs/owner_authority"}
+      }
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "premium_usd", "selection_rule", "selection_floor_usd", "selection_root_class",
+        "contracts", "avg_option_trade_price", "flow_side", "dte", "moneyness_bucket",
+        "vol_gt_prior_oi", "repeated", "swept"
+      ],
+      "properties": {
+        "premium_usd": {"type": "number", "exclusiveMinimum": 0},
+        "selection_rule": {"const": "premium_floor/v1"},
+        "selection_floor_usd": {"type": "number", "minimum": 0},
+        "selection_root_class": {"enum": ["etf_anchor", "single_name"]},
+        "contracts": {"type": "integer", "minimum": 1},
+        "avg_option_trade_price": {"type": "number", "exclusiveMinimum": 0},
+        "flow_side": {"enum": ["~buy", "~sell", "mixed"]},
+        "dte": {"type": ["integer", "null"], "minimum": 0},
+        "moneyness_bucket": {"enum": ["itm", "atm", "near_otm", "far_otm", "unknown"]},
+        "vol_gt_prior_oi": {"type": ["boolean", "null"]},
+        "repeated": {"type": "boolean"},
+        "swept": {"type": "boolean"}
+      }
+    },
+    "owner_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_schema", "source_artifact", "source_snapshot_asof", "feature_cutoff",
+        "signing_source", "oi_vintage", "oi_vintage_rule"
+      ],
+      "properties": {
+        "source_schema": {"const": "live_flow.event_stage/v1"},
+        "source_artifact": {"type": "string", "minLength": 1},
+        "source_snapshot_asof": {"$ref": "#/$defs/timestamp"},
+        "feature_cutoff": {"$ref": "#/$defs/timestamp"},
+        "signing_source": {"const": "tape"},
+        "oi_vintage": {
+          "anyOf": [{"type": "string", "format": "date"}, {"type": "null"}]
+        },
+        "oi_vintage_rule": {"const": "latest_available_chain_before_session"}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "availability_exact", "trade_direction_reliability",
+        "option_quote_outcome_eligible", "source_baseline"
+      ],
+      "properties": {
+        "availability_exact": {"const": true},
+        "trade_direction_reliability": {"const": "soft"},
+        "option_quote_outcome_eligible": {"const": false},
+        "source_baseline": {"const": "floor"}
+      }
+    },
+    "owner_episode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "episode_id", "source", "source_event_id", "event_time",
+        "observed_at", "decision_at", "available_at", "published_at",
+        "anchor_strategy", "session_date", "ticker", "contract", "decision",
+        "feature_snapshot", "provenance", "quality"
+      ],
+      "properties": {
+        "schema": {"const": "options.signal_episode/v1"},
+        "episode_id": {"type": "string", "pattern": "^osep_[a-f0-9]{24}$"},
+        "source": {"type": "string", "minLength": 1},
+        "source_event_id": {"type": "string", "minLength": 1},
+        "event_time": {"$ref": "#/$defs/timestamp"},
+        "observed_at": {"$ref": "#/$defs/timestamp"},
+        "decision_at": {"$ref": "#/$defs/timestamp"},
+        "available_at": {"$ref": "#/$defs/timestamp"},
+        "published_at": {"anyOf": [{"$ref": "#/$defs/timestamp"}, {"type": "null"}]},
+        "anchor_strategy": {"const": "durable_available_at"},
+        "session_date": {"type": "string", "format": "date"},
+        "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]+$"},
+        "contract": {"$ref": "#/$defs/contract"},
+        "decision": {"$ref": "#/$defs/decision"},
+        "feature_snapshot": {"$ref": "#/$defs/features"},
+        "provenance": {"$ref": "#/$defs/owner_provenance"},
+        "quality": {"$ref": "#/$defs/quality"}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actual_owner_output_only", "exact_source_bytes_authenticated",
+        "source_prefix_immutable", "pre_activation_forward_eligible",
+        "production_forward_requires_post_activation_append",
+        "reconstruction_ingest_supported", "option_pnl_evaluable",
+        "retrieval_eligible", "forecast_eligible", "training_eligible",
+        "promotion_eligible", "context_only", "forward_grading_eligible"
+      ],
+      "properties": {
+        "actual_owner_output_only": {"const": true},
+        "exact_source_bytes_authenticated": {"const": true},
+        "source_prefix_immutable": {"const": true},
+        "pre_activation_forward_eligible": {"const": false},
+        "production_forward_requires_post_activation_append": {"const": true},
+        "reconstruction_ingest_supported": {"const": false},
+        "option_pnl_evaluable": {"const": false},
+        "retrieval_eligible": {"const": false},
+        "forecast_eligible": {"const": false},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false},
+        "context_only": {"const": true},
+        "forward_grading_eligible": {"type": "boolean"}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier", "horizon_role", "context_only", "proposal_weight",
+        "may_originate", "may_add_candidates", "may_rank", "may_gate",
+        "may_size", "may_escalate", "may_trade", "may_publish_pick",
+        "may_train_prophet", "may_train_model", "may_promote_feature"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_originate": {"const": false},
+        "may_add_candidates": {"const": false},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_publish_pick": {"const": false},
+        "may_train_prophet": {"const": false},
+        "may_train_model": {"const": false},
+        "may_promote_feature": {"const": false}
+      }
+    },
+    "grading_ruler": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id", "join_key", "owner_outcome_schemas", "cohort_predicate",
+        "numeric_outcome_predicate", "horizons",
+        "measurements", "maturity_clock", "pending_policy", "incomplete_policy",
+        "correction_policy", "option_pnl", "readiness_floor",
+        "performance_thresholds_frozen", "training_eligible", "promotion_eligible"
+      ],
+      "properties": {
+        "contract_id": {"const": "options_episode_underlying_forward_outcomes/v1"},
+        "join_key": {"const": "episode_id"},
+        "owner_outcome_schemas": {
+          "const": [
+            "options.signal_episode_outcome/v1",
+            "options.signal_episode_session_outcome/v1"
+          ]
+        },
+        "cohort_predicate": {
+          "const": "record.era=production_forward AND record.evidence.forward_grading_eligible=true"
+        },
+        "numeric_outcome_predicate": {
+          "const": "owner_outcome.status=complete AND owner_outcome.underlying.status=complete"
+        },
+        "horizons": {"const": ["h+60", "eod", "1d", "3d", "5d", "10d"]},
+        "measurements": {
+          "const": [
+            "owner_outcome.underlying.ret",
+            "owner_outcome.underlying.mfe",
+            "owner_outcome.underlying.mae"
+          ]
+        },
+        "maturity_clock": {"const": "owner_outcome.matured_at"},
+        "pending_policy": {"const": "missing_until_owner_outcome_matures"},
+        "incomplete_policy": {"const": "preserve_terminal_incomplete_or_censored_not_zero"},
+        "correction_policy": {
+          "const": "owner_v1_immutable_conflict_refusal_correction_requires_versioned_owner_contract"
+        },
+        "option_pnl": {"const": "unavailable_without_executable_nbbo_evidence"},
+        "readiness_floor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "minimum_matured_records", "minimum_distinct_session_dates",
+            "minimum_distinct_tickers", "dependence_cluster", "meaning"
+          ],
+          "properties": {
+            "minimum_matured_records": {"const": 30},
+            "minimum_distinct_session_dates": {"const": 20},
+            "minimum_distinct_tickers": {"const": 20},
+            "dependence_cluster": {"const": "session_date+ticker"},
+            "meaning": {"const": "evaluation_readiness_only_not_promotion_or_edge_threshold"}
+          }
+        },
+        "performance_thresholds_frozen": {"const": false},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false}
+      }
+    }
+  }
+}
