@@ -11907,7 +11907,7 @@ artifacts:
     owner_program: macro-release-intel
     cadence: daily-engine
     storage: git
-    asof_field: collected_at
+    asof_field: completed_at
     freshness_sla_hours: 30
     schema: release_target_vintage_collection.v1
     tier: shadow
@@ -11917,13 +11917,221 @@ artifacts:
     consumers:
       - scripts/build_release_forecast.py
       - engine/release_target_truth.py
+      - engine/release_cpi_target_history.py
     notes: >
       Manifest for seven ALFRED output_type=2 full-vintage parquet stores:
       CPIAUCSL, CPILFESL, PCEPI, PCEPILFE, PPIFIS, PPIFES, and PAYEMS.
       Canonical target reconstruction selects T and T-1 from one exact
       release-date vintage and fails closed if either level is unavailable.
+      A completed cohort binds every parquet by exact SHA-256 and byte length;
+      seal_existing preserves the original collection clock while adding that
+      portable completion boundary to pre-contract stores.
       These stores are target truth only; they do not silently replace the
       historical cross-vintage model epoch or rewrite old forward rows.
+
+  # --- shadow: frozen CPI truth preregistration ---
+  release-cpi-truth-preregistered-sample:
+    path: data/release_forecast/cpi_truth/preregistered_sample.json
+    format: json
+    producer: scripts/collect_release_cpi_official_truth.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: on-demand
+    storage: git
+    asof_field: frozen_at
+    freshness_sla_hours: 99999
+    schema: release_cpi_truth_preregistered_sample.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/collect_release_cpi_official_truth.py
+      - engine/release_cpi_target_history.py
+      - scripts/build_release_cpi_truth_parity.py
+    notes: >
+      Frozen 15-case parity panel: fourteen published BLS Table 1 documents
+      spanning legacy XLS/XLSX, annual seasonal-revision boundaries, pandemic,
+      high-inflation and negative/zero prints, plus one source-bound October
+      2025 nonpublication. This governed file is never refreshed from observed
+      parity outcomes; the collector validates it but does not tune it.
+
+  release-cpi-official-table1-archive:
+    path: data/release_forecast/cpi_truth/official_table1_archive/
+    format: other
+    producer: scripts/collect_release_cpi_official_truth.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 99999
+    schema: release_cpi_official_truth.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/collect_release_cpi_official_truth.py
+      - engine/release_cpi_target_history.py
+    notes: >
+      Immutable content-addressed official source bytes and receipts for the
+      preregistered BLS CPI truth panel. Annual ZIP transport hashes and member
+      lengths are pinned; only the exact extracted workbook bytes are retained
+      for compact reproducibility. The explicit nonpublication retains the
+      exact BLS archive-page bytes. Unavailable parse attempts never occupy a
+      canonical archived-edition slot.
+
+  release-cpi-official-table1-receipts:
+    path: data/release_forecast/cpi_truth/official_table1_receipts.jsonl
+    format: jsonl
+    producer: scripts/collect_release_cpi_official_truth.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 99999
+    schema: release_cpi_official_truth.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/release_cpi_target_history.py
+      - scripts/build_release_cpi_truth_parity.py
+    notes: >
+      Deterministic one-row-per-preregistered-case projection of the immutable
+      BLS source store. Published rows carry headline/core archived
+      release-edition MoM and exact document/container bindings; the single gap
+      row carries retained official archive-page evidence. These retrospective
+      downloads explicitly mark first-print status unverified. No forecast
+      model consumes these rows.
+
+  release-cpi-official-table1-collection:
+    path: data/release_forecast/cpi_truth/official_table1_collection.json
+    format: json
+    producer: scripts/collect_release_cpi_official_truth.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: completed_at
+    freshness_sla_hours: 99999
+    schema: release_cpi_official_collection_manifest.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/release_cpi_target_history.py
+      - scripts/build_release_cpi_truth_parity.py
+    notes: >
+      Completion manifest written after the official CPI batch closes. It binds
+      the frozen preregistration and exact ordered receipt corpus by SHA-256,
+      bytes and count, and enumerates every published/gap case. Parity rejects
+      missing, extra, reordered, tampered, or unretained evidence.
+
+  release-cpi-coherent-target-history:
+    path: data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json
+    format: json
+    producer: scripts/build_release_cpi_truth_parity.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: release_cpi_target_history.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Manifest-bound headline/core CPI history reconstructed from T and T-1
+      levels present on the same ALFRED release vintage. Rows retain latent MoM,
+      half-up one-decimal print proxies, source-level coordinates and rejection
+      disclosures. Top-level asof and candidate_data_asof both identify the
+      bound ALFRED manifest completion clock. Candidate target epoch only; no
+      champion or combined weight.
+
+  release-cpi-truth-parity:
+    path: data/release_forecast/cpi_truth/parity_report.json
+    format: json
+    producer: scripts/build_release_cpi_truth_parity.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: release_cpi_truth_parity.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Exact preregistered comparison between official archived BLS headline/core
+      Table 1 release-edition observations and the same-release-vintage ALFRED
+      one-decimal proxy. A pass admits only the proxy target epoch as a candidate;
+      official_first_print_v1 stays withheld until a contemporaneously bound
+      official history and forward record exist. Top-level asof and
+      evidence_available_at are the deterministic latest of the ALFRED manifest,
+      preregistration freeze and official collection completion clocks;
+      candidate_data_asof retains the earlier ALFRED-only availability clock.
+
+  release-cpi-truth-build-completion:
+    path: data/release_forecast/cpi_truth/build_completion.json
+    format: json
+    producer: scripts/build_release_cpi_truth_parity.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: release_cpi_truth_build_completion.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Publication boundary written and fsynced only after coherent history and
+      parity artifacts succeed. Directly binds ALFRED manifest, official
+      collection, preregistration, ordered receipts, history and parity bytes.
+      Top-level asof/evidence_available_at use the latest validated input clock,
+      while candidate_data_asof preserves the ALFRED-only clock. Absence means
+      the candidate corpus is incomplete and must fail closed.
+
+  release-official-actual-defects:
+    path: data/release_forecast/official_actual_defects.json
+    format: json
+    producer: <MANUAL>
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 99999
+    schema: official_actual_defects.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/release_actuals.py
+      - scripts/watch_release_publications.py
+    notes: >
+      Immutable receipt-ID quarantine for official actuals whose permanent URL
+      was historically paired with a feed-wide digest. Membership always fails
+      scoring closed; a newly fetched correctly bound document creates a new
+      eligible receipt without rewriting the old ledger row. Operator-reviewed
+      commits are the sole writer; engine/release_actuals.py owns schema
+      validation and quarantine semantics, while the publication watcher reads
+      the governed URL/hash pairs for bounded repair.
 
   # --- shadow: official first-print actual receipts ---
   release-official-actuals:
