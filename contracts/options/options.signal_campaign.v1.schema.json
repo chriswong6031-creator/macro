@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "options.signal_campaign/v1",
+  "title": "Zero-authority exact-contract options signal campaign",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "campaign_id", "rule", "group", "formed_at", "crossing",
+    "anchor", "disposition", "role", "evidence_phase", "training_eligible",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "options.signal_campaign/v1"},
+    "campaign_id": {"type": "string", "pattern": "^ocam_[a-f0-9]{24}$"},
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "group_by", "order_by", "minimum_event_count",
+        "minimum_cumulative_premium_usd", "crossing_policy", "frozen_at"
+      ],
+      "properties": {
+        "id": {"const": "exact_contract_first_threshold_prefix/v1"},
+        "group_by": {
+          "const": ["session_date", "ticker", "expiration", "strike", "right"]
+        },
+        "order_by": {"const": ["available_at", "episode_id"]},
+        "minimum_event_count": {"const": 2},
+        "minimum_cumulative_premium_usd": {"const": 3000000},
+        "crossing_policy": {"const": "first_qualifying_prefix"},
+        "frozen_at": {"const": "2026-08-11T08:22:28Z"}
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["session_date", "ticker", "expiration", "strike", "right"],
+      "properties": {
+        "session_date": {"type": "string", "format": "date"},
+        "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]+$"},
+        "expiration": {"type": "string", "format": "date"},
+        "strike": {"type": "number", "exclusiveMinimum": 0},
+        "right": {"enum": ["C", "P"]}
+      }
+    },
+    "formed_at": {"type": "string", "format": "date-time"},
+    "crossing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "episode_ids", "event_count", "cumulative_premium_usd",
+        "episode_prefix_sha256"
+      ],
+      "properties": {
+        "episode_ids": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^osep_[a-f0-9]{24}$"}
+        },
+        "event_count": {"type": "integer", "minimum": 2},
+        "cumulative_premium_usd": {"type": "integer", "minimum": 3000000},
+        "episode_prefix_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "outcome_id", "episode_id", "horizon_minutes"],
+      "properties": {
+        "schema": {"const": "options.signal_episode_outcome/v1"},
+        "outcome_id": {"type": "string", "pattern": "^oout_[a-f0-9]{24}$"},
+        "episode_id": {"type": "string", "pattern": "^osep_[a-f0-9]{24}$"},
+        "horizon_minutes": {"const": 60}
+      }
+    },
+    "disposition": {"const": "abstain"},
+    "role": {"const": "research_cohort_only"},
+    "evidence_phase": {
+      "enum": ["retrospective_discovery", "prospective_after_rule_freeze"]
+    },
+    "training_eligible": {"const": false},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "may_originate", "may_rank", "may_gate", "may_size", "may_escalate",
+        "may_trade", "may_publish_pick", "may_train_prophet", "may_select",
+        "may_score", "may_compute_option_pnl"
+      ],
+      "properties": {
+        "may_originate": {"const": false},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_publish_pick": {"const": false},
+        "may_train_prophet": {"const": false},
+        "may_select": {"const": false},
+        "may_score": {"const": false},
+        "may_compute_option_pnl": {"const": false}
+      }
+    }
+  }
+}
