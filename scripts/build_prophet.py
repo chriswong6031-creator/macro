@@ -938,6 +938,14 @@ def advance_ledger(
             # reader can tell a formation anchor from an entry without opening the plan.
             "entry_date": clock_date_str,
             "recorded_at": plan.get("recorded_at"),
+            # HOW the plan came to exist, carried onto the FORWARD-LEDGER row at
+            # close.  Without it the ledger — the substrate every rate, calibration
+            # number and Prophet training input is computed over — has no way to
+            # tell a reconstructed pick from a live one, and the index-row stamp is
+            # useless the moment a consumer reads the ledger instead of the index.
+            # None on every live plan; the only non-null value today is the
+            # disclosed 2026-08-09 replay (engine/prophet_origination_mode.py).
+            "origination_mode": plan.get("origination_mode"),
             "close_date": close_date_str,
             "outcome": outcome,
             "stock_result_pct": stock_result_pct,
