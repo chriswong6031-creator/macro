@@ -193,6 +193,12 @@ verify_paths() {
 	if ! grep -Eq '^BIOCATALYST_FIXED_COHORT_TRANSPORT_ENABLED=[01][[:space:]]*$' "$ENV_FILE"; then
 		die "$ENV_FILE must set BIOCATALYST_FIXED_COHORT_TRANSPORT_ENABLED to 0 or 1"
 	fi
+	if ! grep -Eq '^BIOCATALYST_FIXED_COHORT_USER_AGENT=.+$' "$ENV_FILE"; then
+		die "$ENV_FILE must set a non-empty BIOCATALYST_FIXED_COHORT_USER_AGENT contact string"
+	fi
+	if grep -Eq "^BIOCATALYST_FIXED_COHORT_USER_AGENT=([[:space:]]*|\"\"|'')$" "$ENV_FILE"; then
+		die "$ENV_FILE must set a non-empty BIOCATALYST_FIXED_COHORT_USER_AGENT contact string"
+	fi
 	if [ -L "$ACTIVE_POINTER" ]; then
 		die "$ACTIVE_POINTER must never be a symlink"
 	fi
