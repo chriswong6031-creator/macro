@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/baskets_china_ths/scrape_receipt.v1.schema.json",
+  "title": "同花顺 concept-board scrape receipt v1",
+  "description": "One receipt per FULL-taxonomy THS concept-board scrape attempt, written by scripts/scrape_ths_weekly.py to data/baskets_china_ths/receipts/scrape_<date>.json. Formalises the complete-or-fail law (GMI masterplan G0.4) at the RUN level: `complete` is true only when every attempted concept was fully paged, and only a complete attempt promotes a raw side-car into data/baskets_china_ths/snapshots/. An attempt that resolves nothing still leaves a receipt — the whole point is that a scrape which never ran and a scrape which ran and found no change must not look the same on disk.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "date",
+    "started_at",
+    "finished_at",
+    "concepts_attempted",
+    "concepts_fetched",
+    "members_total",
+    "complete",
+    "truncated",
+    "source",
+    "writer"
+  ],
+  "properties": {
+    "schema": {"const": "baskets_china_ths.scrape_receipt.v1"},
+    "date": {
+      "$ref": "#/$defs/date",
+      "description": "The as-of date of the attempt; also the dated side-car stem when complete."
+    },
+    "started_at": {"$ref": "#/$defs/clock"},
+    "finished_at": {"$ref": "#/$defs/clock"},
+    "concepts_attempted": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Concept boards in the taxonomy this attempt tried to resolve."
+    },
+    "concepts_fetched": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Concept boards fully paged (COMPLETE member lists only — a truncated board is never counted, never recorded)."
+    },
+    "members_total": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Member slots across every fetched board (a name in four boards counts four times)."
+    },
+    "complete": {
+      "type": "boolean",
+      "description": "True only when concepts_fetched == concepts_attempted and truncated is empty. The gate for promoting the raw side-car."
+    },
+    "truncated": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1},
+      "description": "Concept-board names left unresolved (throttled, truncated mid-pagination, retired, or never reached inside the run budget). Empty exactly when complete is true."
+    },
+    "source": {"const": "q.10jqka.com.cn"},
+    "writer": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Module that produced this receipt, e.g. scripts.scrape_ths_weekly."
+    },
+    "passes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Resumable cool-down passes spent this attempt (THS IP-throttles bursts, so one pass rarely resolves the whole taxonomy)."
+    },
+    "budget_minutes": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Wall-clock budget the attempt was given, so a false `complete` caused by an exhausted budget is distinguishable from one caused by a hard throttle."
+    },
+    "budget_exhausted": {
+      "type": "boolean",
+      "description": "True when the attempt stopped because it ran out of budget rather than because it ran out of unresolved concepts."
+    },
+    "promoted": {
+      "type": "boolean",
+      "description": "Whether a raw side-car was promoted into snapshots/ by this attempt. Must be false whenever complete is false."
+    },
+    "pit_rows_added": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Rows the promoted side-car added to data/baskets_china_ths/membership_history.parquet (0 when the lane gate refused, which a hand-run always does)."
+    },
+    "note": {"type": "string", "maxLength": 2000}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"complete": {"const": true}}, "required": ["complete"]},
+      "then": {"properties": {"truncated": {"maxItems": 0}}}
+    },
+    {
+      "if": {"properties": {"complete": {"const": false}}, "required": ["complete"]},
+      "then": {"properties": {"promoted": {"const": false}}}
+    }
+  ],
+  "$defs": {
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "format": "date"},
+    "clock": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "format": "date-time"
+    }
+  }
+}
