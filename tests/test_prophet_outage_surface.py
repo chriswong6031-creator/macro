@@ -9,6 +9,10 @@ from scripts.build_site import (
     _PROPHET_OUTAGE_NOTE,
     _attach_prophet_outage_notes,
 )
+from scripts.build_prophet import (
+    OUTAGE_ORIGINATION_DISCLOSURE,
+    _origination_disclosure,
+)
 
 
 MODE = "outage_backfill_2026_08_09"
@@ -46,6 +50,9 @@ def test_missing_or_unreadable_index_leaves_the_board_unchanged(tmp_path):
 
 
 def test_reader_copy_is_bilingual_and_contains_no_internal_vocabulary():
+    assert OUTAGE_ORIGINATION_DISCLOSURE == _PROPHET_OUTAGE_NOTE
+    assert _origination_disclosure({"origination_mode": MODE}) == _PROPHET_OUTAGE_NOTE
+    assert _origination_disclosure({"origination_mode": "live"}) is None
     assert all(_PROPHET_OUTAGE_NOTE[key].strip() for key in (
         "label_en", "label_zh", "tip_en", "tip_zh",
     ))
@@ -61,6 +68,10 @@ def test_dashboard_routes_the_note_through_the_shared_card_mark(tmp_path):
     root = Path(__file__).resolve().parent.parent
     dashboard = (root / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
     card = (root / "templates" / "_prophet_card.html.j2").read_text(encoding="utf-8")
+    publisher = (root / "scripts" / "build_prophet.py").read_text(encoding="utf-8")
+    assert publisher.count(
+        '"origination_disclosure": _origination_disclosure(plan)'
+    ) == 2, "healthy and degraded index rows must both carry the reader note"
     assert "n.get('prophet_outage_note')" in dashboard
     assert "'k':'replay'" in dashboard
     assert ".pv-mk-replay" in card

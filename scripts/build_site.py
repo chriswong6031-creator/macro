@@ -4632,7 +4632,11 @@ def _attach_prophet_outage_notes(site: Path, doc: "dict | None") -> "dict | None
             return doc
         index = json.loads(path.read_text(encoding="utf-8"))
         reconstructed = {
-            str(row.get("asset") or "").strip().upper()
+            str(row.get("asset") or "").strip().upper(): (
+                dict(row.get("origination_disclosure"))
+                if isinstance(row.get("origination_disclosure"), dict)
+                else dict(_PROPHET_OUTAGE_NOTE)
+            )
             for row in (index.get("plans") or [])
             if isinstance(row, dict)
             and row.get("origination_mode") == "outage_backfill_2026_08_09"
@@ -4641,8 +4645,9 @@ def _attach_prophet_outage_notes(site: Path, doc: "dict | None") -> "dict | None
         if not reconstructed:
             return doc
         for card in doc.get("buy") or []:
-            if str(card.get("ticker") or "").strip().upper() in reconstructed:
-                card["prophet_outage_note"] = dict(_PROPHET_OUTAGE_NOTE)
+            ticker = str(card.get("ticker") or "").strip().upper()
+            if ticker in reconstructed:
+                card["prophet_outage_note"] = reconstructed[ticker]
     except Exception as exc:  # noqa: BLE001 - disclosure join is display-only
         log.warning("Prophet outage note unavailable (%s)", exc)
     return doc

@@ -108,6 +108,30 @@ LEDGER_PATH    = LEDGER_DIR / "ledger.jsonl"
 
 R2_INDEX_KEY   = "prophet/index.json"
 
+# Reader-facing twin for the one force-majeure provenance mode.  The internal
+# slug remains available for deterministic segregation, while every index
+# consumer also receives words a person can understand without incident jargon.
+OUTAGE_ORIGINATION_MODE = "outage_backfill_2026_08_09"
+OUTAGE_ORIGINATION_DISCLOSURE = {
+    "label_en": "Rebuilt after outage",
+    "label_zh": "中断后重建",
+    "tip_en": (
+        "This pick was reconstructed after an outage using the market data "
+        "available that weekend. Its later results stay separate from picks "
+        "published live."
+    ),
+    "tip_zh": (
+        "这条信号因系统中断而在事后重建，使用的是当时那个周末可用的市场数据。"
+        "后续表现会与实时发布的信号分开统计。"
+    ),
+}
+
+
+def _origination_disclosure(plan: dict) -> dict | None:
+    if plan.get("origination_mode") != OUTAGE_ORIGINATION_MODE:
+        return None
+    return dict(OUTAGE_ORIGINATION_DISCLOSURE)
+
 # R0.7 market-overlay inputs (compute_management_state macro_stance/futures_chg)
 MARKET_STATE_PATH = _REPO / "data" / "market_state" / "latest.json"
 YAHOO_DIR         = _REPO / "data" / "yahoo"
@@ -1187,6 +1211,7 @@ def _degraded_index_entry(
         # of a missing price history — the degraded row is still a shipped row.
         "origination_mode": plan.get("origination_mode"),
         "backfill_executed_at": plan.get("backfill_executed_at"),
+        "origination_disclosure": _origination_disclosure(plan),
         "phase": phase,
         "age_days": age,
         "closed": closed,
@@ -1884,6 +1909,7 @@ def main() -> None:
             # a rate by.  Segregation is pinned in tests/test_prophet_outage_backfill.py.
             "origination_mode": plan.get("origination_mode"),
             "backfill_executed_at": plan.get("backfill_executed_at"),
+            "origination_disclosure": _origination_disclosure(plan),
             "entry_basis": plan.get("entry_basis"),
             "entry_zone": plan.get("entry_zone"),
             # DERIVED tonight, never stored on the plan.
