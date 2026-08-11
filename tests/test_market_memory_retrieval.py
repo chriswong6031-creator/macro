@@ -23,6 +23,13 @@ from tests.test_market_memory_forward import _synthetic_w1_packet, _trial
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "contracts" / "market_memory"
+W4A_CI_PATHS = (
+    "engine/neuralweb/market_memory_retrieval.py",
+    "contracts/market_memory/retrieval_registration.v1.schema.json",
+    "contracts/market_memory/episodic_retrieval_record.v1.schema.json",
+    "tests/test_market_memory_retrieval.py",
+    "research/KONSEKI_CLEAN_ROOM_MARKET_MEMORY_AND_COGNITIVE_ARCHITECTURE_FOR_FABLE_2026-08-08.md",
+)
 _STAMP = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{6})?Z$")
 
 
@@ -865,6 +872,16 @@ def test_direct_coordinate_entry_rejects_oversized_q18_before_decimal_work() -> 
                 "beta": "0.000000000000000000",
             },
         )
+
+
+def test_w4a_contract_runtime_and_test_share_the_market_memory_ci_gate() -> None:
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    jobs = (ROOT / ".github/ci/legacy-jobs.yml").read_text(encoding="utf-8")
+    lane = jobs.split("  market-memory-contract:", 1)[1].split("\n  group-pulse:", 1)[0]
+
+    for path in W4A_CI_PATHS:
+        assert f'      - "{path}"' in workflow, f"missing W4A CI trigger: {path}"
+    assert "tests/test_market_memory_retrieval.py" in lane
 
 
 def test_supplied_candidate_shape_forbids_outcomes_scores_and_distance_inputs() -> None:

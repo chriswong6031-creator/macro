@@ -1245,6 +1245,46 @@ origin signatures. Every action-authority bit remains false,
 `context_only=true`, and ranking, gating, sizing, trading, execution, training,
 promotion, forecast, and outcome use remain disconnected.
 
+### 11.0.10 W4A synthetic episodic-retrieval conformance
+
+W4A freezes one exact retrieval calculation without pretending that Market
+Memory can discover a complete historical analogue population. Its registration
+binds an exact W2A trial contract, must be created after that trial and before
+its frozen live-forward split, and preregisters one to thirty-two sorted
+coordinate identifiers with fixed positive scales. Coordinate values remain
+caller-supplied `synthetic_fixture_only` inputs: no W1/W2 feature projection,
+normalization fit, center, imputation, clipping, learned embedding, or
+candidate-pool rescaling is authenticated.
+
+The only distance is normalized Euclidean under the frozen
+`decimal64_half_even_q18/v1` convention. It computes with local Decimal
+precision 64, performs no intermediate quantization, and quantizes once to
+eighteen decimal places. A missing query coordinate abstains the whole supplied
+audit; a missing candidate coordinate makes only that candidate ineligible.
+Numeric, lexical, collection, context-dependency, and canonical-JSON bounds
+fail closed before unbounded parsing or traversal.
+
+Every supplied candidate is rejoined to its exact W2A state, forecast, and W1
+context bytes and appears exactly once in the result. Candidates must have the
+same subject and instrument, be strictly earlier than the query, and avoid the
+query's preregistered purge-plus-embargo interval. Distance-eligible rows sort
+by exact distance then forecast ID. The selector greedily retains the nearest
+rows whose half-open intervals do not overlap a previously selected row, and
+every overlap rejection names those earlier selected IDs. This is deterministic
+de-overlap of a supplied fixture, not a claim that the list is historically
+complete, globally nearest, independent, or suitable for evaluation.
+
+W4A reports only supplied, distance-eligible, and selected-nonoverlapping
+counts. Statistical effective sample size is permanently
+`not_estimated/dependence_model_not_evidence_ready`; selected count is never
+relabeled effective N. Outcomes, W2B scores, predictive-distribution changes,
+DTW, graph relations, bootstrap or conformal intervals, retrieval evaluation,
+cohort aggregation, winners, and skill are structurally absent. There is no
+store, writer, API, CLI, service, scheduler, environment switch, or public
+output. Every evidence and action claim remains false, `context_only=true`,
+`emission_enabled=false`, and forecast input, training, promotion, ranking,
+gating, sizing, trading, and execution remain forbidden.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1412,6 +1452,17 @@ W3A operational playback preparation additions:
 - `tests/test_market_memory_playback.py` and
   `tests/test_market_memory_playback_api.py` — ancestry, tamper, resource,
   dual-provenance, pagination, schema/runtime, auth, cache, and no-leak guards.
+
+W4A synthetic retrieval additions:
+
+- `engine/neuralweb/market_memory_retrieval.py` and the strict
+  `retrieval_registration.v1` and `episodic_retrieval_record.v1` contracts —
+  exact W2A joins, fixed-scale Decimal retrieval, bounded supplied-candidate
+  audit, deterministic purge/embargo de-overlap, explicit effective-N
+  abstention, and zero authority;
+- `tests/test_market_memory_retrieval.py` — schema/runtime parity, exact joins,
+  known-answer arithmetic, missingness, half-open interval, tie, permutation,
+  tamper, loader, resource, purity, and no-skill/no-runtime guards.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 
