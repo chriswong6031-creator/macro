@@ -22,13 +22,13 @@ WHAT EACH GROUP PINS
   reads the index, not the per-plan files, so a stamp that stops at the plan file is
   a stamp no consumer can split a rate by.
 
-  COLLISION (§0.4) — live wins.  Two independent mechanisms have to hold: the
-  engine's own open-plan block, and the post-process drop that catches the case the
-  block cannot see (a live plan already CLOSED in the ledger, whose ticker would
-  otherwise get a second episode).
+  COLLISION (§0.4) — live wins.  The event-time snapshot alone supplies the engine's
+  duplicate/open-plan guards. A separate later snapshot supplies collision authority,
+  so both open and closed live plans are dropped only after a complete counterfactual
+  exists for disclosure.
 
-  DETERMINISM + IDEMPOTENCE — same pinned SHAs → same minted set; a window already
-  recorded in the disclosure refuses instead of double-minting.
+  DETERMINISM + IDEMPOTENCE — same pinned authority SHAs, clean executing commit and
+  same enrichment environment → same minted set; a disclosed window cannot mint twice.
 
   RECEIPT SHAPE — not cosmetic.  ``scripts/audit_prophet_plan_chronology.py``
   validates EVERY receipt in a plan's creation commit before auditing that plan, so
@@ -201,8 +201,8 @@ def _pinned_repo(tmp_path: Path, *, buys: list[dict],
                  closed_ids: tuple[str, ...] = ()) -> tuple[Path, str]:
     """A throwaway git repo carrying a board, a plan baseline and a ledger.
 
-    The script reads every input through ``git show``/``ls-tree`` at a pinned SHA, so
-    a real (tiny) repo exercises the actual extraction path instead of a stub.
+    The script reads authority inputs through ``git show``/``ls-tree`` at pinned SHAs;
+    a real (tiny) repo exercises that extraction and the clean-tree fence.
     """
     repo = tmp_path / "pinned_repo"
     (repo / "site" / "factordata").mkdir(parents=True)
@@ -232,12 +232,67 @@ def _pinned_repo(tmp_path: Path, *, buys: list[dict],
     return repo, sha
 
 
-def _replay(repo: Path, sha: str, *, execute: bool = False,
+def _commit_collision_snapshot(
+    repo: Path,
+    *,
+    plans: dict[str, dict],
+    closed_ids: tuple[str, ...] = (),
+) -> str:
+    """Add later live plans in a second commit, leaving the event commit untouched."""
+    for plan_id, plan in plans.items():
+        (repo / bf.PLANS_RELDIR / f"{plan_id}.json").write_text(
+            json.dumps(plan), encoding="utf-8")
+    if closed_ids:
+        ledger = repo / bf.LEDGER_RELPATH
+        with ledger.open("a", encoding="utf-8") as handle:
+            for plan_id in closed_ids:
+                handle.write(json.dumps({
+                    "schema": "prophet.ledger/v1", "id": plan_id, "outcome": "T1_HIT",
+                }) + "\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "later collision snapshot")
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=repo, check=True, capture_output=True,
+    ).stdout.decode().strip()
+
+
+def _synthetic_refusal_checkpoint(commit: str) -> dict:
+    """Test-only authority object; canonical receipt validation has dedicated tests."""
+    return {
+        "run_id": bf.REFUSAL_RUN_ID,
+        "engine_job_id": bf.REFUSAL_ENGINE_JOB_ID,
+        "checkpoint_commit": commit,
+        "checkpoint_path": bf.REFUSAL_CHECKPOINT_PATH,
+        "intake_partition": dict(bf.EXPECTED_REFUSAL_PARTITION),
+        "refusal_plan_ids": [plan_id for plan_id, _ in bf.EXPECTED_REFUSAL_FAILURES],
+        "validation_failures": [],
+        "validation_failures_sha256": "0" * 64,
+    }
+
+
+def _replay(repo: Path, sha: str, *, event_sha: str | None = None,
+            collision_sha: str | None = None, execute: bool = False,
             executed_at: str = "2026-08-11T00:00:00+00:00") -> dict:
-    return bf.run_backfill(
-        repo, board_commit=sha, plans_baseline=sha,
-        executed_at=executed_at, execute=execute,
-    )
+    event_sha = event_sha or sha
+    collision_sha = collision_sha or event_sha
+    # Unit groups below isolate writer/collision/passthrough behavior with tiny
+    # candidate sets. Production cannot take this shortcut: the CLI always loads and
+    # validates checkpoint 8421e478, covered by TestAuthorizedRefusalFence.
+    with (
+        patch.object(
+            bf, "_load_authorized_refusal_checkpoint",
+            return_value=_synthetic_refusal_checkpoint(event_sha),
+        ),
+        patch.object(bf, "_validate_replay_population", return_value=None),
+    ):
+        return bf.run_backfill(
+            repo,
+            board_commit=sha,
+            event_baseline_commit=event_sha,
+            collision_baseline_commit=collision_sha,
+            executed_at=executed_at,
+            execute=execute,
+        )
 
 
 # ===========================================================================
@@ -492,21 +547,20 @@ class TestNightlyPassthrough:
 class TestCollisionRuleLiveWins:
 
     def test_a_live_plan_closed_in_the_ledger_still_wins(self, tmp_path):
-        """The case the engine's open-plan block CANNOT see.
-
-        ``active_keys`` only holds OPEN plans, so a live 08-10 plan that the ledger
-        has already closed frees its ticker+direction key and the replay would mint a
-        SECOND episode for the same name.  The post-process drop is what stops that,
-        and this is the only test that exercises it.
-        """
+        """A later closed live plan is collision authority, never replay input."""
         live_id = "AAA-BULL-20260806"
-        repo, sha = _pinned_repo(
+        repo, event_sha = _pinned_repo(
             tmp_path,
             buys=[_buy_row("AAA"), _buy_row("BBB", spot=50.0)],
+        )
+        collision_sha = _commit_collision_snapshot(
+            repo,
             plans={live_id: _seed_plan(live_id, "AAA", recorded_at="2026-08-10")},
             closed_ids=(live_id,),
         )
-        row = _replay(repo, sha)["row"]
+        row = _replay(
+            repo, event_sha, event_sha=event_sha, collision_sha=collision_sha,
+        )["row"]
 
         minted = {entry["ticker"] for entry in row["minted"]}
         collided = {entry["ticker"]: entry for entry in row["collided"]}
@@ -519,18 +573,25 @@ class TestCollisionRuleLiveWins:
         )
 
     def test_an_open_live_plan_is_disclosed_as_a_collision_not_a_refusal(self, tmp_path):
-        """The engine blocks it; the disclosure must still call it what it is."""
+        """A later open live plan also leaves a full counterfactual for disclosure."""
         live_id = "AAA-BULL-20260806"
-        repo, sha = _pinned_repo(
+        repo, event_sha = _pinned_repo(
             tmp_path,
             buys=[_buy_row("AAA")],
+        )
+        collision_sha = _commit_collision_snapshot(
+            repo,
             plans={live_id: _seed_plan(live_id, "AAA", recorded_at="2026-08-10")},
         )
-        row = _replay(repo, sha)["row"]
+        row = _replay(
+            repo, event_sha, event_sha=event_sha, collision_sha=collision_sha,
+        )["row"]
         assert row["minted"] == []
         collided = {entry["ticker"]: entry for entry in row["collided"]}
-        assert collided["AAA"]["reason"] == "live_origination_wins_open_plan_block"
+        assert collided["AAA"]["reason"] == "live_origination_wins"
         assert collided["AAA"]["live_plan_ids"] == [live_id]
+        assert collided["AAA"]["would_have_minted"] == "AAA-BULL-20260731"
+        assert collided["AAA"]["counterfactual"] is not None
         assert not row["still_refused"], (
             "a live-won name must be disclosed as a collision, not filed as a gate refusal"
         )
@@ -637,12 +698,121 @@ class TestDeterminismAndIdempotence:
         repo, sha = _pinned_repo(tmp_path, buys=[_buy_row("AAA")])
         with pytest.raises(bf.BackfillRefused, match="does not resolve to a commit"):
             bf.run_backfill(
-                repo, board_commit="deadbeef" * 5, plans_baseline=sha,
+                repo,
+                board_commit="deadbeef" * 5,
+                event_baseline_commit=sha,
+                collision_baseline_commit=sha,
                 executed_at="2026-08-11T00:00:00+00:00", execute=False)
+
+    def test_a_dirty_tracked_worktree_refuses_before_enrichment(self, tmp_path):
+        repo, sha = _pinned_repo(tmp_path, buys=[_buy_row("AAA")])
+        (repo / bf.BOARD_RELPATH).write_text("tracked drift\n", encoding="utf-8")
+
+        with pytest.raises(bf.BackfillRefused, match="tracked working tree is not clean"):
+            _replay(repo, sha)
 
 
 # ===========================================================================
-# 5. RECEIPT SHAPE — pinned against the real downstream validator
+# 5. AUTHORIZED REFUSAL FENCE — exact run/checkpoint/partition/population
+# ===========================================================================
+
+def _authorized_checkpoint_payload() -> dict:
+    rows = []
+    for plan_id, errors in bf.EXPECTED_REFUSAL_FAILURES:
+        rows.append({
+            "ticker": plan_id.rsplit("-BULL-", 1)[0],
+            "id": plan_id,
+            "stage": "clock_provenance",
+            "errors": list(errors),
+        })
+    return {
+        "intake": {
+            **bf.EXPECTED_REFUSAL_PARTITION,
+            "validation_failures": rows,
+        },
+    }
+
+
+class TestAuthorizedRefusalFence:
+    """No equal-count substitute may inherit run 31340764145's authority."""
+
+    def test_exact_8421_checkpoint_partition_identities_and_errors_are_accepted(self):
+        checkpoint = bf._validate_refusal_checkpoint_payload(
+            _authorized_checkpoint_payload())
+        assert checkpoint["run_id"] == "31340764145"
+        assert checkpoint["engine_job_id"] == "93332847126"
+        assert checkpoint["checkpoint_commit"] == bf.REFUSAL_CHECKPOINT_SHA
+        assert checkpoint["intake_partition"] == {
+            "buy_rows": 79,
+            "admitted": 54,
+            "duplicate_id_blocked": 24,
+            "reorigination_blocked": 0,
+            "eligible_after_skips": 30,
+            "validation_failed": 30,
+            "originated": 0,
+            "lossless": True,
+        }
+        assert len(checkpoint["refusal_plan_ids"]) == 30
+
+    @pytest.mark.parametrize("key,bad", [
+        ("buy_rows", 81),
+        ("admitted", 55),
+        ("eligible_after_skips", 32),
+    ])
+    def test_79_54_30_partition_drift_fails_closed(self, key, bad):
+        payload = _authorized_checkpoint_payload()
+        payload["intake"][key] = bad
+        with pytest.raises(bf.BackfillRefused, match="intake partition changed"):
+            bf._validate_refusal_checkpoint_payload(payload)
+
+    @pytest.mark.parametrize("mutation", ["identity", "error"])
+    def test_equal_count_identity_or_error_substitution_fails_closed(self, mutation):
+        payload = _authorized_checkpoint_payload()
+        if mutation == "identity":
+            payload["intake"]["validation_failures"][0].update({
+                "ticker": "ASTS", "id": "ASTS-BULL-20260805",
+            })
+        else:
+            payload["intake"]["validation_failures"][0]["errors"] = [
+                "some other refusal with the same row count"
+            ]
+        with pytest.raises(bf.BackfillRefused, match="identities/errors changed"):
+            bf._validate_refusal_checkpoint_payload(payload)
+
+    def test_healed_replay_must_cover_the_same_30_plan_ids(self):
+        checkpoint = bf._validate_refusal_checkpoint_payload(
+            _authorized_checkpoint_payload())
+        refused_now = {
+            "UUUU-BULL-20260805", "CCJ-BULL-20260805", "URG-BULL-20260805",
+            "SHEN-BULL-20260805", "RES-BULL-20260805",
+        }
+        minted = [
+            {"id": plan_id}
+            for plan_id in checkpoint["refusal_plan_ids"]
+            if plan_id not in refused_now
+        ]
+        intake = {
+            "buy_rows": 79,
+            "admitted": 54,
+            "duplicate_id_blocked": 24,
+            "reorigination_blocked": 0,
+            "eligible_after_skips": 30,
+            "validation_failed": 5,
+            "validation_failures": [{"id": plan_id} for plan_id in refused_now],
+            "originated": 25,
+            "truncated": 0,
+            "unaccounted": 0,
+            "lossless": True,
+        }
+        bf._validate_replay_population(checkpoint, intake, minted)
+
+        minted[0] = {"id": "ASTS-BULL-20260805"}
+        with pytest.raises(bf.BackfillRefused, match="population differs"):
+            bf._validate_replay_population(checkpoint, intake, minted)
+
+
+# ===========================================================================
+# 6. RECEIPT SHAPE — pinned against the real downstream validator
 # ===========================================================================
 
 class TestOriginationReceipt:
@@ -661,6 +831,45 @@ class TestOriginationReceipt:
         assert source["path"] == bf.BOARD_RELPATH
         assert source["price_through"] == PRICE_THROUGH
         assert sorted(by_id) == sorted(p["id"] for p in result["minted"])
+
+    def test_receipt_and_disclosure_name_both_baselines_and_source_checkpoint(self, tmp_path):
+        repo, event_sha = _pinned_repo(tmp_path, buys=[_buy_row("AAA")])
+        old_id = "ZZZ-BULL-20260601"
+        collision_sha = _commit_collision_snapshot(
+            repo,
+            plans={old_id: _seed_plan(old_id, "ZZZ", recorded_at="2026-06-01")},
+        )
+        result = _replay(
+            repo, event_sha, event_sha=event_sha, collision_sha=collision_sha,
+        )
+
+        assert event_sha != collision_sha
+        inputs = result["row"]["inputs"]
+        assert inputs["event_baseline_commit"] == event_sha
+        assert inputs["collision_baseline_commit"] == collision_sha
+        assert "plans_baseline_commit" not in inputs
+        run = result["receipt"]["run"]
+        assert run["source_checkout"] == event_sha
+        assert run["event_baseline_checkout"] == event_sha
+        assert run["collision_baseline_checkout"] == collision_sha
+        assert run["executing_checkout"] == collision_sha
+        enrichment = result["receipt"]["enrichment_context"]
+        assert enrichment == result["row"]["enrichment_context"]
+        assert enrichment["tracked_worktree"] == {
+            "clean": True,
+            "executing_commit": collision_sha,
+        }
+        assert enrichment["all_inputs_content_pinned"] is False
+        assert enrichment["host_local_sources"]["thetadata_store"] == {
+            "resolved_path": None,
+            "content_fingerprint": None,
+            "content_pinned": False,
+        }
+        assert "does not claim" in enrichment["reproducibility_note"]
+        source = result["receipt"]["source_refusal_receipt"]
+        assert source["run_id"] == bf.REFUSAL_RUN_ID
+        assert source["checkpoint_commit"] == event_sha
+        assert result["row"]["source_refusal_receipt"]["validation_failures"] == []
 
     def test_the_receipt_plan_hash_matches_the_bytes_on_disk(self, tmp_path):
         """The hash and the file must come from ONE serialization — the audit
@@ -798,7 +1007,8 @@ class TestTheDisclosureArtifactIsWellFormed:
             assert row["window"]["from"] and row["window"]["to"]
             inputs = row["inputs"]
             assert len(inputs["board_commit"]) == 40, "input SHAs must be pinned in full"
-            assert len(inputs["plans_baseline_commit"]) == 40
+            assert len(inputs["event_baseline_commit"]) == 40
+            assert len(inputs["collision_baseline_commit"]) == 40
             assert inputs["board_path"] == bf.BOARD_RELPATH
             assert row["engine_selection_era"]
 

@@ -35,18 +35,23 @@ WHAT IT WRITES / NEVER WRITES (§3.4).
 IDEMPOTENCE.  The disclosure artifact IS the lock: a second run over a window that
 is already recorded refuses instead of double-minting.
 
-RUN IT FROM A COMPLETE CHECKOUT.  The pinned board and the plan baseline are read out
-of git and are therefore host-independent, but ``originate_plans`` also reads the
-WORKING TREE for its enrichments: the stage-tilt inputs (``data/stage_analysis/``,
+RUN IT FROM A COMPLETE CHECKOUT.  Selection and collision authority are read from
+commit-pinned trees, but ``originate_plans`` also reads the WORKING TREE for its
+enrichments: the stage-tilt inputs (``data/stage_analysis/``,
 ``data/regime/latest.json``) set each plan's leash and therefore ``horizon_days``, and
-the ThetaData store supplies ``option_contract``.  A sparse agent worktree without
-``data/`` silently produces leash-1.0, option-free plans — valid JSON, wrong artifact.
-Compare a dry run's output against expectations before passing ``--execute``.
+the ThetaData store supplies ``option_contract``.  The tracked tree must therefore be
+clean and is bound to the executing commit in both artifacts.  Host-local sources are
+named but not content-pinned, so neither artifact claims all-input reproducibility. A
+sparse agent worktree without ``data/`` silently produces leash-1.0, option-free plans
+— valid JSON, wrong artifact. Compare a dry run against expectations before
+``--execute``.
 
 Run (dry run — prints the would-mint set, writes nothing):
 
     python3 -m scripts.backfill_prophet_outage \\
-        --board-commit <sha> --plans-baseline <sha>
+        --board-commit <sha> \\
+        --event-baseline-commit <sha> \\
+        --collision-baseline-commit <sha>
 
 Add ``--execute`` to write the artifacts.
 """
@@ -94,6 +99,70 @@ RECEIPTS_RELDIR = "data/prophet/origination_receipts"
 DISCLOSURE_SCHEMA_VERSION = "1.0.0"
 RECEIPT_SCHEMA = "prophet.origination_receipt/v1"
 
+# The durable receipt of the refused live event. This is deliberately a commit,
+# not a mutable path on main: the backfill authority is the exact 30-row refusal
+# population written by run 31340764145 / engine job 93332847126.
+REFUSAL_RUN_ID = "31340764145"
+REFUSAL_ENGINE_JOB_ID = "93332847126"
+REFUSAL_CHECKPOINT_SHA = "8421e4783f141248656c850bfd61d1e15a6aeb97"
+REFUSAL_CHECKPOINT_PATH = "site/prophet/index.json"
+
+EXPECTED_REFUSAL_PARTITION: dict[str, Any] = {
+    "buy_rows": 79,
+    "admitted": 54,
+    "duplicate_id_blocked": 24,
+    "reorigination_blocked": 0,
+    "eligible_after_skips": 30,
+    "validation_failed": 30,
+    "originated": 0,
+    "lossless": True,
+}
+
+_MIXED_VINTAGE_REFUSAL = (
+    "us_standouts staleness.inputs.panel.mixed_vintage is true; "
+    "mixed-vintage boards cannot originate plans"
+)
+_CHRONOLOGY_REFUSAL = (
+    "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+)
+
+# Order and error strings are copied from REFUSAL_CHECKPOINT_SHA. Keeping the
+# expected payload here makes the checkpoint reference fail closed: a wrong commit,
+# a rewritten failure, or a 30-row set with one substituted identity cannot acquire
+# force-majeure authority merely because its counts still add up.
+EXPECTED_REFUSAL_FAILURES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("BHP-BULL-20260805", (_MIXED_VINTAGE_REFUSAL,)),
+    ("WBD-BULL-20260805", (_MIXED_VINTAGE_REFUSAL,)),
+    ("RIO-BULL-20260731", (_MIXED_VINTAGE_REFUSAL,)),
+    ("FN-BULL-20260805", (_MIXED_VINTAGE_REFUSAL,)),
+    ("UUUU-BULL-20260805", (_MIXED_VINTAGE_REFUSAL, _CHRONOLOGY_REFUSAL)),
+    ("HP-BULL-20260731", (_MIXED_VINTAGE_REFUSAL,)),
+    ("DAN-BULL-20260731", (_MIXED_VINTAGE_REFUSAL,)),
+    ("RGTI-BULL-20260805", (_MIXED_VINTAGE_REFUSAL,)),
+    ("GNL-BULL-20260805", (_MIXED_VINTAGE_REFUSAL,)),
+    ("BIIB-BULL-20260731", (_MIXED_VINTAGE_REFUSAL,)),
+    ("HASI-BULL-20260805", (_MIXED_VINTAGE_REFUSAL,)),
+    ("VAL-BULL-20260805", (_MIXED_VINTAGE_REFUSAL,)),
+    ("CCJ-BULL-20260805", (_MIXED_VINTAGE_REFUSAL, _CHRONOLOGY_REFUSAL)),
+    ("STZ-BULL-20260805", (_MIXED_VINTAGE_REFUSAL,)),
+    ("URG-BULL-20260805", (_MIXED_VINTAGE_REFUSAL, _CHRONOLOGY_REFUSAL)),
+    ("OKLO-BULL-20260805", (_MIXED_VINTAGE_REFUSAL,)),
+    ("HAYW-BULL-20260731", (_MIXED_VINTAGE_REFUSAL,)),
+    ("APG-BULL-20260731", (_MIXED_VINTAGE_REFUSAL,)),
+    ("SHEN-BULL-20260805", (_MIXED_VINTAGE_REFUSAL, _CHRONOLOGY_REFUSAL)),
+    ("AGNT-BULL-20260406", (_MIXED_VINTAGE_REFUSAL,)),
+    ("EU-BULL-20260805", (_MIXED_VINTAGE_REFUSAL,)),
+    ("FBRT-BULL-20260805", (_MIXED_VINTAGE_REFUSAL,)),
+    ("HRMY-BULL-20260731", (_MIXED_VINTAGE_REFUSAL,)),
+    ("WFRD-BULL-20260731", (_MIXED_VINTAGE_REFUSAL,)),
+    ("ISRG-BULL-20260731", (_MIXED_VINTAGE_REFUSAL,)),
+    ("RES-BULL-20260805", (_MIXED_VINTAGE_REFUSAL, _CHRONOLOGY_REFUSAL)),
+    ("SBAC-BULL-20260731", (_MIXED_VINTAGE_REFUSAL,)),
+    ("MRNA-BULL-20260616", (_MIXED_VINTAGE_REFUSAL,)),
+    ("LECO-BULL-20260731", (_MIXED_VINTAGE_REFUSAL,)),
+    ("DRI-BULL-20260731", (_MIXED_VINTAGE_REFUSAL,)),
+)
+
 DISCLOSURE_PURPOSE = (
     "Plans minted by the 2026-08-11 force-majeure replay of the receipted "
     "2026-08-09 origination refusal, and every candidate the replay did NOT mint. "
@@ -120,7 +189,7 @@ class BackfillRefused(RuntimeError):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# git plumbing — every input is read from a pinned commit, never from disk
+# git plumbing — authority inputs are pinned; enrichment is receipted separately
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _git(repo: Path, *args: str, binary: bool = False) -> bytes | str:
@@ -137,6 +206,46 @@ def resolve_commit(repo: Path, rev: str) -> str:
     except subprocess.CalledProcessError as exc:  # noqa: PERF203 - one call
         stderr = exc.stderr.decode("utf-8", "replace").strip()
         raise BackfillRefused(f"{rev!r} does not resolve to a commit: {stderr}") from exc
+
+
+def require_tracked_worktree_clean(repo: Path) -> None:
+    """Refuse when any tracked path differs from HEAD.
+
+    ``originate_plans`` reads tracked enrichment code and data from the executing
+    checkout.  Recording HEAD is meaningful only when staged and unstaged tracked
+    changes cannot silently alter that context.  Untracked host-local sources are
+    disclosed separately and are deliberately not represented as commit-pinned.
+    """
+    status = str(_git(
+        repo, "status", "--porcelain=v1", "--untracked-files=no",
+    )).strip()
+    if status:
+        changed = "; ".join(status.splitlines()[:8])
+        suffix = " …" if len(status.splitlines()) > 8 else ""
+        raise BackfillRefused(
+            "tracked working tree is not clean; enrichment cannot be bound to one "
+            f"executing commit ({changed}{suffix})"
+        )
+
+
+def require_ancestor(repo: Path, older: str, newer: str, *, relation: str) -> None:
+    """Fail unless ``older`` is on ``newer``'s ancestry.
+
+    Used only where the evidence really shares history: event → refusal checkpoint
+    and healed board → collision baseline.  The refusal/event evidence line may be
+    a scoped-push side history rather than an ancestor of today's rebased main, so
+    no event → collision relationship is asserted.
+    """
+    result = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", older, newer],
+        cwd=repo,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        raise BackfillRefused(
+            f"invalid pinned-input ancestry ({relation}): {older[:12]} is not an "
+            f"ancestor of {newer[:12]}"
+        )
 
 
 def blob_at(repo: Path, commit: str, relative: str) -> bytes | None:
@@ -276,6 +385,165 @@ def _canonical_sha256(payload: Any) -> str:
     ).hexdigest()
 
 
+def _validate_refusal_checkpoint_payload(payload: Any) -> dict[str, Any]:
+    """Validate and normalize the one receipt that grants replay authority.
+
+    Counts alone are not authority: a substituted name with the same 79/54/30
+    arithmetic would widen the force-majeure exception. The ordered identities and
+    every original error therefore have to match the durable checkpoint exactly.
+    """
+    if not isinstance(payload, dict) or not isinstance(payload.get("intake"), dict):
+        raise BackfillRefused(
+            f"{REFUSAL_CHECKPOINT_PATH} at {REFUSAL_CHECKPOINT_SHA[:12]} has no "
+            "intake receipt"
+        )
+    intake = payload["intake"]
+    observed_partition = {
+        key: intake.get(key) for key in EXPECTED_REFUSAL_PARTITION
+    }
+    if observed_partition != EXPECTED_REFUSAL_PARTITION:
+        raise BackfillRefused(
+            "authorized refusal checkpoint intake partition changed: "
+            f"expected {EXPECTED_REFUSAL_PARTITION}, observed {observed_partition}"
+        )
+
+    failures = intake.get("validation_failures")
+    if not isinstance(failures, list):
+        raise BackfillRefused("authorized refusal checkpoint has no failure rows")
+
+    observed: list[tuple[str, tuple[str, ...]]] = []
+    normalized_rows: list[dict[str, Any]] = []
+    for row in failures:
+        if not isinstance(row, dict):
+            raise BackfillRefused("authorized refusal checkpoint has a non-object failure")
+        plan_id = str(row.get("id") or "")
+        ticker = str(row.get("ticker") or "")
+        stage = str(row.get("stage") or "")
+        errors = tuple(str(error) for error in (row.get("errors") or []))
+        if stage != "clock_provenance":
+            raise BackfillRefused(
+                f"authorized refusal {plan_id or '<missing-id>'} has stage {stage!r}, "
+                "expected 'clock_provenance'"
+            )
+        expected_ticker = plan_id.rsplit("-BULL-", 1)[0]
+        if not plan_id or ticker != expected_ticker:
+            raise BackfillRefused(
+                f"authorized refusal identity disagrees: ticker={ticker!r}, id={plan_id!r}"
+            )
+        observed.append((plan_id, errors))
+        normalized_rows.append({
+            "ticker": ticker,
+            "id": plan_id,
+            "stage": stage,
+            "errors": list(errors),
+        })
+
+    if tuple(observed) != EXPECTED_REFUSAL_FAILURES:
+        expected_ids = [plan_id for plan_id, _errors in EXPECTED_REFUSAL_FAILURES]
+        observed_ids = [plan_id for plan_id, _errors in observed]
+        raise BackfillRefused(
+            "authorized refusal checkpoint identities/errors changed: "
+            f"expected_ids={expected_ids}, observed_ids={observed_ids}"
+        )
+
+    return {
+        "run_id": REFUSAL_RUN_ID,
+        "engine_job_id": REFUSAL_ENGINE_JOB_ID,
+        "checkpoint_commit": REFUSAL_CHECKPOINT_SHA,
+        "checkpoint_path": REFUSAL_CHECKPOINT_PATH,
+        "intake_partition": dict(EXPECTED_REFUSAL_PARTITION),
+        "refusal_plan_ids": [plan_id for plan_id, _errors in observed],
+        "validation_failures": normalized_rows,
+        "validation_failures_sha256": _canonical_sha256(normalized_rows),
+    }
+
+
+def _load_authorized_refusal_checkpoint(repo: Path) -> dict[str, Any]:
+    """Read the immutable run-31340764145 refusal receipt, or fail closed."""
+    try:
+        checkpoint_sha = resolve_commit(repo, REFUSAL_CHECKPOINT_SHA)
+    except BackfillRefused as exc:
+        raise BackfillRefused(
+            f"authorized refusal checkpoint {REFUSAL_CHECKPOINT_SHA} is unavailable; "
+            "fetch full main history before replaying"
+        ) from exc
+    if checkpoint_sha != REFUSAL_CHECKPOINT_SHA:
+        raise BackfillRefused(
+            f"authorized refusal checkpoint resolved to unexpected SHA {checkpoint_sha}"
+        )
+    blob = blob_at(repo, checkpoint_sha, REFUSAL_CHECKPOINT_PATH)
+    if blob is None:
+        raise BackfillRefused(
+            f"{REFUSAL_CHECKPOINT_PATH} is absent at authorized checkpoint "
+            f"{checkpoint_sha[:12]}"
+        )
+    try:
+        payload = json.loads(blob.decode("utf-8"))
+    except Exception as exc:  # noqa: BLE001 - malformed authority must fail closed
+        raise BackfillRefused(
+            f"authorized refusal checkpoint is not readable JSON ({exc})"
+        ) from exc
+    return _validate_refusal_checkpoint_payload(payload)
+
+
+def _validate_replay_population(
+    checkpoint: dict[str, Any],
+    intake: dict[str, Any],
+    replayed_plans: list[dict[str, Any]],
+) -> None:
+    """Prove the healed replay still covers exactly the receipted 30 identities."""
+    expected_partition = checkpoint["intake_partition"]
+    for key in ("buy_rows", "admitted", "duplicate_id_blocked",
+                "reorigination_blocked", "eligible_after_skips"):
+        if intake.get(key) != expected_partition[key]:
+            raise BackfillRefused(
+                f"replay intake no longer matches refusal receipt: {key}="
+                f"{intake.get(key)!r}, expected {expected_partition[key]!r}"
+            )
+    if intake.get("lossless") is not True or intake.get("unaccounted") not in (0, None):
+        raise BackfillRefused(
+            "replay intake is not lossless; refusing an incomplete counterfactual set"
+        )
+    if intake.get("truncated") not in (0, None):
+        raise BackfillRefused("replay intake was truncated")
+
+    replay_ids = [str(plan.get("id") or "") for plan in replayed_plans]
+    replay_ids.extend(
+        str(row.get("id") or "")
+        for row in (intake.get("validation_failures") or [])
+    )
+    expected_ids = list(checkpoint["refusal_plan_ids"])
+    if (
+        len(replay_ids) != expected_partition["eligible_after_skips"]
+        or len(set(replay_ids)) != len(replay_ids)
+        or set(replay_ids) != set(expected_ids)
+    ):
+        raise BackfillRefused(
+            "healed replay population differs from the exact receipted refusal set: "
+            f"missing={sorted(set(expected_ids) - set(replay_ids))}, "
+            f"unexpected={sorted(set(replay_ids) - set(expected_ids))}, "
+            f"observed_n={len(replay_ids)}, expected_n={len(expected_ids)}"
+        )
+
+
+def _source_refusal_metadata(
+    checkpoint: dict[str, Any], *, include_failures: bool,
+) -> dict[str, Any]:
+    """Stable receipt/disclosure projection of the force-majeure source event."""
+    metadata = {
+        "run_id": checkpoint["run_id"],
+        "engine_job_id": checkpoint["engine_job_id"],
+        "checkpoint_commit": checkpoint["checkpoint_commit"],
+        "checkpoint_path": checkpoint["checkpoint_path"],
+        "intake_partition": dict(checkpoint["intake_partition"]),
+        "refusal_plan_ids": list(checkpoint["refusal_plan_ids"]),
+        "validation_failures_sha256": checkpoint["validation_failures_sha256"],
+    }
+    if include_failures:
+        metadata["validation_failures"] = list(checkpoint["validation_failures"])
+    return metadata
+
+
 def _plan_bytes(plan: dict) -> bytes:
     """Exactly the bytes ``build_prophet._write_json`` would put on disk.
 
@@ -370,16 +638,17 @@ def run_backfill(
     repo: Path,
     *,
     board_commit: str,
-    plans_baseline: str,
+    event_baseline_commit: str,
+    collision_baseline_commit: str,
     executed_at: str,
     execute: bool,
     thetadata_store: str | None = None,
 ) -> dict[str, Any]:
     """Replay the refused event and return the disclosure document.
 
-    Pure up to the final write: with ``execute=False`` nothing touches the tree, so
-    the dry run and the real run compute the SAME minted set from the same pinned
-    SHAs (determinism is test-pinned).
+    Pure up to the final write: with ``execute=False`` nothing touches the tree. The
+    authority SHAs and clean tracked enrichment context are receipted; host-local
+    enrichment is explicitly named as not content-pinned.
     """
     from engine.prophet_bridge import (  # noqa: PLC0415 - heavy engine import
         SELECTION_ERA,
@@ -399,13 +668,32 @@ def run_backfill(
                 "so in the disclosure, then re-run."
             )
 
+    require_tracked_worktree_clean(repo)
+    executing_sha = resolve_commit(repo, "HEAD")
+    enrichment_context = _enrichment_context(
+        executing_sha=executing_sha,
+        thetadata_store=thetadata_store,
+    )
+
     board_sha = resolve_commit(repo, board_commit)
-    baseline_sha = resolve_commit(repo, plans_baseline)
+    event_baseline_sha = resolve_commit(repo, event_baseline_commit)
+    collision_baseline_sha = resolve_commit(repo, collision_baseline_commit)
 
     board_blob = blob_at(repo, board_sha, BOARD_RELPATH)
     if board_blob is None:
         raise BackfillRefused(f"{BOARD_RELPATH} does not exist at {board_sha[:12]}")
     board = json.loads(board_blob.decode("utf-8"))
+
+    refusal_checkpoint = _load_authorized_refusal_checkpoint(repo)
+    checkpoint_sha = str(refusal_checkpoint["checkpoint_commit"])
+    require_ancestor(
+        repo, event_baseline_sha, checkpoint_sha,
+        relation="event baseline must precede the durable refusal checkpoint",
+    )
+    require_ancestor(
+        repo, board_sha, collision_baseline_sha,
+        relation="healed board must be on collision-baseline ancestry",
+    )
 
     staleness = board.get("staleness") or {}
     price_through = str(staleness.get("price_through") or "")[:10] or None
@@ -417,25 +705,33 @@ def run_backfill(
         len(board.get("buy") or []),
     )
 
-    baseline_plans = load_plans_at(repo, baseline_sha)
-    closed_ids = load_closed_ids_at(repo, baseline_sha)
-    quarantined_ids = _quarantined_plan_ids_at(repo, baseline_sha)
+    event_plans = load_plans_at(repo, event_baseline_sha)
+    event_closed_ids = load_closed_ids_at(repo, event_baseline_sha)
+    event_quarantined_ids = _quarantined_plan_ids_at(repo, event_baseline_sha)
     actionable = {
-        plan_id: plan for plan_id, plan in baseline_plans.items()
-        if plan_id not in quarantined_ids
+        plan_id: plan for plan_id, plan in event_plans.items()
+        if plan_id not in event_quarantined_ids
     }
-    active_keys = open_plan_keys(actionable, closed_ids)
+    event_active_keys = open_plan_keys(actionable, event_closed_ids)
     log.info(
-        "backfill: plans baseline %s — %d plan(s), %d closed, %d quarantined, "
+        "backfill: event baseline %s — %d plan(s), %d closed, %d quarantined, "
         "%d open ticker+direction key(s)",
-        baseline_sha[:12], len(baseline_plans), len(closed_ids),
-        len(quarantined_ids), len(active_keys),
+        event_baseline_sha[:12], len(event_plans), len(event_closed_ids),
+        len(event_quarantined_ids), len(event_active_keys),
     )
 
-    incumbents = live_plans_since(baseline_plans, LIVE_WINS_FROM)
+    collision_plans = load_plans_at(repo, collision_baseline_sha)
+    incumbents = live_plans_since(collision_plans, LIVE_WINS_FROM)
+    log.info(
+        "backfill: collision baseline %s — %d plan(s), %d live incumbent ticker(s)",
+        collision_baseline_sha[:12], len(collision_plans), len(incumbents),
+    )
 
     # `originate_plans` MUTATES the id set it is handed (build_prophet.py:1528) — a
-    # copy keeps the baseline readable afterwards for the collision pass.
+    # copy keeps the event baseline readable afterwards. Collision authority is a
+    # separate, later snapshot and is deliberately NOT visible to this engine call:
+    # otherwise duplicate/open-plan suppression erases counterfactuals before the
+    # disclosure pass can classify them as live-won collisions.
     intake: dict[str, Any] = {}
     with tempfile.TemporaryDirectory(prefix="prophet_backfill_board_") as tmpdir:
         pinned_board = Path(tmpdir) / "us_standouts.json"
@@ -443,11 +739,13 @@ def run_backfill(
         minted_raw = originate_plans(
             standouts_path=pinned_board,
             asof=BACKFILL_ASOF,
-            existing_ids=set(baseline_plans.keys()),
+            existing_ids=set(event_plans.keys()),
             thetadata_store=thetadata_store,
-            active_keys=active_keys,
+            active_keys=event_active_keys,
             intake_stats=intake,
         )
+
+    _validate_replay_population(refusal_checkpoint, intake, minted_raw)
 
     minted: list[dict[str, Any]] = []
     collided: list[dict[str, Any]] = []
@@ -455,9 +753,9 @@ def run_backfill(
         ticker = str(plan.get("asset") or "").strip().upper()
         rivals = incumbents.get(ticker) or []
         if rivals:
-            # §0.4 LIVE WINS.  Belt-and-braces over the engine's own re-origination
-            # block: that block only sees OPEN plans, so a live plan already closed
-            # by the ledger would slip through as a second episode for one name.
+            # §0.4 LIVE WINS. Later live plans were deliberately absent from the
+            # event-time engine inputs, so every open/closed collision arrives here
+            # with its complete counterfactual plan still available for disclosure.
             collided.append({
                 "ticker": ticker,
                 "would_have_minted": plan.get("id"),
@@ -486,36 +784,26 @@ def run_backfill(
     still_refused = _refusal_rows_from_intake(intake)
     for key in intake.get("reorigination_blocked_keys") or []:
         ticker = str(key).rsplit("-", 1)[0]
-        rivals = incumbents.get(ticker.upper()) or []
-        if rivals:
-            collided.append({
-                "ticker": ticker.upper(),
-                "would_have_minted": None,
-                "reason": "live_origination_wins_open_plan_block",
-                "live_plan_ids": sorted(str(r.get("id")) for r in rivals),
-                "live_recorded_at": sorted({
-                    str(plan_recorded_on(r)) for r in rivals
-                }),
-                "counterfactual": None,
-            })
-        else:
-            still_refused.append({
-                "ticker": ticker.upper(),
-                "plan_id": None,
-                "reason": "engine_refusal:reorigination_blocked",
-                "detail": [
-                    f"an open plan on {key} predates this window; the 2026-08-09 "
-                    "bake would have blocked it too"
-                ],
-            })
+        still_refused.append({
+            "ticker": ticker.upper(),
+            "plan_id": None,
+            "reason": "engine_refusal:reorigination_blocked",
+            "detail": [
+                f"an open plan on {key} predates this window; the 2026-08-09 "
+                "bake would have blocked it too"
+            ],
+        })
     collided.sort(key=lambda row: (str(row.get("ticker")), str(row.get("reason"))))
     still_refused.sort(key=lambda row: (str(row.get("ticker")), str(row.get("reason"))))
 
     duplicate_ids, duplicate_note = already_published_ids(
-        board, baseline_plans, expected=intake.get("duplicate_id_blocked"),
+        board, event_plans, expected=intake.get("duplicate_id_blocked"),
     )
 
-    receipt_id = _receipt_id(board_sha, baseline_sha, minted)
+    receipt_id = _receipt_id(
+        board_sha, event_baseline_sha, collision_baseline_sha,
+        executing_sha, refusal_checkpoint, minted,
+    )
     disclosure_row: dict[str, Any] = {
         "id": WINDOW_ID,
         "market": "US",
@@ -538,11 +826,17 @@ def run_backfill(
             "board_sha256": hashlib.sha256(board_blob).hexdigest(),
             "board_asof": str(board.get("as_of") or "")[:10] or None,
             "board_price_through": price_through,
-            "plans_baseline_commit": baseline_sha,
-            "plans_baseline_count": len(baseline_plans),
+            "event_baseline_commit": event_baseline_sha,
+            "event_baseline_count": len(event_plans),
+            "collision_baseline_commit": collision_baseline_sha,
+            "collision_baseline_count": len(collision_plans),
             "live_wins_from": LIVE_WINS_FROM,
         },
-        "executing_commit": _head_sha(repo),
+        "source_refusal_receipt": _source_refusal_metadata(
+            refusal_checkpoint, include_failures=True,
+        ),
+        "executing_commit": executing_sha,
+        "enrichment_context": enrichment_context,
         "receipt": f"{RECEIPTS_RELDIR}/{receipt_id}.json",
         "counts": {
             "buy_rows": intake.get("buy_rows"),
@@ -600,7 +894,11 @@ def run_backfill(
         board=board,
         board_blob=board_blob,
         board_sha=board_sha,
-        baseline_sha=baseline_sha,
+        event_baseline_sha=event_baseline_sha,
+        collision_baseline_sha=collision_baseline_sha,
+        executing_sha=executing_sha,
+        enrichment_context=enrichment_context,
+        refusal_checkpoint=refusal_checkpoint,
         minted=minted,
         intake=intake,
         executed_at=executed_at,
@@ -662,18 +960,54 @@ def _quarantined_plan_ids_at(repo: Path, commit: str) -> set[str]:
     }
 
 
-def _head_sha(repo: Path) -> str | None:
-    try:
-        return str(_git(repo, "rev-parse", "HEAD")).strip()
-    except subprocess.CalledProcessError:  # pragma: no cover - a repo always has HEAD
-        return None
+def _enrichment_context(
+    *, executing_sha: str, thetadata_store: str | None,
+) -> dict[str, Any]:
+    """Describe the non-authority context without overstating reproducibility."""
+    resolved_store = (
+        str(Path(thetadata_store).expanduser().resolve())
+        if thetadata_store else None
+    )
+    return {
+        "tracked_worktree": {
+            "clean": True,
+            "executing_commit": executing_sha,
+        },
+        "host_local_sources": {
+            "thetadata_store": {
+                "resolved_path": resolved_store,
+                "content_fingerprint": None,
+                "content_pinned": False,
+            },
+        },
+        "all_inputs_content_pinned": False,
+        "reproducibility_note": (
+            "Selection/collision authority is commit-pinned and tracked enrichment "
+            "code/data is bound to executing_commit. Host-local or untracked "
+            "enrichment content is not fingerprinted; this receipt does not claim "
+            "a byte-identical replay from commits alone."
+        ),
+    }
 
 
-def _receipt_id(board_sha: str, baseline_sha: str, minted: list[dict]) -> str:
-    """Deterministic id: same pinned inputs and same minted set → same receipt id."""
+def _receipt_id(
+    board_sha: str,
+    event_baseline_sha: str,
+    collision_baseline_sha: str,
+    executing_sha: str,
+    refusal_checkpoint: dict[str, Any],
+    minted: list[dict],
+) -> str:
+    """Stable id binding authority, executing commit and the minted identity set."""
     digest = hashlib.sha256(
         "\n".join([
-            WINDOW_ID, board_sha, baseline_sha,
+            WINDOW_ID,
+            board_sha,
+            event_baseline_sha,
+            collision_baseline_sha,
+            executing_sha,
+            str(refusal_checkpoint["checkpoint_commit"]),
+            str(refusal_checkpoint["validation_failures_sha256"]),
             *(str(plan.get("id")) for plan in minted),
         ]).encode("utf-8")
     ).hexdigest()[:16]
@@ -686,7 +1020,11 @@ def _build_receipt(
     board: dict,
     board_blob: bytes,
     board_sha: str,
-    baseline_sha: str,
+    event_baseline_sha: str,
+    collision_baseline_sha: str,
+    executing_sha: str,
+    enrichment_context: dict[str, Any],
+    refusal_checkpoint: dict[str, Any],
     minted: list[dict],
     intake: dict[str, Any],
     executed_at: str,
@@ -736,9 +1074,19 @@ def _build_receipt(
             "event_sha": board_sha,
             "id": WINDOW_ID,
             "ref": "refs/heads/main",
-            "source_checkout": baseline_sha,
+            # The event checkout owns duplicate/open-plan suppression. The later
+            # checkout owns only collision authority; recording both prevents a
+            # one-SHA receipt from hiding which world the engine actually saw.
+            "source_checkout": event_baseline_sha,
+            "event_baseline_checkout": event_baseline_sha,
+            "collision_baseline_checkout": collision_baseline_sha,
+            "executing_checkout": executing_sha,
         },
         "schema": RECEIPT_SCHEMA,
+        "enrichment_context": enrichment_context,
+        "source_refusal_receipt": _source_refusal_metadata(
+            refusal_checkpoint, include_failures=False,
+        ),
         "selection": {
             "admitted_count": intake.get("admitted"),
             "originated_count": len(minted),
@@ -802,8 +1150,14 @@ def _print_dry_run(result: dict[str, Any]) -> None:
     print(f"board         : {row['inputs']['board_commit'][:12]} "
           f"as_of={row['inputs']['board_asof']} "
           f"price_through={row['inputs']['board_price_through']}")
-    print(f"plans baseline: {row['inputs']['plans_baseline_commit'][:12]} "
-          f"({row['inputs']['plans_baseline_count']} plan(s))")
+    print(f"event baseline: {row['inputs']['event_baseline_commit'][:12]} "
+          f"({row['inputs']['event_baseline_count']} plan(s))")
+    print(f"collision base: {row['inputs']['collision_baseline_commit'][:12]} "
+          f"({row['inputs']['collision_baseline_count']} plan(s))")
+    source_receipt = row["source_refusal_receipt"]
+    print(f"refusal receipt: run={source_receipt['run_id']} "
+          f"checkpoint={source_receipt['checkpoint_commit'][:12]} "
+          f"n={source_receipt['intake_partition']['eligible_after_skips']}")
     print(f"engine era    : {row['engine_selection_era']}")
     print(f"receipt       : {row['receipt']}")
     print(
@@ -847,9 +1201,14 @@ def main(argv: list[str] | None = None) -> int:
              "as_of=2026-08-07 board (price_through must be 2026-08-07)",
     )
     parser.add_argument(
-        "--plans-baseline", required=True,
-        help="commit on main AFTER the 2026-08-10 nightly checkpoint — supplies the "
-             "existing-plan set, the ledger closures and the collision incumbents",
+        "--event-baseline-commit", required=True,
+        help="event-time main commit — supplies duplicate/open-plan suppression for "
+             "the exact receipted 2026-08-09 population",
+    )
+    parser.add_argument(
+        "--collision-baseline-commit", required=True,
+        help="post-nightly main commit — supplies later live plans for collision "
+             "classification only; it is never passed into originate_plans",
     )
     parser.add_argument(
         "--execute", action="store_true",
@@ -888,7 +1247,8 @@ def main(argv: list[str] | None = None) -> int:
         result = run_backfill(
             repo,
             board_commit=args.board_commit,
-            plans_baseline=args.plans_baseline,
+            event_baseline_commit=args.event_baseline_commit,
+            collision_baseline_commit=args.collision_baseline_commit,
             executed_at=executed_at,
             execute=bool(args.execute),
             thetadata_store=str(resolved_store) if resolved_store else None,
