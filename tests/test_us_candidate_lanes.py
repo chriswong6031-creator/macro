@@ -840,12 +840,15 @@ class TestGraduationFields:
 # --------------------------------------------------------------------------- #
 
 #: The ONLY modules allowed to name the candidate pool.  The producer, the builder that
-#: calls it, and the store that carries its columns.  Everything else — and in
-#: particular anything that decides membership, order, size or a gate — must not.
+#: calls it, the store that carries its columns, and the static contract exporter that
+#: declares the additive display field.  The exporter neither reads the pool nor sits in
+#: an admission, ordering, sizing or gate path.  Everything with authority must remain
+#: unaware that the pool exists.
 POOL_ALLOWLIST = frozenset({
     "engine/us_candidate_lanes.py",
     "engine/us_context_vector.py",
     "scripts/build_stock_library.py",
+    "scripts/export_signal_contracts.py",
 })
 
 #: Modules that DECIDE things.  If any of them ever learns the pool exists, the fence is
