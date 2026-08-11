@@ -4,9 +4,12 @@
 <!--
   com.mastermind.prophetmarks.plist — launchd agent for the Prophet live-marks publisher.
 
-  Fires once on weekdays at 09:25 ET, then the runner script (run_prophet_marks_loop.sh)
-  polls every 5 minutes.  The runner exits when the current ET time passes 16:05 or the
-  session is over; launchd fires it again at 09:25 the next weekday.
+  Fires every 5 minutes using a timezone-neutral StartInterval.  The runner checks
+  America/New_York explicitly, admits one cycle inside 09:25–16:05 ET, and exits.
+  build_prophet_marks.py applies the stricter NYSE session/RTH publication guard.
+
+  Do not replace StartInterval with StartCalendarInterval hours.  launchd interprets
+  those hours in the Mac's local timezone, and the production M1 is America/Vancouver.
 
   DO NOT touch the com.mastermind.liveflow lane — this is a separate, independent job.
 
@@ -41,7 +44,7 @@
     source /Users/chriswong/flow-ops-wt/.env
     set +a
     cd /Users/chriswong/flow-ops-wt
-    python -m scripts.build_prophet_marks --publish
+    python -m scripts.build_prophet_marks  [add the publish flag]
 -->
 <plist version="1.0">
 <dict>
@@ -49,8 +52,7 @@
   <string>com.mastermind.prophetmarks</string>
 
   <!--
-    run_with_env.sh sources .env before executing the runner loop script.
-    The loop runs build_prophet_marks.py --publish every 5 min until 16:05 ET.
+    run_with_env.sh sources .env before executing the one-cycle runner.
   -->
   <key>ProgramArguments</key>
   <array>
@@ -65,38 +67,12 @@
   <string>/Users/chriswong/flow-ops-wt</string>
 
   <!--
-    Start weekdays at 09:25 ET (slightly before market open).
-    The build_prophet_marks script has its own RTH guard (09:30–16:00 ET);
-    the pre-open 09:25 cycle exits cleanly.
+    StartInterval is elapsed time, not a wall-clock hour, so host timezone cannot
+    shift the lane.  The runner's explicit America/New_York gate discards cycles
+    outside 09:25–16:05 ET; the builder then enforces NYSE sessions and 09:30–16:00.
   -->
-  <key>StartCalendarInterval</key>
-  <array>
-    <dict>
-      <key>Weekday</key><integer>1</integer>
-      <key>Hour</key><integer>9</integer>
-      <key>Minute</key><integer>25</integer>
-    </dict>
-    <dict>
-      <key>Weekday</key><integer>2</integer>
-      <key>Hour</key><integer>9</integer>
-      <key>Minute</key><integer>25</integer>
-    </dict>
-    <dict>
-      <key>Weekday</key><integer>3</integer>
-      <key>Hour</key><integer>9</integer>
-      <key>Minute</key><integer>25</integer>
-    </dict>
-    <dict>
-      <key>Weekday</key><integer>4</integer>
-      <key>Hour</key><integer>9</integer>
-      <key>Minute</key><integer>25</integer>
-    </dict>
-    <dict>
-      <key>Weekday</key><integer>5</integer>
-      <key>Hour</key><integer>9</integer>
-      <key>Minute</key><integer>25</integer>
-    </dict>
-  </array>
+  <key>StartInterval</key>
+  <integer>300</integer>
 
   <key>EnvironmentVariables</key>
   <dict>
@@ -111,8 +87,8 @@
   <key>StandardErrorPath</key>
   <string>/tmp/prophetmarks.stderr.log</string>
 
-  <!-- Do NOT set KeepAlive: the runner self-exits after 16:05 ET;
-       launchd respawns at the next StartCalendarInterval. -->
+  <!-- Do NOT set KeepAlive: StartInterval owns the five-minute cadence and the
+       runner exits after exactly one admitted or skipped cycle. -->
   <key>KeepAlive</key>
   <false/>
 
