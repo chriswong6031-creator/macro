@@ -845,6 +845,152 @@ def union_admission(price_history: Any, asof: str | None = None, *,
 
 
 # ---------------------------------------------------------------------------
+# SETUP GEOMETRY — the early lane's own score (operator ruling 2026-08-11)
+# ---------------------------------------------------------------------------
+# A GEOMETRY score, never a probability score.  It answers "how good is the trade
+# available RIGHT NOW", from three things a chart shows and nothing a backtest inferred:
+#
+#   (a) how far today's entry sits above the structural stop      (lower = better)
+#   (b) whether the low that stop hangs under is a CONFIRMED pivot (cleaner = better)
+#   (c) how far price has already travelled from the fire         (a chase = worse)
+#
+# (c) is why this is scored today and not on the signal's birthday: a fire that has run
+# +10% off its low is a chase, and it must sort BELOW a fresh one no matter how good the
+# original signature looked.
+#
+# What is deliberately NOT in here, and is test-pinned absent: any durability or P(win)
+# claim, the §8 / footprint features that were nulled under risk-equalization, member-share
+# theme breadth, and the retracted repeat-fire flag.  The basket TURNING/CONFIRMED read may
+# sit BESIDE a row as display context — it has its own forward ledger — but it is not an
+# input here.
+#: Risk this far above the structural stop scores zero on the risk leg.  Not a threshold
+#: anyone may act on — the ordering key's floor, so the leg cannot run away.
+GEOMETRY_RISK_CAP: float = 0.15
+#: Travel from the fire that fully spends the freshness leg (the operator's "+10% is a
+#: chase" example).
+GEOMETRY_CHASE_CAP: float = 0.10
+#: How much of the score the freshness leg may take away.
+GEOMETRY_DECAY_WEIGHT: float = 0.45
+#: What a CONFIRMED reference pivot is worth against an unconfirmed raw low.
+GEOMETRY_CONFIRMED_BONUS: float = 8.0
+#: The decline-low lookback the structural stop hangs under, and the stop's own haircut —
+#: the same P_low x 0.99 basis the bake-off measured stop-A survival on.
+GEOMETRY_LOW_LOOKBACK: int = 45
+GEOMETRY_STOP_K: float = 0.99
+#: Radius of the confirmed swing low the stop-structure flag reads.
+PIVOT_RADIUS_R3: int = 3
+
+#: The stage a row is at.  A FACT column, never a score and never blended into one: the
+#: early lane's geometry score and the confirmed lane's own score stay two numbers.
+STAGE_EARLY = "EARLY"
+STAGE_CONFIRMING = "CONFIRMING"
+STAGE_CONFIRMED = "CONFIRMED"
+
+
+def _confirmed_pivot_low(low: "np.ndarray", end: int) -> tuple[float | None, int | None]:
+    """The most recent r3-CONFIRMED swing low knowable at ``end`` (pivot at p, strict min
+    of lows[p-3..p+3], knowable at p+3)."""
+    for p in range(end - PIVOT_RADIUS_R3, PIVOT_RADIUS_R3 - 1, -1):
+        w = low[p - PIVOT_RADIUS_R3: p + PIVOT_RADIUS_R3 + 1]
+        if len(w) < 2 * PIVOT_RADIUS_R3 + 1 or not np.isfinite(w).all():
+            continue
+        if low[p] < np.min(np.delete(w, PIVOT_RADIUS_R3)):
+            return float(low[p]), int(p)
+    return None, None
+
+
+def setup_geometry(price_history: Any, asof: str | None = None, *,
+                   union: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """The early lane's GEOMETRY score — the trade available today, not the signal's age.
+
+    Returns the three legs as data plus ``score`` (0-100, an ORDERING KEY for the deck's
+    sort).  It is not a probability, it is not calibrated, and it never claims a name will
+    work: two rows with the same score have the same geometry, nothing more.
+    """
+    out: dict[str, Any] = {
+        "score": None, "risk_pct": None, "stop": None, "reference_low": None,
+        "stop_confirmed": None, "chase_pct": None, "age_bars": None,
+        "basis": "distance to the structural stop, how clean that stop is, "
+                 "and how far price has travelled since the fire",
+        "reason": None,
+    }
+    close = _close_series(price_history, asof)
+    if close is None:
+        out["reason"] = f"fewer than {MIN_BARS} usable daily closes through {asof}"
+        return out
+    lows = _low_series(price_history, close)
+    c = close.to_numpy(dtype="float64")
+    end = len(c) - 1
+    spot = float(c[end])
+    if not np.isfinite(spot) or spot <= 0:
+        out["reason"] = "last close is not a positive finite price"
+        return out
+
+    a = max(0, end - GEOMETRY_LOW_LOOKBACK)
+    raw_low = float(np.nanmin(lows[a: end + 1]))
+    pivot_low, pivot_pos = _confirmed_pivot_low(lows, end)
+    # The stop hangs under the decline low that is actually in force. When the most recent
+    # CONFIRMED pivot is that same low, the stop is structurally clean; otherwise it is
+    # hanging under a raw low the tape has not yet defended, and the row says so.
+    confirmed = bool(pivot_low is not None and np.isfinite(raw_low)
+                     and abs(pivot_low - raw_low) <= 1e-9)
+    if not np.isfinite(raw_low) or raw_low <= 0:
+        out["reason"] = "no usable decline low in the lookback"
+        return out
+    stop = raw_low * GEOMETRY_STOP_K
+    if stop >= spot:
+        out["reason"] = "price is at or below its own structural stop"
+        return out
+    risk = (spot - stop) / spot
+
+    chase = None
+    age = None
+    if isinstance(union, Mapping) and union.get("fire_date"):
+        try:
+            fire_pos = int(close.index.searchsorted(pd.Timestamp(union["fire_date"]),
+                                                    side="left"))
+            if 0 <= fire_pos <= end and float(c[fire_pos]) > 0:
+                chase = float(spot / float(c[fire_pos]) - 1.0)
+                age = int(end - fire_pos)
+        except Exception:  # noqa: BLE001
+            chase = None
+
+    risk_leg = 100.0 * max(0.0, 1.0 - risk / GEOMETRY_RISK_CAP)
+    decay_leg = 0.0
+    if chase is not None and chase > 0:
+        decay_leg = (100.0 * GEOMETRY_DECAY_WEIGHT
+                     * min(1.0, chase / GEOMETRY_CHASE_CAP))
+    score = risk_leg + (GEOMETRY_CONFIRMED_BONUS if confirmed else 0.0) - decay_leg
+    out.update({
+        "score": round(max(0.0, min(100.0, score)), 2),
+        "risk_pct": round(risk, 4),
+        "stop": round(stop, 4),
+        "reference_low": round(raw_low, 4),
+        "stop_confirmed": confirmed,
+        "confirmed_pivot_low": (round(pivot_low, 4) if pivot_low is not None else None),
+        "chase_pct": (round(chase, 4) if chase is not None else None),
+        "age_bars": age,
+    })
+    return out
+
+
+def _low_series(price_history: Any, close: "pd.Series") -> "np.ndarray":
+    """Daily lows aligned to ``close``; falls back to the close when no low is carried
+    (a close-only name has no intrabar low to hang a stop under, and pretending otherwise
+    would place the stop tighter than the tape can honour)."""
+    try:
+        if isinstance(price_history, pd.DataFrame):
+            for name in ("low", "Low", "l"):
+                if name in price_history.columns:
+                    s = pd.Series(price_history[name]).astype(float)
+                    s.index = pd.DatetimeIndex(s.index).tz_localize(None).normalize()
+                    return s.reindex(close.index).to_numpy(dtype="float64")
+    except Exception:  # noqa: BLE001
+        pass
+    return close.to_numpy(dtype="float64")
+
+
+# ---------------------------------------------------------------------------
 # The admission decision
 # ---------------------------------------------------------------------------
 
@@ -883,6 +1029,7 @@ def assess_early_turn(
     daily = turn_signature(price_history, asof=asof, timeframe=TF_DAILY)
     two_day = turn_signature(price_history, asof=asof, timeframe=TF_2D)
     union = union_admission(price_history, asof=asof, benchmark=benchmark)
+    geometry = setup_geometry(price_history, asof=asof, union=union)
     washout = basket_turn_context(ticker, membership)
     leader = leader_pullback_context(ticker, price_history=price_history, asof=asof,
                                      states=leader_states)
@@ -939,6 +1086,11 @@ def assess_early_turn(
         "union_legs": list(union.get("legs") or []),
         "admission_era": UNION_ADMISSION_ERA if union.get("fired") else None,
         "context_badges": union.get("badges") if union.get("fired") else None,
+        # The early lane's OWN score — geometry, and the deck's sort key for this lane.
+        # It is never blended with the confirmed lane's score; `stage` is the fact column
+        # that says which lane a row is reading from.
+        "setup_geometry": geometry,
+        "stage": STAGE_EARLY if union.get("fired") else None,
         "daily": daily,
         "two_day": two_day,
         "washout": washout,

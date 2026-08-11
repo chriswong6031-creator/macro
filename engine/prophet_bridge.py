@@ -223,6 +223,70 @@ UNION_BADGE_COPY = {
 #: A decline this deep reads as "well off" its 6-month high in the chip copy.
 UNION_DEEP_DECLINE = -0.15
 
+#: The early lane's score is a GEOMETRY score and the copy says so in the label itself —
+#: "setup geometry", not "quality", not "conviction", not a percentage anyone could read
+#: as a chance of working. The hover carries the whole contract: what it measures, what it
+#: is NOT, and the cost that stops are there to cap.
+GEOMETRY_LABEL_EN = "Setup geometry"
+GEOMETRY_LABEL_ZH = "入场结构"
+GEOMETRY_HOVER_EN = ("Distance to the structural stop and how clean that stop is — "
+                     "geometry, not a probability. Early entries mostly stop out; "
+                     "the stop is what caps the cost.")
+GEOMETRY_HOVER_ZH = ("到结构性止损的距离，以及该止损是否干净 — 这是结构，不是概率。"
+                     "早期入场多数会被止损；止损用来限制成本。")
+#: The stop-structure flag, in plain words.
+GEOMETRY_STOP_CLEAN_EN = "Stop sits under a low the tape has defended"
+GEOMETRY_STOP_CLEAN_ZH = "止损位于已被确认的低点下方"
+GEOMETRY_STOP_RAW_EN = "Stop sits under a low the tape has not defended yet"
+GEOMETRY_STOP_RAW_ZH = "止损位于尚未被确认的低点下方"
+#: Freshness, in plain words — the operator's "a fire +10% off its low is a chase".
+GEOMETRY_FRESH_EN = "Still near where it turned"
+GEOMETRY_FRESH_ZH = "仍接近转向位置"
+GEOMETRY_CHASED_EN = "Already run from where it turned — chasing"
+GEOMETRY_CHASED_ZH = "已远离转向位置 — 属于追高"
+#: Travel from the fire past which the copy calls it a chase (half the decay cap).
+GEOMETRY_CHASED_AT = 0.05
+
+#: Sizing guidance is a STAGE statement, never a size number: the row says which stage it
+#: is at and what that stage is for.
+STAGE_SIZING_COPY = {
+    "EARLY": ("Starter size — add only if it confirms", "试仓 — 确认后再加"),
+    "CONFIRMING": ("Confirming — size on the confirmation, not before",
+                   "确认中 — 待确认后再定仓位"),
+    "CONFIRMED": ("Confirmed — this is the add", "已确认 — 此处加仓"),
+}
+
+
+def setup_geometry_texture(geometry: Mapping[str, Any] | None,
+                           stage: str | None = None) -> dict[str, Any]:
+    """Deck copy for the early lane's geometry score.
+
+    The score itself is an ORDERING KEY. This turns it into words a reader can act on
+    without ever implying a likelihood — the hover says "geometry, not a probability" in
+    both languages, and the stage line says what the stage is FOR.
+    """
+    if not isinstance(geometry, Mapping) or geometry.get("score") is None:
+        return {}
+    chips: list[dict[str, str]] = []
+    if geometry.get("stop_confirmed") is True:
+        chips.append({"en": GEOMETRY_STOP_CLEAN_EN, "zh": GEOMETRY_STOP_CLEAN_ZH})
+    elif geometry.get("stop_confirmed") is False:
+        chips.append({"en": GEOMETRY_STOP_RAW_EN, "zh": GEOMETRY_STOP_RAW_ZH})
+    chase = geometry.get("chase_pct")
+    if isinstance(chase, (int, float)):
+        chased = chase >= GEOMETRY_CHASED_AT
+        chips.append({"en": GEOMETRY_CHASED_EN if chased else GEOMETRY_FRESH_EN,
+                      "zh": GEOMETRY_CHASED_ZH if chased else GEOMETRY_FRESH_ZH})
+    out: dict[str, Any] = {
+        "label": {"en": GEOMETRY_LABEL_EN, "zh": GEOMETRY_LABEL_ZH},
+        "hover": {"en": GEOMETRY_HOVER_EN, "zh": GEOMETRY_HOVER_ZH},
+        "chips": chips,
+    }
+    sizing = STAGE_SIZING_COPY.get(str(stage or "").upper())
+    if sizing:
+        out["sizing"] = {"en": sizing[0], "zh": sizing[1]}
+    return out
+
 
 def union_admission_texture(union: Mapping[str, Any] | None) -> dict[str, Any]:
     """TURN WATCH texture for a union-admitted row: chips + the Tier-2 honesty notes.
@@ -4455,6 +4519,17 @@ def originate_plans(
                 "admission_era": early.get("admission_era"),
                 "context_badges": early.get("context_badges"),
                 "union_texture": union_admission_texture(early.get("union")),
+                # ── the early lane's OWN score (operator ruling 2026-08-11) ───────
+                # Geometry, never probability. It is THIS lane's deck sort key and is
+                # never blended with the confirmed lane's score — `stage` is the fact
+                # column that says which lane a row is reading from. The basket state
+                # sits beside it as display context (its own forward ledger), never in it.
+                "setup_geometry": early.get("setup_geometry"),
+                "geometry_score": (early.get("setup_geometry") or {}).get("score"),
+                "stage": early.get("stage"),
+                "geometry_texture": setup_geometry_texture(
+                    early.get("setup_geometry"), early.get("stage")),
+                "basket_context_chip": (early.get("washout") or {}).get("state"),
             },
         }
 

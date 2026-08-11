@@ -255,6 +255,147 @@ def test_context_chips_never_imply_durability_or_ordering():
         assert claim not in blob, f"durability claim in a context chip: {claim}"
 
 
+# --------------------------------------------------------------- 7. setup geometry
+def _geo(ticker="STLD", asof="2026-07-14", df=None):
+    from engine.us_early_turn import setup_geometry
+    frame = _fixture(ticker) if df is None else df
+    return setup_geometry(frame, asof=asof,
+                          union=union_admission(frame, asof=asof))
+
+
+def test_geometry_scores_the_named_exemplars():
+    g = _geo("STLD", "2026-07-14")
+    assert 0 <= g["score"] <= 100
+    assert g["risk_pct"] == pytest.approx(0.0821, abs=0.001)
+    assert g["reference_low"] == pytest.approx(216.36, abs=0.01)
+    assert g["stop"] == pytest.approx(216.36 * 0.99, abs=0.01)
+    assert g["stop_confirmed"] is True
+    assert _geo("NEM", "2026-07-09")["stop_confirmed"] is False
+
+
+def test_lower_risk_scores_higher():
+    """The primary leg: distance to the structural stop, lower = better."""
+    from engine.us_early_turn import setup_geometry
+    stld, nem = _geo("STLD", "2026-07-14"), _geo("NEM", "2026-07-09")
+    assert nem["risk_pct"] < stld["risk_pct"]
+    assert nem["score"] > stld["score"]
+    assert setup_geometry is not None
+
+
+def test_a_chase_scores_low_however_good_the_signal_was():
+    """The operator's ruling: score the trade available TODAY, not the signal's birthday.
+
+    A REAL replay, not a synthetic one: STLD's 2026-07-14 fire, priced two weeks later on
+    the committed tape after price had run +11%. Same signal, same reference low, and the
+    score must have gone to the floor — that entry is a chase."""
+    from engine.us_early_turn import setup_geometry
+    df = _fixture("STLD")
+    union = union_admission(df, asof="2026-07-14")
+    fresh = setup_geometry(df, asof="2026-07-14", union=union)
+    chased = setup_geometry(df, asof="2026-07-28", union=union)
+    assert fresh["chase_pct"] == pytest.approx(0.0, abs=1e-9)
+    assert chased["chase_pct"] > 0.10
+    assert chased["score"] < fresh["score"]
+    assert chased["score"] == 0.0, "a fire that has run +11% must sort to the bottom"
+
+
+def test_a_confirmed_stop_outranks_a_raw_one_all_else_equal():
+    from engine.us_early_turn import GEOMETRY_CONFIRMED_BONUS
+    assert GEOMETRY_CONFIRMED_BONUS > 0
+    g = _geo("STLD", "2026-07-14")
+    assert g["stop_confirmed"] is True
+    assert g["confirmed_pivot_low"] == pytest.approx(g["reference_low"], abs=0.01)
+
+
+def test_geometry_is_never_a_probability():
+    """Hard rule: no key here may read as a likelihood, and the copy says so out loud."""
+    from engine.prophet_bridge import setup_geometry_texture
+    g = _geo()
+    for banned in ("p_win", "prob", "probability", "win_rate", "odds", "expectancy",
+                   "confidence", "durability", "reliability"):
+        assert not any(banned in k.lower() for k in g), f"probability key: {banned}"
+    tex = setup_geometry_texture(g, "EARLY")
+    assert "not a probability" in tex["hover"]["en"]
+    assert "不是概率" in tex["hover"]["zh"]
+
+
+def test_the_nulled_and_retracted_features_are_absent_from_the_score():
+    """Test-pinned NON-inputs: the §8 / footprint features that died under
+    risk-equalization, member-share theme breadth, and the RETRACTED repeat-fire flag.
+    Pinned on the score's own source so a future edit cannot quietly reintroduce one."""
+    import inspect
+
+    from engine import us_early_turn
+    src = inspect.getsource(us_early_turn.setup_geometry)
+    src += inspect.getsource(us_early_turn._confirmed_pivot_low)
+    for banned in ("repeat_fire", "repeat_false", "washout_breadth", "turn_breadth",
+                   "member_share", "d1_avwap", "d2_poc", "d4_absorption", "d5_quiet",
+                   "participation_z", "f_k_cross", "f_rs63", "f_decline_depth"):
+        assert banned not in src, f"nulled/retracted feature reached the score: {banned}"
+
+
+def test_basket_state_is_context_beside_the_row_not_a_score_input():
+    """The basket TURNING/CONFIRMED read has its own forward ledger and may DISPLAY beside
+    a row — it must not enter the geometry score."""
+    import inspect
+
+    from engine import us_early_turn
+    # comments are prose ABOUT the score, not inputs to it — read the code only
+    src = "\n".join(line.split("#")[0] for line
+                    in inspect.getsource(us_early_turn.setup_geometry).splitlines())
+    for banned in ("basket", "washout_mature", "TURNING", "membership",
+                   "basket_turn_context"):
+        assert banned not in src, f"basket context reached the score: {banned}"
+    # ... and it IS carried beside the row, as display context
+    from engine.prophet_bridge import setup_geometry_texture
+    assert "basket" not in str(setup_geometry_texture(_geo(), "EARLY")).lower()
+
+
+def test_the_two_scores_are_never_blended():
+    """Hard rule: the early lane's geometry score and the confirmed lane's score stay two
+    numbers, and `stage` is the fact column that says which lane a row reads from."""
+    from engine.us_early_turn import STAGE_EARLY
+    df = _fixture("STLD")
+    row = us_early_turn.assess_early_turn("STLD", df, asof="2026-07-14",
+                                          membership={}, leader_states={})
+    assert row["stage"] == STAGE_EARLY
+    assert row["setup_geometry"]["score"] is not None
+    # the early lane exposes ONLY its own score; it never writes a blended/priority score
+    assert "score" not in row
+    assert "conviction" not in row and "prophet" not in row
+
+
+def test_stage_sizing_copy_is_bilingual_and_stage_shaped():
+    from engine.prophet_bridge import setup_geometry_texture
+    tex = setup_geometry_texture(_geo(), "EARLY")
+    assert set(tex["sizing"]) == {"en", "zh"}
+    assert "Starter" in tex["sizing"]["en"]
+    assert "试仓" in tex["sizing"]["zh"]
+    confirmed = setup_geometry_texture(_geo(), "CONFIRMED")
+    assert "add" in confirmed["sizing"]["en"].lower()
+
+
+def test_geometry_label_says_geometry_not_quality():
+    from engine.prophet_bridge import setup_geometry_texture
+    tex = setup_geometry_texture(_geo(), "EARLY")
+    assert tex["label"]["en"] == "Setup geometry"
+    assert tex["label"]["zh"].strip()
+    for banned in ("quality", "conviction", "grade", "rating", "strength"):
+        assert banned not in tex["label"]["en"].lower()
+
+
+def test_geometry_texture_is_empty_without_a_score():
+    from engine.prophet_bridge import setup_geometry_texture
+    assert setup_geometry_texture(None) == {}
+    assert setup_geometry_texture({"score": None}) == {}
+
+
+def test_geometry_refuses_rather_than_guesses_on_thin_history():
+    from engine.us_early_turn import setup_geometry
+    g = setup_geometry(_fixture("STLD").tail(10), asof="2026-07-14")
+    assert g["score"] is None and g["reason"]
+
+
 def test_assess_early_turn_exposes_the_union_without_bypassing_context():
     """The union joins the signature legs; it does NOT become a licence on its own. A naked
     signature has never admitted in this module and the union must not change that."""
