@@ -8,6 +8,22 @@ per-basket members drill and a dated membership changelog. Additive — any fail
 logs and returns 0 so it can never break the rest of the site.
 
 Usage: python -m scripts.build_baskets
+       python -m scripts.build_baskets --snapshot   (PIT membership side-car only)
+
+--snapshot (GMI W1a): append a dated point-in-time snapshot of US basket membership to
+data/baskets/snapshots/YYYY-MM-DD.json and stamp it into the append-only per-suite PIT
+parquet data/baskets/membership_history.parquet (engine/basket_membership_pit.py), then
+rewrite the cadence stamp. Skips the page render entirely. The exact mirror of
+scripts/build_baskets_china_ths.py --snapshot, one suite over.
+
+WHY THE US SUITE NEEDED THIS. data/baskets/membership.json is a single MUTABLE document:
+49 baskets with per-member added/removed dates, edited in place. engine/basket_freeze.py
+writes only membership HASHES (`<bid>__mhash`) into data/basket_levels/us.parquet — change
+DETECTION, from which membership cannot be reconstructed. So before this flag there was no
+way to answer "who was in this basket on that date" for the US suite at all: any study over
+US baskets was measuring today's membership applied backward, which is exactly the
+look-ahead basis the CN store was built to end. The first snapshot is a genuine observation
+of current membership; no pre-W1a history is reconstructed (masterplan G0.2).
 """
 from __future__ import annotations
 
@@ -79,6 +95,105 @@ def _check_basket_store_staleness(data: dict) -> None:
         log.debug("_check_basket_store_staleness failed (%s)", _e)
 
 
+def _membership_pit_lane() -> str | None:
+    """The collection lane this process runs in, resolved FAIL-CLOSED from ``COLLECT_LANE``.
+
+    The US mirror of ``scripts.build_baskets_china_ths._membership_pit_lane``, and
+    defaultless for the same reason: the PIT store is append-only, keep-FIRST per
+    ``(snapshot_date, basket_id, ticker)`` and content-deduped, so the FIRST lane to
+    stamp a date owns that snapshot forever and a later lane's view of the same day is
+    discarded in silence.  A permissive ``os.environ.get("COLLECT_LANE", "nightly")``
+    would hand that ownership to whichever hand-run or render lane happened to go first
+    — the exact defect that made the CN gate dead on arrival until 2026-08-09
+    (see tests/test_cn_membership_pit_lane_gate.py for the postmortem).
+
+    ``US_LANE`` is accepted as the legacy alias, matching ``engine.ledger_lane``.
+    daily.yml's engine job sets ``COLLECT_LANE: nightly`` at job level; the render,
+    closing-bell and earlyclose lanes leave it unset and so append nothing.
+    """
+    import os  # noqa: PLC0415 — local to the side-car path
+
+    val = os.environ.get("COLLECT_LANE") or os.environ.get("US_LANE") or ""
+    return val.strip().lower() or None
+
+
+def _snapshot_membership_pit() -> int:
+    """Stamp the US suite into its append-only PIT parquet. Never fatal. Returns rows added."""
+    try:
+        from engine import basket_membership_pit as _pit  # noqa: PLC0415
+
+        res = _pit.append_all(lane=_membership_pit_lane(), suites=_pit.SUITES_US)
+        rows = 0
+        for suite, r in res.items():
+            snap = r.get("snapshot") or {}
+            rows += int(snap.get("rows_added") or 0)
+            log.info("membership PIT [%s]: %s (+%d rows, backfill +%d)", suite,
+                     snap.get("snapshot_date") if snap.get("written")
+                     else f"skipped — {snap.get('reason')}",
+                     int(snap.get("rows_added") or 0),
+                     int((r.get("backfill") or {}).get("rows_added") or 0))
+        return rows
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("membership PIT snapshot failed (%s)", e)
+        return 0
+
+
+def snapshot_membership() -> int:
+    """Append a dated PIT snapshot of US basket membership (content-deduped, never fatal).
+
+    Two stores plus one stamp, mirroring the CN side-car writer exactly:
+
+      * the queryable per-suite parquet (lane-gated, keep-first per snapshot_date);
+      * the dated JSON side-car, byte-deduped against the newest one already on disk —
+        membership moves when a curator edits it, not on the trading calendar, so
+        stamping one every night would add ~250 identical files a year that say nothing;
+      * ``_cadence.json``, rewritten UNCONDITIONALLY — including on the dedup skip.
+
+    That last one is the whole reason this function is not just the first two.  A
+    content-deduped writer that has been unwired and a content-deduped writer whose
+    input has not changed leave the identical trace on disk: nothing.  That is how the
+    THS side-car store sat at two snapshots for six weeks while its nightly step ran
+    green ~35 nights in a row.  The cadence stamp is the artifact that tells those two
+    apart, and ``scripts/check_membership_snapshot_freshness.py`` is what reads it.
+    """
+    import hashlib
+
+    from engine import basket_membership_pit as _pit  # noqa: PLC0415
+
+    suite = _pit.SUITE_US
+    _snapshot_membership_pit()
+    sha = None
+    try:
+        src = _pit.membership_path(suite)
+        # NO early return anywhere below: every path falls through to the stamp. A
+        # writer that ran and found no membership.json must look different from a
+        # writer nobody wired — otherwise the tripwire reads a real outage as
+        # INDETERMINATE, the one verdict that never pages anyone.
+        if not src.exists():
+            log.warning("us basket snapshot: membership.json missing — nothing to stamp")
+        else:
+            raw = src.read_bytes()
+            sha = hashlib.sha256(raw).hexdigest()
+            snap_dir = _pit.snapshot_dir(suite)
+            snap_dir.mkdir(parents=True, exist_ok=True)
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            dest = snap_dir / f"{today}.json"
+            prior = _pit.dated_snapshots(suite)
+            if dest.exists():
+                log.info("us basket snapshot: %s already stamped — skipping", today)
+            elif prior and hashlib.sha256(prior[-1].read_bytes()).hexdigest() == sha:
+                log.info("us basket snapshot: membership unchanged since %s — dedup skip",
+                         prior[-1].stem)
+            else:
+                dest.write_bytes(raw)
+                log.info("us basket snapshot: wrote %s (%d bytes)", dest.name, len(raw))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("us basket snapshot failed (%s)", e)
+    # ALWAYS stamped — the dedup-skip path above is exactly the case it exists for.
+    _pit.write_cadence_stamp(suite, writer="scripts.build_baskets", membership_sha=sha)
+    return 0
+
+
 def _write_score_snapshot(ti: dict) -> None:
     """Slim per-theme score snapshot -> data/baskets/latest.json (archived daily by
     scripts.archive_signals into the 'baskets' stream → detail-page score history)."""
@@ -100,6 +215,8 @@ def _write_score_snapshot(ti: dict) -> None:
 
 
 def main() -> int:
+    if "--snapshot" in sys.argv[1:]:
+        return snapshot_membership()
     site = config.ROOT / "site"
     try:
         from engine.baskets import compute_baskets
