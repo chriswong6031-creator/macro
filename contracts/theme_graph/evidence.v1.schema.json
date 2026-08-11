@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/theme_graph/evidence.v1.schema.json",
+  "title": "GMI theme-graph evidence row v1",
+  "description": "One ROW of data/theme_graph/evidence.parquet, as a JSON object. Masterplan §4.1. Receipt rows an edge's evidence_refs point at. Every row is DATED (published_at) — that is what makes the semantic-leakage law checkable: an edge whose evidence cannot be dated is knowledge from nowhere, and the guard refuses it. Contradictory and corroborating evidence coexist as separate rows; nothing nets, nothing is superseded in place. Licensing tags travel with the receipt so a display surface can ask whether it may show, and a redistribution path whether it may republish, without re-deriving the answer from the source.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evidence_id",
+    "kind",
+    "published_at",
+    "source_ref",
+    "licensing_internal_ok",
+    "licensing_display_ok",
+    "licensing_redistribution_ok",
+    "computed_at"
+  ],
+  "properties": {
+    "evidence_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Deterministic: 'ev:' + sha1(kind|source_ref|published_at)[:16] — the same receipt observed twice is one row."
+    },
+    "kind": {
+      "enum": ["filing", "xbrl", "8k_counterparty", "scrape_receipt", "scrape", "news_item", "operator_curation", "comovement_stat"]
+    },
+    "published_at": {
+      "$ref": "#/$defs/date",
+      "description": "When the source document/observation was published. REQUIRED and dated — an undatable receipt is not evidence here."
+    },
+    "effective_at": {
+      "$ref": "#/$defs/nullable_date",
+      "description": "When the underlying reality took effect, where it lags publication (memo §206). Null when publication IS the event."
+    },
+    "source_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repo path, accession, URL or url-hash identifying the source."
+    },
+    "licensing_internal_ok": {"type": "boolean", "description": "May be used in internal computation."},
+    "licensing_display_ok": {"type": "boolean", "description": "May be shown to a user."},
+    "licensing_redistribution_ok": {"type": "boolean", "description": "May be republished as a dataset. Vendor-derived rows are false here."},
+    "retention": {
+      "type": ["string", "null"],
+      "description": "Retention constraint carried by the source, when it has one; null when unconstrained."
+    },
+    "computed_at": {"$ref": "#/$defs/clock"}
+  },
+  "$defs": {
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "nullable_date": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}
+      ]
+    },
+    "clock": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/theme_graph/nodes.v1.schema.json",
+  "title": "GMI theme-graph node row v1",
+  "description": "One ROW of data/theme_graph/nodes.parquet, as a JSON object. The parquet store is the artifact; this schema is the row contract producers emit against and the guard (scripts/check_theme_graph_contracts.py) validates samples against. Masterplan §4.1. Node identity is PERMANENT: a company node id never re-points at a different company — a reused ticker mints a new node at identity_epoch+1 and retires the old one (reused-ticker zombie law; config/theme_graph_identity_breaks.yml is the sole source of epochs). Additive-only for v1: a later wave may add columns, never rename or repurpose one.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "node_id",
+    "kind",
+    "market_scope",
+    "status",
+    "identity_epoch",
+    "external_ids",
+    "provenance",
+    "computed_at",
+    "engine_version"
+  ],
+  "properties": {
+    "node_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable slug, unique per row. Company nodes are 'co:<market>:<SYMBOL>' with an optional '#<epoch>' suffix from epoch 2 on; themes 'theme:<id>'; baskets 'basket:<suite>:<basket_id>'; ETFs 'etf:<SYMBOL>'."
+    },
+    "kind": {
+      "enum": ["theme", "company", "etf", "catalyst", "policy_program", "commodity", "participant_class", "market", "basket"]
+    },
+    "name_en": {
+      "type": ["string", "null"],
+      "description": "English display name, or null. G0.9: a node with no SAME_AS/EXPRESSES edge into an existing vocabulary carries no user-visible name — the join key is not a name."
+    },
+    "name_zh": {"type": ["string", "null"], "description": "中文 display name, or null."},
+    "market_scope": {
+      "type": "string",
+      "minLength": 1,
+      "description": "us | cn | hk | ca | intl | global — the market the node lives in, lower-case."
+    },
+    "tier": {
+      "type": ["string", "null"],
+      "description": "macro_category | theme | micro_theme for theme nodes; null elsewhere."
+    },
+    "status": {"enum": ["candidate", "canonical", "retired", "merged"]},
+    "merged_into": {
+      "type": ["string", "null"],
+      "description": "Target node_id when status=merged. Dead themes and dead members are RETAINED (theme-level survivorship + the gap-refusal survivorship law) — a node never disappears, it changes status."
+    },
+    "birth_date": {"$ref": "#/$defs/nullable_date"},
+    "retire_date": {"$ref": "#/$defs/nullable_date"},
+    "identity_epoch": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "1 for every node minted without a ratified identity break. Any value >=2 REQUIRES a matching row in config/theme_graph_identity_breaks.yml (guard-enforced)."
+    },
+    "external_ids": {
+      "type": "string",
+      "description": "JSON-encoded object of vocabulary ids this node resolves to, e.g. {\"foresight_id\": \"solar\"} or {\"ths_code\": \"301079\"}. A JSON STRING rather than a nested column so the parquet stays flat and diffable."
+    },
+    "provenance": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Which artifact minted this node, e.g. 'membership_doc:baskets_china_ths' or 'crosswalk:config/theme_crosswalk.yml'."
+    },
+    "computed_at": {"$ref": "#/$defs/clock"},
+    "engine_version": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "nullable_date": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}
+      ]
+    },
+    "clock": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    }
+  }
+}

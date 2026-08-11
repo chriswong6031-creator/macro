@@ -1049,9 +1049,9 @@ Connect global themes, evidence, transmission, and contagion into a governed gra
 
 **Derived operational footprint**
 
-- Synapse owners: none
-- Lobe owners: none
-- Synapse artifacts: **0**; tier mix: none
+- Synapse owners: `gmi-theme-graph`
+- Lobe owners: `gmi-theme-graph`
+- Synapse artifacts: **3**; tier mix: display=3
 - Lobe charters: **0**
 - Information domains: none declared
 
@@ -2851,7 +2851,7 @@ These are non-binding semantic posture summaries, not a second authority system.
 - **Semantic posture:** `context_only`
 - **Non-binding summary:** Theme-graph state provides context and cannot originate or promote decisions by itself.
 - **Explicit authority sources:** none; this posture asserts no independent runtime authority
-- **Operational registry checks:** none
+- **Operational registry checks:** `macro:config/synapse.yml`, `macro:config/lobe_charters.yml`
 - **Repository guardrails:** `macro:CLAUDE.md`
 
 ### Government Revenue Foresight (`government-revenue-foresight`)
@@ -3449,6 +3449,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | `macro` | `flow-continuity` | `subprogram_of` | `options-intelligence` | 3 | 0 |
 | `macro` | `flow-leaders-desk` | `subprogram_of` | `options-intelligence` | 2 | 0 |
 | `macro` | `fundamental-forensics` | `mapped` | `fundamental-forensics` | 3 | 0 |
+| `macro` | `gmi-theme-graph` | `mapped` | `gmi-theme-graph` | 3 | 0 |
 | `macro` | `government-revenue-foresight` | `mapped` | `government-revenue-foresight` | 42 | 0 |
 | `macro` | `hk-canada` | `unresolved_split` | `china-system, international-risk-intelligence` | 2 | 0 |
 | `macro` | `hk-pick-lab` | `subprogram_of` | `prophet-cn` | 3 | 0 |
@@ -3586,8 +3587,8 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | Source | SHA-256 |
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
-| `config/mastermind_programs.yml` | `30e437ab2320ea6993296e9780483d70aa53f474f9346afa6c10d5408be663dc` |
-| `config/synapse.yml` | `972b9c5f53aa5516cfcf01484855c78bc9bc9244f8be0baff23cc8c715e710aa` |
+| `config/mastermind_programs.yml` | `1a458391ad95450ac9ee85f963a6679b6c1b1deb627ac20023937111350fed23` |
+| `config/synapse.yml` | `af05197900d310c71ec68318e70524ea150b7f77439da2b1cec976706a11f137` |
 
 ### Legacy registry compatibility notes
 

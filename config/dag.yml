@@ -829,6 +829,12 @@ lanes:
             # GMI W1a — US basket membership PIT side-car + parquet stamp. NIGHTLY ONLY
             # (append-only, keep-FIRST per snapshot_date); absent from every render lane.
             - scripts.build_baskets --snapshot
+            # GMI W1b — the theme-graph semantic spine, materialized from the membership
+            # documents the step above has just stamped, then its contract guard
+            # (advisory in this lane, --strict in CI). Both NIGHTLY ONLY: the store is
+            # append-only and bitemporal, gated on COLLECT_LANE=nightly.
+            - scripts.build_theme_graph
+            - scripts.check_theme_graph_contracts
             - scripts.build_subsector_confluence
             - scripts.build_subsector_confluence --nasdaq
             - scripts.build_subsector_confluence --russell
