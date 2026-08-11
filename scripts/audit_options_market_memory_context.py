@@ -12,10 +12,13 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from engine import options_market_memory_context as context_bridge
-from engine import options_signal_episode
-from engine.neuralweb import market_memory_pit
-from engine.neuralweb import market_memory_trusted
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import options_market_memory_context as context_bridge  # noqa: E402
+from engine import options_signal_episode  # noqa: E402
+from engine.neuralweb import market_memory_pit  # noqa: E402
+from engine.neuralweb import market_memory_trusted  # noqa: E402
 
 _MAX_LEDGER_BYTES = 48 * 1024 * 1024
 _MAX_CONFIG_BYTES = 32 * 1024
