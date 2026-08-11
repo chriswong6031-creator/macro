@@ -378,7 +378,7 @@
   "dw_total_contracts": 35711,
   "sld_call_levels_in_store": 1724,
   "sld_max_issue_date": "2026-08-07",
-  "sld_freshness": "fresh",
+  "sld_freshness": "slow",
   "sld_pdftotext_available": true,
   "sld_banner": null,
   "display_only": true
