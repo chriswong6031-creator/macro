@@ -630,11 +630,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | release-official-actual-defects | `data/release_forecast/official_actual_defects.json` | json | on-demand | infrastructure | 2 | 0 |
 | cleveland-nowcast-store | `data/cleveland_nowcast/nowcast.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | kalshi-releases-store | `data/prediction_markets/kalshi_releases.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| release-cpi-coherent-target-history | `data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json` | json | daily-engine | shadow | 1 | 0 |
+| release-cpi-truth-build-completion | `data/release_forecast/cpi_truth/build_completion.json` | json | daily-engine | shadow | 1 | 0 |
+| release-cpi-truth-parity | `data/release_forecast/cpi_truth/parity_report.json` | json | daily-engine | shadow | 1 | 0 |
 | release-official-actuals | `data/release_forecast/official_actuals.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-release-forecast | `site/macrodata/release_forecast.json` | json | daily-engine | display | 0 | 1 |
-| release-cpi-coherent-target-history | `data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json` | json | daily-engine | shadow | 0 | 0 |
-| release-cpi-truth-build-completion | `data/release_forecast/cpi_truth/build_completion.json` | json | daily-engine | shadow | 0 | 0 |
-| release-cpi-truth-parity | `data/release_forecast/cpi_truth/parity_report.json` | json | daily-engine | shadow | 0 | 0 |
 | release-forecast-scoreboard | `data/release_forecast/scoreboard.json` | json | daily-engine | display | 0 | 0 |
 
 ### mag7-regime
