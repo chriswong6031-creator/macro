@@ -127,6 +127,10 @@ import pandas as pd
 
 from engine.government_revenue.federation import reviewed_award_change_context
 from engine.government_revenue.freshness import effective_freshness
+from engine.prophet_integrity import (
+    RECONSTRUCTED_ORIGINATION_PREFIX,
+    is_reconstructed,
+)
 
 log = logging.getLogger(__name__)
 
@@ -357,11 +361,6 @@ SELECTION_ERA = "anticipation-v1-2026-08-08"
 # stance here would either duplicate it or contradict it.  How the pick was originated
 # does not change what to do about it today — and saying otherwise would be the false
 # claim this disclosure exists to avoid.
-
-#: ``origination_mode`` values that mean "reconstructed, not originated live".  A PREFIX,
-#: not an equality test, so a second (hopefully never) replay dated differently is
-#: disclosed by the same code rather than shipping silently as a live pick.
-RECONSTRUCTED_ORIGINATION_PREFIX = "outage_backfill"
 
 #: Tier 1, per row — the quiet chip.  Four words, no jargon, no alarm colour implied:
 #: it states a fact about how the row was made, not a warning about the stock.
@@ -1217,20 +1216,6 @@ def _plain_date(iso: Any) -> tuple[str, str]:
     if not 1 <= month <= 12 or not 1 <= day <= 31:
         return ("", "")
     return (f"{day} {_REFUSAL_MONTHS_EN[month - 1]} {year}", f"{year}年{month}月{day}日")
-
-
-def is_reconstructed(row: Mapping[str, Any] | None) -> bool:
-    """Was this plan rebuilt after the outage rather than originated live?
-
-    Reads ``origination_mode`` by PREFIX (:data:`RECONSTRUCTED_ORIGINATION_PREFIX`).  A
-    live plan carries the key as ``None`` or not at all, so this is ``False`` for every
-    plan that exists today — which is what makes the whole disclosure a no-op until the
-    replay mints its rows.
-    """
-    if not isinstance(row, Mapping):
-        return False
-    mode = row.get("origination_mode")
-    return isinstance(mode, str) and mode.startswith(RECONSTRUCTED_ORIGINATION_PREFIX)
 
 
 def origination_note(row: Mapping[str, Any] | None) -> dict[str, str] | None:

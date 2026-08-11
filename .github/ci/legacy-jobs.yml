@@ -5752,6 +5752,23 @@ jobs:
         # state enum ("leader pullback (RESET_TURN) — …"); it was unreachable only
         # because nothing published the organ's coverage.
         run: python -m pytest tests/test_prophet_zone_basis_copy.py -q
+      # Force-majeure 2026-08-09 outage backfill (operator 2026-08-11; design of
+      # record research/PROPHET_OUTAGE_BACKFILL_2026_08.md). Enumerated at BIRTH for
+      # the reason this job's header gives, and in THIS job specifically because its
+      # two load-bearing cases drive the real `build_prophet.main()` publisher end to
+      # end — the §0.7 nightly-passthrough gate is precisely "the production caller
+      # neither drops nor rewrites a backfilled plan, and its provenance stamp
+      # survives into index.json". Same import closure as the steps above (pandas +
+      # the pip line already installed here); the pinned-input tests build throwaway
+      # git repos under tmp_path, so nothing in this job writes the real tree.
+      #
+      # The suite's central law is a BOTH-DIRECTIONS set equality between plans
+      # stamped origination_mode=outage_backfill* and the rows enumerated in
+      # data/prophet/backfill_disclosures.json. It stays meaningful before the
+      # artifact exists (both sets empty = no undisclosed backfill) and becomes the
+      # segregation gate the moment it does.
+      - name: force-majeure outage backfill (segregation both ways, nightly passthrough, collision rule, idempotence)
+        run: python -m pytest tests/test_prophet_outage_backfill.py -q
       # The user-facing half of the same feature (#5301): the plain-word EN/ZH chip,
       # receipt and footnote a reconstructed plan carries, plus the record split.
       # Wired HERE, with the lane that mints those plans, and wired at all because it
@@ -5896,6 +5913,14 @@ jobs:
       # check on prophet_bridge.select_candidates.
       - name: US candidate-pool lanes (lossless partition + store columns + no authority leak)
         run: python -m pytest tests/test_us_candidate_lanes.py -q
+      # W1.5 board-session anchor (#5303/#5307): the earnings-blackout gate and the
+      # display-tier chip read the BOARD's session, never the render host's wall
+      # clock — hosts straddling local midnight flipped membership (78 vs 81 buy
+      # rows at one identical as_of) and the chip countdown. Rides this job because
+      # the gate prunes the same candidate pool the lanes above partition, and the
+      # suite imports the same scripts.build_stock_library this job already loads.
+      - name: US board-session anchor (earnings gate + display chip, host-clock determinism)
+        run: python -m pytest tests/test_earnings_blackout_board_anchor.py -q
       # The candidates store this job guards is TRACKED IN A PUBLIC REPO, and
       # context_api.context_frame flattens each dimension's whole `value` dict
       # with no allowlist — so a dimension that grows a paid body ships it to

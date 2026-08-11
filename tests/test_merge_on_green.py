@@ -13,6 +13,7 @@ list so the four outcomes are provable without a network.
 
 from __future__ import annotations
 
+import ast
 import datetime as dt
 import json
 from pathlib import Path
@@ -174,13 +175,24 @@ def test_no_concurrency_group_may_serialise_this_lane():
     )
 
 
-def test_the_sweep_only_wakes_for_a_trigger_that_could_unblock_a_merge():
+def test_the_sweep_wakes_for_a_green_to_merge_and_for_a_red_to_MARK():
     """Removing the concurrency group means every trigger now produces a run, so
     the runner budget is defended by SKIPPING instead of by cancelling — a skipped
     job costs no runner, no queue slot and no minutes, where a cancelled one cost
     us the sweep. Only a green triggering run can make a PR mergeable (ci's last
-    100 completed runs: 51 failure, 25 cancelled, 18 skipped, 6 success), so this
-    gate drops ~94% of wake-ups and keeps every actionable one.
+    100 completed runs: 51 failure, 25 cancelled, 18 skipped, 6 success).
+
+    `failure` is admitted TOO, since 2026-08-11 (PR #5291), and not for merging: it
+    runs the bounded `mark_only_pass`. The old gate's stated reason for dropping reds
+    was that it "fails SAFE — a red PR simply stays armed and unmerged", which
+    assumed nothing else touches the label while the red is unmarked. #5291's red
+    concluded at 02:05:18Z, a session stripped `merge-on-green` at 02:13:34Z leaving
+    no marker at all, and the 02:13:41Z sweep could no longer SEE the pull request —
+    a label-filtered sweeper cannot mark what is not labeled, so the marker could
+    never arrive. The window has to be closed from the failure side.
+
+    `cancelled` and `skipped` stay dropped: a cancelled run is a superseded head, not
+    a red, and marking on one would accuse a head no check ever judged.
 
     `schedule` and `workflow_dispatch` must never be gated away — the cron is the
     recovery net for third-party checks, and an operator must always be able to
@@ -191,6 +203,14 @@ def test_the_sweep_only_wakes_for_a_trigger_that_could_unblock_a_merge():
         "the cron and workflow_dispatch must bypass the conclusion filter entirely"
     )
     assert "github.event.workflow_run.conclusion == 'success'" in gate
+    assert "github.event.workflow_run.conclusion == 'failure'" in gate, (
+        "a fresh red must wake the marker pass — see PR #5291"
+    )
+    for dropped in ("cancelled", "skipped"):
+        assert f"conclusion == '{dropped}'" not in gate, (
+            f"a {dropped} run judged nothing; waking on it would mark a head no "
+            "check has failed"
+        )
 
 
 def test_the_sweep_step_invokes_the_tracked_script_with_the_token_fallback():
@@ -822,8 +842,13 @@ def test_the_empty_diff_refusal_comments_exactly_once(monkeypatch, capsys):
     )
     assert [call for call in calls if call[0] == "POST"] == [], "must never re-comment"
     assert any(
-        line.startswith("::warning") and "Already labeled merge-blocked" in line
+        line.startswith("::warning") and "No new marker" in line
         for line in capsys.readouterr().out.splitlines()
+    ), (
+        "the log line moved off 'Already labeled merge-blocked' (2026-08-11): "
+        "`mark_blocked` now returns False for a FAILED write as well as for an "
+        "already-labeled pull request, so this line may no longer claim to know "
+        "which of the two happened — the write failure emits its own `::error`"
     )
 
 
@@ -2083,6 +2108,10 @@ def _main_harness(monkeypatch, pulls, *, readings=(1000,), verdict="pending"):
     monkeypatch.setenv("READ_TOKEN", "read")
     monkeypatch.setenv("MERGE_TOKEN", "write")
     monkeypatch.delenv("TRIGGER_HEAD_SHA", raising=False)
+    # A `failure` value here would route `main()` into `mark_only_pass` and no
+    # full-sweep test would run the code it is about. Cleared rather than assumed
+    # absent: this pack runs inside Actions jobs, where env is ambient.
+    monkeypatch.delenv("TRIGGER_CONCLUSION", raising=False)
     polls: list[int] = []
 
     def fake_limit(_token):
@@ -2368,6 +2397,19 @@ def test_the_trigger_head_never_outranks_a_main_red_repair():
 def test_the_workflow_hands_the_sweeper_its_triggering_head():
     step = _sweep_step(_workflow())
     assert step["env"]["TRIGGER_HEAD_SHA"] == "${{ github.event.workflow_run.head_sha }}"
+
+
+def test_the_workflow_hands_the_sweeper_the_triggering_CONCLUSION_too():
+    """The mark-only routing lives in the script, not in a second `if:`.
+
+    The job gate decides whether the runner starts; `TRIGGER_CONCLUSION` decides what
+    the run DOES. Keeping the branch in Python is what makes it testable at all —
+    a workflow-level branch is only provable by observing production.
+    """
+    step = _sweep_step(_workflow())
+    assert step["env"]["TRIGGER_CONCLUSION"] == (
+        "${{ github.event.workflow_run.conclusion }}"
+    )
 
 
 def test_the_budget_floor_can_actually_fund_a_capped_sweep():
@@ -3987,3 +4029,340 @@ def test_the_dispatch_does_not_unblock_the_sweep_that_ordered_it(monkeypatch, ca
     assert "source-baseline: dispatched" in out, (
         "the summary must record the dispatch, so a suppressed one is diagnosable"
     )
+
+
+# --- a red must ALWAYS leave a marker (PR #5291, 2026-08-11) -------------------
+#
+# The incident, from the label timeline and the run logs:
+#
+#   01:23:45Z  #5291 armed with `merge-on-green`
+#   02:05:18Z  ci run 31449929887 concludes FAILURE on head 9ce3c2ef
+#   02:13:32Z  a codex session execs `gh pr edit 5291 --remove-label merge-on-green`
+#   02:13:34Z  the arm label is gone. No `merge-blocked`. No comment. No marker.
+#   02:13:41Z  sweep 31451725301 lists the armed PRs — #5291 is already invisible
+#   02:20:52Z  a builder re-arms it
+#   02:21:36Z  the same session strips it again, still with no marker
+#   02:32:52Z  a human admin-merges it by hand
+#
+# Two sweeper-side properties made the silent window possible, and both are pinned
+# below. The `if:` gate skipped failure wake-ups, so the marker could only ride the
+# ~0.5/hr cron or the next green anywhere in the repository — and once the arm label
+# came off, a label-filtered sweep could never see the pull request again, so the
+# marker could not arrive at all. And `mark_blocked` treated a failed label POST as
+# a reason to skip the COMMENT too, which turns one unlucky HTTP status into a
+# refusal that exists only in a run log.
+#
+# The disarm itself is not the sweeper's to prevent — `scripts/merge_on_green.py`
+# has no code path that removes `merge-on-green`. That half is a fleet law, and it
+# lives in CLAUDE.md and AGENTS.md.
+
+
+def _label_api(monkeypatch, *, label_status=200, comment_status=200):
+    """Route ONLY the two write endpoints `mark_blocked` uses, and record them."""
+    calls: list[tuple[str, str, dict | None]] = []
+
+    def fake_request(method, url, token, payload=None):
+        calls.append((method, url, payload))
+        if url.endswith("/labels"):
+            if label_status >= 400:
+                return label_status, {"message": "Resource not accessible"}
+            return label_status, [{"name": MOG.MERGE_BLOCKED_LABEL}]
+        if url.endswith("/comments"):
+            if comment_status >= 400:
+                return comment_status, {"message": "Server Error"}
+            return comment_status, {"id": 1}
+        raise AssertionError(f"mark_blocked made an unexpected call: {method} {url}")
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    return calls
+
+
+def _errors(capsys) -> list[str]:
+    return [
+        line
+        for line in capsys.readouterr().out.splitlines()
+        if line.startswith("::error")
+    ]
+
+
+def test_a_failed_label_write_still_posts_the_explanation(monkeypatch, capsys):
+    """The 403 that used to make a refusal invisible.
+
+    `mark_blocked` warned into the run log and returned WITHOUT commenting, so the
+    pull request carried no label, no comment, and no evidence that the sweeper had
+    ever looked at it. The label and the comment are two independent ways of saying
+    the same thing: losing one is a reason to lean harder on the other.
+    """
+    calls = _label_api(monkeypatch, label_status=403)
+    landed = MOG.mark_blocked("acme/widgets", _pull(), "why not", "write")
+    comments = [call for call in calls if call[1].endswith("/comments")]
+    assert len(comments) == 1, "the explanation must be posted even when the label 403s"
+    assert comments[0][2] == {"body": "why not"}
+    assert landed is True, "a comment IS a marker — the caller must not report silence"
+    errors = _errors(capsys)
+    assert errors, "a lost marker write is an ERROR, not a warning"
+    assert all(line.startswith("::error") for line in errors), (
+        "GH annotation law: the `::` token starts the line (bare print, never a logger)"
+    )
+    assert any("403" in line for line in errors), "the status must be diagnosable"
+
+
+def test_a_failed_comment_write_is_an_error_too(monkeypatch, capsys):
+    """The other half. The label landed, so a marker exists and the return says so —
+    but the explanation is the part that tells the owner WHY, and losing it silently
+    is how a `merge-blocked` label becomes a mystery."""
+    calls = _label_api(monkeypatch, comment_status=500)
+    landed = MOG.mark_blocked("acme/widgets", _pull(), "why not", "write")
+    assert landed is True, "the label landed, so a marker did land"
+    assert any(call[1].endswith("/labels") for call in calls)
+    errors = _errors(capsys)
+    assert any("500" in line for line in errors), errors
+
+
+def test_a_refusal_that_could_not_be_written_at_all_says_exactly_that(
+    monkeypatch, capsys
+):
+    """Both writes gone. This is the one case where the run log IS the only record,
+    so it must say so in as many words rather than reporting a routine no-op."""
+    _label_api(monkeypatch, label_status=403, comment_status=500)
+    assert MOG.mark_blocked("acme/widgets", _pull(), "why not", "write") is False
+    assert any("NO visible marker" in line for line in _errors(capsys))
+
+
+def test_the_red_comment_forbids_a_SILENT_takeover(monkeypatch):
+    """The copy used to end at "or remove `merge-on-green` to take it manual." — an
+    instruction to do the exact thing that made #5291 invisible, with no mention of
+    the marker that keeps it visible. One helper, so the full sweep and the mark-only
+    pass cannot drift apart on the law they teach."""
+    body = MOG.red_check_comment(["ci-pack-2 (failure)"])
+    assert "take it manual" in body, "the option itself is legitimate and stays"
+    assert "silently" in body.lower()
+    assert "#5291" in body
+    assert MOG.MERGE_BLOCKED_LABEL in body, "it must name the marker to leave"
+
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-2", conclusion="failure")]}}
+    calls = _fake_api(monkeypatch, check_pages=pages)
+    assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness()) == "blocked"
+    posted = [
+        call for call in calls if call[0] == "POST" and call[1].endswith("/comments")
+    ]
+    assert len(posted) == 1 and posted[0][2]["body"] == MOG.red_check_comment(
+        ["ci-pack-2 (failure)"]
+    ), "the full sweep must post the SHARED copy, not a second hand-maintained one"
+
+
+def _mark_only(monkeypatch, pulls, *, check_pages, proof=None, head="a" * 40):
+    """`mark_only_pass` with the listing stubbed and every request routed+recorded."""
+    calls = _fake_api(monkeypatch, check_pages=check_pages)
+    monkeypatch.setattr(MOG, "labeled_pulls", lambda *_a: list(pulls))
+    if proof is not None:
+        monkeypatch.setattr(MOG, "main_proof", lambda *_a: proof)
+    return calls, MOG.mark_only_pass("acme/widgets", "read", "write", head)
+
+
+def test_the_mark_only_pass_marks_a_genuine_red_and_does_nothing_else(
+    monkeypatch, capsys
+):
+    """What the failure wake-up is FOR: the marker, within seconds of the red.
+
+    And nothing else. This pass runs on ~26 wake-ups an hour against a 1,000/hr
+    per-repository READ_TOKEN bucket, so a merge, an `update-branch` or a baseline
+    dispatch here would re-create the 2026-08-07 starvation the `if:` gate was
+    written to prevent.
+    """
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-2", conclusion="failure")]}}
+    calls, code = _mark_only(
+        monkeypatch,
+        [_pull(5291)],
+        check_pages=pages,
+        proof=_proof("ci-pack-9"),  # main proves something else — the red is its own
+    )
+    assert code == 0, "a red pull request is the lane working, not a broken sweeper"
+
+    posts = [call for call in calls if call[0] == "POST"]
+    labels = [call for call in posts if call[1].endswith("/labels")]
+    comments = [call for call in posts if call[1].endswith("/comments")]
+    assert len(labels) == 1 and labels[0][2] == {"labels": [MOG.MERGE_BLOCKED_LABEL]}
+    assert len(comments) == 1 and "ci-pack-2 (failure)" in comments[0][2]["body"]
+
+    for endpoint in ("/merge", "/update-branch", "/dispatches"):
+        assert not [call for call in calls if call[1].endswith(endpoint)], (
+            f"the mark-only pass must never call {endpoint}"
+        )
+    assert not [call for call in calls if call[0] == "DELETE"], (
+        "it never clears a label either — clearing is the full sweep's call"
+    )
+    out = capsys.readouterr().out
+    assert any(
+        line.startswith("merge-on-green mark-only pass:") for line in out.splitlines()
+    ), "the pass must leave one greppable summary line"
+
+
+def test_a_red_on_a_SUPERSEDED_head_marks_nothing(monkeypatch, capsys):
+    """A PUSH SUPERSEDES ITS OWN RED.
+
+    The failed run belongs to the head it ran on. If the branch has moved since, the
+    armed pull request now sits at a head no check has judged, and marking it would
+    accuse the successor of its ancestor's failure. Its own runs will conclude and
+    wake their own pass.
+    """
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-2", conclusion="failure")]}}
+    calls, code = _mark_only(
+        monkeypatch, [_pull(5291)], check_pages=pages, head="b" * 40
+    )
+    assert code == 0
+    assert [call for call in calls if call[0] != "GET"] == [], (
+        "no armed pull request at the trigger head means zero writes"
+    )
+    assert calls == [], "and not even a check-run read — the listing already answered"
+    assert "SUPERSEDES" in capsys.readouterr().out
+
+
+def test_a_base_inherited_red_is_left_for_the_full_sweep(monkeypatch, capsys):
+    """The one-shot comment must not be burned on a fleet-wide stale base.
+
+    Every failing check being clean on main is the base-inherited signature, and
+    deciding it needs `proof_postdates_failures`, a refresh slot and an
+    `update-branch` — all of which are the full sweep's, none of which this pass may
+    spend. Marking on the name overlap alone would post the false-accusation comment
+    on every armed head during a main-red episode (measured shape: 84 of 93), and a
+    one-shot comment cannot be taken back.
+    """
+    pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
+    calls, code = _mark_only(
+        monkeypatch, [_pull(5291)], check_pages=pages, proof=_proof("ci-pack-3")
+    )
+    assert code == 0
+    assert [call for call in calls if call[0] != "GET"] == [], (
+        "an inherited red must not be labeled or commented by this pass"
+    )
+    out = capsys.readouterr().out
+    assert "Deferred to the full sweep" in out, out
+
+
+@pytest.mark.parametrize(
+    "runs, why",
+    [
+        ([("ci-pack-2", "in_progress", None)], "a rerun may still green the head"),
+        ([("ci-pack-2", "completed", "success")], "the head is green; nothing to mark"),
+        ([("Workers Builds: macro", "completed", "failure")], "spurious-only is unproven"),
+    ],
+)
+def test_the_mark_only_pass_marks_nothing_but_a_settled_red(
+    monkeypatch, capsys, runs, why
+):
+    """One failed RUN is not a red HEAD. `decide_verdict` is the same authority the
+    full sweep uses, and only its `blocked` answer may write."""
+    pages = {
+        1: {
+            "total_count": len(runs),
+            "check_runs": [
+                _run(name, status, conclusion=conclusion) for name, status, conclusion in runs
+            ],
+        }
+    }
+    calls, code = _mark_only(monkeypatch, [_pull(5291)], check_pages=pages)
+    assert code == 0
+    assert [call for call in calls if call[0] != "GET"] == [], why
+    capsys.readouterr()
+
+
+def test_a_rate_limited_mark_only_pass_defers_instead_of_reddening(monkeypatch, capsys):
+    """Same law as the sweep: a lane that correctly declined to run is not a fault,
+    and 17 red runs is how the 2026-08-07 outage buried its own diagnosis."""
+
+    def starved(*_a, **_k):
+        raise MOG.RateLimited("only 0 of 1000 core API requests remain")
+
+    monkeypatch.setattr(MOG, "labeled_pulls", starved)
+    assert MOG.mark_only_pass("acme/widgets", "read", "write", "a" * 40) == 0
+    assert any(
+        line.startswith("::warning") and "deferred" in line.lower()
+        for line in capsys.readouterr().out.splitlines()
+    )
+
+
+def test_a_failure_wake_up_runs_the_mark_only_pass_and_never_the_full_sweep(
+    monkeypatch, capsys
+):
+    """The routing, end to end through `main()`.
+
+    A red cannot make anything mergeable and failure wake-ups outnumber the greens
+    ~5:1, so falling through into a 25-pull-request pass would put the READ_TOKEN
+    bucket back where 2026-08-07 found it.
+    """
+    monkeypatch.setenv("GH_REPO", "acme/widgets")
+    monkeypatch.setenv("READ_TOKEN", "read")
+    monkeypatch.setenv("MERGE_TOKEN", "write")
+    monkeypatch.setenv("TRIGGER_HEAD_SHA", "9ce3c2ef" + "0" * 32)
+    monkeypatch.setenv("TRIGGER_CONCLUSION", "failure")
+    monkeypatch.setattr(
+        MOG,
+        "labeled_pulls",
+        lambda *_a: pytest.fail("the full sweep must not list the backlog on a red"),
+    )
+    monkeypatch.setattr(
+        MOG, "sweep_pull", lambda *_a, **_k: pytest.fail("a red wake-up never sweeps")
+    )
+    seen: list[tuple] = []
+
+    def fake_mark(repo, read_token, merge_token, head, budget=None):
+        seen.append((repo, head, budget is not None))
+        return 0
+
+    monkeypatch.setattr(MOG, "mark_only_pass", fake_mark)
+    assert MOG.main() == 0
+    assert seen == [("acme/widgets", "9ce3c2ef" + "0" * 32, True)], (
+        "the pass gets the trigger head AND the preflighted budget"
+    )
+    capsys.readouterr()
+
+
+@pytest.mark.parametrize("conclusion", ["success", "", "neutral"])
+def test_every_other_conclusion_still_runs_the_full_sweep(monkeypatch, conclusion):
+    """`failure` is the only value that reroutes. The cron and workflow_dispatch
+    supply an empty string, and it must keep meaning "sweep normally"."""
+    seen = _main_harness(monkeypatch, [_pull(1)])
+    monkeypatch.setenv("TRIGGER_CONCLUSION", conclusion)
+    monkeypatch.setattr(
+        MOG,
+        "mark_only_pass",
+        lambda *_a, **_k: pytest.fail(f"{conclusion!r} must not route to the marker"),
+    )
+    assert MOG.main() == 0
+    assert seen == [1]
+
+
+def test_the_mark_only_pass_never_removes_the_arm_label(monkeypatch):
+    """The sweeper is not the disarmer, and nothing here may become one.
+
+    #5291's arm label was removed by a session, not by this lane — `merge_on_green.py`
+    contains no code path that removes `merge-on-green`, and this pins that as a
+    property of the source rather than of one execution. The other half of the repair
+    is a fleet law (CLAUDE.md / AGENTS.md): a disarm must leave a marker.
+    """
+    source = (ROOT / "scripts" / "merge_on_green.py").read_text(encoding="utf-8")
+    # Parsed, not grepped line by line: every `_request` here spans several lines, so
+    # a "DELETE and labels on one line" scan would pass vacuously — including on the
+    # very code it is supposed to forbid.
+    deletes = [
+        node
+        for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.Call)
+        and getattr(node.func, "id", "") == "_request"
+        and node.args
+        and isinstance(node.args[0], ast.Constant)
+        and node.args[0].value == "DELETE"
+    ]
+    assert deletes, "the scan found no DELETE at all — it has stopped being a check"
+    for node in deletes:
+        url = ast.unparse(node.args[1])
+        assert "MERGE_ON_GREEN_LABEL" not in url, (
+            f"the sweeper must never remove the arm label: {url}"
+        )
+    for doc in ("CLAUDE.md", "AGENTS.md"):
+        law = (ROOT / doc).read_text(encoding="utf-8")
+        assert "#5291" in law, f"{doc} must carry the no-silent-disarm law"
+        assert "remove-label merge-on-green" in law, (
+            f"{doc} must name the exact command that caused it"
+        )
