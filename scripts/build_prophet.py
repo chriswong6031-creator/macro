@@ -991,6 +991,19 @@ def advance_ledger(
             ),
             "asof": asof,
         }
+        # HOW the plan came to exist, carried onto the FORWARD-LEDGER row at close.
+        # The ledger is the substrate every rate, calibration number and Prophet
+        # training input is ultimately computed over, and a consumer reading
+        # ledger.jsonl directly never sees the index row's stamp — so without this the
+        # cohort is unsplittable exactly where it matters most (§0.6c).
+        #
+        # CONDITIONAL, matching the index-row discipline: the ledger is append-only
+        # and a null key on every future row is a schema change for a fact that is
+        # almost never true. Absent means live.
+        if is_reconstructed(plan):
+            row["origination_mode"] = plan.get("origination_mode")
+            if plan.get("backfill_executed_at"):
+                row["backfill_executed_at"] = plan.get("backfill_executed_at")
         _append_ledger_row(row)
         new_rows.append(row)
         log.info(
@@ -1223,6 +1236,11 @@ def _degraded_index_entry(
         "source_marker_date": plan.get("source_marker_date"),
         "integrity_status": plan.get("integrity_status"),
         "integrity_reason": plan.get("integrity_reason"),
+        # NOTE: `origination_mode` is deliberately NOT stamped here. The
+        # reconstructed-origination pass in main() walks the FINISHED rows and covers
+        # this builder too, conditionally — so a degraded row still discloses, while a
+        # population with nothing reconstructed leaves index.json byte-for-byte
+        # unchanged. Stamping an unconditional null here would defeat that.
         "phase": phase,
         "age_days": age,
         "closed": closed,
@@ -1908,6 +1926,10 @@ def main() -> None:
             "admission_class": plan.get("admission_class"),
             "entry_status": plan.get("entry_status"),
             "selection_era": plan.get("selection_era"),
+            # NOTE: `origination_mode` is deliberately NOT stamped here either — the
+            # reconstructed-origination pass in main() adds it (plus the bilingual
+            # note) to the finished rows, only for rows that ARE reconstructed. See
+            # the sibling note in `_degraded_index_entry`.
             "entry_basis": plan.get("entry_basis"),
             "entry_zone": plan.get("entry_zone"),
             # DERIVED tonight, never stored on the plan.

@@ -531,6 +531,13 @@ def track_record_stats(root: Path | str | None = None,
             try:
                 idx = json.loads(prophet_path.read_text(encoding="utf-8"))
                 plans = idx.get("plans", []) or []
+                # A reconstructed plan is not a live historical call and never enters
+                # a published track-record stat (§0.6d). Filtered HERE as well as in
+                # graded_receipts: this is the read that decides the denominator, and
+                # a stat computed over a population that includes rebuilt rows is
+                # wrong even when every individual receipt is later dropped.
+                from engine.prophet_integrity import is_reconstructed  # noqa: PLC0415
+                plans = [p for p in plans if not is_reconstructed(p)]
             except Exception as exc:  # noqa: BLE001
                 log.warning("allies.track_record_stats: could not read prophet index: %s", exc)
 

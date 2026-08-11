@@ -27,6 +27,23 @@ LEDGER_CORRECTIONS_FILENAME = "ledger_corrections.jsonl"
 LEDGER_QUARANTINE_SCHEMA = "prophet.ledger_quarantine/v1"
 LEDGER_QUARANTINE_FILENAME = "ledger_quarantine.json"
 
+# A reconstructed plan was produced by the bounded outage-replay lane rather than by
+# the live nightly publisher.  This predicate lives in the stdlib-only integrity
+# module so lightweight readers (especially the minimal marketing CI environment) can
+# enforce the provenance boundary without importing prophet_bridge and its pandas
+# execution stack.
+RECONSTRUCTED_ORIGINATION_PREFIX = "outage_backfill"
+
+
+def is_reconstructed(row: Mapping[str, Any] | None) -> bool:
+    """Return whether *row* was reconstructed after an outage."""
+    if not isinstance(row, Mapping):
+        return False
+    mode = row.get("origination_mode")
+    return isinstance(mode, str) and mode.startswith(
+        RECONSTRUCTED_ORIGINATION_PREFIX
+    )
+
 # Identity and geometry are publication facts.  A date audit may add/correct clocks and
 # integrity disposition, but it may not turn an old plan into a different trade.
 CORRECTABLE_FIELDS = frozenset({

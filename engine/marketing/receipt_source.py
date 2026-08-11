@@ -157,8 +157,18 @@ def graded_receipts(
 
     raw: list[dict] = []
 
+    # A RECONSTRUCTED plan may never be presented as a live historical call, under
+    # any framing (§0.6d, research/PROPHET_OUTAGE_BACKFILL_2026_08.md). These
+    # receipts are marketing's "here is a call we made and how it went" surface, and
+    # the 2026-08-09 outage replay's rows were written after the fact — publishing
+    # one here would claim a track record the desk did not have on the day. Excluded
+    # at the single choke point every caller passes through, not per caller.
+    from engine.prophet_integrity import is_reconstructed  # noqa: PLC0415
+
     for plan in plans:
         if not isinstance(plan, dict):
+            continue
+        if is_reconstructed(plan):
             continue
         ticker = plan.get("asset", "")
         if not ticker:
