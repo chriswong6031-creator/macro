@@ -363,6 +363,7 @@
             "dark_unarmed",
             "implemented_current_record_facts_only",
             "implemented_private_in_process_transcript_only",
+            "armed_bounded_record_history_source_facts_only",
             "implemented_private_in_process_event_state_only",
             "dark_contract_and_hermetic_harness_only",
             "dark_b4a_private_only",
@@ -420,6 +421,7 @@
                   "dark_unarmed",
                   "implemented_current_record_facts_only",
                   "implemented_private_in_process_transcript_only",
+                  "armed_bounded_record_history_source_facts_only",
                   "implemented_private_in_process_event_state_only"
                 ]
               }

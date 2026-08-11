@@ -3796,6 +3796,20 @@ jobs:
             # closing-bell / earlyclose / engine-render / render: those are data/-discarding
             # lanes and nightly is the sole advancer.
             brun baskets_snapshot "US basket membership snapshot (build_baskets --snapshot)" scripts.build_baskets --snapshot
+            # GMI W1b: the theme-graph semantic spine (nodes/edges/evidence). Runs AFTER
+            # baskets_snapshot because it materializes from the membership documents that
+            # step has just stamped, so tonight's graph describes tonight's membership.
+            # Nightly diff mode: it recomputes the view and appends ONLY what changed,
+            # era=observed, belief_time=today. NIGHTLY ONLY for the same reason as the
+            # snapshot above — the store is append-only and bitemporal, and
+            # COLLECT_LANE=nightly (job-level env) is the fail-closed gate; render,
+            # closing-bell and earlyclose leave it unset and so compute and discard.
+            # The guard follows immediately and is ADVISORY here (rc 0 on a breach, one
+            # ::warning): the plane is display-tier with all six authority booleans
+            # false, so a contract breach must not take the collect lane down. CI runs
+            # the same guard with --strict.
+            brun theme_graph "theme graph nightly materialization (build_theme_graph)" scripts.build_theme_graph
+            brun theme_graph_guard "theme graph contract guard (check_theme_graph_contracts)" scripts.check_theme_graph_contracts
             brun subsector_conf "subsector confluence desk + double-gated funnel (build_subsector_confluence)" scripts.build_subsector_confluence
             brun subsector_conf_ndx "nasdaq-100 subsector confluence desk (build_subsector_confluence --nasdaq)" scripts.build_subsector_confluence --nasdaq
             brun subsector_conf_rut "russell-2000 subsector confluence desk (build_subsector_confluence --russell)" scripts.build_subsector_confluence --russell
@@ -3914,7 +3928,7 @@ jobs:
           # check_builder_failstreaks, which globs *.rc and so catches a >=2-night
           # streak regardless of ORDER) — but a FIRST failure still passed silently,
           # with no log and no step-summary line for the TXI W1 chain tracker.
-          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets baskets_snapshot subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics basket_washout rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow program_watch stage_analysis stage_analysis_page top_maturation winner_health_page"
+          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets baskets_snapshot theme_graph theme_graph_guard subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics basket_washout rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow program_watch stage_analysis stage_analysis_page top_maturation winner_health_page"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue

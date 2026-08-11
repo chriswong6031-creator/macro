@@ -2484,3 +2484,54 @@ checks:
       Registered by the post-#2297 census fix (rode along in #2311): the guard
       shipped in #2297 wired via pytest only, which the registry census could
       not see; the census red-flagged every later PR.
+
+  - law_id: theme_graph.edge_contract
+    summary: >
+      The GMI theme graph's structural contract (masterplan §4.1/§4.4, gate G0.2).
+      All three stores keep their exact column set and order and validate against
+      contracts/theme_graph/*.v1.schema.json; every enum value and every company
+      node id is scanned in full; EVERY edge cites at least one evidence_ref that
+      resolves to an evidence row with a parseable dated published_at (the general
+      form of the semantic-leakage law, with source_class=llm_proposed_ratified
+      refused outright without one); identity_epoch >= 2 requires a ratified row in
+      config/theme_graph_identity_breaks.yml; and every closed edge in the full
+      history still resolves in the latest-belief view, so a closed membership stays
+      findable instead of merely absent.
+    source_ref:
+      - scripts/check_theme_graph_contracts.py
+      - contracts/theme_graph/README.md
+      - research/GLOBAL_MARKET_INTELLIGENCE_MASTERPLAN_BY_FABLE.md
+      - tests/test_theme_graph_contracts.py
+    severity: hard
+    check_script: scripts/check_theme_graph_contracts.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: unrun-intl-libraries
+        lane: pr_ci
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: scheduled
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        The nightly invocation is ADVISORY (rc 0 on a breach, one line-start warning
+        annotation) because the graph is display-tier with all six authority booleans
+        false, so a contract breach must not take the collect lane down. --strict is
+        what CI runs.
+      - >-
+        A missing store is INDETERMINATE, not a breach — a sparse checkout carries no
+        data/ and the state before the first backfill is not a failure.
+      - >-
+        jsonschema runs on an evenly-spaced sample of <=200 rows per store; enums and
+        the company-id grammar are full-scanned, so a bad value outside the sample is
+        still caught, but an exotic per-row schema violation outside it could be missed.
+      - The guard checks that evidence is DATED and resolvable, never that it is true.
+    owner_program: gmi-theme-graph
+    notes: >
+      Registered with W1b (the wave that created the store). The evidence-resolution and
+      llm_proposed_ratified checks are structural rather than empirical: zero
+      llm_proposed_ratified edges exist today, and the point of the check is that the
+      first one cannot land quietly. Fixture dates in --selftest are constants with no
+      relation to the wall clock — a guard whose fixtures age is a scheduled red.

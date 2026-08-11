@@ -10,18 +10,18 @@
 contract_id: biocatalyst_closed_beta_source_manifest.v1
 schema_version: 1.0.0
 state: draft_denominator_unarmed
-effective_at: '2026-08-11T06:57:31Z'
+effective_at: '2026-08-11T10:03:45Z'
 owner: biocatalyst
 source_registry_ref: config/biocatalyst_sources.yml
-source_registry_sha256: d9dae15aa3f10ece779571d4ed1d5c8da6c4ae0970acc96dcf6de387345e334e
+source_registry_sha256: bf19c50a80fc7611f8b53267e16acf4a234cfa7ca3a0afb6336a12781db41785
 ownership_registry_ref: config/sector_intelligence_ownership.yml
 ownership_registry_sha256: 48ad80734df866ab9427c72ba046b8a9dfbefcc37c1451426fadb41ed3aeb6e3
 reconciliation_receipt_ref: data/biocatalyst/fixtures/biocatalyst_f0_delta_reconciliation_receipt.v2.json
 reconciliation_receipt_id: biocatalyst_f0_delta_6a72f5fbe06a4482d70f6f11
 reconciliation_receipt_sha256: 84a481510a9176efad63e847101cb953dfea30831aa72da47dbc70105fc9e1d7
 launch_slo_manifest_ref: config/biocatalyst_launch_slo_manifest.yml
-launch_slo_manifest_id: biocatalyst_launch_slo_b153344685605f6fa3dad028
-launch_slo_manifest_content_sha256: b153344685605f6fa3dad028f78b53b57c501b3e7023490505b5ab8877eed354
+launch_slo_manifest_id: biocatalyst_launch_slo_2231c14e8979c2e3ac6c11b3
+launch_slo_manifest_content_sha256: 2231c14e8979c2e3ac6c11b3b7ef07ca49f047d22cda019fa546bd270e97e731
 families:
 - family_id: clinicaltrials_current_record
   title: ClinicalTrials.gov current-record coverage
@@ -124,8 +124,8 @@ families:
 - family_id: clinicaltrials_record_history
   title: ClinicalTrials.gov record-history versions
   obligation: deferred
-  availability: unavailable
-  activation_state: blocked_until_enable
+  availability: available
+  activation_state: armed_bounded_record_history_source_facts_only
   bindings:
   - binding_kind: source_registry_source
     id: clinicaltrials_gov_record_history
@@ -139,7 +139,7 @@ families:
     retention: private_only
     redistribution: review_required
     derived_model_training: review_required
-    publication: blocked_until_enable
+    publication: source_facts_with_attribution
     distribution_obligations:
     - attribute_clinicaltrials_gov
     - display_source_processing_date
@@ -151,19 +151,23 @@ families:
     - do_not_present_registry_as_government_validation
   slo:
     freshness_slo_seconds: null
-    freshness_denominator: 'Unavailable: the source declares freshness_slo_seconds null and collection
-      is an operator-armed explicit NCT allowlist that is empty by default.'
-    completeness_denominator: 'Unavailable: completeness would be every version in each NCT history chain
-      roundtripped and receipted, but the canary allowlist is empty and ingest is disallowed.'
-    error_denominator: 'Unavailable: no history chain is scheduled, so there is no opportunity denominator.'
-    correction_denominator: 'Unavailable: no history projection is published, so no correction can be
-      replayed.'
-  features_unlocked: []
-  features_unavailable:
-  - halt_onset_date
+    freshness_denominator: No source freshness SLO is claimed; each operator-triggered explicit-NCT
+      history chain is measured as one complete version chain, not as a recency clock.
+    completeness_denominator: Every source version in each of the exact four B1 NCT history chains,
+      with the history index roundtripped and every version receipted before publication.
+    error_denominator: Every one of the four configured NCT history chains requested by an operator-triggered
+      collection run; a missing, partial, or shape-invalid chain is a failed opportunity.
+    correction_denominator: Every superseding source version in the bounded chains, linked to its exact
+      predecessor and replayed as source facts without protocol or materiality inference.
+  features_unlocked:
   - complete_version_timeline
   - exact_historical_field_diff
-  blocker: operator_review_required_before_enable_and_production_ingest_disallowed
+  - registry_change_tape_lineage
+  features_unavailable:
+  - halt_onset_date
+  - protocol_change_interpretation
+  - endpoint_readout_interpretation
+  blocker: null
 - family_id: regulator_application_and_submission
   title: Regulator-native application and submission records
   obligation: mandatory
@@ -482,5 +486,5 @@ authority:
   constitutes_soak_evidence: false
   originates_signals_scores_or_ranking: false
 hash_scope: canonical_payload_excluding_manifest_id_and_content_sha256
-manifest_id: biocatalyst_closed_beta_54236b5c8372282bbabd5abf
-content_sha256: 54236b5c8372282bbabd5abf4ecde1269616600fad3884ca5e0b390ee1c28c40
+manifest_id: biocatalyst_closed_beta_4c0bd45a37bfb00d19293408
+content_sha256: 4c0bd45a37bfb00d1929340870e26f8e0e5d362a3ab41036406d325f4539ed83
