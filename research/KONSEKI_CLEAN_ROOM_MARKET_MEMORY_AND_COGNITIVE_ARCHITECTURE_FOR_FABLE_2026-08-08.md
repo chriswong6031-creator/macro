@@ -1280,6 +1280,18 @@ runtime/Synapse integration, training consumption, and action authority. A
 future audit requires a new version and owner-authenticated evidence; v1 cannot
 be edited into a promotion artifact.
 
+Current conformance topology: W4, W5, W6, and W7 are guardrail slices, not an
+operational W4-to-W7 dataflow. W4 can build a caller-supplied synthetic
+`episodic_retrieval_record`; W5 can revalidate that exact dependency set to
+build an unsigned structural Cortex packet whose portable external-coverage
+claims remain false. W6 currently consumes only exact W2A trial-registration
+bytes and carries deferred null `episodic_retrieval_record_id` and
+`operating_cortex_packet_id` owner references. W7 reads the frozen feature
+registry and this evidence checkpoint, not a W6 candidate. Real W5-to-W6 and
+W6-to-W7 edges require new owner-authenticated, evidence-bearing contract
+versions and separate review. The mere presence of a later contract is never
+operational or promotion evidence.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
