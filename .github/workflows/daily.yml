@@ -5480,7 +5480,8 @@ jobs:
           # engine rebase would otherwise defeat that refusal; even without a
           # commit, the always() Pages upload would serve the stale local index.
           # Restore HEAD (the known main-ancestry checkout) into both index and
-          # worktree, then unstage every Prophet-owned root. Using origin/main
+          # worktree, unstage every Prophet-owned root, then clean builder-owned
+          # additions that did not exist in HEAD. Using origin/main
           # here would leave an unstaged A->B Prophet delta when main advanced;
           # the broad push loop's later autostash/rebase could replay that delta
           # over a still-newer correction and a follow-up `git add site/` could
@@ -5498,22 +5499,26 @@ jobs:
             echo "::error title=Prophet safe restore failed::could not restore checkout-time Prophet publications; aborting the broad commit rather than publishing an uncheckpointed tree"
             exit 1
           fi
-          # New plan/state/arena files do not exist in the safe ref, so checkout
-          # cannot remove them. These roots are builder-owned and not ignored;
-          # scoped clean removes only the uncheckpointed additions.
-          git clean -fd -- \
-            site/prophet \
-            data/prophet_arena \
-            data/prophet_stage_shadow
           git reset -q -- \
             site/prophet \
             data/prophet \
             data/prophet_arena \
             data/prophet_stage_shadow
-          # A refused receipt is build-owned and may now be untracked after the
-          # reset above. Remove only this dedicated directory; append-only
-          # correction ledgers elsewhere under data/prophet remain untouched.
-          git clean -fd -- data/prophet/origination_receipts
+          # New plan/state/arena files do not exist in the safe ref, so checkout
+          # cannot remove them. Reset first converts broad-staged additions back
+          # to untracked files; this scoped clean then removes only those refused
+          # builder outputs while preserving correction inputs under data/prophet.
+          git clean -fd -- \
+            site/prophet \
+            data/prophet_arena \
+            data/prophet_stage_shadow
+          # Refused receipts and legacy-shadow day parts are build-owned and may
+          # now be untracked after the reset above. Remove only these dedicated
+          # directories; correction ledgers elsewhere under data/prophet remain
+          # untouched.
+          git clean -fd -- \
+            data/prophet/origination_receipts \
+            data/prophet/legacy_shadow
           # OIP episode and campaign ledgers have immediate, exact-path publishers
           # above. Never let this broad data/ commit bypass a refused, skipped, or
           # failed narrow publication. Paths already committed locally by a winning

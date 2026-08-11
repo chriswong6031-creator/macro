@@ -605,11 +605,11 @@ def test_final_engine_commit_cannot_bypass_checkpoint_refusal() -> None:
     final_run = steps[final_i]["run"]
     broad_add_i = final_run.index("git add data/ site/ reports/")
     safe_ref_i = final_run.index("git checkout HEAD -- ")
-    scoped_clean_i = final_run.index("git clean -fd --", safe_ref_i)
     reset_i = final_run.index("git reset -q -- ", safe_ref_i)
+    scoped_clean_i = final_run.index("git clean -fd --", reset_i)
     push_i = final_run.index("push_staged_heal data/ site/ reports/ templates/")
 
-    assert broad_add_i < safe_ref_i < scoped_clean_i < reset_i < push_i
+    assert broad_add_i < safe_ref_i < reset_i < scoped_clean_i < push_i
     assert "PROPHET_SAFE_REF=origin/main" not in final_run
     assert "git checkout origin/main --" not in final_run
     for path in (
@@ -631,6 +631,56 @@ def test_final_engine_commit_cannot_bypass_checkpoint_refusal() -> None:
     assert "data/prophet/plan_corrections.jsonl" not in final_run
     assert "data/prophet/ledger_corrections.jsonl" not in final_run
     assert "site/stockdata/prophet_arena.json" not in final_run
+
+
+def test_final_engine_cleanup_removes_first_publication_prophet_additions(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-b", "main")
+    _git(repo, "config", "user.name", "Prophet cleanup test")
+    _git(repo, "config", "user.email", "prophet-cleanup@example.invalid")
+    _write(repo, "baseline.txt", "safe\n")
+    _git(repo, "add", "baseline.txt")
+    _git(repo, "commit", "-m", "baseline")
+
+    new_paths = (
+        "site/prophet/plans/new.json",
+        "data/prophet_arena/new.json",
+        "data/prophet_stage_shadow/new.json",
+        "data/prophet/legacy_shadow/2026-08/new.parquet",
+    )
+    for path in new_paths:
+        _write(repo, path, "{}\n")
+    _git(repo, "add", "site", "data")
+    assert {line[0] for line in _git(repo, "status", "--short").stdout.splitlines()} == {
+        "A"
+    }
+
+    _git(
+        repo,
+        "reset",
+        "-q",
+        "--",
+        "site/prophet",
+        "data/prophet",
+        "data/prophet_arena",
+        "data/prophet_stage_shadow",
+    )
+    _git(
+        repo,
+        "clean",
+        "-fd",
+        "--",
+        "site/prophet",
+        "data/prophet_arena",
+        "data/prophet_stage_shadow",
+        "data/prophet/legacy_shadow",
+    )
+
+    assert _git(repo, "status", "--porcelain").stdout == ""
+    assert all(not (repo / path).exists() for path in new_paths)
 
 
 def test_stage_checkpoint_is_hash_closed_and_rejects_authority_races() -> None:
