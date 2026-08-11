@@ -1111,3 +1111,16 @@ def test_options_prophet_strict_mirror_rejects_remote_receipt_mismatch(
     )
 
     assert mirror_flow_idx.main() == 1
+
+
+def test_prophet_marks_runner_uses_the_checkout_that_owns_it():
+    """The M1 launcher must not jump to a workstation-only repository path."""
+    repo = Path(__file__).resolve().parents[1]
+    runner = (repo / "ops/launchd/run_prophet_marks_loop.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'REPO_ROOT="/Users/' not in runner
+    assert 'SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)' in runner
+    assert 'REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)' in runner
+    assert 'cd "$REPO_ROOT" && "$PYTHON" -m "$MODULE" --publish' in runner
