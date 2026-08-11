@@ -2,7 +2,7 @@
 
 Program: research/PROPHET_BOARD_PRIORITY_ENGINE_MASTERPLAN_BY_FABLE.md
 Gates covered here: G0.1 (priority order + stage buckets), G0.2 (featured glow),
-G0.4 (ran lane), G0.5 (theme chips + themes-in-favour strip), G0.6 (stage filter
+G0.4 (ran lane), G0.5 (theme chips), G0.6 (stage filter
 chips + NEW badge), G0.7 (honest score framing on the surface).
 
 TWO SHAPES, ONE TEMPLATE.  The committed `site/factordata/us_standouts.json` does
@@ -28,7 +28,7 @@ from zlib import crc32
 
 import jinja2
 
-from tests.test_dashboard_template_render import _base_vm, _board_row, _env
+from tests.test_dashboard_template_render import _base_vm, _board_row, _env, _setup_row
 
 # --------------------------------------------------------------------------- #
 # Deterministic us_prophet_v1 overlay
@@ -571,8 +571,8 @@ def test_the_absence_mark_suppresses_itself_when_the_whole_shelf_is_unmeasured()
     # ... and the footer is doing the work, so nothing goes dark.
     footnote = _footnote(html)
     featured = sum(1 for r in vm["us_standouts"]["buy"] if r.get("featured"))
-    assert f"({featured} of the featured names have none at all" in footnote
-    assert f"（另有{featured}只精选个股完全没有读数" in footnote
+    assert f"We could not check whether {featured} featured names had already run too far." in footnote
+    assert f"其中 {featured} 只精选股票无法检查是否已经涨得太远。" in footnote
 
 
 def test_the_absence_mark_is_the_only_hollow_chip_in_the_row():
@@ -792,77 +792,67 @@ def test_ran_section_absent_when_the_artifact_carries_no_ran_array():
 
 
 # --------------------------------------------------------------------------- #
-# G0.5 — theme linkage
+# G0.5 — theme linkage without a duplicate Prophet mini-strip
 # --------------------------------------------------------------------------- #
 
-def test_theme_strip_lists_top_three_themes_with_their_board_tickers():
+def test_prophet_does_not_repeat_the_theme_tape_above_its_cards():
+    """Theme membership remains on the cards and in the full Theme Heat panel.
+    The retired mini-strip duplicated that context, and its regime-age tail made a
+    mature theme read like stale data inside an entry-timing board."""
     vm = _priority_vm()
-    html = _render(vm)
-    assert '<div class="pbt">' in html
-    assert '<span class="l-en">Themes in favour</span><span class="l-zh">主题风向</span>' in html
-    assert '<span class="l-en">AI software</span><span class="l-zh">AI软件</span>' in html
-    strip = html[html.find('<div class="pbt">'):html.find('<div class="pbf-bar"')]
-    rows = re.findall(r'<div class="pbt-r">', strip)
-    assert len(rows) == 3, f"the strip must show at most the top three themes, got {len(rows)}"
-    # highest-ranked theme first (rank 3 AI software before rank 6 Power & grid)
-    assert strip.find("AI software") < strip.find("Power & grid")
-    # A theme with no name on THIS board is dropped, not padded in to look fuller.
-    assert "Shipping" not in strip
-    # …and off-board basket members never leak into a board strip.
-    board = {r["ticker"] for r in vm["us_standouts"]["buy"]}
-    for ticker in re.findall(r"<span>([A-Z.\-]{1,6})</span>", strip):
-        assert ticker in board, f"{ticker} is a basket member, not a name on this board"
-    assert re.search(r"<span>[A-Z]", strip), "the strip printed no tickers at all"
-    # bull_days rides as a quiet tail where the engine supplies it
-    assert '<span class="l-en">turned 5d ago</span><span class="l-zh">5天前转向</span>' in strip
-
-
-def test_theme_strip_falls_back_to_row_grouping_without_themes_in_favour():
-    """A partial artifact (rows stamped, top-level list missing) still gets a strip."""
-    vm = _priority_vm()
-    art = dict(vm["us_standouts"])
-    art.pop("themes_in_favour")
-    vm["us_standouts"] = art
-    html = _render(vm)
-    strip = html[html.find('<div class="pbt">'):html.find('<div class="pbf-bar"')]
-    assert '<div class="pbt-r">' in strip
-    assert '<span class="l-en">AI software</span><span class="l-zh">AI软件</span>' in strip
-
-
-def test_theme_strip_absent_when_no_favoured_theme_has_a_name_on_the_board():
-    """The sparse case is real — theme membership on the buy lane is 2-of-71 on the
-    first live artifact.  The strip shrinks and then disappears; it never pads."""
-    vm = _priority_vm()
-    board = [{k: v for k, v in r.items() if k != "theme"} for r in vm["us_standouts"]["buy"]]
-    vm["us_standouts"] = dict(
-        vm["us_standouts"], buy=board,
-        themes_in_favour=[{"id": "shipping", "name": "Shipping", "name_zh": "航运",
-                           "rank": 9, "reco": "accumulate", "tickers": ["ZIM", "MATX"]}])
     html = _render(vm)
     assert '<div class="pbt">' not in html
+    assert "Themes in favour" not in html
+    assert "turned 90d ago" not in html
     assert '<div class="pbf-bar" id="us-stage-filter"' in html   # the rest is intact
+    assert '<span class="pv-mk-i pv-mk-theme"' in html     # card context survives
 
 
-def test_theme_strip_absent_when_no_row_carries_a_theme():
-    """Absence is scoped to the whole panel here: board, ran AND leaders lose their
-    themes, so a stray chip from any of the three lanes would fail this."""
+def test_earnings_candidates_stay_visible_below_the_actionable_cards():
     vm = _priority_vm()
-    art = dict(vm["us_standouts"])
-    art.pop("themes_in_favour")
-    for key in ("buy", "ran", "leaders"):
-        stripped = []
-        for row in art[key]:
-            row = dict(row)
-            row.pop("theme", None)
-            row.pop("theme_confirmed", None)
-            stripped.append(row)
-        art[key] = stripped
-    vm["us_standouts"] = art
+    vm["us_standouts"] = dict(
+        vm["us_standouts"],
+        earnings_blackout_note={"count": 3, "tickers": ["UAMY", "LAC", "YETI"]},
+    )
     html = _render(vm)
-    assert '<div class="pbt">' not in html
-    assert '<div class="nb-stage-hd sg-live"' in html
-    assert '<span class="pv-mk-i pv-mk-theme"' not in html
-    assert '<div class="pbr" data-stage="ran">' in html   # the ran lane itself survives
+    watch = html[html.index('<div class="nb-ewatch"'):html.index('</div>', html.index('<div class="nb-ewatch"')) + 6]
+    assert html.index('<div class="nb-ewatch"') > html.index('<div class="nbgrid"')
+    assert '<span class="l-en">Earnings watch</span>' in watch
+    for ticker in ("UAMY", "LAC", "YETI"):
+        assert f'<a href="stock.html#{ticker}">{ticker}</a>' in watch
+    assert "Prophet waits through the report date" in watch
+    assert "setups suppressed today" not in html.lower()
+    assert '<div class="nb-eb-note"' not in html
+    assert "W1.5" not in watch and "adjudicated" not in watch and "hygiene" not in watch
+
+
+def test_earnings_watch_names_do_not_reappear_as_fresh_triggers():
+    """A waiting name cannot simultaneously be presented as an actionable trigger."""
+    vm = _priority_vm()
+    vm["us_standouts"] = dict(
+        vm["us_standouts"],
+        earnings_blackout_note={"count": 1, "tickers": ["UAMY"]},
+    )
+    vm["top_setups"] = {
+        "buy": [_setup_row(ticker="UAMY"), _setup_row(ticker="ZORB")],
+        "eligible": 2,
+    }
+    html = _render(vm)
+    assert '<span class="ts-tk">ZORB</span>' in html
+    assert '<span class="ts-tk">UAMY</span>' not in html
+    assert html.count('href="stock.html#UAMY"') == 1  # the Earnings watch link
+
+
+def test_all_earnings_window_triggers_get_an_honest_empty_state():
+    vm = _priority_vm()
+    vm["us_standouts"] = dict(
+        vm["us_standouts"],
+        earnings_blackout_note={"count": 1, "tickers": ["UAMY"]},
+    )
+    vm["top_setups"] = {"buy": [_setup_row(ticker="UAMY")], "eligible": 1}
+    html = _render(vm)
+    assert "Today's fresh signals are in Earnings watch while their reports are due." in html
+    assert "Every actionable signal is already on the board above" not in html
 
 
 def test_theme_chip_and_demoted_lane_chip_ride_the_card_marks_row():
@@ -922,8 +912,8 @@ def test_priority_score_replaces_the_edge_slot_with_the_no_forecast_framing():
     stated once instead of on all 40 cards."""
     html = _priority_html()
     assert '<span class="l-en">Priority</span><span class="l-zh">优先级</span>' in html
-    assert "not a win probability or return forecast." in _footnote(html)
-    assert "不是胜率，也不是收益预测。" in _footnote(html)
+    assert "not more likely to win" in _footnote(html)
+    assert "并不代表更容易获胜" in _footnote(html)
 
 
 def test_the_card_chips_carry_no_hover_cards():
@@ -948,20 +938,20 @@ def test_legacy_rows_keep_the_edge_label_untouched():
     assert '<span class="l-en">Priority</span>' not in html
 
 
-def test_board_carries_the_priority_formula_footnote_once():
+def test_board_carries_the_plain_language_priority_footnote_once():
     html = _priority_html()
     assert html.count('<p class="pb-fn">') == 1
-    assert "Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%." in html
-    # the ZH half must still disclaim a win probability. The wording widened when the
-    # per-card tooltips folded into this footnote ("并非胜率" → "不是胜率，也不是收益预测"),
-    # so this pins the claim, not the old phrasing.
-    assert "不是胜率" in html
+    foot = _footnote(html)
+    assert "Higher Priority means the setup is more ready today" in foot
+    assert "not more likely to win" in foot
+    assert "signal 30%" not in foot and "us_prophet_v1" not in foot
 
 
-def test_stage_heading_tips_disclose_priority_order_not_a_forecast():
+def test_stage_heading_tips_explain_priority_in_plain_language():
     html = _priority_html()
-    assert "Priority order, not a return forecast." in html
-    assert "这是排序，不是收益预测。" in html
+    assert "Higher Priority means the setup is more ready today, not more likely to win." in html
+    assert "优先级越高，表示今天越接近可操作，并不代表更容易获胜。" in html
+    assert "awaiting confluence" not in html
 
 
 # --------------------------------------------------------------------------- #
@@ -980,10 +970,10 @@ def test_stage_heading_tips_disclose_priority_order_not_a_forecast():
 # kill-switch test below).  A hardcoded sentence would outlive the null it discloses.
 # --------------------------------------------------------------------------- #
 
-_RW_EN = "Runway currently contributes 0 for "
-_RW_ZH = "上行空间目前对"
-_RW_TAIL_EN = "the extension reading it scores is not wired up yet"
-_RW_TAIL_ZH = "它所依据的拉伸幅度数据尚未接入"
+_RW_EN = "Room to run could not be checked for "
+_RW_ZH = "今晚无法检查"
+_RW_TAIL_EN = "so that part adds no points"
+_RW_TAIL_ZH = "因此这一项不加分"
 
 
 def _coverage_vm(runway: dict | None) -> dict:
@@ -1024,9 +1014,7 @@ def test_runway_disclosure_reads_the_artifact_and_stops_when_the_leg_scores():
         assert _RW_EN not in place
         assert _RW_ZH not in place
         assert _RW_TAIL_ZH not in place
-    # the formula itself is untouched — this is a disclosure, not a weight change
-    assert "runway 10%" in _footnote(html)
-    assert "上行空间10%" in _footnote(html)
+    assert "Higher Priority means the setup is more ready today" in _footnote(html)
 
 
 def test_runway_disclosure_without_the_coverage_key_claims_no_count():
@@ -1034,8 +1022,8 @@ def test_runway_disclosure_without_the_coverage_key_claims_no_count():
     stays on — but it may not print a count it never read."""
     html = _render(_coverage_vm(None))
     for place in (_footnote(html),):
-        assert _RW_EN + "every name" in place
-        assert _RW_ZH + "每一只股票" in place
+        assert _RW_EN + "these names" in place
+        assert _RW_ZH + "这些股票" in place
         assert "71" not in place.split(_RW_EN)[1].split(".")[0]
 
 
@@ -1046,32 +1034,21 @@ def test_runway_disclosure_never_reaches_the_legacy_board():
 
 
 # --------------------------------------------------------------------------- #
-# m5 — the featured edge gate is an absolute floor, not a rank
+# m5 — featured stays lossless without exposing engine language
 # --------------------------------------------------------------------------- #
 
-def test_featured_gate_is_called_an_absolute_floor():
-    """engine ranking_block featured_requirements: "residual alpha at or above zero".
-    The old copy ("above the board's midpoint") described a cross-sectional test the
-    engine never runs — on a weak board it promised the opposite of the real gate.
-    The ★ Featured hover card that carried this was removed (operator 2026-08-05), so
-    the sentence moved to the board footnote rather than off the page: the wording is
-    the guard, not the surface it sits on."""
+def test_featured_shelf_is_explained_without_engine_language():
     html = _priority_html()
-    assert "edge above zero (an absolute floor)" in _footnote(html)
-    assert "edge above zero (an absolute floor)" in html
-    assert "优势为正（绝对下限，而非同榜排名）" in html
-    assert "above the board’s midpoint" not in html
-    assert "above the board's midpoint" not in html
-    assert "优势高于本板中位" not in html
+    foot = _footnote(html)
+    assert "Featured highlights up to 12 of the most ready names" in foot
+    assert "no more than four per sector" in foot
+    assert "absolute floor" not in foot and "admission limit" not in foot
 
 
 def test_featured_shelf_does_not_misstate_the_lossless_board_depth():
     html = _footnote(_priority_html())
-    assert "featured attention shelf, not an admission limit" in html
-    assert "Every qualifying name remains on this ranked, searchable board" in html
-    assert "US Prophet evaluates the full eligible set" in html
-    assert "绿色高亮只是精选关注层，并非准入上限" in html
-    assert "所有符合条件的股票都会保留" in html
+    assert "every qualifying name still appears on this board" in html
+    assert "所有合格股票仍会保留在本榜" in html
 
 
 # --------------------------------------------------------------------------- #
@@ -1100,15 +1077,6 @@ def _zero_bull_days_vm() -> dict:
     return vm
 
 
-def test_theme_that_turned_today_keeps_its_age_chip_and_reads_today():
-    vm = _zero_bull_days_vm()
-    html = _render(vm)
-    strip = html[html.find('<div class="pbt">'):html.find('<div class="pbf-bar"')]
-    assert '<span class="pbt-age">' in strip, "bull_days == 0 lost the age chip entirely"
-    assert '<span class="l-en">turned today</span><span class="l-zh">今日转向</span>' in strip
-    assert "turned 0d ago" not in html and "0天前转向" not in html
-
-
 def test_ran_lane_theme_note_reads_today_at_zero_bull_days():
     html = _render(_zero_bull_days_vm())
     assert "watch for the next entry (turned today)" in html
@@ -1118,24 +1086,9 @@ def test_ran_lane_theme_note_reads_today_at_zero_bull_days():
 
 def test_nonzero_bull_days_still_prints_the_age():
     """The other direction: the None-test must not swallow real ages."""
-    strip = _priority_html()
-    assert '<span class="l-en">turned 5d ago</span><span class="l-zh">5天前转向</span>' in strip
-    assert "turned today" not in strip
-
-
-def test_absent_bull_days_still_prints_no_age_chip():
-    """None is genuinely unknown and stays silent — the fix must not turn a missing
-    age into a claim that the theme turned today."""
-    vm = _priority_vm()
-    art = dict(vm["us_standouts"])
-    art["themes_in_favour"] = [{k: v for k, v in t.items() if k != "bull_days"}
-                               for t in art["themes_in_favour"]]
-    vm["us_standouts"] = art
-    html = _render(vm)
-    strip = html[html.find('<div class="pbt">'):html.find('<div class="pbf-bar"')]
-    assert '<div class="pbt-r">' in strip          # the strip DID render
-    assert '<span class="pbt-age">' not in strip
-    assert "turned today" not in strip
+    html = _priority_html()
+    assert "turned 3d ago" in html and "3天前转向" in html
+    assert "turned today" not in html
 
 
 # --------------------------------------------------------------------------- #

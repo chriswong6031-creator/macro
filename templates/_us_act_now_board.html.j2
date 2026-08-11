@@ -247,8 +247,8 @@
         icon() macro output survives autoescape — the legend must show the SAME
         marks the rows show, or it is a legend for a board that no longer exists.
         ✓ and ★ are text glyphs, not emoji; they stay as characters. -#}
-    {%- set _legend_en %}Every sector and theme is sorted into five lanes by cycle position — the lane name is the action, and each lane explains itself below its title. Hover any row for full detail. Symbols: {{ icon('sector') }} sector fund · {{ icon('diamond') }} theme group · ✓ tested sell-discipline gate (overrides the lane read when it fires) · ★ in the model book.{% endset -%}
-    {%- set _legend_zh %}所有板块与主题按周期位置分入五个泳道 — 泳道名称即操作建议，各泳道标题下有说明。悬停任意行查看完整详情。图例：{{ icon('sector') }} 板块基金 · {{ icon('diamond') }} 主题篮子 · ✓ 经回测的卖出纪律门槛（触发时覆盖泳道判读）· ★ 模型组合内。{% endset -%}
+    {%- set _legend_en %}Every sector and theme is grouped by where it sits in the cycle. The lane name tells you what to do; open a row for detail. Symbols: {{ icon('sector') }} sector fund · {{ icon('diamond') }} theme · ✓ risk check passed · ★ in the model portfolio.{% endset -%}
+    {%- set _legend_zh %}所有板块与主题都按当前周期位置分组。分组名称就是操作建议；打开任意一行可查看详情。图例：{{ icon('sector') }} 板块基金 · {{ icon('diamond') }} 主题 · ✓ 风险检查通过 · ★ 模型组合内。{% endset -%}
     <h2>{{ t('What to act on now', '当前可操作') }}
       {{ help(_legend_en, _legend_zh) }}
       <a href="sector_central.html#actnow-section" style="font-size:11px;color:var(--muted);font-weight:400;text-decoration:none;margin-left:8px"><span class="l-en">Theme reasons → Sector Intelligence</span><span class="l-zh">主题详情 → 行业情报页</span></a>
@@ -257,7 +257,7 @@
        no reordering, no removal. Ranks computed on pre-shock data; this chip is the only change.) #}
     {% if shock_state is defined and shock_state and shock_state.get('active') %}
     <div style="margin:6px 0 10px;padding:8px 12px;border-radius:8px;border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel2));font-size:13px;font-weight:600">
-      <span class="ab-shock-ic">{{ icon('alert') }}</span> <span class="l-en">SHOCK active — fresh entries carry extra uncertainty; sector ranks computed on pre-shock data. Context only — no ranks have been changed. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">冲击期间 — 新进场具有额外不确定性；板块排名基于冲击前数据计算。仅供参考，排名未作调整，有效期至 {{ shock_state.get('expires', '') }}。</span>
+      <span class="ab-shock-ic">{{ icon('alert') }}</span> <span class="l-en">Market shock active — new entries are less predictable. The order below has not been changed and uses pre-shock data. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">市场冲击仍在 — 新入场更难判断。下方顺序未作调整，使用的是冲击前数据。有效期至 {{ shock_state.get('expires', '') }}。</span>
     </div>
     {% endif %}
     {# Unified board: diamond-marked narrative baskets (the AI-buildout-vs-rest resolution)
@@ -267,9 +267,9 @@
     {# (legacy themeitem / themeitem_run row macros removed 2026-07-11 — dead since the
        V2 board switched every lane to ab_theme_row / ab_sector_row.) #}
     {# TS-R6 A2: two-reads chip for action-board sector rows (same ETF, two house reads disagree). #}
-    {% macro ab_two_reads(x) -%}{% if x.get('two_reads_chip') %}{% set _abtr = x.two_reads_chip %}<span class="two-reads-chip" data-tip-en="Two house reads on {{ x.ticker }}: cycle timing = {{ _abtr.cycle_label_en }} (slow, cap-weighted); setup engine = {{ _abtr.setup_label_en }} (3-day tactical). Different instruments / different horizons — both shown, neither overrides." data-tip-zh="{{ x.ticker }} 两个本系统读数：周期 = {{ _abtr.cycle_label_en }}（慢速市值加权）；形态 = {{ _abtr.setup_label_en }}（3日战术）。不同工具／维度，同时显示。"><span class="tr-sep">⇔</span><span class="l-en">two reads: cycle <b>{{ _abtr.cycle_label_en }}</b> vs setup <b>{{ _abtr.setup_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _abtr.cycle_label_en }}</b> vs 形态 <b>{{ _abtr.setup_label_en }}</b></span></span>{% endif %}{%- endmacro %}
+    {% macro ab_two_reads(x) -%}{% if x.get('two_reads_chip') %}{% set _abtr = x.two_reads_chip %}<span class="two-reads-chip" data-tip-en="The slower cycle view says {{ _abtr.cycle_label_en }}, while the near-term setup says {{ _abtr.setup_label_en }}. They cover different time frames, so neither cancels the other." data-tip-zh="较慢的周期判断为 {{ _abtr.cycle_label_en }}，近期形态判断为 {{ _abtr.setup_label_en }}。两者观察的时间不同，因此互不覆盖。"><span class="tr-sep">⇔</span><span class="l-en">longer view <b>{{ _abtr.cycle_label_en }}</b> · near term <b>{{ _abtr.setup_label_en }}</b></span><span class="l-zh">较长周期 <b>{{ _abtr.cycle_label_en }}</b> · 近期 <b>{{ _abtr.setup_label_en }}</b></span></span>{% endif %}{%- endmacro %}
     {# FIX 2: EW-vs-cycle disclosure chip for sector rows — fires when EW and cycle disagree (buy vs reduce) and gate_override did NOT fire. #}
-    {% macro ab_ew_two_reads(x) -%}{% if x.get('ew_two_reads') %}{% set _ewtr = x.ew_two_reads %}<span class="two-reads-chip" data-tip-en="Two reads on {{ x.ticker }}: cycle timing = {{ _ewtr.cycle_label_en }}; equal-weight basket = {{ _ewtr.ew_label_en }}. Different constructions — both shown for context." data-tip-zh="{{ x.ticker }} 两个读数：周期 = {{ _ewtr.cycle_label_zh }}；等权篮子 = {{ _ewtr.ew_label_zh }}。不同构建方式，同时显示供参考。"><span class="tr-sep">⇔</span><span class="l-en">two reads: cycle <b>{{ _ewtr.cycle_label_en }}</b> vs equal-weight <b>{{ _ewtr.ew_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _ewtr.cycle_label_zh }}</b> vs 等权 <b>{{ _ewtr.ew_label_zh }}</b></span></span>{% endif %}{%- endmacro %}
+    {% macro ab_ew_two_reads(x) -%}{% if x.get('ew_two_reads') %}{% set _ewtr = x.ew_two_reads %}<span class="two-reads-chip" data-tip-en="The headline index says {{ _ewtr.cycle_label_en }}, while the average stock inside it says {{ _ewtr.ew_label_en }}. The difference shows whether a few large names are masking the broader sector." data-tip-zh="龙头指数判断为 {{ _ewtr.cycle_label_zh }}，板块内平均股票判断为 {{ _ewtr.ew_label_zh }}。两者的差异可看出少数大公司是否掩盖了板块整体。"><span class="tr-sep">⇔</span><span class="l-en">headline <b>{{ _ewtr.cycle_label_en }}</b> · broad sector <b>{{ _ewtr.ew_label_en }}</b></span><span class="l-zh">龙头指数 <b>{{ _ewtr.cycle_label_zh }}</b> · 板块整体 <b>{{ _ewtr.ew_label_zh }}</b></span></span>{% endif %}{%- endmacro %}
     {# ew_chip is inlined below each sector row for Jinja2 lexer compatibility. #}
     {#- V2 ACTION BOARD — new lane design (adjudicated 2026-07-10)
         Each lane: header (monoline lane icon + EN/ZH name + count + subtitle) + row list.
@@ -295,7 +295,7 @@
     {%- if x.get('recovering_chip_en') %}<span class="ab-chip ab-chip--info ab-chip--wrap" data-tip-en="{{ x.get('recovering_tip_en','')|e }}" data-tip-zh="{{ x.get('recovering_tip_zh', x.get('recovering_tip_en',''))|e }}"><span class="l-en">{{ x.recovering_chip_en|e }}</span><span class="l-zh">{{ x.get('recovering_chip_zh', x.recovering_chip_en)|e }}</span></span>{% endif -%}
     {%- endmacro -%}
     {%- macro ab_gate(x) -%}
-    {%- if x.get('gate_override') %}<span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: {{ x.get('ew', {}).get('label', '') }}" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：{{ x.get('ew', {}).get('label_zh', '') or x.get('ew', {}).get('label', '') }}">&#10003;</span>{% endif -%}
+    {%- if x.get('gate_override') %}<span class="ab-chip--gate" data-tip-en="The average stock in this sector says {{ x.get('ew', {}).get('label', '') }}. That broader risk check takes precedence over the slower headline-index reading." data-tip-zh="板块内平均股票判断为 {{ x.get('ew', {}).get('label_zh', '') or x.get('ew', {}).get('label', '') }}。这一更广泛的风险检查优先于较慢的龙头指数判断。">&#10003;</span>{% endif -%}
     {%- endmacro -%}
     {#- Popover source for a SECTOR row (hidden inline, cloned by JS) -#}
     {#- Compact decision card for a SECTOR row. Keep this payload intentionally
@@ -355,7 +355,7 @@
               else (('Trend confirmed — use pullbacks instead of chasing.','趋势已确认 — 等回调，不追高。') if _lbl in _up_labels
               else (('Early turn — keep size measured while the weekly trend catches up.','早期转向 — 周线趋势确认前控制仓位。') if _lbl in _warn_labels
               else (('Momentum is fading — protect gains and avoid fresh adds.','动能转弱 — 保护利润，避免加仓。') if _lbl in _reduce_labels
-              else ('No clean edge yet — wait for the signals to align.','暂无清晰优势 — 等待信号同步。')))),
+              else ('No clear setup yet — wait for the signals to agree.','暂无清晰形态 — 等待信号一致。')))),
       'foot': ('Click row for the full sector view','点击查看完整板块详情'),
       'foot_b': (x.ticker ~ ' ↗', x.ticker ~ ' ↗'),
     }) }}
@@ -385,7 +385,7 @@
                                  'zh': '★ 模型 ' ~ '%.0f'|format(x.book_wt*100) ~ '%'}) -%}
     {%- endif -%}
     {%- if x.validated -%}
-      {%- set _ = _trust.append({'tone': 'up', 'en': '✓ Risk gate', 'zh': '✓ 风险门槛'}) -%}
+      {%- set _ = _trust.append({'tone': 'up', 'en': '✓ Risk check', 'zh': '✓ 风险检查'}) -%}
     {%- endif -%}
     {{ dc.dc_card({
       'kind': 'theme', 'mark': icon('diamond'), 'tone': _rtone,
@@ -439,8 +439,8 @@
       <span class="act-row-top">
         <span class="ai-bdg">{{ icon('diamond') }}</span>
         <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
-        {%- if x.get('book_wt') %}<span class="ai-book" data-tip-en="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过经回测的绝对趋势门槛">&#9733;{{ '%.0f'|format(x.book_wt*100) }}%</span>{%- endif %}
-        {%- if x.validated %}<span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>{%- else %}<span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>{%- endif %}
+        {%- if x.get('book_wt') %}<span class="ai-book" data-tip-en="This theme has a {{ '%.0f'|format(x.book_wt*100) }}% weight in the model portfolio and has passed its trend-risk check." data-tip-zh="该主题在模型组合中的权重为 {{ '%.0f'|format(x.book_wt*100) }}%，并已通过趋势风险检查。">&#9733;{{ '%.0f'|format(x.book_wt*100) }}%</span>{%- endif %}
+        {%- if x.validated %}<span class="ai-val" data-tip-en="Risk check passed — the trend is intact and has not begun a damaging fade." data-tip-zh="风险检查通过 — 趋势仍然完整，尚未出现明显恶化。">&#10003;</span>{%- else %}<span class="ai-lens" data-tip-en="Leadership only — this shows what is leading, but it has not improved the buy decision." data-tip-zh="仅显示领先方向 — 可看出谁在领涨，但尚未改善买入判断。">&asymp;</span>{%- endif %}
         {%- if x.get('run_reason_en') %}<span class="ai-lens" data-tip-en="{{ x.run_reason_en }}" data-tip-zh="{{ x.get('run_reason_zh', x.run_reason_en) }}">&#8635;</span>{%- endif %}
         {%- if x.get('score') is not none and x.get('score') is defined %}{%- set _sc = x.score -%}
         <span class="act-row-score{% if _sc >= 60 %} act-score-hi{% elif _sc >= 40 %} act-score-mid{% else %} act-score-lo{% endif %}">{{ '%.0f'|format(_sc) }}</span>

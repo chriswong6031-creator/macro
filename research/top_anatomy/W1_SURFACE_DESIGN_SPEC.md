@@ -262,7 +262,15 @@ body
 | Hero lede | **{maturing}** of tonight's **{extended}** extended names are showing wear. *The rest are running the way they were.* | 今晚 **{extended}** 只高位强势股中，有 **{maturing}** 只出现转弱迹象。*其余仍按原来的样子运行。* |
 | Themes h2 | How much of each theme is aging | 各主题老化到什么程度 |
 | Themes note | Counts only — the bar width is the size of the theme, so a small group can never look like a big one. | 只是计数 —— 条形的宽度代表主题的大小，小主题不会被画得跟大主题一样。 |
-| Small print (ONE sentence) | US names only — the library counts are what similar past runs did, history rather than forecasts, and nothing on this page ranks, gates or sizes anything. Tonight: **{extended_n}** extended out of **{universe_n}** US names screened, read **{asof}**. | 仅限美股 —— 资料库中的次数是历史上相似行情走过的路，属于历史而非预测；本页任何内容都不参与排序、准入或仓位。今晚：筛查 **{universe_n}** 只美股，其中 **{extended_n}** 只处于高位强势，判读日期 **{asof}**。 |
+| Small print (ONE line) | US names only — the library counts are what similar past runs did, history rather than forecasts, and nothing on this page ranks, gates or sizes anything. Tonight: **{extended_n}** extended out of **{universe_n}** US names screened, read **{asof}**. A name that has just left the extended band stays listed only while we evaluate the change. | 仅限美股 —— 资料库中的次数是历史上相似行情走过的路，属于历史而非预测；本页任何内容都不参与排序、准入或仓位。今晚：筛查 **{universe_n}** 只美股，其中 **{extended_n}** 只处于高位强势，判读日期 **{asof}**。刚离开高位强势区间的个股，仅在我们判读这一变化期间保留在看板上。 |
+
+The closing sentence is the **board-membership disclosure** (design authority, 2026-08-10),
+added when the membership ruling widened the board to names with an EXT day inside the
+trailing 21 sessions. It is what keeps the word *extended* honest in the count beside it: on
+the measured tape 39 of 122 rows were names that had just left the band. ZH uses the page's
+own vocabulary — 高位强势 (extended, as in 处于高位强势), 个股, 判读 (the nightly read), 看板 —
+rather than a second term for each; and 离开 not 跌出, because a name can leave the band by its
+six-month gain maturing out without falling at all.
 
 ### 4.2 The four states — **named, never explained on the surface**
 
@@ -301,6 +309,23 @@ Builder substitutes the numbers and emits both the glance words and the hover se
 
 **Leg ordering is the fixed key order of this table**, not a severity ranking. The same two
 legs must always read in the same order on every row and every night. Max 3 rendered.
+
+**AMENDMENT (design authority, 2026-08-10) — breaking rows lead with their state-defining
+legs.** *The state's evidence may never be truncated off its own row.* When
+`state == breaking`, the legs line renders `below_50d` first, then `drawdown_from_high`, and
+fills any remaining slot from the frozen key order above. `MAX_LEGS` stays 3; every other
+state keeps the pure frozen order, unchanged.
+
+Why: those two keys are 8th and 9th of ten, and they are exactly the pair `classify` requires
+for the terminal state — so the cap cut them off the very rows they had just defined. Measured
+on the real tape (2026-07-02, 122 rows): **all 39 breaking rows** rendered three legs and not
+one of them was the give-back or the lost 50-day line. `VIAV` printed
+`lagging the market for 40 sessions · selling days now heavier · lost its 50-day line` with
+no give-back at all. This is a **display order only** — `classify`, the counting set and the
+state taxonomy are untouched, and the order *inside* the lead pair is the order `classify`
+reads them in, not a ranking between them. Builder: `engine.top_maturation.order_legs`
+(applied before the cap); guarded by `tests/test_top_maturation.py`
+`test_breaking_row_leads_with_its_own_evidence_and_never_truncates_it`.
 
 **No-legs fallback (template-computed, do not send):** `sitting at its high` / 正处于自身高点
 when within 1% of `episode_high`; otherwise `{x}% under its high` / 低于自身高点 {x}%.
