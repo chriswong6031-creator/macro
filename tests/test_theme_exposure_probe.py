@@ -29,6 +29,7 @@ from scripts.probe_theme_exposure_axes import (
     block_bootstrap_median_ci,
     causal_beta_pair,
     cell_abstains,
+    corr_cell_from_beta_rows,
     coverage_fraction,
     era_for_month,
     ex_self_returns,
@@ -141,6 +142,43 @@ class TestExSelfBasketReturn:
         sd_o = R["A"].rolling(BETA_WIN, min_periods=BETA_MINP).std().shift(1).iloc[i]
         sd_x = X["A"].rolling(BETA_WIN, min_periods=BETA_MINP).std().shift(1).iloc[i]
         assert beta == pytest.approx(corr * sd_o / sd_x, rel=1e-9)
+
+
+class TestCorrCompanionProjection:
+    """The post-prereg companion is a PROJECTION of the beta cell, never a re-estimation."""
+
+    def _rows(self):
+        rows = [
+            dict(month="2026-07", node_id="co:us:A", symbol="A", value=1.2,
+                 corr_to_ex_self=0.8, sd_own_daily=0.03, sd_ex_self_daily=0.02,
+                 era="reconstruction", in_universe=True, stamp_session="2026-07-31"),
+            dict(month="2026-07", node_id="co:us:B", symbol="B", value=np.nan,
+                 corr_to_ex_self=np.nan, sd_own_daily=np.nan, sd_ex_self_daily=np.nan,
+                 era="reconstruction", in_universe=False, stamp_session="2026-07-31"),
+        ]
+        diags = [dict(month="2026-07", n_members=2, n_values=1, coverage=0.5,
+                      no_events=False, era="reconstruction", stamp_session="2026-07-31")]
+        return rows, diags
+
+    def test_carries_the_corr_term_through_as_the_cell_value(self):
+        cell = corr_cell_from_beta_rows(*self._rows())
+        by_sym = {r["symbol"]: r for r in cell["rows"]}
+        assert by_sym["A"]["value"] == pytest.approx(0.8)
+        assert by_sym["A"]["month"] == "2026-07"
+        assert by_sym["A"]["era"] == "reconstruction"
+
+    def test_a_missing_corr_is_not_counted_as_a_value(self):
+        cell = corr_cell_from_beta_rows(*self._rows())
+        d = cell["diags"][0]
+        assert d["n_values"] == 1 and d["n_members"] == 2
+        assert d["coverage"] == pytest.approx(0.5)
+
+    def test_preserves_the_month_and_membership_grid_of_the_frozen_cell(self):
+        rows, diags = self._rows()
+        cell = corr_cell_from_beta_rows(rows, diags)
+        assert len(cell["rows"]) == len(rows)
+        assert [d["month"] for d in cell["diags"]] == [d["month"] for d in diags]
+        assert all(d["no_events"] is False for d in cell["diags"])
 
 
 class TestVasicekShrink:

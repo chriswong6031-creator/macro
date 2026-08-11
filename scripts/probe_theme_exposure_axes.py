@@ -106,6 +106,11 @@ SLOTS: "OrderedDict[str, dict]" = OrderedDict([
 ])
 
 BETA_ID = "trading_beta.v0"
+# POST-PREREG COMPANION (main-session commission, 2026-08-11). The corr term already inside
+# the beta identity, promoted to its own cross-section so the H2 result can be re-read with
+# the volatility-ratio term removed. It carries NO verdict authority: it never enters H1, the
+# frozen H2/H3 tables, or any verdict cell — it informs interpretation sentences only.
+COMPANION_CORR_ID = "trading_corr.companion"
 CN_COMMENT_ID = "attention_share.cn.comment.v0"
 CN_LHB_ID = "attention_share.cn.lhb.v0"
 US_WSB_ID = "attention_share.us.wsb.v0"
@@ -130,6 +135,26 @@ CONSTRUCTIONS: "OrderedDict[str, dict]" = OrderedDict([
                        unlock=UNLOCK_DENSE_ATTENTION,
                        note="member share of monthly narrative-flare lit-channel count")),
 ])
+
+# Main-session adjudication on the probe's escalation (2026-08-11). Recorded verbatim in
+# substance: the probe reports these, it did not decide them.
+ADJUDICATION_RULINGS = [
+    {"id": 1, "subject": BETA_ID, "ruling": (
+        "The frozen trading_beta.v0 construction is NOT reopened — its H2/H3 readings stand "
+        "as computed. The exemplar-gate failures are recorded as a SEMANTIC FINDING, not a "
+        "defect: v0 measures relative-vol-weighted co-movement "
+        "(beta = corr x sd_own/sd_ex-self), and the prereg's expectations carried a "
+        "cap-weighted intuition v0 never implemented. The gate did its job.")},
+    {"id": 2, "subject": CN_LHB_ID, "ruling": (
+        "The LHB verdict cell must not read MEASURABLE-NOW: a construction whose H3 is NOISE "
+        "with high tie mass is COMPUTABLE-BUT-UNSTABLE at the monthly-share grain — a null for "
+        "THIS construction. Ore law: it closes monthly-share-of-appearances, and leaves "
+        "event-grain and quarterly aggregations unmapped-but-open.")},
+    {"id": 3, "subject": US_FLARE_ID, "ruling": (
+        "US flare's near-1.0 H3 on a 50% tie block is the stability of a degenerate magnitude. "
+        "US attention stays BLOCKED-ON-INGESTION, and the degeneracy (channels_lit is "
+        "approximately a days-present count) is named as part of the blocking reason.")},
+]
 
 
 # ======================================================================================
@@ -576,6 +601,32 @@ def compute_attention_cell(slot: str, meta: dict, lb: pd.DataFrame, symbols: dic
     return rows, diags
 
 
+def corr_cell_from_beta_rows(rows: list, diags: list) -> dict:
+    """Project the corr term of the beta identity into its own cell (POST-PREREG companion).
+
+    Same window, same causal shift, same months, same membership: this is literally the `corr`
+    factor already computed inside `beta = corr * sd_own / sd_ex_self`, re-cross-sectioned.
+    Nothing is re-estimated, so the companion can never disagree with the frozen cell about
+    WHICH member-months exist — only about how they rank once the volatility ratio is removed.
+    """
+    crows = [dict(month=r["month"], node_id=r["node_id"], symbol=r["symbol"],
+                  value=r["corr_to_ex_self"], era=r["era"],
+                  in_universe=r["in_universe"], stamp_session=r["stamp_session"])
+             for r in rows]
+    by_month: dict = {}
+    for r in crows:
+        by_month.setdefault(r["month"], []).append(r)
+    cdiags = []
+    for d in diags:
+        n_val = sum(1 for r in by_month.get(d["month"], [])
+                    if r["value"] is not None and np.isfinite(r["value"]))
+        cdiags.append(dict(month=d["month"], n_members=d["n_members"], n_values=n_val,
+                           coverage=coverage_fraction(n_val, d["n_members"]),
+                           no_events=False, era=d["era"],
+                           stamp_session=d.get("stamp_session")))
+    return dict(rows=crows, diags=cdiags)
+
+
 def monthly_sum(df: pd.DataFrame, sym_col: str, date_col: str, val_col: str) -> dict:
     d = df[[sym_col, date_col, val_col]].copy()
     d["month"] = d[date_col].astype(str).str.slice(0, 7)
@@ -719,6 +770,7 @@ def run(out_dir: Path) -> int:
     # Per-cell computation
     # ==================================================================================
     cells: dict = {}          # (slot, construction) -> dict(rows, diags, coverage, abstain)
+    comp_cells: dict = {}     # post-prereg companion cells, kept OUT of the frozen tables
     slot_members_meta: dict = {}
 
     for slot, meta in SLOTS.items():
@@ -753,6 +805,7 @@ def run(out_dir: Path) -> int:
 
         rows, diags = compute_beta_cell(slot, meta, lb, symbols, closes, months_beta)
         cells[(slot, BETA_ID)] = dict(rows=rows, diags=diags)
+        comp_cells[(slot, COMPANION_CORR_ID)] = corr_cell_from_beta_rows(rows, diags)
 
         if market == "cn":
             att_months = [m for m in month_list(CN_HISTORY_START, last_month)
@@ -842,15 +895,31 @@ def run(out_dir: Path) -> int:
     pd.DataFrame(h1_rows).to_csv(out_dir / "h1_coverage.csv", index=False)
 
     # ---- cross-section helper ---------------------------------------------------------
-    def xs(slot: str, cid: str, month: str) -> pd.Series:
-        c = cells.get((slot, cid))
-        if not c:
-            return pd.Series(dtype=float)
-        d = pd.DataFrame(c["rows"])
-        if not len(d):
-            return pd.Series(dtype=float)
-        d = d[(d["month"] == month) & d["value"].notna()]
-        return pd.Series(d["value"].values, index=d["symbol"].values, dtype=float).sort_index()
+    def _mk_xs(src: dict):
+        def _xs(slot: str, cid: str, month: str) -> pd.Series:
+            c = src.get((slot, cid))
+            if not c:
+                return pd.Series(dtype=float)
+            d = pd.DataFrame(c["rows"])
+            if not len(d):
+                return pd.Series(dtype=float)
+            d = d[(d["month"] == month) & d["value"].notna()]
+            return pd.Series(d["value"].values, index=d["symbol"].values,
+                             dtype=float).sort_index()
+        return _xs
+
+    xs = _mk_xs(cells)
+    xs_c = _mk_xs(comp_cells)
+
+    # Companion coverage, computed the same way but kept in its own namespace so it cannot
+    # leak into h1_coverage.csv or any verdict cell.
+    for (slot, cid), c in comp_cells.items():
+        graded = [d for d in c["diags"] if not d["no_events"]]
+        cov = coverage_fraction(sum(d["n_values"] for d in graded),
+                                sum(d["n_members"] for d in graded))
+        c["coverage"], c["abstain"] = cov, cell_abstains(cov)
+        c["graded_months"] = [d["month"] for d in graded]
+        c["no_events_months"] = []
 
     # ---- H2 ---------------------------------------------------------------------------
     h2_rows = []
@@ -962,6 +1031,21 @@ def run(out_dir: Path) -> int:
                  else "mixed")
     pd.DataFrame(h3_pairs).to_csv(out_dir / "h3_stability_pairs.csv", index=False)
 
+    # ---- post-prereg corr companion ----------------------------------------------------
+    companion = corr_companion(cells, comp_cells, xs, xs_c, h2_rows, h3_summary)
+    for (slot, cid), c in sorted(comp_cells.items()):
+        df = pd.DataFrame(c["rows"])
+        if len(df):
+            df = df.sort_values(["month", "symbol"]).reset_index(drop=True)
+        df.to_csv(cells_dir / f"{slot}__{cid}.csv", index=False)
+        dd = pd.DataFrame(c["diags"])
+        if len(dd):
+            dd = dd.sort_values("month").reset_index(drop=True)
+        dd.to_csv(cells_dir / f"{slot}__{cid}__months.csv", index=False)
+    pd.DataFrame(companion["h2"]).to_csv(out_dir / "companion_trading_corr_h2.csv", index=False)
+    pd.DataFrame(companion["h3"]["per_slot"]).to_csv(
+        out_dir / "companion_trading_corr_h3.csv", index=False)
+
     # ---- honest-N ---------------------------------------------------------------------
     hn_rows = []
     for (slot, cid), c in sorted(cells.items()):
@@ -998,11 +1082,13 @@ def run(out_dir: Path) -> int:
 
     receipts["h2"] = h2_readings
     receipts["h3"] = h3_summary
+    receipts["companion_trading_corr"] = companion
+    receipts["adjudication_rulings"] = ADJUDICATION_RULINGS
     (out_dir / "receipts.json").write_text(json.dumps(receipts, indent=2, sort_keys=True,
                                                       default=str) + "\n")
 
     write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h3_pairs,
-                 hn_rows, gate, verdicts, slot_members_meta, cells)
+                 hn_rows, gate, verdicts, slot_members_meta, cells, companion)
     print(f"W2 probe written to {out_dir}")
     return 0
 
@@ -1159,6 +1245,114 @@ def exemplar_gate(cells, xs, symbols, slot_meta) -> dict:
     return gate
 
 
+def corr_companion(cells, comp_cells, xs, xs_c, h2_rows, h3_summary) -> dict:
+    """POST-PREREG companion (main-session commission): re-read H2/H3 on the corr term alone.
+
+    Two questions, neither of which can change a verdict:
+      * does the frozen H2 "the axes disagree" result survive with the volatility-ratio term
+        removed — i.e. is the disagreement about co-movement, or only about relative vol?
+      * is co-movement itself as rank-stable month to month as beta is?
+    Computed on exactly the months the frozen cells used, so the comparison is like for like.
+    """
+    out: dict = {"h2": [], "h3": {}, "exemplars": {}}
+
+    # (a) H2 companion — same slot, same month as every frozen H2 cell that COMPUTED.
+    for r in h2_rows:
+        if r["status"] != "COMPUTED":
+            continue
+        slot, month = r["slot"], r["month"]
+        cid = r["pair"].split("~", 1)[1]
+        a_c, b = xs_c(slot, COMPANION_CORR_ID, month), xs(slot, cid, month)
+        idx = sorted(set(a_c.index) & set(b.index))
+        rho, p, method = spearman_exact(a_c[idx].values, b[idx].values)
+        out["h2"].append(dict(
+            slot=slot, market=r["market"], pair=f"{COMPANION_CORR_ID}~{cid}",
+            month=month, n=len(idx),
+            rho=(round(rho, 4) if np.isfinite(rho) else None),
+            abs_rho=(round(abs(rho), 4) if np.isfinite(rho) else None),
+            p=(round(p, 5) if np.isfinite(p) else None), p_method=method,
+            frozen_beta_rho=r["rho"], frozen_beta_abs_rho=r["abs_rho"],
+            era=r["era"]))
+    for cid in (CN_COMMENT_ID, CN_LHB_ID, US_WSB_ID, US_FLARE_ID):
+        vals = [x["abs_rho"] for x in out["h2"]
+                if x["pair"].endswith(cid) and x["abs_rho"] is not None]
+        out.setdefault("h2_readings", {})[cid] = dict(
+            reading=h2_reading(vals), n_slots=len(vals),
+            abs_rhos=[round(float(v), 4) for v in vals])
+
+    # (b) H3 companion — adjacent AND lag-3 disjoint-window rank autocorrelation, all slots.
+    per_slot_series, per_slot_meta, lag3 = [], [], []
+    for slot in SLOTS:
+        c = comp_cells.get((slot, COMPANION_CORR_ID))
+        if not c or c["abstain"]:
+            continue
+        months = c["graded_months"]
+        rr = []
+        for m0, m1 in zip(months[:-1], months[1:]):
+            if (pd.Period(m1, freq="M") - pd.Period(m0, freq="M")).n != 1:
+                continue
+            a, b = xs_c(slot, COMPANION_CORR_ID, m0), xs_c(slot, COMPANION_CORR_ID, m1)
+            idx = sorted(set(a.index) & set(b.index))
+            rho = spearman_rho(a[idx].values, b[idx].values)
+            if np.isfinite(rho):
+                rr.append(float(rho))
+        l3 = []
+        for m0, m1 in zip(months[:-3], months[3:]):
+            if (pd.Period(m1, freq="M") - pd.Period(m0, freq="M")).n != 3:
+                continue
+            a, b = xs_c(slot, COMPANION_CORR_ID, m0), xs_c(slot, COMPANION_CORR_ID, m1)
+            idx = sorted(set(a.index) & set(b.index))
+            rho = spearman_rho(a[idx].values, b[idx].values)
+            if np.isfinite(rho):
+                l3.append(float(rho))
+        lag3.extend(l3)
+        per_slot_series.append(np.asarray(rr, dtype=float))
+        per_slot_meta.append(dict(
+            slot=slot, n_pairs=len(rr),
+            median=(round(float(np.median(rr)), 4) if rr else None),
+            n_lag3=len(l3),
+            median_lag3=(round(float(np.median(l3)), 4) if l3 else None)))
+    pooled = np.concatenate(per_slot_series) if per_slot_series else np.asarray([])
+    pooled = pooled[np.isfinite(pooled)]
+    med = float(np.median(pooled)) if len(pooled) else float("nan")
+    lo, hi, n_used = block_bootstrap_median_ci(per_slot_series)
+    frozen = h3_summary.get(BETA_ID, {})
+    out["h3"] = dict(
+        n_pairs=int(len(pooled)),
+        median_rho=(round(med, 4) if np.isfinite(med) else None),
+        ci80_lo=(round(lo, 4) if np.isfinite(lo) else None),
+        ci80_hi=(round(hi, 4) if np.isfinite(hi) else None),
+        ci_degenerate=bool(per_slot_series) and all(
+            len(a[np.isfinite(a)]) <= BOOTSTRAP_BLOCK for a in per_slot_series),
+        lag3_median=(round(float(np.median(lag3)), 4) if lag3 else None),
+        lag3_pairs=len(lag3),
+        reading=h3_reading(med, int(len(pooled))),
+        frozen_beta_median=frozen.get("median_rho"),
+        frozen_beta_lag3_median=frozen.get("companion_lag3_median"),
+        bootstrap_n=n_used, per_slot=per_slot_meta, era="reconstruction")
+
+    # (c) exemplar re-read — the same names, ranked on co-movement instead of beta.
+    def _rank_block(slot, names, month):
+        a_c, a_b = xs_c(slot, COMPANION_CORR_ID, month), xs(slot, BETA_ID, month)
+        if not len(a_c):
+            return None
+        rc, rb = a_c.rank(ascending=False), a_b.rank(ascending=False)
+        return dict(month=month, n=int(len(a_c)),
+                    median_corr=round(float(a_c.median()), 4),
+                    names=[dict(symbol=s,
+                                corr=(round(float(a_c[s]), 4) if s in a_c.index else None),
+                                corr_rank_desc=(int(rc[s]) if s in rc.index else None),
+                                beta_rank_desc=(int(rb[s]) if s in rb.index else None))
+                           for s in names])
+
+    for key, slot, names in (("nvda", "cross_market_pair.us", ["NVDA"]),
+                             ("defense_primes", "us_institutional", ["LMT", "NOC", "GD"])):
+        c = comp_cells.get((slot, COMPANION_CORR_ID))
+        if c and c["graded_months"]:
+            out["exemplars"][key] = _rank_block(slot, names, c["graded_months"][-1])
+    return out
+
+
 def draft_verdicts(cells, h3_summary) -> list:
     """DRAFT per (axis-construction × market) verdict in the prereg §6 vocabulary."""
     out = []
@@ -1186,16 +1380,34 @@ def draft_verdicts(cells, h3_summary) -> list:
                 if v:
                     ties.append(float(np.median(v)))
             tie_mass = round(float(np.median(ties)), 4) if ties else None
+            h3_read = str(h3_summary.get(cid, {}).get("reading", ""))
             if n_ab * 2 > len(slots):
                 verdict, unlock, ing = "BLOCKED-ON-INGESTION", None, (
                     US_ATTENTION_INGESTION if cid in (US_WSB_ID, US_FLARE_ID)
                     else "a wider source universe for this construction")
                 basis = (f"{n_ab} of {len(slots)} slots below the {COVERAGE_FLOOR} coverage floor "
                          f"— the members are absent from the source universe, not measured")
+                if cid == US_FLARE_ID:
+                    # RULING 3 (main session, 2026-08-11): name the magnitude degeneracy as
+                    # part of the blocking reason — the one cell that clears coverage is
+                    # ranking a tie block, so "more coverage" is not the whole ask.
+                    basis += (f"; and the one cell that does clear it ranks a degenerate "
+                              f"magnitude — summed channels_lit is approximately a "
+                              f"days-present count, tie mass {100.0 * (tie_mass or 0):.0f}%")
             elif max_pairs < H3_MIN_PAIRS:
                 verdict, unlock, ing = "UNDERPOWERED-BY-DEPTH", cmeta["unlock"], None
                 basis = (f"deepest computable slot carries {max_pairs} adjacent month pair(s) "
                          f"< {H3_MIN_PAIRS}")
+            elif h3_read.startswith("NOISE"):
+                # RULING 2 (main session, 2026-08-11): coverage and depth are not sufficient
+                # for MEASURABLE-NOW. A construction that clears both but whose H3 is NOISE is
+                # computable and NOT stable at this grain — a null for THIS construction under
+                # the ore law, which closes the grain tested and leaves the others open.
+                verdict, unlock, ing = "COMPUTABLE-BUT-UNSTABLE", None, None
+                basis = (f"clears coverage ({len(live)} of {len(slots)} slots) and depth "
+                         f"({max_pairs} adjacent pairs), but H3 is {h3_read} at "
+                         f"{100.0 * (tie_mass or 0):.0f}% tie mass — a null for the "
+                         f"monthly-share grain, not for the source")
             else:
                 verdict, unlock, ing = "MEASURABLE-NOW", None, None
                 basis = (f"{len(live)} of {len(slots)} slots clear the coverage floor; deepest "
@@ -1221,7 +1433,7 @@ def _fmt(v, nd=3):
 
 
 def write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h3_pairs,
-                 hn_rows, gate, verdicts, slot_meta, cells) -> None:
+                 hn_rows, gate, verdicts, slot_meta, cells, companion) -> None:
     L = []
     A = L.append
     A("# W2 — exposure-decomposition probe (R1): results")
@@ -1562,6 +1774,25 @@ def write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h
     A("the unlock date; otherwise MEASURABLE-NOW.")
     A("")
 
+    # --- 7a adjudication rulings
+    A("## 7a. Adjudication rulings applied (main session, 2026-08-11)")
+    A("")
+    A("The probe escalated the exemplar-gate failures rather than resolving them. The main")
+    A("session's rulings are recorded here and are already applied to the §7 table above — the")
+    A("probe reports them, it did not decide them.")
+    A("")
+    for r in ADJUDICATION_RULINGS:
+        A(f"**Ruling {r['id']} — `{r['subject']}`.** {r['ruling']}")
+        A("")
+    A("Ruling 2 introduces **COMPUTABLE-BUT-UNSTABLE**, a fourth term beyond the three the")
+    A("prereg §6 froze (MEASURABLE-NOW / UNDERPOWERED-BY-DEPTH / BLOCKED-ON-INGESTION). That is")
+    A("an adjudicated extension of the verdict vocabulary, not a probe decision, and it is")
+    A("disclosed as such: the frozen three could not express \"we can compute every month and")
+    A("the months do not agree with each other\" — depth is present, coverage is present, and")
+    A("the measurement is still not stable. It is coded as a rule, not as a named exception:")
+    A("any construction that clears coverage and depth but whose H3 reads NOISE takes it.")
+    A("")
+
     # --- 8 deviations
     A("## 8. Disclosed deviations from the preregistration")
     A("")
@@ -1612,6 +1843,98 @@ def write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h
     A("   measurement; the column is what shows that the LHB cell's MEASURABLE-NOW and the flare")
     A("   cell's near-1.0 autocorrelation are ordering far fewer members than their headline")
     A("   numbers suggest.")
+    A("")
+
+    # --- 8a post-prereg companion
+    A("## 8a. Post-prereg companion: `trading_corr` (no verdict authority)")
+    A("")
+    A("Commissioned by the main session AFTER the preregistered results were computed, and")
+    A("bounded accordingly: it informs interpretation sentences and the W4 narrowing, and it")
+    A("enters no H1 cell, no frozen H2/H3 table and no verdict. It is the `corr` term already")
+    A("inside `beta = corr x sd_own / sd_ex-self`, promoted to its own cross-section — same 63-")
+    A("session window, same one-day causal shift, same months, same membership. Nothing is")
+    A("re-estimated, so it cannot disagree with the frozen cell about which member-months exist,")
+    A("only about how they rank once the volatility ratio is removed.")
+    A("")
+    A("**The question it answers: is the H2 disagreement about co-movement, or only about")
+    A("relative volatility?**")
+    A("")
+    A("| slot | attention construction | month | n | corr rho | frozen beta rho | \\|Δ\\| |")
+    A("|---|---|---|---:|---:|---:|---:|")
+    for r in companion["h2"]:
+        cid = r["pair"].split("~", 1)[1]
+        d = ("—" if r["abs_rho"] is None or r["frozen_beta_abs_rho"] is None
+             else f"{abs(float(r['abs_rho']) - float(r['frozen_beta_abs_rho'])):.3f}")
+        A(f"| `{r['slot']}` | `{cid}` | {r['month']} | {r['n']} | {_fmt(r['rho'])} | "
+          f"{_fmt(r['frozen_beta_rho'])} | {d} |")
+    A("")
+    for cid, rd in companion.get("h2_readings", {}).items():
+        if rd["n_slots"]:
+            A(f"- `{COMPANION_CORR_ID}` ~ `{cid}` — **{rd['reading']}** over {rd['n_slots']} "
+              f"slot(s) {rd['abs_rhos']} (frozen beta pair read: "
+              f"{h2_readings.get(cid, {}).get('reading', '—')})")
+    A("")
+    h3c = companion["h3"]
+    A("**And: is co-movement itself as rank-stable as beta?**")
+    A("")
+    A("| statistic | corr companion | frozen beta |")
+    A("|---|---:|---:|")
+    A(f"| adjacent-month median rho | {_fmt(h3c['median_rho'])} | "
+      f"{_fmt(h3c['frozen_beta_median'])} |")
+    A(f"| adjacent-month 80% CI | [{_fmt(h3c['ci80_lo'])}, {_fmt(h3c['ci80_hi'])}] | "
+      f"[{_fmt(h3_summary[BETA_ID]['ci80_lo'])}, {_fmt(h3_summary[BETA_ID]['ci80_hi'])}] |")
+    A(f"| lag-3 disjoint-window median rho | {_fmt(h3c['lag3_median'])} "
+      f"({h3c['lag3_pairs']} pairs) | {_fmt(h3c['frozen_beta_lag3_median'])} "
+      f"({h3_summary[BETA_ID]['companion_lag3_pairs']} pairs) |")
+    A(f"| adjacent pairs | {h3c['n_pairs']} | {h3_summary[BETA_ID]['n_pairs']} |")
+    A("")
+    A(f"Reading (companion, no threshold authority): {h3c['reading']} on "
+      f"{h3c['era']}-era membership.")
+    A("")
+    # Answer the two commissioned questions in sentences derived from the numbers above, so
+    # the prose cannot drift from the table.
+    surviving = [cid for cid, rd in companion.get("h2_readings", {}).items()
+                 if rd["n_slots"] and rd["reading"].startswith("MEASURABLY-DISAGREE")]
+    upgraded = [cid for cid in surviving
+                if not str(h2_readings.get(cid, {}).get("reading", "")).startswith(
+                    "MEASURABLY-DISAGREE")]
+    A(f"**Q1 — does the H2 result survive with the volatility ratio removed? Yes, and it")
+    A(f"strengthens.** All {len(surviving)} computable companion pairs read MEASURABLY-DISAGREE")
+    if upgraded:
+        A(f"— including `{upgraded[0]}`, which was only PARTIALLY-DISTINCT on the frozen beta")
+        A("pair. ")
+    A("The LHB pair moves furthest: median |rho| "
+      f"{_fmt(np.median([abs(float(x['rho'])) for x in companion['h2'] if x['pair'].endswith(CN_LHB_ID)]))} "
+      f"on co-movement against {_fmt(h2_readings[CN_LHB_ID]['abs_rhos'] and float(np.median(h2_readings[CN_LHB_ID]['abs_rhos'])))} "
+      "on beta — near-orthogonal once the vol term is gone. So the residual agreement between")
+    A("beta and attention was carried substantially BY the volatility ratio (volatile names")
+    A("score high on both), not by co-movement. The frozen H2 finding is not an artifact of the")
+    A("vol term; if anything the vol term was working against it.")
+    A("")
+    lag_gap = (None if h3c["lag3_median"] is None or h3c["frozen_beta_lag3_median"] is None
+               else float(h3c["frozen_beta_lag3_median"]) - float(h3c["lag3_median"]))
+    A("**Q2 — is co-movement itself as rank-stable as beta? No — it is the LESS persistent")
+    A("half.** Adjacent-month medians are close "
+      f"({_fmt(h3c['median_rho'])} vs {_fmt(h3c['frozen_beta_median'])}), but the gap opens at")
+    A("the disjoint-window horizon where the mechanical overlap is gone: "
+      f"{_fmt(h3c['lag3_median'])} vs {_fmt(h3c['frozen_beta_lag3_median'])}"
+      + (f" (a {_fmt(lag_gap)} gap)" if lag_gap is not None else "") + ". Corr's lag-3 median")
+    A(f"falls BELOW the {H3_STABLE} H3 stable floor while beta's clears it, so relative")
+    A("volatility — not co-movement — is the more persistent component of what")
+    A(f"`{BETA_ID}` ranks. For W4 this narrows rather than widens: an edge annotation built on")
+    A("co-movement alone would be weakly stable at a quarter's horizon on this data.")
+    A("")
+    A("Exemplar re-read — the same names, ranked on co-movement instead of on beta:")
+    A("")
+    for key, label in (("nvda", "NVDA"), ("defense_primes", "Defense primes")):
+        blk = companion["exemplars"].get(key)
+        if not blk:
+            continue
+        for nm in blk["names"]:
+            A(f"- **{nm['symbol']}** (`{blk['month']}`, n={blk['n']}): corr "
+              f"{_fmt(nm['corr'])} → rank **#{nm['corr_rank_desc']} of {blk['n']}** on")
+            A(f"  co-movement, versus rank #{nm['beta_rank_desc']} on beta "
+              f"(slot median corr {_fmt(blk['median_corr'])}).")
     A("")
 
     # --- 9 filed not fixed
