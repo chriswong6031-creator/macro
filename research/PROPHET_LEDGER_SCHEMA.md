@@ -181,6 +181,17 @@ on their own terms, and every candidate they refuse at execution time is RECORDE
 the disclosure rather than overridden in code (the five chronology-refused candidates
 from the R6 audit stay refused).
 
+**Current-engine enrichment contract.** “One repaired input” describes the
+population-blocking session flag, not every byte later consumed while building a
+plan. The operator explicitly ordered the current engine. Its post-selection stage,
+price-history, option, earnings, dealer-positioning, washout, leader and procurement
+contexts can differ from the event host while leaving the exact 30-identity population
+unchanged. The producer therefore refuses a dirty or sparse execution checkout,
+records the full executing SHA (pinning all tracked enrichments), resolves ThetaData
+fail-closed, and receipts each local-only source state/content fingerprint. The
+disclosure calls these rows a current-engine enrichment replay; it does not claim an
+event-time byte-for-byte reconstruction.
+
 **How a reader tells a replayed row from a live one.** Every minted plan carries
 `origination_mode: "outage_backfill_2026_08_09"` and `backfill_executed_at` (the real
 wall date of the write), alongside its normal era stamps — `selection_era` is

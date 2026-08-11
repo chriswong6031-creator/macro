@@ -17,11 +17,18 @@ This document is the design of record for the backfill PR. §0 gates are the
    `panel.mixed_vintage` flag). No other date is minted. 2026-08-03→08-06 are
    NOT reconstructed (see §2 refusal). 2026-08-10 forward belongs to the live
    nightly.
-2. **Vintage-pinned inputs, receipted.** The replay reads the genuine
+2. **Pinned population and receipted current-engine inputs.** The replay reads the genuine
    `as_of=2026-08-07` board (post-heal staleness block), plus the event-time
    plans baseline, each pinned by commit SHA. A separately pinned current
    plans baseline supplies collision authority. All three SHAs are recorded in
-   the backfill receipt; no input is "whatever is on disk".
+   the backfill receipt, together with the immutable refusal-checkpoint SHA.
+   The operator ordered the **current** engine, whose post-selection enrichments
+   also read the executing checkout and local/private stores. Therefore the run
+   must start from a clean, complete checkout at a full executing SHA: tracked
+   enrichment inputs are pinned by that SHA, and every local-only source the
+   engine can read is receipted with its resolved state and content fingerprint.
+   This is a current-engine replay over an exact event-time population, not a
+   claim that every enrichment byte existed at the incident vintage.
 3. **Provenance on every minted row.** Each backfilled plan carries
    `origination_mode: "outage_backfill_2026_08_09"` plus
    `backfill_executed_at` (real wall date) alongside the normal era stamps
@@ -79,8 +86,11 @@ This document is the design of record for the backfill PR. §0 gates are the
   `intake.legacy_shadow.rows_in_part=30`. (The similarly dated
   `data/prophet/origination_receipts/31292839484-*.json` belongs to an earlier
   workflow-dispatch run that originated two plans; it is NOT this refusal
-  receipt.) The counterfactual "fix present" flips exactly one poisoned input;
-  everything else is the receipted live path.
+  receipt.) The session-clamp repair flips the one proven **population-blocking**
+  input. The selected identities are fenced to that exact receipt, while plan
+  enrichments intentionally come from the operator-ordered current engine and
+  are pinned/receipted at execution. They are not represented as event-time
+  byte-for-byte inputs.
 - The board it read is still on main (`site/factordata/us_standouts.json`,
   `as_of=2026-08-07`), and the 2026-08-10 closing-bell render re-derived its
   staleness block through the healed `_panel_price_reach`:
@@ -128,7 +138,8 @@ the second of which is honestly replayable.
 New one-off script `scripts/backfill_prophet_outage.py` (era-stamped, refuses
 to run twice — idempotence via the disclosure artifact):
 
-1. Inputs (all pinned, passed as SHAs on the CLI, recorded in the receipt):
+1. Population/collision inputs (all pinned, passed as SHAs on the CLI, recorded
+   in the receipt):
    - `--board-commit <sha>`: commit on main whose
      `site/factordata/us_standouts.json` is the healed 08-07 board.
    - `--event-baseline-commit <sha>`: the plan set at the scheduled event's
@@ -136,6 +147,9 @@ to run twice — idempotence via the disclosure artifact):
      replay can reproduce the receipted 30-row refusal population.
    - `--collision-baseline-commit <sha>`: main AFTER the 2026-08-10 nightly
      checkpoint (the plans originated live since the event).
+   - `--refusal-checkpoint-commit <sha>`: durable run `31340764145` checkpoint
+     whose exact 30 validation-failure identities are the immutable population
+     fence.
 2. Extract the pinned board to a temp path; run the intake through
    `originate_plans(asof="2026-08-09", standouts_path=<pinned board>, ...)`
    — via a thin wrapper, NOT by editing build_prophet's constants. Its
@@ -152,10 +166,17 @@ to run twice — idempotence via the disclosure artifact):
 4. NEVER write: `data/prophet/ledger.jsonl` (nightly advances it),
    `site/prophet/index.json`/`states/` (nightly renders them),
    `site/factordata/*` (not ours).
-5. Commit artifacts + script + tests + docs in ONE PR. Execute the script
+5. Before origination, require a complete checkout with no tracked changes and
+   record its full HEAD. That commit pins tracked stage/regime, GEX, washout,
+   Government Revenue and other enrichment artifacts. Resolve the real
+   ThetaData store fail-closed, and receipt its exact per-ticker year files;
+   receipt the local EquityDesk earnings-call source as available or unavailable,
+   with fingerprints where present. A warning-only missing source or a sparse/
+   dirty checkout is not executable.
+6. Commit artifacts + script + tests + docs in ONE PR. Execute the script
    IN the PR branch (artifacts are committed outputs, house pattern), so CI
    sees the final state and the disclosure test runs against real rows.
-6. After merge + next nightly: verify index.json carries the backfilled
+7. After merge + next nightly: verify index.json carries the backfilled
    plans with states, board renders them with the disclosure chip, ledger
    begins advancing them. Then update the masterplan §6.9 execution record.
 
