@@ -25,6 +25,7 @@ import re
 import secrets
 import stat
 import subprocess
+import sys
 from copy import deepcopy
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
@@ -32,7 +33,10 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
-from scripts import build_prophet_marks as mark_chain
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts import build_prophet_marks as mark_chain  # noqa: E402
 
 
 log = logging.getLogger(__name__)
@@ -45,7 +49,7 @@ ADVANCE_BOUNDARY_SCHEMA = "prophet.option_shadow_lifecycle_advance_boundary/v1"
 LEDGER_SNAPSHOT_RECEIPT_SCHEMA = "prophet.canonical_ledger_snapshot_receipt/v1"
 EVENT_PREFIX = "events"
 
-_REPO = Path(__file__).resolve().parents[1]
+_REPO = _ROOT
 DEFAULT_STATE_ROOT = (
     Path.home() / ".mastermind_private" / "prophet_option_shadow_lifecycle_v1"
 )
