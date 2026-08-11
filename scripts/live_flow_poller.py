@@ -98,6 +98,15 @@ STATE_DIR = "live_flow_state"
 EVENT_STAGE_SCHEMA = "live_flow.event_stage/v1"
 EVENT_STAGE_RETAIN_SESSIONS = 64
 
+# Prospective Market Memory capture is opt-in and private. The poller queues a
+# request only after both owner receipts are fsynced. Historical/manual runs
+# never initialize this boundary.
+OPTIONS_CONTEXT_CAPTURE_ENV = "MARKET_MEMORY_OPTIONS_CONTEXT_CAPTURE"
+OPTIONS_CONTEXT_CAPTURE_ROOT_ENV = "MARKET_MEMORY_OPTIONS_CONTEXT_OUTBOX"
+OPTIONS_CONTEXT_CAPTURE_TARGET_ENV = "MARKET_MEMORY_OPTIONS_CONTEXT_SSH_TARGET"
+OPTIONS_CONTEXT_CAPTURE_KEY_ENV = "MARKET_MEMORY_OPTIONS_CONTEXT_SSH_KEY"
+_OPTIONS_CONTEXT_DISPATCHER = None
+
 # Top tickers to publish per cycle (by day gross premium)
 TOP_TICKERS_N = 40
 
@@ -308,6 +317,65 @@ def _out_dir() -> Path:
 def _state_dir() -> Path:
     p = config.data_dir() / STATE_DIR
     return _ensure_directory_durable(p)
+
+
+def _initialize_options_context_dispatcher(
+    session_date: str, *, historical: bool,
+):
+    """Arm the private owner-time outbox, never a backdated run."""
+
+    if os.environ.get(OPTIONS_CONTEXT_CAPTURE_ENV, "0").strip() != "1":
+        return None
+    if historical:
+        log.warning(
+            "poller: option-context capture disabled for a historical --date run"
+        )
+        return None
+    try:
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        root_text = os.environ.get(OPTIONS_CONTEXT_CAPTURE_ROOT_ENV, "").strip()
+        root = (
+            Path(root_text)
+            if root_text
+            else _state_dir() / "market_memory_options_context"
+        )
+        target = os.environ.get(OPTIONS_CONTEXT_CAPTURE_TARGET_ENV, "").strip()
+        key = os.environ.get(OPTIONS_CONTEXT_CAPTURE_KEY_ENV, "").strip()
+        if not target or not key:
+            raise capture.OptionsEpisodeContextCaptureError(
+                "capture transport target/key path is not configured"
+            )
+        return capture.initialize_dispatcher(
+            root,
+            session_date=session_date,
+            config_path=_ROOT / "config" / "market_memory_canary.v1.json",
+            ssh_target=target,
+            ssh_key=key,
+        )
+    except Exception as exc:  # noqa: BLE001 - evidence must not stop live flow
+        log.warning(
+            "poller: prospective option-context capture is abstaining (%s)", exc,
+        )
+        return None
+
+
+def _flush_options_context_outbox() -> None:
+    """Bounded fail-soft transport; failed evidence remains durable."""
+
+    if _OPTIONS_CONTEXT_DISPATCHER is None:
+        return
+    try:
+        result = _OPTIONS_CONTEXT_DISPATCHER.flush_pending()
+        if result.get("captured") or result.get("expired"):
+            log.info(
+                "poller: option-context outbox captured=%d expired=%d pending=%d",
+                result.get("captured", 0),
+                result.get("expired", 0),
+                result.get("pending", 0),
+            )
+    except Exception as exc:  # noqa: BLE001 - evidence must not stop live flow
+        log.warning("poller: option-context outbox transport deferred (%s)", exc)
 
 
 def _utc_now_iso(now_fn=None) -> str:
@@ -694,7 +762,9 @@ def _stage_raw_events(
                         needs_directory_fsync = False
                     decisions[event_id] = durable_event
                 stamp = available.get(event_id)
-                if stamp is None:
+                new_availability = stamp is None
+                prepared_context_request = None
+                if new_availability:
                     stamp = _utc_now_iso(clock)
                     stamp_dt = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
                     decision_dt = datetime.fromisoformat(
@@ -708,6 +778,34 @@ def _stage_raw_events(
                         raise RuntimeError(
                             f"durable availability leaves session date for {event_id}"
                         )
+                    enriched_event = dict(durable_event)
+                    enriched_event["available_at"] = stamp
+                    enriched_event["published_at"] = None
+                    enriched_event["source_snapshot_asof"] = stamp
+                    enriched_event["anchor_strategy"] = "durable_available_at"
+                    # Observe missingness at the newly sampled cutoff, after the
+                    # decision fsync but before any later clock can be confused
+                    # with owner-time evidence. The private precommit is not
+                    # transport-eligible; it only closes the crash seam until
+                    # the availability receipt below becomes durable.
+                    if _OPTIONS_CONTEXT_DISPATCHER is not None:
+                        try:
+                            prepared_context_request = (
+                                _OPTIONS_CONTEXT_DISPATCHER.prepare(
+                                    owner_event=enriched_event,
+                                    session_date=session_date,
+                                )
+                            )
+                            _OPTIONS_CONTEXT_DISPATCHER.stage(
+                                prepared_context_request
+                            )
+                        except Exception as exc:  # noqa: BLE001 - context abstains
+                            prepared_context_request = None
+                            log.warning(
+                                "poller: option-context observation abstained for %s (%s)",
+                                event_id,
+                                exc,
+                            )
                     receipt = {
                         "schema": EVENT_STAGE_SCHEMA,
                         "kind": "availability",
@@ -720,11 +818,38 @@ def _stage_raw_events(
                     fh.flush()
                     os.fsync(fh.fileno())
                     available[event_id] = stamp
-                enriched_event = dict(durable_event)
-                enriched_event["available_at"] = stamp
-                enriched_event["published_at"] = None
-                enriched_event["source_snapshot_asof"] = stamp
-                enriched_event["anchor_strategy"] = "durable_available_at"
+                    if prepared_context_request is not None:
+                        try:
+                            _OPTIONS_CONTEXT_DISPATCHER.commit(
+                                prepared_context_request
+                            )
+                        except Exception as exc:  # noqa: BLE001 - context abstains
+                            log.warning(
+                                "poller: option-context request abstained for %s (%s)",
+                                event_id,
+                                exc,
+                            )
+                else:
+                    enriched_event = dict(durable_event)
+                    enriched_event["available_at"] = stamp
+                    enriched_event["published_at"] = None
+                    enriched_event["source_snapshot_asof"] = stamp
+                    enriched_event["anchor_strategy"] = "durable_available_at"
+                    if _OPTIONS_CONTEXT_DISPATCHER is not None:
+                        try:
+                            _OPTIONS_CONTEXT_DISPATCHER.recover(
+                                owner_event=enriched_event,
+                                session_date=session_date,
+                            )
+                        except Exception as exc:  # noqa: BLE001 - context abstains
+                            log.warning(
+                                "poller: option-context precommit recovery abstained "
+                                "for %s (%s)",
+                                event_id,
+                                exc,
+                            )
+                # An already-available replay cannot manufacture a request. Only
+                # exact bytes precommitted at the first cutoff may retry transport.
                 enriched.append(enriched_event)
             # Reconfirm the complete visible prefix at the transaction boundary,
             # even when every receipt came from a prior attempt.  A failed fsync
@@ -2538,6 +2663,8 @@ def _within_rth() -> bool:
 
 
 def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
+    global _OPTIONS_CONTEXT_DISPATCHER
+
     parser = argparse.ArgumentParser(description="Live options-flow poller")
     parser.add_argument(
         "--once", action="store_true",
@@ -2570,6 +2697,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
 
     session_date = _session_date(args.date)
     log.info("poller: session_date=%s once=%s", session_date, args.once)
+    _OPTIONS_CONTEXT_DISPATCHER = _initialize_options_context_dispatcher(
+        session_date, historical=bool(args.date),
+    )
 
     # Recover the transaction seam before any network dependency or RTH exit.
     # A same-session restart can durably stage the exact pending decisions without
@@ -2596,6 +2726,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 event_stager=_stage_raw_events,
                 cutoff_ts=cutoff,
             )
+        _flush_options_context_outbox()
     except Exception as exc:  # noqa: BLE001
         log.error("poller: startup learning-WAL recovery failed: %s", exc, exc_info=True)
         return 1
@@ -2785,6 +2916,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 event_stager=_stage_raw_events,
                 cutoff_ts=cutoff,
             )
+            _flush_options_context_outbox()
             # The cumulative display envelope is published only after durable
             # availability receipts exist for every newly admitted learning event.
             committed_asof = _utc_now_iso()
