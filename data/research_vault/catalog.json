@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-11T21:27:10.315476+00:00",
-  "count": 947,
+  "generated_at": "2026-08-11T21:51:27.761036+00:00",
+  "count": 949,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -140,6 +140,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bco5esaj1dl-bd2ff1",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T22:19:08Z",
+      "summary_points": [
+        "**Strong US earnings momentum**: 87% of S&P 500 companies beat Q2 earnings, median Russell 3000 growth at 15% (strongest since 2021), sustaining risk-on trade amid Fed rate moderation.",
+        "**Fed Policy Outlook**: July CPI key data; base case holds rates unchanged this year as labor market easing (payroll miss, revisions) outweighs tightening fears, supporting short/medium bonds.",
+        "**Geopolitical & Gold Dynamics**: Iran negotiations temper flare-up risk, but Strait of Hormuz delays threaten oil volatility; gold rallies 7.4% weekly (strongest since Jan) on easing rate expectations, targeting $5,000/oz by 2027.",
+        "**US Treasury yields falling**: 10Y/2Y yields down 1/5 basis points (1D/5D), signaling rate cut expectations, pressuring bonds and equities."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-diubsw9r87b-7ea4c2",
       "title": "Transformational Innovation Opportunities (TRIO)",
       "institution": "UBS",
@@ -180,6 +200,24 @@
       "tickers": [],
       "top_pick": true,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-knyv6slrn7p-a37db9",
+      "title": "RBC UK & EUROPEAN RESEARCH AT A GLANCE",
+      "institution": "RBC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T15:01:34Z",
+      "summary_points": [
+        "**Amrize Margins Deterioration**: Downgrade to Underperform; margins disappoint despite volume beats, EPS/EBITDA estimates cut 12-15% (FY26E-FY28E), missed Q2 guidance vs peers (CRH, MLM, VMC beat) - **Siemens Healthineers Earnings Pressure**: Guidance downgrades driving model cuts, signaling critical earnings risk despite prior belief; US business sale risk ($280m erosion) impacts valuation - **Chemring Structural Catalyst**: Upgrade to Outperform; NATO-qualified military explosives supplier with Energistics growth, depleted missile stockpiles, pricing tailwinds, structural scarcity value (PT $580) - **Kingspan Undervaluation**: EBITDA estimates up 6-8% (FY26-FY27), valuation 15% below 10yr avg (14.2x), 2% below subsector (12.3x); organic growth + EPS outperformance, November CMD/M&A catalyst (PT EUR122) - **WuXi AppTec Geopolitical Relief**: D.C.",
+        "court suspends 1260H designation (DoD factual error), H1 2026 revenue +57% YoY, FY guidance raised 35-39%; anti-China legislative direction unchanged but BIOSECURE delays structural supply chain risk"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
