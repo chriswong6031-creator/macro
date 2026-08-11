@@ -230,12 +230,13 @@ rows mix 64% `quality=block` markers. Recall spine = the RELAXED washout-cross f
 strict-ordered form covers only 25.0% (below the dot's 29.2%) — disclosed, both printed. Dot
 = anticipation chip, not sole gate. Zero-bound = proximity, not durability. §8 discriminator
 ledger: headline features are largely STOP-WIDTH ARITHMETIC (risk-equalized labels flip or
-null %K/RS/1D-level); the load-bearing split is PRE-vs-POST-trough firing (stop-A survival
-~8–11% vs ~77–84%); repeat-fire "filter" RETRACTED as a look-ahead artifact (PIT-only ≈
-null). STLD receipt: dot knowable 07-14 @233.35 (+7.9% off 216.36) vs BUY 08-07 @262.45
+null %K/RS/1D-level); the load-bearing split is PRE-vs-POST-trough firing — C0-take fires
+pre-trough only 5.2% vs early lanes' 35–42%, post-trough survival 88.5% (take) vs 77–79%
+(early), so the mix carries most of the cost with a ~10pp per-fire residual; repeat-fire
+"filter" RETRACTED as a look-ahead artifact (PIT-only ≈ null). STLD receipt: dot knowable 07-14 @233.35 (+7.9% off 216.36) vs BUY 08-07 @262.45
 (+21.3%). Store `early_markers` are bucket-OPEN-stamped (3,756/3,760) — §6.7 defect family.
 (a) structure stops: 34.9% of 12,940 confirms land within ±2 sessions of the local low vs a
-15.9% random-session null (2.2× chance; STLD 05-19 gap 0, +23% fwd10) — the pinned
+15.7% random-session null (2.2× chance; STLD 05-19 gap 0, +23% fwd10) — the pinned
 histogram-rising disarm is NOT supported as constructed (0.9% cohort, near-lows LESS, CI
 clean); fix direction = post-trough-evidence features + a fresh curvature-form charter, and
 the charting-app grid-phasing defect (stop events are leading-history-dependent, R4.hl_phase)

@@ -3,15 +3,15 @@
  "charter": "research/prophet_us_audit/EARLY_ADMISSION_BAKEOFF_2026-08-11.md",
  "tier": "measurement/display \u2014 no gate, rank, veto or engine change ships from this",
  "run_metadata": {
-  "run_utc": "2026-08-11T12:14:44+00:00",
-  "runtime_seconds": 63.2,
+  "run_utc": "2026-08-11T12:36:43+00:00",
+  "runtime_seconds": 117.1,
   "argv": []
  },
  "provenance": {
-  "repo_sha": "77241997ccf48f4577caee34fd4bc2da6865cbd3",
+  "repo_sha": "ef43e77997659ace2534232c015e96179d0f3fba",
   "signals_store_dir": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/stoch-rsi-macd-confluence-2959db/site/signals",
   "signals_store_files": 241,
-  "signals_store_origin_main_sha": "80891bb5331ce72553ed617219b81a6ed064d00e",
+  "signals_store_origin_main_sha": "45dae5dba0a252ceaef05a8ab8c17decb73d99d8",
   "signals_store_last_commit_touching_it": "ba0bed16a36aa5a868e6fcdaaf207264e3356229",
   "signals_store_asof_dates": [
    "2026-07-17",
@@ -348,7 +348,7 @@
    "rows": [
     [
      "repo SHA",
-     "77241997ccf48f4577caee34fd4bc2da6865cbd3"
+     "ef43e77997659ace2534232c015e96179d0f3fba"
     ],
     [
      "signals store",
@@ -3512,7 +3512,7 @@
      5
     ]
    ],
-   "notes": "stop A's distance from the entry IS entry_vs_low, so any feature whose spread collapses under a distance-independent stop, or within an entry_vs_low quintile, was re-measuring stop geometry"
+   "notes": "stop A's distance from the entry IS entry_vs_low, so any feature whose spread collapses under a distance-independent stop, or within an entry_vs_low quintile, was re-measuring stop geometry. NOTE: these relabels swap the STOP only \u2014 the false-bounce leg stays P_low-anchored, so the equalization is PARTIAL by construction; dropping that leg too (stop-only, fixed -8%) moves f_k_cross to +2.25pp on this lane, i.e. the residual negative spread in the column below is the false-bounce leg, not the stop."
   },
   "R9d.C1": {
    "title": "\u00a78 spreads under RISK-EQUALIZED stops \u2014 C1",
@@ -3608,7 +3608,7 @@
      5
     ]
    ],
-   "notes": "stop A's distance from the entry IS entry_vs_low, so any feature whose spread collapses under a distance-independent stop, or within an entry_vs_low quintile, was re-measuring stop geometry"
+   "notes": "stop A's distance from the entry IS entry_vs_low, so any feature whose spread collapses under a distance-independent stop, or within an entry_vs_low quintile, was re-measuring stop geometry. NOTE: these relabels swap the STOP only \u2014 the false-bounce leg stays P_low-anchored, so the equalization is PARTIAL by construction; dropping that leg too (stop-only, fixed -8%) moves f_k_cross to +1.67pp on this lane, i.e. the residual negative spread in the column below is the false-bounce leg, not the stop."
   },
   "R9e": {
    "title": "Mechanical hold-42 R-multiple expectancy (R = close - stop A; -1R when stop A is touched first)",
@@ -3832,7 +3832,7 @@
    ],
    "rows": [
     [
-     "C0",
+     "C0 all",
      7859,
      240,
      8.88,
@@ -3840,6 +3840,16 @@
      6.51,
      0.10742766260096315,
      2.37
+    ],
+    [
+     "C0 quality=take",
+     2811,
+     240,
+     7.47,
+     0.10328232872213072,
+     6.83,
+     0.10623105543207201,
+     0.64
     ],
     [
      "C1",
@@ -3920,7 +3930,7 @@
    ],
    "rows": [
     [
-     "C0",
+     "C0 all",
      7859,
      240,
      14.45,
@@ -3929,6 +3939,18 @@
      1136,
      6723,
      65.58,
+     0.0
+    ],
+    [
+     "C0 quality=take",
+     2811,
+     240,
+     5.16,
+     6.99,
+     88.46,
+     145,
+     2666,
+     59.31,
      0.0
     ],
     [
@@ -4240,7 +4262,7 @@
     ],
     [
      "NEM C0 2026-07-27 entry_vs_trough (two-sided)",
-     null
+     "0.0532 (provisional: two-sided window open until +15 sessions of data exist; 10 of 15 available, trough so far 88.75 on 2026-07-17)"
     ],
     [
      "NEM 2026-07-27 C0 marker quality",

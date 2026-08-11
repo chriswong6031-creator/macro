@@ -1170,6 +1170,19 @@ R9_METRIC_COLS = ["subset", "episodes", "names", "near_low%", "entry_vs_low", "t
                   "fwd42", "ex21", "ex42", "near_low_open%"]
 
 
+def r9_lane_rows(ep: pd.DataFrame) -> list[tuple[str, pd.DataFrame]]:
+    """The per-lane row set for the §R9 lane tables.
+
+    C0 is split: the pooled `C0 all` row is what R2b reports, but the shipped buy filter
+    REFUSES `block`, so `C0 quality=take` is the row the product actually surfaces and the
+    only fair comparator for a candidate lane."""
+    c0 = ep[ep["construction"] == "C0"]
+    rows = [("C0 all", c0), ("C0 quality=take", c0[c0["quality"] == "take"])]
+    rows += [(c, ep[ep["construction"] == c]) for c in CONSTRUCTIONS if c != "C0"]
+    rows += [("C1L", ep[ep["construction"] == "C1L"])]
+    return rows
+
+
 def r9_metric_row(label: str, d: pd.DataFrame) -> list:
     """One pooled R2b-shaped metric row, computed from the frozen episode plane."""
     if d.empty:
@@ -1367,6 +1380,15 @@ def run_redteam(ep_path: Path, nds: dict, raw_fires: dict, panel: list, store: d
                  ("f_zero_bound", "b"), ("entry_vs_low", "t")]
     for lane in ("C2r", "C1"):
         d = ep[ep["construction"] == lane]
+        # The alternative labels swap the STOP but keep the false-bounce leg, which is still
+        # anchored on P_low — so "risk-equalized" is partial by construction. Dropping that
+        # leg entirely (stop-only) is measured here so the residual can be cited, not guessed.
+        sa = d["survive_fix8"]
+        known = sa.notna()
+        stop_only = pd.Series(np.where(known & ~sa.fillna(False).astype(bool), "false_start",
+                                       np.where(known & sa.fillna(False).astype(bool),
+                                                "durable", "excluded")), index=d.index)
+        so_sp, _ = spread_under(d, "f_k_cross", "t", stop_only)
         td = Table(f"R9d.{lane}", f"§8 spreads under RISK-EQUALIZED stops — {lane}",
                    ["feature", "graded n (shipped)", "spread pp shipped",
                     "spread pp fixed -8%", "spread pp entry-2ATR", "spread pp entry-3ATR",
@@ -1374,7 +1396,13 @@ def run_redteam(ep_path: Path, nds: dict, raw_fires: dict, panel: list, store: d
                     "quintiles used"],
                    "stop A's distance from the entry IS entry_vs_low, so any feature whose "
                    "spread collapses under a distance-independent stop, or within an "
-                   "entry_vs_low quintile, was re-measuring stop geometry")
+                   "entry_vs_low quintile, was re-measuring stop geometry. NOTE: these "
+                   "relabels swap the STOP only — the false-bounce leg stays P_low-anchored, "
+                   "so the equalization is PARTIAL by construction; dropping that leg too "
+                   "(stop-only, fixed -8%) moves f_k_cross to "
+                   f"{'-' if so_sp is None else format(100 * so_sp, '+.2f')}pp on this lane, "
+                   "i.e. the residual negative spread in the column below is the "
+                   "false-bounce leg, not the stop.")
         for key, kind in r9d_feats:
             base_lab = label_episodes(d)["label"]
             sp, n = spread_under(d, key, kind, base_lab)
@@ -1508,14 +1536,14 @@ def run_redteam(ep_path: Path, nds: dict, raw_fires: dict, panel: list, store: d
                 "median entry_vs_trough", "near-low gap pp"],
                "the backward column is what a live surface can know; the trough column is "
                "the hindsight lens the operator's chart eye actually applies")
-    for c in list(CONSTRUCTIONS) + ["C1L"]:
-        d = ep[(ep["construction"] == c) & ep["entry_vs_trough"].notna()]
+    for lab, lane in r9_lane_rows(ep):
+        d = lane[lane["entry_vs_trough"].notna()]
         if d.empty:
-            th.add(c, 0, 0, *[None] * 5)
+            th.add(lab, 0, 0, *[None] * 5)
             continue
         nb = rate(d["near_low"].tolist())
         nt = rate(d["near_low_trough"].tolist())
-        th.add(c, len(d), int(d["ticker"].nunique()), pct(nb),
+        th.add(lab, len(d), int(d["ticker"].nunique()), pct(nb),
                med(d["entry_vs_low"].tolist()), pct(nt),
                med(d["entry_vs_trough"].tolist()),
                pct(None if nb is None or nt is None else nb - nt))
@@ -1534,13 +1562,13 @@ def run_redteam(ep_path: Path, nds: dict, raw_fires: dict, panel: list, store: d
                "test cannot fire. `false_bounce` is therefore very nearly a restatement of "
                "`td_to_trough < 0`, and every §8 feature that separates false starts is to "
                "that extent separating pre-trough fires from post-trough ones.")
-    for c in list(CONSTRUCTIONS) + ["C1L"]:
-        d = ep[(ep["construction"] == c) & ep["td_to_trough"].notna()]
+    for lab, lane in r9_lane_rows(ep):
+        d = lane[lane["td_to_trough"].notna()]
         if d.empty:
-            ti.add(c, 0, 0, *[None] * 7)
+            ti.add(lab, 0, 0, *[None] * 7)
             continue
         pre, post = d[d["td_to_trough"] < 0], d[d["td_to_trough"] >= 0]
-        ti.add(c, len(d), int(d["ticker"].nunique()), pct(len(pre) / len(d)),
+        ti.add(lab, len(d), int(d["ticker"].nunique()), pct(len(pre) / len(d)),
                pct(rate(pre["survive_a"].tolist())), pct(rate(post["survive_a"].tolist())),
                len(pre), len(post), pct(rate(pre["false_bounce"].tolist())),
                pct(rate(post["false_bounce"].tolist())))
@@ -1611,7 +1639,20 @@ def run_redteam(ep_path: Path, nds: dict, raw_fires: dict, panel: list, store: d
             r = rule_episode(nem, p, None)
             tk.add(f"{lab} close", float(nem.c[p]))
             tk.add(f"{lab} entry_vs_low (backward P_low)", r["entry_vs_low"])
-            tk.add(f"{lab} entry_vs_trough (two-sided)", r.get("entry_vs_trough"))
+            if r.get("entry_vs_trough") is not None:
+                tk.add(f"{lab} entry_vs_trough (two-sided)", r["entry_vs_trough"])
+            else:
+                # The +15 leg does not exist yet, so the two-sided trough is still open. A
+                # PROVISIONAL value against the trough observed SO FAR is more useful than a
+                # blank, provided the marker travels with the number.
+                end = min(p + TROUGH_FWD, len(nem.idx) - 1)
+                tl = float(np.nanmin(nem.l[p - LOOKBACK_LOW: end + 1]))
+                avail = len(nem.idx) - 1 - p
+                tk.add(f"{lab} entry_vs_trough (two-sided)",
+                       f"{float(nem.c[p] / tl - 1.0):.4f} (provisional: two-sided window "
+                       f"open until +{TROUGH_FWD} sessions of data exist; {avail} of "
+                       f"{TROUGH_FWD} available, trough so far {tl:.2f} on "
+                       f"{nem.idx[p - LOOKBACK_LOW + int(np.nanargmin(nem.l[p - LOOKBACK_LOW: end + 1]))].date()})")
         mk = [m for m in (store.get("NEM") or {}).get("markers", [])
               if (m.get("signal_date") or m.get("date")) == "2026-07-27"]
         tk.add("NEM 2026-07-27 C0 marker quality",

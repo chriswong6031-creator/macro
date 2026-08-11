@@ -49,7 +49,7 @@ stamped at the daily session T on which the condition became knowable; entry bas
 | id | construction | definition |
 |---|---|---|
 | **C0** | incumbent BUY (comparator) | `buy`/`rebuy` markers as published in `site/signals/<T>.json` (the store Prophet consumes) — 3D MACD-RSI bull cross + recent 3D StochRSI oversold up-cross + weekly confirm + RSI cap, as shipped |
-| **C1** | operator proposal | 3D StochRSI bull cross (%K up through %D) with both lines < 20 at cross → CONFIRMED by the first 1D MACD-RSI bull cross (line up through signal) within the next 10 sessions; fire at the confirm session |
+| **C1** | operator proposal | 3D StochRSI bull cross (%K up through %D) with both lines < 20 at cross → CONFIRMED by the first 1D MACD-RSI bull cross (line up through signal) within the next 10 sessions; fire at the confirm session. **As-measured deviation (D2, §RT):** the commissioning spec ALSO admitted a 1D cross already in force ≤5 sessions before the 3D cross (fires at the 3D cross date; 74% of episodes) — that form is reported as C1-relaxed, the literal ordered form as C1L |
 | **C1z** | C1 + zero-bound cohort | C1 fires where 3D %K printed ≤ 2 within the 10 3D-bars before the cross (reported as a split of C1, not a separate lane) |
 | **C2s** | grey dot, as published | `early_markers` dates from `site/signals/<T>.json` — the engine's `m2d_s3d_early` leg (`engine/signal_quality.py:210`): 3D StochRSI %K×%D bull cross with %D-dipped-<20-within-8-bars context, while the prior CLOSED 2D RSI-MACD histogram rose 2 bars, weekly-or-oversold + RSI14<65. Identity receipts: Terminal `early_dots` = the same signature (charting-app `signal_layer/confluence_v2.py:578-610`, the 2.2px slate dot below the bar low). THIS is the operator's grey dot |
 | **C2r** | grey dot, recomputed | the same leg recomputed from prices via `engine.signal_quality.signal_frame` (parity-checked against C2s on overlap; gives full metadata + coverage on names/dates the store trimmed) |
@@ -214,8 +214,9 @@ fwd10). NEM cuts the other way and is printed so (red-team item 6): the July tro
 **88.75 on 07-17**; the C1 07-09 fire @ 94.81 was a **false start** (td −6; its reference low
 was breached) sitting **+6.8%** above the eventual trough, while the incumbent's 07-27 fire @
 93.47 — `quality=block`, reason "counter-trend, held but no 200-reclaim" (so the product
-VETOED it; consistent with the regime-block forensic) — was **closer** to the low than the
-early fire. On this exemplar the early lane was earlier but wronger; pooled, the
+VETOED it; consistent with the regime-block forensic) — sat **+5.3%** above that trough
+(truncation-provisional: its two-sided window is still open at the data edge), closer than
+the early fire. On this exemplar the early lane was earlier but wronger; pooled, the
 trough-referenced comparison still favors the early lanes (R9h). HL/UEC (add-on names,
 store-less): the early lanes fire INTO their deep miner washouts (HL C2r median td_to_trough
 −9.5; false-bounce 37–60% on tiny N) — the hard-mode class where the stop discipline, not
@@ -245,13 +246,13 @@ admits immediately — 74% of its episodes); the charter-literal ordered form (C
 printed beside it and is MORE proximate (56.0% near-low, +4.6%) but much lower-recall
 (1.19 fires/name-year, 6,207 unconfirmed 3D crosses).
 
-Priced against the actioned incumbent, the honest trade is: early lanes enter **~35–43%
+Priced against the actioned incumbent, the honest trade is: early lanes enter **~35–45%
 closer to the eventual trough** (trough-referenced medians, R9h: C1 +6.5% / C1L +5.9% / dot
-+6.9% / C4 +6.2% vs C0 +10.7%) and 15+ sessions earlier — at **~8× the false-bounce rate**
-(20–27% vs 3.1%), **~30pp less stop-A survival**, and (R9e) a mechanical hold-42 R-multiple
-whose MEAN favors the early lanes over C0-all (+0.29..+0.40 vs +0.23) but whose MEDIAN is
-negative for every early lane (−0.27..−1.00; stop-out share 45–51%) while **C0-take leads on
-both** (mean +0.447, median +0.373, stop-out 15.7%). The naked ≥2R multiple in the table is
++6.9% / C4 +6.2% vs C0-take ≈ +10.6%) and 15+ sessions earlier — at **6.5–8.7× the
+false-bounce rate** (20–27% vs 3.1%), **~30pp less stop-A survival**, and (R9e) a mechanical
+hold-42 R-multiple whose MEAN favors the early lanes over C0-all (+0.29..+0.40 vs +0.23) but
+whose MEDIAN is negative for every early lane (−0.27..−1.00; stop-out share 44.7–50.8%)
+while **C0-take leads on both** (mean +0.447, median +0.373, stop-out 15.7%). The naked ≥2R multiple in the table is
 partly arithmetic — early-lane R targets are about half C0's (median 2R distance 10.6–12.3%
 vs 20.1%) — so it describes geometry, not expectancy. The distribution shape is the point:
 the early book is many small stop-outs + a fatter right tail, which monetizes ONLY under the
@@ -354,14 +355,16 @@ mostly measuring the ruler, and one feature was leaking the future.**
   above); within entry-distance quintiles they shrink 2–3×. What looked like "shallow
   resets in strong names are durable" was mostly "entries further above the reference low
   have wider stops."
-- **What actually stands (R9i): the pre-vs-post-trough mix is the whole game.** Stop-A
-  survival is **8–11% for fires before the eventual trough** and **76–84% after it**, in
-  every lane including the incumbent; per-fire post-trough survival differs by only ~6pp
-  between the actioned incumbent (83.9%) and the early lanes (77–79%). The early lanes'
-  entire durability cost is that they fire pre-trough 35–42% of the time versus C0-take's
-  14%. (At episode level the false-bounce leg of the label is near-tautological with
-  pre-trough firing — post-trough false-bounce is ~0 by construction — which is exactly why
-  the durable/false anatomy reduces to this mix.)
+- **What actually stands (R9i): the pre-vs-post-trough mix carries most of it, with a ~10pp
+  per-fire residual.** Stop-A survival is **~7–11% for fires before the eventual trough**
+  in every lane, and post-trough it is **88.5% for the actioned incumbent (C0-take)** vs
+  **77–79% for the early lanes** (C0-all 83.9%) — so the honest decomposition is: the early
+  lanes fire pre-trough **35–42%** of the time versus C0-take's **5.2%** (C0-all 14.5%),
+  and even their post-trough fires give up ~10pp of survival to the actioned incumbent.
+  Most of the durability cost is the mix; a real per-fire gap remains. (At episode level
+  the false-bounce leg of the label is near-tautological with pre-trough firing —
+  post-trough false-bounce is ~0 by construction — which is why the durable/false anatomy
+  reduces to this decomposition.)
 - The 2×2 was built on the %K feature and is demoted with it (kept in the artifact for the
   record). Breadth direction notes from the raw ledger (more basket-wide washout/turn =
   more false starts, post-2023 slice) survive as SUGGESTIVE texture consistent with R3.
@@ -386,9 +389,9 @@ features promotes only through a fresh prereg (§6.0/§6.6 sequencing).
 
 1. **The operator's direction survives — priced honestly, against the actioned incumbent.**
    For a filtering machine whose operator stops under the decline low: the early
-   constructions surface candidates ~35–43% closer to the eventual trough and 15+ sessions
-   earlier than the actioned incumbent (C0-take: +10.7% trough-referenced, +18td), at ~8×
-   its false-bounce rate and ~30pp less stop-A survival — with a mechanical-rule R
+   constructions surface candidates ~35–45% closer to the eventual trough and 15+ sessions
+   earlier than the actioned incumbent (C0-take: ≈+10.6% trough-referenced, +18td), at
+   6.5–8.7× its false-bounce rate and ~30pp less stop-A survival — with a mechanical-rule R
    distribution that is mean-positive/median-negative (many small stop-outs, fat right
    tail) where C0-take is positive on both. The early book therefore monetizes ONLY through
    the operator's asymmetric execution plus second-stage selection — which is the operator's
@@ -404,12 +407,13 @@ features promotes only through a fresh prereg (§6.0/§6.6 sequencing).
    "why not" receipts, starter size, window-not-certainty copy. No scored-authority change
    without the program's own prereg sequencing (§6.0/§6.6); CONFLUENCE_TUNING's scored-gate
    kill stands un-contested on its own ruler.
-3. **Theme breadth is not the false-start filter** on this evidence (R3 null). The
-   false-start reduction the operator wants must come from the §8 discriminator ledger
-   (durable-vs-false anatomy on the dot/C1 fires) — measured next in this same file.
+3. **Theme breadth is not the false-start filter** on this evidence (R3 null, post-2023
+   slice, direction against the confirm hypothesis where it moves). The §8 static-feature
+   ledger did not deliver one either after risk-equalization (§R8) — the chartered path to
+   false-start reduction is §A6's post-trough-evidence prereg.
 4. **Stops:** the fix direction is NOT the histogram-divergence disarm as originally pinned
-   in §6.8(a) (R4b refutes it as constructed); the load-bearing fact is the 35% base rate of
-   bottom-marking stops. The chartered follow-ups: (a) a curvature-form context study
+   in §6.8(a) (R4b: not supported as constructed, month-cluster CI clean); the load-bearing
+   fact is the 34.9%-vs-15.7%-null rate of bottom-marking stops (2.2× chance, R9f). The chartered follow-ups: (a) a curvature-form context study
    (hist-above-trailing-min at confirm), fresh charter, fresh data discipline; (b) the
    §6.8(a) "flush signature → re-entry watch armed" surface remains the right product shape —
    its trigger needs the §8-style feature anatomy, not the 2-step-rising split; (c) the
@@ -419,15 +423,19 @@ features promotes only through a fresh prereg (§6.0/§6.6 sequencing).
    `signal_date` for dots as it now does for markers; EA/SATS carry stale store right-edges.
 6. **§8 outcome, as corrected (§R8/§RT):** no static feature filter survives
    risk-equalization on this evidence — the repeat-fire chip is retracted (look-ahead), and
-   the %K/RS/decline-depth "durability tier" was mostly stop-width arithmetic. What stands
-   is the pre/post-trough decomposition: survival is ~8–11% before the trough is in and
-   ~76–84% after, in every lane. The chartered v2 prereg for false-start reduction therefore
-   tests **post-trough-evidence confirm tiers on the dot/relaxed-C1 fires** — confirmed r3
-   pivot above the fire's reference low, sessions-since-last-new-low ≥ k, higher-low
-   sequence — under risk-equalized labels (fixed-% AND ATR stops) with explicit PIT-leak
-   discipline. Until that runs, the deck carries the early fires with honest texture copy
-   ("pre-trough fires stop out ~9 in 10; windows, not certainties"), and the operator
-   remains the second-stage filter by design.
+   the %K/RS "durability tier" was mostly stop-width arithmetic (decline-depth survives as
+   a volatility-confounded MAYBE). What stands is the pre/post-trough decomposition:
+   survival is ~7–11% before the trough is in, versus 88.5% post-trough for the actioned
+   incumbent and 77–79% for the early lanes — the mix (5.2% vs 35–42% pre-trough) carries
+   most of the cost, a ~10pp per-fire gap remains. The chartered v2 prereg for false-start
+   reduction therefore tests **post-trough-evidence confirm tiers on the dot/relaxed-C1
+   fires** — confirmed r3 pivot above the fire's reference low, sessions-since-last-new-low
+   ≥ k, higher-low sequence — under FULLY risk-equalized labels (fixed-% AND ATR stops on
+   BOTH label legs; note the R9d relabels kept the false-bounce leg P_low-anchored, so they
+   are partial by construction — a stop-only relabel flips %K positive) with explicit
+   PIT-leak discipline. Until that runs, the deck carries the early fires with honest
+   texture copy ("pre-trough fires stop out ~9 in 10; windows, not certainties"), and the
+   operator remains the second-stage filter by design.
 
 ## §RT Red-team record (2026-08-11, adversarial pass per the adjudication coverage gate)
 
