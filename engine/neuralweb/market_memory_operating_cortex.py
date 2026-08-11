@@ -235,7 +235,7 @@ _FORBIDDEN_COMPACT = frozenset(
         "trainingeligible",
     }
 )
-_FORBIDDEN_COMPOUND_SUFFIXES = frozenset(
+_CAPABILITY_AFFIXES = frozenset(
     {
         "candidate",
         "context",
@@ -244,9 +244,18 @@ _FORBIDDEN_COMPOUND_SUFFIXES = frozenset(
         "free",
         "gate",
         "input",
+        "may",
         "now",
         "signal",
         "token",
+    }
+)
+_FORBIDDEN_COMPOUNDS = frozenset(
+    {
+        compound
+        for forbidden in _FORBIDDEN_WORDS
+        for affix in _CAPABILITY_AFFIXES
+        for compound in (f"{affix}{forbidden}", f"{forbidden}{affix}")
     }
 )
 
@@ -376,6 +385,14 @@ def _require_fields(
 def _resource_guard(value: object, *, field: str) -> None:
     nodes = 0
 
+    def utf8_length(text: str, *, text_field: str) -> int:
+        try:
+            return len(text.encode("utf-8"))
+        except UnicodeEncodeError as exc:
+            raise MarketMemoryOperatingCortexContractError(
+                f"{text_field} contains a surrogate code point"
+            ) from exc
+
     def visit(item: object, depth: int) -> None:
         nonlocal nodes
         nodes += 1
@@ -385,14 +402,17 @@ def _resource_guard(value: object, *, field: str) -> None:
             _fail(f"{field} exceeds depth {_MAX_DEPTH}")
         if type(item) is dict:
             for key, child in item.items():
-                if type(key) is not str or len(key.encode("utf-8")) > _MAX_STRING_BYTES:
+                if (
+                    type(key) is not str
+                    or utf8_length(key, text_field=f"{field} key") > _MAX_STRING_BYTES
+                ):
                     _fail(f"{field} contains an invalid key")
                 visit(child, depth + 1)
         elif type(item) is list:
             for child in item:
                 visit(child, depth + 1)
         elif type(item) is str:
-            if len(item.encode("utf-8")) > _MAX_STRING_BYTES:
+            if utf8_length(item, text_field=field) > _MAX_STRING_BYTES:
                 _fail(
                     f"{field} contains a string longer than {_MAX_STRING_BYTES} bytes"
                 )
@@ -457,17 +477,21 @@ def _semantic_forms(text: str) -> tuple[set[str], str]:
     return set(words), "".join(words)
 
 
+def _compound_forms(words: set[str]) -> set[str]:
+    """Return exact compact lexemes with only a trailing version marker removed."""
+
+    forms = set(words)
+    forms.update(re.sub(r"(?:v)?[0-9]+\Z", "", word) for word in words)
+    return forms
+
+
 def _opaque(value: object, *, field: str) -> str:
     if type(value) is str:
         words, compact = _semantic_forms(value)
         if (
             words & _FORBIDDEN_WORDS
             or any(token in compact for token in _FORBIDDEN_COMPACT)
-            or any(
-                f"{word}{suffix}" in compact
-                for word in _FORBIDDEN_WORDS
-                for suffix in _FORBIDDEN_COMPOUND_SUFFIXES
-            )
+            or _compound_forms(words) & _FORBIDDEN_COMPOUNDS
         ):
             _fail(f"{field} contains a forbidden action or authority token")
     text = _match(value, _OPAQUE, field=field)

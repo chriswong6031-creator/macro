@@ -937,6 +937,12 @@ def test_zero_claims_has_null_rate_and_zero_evidence_refs_are_accepted() -> None
         "proposal_weight",
         "safeProposalWeightV1",
         "may_rank",
+        "maybuy",
+        "maysell",
+        "mayhold",
+        "mayforecast",
+        "maypromote",
+        "mayrecommend",
         "rankingGate",
         "rankinggate",
         "rankingsignal",
@@ -952,6 +958,13 @@ def test_zero_claims_has_null_rate_and_zero_evidence_refs_are_accepted() -> None
         "tradingsignal",
         "mayTrainProphet",
         "permissiontoken",
+        "signalbuy",
+        "tokenauthority",
+        "candidatepromotion",
+        "inputprophet",
+        "contextforecast",
+        "nowexecute",
+        "maybuyv2",
         "ｂｕｙｉｎｇＳｉｇｎａｌ",
     ],
 )
@@ -1000,9 +1013,15 @@ def test_morphology_applies_to_source_refs_kinds_claim_keys_and_falsifier_codes(
     "registration_key",
     [
         "constraint.audit.v1",
+        "aggregate",
+        "aggregate.signal.audit",
+        "classification",
         "classification.signal.audit",
+        "buyer",
         "buyer.profile.v1",
+        "executioner",
         "executioner.nowcast.v1",
+        "prophetic",
         "prophetic.context.audit",
     ],
 )
@@ -1130,6 +1149,44 @@ def test_strict_loaders_reject_duplicate_nonfinite_and_oversize_json() -> None:
     ):
         cortex.load_operating_cortex_packet_join_json(
             b"{" + b" " * 2_097_152, **fixture["join_kwargs"]
+        )
+
+
+def test_lone_surrogates_fail_as_contract_errors_in_validators_and_loaders() -> None:
+    fixture = _fixture()
+    registration = fixture["registration"]
+    registration["registration_key"] = "\ud800"
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="surrogate"
+    ):
+        cortex.validate_operating_cortex_registration_record(registration)
+    registration_body = json.dumps(
+        registration, ensure_ascii=True, separators=(",", ":"), sort_keys=True
+    ).encode("ascii")
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="surrogate"
+    ):
+        cortex.load_operating_cortex_registration_join_json(
+            registration_body,
+            retrieval_registration=fixture["retrieval_registration"],
+            trial_registration=fixture["trial"],
+        )
+
+    fixture = _fixture()
+    packet = fixture["packet"]
+    packet["coverage"]["\ud800"] = False
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="surrogate"
+    ):
+        cortex.validate_operating_cortex_packet(packet)
+    packet_body = json.dumps(
+        packet, ensure_ascii=True, separators=(",", ":"), sort_keys=True
+    ).encode("ascii")
+    with pytest.raises(
+        cortex.MarketMemoryOperatingCortexContractError, match="surrogate"
+    ):
+        cortex.load_operating_cortex_packet_join_json(
+            packet_body, **fixture["join_kwargs"]
         )
 
 
