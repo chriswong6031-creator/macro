@@ -7,6 +7,7 @@
     {"module": "engine/research_factory/adapter_alpha_grammar.py", "reason": "factory's own alpha-grammar domain adapter (W3, RF-13) — line-1 docstring names its own module path"},
     {"module": "engine/research_factory/adapter_cortex.py", "reason": "factory's own cortex domain adapter (W3, RF-13) — line-1 docstring names its own module path"},
     {"module": "engine/research_factory/adapter_cycle_pattern.py", "reason": "factory's own cycle-pattern (CPI) domain adapter — line-1 docstring names its own module path"},
+    {"module": "engine/research_factory/adapter_market_memory.py", "reason": "factory's own pure Market Memory candidate-conformance adapter (W6A) — imports the canonical factory schema for read-only validation; no factory lake read or write"},
     {"module": "engine/research_factory/adapter_oracle.py", "reason": "factory's own oracle domain adapter (W3, RF-2/RF-13) — line-1 docstring names its own module path"},
     {"module": "engine/research_factory/challenge.py", "reason": "factory challenger module (W4) — builds challenge packets from the factory's own lake"},
     {"module": "engine/research_factory/monitor.py", "reason": "factory paper-monitor module (W6, RF-8/RF-9/RF-10) — reads/advances the factory's own paper ledger by design"},

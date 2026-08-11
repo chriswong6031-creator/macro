@@ -425,6 +425,16 @@ on:
       # live_flow poller loop for the Terminal surface pane (shape ↔ surfaceContract.ts).
       - "scripts/build_flow_surface.py"
       - "tests/test_flow_surface.py"
+      # PRISM daily matrix: exact-contract-side PIT UNUSUAL baseline and its payload
+      # validator.  List every subject plus the suite explicitly even though
+      # engine/** and tests/** also start CI, so the packed-job ownership seam
+      # stays executable and reviewable.
+      - "engine/options_matrix.py"
+      - "engine/options_structure.py"
+      - "engine/thetadata_store.py"
+      - "scripts/build_options_matrix.py"
+      - "site/options_structure/examples/matrix.json"
+      - "tests/test_options_matrix.py"
       # MSC R2.2-A Light U-CHAIN: compact per-root eligibility receipts and the
       # monotonic all-root R2 discovery commit. Keep this list exact so source,
       # schema, publisher, or either adversarial suite can start their packed job.
@@ -659,6 +669,7 @@ on:
       - "engine/neuralweb/market_memory_scoring.py"
       - "engine/neuralweb/market_memory_playback.py"
       - "engine/neuralweb/market_memory_retrieval.py"
+      - "engine/neuralweb/market_memory_operating_cortex.py"
       - "engine/neuralweb/market_memory_projection.py"
       - "engine/neuralweb/market_memory_trusted.py"
       - "contracts/market_memory/source_artifact_receipt.v1.schema.json"
@@ -694,6 +705,8 @@ on:
       - "contracts/market_memory/operational_playback_catalog.v1.schema.json"
       - "contracts/market_memory/retrieval_registration.v1.schema.json"
       - "contracts/market_memory/episodic_retrieval_record.v1.schema.json"
+      - "contracts/market_memory/operating_cortex_registration.v1.schema.json"
+      - "contracts/market_memory/operating_cortex_packet.v1.schema.json"
       - "contracts/symbol_directory/symbol_directory_completion_receipt.v1.schema.json"
       - "config/market_memory_canary.v1.json"
       - "config/market_memory_technical_price_basis.v1.json"
@@ -757,6 +770,7 @@ on:
       - "tests/test_market_memory_playback.py"
       - "tests/test_market_memory_playback_api.py"
       - "tests/test_market_memory_retrieval.py"
+      - "tests/test_market_memory_operating_cortex.py"
       - "tests/test_market_memory_projection.py"
       - "tests/test_market_memory_trusted.py"
       - "tests/test_market_memory_context_deploy.py"
@@ -1567,6 +1581,13 @@ on:
       - "scripts/*research_factory*.py"
       - "data/research_factory/**"
       - "tests/test_research_factory*.py"
+      # W6A Market Memory candidate conformance: keep the exact adapter/schema,
+      # hostile suite, and owner-contract amendment explicit despite broad globs.
+      - "engine/research_factory/adapter_market_memory.py"
+      - "engine/research_factory/schema.py"
+      - "tests/test_research_factory_market_memory.py"
+      - "research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md"
+      - "research/KONSEKI_CLEAN_ROOM_MARKET_MEMORY_AND_COGNITIVE_ARCHITECTURE_FOR_FABLE_2026-08-08.md"
       - "config/synapse.yml"
       # CPI P2 authority guard: no money-path module may read cycle-pattern lake.
       - "scripts/check_cycle_pattern_authority.py"
