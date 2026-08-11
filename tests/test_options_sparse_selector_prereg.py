@@ -33,7 +33,6 @@ from scripts.build_options_sparse_selector_prereg import (
     NYSE_CLOCK_CONTRACT_RECEIPTS,
     RECEIPT_PATH,
     RECEIPT_SCHEMA_PATH,
-    REGISTERED_AT,
     SELECTOR_EFFECTIVE_FREEZE_AT,
     SELECTOR_EFFECTIVE_FREEZE_RULE,
     SELECTOR_EFFECTIVE_FREEZE_SESSION,
@@ -45,7 +44,6 @@ from scripts.build_options_sparse_selector_prereg import (
     validate_campaign_v2_time_fence,
     validate_proposal_decision_clock,
 )
-
 
 ROOT = Path(__file__).resolve().parents[1]
 

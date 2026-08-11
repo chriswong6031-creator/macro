@@ -42,7 +42,7 @@
         "selector_effective_freeze"
       ],
       "properties": {
-        "registered_at": {"const": "2026-08-11T21:36:23Z"},
+        "registered_at": {"const": "2026-08-11T22:43:53Z"},
         "repository": {"const": "mastermindx-market-intelligence/macro"},
         "benchmark": {
           "type": "object",
@@ -171,7 +171,7 @@
             "rule_change_policy"
           ],
           "properties": {
-            "registered_at": {"const": "2026-08-11T21:36:23Z"},
+            "registered_at": {"const": "2026-08-11T22:43:53Z"},
             "effective_freeze_rule": {
               "const": "preregistered_next_nyse_session_open_after_finalized_rule_head_with_origin_main_before_boundary/v1"
             },
@@ -462,9 +462,9 @@
               {
                 "role": "reference_validator_implementation",
                 "path": "engine/options_market_memory_context.py",
-                "file_sha256": "a93fa07f277473033fb11fdcb22675af20f189f7293dcb7b4ed0c0cecf0ccb30",
-                "file_bytes": 44798,
-                "source_commit": "c2ea5ef44a37976b91ad1636c438160c8e11ad68"
+                "file_sha256": "7d3b410f6997a29299728b1f806956781803a89053f0cf8e016c315c3c296f82",
+                "file_bytes": 45021,
+                "source_commit": "6e2c3f5e0ce3bd94eb00e0fad8fee353ae905aa7"
               },
               {
                 "role": "reviewed_canary_identity_config",

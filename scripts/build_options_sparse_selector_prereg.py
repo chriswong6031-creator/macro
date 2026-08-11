@@ -21,7 +21,6 @@ from typing import Any, NoReturn
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 BENCHMARK_PATH = Path("research/momoedge/completion_benchmark_prereg_v1.json")
@@ -77,7 +76,7 @@ BENCHMARK_BASELINE_COMMIT = "e1100ee158a8b18576bbc6130276ef6f8becd373"
 BENCHMARK_FIRST_MAIN_COMMIT = "c46daec89ce2f25bdff85200eaf29f6de3e1572e"
 BENCHMARK_FIRST_MAIN_COMMITTED_AT = "2026-08-11T15:47:06Z"
 BENCHMARK_EFFECTIVE_FREEZE_AT = "2026-08-11T15:47:06Z"
-REGISTERED_AT = "2026-08-11T21:36:23Z"
+REGISTERED_AT = "2026-08-11T22:43:53Z"
 REPOSITORY = "mastermindx-market-intelligence/macro"
 CAMPAIGN_V2_SOURCE_COMMIT = "d8e290032710d84e538c32af0d58358a16407c88"
 SELECTOR_EFFECTIVE_FREEZE_AT = "2026-08-12T13:30:00Z"
@@ -115,9 +114,9 @@ CONTEXT_REFERENCE_CONTRACT_RECEIPTS = [
     {
         "role": "reference_validator_implementation",
         "path": CONTEXT_REFERENCE_IMPLEMENTATION_PATH.as_posix(),
-        "file_sha256": "a93fa07f277473033fb11fdcb22675af20f189f7293dcb7b4ed0c0cecf0ccb30",
-        "file_bytes": 44_798,
-        "source_commit": "c2ea5ef44a37976b91ad1636c438160c8e11ad68",
+        "file_sha256": "7d3b410f6997a29299728b1f806956781803a89053f0cf8e016c315c3c296f82",
+        "file_bytes": 45_021,
+        "source_commit": "6e2c3f5e0ce3bd94eb00e0fad8fee353ae905aa7",
     },
     {
         "role": "reviewed_canary_identity_config",
@@ -810,7 +809,7 @@ def validate_campaign_v2_context_owner_binding(
         identity = load_canary_identity_snapshot(
             root / MARKET_MEMORY_CANARY_IDENTITY_PATH
         )
-    except Exception as exc:  # noqa: BLE001 - normalize the owner contract boundary
+    except Exception as exc:
         raise RegistrationError("context reference fails its owner contract") from exc
     expected_owner = {
         "schema": "options.signal_episode/v1",

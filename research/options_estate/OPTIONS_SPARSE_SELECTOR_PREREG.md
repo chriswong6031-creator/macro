@@ -6,7 +6,7 @@ Machine receipt:
 `research/options_estate/sparse_selector_preregistration_receipt_v1.json`
 
 Receipt SHA-256:
-`8c0f2323f9d7006f00d61b0487aa8b80dbeabe3f5bb59cdbe5ae0ae3a9154b76`
+`49d0fa742383e86d8907fec60e47d733788d8879e394d85c8e6a6ac0d3f1a878`
 
 Frozen MomoEdge benchmark digest:
 `20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42`
@@ -55,13 +55,14 @@ A later governed implementation may admit only
 `options.signal_campaign/v2` rows first observed after both the selector freeze
 and the benchmark freeze. The selector boundary is preregistered at
 `2026-08-12T13:30:00Z`, the next NYSE session open after the final campaign-v2
-dependency landed on `origin/main` and the integrated selector rule was
-finalized. The exact selector rule digest must itself reach `origin/main` before
-that boundary. Its first-main commit cannot be self-referenced by these same
-content-identified bytes, so those two audit fields remain honestly null in the
-premerge receipt. If the hosting precondition misses the boundary, this version
-stays in global abstention and a new version with a later NYSE boundary is
-required. It may not backdate or reinterpret any row as prospective.
+and W1A context dependencies landed on `origin/main` and the integrated
+selector rule was finalized. The exact selector rule digest must itself reach
+`origin/main` before that boundary. Its first-main commit cannot be
+self-referenced by these same content-identified bytes, so those two audit
+fields remain honestly null in the premerge receipt. If the hosting
+precondition misses the boundary, this version stays in global abstention and a
+new version with a later NYSE boundary is required. It may not backdate or
+reinterpret any row as prospective.
 
 The campaign-v2 source contract uses the same `2026-08-12T13:30:00Z` forward
 boundary. Every source row before it is retrospective and permanently excluded
@@ -148,6 +149,10 @@ final `origin/main` schema as 7,177 bytes / SHA-256
 `65ce2f0fe1cb16dfca58949a85562645be4a41eb454b5ce243c16011c8a251a3`
 and runtime as 46,774 bytes / SHA-256
 `f5d0a83c7fd35ee219aad448cef7384df98e1ee04b87d36ae631b0d273e4310c`.
+The W1A crash-safe context path is merged as #5373 at
+`6e2c3f5e0ce3bd94eb00e0fad8fee353ae905aa7`; this registration rebinds the
+context-reference validator to its final 45,021 bytes / SHA-256
+`7d3b410f6997a29299728b1f806956781803a89053f0cf8e016c315c3c296f82`.
 Any dependency drift forces abstention. The current activation snapshot still
 has no prospective candidate, no decision, and no authority; the only valid
 output remains global abstention.
