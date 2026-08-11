@@ -6907,15 +6907,24 @@ jobs:
       - data/cycle_ontology/falsifiers.json
       - data/cycle_ontology/falsifiers_retired.json
       - data/cycle_ontology/tripwire_state.json
+      - data/top_anatomy/library.parquet
+      - data/top_anatomy/thresholds.json
+      - data/top_maturation/latest.json
       - engine/alerts.py
       - engine/falsifier_tripwires.py
       - engine/i18n.py
+      - engine/top_maturation.py
+      - scripts/build_top_maturation.py
       - scripts/build_vector.py
+      - scripts/build_winner_health_page.py
+      - scripts/export_top_anatomy_library.py
       - tests/test_alert_zh_completeness.py
       - tests/test_falsifier_tripwires.py
       - tests/test_price_pressure.py
       - tests/test_top_anatomy.py
+      - tests/test_top_maturation.py
       - tests/test_winner_health_design_freeze.py
+      - tests/test_winner_health_page.py
       - templates/winner_health.html.j2
     timeout-minutes: 12
     runs-on: ubuntu-latest
@@ -6974,6 +6983,14 @@ jobs:
       # Phase-0 contract.  The derived scope follows its engine/script/read closure.
       - name: TOP ANATOMY point-in-time engine and preregistration contracts
         run: python -m pytest tests/test_top_anatomy.py -q
+      # Nightly display-only consumer of the frozen TOP ANATOMY library. Keep
+      # its point-in-time state machine and generated page beside the research
+      # owner so changes to either side cannot leave the shipped read dark.
+      - name: Winner Health nightly maturation and render contracts
+        run: >-
+          TZ=UTC python -m pytest
+          tests/test_top_maturation.py
+          tests/test_winner_health_page.py -q
       # Source-template render only; templates/winner_health.html.j2 is declared
       # above because Jinja's runtime template lookup is intentionally not inferred
       # as a Python import edge.
