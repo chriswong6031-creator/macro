@@ -1,0 +1,5826 @@
+{
+ "study": "early_admission_bakeoff",
+ "charter": "research/prophet_us_audit/EARLY_ADMISSION_BAKEOFF_2026-08-11.md",
+ "tier": "measurement/display \u2014 no gate, rank, veto or engine change ships from this",
+ "run_metadata": {
+  "run_utc": "2026-08-11T11:34:07+00:00",
+  "runtime_seconds": 51.4,
+  "argv": []
+ },
+ "provenance": {
+  "repo_sha": "e602737841c729fb5a41936805b36691c9f20354",
+  "signals_store_dir": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/stoch-rsi-macd-confluence-2959db/site/signals",
+  "signals_store_files": 241,
+  "signals_store_origin_main_sha": "edb82192e18f91340bfef2097c42d5223820ddf6",
+  "signals_store_last_commit_touching_it": "082f7c285c7faa10035d0ba7839706a30cc9c23e",
+  "signals_store_asof_dates": [
+   "2026-07-17",
+   "2026-08-05",
+   "2026-08-10"
+  ],
+  "price_root": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/baskets/ohlcv",
+  "stocks_fallback_root": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/stocks",
+  "stld_last_price_date": "2026-08-10",
+  "spy_source": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/yahoo/SPY.parquet",
+  "charting_app_path": "/Users/chriswong/Documents/Cluade/charting-app",
+  "charting_app_sha": "687da219938b345dcd60fe034481a3cdb886a125",
+  "membership_path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/baskets/membership.json",
+  "membership_note": "Curated US theme baskets for monitoring rotation. Descriptive only, not a buy list.",
+  "membership_history_note": "Available history comes from the S&P 1500 and baskets-only price caches. Basket levels are BACK-PROJECTED: a basket curated after seed_date is charted with its current roster carried backward over that roster's own price history, so the line shows what today's members did in the past, not what anyone held at the time. 35 of the 49 baskets here are back-projected this way. Membership changes are recorded per basket in `changelog`, and each member carries its true curation date in `curated_added` (see `added_semantics`) \u2014 treat the history before a member's `curated_added` as context, never as a track record.",
+  "membership_added_semantics": "Each member carries TWO dates and they mean different things. `added` is the index-inclusion mask: the first date this member's price counts toward the basket's equal-weight level, back-projected to seed_date for any roster curated later, and it is what engine/baskets.py and its sibling engines read. `curated_added` is the provenance stamp: the date a curator actually put this name in this basket, never earlier than the basket's own `created`. Read `curated_added` \u2014 never `added` \u2014 when asking how long a name has been watched, or whether a signal predates its curation.",
+  "membership_baskets": 49,
+  "anchor_era": "sq-abs-session-2026-08-06"
+ },
+ "constants": {
+  "BUCKET_N": 3,
+  "DEDUP_SESSIONS": 10,
+  "C1_OS_BAND": 20,
+  "C1_ZERO_BOUND": 2.0,
+  "C1_ZERO_LOOKBACK": 10,
+  "C1_RECENT_1D": 5,
+  "C1_WAIT_MAX": 10,
+  "PIVOT_R": 3,
+  "LOOKBACK_LOW": 45,
+  "NEAR_LOW_PCT": 0.05,
+  "TROUGH_FWD": 15,
+  "FALSE_BOUNCE_K": 0.98,
+  "MAE_FWD": 21,
+  "FWD_MAX": 42,
+  "MIN_FWD_SESSIONS": 30,
+  "STOP_A_K": 0.99,
+  "STOP_B_ATR": 0.25,
+  "R_MULTIPLE": 2.0,
+  "BREADTH_WASHOUT_BACK": 10,
+  "BREADTH_TURN_BACK": 5,
+  "BREADTH_SPREAD_READ": 0.1,
+  "STOP_NEAR_WIN": 10,
+  "STOP_NEAR_TOL": 2,
+  "SESSIONS_PER_YEAR": 252.0,
+  "engine_OS_band": 20,
+  "CURRENT_REGIME_FROM": "2026-01-01"
+ },
+ "universe": {
+  "store_names": 241,
+  "primary_panel": [
+   "AAPL",
+   "ABBV",
+   "ABNB",
+   "ABT",
+   "ADI",
+   "ADM",
+   "ADP",
+   "AEE",
+   "AEP",
+   "AMAT",
+   "AMCR",
+   "AMD",
+   "AMGN",
+   "AMT",
+   "AMZN",
+   "ANET",
+   "APD",
+   "APH",
+   "APP",
+   "ATO",
+   "AVB",
+   "AVGO",
+   "AXP",
+   "AZO",
+   "BA",
+   "BAC",
+   "BKNG",
+   "BKR",
+   "BLK",
+   "BMY",
+   "BNY",
+   "BRK-B",
+   "BX",
+   "C",
+   "CASY",
+   "CAT",
+   "CB",
+   "CBRE",
+   "CCI",
+   "CEG",
+   "CF",
+   "CHTR",
+   "CI",
+   "CL",
+   "CMCSA",
+   "CME",
+   "CMI",
+   "CNP",
+   "COF",
+   "COP",
+   "COST",
+   "CRH",
+   "CRWD",
+   "CSCO",
+   "CSX",
+   "CTVA",
+   "CVNA",
+   "CVS",
+   "CVX",
+   "D",
+   "DASH",
+   "DD",
+   "DE",
+   "DG",
+   "DHR",
+   "DIS",
+   "DLR",
+   "DOW",
+   "DTE",
+   "DUK",
+   "DVN",
+   "EA",
+   "EBAY",
+   "ECHO",
+   "ECL",
+   "ED",
+   "EIX",
+   "ELV",
+   "EOG",
+   "EQIX",
+   "EQR",
+   "EQT",
+   "ES",
+   "ESS",
+   "ETN",
+   "ETR",
+   "EXC",
+   "EXE",
+   "EXR",
+   "F",
+   "FANG",
+   "FCX",
+   "FOX",
+   "FOXA",
+   "GD",
+   "GE",
+   "GEV",
+   "GILD",
+   "GM",
+   "GOOG",
+   "GOOGL",
+   "GRMN",
+   "GS",
+   "HAL",
+   "HD",
+   "HLT",
+   "HON",
+   "HOOD",
+   "HSY",
+   "HWM",
+   "IBM",
+   "IFF",
+   "INTC",
+   "INVH",
+   "IP",
+   "IRM",
+   "ISRG",
+   "JCI",
+   "JNJ",
+   "JPM",
+   "KDP",
+   "KIM",
+   "KLAC",
+   "KMB",
+   "KMI",
+   "KO",
+   "KR",
+   "KVUE",
+   "LIN",
+   "LLY",
+   "LMT",
+   "LOW",
+   "LRCX",
+   "LYV",
+   "MA",
+   "MAR",
+   "MCD",
+   "MCK",
+   "MDLZ",
+   "MDT",
+   "META",
+   "MLM",
+   "MMM",
+   "MNST",
+   "MO",
+   "MPC",
+   "MRK",
+   "MRVL",
+   "MS",
+   "MSFT",
+   "MU",
+   "NEE",
+   "NEM",
+   "NFLX",
+   "NKE",
+   "NRG",
+   "NUE",
+   "NVDA",
+   "NWSA",
+   "O",
+   "OKE",
+   "OMC",
+   "ORCL",
+   "ORLY",
+   "OXY",
+   "PANW",
+   "PCG",
+   "PEG",
+   "PEP",
+   "PFE",
+   "PG",
+   "PGR",
+   "PH",
+   "PKG",
+   "PLD",
+   "PLTR",
+   "PM",
+   "PNC",
+   "PPG",
+   "PPL",
+   "PSA",
+   "PSX",
+   "PWR",
+   "QCOM",
+   "RCL",
+   "REGN",
+   "ROST",
+   "RTX",
+   "SBAC",
+   "SBUX",
+   "SCHW",
+   "SHW",
+   "SLB",
+   "SNDK",
+   "SO",
+   "SPG",
+   "SPGI",
+   "SRE",
+   "STLD",
+   "STX",
+   "SW",
+   "SYK",
+   "SYY",
+   "T",
+   "TGT",
+   "TJX",
+   "TKO",
+   "TMO",
+   "TMUS",
+   "TPL",
+   "TRGP",
+   "TSLA",
+   "TT",
+   "TTD",
+   "TTWO",
+   "TXN",
+   "UBER",
+   "UNH",
+   "UNP",
+   "USB",
+   "V",
+   "VICI",
+   "VLO",
+   "VMC",
+   "VRT",
+   "VRTX",
+   "VST",
+   "VTR",
+   "VZ",
+   "WBD",
+   "WDC",
+   "WEC",
+   "WELL",
+   "WFC",
+   "WM",
+   "WMB",
+   "WMT",
+   "WY",
+   "XEL",
+   "XOM"
+  ],
+  "addon_exemplars": [
+   "HL",
+   "UEC"
+  ],
+  "store_names_unpriced": [
+   "SATS"
+  ],
+  "panel_name_years": 2658.67
+ },
+ "acceptance_gates": {
+  "stld_c0_2026_08_07": true,
+  "stld_c0_2026_08_07_after_dedup": true,
+  "stld_c2s_store_has_2026_07_10": true,
+  "stld_2026_07_10_bucket_last": "2026-07-14",
+  "stld_c2r_2026_dates": [
+   "2026-07-14"
+  ],
+  "stld_c2r_reproduces_the_dot": true
+ },
+ "deviations": [
+  "SPY is NOT in the ohlcv price root; benchmark read from /Users/chriswong/actions-runner-2/_work/macro/macro/data/yahoo/SPY.parquet (charter \u00a72 named the ohlcv root).",
+  "HL 2026-07-31 structure stop does NOT reproduce on the FULL-history recompute (charter \u00a74 named it as a must-appear receipt). It DOES reproduce at other leading-history phases (R4.hl_phase). Cause: charting-app confluence_v2._arm_event_daily still cuts its 2B/3B bars with pandas `resample`, whose bin edges are phased to the SERIES' FIRST timestamp \u2014 the served slice and the full history are different grids. Both readings printed; nothing tuned.",
+  "\u00a78 2x2 axis: the charter says 'the single strongest LIVE feature'. The strongest by raw spread is label-COUPLED (f_dist_swing) \u2014 its cells differ by how far stop A sits from the entry BY CONSTRUCTION, so cross-tabbing it would measure the ruler, not foresight. The 2x2 uses the strongest NON-coupled feature instead; the coupled row is still printed in full in the ledger with its spread and CI."
+ ],
+ "notes": [
+  "store names with no price series (excluded from every lane): ['SATS']",
+  "signals store is NOT uniformly as-of one date: 2026-07-17=1 file(s), 2026-08-05=1 file(s), 2026-08-10=239 file(s); the stale files are {'2026-07-17': ['SATS'], '2026-08-05': ['EA']} \u2014 their C0/C2s right edge is older than the price tape, so those names carry fewer recent store episodes than they would on a fresh bake.",
+  "MEASURED: `early_markers` in site/signals are stamped at the 3D bucket OPEN label, not the bucket last session (3756/3760 moved on mapping). Every C2s episode here is stamped at its bucket LAST session per the G0.4 knowability law; the raw store date is kept in each episode's meta.",
+  "store events dropped for predating the ohlcv price root's coverage (never relocated onto the first available bar): C0=18137, C2s=7202. The store is built on a ~1996+ price cache; the adjusted ohlcv root starts ~2014, so the deep-history half of the published marker stream is unmeasurable here and is excluded from every table.",
+  "panel measurable exposure = 2658.7 name-years (common window: each name scored only from the first session its recomputed 3D lane can fire, so store lanes and recomputed lanes see the SAME window)",
+  "BREADTH LANE IS TIME-BOUNDED: membership `added` is the index-inclusion mask back-projected to seed_date=2023-05-09, and 986 of 1038 memberships carry exactly that date. Honouring it point-in-time means NO episode before 2023-05-09 has a live roster, so \u00a73 and the \u00a78 breadth features are measured only on the post-2023-05-09 slice of each lane (episode counts in R3/R8 show the shortfall). This is a substrate limit, not a null result.",
+  "membership.json: 49 baskets, note='Curated US theme baskets for monitoring rotation. Descriptive only, not a buy list.'; rosters are CURATED WITH HINDSIGHT and 35/49 basket levels are back-projected (file's own history_note) \u2014 the breadth lane carries that flag. A name in several baskets is assigned its first basket by sorted key (deterministic)."
+ ],
+ "tables": {
+  "R0": {
+   "title": "Substrate, universe and acceptance gates",
+   "columns": [
+    "item",
+    "value"
+   ],
+   "rows": [
+    [
+     "repo SHA",
+     "e602737841c729fb5a41936805b36691c9f20354"
+    ],
+    [
+     "signals store",
+     "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/stoch-rsi-macd-confluence-2959db/site/signals (241 files)"
+    ],
+    [
+     "price root",
+     "/Users/chriswong/actions-runner-2/_work/macro/macro/data/baskets/ohlcv"
+    ],
+    [
+     "STLD last price date",
+     "2026-08-10"
+    ],
+    [
+     "charting-app SHA",
+     "687da219938b345dcd60fe034481a3cdb886a125"
+    ],
+    [
+     "SPY benchmark",
+     "/Users/chriswong/actions-runner-2/_work/macro/macro/data/yahoo/SPY.parquet"
+    ],
+    [
+     "anchor era",
+     "sq-abs-session-2026-08-06"
+    ],
+    [
+     "primary panel names (store \u2229 priced \u2229 3D-frame)",
+     240
+    ],
+    [
+     "add-on exemplar names (traces only)",
+     "HL, UEC"
+    ],
+    [
+     "GATE 1a  STLD C0 carries signal_date 2026-08-07",
+     true
+    ],
+    [
+     "GATE 1b  STLD C2s store carries 2026-07-10",
+     true
+    ],
+    [
+     "         ... its 3D bucket LAST session",
+     "2026-07-14"
+    ],
+    [
+     "GATE 1c  STLD C2r reproduces that dot",
+     true
+    ],
+    [
+     "         STLD C2r 2026 fire dates",
+     "2026-07-14"
+    ]
+   ],
+   "notes": ""
+  },
+  "R0b": {
+   "title": "C2s (published grey dot) vs C2r (recomputed) parity on the overlap",
+   "columns": [
+    "metric",
+    "value"
+   ],
+   "rows": [
+    [
+     "raw store dots on priced panel names (bucket-last mapped)",
+     3760
+    ],
+    [
+     "matched by a raw C2r fire within 1 session",
+     3610
+    ],
+    [
+     "match rate",
+     96.01
+    ],
+    [
+     "store dots with NO C2r counterpart",
+     150
+    ],
+    [
+     "C2r fires with NO store dot (store trims history / deeper cache)",
+     177
+    ],
+    [
+     "unmatched examples",
+     "AAPL@2014-03-07, ABBV@2014-07-29, ADM@2014-03-04, ADP@2014-04-24, AEE@2014-01-14, AEE@2014-06-03, AEP@2014-01-17, AMAT@2014-04-29"
+    ],
+    [
+     "C2r-only examples",
+     "ABBV@2019-03-19, ADP@2016-06-20, AEE@2021-08-04, AEP@2015-06-19, AMAT@2024-01-19, AMCR@2014-09-02, AMD@2022-07-19, AMT@2025-11-12"
+    ],
+    [
+     "raw store dots whose date was a bucket-OPEN label (remapped)",
+     "3756 of 3760"
+    ]
+   ],
+   "notes": "match = same name, |date diff| <= 1 session, after mapping the store's bucket-OPEN label to its bucket LAST session"
+  },
+  "R0c": {
+   "title": "Grey dot as PLOTTED (store bucket-OPEN label) vs as KNOWABLE (bucket LAST session) \u2014 the cost of the G0.4 correction",
+   "columns": [
+    "stamp",
+    "episodes",
+    "names",
+    "median entry_vs_low",
+    "near_low%",
+    "median close"
+   ],
+   "rows": [
+    [
+     "as PLOTTED (bucket-open label)",
+     3474,
+     240,
+     0.04618647446823987,
+     53.43,
+     65.55864715576172
+    ],
+    [
+     "as KNOWABLE (bucket-last)",
+     3474,
+     240,
+     0.054215244812858554,
+     44.79,
+     66.33662796020508
+    ],
+    [
+     "median sessions between the two stamps",
+     3474,
+     240,
+     2.0,
+     null,
+     null
+    ]
+   ],
+   "notes": "same episode set, two entry stamps; gap between them printed below"
+  },
+  "R1.STLD": {
+   "title": "STLD \u2014 every lane event, chronological",
+   "columns": [
+    "date",
+    "lane",
+    "detail",
+    "close",
+    "P_low[T-45,T]",
+    "P_low date",
+    "entry_vs_low",
+    "td_to_trough",
+    "false_bounce",
+    "MFE_42"
+   ],
+   "rows": [
+    [
+     "2026-05-19",
+     "STOP",
+     "stop_level 223.86; argmin low 2026-05-19 gap 0; hist_rising=False m3_bull=True",
+     222.8645477294922,
+     null,
+     "",
+     null,
+     null,
+     "",
+     null
+    ],
+    [
+     "2026-06-18",
+     "STOP",
+     "stop_level 266.60; argmin low 2026-07-02 gap -9; hist_rising=False m3_bull=True",
+     249.34449768066406,
+     null,
+     "",
+     null,
+     null,
+     "",
+     null
+    ],
+    [
+     "2026-06-22",
+     "store-sell",
+     "bucket label 2026-06-17",
+     250.4120635986328,
+     null,
+     "",
+     null,
+     null,
+     "",
+     null
+    ],
+    [
+     "2026-07-08",
+     "C4",
+     "pivot 2026-07-02 low 216.36 d3=4.2",
+     228.75999450683594,
+     216.36000061035156,
+     "2026-07-02",
+     0.05731185922307258,
+     3,
+     false,
+     null
+    ],
+    [
+     "2026-07-14",
+     "C1",
+     "immediate cross@2026-07-14 zero-bound",
+     233.35000610351562,
+     216.36000061035156,
+     "2026-07-02",
+     0.07852655502512129,
+     7,
+     false,
+     null
+    ],
+    [
+     "2026-07-14",
+     "C2r",
+     "k=4.7 d=1.6",
+     233.35000610351562,
+     216.36000061035156,
+     "2026-07-02",
+     0.07852655502512129,
+     7,
+     false,
+     null
+    ],
+    [
+     "2026-07-14",
+     "C2s",
+     "store label 2026-07-10",
+     233.35000610351562,
+     216.36000061035156,
+     "2026-07-02",
+     0.07852655502512129,
+     7,
+     false,
+     null
+    ],
+    [
+     "2026-07-14",
+     "C3",
+     "k=4.7 d=1.6",
+     233.35000610351562,
+     216.36000061035156,
+     "2026-07-02",
+     0.07852655502512129,
+     7,
+     false,
+     null
+    ],
+    [
+     "2026-07-23",
+     "C4",
+     "pivot 2026-07-20 low 228.77 d3=10.7",
+     240.57000732421875,
+     216.36000061035156,
+     "2026-07-02",
+     0.11189686931766851,
+     null,
+     null,
+     null
+    ],
+    [
+     "2026-08-07",
+     "C0",
+     "buy/take",
+     262.45001220703125,
+     216.36000061035156,
+     "2026-07-02",
+     0.2130246416466064,
+     null,
+     null,
+     null
+    ]
+   ],
+   "notes": ""
+  },
+  "R1.NEM": {
+   "title": "NEM \u2014 every lane event, chronological",
+   "columns": [
+    "date",
+    "lane",
+    "detail",
+    "close",
+    "P_low[T-45,T]",
+    "P_low date",
+    "entry_vs_low",
+    "td_to_trough",
+    "false_bounce",
+    "MFE_42"
+   ],
+   "rows": [
+    [
+     "2026-06-16",
+     "C1",
+     "immediate cross@2026-06-16 zero-bound",
+     108.44000244140625,
+     92.0199966430664,
+     "2026-06-11",
+     0.17843953920179878,
+     -14,
+     false,
+     0.08133529598166467
+    ],
+    [
+     "2026-06-16",
+     "C4",
+     "pivot 2026-06-11 low 92.02 d3=8.4",
+     108.44000244140625,
+     92.0199966430664,
+     "2026-06-11",
+     0.17843953920179878,
+     -14,
+     false,
+     0.08133529598166467
+    ],
+    [
+     "2026-07-06",
+     "C4",
+     "pivot 2026-06-30 low 91.71 d3=15.3",
+     98.19999694824219,
+     91.70999908447266,
+     "2026-06-30",
+     0.07076652413649787,
+     -9,
+     true,
+     null
+    ],
+    [
+     "2026-07-09",
+     "C1",
+     "immediate cross@2026-07-09 zero-bound",
+     94.80999755859375,
+     91.18000030517578,
+     "2026-07-08",
+     0.03981133188493646,
+     -6,
+     true,
+     null
+    ],
+    [
+     "2026-07-22",
+     "C4",
+     "pivot 2026-07-17 low 88.75 d3=16.5",
+     95.75,
+     88.75,
+     "2026-07-17",
+     0.07887323943661961,
+     null,
+     null,
+     null
+    ],
+    [
+     "2026-07-27",
+     "C0",
+     "buy/block",
+     93.47000122070312,
+     88.75,
+     "2026-07-17",
+     0.053183112345950745,
+     null,
+     null,
+     null
+    ]
+   ],
+   "notes": ""
+  },
+  "R1.HL": {
+   "title": "HL \u2014 every lane event, chronological",
+   "columns": [
+    "date",
+    "lane",
+    "detail",
+    "close",
+    "P_low[T-45,T]",
+    "P_low date",
+    "entry_vs_low",
+    "td_to_trough",
+    "false_bounce",
+    "MFE_42"
+   ],
+   "rows": [
+    [
+     "2026-06-12",
+     "C4",
+     "pivot 2026-06-09 low 13.81 d3=8.6",
+     15.289999961853027,
+     13.8100004196167,
+     "2026-06-09",
+     0.10716868191647788,
+     3,
+     false,
+     0.14780897847259555
+    ],
+    [
+     "2026-06-16",
+     "C1",
+     "immediate cross@2026-06-16 zero-bound",
+     16.719999313354492,
+     13.8100004196167,
+     "2026-06-09",
+     0.21071678532349836,
+     5,
+     false,
+     0.04964114580095247
+    ]
+   ],
+   "notes": ""
+  },
+  "R1.UEC": {
+   "title": "UEC \u2014 every lane event, chronological",
+   "columns": [
+    "date",
+    "lane",
+    "detail",
+    "close",
+    "P_low[T-45,T]",
+    "P_low date",
+    "entry_vs_low",
+    "td_to_trough",
+    "false_bounce",
+    "MFE_42"
+   ],
+   "rows": [
+    [
+     "2026-05-15",
+     "STOP",
+     "stop_level 14.50; argmin low 2026-05-19 gap -2; hist_rising=False m3_bull=True",
+     13.649999618530273,
+     null,
+     "",
+     null,
+     null,
+     "",
+     null
+    ],
+    [
+     "2026-06-22",
+     "C1",
+     "immediate cross@2026-06-22",
+     11.470000267028809,
+     9.359999656677246,
+     "2026-06-10",
+     0.22542742390447934,
+     7,
+     false,
+     -0.007846569354196253
+    ],
+    [
+     "2026-06-22",
+     "C2r",
+     "k=16.6 d=14.2",
+     11.470000267028809,
+     9.359999656677246,
+     "2026-06-10",
+     0.22542742390447934,
+     7,
+     false,
+     -0.007846569354196253
+    ],
+    [
+     "2026-06-22",
+     "C3",
+     "k=16.6 d=14.2",
+     11.470000267028809,
+     9.359999656677246,
+     "2026-06-10",
+     0.22542742390447934,
+     7,
+     false,
+     -0.007846569354196253
+    ],
+    [
+     "2026-07-01",
+     "C4",
+     "pivot 2026-06-26 low 10.24 d3=16.3",
+     10.550000190734863,
+     9.359999656677246,
+     "2026-06-10",
+     0.1271368138575404,
+     -11,
+     true,
+     null
+    ],
+    [
+     "2026-07-22",
+     "C1",
+     "immediate cross@2026-07-22",
+     9.729999542236328,
+     8.90999984741211,
+     "2026-07-17",
+     0.09203139268990967,
+     null,
+     null,
+     null
+    ],
+    [
+     "2026-07-22",
+     "C4",
+     "pivot 2026-07-17 low 8.91 d3=6.8",
+     9.729999542236328,
+     8.90999984741211,
+     "2026-07-17",
+     0.09203139268990967,
+     null,
+     null,
+     null
+    ]
+   ],
+   "notes": ""
+  },
+  "R2a": {
+   "title": "PER-NAME-FIRST (per-name median/rate, then median across names)",
+   "columns": [
+    "lane",
+    "episodes",
+    "names",
+    "near_low%",
+    "entry_vs_low",
+    "td_to_trough",
+    "false_bounce%",
+    "MAE_21",
+    "survA%",
+    "survB%",
+    "MFE_42",
+    "R2%",
+    "fwd21",
+    "fwd42",
+    "ex21",
+    "ex42",
+    "near_low_open%"
+   ],
+   "rows": [
+    [
+     "C0",
+     7918,
+     240,
+     5.88,
+     0.10091397790406886,
+     14.5,
+     9.09,
+     -0.03996065465615106,
+     73.33,
+     28.12,
+     0.07477703206072234,
+     9.72,
+     0.017027139292365323,
+     0.028554919144615054,
+     0.0002096294052214842,
+     0.003757855343712313,
+     6.67
+    ],
+    [
+     "C1",
+     7973,
+     240,
+     50.0,
+     0.050011098185748726,
+     3.0,
+     24.32,
+     -0.04234989200402273,
+     53.03,
+     27.27,
+     0.07455605003900961,
+     24.32,
+     0.016264253121050343,
+     0.028658620437886584,
+     -0.000866055531909049,
+     0.0011175644822912223,
+     48.65
+    ],
+    [
+     "C2s",
+     3474,
+     240,
+     45.0,
+     0.054818651682679465,
+     6.0,
+     21.43,
+     -0.04270807755719963,
+     54.55,
+     23.08,
+     0.07143931580442664,
+     22.22,
+     0.013695218922135322,
+     0.023731694862839214,
+     -0.0020093670502647765,
+     0.0016821560364151944,
+     41.67
+    ],
+    [
+     "C2r",
+     3630,
+     240,
+     43.75,
+     0.057199507918562986,
+     6.0,
+     20.0,
+     -0.042590959758526004,
+     55.56,
+     23.08,
+     0.07072955871969433,
+     22.22,
+     0.012967745065009417,
+     0.022916651064937565,
+     -0.0008765823204662793,
+     0.001495115643543432,
+     41.67
+    ],
+    [
+     "C3",
+     2396,
+     240,
+     55.56,
+     0.04648744257014842,
+     3.0,
+     25.0,
+     -0.0425636940253708,
+     50.0,
+     23.08,
+     0.07602594219242564,
+     25.0,
+     0.018086334460851172,
+     0.026573754127996452,
+     -0.0016597017925206181,
+     0.002188735255697405,
+     53.33
+    ],
+    [
+     "C4",
+     11111,
+     240,
+     57.15,
+     0.044989829839522766,
+     3.0,
+     26.55,
+     -0.04137952965114183,
+     49.53,
+     24.49,
+     0.07584375918071695,
+     26.04,
+     0.0167310661319115,
+     0.03265832796218793,
+     -0.00044267133367847933,
+     0.002165280158620053,
+     55.18
+    ]
+   ],
+   "notes": "rates are medians of per-name rates; see R2c for the mean"
+  },
+  "R2b": {
+   "title": "POOLED-EPISODE",
+   "columns": [
+    "lane",
+    "episodes",
+    "names",
+    "near_low%",
+    "entry_vs_low",
+    "td_to_trough",
+    "false_bounce%",
+    "MAE_21",
+    "survA%",
+    "survB%",
+    "MFE_42",
+    "R2%",
+    "fwd21",
+    "fwd42",
+    "ex21",
+    "ex42",
+    "near_low_open%"
+   ],
+   "rows": [
+    [
+     "C0",
+     7918,
+     240,
+     8.83,
+     0.1005530109170244,
+     14.0,
+     9.48,
+     -0.03992126877154106,
+     72.96,
+     28.7,
+     0.0726723718798945,
+     10.07,
+     0.017505039553938784,
+     0.027423731021808173,
+     0.0005805787619016511,
+     0.0024966366907366866,
+     9.38
+    ],
+    [
+     "C1",
+     7973,
+     240,
+     49.6,
+     0.05024834057515282,
+     3.0,
+     24.24,
+     -0.04208907366931114,
+     52.58,
+     27.79,
+     0.07620548707250929,
+     24.98,
+     0.015624897250869685,
+     0.030018605877973448,
+     -0.0004673917960684726,
+     0.0013341523991725612,
+     48.64
+    ],
+    [
+     "C2s",
+     3474,
+     240,
+     44.79,
+     0.054215244812858554,
+     6.0,
+     22.8,
+     -0.04132231274684206,
+     54.82,
+     23.3,
+     0.07143446494588479,
+     21.79,
+     0.013918456688006176,
+     0.023994169687378886,
+     -0.0019646732968372493,
+     -0.0005109187924016156,
+     43.92
+    ],
+    [
+     "C2r",
+     3630,
+     240,
+     43.58,
+     0.055232157195119314,
+     6.0,
+     22.27,
+     -0.04132231274684206,
+     55.2,
+     23.47,
+     0.0711322716638404,
+     21.44,
+     0.013442545453721033,
+     0.02328562530677103,
+     -0.0017936018956565825,
+     -0.001033589046714134,
+     42.83
+    ],
+    [
+     "C3",
+     2396,
+     240,
+     55.09,
+     0.045775666900714995,
+     3.0,
+     25.9,
+     -0.04096511653234991,
+     50.4,
+     24.06,
+     0.07404330708936113,
+     25.5,
+     0.016194836466746354,
+     0.026141970400455627,
+     -0.0013685191363266291,
+     0.000861363172009133,
+     53.82
+    ],
+    [
+     "C4",
+     11111,
+     240,
+     55.47,
+     0.04555914687651885,
+     3.0,
+     27.38,
+     -0.04141073218865182,
+     49.13,
+     24.55,
+     0.07662923571249303,
+     26.37,
+     0.016120865886807945,
+     0.030631780837556688,
+     -0.00034400815679186403,
+     0.0007242766725201744,
+     54.39
+    ]
+   ],
+   "notes": "every episode weighted equally; survivorship-tinted outcome columns"
+  },
+  "R2c": {
+   "title": "PER-NAME-FIRST rate metrics \u2014 MEAN across names",
+   "columns": [
+    "lane",
+    "names",
+    "near_low%",
+    "false_bounce%",
+    "survA%",
+    "survB%",
+    "R2%"
+   ],
+   "rows": [
+    [
+     "C0",
+     240,
+     8.25,
+     9.48,
+     73.24,
+     28.95,
+     10.53
+    ],
+    [
+     "C1",
+     240,
+     48.28,
+     24.28,
+     52.88,
+     27.55,
+     25.26
+    ],
+    [
+     "C2s",
+     240,
+     43.16,
+     22.77,
+     54.42,
+     23.08,
+     22.5
+    ],
+    [
+     "C2r",
+     240,
+     41.95,
+     22.27,
+     54.92,
+     23.31,
+     22.2
+    ],
+    [
+     "C3",
+     240,
+     53.29,
+     26.1,
+     49.93,
+     23.83,
+     25.9
+    ],
+    [
+     "C4",
+     240,
+     54.16,
+     27.27,
+     49.51,
+     24.69,
+     26.7
+    ]
+   ],
+   "notes": ""
+  },
+  "R2d": {
+   "title": "C1 cohort splits (confirm timing, and the C1z zero-bound subset)",
+   "columns": [
+    "cohort",
+    "episodes",
+    "names",
+    "near_low%",
+    "entry_vs_low",
+    "td_to_trough",
+    "false_bounce%",
+    "survA%",
+    "MFE_42",
+    "R2%"
+   ],
+   "rows": [
+    [
+     "C1 all",
+     7973,
+     240,
+     49.6,
+     0.05024834057515282,
+     3.0,
+     24.24,
+     52.58,
+     0.07620548707250929,
+     24.98
+    ],
+    [
+     "C1 immediate-confirm",
+     5926,
+     240,
+     48.35,
+     0.051134511086796564,
+     3.0,
+     24.58,
+     52.83,
+     0.07648963282408361,
+     24.41
+    ],
+    [
+     "C1 waited-confirm",
+     2047,
+     239,
+     53.25,
+     0.0476289523462452,
+     2.0,
+     23.28,
+     51.85,
+     0.07515435309666874,
+     26.64
+    ],
+    [
+     "C1z (3D %K <= 2 in prior 10 bars)",
+     4722,
+     239,
+     54.6,
+     0.04637038441960495,
+     2.0,
+     25.73,
+     50.52,
+     0.07880004788498152,
+     26.77
+    ],
+    [
+     "C1 non-zero-bound",
+     3251,
+     240,
+     42.36,
+     0.055802271564768136,
+     4.0,
+     22.07,
+     55.57,
+     0.07239550477484213,
+     22.38
+    ]
+   ],
+   "notes": ""
+  },
+  "R2e": {
+   "title": "C1 confirm accounting + fire economics",
+   "columns": [
+    "metric",
+    "value"
+   ],
+   "rows": [
+    [
+     "C1 3D deep crosses that never found a 1D confirm within 10 sessions (unconfirmed, NO fire; all names, all dates)",
+     672
+    ],
+    [
+     "C1 panel episodes confirmed IMMEDIATELY",
+     5926
+    ],
+    [
+     "C1 panel episodes confirmed after WAITING",
+     2047
+    ],
+    [
+     "median wait when waiting (sessions, panel episodes)",
+     2.0
+    ],
+    [
+     "deduped C1 fires across ALL names incl. add-ons (immediate / waited)",
+     "6243 / 2181"
+    ],
+    [
+     "median wait, all names",
+     2.0
+    ]
+   ],
+   "notes": ""
+  },
+  "R2f": {
+   "title": "Honest-N: fires, episodes, truncation and fire rate",
+   "columns": [
+    "lane",
+    "raw fires",
+    "episodes (deduped, in-window, priced)",
+    "names",
+    "fires/name-year",
+    "truncated: no T+15",
+    "truncated: <30 fwd sessions"
+   ],
+   "rows": [
+    [
+     "C0",
+     8803,
+     7918,
+     240,
+     2.9782,
+     59,
+     103
+    ],
+    [
+     "C1",
+     8970,
+     7973,
+     240,
+     2.9989,
+     45,
+     92
+    ],
+    [
+     "C2s",
+     3760,
+     3474,
+     240,
+     1.3067,
+     14,
+     32
+    ],
+    [
+     "C2r",
+     3819,
+     3630,
+     240,
+     1.3653,
+     16,
+     34
+    ],
+    [
+     "C3",
+     2512,
+     2396,
+     240,
+     0.9012,
+     10,
+     23
+    ],
+    [
+     "C4",
+     16428,
+     11111,
+     240,
+     4.1792,
+     59,
+     115
+    ]
+   ],
+   "notes": ""
+  },
+  "R2g": {
+   "title": "Half-split by fire date (each lane split at ITS OWN median date)",
+   "columns": [
+    "lane",
+    "half",
+    "median date",
+    "episodes",
+    "near_low%",
+    "entry_vs_low",
+    "td_to_trough",
+    "false_bounce%",
+    "survA%",
+    "MFE_42",
+    "R2%"
+   ],
+   "rows": [
+    [
+     "C0",
+     "early",
+     "2021-02-11",
+     3967,
+     10.81,
+     0.09590966833959191,
+     15.0,
+     9.53,
+     73.56,
+     0.06886548601506148,
+     8.92
+    ],
+    [
+     "C0",
+     "late",
+     "2021-02-11",
+     3951,
+     6.83,
+     0.10492014814499373,
+     14.0,
+     9.43,
+     72.35,
+     0.07774932758262587,
+     11.25
+    ],
+    [
+     "C1",
+     "early",
+     "2021-03-15",
+     3989,
+     53.4,
+     0.04715004492275909,
+     3.0,
+     23.01,
+     54.05,
+     0.07015009427649543,
+     23.64
+    ],
+    [
+     "C1",
+     "late",
+     "2021-03-15",
+     3984,
+     45.81,
+     0.05346151135229682,
+     3.0,
+     25.49,
+     51.08,
+     0.08207941551245623,
+     26.36
+    ],
+    [
+     "C2s",
+     "early",
+     "2020-10-02",
+     1765,
+     47.76,
+     0.0519608333676409,
+     6.0,
+     22.15,
+     55.24,
+     0.0628678501684734,
+     19.21
+    ],
+    [
+     "C2s",
+     "late",
+     "2020-10-02",
+     1709,
+     41.72,
+     0.057106538246525895,
+     5.0,
+     23.48,
+     54.38,
+     0.08117249975411767,
+     24.51
+    ],
+    [
+     "C2r",
+     "early",
+     "2020-10-02",
+     1835,
+     46.81,
+     0.052769377916698224,
+     6.0,
+     21.8,
+     55.42,
+     0.06284797362937744,
+     18.91
+    ],
+    [
+     "C2r",
+     "late",
+     "2020-10-02",
+     1795,
+     40.28,
+     0.05907676747494017,
+     5.0,
+     22.77,
+     54.97,
+     0.08082288390143533,
+     24.08
+    ],
+    [
+     "C3",
+     "early",
+     "2020-09-02",
+     1202,
+     58.49,
+     0.04345079719586187,
+     3.0,
+     25.54,
+     50.92,
+     0.06377527263777416,
+     23.04
+    ],
+    [
+     "C3",
+     "late",
+     "2020-09-02",
+     1194,
+     51.68,
+     0.04862558923590432,
+     3.0,
+     26.27,
+     49.87,
+     0.08358514181378807,
+     28.01
+    ],
+    [
+     "C4",
+     "early",
+     "2021-03-30",
+     5558,
+     58.13,
+     0.042991822760292564,
+     3.0,
+     25.96,
+     50.41,
+     0.07133443511705129,
+     25.66
+    ],
+    [
+     "C4",
+     "late",
+     "2021-03-30",
+     5553,
+     52.8,
+     0.047631275312241206,
+     3.0,
+     28.81,
+     47.81,
+     0.08237467345011495,
+     27.11
+    ]
+   ],
+   "notes": ""
+  },
+  "R2h": {
+   "title": "CURRENT-REGIME CELL \u2014 episodes with T >= 2026-01-01 (pooled)",
+   "columns": [
+    "lane",
+    "episodes",
+    "names",
+    "near_low%",
+    "entry_vs_low",
+    "td_to_trough",
+    "false_bounce%",
+    "MAE_21",
+    "survA%",
+    "survB%",
+    "MFE_42",
+    "R2%",
+    "fwd21",
+    "fwd42",
+    "ex21",
+    "ex42",
+    "near_low_open%"
+   ],
+   "rows": [
+    [
+     "C0",
+     428,
+     222,
+     6.54,
+     0.12043235462551571,
+     14.0,
+     7.59,
+     -0.0432904538544292,
+     73.85,
+     29.54,
+     0.08794590757648968,
+     15.69,
+     0.014329801041821577,
+     0.04105920822318376,
+     -0.003712995746432246,
+     0.004425256049563675,
+     6.65
+    ],
+    [
+     "C1",
+     436,
+     228,
+     39.91,
+     0.05823717773226289,
+     3.0,
+     21.74,
+     -0.04457424513640079,
+     53.2,
+     23.55,
+     0.07855135852833661,
+     26.74,
+     0.011294236589011852,
+     0.027462597571778602,
+     -0.021595474492076716,
+     -0.04389750766517203,
+     38.66
+    ],
+    [
+     "C2s",
+     188,
+     141,
+     40.96,
+     0.05768459995797659,
+     4.0,
+     21.26,
+     -0.04087762211824342,
+     55.77,
+     21.79,
+     0.0766488935785713,
+     21.79,
+     0.01516139787232218,
+     0.038177137805101014,
+     -0.01927220544505226,
+     -0.030371554527105715,
+     44.02
+    ],
+    [
+     "C2r",
+     194,
+     146,
+     39.69,
+     0.058867167466891024,
+     4.0,
+     21.35,
+     -0.04326508512731364,
+     55.62,
+     21.88,
+     0.07759838054510504,
+     22.5,
+     0.01516139787232218,
+     0.038177137805101014,
+     -0.01927220544505226,
+     -0.030371554527105715,
+     42.63
+    ],
+    [
+     "C3",
+     132,
+     110,
+     46.21,
+     0.05247178646454609,
+     2.0,
+     22.13,
+     -0.03917947535982258,
+     55.96,
+     24.77,
+     0.07807882202416128,
+     26.61,
+     0.015838896134822367,
+     0.043600238213866604,
+     -0.02433648696020141,
+     -0.030019786087499722,
+     50.39
+    ],
+    [
+     "C4",
+     616,
+     233,
+     44.97,
+     0.05482374375686616,
+     3.0,
+     26.75,
+     -0.04300674865025278,
+     51.7,
+     22.16,
+     0.08439903116151326,
+     28.14,
+     0.017116450199183397,
+     0.03301470388945249,
+     -0.00906473317979839,
+     -0.01540700920577931,
+     45.11
+    ]
+   ],
+   "notes": "the adjudication-coverage answer for today's regime"
+  },
+  "R2i": {
+   "title": "C0 coverage \u2014 share of incumbent BUY episodes with an earlier candidate fire in the prior 30 sessions",
+   "columns": [
+    "lane",
+    "C0 episodes",
+    "covered",
+    "coverage%",
+    "median lead (sessions)"
+   ],
+   "rows": [
+    [
+     "C1",
+     7918,
+     4800,
+     60.62,
+     12.0
+    ],
+    [
+     "C2r",
+     7918,
+     2313,
+     29.21,
+     12.0
+    ],
+    [
+     "C3",
+     7918,
+     1611,
+     20.35,
+     15.0
+    ],
+    [
+     "C4",
+     7918,
+     5439,
+     68.69,
+     11.0
+    ]
+   ],
+   "notes": ""
+  },
+  "R3.washout_breadth": {
+   "title": "Outcome by within-construction TERCILE of washout_breadth",
+   "columns": [
+    "lane",
+    "tercile",
+    "episodes",
+    "names",
+    "washout_breadth range",
+    "false_bounce%",
+    "survA%",
+    "MFE_42"
+   ],
+   "rows": [
+    [
+     "C1",
+     "bottom",
+     792,
+     226,
+     "0.04-0.48",
+     22.5,
+     53.32,
+     0.0671713731305813
+    ],
+    [
+     "C1",
+     "middle",
+     793,
+     235,
+     "0.48-0.70",
+     25.48,
+     49.61,
+     0.07719184538417456
+    ],
+    [
+     "C1",
+     "top",
+     792,
+     231,
+     "0.70-1.00",
+     24.81,
+     51.65,
+     0.08950903646386532
+    ],
+    [
+     "C2r",
+     "bottom",
+     339,
+     178,
+     "0.00-0.44",
+     20.97,
+     57.14,
+     0.07405362698130213
+    ],
+    [
+     "C2r",
+     "middle",
+     339,
+     178,
+     "0.44-0.67",
+     25.82,
+     52.4,
+     0.06905958053004768
+    ],
+    [
+     "C2r",
+     "top",
+     339,
+     179,
+     "0.67-1.00",
+     25.6,
+     51.22,
+     0.07842774352658588
+    ],
+    [
+     "C3",
+     "bottom",
+     226,
+     144,
+     "0.05-0.48",
+     26.82,
+     48.6,
+     0.07229475512321248
+    ],
+    [
+     "C3",
+     "middle",
+     226,
+     149,
+     "0.49-0.70",
+     30.22,
+     49.55,
+     0.07152988378681657
+    ],
+    [
+     "C3",
+     "top",
+     226,
+     144,
+     "0.71-1.00",
+     26.79,
+     48.18,
+     0.08012239154953182
+    ]
+   ],
+   "notes": "top-vs-bottom spread printed in R3.spread; pre-stated read = >= 10pp false-bounce spread with consistent sign across the half-split"
+  },
+  "R3.spread.washout_breadth": {
+   "title": "Top-vs-bottom tercile FALSE-BOUNCE spread on washout_breadth, with half-split sign stability",
+   "columns": [
+    "lane",
+    "episodes with a basket",
+    "names",
+    "spread pp (top-bottom)",
+    "early-half spread pp",
+    "late-half spread pp",
+    "|spread| >= 10pp",
+    "sign consistent",
+    "READ"
+   ],
+   "rows": [
+    [
+     "C1",
+     2377,
+     240,
+     2.31,
+     7.81,
+     -4.34,
+     false,
+     false,
+     "null"
+    ],
+    [
+     "C2r",
+     1017,
+     235,
+     4.62,
+     7.69,
+     3.4,
+     false,
+     true,
+     "null"
+    ],
+    [
+     "C3",
+     678,
+     226,
+     -0.03,
+     1.74,
+     -2.0,
+     false,
+     false,
+     "null"
+    ]
+   ],
+   "notes": ""
+  },
+  "R3.turn_breadth": {
+   "title": "Outcome by within-construction TERCILE of turn_breadth",
+   "columns": [
+    "lane",
+    "tercile",
+    "episodes",
+    "names",
+    "turn_breadth range",
+    "false_bounce%",
+    "survA%",
+    "MFE_42"
+   ],
+   "rows": [
+    [
+     "C1",
+     "bottom",
+     792,
+     204,
+     "0.00-0.00",
+     21.21,
+     55.1,
+     0.08385807064542528
+    ],
+    [
+     "C1",
+     "middle",
+     793,
+     211,
+     "0.00-0.07",
+     24.65,
+     50.91,
+     0.07334809211906934
+    ],
+    [
+     "C1",
+     "top",
+     792,
+     233,
+     "0.07-0.55",
+     26.95,
+     48.56,
+     0.07904047771781586
+    ],
+    [
+     "C2r",
+     "bottom",
+     339,
+     167,
+     "0.00-0.08",
+     21.52,
+     55.69,
+     0.07515341248293872
+    ],
+    [
+     "C2r",
+     "middle",
+     339,
+     184,
+     "0.08-0.14",
+     25.23,
+     50.15,
+     0.07386721930799434
+    ],
+    [
+     "C2r",
+     "top",
+     339,
+     166,
+     "0.14-0.60",
+     25.66,
+     54.82,
+     0.07223401392345064
+    ],
+    [
+     "C3",
+     "bottom",
+     226,
+     136,
+     "0.01-0.08",
+     30.0,
+     45.37,
+     0.06600734804018671
+    ],
+    [
+     "C3",
+     "middle",
+     226,
+     146,
+     "0.08-0.14",
+     25.56,
+     48.62,
+     0.08684989783786135
+    ],
+    [
+     "C3",
+     "top",
+     226,
+     134,
+     "0.14-0.55",
+     28.32,
+     52.25,
+     0.07610944434634104
+    ]
+   ],
+   "notes": "top-vs-bottom spread printed in R3.spread; pre-stated read = >= 10pp false-bounce spread with consistent sign across the half-split"
+  },
+  "R3.spread.turn_breadth": {
+   "title": "Top-vs-bottom tercile FALSE-BOUNCE spread on turn_breadth, with half-split sign stability",
+   "columns": [
+    "lane",
+    "episodes with a basket",
+    "names",
+    "spread pp (top-bottom)",
+    "early-half spread pp",
+    "late-half spread pp",
+    "|spread| >= 10pp",
+    "sign consistent",
+    "READ"
+   ],
+   "rows": [
+    [
+     "C1",
+     2377,
+     240,
+     5.74,
+     9.82,
+     5.18,
+     false,
+     true,
+     "null"
+    ],
+    [
+     "C2r",
+     1017,
+     235,
+     4.15,
+     6.51,
+     -0.08,
+     false,
+     false,
+     "null"
+    ],
+    [
+     "C3",
+     678,
+     226,
+     -1.68,
+     0.0,
+     -3.55,
+     false,
+     false,
+     "null"
+    ]
+   ],
+   "notes": ""
+  },
+  "R4.parity": {
+   "title": "confirm_events (with stop_level) vs charting-app warn_events(kind='confirm')",
+   "columns": [
+    "names checked",
+    "confirm dates ours",
+    "confirm dates warn_events",
+    "identical"
+   ],
+   "rows": [
+    [
+     242,
+     12940,
+     12940,
+     true
+    ]
+   ],
+   "notes": ""
+  },
+  "R4a": {
+   "title": "Structure-stop CONFIRMs \u2014 near-low audit (full +/-10 window only)",
+   "columns": [
+    "cohort",
+    "n",
+    "names",
+    "near_low_stop%",
+    "median fwd10",
+    "median fwd21"
+   ],
+   "rows": [
+    [
+     "primary panel",
+     12786,
+     240,
+     34.92,
+     0.007280465078080445,
+     0.010749606120130206
+    ],
+    [
+     "panel + HL/UEC add-ons",
+     12892,
+     242,
+     34.95,
+     0.0073007162176004226,
+     0.010695464659929654
+    ],
+    [
+     "HL/UEC add-ons only",
+     106,
+     2,
+     38.68,
+     0.011257689092536327,
+     -0.001347591632984979
+    ]
+   ],
+   "notes": ""
+  },
+  "R4b": {
+   "title": "split (a): 1D MACD-RSI histogram RISING at the confirm (hist(T)>hist(T-1)>hist(T-2))",
+   "columns": [
+    "cohort",
+    "n",
+    "names",
+    "near_low_stop%",
+    "median fwd10",
+    "median fwd21"
+   ],
+   "rows": [
+    [
+     "hist rising (contradicted stop)",
+     110,
+     87,
+     23.64,
+     0.002131860755777759,
+     0.0066536889888435535
+    ],
+    [
+     "hist not rising",
+     12676,
+     240,
+     35.02,
+     0.0073646438779296775,
+     0.010750373534478275
+    ]
+   ],
+   "notes": ""
+  },
+  "R4c": {
+   "title": "split (b): 3D MACD-RSI at-or-above its signal line at the confirm",
+   "columns": [
+    "cohort",
+    "n",
+    "names",
+    "near_low_stop%",
+    "median fwd10",
+    "median fwd21"
+   ],
+   "rows": [
+    [
+     "3D macd >= sig",
+     9660,
+     240,
+     34.0,
+     0.006880769383526775,
+     0.008894459525866427
+    ],
+    [
+     "3D macd < sig",
+     3126,
+     240,
+     37.78,
+     0.00877967293691706,
+     0.015787221988649458
+    ]
+   ],
+   "notes": ""
+  },
+  "R4d": {
+   "title": "joint split (a)x(b)",
+   "columns": [
+    "cohort",
+    "n",
+    "names",
+    "near_low_stop%",
+    "median fwd10",
+    "median fwd21"
+   ],
+   "rows": [
+    [
+     "hist rising & 3D bull",
+     58,
+     50,
+     15.52,
+     -0.004383198425671808,
+     0.011295790532938943
+    ],
+    [
+     "hist rising & 3D bear",
+     52,
+     48,
+     32.69,
+     0.003336216370370182,
+     0.0066536889888435535
+    ],
+    [
+     "hist flat/falling & 3D bull",
+     9602,
+     240,
+     34.11,
+     0.006932208375788007,
+     0.008894459525866427
+    ],
+    [
+     "hist flat/falling & 3D bear",
+     3074,
+     240,
+     37.87,
+     0.00886029868614846,
+     0.015795755152680835
+    ]
+   ],
+   "notes": ""
+  },
+  "R4.receipts": {
+   "title": "Named receipt rows \u2014 STLD 2026 stops and HL 2026-07-31",
+   "columns": [
+    "ticker",
+    "date",
+    "close",
+    "stop_level",
+    "argmin low date",
+    "gap",
+    "near_low_stop",
+    "hist_rising",
+    "3D macd>=sig",
+    "fwd10",
+    "fwd21"
+   ],
+   "rows": [
+    [
+     "STLD",
+     "2026-01-07",
+     166.93359375,
+     168.54493713378906,
+     "2026-01-08",
+     -1,
+     true,
+     false,
+     false,
+     0.0654233576108576,
+     0.20592267389142394
+    ],
+    [
+     "STLD",
+     "2026-05-19",
+     222.8645477294922,
+     223.86228942871094,
+     "2026-05-19",
+     0,
+     true,
+     false,
+     true,
+     0.23172325560839435,
+     0.11881634033293009
+    ],
+    [
+     "STLD",
+     "2026-06-18",
+     249.34449768066406,
+     266.59539794921875,
+     "2026-07-02",
+     -9,
+     false,
+     false,
+     true,
+     -0.08933219126003045,
+     -0.06346437782023806
+    ],
+    [
+     "HL",
+     "2026-02-12",
+     20.881072998046875,
+     21.300891876220703,
+     "2026-02-17",
+     -2,
+     true,
+     false,
+     false,
+     0.1924365638212826,
+     -0.04816182327313434
+    ]
+   ],
+   "notes": ""
+  },
+  "R4.hl_phase": {
+   "title": "HL 2026-07-31 served-slice stop vs full-history recompute \u2014 leading-history PHASE sweep of confluence_v2's 2B/3B resample",
+   "columns": [
+    "slice",
+    "confirm dates >= 2026-06-01",
+    "has 2026-07-31"
+   ],
+   "rows": [
+    [
+     "drop 0 leading sessions",
+     "-",
+     false
+    ],
+    [
+     "drop 1 leading sessions",
+     "-",
+     false
+    ],
+    [
+     "drop 2 leading sessions",
+     "2026-07-31",
+     true
+    ],
+    [
+     "drop 3 leading sessions",
+     "-",
+     false
+    ],
+    [
+     "drop 4 leading sessions",
+     "-",
+     false
+    ],
+    [
+     "drop 5 leading sessions",
+     "-",
+     false
+    ],
+    [
+     "slice from 2020-01-01",
+     "-",
+     false
+    ],
+    [
+     "slice from 2021-01-01",
+     "-",
+     false
+    ],
+    [
+     "slice from 2022-01-01",
+     "-",
+     false
+    ],
+    [
+     "slice from 2023-01-01",
+     "2026-07-31",
+     true
+    ],
+    [
+     "slice from 2024-01-01",
+     "-",
+     false
+    ],
+    [
+     "slice from 2025-01-01",
+     "2026-07-31",
+     true
+    ]
+   ],
+   "notes": ""
+  },
+  "R4e": {
+   "title": "SECONDARY \u2014 macro-store `sell` (3D CS) markers, same near-low audit",
+   "columns": [
+    "cohort",
+    "n",
+    "names",
+    "near_low_stop%",
+    "median fwd10",
+    "median fwd21"
+   ],
+   "rows": [
+    [
+     "all sells",
+     8331,
+     240,
+     32.59,
+     0.006478727311163057,
+     0.012751350557438479
+    ],
+    [
+     "hist rising",
+     1138,
+     235,
+     26.45,
+     0.0044593255916215435,
+     0.008124061560602414
+    ],
+    [
+     "hist not rising",
+     7193,
+     240,
+     33.56,
+     0.006747334876852085,
+     0.013377136255346533
+    ],
+    [
+     "3D macd >= sig",
+     11,
+     11,
+     45.45,
+     0.011002086230648134,
+     -0.01214998520928745
+    ],
+    [
+     "3D macd < sig",
+     8320,
+     240,
+     32.57,
+     0.0064694009733039515,
+     0.012850458817967425
+    ]
+   ],
+   "notes": ""
+  },
+  "R5": {
+   "title": "Add-on exemplars (HL, UEC) \u2014 recomputed lanes only, NEVER pooled",
+   "columns": [
+    "ticker",
+    "lane",
+    "episodes",
+    "near_low%",
+    "median entry_vs_low",
+    "median td_to_trough",
+    "false_bounce%",
+    "survA%",
+    "median MFE_42"
+   ],
+   "rows": [
+    [
+     "HL",
+     "C1",
+     36,
+     16.67,
+     0.10210380895891635,
+     3.0,
+     27.78,
+     41.67,
+     0.15835243227118334
+    ],
+    [
+     "HL",
+     "C2r",
+     16,
+     25.0,
+     0.09863846038952073,
+     -9.5,
+     37.5,
+     37.5,
+     0.13740701889568085
+    ],
+    [
+     "HL",
+     "C3",
+     10,
+     40.0,
+     0.08196577321892862,
+     -11.5,
+     60.0,
+     20.0,
+     0.13740701889568085
+    ],
+    [
+     "HL",
+     "C4",
+     49,
+     24.49,
+     0.0862069460352155,
+     3.0,
+     38.78,
+     32.65,
+     0.10418749577603625
+    ],
+    [
+     "UEC",
+     "C1",
+     32,
+     6.25,
+     0.14069312508175913,
+     2.0,
+     22.58,
+     35.48,
+     0.18279571546434803
+    ],
+    [
+     "UEC",
+     "C2r",
+     16,
+     12.5,
+     0.1666087375020716,
+     3.0,
+     18.75,
+     31.25,
+     0.1722684083291378
+    ],
+    [
+     "UEC",
+     "C3",
+     12,
+     16.67,
+     0.15595423826606192,
+     3.0,
+     25.0,
+     16.67,
+     0.14356814614586333
+    ],
+    [
+     "UEC",
+     "C4",
+     39,
+     7.69,
+     0.11029409895615605,
+     3.0,
+     42.11,
+     27.03,
+     0.190839702992317
+    ]
+   ],
+   "notes": ""
+  },
+  "R8.labels": {
+   "title": "\u00a78 label accounting (FALSE START / DURABLE / excluded-truncated)",
+   "columns": [
+    "lane",
+    "episodes",
+    "names",
+    "false_start",
+    "durable",
+    "excluded (truncated forward window)",
+    "false-start% of graded"
+   ],
+   "rows": [
+    [
+     "C2r",
+     3630,
+     240,
+     1611,
+     1985,
+     34,
+     44.8
+    ],
+    [
+     "C1",
+     7973,
+     240,
+     3737,
+     4144,
+     92,
+     47.42
+    ]
+   ],
+   "notes": "FALSE START = stop A hit within +42 OR false bounce; DURABLE = stop A survived AND no false bounce; anything with a missing input is excluded"
+  },
+  "R8.C2r.ledger": {
+   "title": "\u00a78 ORE LEDGER \u2014 C2r episodes: false-start rate by feature cell",
+   "columns": [
+    "feature",
+    "cells (low -> high)",
+    "n per cell",
+    "names per cell",
+    "false-start% per cell",
+    "spread pp (hi-lo)",
+    "95% CI pp (month-cluster)",
+    "per-name-first spread pp",
+    "early-half pp",
+    "late-half pp",
+    "median entry_vs_low lo -> hi",
+    "label-coupled",
+    "READ"
+   ],
+   "rows": [
+    [
+     "1  washout depth: 3D %K at the cross bar",
+     "bottom (<= 10.5) | middle | top (> 20.2)",
+     "1199 | 1198 | 1199",
+     "237 | 235 | 234",
+     "57.2 | 41.8 | 35.4",
+     -21.85,
+     "-26.8 .. -16.3",
+     -21.85,
+     -19.62,
+     -24.11,
+     "0.036 -> 0.077",
+     false,
+     "LIVE"
+    ],
+    [
+     "1b washout depth: 3D %K <= 2 in the prior 10 buckets",
+     "False | True",
+     "1921 | 1675",
+     "236 | 239",
+     "42.8 | 47.1",
+     4.31,
+     "-1.0 .. 9.1",
+     3.59,
+     3.44,
+     5.19,
+     "0.062 -> 0.049",
+     false,
+     "null"
+    ],
+    [
+     "2  washout duration: consecutive 3D buckets with %D < 20",
+     "bottom (<= 3) | middle | top (> 5)",
+     "1890 | 625 | 1081",
+     "236 | 222 | 234",
+     "43.0 | 47.4 | 46.4",
+     3.42,
+     "-3.2 .. 9.3",
+     3.66,
+     7.17,
+     -0.19,
+     "0.060 -> 0.052",
+     false,
+     "null"
+    ],
+    [
+     "3  decline depth: close(T)/max close[T-126,T] - 1",
+     "bottom (<= -0.135) | middle | top (> -0.0693)",
+     "1199 | 1198 | 1199",
+     "229 | 233 | 225",
+     "48.8 | 49.9 | 35.7",
+     -13.09,
+     "-19.8 .. -5.6",
+     -8.83,
+     -12.16,
+     -14.1,
+     "0.057 -> 0.064",
+     false,
+     "LIVE"
+    ],
+    [
+     "4a 1D confirm state: MACD-RSI crossed up within [T-10, T]",
+     "False | True",
+     "543 | 3053",
+     "220 | 239",
+     "48.4 | 44.2",
+     -4.28,
+     "-10.2 .. 1.2",
+     -4.54,
+     -6.71,
+     -2.02,
+     "0.055 -> 0.055",
+     false,
+     "null"
+    ],
+    [
+     "4b 1D washout depth: MACD-RSI line level at T",
+     "bottom (<= -6.6) | middle | top (> -3.42)",
+     "1199 | 1198 | 1199",
+     "235 | 237 | 233",
+     "51.6 | 46.2 | 36.6",
+     -15.01,
+     "-21.1 .. -8.1",
+     -15.66,
+     -11.35,
+     -18.86,
+     "0.042 -> 0.071",
+     false,
+     "LIVE"
+    ],
+    [
+     "5a structure: latest confirmed r3 swing low >= the prior one",
+     "False | True",
+     "2644 | 952",
+     "238 | 233",
+     "46.6 | 39.8",
+     -6.79,
+     "-11.4 .. -1.6",
+     -7.44,
+     -6.73,
+     -6.84,
+     "0.051 -> 0.067",
+     false,
+     "SUGGESTIVE"
+    ],
+    [
+     "5b structure: close(T) vs the latest confirmed swing low",
+     "bottom (<= 0.0306) | middle | top (> 0.0564)",
+     "1199 | 1198 | 1199",
+     "231 | 227 | 233",
+     "56.0 | 43.7 | 34.6",
+     -21.43,
+     "-27.7 .. -14.4",
+     -25.72,
+     -21.62,
+     -21.69,
+     "0.028 -> 0.098",
+     true,
+     "LIVE"
+    ],
+    [
+     "6a volume: max down-day volume z (vs 60d) in [T-15, T]",
+     "<= 1.7 | > 1.7",
+     "1796 | 1795",
+     "238 | 239",
+     "43.8 | 45.8",
+     2.03,
+     "-2.7 .. 7.0",
+     2.25,
+     1.99,
+     2.09,
+     "0.056 -> 0.055",
+     false,
+     "null"
+    ],
+    [
+     "6b volume: fire-day volume / its 20d average",
+     "bottom (<= 0.762) | middle | top (> 0.997)",
+     "1199 | 1198 | 1199",
+     "236 | 234 | 234",
+     "45.5 | 42.4 | 46.5",
+     0.92,
+     "-3.7 .. 6.4",
+     1.78,
+     3.53,
+     -1.84,
+     "0.056 -> 0.054",
+     false,
+     "null"
+    ],
+    [
+     "7a trend class: close(T) above its 200-session mean",
+     "False | True",
+     "1557 | 2039",
+     "237 | 238",
+     "47.8 | 42.5",
+     -5.38,
+     "-11.4 .. 0.5",
+     -3.05,
+     -6.98,
+     -3.77,
+     "0.050 -> 0.060",
+     false,
+     "SUGGESTIVE"
+    ],
+    [
+     "7b trend class: 63-session relative strength vs SPY",
+     "bottom (<= -0.0829) | middle | top (> -0.00228)",
+     "1199 | 1198 | 1199",
+     "236 | 230 | 235",
+     "52.3 | 44.2 | 37.9",
+     -14.35,
+     "-20.7 .. -8.3",
+     -10.98,
+     -19.21,
+     -10.13,
+     "0.046 -> 0.077",
+     false,
+     "LIVE"
+    ],
+    [
+     "8  market context: SPY's own 3D %D < 20 at T",
+     "False | True",
+     "2682 | 914",
+     "239 | 231",
+     "44.7 | 45.0",
+     0.22,
+     "-8.7 .. 9.4",
+     -0.8,
+     -6.49,
+     6.57,
+     "0.054 -> 0.059",
+     false,
+     "null"
+    ],
+    [
+     "9a theme breadth: basket members washed out in [T-10, T]",
+     "bottom (<= 0.444) | middle | top (> 0.667)",
+     "331 | 332 | 321",
+     "180 | 177 | 176",
+     "43.5 | 46.4 | 49.5",
+     6.03,
+     "-3.9 .. 16.7",
+     7.77,
+     9.14,
+     2.43,
+     "0.064 -> 0.048",
+     false,
+     "SUGGESTIVE"
+    ],
+    [
+     "9b theme breadth: basket members with a C2r fire in [T-5, T]",
+     "bottom (<= 0.0769) | middle | top (> 0.143)",
+     "337 | 330 | 317",
+     "167 | 182 | 160",
+     "45.4 | 49.7 | 44.2",
+     -1.24,
+     "-10.7 .. 9.7",
+     -1.01,
+     0.98,
+     -2.94,
+     "0.056 -> 0.051",
+     false,
+     "null"
+    ],
+    [
+     "10 repeat-fire: a prior C2r fire in [T-20, T-1] that false-started",
+     "False | True",
+     "3425 | 171",
+     "239 | 113",
+     "44.2 | 56.7",
+     12.52,
+     "3.5 .. 22.6",
+     10.52,
+     20.29,
+     4.67,
+     "0.055 -> 0.050",
+     false,
+     "LIVE"
+    ]
+   ],
+   "notes": "LIVE = |spread| >= 10pp AND sign-stable across the halves; SUGGESTIVE = >= 5pp sign-stable; else null. Extreme cells thinner than 20 episodes get no verdict. No combinations searched. `label-coupled` marks a feature whose definition shares a term with the label. READ THE entry_vs_low COLUMN ALONGSIDE EVERY SPREAD: stop A sits at P_low x 0.99, so any feature whose cells differ in entry_vs_low is partly re-measuring stop DISTANCE rather than foresight \u2014 a cell entered further above its decline low is harder to stop out for arithmetic reasons alone."
+  },
+  "R8.C1.ledger": {
+   "title": "\u00a78 ORE LEDGER \u2014 C1 episodes: false-start rate by feature cell",
+   "columns": [
+    "feature",
+    "cells (low -> high)",
+    "n per cell",
+    "names per cell",
+    "false-start% per cell",
+    "spread pp (hi-lo)",
+    "95% CI pp (month-cluster)",
+    "per-name-first spread pp",
+    "early-half pp",
+    "late-half pp",
+    "median entry_vs_low lo -> hi",
+    "label-coupled",
+    "READ"
+   ],
+   "rows": [
+    [
+     "1  washout depth: 3D %K at the cross bar",
+     "bottom (<= 6.93) | middle | top (> 12.8)",
+     "2627 | 2627 | 2627",
+     "239 | 239 | 239",
+     "55.2 | 46.0 | 41.0",
+     -14.2,
+     "-17.4 .. -11.0",
+     -14.23,
+     -15.44,
+     -12.82,
+     "0.037 -> 0.063",
+     false,
+     "LIVE"
+    ],
+    [
+     "1b washout depth: 3D %K <= 2 in the prior 10 buckets",
+     "False | True",
+     "3220 | 4661",
+     "240 | 239",
+     "44.4 | 49.5",
+     5.14,
+     "1.7 .. 8.4",
+     5.49,
+     4.41,
+     5.73,
+     "0.055 -> 0.046",
+     false,
+     "SUGGESTIVE"
+    ],
+    [
+     "2  washout duration: consecutive 3D buckets with %D < 20",
+     "bottom (<= 2) | middle | top (> 4)",
+     "2709 | 2891 | 2281",
+     "239 | 239 | 239",
+     "43.7 | 48.4 | 50.6",
+     6.93,
+     "2.1 .. 12.2",
+     6.87,
+     9.41,
+     4.25,
+     "0.057 -> 0.044",
+     false,
+     "SUGGESTIVE"
+    ],
+    [
+     "3  decline depth: close(T)/max close[T-126,T] - 1",
+     "bottom (<= -0.14) | middle | top (> -0.0751)",
+     "2627 | 2627 | 2627",
+     "239 | 239 | 238",
+     "50.1 | 53.1 | 39.1",
+     -11.08,
+     "-17.5 .. -4.5",
+     -8.02,
+     -7.83,
+     -13.93,
+     "0.056 -> 0.052",
+     false,
+     "LIVE"
+    ],
+    [
+     "4a 1D confirm state: MACD-RSI crossed up within [T-10, T]",
+     "(degenerate: one cell only)",
+     "-",
+     "-",
+     "-",
+     null,
+     "-",
+     null,
+     null,
+     null,
+     "-",
+     false,
+     "degenerate"
+    ],
+    [
+     "4b 1D washout depth: MACD-RSI line level at T",
+     "bottom (<= -8.4) | middle | top (> -5.63)",
+     "2627 | 2627 | 2627",
+     "239 | 239 | 240",
+     "49.3 | 46.7 | 46.3",
+     -3.05,
+     "-7.7 .. 2.6",
+     -2.62,
+     -0.72,
+     -5.35,
+     "0.046 -> 0.054",
+     false,
+     "null"
+    ],
+    [
+     "5a structure: latest confirmed r3 swing low >= the prior one",
+     "False | True",
+     "6764 | 1117",
+     "240 | 234",
+     "47.8 | 44.9",
+     -2.99,
+     "-6.3 .. 0.4",
+     -3.05,
+     -2.94,
+     -2.94,
+     "0.049 -> 0.056",
+     false,
+     "null"
+    ],
+    [
+     "5b structure: close(T) vs the latest confirmed swing low",
+     "bottom (<= 0.0287) | middle | top (> 0.0522)",
+     "2627 | 2627 | 2627",
+     "238 | 235 | 240",
+     "55.5 | 48.2 | 38.6",
+     -16.94,
+     "-22.3 .. -11.4",
+     -21.27,
+     -19.43,
+     -15.21,
+     "0.028 -> 0.084",
+     true,
+     "LIVE"
+    ],
+    [
+     "6a volume: max down-day volume z (vs 60d) in [T-15, T]",
+     "<= 1.93 | > 1.93",
+     "3940 | 3940",
+     "240 | 239",
+     "48.1 | 46.8",
+     -1.29,
+     "-5.0 .. 1.9",
+     -0.9,
+     0.48,
+     -2.9,
+     "0.049 -> 0.051",
+     false,
+     "null"
+    ],
+    [
+     "6b volume: fire-day volume / its 20d average",
+     "bottom (<= 0.787) | middle | top (> 1.01)",
+     "2627 | 2627 | 2627",
+     "239 | 239 | 239",
+     "47.4 | 48.6 | 46.3",
+     -1.14,
+     "-4.9 .. 2.8",
+     -0.22,
+     -0.58,
+     -1.74,
+     "0.050 -> 0.051",
+     false,
+     "null"
+    ],
+    [
+     "7a trend class: close(T) above its 200-session mean",
+     "False | True",
+     "3463 | 4418",
+     "238 | 240",
+     "51.5 | 44.2",
+     -7.26,
+     "-12.4 .. -1.9",
+     -6.4,
+     -6.71,
+     -7.79,
+     "0.046 -> 0.054",
+     false,
+     "SUGGESTIVE"
+    ],
+    [
+     "7b trend class: 63-session relative strength vs SPY",
+     "bottom (<= -0.0828) | middle | top (> 0.00273)",
+     "2627 | 2627 | 2627",
+     "238 | 237 | 240",
+     "54.2 | 49.1 | 38.9",
+     -15.38,
+     "-20.2 .. -10.6",
+     -13.55,
+     -19.36,
+     -11.67,
+     "0.043 -> 0.069",
+     false,
+     "LIVE"
+    ],
+    [
+     "8  market context: SPY's own 3D %D < 20 at T",
+     "False | True",
+     "5248 | 2633",
+     "239 | 239",
+     "47.0 | 48.2",
+     1.23,
+     "-7.7 .. 10.2",
+     1.65,
+     -3.93,
+     5.58,
+     "0.047 -> 0.056",
+     false,
+     "null"
+    ],
+    [
+     "9a theme breadth: basket members washed out in [T-10, T]",
+     "bottom (<= 0.487) | middle | top (> 0.696)",
+     "765 | 770 | 754",
+     "225 | 233 | 225",
+     "46.5 | 50.5 | 48.4",
+     1.87,
+     "-5.6 .. 9.1",
+     2.86,
+     5.63,
+     -1.54,
+     "0.052 -> 0.048",
+     false,
+     "null"
+    ],
+    [
+     "9b theme breadth: basket members with a C2r fire in [T-5, T]",
+     "bottom (<= 0) | middle | top (> 0.0733)",
+     "852 | 674 | 763",
+     "229 | 203 | 233",
+     "44.5 | 50.1 | 51.5",
+     7.02,
+     "-0.2 .. 13.7",
+     9.19,
+     8.8,
+     5.42,
+     "0.052 -> 0.050",
+     false,
+     "SUGGESTIVE"
+    ],
+    [
+     "10 repeat-fire: a prior C2r fire in [T-20, T-1] that false-started",
+     "False | True",
+     "7295 | 586",
+     "240 | 215",
+     "46.1 | 63.3",
+     17.17,
+     "11.7 .. 22.6",
+     16.17,
+     19.7,
+     14.47,
+     "0.051 -> 0.043",
+     false,
+     "LIVE"
+    ]
+   ],
+   "notes": "LIVE = |spread| >= 10pp AND sign-stable across the halves; SUGGESTIVE = >= 5pp sign-stable; else null. Extreme cells thinner than 20 episodes get no verdict. No combinations searched. `label-coupled` marks a feature whose definition shares a term with the label. READ THE entry_vs_low COLUMN ALONGSIDE EVERY SPREAD: stop A sits at P_low x 0.99, so any feature whose cells differ in entry_vs_low is partly re-measuring stop DISTANCE rather than foresight \u2014 a cell entered further above its decline low is harder to stop out for arithmetic reasons alone."
+  },
+  "R8.cross2x2": {
+   "title": "\u00a78 2x2 \u2014 strongest C2r discriminator x theme TURN breadth (median split)",
+   "columns": [
+    "strongest feature",
+    "feature cell",
+    "turn breadth",
+    "episodes",
+    "names",
+    "false-start%"
+   ],
+   "rows": [
+    [
+     "1  washout depth: 3D %K at the cross bar",
+     "bottom (<= 10.1)",
+     "low (<= 0.106)",
+     152,
+     111,
+     74.34
+    ],
+    [
+     "1  washout depth: 3D %K at the cross bar",
+     "bottom (<= 10.1)",
+     "high (> 0.106)",
+     176,
+     120,
+     55.11
+    ],
+    [
+     "1  washout depth: 3D %K at the cross bar",
+     "top (> 20)",
+     "low (<= 0.106)",
+     175,
+     116,
+     33.71
+    ],
+    [
+     "1  washout depth: 3D %K at the cross bar",
+     "top (> 20)",
+     "high (> 0.106)",
+     153,
+     108,
+     40.52
+    ]
+   ],
+   "notes": "the single pre-permitted cross-tab; no other combination was searched"
+  }
+ },
+ "discriminator_lane": {
+  "ledger_C2r": [
+   {
+    "feature": "f_k_cross",
+    "label": "1  washout depth: 3D %K at the cross bar",
+    "kind": "t",
+    "cells": [
+     "bottom (<= 10.5)",
+     "middle",
+     "top (> 20.2)"
+    ],
+    "n": [
+     1199,
+     1198,
+     1199
+    ],
+    "names": [
+     237,
+     235,
+     234
+    ],
+    "false_start_rate": [
+     0.5721434528773979,
+     0.41819699499165275,
+     0.353628023352794
+    ],
+    "spread": -0.2185154295246039,
+    "ci95": [
+     -0.26816032522653793,
+     -0.16278169346950866
+    ],
+    "per_name_spread": -0.21848420176479244,
+    "early_spread": -0.19615369373347596,
+    "late_spread": -0.24113517893906872,
+    "entry_vs_low_lo": 0.03561901025763459,
+    "entry_vs_low_hi": 0.07720910222808408,
+    "label_coupled": false,
+    "read": "LIVE"
+   },
+   {
+    "feature": "f_zero_bound",
+    "label": "1b washout depth: 3D %K <= 2 in the prior 10 buckets",
+    "kind": "b",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     1921,
+     1675
+    ],
+    "names": [
+     236,
+     239
+    ],
+    "false_start_rate": [
+     0.4279021343050495,
+     0.471044776119403
+    ],
+    "spread": 0.04314264181435351,
+    "ci95": [
+     -0.010138065168806668,
+     0.09134915211261445
+    ],
+    "per_name_spread": 0.03594149753445147,
+    "early_spread": 0.034401647304873106,
+    "late_spread": 0.051883799005029596,
+    "entry_vs_low_lo": 0.06218094220559389,
+    "entry_vs_low_hi": 0.04859594674162859,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "f_wash_dur",
+    "label": "2  washout duration: consecutive 3D buckets with %D < 20",
+    "kind": "t",
+    "cells": [
+     "bottom (<= 3)",
+     "middle",
+     "top (> 5)"
+    ],
+    "n": [
+     1890,
+     625,
+     1081
+    ],
+    "names": [
+     236,
+     222,
+     234
+    ],
+    "false_start_rate": [
+     0.4301587301587302,
+     0.4736,
+     0.46438482886216464
+    ],
+    "spread": 0.03422609870343446,
+    "ci95": [
+     -0.03175858900163918,
+     0.09267061583657529
+    ],
+    "per_name_spread": 0.036589212471980825,
+    "early_spread": 0.07166446243919039,
+    "late_spread": -0.0018529895361760196,
+    "entry_vs_low_lo": 0.05979248033609186,
+    "entry_vs_low_hi": 0.051688035129319854,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "f_decline_depth",
+    "label": "3  decline depth: close(T)/max close[T-126,T] - 1",
+    "kind": "t",
+    "cells": [
+     "bottom (<= -0.135)",
+     "middle",
+     "top (> -0.0693)"
+    ],
+    "n": [
+     1199,
+     1198,
+     1199
+    ],
+    "names": [
+     229,
+     233,
+     225
+    ],
+    "false_start_rate": [
+     0.48790658882402,
+     0.4991652754590985,
+     0.35696413678065053
+    ],
+    "spread": -0.13094245204336946,
+    "ci95": [
+     -0.1984161061509957,
+     -0.05558567941934137
+    ],
+    "per_name_spread": -0.08832017101449419,
+    "early_spread": -0.12162660035000461,
+    "late_spread": -0.14095991581522327,
+    "entry_vs_low_lo": 0.057106538246525895,
+    "entry_vs_low_hi": 0.06449993004387622,
+    "label_coupled": false,
+    "read": "LIVE"
+   },
+   {
+    "feature": "f_x1d_crossed",
+    "label": "4a 1D confirm state: MACD-RSI crossed up within [T-10, T]",
+    "kind": "b",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     543,
+     3053
+    ],
+    "names": [
+     220,
+     239
+    ],
+    "false_start_rate": [
+     0.4843462246777164,
+     0.44153291844087783
+    ],
+    "spread": -0.042813306236838544,
+    "ci95": [
+     -0.10152363543555246,
+     0.011508119556209102
+    ],
+    "per_name_spread": -0.045369067913661576,
+    "early_spread": -0.0671465724964661,
+    "late_spread": -0.02023809523809522,
+    "entry_vs_low_lo": 0.055225110427406854,
+    "entry_vs_low_hi": 0.05502348381349753,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "f_macd1_level",
+    "label": "4b 1D washout depth: MACD-RSI line level at T",
+    "kind": "t",
+    "cells": [
+     "bottom (<= -6.6)",
+     "middle",
+     "top (> -3.42)"
+    ],
+    "n": [
+     1199,
+     1198,
+     1199
+    ],
+    "names": [
+     235,
+     237,
+     233
+    ],
+    "false_start_rate": [
+     0.5162635529608006,
+     0.46160267111853087,
+     0.36613844870725604
+    ],
+    "spread": -0.15012510425354458,
+    "ci95": [
+     -0.21067625402801932,
+     -0.08132055857005335
+    ],
+    "per_name_spread": -0.15664584444056645,
+    "early_spread": -0.11345532890773147,
+    "late_spread": -0.1886140557518649,
+    "entry_vs_low_lo": 0.0418386759971634,
+    "entry_vs_low_hi": 0.07139429216549797,
+    "label_coupled": false,
+    "read": "LIVE"
+   },
+   {
+    "feature": "f_higher_low",
+    "label": "5a structure: latest confirmed r3 swing low >= the prior one",
+    "kind": "b",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     2644,
+     952
+    ],
+    "names": [
+     238,
+     233
+    ],
+    "false_start_rate": [
+     0.4659606656580938,
+     0.39810924369747897
+    ],
+    "spread": -0.06785142196061483,
+    "ci95": [
+     -0.11368727708090921,
+     -0.01569659265454031
+    ],
+    "per_name_spread": -0.07435881457204424,
+    "early_spread": -0.0672505118635619,
+    "late_spread": -0.06842090094244457,
+    "entry_vs_low_lo": 0.05122286916061136,
+    "entry_vs_low_hi": 0.0674616868123965,
+    "label_coupled": false,
+    "read": "SUGGESTIVE"
+   },
+   {
+    "feature": "f_dist_swing",
+    "label": "5b structure: close(T) vs the latest confirmed swing low",
+    "kind": "t",
+    "cells": [
+     "bottom (<= 0.0306)",
+     "middle",
+     "top (> 0.0564)"
+    ],
+    "n": [
+     1199,
+     1198,
+     1199
+    ],
+    "names": [
+     231,
+     227,
+     233
+    ],
+    "false_start_rate": [
+     0.5604670558798999,
+     0.4373956594323873,
+     0.34612176814011675
+    ],
+    "spread": -0.21434528773978312,
+    "ci95": [
+     -0.2766116233859415,
+     -0.143608992736477
+    ],
+    "per_name_spread": -0.2571638274370187,
+    "early_spread": -0.2162342767295598,
+    "late_spread": -0.2168974055700683,
+    "entry_vs_low_lo": 0.028022909262102935,
+    "entry_vs_low_hi": 0.09831083998157841,
+    "label_coupled": true,
+    "read": "LIVE"
+   },
+   {
+    "feature": "f_vol_z_down",
+    "label": "6a volume: max down-day volume z (vs 60d) in [T-15, T]",
+    "kind": "m",
+    "cells": [
+     "<= 1.7",
+     "> 1.7"
+    ],
+    "n": [
+     1796,
+     1795
+    ],
+    "names": [
+     238,
+     239
+    ],
+    "false_start_rate": [
+     0.438195991091314,
+     0.4584958217270195
+    ],
+    "spread": 0.020299830635705507,
+    "ci95": [
+     -0.027080794992699605,
+     0.06974514502747206
+    ],
+    "per_name_spread": 0.022547813002174732,
+    "early_spread": 0.019936078443541116,
+    "late_spread": 0.02091954022988507,
+    "entry_vs_low_lo": 0.05572016550824066,
+    "entry_vs_low_hi": 0.05451976188070318,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "f_vol_ratio",
+    "label": "6b volume: fire-day volume / its 20d average",
+    "kind": "t",
+    "cells": [
+     "bottom (<= 0.762)",
+     "middle",
+     "top (> 0.997)"
+    ],
+    "n": [
+     1199,
+     1198,
+     1199
+    ],
+    "names": [
+     236,
+     234,
+     234
+    ],
+    "false_start_rate": [
+     0.4553794829024187,
+     0.4240400667779633,
+     0.4645537948290242
+    ],
+    "spread": 0.009174311926605505,
+    "ci95": [
+     -0.037224247569042586,
+     0.0641780295072657
+    ],
+    "per_name_spread": 0.01777213161393948,
+    "early_spread": 0.03528081930598681,
+    "late_spread": -0.018421368101976865,
+    "entry_vs_low_lo": 0.05619117733121959,
+    "entry_vs_low_hi": 0.05356884396576156,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "f_above200",
+    "label": "7a trend class: close(T) above its 200-session mean",
+    "kind": "b",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     1557,
+     2039
+    ],
+    "names": [
+     237,
+     238
+    ],
+    "false_start_rate": [
+     0.47848426461143223,
+     0.42471799901912705
+    ],
+    "spread": -0.053766265592305185,
+    "ci95": [
+     -0.11370296962069333,
+     0.0045596057064277405
+    ],
+    "per_name_spread": -0.030477966298310788,
+    "early_spread": -0.06980322588762233,
+    "late_spread": -0.0377091377091377,
+    "entry_vs_low_lo": 0.05023662291523534,
+    "entry_vs_low_hi": 0.05991596818082101,
+    "label_coupled": false,
+    "read": "SUGGESTIVE"
+   },
+   {
+    "feature": "f_rs63",
+    "label": "7b trend class: 63-session relative strength vs SPY",
+    "kind": "t",
+    "cells": [
+     "bottom (<= -0.0829)",
+     "middle",
+     "top (> -0.00228)"
+    ],
+    "n": [
+     1199,
+     1198,
+     1199
+    ],
+    "names": [
+     236,
+     230,
+     235
+    ],
+    "false_start_rate": [
+     0.5229357798165137,
+     0.44156928213689484,
+     0.3794829024186822
+    ],
+    "spread": -0.14345287739783152,
+    "ci95": [
+     -0.20684990540961518,
+     -0.08293063598692703
+    ],
+    "per_name_spread": -0.10980219143760428,
+    "early_spread": -0.19208754208754214,
+    "late_spread": -0.10130049285794906,
+    "entry_vs_low_lo": 0.04631708271446211,
+    "entry_vs_low_hi": 0.07699673041383992,
+    "label_coupled": false,
+    "read": "LIVE"
+   },
+   {
+    "feature": "f_spy_d3_lt20",
+    "label": "8  market context: SPY's own 3D %D < 20 at T",
+    "kind": "b",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     2682,
+     914
+    ],
+    "names": [
+     239,
+     231
+    ],
+    "false_start_rate": [
+     0.44742729306487694,
+     0.449671772428884
+    ],
+    "spread": 0.002244479364007068,
+    "ci95": [
+     -0.08666959700943358,
+     0.09415716403443032
+    ],
+    "per_name_spread": -0.007962154638449626,
+    "early_spread": -0.06489990236832305,
+    "late_spread": 0.06565086291897532,
+    "entry_vs_low_lo": 0.054011967873292654,
+    "entry_vs_low_hi": 0.058883797066950905,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "washout_breadth",
+    "label": "9a theme breadth: basket members washed out in [T-10, T]",
+    "kind": "t",
+    "cells": [
+     "bottom (<= 0.444)",
+     "middle",
+     "top (> 0.667)"
+    ],
+    "n": [
+     331,
+     332,
+     321
+    ],
+    "names": [
+     180,
+     177,
+     176
+    ],
+    "false_start_rate": [
+     0.4350453172205438,
+     0.463855421686747,
+     0.4953271028037383
+    ],
+    "spread": 0.060281785583194525,
+    "ci95": [
+     -0.03941378104284578,
+     0.16717483997189822
+    ],
+    "per_name_spread": 0.07769360269360265,
+    "early_spread": 0.09143559143559143,
+    "late_spread": 0.024260551678298437,
+    "entry_vs_low_lo": 0.0642938306219154,
+    "entry_vs_low_hi": 0.04795163770315636,
+    "label_coupled": false,
+    "read": "SUGGESTIVE"
+   },
+   {
+    "feature": "turn_breadth",
+    "label": "9b theme breadth: basket members with a C2r fire in [T-5, T]",
+    "kind": "t",
+    "cells": [
+     "bottom (<= 0.0769)",
+     "middle",
+     "top (> 0.143)"
+    ],
+    "n": [
+     337,
+     330,
+     317
+    ],
+    "names": [
+     167,
+     182,
+     160
+    ],
+    "false_start_rate": [
+     0.4540059347181009,
+     0.49696969696969695,
+     0.4416403785488959
+    ],
+    "spread": -0.012365556169205039,
+    "ci95": [
+     -0.10741886017395098,
+     0.09684345472866854
+    ],
+    "per_name_spread": -0.010058810949529484,
+    "early_spread": 0.009830611010284374,
+    "late_spread": -0.029447852760736193,
+    "entry_vs_low_lo": 0.055727508231070644,
+    "entry_vs_low_hi": 0.050759149975631024,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "f_repeat_false",
+    "label": "10 repeat-fire: a prior C2r fire in [T-20, T-1] that false-started",
+    "kind": "b",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     3425,
+     171
+    ],
+    "names": [
+     239,
+     113
+    ],
+    "false_start_rate": [
+     0.44204379562043794,
+     0.5672514619883041
+    ],
+    "spread": 0.12520766636786618,
+    "ci95": [
+     0.03454955227510119,
+     0.2264085780656569
+    ],
+    "per_name_spread": 0.10517014380757256,
+    "early_spread": 0.20287405476588066,
+    "late_spread": 0.046687740516767495,
+    "entry_vs_low_lo": 0.055225110427406854,
+    "entry_vs_low_hi": 0.0503811087208097,
+    "label_coupled": false,
+    "read": "LIVE"
+   }
+  ],
+  "ledger_C1": [
+   {
+    "feature": "f_k_cross",
+    "label": "1  washout depth: 3D %K at the cross bar",
+    "kind": "t",
+    "cells": [
+     "bottom (<= 6.93)",
+     "middle",
+     "top (> 12.8)"
+    ],
+    "n": [
+     2627,
+     2627,
+     2627
+    ],
+    "names": [
+     239,
+     239,
+     239
+    ],
+    "false_start_rate": [
+     0.552341073467834,
+     0.4598401218119528,
+     0.4103540159878188
+    ],
+    "spread": -0.14198705748001522,
+    "ci95": [
+     -0.17415894871598472,
+     -0.1102697565183049
+    ],
+    "per_name_spread": -0.14229409413985883,
+    "early_spread": -0.1544224011691286,
+    "late_spread": -0.12824639895242257,
+    "entry_vs_low_lo": 0.0373997921185949,
+    "entry_vs_low_hi": 0.062927495384693,
+    "label_coupled": false,
+    "read": "LIVE"
+   },
+   {
+    "feature": "f_zero_bound",
+    "label": "1b washout depth: 3D %K <= 2 in the prior 10 buckets",
+    "kind": "b",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     3220,
+     4661
+    ],
+    "names": [
+     240,
+     239
+    ],
+    "false_start_rate": [
+     0.4437888198757764,
+     0.49517270971894445
+    ],
+    "spread": 0.05138388984316805,
+    "ci95": [
+     0.0165215047389154,
+     0.08427824283032591
+    ],
+    "per_name_spread": 0.05490919325134491,
+    "early_spread": 0.044118060077856625,
+    "late_spread": 0.05733124162101916,
+    "entry_vs_low_lo": 0.05547504918116364,
+    "entry_vs_low_hi": 0.046139739910648014,
+    "label_coupled": false,
+    "read": "SUGGESTIVE"
+   },
+   {
+    "feature": "f_wash_dur",
+    "label": "2  washout duration: consecutive 3D buckets with %D < 20",
+    "kind": "t",
+    "cells": [
+     "bottom (<= 2)",
+     "middle",
+     "top (> 4)"
+    ],
+    "n": [
+     2709,
+     2891,
+     2281
+    ],
+    "names": [
+     239,
+     239,
+     239
+    ],
+    "false_start_rate": [
+     0.43706164636397193,
+     0.4835696990660671,
+     0.5063568610258659
+    ],
+    "spread": 0.06929521466189392,
+    "ci95": [
+     0.02113586829080715,
+     0.12210000091680454
+    ],
+    "per_name_spread": 0.0686890088471433,
+    "early_spread": 0.09405505238304313,
+    "late_spread": 0.042537001128098995,
+    "entry_vs_low_lo": 0.056745050709829936,
+    "entry_vs_low_hi": 0.04442663709963601,
+    "label_coupled": false,
+    "read": "SUGGESTIVE"
+   },
+   {
+    "feature": "f_decline_depth",
+    "label": "3  decline depth: close(T)/max close[T-126,T] - 1",
+    "kind": "t",
+    "cells": [
+     "bottom (<= -0.14)",
+     "middle",
+     "top (> -0.0751)"
+    ],
+    "n": [
+     2627,
+     2627,
+     2627
+    ],
+    "names": [
+     239,
+     239,
+     238
+    ],
+    "false_start_rate": [
+     0.5013323182337267,
+     0.5306433193757137,
+     0.3905595736581652
+    ],
+    "spread": -0.11077274457556152,
+    "ci95": [
+     -0.17476806113359203,
+     -0.04464811069986235
+    ],
+    "per_name_spread": -0.08019063267239446,
+    "early_spread": -0.07827608866120106,
+    "late_spread": -0.13927694859038137,
+    "entry_vs_low_lo": 0.055967075615134476,
+    "entry_vs_low_hi": 0.05185968318163847,
+    "label_coupled": false,
+    "read": "LIVE"
+   },
+   {
+    "feature": "f_x1d_crossed",
+    "read": "degenerate",
+    "why": "degenerate: one cell only"
+   },
+   {
+    "feature": "f_macd1_level",
+    "label": "4b 1D washout depth: MACD-RSI line level at T",
+    "kind": "t",
+    "cells": [
+     "bottom (<= -8.4)",
+     "middle",
+     "top (> -5.63)"
+    ],
+    "n": [
+     2627,
+     2627,
+     2627
+    ],
+    "names": [
+     239,
+     239,
+     240
+    ],
+    "false_start_rate": [
+     0.49295774647887325,
+     0.46707270650932625,
+     0.4625047582794062
+    ],
+    "spread": -0.030452988199467068,
+    "ci95": [
+     -0.07717398416154604,
+     0.025878508334693094
+    ],
+    "per_name_spread": -0.026245696283402287,
+    "early_spread": -0.0071645717020992206,
+    "late_spread": -0.053507108617146415,
+    "entry_vs_low_lo": 0.04649125030883727,
+    "entry_vs_low_hi": 0.05355642635875002,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "f_higher_low",
+    "label": "5a structure: latest confirmed r3 swing low >= the prior one",
+    "kind": "b",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     6764,
+     1117
+    ],
+    "names": [
+     240,
+     234
+    ],
+    "false_start_rate": [
+     0.47841513897102306,
+     0.4485228290062668
+    ],
+    "spread": -0.02989230996475628,
+    "ci95": [
+     -0.06292658771147415,
+     0.004205280545002307
+    ],
+    "per_name_spread": -0.030492565745073474,
+    "early_spread": -0.029433395618922775,
+    "late_spread": -0.029430545010905473,
+    "entry_vs_low_lo": 0.04941997739339532,
+    "entry_vs_low_hi": 0.056389106446294024,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "f_dist_swing",
+    "label": "5b structure: close(T) vs the latest confirmed swing low",
+    "kind": "t",
+    "cells": [
+     "bottom (<= 0.0287)",
+     "middle",
+     "top (> 0.0522)"
+    ],
+    "n": [
+     2627,
+     2627,
+     2627
+    ],
+    "names": [
+     238,
+     235,
+     240
+    ],
+    "false_start_rate": [
+     0.5550057099352874,
+     0.48191853825656644,
+     0.3856109630757518
+    ],
+    "spread": -0.1693947468595356,
+    "ci95": [
+     -0.22317351957881032,
+     -0.11430752931420522
+    ],
+    "per_name_spread": -0.21270776364755217,
+    "early_spread": -0.19429682766951878,
+    "late_spread": -0.15214940653653597,
+    "entry_vs_low_lo": 0.0277138861479167,
+    "entry_vs_low_hi": 0.08354303756197412,
+    "label_coupled": true,
+    "read": "LIVE"
+   },
+   {
+    "feature": "f_vol_z_down",
+    "label": "6a volume: max down-day volume z (vs 60d) in [T-15, T]",
+    "kind": "m",
+    "cells": [
+     "<= 1.93",
+     "> 1.93"
+    ],
+    "n": [
+     3940,
+     3940
+    ],
+    "names": [
+     240,
+     239
+    ],
+    "false_start_rate": [
+     0.48071065989847717,
+     0.46776649746192894
+    ],
+    "spread": -0.012944162436548223,
+    "ci95": [
+     -0.049588818667779797,
+     0.019045626367361124
+    ],
+    "per_name_spread": -0.009030199952956564,
+    "early_spread": 0.00478710599932064,
+    "late_spread": -0.029046431583176158,
+    "entry_vs_low_lo": 0.04872786784019412,
+    "entry_vs_low_hi": 0.05133753053712631,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "f_vol_ratio",
+    "label": "6b volume: fire-day volume / its 20d average",
+    "kind": "t",
+    "cells": [
+     "bottom (<= 0.787)",
+     "middle",
+     "top (> 1.01)"
+    ],
+    "n": [
+     2627,
+     2627,
+     2627
+    ],
+    "names": [
+     239,
+     239,
+     239
+    ],
+    "false_start_rate": [
+     0.47392462885420633,
+     0.48610582413399317,
+     0.4625047582794062
+    ],
+    "spread": -0.01141987057480015,
+    "ci95": [
+     -0.04880848962855928,
+     0.028081830494028983
+    ],
+    "per_name_spread": -0.0021533801702312005,
+    "early_spread": -0.005836461622554412,
+    "late_spread": -0.0174384496402899,
+    "entry_vs_low_lo": 0.050351193545657535,
+    "entry_vs_low_hi": 0.05097588450042467,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "f_above200",
+    "label": "7a trend class: close(T) above its 200-session mean",
+    "kind": "b",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     3463,
+     4418
+    ],
+    "names": [
+     238,
+     240
+    ],
+    "false_start_rate": [
+     0.5148714987005486,
+     0.4422815753734722
+    ],
+    "spread": -0.07258992332707642,
+    "ci95": [
+     -0.12370455365603163,
+     -0.018870342048994102
+    ],
+    "per_name_spread": -0.06397824026750837,
+    "early_spread": -0.06711233382824816,
+    "late_spread": -0.07792170408750715,
+    "entry_vs_low_lo": 0.04551836621334204,
+    "entry_vs_low_hi": 0.053592474380107835,
+    "label_coupled": false,
+    "read": "SUGGESTIVE"
+   },
+   {
+    "feature": "f_rs63",
+    "label": "7b trend class: 63-session relative strength vs SPY",
+    "kind": "t",
+    "cells": [
+     "bottom (<= -0.0828)",
+     "middle",
+     "top (> 0.00273)"
+    ],
+    "n": [
+     2627,
+     2627,
+     2627
+    ],
+    "names": [
+     238,
+     237,
+     240
+    ],
+    "false_start_rate": [
+     0.5424438523030072,
+     0.4914350970688999,
+     0.3886562618956985
+    ],
+    "spread": -0.15378759040730866,
+    "ci95": [
+     -0.20176526301991077,
+     -0.10633497340060291
+    ],
+    "per_name_spread": -0.13552561851801515,
+    "early_spread": -0.19355921826413391,
+    "late_spread": -0.11673066431658902,
+    "entry_vs_low_lo": 0.042581646990680344,
+    "entry_vs_low_hi": 0.06912113806390807,
+    "label_coupled": false,
+    "read": "LIVE"
+   },
+   {
+    "feature": "f_spy_d3_lt20",
+    "label": "8  market context: SPY's own 3D %D < 20 at T",
+    "kind": "b",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     5248,
+     2633
+    ],
+    "names": [
+     239,
+     239
+    ],
+    "false_start_rate": [
+     0.47008384146341464,
+     0.4823395366502089
+    ],
+    "spread": 0.012255695186794258,
+    "ci95": [
+     -0.07735457453181414,
+     0.10170365560045044
+    ],
+    "per_name_spread": 0.016487526205278547,
+    "early_spread": -0.03931909048541782,
+    "late_spread": 0.05584647456037978,
+    "entry_vs_low_lo": 0.047057511833447196,
+    "entry_vs_low_hi": 0.05584372816890992,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "washout_breadth",
+    "label": "9a theme breadth: basket members washed out in [T-10, T]",
+    "kind": "t",
+    "cells": [
+     "bottom (<= 0.487)",
+     "middle",
+     "top (> 0.696)"
+    ],
+    "n": [
+     765,
+     770,
+     754
+    ],
+    "names": [
+     225,
+     233,
+     225
+    ],
+    "false_start_rate": [
+     0.465359477124183,
+     0.5051948051948052,
+     0.48408488063660476
+    ],
+    "spread": 0.018725403512421745,
+    "ci95": [
+     -0.05574193964290266,
+     0.09053193261847571
+    ],
+    "per_name_spread": 0.02863668430335098,
+    "early_spread": 0.05631730026665116,
+    "late_spread": -0.01543242528431632,
+    "entry_vs_low_lo": 0.05187747401867826,
+    "entry_vs_low_hi": 0.04803352434798969,
+    "label_coupled": false,
+    "read": "null"
+   },
+   {
+    "feature": "turn_breadth",
+    "label": "9b theme breadth: basket members with a C2r fire in [T-5, T]",
+    "kind": "t",
+    "cells": [
+     "bottom (<= 0)",
+     "middle",
+     "top (> 0.0733)"
+    ],
+    "n": [
+     852,
+     674,
+     763
+    ],
+    "names": [
+     229,
+     203,
+     233
+    ],
+    "false_start_rate": [
+     0.4448356807511737,
+     0.5014836795252225,
+     0.5150720838794234
+    ],
+    "spread": 0.07023640312824969,
+    "ci95": [
+     -0.002081843035278992,
+     0.13717055866590208
+    ],
+    "per_name_spread": 0.09193892680361193,
+    "early_spread": 0.08801825387927914,
+    "late_spread": 0.0542052826691381,
+    "entry_vs_low_lo": 0.05243406984108212,
+    "entry_vs_low_hi": 0.04982398074036132,
+    "label_coupled": false,
+    "read": "SUGGESTIVE"
+   },
+   {
+    "feature": "f_repeat_false",
+    "label": "10 repeat-fire: a prior C2r fire in [T-20, T-1] that false-started",
+    "kind": "b",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     7295,
+     586
+    ],
+    "names": [
+     240,
+     215
+    ],
+    "false_start_rate": [
+     0.4614119259766964,
+     0.6331058020477816
+    ],
+    "spread": 0.17169387607108516,
+    "ci95": [
+     0.11725230924856395,
+     0.2260290967216419
+    ],
+    "per_name_spread": 0.16167411624664552,
+    "early_spread": 0.19700607917445,
+    "late_spread": 0.14470264088168022,
+    "entry_vs_low_lo": 0.05058873576170875,
+    "entry_vs_low_hi": 0.04255579989190572,
+    "label_coupled": false,
+    "read": "LIVE"
+   }
+  ],
+  "cross2x2": {
+   "title": "\u00a78 2x2 \u2014 strongest C2r discriminator x theme TURN breadth (median split)",
+   "columns": [
+    "strongest feature",
+    "feature cell",
+    "turn breadth",
+    "episodes",
+    "names",
+    "false-start%"
+   ],
+   "rows": [
+    [
+     "1  washout depth: 3D %K at the cross bar",
+     "bottom (<= 10.1)",
+     "low (<= 0.106)",
+     152,
+     111,
+     74.34
+    ],
+    [
+     "1  washout depth: 3D %K at the cross bar",
+     "bottom (<= 10.1)",
+     "high (> 0.106)",
+     176,
+     120,
+     55.11
+    ],
+    [
+     "1  washout depth: 3D %K at the cross bar",
+     "top (> 20)",
+     "low (<= 0.106)",
+     175,
+     116,
+     33.71
+    ],
+    [
+     "1  washout depth: 3D %K at the cross bar",
+     "top (> 20)",
+     "high (> 0.106)",
+     153,
+     108,
+     40.52
+    ]
+   ],
+   "notes": "the single pre-permitted cross-tab; no other combination was searched"
+  },
+  "strongest_feature": "f_k_cross"
+ },
+ "split_out": {
+  "episodes_parquet": "early_admission_bakeoff_episodes.parquet",
+  "episodes_rows": 36712,
+  "episodes_columns": [
+   "ticker",
+   "date",
+   "pos",
+   "construction",
+   "addon",
+   "close",
+   "p_low",
+   "p_low_date",
+   "entry_vs_low",
+   "near_low",
+   "entry_vs_low_open",
+   "near_low_open",
+   "open_slip",
+   "td_to_trough",
+   "false_bounce",
+   "mae_21",
+   "stop_a",
+   "stop_b",
+   "survive_a",
+   "survive_b",
+   "mfe_42",
+   "reached_2r",
+   "fwd21",
+   "fwd42",
+   "ex21",
+   "ex42",
+   "fwd_sessions",
+   "window_sessions",
+   "c1z",
+   "basis",
+   "type",
+   "quality",
+   "confirm",
+   "cross_known",
+   "wait_sessions",
+   "zero_bound",
+   "store_date",
+   "mapped",
+   "open_label",
+   "k",
+   "d",
+   "pivot",
+   "pivot_low",
+   "d3_at_confirm",
+   "f_k_cross",
+   "f_zero_bound",
+   "f_wash_dur",
+   "f_decline_depth",
+   "f_x1d_crossed",
+   "f_hist_rising",
+   "f_macd1_level",
+   "f_higher_low",
+   "f_dist_swing",
+   "f_vol_z_down",
+   "f_vol_ratio",
+   "f_above200",
+   "f_rs63",
+   "f_spy_d3_lt20",
+   "washout_breadth",
+   "turn_breadth",
+   "basket",
+   "members_with_data",
+   "hindsight_roster"
+  ],
+  "episodes_by_construction": {
+   "C0": 7918,
+   "C1": 7973,
+   "C2s": 3474,
+   "C2r": 3630,
+   "C3": 2396,
+   "C4": 11111
+  },
+  "addon_episodes_by_construction": {
+   "C1": 68,
+   "C2r": 32,
+   "C3": 22,
+   "C4": 88
+  },
+  "stops_parquet": "early_admission_bakeoff_stops.parquet",
+  "stops_rows": 12940,
+  "stops_columns": [
+   "ticker",
+   "date",
+   "close",
+   "stop_level",
+   "argmin_date",
+   "gap",
+   "near_low_stop",
+   "full_window",
+   "hist_rising",
+   "m3_bull",
+   "fwd10",
+   "fwd21",
+   "addon"
+  ],
+  "compression": "zstd"
+ },
+ "price_meta": {
+  "AAPL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ABBV": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ABNB": {
+   "source": "ohlcv",
+   "first": "2020-12-10",
+   "last": "2026-08-10",
+   "rows": 1421
+  },
+  "ABT": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ADI": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ADM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ADP": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "AEE": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "AEP": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "AMAT": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "AMCR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "AMD": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "AMGN": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "AMT": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "AMZN": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ANET": {
+   "source": "ohlcv",
+   "first": "2014-06-06",
+   "last": "2026-08-10",
+   "rows": 3062
+  },
+  "APD": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "APH": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "APP": {
+   "source": "ohlcv",
+   "first": "2021-04-15",
+   "last": "2026-08-10",
+   "rows": 1336
+  },
+  "ATO": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "AVB": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "AVGO": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "AXP": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "AZO": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "BA": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "BAC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "BKNG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "BKR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "BLK": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "BMY": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "BNY": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "BRK-B": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "BX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "C": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CASY": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CAT": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CB": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CBRE": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CCI": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CEG": {
+   "source": "ohlcv",
+   "first": "2022-01-19",
+   "last": "2026-08-10",
+   "rows": 1143
+  },
+  "CF": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CHTR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CI": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CMCSA": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CME": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CMI": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CNP": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "COF": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "COP": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "COST": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CRH": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CRWD": {
+   "source": "ohlcv",
+   "first": "2019-06-12",
+   "last": "2026-08-10",
+   "rows": 1800
+  },
+  "CSCO": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CSX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CTVA": {
+   "source": "ohlcv",
+   "first": "2019-05-24",
+   "last": "2026-08-10",
+   "rows": 1812
+  },
+  "CVNA": {
+   "source": "ohlcv",
+   "first": "2017-04-28",
+   "last": "2026-08-10",
+   "rows": 2333
+  },
+  "CVS": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "CVX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "D": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "DASH": {
+   "source": "ohlcv",
+   "first": "2020-12-09",
+   "last": "2026-08-10",
+   "rows": 1422
+  },
+  "DD": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "DE": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "DG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "DHR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "DIS": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "DLR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "DOW": {
+   "source": "ohlcv",
+   "first": "2019-03-20",
+   "last": "2026-08-10",
+   "rows": 1858
+  },
+  "DTE": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "DUK": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "DVN": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "EA": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-07",
+   "rows": 3167
+  },
+  "EBAY": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ECHO": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ECL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ED": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "EIX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ELV": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "EOG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "EQIX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "EQR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "EQT": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ES": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ESS": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ETN": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ETR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "EXC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "EXE": {
+   "source": "ohlcv",
+   "first": "2021-02-10",
+   "last": "2026-08-10",
+   "rows": 1380
+  },
+  "EXR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "F": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "FANG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "FCX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "FOX": {
+   "source": "ohlcv",
+   "first": "2019-03-13",
+   "last": "2026-08-10",
+   "rows": 1863
+  },
+  "FOXA": {
+   "source": "ohlcv",
+   "first": "2019-03-12",
+   "last": "2026-08-10",
+   "rows": 1864
+  },
+  "GD": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "GE": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "GEV": {
+   "source": "ohlcv",
+   "first": "2024-03-27",
+   "last": "2026-08-10",
+   "rows": 594
+  },
+  "GILD": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "GM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "GOOG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "GOOGL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "GRMN": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "GS": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "HAL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "HD": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "HLT": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "HON": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "HOOD": {
+   "source": "ohlcv",
+   "first": "2021-07-29",
+   "last": "2026-08-10",
+   "rows": 1263
+  },
+  "HSY": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "HWM": {
+   "source": "ohlcv",
+   "first": "2016-11-01",
+   "last": "2026-08-10",
+   "rows": 2455
+  },
+  "IBM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "IFF": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "INTC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "INVH": {
+   "source": "ohlcv",
+   "first": "2017-02-01",
+   "last": "2026-08-10",
+   "rows": 2393
+  },
+  "IP": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "IRM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ISRG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "JCI": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "JNJ": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "JPM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "KDP": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "KIM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "KLAC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "KMB": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "KMI": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "KO": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "KR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "KVUE": {
+   "source": "ohlcv",
+   "first": "2023-05-04",
+   "last": "2026-08-10",
+   "rows": 819
+  },
+  "LIN": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "LLY": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "LMT": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "LOW": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "LRCX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "LYV": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MA": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MAR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MCD": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MCK": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MDLZ": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MDT": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "META": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MLM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MMM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MNST": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MO": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MPC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MRK": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MRVL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MS": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MSFT": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "MU": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "NEE": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "NEM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "NFLX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "NKE": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "NRG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "NUE": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "NVDA": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "NWSA": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "O": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "OKE": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "OMC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ORCL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ORLY": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "OXY": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PANW": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PCG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PEG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PEP": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PFE": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PGR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PH": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PKG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PLD": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PLTR": {
+   "source": "ohlcv",
+   "first": "2020-09-30",
+   "last": "2026-08-10",
+   "rows": 1471
+  },
+  "PM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PNC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PPG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PPL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PSA": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PSX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "PWR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "QCOM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "RCL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "REGN": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "ROST": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "RTX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "SBAC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "SBUX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "SCHW": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "SHW": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "SLB": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "SNDK": {
+   "source": "ohlcv",
+   "first": "2025-02-13",
+   "last": "2026-08-10",
+   "rows": 373
+  },
+  "SO": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "SPG": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "SPGI": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "SRE": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "STLD": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "STX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "SW": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "SYK": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "SYY": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "T": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "TGT": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "TJX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "TKO": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "TMO": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "TMUS": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "TPL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "TRGP": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "TSLA": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "TT": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "TTD": {
+   "source": "ohlcv",
+   "first": "2016-09-21",
+   "last": "2026-08-10",
+   "rows": 2484
+  },
+  "TTWO": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "TXN": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "UBER": {
+   "source": "ohlcv",
+   "first": "2019-05-10",
+   "last": "2026-08-10",
+   "rows": 1822
+  },
+  "UNH": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "UNP": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "USB": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "V": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "VICI": {
+   "source": "ohlcv",
+   "first": "2018-01-02",
+   "last": "2026-08-10",
+   "rows": 2162
+  },
+  "VLO": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "VMC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "VRT": {
+   "source": "ohlcv",
+   "first": "2018-08-02",
+   "last": "2026-08-10",
+   "rows": 2015
+  },
+  "VRTX": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "VST": {
+   "source": "ohlcv",
+   "first": "2016-10-05",
+   "last": "2026-08-10",
+   "rows": 2474
+  },
+  "VTR": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "VZ": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "WBD": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "WDC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "WEC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "WELL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "WFC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "WM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "WMB": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "WMT": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "WY": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "XEL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "XOM": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "HL": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  },
+  "UEC": {
+   "source": "ohlcv",
+   "first": "2014-01-02",
+   "last": "2026-08-10",
+   "rows": 3169
+  }
+ }
+}
