@@ -27,6 +27,21 @@ lanes:
           collectors so wiki_pageviews' ~120d upsert extends deep history instead
           of rebuilding a shallow window. continue-on-error; the publish-back step
           at the end of this lane is gated on this step's outcome.
+      - id: fetch_r2_massive_stock_day
+        module: scripts.fetch_r2
+        args: [--dirs, massive_stock_day, --workers, "24"]
+        note: >
+          Whole-market daily store restore — data/massive_stock_day (~617 MB,
+          ~20k per-ticker parquets) is R2-CANONICAL; a checkout holds only the
+          two committed JSON sidecars. Restore FIRST so
+          collectors/massive_stock_day.py run_incremental() upserts the new
+          trading days ON TOP of the full store instead of tripping its
+          store-absent fence. continue-on-error; the publish-back step after
+          the checkpoints is gated on this step's outcome (fetch_r2 exits 1 on
+          any download failure; publish_r2's _DATA_DIR_MIN_FILES floor is the
+          second fence). Declared 2026-08-11 (fetch_r2 census) — the workflow
+          step predates this row; the checker's set-based module matching let
+          the lane's one declared fetch_r2 cover both invocations.
       - id: collect_us
         module: scripts.collect
         args: [--exclude-group, asia, --exclude, sam_gov_opportunities, --skip-shadow-importance]
@@ -489,6 +504,37 @@ lanes:
           SLF-048 attention store restore (#1677) — build_site.build_attention_data
           reads data/attention/*.parquet (gitignored, R2-hosted). Non-fatal: absent
           store = attention chip silently absent this render.
+      - id: fetch_r2_odds_ohlcv
+        module: scripts.fetch_r2
+        args: [--dirs, odds_ohlcv]
+        note: >
+          Odds desk OHLCV restore — data/odds_ohlcv/*.parquet is gitignored +
+          R2-backed but runner-local, and the engine job hops runners: without
+          the restore every hop cold-started the store and build_odds
+          re-fetched all 119 tickers at period=max, so a single-night yfinance
+          flake dropped the ticker from site/oddsdata/catalog.json entirely
+          (AMAT 2026-07-21). With the store restored build_odds takes its 1mo
+          upsert path. Non-fatal: on restore failure build_odds cold-backfills
+          exactly as before; publish-back needs no gate on this step (a cold
+          rebuild is a COMPLETE deep store, and publish_r2 never prunes R2 keys
+          absent locally). Declared 2026-08-11 (fetch_r2 census) — the workflow
+          step predates this row; the checker's set-based matching let the
+          lane's one declared fetch_r2 cover all three preamble re-invocations.
+      - id: fetch_r2_subsectorohlc
+        module: scripts.fetch_r2
+        args: [--dirs, "subsectorohlc,subsectorohlc_nasdaq,subsectorohlc_russell"]
+        note: >
+          Subsector OHLC sidecar restore — build_index_leadership computes
+          per-group closes from site/subsectorohlc{,_nasdaq,_russell}/*.json
+          (gitignored, R2-hosted, published back at the end of this job); a
+          fresh checkout holds NONE, so the builder skipped silently and the
+          index_leadership board + forward ledger froze at their 2026-06-30
+          seed for 18 nightlies (audit 2026-08-03). Restores LAST NIGHT's
+          generation — the same generation as the committed
+          subsector_confluence*.json boards it is read against (the producer
+          runs in the parallel band AFTER this restore's consumer). Non-fatal:
+          on restore failure the builder skips LOUDLY. Declared 2026-08-11
+          (fetch_r2 census), same provenance as fetch_r2_odds_ohlcv above.
       # price-store freshness gate (2026-07-07 incident guard) — precedes the serial spine
       - id: check_price_store_freshness
         module: scripts.check_price_store_freshness
@@ -919,8 +965,10 @@ lanes:
           live_flow event stage (never capped feed_current), validates the monotonic
           checkpoint, freezes exact decision episodes, and accrues explicitly labeled
           aligned-bar H+60 proxies plus separate EOD/1d/3d/5d/10d declared-session-close
-          outcomes from the same receipt-bound intraday cache. The H+60 v1 ledger
-          remains unchanged. All decision and training authority is false;
+          outcomes from the same receipt-bound intraday cache. It then derives the
+          zero-authority exact-contract first-prefix campaign ledger from persisted
+          episodes and reloaded H+60 rows before advancing the checkpoint. The H+60
+          v1 ledger remains unchanged. All decision and training authority is false;
           coarse/delayed measurements are training_eligible=false. Runs serially
           after build_session_digest and advances all committed ledgers before the
           source checkpoint, only in COLLECT_LANE=nightly. Non-fatal.
@@ -1054,6 +1102,9 @@ lanes:
       - id: grade_us_board
         module: scripts.grade_us_board
         args: [--nightly]
+      - id: build_opportunity_timeline
+        module: scripts.build_opportunity_timeline
+        note: "Durable display-only Prophet candidate and reversal-watch receipts for Terminal; runs after grade_us_board so tonight's US board snapshot is included."
       - id: grade_bottom_calls
         module: scripts.grade_bottom_calls
         args: [--nightly]
@@ -1745,6 +1796,46 @@ lanes:
           default to `warn`, so this step silences no desk until an operator
           arms it. Never-raise (set +e, exit 0); a non-zero rc only prints a
           ::warning. Display-only; originates no market signal.
+
+  # ── daily.yml / us_scan_tier ─────────────────────────────────────────────
+  # US scan tier (2026-08-06 off-engine move, sibling of us_prophet_ledgers).
+  # Lane declared 2026-08-11 (fetch_r2 census): the job shipped without a
+  # dag.yml entry, so its whole 3-module spine — including a fetch_r2 restore —
+  # was invisible to dag-conformance (the checker only diffs DECLARED lanes).
+  - workflow: .github/workflows/daily.yml
+    job: us_scan_tier
+    steps:
+      - id: heal_shallow_caches
+        module: scripts.heal_shallow_caches
+        args: [--nightly]
+        note: >
+          Prepend-only splice of deeper LOCAL history into shallow curated
+          caches (build_stock_library's universe() served some names from
+          data/yahoo and never fell back to data/baskets/ohlcv — GOLD carried
+          23 bars while 3,113 sat one directory over). No network, idempotent;
+          runs BEFORE the scan pass so tonight's gate verdicts already see the
+          healed depth. continue-on-error + `|| true`.
+      - id: fetch_r2_massive_stock_day
+        module: scripts.fetch_r2
+        args: [--dirs, massive_stock_day, --workers, "24"]
+        note: >
+          The scan tier's price plane. Read-only here: no publish-back leg in
+          this job, and fetch_r2's content-hash skip means a warm runner tree
+          costs one LIST and zero GETs. Non-fatal (continue-on-error): on a
+          failed restore the scan runner emits a line-start ::warning and
+          writes a disclosed null — the honest artifact for a night with no
+          store.
+      - id: run_us_scan_tier
+        module: scripts.run_us_scan_tier
+        args: [--nightly]
+        note: >
+          Stamps the widened seeing set (data/prophet_scan_tier/latest.json +
+          forward_log.jsonl) and appends tier="scan" rows to the SAME
+          data/us_prophet_rank/candidates monthly part the engine job wrote
+          earlier tonight — keep-first on (stamp_date, ticker,
+          board_definition) so the curated row wins on any overlap.
+          COLLECT_LANE=nightly arms the context-vector stamp's lane gate.
+          `|| true`; the commit step that follows pushes the artifacts.
 
   # ── daily.yml / oracle_offrender ────────────────────────────────────────
   # Oracle off-render job: panel rebuild + episodes + Time Machine + Ratio Lens.

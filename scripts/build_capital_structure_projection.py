@@ -23,8 +23,6 @@ import sys
 import tempfile
 from typing import Any
 
-import pandas as pd
-
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
@@ -32,18 +30,8 @@ from engine.capital_structure.projection import (
     build_projection_bundle,
     validate_projection_bundle,
 )  # noqa: E402
-from engine.capital_structure.source_ledger_io import (
-    read_source_ledger,
-    source_ledger_path,
-)  # noqa: E402
-from scripts.compile_capital_structure_events import (
-    EDGE_COLUMNS,
-    REVIEW_COLUMNS,
-    _load_contract,
-    _load_existing_edges,
-    _load_existing_events,
-    _validate_committed_generation,
-    dataframe_records,
+from engine.capital_structure.verified_projection_generation import (
+    read_verified_projection_generation,
 )  # noqa: E402
 
 
@@ -59,36 +47,6 @@ def _data_root() -> Path:
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def _read_json_object(path: Path) -> dict[str, Any]:
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"unreadable JSON object: {path}") from exc
-    if not isinstance(value, Mapping):
-        raise ValueError(f"JSON root must be an object: {path}")
-    return dict(value)
-
-
-def _validate_review_rows(frame: pd.DataFrame) -> list[dict[str, Any]]:
-    if frame.columns.tolist() != REVIEW_COLUMNS:
-        raise ValueError(
-            "review queue columns must exactly equal "
-            f"{REVIEW_COLUMNS}; got {frame.columns.tolist()}"
-        )
-    rows = dataframe_records(frame)
-    schema = _load_contract("review")
-    from jsonschema import Draft202012Validator, FormatChecker
-
-    validator = Draft202012Validator(schema, format_checker=FormatChecker())
-    for index, row in enumerate(rows):
-        errors = list(validator.iter_errors(row))
-        if errors:
-            raise ValueError(
-                f"review queue row {index} violates its contract: {errors[0].message}"
-            )
-    return rows
 
 
 def _validated_projection_bytes(path: Path) -> bytes | None:
@@ -259,44 +217,14 @@ def build_from_disk(
     # the last-good public/canonical pair returns to a byte-identical state.
     _recover_projection_pair(canonical_path, public_path)
 
-    manifest_path = source_ledger_path(root)
-    manifests = read_source_ledger(manifest_path)
-    telemetry_path = root / "telemetry.json"
-    telemetry = (
-        _read_json_object(telemetry_path)
-        if telemetry_path.exists()
-        else {
-            "status": "missing",
-            "as_of": None,
-            "generation_id": None,
-            "artifact_hashes": {},
-            "source_ledger_receipt": None,
-            "coverage_claim": None,
-            "known_exclusions": [],
-        }
-    )
-    has_generation = _validate_committed_generation(
-        root, _load_contract("telemetry"), manifests
-    )
-
-    if has_generation:
-        events = _load_existing_events(
-            pd.read_parquet(root / "event_versions.parquet"),
-            _load_contract("event"),
-        )
-        edge_frame = pd.read_parquet(root / "event_edges.parquet")
-        if edge_frame.columns.tolist() != EDGE_COLUMNS:
-            raise ValueError("event edge ledger columns changed before projection")
-        edges = _load_existing_edges(edge_frame, _load_contract("edge"))
-        reviews = _validate_review_rows(pd.read_parquet(root / "review_queue.parquet"))
-    else:
-        events, edges, reviews = [], [], []
+    generation = read_verified_projection_generation(root)
+    telemetry = generation.telemetry
 
     projection_as_of = as_of or telemetry.get("as_of") or produced_at
     bundle = build_projection_bundle(
-        events,
-        edges,
-        reviews,
+        generation.events,
+        generation.edges,
+        generation.reviews,
         telemetry,
         as_of=str(projection_as_of),
         generated_at=produced_at,

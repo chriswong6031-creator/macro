@@ -7,6 +7,7 @@ import math
 import stat
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from decimal import Decimal
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -14,17 +15,24 @@ import pandas as pd
 import pytest
 
 from engine.options_signal_episode import (
+    CAMPAIGN_FALSE_AUTHORITY,
+    CAMPAIGN_MIN_PREMIUM_USD,
+    CAMPAIGN_RULE_FROZEN_AT,
     PRICE_BASIS,
     PRICE_RECEIPT_SCHEMA,
     SESSION_HORIZONS,
     TIMESTAMP_BASIS,
     ContractError,
+    append_campaigns,
     append_episodes,
     append_outcomes,
     append_session_outcomes,
     episode_from_live_event,
+    derive_campaigns,
     load_jsonl,
     validate_episode,
+    validate_campaign,
+    validate_campaign_against_sources,
     validate_outcome,
     validate_outcome_against_episode,
     validate_session_outcome,
@@ -329,6 +337,88 @@ def _stage_records(event: dict | None = None) -> list[dict]:
             "available_at": available_at,
         },
     ]
+
+
+def _campaign_episode(
+    source_event_id: str,
+    premium_usd: float,
+    *,
+    session_date: str = "2026-07-02",
+    available_at: str | None = None,
+    ticker: str = "TEST",
+    expiration: str = "2026-07-17",
+    strike: float = 105.0,
+    right: str = "C",
+) -> dict:
+    session = datetime.fromisoformat(session_date).date()
+    available = datetime.fromisoformat(
+        (available_at or f"{session_date}T14:31:00Z").replace("Z", "+00:00")
+    ).astimezone(timezone.utc)
+    event_time = available - timedelta(minutes=1)
+    prior_session = nyse_calendar.session_n_back(session, 1)
+    assert prior_session is not None
+    expiration_date = datetime.fromisoformat(expiration).date()
+    contracts = 10_000
+    return _episode(
+        id=source_event_id,
+        ts=event_time.isoformat().replace("+00:00", "Z"),
+        observed_at=available.isoformat().replace("+00:00", "Z"),
+        decision_at=available.isoformat().replace("+00:00", "Z"),
+        available_at=available.isoformat().replace("+00:00", "Z"),
+        root=ticker,
+        right=right,
+        exp=expiration,
+        strike=strike,
+        dte=(expiration_date - session).days,
+        size=contracts,
+        avg_price=float(premium_usd) / (contracts * 100),
+        premium=premium_usd,
+        vol_gt_oi=True,
+        oi_vintage=prior_session.isoformat(),
+    )
+
+
+def _campaign_h60_outcome(episode: dict) -> dict:
+    available = datetime.fromisoformat(
+        episode["available_at"].replace("Z", "+00:00")
+    ).astimezone(timezone.utc)
+    session = datetime.fromisoformat(episode["session_date"]).date()
+    close = session_window_et(session)[1].astimezone(timezone.utc)
+    target = available + timedelta(minutes=60)
+    if target >= close:
+        outcome = derive_h60_outcome(
+            episode,
+            None,
+            computed_at=target + timedelta(minutes=1),
+            price_source=f"data/intraday/{episode['ticker']}.parquet",
+            bar_seconds=None,
+            price_delay_minutes=None,
+            price_receipt=None,
+        )
+        assert outcome["status"] == "incomplete"
+        return outcome
+    entry = pd.Timestamp(available).ceil("h").to_pydatetime().astimezone(timezone.utc)
+    exit_time = entry + timedelta(hours=1)
+    outcome = derive_h60_outcome(
+        episode,
+        _bars(
+            (entry.isoformat(), 100.0, 101.0, 99.0, 100.5),
+            (exit_time.isoformat(), 100.5, 102.0, 100.0, 101.0),
+        ),
+        computed_at=exit_time,
+        price_source=f"data/intraday/{episode['ticker']}.parquet",
+        bar_seconds=3600,
+        price_delay_minutes=0,
+    )
+    assert outcome["status"] == "complete"
+    return outcome
+
+
+def _canonical_test_bytes(value: object) -> bytes:
+    return json.dumps(
+        value, ensure_ascii=False, separators=(",", ":"), sort_keys=True,
+        allow_nan=False,
+    ).encode("utf-8")
 
 
 def test_episode_freezes_exact_availability_and_zero_authority() -> None:
@@ -2702,6 +2792,10 @@ def test_options_pit_engine_and_adversarial_suites_are_ci_wired() -> None:
     for required in (
         '"engine/options_signal_episode.py"',
         '"contracts/options/options.signal_episode_session_outcome.v1.schema.json"',
+        '"contracts/options/options.signal_campaign.v1.schema.json"',
+        '"data/options_signal_episode/campaigns.jsonl"',
+        '"research/options_estate/OPTIONS_SIGNAL_CAMPAIGNS_PREREG.md"',
+        '"ops/LIVE_FLOW_RUNBOOK.md"',
         '"engine/live_flow.py"',
         '"tests/test_options_signal_episode.py"',
         '"tests/test_live_flow.py"',
@@ -2757,7 +2851,7 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
         "declared-session-close proxy accrual"
     )
     checkpoint_name = (
-        "      - name: OIP PIT — checkpoint the four durable episode ledgers"
+        "      - name: OIP PIT — checkpoint the five durable episode ledgers"
     )
     following_name = (
         "      - name: XSR W1 — US fast-sector rotation lens "
@@ -2787,6 +2881,7 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
         "data/options_signal_episode/episodes.jsonl",
         "data/options_signal_episode/outcomes_h60.jsonl",
         "data/options_signal_episode/outcomes_session.jsonl",
+        "data/options_signal_episode/campaigns.jsonl",
     }
     declared = checkpoint_block.split("OIP_LEDGER_PATHS=(", 1)[1].split(")", 1)[0]
     assert {line.strip() for line in declared.splitlines() if line.strip()} == expected_paths
@@ -3848,3 +3943,518 @@ def test_builder_consumes_partial_session_extension_and_rejects_shrink(
             stages_by_session={"2026-07-02": first_stage},
             computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
         )
+
+
+@pytest.mark.parametrize(
+    ("premiums", "expected_count"),
+    [
+        ([3_000_000], 0),
+        ([1_500_000, 1_499_999], 0),
+        ([1_500_000, 1_500_000], 1),
+    ],
+)
+def test_campaign_first_prefix_requires_two_events_and_exact_three_million(
+    premiums: list[int], expected_count: int,
+) -> None:
+    episodes = [
+        _campaign_episode(
+            f"threshold-{index}",
+            premium,
+            available_at=f"2026-07-02T14:{31 + index:02d}:00Z",
+        )
+        for index, premium in enumerate(premiums)
+    ]
+    campaigns, pending = derive_campaigns(
+        episodes,
+        [_campaign_h60_outcome(episode) for episode in episodes],
+    )
+    assert len(campaigns) == expected_count
+    assert pending == []
+    if campaigns:
+        assert campaigns[0]["crossing"]["cumulative_premium_usd"] == (
+            CAMPAIGN_MIN_PREMIUM_USD
+        )
+
+
+def test_campaign_tie_shuffle_and_later_events_are_byte_stable() -> None:
+    tied = [
+        _campaign_episode(
+            f"tie-{index}", 1_000_000, available_at="2026-07-02T14:31:00Z",
+        )
+        for index in range(3)
+    ]
+    outcomes = [_campaign_h60_outcome(episode) for episode in tied]
+    baseline, pending = derive_campaigns(tied, outcomes)
+    shuffled, shuffled_pending = derive_campaigns(
+        [tied[2], tied[0], tied[1]], [outcomes[1], outcomes[2], outcomes[0]],
+    )
+    assert pending == shuffled_pending == []
+    assert _canonical_test_bytes(baseline) == _canonical_test_bytes(shuffled)
+    assert len(baseline) == 1
+    ordered = sorted(tied, key=lambda row: row["episode_id"])
+    assert baseline[0]["crossing"]["episode_ids"] == [
+        episode["episode_id"] for episode in ordered
+    ]
+    assert baseline[0]["crossing"]["episode_prefix_sha256"] == hashlib.sha256(
+        _canonical_test_bytes(ordered)
+    ).hexdigest()
+
+    campaign = baseline[0]
+    group = campaign["group"]
+    normalized_group = [
+        group["session_date"],
+        group["ticker"],
+        group["expiration"],
+        format(Decimal(str(group["strike"])).normalize(), "f"),
+        group["right"],
+    ]
+    full_rule_identity = {
+        "schema": campaign["schema"],
+        "rule": campaign["rule"],
+        "group": normalized_group,
+    }
+    expected_id = "ocam_" + hashlib.sha256(
+        _canonical_test_bytes(full_rule_identity)
+    ).hexdigest()[:24]
+    id_only_identity = {
+        **full_rule_identity,
+        "rule": campaign["rule"]["id"],
+    }
+    id_only_digest = "ocam_" + hashlib.sha256(
+        _canonical_test_bytes(id_only_identity)
+    ).hexdigest()[:24]
+    assert campaign["campaign_id"] == expected_id
+    assert campaign["campaign_id"] != id_only_digest
+
+    later = _campaign_episode(
+        "tie-later", 9_000_000, available_at="2026-07-02T14:40:00Z",
+    )
+    with_later, later_pending = derive_campaigns(
+        [later, *tied], [*outcomes, _campaign_h60_outcome(later)],
+    )
+    assert later_pending == []
+    assert _canonical_test_bytes(with_later) == _canonical_test_bytes(baseline)
+
+
+def test_campaign_normalizes_equivalent_anchor_clock_to_canonical_utc() -> None:
+    episodes = [
+        _campaign_episode("offset-one", 1_500_000),
+        _campaign_episode(
+            "offset-two", 1_500_000, available_at="2026-07-02T14:32:00Z",
+        ),
+    ]
+    anchor = episodes[-1]
+    for field in ("observed_at", "decision_at", "available_at"):
+        anchor[field] = "2026-07-02T10:32:00-04:00"
+    anchor["provenance"]["source_snapshot_asof"] = "2026-07-02T10:32:00-04:00"
+    anchor["provenance"]["feature_cutoff"] = "2026-07-02T10:32:00-04:00"
+    validate_episode(anchor)
+    outcome = _campaign_h60_outcome(anchor)
+    campaigns, pending = derive_campaigns(
+        episodes, [_campaign_h60_outcome(episodes[0]), outcome],
+    )
+    assert pending == []
+    assert campaigns[0]["formed_at"] == "2026-07-02T14:32:00Z"
+
+
+def test_campaign_evidence_phase_is_recomputed_at_the_frozen_boundary() -> None:
+    retrospective_episodes = [
+        _campaign_episode("phase-retro-one", 1_500_000),
+        _campaign_episode(
+            "phase-retro-two", 1_500_000,
+            available_at="2026-07-02T14:32:00Z",
+        ),
+    ]
+    retrospective, _ = derive_campaigns(
+        retrospective_episodes,
+        [_campaign_h60_outcome(episode) for episode in retrospective_episodes],
+    )
+    assert retrospective[0]["evidence_phase"] == "retrospective_discovery"
+
+    prospective_episodes = [
+        _campaign_episode(
+            "phase-prospective-one", 1_500_000,
+            session_date="2026-08-11", available_at="2026-08-11T14:31:00Z",
+            expiration="2026-08-21",
+        ),
+        _campaign_episode(
+            "phase-prospective-two", 1_500_000,
+            session_date="2026-08-11", available_at="2026-08-11T14:32:00Z",
+            expiration="2026-08-21",
+        ),
+    ]
+    prospective, _ = derive_campaigns(
+        prospective_episodes,
+        [_campaign_h60_outcome(episode) for episode in prospective_episodes],
+    )
+    assert prospective[0]["evidence_phase"] == "prospective_after_rule_freeze"
+
+    exact_boundary = copy.deepcopy(prospective[0])
+    exact_boundary["formed_at"] = CAMPAIGN_RULE_FROZEN_AT
+    validate_campaign(exact_boundary)
+    mislabeled = copy.deepcopy(retrospective[0])
+    mislabeled["evidence_phase"] = "prospective_after_rule_freeze"
+    with pytest.raises(ContractError, match="evidence_phase"):
+        validate_campaign(mislabeled)
+
+
+def test_campaign_retroactive_earlier_insertion_conflicts_in_append_store(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    baseline_episodes = [
+        _campaign_episode("retro-one", 1_500_000),
+        _campaign_episode(
+            "retro-two", 1_500_000, available_at="2026-07-02T14:32:00Z",
+        ),
+    ]
+    baseline, _ = derive_campaigns(
+        baseline_episodes,
+        [_campaign_h60_outcome(episode) for episode in baseline_episodes],
+    )
+    path = tmp_path / "campaigns.jsonl"
+    assert append_campaigns(path, baseline) == 1
+    frozen = path.read_bytes()
+
+    earlier = _campaign_episode(
+        "retro-earlier", 1_500_000, available_at="2026-07-02T14:30:00Z",
+    )
+    revised_episodes = [*baseline_episodes, earlier]
+    revised, _ = derive_campaigns(
+        revised_episodes,
+        [_campaign_h60_outcome(episode) for episode in revised_episodes],
+    )
+    assert revised[0]["campaign_id"] == baseline[0]["campaign_id"]
+    assert revised[0] != baseline[0]
+    with pytest.raises(ContractError, match="conflicting append payload"):
+        append_campaigns(path, revised)
+    assert path.read_bytes() == frozen
+
+
+@pytest.mark.parametrize(
+    ("dimension", "variant"),
+    [
+        ("session_date", {"session_date": "2026-07-06"}),
+        ("ticker", {"ticker": "OTHER"}),
+        ("expiration", {"expiration": "2026-07-24"}),
+        ("strike", {"strike": 110.0}),
+        ("right", {"right": "P"}),
+    ],
+)
+def test_campaign_exact_group_dimensions_never_coalesce(
+    dimension: str, variant: dict[str, object],
+) -> None:
+    base = [
+        _campaign_episode("dimension-base-one", 1_500_000),
+        _campaign_episode(
+            "dimension-base-two", 1_500_000,
+            available_at="2026-07-02T14:32:00Z",
+        ),
+    ]
+    variant_session = str(variant.get("session_date", "2026-07-02"))
+    variant_kwargs = {key: value for key, value in variant.items() if key != "session_date"}
+    other = [
+        _campaign_episode(
+            f"dimension-{dimension}-one", 1_500_000,
+            session_date=variant_session,
+            **variant_kwargs,
+        ),
+        _campaign_episode(
+            f"dimension-{dimension}-two", 1_500_000,
+            session_date=variant_session,
+            available_at=f"{variant_session}T14:32:00Z",
+            **variant_kwargs,
+        ),
+    ]
+    episodes = [*base, *other]
+    campaigns, pending = derive_campaigns(
+        episodes, [_campaign_h60_outcome(episode) for episode in episodes],
+    )
+    assert pending == []
+    assert len(campaigns) == 2
+    assert campaigns[0]["group"][dimension] != campaigns[1]["group"][dimension]
+
+
+def test_campaign_strike_identity_remains_exact_above_float_safe_integer() -> None:
+    episodes: list[dict] = []
+    for strike_index, strike in enumerate((9_007_199_254_740_992, 9_007_199_254_740_993)):
+        for event_index in range(2):
+            episode = _campaign_episode(
+                f"wide-strike-{strike_index}-{event_index}",
+                1_500_000,
+                available_at=f"2026-07-02T14:{31 + event_index:02d}:00Z",
+            )
+            episode["contract"]["strike"] = strike
+            validate_episode(episode)
+            episodes.append(episode)
+    campaigns, pending = derive_campaigns(
+        episodes, [_campaign_h60_outcome(episode) for episode in episodes],
+    )
+    assert pending == []
+    assert len(campaigns) == 2
+    assert {campaign["group"]["strike"] for campaign in campaigns} == {
+        9_007_199_254_740_992,
+        9_007_199_254_740_993,
+    }
+
+
+def test_campaign_missing_h60_is_pending_not_an_orphan() -> None:
+    episodes = [
+        _campaign_episode("pending-one", 1_500_000),
+        _campaign_episode(
+            "pending-two", 1_500_000, available_at="2026-07-02T14:32:00Z",
+        ),
+    ]
+    campaigns, pending = derive_campaigns(
+        episodes, [_campaign_h60_outcome(episodes[0])],
+    )
+    assert campaigns == []
+    assert pending == [episodes[-1]["episode_id"]]
+
+
+def test_campaign_membership_ignores_complete_vs_incomplete_h60_values() -> None:
+    complete_group = [
+        _campaign_episode("complete-one", 1_500_000, ticker="EARLY"),
+        _campaign_episode(
+            "complete-two", 1_500_000, ticker="EARLY",
+            available_at="2026-07-02T14:32:00Z",
+        ),
+    ]
+    incomplete_group = [
+        _campaign_episode(
+            "incomplete-one", 1_500_000, ticker="LATE",
+            available_at="2026-07-02T19:20:00Z",
+        ),
+        _campaign_episode(
+            "incomplete-two", 1_500_000, ticker="LATE",
+            available_at="2026-07-02T19:30:00Z",
+        ),
+    ]
+    episodes = [*complete_group, *incomplete_group]
+    outcomes = [_campaign_h60_outcome(episode) for episode in episodes]
+    assert {outcomes[1]["status"], outcomes[3]["status"]} == {
+        "complete", "incomplete",
+    }
+    campaigns, pending = derive_campaigns(episodes, outcomes)
+    assert pending == []
+    assert len(campaigns) == 2
+    shifted_outcomes = copy.deepcopy(outcomes)
+    for outcome in shifted_outcomes:
+        computed = datetime.fromisoformat(
+            outcome["computed_at"].replace("Z", "+00:00")
+        ).astimezone(timezone.utc)
+        outcome["computed_at"] = (
+            computed + timedelta(days=1)
+        ).isoformat().replace("+00:00", "Z")
+    replay, replay_pending = derive_campaigns(episodes, shifted_outcomes)
+    assert replay_pending == []
+    assert _canonical_test_bytes(replay) == _canonical_test_bytes(campaigns)
+    for campaign in campaigns:
+        assert set(campaign["anchor"]) == {
+            "schema", "outcome_id", "episode_id", "horizon_minutes",
+        }
+        serialized = _canonical_test_bytes(campaign)
+        for forbidden in (
+            b'"status"', b'"underlying"', b'"option"', b'"entry_price"',
+            b'"exit_price"', b'"ret"', b'"mfe"', b'"mae"',
+        ):
+            assert forbidden not in serialized
+
+
+def test_campaign_rejects_wrong_h60_references_horizons_and_ids() -> None:
+    episodes = [
+        _campaign_episode("reference-one", 1_500_000),
+        _campaign_episode(
+            "reference-two", 1_500_000, available_at="2026-07-02T14:32:00Z",
+        ),
+    ]
+    outcomes = [_campaign_h60_outcome(episode) for episode in episodes]
+    valid, _ = derive_campaigns(episodes, outcomes)
+
+    with pytest.raises(ContractError, match="duplicate campaign H\\+60 outcome"):
+        derive_campaigns(episodes, [*outcomes, copy.deepcopy(outcomes[-1])])
+
+    wrong_horizon = copy.deepcopy(outcomes[-1])
+    wrong_horizon["horizon_minutes"] = 30
+    with pytest.raises(ContractError, match="schema validation"):
+        derive_campaigns(episodes, [outcomes[0], wrong_horizon])
+
+    wrong_id = copy.deepcopy(outcomes[-1])
+    wrong_id["outcome_id"] = "oout_" + "0" * 24
+    with pytest.raises(ContractError, match="outcome_id"):
+        derive_campaigns(episodes, [outcomes[0], wrong_id])
+
+    orphan_episode = _campaign_episode("reference-orphan", 50_000)
+    with pytest.raises(ContractError, match="references missing episode"):
+        derive_campaigns(episodes, [*outcomes, _campaign_h60_outcome(orphan_episode)])
+
+    wrong_anchor = copy.deepcopy(valid[0])
+    wrong_anchor["anchor"]["episode_id"] = episodes[0]["episode_id"]
+    with pytest.raises(ContractError, match="first crossing episode"):
+        validate_campaign(wrong_anchor)
+
+
+def test_campaign_rejects_authority_training_and_non_dollar_premiums() -> None:
+    episodes = [
+        _campaign_episode("authority-one", 1_500_000),
+        _campaign_episode(
+            "authority-two", 1_500_000, available_at="2026-07-02T14:32:00Z",
+        ),
+    ]
+    campaigns, _ = derive_campaigns(
+        episodes, [_campaign_h60_outcome(episode) for episode in episodes],
+    )
+    assert campaigns[0]["authority"] == CAMPAIGN_FALSE_AUTHORITY
+    escalated = copy.deepcopy(campaigns[0])
+    escalated["authority"]["may_select"] = True
+    with pytest.raises(ContractError, match="schema validation"):
+        validate_campaign(escalated)
+    trainable = copy.deepcopy(campaigns[0])
+    trainable["training_eligible"] = True
+    with pytest.raises(ContractError, match="schema validation"):
+        validate_campaign(trainable)
+
+    fractional = [
+        _campaign_episode("fractional-one", 1_500_000.5),
+        _campaign_episode(
+            "fractional-two", 1_500_000,
+            available_at="2026-07-02T14:32:00Z",
+        ),
+    ]
+    with pytest.raises(ContractError, match="rounded-dollar"):
+        derive_campaigns(
+            fractional, [_campaign_h60_outcome(episode) for episode in fractional],
+        )
+    with pytest.raises(ContractError, match="finite"):
+        _campaign_episode("nonfinite", math.inf)
+    unsafe = _campaign_episode("unsafe-rounded-dollar", 9_007_199_254_740_992)
+    with pytest.raises(ContractError, match="rounded-dollar"):
+        derive_campaigns([unsafe], [])
+
+
+def test_campaign_locked_append_is_concurrently_idempotent_and_conflict_strict(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    episodes = [
+        _campaign_episode("concurrent-one", 1_500_000),
+        _campaign_episode(
+            "concurrent-two", 1_500_000, available_at="2026-07-02T14:32:00Z",
+        ),
+    ]
+    campaigns, _ = derive_campaigns(
+        episodes, [_campaign_h60_outcome(episode) for episode in episodes],
+    )
+    path = tmp_path / "campaigns.jsonl"
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda _value: append_campaigns(path, campaigns), range(2)))
+    assert sorted(results) == [0, 1]
+    assert load_jsonl(path) == campaigns
+
+    conflict = copy.deepcopy(campaigns[0])
+    conflict["crossing"]["episode_prefix_sha256"] = "f" * 64
+    validate_campaign(conflict)
+    with pytest.raises(ContractError, match="conflicting append payload"):
+        append_campaigns(path, [conflict])
+    assert load_jsonl(path) == campaigns
+
+
+def test_committed_campaign_ledger_equals_live_recomputation_without_count_pin() -> None:
+    repo = Path(__file__).resolve().parent.parent
+    ledger_root = repo / "data/options_signal_episode"
+    episodes = load_jsonl(ledger_root / "episodes.jsonl")
+    outcomes = load_jsonl(ledger_root / "outcomes_h60.jsonl")
+    committed = load_jsonl(ledger_root / "campaigns.jsonl")
+    recomputed, pending = derive_campaigns(episodes, outcomes)
+    assert pending == []
+    assert committed
+    assert committed == recomputed
+    assert {row["evidence_phase"] for row in committed} == {"retrospective_discovery"}
+    for campaign in committed:
+        validate_campaign_against_sources(campaign, episodes, outcomes)
+
+
+def test_campaign_registry_has_one_writer_and_no_authority_consumers() -> None:
+    import yaml
+
+    repo = Path(__file__).resolve().parent.parent
+    registry = yaml.safe_load((repo / "config/synapse.yml").read_text())
+    artifact = registry["artifacts"]["options-signal-campaigns"]
+    assert artifact["producer"] == "scripts/build_options_signal_episode.py"
+    assert artifact["known_extra_writers"] == []
+    assert artifact["consumers"] == ["scripts/build_options_signal_episode.py"]
+    assert artifact["external_consumers"] == []
+    assert artifact["weights"] == "none"
+    assert artifact["scored_path_surfaces"] == []
+
+
+def test_campaign_contract_carries_no_chain_heat_or_directional_projection_fields() -> None:
+    repo = Path(__file__).resolve().parent.parent
+    contract = (
+        repo / "contracts/options/options.signal_campaign.v1.schema.json"
+    ).read_text()
+    ledger = (repo / "data/options_signal_episode/campaigns.jsonl").read_text()
+    for forbidden in (
+        "ask_share", '"lean"', "total_premium_mn", "direction_label",
+        "bullish", "bearish",
+    ):
+        assert forbidden not in contract
+        assert forbidden not in ledger
+
+
+def test_campaign_append_failure_blocks_checkpoint_advance(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    from scripts import build_options_signal_episode as builder
+
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    first = _event(
+        id="campaign-builder-one",
+        ts="2026-07-02T19:19:00Z",
+        observed_at="2026-07-02T19:20:00Z",
+        decision_at="2026-07-02T19:20:00Z",
+        available_at="2026-07-02T19:20:00Z",
+        source_snapshot_asof="2026-07-02T19:20:00Z",
+        size=10_000,
+        avg_price=1.5,
+        premium=1_500_000,
+    )
+    second = _event(
+        id="campaign-builder-two",
+        ts="2026-07-02T19:29:00Z",
+        observed_at="2026-07-02T19:30:00Z",
+        decision_at="2026-07-02T19:30:00Z",
+        available_at="2026-07-02T19:30:00Z",
+        source_snapshot_asof="2026-07-02T19:30:00Z",
+        size=10_000,
+        avg_price=1.5,
+        premium=1_500_000,
+    )
+    stage = [*_stage_records(first), *_stage_records(second)]
+    real_append = builder.append_campaigns
+
+    def fail_campaign_append(*_args, **_kwargs):
+        raise ContractError("synthetic campaign append failure")
+
+    monkeypatch.setattr(builder, "append_campaigns", fail_campaign_append)
+    with pytest.raises(ContractError, match="campaign append failure"):
+        builder.run(
+            root_dir=tmp_path,
+            stages_by_session={"2026-07-02": stage},
+            computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
+        )
+    ledger_root = tmp_path / "data/options_signal_episode"
+    assert len(load_jsonl(ledger_root / "episodes.jsonl")) == 2
+    assert len(load_jsonl(ledger_root / "outcomes_h60.jsonl")) == 2
+    assert not (ledger_root / "campaigns.jsonl").exists()
+    assert not (ledger_root / "checkpoint.json").exists()
+
+    monkeypatch.setattr(builder, "append_campaigns", real_append)
+    replay = builder.run(
+        root_dir=tmp_path,
+        stages_by_session={"2026-07-02": stage},
+        computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
+    )
+    assert replay["campaigns_appended"] == 1
+    assert len(load_jsonl(ledger_root / "campaigns.jsonl")) == 1
+    assert (ledger_root / "checkpoint.json").exists()

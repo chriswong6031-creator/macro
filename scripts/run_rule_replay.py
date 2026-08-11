@@ -90,6 +90,10 @@ from engine.rule_experiments import (  # noqa: E402
     verify_spec_hashes,
 )
 from engine.vintage_stamp import vintage_stamp  # noqa: E402
+from collectors.massive_stock_day import (  # noqa: E402
+    StaleLocalMirrorError,
+    check_local_mirror_freshness,
+)
 
 # Regime merge columns that DISP-GATE-1 requires.
 # These are appended to fires_df before CohortFilter applies, only when the
@@ -1478,8 +1482,29 @@ def main() -> int:
         action="store_true",
         help="Print plan without computing or writing any files",
     )
+    parser.add_argument(
+        "--allow-stale",
+        action="store_true",
+        help=(
+            "Replay against a local massive_stock_day mirror 20+ trading sessions "
+            "behind (refused by default: the mirror does not self-update, so every "
+            "cell would be graded on a frozen tape)"
+        ),
+    )
 
     args = parser.parse_args()
+
+    # The panel is reconstructed from a LOCAL mirror of the R2-canonical store, and
+    # nothing refreshes that mirror in place — checked before the registry work so a
+    # frozen tape cannot be graded and then written into the results plane.
+    try:
+        check_local_mirror_freshness(
+            args.massive_dir or _MASSIVE_DIR,
+            entrypoint="scripts/run_rule_replay.py",
+            allow_stale=args.allow_stale,
+        )
+    except StaleLocalMirrorError:
+        sys.exit(2)   # the banner already printed the lag and the fix command
 
     try:
         summary = run_experiment(

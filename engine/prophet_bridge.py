@@ -127,6 +127,10 @@ import pandas as pd
 
 from engine.government_revenue.federation import reviewed_award_change_context
 from engine.government_revenue.freshness import effective_freshness
+from engine.prophet_integrity import (
+    RECONSTRUCTED_ORIGINATION_PREFIX,
+    is_reconstructed,
+)
 
 log = logging.getLogger(__name__)
 
@@ -335,6 +339,83 @@ _REFUSAL_MONTHS_EN = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
 #: dates (the #4942 era-stamp pattern).  CHARTERED LITERAL — §6.2 fixed this string and
 #: the §6.6 measurement lane filters on it; it is never re-dated to the build date.
 SELECTION_ERA = "anticipation-v1-2026-08-08"
+
+# ── Reconstructed-origination disclosure ─────────────────────────────────────────────
+# research/PROPHET_OUTAGE_BACKFILL_2026_08.md §0.10.  A plan minted by the operator's
+# force-majeure replay carries `origination_mode: "outage_backfill_<date>"`; a live plan
+# carries the key not at all.  This block is the ONE place that reader-facing wording
+# lives, for the same reason REFUSAL_COPY is: `build_prophet` publishes it onto the row
+# and `build_site` renders a count of it on the US board, and the two must never word
+# the same fact differently.
+#
+# VOCABULARY RULING (doctrine §2 Law 2, and §0.10 by name).  The internal name of this
+# event never reaches a reader: not "backfill", not "mixed vintage", not "force majeure",
+# not the era literal, not the mode slug.  The reader is told the true, useful thing —
+# the run that would have made this pick did not finish, so the pick was rebuilt
+# afterwards from that day's data — and the machine identifier stays on the row for a
+# reader who wants to split the cohort themselves (§0.6c).
+#
+# NO STANCE CLAUSE, DELIBERATELY (doctrine §2 Law 1).  Law 1 asks every PANEL to answer
+# "so what do I do"; this is a provenance chip riding a row whose stance is already the
+# card's whole point (buy / near / wait / hold / avoid, plus `what_to_do_now`).  A second
+# stance here would either duplicate it or contradict it.  How the pick was originated
+# does not change what to do about it today — and saying otherwise would be the false
+# claim this disclosure exists to avoid.
+
+#: Tier 1, per row — the quiet chip.  Four words, no jargon, no alarm colour implied:
+#: it states a fact about how the row was made, not a warning about the stock.
+RECONSTRUCTED_CHIP = ("Reconstructed after an outage", "系统中断后补记")
+
+#: Tier 2, per row — the receipt behind the chip.  ~48 words (budget ≤80).  Says the
+#: three things a reader needs and nothing else: why it exists, what it was rebuilt
+#: from and when, and that the record can be read with these separated out.
+RECONSTRUCTED_RECEIPT_EN = (
+    "The nightly run that would have made this pick didn't finish that weekend. It was"
+    " rebuilt afterwards from the data as it stood on {date}, and its windows are timed"
+    " from that date. Rebuilt picks are marked, and counted on their own in the record."
+)
+RECONSTRUCTED_RECEIPT_ZH = (
+    "那个周末的夜间选股没能跑完。它是事后按 {date} 当时的数据重新算出来的，各个时间窗口都从这一天"
+    "起算。补记的选股都有标注，成绩记录里也单独计数。"
+)
+
+#: Tier 1, board level — the count clause that merges into an existing footnote
+#: (doctrine Law 4: one footnote per panel, never a second stamp).  Leading separator
+#: is the caller's job, so the clause can ride any footnote.
+#:
+#: THE REFERENT IS NAMED, NOT IMPLIED.  On the US board this clause lands one line under
+#: "N more already have a plan running", and a bare "N running plans were reconstructed"
+#: reads as "N OF THOSE" — which is false: this count is taken over EVERY open plan, not
+#: over the subset tonight's board happened to consider.  Rendered once and read, the
+#: ambiguity was obvious; naming the population ("of the plans now running") costs three
+#: words and removes it.  The ZH half drops "另有" for exactly the same reason — 另有
+#: means "additionally", which is the wrong relationship to the line above it.
+RECONSTRUCTED_FOOTNOTE_EN = "{n} of the plans now running {were} reconstructed after an outage"
+RECONSTRUCTED_FOOTNOTE_ZH = "在跑的计划中有 {n} 只是中断后补记的"
+
+#: Tier 2, board level — the hover behind that clause.
+RECONSTRUCTED_FOOTNOTE_TIP_EN = (
+    "The nightly run didn't finish over the weekend of {date}. These plans were rebuilt"
+    " afterwards from the data as it stood that day, their windows are timed from it,"
+    " and they are counted on their own in the record."
+)
+RECONSTRUCTED_FOOTNOTE_TIP_ZH = (
+    "{date} 那个周末的夜间选股没能跑完。这些计划是事后按当天的数据重新算出来的，时间窗口都从那天"
+    "起算，成绩记录里也单独计数。"
+)
+
+#: The record block's own disclosure line, shaped like its sibling QUARANTINE_NOTE so
+#: the two read as one voice where they sit together.  It claims a SPLIT, not an
+#: exclusion: these rows ARE in the rate (the backfill never writes the ledger — the
+#: nightly advances them like any other plan), and the count is what lets a reader take
+#: them back out.  Claiming "excluded" here would be a wrong number wearing right units.
+RECONSTRUCTED_RECORD_NOTE_EN = (
+    "{n} of these were reconstructed after an outage on {date} — counted here, and"
+    " marked so they can be counted apart"
+)
+RECONSTRUCTED_RECORD_NOTE_ZH = (
+    "其中 {n} 条是 {date} 系统中断后补记的 — 已计入，也已标注，可单独拆分统计"
+)
 
 #: Publication-lag tolerance: how many SESSIONS the entry basis may trail the run's
 #: price basis before a plan is refused.  The forensic measured a median 5d and max
@@ -1120,10 +1201,88 @@ def _refusal_era() -> dict[str, str]:
     }
 
 
+def _plain_date(iso: Any) -> tuple[str, str]:
+    """``"2026-08-09"`` → ``("9 Aug 2026", "2026年8月9日")``; unparseable → ``("", "")``.
+
+    The same plain-word date form :func:`_refusal_era` already puts on the board, for the
+    same doctrine reason (Law 2/Law 3: a date a reader reads, at full precision, not an
+    identifier).  FAIL-SOFT by design — every caller drops its date clause on ``("", "")``
+    rather than printing a wrong day, and no render may raise here.
+    """
+    match = re.match(r"\s*(\d{4})-(\d{2})-(\d{2})", str(iso or ""))
+    if not match:
+        return ("", "")
+    year, month, day = (int(g) for g in match.groups())
+    if not 1 <= month <= 12 or not 1 <= day <= 31:
+        return ("", "")
+    return (f"{day} {_REFUSAL_MONTHS_EN[month - 1]} {year}", f"{year}年{month}月{day}日")
+
+
+def origination_note(row: Mapping[str, Any] | None) -> dict[str, str] | None:
+    """The per-row disclosure — chip (Tier 1) + receipt (Tier 2), EN and ZH.
+
+    ``None`` for a live plan, which is how a renderer draws nothing without knowing this
+    feature exists.  Self-describing on purpose: the row ships FINISHED user copy, not a
+    code to look up, because the surfaces that draw these rows do not all live in this
+    repository and a code they must word themselves is a second place for the wording to
+    drift (the mistake REFUSAL_COPY's byte-equal mirror test exists to catch).
+
+    The date is the plan's own ``recorded_at`` — the origination day being replayed, which
+    is also the day every window is graded from.  A row whose date will not parse ships
+    the chip with NO receipt rather than a receipt with a wrong or blank day.
+    """
+    if not is_reconstructed(row):
+        return None
+    assert row is not None  # narrowed by is_reconstructed
+    date_en, date_zh = _plain_date(row.get("recorded_at"))
+    note = {"en": RECONSTRUCTED_CHIP[0], "zh": RECONSTRUCTED_CHIP[1]}
+    if date_en:
+        note["tip_en"] = RECONSTRUCTED_RECEIPT_EN.format(date=date_en)
+        note["tip_zh"] = RECONSTRUCTED_RECEIPT_ZH.format(date=date_zh)
+        note["date_en"] = date_en
+        note["date_zh"] = date_zh
+    return note
+
+
+def origination_disclosure(rows: Iterable[Mapping[str, Any]] | None) -> dict[str, Any] | None:
+    """Board-level disclosure over a plan population — ``None`` when none were rebuilt.
+
+    ``None`` rather than a zero row is the whole safety property: with no reconstructed
+    plans in the population every caller omits its key, and the artifact and the rendered
+    page are byte-identical to what they were before this feature existed.
+
+    ``date`` is the EARLIEST reconstructed ``recorded_at`` in the population.  One replay
+    is one date, so today that is simply "the date"; if a second event ever adds a second
+    date the clause still names a true day rather than silently averaging two.
+    """
+    reconstructed = [r for r in (rows or []) if is_reconstructed(r)]
+    if not reconstructed:
+        return None
+    dates = sorted(
+        str(r.get("recorded_at") or "") for r in reconstructed if r.get("recorded_at")
+    )
+    date_en, date_zh = _plain_date(dates[0] if dates else None)
+    n = len(reconstructed)
+    out: dict[str, Any] = {
+        "n": n,
+        "date": dates[0] if dates else None,
+        # Plural agreement done here, not in a template: a template that writes
+        # `plan{{ 's' if n != 1 }}` has quietly hard-coded English grammar into a
+        # bilingual surface, and the ZH half never needed it in the first place.
+        "en": RECONSTRUCTED_FOOTNOTE_EN.format(n=n, were="were" if n != 1 else "was"),
+        "zh": RECONSTRUCTED_FOOTNOTE_ZH.format(n=n),
+    }
+    if date_en:
+        out["tip_en"] = RECONSTRUCTED_FOOTNOTE_TIP_EN.format(date=date_en)
+        out["tip_zh"] = RECONSTRUCTED_FOOTNOTE_TIP_ZH.format(date=date_zh)
+    return out
+
+
 def refusal_receipts(
     standouts: Mapping[str, Any] | None,
     open_keys: Iterable[str] | None = (),
     originated_tickers: Iterable[str] | None = None,
+    reconstructed_plans: Iterable[Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Per-name "why not" receipts for every buy-lane row the intake did NOT plan.
 
@@ -1156,8 +1315,17 @@ def refusal_receipts(
     all rather than an invented one.  When a set IS passed (build_prophet's case), a
     cleared row missing from it is disclosed as ``plan_not_built``.
 
+    ``reconstructed_plans`` — the OPEN plans a call site knows were rebuilt after the
+    outage rather than originated live (build_site reads them out of the published index;
+    ``None`` / empty from every other caller).  It rides this dict rather than a second
+    template argument because the shelf takes exactly one ``cx``, and it is safe to read
+    from last night's index for the SAME reason the open-plan keys are: how a plan was
+    originated is a fact about its past that no later night can change.
+
     Returns ``{"considered", "planned", "passed", "groups", "unmapped", "era",
-    "era_since_en", "era_since_zh"}``.  ``passed`` is the number of names passed on;
+    "era_since_en", "era_since_zh"}``, plus ``"reconstructed"`` ONLY when some were —
+    absent, never zero, so a board with none renders byte-identically to before.
+    ``passed`` is the number of names passed on;
     ``planned`` is the remainder of the considered set.  Groups follow
     :data:`REFUSAL_ORDER`, empties omitted; names sort by the board's own priority score
     descending, then ticker ascending; ``why`` is the row's FULL failing set with the
@@ -1227,7 +1395,7 @@ def refusal_receipts(
     # figure a surface should headline, and the two are kept apart here rather than in a
     # template so both call sites inherit the same arithmetic.
     open_now = sum(1 for r in rows if r["why"][0] == "already_open")
-    return {
+    receipts = {
         "considered": len(buys),
         "planned": len(buys) - len(rows),
         "passed": len(rows),
@@ -1240,6 +1408,13 @@ def refusal_receipts(
         "unmapped": sum(1 for r in rows if r["why"][0] == "unknown"),
         **_refusal_era(),
     }
+    # ADDED ONLY WHEN TRUE (§0.10).  The key is absent — not zero, not null — whenever
+    # nothing was reconstructed, so `{% if cx.reconstructed %}` in the shelf is false on
+    # every board that exists today and the rendered footnote is byte-identical.
+    disclosure = origination_disclosure(reconstructed_plans)
+    if disclosure:
+        receipts["reconstructed"] = disclosure
+    return receipts
 
 
 def legacy_admitted(standouts: dict) -> list[dict]:

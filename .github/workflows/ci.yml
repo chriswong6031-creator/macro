@@ -473,7 +473,11 @@ on:
       - "contracts/options/options.signal_episode.v1.schema.json"
       - "contracts/options/options.signal_episode_outcome.v1.schema.json"
       - "contracts/options/options.signal_episode_session_outcome.v1.schema.json"
+      - "contracts/options/options.signal_campaign.v1.schema.json"
       - "contracts/options/polygon.intraday_price_receipt.v1.schema.json"
+      - "data/options_signal_episode/campaigns.jsonl"
+      - "research/options_estate/OPTIONS_SIGNAL_CAMPAIGNS_PREREG.md"
+      - "ops/LIVE_FLOW_RUNBOOK.md"
       - "tests/test_options_signal_episode.py"
       - "tests/test_polygon_intraday.py"
       # R6.2 private operator-reviewed Options Issue Desk. engine/** and
