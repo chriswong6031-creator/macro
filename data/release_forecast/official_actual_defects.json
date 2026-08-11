@@ -1,0 +1,22 @@
+{
+  "schema": "official_actual_defects.v1",
+  "policy": "immutable_receipt_quarantine",
+  "defects_by_receipt": {
+    "official_actual:0492229833dc679fdb39494f": {
+      "defect_code": "known_source_binding_defect",
+      "release": "pce_headline",
+      "period": "2026-06",
+      "source_url": "https://www.bea.gov/news/2026/personal-income-and-outlays-june-2026",
+      "recorded_source_sha256": "29ae0bad7d568ca7ea59be2f74461b5dcf5da4393ff816544254cd47507f13e1",
+      "reason": "The permanent BEA release URL was recorded with the shared RSS feed digest after a 304 response, so the URL and bytes are not bound."
+    },
+    "official_actual:3af69117d78be4d9ea46b002": {
+      "defect_code": "known_source_binding_defect",
+      "release": "pce_core",
+      "period": "2026-06",
+      "source_url": "https://www.bea.gov/news/2026/personal-income-and-outlays-june-2026",
+      "recorded_source_sha256": "29ae0bad7d568ca7ea59be2f74461b5dcf5da4393ff816544254cd47507f13e1",
+      "reason": "The permanent BEA release URL was recorded with the shared RSS feed digest after a 304 response, so the URL and bytes are not bound."
+    }
+  }
+}

@@ -58,6 +58,12 @@ EVENT_ALERT_RETENTION = {
     event_type: timedelta(days=7) for event_type in RESULT_EVENT_TYPES
 }
 UNRESOLVED_RETRY_INTERVAL_MIN = 15
+DEFECT_REPAIR_MAX_ATTEMPTS = 3
+DEFECT_REPAIR_BACKOFF_MIN = 60
+DEFECT_REPAIR_STATE_KEY = "official_actual_defect_repairs"
+OFFICIAL_ACTUAL_DEFECTS_PATH = (
+    _ROOT / "data" / "release_forecast" / "official_actual_defects.json"
+)
 
 
 @dataclass(frozen=True)
@@ -673,6 +679,211 @@ def _safe_official_document_url(value: Any) -> str | None:
     return parsed.geturl()
 
 
+def _governed_source_binding_defects() -> list[dict[str, Any]]:
+    """Load exact immutable source-binding defects from the governed sidecar."""
+    try:
+        payload = json.loads(OFFICIAL_ACTUAL_DEFECTS_PATH.read_text(encoding="utf-8"))
+    except (FileNotFoundError, OSError, ValueError, TypeError):
+        return []
+    if not isinstance(payload, dict):
+        return []
+    defects = payload.get("defects_by_receipt")
+    if payload.get("schema") != "official_actual_defects.v1" or not isinstance(
+        defects, dict
+    ):
+        return []
+    governed = []
+    for receipt_id, defect in defects.items():
+        if not isinstance(defect, dict):
+            continue
+        source_url = _safe_official_document_url(defect.get("source_url"))
+        source_sha256 = str(defect.get("recorded_source_sha256") or "").lower()
+        if (
+            defect.get("defect_code") != "known_source_binding_defect"
+            or not source_url
+            or not re.fullmatch(r"[0-9a-f]{64}", source_sha256)
+        ):
+            continue
+        governed.append(
+            {
+                "receipt_id": str(receipt_id),
+                "source_url": source_url,
+                "recorded_source_sha256": source_sha256,
+            }
+        )
+    return governed
+
+
+def _known_source_binding_defect(source_url: str | None, source_sha256: str) -> bool:
+    """Match a prior watcher tuple to the governed immutable defect sidecar."""
+    if not source_url or not re.fullmatch(r"[0-9a-f]{64}", source_sha256):
+        return False
+    return any(
+        defect["source_url"] == source_url
+        and defect["recorded_source_sha256"] == source_sha256
+        for defect in _governed_source_binding_defects()
+    )
+
+
+def _state_time(value: Any) -> datetime | None:
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _repair_event(publication: dict[str, Any]) -> dict[str, Any] | None:
+    required = ("event_id", "type", "date", "time_et")
+    if any(not publication.get(field) for field in required):
+        return None
+    try:
+        _event_at(publication)
+    except (TypeError, ValueError):
+        return None
+    fields = (
+        "event_id",
+        "type",
+        "date",
+        "time_et",
+        "label",
+        "label_zh",
+        "schedule_source",
+        "scheduled_at",
+        "is_sep",
+        "is_context_only",
+    )
+    return {field: publication[field] for field in fields if field in publication}
+
+
+def _admit_governed_defect_repairs(
+    *,
+    publications: dict[str, Any],
+    repair_state: dict[str, Any],
+    now: datetime,
+) -> tuple[list[dict[str, Any]], set[str]]:
+    """Re-admit only exact aged URL/hash defects whose bounded retry is due."""
+    defects = _governed_source_binding_defects()
+    admitted: list[dict[str, Any]] = []
+    admitted_keys: set[str] = set()
+    for publication_key, value in publications.items():
+        if not isinstance(value, dict):
+            continue
+        publication = value
+        source_url = _safe_official_document_url(publication.get("source_url"))
+        source_sha256 = str(publication.get("source_sha256") or "").lower()
+        content_sha256 = str(publication.get("content_sha256") or "").lower()
+        actual = publication.get("actual")
+        actual_source_url = _safe_official_document_url(
+            actual.get("source_url") if isinstance(actual, dict) else None
+        )
+        matching = [
+            defect
+            for defect in defects
+            if defect["source_url"] == source_url
+            and defect["recorded_source_sha256"] == source_sha256
+        ]
+        event = _repair_event(publication)
+        try:
+            elapsed = now.astimezone(NY) - _event_at(publication)
+        except (TypeError, ValueError):
+            continue
+        source_supports_repair = any(
+            source.source_id == publication.get("source_id")
+            and source.follow_entry_link
+            for source in SOURCES
+        )
+        if (
+            not matching
+            or event is None
+            or publication.get("status") != "published"
+            or publication.get("data_ready") is not True
+            or not isinstance(actual, dict)
+            or not actual
+            or content_sha256 != source_sha256
+            or actual_source_url != source_url
+            or not source_supports_repair
+            or elapsed <= _alert_retention(publication)
+        ):
+            continue
+
+        event_key = _event_key(event)
+        if publication_key not in (event_key, _legacy_event_key(event)):
+            continue
+        signature = {
+            "source_url": source_url,
+            "recorded_source_sha256": source_sha256,
+            "defect_receipt_ids": sorted(
+                defect["receipt_id"] for defect in matching
+            ),
+        }
+        prior = repair_state.get(event_key)
+        record = dict(prior) if isinstance(prior, dict) else {}
+        if any(record.get(field) != value for field, value in signature.items()):
+            record = {
+                **signature,
+                "status": "pending",
+                "attempts": 0,
+                "attempt_limit": DEFECT_REPAIR_MAX_ATTEMPTS,
+                "backoff_minutes": DEFECT_REPAIR_BACKOFF_MIN,
+            }
+        attempts = record.get("attempts")
+        if isinstance(attempts, bool) or not isinstance(attempts, int) or attempts < 0:
+            attempts = 0
+            record["attempts"] = 0
+        if attempts >= DEFECT_REPAIR_MAX_ATTEMPTS:
+            record["status"] = "exhausted"
+            repair_state[event_key] = record
+            continue
+        if record.get("status") == "repaired":
+            # A repaired record and the governed bad tuple cannot coexist in one
+            # atomic state snapshot. Re-open conservatively if that invariant drifts.
+            record["status"] = "pending"
+            record["attempts"] = 0
+        next_attempt = _state_time(record.get("next_attempt_at"))
+        if next_attempt is not None and now < next_attempt:
+            repair_state[event_key] = record
+            continue
+        repair_state[event_key] = record
+        admitted.append(event)
+        admitted_keys.add(event_key)
+    return admitted, admitted_keys
+
+
+def _start_defect_repair_attempt(record: dict[str, Any], now: datetime) -> None:
+    attempts = int(record.get("attempts") or 0) + 1
+    record["attempts"] = attempts
+    record["last_attempt_at"] = now.isoformat()
+    record.pop("completed_at", None)
+    record.pop("repaired_source_sha256", None)
+    if attempts >= DEFECT_REPAIR_MAX_ATTEMPTS:
+        record["status"] = "exhausted"
+        record["next_attempt_at"] = None
+    else:
+        delay = DEFECT_REPAIR_BACKOFF_MIN * (2 ** (attempts - 1))
+        record["status"] = "retry_wait"
+        record["next_attempt_at"] = (now + timedelta(minutes=delay)).isoformat()
+
+
+def _fail_defect_repair(record: dict[str, Any], error: str) -> None:
+    record["last_error"] = str(error or "detail_document_unverified")
+
+
+def _complete_defect_repair(
+    record: dict[str, Any],
+    *,
+    now: datetime,
+    source_sha256: str,
+) -> None:
+    record["status"] = "repaired"
+    record["completed_at"] = now.isoformat()
+    record["repaired_source_sha256"] = source_sha256
+    record["next_attempt_at"] = None
+    record.pop("last_error", None)
+
+
 def _prepare_official_document(
     *,
     spec: SourceSpec,
@@ -683,6 +894,7 @@ def _prepare_official_document(
     fetcher: Any,
     timeout: float,
     checked_at: str,
+    force_unconditional: bool = False,
 ) -> tuple[dict[str, Any], bool, str | None]:
     """Resolve an exact dated feed entry and, for BEA, its permanent release page.
 
@@ -692,7 +904,7 @@ def _prepare_official_document(
     """
     if not spec.feed_kind:
         evidence = _body_looks_published(result.get("body") or b"", event, spec)
-        return dict(result), evidence, None
+        return {**result, "binding_kind": "direct_document"}, evidence, None
 
     entry = official_release_parsers.extract_feed_entry(
         spec.feed_kind,
@@ -700,7 +912,16 @@ def _prepare_official_document(
         str(event["date"]),
     )
     if not entry:
-        return dict(result), False, None
+        return (
+            {
+                **result,
+                "binding_kind": (
+                    "feed_304" if result.get("status") == 304 else "feed_unmatched"
+                ),
+            },
+            False,
+            None,
+        )
 
     entry_body = entry.get("body") or b""
     if isinstance(entry_body, str):
@@ -714,6 +935,7 @@ def _prepare_official_document(
         "source_released_at": entry.get("source_released_at"),
         "reference_period": entry.get("reference_period"),
         "feed_entry_title": entry.get("title"),
+        "binding_kind": "feed_entry",
     }
     if not spec.follow_entry_link:
         return document, True, None
@@ -722,7 +944,9 @@ def _prepare_official_document(
     if not detail_url:
         return document, True, "UnsafeFeedLink"
     detail_key = f"{state_key}:document"
-    detail_prior = dict(source_state.get(detail_key) or {})
+    detail_prior = (
+        {} if force_unconditional else dict(source_state.get(detail_key) or {})
+    )
     detail_spec = replace(
         spec,
         url=detail_url,
@@ -731,6 +955,8 @@ def _prepare_official_document(
     )
     try:
         detail = fetcher(detail_spec, detail_prior, timeout)
+        if detail.get("status") == 304 and force_unconditional:
+            return document, True, "UnconditionalDetailNotModified"
         if detail.get("status") == 304:
             # An unresolved parser needs bytes, not only a validator.
             detail = fetcher(detail_spec, {}, timeout)
@@ -747,6 +973,7 @@ def _prepare_official_document(
         document["source_released_at"] = entry.get("source_released_at")
         document["reference_period"] = entry.get("reference_period")
         document["feed_entry_title"] = entry.get("title")
+        document["binding_kind"] = "detail_document"
         return document, True, None
     except Exception as exc:  # noqa: BLE001 - retain exact feed publication evidence
         return document, True, type(exc).__name__
@@ -769,6 +996,8 @@ def detect(
         dict(state.get("publications") or {}),
         candidates,
     )
+    raw_repair_state = state.get(DEFECT_REPAIR_STATE_KEY)
+    repair_state = dict(raw_repair_state) if isinstance(raw_repair_state, dict) else {}
     coverage_started_at_by_type = _coverage_started_at_by_type(state, now)
     new_coverage_types = _new_coverage_types(state)
     events = [
@@ -815,6 +1044,21 @@ def detect(
             ):
                 due.append(event)
                 due_keys.add(event_key)
+    repair_events, forced_repair_keys = _admit_governed_defect_repairs(
+        publications=publications,
+        repair_state=repair_state,
+        now=now,
+    )
+    event_keys = {_event_key(event) for event in events}
+    due_keys = {_event_key(event) for event in due}
+    for event in repair_events:
+        event_key = _event_key(event)
+        if event_key not in event_keys:
+            events.append(event)
+            event_keys.add(event_key)
+        if event_key not in due_keys:
+            due.append(event)
+            due_keys.add(event_key)
     health: list[dict[str, Any]] = []
     feed_fetch_cache: dict[tuple[str, str, str], dict[str, Any]] = {}
 
@@ -857,8 +1101,17 @@ def detect(
                 or source_state.get(legacy_state_key)
                 or {}
             )
+            scoped_event_key = _event_key(scoped_event) if scoped_event else None
+            forced_repair = bool(
+                scoped_event_key and scoped_event_key in forced_repair_keys
+            )
+            repair_record = (
+                repair_state.get(scoped_event_key) if scoped_event_key else None
+            )
+            if forced_repair and isinstance(repair_record, dict):
+                _start_defect_repair_attempt(repair_record, now)
             try:
-                result = fetch_primary(resolved, prior)
+                result = fetch_primary(resolved, {} if forced_repair else prior)
                 # A statement can become visible seconds before the scheduled
                 # time.  That seed request stores validators, so the first
                 # post-time request will normally be a 304 with no body.  The
@@ -873,6 +1126,8 @@ def detect(
                     )
                     for event in scoped_matching
                 )
+                if result.get("status") == 304 and forced_repair:
+                    raise RuntimeError("UnconditionalFeedNotModified")
                 if result.get("status") == 304 and needs_parser_body:
                     result = fetch_primary(resolved, {})
                 changed = bool(
@@ -906,6 +1161,7 @@ def detect(
                             fetcher=fetcher,
                             timeout=timeout,
                             checked_at=now.isoformat(),
+                            force_unconditional=forced_repair,
                         )
                     )
                     if detail_error:
@@ -914,9 +1170,74 @@ def detect(
                     document_urls.append(document_url)
                     publication = _publication_for(publications, event)
                     already_detected = bool(publication)
-                    actual = _parse_actual(
+                    prior_actual = publication.get("actual")
+                    prior_source_url = _safe_official_document_url(
+                        publication.get("source_url")
+                    )
+                    prior_actual_url = _safe_official_document_url(
+                        prior_actual.get("source_url")
+                        if isinstance(prior_actual, dict)
+                        else None
+                    )
+                    prior_source_sha = str(
+                        publication.get("source_sha256") or ""
+                    ).lower()
+                    prior_content_sha = str(
+                        publication.get("content_sha256") or ""
+                    ).lower()
+                    prior_verified_binding = bool(
+                        publication.get("data_ready") is True
+                        and isinstance(prior_actual, dict)
+                        and prior_actual
+                        and prior_source_url
+                        and prior_actual_url == prior_source_url
+                        and re.fullmatch(r"[0-9a-f]{64}", prior_source_sha)
+                        and prior_source_sha == prior_content_sha
+                    )
+                    parsed_actual = _parse_actual(
                         resolved,
                         document.get("body") or b"",
+                    )
+                    actual = (
+                        None
+                        if resolved.follow_entry_link
+                        and document.get("binding_kind") != "detail_document"
+                        else parsed_actual
+                    )
+                    primary_sha = str(result.get("fingerprint") or "").lower()
+                    current_document_sha = str(
+                        document.get("fingerprint") or ""
+                    ).lower()
+                    current_document_url = _safe_official_document_url(document_url)
+                    primary_url = _safe_official_document_url(resolved.url)
+                    known_feed_bound_state = bool(
+                        prior_verified_binding
+                        and resolved.follow_entry_link
+                        and prior_source_url != primary_url
+                        and (
+                            _known_source_binding_defect(
+                                prior_source_url,
+                                prior_source_sha,
+                            )
+                            or (
+                                re.fullmatch(r"[0-9a-f]{64}", primary_sha)
+                                and prior_source_sha == primary_sha
+                            )
+                        )
+                    )
+                    successful_detail_repair = bool(
+                        actual
+                        and resolved.actual_parser
+                        and resolved.follow_entry_link
+                        and document.get("binding_kind") == "detail_document"
+                        and current_document_url
+                        and current_document_url != primary_url
+                        and re.fullmatch(r"[0-9a-f]{64}", current_document_sha)
+                        and current_document_sha != primary_sha
+                    )
+                    keep_verified_binding = bool(
+                        prior_verified_binding
+                        and not (known_feed_bound_state and successful_detail_repair)
                     )
                     if not after_release or not (
                         publication_evidence
@@ -937,11 +1258,42 @@ def detect(
                         event,
                         publication,
                     )
-                    official_url = (
-                        document_url
-                        if publication_evidence or actual
-                        else str(publication.get("source_url") or document_url)
-                    )
+                    if keep_verified_binding:
+                        # The verified actual, permanent document URL, and document
+                        # digest form one keep-first evidence tuple.  A later feed
+                        # 304 carries only the RSS validator/fingerprint; it must
+                        # never rebind that URL to feed bytes.  Re-observing the
+                        # same release document is deliberately idempotent too.
+                        official_url = str(publication["source_url"])
+                        content_sha256 = prior_content_sha
+                        source_sha256 = prior_source_sha
+                        source_released_at = publication.get("source_released_at")
+                        source_time_basis = publication.get("source_time_basis")
+                    else:
+                        feed_fallback = bool(
+                            resolved.follow_entry_link
+                            and document.get("binding_kind") != "detail_document"
+                        )
+                        if feed_fallback:
+                            official_url = resolved.url
+                            content_sha256 = primary_sha
+                            source_sha256 = primary_sha
+                        else:
+                            official_url = (
+                                document_url
+                                if publication_evidence or actual
+                                else str(
+                                    publication.get("source_url") or document_url
+                                )
+                            )
+                            content_sha256 = (
+                                document.get("fingerprint")
+                                or publication.get("content_sha256")
+                            )
+                            source_sha256 = (
+                                document.get("fingerprint")
+                                or publication.get("source_sha256")
+                            )
                     publication.update(
                         {
                             **event,
@@ -959,16 +1311,18 @@ def detect(
                             "publisher": resolved.publisher,
                             "source_id": resolved.source_id,
                             "source_url": official_url,
-                            "content_sha256": document.get("fingerprint")
-                            or publication.get("content_sha256"),
-                            "source_sha256": document.get("fingerprint")
-                            or publication.get("source_sha256"),
+                            "content_sha256": content_sha256,
+                            "source_sha256": source_sha256,
                             "data_ready": has_verified_actual,
                             "is_context_only": True,
                             "reference_period": (
-                                document.get("reference_period")
-                                or (actual or {}).get("reference_period")
-                                or publication.get("reference_period")
+                                publication.get("reference_period")
+                                if keep_verified_binding
+                                else (
+                                    document.get("reference_period")
+                                    or (actual or {}).get("reference_period")
+                                    or publication.get("reference_period")
+                                )
                             ),
                             "note": (
                                 "Verified official facts are live. Canonical vintage "
@@ -985,13 +1339,25 @@ def detect(
                             "name": str(resolved.actual_parser),
                             "version": 1,
                         }
-                    if actual:
+                    if actual and not keep_verified_binding:
                         publication["actual"] = {
                             **actual,
                             "source_url": official_url,
                         }
                         publication["verified_at"] = now.isoformat()
                     publications[event_key] = publication
+                    if forced_repair and isinstance(repair_record, dict):
+                        if successful_detail_repair:
+                            _complete_defect_repair(
+                                repair_record,
+                                now=now,
+                                source_sha256=current_document_sha,
+                            )
+                        else:
+                            _fail_defect_repair(
+                                repair_record,
+                                detail_error or "detail_document_unverified",
+                            )
                 health.append(
                     {
                         "source_id": resolved.source_id,
@@ -1016,6 +1382,8 @@ def detect(
                     }
                 )
             except Exception as exc:  # noqa: BLE001 - source failure is display health
+                if forced_repair and isinstance(repair_record, dict):
+                    _fail_defect_repair(repair_record, type(exc).__name__)
                 log.warning(
                     "source %s failed for %s: %s: %s",
                     resolved.source_id,
@@ -1063,6 +1431,7 @@ def detect(
         },
         "sources": source_state,
         "publications": publications,
+        DEFECT_REPAIR_STATE_KEY: repair_state,
         "updated_at": now.isoformat(),
     }
     sorted_publications = sorted(
@@ -1114,6 +1483,11 @@ def detect(
         "source_health": health,
         "schedule_coverage": schedule_coverage(today_et),
         "canonical_reconciliation": "nightly",
+        "official_actual_defect_repair": {
+            "state_key": DEFECT_REPAIR_STATE_KEY,
+            "max_attempts": DEFECT_REPAIR_MAX_ATTEMPTS,
+            "backoff_minutes": DEFECT_REPAIR_BACKOFF_MIN,
+        },
         "is_context_only": True,
     }
     return new_state, payload
