@@ -2955,7 +2955,31 @@ body.page-macro .mxqm-eyebrow-chip{margin-left:auto;font-size:9.5px;font-weight:
    chip, so suppress the duplicate badge in the shared regime_flip_strip header. */
 body.page-macro #mx5FlipCtxPop .mxfs-badge{display:none}
 body.page-macro .mxqm-glance{font-size:12.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.78));margin:2px 0 10px}
-body.page-macro .mxqm-glance b{color:var(--warn,#f59e0b);font-weight:700}
+/* The regime name was --warn, i.e. the SAME token the position dot used — so the
+   headline word and a dot sitting in a different quadrant were painted alike, which
+   is half of why the two read as one self-contradicting claim. It is also 3.6:1 on
+   white (12.5px bold is not WCAG large text, so it wanted 4.5:1). Full text ink
+   fixes both, and leaves hue to mean quadrant and nothing else. */
+body.page-macro .mxqm-glance b{color:var(--text,#c8d0dc);font-weight:700}
+/* Divergence line — shown ONLY when today's reading and the confirmed label sit in
+   different quadrants. A watch condition, never an alarm: no falsifier/refutation
+   vocabulary on a user surface (operator 2026-07-27). */
+body.page-macro .mxqm-diverge{display:block;margin-top:3px;color:var(--muted)}
+/* Legend. The map carries two different KINDS of object — a measurement and a
+   label — and shipped naming neither, so the dot read as a broken "you are here".
+   One row, defined once, under the plot. */
+body.page-macro .mxqm-legend{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 14px;
+  margin:6px 0 0;font-size:9.5px;letter-spacing:.02em;color:var(--muted)}
+body.page-macro .mxqm-lg-item{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+body.page-macro .mxqm-lg-dot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--mxqm-mark,#f2f6fc)}
+/* swatch = the active tile's exact composite (its hue at .42 over the plate), the
+   same color-mix the odds halo uses, so it re-shades per theme and through the zh
+   q1/q3 swap for free. */
+body.page-macro .mxqm-lg-tile{width:9px;height:9px;border-radius:2.5px;flex:none}
+body.page-macro .mxqm-lg-q1{background:color-mix(in srgb,var(--q1,#2e9e4f) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-lg-q2{background:color-mix(in srgb,var(--q2,#d4a017) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-lg-q3{background:color-mix(in srgb,var(--q3,#d04545) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-lg-q4{background:color-mix(in srgb,var(--q4,#3f78d8) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
 body.page-macro .mxqm-wrap{margin:0 0 8px}
 body.page-macro .mxqm-svg-box{width:100%;max-width:300px;margin:0 auto}
 body.page-macro .mxqm-svg-box svg{width:100%;height:auto;display:block;overflow:visible}
@@ -2978,7 +3002,14 @@ body.page-macro .mxqm-axis-label{fill:rgba(255,255,255,.34);font-size:7.5px;lett
    InterDisplay-700.woff2 is in flight — so it never overflows in either state.
    CJK keeps 8px below: 2-4 glyphs never approach the tile edge and Chinese suffers
    more than Latin at small sizes. #}
-body.page-macro .mxqm-quad-label{fill:rgba(255,255,255,.62);font-size:6.6px;letter-spacing:.04em;font-family:Inter,-apple-system,sans-serif;font-weight:700}
+{# The label takes the same tile-coloured halo as the odds numeral, for the same
+   reason: the dot is drawn beneath BOTH and can land on either. It used to be safe
+   bare only because the dot was amber — a dark glyph still read on it. The dot is
+   now theme ink, so in light theme an unhaloed label glyph is near-black on a
+   near-black dot, i.e. gone. Halo width is 2.2 (vs the numeral's 3.4) because these
+   glyphs are 6.6px, not 17px — 3.4 would close the counters. #}
+body.page-macro .mxqm-quad-label{fill:rgba(255,255,255,.62);font-size:6.6px;letter-spacing:.04em;font-family:Inter,-apple-system,sans-serif;font-weight:700;
+  paint-order:stroke fill;stroke-width:2.2;stroke-linejoin:round}
 body.page-macro .mxqm-quad-label.l-zh{font-size:8px;letter-spacing:.06em}
 /* The odds numeral carries a HALO so the position dot (drawn beneath it — see the
    marker-layer note in the SVG) can pass behind the glyphs without eating them.
@@ -2991,32 +3022,50 @@ body.page-macro .mxqm-quad-label.l-zh{font-size:8px;letter-spacing:.06em}
 body.page-macro .mxqm-odds{fill:rgba(255,255,255,.72);font-size:17px;font-weight:800;font-family:Inter,-apple-system,sans-serif;font-variant-numeric:tabular-nums;
   paint-order:stroke fill;stroke-width:3.4;stroke-linejoin:round;
   stroke:color-mix(in srgb,var(--q1,#2e9e4f) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q1{stroke:color-mix(in srgb,var(--q1,#2e9e4f) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q2{stroke:color-mix(in srgb,var(--q2,#d4a017) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q3{stroke:color-mix(in srgb,var(--q3,#d04545) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q4{stroke:color-mix(in srgb,var(--q4,#3f78d8) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-/* active tile = the .42 fill, and the ONLY tile the dot can ever land in */
-body.page-macro .mxqm-odds-q1.active{stroke:color-mix(in srgb,var(--q1,#2e9e4f) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q2.active{stroke:color-mix(in srgb,var(--q2,#d4a017) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q3.active{stroke:color-mix(in srgb,var(--q3,#d04545) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
-body.page-macro .mxqm-odds-q4.active{stroke:color-mix(in srgb,var(--q4,#3f78d8) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q1{stroke:color-mix(in srgb,var(--q1,#2e9e4f) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q2{stroke:color-mix(in srgb,var(--q2,#d4a017) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q3{stroke:color-mix(in srgb,var(--q3,#d04545) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q4{stroke:color-mix(in srgb,var(--q4,#3f78d8) 14%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+/* active tile = the .42 fill. NOT necessarily the tile the dot lands in: the dot is
+   today's raw growth x inflation reading, the active tile is the hysteresis-confirmed
+   label, and during a transition they legitimately differ (see .mxqm-diverge). Every
+   tile therefore needs its halo mix at BOTH opacities. */
+body.page-macro .mxqm-halo-q1.active{stroke:color-mix(in srgb,var(--q1,#2e9e4f) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q2.active{stroke:color-mix(in srgb,var(--q2,#d4a017) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q3.active{stroke:color-mix(in srgb,var(--q3,#d04545) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
+body.page-macro .mxqm-halo-q4.active{stroke:color-mix(in srgb,var(--q4,#3f78d8) 42%,var(--mxqm-plate,rgba(16,21,30,.97)))}
 body.page-macro .mxqm-odds.active{fill:#fff}
-body.page-macro .mxqm-dot{fill:var(--warn,#f59e0b);stroke:rgba(255,255,255,.92);stroke-width:1.5}
-body.page-macro .mxqm-pulse{fill:var(--warn,#f59e0b);opacity:.4;transform-box:fill-box;transform-origin:center;animation:mxqmPulse 2.4s ease-out infinite}
-body.page-macro .mxqm-arrow{stroke:var(--warn,#f59e0b);stroke-width:2;fill:none;marker-end:url(#mxqmArrowHead);
+/* ── Colour law for this map: HUE = quadrant, INK = measurement ────────────────
+   All four hues are spoken for (--q1..--q4), and --q1/--q3 additionally SWAP under
+   zh 红涨绿跌 — so any hue the position marker picks collides with some tile in some
+   theme x language. It shipped on --warn, which resolves to #b9791a on light: six
+   degrees of hue from --q2 #b07d05, the REFLATION tile. The "you are here" dot was
+   therefore painted in one of the four categories it is supposed to be neutral
+   about — it camouflaged on an active Reflation tile, and over the pale Stagflation
+   tile it read as a brown smudge rather than a marker (operator report 2026-08-11).
+   The old light-theme stroke rgba(0,0,0,.5) made that worse: a translucent black rim
+   over a dark ochre fill is mud, and it separates the dot from nothing.
+   --mxqm-mark is theme ink and carries NO category meaning; the ring is the plate
+   colour, opaque, so the marker separates from all four tile hues in both themes.
+   Anything painted here that means "the reading" (dot, pulse, drift arrow) takes
+   --mxqm-mark. Never a --qN, never a state token. */
+body.page-macro .mxqm-dot{fill:var(--mxqm-mark,#f2f6fc);stroke:var(--mxqm-plate,rgba(16,21,30,.97));stroke-width:2}
+body.page-macro .mxqm-pulse{fill:var(--mxqm-mark,#f2f6fc);opacity:.26;transform-box:fill-box;transform-origin:center;animation:mxqmPulse 2.4s ease-out infinite}
+body.page-macro .mxqm-arrow{stroke:var(--mxqm-mark,#f2f6fc);stroke-width:2;fill:none;marker-end:url(#mxqmArrowHead);opacity:.62;
   stroke-dasharray:120;stroke-dashoffset:120;animation:mxqmDraw .9s ease-out .15s forwards}
-body.page-macro .mxqm-arrowhead{fill:var(--warn,#f59e0b)}
-@keyframes mxqmPulse{0%{transform:scale(1);opacity:.42}70%{transform:scale(2.9);opacity:0}100%{transform:scale(2.9);opacity:0}}
+body.page-macro .mxqm-arrowhead{fill:var(--mxqm-mark,#f2f6fc)}
+@keyframes mxqmPulse{0%{transform:scale(1);opacity:.30}70%{transform:scale(2.9);opacity:0}100%{transform:scale(2.9);opacity:0}}
 @keyframes mxqmDraw{to{stroke-dashoffset:0}}
 @media (prefers-reduced-motion: reduce){
-  body.page-macro .mxqm-pulse{animation:none;opacity:.28}
+  body.page-macro .mxqm-pulse{animation:none;opacity:.20}
   body.page-macro .mxqm-arrow{animation:none;stroke-dashoffset:0}
 }
 [data-theme="light"] body.page-macro .mxqm-axis-label{fill:rgba(0,0,0,.58)}
 [data-theme="light"] body.page-macro .mxqm-quad-label{fill:rgba(0,0,0,.62)}
 [data-theme="light"] body.page-macro .mxqm-odds{fill:rgba(0,0,0,.6)}
 [data-theme="light"] body.page-macro .mxqm-odds.active{fill:rgba(0,0,0,.9)}
-[data-theme="light"] body.page-macro .mxqm-dot{stroke:rgba(0,0,0,.5)}
+{# No light-theme .mxqm-dot override any more: fill AND ring both resolve from
+   --mxqm-mark / --mxqm-plate, which the pop already re-points per theme. #}
 /* ── Task 6: leadership drawdown bar strip ── */
 body.page-macro .rsx-ldr-bars{margin:6px 0 4px;display:flex;flex-direction:column;gap:3px;position:relative}
 body.page-macro .rsx-ldr-bar-row{display:flex;align-items:center;gap:5px;font-size:10.5px;min-height:16px}
@@ -3060,6 +3109,10 @@ body.page-macro.mx4-grid .mx5-flipctx-pop{
      because the light theme overrides `background` with a literal below rather
      than re-pointing --mx5-pop-bg, so the halo cannot read the background. */
   --mxqm-plate:var(--mx5-pop-bg,rgba(16,21,30,.97));
+  /* the MEASUREMENT ink — position dot, its pulse and the drift arrow. Deliberately
+     NOT a state token: see the colour law above .mxqm-dot. Denser than --text so a
+     4.5-unit dot still reads as a marker rather than as a stray glyph. */
+  --mxqm-mark:#f2f6fc;
   border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));
   border-radius:14px;
   box-shadow:0 18px 48px rgba(0,0,0,.5);
@@ -3069,6 +3122,7 @@ body.page-macro.mx4-grid .mx5-flipctx-pop{
 [data-theme="light"] body.page-macro.mx4-grid .mx5-flipctx-pop{
   background:#fff;
   --mxqm-plate:#fff;
+  --mxqm-mark:#1b2333;
   border-color:rgba(0,0,0,.12);
   box-shadow:0 18px 48px rgba(20,30,50,.18);
 }
@@ -7283,6 +7337,28 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {# Current quad hard label and gaining quad #}
         {% set _qm_hard = latest.get('quad') %}
         {% set _qm_gain = _qvi_tm.get('gaining') %}
+        {# ── The three objects on this map answer three DIFFERENT questions ───────
+           dot   = today's raw growth x inflation axis scores (fastest, unsmoothed)
+           tile  = latest.quad, the STICKY hysteresis label (engine/regime.py — a
+                   flip needs N consecutive confirming days or a shock override)
+           odds  = quad_vector.p, the causal HMM posterior
+           They are allowed to disagree, and engine/quad_vector.py's own contract says
+           so: "hard_label ... need NOT equal argmax(p); the divergence is itself a
+           WEAKENING tell". The map was nonetheless BUILT on the assumption they can't
+           (two now-corrected comments asserted the dot only ever lands in the active
+           tile), so the divergence had no copy, no legend and no visual language and
+           rendered as a defect — a dot parked in the 6% quadrant while the 93% one was
+           lit (operator report 2026-08-11, live g~-0.14 / i~+0.25 -> raw Q3, label Q2).
+           _qm_raw mirrors engine.regime.raw_quad EXACTLY (g>=0 -> Q1 if i<0 else Q2;
+           g<0 -> Q4 if i<0 else Q3) so the sentence can never contradict the marker.
+           Kept as one expression: a {% set %} inside {% if %} would not escape the
+           block scope. #}
+        {% set _qm_raw = ({'11':'Q2','10':'Q1','01':'Q3','00':'Q4'}).get(
+             ('1' if (latest.get('growth_score') | float) >= 0 else '0')
+             ~ ('1' if (latest.get('inflation_score') | float) >= 0 else '0'))
+           if (latest.get('growth_score') is number and latest.get('inflation_score') is number)
+           else none %}
+        {% set _qm_split = (_qm_raw is not none and _qm_hard and _qm_raw != _qm_hard) %}
         {# Glance line — bilingual: "drifting toward X" or stable #}
         {% if _qm_hard %}
         {% set _qm_hard_names = _qm_quad.get(_qm_hard, [_qm_hard, _qm_hard]) %}
@@ -7305,6 +7381,30 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="l-en"><b>{{ _qm_hard_en }}</b> now, with today’s odds drifting toward <b>{{ _qm_gain_names[0] }}</b>.</span>
           <span class="l-zh">当前为<b>{{ _qm_hard_zh }}</b>，今日概率正向<b>{{ _qm_gain_names[1] }}</b>漂移。</span>
           {% endif %}
+          {% endif %}
+          {# Names the split the moment it exists, in the same vocabulary the legend
+             below defines ("today's reading"). Stance, not alarm: the reading has to
+             persist before the label moves — which is exactly what the hysteresis
+             machine does — so the honest Tier-1 line is a hold, not a warning. #}
+          {% if _qm_split %}
+          {% set _qm_raw_names = _qm_quad.get(_qm_raw, [_qm_raw, _qm_raw]) %}
+          <span class="mxqm-diverge">
+            <span class="l-en">Today’s reading sits in <b>{{ _qm_raw_names[0] }}</b> — it has to hold before the regime changes.</span>
+            <span class="l-zh">今日读数落在<b>{{ _qm_raw_names[1] }}</b> — 需持续站稳才会切换周期。</span>
+          </span>
+          {% endif %}
+          {# Null axes: _dot_x/_dot_y fall back to 75/75 below, i.e. DEAD CENTRE — which
+             is a real reading ("growth and inflation both exactly neutral"), not an
+             absence. Unlabelled that was merely wrong; with the legend naming the dot
+             "today's reading" it would be a claim we cannot support, so the marker is
+             suppressed entirely (see the _qm_raw guards on the circles + arrow) and the
+             absence is stated in plain words. Same rule engine/regime.apply_hysteresis
+             already follows: an axis dark means NO claim, not a carried-forward one. #}
+          {% if _qm_raw is none %}
+          <span class="mxqm-diverge">
+            <span class="l-en">Today’s reading isn’t in yet — the map shows the confirmed regime only.</span>
+            <span class="l-zh">今日读数尚未到位 — 图中仅显示已确认周期。</span>
+          </span>
           {% endif %}
         </div>
         {# 2×2 quad map SVG — 150×150, growth=X(right=strong), inflation=Y(up=high) #}
@@ -7340,7 +7440,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
            centroid is ~20 units, and the geometry below trims most of that away, leaving
            a stub shorter than the arrowhead sitting on top of the dot. A firming read is
            the dot and its pulse; only a move gets an arrow. #}
-        {% if _qm_gain and _qm_gain != _qm_hard and not _qvi_deg %}
+        {# _qm_raw is not none == both axes readable == the dot is a real point. With an
+           axis dark there is no tail for the arrow to leave from, so it is suppressed
+           with the marker rather than drawn out of the box's centre. #}
+        {% if _qm_gain and _qm_gain != _qm_hard and not _qvi_deg and _qm_raw is not none %}
         {% set _qm_centers = {'Q1':[112,112],'Q2':[112,38],'Q3':[38,38],'Q4':[38,112]} %}
         {% set _qm_tc = _qm_centers.get(_qm_gain, [75,75]) %}
         {% set _arr_tx = _qm_tc[0] %}
@@ -7406,10 +7509,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               {# Q1 Goldilocks bottom-right #}
               <rect class="mxqm-q1-fill{% if _qm_hard == 'Q1' %} active{% endif %}" x="80" y="80" width="65" height="65" rx="8"/>
               {# ── MARKER LAYER FIRST, TEXT SECOND — order is load-bearing ──────────
-                 SVG has no z-index; paint order IS document order. The position dot
-                 always lands in the ACTIVE quad, i.e. the same tile that carries the
-                 largest odds numeral, so the two collide by construction rather than
-                 by accident — it shipped as an amber smudge sitting across the "96%".
+                 SVG has no z-index; paint order IS document order. The dot collides
+                 with an odds numeral often: whenever the reading is near a tile's
+                 centre it lands on that tile's number. (This comment used to claim the
+                 dot ALWAYS lands in the active quad — it does not; the dot is today's
+                 raw reading and the active tile is the sticky label. See the _qm_raw
+                 note above. The paint-order fix below is unaffected — it has to hold
+                 for ALL four numerals, which is exactly what it does.)
                  Drawing the marker before the numerals, and giving the numerals a
                  halo in their own tile's colour (.mxqm-odds below), keeps the number
                  readable wherever growth/inflation put the dot. Moving these three
@@ -7418,35 +7524,49 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               {% if _show_arrow %}
               <line class="mxqm-arrow" x1="{{ _arr_sx }}" y1="{{ _arr_sy }}" x2="{{ _arr_ex }}" y2="{{ _arr_ey }}"/>
               {% endif %}
-              {# Current position — soft pulse ring behind a bright dot #}
+              {# Today's reading — soft pulse ring behind an ink dot. Drawn only when
+                 both axes are readable; a centred dot on a dark axis is a claim. #}
+              {% if _qm_raw is not none %}
               <circle class="mxqm-pulse" cx="{{ _dot_x }}" cy="{{ _dot_y }}" r="5"/>
               <circle class="mxqm-dot" cx="{{ _dot_x }}" cy="{{ _dot_y }}" r="4.5"/>
+              {% endif %}
               {# Quad labels (top of each tile) + odds numeral (centre) — bilingual via
                  l-en/l-zh (the toggle works on SVG <text>; NO t() inside <text>).
-                 The per-quad mxqm-odds-qN class carries the halo colour: the halo has
+                 The per-quad mxqm-halo-qN class carries the halo colour: the halo has
                  to match the tile it sits on, and each tile is a different hue. #}
               {# Q3 Stagflation #}
-              <text class="mxqm-quad-label l-en" x="37.5" y="24" text-anchor="middle">STAGFLATION</text>
-              <text class="mxqm-quad-label l-zh" x="37.5" y="24" text-anchor="middle">滞胀</text>
-              {% if _p_q3 is not none %}<text class="mxqm-odds mxqm-odds-q3{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="52" text-anchor="middle">{{ _p_q3 }}%</text>{% endif %}
+              <text class="mxqm-quad-label l-en mxqm-halo-q3{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="24" text-anchor="middle">STAGFLATION</text>
+              <text class="mxqm-quad-label l-zh mxqm-halo-q3{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="24" text-anchor="middle">滞胀</text>
+              {% if _p_q3 is not none %}<text class="mxqm-odds mxqm-halo-q3{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="52" text-anchor="middle">{{ _p_q3 }}%</text>{% endif %}
               {# Q2 Reflation #}
-              <text class="mxqm-quad-label l-en" x="112.5" y="24" text-anchor="middle">REFLATION</text>
-              <text class="mxqm-quad-label l-zh" x="112.5" y="24" text-anchor="middle">再通胀</text>
-              {% if _p_q2 is not none %}<text class="mxqm-odds mxqm-odds-q2{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="52" text-anchor="middle">{{ _p_q2 }}%</text>{% endif %}
+              <text class="mxqm-quad-label l-en mxqm-halo-q2{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="24" text-anchor="middle">REFLATION</text>
+              <text class="mxqm-quad-label l-zh mxqm-halo-q2{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="24" text-anchor="middle">再通胀</text>
+              {% if _p_q2 is not none %}<text class="mxqm-odds mxqm-halo-q2{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="52" text-anchor="middle">{{ _p_q2 }}%</text>{% endif %}
               {# Q4 Growth-scare #}
-              <text class="mxqm-quad-label l-en" x="37.5" y="99" text-anchor="middle">GROWTH-SCARE</text>
-              <text class="mxqm-quad-label l-zh" x="37.5" y="99" text-anchor="middle">增长恐慌</text>
-              {% if _p_q4 is not none %}<text class="mxqm-odds mxqm-odds-q4{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="127" text-anchor="middle">{{ _p_q4 }}%</text>{% endif %}
+              <text class="mxqm-quad-label l-en mxqm-halo-q4{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="99" text-anchor="middle">GROWTH-SCARE</text>
+              <text class="mxqm-quad-label l-zh mxqm-halo-q4{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="99" text-anchor="middle">增长恐慌</text>
+              {% if _p_q4 is not none %}<text class="mxqm-odds mxqm-halo-q4{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="127" text-anchor="middle">{{ _p_q4 }}%</text>{% endif %}
               {# Q1 Goldilocks #}
-              <text class="mxqm-quad-label l-en" x="112.5" y="99" text-anchor="middle">GOLDILOCKS</text>
-              <text class="mxqm-quad-label l-zh" x="112.5" y="99" text-anchor="middle">理想增长</text>
-              {% if _p_q1 is not none %}<text class="mxqm-odds mxqm-odds-q1{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="127" text-anchor="middle">{{ _p_q1 }}%</text>{% endif %}
+              <text class="mxqm-quad-label l-en mxqm-halo-q1{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="99" text-anchor="middle">GOLDILOCKS</text>
+              <text class="mxqm-quad-label l-zh mxqm-halo-q1{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="99" text-anchor="middle">理想增长</text>
+              {% if _p_q1 is not none %}<text class="mxqm-odds mxqm-halo-q1{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="127" text-anchor="middle">{{ _p_q1 }}%</text>{% endif %}
               {# Axis labels — bilingual; kept subtle at the edges #}
               <text class="mxqm-axis-label l-en" x="75" y="160" text-anchor="middle">growth →</text>
               <text class="mxqm-axis-label l-zh" x="75" y="160" text-anchor="middle">增长 →</text>
               <text class="mxqm-axis-label l-en" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">infl ↑</text>
               <text class="mxqm-axis-label l-zh" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">通胀 ↑</text>
             </svg>
+          </div>
+          {# Legend — names the map's two object types. Without it the ink dot is just
+             an unexplained mark competing with the lit tile; with it the map reads as
+             one measurement plotted against one label. Bilingual via l-en/l-zh. #}
+          <div class="mxqm-legend">
+            {% if _qm_raw is not none %}
+            <span class="mxqm-lg-item"><span class="mxqm-lg-dot"></span>
+              <span class="l-en">today’s reading</span><span class="l-zh">今日读数</span></span>
+            {% endif %}
+            <span class="mxqm-lg-item"><span class="mxqm-lg-tile mxqm-lg-{{ _qm_hard | lower }}"></span>
+              <span class="l-en">confirmed regime</span><span class="l-zh">已确认周期</span></span>
           </div>
         </div>
         {% endif %}{# /_qm_hard #}
