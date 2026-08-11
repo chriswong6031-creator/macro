@@ -73,7 +73,10 @@ DAILY_INSTRUMENTED_JOBS = frozenset({
     "oracle_offrender", "standout_audit_us", "stock_briefs", "tech_lab_offrender",
     "us_prophet_ledgers", "us_scan_tier",
 })
-ASIA_INSTRUMENTED_JOBS = frozenset({"asia"})
+#: `ths_rescrape` (GMI W1a) is the weekly 同花顺 re-scrape: self-hosted, capped, and
+#: job-level skipped on the six non-Saturday days, so it appends a ledger row only on
+#: the days it actually runs — which is precisely the cadence its cap needs measuring at.
+ASIA_INSTRUMENTED_JOBS = frozenset({"asia", "ths_rescrape"})
 EXPECTED_INSTRUMENTED = {DAILY: DAILY_INSTRUMENTED_JOBS, ASIA: ASIA_INSTRUMENTED_JOBS}
 
 #: The ONLY steps allowed to follow the finish step, and only because they are
