@@ -215,30 +215,51 @@ def test_census_keeps_singletons_exact_contracts_stable_and_zero_authority(
     }
 
 
-def test_group_map_iteration_is_byte_identical_for_one_exact_source_prefix(
-    tmp_path: Path,
+def test_group_and_outcome_map_iteration_is_byte_identical_for_exact_sources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
     episodes = [
-        _episode("map-nvda", "2026-08-10T14:02:00Z"),
+        copy.deepcopy(BASE_EPISODE),
         _episode("map-aapl", "2026-08-10T14:03:00Z", ticker="AAPL"),
         _episode("map-put", "2026-08-10T14:04:00Z", right="P"),
     ]
-    root = _root(tmp_path, episodes)
-    snapshot = campaign_engine.load_ledger(
-        root / campaign_engine.EPISODES_PATH,
-        campaign_engine.EPISODES_PATH,
+    h60 = [copy.deepcopy(BASE_H60), *[_h60(row) for row in episodes[1:]]]
+    session = [copy.deepcopy(BASE_SESSION)]
+    normal_root = _root(
+        tmp_path / "normal",
+        episodes,
+        h60=h60,
+        session=session,
     )
-    groups = campaign_engine._validated_episode_groups(snapshot)
-    reversed_groups = dict(reversed(tuple(groups.items())))
-    forward = campaign_engine._derive_campaign_revisions_from_groups(
-        snapshot, groups, {}
+    reversed_root = _root(
+        tmp_path / "reversed",
+        episodes,
+        h60=h60,
+        session=session,
     )
-    reversed_rows = campaign_engine._derive_campaign_revisions_from_groups(
-        snapshot, reversed_groups, {}
-    )
-    assert b"".join(canonical_bytes(row) + b"\n" for row in forward) == b"".join(
-        canonical_bytes(row) + b"\n" for row in reversed_rows
-    )
+
+    run(root_dir=normal_root)
+    original_groups = campaign_engine._validated_episode_groups
+    original_maps = campaign_engine._source_outcome_maps
+
+    def reversed_groups(snapshot: campaign_engine.LedgerSnapshot):
+        groups = original_groups(snapshot)
+        return dict(reversed(tuple(groups.items())))
+
+    def reversed_maps(*args, **kwargs):
+        h60_map, session_map = original_maps(*args, **kwargs)
+        return (
+            dict(reversed(tuple(h60_map.items()))),
+            dict(reversed(tuple(session_map.items()))),
+        )
+
+    monkeypatch.setattr(campaign_engine, "_validated_episode_groups", reversed_groups)
+    monkeypatch.setattr(campaign_engine, "_source_outcome_maps", reversed_maps)
+    run(root_dir=reversed_root)
+
+    for path in (CAMPAIGNS_PATH, OUTCOMES_PATH, CHECKPOINT_PATH):
+        assert (normal_root / path).read_bytes() == (reversed_root / path).read_bytes()
 
 
 def test_late_source_extension_appends_revision_and_backdated_member_rejects(
