@@ -61,9 +61,10 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -86,6 +87,13 @@ DEFAULT_DISARMED_ALARM_HOURS = 24.0
 #: brand-new checkout or a lane that has never shipped; both deserve the alarm
 #: rather than a pass, so unknown reads as "very old" instead of "fine".
 UNKNOWN_AGE_HOURS = 10_000.0
+
+#: A live receipt is stamped by this workflow's own UTC clock.  A few seconds of
+#: runner skew are harmless, but an arbitrarily future row must not make the
+#: tripwire report ``0.0h`` forever.  Five minutes is already much wider than the
+#: normal clock skew on the self-hosted runner and keeps the reader fail-closed
+#: when an append-only ledger receives a malformed future stamp.
+MAX_FUTURE_SKEW = timedelta(minutes=5)
 
 #: The once-daily slot where a long-dark lane turns from a warning into a red
 #: sweep. 13:00Z is already reserved in marketing-publish.yml for the metrics
@@ -133,8 +141,16 @@ def read_last_live_post(path: Path | str) -> datetime | None:
     except OSError:
         return None
 
-    newest: datetime | None = None
-    live = skipped = 0
+    # Retraction rows are written by marketing_recall when Buffer accepted a
+    # future booking but the operator cancelled it before it sent.  Those rows
+    # deliberately retain ``mode: live`` and the original ``published_at`` for
+    # schema/fold compatibility, so filtering on mode alone would count a post
+    # that never existed on X.  The ledger is union-merged and therefore not
+    # reliably ordered; collect terminal retractions first, then suppress every
+    # row for the same publication id regardless of line order.
+    rows: list[dict] = []
+    retracted_ids: set[str] = set()
+    skipped = 0
     for line in text.splitlines():
         line = line.strip()
         if not line:
@@ -147,7 +163,20 @@ def read_last_live_post(path: Path | str) -> datetime | None:
         if not isinstance(row, dict):
             skipped += 1
             continue
+        rows.append(row)
+        publication_id = str(row.get("publication_id") or "").strip()
+        if publication_id and str(row.get("correction_state") or "") == "retracted":
+            retracted_ids.add(publication_id)
+
+    newest: datetime | None = None
+    live = 0
+    for row in rows:
         if str(row.get("mode") or "") != "live":
+            continue
+        publication_id = str(row.get("publication_id") or "").strip()
+        if publication_id and publication_id in retracted_ids:
+            continue
+        if str(row.get("correction_state") or "") == "retracted":
             continue
         when = parse_iso(row.get("published_at"))
         if when is None:
@@ -200,8 +229,8 @@ def load_config(root: Path | str | None = None) -> dict[str, float]:
             log.warning("publish.liveness.%s = %r is not a number — keeping %s",
                         key, raw, cfg[key])
             continue
-        if val <= 0:
-            log.warning("publish.liveness.%s = %r is not positive — keeping %s",
+        if not math.isfinite(val) or val <= 0:
+            log.warning("publish.liveness.%s = %r is not finite and positive — keeping %s",
                         key, raw, cfg[key])
             continue
         cfg[key] = val
@@ -240,9 +269,22 @@ def age_hours(now_utc: datetime, last_live_post_at: datetime | None) -> float:
     """Hours since the last live post; UNKNOWN_AGE_HOURS when there is none."""
     if last_live_post_at is None:
         return UNKNOWN_AGE_HOURS
-    # A future stamp is clock skew, not freshness in reverse — clamp at 0 so it
-    # reads "just posted" rather than "negative hours stale".
-    return max((now_utc - last_live_post_at).total_seconds() / 3600.0, 0.0)
+    delta = now_utc - last_live_post_at
+    # Tolerate only ordinary host-clock skew.  Treating an arbitrarily future
+    # append-only receipt as perpetually fresh would disable the alarm until that
+    # timestamp arrived, which is the opposite of this module's fail-closed law.
+    if delta < -MAX_FUTURE_SKEW:
+        return UNKNOWN_AGE_HOURS
+    return max(delta.total_seconds() / 3600.0, 0.0)
+
+
+def _positive_finite_threshold(raw: object, fallback: float) -> float:
+    """A usable alarm threshold; malformed direct callers get the safe default."""
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return fallback
+    return value if math.isfinite(value) and value > 0 else fallback
 
 
 def evaluate(
@@ -260,8 +302,10 @@ def evaluate(
     """
     now = now_utc if now_utc.tzinfo else now_utc.replace(tzinfo=timezone.utc)
     now = now.astimezone(timezone.utc)
-    stale_thr = float(cfg.get("stale_post_alarm_hours", DEFAULT_STALE_POST_ALARM_HOURS))
-    dark_thr = float(cfg.get("disarmed_alarm_hours", DEFAULT_DISARMED_ALARM_HOURS))
+    stale_thr = _positive_finite_threshold(
+        cfg.get("stale_post_alarm_hours"), DEFAULT_STALE_POST_ALARM_HOURS)
+    dark_thr = _positive_finite_threshold(
+        cfg.get("disarmed_alarm_hours"), DEFAULT_DISARMED_ALARM_HOURS)
     age = age_hours(now, last_live_post_at)
     annotations: list[str] = []
 

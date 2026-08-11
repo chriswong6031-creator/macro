@@ -34,6 +34,7 @@ Run: TZ=UTC python3 -m pytest tests/test_marketing_liveness_tripwire.py -q
 from __future__ import annotations
 
 import json
+import math
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -247,6 +248,35 @@ def test_reader_skips_malformed_rows_without_crashing(tmp_path):
     assert tw.read_last_live_post(path) == datetime(2026, 8, 10, 16, 0, tzinfo=timezone.utc)
 
 
+def test_reader_does_not_count_a_recalled_booking_as_a_live_post(tmp_path):
+    """A Buffer booking cancelled before send is not liveness evidence.
+
+    marketing_recall intentionally writes the correction with ``mode: live``
+    and the same publication id/published_at as the original.  The retraction
+    can land before or after its source row after a union merge, so ordering
+    cannot be used to decide which one wins.
+    """
+    old = {"publication_id": "pub-old", "mode": "live",
+           "correction_state": "clean", "published_at": "2026-08-05T20:00:00Z"}
+    booked = {"publication_id": "pub-booked", "mode": "live",
+              "correction_state": "clean", "published_at": "2026-08-10T19:55:00Z"}
+    recalled = {"publication_id": "pub-booked", "mode": "live",
+                "correction_state": "retracted", "published_at": "2026-08-10T19:55:00Z",
+                "recalled_at": "2026-08-10T19:50:00Z"}
+
+    for rows in ([old, booked, recalled], [recalled, old, booked]):
+        path = _write_rows(tmp_path, [json.dumps(row) for row in rows])
+        assert tw.read_last_live_post(path) == datetime(
+            2026, 8, 5, 20, 0, tzinfo=timezone.utc)
+
+
+def test_retracted_only_ledger_reads_as_unknown(tmp_path):
+    row = {"publication_id": "pub-never-sent", "mode": "live",
+           "correction_state": "retracted", "published_at": "2026-08-10T19:55:00Z"}
+    path = _write_rows(tmp_path, [json.dumps(row)])
+    assert tw.read_last_live_post(path) is None
+
+
 def test_reader_normalises_stamps_to_utc(tmp_path):
     """Offset stamps and naive stamps both land on the same instant."""
     path = _write_rows(tmp_path, [
@@ -259,8 +289,16 @@ def test_reader_normalises_stamps_to_utc(tmp_path):
     assert tw.parse_iso(None) is None
 
 
-def test_a_future_stamp_is_clock_skew_not_negative_age():
-    assert tw.age_hours(IN_WINDOW, IN_WINDOW + timedelta(hours=3)) == 0.0
+def test_small_future_stamp_is_clock_skew_not_negative_age():
+    assert tw.age_hours(IN_WINDOW, IN_WINDOW + timedelta(minutes=2)) == 0.0
+
+
+def test_far_future_stamp_fails_closed_instead_of_silencing_the_alarm():
+    assert tw.age_hours(IN_WINDOW, IN_WINDOW + timedelta(hours=3)) == tw.UNKNOWN_AGE_HOURS
+    code, annotations = tw.evaluate(
+        IN_WINDOW, True, IN_WINDOW + timedelta(hours=3), CFG)
+    assert code == 1
+    assert _kinds(annotations) == ["error"]
 
 
 # ── 5. WINDOW + ARM PARSING ──────────────────────────────────────────────────
@@ -332,6 +370,32 @@ def test_absent_block_absent_file_and_junk_all_fall_back_to_defaults(tmp_path):
     )) == defaults
     # unparseable YAML
     assert tw.load_config(_cfg_file(tmp_path, "publish: [unclosed\n")) == defaults
+
+
+@pytest.mark.parametrize("bad", [".nan", ".inf", "-.inf"])
+def test_non_finite_threshold_cannot_disable_the_alarm(tmp_path, bad):
+    pytest.importorskip("yaml")
+    defaults = {
+        "stale_post_alarm_hours": tw.DEFAULT_STALE_POST_ALARM_HOURS,
+        "disarmed_alarm_hours": tw.DEFAULT_DISARMED_ALARM_HOURS,
+    }
+    root = _cfg_file(
+        tmp_path,
+        "publish:\n  liveness:\n"
+        f"    stale_post_alarm_hours: {bad}\n"
+        f"    disarmed_alarm_hours: {bad}\n",
+    )
+    assert tw.load_config(root) == defaults
+
+
+def test_evaluate_fail_closes_on_non_finite_direct_config():
+    for bad in (math.nan, math.inf, -math.inf):
+        code, annotations = tw.evaluate(
+            IN_WINDOW, True, _ago(IN_WINDOW, 12),
+            {"stale_post_alarm_hours": bad, "disarmed_alarm_hours": bad},
+        )
+        assert code == 1
+        assert _kinds(annotations) == ["error"]
 
 
 def test_the_shipped_config_carries_the_block():
