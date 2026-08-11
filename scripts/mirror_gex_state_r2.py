@@ -7,15 +7,16 @@ dealer-sign assumptions, or grants signal/ranking authority.
 The M1 scheduler runs this module from a clean, fast-forward-only standalone
 clone.  Publication fails closed unless the index is internally complete and
 SPY/QQQ/NVDA describe the expected settled NYSE session.  A durable local state
-file plus exact public anchor reads avoids rewriting the full prefix every
-cycle, while still detecting and healing an older publisher that overwrote the
-anchors with stale bytes.
+file plus authenticated reads of every object avoids rewriting the full prefix
+every cycle. A deterministic public content-hash manifest makes the complete
+projection auditable; the former mixed-vintage writer is retired separately.
 
 Env: R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET.
 """
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import logging
@@ -27,11 +28,13 @@ import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Callable, Iterable
 
+from lib.gex_state_index import build_index
 from lib.nyse_calendar import expected_last_session
 
 logging.basicConfig(
@@ -50,6 +53,8 @@ AUTHORITY_TIER = "display"
 PASSPORT_BASIS = "assumption"
 PASSPORT_VERDICT = "display-only"
 LEVEL_AUTHORITY = "display-only-until-gate"
+CONTENT_MANIFEST_NAME = "_content_manifest.json"
+CONTENT_MANIFEST_SCHEMA = "options_structure.gex_state_content_manifest/v1"
 
 
 @dataclass(frozen=True)
@@ -87,6 +92,35 @@ def _manifest_sha256(objects: Iterable[tuple[str, bytes]]) -> str:
         digest.update(b"\0")
         digest.update(hashlib.sha256(body).digest())
     return digest.hexdigest()
+
+
+def content_manifest_bytes(bundle: MirrorBundle, *, source_commit: str) -> bytes:
+    """Build the deterministic public content-hash receipt for every object."""
+
+    payload = {
+        "schema": CONTENT_MANIFEST_SCHEMA,
+        "source_manifest_sha256": bundle.manifest_sha256,
+        "source_commit": source_commit,
+        "source_object_count": len(bundle.objects),
+        "n_roots": len(bundle.roots),
+        "expected_session": (
+            bundle.expected_session.isoformat() if bundle.expected_session else None
+        ),
+        "required_roots": list(bundle.required_roots),
+        "authority": {
+            "tier": AUTHORITY_TIER,
+            "dealer_sign_basis": PASSPORT_BASIS,
+            "may_rank": False,
+            "may_score": False,
+            "may_trade": False,
+        },
+        "objects": {
+            name: hashlib.sha256(body).hexdigest() for name, body in bundle.objects
+        },
+    }
+    return (
+        json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n"
+    ).encode("utf-8")
 
 
 def load_bundle(
@@ -174,6 +208,11 @@ def load_bundle(
         raise ValueError("_index.json: rows do not exactly cover per-root files")
     if index_payload.get("n_roots") != len(roots):
         raise ValueError("_index.json: n_roots does not match rows")
+    rebuilt_index = build_index(source_dir)
+    if rebuilt_index != index_payload:
+        raise ValueError(
+            "_index.json: payload differs from deterministic per-root reconstruction"
+        )
 
     missing = sorted(set(required) - set(roots))
     if missing:
@@ -238,6 +277,26 @@ def public_anchors_match(
         except (OSError, urllib.error.URLError, urllib.error.HTTPError):
             return False
     return True
+
+
+def public_content_manifest_matches(
+    body: bytes,
+    public_base: str,
+    *,
+    fetch: Callable[[str], bytes] | None = None,
+) -> bool:
+    """Verify the public every-object hash manifest byte-for-byte."""
+
+    fetcher = fetch or _http_get
+    cache_key = f"{hashlib.sha256(body).hexdigest()[:16]}-{time.time_ns()}"
+    url = (
+        f"{public_base.rstrip('/')}/{PREFIX}/{CONTENT_MANIFEST_NAME}"
+        f"?v={cache_key}"
+    )
+    try:
+        return fetcher(url) == body
+    except (OSError, urllib.error.URLError, urllib.error.HTTPError):
+        return False
 
 
 def _read_state(path: Path | None) -> dict:
@@ -324,21 +383,78 @@ def _remote_keys(client, bucket: str) -> set[str]:
             raise RuntimeError("R2 listing truncated without continuation token")
 
 
-def r2_anchors_match(bundle: MirrorBundle, client, bucket: str) -> bool:
-    """Compare required roots and the index through authenticated object reads."""
+def _expected_keys(bundle: MirrorBundle) -> set[str]:
+    keys = {f"{PREFIX}/{name}" for name, _ in bundle.objects}
+    keys.add(f"{PREFIX}/{CONTENT_MANIFEST_NAME}")
+    return keys
 
-    names = [f"{root}.json" for root in bundle.required_roots] + ["_index.json"]
-    for name in names:
+
+def _delete_remote_keys(client, bucket: str, keys: Iterable[str]) -> None:
+    """Delete objects outside the exact source projection in bounded batches."""
+
+    ordered = sorted(set(keys))
+    for offset in range(0, len(ordered), 1000):
+        batch = ordered[offset : offset + 1000]
+        response = client.delete_objects(
+            Bucket=bucket,
+            Delete={"Objects": [{"Key": key} for key in batch], "Quiet": True},
+        )
+        errors = response.get("Errors", [])
+        if errors:
+            sample = ", ".join(str(row.get("Key", "?")) for row in errors[:8])
+            raise RuntimeError(
+                f"R2 projection cleanup failed for {len(errors)} object(s): {sample}"
+            )
+
+
+def r2_object_mismatches(
+    bundle: MirrorBundle,
+    client,
+    bucket: str,
+    *,
+    content_manifest: bytes,
+) -> tuple[str, ...]:
+    """Return every source/manifest object whose direct R2 bytes differ."""
+
+    expected = list(bundle.objects) + [(CONTENT_MANIFEST_NAME, content_manifest)]
+
+    def mismatch(item: tuple[str, bytes]) -> str | None:
+        name, expected_body = item
         try:
             body = client.get_object(
                 Bucket=bucket,
                 Key=f"{PREFIX}/{name}",
             )["Body"].read()
-        except Exception:  # noqa: BLE001 - any missing/unreadable anchor is a mismatch.
-            return False
-        if body != bundle.body(name):
-            return False
-    return True
+        except Exception:  # noqa: BLE001 - any missing/unreadable object is a mismatch.
+            return name
+        return name if body != expected_body else None
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(mismatch, expected))
+    return tuple(name for name in results if name is not None)
+
+
+@contextmanager
+def exclusive_lock(path: Path | None):
+    """Hold one non-blocking cross-process lock for the complete projection."""
+
+    if path is None:
+        yield
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
+    acquired = False
+    try:
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            acquired = True
+        except BlockingIOError as exc:
+            raise RuntimeError(f"GEX state publisher lock is already held: {path}") from exc
+        yield
+    finally:
+        if acquired:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+        os.close(descriptor)
 
 
 def publish_bundle(
@@ -351,23 +467,44 @@ def publish_bundle(
 ) -> dict:
     """Publish the bundle, then verify direct R2 and public exact bytes."""
 
+    content_manifest = content_manifest_bytes(bundle, source_commit=source_commit)
+    content_manifest_sha256 = hashlib.sha256(content_manifest).hexdigest()
     prior = _read_state(state_file)
     client = None
     bucket = None
-    if not force and prior.get("manifest_sha256") == bundle.manifest_sha256:
+    if (
+        not force
+        and prior.get("manifest_sha256") == bundle.manifest_sha256
+        and prior.get("content_manifest_sha256") == content_manifest_sha256
+    ):
         client, bucket = _r2_client()
+    direct_mismatches: tuple[str, ...] = ()
+    exact_remote_keys = False
+    if client is not None and bucket is not None:
+        exact_remote_keys = _remote_keys(client, bucket) == _expected_keys(bundle)
+        direct_mismatches = r2_object_mismatches(
+            bundle,
+            client,
+            bucket,
+            content_manifest=content_manifest,
+        )
     if (
         client is not None
         and bucket is not None
-        and r2_anchors_match(bundle, client, bucket)
+        and exact_remote_keys
+        and not direct_mismatches
         and public_anchors_match(bundle, public_base)
+        and public_content_manifest_matches(content_manifest, public_base)
     ):
         receipt = {
             "status": "unchanged",
             "manifest_sha256": bundle.manifest_sha256,
+            "content_manifest_sha256": content_manifest_sha256,
             "source_commit": source_commit,
             "n_roots": len(bundle.roots),
-            "object_count": len(bundle.objects),
+            "source_object_count": len(bundle.objects),
+            "published_object_count": len(bundle.objects) + 1,
+            "direct_verified_count": len(bundle.objects) + 1,
             "expected_session": (
                 bundle.expected_session.isoformat() if bundle.expected_session else None
             ),
@@ -409,21 +546,43 @@ def publish_bundle(
     with ThreadPoolExecutor(max_workers=4) as pool:
         list(pool.map(upload, root_objects))
     upload(index_object)  # coverage marker publishes last
+    upload((CONTENT_MANIFEST_NAME, content_manifest))  # every-object receipt is final
 
-    expected_keys = {f"{PREFIX}/{name}" for name, _ in bundle.objects}
-    missing_keys = sorted(expected_keys - _remote_keys(client, bucket))
+    expected_keys = _expected_keys(bundle)
+    remote_keys = _remote_keys(client, bucket)
+    missing_keys = sorted(expected_keys - remote_keys)
     if missing_keys:
         raise RuntimeError(f"R2 publication missing {len(missing_keys)} source objects")
+    unexpected_keys = sorted(remote_keys - expected_keys)
+    if unexpected_keys:
+        _delete_remote_keys(client, bucket, unexpected_keys)
+        remote_keys = _remote_keys(client, bucket)
+    if remote_keys != expected_keys:
+        missing = len(expected_keys - remote_keys)
+        unexpected = len(remote_keys - expected_keys)
+        raise RuntimeError(
+            "R2 projection key set is not exact after publication "
+            f"(missing={missing}, unexpected={unexpected})"
+        )
 
-    verify_names = [f"{root}.json" for root in bundle.required_roots] + ["_index.json"]
-    for name in verify_names:
-        body = client.get_object(Bucket=bucket, Key=f"{PREFIX}/{name}")["Body"].read()
-        if body != bundle.body(name):
-            raise RuntimeError(f"R2 direct verification mismatch: {name}")
+    direct_mismatches = r2_object_mismatches(
+        bundle,
+        client,
+        bucket,
+        content_manifest=content_manifest,
+    )
+    if direct_mismatches:
+        sample = ", ".join(direct_mismatches[:8])
+        raise RuntimeError(
+            f"R2 direct verification mismatched {len(direct_mismatches)} object(s): {sample}"
+        )
 
     public_verified = False
     for attempt in range(1, 7):
-        if public_anchors_match(bundle, public_base):
+        if (
+            public_anchors_match(bundle, public_base)
+            and public_content_manifest_matches(content_manifest, public_base)
+        ):
             public_verified = True
             break
         if attempt < 6:
@@ -435,9 +594,12 @@ def publish_bundle(
         "status": "published",
         "published_at": datetime.now(timezone.utc).isoformat(),
         "manifest_sha256": bundle.manifest_sha256,
+        "content_manifest_sha256": content_manifest_sha256,
         "source_commit": source_commit,
         "n_roots": len(bundle.roots),
-        "object_count": len(bundle.objects),
+        "source_object_count": len(bundle.objects),
+        "published_object_count": len(bundle.objects) + 1,
+        "direct_verified_count": len(bundle.objects) + 1,
         "expected_session": (
             bundle.expected_session.isoformat() if bundle.expected_session else None
         ),
@@ -457,6 +619,7 @@ def _parser() -> argparse.ArgumentParser:
         default=repo / "site" / "options_structure" / "gex_state",
     )
     parser.add_argument("--state-file", type=Path)
+    parser.add_argument("--lock-file", type=Path)
     parser.add_argument("--public-base", default=PUBLIC_BASE)
     parser.add_argument("--required-root", action="append", dest="required_roots")
     parser.add_argument(
@@ -474,18 +637,19 @@ def main(argv: list[str] | None = None) -> int:
     expected = expected_last_session() if args.require_expected_session else None
     source_commit = os.environ.get("GEX_STATE_SOURCE_COMMIT", "unknown")
     try:
-        bundle = load_bundle(
-            args.source_dir,
-            required_roots=required_roots,
-            expected_session=expected,
-        )
-        receipt = publish_bundle(
-            bundle,
-            public_base=args.public_base,
-            state_file=args.state_file,
-            source_commit=source_commit,
-            force=args.force,
-        )
+        with exclusive_lock(args.lock_file):
+            bundle = load_bundle(
+                args.source_dir,
+                required_roots=required_roots,
+                expected_session=expected,
+            )
+            receipt = publish_bundle(
+                bundle,
+                public_base=args.public_base,
+                state_file=args.state_file,
+                source_commit=source_commit,
+                force=args.force,
+            )
     except Exception as exc:  # noqa: BLE001 - scheduler must fail closed on every defect.
         log.error("gex_state mirror failed: %s", exc)
         return 1

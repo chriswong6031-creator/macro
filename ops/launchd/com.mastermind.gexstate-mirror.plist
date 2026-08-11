@@ -21,7 +21,7 @@
   <key>WorkingDirectory</key>
   <string>/Users/chriswong/gexstate-ops-wt</string>
 
-  <!-- Re-check often enough to heal the retired mixed-vintage matrix mirror. -->
+  <!-- Re-check freshness and every-object integrity between nightly builds. -->
   <key>StartInterval</key>
   <integer>900</integer>
   <key>RunAtLoad</key>

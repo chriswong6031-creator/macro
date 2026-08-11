@@ -123,30 +123,22 @@ def _mirror_state(root: str, asof: str = "2026-08-10T16:00:00-04:00") -> dict:
 
 
 def _write_mirror_bundle(directory: Path) -> None:
-    roots = ("SPY", "QQQ", "NVDA")
+    roots = ("SPY", "QQQ", "NVDA", "AMD")
     for root in roots:
         _write(directory, f"{root}.json", _mirror_state(root))
-    _write(
-        directory,
-        "_index.json",
-        {
-            "schema": "options_structure.gex_state_index/v1",
-            "asof": "2026-08-10T16:00:00-04:00",
-            "n_roots": len(roots),
-            "rows": {root: {"asof": "2026-08-10"} for root in roots},
-        },
-    )
+    assert write_index(directory) == directory / "_index.json"
 
 
 def test_r2_mirror_bundle_requires_fresh_liquid_roots_and_exact_index(tmp_path: Path) -> None:
     _write_mirror_bundle(tmp_path)
     bundle = load_bundle(tmp_path, expected_session=date(2026, 8, 10))
-    assert bundle.roots == ("NVDA", "QQQ", "SPY")
+    assert bundle.roots == ("AMD", "NVDA", "QQQ", "SPY")
     assert bundle.required_roots == ("SPY", "QQQ", "NVDA")
-    assert len(bundle.objects) == 4
+    assert len(bundle.objects) == 5
     assert len(bundle.manifest_sha256) == 64
 
     _write(tmp_path, "NVDA.json", _mirror_state("NVDA", "2026-08-07T16:00:00-04:00"))
+    assert write_index(tmp_path) == tmp_path / "_index.json"
     try:
         load_bundle(tmp_path, expected_session=date(2026, 8, 10))
     except ValueError as exc:
@@ -154,6 +146,20 @@ def test_r2_mirror_bundle_requires_fresh_liquid_roots_and_exact_index(tmp_path: 
         assert "expected settled session" in str(exc)
     else:  # pragma: no cover - the fail-closed assertion above must fire.
         raise AssertionError("stale required root was accepted")
+
+
+def test_r2_mirror_rejects_semantically_corrupt_index_row(tmp_path: Path) -> None:
+    _write_mirror_bundle(tmp_path)
+    index_path = tmp_path / "_index.json"
+    index = json.loads(index_path.read_text())
+    index["rows"]["AMD"]["spot"] = 999.0
+    _write(tmp_path, "_index.json", index)
+    try:
+        load_bundle(tmp_path, expected_session=date(2026, 8, 10))
+    except ValueError as exc:
+        assert "deterministic per-root reconstruction" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("semantically corrupt index row was accepted")
 
 
 def test_r2_mirror_preserves_display_assumption_authority(tmp_path: Path) -> None:
@@ -217,9 +223,20 @@ def test_r2_mirror_publishes_complete_prefix_then_index_and_verifies(
             assert Bucket == "bucket"
             return {"Body": BytesIO(self.objects[Key])}
 
+        def delete_objects(self, *, Bucket, Delete):  # noqa: N803
+            assert Bucket == "bucket"
+            for row in Delete["Objects"]:
+                self.objects.pop(row["Key"], None)
+            return {}
+
     fake = FakeR2()
     monkeypatch.setattr(gex_mirror, "_r2_client", lambda: (fake, "bucket"))
     monkeypatch.setattr(gex_mirror, "public_anchors_match", lambda *_args, **_kw: True)
+    monkeypatch.setattr(
+        gex_mirror,
+        "public_content_manifest_matches",
+        lambda *_args, **_kw: True,
+    )
     state_file = tmp_path / "runtime" / "state.json"
 
     receipt = gex_mirror.publish_bundle(
@@ -229,12 +246,51 @@ def test_r2_mirror_publishes_complete_prefix_then_index_and_verifies(
         source_commit="a" * 40,
     )
     assert receipt["status"] == "published"
-    assert receipt["n_roots"] == 3
-    assert receipt["object_count"] == 4
+    assert receipt["n_roots"] == 4
+    assert receipt["source_object_count"] == 5
+    assert receipt["published_object_count"] == 6
+    assert receipt["direct_verified_count"] == 6
     assert receipt["public_verified"] is True
-    assert fake.put_order[-1].endswith("/_index.json")
-    assert len(fake.objects) == 4
+    assert fake.put_order[-2].endswith("/_index.json")
+    assert fake.put_order[-1].endswith("/_content_manifest.json")
+    assert len(fake.objects) == 6
     assert json.loads(state_file.read_text())["manifest_sha256"] == bundle.manifest_sha256
+
+    # A concurrent/stale overwrite of even a non-anchor root must defeat the
+    # unchanged fast path and force a complete repair.
+    amd_key = f"{gex_mirror.PREFIX}/AMD.json"
+    fake.objects[amd_key] = b'{"stale":true}'
+    stale_extra_key = f"{gex_mirror.PREFIX}/RETIRED.json"
+    fake.objects[stale_extra_key] = b'{"stale":true}'
+    repaired = gex_mirror.publish_bundle(
+        bundle,
+        public_base="https://public.example",
+        state_file=state_file,
+        source_commit="a" * 40,
+    )
+    assert repaired["status"] == "published"
+    assert fake.objects[amd_key] == bundle.body("AMD.json")
+    assert stale_extra_key not in fake.objects
+
+    unchanged = gex_mirror.publish_bundle(
+        bundle,
+        public_base="https://public.example",
+        state_file=state_file,
+        source_commit="a" * 40,
+    )
+    assert unchanged["status"] == "unchanged"
+    assert unchanged["direct_verified_count"] == 6
+
+
+def test_r2_mirror_publisher_lock_rejects_a_concurrent_writer(tmp_path: Path) -> None:
+    lock = tmp_path / "publisher.lock"
+    with gex_mirror.exclusive_lock(lock):
+        for _attempt in range(2):
+            try:
+                with gex_mirror.exclusive_lock(lock):
+                    raise AssertionError("concurrent publisher acquired the same lock")
+            except RuntimeError as exc:
+                assert "publisher lock is already held" in str(exc)
 
 
 def test_gex_state_mirror_launchd_uses_clean_standalone_clone_contract() -> None:
@@ -257,10 +313,19 @@ def test_gex_state_mirror_launchd_uses_clean_standalone_clone_contract() -> None
     assert '--required-root SPY' in runner
     assert '--required-root QQQ' in runner
     assert '--required-root NVDA' in runner
+    assert '--lock-file "$STATE_DIR/publisher.lock"' in runner
+    assert 'rev-list -1 HEAD -- site/options_structure/gex_state' in runner
     assert 'reset --hard' not in runner
     assert 'flow-ops-wt' not in runner
+
+    matrix_runner = (root / "ops/launchd/run_options_matrix.sh").read_text()
+    assert "GEX_STATE_PUBLICATION_OWNER=com.mastermind.gexstate-mirror" in matrix_runner
+    assert "options_structure/gex_state/" not in matrix_runner
+    assert "s3.upload_file" not in matrix_runner
 
     runbook = (root / "ops/GEX_STATE_R2_MIRROR_RUNBOOK.md").read_text()
     assert "never recomputes GEX" in runbook
     assert "ranking, scoring, Prophet, sizing, or trading authority" in runbook
     assert "SPY/QQQ/NVDA" in runbook
+    assert "compares every source object" in runbook
+    assert "inline writer is" in runbook and "retired" in runbook

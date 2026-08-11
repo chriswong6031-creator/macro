@@ -28,10 +28,15 @@ done
 test -n "${REMOTE_MAIN:-}"
 test "$LOCAL_MAIN" = "$REMOTE_MAIN"
 git -C "$REPO" merge-base --is-ancestor "$LOCAL_MAIN" origin/main
+SOURCE_COMMIT=$(
+    git -C "$REPO" rev-list -1 HEAD -- site/options_structure/gex_state
+)
+test -n "$SOURCE_COMMIT"
+git -C "$REPO" merge-base --is-ancestor "$SOURCE_COMMIT" "$LOCAL_MAIN"
 
 mkdir -p "$STATE_DIR"
 cd "$REPO"
-GEX_STATE_SOURCE_COMMIT="$LOCAL_MAIN" \
+GEX_STATE_SOURCE_COMMIT="$SOURCE_COMMIT" \
 PYTHONPATH="$REPO" \
 "$PYTHON" -m scripts.mirror_gex_state_r2 \
     --require-expected-session \
@@ -39,4 +44,5 @@ PYTHONPATH="$REPO" \
     --required-root QQQ \
     --required-root NVDA \
     --public-base "$PUBLIC_BASE" \
-    --state-file "$STATE_DIR/state.json"
+    --state-file "$STATE_DIR/state.json" \
+    --lock-file "$STATE_DIR/publisher.lock"
