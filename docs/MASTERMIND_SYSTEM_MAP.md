@@ -3587,7 +3587,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
 | `config/mastermind_programs.yml` | `30e437ab2320ea6993296e9780483d70aa53f474f9346afa6c10d5408be663dc` |
-| `config/synapse.yml` | `2c7121418056cee5bd1397253e23c4ba4c78f05722033e3abfa60354947ba010` |
+| `config/synapse.yml` | `b28bbd59ddb396c1dbc046ecd400692ec2bde2a80f7050e8ec790f24f653e168` |
 
 ### Legacy registry compatibility notes
 

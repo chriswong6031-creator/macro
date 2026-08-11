@@ -1,0 +1,13 @@
+[Unit]
+Description=Reconcile admitted Market Memory production records nightly
+
+[Timer]
+OnBootSec=19min
+OnCalendar=*-*-* 06:47:00 UTC
+AccuracySec=1min
+RandomizedDelaySec=120s
+Persistent=true
+Unit=macro-market-memory-production-records.service
+
+[Install]
+WantedBy=timers.target

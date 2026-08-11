@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Stateless projection lane for committed display-only GEX state. The clone
+  fast-forwards main and refuses stale SPY/QQQ/NVDA settled-session anchors.
+  Secrets remain in the standalone clone's mode-600 .env file.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.mastermind.gexstate-mirror</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/chriswong/gexstate-ops-wt/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/gexstate-ops-wt/.env</string>
+    <string>/Users/chriswong/gexstate-ops-wt/ops/launchd/run_gex_state_mirror.sh</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/chriswong/gexstate-ops-wt</string>
+
+  <!-- Re-check freshness and every-object integrity between nightly builds. -->
+  <key>StartInterval</key>
+  <integer>900</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <false/>
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>/Users/chriswong/gexstate-ops-wt</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/gexstate-mirror.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/gexstate-mirror.stderr.log</string>
+</dict>
+</plist>

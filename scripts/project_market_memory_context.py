@@ -18,9 +18,11 @@ sys.path.insert(0, str(_ROOT))
 
 from engine.neuralweb import (
     market_memory_identity,
+    market_memory_pit,
     market_memory_projection,
     market_memory_trusted,
 )
+from scripts import audit_options_market_memory_context as options_context_audit
 
 _COMMIT = re.compile(r"[a-f0-9]{40,64}\Z")
 
@@ -118,9 +120,14 @@ def project_current_context(
         raw_source_body=raw_body,
         deployed_commit=deployed_commit,
     )
+    if _repository_commit(root) != deployed_commit:
+        raise market_memory_trusted.MarketMemoryTrustedCaptureError(
+            "deployed checkout changed during trusted context publication"
+        )
     receipt = stored.capture_receipt
     return {
         "schema": "market_memory.trusted_projection_result.v1",
+        "deployed_commit": deployed_commit,
         "context_id": stored.packet["context_id"],
         "capture_id": receipt["capture_id"],
         "query_id": receipt["query_id"],
@@ -131,6 +138,52 @@ def project_current_context(
         "observed_feature_ids": receipt["observed_feature_ids"],
         "missing_feature_count": len(receipt["missing_feature_ids"]),
         "authority": stored.packet["authority"],
+    }
+
+
+def run_projection_cycle(
+    repository_root: str | Path,
+    *,
+    public_store_root: str | Path | None = None,
+    private_evidence_root: str | Path | None = None,
+    w1a_store_root: str | Path | None = None,
+    receipt_store_root: str | Path | None = None,
+) -> dict[str, Any]:
+    """Publish trusted context, then its durable private options truth receipt."""
+
+    root = Path(repository_root).expanduser().resolve()
+    public = Path(
+        public_store_root or market_memory_trusted.default_trusted_store_root(root)
+    )
+    private = Path(
+        private_evidence_root
+        or market_memory_trusted.default_private_evidence_root(root)
+    )
+    w1a = Path(w1a_store_root or market_memory_pit.default_store_root(root))
+    receipt_root = Path(receipt_store_root or private / "options-context-receipts")
+    trusted_result = project_current_context(
+        root,
+        public_store_root=public,
+        private_evidence_root=private,
+    )
+    deployed_commit = str(trusted_result["deployed_commit"])
+    options_receipt = options_context_audit.publish_live_audit(
+        repository_root=root,
+        w1a_store_root=w1a,
+        trusted_store_root=public,
+        config_path=root / "config" / "market_memory_canary.v1.json",
+        publication_root=receipt_root,
+        expected_deployed_commit=deployed_commit,
+    )
+    if _repository_commit(root) != deployed_commit:
+        raise market_memory_trusted.MarketMemoryTrustedCaptureError(
+            "deployed checkout changed during options receipt cycle"
+        )
+    return {
+        "schema": "market_memory.trusted_projection_cycle_result.v1",
+        "deployed_commit": deployed_commit,
+        "trusted_projection": trusted_result,
+        "options_context_receipt": options_receipt,
     }
 
 
@@ -153,15 +206,27 @@ def _parser() -> argparse.ArgumentParser:
         default=None,
         help="private evidence root override (tests/operators only)",
     )
+    parser.add_argument(
+        "--w1a-store-root",
+        default=None,
+        help="W1A exact-context store override (tests/operators only)",
+    )
+    parser.add_argument(
+        "--receipt-store-root",
+        default=None,
+        help="private options receipt store override (tests/operators only)",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    result = project_current_context(
+    result = run_projection_cycle(
         args.repository_root,
         public_store_root=args.public_store_root,
         private_evidence_root=args.private_evidence_root,
+        w1a_store_root=args.w1a_store_root,
+        receipt_store_root=args.receipt_store_root,
     )
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))
     return 0

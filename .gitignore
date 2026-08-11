@@ -378,8 +378,10 @@ data/research_factory/*
 data/live_flow_state/
 data/live_flow_out/
 
-# U-CHAIN chain-snapshot lane output (~0.4-1 GB/day forward; never committed)
-data/chain_snapshots/
+# U-CHAIN chain-snapshot lane output (~0.4-1 GB/day forward; never committed).
+# No trailing slash: the dedicated M1 deploy clone carries this path as a
+# symlink to the preserved physical authority in flow-ops-wt.
+data/chain_snapshots
 data/options_structure_intraday_r2/
 
 # W0.2 OHLC store (reproducible from collector + manifest; not committed)
