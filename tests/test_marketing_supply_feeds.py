@@ -250,7 +250,11 @@ def test_dollar_volume_pool_ranks_by_adv_rank(tmp_path, capsys):
         assert r["asof"] == fresh
     # `why` names the concrete driver, with its number — provenance, not a score.
     assert "dollar-volume rank #1" in rows[0]["why"]
-    assert "$9.0B" in rows[0]["why"]
+    # THREE SIGNIFICANT FIGURES, not one decimal. `_human_dollars` now delegates
+    # to the package's one money register (`wire_format.humanize_money`, voice
+    # doctrine ban #8), so a billions mantissa carries the digits a reader acts
+    # on: "$9.00B", and "$7.64B" where the old table said "$7.6B".
+    assert "$9.00B" in rows[0]["why"]
     assert not _annotation_lines(capsys.readouterr().out)
 
 

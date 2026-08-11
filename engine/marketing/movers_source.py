@@ -103,19 +103,32 @@ _EMPTY_FACTS: dict = {"facts": [], "numbers_whitelist": []}
 # thinking; there is no position, no watch-condition, and nothing that can later
 # be shown to have been wrong.
 #
-# The replacements are stance-or-watch-condition tails that COST the author: each
-# commits to doing nothing (or to waiting for a named condition) and then says
-# the price of that choice out loud. Four constraints shape every line:
+# The 2026-07-31 replacements were stance-or-watch-condition tails that COST the
+# author: each committed to doing nothing (or to waiting for a named condition)
+# and then said the price of that choice out loud. That register is ITSELF
+# retired now — see constraints 1, 2 and 7 — because it kept the author as the
+# subject of the sentence, which is the disease v5 exists to end.
 #
-#   1. It must end with "?" — copywriter.validate_copy hard-requires a theme_list
-#      body to end on a question mark, and that validator is not in this lane's
-#      territory. A question can still cost the author when it is about the
-#      AUTHOR ("Am I too slow here?") rather than the reader ("What's your
-#      read?"). That distinction is the whole rule, and it is ENFORCED on the
-#      rendered post by publish_time_content._tail_is_bait: a trailing question
-#      carrying no first-person marker is bait, and the post is re-rolled onto
-#      another template variant rather than shipped.
-#   2. First person in the FINAL sentence, for the same reason.
+# THE STANDING RULE (Voice Doctrine v5, 2026-08-11): **the read is in the
+# selection, not in a performed reaction.** The subject of every sentence is the
+# MARKET. The tail is a declarative structural note about what the GROUP did —
+# no narrator, no question, no instruction. Seven constraints shape every line:
+#
+#   1. **NO QUESTION MARK, EVER** (v5, 2026-08-11 — this INVERTS the v4 rule
+#      that used to sit here). Constraints 1 and 2 used to read "it must end with
+#      '?'" and "first person in the FINAL sentence", because
+#      copywriter.validate_copy hard-REQUIRED a theme_list body to end on a
+#      question mark and publish_time_content._tail_is_bait only spared a
+#      trailing question that carried a first-person marker. Voice Doctrine v5
+#      retires both: validate_copy's "?" requirement becomes a "?" BAN, and
+#      _tail_is_bait simplifies to "any interrogative tail is bait", so the
+#      first-person exemption those two rules granted is now itself the
+#      violation. The tail is a STATEMENT.
+#   2. **NO FIRST PERSON**, anywhere in the line. No I / I'm / I'd / my / we /
+#      our / us. The v4 register performed a persona having feelings about a
+#      trade; the subject of a v5 sentence is the MARKET. The read is in the
+#      SELECTION — this lane already decided which group was worth a post — not
+#      in a narrator reacting to it.
 #   3. NO numbers. copywriter._NUMBER_RE screens every numeric token against the
 #      facts whitelist, so a tail inventing "two closes" or "3 days" is a copy
 #      violation that drops the whole candidate.
@@ -148,43 +161,49 @@ _EMPTY_FACTS: dict = {"facts": [], "numbers_whitelist": []}
 #      way I'd let it settle first", written over a name that had just crossed
 #      up out of a two-month washout, which is the setup momentum traders buy).
 #
-#      The replacement keeps the COST — the author admits, on the record, that
-#      he cannot yet read the group — and drops the instruction. An admission of
-#      ignorance is falsifiable in the only way that matters here (the next day
-#      shows whether it was a theme or one story) and it prescribes nothing.
-#      ``copywriter.uncomputed_stance`` is the executable form of this rule and
+#      The replacement kept the COST — the author admitted, on the record, that
+#      he could not yet read the group — and dropped the instruction. This
+#      constraint is UNCHANGED under v5: no instruction, hedged or otherwise.
+#      ``copywriter.uncomputed_stance`` is the executable form of the rule and
 #      ``tests/test_marketing_mover_stance.py`` walks both banks through it.
 #
-#   7. **THE QUESTION IS ABOUT THE TAPE'S NEXT MOVE, NOT ABOUT WHETHER THE
-#      AUTHOR IS ANY GOOD** (operator 2026-08-06, the abstention law). The
-#      2026-08-03 bank kept the cost by making the author admit he could not read
-#      the group: "Do I know why they all went at once?", "Is my read on this
-#      group any good today?", "Is this a theme or a headline I missed?". The
-#      operator on that whole register: "it makes us look indecisive and provides
-#      zero value... It kills authority and causes unfollows."
+#   7. **THE TAIL IS A STRUCTURAL NOTE ABOUT WHAT THE GROUP DID** (Voice
+#      Doctrine v5, 2026-08-11). Two earlier waves both kept the author as the
+#      subject and both failed for it. The 2026-08-03 bank made him admit he
+#      could not read the group ("Do I know why they all went at once?", "Is my
+#      read on this group any good today?"); the operator: "it makes us look
+#      indecisive and provides zero value... It kills authority and causes
+#      unfollows." The 2026-08-06 bank moved the question onto the tape's next
+#      move ("Am I getting a second session out of this?") but kept the "I" and
+#      the "?", so it still read as a bot cosplaying a trader — measured across
+#      the live queue, first person was 25.8% of the corpus and it is the single
+#      biggest v5 scrub.
 #
-#      Constraint 6 is unchanged — still no instruction, still nothing the
-#      engines did not compute — and so are the two structural rules the tail
-#      cannot escape: `copywriter.validate_copy` requires a theme_list body to
-#      end on "?", and `publish_time_content._tail_is_bait` requires that final
-#      question to carry a first-person marker (a question handed to the timeline
-#      commits to nothing). What changes is the OBJECT of the question. Asking
-#      "do I get a second session out of this?" still costs the author — it is a
-#      forward claim the next open grades — while giving the reader a condition
-#      they can check for themselves. Asking whether the author can read a chart
-#      gives them nothing at all.
+#      v5 removes the narrator entirely. The tail states something the theme
+#      item ALREADY COMPUTED and the member list already proves: every listed
+#      name moved the group's way (``in_dir`` filters to the direction before
+#      the top-n slice), the aggregate is a group average over ≥ min_members
+#      names, and the move is therefore breadth rather than one story. That is
+#      the doctrine's material — breadth inside the group — and it is the only
+#      material a crc32 of the theme name is entitled to: no streak, no rank, no
+#      volume multiple, because nothing in this lane measured one. A tail
+#      asserting "second straight session" here would be constraint 6's defect
+#      wearing a fact's costume.
+#
+#      Direction-keying (constraint 4) does the rest of the work: a heavy group
+#      and a bid group get different words for the same structural claim.
 # ─────────────────────────────────────────────────────────────────────────────
 _TAIL_DOWN = [
-    "Do these lows hold when I look tomorrow?",
-    "Am I seeing this group heavy again at the open?",
-    "Do I get a second session of this?",
-    "Will I still see these names on the lows list?",
+    "Every name on the list is lower.",
+    "The whole group is heavy, not one name.",
+    "Breadth inside the group, not one loser.",
+    "A group this wide is not one story.",
 ]
 _TAIL_UP = [
-    "Do I see follow-through at tomorrow's open?",
-    "Am I getting a second session out of this?",
-    "Do these highs hold when I look tomorrow?",
-    "Will I still see this group leading next week?",
+    "Every name on the list is higher.",
+    "The whole group is bid, not one name.",
+    "Breadth inside the group, not one leader.",
+    "The group moved together, not one name.",
 ]
 
 #: Hard ceiling every tail must satisfy — pinned in tests so a future "better"
@@ -577,7 +596,12 @@ def theme_lists(
           "tone": str,             # plain-English tone
           "members": [{ticker, pct}, ...],  # top N by abs move in direction
           "agg_pct": float,        # average of member pcts
-          "question": str,         # the direction-keyed stance / watch tail
+          "question": str,         # the direction-keyed structural tail. The KEY
+                                   # name is v4 vintage and load-bearing across
+                                   # content_studio / the outbox rows / the
+                                   # {theme_question} template token; the VALUE
+                                   # has been a declarative statement since v5
+                                   # (see the _TAIL_UP/_TAIL_DOWN block above).
           "asof": str | None,      # the session ALL members share, else None
         }
 
@@ -1296,7 +1320,7 @@ def theme_facts(theme_item: dict, *, now: datetime | None = None,
             "numbers": member_pct_strs,
         })
 
-    # Question fact (for reply-bait context)
+    # The structural tail (v5: a declarative breadth note, never a question).
     if question:
         facts.append({
             "id": "theme_question",
