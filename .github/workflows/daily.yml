@@ -4876,7 +4876,21 @@ jobs:
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         timeout-minutes: 20
-        run: python -m scripts.collect_release_target_vintages || echo "::warning::release target vintage collection failed (non-fatal — existing coherent stores stand)"
+        run: python -m scripts.collect_release_target_vintages || echo "::warning::release target vintage collection failed (non-fatal — completion authority remains withheld until a full cohort succeeds)"
+      - name: Release Radar official CPI Table 1 receipts (truth substrate, non-fatal)
+        # Collects the frozen preregistered BLS Supplemental Table 1 panel into
+        # immutable content-addressed source documents and source-bound receipts.
+        # The batch is resumable and validates retained bytes before reuse; a
+        # missing or drifting official document leaves the prior corpus standing.
+        timeout-minutes: 20
+        run: python -m scripts.collect_release_cpi_official_truth || echo "::warning::official CPI Table 1 collection failed (non-fatal — completion authority remains withheld if publication began)"
+      - name: Release Radar coherent CPI target parity (truth substrate, non-fatal)
+        # Reconstructs headline/core CPI targets from one ALFRED release vintage
+        # and publishes a completion receipt only after the preregistered BLS
+        # parity panel passes exactly.  This is a shadow truth gate: it does not
+        # alter champion coefficients, combined weights, or promotion authority.
+        timeout-minutes: 10
+        run: python -m scripts.build_release_cpi_truth_parity || echo "::warning::coherent CPI truth parity failed (non-fatal — no new completion boundary published)"
       - name: Release Radar official-actual reconciliation (truth substrate, non-fatal)
         # Converts verified BLS/BEA/DOL publication facts from the VPS live
         # sidecar into keep-first, source-hashed actual receipts.  No forecast is
