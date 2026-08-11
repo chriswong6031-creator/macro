@@ -1284,6 +1284,111 @@ class TrustedFileAsKnownAtReader(market_memory.AsKnownAtReader):
                 "trusted reader supports operational_pit only"
             )
         self.mode = mode
+        self._pinned_snapshots: dict[
+            tuple[str, str], market_memory_pit.PinnedGenerationSnapshot
+        ] = {}
+
+    def read_pinned_generation(
+        self, *, generation_id: str | None = None
+    ) -> market_memory_pit.PinnedGenerationSnapshot:
+        """Pin current trusted HEAD or one append-only published ancestor."""
+
+        state = _load_state(self.root)
+        target = generation_id or str(state.head["generation_id"])
+        key = (str(state.head["generation_id"]), target)
+        snapshot = market_memory_pit._read_pinned_generation_from_state(
+            self.root,
+            state=state,
+            profile=TRUSTED_STORE_PROFILE,
+            generation_id=generation_id,
+            generation_limit=_MAX_GENERATION_BYTES,
+        )
+        if len(self._pinned_snapshots) >= 8:
+            self._pinned_snapshots.pop(next(iter(self._pinned_snapshots)))
+        self._pinned_snapshots[key] = snapshot
+        return snapshot
+
+    def _authenticate_pinned_snapshot(
+        self, generation: market_memory_pit.PinnedGenerationSnapshot
+    ) -> market_memory_pit.PinnedGenerationSnapshot:
+        if not isinstance(generation, market_memory_pit.PinnedGenerationSnapshot):
+            raise market_memory_pit.MarketMemoryQueryError(
+                "generation must be a PinnedGenerationSnapshot"
+            )
+        if generation.profile != TRUSTED_STORE_PROFILE:
+            raise market_memory_pit.MarketMemoryQueryError(
+                "generation profile does not belong to the trusted store"
+            )
+        if any(generation is cached for cached in self._pinned_snapshots.values()):
+            return generation
+        authenticated = self.read_pinned_generation(
+            generation_id=generation.generation_id
+        )
+        if authenticated != generation:
+            raise market_memory_pit.MarketMemoryStoreError(
+                "pinned trusted generation differs from its published bytes"
+            )
+        return authenticated
+
+    def read_pinned_capture_receipt(
+        self,
+        generation: market_memory_pit.PinnedGenerationSnapshot,
+        *,
+        query_id: str,
+    ) -> dict[str, Any]:
+        """Read one trusted owner-validated receipt from a pinned index."""
+
+        authenticated = self._authenticate_pinned_snapshot(generation)
+        if not isinstance(query_id, str) or not _QUERY_ID.fullmatch(query_id):
+            raise market_memory_pit.MarketMemoryQueryError(
+                "query_id must be mmquery_<sha256>"
+            )
+        entries = [row for row in authenticated.captures if row.query_id == query_id]
+        if not entries:
+            raise market_memory_pit.MarketMemoryContextNotFound(
+                "query is absent from the pinned trusted generation"
+            )
+        if len(entries) != 1:  # pragma: no cover - generation validator proves this
+            raise market_memory_pit.MarketMemoryStoreError(
+                "pinned trusted query index is ambiguous"
+            )
+        entry = entries[0]
+        receipt, receipt_body = market_memory_pit._read_canonical_object(
+            market_memory_pit._query_path(self.root, query_id),
+            limit=_MAX_RECEIPT_BYTES,
+            label="pinned trusted query receipt",
+        )
+        clean_receipt = _validate_receipt(receipt)
+        if clean_receipt["store_id"] != authenticated.store_id:
+            raise market_memory_pit.MarketMemoryStoreError(
+                "pinned trusted receipt belongs to another store"
+            )
+        if market_memory_pit._capture_entry(clean_receipt) != entry.as_dict():
+            raise market_memory_pit.MarketMemoryStoreError(
+                "pinned trusted query receipt differs from generation"
+            )
+        context_receipt, context_body = market_memory_pit._read_canonical_object(
+            market_memory_pit._context_path(self.root, clean_receipt["context_id"]),
+            limit=_MAX_RECEIPT_BYTES,
+            label="pinned trusted context receipt",
+        )
+        if context_body != receipt_body or context_receipt != receipt:
+            raise market_memory_pit.MarketMemoryStoreError(
+                "pinned trusted query and context receipts disagree"
+            )
+        return clean_receipt
+
+    def read_stored_from_pinned_generation(
+        self,
+        generation: market_memory_pit.PinnedGenerationSnapshot,
+        *,
+        query_id: str,
+    ) -> market_memory_pit.StoredMarketMemoryContext:
+        """Read one exact trusted packet without consulting a newer index."""
+
+        authenticated = self._authenticate_pinned_snapshot(generation)
+        receipt = self.read_pinned_capture_receipt(authenticated, query_id=query_id)
+        return _load_stored(self.root, receipt, store_id=authenticated.store_id)
 
     def read_stored_as_known_at(
         self,
