@@ -34,8 +34,11 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Callable, Iterable
 
-from lib.gex_state_index import build_index
-from lib.nyse_calendar import expected_last_session
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib.gex_state_index import build_index  # noqa: E402
+from lib.nyse_calendar import expected_last_session  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
