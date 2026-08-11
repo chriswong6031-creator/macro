@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "options.signal_campaign_outcome/v1",
+  "title": "Receipt-bound outcome for one immutable campaign revision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "campaign_outcome_id",
+    "campaign_id",
+    "campaign_revision_id",
+    "horizon",
+    "anchor_policy",
+    "campaign_available_at",
+    "anchor_episode_id",
+    "computed_at",
+    "status",
+    "reason",
+    "target_time",
+    "matured_at",
+    "measurement",
+    "underlying",
+    "option",
+    "source_outcome",
+    "source_outcome_prefix",
+    "member_outcome_coverage",
+    "label_authority",
+    "training_eligible",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "options.signal_campaign_outcome/v1"},
+    "campaign_outcome_id": {"type": "string", "pattern": "^ocout_[a-f0-9]{24}$"},
+    "campaign_id": {"type": "string", "pattern": "^ocam_[a-f0-9]{24}$"},
+    "campaign_revision_id": {"type": "string", "pattern": "^ocrev_[a-f0-9]{24}$"},
+    "horizon": {"enum": ["h60", "eod", "1d", "3d", "5d", "10d"]},
+    "anchor_policy": {"const": "final-member-availability/v1"},
+    "campaign_available_at": {"type": "string", "format": "date-time"},
+    "anchor_episode_id": {"type": "string", "pattern": "^osep_[a-f0-9]{24}$"},
+    "computed_at": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["complete", "incomplete"]},
+    "reason": {"oneOf": [{"type": "null"}, {"type": "string", "minLength": 1}]},
+    "target_time": {"type": "string", "format": "date-time"},
+    "matured_at": {"type": "string", "format": "date-time"},
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "target_aligned", "source_measurement_sha256"],
+      "properties": {
+        "kind": {"type": "string", "minLength": 1},
+        "target_aligned": {"type": "boolean"},
+        "source_measurement_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "underlying": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "ret", "mfe", "mae"],
+      "properties": {
+        "status": {"enum": ["complete", "unavailable"]},
+        "ret": {"$ref": "#/$defs/nullableNumber"},
+        "mfe": {"$ref": "#/$defs/nullableNumber"},
+        "mae": {"$ref": "#/$defs/nullableNumber"}
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "quote_basis", "ret", "mfe", "mae"],
+      "properties": {
+        "status": {"const": "unavailable"},
+        "reason": {"const": "no_executable_nbbo_quote_path"},
+        "quote_basis": {"type": "null"},
+        "ret": {"type": "null"},
+        "mfe": {"type": "null"},
+        "mae": {"type": "null"}
+      }
+    },
+    "source_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "row",
+        "row_sha256",
+        "schema",
+        "outcome_id",
+        "episode_id",
+        "horizon_anchor",
+        "price_receipt_sha256",
+        "price_source",
+        "price_vintage",
+        "source_receipt_schema"
+      ],
+      "properties": {
+        "path": {
+          "enum": [
+            "data/options_signal_episode/outcomes_h60.jsonl",
+            "data/options_signal_episode/outcomes_session.jsonl"
+          ]
+        },
+        "row": {"type": "integer", "minimum": 1},
+        "row_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "schema": {
+          "enum": [
+            "options.signal_episode_outcome/v1",
+            "options.signal_episode_session_outcome/v1"
+          ]
+        },
+        "outcome_id": {"type": "string", "pattern": "^oout_[a-f0-9]{24}$"},
+        "episode_id": {"type": "string", "pattern": "^osep_[a-f0-9]{24}$"},
+        "horizon_anchor": {"type": "string", "format": "date-time"},
+        "price_receipt_sha256": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+          ]
+        },
+        "price_source": {"oneOf": [{"type": "null"}, {"type": "string", "minLength": 1}]},
+        "price_vintage": {
+          "oneOf": [{"type": "null"}, {"type": "string", "format": "date-time"}]
+        },
+        "source_receipt_schema": {
+          "oneOf": [{"type": "null"}, {"const": "polygon.intraday_price_receipt/v1"}]
+        }
+      }
+    },
+    "source_outcome_prefix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "records", "prefix_sha256"],
+      "properties": {
+        "path": {
+          "enum": [
+            "data/options_signal_episode/outcomes_h60.jsonl",
+            "data/options_signal_episode/outcomes_session.jsonl"
+          ]
+        },
+        "records": {"type": "integer", "minimum": 1},
+        "prefix_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "member_outcome_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected_member_count", "observed_member_count", "references", "missing_episode_ids"],
+      "properties": {
+        "expected_member_count": {"type": "integer", "minimum": 1},
+        "observed_member_count": {"type": "integer", "minimum": 0},
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["episode_id", "outcome_id", "status", "row", "row_sha256"],
+            "properties": {
+              "episode_id": {"type": "string", "pattern": "^osep_[a-f0-9]{24}$"},
+              "outcome_id": {"type": "string", "pattern": "^oout_[a-f0-9]{24}$"},
+              "status": {"enum": ["complete", "incomplete"]},
+              "row": {"type": "integer", "minimum": 1},
+              "row_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+            }
+          }
+        },
+        "missing_episode_ids": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^osep_[a-f0-9]{24}$"}
+        }
+      }
+    },
+    "label_authority": {"const": "research_only"},
+    "training_eligible": {"const": false},
+    "authority": {"$ref": "#/$defs/falseAuthority"}
+  },
+  "$defs": {
+    "nullableNumber": {
+      "oneOf": [{"type": "null"}, {"type": "number"}]
+    },
+    "falseAuthority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "may_originate",
+        "may_rank",
+        "may_score",
+        "may_gate",
+        "may_size",
+        "may_issue",
+        "may_trade",
+        "may_publish_pick",
+        "may_train_prophet",
+        "may_feed_neural_web",
+        "may_select",
+        "may_escalate",
+        "may_compute_option_pnl"
+      ],
+      "properties": {
+        "may_originate": {"const": false},
+        "may_rank": {"const": false},
+        "may_score": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_issue": {"const": false},
+        "may_trade": {"const": false},
+        "may_publish_pick": {"const": false},
+        "may_train_prophet": {"const": false},
+        "may_feed_neural_web": {"const": false},
+        "may_select": {"const": false},
+        "may_escalate": {"const": false},
+        "may_compute_option_pnl": {"const": false}
+      }
+    }
+  }
+}
