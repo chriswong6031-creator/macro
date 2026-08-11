@@ -9,25 +9,31 @@ or execution.
 
 1. The M1 live-flow poller fsyncs the existing `kind=decision` owner receipt.
 2. It samples `available_at` and writes a private non-sendable precommit, then
-   fsyncs the existing `kind=availability` receipt. Only the exact precommitted
-   bytes can then move into the transport outbox; a restart can promote them
-   but cannot manufacture a request from an old receipt.
+   fsyncs the existing `kind=availability` receipt with either the exact
+   request ID/SHA binding or an explicit abstention. A separate publication
+   proof distinguishes a proven precommit from a link left visible by a failed
+   parent fsync. Only proven bytes can move into the transport outbox; an
+   ambiguous precommit after availability permanently abstains.
 3. The request preserves the unequal clocks: owner `ts` is `event_time`, while
    the durable receipt clock is `as_known_at` and `knowledge_cutoff`.
 4. A bounded local outbox drains all currently eligible work in eight-request
    batches, independent of the next slow live-data cycle. Before SSH starts it
-   fsyncs an attempt receipt. A lost acknowledgement becomes
-   `outcome_unknown_after_transport`, never the false claim
-   `expired_before_transport`; an unattempted late request is explicitly
-   expired and never backdated.
+   fsyncs one ordered batch intent binding every request ID/SHA and the forced
+   target. A crash in the unavoidable durable-intent/spawn seam or a lost
+   acknowledgement becomes
+   `outcome_unknown_after_durable_transport_intent`; an explicit pre-exec
+   spawn error remains `pretransport_spawn_error`. A partial, unproven intent
+   never implies launch.
 5. A forced-command SSH key admits the exact request to the production W1A
-   generation. The existing hourly context projector later binds that exact
-   query when the nightly owner publishes the episode.
+   generation. The remote writer captures the whole bounded batch first, then
+   projects every response from one final authenticated active HEAD pin. The
+   existing hourly context projector later binds that exact query when the
+   nightly owner publishes the episode.
 
-The session identity/calendar anchor is created before the regular-session
-open and is valid only for that NYSE session. A restart can reuse the exact
-anchor. If no pre-open anchor exists, capture abstains for that session while
-the live-flow and episode owners continue normally.
+The session identity/calendar anchor is created and publication-proven before
+the regular-session open and is valid only for that NYSE session. A restart can
+reuse the exact proven anchor. An anchor link without its causal proof can be
+repaired only before open; afterward it permanently abstains.
 
 ## Fixed limits
 
@@ -35,7 +41,7 @@ the live-flow and episode owners continue normally.
 - 8 requests and 1 MiB per SSH batch; at most 8 batches drain the fixed
   64-request outbox per owner boundary.
 - 64 pending requests, 4,096 lifetime receipts, and 64 session anchors.
-- 256 KiB per request; 30 seconds per transport attempt.
+- 256 KiB per request; 30 seconds per ordered batch transport.
 - Transport starts only through 13 minutes after the owner cutoff, leaving
   validation margin inside W1A's frozen 15-minute admission window.
 - All roots and files are private (`0700` directories, `0600` files).
@@ -71,8 +77,9 @@ Before the next open, verify an anchor exists and is private. After the first
 new SPY decision, require all of the following:
 
 - the M1 outbox has an authenticated `status=captured` transport receipt (or,
-  after a lost acknowledgement, honestly reports `outcome_unknown_after_transport`
-  and relies on the independent W1A/projector proof);
+  after a lost acknowledgement, honestly reports
+  `outcome_unknown_after_durable_transport_intent` and relies on the
+  independent W1A/projector proof);
 - the W1A HEAD authenticates the response `query_id`, `context_id`, and packet
   digest;
 - packet `event_time` equals the future episode's owner event clock and packet

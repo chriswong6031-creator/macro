@@ -708,6 +708,9 @@ def _write_create_once(root: Path, path: Path, body: bytes, *, label: str) -> bo
         )
         if existing != body:
             raise MarketMemoryCaptureError(f"immutable {label} collision")
+        # A prior link may have been visible when its parent fsync failed.
+        # Re-establish that exact parent durability before any HEAD can refer to it.
+        _directory_fsync(path.parent)
         return False
     temporary = path.parent / f".{path.name}.tmp.{os.getpid()}.{uuid4().hex}"
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
@@ -735,6 +738,7 @@ def _write_create_once(root: Path, path: Path, body: bytes, *, label: str) -> bo
             )
             if existing != body:
                 raise MarketMemoryCaptureError(f"immutable {label} collision")
+            _directory_fsync(path.parent)
             return False
     except (MarketMemoryCaptureError, MarketMemoryStoreError):
         raise
@@ -743,7 +747,14 @@ def _write_create_once(root: Path, path: Path, body: bytes, *, label: str) -> bo
     finally:
         if descriptor is not None:
             os.close(descriptor)
-        temporary.unlink(missing_ok=True)
+        if temporary.exists():
+            try:
+                temporary.unlink()
+                _directory_fsync(path.parent)
+            except OSError as exc:
+                raise MarketMemoryStoreError(
+                    f"cannot durably clean temporary {label}"
+                ) from exc
 
 
 def _replace_head(root: Path, head: Mapping[str, Any]) -> None:
@@ -776,7 +787,14 @@ def _replace_head(root: Path, head: Mapping[str, Any]) -> None:
     finally:
         if descriptor is not None:
             os.close(descriptor)
-        temporary.unlink(missing_ok=True)
+        if temporary.exists():
+            try:
+                temporary.unlink()
+                _directory_fsync(root)
+            except OSError as exc:
+                raise MarketMemoryStoreError(
+                    "cannot durably clean temporary store HEAD"
+                ) from exc
 
 
 def _initialize_store(root: Path) -> _StoreState:
@@ -877,6 +895,26 @@ def _load_store_state(root: Path) -> _StoreState:
         head=clean_head,
         generation=clean_generation,
     )
+
+
+def _reprove_active_publication(root: Path, state: _StoreState) -> None:
+    """Re-establish generation and HEAD parent durability before writer ACK."""
+
+    _directory_fsync(_generation_path(root, state.head["generation_id"]).parent)
+    _directory_fsync(root)
+
+
+def _reprove_stored_publication(
+    root: Path, stored: StoredMarketMemoryContext, *, state: _StoreState
+) -> None:
+    receipt = stored.capture_receipt
+    for path in (
+        _object_path(root, receipt["packet_sha256"]),
+        _context_path(root, receipt["context_id"]),
+        _query_path(root, receipt["query_id"]),
+    ):
+        _directory_fsync(path.parent)
+    _reprove_active_publication(root, state)
 
 
 def _snapshot_from_generation(
@@ -1331,6 +1369,8 @@ class FileAsKnownAtReader(market_memory.AsKnownAtReader):
             )
         self.mode = mode
         self._pinned_snapshots: dict[tuple[str, str], PinnedGenerationSnapshot] = {}
+        self._active_snapshot_key: tuple[str, str] | None = None
+        self._active_snapshot: PinnedGenerationSnapshot | None = None
 
     def read_pinned_generation(
         self, *, generation_id: str | None = None
@@ -1362,11 +1402,20 @@ class FileAsKnownAtReader(market_memory.AsKnownAtReader):
         """
 
         state = _load_store_state(self.root)
-        return _snapshot_from_generation(
+        key = (
+            str(state.generation["generation_id"]),
+            str(state.head["generation_sha256"]),
+        )
+        if self._active_snapshot_key == key and self._active_snapshot is not None:
+            return self._active_snapshot
+        snapshot = _snapshot_from_generation(
             state.generation,
             generation_sha256=str(state.head["generation_sha256"]),
             profile=STORE_PROFILE,
         )
+        self._active_snapshot_key = key
+        self._active_snapshot = snapshot
+        return snapshot
 
     def _authenticate_pinned_snapshot(
         self, generation: PinnedGenerationSnapshot
@@ -1564,6 +1613,7 @@ def capture_context(
     try:
         fcntl.flock(lock_descriptor, fcntl.LOCK_EX)
         state = _initialize_or_load_store(store)
+        _reprove_active_publication(store, state)
         receipt = _build_capture_receipt(
             validated,
             store_id=state.manifest["store_id"],
@@ -1586,11 +1636,13 @@ def capture_context(
                 raise MarketMemoryCaptureError(
                     "operational query already has a different immutable capture"
                 )
-            return FileAsKnownAtReader(store).read_stored_as_known_at(
+            stored = FileAsKnownAtReader(store).read_stored_as_known_at(
                 subject=validated["subject"],
                 event_time=validated["clocks"]["event_time"],
                 as_known_at=validated["clocks"]["as_known_at"],
             )
+            _reprove_stored_publication(store, stored, state=state)
+            return stored
 
         query_path = _query_path(store, receipt["query_id"])
         if query_path.exists() or query_path.is_symlink():
@@ -1674,15 +1726,18 @@ def capture_context(
             receipt_body,
             label="exact-query receipt",
         )
-        _publish_generation(store, state=state, receipt=receipt)
+        state = _publish_generation(store, state=state, receipt=receipt)
+        _reprove_active_publication(store, state)
     finally:
         fcntl.flock(lock_descriptor, fcntl.LOCK_UN)
         os.close(lock_descriptor)
-    return FileAsKnownAtReader(store).read_stored_as_known_at(
+    stored = FileAsKnownAtReader(store).read_stored_as_known_at(
         subject=validated["subject"],
         event_time=validated["clocks"]["event_time"],
         as_known_at=validated["clocks"]["as_known_at"],
     )
+    _reprove_stored_publication(store, stored, state=state)
+    return stored
 
 
 def default_store_root(repository_root: str | Path) -> Path:

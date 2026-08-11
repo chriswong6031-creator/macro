@@ -597,7 +597,7 @@ def _parse_event_stage_bytes(
     *,
     path: Path,
     require_complete: bool,
-) -> tuple[dict[str, dict], dict[str, str]]:
+) -> tuple[dict[str, dict], dict[str, str], dict[str, dict]]:
     """Parse a stage as an ordered per-event state machine, failing closed."""
     if raw and not raw.endswith(b"\n"):
         raise RuntimeError(f"torn live-flow event stage: {path}")
@@ -605,6 +605,7 @@ def _parse_event_stage_bytes(
         raise RuntimeError(f"empty live-flow event stage: {path}")
     decisions: dict[str, dict] = {}
     available: dict[str, str] = {}
+    context_capture: dict[str, dict] = {}
     for lineno, line in enumerate(raw.splitlines(), start=1):
         try:
             receipt = _strict_json_loads(line)
@@ -634,7 +635,10 @@ def _parse_event_stage_bytes(
                 raise RuntimeError(f"decision receipt contains non-durable fields {event_id}")
             decisions[event_id] = event
         elif kind == "availability":
-            if set(receipt) != {"schema", "kind", "event_id", "available_at"}:
+            if set(receipt) not in (
+                {"schema", "kind", "event_id", "available_at"},
+                {"schema", "kind", "event_id", "available_at", "context_capture"},
+            ):
                 raise RuntimeError(f"invalid availability receipt shape {path}:{lineno}")
             if event_id not in decisions:
                 raise RuntimeError(
@@ -658,13 +662,43 @@ def _parse_event_stage_bytes(
                 raise RuntimeError(
                     f"staged availability leaves session date for {event_id}"
                 )
+            binding = receipt.get("context_capture")
+            if binding is None:
+                binding = {"status": "abstained", "reason": "legacy_unbound"}
+            if not isinstance(binding, dict):
+                raise RuntimeError(f"invalid context capture binding for {event_id}")
+            if binding.get("status") == "prepared":
+                if (
+                    set(binding) != {"status", "request_id", "request_sha256"}
+                    or not re.fullmatch(r"mmoptrequest_[a-f0-9]{64}", str(binding.get("request_id") or ""))
+                    or not re.fullmatch(r"[a-f0-9]{64}", str(binding.get("request_sha256") or ""))
+                ):
+                    raise RuntimeError(
+                        f"invalid prepared context capture binding for {event_id}"
+                    )
+            elif binding.get("status") == "abstained":
+                if (
+                    set(binding) != {"status", "reason"}
+                    or binding.get("reason") not in {
+                        "capture_not_armed",
+                        "outside_predeclared_canary",
+                        "precommit_not_proven",
+                        "legacy_unbound",
+                    }
+                ):
+                    raise RuntimeError(
+                        f"invalid context capture abstention for {event_id}"
+                    )
+            else:
+                raise RuntimeError(f"unknown context capture state for {event_id}")
             available[event_id] = stamp
+            context_capture[event_id] = dict(binding)
         else:
             raise RuntimeError(f"unknown event-stage receipt {path}:{lineno}")
     missing = set(decisions) - set(available)
     if require_complete and missing:
         raise RuntimeError(f"event stage has decisions without availability: {sorted(missing)}")
-    return decisions, available
+    return decisions, available, context_capture
 
 
 def _stage_raw_events(
@@ -697,7 +731,7 @@ def _stage_raw_events(
         try:
             fh.seek(0)
             raw = fh.read()
-            decisions, available = _parse_event_stage_bytes(
+            decisions, available, context_capture = _parse_event_stage_bytes(
                 session_date, raw, path=path, require_complete=False,
             )
             # An empty file means this call is creating the first durable source
@@ -745,7 +779,7 @@ def _stage_raw_events(
                     )
 
             enriched: list[dict] = []
-            context_promotions: list[tuple[str, object, str]] = []
+            context_promotions: list[tuple[str, object, str, dict]] = []
             for event_id, durable_event, needs_decision in resolved:
                 if needs_decision:
                     receipt = {
@@ -767,6 +801,7 @@ def _stage_raw_events(
                 stamp = available.get(event_id)
                 new_availability = stamp is None
                 prepared_context_request = None
+                capture_binding = {"status": "abstained", "reason": "capture_not_armed"}
                 if new_availability:
                     stamp = _utc_now_iso(clock)
                     stamp_dt = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
@@ -802,8 +837,24 @@ def _stage_raw_events(
                             _OPTIONS_CONTEXT_DISPATCHER.stage(
                                 prepared_context_request
                             )
+                            if prepared_context_request is None:
+                                capture_binding = {
+                                    "status": "abstained",
+                                    "reason": "outside_predeclared_canary",
+                                }
+                            else:
+                                capture_binding = {
+                                    "status": "prepared",
+                                    **_OPTIONS_CONTEXT_DISPATCHER.availability_binding(
+                                        prepared_context_request
+                                    ),
+                                }
                         except Exception as exc:  # noqa: BLE001 - context abstains
                             prepared_context_request = None
+                            capture_binding = {
+                                "status": "abstained",
+                                "reason": "precommit_not_proven",
+                            }
                             log.warning(
                                 "poller: option-context observation abstained for %s (%s)",
                                 event_id,
@@ -814,6 +865,7 @@ def _stage_raw_events(
                         "kind": "availability",
                         "event_id": event_id,
                         "available_at": stamp,
+                        "context_capture": capture_binding,
                     }
                     fh.write(json.dumps(
                         receipt, sort_keys=True, separators=(",", ":"), allow_nan=False,
@@ -823,7 +875,7 @@ def _stage_raw_events(
                     available[event_id] = stamp
                     if prepared_context_request is not None:
                         context_promotions.append(
-                            ("commit", prepared_context_request, event_id)
+                            ("commit", prepared_context_request, event_id, capture_binding)
                         )
                 else:
                     enriched_event = dict(durable_event)
@@ -832,9 +884,14 @@ def _stage_raw_events(
                     enriched_event["source_snapshot_asof"] = stamp
                     enriched_event["anchor_strategy"] = "durable_available_at"
                     if _OPTIONS_CONTEXT_DISPATCHER is not None:
-                        context_promotions.append(
-                            ("recover", enriched_event, event_id)
+                        capture_binding = context_capture.get(
+                            event_id,
+                            {"status": "abstained", "reason": "legacy_unbound"},
                         )
+                        if capture_binding.get("status") == "prepared":
+                            context_promotions.append(
+                                ("recover", enriched_event, event_id, capture_binding)
+                            )
                 # An already-available replay cannot manufacture a request. Only
                 # exact bytes precommitted at the first cutoff may retry transport.
                 enriched.append(enriched_event)
@@ -851,21 +908,20 @@ def _stage_raw_events(
             # and their parent entry durable. A replay may promote an exact
             # precommit after this proof, never merely because page-cache bytes
             # parsed before the final fsync boundary.
-            for action, payload, event_id in context_promotions:
-                try:
-                    if action == "commit":
-                        _OPTIONS_CONTEXT_DISPATCHER.commit(payload)
-                    else:
-                        _OPTIONS_CONTEXT_DISPATCHER.recover(
-                            owner_event=payload,
-                            session_date=session_date,
-                        )
-                except Exception as exc:  # noqa: BLE001 - context abstains
-                    log.warning(
-                        "poller: option-context %s abstained for %s (%s)",
-                        action,
-                        event_id,
-                        exc,
+            for action, payload, event_id, capture_binding in context_promotions:
+                owner_binding = {
+                    "request_id": capture_binding["request_id"],
+                    "request_sha256": capture_binding["request_sha256"],
+                }
+                if action == "commit":
+                    _OPTIONS_CONTEXT_DISPATCHER.commit(
+                        payload, owner_binding=owner_binding
+                    )
+                else:
+                    _OPTIONS_CONTEXT_DISPATCHER.recover(
+                        owner_event=payload,
+                        session_date=session_date,
+                        owner_binding=owner_binding,
                     )
             return enriched
         finally:

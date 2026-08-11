@@ -94,7 +94,7 @@ def capture_options_request_batch(
         raise options_capture.OptionsEpisodeContextCaptureError(
             "capture request batch count exceeds its bound"
         )
-    responses: list[dict] = []
+    captures: list[tuple[dict, object]] = []
     rejected = 0
     for line in lines:
         request_id = "unknown"
@@ -109,11 +109,7 @@ def capture_options_request_batch(
                 request_id = candidate_id
             clean = options_capture.validate_capture_request(request)
             stored = capture_context(store, clean["packet"])
-            responses.append(
-                options_capture.response_from_stored_capture(
-                    store, request=clean, stored=stored
-                )
-            )
+            captures.append((clean, stored))
         except (options_capture.OptionsEpisodeContextCaptureError, MarketMemoryPITError) as exc:
             rejected += 1
             print(
@@ -121,6 +117,11 @@ def capture_options_request_batch(
                 f"{type(exc).__name__}: {exc}",
                 file=sys.stderr,
             )
+    responses = (
+        options_capture.responses_from_stored_batch(store, captures=captures)
+        if captures
+        else []
+    )
     return responses, rejected
 
 

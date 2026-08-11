@@ -282,7 +282,10 @@ def _events_from_stage(
                 )
             decisions[event_id] = event
         elif kind == "availability":
-            if set(record) != {"schema", "kind", "event_id", "available_at"}:
+            if set(record) not in (
+                {"schema", "kind", "event_id", "available_at"},
+                {"schema", "kind", "event_id", "available_at", "context_capture"},
+            ):
                 raise ContractError(f"invalid availability receipt shape at line {lineno}")
             if event_id not in decisions:
                 raise ContractError(
@@ -293,6 +296,44 @@ def _events_from_stage(
             stamp = str(record.get("available_at") or "")
             if not stamp:
                 raise ContractError(f"invalid availability receipt at line {lineno}")
+            binding = record.get("context_capture")
+            if binding is not None:
+                if not isinstance(binding, dict):
+                    raise ContractError(
+                        f"invalid context capture binding at line {lineno}"
+                    )
+                if binding.get("status") == "prepared":
+                    if (
+                        set(binding) != {"status", "request_id", "request_sha256"}
+                        or not re.fullmatch(
+                            r"mmoptrequest_[a-f0-9]{64}",
+                            str(binding.get("request_id") or ""),
+                        )
+                        or not re.fullmatch(
+                            r"[a-f0-9]{64}",
+                            str(binding.get("request_sha256") or ""),
+                        )
+                    ):
+                        raise ContractError(
+                            f"invalid prepared context capture binding at line {lineno}"
+                        )
+                elif binding.get("status") == "abstained":
+                    if (
+                        set(binding) != {"status", "reason"}
+                        or binding.get("reason") not in {
+                            "capture_not_armed",
+                            "outside_predeclared_canary",
+                            "precommit_not_proven",
+                            "legacy_unbound",
+                        }
+                    ):
+                        raise ContractError(
+                            f"invalid context capture abstention at line {lineno}"
+                        )
+                else:
+                    raise ContractError(
+                        f"unknown context capture state at line {lineno}"
+                    )
             availability[event_id] = stamp
         else:
             raise ContractError(f"unknown event-stage receipt at line {lineno}")

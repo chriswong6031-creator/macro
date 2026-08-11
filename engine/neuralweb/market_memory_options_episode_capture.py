@@ -40,11 +40,16 @@ ANCHOR_SCHEMA = "market_memory.options_context_session_identity_anchor/v1"
 REQUEST_SCHEMA = "market_memory.options_context_capture_request/v1"
 RESPONSE_SCHEMA = "market_memory.options_context_capture_response/v1"
 TRANSPORT_RECEIPT_SCHEMA = "market_memory.options_context_transport_receipt/v1"
-TRANSPORT_ATTEMPT_SCHEMA = "market_memory.options_context_transport_attempt/v1"
+TRANSPORT_BATCH_INTENT_SCHEMA = (
+    "market_memory.options_context_transport_batch_intent/v1"
+)
+OWNER_AVAILABILITY_SCHEMA = "market_memory.options_context_owner_availability/v1"
+PUBLICATION_PROOF_SCHEMA = "market_memory.options_context_publication_proof/v1"
 
 _REMOTE_TARGET = "root@146.190.142.17"
 _ANCHOR_ID = re.compile(r"mmoptanchor_[a-f0-9]{64}\Z")
 _REQUEST_ID = re.compile(r"mmoptrequest_[a-f0-9]{64}\Z")
+_BATCH_ID = re.compile(r"mmoptbatch_[a-f0-9]{64}\Z")
 _EPISODE_ID = re.compile(r"osep_[a-f0-9]{24}\Z")
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
@@ -164,6 +169,56 @@ def _fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
+def _validate_private_directory(path: Path, *, label: str) -> None:
+    try:
+        metadata = path.lstat()
+    except OSError as exc:
+        raise OptionsEpisodeContextCaptureError(
+            f"cannot inspect {label} safely"
+        ) from exc
+    if (
+        path.is_symlink()
+        or not stat.S_ISDIR(metadata.st_mode)
+        or stat.S_IMODE(metadata.st_mode) & 0o077
+        or metadata.st_uid != os.getuid()
+    ):
+        raise OptionsEpisodeContextCaptureError(
+            f"{label} must be an owned private directory"
+        )
+
+
+def _mkdir_private_durable(path: Path) -> None:
+    """Create missing private directories and persist every parent link."""
+
+    missing: list[Path] = []
+    cursor = path
+    while not cursor.exists():
+        if cursor.is_symlink():
+            raise OptionsEpisodeContextCaptureError(
+                "capture outbox path contains a symlink"
+            )
+        missing.append(cursor)
+        if cursor == cursor.parent:
+            raise OptionsEpisodeContextCaptureError(
+                "capture outbox has no safe existing parent"
+            )
+        cursor = cursor.parent
+    if cursor.is_symlink() or not cursor.is_dir():
+        raise OptionsEpisodeContextCaptureError(
+            "capture outbox parent is not a directory"
+        )
+    for directory in reversed(missing):
+        try:
+            os.mkdir(directory, 0o700)
+        except FileExistsError:
+            if directory.is_symlink() or not directory.is_dir():
+                raise OptionsEpisodeContextCaptureError(
+                    "capture outbox directory race was unsafe"
+                ) from None
+        _validate_private_directory(directory, label="new capture outbox directory")
+        _fsync_directory(directory.parent)
+
+
 def _private_directory(path: Path) -> Path:
     expanded = path.expanduser()
     if not expanded.is_absolute():
@@ -184,12 +239,10 @@ def _private_directory(path: Path) -> Path:
         raise OptionsEpisodeContextCaptureError("capture outbox cannot use a public root")
     if path.is_symlink():
         raise OptionsEpisodeContextCaptureError("capture outbox root is a symlink")
-    candidate.mkdir(mode=0o700, parents=True, exist_ok=True)
-    metadata = candidate.stat()
-    if not stat.S_ISDIR(metadata.st_mode) or stat.S_IMODE(metadata.st_mode) & 0o077:
-        raise OptionsEpisodeContextCaptureError(
-            "capture outbox root must be a private 0700 directory"
-        )
+    _mkdir_private_durable(candidate)
+    _validate_private_directory(candidate, label="capture outbox root")
+    # Re-prove an entry left visible by an interrupted mkdir parent fsync.
+    _fsync_directory(candidate.parent)
     return candidate
 
 
@@ -197,27 +250,53 @@ def _private_child(root: Path, name: str) -> Path:
     path = root / name
     if path.is_symlink():
         raise OptionsEpisodeContextCaptureError("capture outbox contains a symlink")
-    path.mkdir(mode=0o700, exist_ok=True)
-    metadata = path.stat()
-    if not stat.S_ISDIR(metadata.st_mode) or stat.S_IMODE(metadata.st_mode) & 0o077:
-        raise OptionsEpisodeContextCaptureError(
-            "capture outbox children must be private 0700 directories"
-        )
+    _mkdir_private_durable(path)
+    _validate_private_directory(path, label="capture outbox child")
+    # Existing-but-unpersisted child links are harmless only after this proof.
+    _fsync_directory(root)
     return path
 
 
-def _write_create_once(path: Path, body: bytes, *, label: str) -> None:
+def _unlink_durable(path: Path) -> None:
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        return
+    _fsync_directory(path.parent)
+
+
+def _write_create_once(
+    path: Path,
+    body: bytes,
+    *,
+    label: str,
+    recover_existing: bool = False,
+) -> None:
     if len(body) <= 0:
         raise OptionsEpisodeContextCaptureError(f"{label} is empty")
-    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    _validate_private_directory(path.parent, label=f"{label} parent")
+    if path.exists() or path.is_symlink():
+        existing = _read_file(path, maximum=len(body), label=f"existing {label}")
+        if existing != body:
+            raise OptionsEpisodeContextCaptureError(
+                f"immutable {label} collision"
+            )
+        if not recover_existing:
+            raise OptionsEpisodeContextCaptureError(
+                f"{label} publication is not durably proven"
+            )
+        _fsync_directory(path.parent)
+        return
     temporary = path.parent / f".{path.name}.tmp.{os.getpid()}.{uuid4().hex}"
     descriptor: int | None = None
+    temporary_created = False
     try:
         descriptor = os.open(
             temporary,
             os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
             0o600,
         )
+        temporary_created = True
         view = memoryview(body)
         while view:
             written = os.write(descriptor, view)
@@ -236,6 +315,11 @@ def _write_create_once(path: Path, body: bytes, *, label: str) -> None:
                 raise OptionsEpisodeContextCaptureError(
                     f"immutable {label} collision"
                 )
+            if not recover_existing:
+                raise OptionsEpisodeContextCaptureError(
+                    f"{label} publication is not durably proven"
+                )
+            _fsync_directory(path.parent)
     except OptionsEpisodeContextCaptureError:
         raise
     except OSError as exc:
@@ -245,7 +329,79 @@ def _write_create_once(path: Path, body: bytes, *, label: str) -> None:
     finally:
         if descriptor is not None:
             os.close(descriptor)
-        temporary.unlink(missing_ok=True)
+        if temporary_created and temporary.exists():
+            try:
+                temporary.unlink()
+                _fsync_directory(path.parent)
+            except OSError as exc:
+                raise OptionsEpisodeContextCaptureError(
+                    f"cannot durably clean temporary {label}"
+                ) from exc
+
+
+def _publication_proof(*, label: str, object_name: str, body: bytes) -> bytes:
+    return _canonical_bytes(
+        {
+            "schema": PUBLICATION_PROOF_SCHEMA,
+            "label": label,
+            "object_name": object_name,
+            "body_sha256": sha256(body).hexdigest(),
+        }
+    )
+
+
+def _write_proven_create_once(
+    path: Path,
+    body: bytes,
+    *,
+    proof_path: Path,
+    label: str,
+    may_reprove_unproven: bool,
+) -> bool:
+    """Publish bytes plus a causal proof created only after parent durability."""
+
+    proof = _publication_proof(label=label, object_name=path.name, body=body)
+    if proof_path.exists() or proof_path.is_symlink():
+        _write_create_once(
+            proof_path,
+            proof,
+            label=f"{label} publication proof",
+            recover_existing=True,
+        )
+        existing = _read_file(path, maximum=len(body), label=f"proven {label}")
+        if existing != body:
+            raise OptionsEpisodeContextCaptureError(
+                f"proven {label} differs from its proof"
+            )
+        return True
+    if path.exists() or path.is_symlink():
+        if not may_reprove_unproven:
+            return False
+        _write_create_once(path, body, label=label, recover_existing=True)
+    else:
+        _write_create_once(path, body, label=label)
+    _write_create_once(
+        proof_path,
+        proof,
+        label=f"{label} publication proof",
+        recover_existing=True,
+    )
+    return True
+
+
+def _has_publication_proof(
+    path: Path, body: bytes, *, proof_path: Path, label: str
+) -> bool:
+    if not proof_path.exists() and not proof_path.is_symlink():
+        return False
+    proof = _publication_proof(label=label, object_name=path.name, body=body)
+    _write_create_once(
+        proof_path,
+        proof,
+        label=f"{label} publication proof",
+        recover_existing=True,
+    )
+    return True
 
 
 def _read_file(path: Path, *, maximum: int, label: str) -> bytes:
@@ -260,6 +416,7 @@ def _read_file(path: Path, *, maximum: int, label: str) -> bytes:
             or metadata.st_size <= 0
             or metadata.st_size > maximum
             or stat.S_IMODE(metadata.st_mode) & 0o077
+            or metadata.st_uid != os.getuid()
         ):
             raise OptionsEpisodeContextCaptureError(
                 f"{label} is not a bounded private regular file"
@@ -476,15 +633,30 @@ def create_or_load_session_anchor(
 
     store = _private_directory(Path(root))
     anchors = _private_child(store, "anchors")
+    anchor_proofs = _private_child(store, "anchor_proofs")
     path = anchors / f"{session_date}.json"
+    proof_path = anchor_proofs / f"{session_date}.json"
     descriptor = os.open(store, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
     try:
         fcntl.flock(descriptor, fcntl.LOCK_EX)
         if path.exists() or path.is_symlink():
             body = _read_file(path, maximum=MAX_ANCHOR_BYTES, label="session anchor")
-            return validate_session_anchor(
+            anchor = validate_session_anchor(
                 _strict_object(body, label="session anchor", maximum=MAX_ANCHOR_BYTES)
             )
+            session = date.fromisoformat(session_date)
+            session_open = session_window_et(session)[0].astimezone(timezone.utc)
+            if not _write_proven_create_once(
+                path,
+                body,
+                proof_path=proof_path,
+                label="session anchor",
+                may_reprove_unproven=_utc_now().astimezone(timezone.utc) < session_open,
+            ):
+                raise OptionsEpisodeContextCaptureError(
+                    "unproven session anchor after open permanently abstains"
+                )
+            return anchor
         anchor_files = sorted(anchors.iterdir(), key=lambda item: item.name)
         for anchor_file in anchor_files:
             if (
@@ -512,7 +684,16 @@ def create_or_load_session_anchor(
             observed_at=_utc_now(),
         )
         body = _canonical_bytes(anchor)
-        _write_create_once(path, body, label="session anchor")
+        if not _write_proven_create_once(
+            path,
+            body,
+            proof_path=proof_path,
+            label="session anchor",
+            may_reprove_unproven=True,
+        ):  # pragma: no cover - a new path is always provable
+            raise OptionsEpisodeContextCaptureError(
+                "cannot prove prospective session anchor publication"
+            )
         return validate_session_anchor(anchor)
     except OSError as exc:
         raise OptionsEpisodeContextCaptureError(
@@ -826,12 +1007,20 @@ def response_from_stored_capture(
     *,
     request: Mapping[str, Any],
     stored: market_memory_pit.StoredMarketMemoryContext,
+    generation: market_memory_pit.PinnedGenerationSnapshot | None = None,
 ) -> dict[str, Any]:
     """Authenticate a sole-writer result against the active W1A generation."""
 
     clean = validate_capture_request(request)
     receipt = stored.capture_receipt
-    generation = market_memory_pit.FileAsKnownAtReader(root).read_active_generation()
+    if generation is None:
+        generation = market_memory_pit.FileAsKnownAtReader(
+            root
+        ).read_active_generation()
+    if generation.profile != market_memory_pit.STORE_PROFILE:
+        raise OptionsEpisodeContextCaptureError(
+            "capture response generation belongs to another profile"
+        )
     if not any(
         row.query_id == receipt["query_id"]
         and row.capture_id == receipt["capture_id"]
@@ -859,6 +1048,33 @@ def response_from_stored_capture(
         "authority": dict(market_memory.AUTHORITY),
     }
     return validate_capture_response(response, request=clean)
+
+
+def responses_from_stored_batch(
+    root: str | Path,
+    *,
+    captures: list[
+        tuple[Mapping[str, Any], market_memory_pit.StoredMarketMemoryContext]
+    ],
+) -> list[dict[str, Any]]:
+    """Project every batch ACK from one final authenticated active HEAD pin."""
+
+    if not captures or len(captures) > MAX_BATCH_REQUESTS:
+        raise OptionsEpisodeContextCaptureError(
+            "capture response batch count exceeds its bound"
+        )
+    generation = market_memory_pit.FileAsKnownAtReader(
+        root
+    ).read_active_generation()
+    return [
+        response_from_stored_capture(
+            root,
+            request=request,
+            stored=stored,
+            generation=generation,
+        )
+        for request, stored in captures
+    ]
 
 
 def validate_capture_response(
@@ -954,9 +1170,13 @@ def validate_transport_receipt(
     status_value = receipt.get("status")
     if status_value not in {
         "captured",
+        "abstained_missing_proven_precommit",
+        "abstained_unproven_precommit",
         "expired_before_transport",
         "expired_before_owner_availability",
-        "outcome_unknown_after_transport",
+        "pretransport_intent_publication_error",
+        "pretransport_spawn_error",
+        "outcome_unknown_after_durable_transport_intent",
     }:
         raise OptionsEpisodeContextCaptureError("transport receipt status drift")
     completed_at, _ = _exact_utc(
@@ -1001,47 +1221,131 @@ def validate_transport_receipt(
     return receipt
 
 
-def validate_transport_attempt(
+def owner_availability_binding(request: Mapping[str, Any]) -> dict[str, str]:
+    clean = validate_capture_request(request)
+    return {
+        "request_id": clean["request_id"],
+        "request_sha256": sha256(_canonical_bytes(clean)).hexdigest(),
+    }
+
+
+def _owner_availability_receipt(request: Mapping[str, Any]) -> dict[str, Any]:
+    clean = validate_capture_request(request)
+    return {
+        "schema": OWNER_AVAILABILITY_SCHEMA,
+        **owner_availability_binding(clean),
+        "owner_event_id": clean["owner"]["source_event_id"],
+        "available_at": clean["owner"]["available_at"],
+        "status": "owner_availability_durable",
+        "evidence_policy": copy.deepcopy(_EVIDENCE_POLICY),
+        "authority": dict(market_memory.AUTHORITY),
+    }
+
+
+def validate_owner_availability_receipt(
     value: Mapping[str, Any], *, request: Mapping[str, Any]
 ) -> dict[str, Any]:
+    expected = _owner_availability_receipt(request)
+    if not isinstance(value, Mapping) or dict(value) != expected:
+        raise OptionsEpisodeContextCaptureError(
+            "owner availability receipt does not bind the exact request"
+        )
+    return copy.deepcopy(expected)
+
+
+def _batch_intent_projection(
+    requests: list[Mapping[str, Any]], *, intended_at: datetime
+) -> dict[str, Any]:
+    clean = [validate_capture_request(request) for request in requests]
+    rows = [owner_availability_binding(request) for request in clean]
+    intent: dict[str, Any] = {
+        "schema": TRANSPORT_BATCH_INTENT_SCHEMA,
+        "batch_id": "mmoptbatch_" + "0" * 64,
+        "requests": rows,
+        "status": "durable_transport_intent",
+        "intended_at": _format_utc(intended_at.astimezone(timezone.utc)),
+        "ssh_target": _REMOTE_TARGET,
+        "evidence_policy": copy.deepcopy(_EVIDENCE_POLICY),
+        "authority": dict(market_memory.AUTHORITY),
+    }
+    intent["batch_id"] = _content_id("mmoptbatch_", intent, field="batch_id")
+    return intent
+
+
+def _validate_transport_batch_intent_shape(value: Mapping[str, Any]) -> dict[str, Any]:
     fields = {
         "schema",
-        "request_id",
-        "request_sha256",
+        "batch_id",
+        "requests",
         "status",
-        "attempted_at",
+        "intended_at",
         "ssh_target",
         "evidence_policy",
         "authority",
     }
     if not isinstance(value, Mapping) or set(value) != fields:
-        raise OptionsEpisodeContextCaptureError("transport attempt fields drift")
-    attempt = copy.deepcopy(dict(value))
-    clean = validate_capture_request(request)
-    attempted_at, _ = _exact_utc(
-        attempt.get("attempted_at"), field="transport_attempt.attempted_at"
-    )
-    cutoff, _ = _exact_utc(
-        clean["owner"]["available_at"], field="request.available_at"
-    )
-    if not cutoff - MAX_FUTURE_SKEW <= attempted_at <= cutoff + MAX_SEND_AGE:
-        raise OptionsEpisodeContextCaptureError(
-            "transport attempt falls outside the contemporaneous send window"
-        )
+        raise OptionsEpisodeContextCaptureError("transport batch intent fields drift")
+    intent = copy.deepcopy(dict(value))
+    rows = intent.get("requests")
     if (
-        attempt.get("schema") != TRANSPORT_ATTEMPT_SCHEMA
-        or attempt.get("request_id") != clean["request_id"]
-        or attempt.get("request_sha256")
-        != sha256(_canonical_bytes(clean)).hexdigest()
-        or attempt.get("status") != "transport_started"
-        or attempt.get("ssh_target") != _REMOTE_TARGET
-        or attempt.get("evidence_policy") != _EVIDENCE_POLICY
-        or attempt.get("authority") != dict(market_memory.AUTHORITY)
+        not isinstance(rows, list)
+        or not rows
+        or len(rows) > MAX_BATCH_REQUESTS
+        or any(
+            not isinstance(row, Mapping)
+            or set(row) != {"request_id", "request_sha256"}
+            or type(row.get("request_id")) is not str
+            or _REQUEST_ID.fullmatch(row["request_id"]) is None
+            or type(row.get("request_sha256")) is not str
+            or _SHA256.fullmatch(row["request_sha256"]) is None
+            for row in rows
+        )
+        or len({row["request_id"] for row in rows}) != len(rows)
+        or intent.get("schema") != TRANSPORT_BATCH_INTENT_SCHEMA
+        or intent.get("status") != "durable_transport_intent"
+        or intent.get("ssh_target") != _REMOTE_TARGET
+        or intent.get("evidence_policy") != _EVIDENCE_POLICY
+        or intent.get("authority") != dict(market_memory.AUTHORITY)
+        or type(intent.get("batch_id")) is not str
+        or _BATCH_ID.fullmatch(intent["batch_id"]) is None
+        or _content_id("mmoptbatch_", intent, field="batch_id")
+        != intent["batch_id"]
     ):
         raise OptionsEpisodeContextCaptureError(
-            "transport attempt does not bind the exact request"
+            "transport batch intent shape or identity drift"
         )
-    return attempt
+    _exact_utc(
+        intent.get("intended_at"), field="transport_batch_intent.intended_at"
+    )
+    return intent
+
+
+def validate_transport_batch_intent(
+    value: Mapping[str, Any], *, requests: list[Mapping[str, Any]]
+) -> dict[str, Any]:
+    intent = _validate_transport_batch_intent_shape(value)
+    if not requests or len(requests) > MAX_BATCH_REQUESTS:
+        raise OptionsEpisodeContextCaptureError("transport batch intent count drift")
+    clean = [validate_capture_request(request) for request in requests]
+    intended_at, _ = _exact_utc(
+        intent.get("intended_at"), field="transport_batch_intent.intended_at"
+    )
+    for request in clean:
+        cutoff, _ = _exact_utc(
+            request["owner"]["available_at"], field="request.available_at"
+        )
+        if not cutoff - MAX_FUTURE_SKEW <= intended_at <= cutoff + MAX_SEND_AGE:
+            raise OptionsEpisodeContextCaptureError(
+                "transport batch intent falls outside the contemporaneous send window"
+            )
+    expected = _batch_intent_projection(clean, intended_at=intended_at)
+    if (
+        intent != expected
+    ):
+        raise OptionsEpisodeContextCaptureError(
+            "transport batch intent does not bind the ordered exact requests"
+        )
+    return intent
 
 
 class OptionsContextDispatcher:
@@ -1066,9 +1370,14 @@ class OptionsContextDispatcher:
             )
         self.root = _private_directory(Path(root))
         self.anchors = _private_child(self.root, "anchors")
+        self.anchor_proofs = _private_child(self.root, "anchor_proofs")
         self.prepared = _private_child(self.root, "prepared")
+        self.prepared_proofs = _private_child(self.root, "prepared_proofs")
         self.pending = _private_child(self.root, "pending")
-        self.attempts = _private_child(self.root, "attempts")
+        self.pending_proofs = _private_child(self.root, "pending_proofs")
+        self.owner_available = _private_child(self.root, "owner_available")
+        self.intents = _private_child(self.root, "transport_intents")
+        self.intent_proofs = _private_child(self.root, "transport_intent_proofs")
         self.receipts = _private_child(self.root, "receipts")
         self.anchor = validate_session_anchor(anchor)
         self.ssh_target = ssh_target
@@ -1100,6 +1409,26 @@ class OptionsContextDispatcher:
                 )
         return files
 
+    def _intent_files(self) -> list[Path]:
+        files = sorted(self.intents.iterdir(), key=lambda item: item.name)
+        for path in files:
+            if (
+                path.is_symlink()
+                or not path.is_file()
+                or _BATCH_ID.fullmatch(path.stem) is None
+                or path.suffix != ".json"
+            ):
+                raise OptionsEpisodeContextCaptureError(
+                    "transport intent store contains an unowned path"
+                )
+        return files
+
+    @staticmethod
+    def _remove_state(path: Path, proof_path: Path | None = None) -> None:
+        _unlink_durable(path)
+        if proof_path is not None:
+            _unlink_durable(proof_path)
+
     def prepare(
         self, *, owner_event: Mapping[str, Any], session_date: str
     ) -> dict[str, Any] | None:
@@ -1110,6 +1439,10 @@ class OptionsContextDispatcher:
             owner_event=owner_event,
             session_date=session_date,
         )
+
+    @staticmethod
+    def availability_binding(request: Mapping[str, Any]) -> dict[str, str]:
+        return owner_availability_binding(request)
 
     def stage(self, request: Mapping[str, Any] | None) -> str | None:
         """Durably precommit exact bytes before the owner availability fsync.
@@ -1130,6 +1463,7 @@ class OptionsContextDispatcher:
             receipts = self._files(self.receipts)
             receipt_path = self.receipts / f"{request['request_id']}.json"
             if receipt_path.exists():
+                _fsync_directory(self.receipts)
                 validate_transport_receipt(
                     _strict_object(
                         _read_file(
@@ -1154,6 +1488,35 @@ class OptionsContextDispatcher:
                     raise OptionsEpisodeContextCaptureError(
                         "immutable pending capture request collision"
                     )
+                owner_path = self.owner_available / f"{request['request_id']}.json"
+                owner = validate_owner_availability_receipt(
+                    _strict_object(
+                        _read_file(
+                            owner_path,
+                            maximum=MAX_REQUEST_BYTES,
+                            label="owner availability receipt",
+                        ),
+                        label="owner availability receipt",
+                        maximum=MAX_REQUEST_BYTES,
+                    ),
+                    request=request,
+                )
+                _write_create_once(
+                    owner_path,
+                    _canonical_bytes(owner),
+                    label="owner availability receipt",
+                    recover_existing=True,
+                )
+                if not _write_proven_create_once(
+                    pending_path,
+                    body,
+                    proof_path=self.pending_proofs / f"{request['request_id']}.json",
+                    label="pending capture request",
+                    may_reprove_unproven=True,
+                ):  # pragma: no cover - owner proof permits recovery
+                    raise OptionsEpisodeContextCaptureError(
+                        "cannot prove pending capture request"
+                    )
                 return request["request_id"]
             path = self.prepared / f"{request['request_id']}.json"
             if not path.exists() and len(prepared) + len(pending) >= MAX_PENDING_REQUESTS:
@@ -1168,12 +1531,26 @@ class OptionsContextDispatcher:
                 raise OptionsEpisodeContextCaptureError(
                     "capture outbox reached its pilot lifetime bound"
                 )
-            _write_create_once(path, body, label="prepared capture request")
+            if not _write_proven_create_once(
+                path,
+                body,
+                proof_path=self.prepared_proofs / f"{request['request_id']}.json",
+                label="prepared capture request",
+                may_reprove_unproven=True,
+            ):  # pragma: no cover - stage is the pre-availability recovery boundary
+                raise OptionsEpisodeContextCaptureError(
+                    "cannot prove prepared capture request"
+                )
         finally:
             self._unlock(descriptor)
         return request["request_id"]
 
-    def commit(self, request: Mapping[str, Any] | None) -> str | None:
+    def commit(
+        self,
+        request: Mapping[str, Any] | None,
+        *,
+        owner_binding: Mapping[str, Any] | None = None,
+    ) -> str | None:
         """Promote only exact precommitted bytes after owner availability fsync."""
 
         if request is None:
@@ -1181,12 +1558,28 @@ class OptionsContextDispatcher:
         request = validate_capture_request(request)
         body = _canonical_bytes(request)
         request_id = request["request_id"]
+        expected_binding = owner_availability_binding(request)
+        if owner_binding is not None and dict(owner_binding) != expected_binding:
+            raise OptionsEpisodeContextCaptureError(
+                "owner availability binding differs from the exact request"
+            )
         descriptor = self._lock()
         try:
             prepared_path = self.prepared / f"{request_id}.json"
+            prepared_proof = self.prepared_proofs / f"{request_id}.json"
             pending_path = self.pending / f"{request_id}.json"
+            pending_proof = self.pending_proofs / f"{request_id}.json"
             receipt_path = self.receipts / f"{request_id}.json"
+            owner_path = self.owner_available / f"{request_id}.json"
+            owner_receipt = _owner_availability_receipt(request)
+            _write_create_once(
+                owner_path,
+                _canonical_bytes(owner_receipt),
+                label="owner availability receipt",
+                recover_existing=True,
+            )
             if receipt_path.exists():
+                _fsync_directory(self.receipts)
                 validate_transport_receipt(
                     _strict_object(
                         _read_file(
@@ -1209,8 +1602,18 @@ class OptionsContextDispatcher:
                         raise OptionsEpisodeContextCaptureError(
                             "prepared capture request differs from its terminal receipt"
                         )
-                    prepared_path.unlink()
-                    _fsync_directory(self.prepared)
+                    self._remove_state(prepared_path, prepared_proof)
+                if pending_path.exists():
+                    pending = _read_file(
+                        pending_path,
+                        maximum=MAX_REQUEST_BYTES,
+                        label="pending capture request",
+                    )
+                    if pending != body:
+                        raise OptionsEpisodeContextCaptureError(
+                            "pending capture request differs from its terminal receipt"
+                        )
+                    self._remove_state(pending_path, pending_proof)
                 return request_id
             if pending_path.exists():
                 existing = _read_file(
@@ -1222,11 +1625,29 @@ class OptionsContextDispatcher:
                     raise OptionsEpisodeContextCaptureError(
                         "immutable pending capture request collision"
                     )
+                if not _write_proven_create_once(
+                    pending_path,
+                    body,
+                    proof_path=pending_proof,
+                    label="pending capture request",
+                    may_reprove_unproven=True,
+                ):  # pragma: no cover - durable owner receipt permits re-proof
+                    raise OptionsEpisodeContextCaptureError(
+                        "cannot prove pending capture request"
+                    )
+                if prepared_path.exists():
+                    self._remove_state(prepared_path, prepared_proof)
                 return request_id
             if not prepared_path.exists():
-                # Replay may promote bytes observed before the availability
-                # fsync, but absence is an abstention: never build a new file.
-                return None
+                self._complete(
+                    path=prepared_path,
+                    proof_path=prepared_proof,
+                    request=request,
+                    status="abstained_missing_proven_precommit",
+                    response=None,
+                    completed_at=_utc_now().astimezone(timezone.utc),
+                )
+                return request_id
             existing = _read_file(
                 prepared_path,
                 maximum=MAX_REQUEST_BYTES,
@@ -1236,21 +1657,32 @@ class OptionsContextDispatcher:
                 raise OptionsEpisodeContextCaptureError(
                     "prepared capture request differs from the durable owner cutoff"
                 )
-            try:
-                os.link(prepared_path, pending_path, follow_symlinks=False)
-                _fsync_directory(self.pending)
-            except FileExistsError:
-                pending = _read_file(
-                    pending_path,
-                    maximum=MAX_REQUEST_BYTES,
-                    label="pending capture request",
+            if not _has_publication_proof(
+                prepared_path,
+                body,
+                proof_path=prepared_proof,
+                label="prepared capture request",
+            ):
+                self._complete(
+                    path=prepared_path,
+                    proof_path=prepared_proof,
+                    request=request,
+                    status="abstained_unproven_precommit",
+                    response=None,
+                    completed_at=_utc_now().astimezone(timezone.utc),
                 )
-                if pending != body:
-                    raise OptionsEpisodeContextCaptureError(
-                        "immutable pending capture request collision"
-                    )
-            prepared_path.unlink()
-            _fsync_directory(self.prepared)
+                return request_id
+            if not _write_proven_create_once(
+                pending_path,
+                body,
+                proof_path=pending_proof,
+                label="pending capture request",
+                may_reprove_unproven=True,
+            ):  # pragma: no cover - durable owner receipt permits re-proof
+                raise OptionsEpisodeContextCaptureError(
+                    "cannot prove pending capture request"
+                )
+            self._remove_state(prepared_path, prepared_proof)
         except OSError as exc:
             raise OptionsEpisodeContextCaptureError(
                 "cannot commit the prepared capture request"
@@ -1260,7 +1692,11 @@ class OptionsContextDispatcher:
         return request_id
 
     def recover(
-        self, *, owner_event: Mapping[str, Any], session_date: str
+        self,
+        *,
+        owner_event: Mapping[str, Any],
+        session_date: str,
+        owner_binding: Mapping[str, Any] | None = None,
     ) -> str | None:
         """Promote a prior precommit; absence stays an explicit abstention."""
 
@@ -1269,14 +1705,29 @@ class OptionsContextDispatcher:
             owner_event=owner_event,
             session_date=session_date,
         )
-        return self.commit(expected)
+        if expected is None:
+            return None
+        if owner_binding is None:
+            # Compatibility for direct callers that already own the durable
+            # cutoff: absence still cannot manufacture a request.
+            request_id = expected["request_id"]
+            if not (
+                (self.prepared / f"{request_id}.json").exists()
+                or (self.pending / f"{request_id}.json").exists()
+                or (self.receipts / f"{request_id}.json").exists()
+            ):
+                return None
+        return self.commit(expected, owner_binding=owner_binding)
 
     def enqueue(self, *, owner_event: Mapping[str, Any], session_date: str) -> str | None:
         """Convenience wrapper for callers that already own a durable cutoff."""
 
         request = self.prepare(owner_event=owner_event, session_date=session_date)
         self.stage(request)
-        return self.commit(request)
+        return self.commit(
+            request,
+            owner_binding=(owner_availability_binding(request) if request else None),
+        )
 
     def _transport_key_ready(self) -> None:
         try:
@@ -1315,55 +1766,86 @@ class OptionsContextDispatcher:
         }
         return receipt
 
-    def _start_attempt(
-        self, *, request: Mapping[str, Any], attempted_at: datetime
-    ) -> dict[str, Any]:
-        attempt = {
-            "schema": TRANSPORT_ATTEMPT_SCHEMA,
-            "request_id": request["request_id"],
-            "request_sha256": sha256(_canonical_bytes(request)).hexdigest(),
-            "status": "transport_started",
-            "attempted_at": _format_utc(attempted_at.astimezone(timezone.utc)),
-            "ssh_target": self.ssh_target,
-            "evidence_policy": copy.deepcopy(_EVIDENCE_POLICY),
-            "authority": dict(market_memory.AUTHORITY),
-        }
-        attempt = validate_transport_attempt(attempt, request=request)
-        path = self.attempts / f"{request['request_id']}.json"
-        _write_create_once(
+    def _start_batch_intent(
+        self, *, requests: list[Mapping[str, Any]], intended_at: datetime
+    ) -> tuple[dict[str, Any], Path, Path]:
+        intent = validate_transport_batch_intent(
+            _batch_intent_projection(requests, intended_at=intended_at),
+            requests=requests,
+        )
+        path = self.intents / f"{intent['batch_id']}.json"
+        proof_path = self.intent_proofs / f"{intent['batch_id']}.json"
+        if not _write_proven_create_once(
             path,
-            _canonical_bytes(attempt),
-            label="capture transport attempt",
-        )
-        return attempt
+            _canonical_bytes(intent),
+            proof_path=proof_path,
+            label="transport batch intent",
+            may_reprove_unproven=False,
+        ):
+            raise OptionsEpisodeContextCaptureError(
+                "transport batch intent is not durably proven"
+            )
+        return intent, path, proof_path
 
-    def _read_attempt(
+    def _intent_state_for(
         self, *, request: Mapping[str, Any]
-    ) -> dict[str, Any] | None:
-        path = self.attempts / f"{request['request_id']}.json"
-        if not path.exists():
-            return None
-        return validate_transport_attempt(
-            _strict_object(
-                _read_file(
-                    path,
-                    maximum=MAX_REQUEST_BYTES,
-                    label="capture transport attempt",
-                ),
-                label="capture transport attempt",
+    ) -> tuple[str, Path, Path] | None:
+        binding = owner_availability_binding(request)
+        matches: list[tuple[str, Path, Path]] = []
+        for path in self._intent_files():
+            body = _read_file(
+                path,
                 maximum=MAX_REQUEST_BYTES,
-            ),
-            request=request,
-        )
+                label="transport batch intent",
+            )
+            intent = _validate_transport_batch_intent_shape(
+                _strict_object(
+                    body,
+                    label="transport batch intent",
+                    maximum=MAX_REQUEST_BYTES,
+                )
+            )
+            if binding not in intent["requests"]:
+                continue
+            intended_at, _ = _exact_utc(
+                intent["intended_at"], field="transport_batch_intent.intended_at"
+            )
+            cutoff, _ = _exact_utc(
+                request["owner"]["available_at"], field="request.available_at"
+            )
+            if not cutoff - MAX_FUTURE_SKEW <= intended_at <= cutoff + MAX_SEND_AGE:
+                raise OptionsEpisodeContextCaptureError(
+                    "transport intent/request clock binding drift"
+                )
+            proof_path = self.intent_proofs / path.name
+            proven = _has_publication_proof(
+                path,
+                body,
+                proof_path=proof_path,
+                label="transport batch intent",
+            )
+            matches.append(("proven" if proven else "unproven", path, proof_path))
+        if len(matches) > 1:
+            raise OptionsEpisodeContextCaptureError(
+                "request is bound by multiple transport batch intents"
+            )
+        return matches[0] if matches else None
 
     def _reconcile_terminal(
-        self, *, path: Path, request: Mapping[str, Any]
+        self,
+        *,
+        path: Path,
+        proof_path: Path | None,
+        request: Mapping[str, Any],
     ) -> bool:
         """Finish a crash-interrupted unlink after a terminal receipt fsync."""
 
         receipt_path = self.receipts / f"{request['request_id']}.json"
         if not receipt_path.exists():
             return False
+        # A visible link after a failed receipt-parent fsync is not yet a
+        # deletion license.  Re-establish that exact directory durability first.
+        _fsync_directory(self.receipts)
         validate_transport_receipt(
             _strict_object(
                 _read_file(
@@ -1376,14 +1858,14 @@ class OptionsContextDispatcher:
             ),
             request=request,
         )
-        path.unlink()
-        _fsync_directory(path.parent)
+        self._remove_state(path, proof_path)
         return True
 
     def _complete(
         self,
         *,
         path: Path,
+        proof_path: Path | None = None,
         request: Mapping[str, Any],
         status: str,
         response: Mapping[str, Any] | None,
@@ -1398,6 +1880,7 @@ class OptionsContextDispatcher:
         receipt = validate_transport_receipt(receipt, request=request)
         receipt_path = self.receipts / f"{request['request_id']}.json"
         if receipt_path.exists():
+            _fsync_directory(self.receipts)
             existing = validate_transport_receipt(
                 _strict_object(
                     _read_file(
@@ -1422,9 +1905,12 @@ class OptionsContextDispatcher:
                 receipt_path,
                 _canonical_bytes(receipt),
                 label="capture transport receipt",
+                recover_existing=True,
             )
-        path.unlink()
-        _fsync_directory(path.parent)
+        # Re-sync even after a successful helper return so fault-injection at
+        # the first parent sync cannot be laundered by deleting source state.
+        _fsync_directory(self.receipts)
+        self._remove_state(path, proof_path)
 
     def flush_pending(self) -> dict[str, int]:
         """Send at most eight fresh requests; expire late work without backfill."""
@@ -1435,9 +1921,9 @@ class OptionsContextDispatcher:
             selected: list[tuple[Path, dict[str, Any]]] = []
             expired = 0
             unknown = 0
-            # A precommit is never sent.  If its owner availability receipt was
-            # not durably observed and promoted within W1A, retain a terminal
-            # private abstention instead of allowing unbounded orphan growth.
+            # A precommit is never sent.  A durable owner receipt, however, is a
+            # replayable promotion obligation even if the live-flow caller died
+            # after its availability ledger fsync and swallowed no exception.
             for path in self._files(self.prepared):
                 body = _read_file(
                     path, maximum=MAX_REQUEST_BYTES, label="prepared capture request"
@@ -1449,17 +1935,60 @@ class OptionsContextDispatcher:
                         maximum=MAX_REQUEST_BYTES,
                     )
                 )
-                if self._reconcile_terminal(path=path, request=request):
+                proof_path = self.prepared_proofs / path.name
+                if self._reconcile_terminal(
+                    path=path, proof_path=proof_path, request=request
+                ):
                     continue
-                if self._read_attempt(request=request) is not None:
-                    self._complete(
-                        path=path,
+                owner_path = self.owner_available / path.name
+                if owner_path.exists() or owner_path.is_symlink():
+                    owner = validate_owner_availability_receipt(
+                        _strict_object(
+                            _read_file(
+                                owner_path,
+                                maximum=MAX_REQUEST_BYTES,
+                                label="owner availability receipt",
+                            ),
+                            label="owner availability receipt",
+                            maximum=MAX_REQUEST_BYTES,
+                        ),
                         request=request,
-                        status="outcome_unknown_after_transport",
-                        response=None,
-                        completed_at=now,
                     )
-                    unknown += 1
+                    _write_create_once(
+                        owner_path,
+                        _canonical_bytes(owner),
+                        label="owner availability receipt",
+                        recover_existing=True,
+                    )
+                    if not _has_publication_proof(
+                        path,
+                        body,
+                        proof_path=proof_path,
+                        label="prepared capture request",
+                    ):
+                        self._complete(
+                            path=path,
+                            proof_path=proof_path,
+                            request=request,
+                            status="abstained_unproven_precommit",
+                            response=None,
+                            completed_at=now,
+                        )
+                        expired += 1
+                        continue
+                    pending_path = self.pending / path.name
+                    pending_proof = self.pending_proofs / path.name
+                    if not _write_proven_create_once(
+                        pending_path,
+                        body,
+                        proof_path=pending_proof,
+                        label="pending capture request",
+                        may_reprove_unproven=True,
+                    ):
+                        raise OptionsEpisodeContextCaptureError(
+                            "cannot recover pending capture publication"
+                        )
+                    self._remove_state(path, proof_path)
                     continue
                 cutoff, _ = _exact_utc(
                     request["owner"]["available_at"], field="request.available_at"
@@ -1467,6 +1996,7 @@ class OptionsContextDispatcher:
                 if now - cutoff > MAX_SEND_AGE:
                     self._complete(
                         path=path,
+                        proof_path=proof_path,
                         request=request,
                         status="expired_before_owner_availability",
                         response=None,
@@ -1484,17 +2014,61 @@ class OptionsContextDispatcher:
                         maximum=MAX_REQUEST_BYTES,
                     )
                 )
-                if self._reconcile_terminal(path=path, request=request):
+                proof_path = self.pending_proofs / path.name
+                if self._reconcile_terminal(
+                    path=path, proof_path=proof_path, request=request
+                ):
                     continue
-                if self._read_attempt(request=request) is not None:
+                owner_path = self.owner_available / path.name
+                owner = validate_owner_availability_receipt(
+                    _strict_object(
+                        _read_file(
+                            owner_path,
+                            maximum=MAX_REQUEST_BYTES,
+                            label="owner availability receipt",
+                        ),
+                        label="owner availability receipt",
+                        maximum=MAX_REQUEST_BYTES,
+                    ),
+                    request=request,
+                )
+                _write_create_once(
+                    owner_path,
+                    _canonical_bytes(owner),
+                    label="owner availability receipt",
+                    recover_existing=True,
+                )
+                if not _write_proven_create_once(
+                    path,
+                    body,
+                    proof_path=proof_path,
+                    label="pending capture request",
+                    may_reprove_unproven=True,
+                ):
+                    raise OptionsEpisodeContextCaptureError(
+                        "cannot prove pending capture request"
+                    )
+                prior_intent = self._intent_state_for(request=request)
+                if prior_intent is not None:
+                    intent_state, intent_path, intent_proof = prior_intent
+                    status = (
+                        "outcome_unknown_after_durable_transport_intent"
+                        if intent_state == "proven"
+                        else "pretransport_intent_publication_error"
+                    )
                     self._complete(
                         path=path,
+                        proof_path=proof_path,
                         request=request,
-                        status="outcome_unknown_after_transport",
+                        status=status,
                         response=None,
                         completed_at=now,
                     )
-                    unknown += 1
+                    if intent_state == "proven":
+                        unknown += 1
+                    else:
+                        expired += 1
+                        self._remove_state(intent_path, intent_proof)
                     continue
                 cutoff, _ = _exact_utc(
                     request["owner"]["available_at"], field="request.available_at"
@@ -1502,6 +2076,7 @@ class OptionsContextDispatcher:
                 if now - cutoff > MAX_SEND_AGE:
                     self._complete(
                         path=path,
+                        proof_path=proof_path,
                         request=request,
                         status="expired_before_transport",
                         response=None,
@@ -1547,8 +2122,32 @@ class OptionsContextDispatcher:
                 self.ssh_target,
             ]
             attempted_at = _utc_now().astimezone(timezone.utc)
-            for _path, request in selected:
-                self._start_attempt(request=request, attempted_at=attempted_at)
+            requests = [request for _path, request in selected]
+            intent = _batch_intent_projection(requests, intended_at=attempted_at)
+            intent_path = self.intents / f"{intent['batch_id']}.json"
+            intent_proof = self.intent_proofs / intent_path.name
+            try:
+                self._start_batch_intent(
+                    requests=requests, intended_at=attempted_at
+                )
+            except OptionsEpisodeContextCaptureError:
+                completed = _utc_now().astimezone(timezone.utc)
+                for path, request in selected:
+                    self._complete(
+                        path=path,
+                        proof_path=self.pending_proofs / path.name,
+                        request=request,
+                        status="pretransport_intent_publication_error",
+                        response=None,
+                        completed_at=completed,
+                    )
+                self._remove_state(intent_path, intent_proof)
+                return {
+                    "captured": 0,
+                    "expired": expired + len(selected),
+                    "unknown": unknown,
+                    "pending": len(self._files(self.pending)),
+                }
             try:
                 result = subprocess.run(
                     command,
@@ -1557,13 +2156,31 @@ class OptionsContextDispatcher:
                     timeout=30,
                     check=False,
                 )
-            except (OSError, subprocess.SubprocessError):
+            except OSError:
                 completed = _utc_now().astimezone(timezone.utc)
                 for path, request in selected:
                     self._complete(
                         path=path,
+                        proof_path=self.pending_proofs / path.name,
                         request=request,
-                        status="outcome_unknown_after_transport",
+                        status="pretransport_spawn_error",
+                        response=None,
+                        completed_at=completed,
+                    )
+                return {
+                    "captured": 0,
+                    "expired": expired + len(selected),
+                    "unknown": unknown,
+                    "pending": len(self._files(self.pending)),
+                }
+            except subprocess.SubprocessError:
+                completed = _utc_now().astimezone(timezone.utc)
+                for path, request in selected:
+                    self._complete(
+                        path=path,
+                        proof_path=self.pending_proofs / path.name,
+                        request=request,
+                        status="outcome_unknown_after_durable_transport_intent",
                         response=None,
                         completed_at=completed,
                     )
@@ -1606,6 +2223,7 @@ class OptionsContextDispatcher:
                 path, request = requests_by_id[request_id]
                 self._complete(
                     path=path,
+                    proof_path=self.pending_proofs / path.name,
                     request=request,
                     status="captured",
                     response=response,
@@ -1620,8 +2238,9 @@ class OptionsContextDispatcher:
                 for path, request in unresolved:
                     self._complete(
                         path=path,
+                        proof_path=self.pending_proofs / path.name,
                         request=request,
-                        status="outcome_unknown_after_transport",
+                        status="outcome_unknown_after_durable_transport_intent",
                         response=None,
                         completed_at=completed,
                     )
@@ -1672,19 +2291,23 @@ __all__ = [
     "MAX_BATCH_REQUESTS",
     "MAX_DRAIN_BATCHES",
     "MAX_REQUEST_BYTES",
+    "OWNER_AVAILABILITY_SCHEMA",
     "REQUEST_SCHEMA",
     "RESPONSE_SCHEMA",
-    "TRANSPORT_ATTEMPT_SCHEMA",
+    "TRANSPORT_BATCH_INTENT_SCHEMA",
     "TRANSPORT_RECEIPT_SCHEMA",
     "OptionsContextDispatcher",
     "OptionsEpisodeContextCaptureError",
     "build_capture_request",
     "create_or_load_session_anchor",
     "initialize_dispatcher",
+    "owner_availability_binding",
     "response_from_stored_capture",
+    "responses_from_stored_batch",
     "validate_capture_request",
     "validate_capture_response",
+    "validate_owner_availability_receipt",
     "validate_session_anchor",
-    "validate_transport_attempt",
+    "validate_transport_batch_intent",
     "validate_transport_receipt",
 ]
