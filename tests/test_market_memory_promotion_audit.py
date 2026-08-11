@@ -290,6 +290,15 @@ def test_exact_loader_rejects_duplicate_noncanonical_nonbytes_and_bounds() -> No
         audit.load_feature_promotion_audit_json(bytearray(exact))  # type: ignore[arg-type]
 
 
+def test_exact_loader_wraps_oversized_json_integer_as_contract_error() -> None:
+    hostile = b'{"oversized_integer":' + b"1" * 4301 + b"}"
+    with pytest.raises(
+        audit.MarketMemoryPromotionAuditContractError, match="JSON is malformed"
+    ) as caught:
+        audit.load_feature_promotion_audit_json(hostile)
+    assert type(caught.value.__cause__) is ValueError
+
+
 @pytest.mark.parametrize(
     "audited_at",
     [

@@ -281,7 +281,12 @@ def load_feature_promotion_audit_json(raw: bytes) -> dict[str, Any]:
         )
     except MarketMemoryPromotionAuditContractError:
         raise
-    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:
+    except (
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        RecursionError,
+        ValueError,
+    ) as exc:
         raise MarketMemoryPromotionAuditContractError(
             "feature-promotion audit JSON is malformed"
         ) from exc
