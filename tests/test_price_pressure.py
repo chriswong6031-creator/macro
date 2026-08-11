@@ -21,7 +21,9 @@ What each block pins, and why it is worth a test:
 """
 from __future__ import annotations
 
+import hashlib
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -35,12 +37,14 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from engine.price_pressure import (  # noqa: E402
+    ENGINE_VERSION,
     LEDGER_HORIZONS,
     TERMINAL_PRIMARY,
     TERMINAL_SECONDARY,
 )
 from engine.price_pressure import artifact as pp_artifact  # noqa: E402
 from engine.price_pressure import base_rates as pp_base  # noqa: E402
+from engine.price_pressure import completion as pp_completion  # noqa: E402
 from engine.price_pressure import context as pp_context  # noqa: E402
 from engine.price_pressure import detect as pp_detect  # noqa: E402
 from engine.price_pressure import ledger as pp_ledger  # noqa: E402
@@ -551,6 +555,371 @@ def test_family_lands_on_the_row_and_respects_coverage(tmp_path):
     write_stores(data_dir2, edgar_tickers=("AAB",))
     _, res2 = _advance(panel, data_dir2, tmp_path / "root2")
     assert res2["ledger"].iloc[0]["family"] == "filing-coverage-unknown"
+
+
+# ---------------------------------------------------------------------------
+# §10.1 VIXCLS stamp completion
+#
+# The prereg's measured problem: the FRED store trails the tape by one session
+# at the 22:30Z harvest, so a forward row stamps vix_pctile=NULL through no
+# property of its own — and excluding nulls forever starved BOTH evidence arms
+# to zero.  Every test below runs the real two-night shape: night 1 harvests
+# against a store that is missing t0, night 2 finds t0 in the store.
+# ---------------------------------------------------------------------------
+
+def _vix_values(n: int = SESSIONS, seed: int = 5) -> np.ndarray:
+    """A VIXCLS path whose PREFIX is stable — the extended store must agree with
+    the lagging one on every shared date, or the two nights are two series."""
+    rng = np.random.default_rng(seed)
+    return (12.0 + np.abs(rng.normal(0.0, 4.0, SESSIONS)))[:n]
+
+
+def write_vix(data_dir: Path, *, through: int = SESSIONS,
+              values: np.ndarray | None = None) -> Path:
+    """A FRED VIXCLS store covering the panel's first ``through`` sessions.
+
+    ``through = SESSIONS - 1`` is the lag the prereg measured: the tape has
+    traded today, the store's newest observation is yesterday.
+    """
+    idx = pd.DatetimeIndex(_dates()[:through], name="date")
+    vals = _vix_values(through) if values is None else np.asarray(values)[:through]
+    (data_dir / "fred").mkdir(parents=True, exist_ok=True)
+    p = data_dir / "fred" / "VIXCLS.parquet"
+    pd.DataFrame({"vix_close": vals}, index=idx).to_parquet(p)
+    return p
+
+
+def _last_session_shock(data_dir: Path) -> dict:
+    """One shock on the panel's NEWEST session — the row the lag actually bites."""
+    write_stores(data_dir)
+    rets = default_returns(shock_pos=SESSIONS - 1)
+    return build_panel_frames(rets, volumes={"AAA": {SESSIONS - 1: 5.0}})
+
+
+def _receipt_lines(data_root: Path) -> list[str]:
+    p = pp_completion.receipts_path(data_root)
+    return p.read_text(encoding="utf-8").splitlines() if p.exists() else []
+
+
+def test_lag_completion_fills_the_null_stamp_and_files_a_receipt(tmp_path, capsys):
+    """(a) null stamp + t0 present + immature -> completed, receipt with the
+    SHA-256 of the exact VIXCLS bytes the value was computed from."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    panel = _last_session_shock(data_dir)
+    t0 = _dates()[SESSIONS - 1]
+
+    # Night 1: the store stops one session short, so the row stamps NULL.
+    write_vix(data_dir, through=SESSIONS - 1)
+    _, first = _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    assert len(first["ledger"]) == 1
+    assert pd.isna(first["ledger"].iloc[0]["vix_pctile"])
+    assert first["stats"]["completion"]["skipped_no_vix"] == 1
+    assert not pp_completion.receipts_path(tmp_path).exists()
+
+    # Night 2: FRED has published t0's close.
+    store = write_vix(data_dir, through=SESSIONS)
+    _, second = _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    row = second["ledger"].iloc[0]
+    cstats = second["stats"]["completion"]
+    assert cstats["candidates"] == 1 and cstats["completed"] == 1
+    assert cstats["receipts"] == 1
+
+    # The completed value is t0's OWN close percentile under the shipped §3
+    # transform — not a forward-fill of the prior session.
+    expected = float(pp_context.vix_percentile(data_dir, pd.DatetimeIndex([t0])).iloc[0])
+    assert np.isfinite(expected)
+    assert float(row["vix_pctile"]) == pytest.approx(expected, abs=0.0, rel=0.0)
+    prior = float(pp_context.vix_percentile(
+        data_dir, pd.DatetimeIndex([_dates()[SESSIONS - 2]])).iloc[0])
+    assert float(row["vix_pctile"]) != pytest.approx(prior)
+
+    lines = _receipt_lines(tmp_path)
+    assert len(lines) == 1
+    rec = json.loads(lines[0])
+    assert list(rec) == list(pp_completion.RECEIPT_FIELDS)
+    assert rec["ticker"] == "AAA" and rec["side"] == "down"
+    assert rec["date"] == str(t0.date())
+    assert rec["vix_pctile"] == pytest.approx(expected, abs=0.0, rel=0.0)
+    assert rec["engine_version"] == ENGINE_VERSION
+    assert rec["vixcls_sha256"] == hashlib.sha256(store.read_bytes()).hexdigest()
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", rec["observed_at"])
+    assert lines[0] == lines[0].rstrip()
+
+    # The counts reach the Actions log through a bare print at line start.
+    out = capsys.readouterr().out.splitlines()
+    hit = [ln for ln in out if ln.startswith("price_pressure: vix stamp completion")]
+    assert hit and "completed=1" in hit[-1] and "receipts_appended=1" in hit[-1]
+
+    # The persisted ledger carries the completion, not just the in-memory frame.
+    assert float(pp_ledger.read_ledger(tmp_path).iloc[0]["vix_pctile"]) == \
+        pytest.approx(expected, abs=0.0, rel=0.0)
+
+
+def test_completion_never_revises_a_non_null_stamp(tmp_path):
+    """(b) a stamp that disagrees with tonight's recompute is STILL immutable."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    panel = _last_session_shock(data_dir)
+    t0 = _dates()[SESSIONS - 1]
+
+    write_vix(data_dir, through=SESSIONS)
+    _, first = _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    stamped = float(first["ledger"].iloc[0]["vix_pctile"])
+    assert np.isfinite(stamped)
+
+    # Rewrite the store so a recompute would land somewhere else entirely.
+    write_vix(data_dir, through=SESSIONS, values=np.linspace(80.0, 5.0, SESSIONS))
+    recomputed = float(pp_context.vix_percentile(data_dir, pd.DatetimeIndex([t0])).iloc[0])
+    assert recomputed != pytest.approx(stamped)
+
+    _, second = _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    assert float(second["ledger"].iloc[0]["vix_pctile"]) == pytest.approx(stamped)
+    assert second["stats"]["completion"]["candidates"] == 0
+    assert not pp_completion.receipts_path(tmp_path).exists()
+
+
+def test_t0_absent_from_the_store_is_counted_not_completed(tmp_path):
+    """(c) the store cannot answer yet — the row waits inside its window."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    panel = _last_session_shock(data_dir)
+    write_vix(data_dir, through=SESSIONS - 1)
+
+    _, res = _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    cstats = res["stats"]["completion"]
+    assert cstats == {"candidates": 1, "completed": 0, "skipped_matured": 0,
+                      "skipped_no_vix": 1, "skipped_receipted": 0, "receipts": 0}
+    assert pd.isna(res["ledger"].iloc[0]["vix_pctile"])
+    assert not pp_completion.receipts_path(tmp_path).exists()
+
+
+def test_a_row_that_missed_its_window_is_never_completed(tmp_path):
+    """(d) matured endpoint or >5 sessions back -> null forever, counted."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    write_stores(data_dir)
+    panel = build_panel_frames(default_returns(), volumes={"AAA": {SHOCK_POS: 5.0}})
+
+    # Night 1 with no VIXCLS store at all: the stamp is null.
+    _, first = _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    assert pd.isna(first["ledger"].iloc[0]["vix_pctile"])
+    assert np.isfinite(first["ledger"].iloc[0]["fwd5"])
+
+    # Night 2 with a store that DOES carry t0 — but fwd5 has already graded.
+    write_vix(data_dir, through=SESSIONS)
+    _, second = _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    cstats = second["stats"]["completion"]
+    assert cstats["candidates"] == 1 and cstats["completed"] == 0
+    assert cstats["skipped_matured"] == 1 and cstats["skipped_no_vix"] == 0
+    assert pd.isna(second["ledger"].iloc[0]["vix_pctile"])
+    assert not pp_completion.receipts_path(tmp_path).exists()
+
+
+def test_dead_tape_row_is_closed_by_the_session_gate_not_by_fwd5(tmp_path):
+    """(d, second leg) fwd5 stays NULL forever on a halted name — the belt-and-
+    braces session distance is the only thing that closes that window."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    write_stores(data_dir)
+    panel = build_panel_frames(default_returns(), volumes={"AAA": {SHOCK_POS: 5.0}},
+                               dead_after={"AAA": SHOCK_POS + 2})
+    _, first = _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    assert pd.isna(first["ledger"].iloc[0]["fwd5"])          # never matures
+    assert bool(first["ledger"].iloc[0]["dead_tape"])
+
+    write_vix(data_dir, through=SESSIONS)
+    _, second = _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    cstats = second["stats"]["completion"]
+    assert cstats["candidates"] == 1 and cstats["completed"] == 0
+    assert cstats["skipped_matured"] == 1
+    assert pd.isna(second["ledger"].iloc[0]["vix_pctile"])
+
+
+def test_completion_is_idempotent_and_leaves_the_ledger_byte_stable(tmp_path):
+    """(e) a second run on the same inputs files nothing and moves nothing."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    panel = _last_session_shock(data_dir)
+    write_vix(data_dir, through=SESSIONS - 1)
+    _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    write_vix(data_dir, through=SESSIONS)
+    prep, _ = _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+
+    ledger_bytes = pp_ledger.ledger_path(tmp_path).read_bytes()
+    receipt_bytes = pp_completion.receipts_path(tmp_path).read_bytes()
+
+    again = pp_pipeline.advance(prep, tmp_path, mode="nightly", write=True,
+                                require_nightly_lane=False, cap=SESSIONS)
+    assert again["stats"]["completion"]["completed"] == 0
+    assert again["stats"]["completion"]["candidates"] == 0
+    assert pp_ledger.ledger_path(tmp_path).read_bytes() == ledger_bytes
+    assert pp_completion.receipts_path(tmp_path).read_bytes() == receipt_bytes
+
+
+def test_existing_receipt_lines_survive_a_later_append_byte_for_byte(tmp_path):
+    """(f) the file is append-only: earlier lines are never rewritten or moved,
+    and a file missing its final newline is not fused onto."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    panel = _last_session_shock(data_dir)
+
+    sentinel = json.dumps({k: v for k, v in zip(
+        pp_completion.RECEIPT_FIELDS,
+        ["ZZZ", "2026-08-11", "down", 0.5, "2026-08-12T22:31:00Z", "0" * 64,
+         ENGINE_VERSION])}, ensure_ascii=False)
+    p = pp_completion.receipts_path(tmp_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(sentinel, encoding="utf-8")          # deliberately no newline
+    before = p.read_bytes()
+
+    write_vix(data_dir, through=SESSIONS - 1)
+    _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    write_vix(data_dir, through=SESSIONS)
+    _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+
+    after = p.read_bytes()
+    assert after.startswith(before)
+    lines = _receipt_lines(tmp_path)
+    assert len(lines) == 2
+    assert lines[0] == sentinel
+    assert json.loads(lines[1])["ticker"] == "AAA"
+
+
+def test_completion_moves_no_column_other_than_vix_pctile(tmp_path):
+    """(g) full-frame equality modulo the one field the exception may fill."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    panel = _last_session_shock(data_dir)
+    write_vix(data_dir, through=SESSIONS - 1)
+    _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    before = pp_ledger.read_ledger(tmp_path)
+
+    write_vix(data_dir, through=SESSIONS)
+    _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    after = pp_ledger.read_ledger(tmp_path)
+
+    assert len(before) == len(after) == 1
+    others = [c for c in pp_ledger.LEDGER_COLUMNS if c != "vix_pctile"]
+    pd.testing.assert_frame_equal(before[others], after[others])
+    assert pd.isna(before.iloc[0]["vix_pctile"])
+    assert np.isfinite(after.iloc[0]["vix_pctile"])
+
+
+def test_complete_vix_stamps_refuses_anything_but_a_null_stamp(tmp_path):
+    """The seam is structural, not conventional: it raises rather than drift."""
+    rows = []
+    for i, tic in enumerate(("AAA", "BBB")):
+        r = {c: None for c in pp_ledger.LEDGER_COLUMNS}
+        r.update({"date": pd.Timestamp("2026-08-11"), "ticker": tic, "side": "down",
+                  "era": "forward", "vix_pctile": None if i == 0 else 0.42})
+        rows.append(r)
+    df = pp_ledger._coerce(pd.DataFrame(rows))
+
+    ok = [{"pos": 0, "ticker": "AAA", "date": "2026-08-11", "side": "down",
+           "vix_pctile": 0.87}]
+    out = pp_ledger.complete_vix_stamps(df, ok)
+    assert float(out.iloc[0]["vix_pctile"]) == pytest.approx(0.87)
+    assert float(out.iloc[1]["vix_pctile"]) == pytest.approx(0.42)
+    others = [c for c in pp_ledger.LEDGER_COLUMNS if c != "vix_pctile"]
+    pd.testing.assert_frame_equal(df[others], out[others])
+
+    # A non-null stamp is immutable — even when the plan names it explicitly.
+    with pytest.raises(AssertionError, match="immutable"):
+        pp_ledger.complete_vix_stamps(df, [{"pos": 1, "ticker": "BBB",
+                                            "date": "2026-08-11", "side": "down",
+                                            "vix_pctile": 0.9}])
+    # A stale plan pointing at the wrong row raises rather than stamping it.
+    with pytest.raises(AssertionError, match="plan says"):
+        pp_ledger.complete_vix_stamps(df, [{"pos": 0, "ticker": "BBB",
+                                            "date": "2026-08-11", "side": "down",
+                                            "vix_pctile": 0.9}])
+    with pytest.raises(AssertionError, match="outside the ledger"):
+        pp_ledger.complete_vix_stamps(df, [{"pos": 9, "ticker": "AAA",
+                                            "date": "2026-08-11", "side": "down",
+                                            "vix_pctile": 0.9}])
+    # And the caller's frame was never mutated in place.
+    assert pd.isna(df.iloc[0]["vix_pctile"])
+
+
+def test_completion_reuses_the_shipped_vix_transform_not_a_copy(tmp_path):
+    """One construction: the completing percentile IS the stamping percentile."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    write_vix(data_dir, through=SESSIONS)
+    pct, sha = pp_completion.read_vix(data_dir)
+    idx = pd.DatetimeIndex(_dates()[SESSIONS - 30:SESSIONS])
+    shipped = pp_context.vix_percentile(data_dir, idx)
+    np.testing.assert_allclose(pct.reindex(idx).to_numpy(dtype="float64"),
+                               shipped.to_numpy(dtype="float64"), rtol=0, atol=0)
+    assert sha == hashlib.sha256(
+        (data_dir / "fred" / "VIXCLS.parquet").read_bytes()).hexdigest()
+
+    # A missing store is a gap, not a crash — and it plans nothing.
+    empty_pct, empty_sha = pp_completion.read_vix(tmp_path / "nowhere")
+    assert empty_pct.empty and empty_sha is None
+
+
+def test_backfill_mode_never_completes_stamps(tmp_path):
+    """The prereg names the NIGHTLY producer; a historical seed is not it."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    panel = _last_session_shock(data_dir)
+    write_vix(data_dir, through=SESSIONS - 1)
+    _, first = _advance(panel, data_dir, tmp_path, mode="backfill")
+    assert pd.isna(first["ledger"].iloc[0]["vix_pctile"])
+    assert first["stats"]["completion"] == {}
+
+    write_vix(data_dir, through=SESSIONS)
+    _, second = _advance(panel, data_dir, tmp_path, mode="backfill")
+    assert second["stats"]["completion"] == {}
+    assert not pp_completion.receipts_path(tmp_path).exists()
+
+
+def test_receipts_are_withheld_when_the_ledger_write_is_skipped(tmp_path, monkeypatch):
+    """A receipt filed against a skipped write would fence the row out of its
+    own window forever — the one way this pass could destroy evidence."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    panel = _last_session_shock(data_dir)
+    write_vix(data_dir, through=SESSIONS - 1)
+    _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+
+    write_vix(data_dir, through=SESSIONS)
+    prep = prep_from(panel, data_dir)
+    monkeypatch.delenv("COLLECT_LANE", raising=False)
+    monkeypatch.delenv("US_LANE", raising=False)
+    res = pp_pipeline.advance(prep, tmp_path, mode="nightly", write=True,
+                              require_nightly_lane=True, cap=SESSIONS)
+    assert res["stats"]["write"]["written"] is False
+    assert res["stats"]["completion"]["completed"] == 1     # planned
+    assert res["stats"]["completion"]["receipts"] == 0      # but not filed
+    assert not pp_completion.receipts_path(tmp_path).exists()
+    # The stored row is untouched, so a later nightly still completes it.
+    assert pd.isna(pp_ledger.read_ledger(tmp_path).iloc[0]["vix_pctile"])
+
+
+def test_a_receipted_row_is_fenced_off_from_a_second_completion(tmp_path):
+    """Belt and braces on top of the null-stamp gate."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    panel = _last_session_shock(data_dir)
+    write_vix(data_dir, through=SESSIONS - 1)
+    _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+
+    t0 = _dates()[SESSIONS - 1]
+    pp_completion.append_receipts(tmp_path, [{
+        "ticker": "AAA", "date": str(t0.date()), "side": "down",
+        "vix_pctile": 0.31, "observed_at": "2026-08-12T22:31:00Z",
+        "vixcls_sha256": "0" * 64, "engine_version": ENGINE_VERSION}])
+
+    write_vix(data_dir, through=SESSIONS)
+    _, res = _advance(panel, data_dir, tmp_path, mode="nightly", cap=SESSIONS)
+    cstats = res["stats"]["completion"]
+    assert cstats["candidates"] == 1 and cstats["skipped_receipted"] == 1
+    assert cstats["completed"] == 0
+    assert pd.isna(res["ledger"].iloc[0]["vix_pctile"])
+    assert len(_receipt_lines(tmp_path)) == 1
 
 
 # ---------------------------------------------------------------------------

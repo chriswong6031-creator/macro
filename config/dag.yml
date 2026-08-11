@@ -1180,6 +1180,9 @@ lanes:
           (DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER) and this lobe ships that
           measured record as context. data/price_pressure/base_rates.json is
           frozen by a manual local backfill only and is never rewritten here.
+          Runs AFTER the collect job's FRED collectors, so data/fred/VIXCLS.parquet
+          is the freshest committed store when the §10.1 stamp-completion pass
+          fills a null vix_pctile that FRED published one session late.
           inputs: [data/massive_stock_day/, data/breadth/ticker_sectors.parquet,
                    data/edgar/earnings_8k_dates.parquet,
                    data/edgar/material_8k_events.parquet,
@@ -1187,7 +1190,8 @@ lanes:
                    data/fred/VIXCLS.parquet, data/revisions/history.parquet,
                    data/price_pressure/base_rates.json]
           outputs: [data/price_pressure/events.parquet,
-                    data/price_pressure/latest.json]
+                    data/price_pressure/latest.json,
+                    data/price_pressure/completion_receipts.jsonl]
       - id: collect_release_target_vintages
         module: scripts.collect_release_target_vintages
         note: >

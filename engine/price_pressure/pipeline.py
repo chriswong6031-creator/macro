@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from engine.price_pressure import completion as _completion
 from engine.price_pressure import context as _ctx
 from engine.price_pressure import detect as _detect
 from engine.price_pressure import ledger as _ledger
@@ -109,6 +110,14 @@ def advance(prep: dict, data_root: Path, *, mode: str = "nightly",
 
     ``mode="backfill"`` — the whole panel span, era ``backfill``, refusing to
     touch any row already forward or gap.
+
+    The nightly additionally runs the §10.1 VIXCLS stamp-completion pass after
+    the advance (``completion.py``): the FRED store trails the tape at harvest,
+    so a row's own ``vix_pctile`` often arrives a night late, and completing it
+    inside the row's maturity window is what keeps the R4 evidence arms from
+    starving to zero.  The backfill does not run it — the prereg names the
+    nightly producer, and a historical seed's rows are stamped from a store that
+    already carries their dates.
     """
     t0 = time.time()
     sessions = prep["sessions"]
@@ -132,10 +141,32 @@ def advance(prep: dict, data_root: Path, *, mode: str = "nightly",
     merged = _ledger.assign_episodes(merged, sessions)
     graded, gstats = _ledger.grade(merged, prep["d"]["cum"], sessions)
 
+    # §10.1 stamp completion — AFTER the advance, and only on the nightly, which
+    # is the producer the prereg names.  It runs against the VIXCLS store as of
+    # this run: the FRED collector refreshes and commits that store in the
+    # earlier `collect` job, so a t0 close that FRED published late simply lands
+    # on the next night, inside the row's own window.  Receipts are held back
+    # until the ledger write is known to have landed (completion module
+    # docstring) — a receipt filed against a skipped write would fence the row
+    # out of its own window forever.
+    cstats: dict = {}
+    creceipts: list[dict] = []
+    if mode == "nightly":
+        comp = _completion.run(graded, data_root, data_dir=prep["data_dir"],
+                               sessions=sessions, asof=asof_session)
+        graded, creceipts, cstats = comp["ledger"], comp["receipts"], comp["stats"]
+
     wstats = {"written": False, "reason": "write=False", "rows": int(len(graded))}
     if write:
         wstats = _ledger.write_ledger(graded, data_root,
                                       require_nightly_lane=require_nightly_lane)
+
+    if cstats:
+        appended = (_completion.append_receipts(data_root, creceipts)
+                    if (creceipts and wstats.get("written")) else 0)
+        cstats["receipts"] = appended
+        if cstats.get("candidates"):
+            print(_completion.log_line(cstats), flush=True)
 
     stats = {
         "mode": mode,
@@ -146,6 +177,7 @@ def advance(prep: dict, data_root: Path, *, mode: str = "nightly",
         "ledger_max_before": str(ledger_max.date()) if ledger_max is not None and pd.notna(ledger_max) else None,
         "merge": mstats,
         "grade": gstats,
+        "completion": cstats,
         "write": wstats,
         "elapsed_s": round(time.time() - t0, 1),
     }
