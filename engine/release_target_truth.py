@@ -362,7 +362,10 @@ def round_published_1dp(value: float) -> float:
 
 
 def _round_decimal_1dp(value: Decimal) -> float:
-    return float(value.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
+    rounded = float(value.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
+    # JSON distinguishes the spelling ``-0.0`` even though the published CPI
+    # print does not.  Canonical receipts therefore collapse signed zero.
+    return 0.0 if rounded == 0.0 else rounded
 
 
 def _row_active_on(
