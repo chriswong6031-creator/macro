@@ -745,7 +745,11 @@ function grArcRail(p){
   // unit is sessions, not calendar days"). 90 sessions is ~126 calendar days, so printing
   // "days" understated every page by ~40%. The unit word is pinned by
   // tests/test_group_read_surface.py::test_the_capitulation_age_prints_sessions_not_days.
-  var age=arc.capitulation_median_age_d;
+  // Belt and braces on the engine-side refusal. The age is nulled under the coverage
+  // floor when the artifact is REBUILT, so gating here is what closes the window on
+  // bytes that predate that — and what keeps the rail honest against any future
+  // artifact that carries a value under a state that refuses to read the group.
+  var age=(arc.state==='insufficient_coverage')?null:arc.capitulation_median_age_d;
   var note=age!=null
     ? L(`The typical member's low was about <b>${age}</b> trading session${age===1?'':'s'} ago. Context, not a signal.`,`成分股的低点中位数约在 <b>${age}</b> 个交易日前。仅为背景，不是信号。`)
     : L('Context, not a signal.','仅为背景，不是信号。');

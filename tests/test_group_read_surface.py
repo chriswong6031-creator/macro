@@ -354,6 +354,47 @@ def test_the_arc_read_discloses_its_null_verbatim_in_both_languages():
     assert js.count("GR_P8_EN") >= 3 and js.count("GR_P8_ZH") >= 3   # tile + rail + reuse
 
 
+def _rail_note(html: str) -> tuple[str, str]:
+    """The sentence under the arc rail — not the stop labels and not the hover."""
+    m = re.search(r'<div class="gpr-arc-note">.*?<span>(.*?)</span>', html, re.S)
+    assert m, f"the rail has no note: {html[:300]!r}"
+    return _langs(m.group(1))
+
+
+@needs_node
+def test_the_arc_rail_refuses_the_capitulation_age_under_the_coverage_floor():
+    """Belt and braces over the engine-side null. `capitulation_median_age_d` is a
+    MEDIAN over a cross-section the state has declined to read, and the rail was
+    printing it — "the typical member's low was about 90 trading sessions ago" — beside
+    a tile that refuses. The engine nulls it, but only when the artifact is REBUILT, so
+    the first fixture below is the exact shape sitting in site/basketdata/pulse.json
+    right now: a refused state carrying a live age.
+
+    Gating on the STATE also holds against any future artifact that publishes a value
+    under a refusal — the page never has to trust the producer for this."""
+    out = _run("""
+        var o = {};
+        o.stale = grArcRail({arc: {state: 'insufficient_coverage',
+                                   capitulation_median_age_d: 90}});
+        o.fresh = grArcRail({arc: {state: 'insufficient_coverage',
+                                   capitulation_median_age_d: null}});
+        o.real  = grArcRail({arc: {state: 'turning', capitulation_median_age_d: 8}});
+        process.stdout.write(JSON.stringify(o));
+    """)
+    for key in ("stale", "fresh"):
+        en, zh = _rail_note(out[key])
+        assert not re.search(r"\d", en), f"{key}: a figure survived the refusal: {en!r}"
+        assert not re.search(r"\d", zh), f"{key}: a figure survived the refusal: {zh!r}"
+        assert "trading session" not in en and "交易日" not in zh, (key, en, zh)
+        assert en == "Context, not a signal." and zh == "仅为背景，不是信号。", (key, en, zh)
+        for blob in (en, zh):
+            assert "undefined" not in blob and "NaN" not in blob and "null" not in blob
+    # above the floor the age is still the whole point of the note
+    en, zh = _rail_note(out["real"])
+    assert "8 trading sessions ago" in en, en
+    assert "8 个交易日前" in zh, zh
+
+
 @needs_node
 def test_the_capitulation_age_prints_sessions_not_days():
     """F-2 (audit 2026-08-10, MAJOR/correctness) — `capitulation_median_age_d` counts TRADING
