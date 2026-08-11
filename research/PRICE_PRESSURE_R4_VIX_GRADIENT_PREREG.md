@@ -177,11 +177,13 @@ percentiles. This is not the source reopener's approximate subtraction of two
 arm CIs; the direct bootstrap-difference is prospectively frozen here before
 forward evidence.
 
-The stated direction is one-sided, but passage deliberately requires the
-more conservative two-sided 95% interval to sit wholly above zero. An interval
-wholly below zero grades the claim FAILED; an interval spanning zero grades it
-INCONCLUSIVE. R4-B's endpoints are computed with the same machinery and
-printed; they gate nothing (§1, §10.3).
+R4-A's stated direction is one-sided, but its passage deliberately requires
+the more conservative two-sided 95% interval to sit wholly above zero. For
+R4-A only, an interval wholly below zero grades R4-A FAILED; an interval
+spanning zero grades it INCONCLUSIVE. R4-B's endpoints are estimated with the
+same bootstrap machinery and printed only alongside R4-A's one grading, but no
+R4-B interval maps to PASS, FAIL, or INCONCLUSIVE; they gate nothing (§1,
+§10.3).
 
 ## §5 Floors and discipline (per masterplan §7)
 
@@ -201,8 +203,10 @@ printed; they gate nothing (§1, §10.3).
   whenever R4-A grades, on whatever endpoint-complete rows exist then; they
   carry no floors of their own because they gate nothing.
 - No interim outcome or significance peeking. Only eligibility/maturity counts
-  may be checked while accruing. Each claim is graded once, in the first
-  session after its complete floors clear, and its result is then appended.
+  may be checked while accruing. R4-A is graded once, in the first session
+  after its complete floors clear, and its result is then appended. R4-B is
+  merely computed and printed at that same grading; it receives no verdict and
+  is never graded separately.
 - No re-binning, re-horizoning, re-siding, or era-mixing at grading time —
   any of those is the LSR re-tuning shape and voids the registration.
 - An opus `reviewer` adversarial pass on the exact claim text and the graded
