@@ -3668,6 +3668,13 @@ owner_program_dispositions:
   fundamental-forensics:
     disposition: mapped
     program: fundamental-forensics
+  gmi-theme-graph:
+    disposition: mapped
+    program: gmi-theme-graph
+    note: >
+      Became a raw synapse owner with GMI W1b (#5343: theme-graph-nodes/edges/evidence,
+      display tier, all six authority booleans false). The program entry itself was
+      authored ahead of that by the system-map registry (#5347).
   government-revenue-foresight:
     disposition: mapped
     program: government-revenue-foresight
