@@ -808,6 +808,12 @@ lanes:
             - scripts.fetch_earnings_scores
             - scripts.build_stage_analysis
             - scripts.build_stage_analysis_page
+            # TOP ANATOMY W1 (Winner Health — research/top_anatomy/): nightly
+            # maturation read over massive_stock_day, then the page. Data builder
+            # before page builder; both fail-open. Engine is daily-only (forward-log
+            # single-writer), so the render lanes carry neither.
+            - scripts.build_top_maturation
+            - scripts.build_winner_health_page
           cl_misc:
             - scripts.build_seasonality
             - scripts.build_stock_seasonality_page
@@ -2229,6 +2235,11 @@ lanes:
             - scripts.build_index_changes
             # SGA page-only re-render (committed artifact); engine stays daily-only.
             - scripts.build_stage_analysis_page
+            # Winner Health page-only re-render (committed data/top_maturation/latest.json),
+            # same rule as SGA: the page must not sit on stale shared chrome between
+            # nightlies. The ENGINE (build_top_maturation) is daily-only — forward-log
+            # single-writer — and must never be added to a render lane.
+            - scripts.build_winner_health_page
             # TLT hub: ~0.5s page-only rebake from committed site/factordata JSONs; the
             # heavy data-gen (build_tech_lab_data + confluence miner) stays daily-offrender.
             - scripts.build_tech_lab
@@ -2467,6 +2478,11 @@ lanes:
             - scripts.build_index_changes
             # SGA page-only re-render (committed artifact); engine stays daily-only.
             - scripts.build_stage_analysis_page
+            # Winner Health page-only re-render (committed data/top_maturation/latest.json),
+            # same rule as SGA: the page must not sit on stale shared chrome between
+            # nightlies. The ENGINE (build_top_maturation) is daily-only — forward-log
+            # single-writer — and must never be added to a render lane.
+            - scripts.build_winner_health_page
             # TLT hub: ~0.5s page-only rebake from committed site/factordata JSONs; the
             # heavy data-gen (build_tech_lab_data + confluence miner) stays daily-offrender.
             - scripts.build_tech_lab

@@ -1296,7 +1296,59 @@ output. Every evidence and action claim remains false, `context_only=true`,
 `emission_enabled=false`, and forecast input, training, promotion, ranking,
 gating, sizing, trading, and execution remain forbidden.
 
-### 11.0.11 W6A Research Factory candidate conformance
+### 11.0.11 W5A synthetic Operating Cortex conformance
+
+W5A freezes a pure, caller-supplied structural review kernel over one exact W4A
+synthetic retrieval record. It revalidates the complete W4/W2 dependency chain
+before examining evidence, accepts no operational playback input, and has no
+filesystem, network, clock, LLM, store, writer, service, scheduler, or emission
+capability. The registration fixes the required evidence kinds, six-component
+salience policy, citation policy, bounded read tools, implementation hashes,
+resource limits, and zero-authority profile before a packet can be built.
+Those W4 dependency and exact-source checks are invocation-local. Because the
+packet has no operational signer, its durable W4-join and citation-byte coverage
+flags remain false; a consumer must rerun the exact join validator with every
+external dependency rather than treat packet metadata as portable provenance.
+
+Ownership boundary: this W5A kernel is not `engine/neuralweb/cortex.py`; it
+neither imports nor replaces that nightly LLM runtime and cannot read or write
+`data/neuralweb/cortex/`, `site/neuralweb/cortex_memo.json`, or
+`data/reflexes/cortex_attention/`. It also does not produce or replace
+`data/neuralweb/attention_deterministic.json`, which remains owned by
+`engine/neuralweb/attention_deterministic.py` and its builder. The
+`attention_queue` and seven read methods here are packet-local projections over
+caller-supplied synthetic W5 evidence, not entries in either live attention
+registry or the live Cortex tool dispatcher. Any future handoff into the live
+Cortex requires a separately reviewed adapter; this contract alone grants no
+runtime or authority.
+
+Evidence and claim cards are content-addressed and bound to the exact query or
+selected analogue episode. Citations authenticate caller-supplied source bytes
+and a half-open byte span; this proves byte and reference closure only, never
+semantic entailment. Salience uses the preregistered six fixed weights under a
+local Decimal64 half-even context and one final q18 quantization. A missing
+component abstains rather than imputes. The resulting order is only an attention
+queue within one supplied synthetic subject; it is not an asset, forecast, or
+trade rank.
+
+Contradictions are structural support-versus-challenge groups on an exact
+subject and claim key. Missingness means absent from the supplied synthetic
+evidence, not absent from the world. Falsifiers are audited but never invented.
+Malformed or hash-mismatched source/span citation closure aborts packet
+construction. Claims with no evidence references, structurally incompatible
+references, or a missing preregistered evidence kind are withheld with a
+deterministic reason; structurally closed claims remain explicitly
+semantic-entailment-not-evaluated. The unsupported-claim scorecard is structural
+only, and attention quality is permanently `not_evaluated` because no
+preregistered attention outcomes exist.
+
+Every operational, population, provenance, entailment, truth, attention-quality,
+synthesis, hypothesis, forecast-input, aggregation, skill, and Prophet-input
+claim remains false. The input profile is `synthetic_fixture_only`, emission is
+disabled, and ranking, gating, sizing, trading, execution, training, and
+promotion authority remain structurally absent.
+
+### 11.0.12 W6A Research Factory candidate conformance
 
 W6A adds a pure adapter from one exact W2A
 `market_memory.trial_registration.v1` byte string to the canonical
@@ -1522,6 +1574,19 @@ W4A synthetic retrieval additions:
 - `tests/test_market_memory_retrieval.py` — schema/runtime parity, exact joins,
   known-answer arithmetic, missingness, half-open interval, tie, permutation,
   tamper, loader, resource, purity, and no-skill/no-runtime guards.
+
+W5A synthetic Operating Cortex additions:
+
+- `engine/neuralweb/market_memory_operating_cortex.py` and the strict
+  `operating_cortex_registration.v1` and `operating_cortex_packet.v1`
+  contracts — invocation-local exact W4/W2 and citation-byte revalidation,
+  durable external-coverage abstention, content-addressed evidence,
+  deterministic salience, structural contradiction/missingness/falsifier/
+  citation audits, immutable bounded read views, and zero authority;
+- `tests/test_market_memory_operating_cortex.py` — schema/runtime and join
+  parity, content identity, source/span tamper, Decimal and permutation,
+  hostile morphology, missing-component abstention, reader immutability,
+  resource bounds, purity, and no-LLM/no-runtime/no-quality-claim guards.
 
 W6A Research Factory conformance additions:
 

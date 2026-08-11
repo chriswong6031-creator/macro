@@ -659,6 +659,7 @@ on:
       - "engine/neuralweb/market_memory_scoring.py"
       - "engine/neuralweb/market_memory_playback.py"
       - "engine/neuralweb/market_memory_retrieval.py"
+      - "engine/neuralweb/market_memory_operating_cortex.py"
       - "engine/neuralweb/market_memory_projection.py"
       - "engine/neuralweb/market_memory_trusted.py"
       - "contracts/market_memory/source_artifact_receipt.v1.schema.json"
@@ -694,6 +695,8 @@ on:
       - "contracts/market_memory/operational_playback_catalog.v1.schema.json"
       - "contracts/market_memory/retrieval_registration.v1.schema.json"
       - "contracts/market_memory/episodic_retrieval_record.v1.schema.json"
+      - "contracts/market_memory/operating_cortex_registration.v1.schema.json"
+      - "contracts/market_memory/operating_cortex_packet.v1.schema.json"
       - "contracts/symbol_directory/symbol_directory_completion_receipt.v1.schema.json"
       - "config/market_memory_canary.v1.json"
       - "config/market_memory_technical_price_basis.v1.json"
@@ -757,6 +760,7 @@ on:
       - "tests/test_market_memory_playback.py"
       - "tests/test_market_memory_playback_api.py"
       - "tests/test_market_memory_retrieval.py"
+      - "tests/test_market_memory_operating_cortex.py"
       - "tests/test_market_memory_projection.py"
       - "tests/test_market_memory_trusted.py"
       - "tests/test_market_memory_context_deploy.py"
@@ -2891,6 +2895,12 @@ on:
       - "scripts/build_sector_map.py"
       - "scripts/build_sp500_heatmap.py"
       - "scripts/build_stage_analysis_page.py"
+      # TOP ANATOMY W1 (Winner Health): the page builder's twin, same reason as
+      # its stage-analysis sibling directly above — provenance for a builder that
+      # renders from a committed artifact in three lanes (daily, render,
+      # engine-render). Coverage registration, never an exemption: this key is
+      # `on.pull_request.paths` and ci.yml has no `paths-ignore` at all.
+      - "scripts/build_winner_health_page.py"
       # unrun-builders-stores — store/ops builders behind the nightly data lanes
       - "tests/test_append_sync_gauge.py"
       - "tests/test_audit_fred_groups.py"
