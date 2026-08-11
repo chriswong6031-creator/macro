@@ -33,14 +33,14 @@
     set -a
     source /Users/chriswong/flow-ops-wt/.env
     set +a
-    cd '/Users/chriswong/Documents/Cluade/Macro Dashboard'
+    cd /Users/chriswong/flow-ops-wt
     python -m scripts.build_prophet_marks
 
   MANUAL PUBLISH (one cycle):
     set -a
     source /Users/chriswong/flow-ops-wt/.env
     set +a
-    cd '/Users/chriswong/Documents/Cluade/Macro Dashboard'
+    cd /Users/chriswong/flow-ops-wt
     python -m scripts.build_prophet_marks --publish
 -->
 <plist version="1.0">
@@ -101,7 +101,7 @@
   <key>EnvironmentVariables</key>
   <dict>
     <key>PYTHONPATH</key>
-    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard</string>
+    <string>/Users/chriswong/flow-ops-wt</string>
     <!-- R2_* and other secrets sourced from .env via run_with_env.sh above. -->
   </dict>
 
