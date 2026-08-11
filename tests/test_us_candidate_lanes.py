@@ -840,9 +840,9 @@ class TestGraduationFields:
 # --------------------------------------------------------------------------- #
 
 #: The ONLY modules allowed to name the candidate pool.  The producer, the builder that
-#: calls it, the store that carries its columns, and the read-only contract exporter.
-#: Everything else — and in particular anything that decides membership, order, size or
-#: a gate — must not.
+#: calls it, the store that carries its columns, and the schema exporter that merely
+#: registers the already-public disclosure.  Everything else — and in
+#: particular anything that decides membership, order, size or a gate — must not.
 POOL_ALLOWLIST = frozenset({
     "engine/us_candidate_lanes.py",
     "engine/us_context_vector.py",
