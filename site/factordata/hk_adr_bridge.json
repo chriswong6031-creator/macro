@@ -15,22 +15,22 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "KWEB": {
-      "asof": "2026-08-10",
-      "lag_days": 0,
-      "state": "fresh"
-    },
     "JD": {
       "asof": "2026-08-10",
       "lag_days": 0,
       "state": "fresh"
     },
-    "TCOM": {
+    "FXI": {
       "asof": "2026-08-10",
       "lag_days": 0,
       "state": "fresh"
     },
-    "FXI": {
+    "KWEB": {
+      "asof": "2026-08-10",
+      "lag_days": 0,
+      "state": "fresh"
+    },
+    "TCOM": {
       "asof": "2026-08-10",
       "lag_days": 0,
       "state": "fresh"
