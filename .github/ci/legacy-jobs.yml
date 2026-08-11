@@ -882,6 +882,8 @@ jobs:
         run: python -m pytest tests/test_options_matrix.py -q
       - name: options PIT episodes (causal clocks, durable stage, H+60 + declared-session-close proxies, R2/checkpoint integrity)
         run: python -m pytest tests/test_options_signal_episode.py -q
+      - name: options signal campaign v2 (immutable revisions, causal anchors, exact checkpoint)
+        run: python -m pytest tests/test_options_signal_campaign.py -q
       - name: MSC R2.2-A Light U-CHAIN packets + monotonic R2 discovery publication
         run: python -m pytest tests/test_options_structure_intraday.py tests/test_build_options_structure_intraday.py -q
       - name: W0a-B chain-snapshot durable bucket receipts and source-install proofs
@@ -2648,7 +2650,7 @@ jobs:
         # which is how its render precondition shipped scoped to the whole session
         # range: on a shared main that sweeps in concurrent sessions' templates/
         # merges and demands a render on a merge commit that can never have one.
-        run: python -m pytest tests/test_ship_loop_guard.py -q
+        run: python -m pytest tests/test_ship_loop_guard.py tests/test_agent_worktree_roots.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
           git fetch origin ${{ github.base_ref || 'main' }}
@@ -5635,6 +5637,11 @@ jobs:
       # the frozen 2012/2014 legacy-XLS BLS fixtures run rather than skip.
       - name: Release Radar — inflation truth, actuals, defects, target truth (#5153)
         run: python -m pytest tests/test_inflation_intelligence.py tests/test_inflation_intelligence_nw.py tests/test_release_actuals.py tests/test_release_cpi_official_truth.py tests/test_release_cpi_target_history.py tests/test_release_defects.py tests/test_release_target_truth.py -q
+      # Wave 2B: the coherent-target ridge is a display-only forward candidate.
+      # Keep its frozen registry/prereg, truth-receipt closure, authority wall,
+      # and combined_v1 exclusion under the release-forecast owner lane.
+      - name: Release Radar — coherent-target ridge governance (Wave 2B)
+        run: python -m pytest tests/test_release_cpi_coherent_governance.py tests/test_release_cpi_coherent_shadow.py -q
 
   unrun-brain-desks:
     # master brain / AI desk / alt-data / risk brains behind the shipped desk verdicts.

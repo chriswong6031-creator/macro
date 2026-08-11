@@ -859,7 +859,10 @@ class PinnedCompositeAsKnownAtReader:
             _fail("pinned options audit requires CompositeAsKnownAtReader")
         self._reader = reader
         self._trusted_generation = reader.trusted.read_pinned_generation()
-        self._w1a_generation = reader.w1a.read_pinned_generation()
+        # W1A's complete active generation is already hash-bound by durable
+        # HEAD.  Pin that bounded current capability instead of replaying the
+        # cumulative append-one ancestry on every hourly projection.
+        self._w1a_generation = reader.w1a.read_active_generation()
 
     def generation_receipts(self) -> list[dict[str, Any]]:
         rows = []
