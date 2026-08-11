@@ -33,14 +33,38 @@ def test_workbench_renders_seven_functional_views_and_external_assets():
         assert f'id="ff-panel-{tab}"' in html
     assert 'id="ff-company-search"' in html
     assert 'id="ff-evidence"' in html
-    assert 'href="fundamental_forensics.css"' in html
-    assert 'src="fundamental_forensics.js"' in html
+    assert 'href="fundamental_forensics.css?v=20260811-ux"' in html
+    assert 'src="fundamental_forensics.js?v=20260811-ux"' in html
     assert 'https://www.mastermind-x.com/fundamental_forensics.html' in html
     assert 'src="theme.js"' in html
     # There is no executable page-inline JS; the SEO structured data block is
     # allowed and is not application logic.
     executable_inline = re.findall(r"<script(?![^>]*\bsrc=)(?![^>]*application/ld\+json)[^>]*>(.*?)</script>", html, re.S)
     assert executable_inline == []
+
+
+def test_member_experience_leads_with_value_and_explains_the_workflow():
+    html = _render()
+    for element_id in (
+        "ff-overview",
+        "ff-overview-status",
+        "ff-quick-signal",
+        "ff-quick-signal-title",
+        "ff-stat-attention",
+        "ff-stat-watch",
+        "ff-stat-coverage",
+        "ff-stat-sources",
+    ):
+        assert f'id="{element_id}"' in html
+    assert "Spot the changes that matter." in html
+    assert "Pick a company. We compare its latest filing" in html
+    assert "The important changes, up front" in html
+    assert "Compare the numbers" in html
+    assert "Read wording changes" in html
+    assert "Verify the source" in html
+    assert "Needs attention" in html
+    assert "Keep an eye on" in html
+    assert "Review now" not in html
 
 
 def test_disclosure_surfaces_make_the_text_comparison_boundary_and_source_path_plain():
@@ -50,10 +74,10 @@ def test_disclosure_surfaces_make_the_text_comparison_boundary_and_source_path_p
     assert 'id="ff-timeline"' in html
     assert 'id="ff-disclosure-section"' in html
     assert 'class="ff-lexical-glyph"' in html
-    assert "This is a text comparison, not an explanation of motive, materiality, or financial impact." in html
-    assert "Every row links back to the matched SEC filing excerpts." in html
-    assert "The filing record behind this review" in html
-    assert "Confirm the reporting form, filing date, accession, and original SEC document" in html
+    assert "This compares language between filings. It shows what changed—not why it changed." in html
+    assert "Each row shows matching passages from both SEC filings." in html
+    assert "See which filings are being compared" in html
+    assert "Check the filing type, date, and original SEC document." in html
 
 
 def test_sources_tab_preserves_compatibility_and_adds_a_scoped_receipt_reader():
@@ -72,9 +96,10 @@ def test_sources_tab_preserves_compatibility_and_adds_a_scoped_receipt_reader():
     assert 'id="ff-receipt-inspector"' in html
     assert 'id="ff-receipt-inspector-close"' in html
     assert '</aside>\n  <div class="ff-scrim" id="ff-scrim" hidden></div>\n</div>\n\n<template' in html
-    assert "Sources &amp; receipt" in html
-    assert "Sealed receipt" in html
-    assert "密封凭据" in html
+    assert '<span class="l-en">Sources</span>' in html
+    assert '<span class="l-zh">来源凭据</span>' in html
+    assert "Run record" in html
+    assert "运行记录" in html
 
 
 def test_workbench_dom_ids_are_unique_and_bilingual():
@@ -83,8 +108,8 @@ def test_workbench_dom_ids_are_unique_and_bilingual():
     assert len(ids) == len(set(ids))
     assert html.count('class="l-en"') >= 20
     assert html.count('class="l-zh"') >= 20
-    assert "财报变化雷达" in html
-    assert "Evidence inspector" in html
+    assert "找出真正重要的财报变化" in html
+    assert "Signal details" in html
 
 
 def test_runtime_contract_accessibility_and_security_guards():
@@ -149,7 +174,7 @@ def test_runtime_contract_accessibility_and_security_guards():
     assert "No comparable filing pair yet" in js
     assert "suppressed_boilerplate" in js
     assert "Array.isArray(bundle.redlines) ? bundle.redlines : []" in js
-    assert "No published receipt for this selected issuer" in js
+    assert "No run record for this company" in js
     assert "all_leaves_attested" in js
     assert "partially_attested" in js
     assert "not_attested" in js
@@ -208,6 +233,12 @@ def test_responsive_evidence_lens_has_desktop_drawer_and_mobile_sheet():
     assert "body.ff-modal-open #mmb-launch" in css
     assert ":focus-visible" in css
     assert "prefers-reduced-motion" in css
+    assert ".ff-overview" in css
+    assert ".ff-quick-signal" in css
+    assert ".ff-tab-group" in css
+    assert ".ff-signal-meaning" in css
+    assert ".ff-view-guide" in css
+    assert '.ff-workspace[data-tab="statements"]' in css
 
 
 def test_forensics_browser_state_stays_inside_paid_same_origin_boundary():
