@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/theme_graph/edges.v1.schema.json",
+  "title": "GMI theme-graph edge row v1",
+  "description": "One ROW of data/theme_graph/edges.parquet, as a JSON object. Masterplan §4.1/§4.4, gates G0.2 (point-in-time law) and G0.6 (LLM law). The store is APPEND-ONLY and BITEMPORAL: a fact is never edited in place — a later belief about the same edge_id is a NEW row with a later belief_time, and the read view takes the max-belief_time row per edge_id. Closing an interval therefore appends a row carrying valid_to; the open row stays on disk forever as what was believed then. Contradictory evidence coexists as rows; nothing nets. The three exposure axes are RESERVED-NULL in W1b: they are continuous quantities with formula ids (W2's R1 probe measures them), and the *_display enums are glance-tier rounding of those quantities, never an input to one.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "edge_id",
+    "type",
+    "src",
+    "dst",
+    "valid_from",
+    "evidence_time",
+    "belief_time",
+    "era",
+    "source_class",
+    "date_provenance",
+    "evidence_refs",
+    "confidence_basis",
+    "computed_at",
+    "engine_version"
+  ],
+  "properties": {
+    "edge_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Deterministic: '<type_lower>:<src>-><dst>@<valid_from>'. Stable across rebuilds, so a re-run appends nothing when nothing changed."
+    },
+    "type": {
+      "enum": ["MEMBER_OF", "EXPRESSES", "SAME_AS", "TRANSLATES_TO", "PARENT_OF", "RELATED", "SUPPLIES", "ENABLES", "BOTTLENECK_OF", "BENEFITS_FROM", "CATALYST_OF", "TRACKS", "HEDGES"]
+    },
+    "src": {"type": "string", "minLength": 1, "description": "node_id of the source node."},
+    "dst": {"type": "string", "minLength": 1, "description": "node_id of the destination node."},
+    "valid_from": {"$ref": "#/$defs/date", "description": "VALID time: when the fact became true in the world."},
+    "valid_to": {"$ref": "#/$defs/nullable_date", "description": "Null while the fact is still true. A closed interval never deletes the row that opened it."},
+    "evidence_time": {"$ref": "#/$defs/date", "description": "When the EVIDENCE for this edge was published/observed."},
+    "belief_time": {"$ref": "#/$defs/date", "description": "When THIS system came to believe it — the run date. A backfill's belief_time is the backfill's own date, never the reconstructed past."},
+    "era": {
+      "enum": ["reconstruction", "observed"],
+      "description": "reconstruction = assembled from curated/seed dates after the fact; it is NEVER promotion evidence (G0.2, Konseki authenticated-vs-reconstruction). observed = the nightly saw the change happen."
+    },
+    "source_class": {
+      "enum": ["curated", "scrape", "filing", "co_movement", "llm_proposed_ratified"],
+      "description": "llm_proposed_ratified edges must carry >=1 dated evidence ref — the semantic-leakage law (§4.4): membership recalled from a model's general knowledge is undatable and forbidden."
+    },
+    "date_provenance": {
+      "enum": ["curated_changelog", "seed_constant", "raw_snapshot", "crosswalk"],
+      "description": "How valid_from was obtained. seed_constant is the honesty flag that matters: CN membership docs seed every first-run member at the fixed cache-start constant, so that date is a CONVENTION, not an observation."
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1},
+      "description": "evidence_id values resolving into evidence.parquet. Every edge has at least one; corroborating refs are appended, never merged."
+    },
+    "confidence_basis": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Deterministic formula/derivation id, never a bare number without a basis. W1b constant: 'membership_doc.v1'."
+    },
+    "economic_share": {"$ref": "#/$defs/reserved_share"},
+    "trading_beta": {"$ref": "#/$defs/reserved_number"},
+    "attention_share": {"$ref": "#/$defs/reserved_share"},
+    "economic_share_formula_id": {"$ref": "#/$defs/reserved_string"},
+    "trading_beta_formula_id": {"$ref": "#/$defs/reserved_string"},
+    "attention_share_formula_id": {"$ref": "#/$defs/reserved_string"},
+    "economic_share_display": {"$ref": "#/$defs/exposure_display"},
+    "trading_beta_display": {"$ref": "#/$defs/exposure_display"},
+    "attention_share_display": {"$ref": "#/$defs/exposure_display"},
+    "computed_at": {"$ref": "#/$defs/clock"},
+    "engine_version": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "nullable_date": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}
+      ]
+    },
+    "clock": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "reserved_share": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "RESERVED-NULL until W2. A measured share of the named quantity, with its formula id alongside."
+    },
+    "reserved_number": {
+      "type": ["number", "null"],
+      "description": "RESERVED-NULL until W2. A measured continuous quantity, with its formula id alongside."
+    },
+    "reserved_string": {
+      "type": ["string", "null"],
+      "description": "RESERVED-NULL until W2. The deterministic formula id that produced the quantity beside it."
+    },
+    "exposure_display": {
+      "anyOf": [
+        {"type": "null"},
+        {"enum": ["none", "weak", "core"]}
+      ],
+      "description": "RESERVED-NULL until W2. Glance-tier ROUNDING of the continuous axis beside it — presentation only, never an input to a measurement, never an ordering key (G0.11)."
+    }
+  }
+}

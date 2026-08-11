@@ -15,8 +15,10 @@ from types import SimpleNamespace
 
 import pytest
 
+from engine import options_market_memory_receipt_store as options_receipt_store
 from engine.neuralweb import market_memory_pit as pit
 from engine.neuralweb import market_memory_trusted as trusted
+from scripts import audit_options_market_memory_context as options_context_audit
 from scripts import initialize_market_memory_w1a as w1a_initializer
 from scripts import project_market_memory_context as writer_module
 from tests.test_market_memory_pit import CAPTURED_AT, _packet
@@ -31,6 +33,7 @@ UPDATE = DEPLOY / "update.sh"
 WRITER = ROOT / "scripts" / "project_market_memory_context.py"
 API_ROUTER = ROOT / "app" / "market_memory.py"
 W1A_INITIALIZER = ROOT / "scripts" / "initialize_market_memory_w1a.py"
+OPTIONS_AUDITOR = ROOT / "scripts" / "audit_options_market_memory_context.py"
 
 W1A_ROOT = "/var/lib/macro-market-memory/public"
 PUBLIC_ROOT = "/var/lib/macro-market-memory/public/trusted-v1"
@@ -299,6 +302,8 @@ def test_projector_is_the_only_production_writer_and_uses_canonical_inputs(
     assert 'root / "config" / "market_memory_canary.v1.json"' in writer
     assert "read_verified_macro_regime_bytes(" in writer
     assert "_repository_commit(root)" in writer
+    assert "run_projection_cycle(" in writer
+    assert "options_context_audit.publish_live_audit(" in writer
 
     monkeypatch.delenv("MARKET_MEMORY_TRUSTED_STORE_DIR", raising=False)
     monkeypatch.delenv("MARKET_MEMORY_CONTEXT_PROJECTION_DIR", raising=False)
@@ -309,6 +314,95 @@ def test_projector_is_the_only_production_writer_and_uses_canonical_inputs(
         trusted.default_private_evidence_root("/opt/macro")
         == Path(PRIVATE_ROOT).resolve()
     )
+
+
+def test_options_receipt_auditor_entrypoint_is_cwd_independent_and_durable(
+    tmp_path: Path,
+) -> None:
+    w1a = tmp_path / "w1a"
+    trusted_root = tmp_path / "trusted"
+    receipt_root = tmp_path / "private-receipts"
+    w1a_initializer.initialize_w1a_store(w1a)
+    trusted.initialize_trusted_store(trusted_root)
+    environment = {
+        key: value for key, value in os.environ.items() if key != "PYTHONPATH"
+    }
+
+    result = subprocess.run(
+        [
+            str(OPTIONS_AUDITOR),
+            "--repository-root",
+            str(ROOT),
+            "--w1a-store-root",
+            str(w1a),
+            "--trusted-store-root",
+            str(trusted_root),
+            "--publish-root",
+            str(receipt_root),
+        ],
+        cwd=tmp_path,
+        env=environment,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    head = json.loads(result.stdout)
+    publication = options_receipt_store.read_current_publication(
+        receipt_root, repository_root=ROOT
+    )
+
+    assert publication["head"] == head
+    assert head["reference_count"] == len(publication["references"])
+    assert head["reference_count"] > 0
+    assert head["reference_set_sha256"] == publication["audit"][
+        "reference_set_sha256"
+    ]
+
+
+def test_projection_cycle_uses_the_hourly_owner_to_publish_private_receipts(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    deployed_commit = "a" * 40
+    public = tmp_path / "public"
+    private = tmp_path / "private"
+    w1a = tmp_path / "w1a"
+    receipt_root = private / "options-context-receipts"
+    trusted_result = {
+        "schema": "market_memory.trusted_projection_result.v1",
+        "deployed_commit": deployed_commit,
+    }
+    observed: dict[str, object] = {}
+    monkeypatch.setattr(
+        writer_module,
+        "project_current_context",
+        lambda *_args, **_kwargs: trusted_result,
+    )
+    monkeypatch.setattr(
+        writer_module, "_repository_commit", lambda _root: deployed_commit
+    )
+
+    def publish(**kwargs: object) -> dict[str, str]:
+        observed.update(kwargs)
+        return {"publication_id": "omctxpub_" + "b" * 64}
+
+    monkeypatch.setattr(options_context_audit, "publish_live_audit", publish)
+    result = writer_module.run_projection_cycle(
+        tmp_path,
+        public_store_root=public,
+        private_evidence_root=private,
+        w1a_store_root=w1a,
+    )
+
+    assert result["trusted_projection"] == trusted_result
+    assert result["options_context_receipt"] == {
+        "publication_id": "omctxpub_" + "b" * 64
+    }
+    assert observed["repository_root"] == tmp_path.resolve()
+    assert observed["w1a_store_root"] == w1a
+    assert observed["trusted_store_root"] == public
+    assert observed["publication_root"] == receipt_root
+    assert observed["expected_deployed_commit"] == deployed_commit
 
 
 def test_w1a_initializer_is_the_only_production_genesis_owner() -> None:
