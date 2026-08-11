@@ -93,8 +93,15 @@
 {# The era clause is the one hoverable thing in the footnote, so it says so quietly: a
    dotted underline is the house's "there is a receipt here" tell, and `cursor:help` is
    already global on [data-tip-en] (theme.css). No colour — the footnote must stay the
-   quietest line on the shelf. #}
-.pvr-era{border-bottom:1px dotted color-mix(in srgb,var(--muted) 55%,transparent)}
+   quietest line on the shelf.
+
+   `.pvr-recon` (the reconstructed-cohort clause) takes the SAME tell, deliberately: it
+   is the same kind of thing — provenance at a glance, receipt on hover — and a second
+   visual language for it would imply a second kind of importance it does not have. Its
+   underline is gated on `[data-tip-en]` because that clause's hover is fail-soft: a
+   plan whose date will not parse ships the count with NO receipt, and a dotted tell
+   over nothing to hover is a promise the line cannot keep. #}
+.pvr-era,.pvr-recon[data-tip-en]{border-bottom:1px dotted color-mix(in srgb,var(--muted) 55%,transparent)}
 html[data-theme="light"] .pvr-g::before{background:color-mix(in srgb,var(--muted) 70%,transparent)}
 {# SPECIFICITY, not decoration — this line is load-bearing. `html[data-theme="light"]
    .pvr-g::before` scores (0,2,2) and OUTRANKS `.pvr-g.is-near::before` at (0,2,1), so
@@ -186,6 +193,40 @@ html[data-theme="light"] .pvr-g.is-near .pvr-tk{color:var(--text)}
       {%- else -%}
       {{ t(' · selection rules unchanged', ' · 选股规则未变') }}
       {%- endif -%}
+    </span>
+    {%- endif -%}
+    {#- RECONSTRUCTED COHORT (§0.10). Rides the SAME merged footnote as the era rather
+        than earning a second stamp — Law 4 allows this panel exactly one footnote, and
+        this clause is the same KIND of thing the era clause is: provenance for the plan
+        population, in plain words at a glance with the detail one hover away.
+
+        It sits LAST on purpose. A reader scanning the shelf wants the shelf; this is
+        accounting about the plans on the board above, which is why it is the quietest
+        clause on the quietest line.
+
+        WORDING (§0.10, doctrine Law 2). Every string here comes worded from
+        engine.prophet_bridge — the template composes nothing, so the count the board
+        shows and the note the artifact publishes cannot say different things. The
+        internal name of the event ("backfill", the mode slug, the era literal) appears
+        NOWHERE, in either tier: the hover is a receipt in plain words, not a decoder.
+        No `title=` — translated text in `title=` is CI-guarded here.
+
+        ABSENT, NOT ZERO. `cx.reconstructed` is omitted by the engine whenever nothing
+        was reconstructed, so this whole block renders the empty string on every board
+        that exists today and the footnote is byte-identical to before. #}
+    {%- if cx.reconstructed %}
+    {%- set _rc = cx.reconstructed %}
+    {#- THE SEPARATOR SITS OUTSIDE THE SPAN, unlike the era clause above. Rendered
+        side by side the two underlines ran together through the " · " and read as ONE
+        long receipt spanning both clauses — so the dotted rule now starts at this
+        clause's first word and there is a clean unmarked gap between the two hovers.
+        Verified in the light and dark shots. #}
+    {{- ' · ' -}}
+    <span class="pvr-recon"
+      {%- if _rc.tip_en %} data-tip-en="{{ _rc.tip_en }}" data-tip-zh="{{ _rc.tip_zh }}"{% endif %}>
+      {#- No whitespace inside the span: a leading space would be underlined too and put
+          the gap back. #}
+      <span class="l-en">{{ _rc.en }}</span><span class="l-zh">{{ _rc.zh }}</span>
     </span>
     {%- endif -%}
   </p>

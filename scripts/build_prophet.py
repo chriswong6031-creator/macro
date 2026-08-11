@@ -69,13 +69,19 @@ from engine.prophet_bridge import (
     QUARANTINE_FILENAME,
     QUARANTINE_REASON,
     QUARANTINE_SCHEMA,
+    RECONSTRUCTED_RECORD_NOTE_EN,
+    RECONSTRUCTED_RECORD_NOTE_ZH,
     SELECTION_ERA,
     _panel_close_history,
     _PLAN_PRICE_DIRS,
+    _plain_date,
     append_legacy_shadow,
     evaluate_entry_zone,
+    is_reconstructed,
     legacy_shadow_rows,
     load_quarantined_ids,
+    origination_disclosure,
+    origination_note,
     originate_plans,
     plan_clock_date,
     plan_key,
@@ -627,7 +633,11 @@ def write_quarantine(
     return payload
 
 
-def record_summary(ledger_rows: list[dict], quarantined: set[str]) -> dict:
+def record_summary(
+    ledger_rows: list[dict],
+    quarantined: set[str],
+    reconstructed_ids: "set[str] | None" = None,
+) -> dict:
     """The honest closed-plan record: quarantined rows out, NO_ENTRY out of the rate.
 
     Two exclusions, for two different reasons, both disclosed as counts:
@@ -635,6 +645,15 @@ def record_summary(ledger_rows: list[dict], quarantined: set[str]) -> dict:
       * NO_ENTRY    — the trigger never confirmed, so no position ever existed.  It is
         neither a win nor a loss; putting it in the denominator would report a losing
         trade the plan explicitly told the reader not to take.
+
+    ``reconstructed_ids`` is a THIRD thing and deliberately NOT a third exclusion
+    (research/PROPHET_OUTAGE_BACKFILL_2026_08.md §0.6c, §0.10).  A plan rebuilt after the
+    outage was still graded by the nightly on its own real bars — the backfill never
+    writes ledger.jsonl — so its outcome is as honest as any other row's and dropping it
+    would be its own distortion.  What a reader is owed is the ability to SPLIT: the
+    count and the ids ride the record so the cohort can be taken out downstream, and
+    ``win_rate``/``avg_result_pct`` are computed exactly as they were before.  The keys
+    are absent entirely when nothing was reconstructed, so today's artifact is unchanged.
     """
     kept = [r for r in ledger_rows if str(r.get("id") or "") not in quarantined]
     resolved = [r for r in kept if str(r.get("outcome") or "") in RESOLVED_OUTCOMES]
@@ -643,7 +662,7 @@ def record_summary(ledger_rows: list[dict], quarantined: set[str]) -> dict:
               and not isinstance(r.get("stock_result_pct"), bool)]
     wins = [r for r in scored if float(r["stock_result_pct"]) > 0]
     n = len(scored)
-    return {
+    out = {
         "n_rows_total": len(ledger_rows),
         "n_quarantined": len(ledger_rows) - len(kept),
         "n_no_entry": sum(1 for r in kept if str(r.get("outcome") or "") == "NO_ENTRY"),
@@ -653,6 +672,28 @@ def record_summary(ledger_rows: list[dict], quarantined: set[str]) -> dict:
         "avg_result_pct": (round(sum(float(r["stock_result_pct"]) for r in scored) / n, 4)
                            if n else None),
     }
+    # Counted over the SCORED rows — the population the rate is actually taken over, so
+    # "N of these" means N of the number printed beside it and not of some wider set.
+    split = sorted(str(r.get("id") or "") for r in scored
+                   if str(r.get("id") or "") in (reconstructed_ids or set()))
+    if split:
+        # The ORIGINATION day being replayed (`recorded_at`), never the close day: the
+        # sentence says "reconstructed after an outage on <date>", and the outage is a
+        # fact about when the pick was made, not about when it finished.
+        _split = set(split)
+        date_en, date_zh = _plain_date(
+            min((str(r.get("recorded_at") or "") for r in scored
+                 if str(r.get("id") or "") in _split and r.get("recorded_at")),
+                default="")
+        )
+        out["n_reconstructed"] = len(split)
+        out["reconstructed_ids"] = split
+        if date_en:
+            out["reconstructed_note"] = RECONSTRUCTED_RECORD_NOTE_EN.format(
+                n=len(split), date=date_en)
+            out["reconstructed_note_zh"] = RECONSTRUCTED_RECORD_NOTE_ZH.format(
+                n=len(split), date=date_zh)
+    return out
 
 
 def _effective_index_entries(
@@ -1919,7 +1960,35 @@ def main() -> None:
     # ledger exclusion receipt. Raw plans/states remain immutable evidence; only the
     # effective publication is filtered.
     active_entries = _effective_index_entries(active_entries, _quarantined_ids)
-    _record = record_summary(_ledger_rows, _quarantined_ids)
+    # ── Reconstructed-origination disclosure (§0.10) ─────────────────────────────
+    # Read off the PLANS, which own `origination_mode`, and applied in ONE pass over the
+    # finished rows so both index-row builders (the enriched row and
+    # `_degraded_index_entry`) are covered — a row that degrades still discloses.  Every
+    # write below is conditional on the plan actually being reconstructed, so with none
+    # in the population (the state of the world today) index.json is byte-for-byte what
+    # it was before this feature existed.
+    _reconstructed_ids = {
+        str(pid) for pid, plan in all_plans.items() if is_reconstructed(plan)
+    }
+    for _entry in active_entries:
+        _plan = all_plans.get(str(_entry.get("id") or "")) or {}
+        if not is_reconstructed(_plan):
+            continue
+        # The machine identifier ships too (§0.6c): the plain-word note is for a reader,
+        # this is for the reader who wants to split the cohort with a filter.
+        _entry["origination_mode"] = _plan.get("origination_mode")
+        if _plan.get("backfill_executed_at"):
+            _entry["backfill_executed_at"] = _plan.get("backfill_executed_at")
+        # FINISHED bilingual copy on the row, not a code: the surfaces that draw these
+        # rows do not all live in this repository, and a code each one words for itself
+        # is a second place for the wording to drift.
+        _note = origination_note({
+            "origination_mode": _plan.get("origination_mode"),
+            "recorded_at": _entry.get("recorded_at") or _plan.get("recorded_at"),
+        })
+        if _note:
+            _entry["origination_note"] = _note
+    _record = record_summary(_ledger_rows, _quarantined_ids, _reconstructed_ids)
     log.info("build_prophet: honest record over %d non-quarantined scored row(s) — "
              "win_rate=%s avg=%s%%", _record["n_scored"],
              _record["win_rate"], _record["avg_result_pct"])
@@ -2127,6 +2196,16 @@ def main() -> None:
             " user-facing text. Nightly is the sole advancer of the forward ledger."
         ),
     }
+    # ── Board-level reconstructed disclosure (§0.10) ────────────────────────────
+    # Placed AFTER the literal so the key is genuinely absent — not present-and-null —
+    # on every night nothing was reconstructed.  It carries finished bilingual copy for
+    # the same reason the row note does, and it is the disclosure a board header renders
+    # once instead of repeating a constant on every row (doctrine Law 4).
+    _origination = origination_disclosure(active_entries)
+    if _origination:
+        index["origination_disclosure"] = _origination
+        log.info("build_prophet: %d plan(s) disclosed as reconstructed (origination %s)",
+                 _origination["n"], _origination.get("date"))
     _write_json(INDEX_PATH, index)
     log.info("build_prophet: wrote index.json (%d active plans)", len(active_entries))
 

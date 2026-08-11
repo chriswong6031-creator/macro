@@ -2,8 +2,10 @@ name: marketing-publish
 # ─────────────────────────────────────────────────────────────────────────────
 # D02 W1 — scheduled LIVE social publisher. DARK BY DEFAULT.
 #
-# Runs on ubuntu-latest (NOT the self-hosted macstudio): this must stay OFF the
-# nightly render path. It posts APPROVED, DUE outbox items to X via Buffer using
+# Runs on [self-hosted, macstudio-light] since 2026-08-03 — NOT ubuntu-latest
+# (that line was stale) and NOT `macstudio`: the light lane is how this stays OFF
+# the nightly render path, and the runs-on block below documents the swap.
+# It posts APPROVED, DUE outbox items to X via Buffer using
 # scripts.marketing_publisher.
 #
 # WHY IT IS SAFE / DARK: the runner self-downgrades to DRY-RUN unless the global
@@ -317,29 +319,56 @@ jobs:
         # next sweep's approved, due, human-audited post was refused with
         # `rate_limited=1`. Five consecutive days had ended with nothing posted.
         #
+        # "ONCE A DAY" MEANT TWICE A DAY (2026-08-11). The hour check alone
+        # admits BOTH the 13:00Z and the 13:30Z sweep — `date -u +%H` reads "13"
+        # for the whole hour — so this fired twice daily and spent 2x the cap.
+        # Run 31453875632 (2026-08-11 02:56Z) is the receipt: a live post attempt
+        # came back `429 retry after 37768s`, and 02:56Z + 37768s = 13:25Z — the
+        # exact minute the 2026-08-10 13:25Z poll's calls roll out of Buffer's
+        # 24h window. Buffer was naming, to the second, whose calls were in the
+        # way of the post. The gate is now hour==13 AND minute<25: sweeps land at
+        # :00 and :30 plus up to ~15 min of Actions queue drift, so `<25` admits
+        # the 13:00Z sweep and only it.
+        #
+        # A BREAKING post_now DISPATCH NEVER POLLS. That click is an operator
+        # trying to get ONE post out NOW; spending its run on telemetry first is
+        # this same failure class in miniature. Every other manual dispatch still
+        # polls, so the console is never more than a click from current.
+        #
         # Metrics refresh ~daily, so 30 polls a day of the same post bought
         # nothing and cost the product. The 13:00Z slot is after the US open so
-        # the prior session's posts have had time to accrue numbers. A manual
-        # dispatch always polls, so the console is never more than a click from
-        # current. The script ALSO stops on the first 429 and caps its own run —
-        # belt and braces, because a workflow condition is one edit away from
-        # being loosened by someone who does not know what it cost.
+        # the prior session's posts have had time to accrue numbers. The script
+        # ALSO stops on the first 429 and caps its own run (8 calls) — belt and
+        # braces, because a workflow condition is one edit away from being
+        # loosened by someone who does not know what it cost.
         #
         # The gate is a CLOCK CHECK, not `github.event.schedule`: this workflow
         # declares ONE cron expression covering every slot, so that context value
         # is the same literal on all 30 sweeps and could never single out an hour.
-        # A manual dispatch always polls.
+        #
         # Reads back per-post analytics (impressions/likes/reposts/… + the x.com
         # permalink) for items posted in the last 7 days and appends them to
-        # data/marketing/post_metrics.jsonl. Metrics refresh ~daily, so this runs
-        # every slot to keep the console current. Fully independent of the
+        # data/marketing/post_metrics.jsonl. Fully independent of the
         # kill-switch: with BUFFER_TOKEN unset it prints one line and exits 0
         # (no network, no write) — so it is harmless while the publisher is dark.
+        env:
+          # Same input the publisher step reads: empty on every scheduled sweep,
+          # non-empty only on a breaking dispatch.
+          POST_NOW_ITEM: ${{ inputs.post_now_item }}
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%H)" != "13" ]; then
-            echo "metrics poll: skipped — once-daily at 13:00Z, now $(date -u +%H:%M)Z."
-            echo "The publisher shares this token; telemetry does not outbid posting."
+          H=$(date -u +%H)
+          M=$(date -u +%M)
+          if [ -n "${POST_NOW_ITEM:-}" ]; then
+            echo "metrics poll: skipped — breaking post_now dispatch."
+            echo "The post gets this run's allowance; telemetry can wait."
             exit 0
+          fi
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            if [ "$H" != "13" ] || [ "$M" -ge 25 ]; then
+              echo "metrics poll: skipped — once-daily at the 13:00Z sweep, now ${H}:${M}Z."
+              echo "The publisher shares this token; telemetry does not outbid posting."
+              exit 0
+            fi
           fi
           python -m scripts.marketing_metrics_poll
 

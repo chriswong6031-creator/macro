@@ -134,7 +134,7 @@ def test_ownership_policy_is_one_writer_and_fail_closed() -> None:
     assert registry["schema"] == "sector_intelligence_ownership.v1"
     assert registry["status"] == "f0_reconciled_partial_freeze"
     assert registry["reconciled_against_commit"] == (
-        "e124f4ed2edcf77a82295c78f4feabc6c3e7bc90"
+        "22cf8a9f8f54e341e2efb63c6d5c6984476252db"
     )
     policy = registry["policy"]
     assert policy["one_writer_required"] is True
@@ -277,6 +277,7 @@ def test_f0_read_adapter_slots_are_exact_and_only_declared_facts_readers_are_eli
     } == {
         "biocatalyst_trial_read_api.v1",
         "biocatalyst_earnings_transcript_span_adapter.v1",
+        "biocatalyst_capital_structure_pit_adapter.v1",
     }
 
     trial = adapters["biocatalyst_trial_read_api.v1"]
@@ -348,16 +349,25 @@ def test_f0_read_adapter_slots_are_exact_and_only_declared_facts_readers_are_eli
     )
 
     capital = adapters["biocatalyst_capital_structure_pit_adapter.v1"]
-    capital_dependency = capital["available_dependency"]
-    assert _declared_router_get_paths(capital_dependency["module"]) == set(
-        capital_dependency["routes"]
+    assert capital["canonical_owner"] == "capital_structure"
+    assert capital["route_prefix"] is None
+    assert capital["routes"] == []
+    assert capital["available_dependency"] is None
+    assert capital["transport"] == (
+        "private_in_process_receipted_context_only_no_store"
     )
-    assert _declared_string_constant(
-        "engine.capital_structure.projection", "PROJECTION_BUNDLE_SCHEMA"
-    ) == (
-        capital_dependency["output_contract"]
-    )
-    assert "cash_runway_or_dilution" in capital_dependency["scope"]
+    assert capital["output_contracts"] == [
+        "biocatalyst_capital_structure_pit_read.v1"
+    ]
+    assert set(capital["output_contracts"]) <= contract_ids
+    assert capital["callable"] in _declared_functions(capital["module"])
+    assert {
+        "event_state_only",
+        "no_cash_burn_runway_or_dilution_calculation",
+        "no_identity_resolution",
+        "no_model_or_signal_authority",
+        "no_negative_issuer_coverage_conclusion",
+    } <= set(capital["limitations"])
 
 
 def test_future_read_adapter_slots_cannot_claim_implementation_or_biocatalyst_use() -> None:
@@ -366,7 +376,6 @@ def test_future_read_adapter_slots_cannot_claim_implementation_or_biocatalyst_us
         "biocatalyst_company_identity_pit_adapter.v1",
         "biocatalyst_security_identity_pit_adapter.v1",
         "biocatalyst_corporate_document_span_adapter.v1",
-        "biocatalyst_capital_structure_pit_adapter.v1",
     }
     for name in blocked:
         adapter = adapters[name]
@@ -416,7 +425,6 @@ def test_full_b0_remains_explicitly_open() -> None:
         "generic_company_identity_executable_contract",
         "complete_market_data_security_master_registration",
         "corporate_documents_and_spans_executable_contract",
-        "capital_structure_biocatalyst_pit_read_adapter",
     } == set(closure["blockers"])
     assert "source_canonical_nct_identity" in closure["unblocked_scope"]
     assert "prospective_trial_observations" not in closure["unblocked_scope"]
