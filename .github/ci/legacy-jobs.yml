@@ -1613,6 +1613,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: neural-web registry + envelope + bus-doc freshness tests
         run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py tests/test_admin_metabolism.py tests/test_admin_metabolism_history.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py tests/test_nw_lobe_descriptions.py tests/test_synapse_registry_contract.py -q
+      - name: Mastermind semantic registry + generated global system map
+        run: python -m pytest tests/test_mastermind_system_map.py -q
       - name: "HARD | entity/thesis/mechanism registry integrity (ETM-C1..C7)"
         run: |
           python3 -m scripts.check_entity_thesis_registry --selftest
@@ -5653,6 +5655,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: neural-web cortex world-state consumers + the factor-contradiction plane
         run: python -m pytest tests/test_build_active_build_map.py tests/test_build_cycle_pattern_state.py tests/test_factor_contradictions.py tests/test_nw_consumers_w3.py tests/test_nw_health_escalation.py tests/test_options_nw_wiring.py tests/test_til_nw_citizenship.py tests/test_world_state_special_sits.py tests/test_world_state_stage_analysis.py -q
+      - name: three-repository advisory Active Build Map
+        run: python -m pytest tests/test_project_active_build_map.py -q
       # Wired 2026-08-06: the CPI substrate that test_build_cycle_pattern_state.py (in
       # the step above) builds ON, dark since it landed and red on main. Its family
       # cardinalities were frozen literals over stores the nightly grows — the code
