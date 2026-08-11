@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from jsonschema import Draft202012Validator, ValidationError
@@ -716,6 +717,138 @@ def test_trusted_pinned_generation_reads_published_empty_ancestor_and_rejects_or
     )
     with pytest.raises(pit.MarketMemoryContextNotFound, match="not published"):
         reader.read_pinned_generation(generation_id=orphan["generation_id"])
+
+
+def test_public_pinned_macro_feature_reader_authenticates_exact_owner_object(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _candidate(monkeypatch, tmp_path)
+    stored = _capture(candidate)
+    reader = trusted.TrustedFileAsKnownAtReader(candidate.public)
+    generation = reader.read_pinned_generation(maximum_capture_count=256)
+    query_id = stored.capture_receipt["query_id"]
+    feature = reader.read_macro_feature_from_pinned_generation(
+        generation, query_id=query_id
+    )
+
+    assert feature["source_artifact"]["source_asof"] == "2026-08-10"
+    assert feature["state"]["growth_score"] == pytest.approx(0.133)
+    feature["state"]["growth_score"] = 9.0
+    assert reader.read_macro_feature_from_pinned_generation(
+        generation, query_id=query_id
+    )["state"]["growth_score"] == pytest.approx(0.133)
+
+    digest = stored.capture_receipt["feature_snapshot"]["content_sha256"]
+    trusted._feature_path(candidate.public, digest).write_bytes(b"{}")
+    with pytest.raises(pit.MarketMemoryStoreError, match="digest|contract"):
+        reader.read_macro_feature_from_pinned_generation(
+            generation, query_id=query_id
+        )
+
+
+@pytest.mark.parametrize("mutation", ["delete", "tamper"])
+def test_pinned_projection_batch_requires_exact_context_receipt_alias(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, mutation: str
+) -> None:
+    candidate = _candidate(monkeypatch, tmp_path)
+    stored = _capture(candidate)
+    reader = trusted.TrustedFileAsKnownAtReader(candidate.public)
+    generation = reader.read_pinned_generation(maximum_capture_count=256)
+    context_path = pit._context_path(
+        candidate.public, stored.capture_receipt["context_id"]
+    )
+    if mutation == "delete":
+        context_path.unlink()
+    else:
+        context_path.write_bytes(b"{}")
+
+    with pytest.raises(pit.MarketMemoryStoreError):
+        reader.read_pinned_capture_projections(generation)
+
+
+def test_pinned_projection_batch_scans_index_once_and_reads_each_owner_object_once(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _candidate(monkeypatch, tmp_path)
+    _capture(candidate)
+    reader = trusted.TrustedFileAsKnownAtReader(candidate.public)
+    real_generation = reader.read_pinned_generation(maximum_capture_count=256)
+    entries = tuple(
+        pit.PinnedCaptureIndexEntry(
+            query_id="mmquery_" + f"{index:064x}",
+            context_id="mmctx_" + f"{index:064x}",
+            capture_id="mmcapture_" + f"{index:064x}",
+            packet_sha256=f"{index:064x}",
+        )
+        for index in range(1, 257)
+    )
+
+    class CountingCaptures:
+        def __init__(self, values) -> None:
+            self.values = values
+            self.scans = 0
+
+        def __iter__(self):
+            self.scans += 1
+            return iter(self.values)
+
+        def __len__(self) -> int:
+            return len(self.values)
+
+    captures = CountingCaptures(entries)
+    authenticated = SimpleNamespace(
+        profile=real_generation.profile,
+        store_id=real_generation.store_id,
+        generation_id=real_generation.generation_id,
+        generation_sha256=real_generation.generation_sha256,
+        captures=captures,
+    )
+    calls = {
+        "authenticate": 0,
+        "query_receipt": 0,
+        "context_receipt": 0,
+        "packet_feature": 0,
+    }
+    observed_queries: list[str] = []
+
+    def authenticate(_generation):
+        calls["authenticate"] += 1
+        return authenticated
+
+    def read_receipt(
+        _authenticated, *, query_id, entry, verify_context_alias
+    ):
+        calls["query_receipt"] += 1
+        observed_queries.append(query_id)
+        assert entry.query_id == query_id
+        assert verify_context_alias is True
+        calls["context_receipt"] += 1
+        return {"query_id": query_id}
+
+    def load_packet_feature(_root, receipt, *, store_id):
+        calls["packet_feature"] += 1
+        assert store_id == authenticated.store_id
+        return (
+            SimpleNamespace(query_id=receipt["query_id"]),
+            {"query_id": receipt["query_id"]},
+        )
+
+    monkeypatch.setattr(reader, "_authenticate_pinned_snapshot", authenticate)
+    monkeypatch.setattr(
+        reader, "_read_pinned_capture_receipt_authenticated", read_receipt
+    )
+    monkeypatch.setattr(trusted, "_load_stored_with_feature", load_packet_feature)
+    rows = reader.read_pinned_capture_projections(real_generation)
+
+    assert len(rows) == 256
+    assert captures.scans == 1
+    assert calls == {
+        "authenticate": 1,
+        "query_receipt": 256,
+        "context_receipt": 256,
+        "packet_feature": 256,
+    }
+    assert observed_queries == [entry.query_id for entry in entries]
 
 
 def test_trusted_repeated_pin_rewalks_ancestor_under_unchanged_head(

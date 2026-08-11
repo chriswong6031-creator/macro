@@ -6,8 +6,8 @@
 [Unit]
 Description=Capture private Market Memory option-OI availability evidence
 Wants=network-online.target
-After=local-fs.target network-online.target macro-market-memory-source.service macro-market-memory-context.service macro-market-memory-identity.service macro-market-memory-breadth.service macro-market-memory-technicals.service
-Conflicts=macro-market-memory-source.service macro-market-memory-context.service macro-market-memory-identity.service macro-market-memory-breadth.service macro-market-memory-technicals.service
+After=local-fs.target network-online.target macro-market-memory-source.service macro-market-memory-context.service macro-market-memory-identity.service macro-market-memory-breadth.service macro-market-memory-technicals.service macro-market-memory-experience.service
+Conflicts=macro-market-memory-source.service macro-market-memory-context.service macro-market-memory-identity.service macro-market-memory-breadth.service macro-market-memory-technicals.service macro-market-memory-experience.service
 ConditionPathExists=/run/macro-api-market-memory-options-deny.ready
 ConditionPathExists=/run/macro-market-memory-options-reciprocal-deny.ready
 
@@ -52,6 +52,7 @@ RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 ReadOnlyPaths=/opt/macro
 ReadWritePaths=/var/lib/macro-market-memory-options/options-v1
 InaccessiblePaths=/var/lib/macro-market-memory
+InaccessiblePaths=/var/lib/macro-market-memory/state/experience-v1
 InaccessiblePaths=-/opt/macro/.env
 InaccessiblePaths=-/var/lib/macro-api
 InaccessiblePaths=-/var/lib/macro-biocatalyst

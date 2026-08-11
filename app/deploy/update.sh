@@ -30,8 +30,13 @@ fi
 OPTIONS_TIMER_DISARMED=0
 OPTIONS_API_FENCE_MARKER=/run/macro-api-market-memory-options-deny.ready
 OPTIONS_RECIPROCAL_FENCE_MARKER=/run/macro-market-memory-options-reciprocal-deny.ready
-OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|context|identity|breadth|technicals)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
-OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|context|identity|breadth|technicals)\.(service|timer)|scripts/__init__\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit)?)\.py))$'
+OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|context|identity|breadth|technicals|experience)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|context|identity|breadth|technicals|experience)\.(service|timer)|scripts/(__init__|accrue_market_memory_spy_experience)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual)?)\.py)|contracts/market_memory/spy_experience_(registration|opportunity|outcome_revision|population_receipt)\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|lib/(__init__|nyse_calendar)\.py|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+MARKET_MEMORY_EXPERIENCE_RUNTIME_REGEX='^(app/requirements\.txt|scripts/(__init__|accrue_market_memory_spy_experience)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual)?)\.py)|contracts/market_memory/spy_experience_(registration|opportunity|outcome_revision|population_receipt)\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|lib/(__init__|nyse_calendar)\.py|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+MARKET_MEMORY_EXPERIENCE_ROOT=/var/lib/macro-market-memory/state/experience-v1
+MARKET_MEMORY_EXPERIENCE_INSTALLATION="$MARKET_MEMORY_EXPERIENCE_ROOT/registration_installation.json"
+MARKET_MEMORY_EXPERIENCE_TERMINAL="$MARKET_MEMORY_EXPERIENCE_ROOT/TERMINAL.json"
+MARKET_MEMORY_EXPERIENCE_PYTHON=/opt/macro-api/.venv/bin/python
 RECIPROCAL_TIMERS_PAUSED=0
 OPTIONS_DEFER_REARM_FOR_SELF_UPDATE=0
 
@@ -75,7 +80,7 @@ stop_unit_and_verify_inactive() {
 stop_reciprocal_market_memory_writers() {
 	local profile service timer
 	rm -f "$OPTIONS_RECIPROCAL_FENCE_MARKER"
-	for profile in source context identity breadth technicals; do
+	for profile in source context identity breadth technicals experience; do
 		service="macro-market-memory-$profile.service"
 		timer="macro-market-memory-$profile.timer"
 		if ! stop_unit_and_verify_inactive \
@@ -95,7 +100,7 @@ stop_reciprocal_market_memory_writers() {
 
 reciprocal_market_memory_units_ready() {
 	local profile
-	for profile in source context identity breadth technicals; do
+	for profile in source context identity breadth technicals experience; do
 		mm_loaded_unit_ready \
 			"$APP_DIR/app/deploy/macro-market-memory-$profile.service" \
 			"/etc/systemd/system/macro-market-memory-$profile.service" \
@@ -114,6 +119,78 @@ unit_repair_inputs_safe() {
 		mm_unit_repair_inputs_safe "$source" "/etc/systemd/system/$unit" || return 1
 	done
 }
+
+# BEGIN W2C_DEPLOY_HELPERS
+w2c_start_owner_chain() {
+	local owner
+	for owner in source context technicals; do
+		if ! systemctl start "macro-market-memory-$owner.service"; then
+			echo "macro-update: W2C owner replay failed: $owner" >&2
+			return 1
+		fi
+	done
+}
+
+w2c_verify_installation() {
+	"${MARKET_MEMORY_EXPERIENCE_PYTHON:-/opt/macro-api/.venv/bin/python}" \
+		"${APP_DIR:-/opt/macro}/scripts/accrue_market_memory_spy_experience.py" \
+		--repository-root "${APP_DIR:-/opt/macro}" \
+		--experience-root "$MARKET_MEMORY_EXPERIENCE_ROOT" \
+		--verify-installation >/dev/null
+}
+
+w2c_terminal_ledger_state() {
+	local status
+	if "${MARKET_MEMORY_EXPERIENCE_PYTHON:-/opt/macro-api/.venv/bin/python}" \
+		"${APP_DIR:-/opt/macro}/scripts/accrue_market_memory_spy_experience.py" \
+		--repository-root "${APP_DIR:-/opt/macro}" \
+		--experience-root "$MARKET_MEMORY_EXPERIENCE_ROOT" \
+		--verify-terminal >/dev/null; then
+		return 0
+	else
+		status=$?
+	fi
+	[ "$status" -eq 3 ] && return 3
+	echo "macro-update: W2C terminal ledger authentication failed" >&2
+	return 2
+}
+
+w2c_reconcile_timer() {
+	local terminal_state=0
+	w2c_terminal_ledger_state || terminal_state=$?
+	case "$terminal_state" in
+		0)
+			systemctl disable --now macro-market-memory-experience.timer || return 1
+			if systemctl is-enabled macro-market-memory-experience.timer >/dev/null 2>&1 || \
+			   systemctl is-active macro-market-memory-experience.timer >/dev/null 2>&1; then
+				echo "macro-update: W2C terminal timer disarm verification failed" >&2
+				return 1
+			fi
+			;;
+		3)
+			if ! w2c_verify_installation; then
+				echo "macro-update: W2C installation authentication failed" >&2
+				return 1
+			fi
+			if systemctl is-enabled macro-market-memory-experience.timer >/dev/null 2>&1 && \
+			   systemctl is-active macro-market-memory-experience.timer >/dev/null 2>&1; then
+				return 0
+			fi
+			if [ "${W2C_OWNER_REPLAY_READY:-0}" -ne 1 ]; then
+				echo "macro-update: refusing to arm W2C before synchronous owner replay" >&2
+				return 1
+			fi
+			systemctl enable --now macro-market-memory-experience.timer || return 1
+			systemctl is-enabled macro-market-memory-experience.timer >/dev/null 2>&1 || return 1
+			systemctl is-active macro-market-memory-experience.timer >/dev/null 2>&1 || return 1
+			;;
+		*)
+			echo "macro-update: W2C terminal state is invalid" >&2
+			return 1
+			;;
+	esac
+}
+# END W2C_DEPLOY_HELPERS
 
 # BEGIN W1B5_TIMER_DISARM
 disarm_options_timer() {
@@ -325,6 +402,7 @@ install -d -m 0700 /var/lib/macro-market-memory/state/context-projection
 install -d -m 0700 /var/lib/macro-market-memory/state/identity-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/breadth-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/technicals-v1
+install -d -m 0700 /var/lib/macro-market-memory/state/experience-v1
 # Unit verification needs the static account and empty deny anchors.  The
 # service-writable profile and credential file are provisioned only after
 # macro-api proves a new deny namespace.
@@ -425,7 +503,7 @@ else
 	echo "macro-update: macro-api effective unit boundary is not reviewed/current" >&2
 fi
 
-# A /run receipt proves that all five pre-existing Market Memory writers were
+# A /run receipt proves that all six reciprocal Market Memory writers were
 # stopped at least once after boot/unit drift and any later starts used the
 # exact reviewed, drop-in-free unit fragments. Its absence pauses the writers
 # before their legacy reconciliation blocks can install, enable, or start them.
@@ -768,6 +846,115 @@ if [ "$MARKET_MEMORY_BREADTH_RUN_NEEDED" -eq 1 ]; then
 		echo "macro-update: Market Memory breadth capture failed closed; hourly timer will retry" >&2
 	fi
 fi
+
+# W2C private prospective experience accrual.  The writer is network-dark and
+# credential-free.  It reads only the exact trusted-v1 and technical owner
+# generations, derives its denominator from the tracked registration/calendar,
+# and writes only the disjoint experience-v1 ledger.
+MARKET_MEMORY_EXPERIENCE_UNIT_UPDATED=0
+MARKET_MEMORY_EXPERIENCE_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-experience.service"
+	"$APP_DIR/app/deploy/macro-market-memory-experience.timer"
+)
+if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_EXPERIENCE_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-experience.service || \
+   ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_EXPERIENCE_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-experience.timer; then
+	unit_repair_inputs_safe "${MARKET_MEMORY_EXPERIENCE_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe experience unit repair input" >&2
+		exit 1
+	}
+	if systemd-analyze verify "${MARKET_MEMORY_EXPERIENCE_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_EXPERIENCE_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				[ ! -L "/etc/systemd/system/$UNIT" ] || {
+					echo "macro-update: refusing symlinked unit $UNIT" >&2
+					exit 1
+				}
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_EXPERIENCE_UNIT_UPDATED=1
+			fi
+		done
+			if [ "$MARKET_MEMORY_EXPERIENCE_UNIT_UPDATED" -eq 1 ]; then
+				systemctl daemon-reload
+				RECONCILED=1
+			echo "macro-update: Market Memory SPY experience units updated"
+		fi
+	else
+		echo "macro-update: refusing Market Memory experience unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+# BEGIN W2C_RUNTIME_ATTESTATION
+MARKET_MEMORY_EXPERIENCE_RUN_NEEDED=0
+MARKET_MEMORY_EXPERIENCE_INSTALLATION_REQUIRED=0
+MARKET_MEMORY_EXPERIENCE_ATTESTED=0
+if [ ! -e "$MARKET_MEMORY_EXPERIENCE_INSTALLATION" ] && \
+   [ ! -L "$MARKET_MEMORY_EXPERIENCE_INSTALLATION" ]; then
+	MARKET_MEMORY_EXPERIENCE_INSTALLATION_REQUIRED=1
+	MARKET_MEMORY_EXPERIENCE_RUN_NEEDED=1
+fi
+if [ "$MARKET_MEMORY_EXPERIENCE_UNIT_UPDATED" -eq 1 ] || \
+   echo "$CHANGED" | grep -qE "$MARKET_MEMORY_EXPERIENCE_RUNTIME_REGEX"; then
+	MARKET_MEMORY_EXPERIENCE_RUN_NEEDED=1
+fi
+MARKET_MEMORY_EXPERIENCE_TERMINAL_STATE=0
+w2c_terminal_ledger_state || MARKET_MEMORY_EXPERIENCE_TERMINAL_STATE=$?
+if [ "$MARKET_MEMORY_EXPERIENCE_TERMINAL_STATE" -eq 0 ]; then
+	if ! w2c_verify_installation; then
+		echo "macro-update: terminal W2C ledger has no authentic installation receipt" >&2
+		exit 1
+	fi
+	MARKET_MEMORY_EXPERIENCE_RUN_NEEDED=0
+	if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ] && ! w2c_reconcile_timer; then
+		echo "macro-update: authenticated terminal W2C timer disarm failed" >&2
+		exit 1
+	fi
+	if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+		MARKET_MEMORY_EXPERIENCE_ATTESTED=1
+	fi
+elif [ "$MARKET_MEMORY_EXPERIENCE_TERMINAL_STATE" -ne 3 ]; then
+	echo "macro-update: W2C terminal ledger is invalid" >&2
+	exit 1
+fi
+if [ "$MARKET_MEMORY_EXPERIENCE_TERMINAL_STATE" -eq 3 ] && \
+   [ "$MARKET_MEMORY_EXPERIENCE_INSTALLATION_REQUIRED" -eq 0 ] && \
+   ! w2c_verify_installation; then
+	echo "macro-update: existing W2C installation receipt failed authentication" >&2
+	exit 1
+fi
+if [ "$MARKET_MEMORY_EXPERIENCE_TERMINAL_STATE" -eq 3 ]; then
+	if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ]; then
+		echo "macro-update: deferring W2C replay and attestation until reciprocal boundary closure" >&2
+	elif [ "$API_DEPS_OK" -ne 1 ]; then
+		echo "macro-update: W2C attestation unavailable — shared runtime dependencies are not current" >&2
+		exit 1
+	else
+		W2C_OWNER_REPLAY_READY=0
+		if [ "$MARKET_MEMORY_EXPERIENCE_RUN_NEEDED" -eq 1 ] || \
+		   ! systemctl is-enabled macro-market-memory-experience.timer >/dev/null 2>&1 || \
+		   ! systemctl is-active macro-market-memory-experience.timer >/dev/null 2>&1; then
+			if ! w2c_start_owner_chain; then
+				echo "macro-update: refusing W2C activation before owner replay completion" >&2
+				exit 1
+			fi
+			W2C_OWNER_REPLAY_READY=1
+		fi
+		if [ "$MARKET_MEMORY_EXPERIENCE_RUN_NEEDED" -eq 1 ] && \
+		   ! systemctl start macro-market-memory-experience.service; then
+			echo "macro-update: W2C accrual failed before deployment attestation" >&2
+			exit 1
+		fi
+		if ! w2c_verify_installation; then
+			echo "macro-update: W2C installation attestation failed after replay" >&2
+			exit 1
+		fi
+		if ! w2c_reconcile_timer; then
+			echo "macro-update: W2C timer reconciliation failed" >&2
+			exit 1
+		fi
+		MARKET_MEMORY_EXPERIENCE_ATTESTED=1
+	fi
+fi
+# END W2C_RUNTIME_ATTESTATION
 
 # W1B.5 private, future-only option-OI endpoint availability canary. It makes
 # exactly one bounded first-page request with a systemd credential, follows no
@@ -1119,9 +1306,44 @@ fi
 if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ] && \
    [ "$RECIPROCAL_UNITS_READY" -eq 1 ] && \
    [ "$OPTIONS_DEFER_REARM_FOR_SELF_UPDATE" -eq 0 ]; then
+	# A deploy in W2C's 04:30-04:45Z window must never seal stale pre-deploy
+	# owner heads. Replay the dependency chain synchronously and in order; a
+	# oneshot `systemctl start` returns only after that owner has completed.
+	# BEGIN W2C_DEFERRED_REPLAY
+	W2C_OWNER_REPLAY_READY=0
+	if [ "$MARKET_MEMORY_EXPERIENCE_TERMINAL_STATE" -eq 3 ]; then
+		if [ "$API_DEPS_OK" -ne 1 ]; then
+			echo "macro-update: refusing deferred W2C attestation with stale dependencies" >&2
+			exit 1
+		fi
+		if ! w2c_start_owner_chain; then
+			echo "macro-update: refusing deferred W2C activation before owner replay completion" >&2
+			exit 1
+		fi
+		W2C_OWNER_REPLAY_READY=1
+		if [ "$MARKET_MEMORY_EXPERIENCE_RUN_NEEDED" -eq 1 ] && \
+		   ! systemctl start macro-market-memory-experience.service; then
+			echo "macro-update: deferred W2C accrual failed before attestation" >&2
+			exit 1
+		fi
+	fi
+	if ! w2c_verify_installation; then
+		echo "macro-update: deferred W2C installation attestation failed" >&2
+		exit 1
+	fi
+	# END W2C_DEFERRED_REPLAY
 	for RECIPROCAL_PROFILE in source context identity breadth technicals; do
 		systemctl start "macro-market-memory-$RECIPROCAL_PROFILE.timer"
 	done
+	if ! w2c_reconcile_timer; then
+		echo "macro-update: W2C timer reconciliation failed" >&2
+		exit 1
+	fi
+	MARKET_MEMORY_EXPERIENCE_ATTESTED=1
+fi
+if [ "${MARKET_MEMORY_EXPERIENCE_ATTESTED:-1}" -ne 1 ]; then
+	echo "macro-update: W2C installation and terminal state were not authenticated" >&2
+	exit 1
 fi
 OPTIONS_RECONCILIATION_COMPLETE=1
 trap - EXIT

@@ -1,0 +1,333 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/spy_experience_opportunity.v1.schema.json",
+  "title": "Market Memory SPY experience opportunity v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "opportunity_id", "registration_id", "registration_sha256",
+    "session", "target_session", "cutoff", "disposition", "reason",
+    "source_pins", "decision_state_projection", "decision_state_projection_reason",
+    "sealed_at", "writer_commit", "evidence_policy", "claims", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.spy_experience_opportunity.v1"},
+    "opportunity_id": {"type": "string", "pattern": "^mmspyexpopp_[a-f0-9]{64}$"},
+    "registration_id": {"type": "string", "pattern": "^mmspyexpreg_[a-f0-9]{64}$"},
+    "registration_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "session": {"$ref": "#/$defs/session"},
+    "target_session": {"$ref": "#/$defs/session"},
+    "cutoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["window_opens_at", "deadline_at", "actual_cutoff_at", "first_owner_observed_at", "reconciled_at", "clock_model"],
+      "properties": {
+        "window_opens_at": {"$ref": "#/$defs/utc"},
+        "deadline_at": {"$ref": "#/$defs/utc"},
+        "actual_cutoff_at": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]},
+        "first_owner_observed_at": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]},
+        "reconciled_at": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]},
+        "clock_model": {"const": "session_ordinal_only_no_fabricated_market_close_timestamp"}
+      }
+    },
+    "disposition": {"enum": ["admitted", "abstained", "missed"]},
+    "reason": {
+      "enum": [
+        "exact_same_session_owner_pins",
+        "trusted_macro_session_absent",
+        "technical_session_absent",
+        "trusted_macro_and_technical_session_absent",
+        "owner_capture_clock_tie",
+        "not_sealed_by_deadline",
+        "owner_pair_not_stable_by_deadline",
+        "owner_unavailable_by_deadline",
+        "owner_integrity_failure_by_deadline",
+        "owner_pin_cap_exceeded_by_deadline"
+      ]
+    },
+    "source_pins": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/sourcePins"}
+      ]
+    },
+    "decision_state_projection": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/decisionStateProjection"}]
+    },
+    "decision_state_projection_reason": {
+      "enum": [
+        "exact_owner_macro_regime_transform",
+        "owner_liquidity_overlay_unknown",
+        "owner_cycle_tag_unknown",
+        "owner_liquidity_overlay_and_cycle_tag_unknown",
+        "trusted_macro_unavailable_or_ambiguous",
+        "missed_without_authenticated_owner_pair"
+      ]
+    },
+    "sealed_at": {"$ref": "#/$defs/utc"},
+    "writer_commit": {"type": "string", "pattern": "^[a-f0-9]{40}(?:[a-f0-9]{24})?$"},
+    "evidence_policy": {"$ref": "#/$defs/evidencePolicy"},
+    "claims": {"$ref": "#/$defs/claims"},
+    "authority": {"$ref": "spy_experience_registration.v1.schema.json#/$defs/authority"}
+  },
+  "$defs": {
+    "session": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "coordinate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_binary64_hex", "source_exact_decimal", "q18"],
+      "properties": {
+        "source_binary64_hex": {"type": "string", "pattern": "^-?0x[0-9a-f]+\\.[0-9a-f]+p[+-][0-9]+$"},
+        "source_exact_decimal": {"type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$", "maxLength": 768},
+        "q18": {"type": "string", "pattern": "^-?(?:0|1)\\.[0-9]{18}$"}
+      }
+    },
+    "decisionStateProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "source_feature_id", "source_transform_version", "feature_snapshot_id",
+        "feature_content_sha256", "growth_score", "inflation_score", "quad",
+        "liquidity_overlay", "cycle_tag", "missingness_policy"
+      ],
+      "properties": {
+        "schema": {"const": "market_memory.spy_regime_decision_state_projection.v1"},
+        "source_feature_id": {"const": "macro.regime_state"},
+        "source_transform_version": {"const": "market_memory.macro_regime_transform.v1"},
+        "feature_snapshot_id": {"type": "string", "pattern": "^mmsnap_[a-f0-9]{64}$"},
+        "feature_content_sha256": {"$ref": "#/$defs/sha256"},
+        "growth_score": {"$ref": "#/$defs/coordinate"},
+        "inflation_score": {"$ref": "#/$defs/coordinate"},
+        "quad": {"enum": ["Q1", "Q2", "Q3", "Q4"]},
+        "liquidity_overlay": {"enum": ["expanding", "neutral", "contracting"]},
+        "cycle_tag": {"enum": ["early", "mid", "late"]},
+        "missingness_policy": {"const": "fail_closed_no_imputation"}
+      }
+    },
+    "trustedGeneration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "store_id", "generation_id", "generation_sha256", "capture_count"],
+      "properties": {
+        "profile": {"const": "market_memory.trusted.macro_regime_canary.v1"},
+        "store_id": {"type": "string", "pattern": "^mmstore_[a-f0-9]{64}$"},
+        "generation_id": {"type": "string", "pattern": "^mmgeneration_[a-f0-9]{64}$"},
+        "generation_sha256": {"$ref": "#/$defs/sha256"},
+        "capture_count": {"type": "integer", "minimum": 0, "maximum": 256}
+      }
+    },
+    "technicalGeneration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "store_id", "generation_id", "generation_sha256", "capture_count"],
+      "properties": {
+        "profile": {"const": "market_memory.private.spy_raw_technical_actual_output.v1"},
+        "store_id": {"type": "string", "pattern": "^mmactualstore_[a-f0-9]{64}$"},
+        "generation_id": {"type": "string", "pattern": "^mmactualgeneration_[a-f0-9]{64}$"},
+        "generation_sha256": {"$ref": "#/$defs/sha256"},
+        "capture_count": {"type": "integer", "minimum": 0, "maximum": 256}
+      }
+    },
+    "trustedCapture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capture_id", "query_id", "context_id", "packet_sha256", "feature_snapshot_id",
+        "feature_content_sha256", "source_session", "captured_at",
+        "feature_observed_at", "source_observed_at", "subject_id",
+        "instrument_id", "identity_version", "decision_state_projection",
+        "decision_state_projection_reason", "decision_state_raw_categories"
+      ],
+      "properties": {
+        "capture_id": {"type": "string", "pattern": "^mmcapture_[a-f0-9]{64}$"},
+        "query_id": {"type": "string", "pattern": "^mmquery_[a-f0-9]{64}$"},
+        "context_id": {"type": "string", "pattern": "^mmctx_[a-f0-9]{64}$"},
+        "packet_sha256": {"$ref": "#/$defs/sha256"},
+        "feature_snapshot_id": {"type": "string", "pattern": "^mmsnap_[a-f0-9]{64}$"},
+        "feature_content_sha256": {"$ref": "#/$defs/sha256"},
+        "source_session": {"$ref": "#/$defs/session"},
+        "captured_at": {"$ref": "#/$defs/utc"},
+        "feature_observed_at": {"$ref": "#/$defs/utc"},
+        "source_observed_at": {"$ref": "#/$defs/utc"},
+        "subject_id": {"const": "mmsecurity_5fc37e8db34f74314b654c910ea8bacfa7de8b5d2d067f2e5421c9d5745ceb4c"},
+        "instrument_id": {"const": "mmsecurity_6f361f5bad9f06a3b2ff157585d5728f55f77198420959aadd8922d1045c3fea"},
+        "identity_version": {"const": "mmidentityv_65ec5e55473e953b55fa2d146f40e8b56dfae2e68a3df7423405db1034d16903"}
+        ,"decision_state_projection": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/decisionStateProjection"}]}
+        ,"decision_state_projection_reason": {
+          "enum": [
+            "exact_owner_macro_regime_transform", "owner_liquidity_overlay_unknown",
+            "owner_cycle_tag_unknown", "owner_liquidity_overlay_and_cycle_tag_unknown"
+          ]
+        }
+        ,"decision_state_raw_categories": {
+          "type": "object", "additionalProperties": false,
+          "required": ["quad", "liquidity_overlay", "cycle_tag"],
+          "properties": {
+            "quad": {"enum": ["Q1", "Q2", "Q3", "Q4"]},
+            "liquidity_overlay": {"enum": ["expanding", "neutral", "contracting", "unknown"]},
+            "cycle_tag": {"enum": ["early", "mid", "late", "unknown"]}
+          }
+        }
+      }
+    },
+    "technicalCapture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capture_id", "revision_id", "source_observation_id", "snapshot_id",
+        "source_session", "first_observed_at", "spy_parquet_sha256",
+        "end_close_binary64_hex", "end_close_exact_decimal", "subject",
+        "calendar", "price_basis"
+      ],
+      "properties": {
+        "capture_id": {"type": "string", "pattern": "^mmactualcapture_[a-f0-9]{64}$"},
+        "revision_id": {"type": "string", "pattern": "^mmtechrev_[a-f0-9]{64}$"},
+        "source_observation_id": {"type": "string", "pattern": "^mmtechsrc_[a-f0-9]{64}$"},
+        "snapshot_id": {"type": "string", "pattern": "^mmtechsnap_[a-f0-9]{64}$"},
+        "source_session": {"$ref": "#/$defs/session"},
+        "first_observed_at": {"$ref": "#/$defs/utc"},
+        "spy_parquet_sha256": {"$ref": "#/$defs/sha256"},
+        "end_close_binary64_hex": {"type": "string", "pattern": "^0x[0-9a-f]+\\.[0-9a-f]+p[+-][0-9]+$"},
+        "end_close_exact_decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?$", "maxLength": 768},
+        "subject": {"$ref": "#/$defs/subject"},
+        "calendar": {"$ref": "#/$defs/calendar"},
+        "price_basis": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["raw_unadjusted", "split_adjusted", "dividend_adjusted", "economic_return"],
+          "properties": {
+            "raw_unadjusted": {"const": true},
+            "split_adjusted": {"const": false},
+            "dividend_adjusted": {"const": false},
+            "economic_return": {"const": false}
+          }
+        }
+      }
+    },
+    "sourcePins": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pin_observed_at", "selection", "subject", "calendar", "trusted_generation", "technical_generation",
+        "trusted_capture", "technical_capture"
+      ],
+      "properties": {
+        "pin_observed_at": {"$ref": "#/$defs/utc"},
+        "selection": {"const": "owner_observed_revision_chain.v1"},
+        "subject": {"$ref": "#/$defs/subject"},
+        "calendar": {"$ref": "#/$defs/calendar"},
+        "trusted_generation": {"$ref": "#/$defs/trustedGeneration"},
+        "technical_generation": {"$ref": "#/$defs/technicalGeneration"},
+        "trusted_capture": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/trustedCapture"}]},
+        "technical_capture": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/technicalCapture"}]}
+      }
+    },
+    "subject": {
+      "type": "object", "additionalProperties": false,
+      "required": ["symbol", "subject_id", "instrument_id", "identity_version", "mic", "currency"],
+      "properties": {
+        "symbol": {"const": "SPY"},
+        "subject_id": {"const": "mmsecurity_5fc37e8db34f74314b654c910ea8bacfa7de8b5d2d067f2e5421c9d5745ceb4c"},
+        "instrument_id": {"const": "mmsecurity_6f361f5bad9f06a3b2ff157585d5728f55f77198420959aadd8922d1045c3fea"},
+        "identity_version": {"const": "mmidentityv_65ec5e55473e953b55fa2d146f40e8b56dfae2e68a3df7423405db1034d16903"},
+        "mic": {"const": "ARCX"},
+        "currency": {"const": "USD"}
+      }
+    },
+    "calendar": {
+      "type": "object", "additionalProperties": false,
+      "required": ["calendar_id", "market_session"],
+      "properties": {
+        "calendar_id": {"const": "mmcalendar_a102c5367c17f9c0b4df3af5c2826824fc112935ec76e6d18d55833f53644e0c"},
+        "market_session": {"const": "XNYS_REGULAR"}
+      }
+    },
+    "evidencePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prospective_only", "actual_output_only", "same_session", "combined_w2_state", "training_eligible", "promotion_eligible"],
+      "properties": {
+        "prospective_only": {"const": true},
+        "actual_output_only": {"const": true},
+        "same_session": {"const": true},
+        "combined_w2_state": {"const": false},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false}
+      }
+    },
+    "claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "external_clock_authenticated",
+        "aba_resistance_authenticated",
+        "calendar_session_derivation_authenticated",
+        "source_generation_pins_authenticated"
+      ],
+      "properties": {
+        "external_clock_authenticated": {"const": false},
+        "aba_resistance_authenticated": {"const": false},
+        "calendar_session_derivation_authenticated": {"const": true},
+        "source_generation_pins_authenticated": {"type": "boolean"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"disposition": {"const": "admitted"}}, "required": ["disposition"]},
+      "then": {
+        "properties": {
+          "reason": {"const": "exact_same_session_owner_pins"},
+          "source_pins": {
+            "allOf": [
+              {"$ref": "#/$defs/sourcePins"},
+              {"properties": {
+                "trusted_capture": {"$ref": "#/$defs/trustedCapture"},
+                "technical_capture": {"$ref": "#/$defs/technicalCapture"}
+              }}
+            ]
+          },
+          "cutoff": {"properties": {
+            "actual_cutoff_at": {"$ref": "#/$defs/utc"},
+            "first_owner_observed_at": {"$ref": "#/$defs/utc"},
+            "reconciled_at": {"type": "null"}
+          }},
+          "claims": {"properties": {"source_generation_pins_authenticated": {"const": true}}}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"disposition": {"const": "missed"}}, "required": ["disposition"]},
+      "then": {"properties": {
+        "reason": {"enum": ["not_sealed_by_deadline", "owner_pair_not_stable_by_deadline", "owner_unavailable_by_deadline", "owner_integrity_failure_by_deadline", "owner_pin_cap_exceeded_by_deadline"]},
+        "source_pins": {"type": "null"},
+        "cutoff": {"properties": {
+          "actual_cutoff_at": {"type": "null"},
+          "first_owner_observed_at": {"type": "null"},
+          "reconciled_at": {"$ref": "#/$defs/utc"}
+        }},
+        "claims": {"properties": {"source_generation_pins_authenticated": {"const": false}}}
+        ,"decision_state_projection": {"type": "null"}
+        ,"decision_state_projection_reason": {"const": "missed_without_authenticated_owner_pair"}
+      }}
+    },
+    {
+      "if": {"properties": {"reason": {"enum": [
+        "trusted_macro_session_absent", "technical_session_absent",
+        "trusted_macro_and_technical_session_absent", "owner_capture_clock_tie"
+      ]}}, "required": ["reason"]},
+      "then": {"properties": {
+        "disposition": {"const": "abstained"},
+        "source_pins": {"$ref": "#/$defs/sourcePins"},
+        "cutoff": {"properties": {
+          "actual_cutoff_at": {"$ref": "#/$defs/utc"},
+          "first_owner_observed_at": {"$ref": "#/$defs/utc"},
+          "reconciled_at": {"type": "null"}
+        }},
+        "claims": {"properties": {"source_generation_pins_authenticated": {"const": true}}}
+      }}
+    }
+  ]
+}
