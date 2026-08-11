@@ -417,12 +417,16 @@ Until all five: display tier, everywhere, forever.
 
 1. **R4-gradient prereg** — "down-shock continuation weakens as market
    liquidity tightens": frozen VIX breakpoints, forward-ledger graded.
-   **REGISTERED 2026-08-10** → `research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md`
-   (immutable t0 VIXCLS trailing-252d-percentile stamp, calm < 0.5 vs stressed
-   ≥ 0.8 — the LSR-P0 reopener sighting's own cells, disclosed and frozen ex
-   ante; R4-A h=5 prospective confirmation + R4-B h=21 conjunctive product
-   claim; zero forward rows at registration — check maturity floors without
-   reading outcomes, never grade early).
+   **REGISTERED 2026-08-10, amended twice pre-evidence (§9 sibling audit + §10
+   red-team reconciliation, 2026-08-11)** →
+   `research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md` (immutable t0 VIXCLS
+   trailing-252d-percentile stamp with a measured lag-completion rule, calm < 0.5
+   vs stressed ≥ 0.8 — the sighting's own cells; **R4-A h=5 is the sole gating
+   claim** at power-based floors — 240 stressed dates across ≥8 regime runs / 480
+   calm ≈ 5.5y clock, stressed arm resampled at run level; **R4-B h=21
+   descriptive-only forever**, measured weak in-sample; evidence eligibility
+   begins 2026-08-11 — check maturity floors without reading outcomes, never
+   grade early).
 2. **Revisions firewall clock** — re-test information separation when
    `data/revisions/history.parquet` covers ≥ ~2y of events (≈2028+).
 3. **Tape-grade exhaustion** — when the tick plane exposes signed
@@ -557,3 +561,25 @@ promotion gates (F14), MU printed as a measured non-fire (B1 arm), CDE
 basket-honesty framing (B1 arm). The review also *measured* MU's worst
 April-2025 residual z at −2.44 (never crosses the −3 fence) — §6's scope
 statement is empirical twice over.
+
+**R4 prereg — twin audits and reconciliation (2026-08-10/11, session 2,
+pre-evidence).** Two independent adversarial passes raced on PR #5285: a
+sibling session's audit merged first (prereg §9 — terminal-enum fix,
+stamped-PIT binding, bootstrap-difference freeze, endpoint-complete floors),
+and this session's opus red-team pass (10 BLOCKER + 7 MINOR, measured rather
+than argued) landed as the §10 amendment (#5286). Four blockers converged
+independently across the two passes. Three defects survived §9 and §10
+repaired them: (1) the stamped-only PIT rule + the measured one-session
+VIXCLS harvest lag would have starved both evidence arms to zero forever
+(lag-completion: null → t0's own value, once; non-null immutable); (2)
+5-date blocks on a stressed arm whose 268 sessions form 36 regime runs are
+anti-conservative exactly where a false PASS promotes (run-level resampling
++ ≥8-run floor); (3) the §7-law minimum floors grade at MDE 2.4–4.9× the
+sighted effect under grade-once semantics (power floors 240/480; R4-B,
+measured weak in-sample at h=21, demoted to descriptive-only forever). Plus
+the eligibility boundary made explicit (the era's first rows are dated
+2026-08-10 — the first post-merge nightly's asof — so evidence is registered
+as era=="forward" AND date ≥ 2026-08-11). Fleet mechanics lesson: the
+sweeper merged #5285 ~70 seconds before this session's rev-2 push — the
+orphaned-rev remedy is to reconcile FROM the merged sibling text (whose §9
+was independently good), never to force the orphan through.
