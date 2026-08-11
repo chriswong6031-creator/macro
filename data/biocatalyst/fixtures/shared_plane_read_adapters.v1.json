@@ -1,7 +1,7 @@
 {
   "contract_id": "biocatalyst_shared_plane_read_adapters.v1",
   "schema_version": "1.0.0",
-  "baseline_commit": "e124f4ed2edcf77a82295c78f4feabc6c3e7bc90",
+  "baseline_commit": "22cf8a9f8f54e341e2efb63c6d5c6984476252db",
   "adapters": {
     "biocatalyst_trial_read_api.v1": {
       "canonical_owner": "biocatalyst",
@@ -135,32 +135,31 @@
     },
     "biocatalyst_capital_structure_pit_adapter.v1": {
       "canonical_owner": "capital_structure",
-      "implementation_state": "blocked_current_projection_has_no_biocatalyst_pit_adapter",
-      "module": null,
-      "callable": null,
+      "implementation_state": "implemented_private_in_process_event_state_only",
+      "module": "engine.capital_structure.biocatalyst_pit_adapter",
+      "callable": "read_biocatalyst_capital_structure_pit",
       "route_prefix": null,
       "routes": [],
-      "input_identity": null,
-      "output_contracts": [],
-      "transport": null,
-      "point_in_time_scope": null,
-      "available_dependency": {
-        "module": "app.capital_structure",
-        "routes": [
-          "/api/capital-structure/v1/coverage",
-          "/api/capital-structure/v1/overview",
-          "/api/capital-structure/v1/issuers/resolve",
-          "/api/capital-structure/v1/issuers/{issuer_id}",
-          "/api/capital-structure/v1/issuers/{issuer_id}/events"
-        ],
-        "output_contract": "capital_structure.projection_bundle.v1",
-        "transport": "authenticated_site_full_private_no_store",
-        "scope": "current_observed_filing_state_without_cash_runway_or_dilution"
-      },
+      "input_identity": "caller_supplied_sec_issuer_id_and_timezone_aware_as_of",
+      "output_contracts": [
+        "biocatalyst_capital_structure_pit_read.v1"
+      ],
+      "transport": "private_in_process_receipted_context_only_no_store",
+      "point_in_time_scope": "verified_owner_generation_system_time_one_issuer",
+      "available_dependency": null,
       "compatibility_fixture": "data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json",
-      "biocatalyst_eligible": false,
-      "limitations": [],
-      "blocker": "versioned_internal_pit_adapter_with_unavailable_state_semantics"
+      "biocatalyst_eligible": true,
+      "limitations": [
+        "caller_supplied_sec_issuer_id_only",
+        "event_state_only",
+        "explicit_owner_generation_coverage_only",
+        "no_cash_burn_runway_or_dilution_calculation",
+        "no_identity_resolution",
+        "no_model_or_signal_authority",
+        "no_negative_issuer_coverage_conclusion",
+        "private_in_process_only"
+      ],
+      "blocker": null
     }
   }
 }
