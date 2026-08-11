@@ -215,7 +215,8 @@ def test_dates_index_shape(staged):
     assert doc["family"] == "tide"
     assert doc["dates"] == [SESSION] and doc["latest"] == SESSION and doc["count"] == 1
     assert doc["retain"] == ARCHIVE_RETAIN_SESSIONS
-    # Cadence honesty: verbatim from the true write interval.
+    # Poll floor is the completeness denominator; legacy cadence aliases it.
+    assert doc["pollFloorSec"] == 300
     assert doc["cadenceSec"] == 300 and doc["cadence"] == "5-min"
     assert doc["asof"] == "2026-07-29T20:01:00Z" and doc["source"] == "poller"
 
@@ -289,8 +290,19 @@ def test_is_archive_dates_rejects_bad_docs():
     assert not is_archive_dates({**good, "latest": "2026-07-28"})                 # != dates[0]
     assert not is_archive_dates({**good, "dates": ["not-a-date"]})
     assert not is_archive_dates({**good, "cadenceSec": "120"})
+    assert not is_archive_dates({**good, "pollFloorSec": "120"})
+    assert not is_archive_dates({**good, "pollFloorSec": True})
+    assert not is_archive_dates({**good, "pollFloorSec": 0})
     assert not is_archive_dates({**good, "family": "nope"})
     assert not is_archive_dates([])
+
+
+@pytest.mark.parametrize("invalid", [0, -1, True, "120", 120.0])
+def test_archive_dates_reject_coercible_invalid_poll_floor(invalid):
+    with pytest.raises(ValueError, match="exact positive integer"):
+        build_archive_dates_index(
+            TIDE_FAMILY, [SESSION], cadence_sec=invalid, asof="a",
+        )
 
 
 def test_corrupt_index_heals_in_the_same_cycle(staged):

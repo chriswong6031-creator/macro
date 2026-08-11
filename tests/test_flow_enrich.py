@@ -465,8 +465,9 @@ def test_enrich_feed_schema_keys():
         "events": [_mk_event()],
     }
     envelope = fe.enrich_feed(feed, ASOF)
-    required = {"schema", "asof", "session_date", "thresholds", "bootstrap",
-                "n_events", "events", "confirmed_yesterday"}
+    required = {"schema", "asof", "source_asof", "built_at", "session_date",
+                "thresholds", "bootstrap", "n_events", "events",
+                "confirmed_yesterday"}
     assert required.issubset(envelope.keys())
     assert envelope["schema"] == "flow.enrich/v1"
     assert envelope["n_events"] == 1
@@ -489,6 +490,94 @@ def test_enrich_feed_empty_events():
     envelope = fe.enrich_feed(feed, ASOF)
     assert envelope["n_events"] == 0
     assert envelope["events"] == []
+
+
+def test_enrich_feed_legacy_asof_is_source_clock_not_rebuild_clock():
+    source_asof = "2026-07-08T15:55:00Z"
+    built_at = "2026-07-08T16:05:00Z"
+    feed = {
+        "schema": "live_flow.feed/v1",
+        # The feed availability envelope can be newer than its represented source.
+        "asof": "2026-07-08T16:00:00Z",
+        "source_asof": source_asof,
+        "session_date": SESSION_DATE,
+        "events": [],
+    }
+    envelope = fe.enrich_feed(feed, built_at)
+    assert envelope["asof"] == source_asof
+    assert envelope["source_asof"] == source_asof
+    assert envelope["built_at"] == built_at
+
+
+def test_enrich_feed_preserves_subsecond_source_identity():
+    source_asof = "2026-07-08T15:55:00.987654Z"
+    feed = {
+        "schema": "live_flow.feed/v1",
+        "source_asof": source_asof,
+        "session_date": SESSION_DATE,
+        "events": [],
+    }
+    envelope = fe.enrich_feed(feed, "2026-07-08T15:55:01.000001Z")
+    assert envelope["asof"] == source_asof
+    assert envelope["source_asof"] == source_asof
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [None, "", "not-a-time", "2026-07-08T15:55:00", "2026-07-08T16:55:00+01:00"],
+)
+def test_enrich_feed_explicit_invalid_source_time_never_falls_back(invalid):
+    feed = {
+        "schema": "live_flow.feed/v1",
+        "asof": ASOF,
+        "source_asof": invalid,
+        "session_date": SESSION_DATE,
+        "events": [],
+    }
+    with pytest.raises(ValueError, match="feed.source_asof"):
+        fe.enrich_feed(feed, "2026-07-08T16:05:00Z")
+
+
+def test_enrich_feed_rejects_build_clock_before_source_clock():
+    feed = {
+        "schema": "live_flow.feed/v1",
+        "source_asof": "2026-07-08T16:05:00Z",
+        "session_date": SESSION_DATE,
+        "events": [],
+    }
+    with pytest.raises(ValueError, match="cannot precede"):
+        fe.enrich_feed(feed, "2026-07-08T16:04:59Z")
+
+
+def test_enrich_feed_orders_subsecond_clocks_temporally_not_lexically():
+    feed = {
+        "schema": "live_flow.feed/v1",
+        "source_asof": "2026-07-08T16:05:00.9Z",
+        "session_date": SESSION_DATE,
+        "events": [],
+    }
+    with pytest.raises(ValueError, match="cannot precede"):
+        fe.enrich_feed(feed, "2026-07-08T16:05:00.10Z")
+
+
+def test_enrich_publisher_does_not_write_when_source_time_is_invalid(monkeypatch):
+    import scripts.build_flow_enrich as builder
+
+    feed = {
+        "schema": "live_flow.feed/v1",
+        "asof": ASOF,
+        "source_asof": "not-a-time",
+        "session_date": SESSION_DATE,
+        "events": [],
+    }
+    writes = []
+    monkeypatch.setattr(builder, "_r2_client", lambda: None)
+    monkeypatch.setattr(builder, "_fetch_feed", lambda *_args: feed)
+    monkeypatch.setattr(builder, "_sample_archive", lambda *_args: [])
+    monkeypatch.setattr(builder, "_fetch_oi_confirmed", lambda *_args: None)
+    monkeypatch.setattr(builder, "_write_json", lambda *args: writes.append(args))
+    assert builder.main(["--no-publish"]) == 0
+    assert writes == []
 
 
 # ════════════════════════════════════════════════════════════════════════════════
@@ -553,8 +642,9 @@ def test_envelope_has_required_keys():
         oi_confirmed={"schema": "options_hub.oi_confirmed/v1",
                       "asof": "2026-07-06", "confirmed": []},
     )
-    required = {"schema", "asof", "session_date", "thresholds", "bootstrap",
-                "n_events", "events", "confirmed_yesterday", "oi_confirm_note"}
+    required = {"schema", "asof", "source_asof", "built_at", "session_date",
+                "thresholds", "bootstrap", "n_events", "events",
+                "confirmed_yesterday", "oi_confirm_note"}
     assert required.issubset(envelope.keys())
 
 

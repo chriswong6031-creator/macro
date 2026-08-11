@@ -13,12 +13,13 @@ Terminal fixtures public/data/surface_idx_fixture.json + surface_fixture.json):
           live_flow/surface/{ROOT}/{DATE}/{HHMM}.json → SurfaceFrame (date-keyed)
           live_flow/surface/{ROOT}/dates.json      → SurfaceDates
 
-  SurfaceIndex = {date, stamps:["HHMM",…] ascending, latest, cadenceSec, cadence?, root?, source?}
+  SurfaceIndex = {date, stamps:["HHMM",…] ascending, latest, pollFloorSec,
+                  cadenceSec?, cadence?, root?, source?}
   SurfaceFrame = {spot, price_levels:[…] ascending, time_steps:["HH:MM",…],
-                  grids:{netprem:[[levelIdx][timeIdx]]}, asof, cadence,
-                  metrics?, session_date?, root?}
+                  grids:{netprem:[[levelIdx][timeIdx]]}, asof, pollFloorSec,
+                  observedCadenceSec, cadence, metrics?, session_date?, root?}
   SurfaceDates = {root, dates:["YYYY-MM-DD",…] NEWEST FIRST, latest, count, retain,
-                  cadenceSec, cadence, asof, source}
+                  pollFloorSec, cadenceSec?, cadence, asof, source}
 
 Multi-day replay (M-XP a, OEU_MASTERPLAN §4): each cycle writes BOTH the legacy today-paths
   (which the live Terminal reads — never changed) and a date-keyed copy under {DATE}/, plus a
@@ -43,11 +44,11 @@ Column semantics — the honest, well-defined per-strike signal the poller can s
   immutable snapshot per stamp, server does the math). Nothing is forward-filled.
 
 Cadence honesty (surfaceContract.ts header law — "never pretend a cadence it doesn't have"):
-  cadenceSec / cadence are carried verbatim from the ACTUAL write interval. Wired into the
-  live_flow poller main loop, that interval is live_flow.cadence_sec (config.yml; 120s = the
-  "2-min" label). The poller's full-day re-pull means every cycle's root_strikes is the
-  true cumulative to-now, so a 120s cadence is honest for these cumulative columns; we never
-  claim a finer cadence than the loop that calls us.
+  pollFloorSec is the configured minimum interval between cycle starts and remains the
+  session-completeness denominator. cadenceSec / cadence are compatibility aliases for that
+  floor, not an observation. Each public frame separately carries observedCadenceSec, derived
+  only from its final two minute-truncated stamps. Slow fetches therefore disclose sparse
+  frames without weakening the denominator or turning a handful of writes into a whole day.
 
 Ledger law: this is a live intraday artifact (like feed_current / tide_current) — it writes
   ONLY to the gitignored staging dir data/live_flow_out/surface/ and uploads to R2. It never
@@ -121,15 +122,15 @@ METRIC_VANNA = "vanna"
 METRIC_CHARM = "charm"
 GREEK_METRICS = (METRIC_GEX, METRIC_DEX, METRIC_VANNA, METRIC_CHARM)
 
-# Human cadence labels for the honesty stamp, keyed by the true write interval (seconds).
+# Human labels for the configured poll floor (legacy display compatibility).
 _CADENCE_LABELS = {60: "1-min", 120: "2-min", 300: "5-min", 600: "10-min", 900: "15-min"}
 
 
 def cadence_label(cadence_sec: int) -> str:
-    """Human cadence label for an interval in seconds (honesty stamp).
+    """Human label for a poll floor in seconds (legacy display compatibility).
 
     Falls back to "<n>-min" (rounded) for uncommon intervals, or "<n>s" under a minute.
-    Never invents a finer cadence than the caller's true write interval.
+    Never presents an observed cadence; sparse spacing is published separately.
     """
     try:
         s = int(cadence_sec)
@@ -142,6 +143,37 @@ def cadence_label(cadence_sec: int) -> str:
     if s < 60:
         return f"{s}s"
     return f"{round(s / 60)}-min"
+
+
+def _require_poll_floor_sec(value: object) -> int:
+    """Return an exact positive poll floor; reject coercible/bool impostors."""
+    if type(value) is not int or value <= 0:
+        raise ValueError("poll floor must be an exact positive integer")
+    return value
+
+
+def observed_cadence_sec(stamps: list[str]) -> int | None:
+    """Latest start spacing from minute-truncated ``HHMM`` frame stamps.
+
+    This is descriptive only. It must never replace ``pollFloorSec`` as a
+    session-completeness denominator.
+    """
+    if len(stamps) < 2:
+        return None
+
+    def _minute_of_day(stamp: str) -> int | None:
+        if not isinstance(stamp, str) or len(stamp) != 4 or not stamp.isdigit():
+            return None
+        hour, minute = int(stamp[:2]), int(stamp[2:])
+        if not (0 <= hour <= 23 and 0 <= minute <= 59):
+            return None
+        return hour * 60 + minute
+
+    previous = _minute_of_day(stamps[-2])
+    current = _minute_of_day(stamps[-1])
+    if previous is None or current is None or current <= previous:
+        return None
+    return (current - previous) * 60
 
 
 def stamp_hhmm(dt: datetime) -> str:
@@ -436,6 +468,14 @@ def append_stamp(
     can surface the walls/coverage AS OF each replayed stamp.
     """
     prior = prior or {}
+    current_poll_floor = _require_poll_floor_sec(cadence_sec)
+    prior_poll_floor = prior.get("pollFloorSec")
+    if type(prior_poll_floor) is int and prior_poll_floor > 0:
+        # A mid-session config change may tighten the denominator but may never
+        # relax away earlier expected opportunities.
+        poll_floor_sec = min(prior_poll_floor, current_poll_floor)
+    else:
+        poll_floor_sec = current_poll_floor
     prior_levels: list[float] = [float(x) for x in (prior.get("price_levels") or [])]
     prior_steps: list[str] = list(prior.get("time_steps") or [])
     prior_stamps: list[str] = list(prior.get("stamps") or [])
@@ -524,7 +564,8 @@ def append_stamp(
         "time_steps": time_steps,
         "grids": grids,
         "asof": asof,
-        "cadence": cadence_label(cadence_sec),
+        "pollFloorSec": poll_floor_sec,
+        "cadence": cadence_label(poll_floor_sec),
         "metrics": all_metrics,
         "session_date": session_date,
         "root": root,
@@ -550,12 +591,20 @@ def build_index(frame: dict, *, session_date: str, cadence_sec: int, root: str,
     idx and the snapshot files can never disagree.
     """
     stamps: list[str] = list(frame.get("stamps") or [])
+    caller_floor = _require_poll_floor_sec(cadence_sec)
+    frame_floor = frame.get("pollFloorSec")
+    poll_floor_sec = (
+        min(frame_floor, caller_floor)
+        if type(frame_floor) is int and frame_floor > 0 else caller_floor
+    )
     return {
         "date": session_date,
         "stamps": stamps,
         "latest": stamps[-1] if stamps else None,
-        "cadenceSec": int(cadence_sec),
-        "cadence": cadence_label(cadence_sec),
+        "pollFloorSec": poll_floor_sec,
+        # Legacy consumer aliases; both name the floor, never observed spacing.
+        "cadenceSec": poll_floor_sec,
+        "cadence": cadence_label(poll_floor_sec),
         "root": root,
         "source": source,
         # idx-level as-of (fixture parity — the newest frame's timestamp). Optional per the
@@ -580,9 +629,10 @@ def build_dates_index(dates, *, root: str, cadence_sec: int, asof: str,
     can never publish a bogus session. The list is trimmed to `retain` — dates.json never
     promises a session the retention prune has already deleted.
 
-    Cadence is carried verbatim from the true write interval (same honesty law as
-    build_index): the index never claims a cadence the poller loop doesn't have.
+    The configured poll floor is carried as the completeness denominator (same
+    honesty law as build_index). It is never replaced by sparse observed spacing.
     """
+    poll_floor_sec = _require_poll_floor_sec(cadence_sec)
     clean = sorted({d for d in (dates or []) if is_session_date(d)}, reverse=True)
     clean = clean[: max(0, int(retain))]
     return {
@@ -591,8 +641,9 @@ def build_dates_index(dates, *, root: str, cadence_sec: int, asof: str,
         "latest": clean[0] if clean else None,
         "count": len(clean),
         "retain": int(retain),
-        "cadenceSec": int(cadence_sec),
-        "cadence": cadence_label(cadence_sec),
+        "pollFloorSec": poll_floor_sec,
+        "cadenceSec": poll_floor_sec,
+        "cadence": cadence_label(poll_floor_sec),
         "asof": asof,
         "source": source,
     }
@@ -620,6 +671,8 @@ def frame_for_stamp(full_frame: dict, stamp: str) -> dict:
         "time_steps": times[:upto],
         "grids": grids,
         "asof": full_frame.get("asof", ""),
+        "pollFloorSec": full_frame.get("pollFloorSec"),
+        "observedCadenceSec": observed_cadence_sec(stamps[:upto]),
         "cadence": full_frame.get("cadence", ""),
         "metrics": list(full_frame.get("metrics") or list(grids_full.keys())),
         "session_date": full_frame.get("session_date", ""),
@@ -646,6 +699,11 @@ def is_surface_index(x: object) -> bool:
     """Port of surfaceContract.ts isSurfaceIndex."""
     if not isinstance(x, dict):
         return False
+    poll_floor = x.get("pollFloorSec")
+    if poll_floor is not None and (
+        type(poll_floor) is not int or poll_floor <= 0
+    ):
+        return False
     return (
         isinstance(x.get("date"), str)
         and isinstance(x.get("stamps"), list)
@@ -659,6 +717,16 @@ def is_surface_index(x: object) -> bool:
 def is_surface_frame(x: object) -> bool:
     """Port of surfaceContract.ts isSurfaceFrame."""
     if not isinstance(x, dict):
+        return False
+    poll_floor = x.get("pollFloorSec")
+    observed = x.get("observedCadenceSec")
+    if poll_floor is not None and (
+        type(poll_floor) is not int or poll_floor <= 0
+    ):
+        return False
+    if observed is not None and (
+        type(observed) is not int or observed <= 0 or observed % 60 != 0
+    ):
         return False
     return (
         isinstance(x.get("price_levels"), list)
@@ -688,6 +756,11 @@ def is_surface_dates(x: object) -> bool:
         if latest != dates[0]:
             return False
     elif latest is not None:
+        return False
+    poll_floor = x.get("pollFloorSec")
+    if poll_floor is not None and (
+        type(poll_floor) is not int or poll_floor <= 0
+    ):
         return False
     return (
         isinstance(x.get("cadenceSec"), int)

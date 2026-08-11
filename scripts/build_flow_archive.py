@@ -220,9 +220,12 @@ def build_archive_dates_index(family: str, dates, *, cadence_sec: int, asof: str
     holiday object in the store can publish a bogus session; the list is trimmed to `retain`,
     so dates.json never promises a session the retention prune has already deleted.
 
-    Cadence is carried verbatim from the true write interval (the honesty law shared with
-    build_flow_surface.build_index): the index never claims a cadence the poller lacks.
+    ``pollFloorSec`` is the configured minimum interval between cycle starts and stays the
+    completeness denominator (the honesty law shared with build_flow_surface.build_index).
+    ``cadenceSec`` is a legacy alias for that floor, never an observed interval.
     """
+    if type(cadence_sec) is not int or cadence_sec <= 0:
+        raise ValueError("poll floor must be an exact positive integer")
     keep_n = _retain_or_default(retain)
     clean = _clean_sessions(dates)[:keep_n]
     return {
@@ -232,7 +235,8 @@ def build_archive_dates_index(family: str, dates, *, cadence_sec: int, asof: str
         "latest":     clean[0] if clean else None,
         "count":      len(clean),
         "retain":     keep_n,
-        "cadenceSec": int(cadence_sec),
+        "pollFloorSec": cadence_sec,
+        "cadenceSec": cadence_sec,
         "cadence":    cadence_label(cadence_sec),
         "asof":       asof,
         "source":     source,
@@ -243,7 +247,7 @@ def is_archive_dates(x: object) -> bool:
     """Validator for a family's dates.json.
 
     Contract: `dates` is a list of YYYY-MM-DD strings sorted NEWEST FIRST, `latest` is
-    dates[0] (null when empty), `family` is a known family, and cadenceSec is an honest int.
+    dates[0] (null when empty), `family` is a known family, and the poll floor is an honest int.
     The digest lane checks the same things before trusting a session list.
     """
     if not isinstance(x, dict):
@@ -258,6 +262,11 @@ def is_archive_dates(x: object) -> bool:
         if latest != dates[0]:
             return False
     elif latest is not None:
+        return False
+    poll_floor = x.get("pollFloorSec")
+    if poll_floor is not None and (
+        type(poll_floor) is not int or poll_floor <= 0
+    ):
         return False
     return (
         isinstance(x.get("cadenceSec"), int)
