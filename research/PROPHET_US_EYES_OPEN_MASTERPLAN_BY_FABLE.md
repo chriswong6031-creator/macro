@@ -220,19 +220,27 @@ conditional table does. Zone law for the entry-zone builder: ADAM is acceptance 
 a Continuation/Ready leader-pullback's zone is the RESET BAND (8.40-8.70), chase-above at
 the pullback high, never the post-pop range.
 
-**§6.8(a)+(b) EXECUTION RECORD (2026-08-11, `research/prophet_us_audit/EARLY_ADMISSION_BAKEOFF_2026-08-11.md`, PR #5339):**
-both MEASURE-FIRST replays ran (240 names / 12y / stop-anchored ruler). (b) the grey dot =
-`early_dots`/`m2d_s3d_early` measured: near-low 44–45%, entry +5.5–5.7% vs incumbent BUY
-5.9%/+10.1%/+14.5td; the 3D<20-cross→1D-confirm form (C1) is the recall spine (60.6% C0
-coverage, 12-session median lead, 3.0 eps/name-yr); dot coverage only 29% → anticipation
-chip, not sole gate. Zero-bound = better proximity, MORE false starts. STLD receipt: dot
-knowable 07-14 @233.40 (+7.9% off 216.36) vs BUY 08-07 @262.45 (+21.3%). NOTE: store
-`early_markers` are bucket-OPEN-stamped (3,756/3,760) — §6.7 defect family. (a) structure
-stops: 34.9% of 12,940 confirms land within ±2 sessions of the local low (STLD 05-19 gap 0,
-+23% fwd10) — but the pinned histogram-rising disarm is REFUTED as constructed (0.9% cohort,
-near-lows LESS); fix direction = §8 feature anatomy + a fresh curvature-form charter, and the
-charting-app grid-phasing defect (stop events are leading-history-dependent, R4.hl_phase)
-goes to the Terminal lanes. Theme-breadth false-start filter: NULL at the pre-stated 10pp bar.
+**§6.8(a)+(b) EXECUTION RECORD (2026-08-11, `research/prophet_us_audit/EARLY_ADMISSION_BAKEOFF_2026-08-11.md`, PR #5339; red-teamed, §RT):**
+both MEASURE-FIRST replays ran (240 names / ~2,659 name-years / stop-anchored ruler). (b) the
+grey dot = `early_dots`/`m2d_s3d_early` measured: near-low 44–45%, entry +5.5% vs the
+ACTIONED incumbent (quality=take) +10.3%/+18td — but the honest cost multiples are priced vs
+take-only: early lanes ≈8× its false-bounce rate and ~30pp less stop-A survival; pooled C0
+rows mix 64% `quality=block` markers. Recall spine = the RELAXED washout-cross form (3D cross
+<20 with 1D MACD-RSI in force or confirming ≤10 sessions): 60.6% C0 coverage @12td lead; the
+strict-ordered form covers only 25.0% (below the dot's 29.2%) — disclosed, both printed. Dot
+= anticipation chip, not sole gate. Zero-bound = proximity, not durability. §8 discriminator
+ledger: headline features are largely STOP-WIDTH ARITHMETIC (risk-equalized labels flip or
+null %K/RS/1D-level); the load-bearing split is PRE-vs-POST-trough firing (stop-A survival
+~8–11% vs ~77–84%); repeat-fire "filter" RETRACTED as a look-ahead artifact (PIT-only ≈
+null). STLD receipt: dot knowable 07-14 @233.35 (+7.9% off 216.36) vs BUY 08-07 @262.45
+(+21.3%). Store `early_markers` are bucket-OPEN-stamped (3,756/3,760) — §6.7 defect family.
+(a) structure stops: 34.9% of 12,940 confirms land within ±2 sessions of the local low vs a
+15.9% random-session null (2.2× chance; STLD 05-19 gap 0, +23% fwd10) — the pinned
+histogram-rising disarm is NOT supported as constructed (0.9% cohort, near-lows LESS, CI
+clean); fix direction = post-trough-evidence features + a fresh curvature-form charter, and
+the charting-app grid-phasing defect (stop events are leading-history-dependent, R4.hl_phase)
+goes to the Terminal lanes. Theme-breadth false-start filter: NULL at the pre-stated 10pp bar
+(post-2023 membership slice), direction runs AGAINST the confirm hypothesis where it moves.
 
 **(c) Washout-state release (Alibaba 90→128 missed).** `bear_block`'s sole release (completed
 2W cross) gains a second release: monthly/2W washout-mature + turning + cohort confirmation

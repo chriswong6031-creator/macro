@@ -3,16 +3,16 @@
  "charter": "research/prophet_us_audit/EARLY_ADMISSION_BAKEOFF_2026-08-11.md",
  "tier": "measurement/display \u2014 no gate, rank, veto or engine change ships from this",
  "run_metadata": {
-  "run_utc": "2026-08-11T11:34:07+00:00",
-  "runtime_seconds": 51.4,
+  "run_utc": "2026-08-11T12:14:44+00:00",
+  "runtime_seconds": 63.2,
   "argv": []
  },
  "provenance": {
-  "repo_sha": "e602737841c729fb5a41936805b36691c9f20354",
+  "repo_sha": "77241997ccf48f4577caee34fd4bc2da6865cbd3",
   "signals_store_dir": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/stoch-rsi-macd-confluence-2959db/site/signals",
   "signals_store_files": 241,
-  "signals_store_origin_main_sha": "edb82192e18f91340bfef2097c42d5223820ddf6",
-  "signals_store_last_commit_touching_it": "082f7c285c7faa10035d0ba7839706a30cc9c23e",
+  "signals_store_origin_main_sha": "80891bb5331ce72553ed617219b81a6ed064d00e",
+  "signals_store_last_commit_touching_it": "ba0bed16a36aa5a868e6fcdaaf207264e3356229",
   "signals_store_asof_dates": [
    "2026-07-17",
    "2026-08-05",
@@ -324,6 +324,8 @@
  },
  "deviations": [
   "SPY is NOT in the ohlcv price root; benchmark read from /Users/chriswong/actions-runner-2/_work/macro/macro/data/yahoo/SPY.parquet (charter \u00a72 named the ohlcv root).",
+  "C1 AS SHIPPED IS 'C1-RELAXED', NOT THE CHARTER-LITERAL LANE. Charter \u00a71 orders C1's legs \u2014 3D washout cross FIRST, then 'CONFIRMED by the first 1D MACD-RSI bull cross ... within the next 10 sessions'. The commissioning spec added an IMMEDIATE branch (fire at the 3D knowability date K when 1D macd >= sig at K AND the last 1D cross-up was within the prior 5 sessions), which admits a 1D cross already IN FORCE before the 3D leg \u2014 the opposite leg order. That branch carries 5926 of C1's 7973 panel episodes (74%), so C1's headline numbers are mostly not the charter's construction. Implemented as specified; the charter-literal lane is measured beside it as C1L in R9b.",
+  "C4's oversold qualifier is evaluated at the CONFIRM session p+3, not at the pivot p. Charter \u00a71 says the pivot must print 'while the last completed 3D StochRSI %D < 20'; the commissioning spec pinned '%D < 20 as of p+3'. The p+3 reading is the knowability-conservative one (at p the p+3 confirm does not yet exist, and a %D read at p can still be revised by the bucket that closes between p and p+3), but it is a different test from the charter's wording and can admit a pivot whose oversold context arrived only after the pivot printed.",
   "HL 2026-07-31 structure stop does NOT reproduce on the FULL-history recompute (charter \u00a74 named it as a must-appear receipt). It DOES reproduce at other leading-history phases (R4.hl_phase). Cause: charting-app confluence_v2._arm_event_daily still cuts its 2B/3B bars with pandas `resample`, whose bin edges are phased to the SERIES' FIRST timestamp \u2014 the served slice and the full history are different grids. Both readings printed; nothing tuned.",
   "\u00a78 2x2 axis: the charter says 'the single strongest LIVE feature'. The strongest by raw spread is label-COUPLED (f_dist_swing) \u2014 its cells differ by how far stop A sits from the entry BY CONSTRUCTION, so cross-tabbing it would measure the ruler, not foresight. The 2x2 uses the strongest NON-coupled feature instead; the coupled row is still printed in full in the ledger with its spread and CI."
  ],
@@ -346,7 +348,7 @@
    "rows": [
     [
      "repo SHA",
-     "e602737841c729fb5a41936805b36691c9f20354"
+     "77241997ccf48f4577caee34fd4bc2da6865cbd3"
     ],
     [
      "signals store",
@@ -3113,6 +3115,1143 @@
     ]
    ],
    "notes": "the single pre-permitted cross-tab; no other combination was searched"
+  },
+  "R9a": {
+   "title": "C0 incumbent BUY split by the published marker `quality`",
+   "columns": [
+    "subset",
+    "episodes",
+    "names",
+    "near_low%",
+    "entry_vs_low",
+    "td_to_trough",
+    "false_bounce%",
+    "MAE_21",
+    "survA%",
+    "survB%",
+    "MFE_42",
+    "R2%",
+    "fwd21",
+    "fwd42",
+    "ex21",
+    "ex42",
+    "near_low_open%"
+   ],
+   "rows": [
+    [
+     "C0 all (as in R2b)",
+     7918,
+     240,
+     8.83,
+     0.1005530109170244,
+     14.0,
+     9.48,
+     -0.03992126877154106,
+     72.96,
+     28.7,
+     0.0726723718798945,
+     10.07,
+     0.017505039553938784,
+     0.027423731021808173,
+     0.0005805787619016511,
+     0.0024966366907366866,
+     9.38
+    ],
+    [
+     "C0 quality=take",
+     2828,
+     240,
+     7.43,
+     0.10341282302984267,
+     18.0,
+     3.06,
+     -0.019095604538880373,
+     84.29,
+     44.11,
+     0.08582546990409567,
+     11.38,
+     0.035628184905799554,
+     0.04377186709362446,
+     0.016422589129784337,
+     0.017599256194891055,
+     6.93
+    ],
+    [
+     "C0 quality=block",
+     5082,
+     239,
+     9.62,
+     0.0988114029041346,
+     12.0,
+     13.05,
+     -0.0524892686406645,
+     66.65,
+     20.12,
+     0.06352915387484515,
+     9.34,
+     0.0036940123475448505,
+     0.017662703101080868,
+     -0.00923314414001708,
+     -0.007061606796472719,
+     10.74
+    ],
+    [
+     "C0 quality=pending",
+     8,
+     8,
+     0.0,
+     0.13481367830354674,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     0.0
+    ],
+    [
+     "C0 quality missing/other",
+     0,
+     0,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   ],
+   "notes": "the shipped buy filter REFUSES `block`, so the pooled C0 row in R2b is not the row the product actually surfaces; `take` is"
+  },
+  "R9b": {
+   "title": "C1 charter-literal (C1L, fresh 1D cross ONLY) vs the shipped C1-relaxed (also admits an already-in-force 1D cross)",
+   "columns": [
+    "subset",
+    "episodes",
+    "names",
+    "near_low%",
+    "entry_vs_low",
+    "td_to_trough",
+    "false_bounce%",
+    "MAE_21",
+    "survA%",
+    "survB%",
+    "MFE_42",
+    "R2%",
+    "fwd21",
+    "fwd42",
+    "ex21",
+    "ex42",
+    "near_low_open%"
+   ],
+   "rows": [
+    [
+     "C1-relaxed (shipped)",
+     7973,
+     240,
+     49.6,
+     0.05024834057515282,
+     3.0,
+     24.24,
+     -0.04208907366931114,
+     52.58,
+     27.79,
+     0.07620548707250929,
+     24.98,
+     0.015624897250869685,
+     0.030018605877973448,
+     -0.0004673917960684726,
+     0.0013341523991725612,
+     48.64
+    ],
+    [
+     "C1L (charter-literal)",
+     3165,
+     239,
+     55.99,
+     0.04569110589791703,
+     2.0,
+     24.49,
+     -0.03954623749775743,
+     50.3,
+     32.76,
+     0.075393955787743,
+     27.74,
+     0.016789652253994092,
+     0.026973423582353773,
+     0.002712837942616231,
+     0.00101635292753266,
+     54.31
+    ],
+    [
+     "C1-relaxed, waited-confirm only",
+     2047,
+     239,
+     53.25,
+     0.0476289523462452,
+     2.0,
+     23.28,
+     -0.03881732691964501,
+     51.85,
+     32.03,
+     0.07515435309666874,
+     26.64,
+     0.016217876699087252,
+     0.0280519616075533,
+     0.0018476968807700223,
+     0.00016882903626275203,
+     51.25
+    ],
+    [
+     "C1-relaxed, immediate-confirm only",
+     5926,
+     240,
+     48.35,
+     0.051134511086796564,
+     3.0,
+     24.58,
+     -0.043089821041718046,
+     52.83,
+     26.32,
+     0.07648963282408361,
+     24.41,
+     0.015554508603736306,
+     0.030968163467318455,
+     -0.0010395675022945028,
+     0.001495115643543432,
+     47.74
+    ]
+   ],
+   "notes": "same panel, same window, same ruler"
+  },
+  "R9b.economics": {
+   "title": "C1L vs C1-relaxed \u2014 fire economics and C0 coverage",
+   "columns": [
+    "lane",
+    "episodes",
+    "names",
+    "fires/name-year",
+    "unconfirmed 3D crosses (no fire)",
+    "C0 coverage%",
+    "median lead (sessions)",
+    "median wait after the 3D cross"
+   ],
+   "rows": [
+    [
+     "C1-relaxed (shipped)",
+     7973,
+     240,
+     2.9989,
+     null,
+     60.62,
+     12.0,
+     2.0
+    ],
+    [
+     "C1L (charter-literal)",
+     3165,
+     239,
+     1.1904,
+     6207,
+     25.04,
+     14.0,
+     4.0
+    ]
+   ],
+   "notes": ""
+  },
+  "R9c": {
+   "title": "Repeat-fire flag \u2014 point-in-time audit (was the prior fire's false start OBSERVABLE at T?)",
+   "columns": [
+    "lane",
+    "flagged n",
+    "knowable at T n",
+    "knowable%",
+    "leaked n",
+    "leaked-subset false-start%",
+    "shipped spread pp",
+    "PIT-only spread pp",
+    "PIT spread pp (fixed -8%)",
+    "PIT spread pp (entry-2ATR)",
+    "PIT spread pp (entry-3ATR)"
+   ],
+   "rows": [
+    [
+     "C2r",
+     172,
+     130,
+     75.58,
+     42,
+     100.0,
+     12.52,
+     -2.24,
+     -6.28,
+     -11.58,
+     -6.61
+    ],
+    [
+     "C1",
+     592,
+     415,
+     70.1,
+     177,
+     100.0,
+     17.17,
+     0.29,
+     -1.78,
+     -6.92,
+     -4.43
+    ]
+   ],
+   "notes": "the shipped flag asks whether a prior fire's episode WAS a false start, a label built from windows extending past T; the PIT flag asks only whether its stop-A touch had already printed by T. The leaked subset scoring ~100% false-start is STRUCTURAL, not a discovery: a prior fire whose stop-A touch prints only after T breaks a low that sits inside the current episode's own [T-45, T] window too, so the same breach stops the current fire. That is the look-ahead, stated as an identity."
+  },
+  "R9d.C2r": {
+   "title": "\u00a78 spreads under RISK-EQUALIZED stops \u2014 C2r",
+   "columns": [
+    "feature",
+    "graded n (shipped)",
+    "spread pp shipped",
+    "spread pp fixed -8%",
+    "spread pp entry-2ATR",
+    "spread pp entry-3ATR",
+    "within-entry_vs_low-quintile avg spread pp (shipped)",
+    "quintiles used"
+   ],
+   "rows": [
+    [
+     "f_k_cross",
+     3596,
+     -21.85,
+     -5.25,
+     2.42,
+     -1.5,
+     -9.17,
+     5
+    ],
+    [
+     "f_macd1_level",
+     3596,
+     -15.01,
+     -5.42,
+     0.17,
+     -0.5,
+     -6.42,
+     5
+    ],
+    [
+     "f_rs63",
+     3596,
+     -14.35,
+     -4.34,
+     1.25,
+     -1.17,
+     -7.58,
+     5
+    ],
+    [
+     "f_decline_depth",
+     3596,
+     -13.09,
+     -16.26,
+     8.51,
+     3.75,
+     -11.17,
+     5
+    ],
+    [
+     "f_above200",
+     3596,
+     -5.38,
+     -6.52,
+     7.48,
+     3.71,
+     -2.71,
+     5
+    ],
+    [
+     "f_dist_swing",
+     3596,
+     -21.43,
+     6.76,
+     -2.25,
+     -6.51,
+     -1.25,
+     5
+    ],
+    [
+     "f_zero_bound",
+     3596,
+     4.31,
+     0.37,
+     -4.48,
+     -1.9,
+     0.15,
+     5
+    ],
+    [
+     "entry_vs_low",
+     3596,
+     -29.61,
+     6.26,
+     -2.0,
+     -7.09,
+     -10.75,
+     5
+    ]
+   ],
+   "notes": "stop A's distance from the entry IS entry_vs_low, so any feature whose spread collapses under a distance-independent stop, or within an entry_vs_low quintile, was re-measuring stop geometry"
+  },
+  "R9d.C1": {
+   "title": "\u00a78 spreads under RISK-EQUALIZED stops \u2014 C1",
+   "columns": [
+    "feature",
+    "graded n (shipped)",
+    "spread pp shipped",
+    "spread pp fixed -8%",
+    "spread pp entry-2ATR",
+    "spread pp entry-3ATR",
+    "within-entry_vs_low-quintile avg spread pp (shipped)",
+    "quintiles used"
+   ],
+   "rows": [
+    [
+     "f_k_cross",
+     7881,
+     -14.2,
+     -3.24,
+     0.76,
+     -1.94,
+     -7.05,
+     5
+    ],
+    [
+     "f_macd1_level",
+     7881,
+     -3.05,
+     -1.41,
+     4.3,
+     2.55,
+     -0.24,
+     5
+    ],
+    [
+     "f_rs63",
+     7881,
+     -15.38,
+     -5.75,
+     0.23,
+     -2.82,
+     -8.65,
+     5
+    ],
+    [
+     "f_decline_depth",
+     7881,
+     -11.08,
+     -16.48,
+     7.12,
+     1.22,
+     -12.8,
+     5
+    ],
+    [
+     "f_above200",
+     7881,
+     -7.26,
+     -7.62,
+     4.35,
+     0.43,
+     -4.81,
+     5
+    ],
+    [
+     "f_dist_swing",
+     7881,
+     -16.94,
+     5.52,
+     -4.42,
+     -7.73,
+     -0.89,
+     5
+    ],
+    [
+     "f_zero_bound",
+     7881,
+     5.14,
+     2.25,
+     -3.03,
+     -0.83,
+     2.26,
+     5
+    ],
+    [
+     "entry_vs_low",
+     7881,
+     -25.31,
+     5.33,
+     -5.29,
+     -9.36,
+     -9.07,
+     5
+    ]
+   ],
+   "notes": "stop A's distance from the entry IS entry_vs_low, so any feature whose spread collapses under a distance-independent stop, or within an entry_vs_low quintile, was re-measuring stop geometry"
+  },
+  "R9e": {
+   "title": "Mechanical hold-42 R-multiple expectancy (R = close - stop A; -1R when stop A is touched first)",
+   "columns": [
+    "lane",
+    "episodes (full window)",
+    "names",
+    "mean R",
+    "p25 R",
+    "median R",
+    "p75 R",
+    "median 2R target (% of entry)",
+    "stop-out share%"
+   ],
+   "rows": [
+    [
+     "C0 all",
+     7760,
+     239,
+     0.2300892179373053,
+     -1.0,
+     0.15634419628868518,
+     0.8836454385406383,
+     0.20045696765501053,
+     27.0
+    ],
+    [
+     "C0 quality=take",
+     2778,
+     239,
+     0.44728145368695893,
+     -0.2999776421855318,
+     0.37281251818035444,
+     1.0513952404272644,
+     0.2044745709251807,
+     15.73
+    ],
+    [
+     "C1",
+     7847,
+     240,
+     0.35903885680598635,
+     -1.0,
+     -0.35999313154919793,
+     1.3074638841102217,
+     0.11440124214161336,
+     47.34
+    ],
+    [
+     "C1L",
+     3117,
+     238,
+     0.3677609788454892,
+     -1.0,
+     -0.7678608766078435,
+     1.3723244896067706,
+     0.10620539622569194,
+     49.6
+    ],
+    [
+     "C2s",
+     3419,
+     239,
+     0.30147683087328003,
+     -1.0,
+     -0.2880893395818384,
+     1.095564572540772,
+     0.12139140484431192,
+     45.07
+    ],
+    [
+     "C2r",
+     3571,
+     239,
+     0.28987815581517795,
+     -1.0,
+     -0.26678685622716136,
+     1.0889554830528565,
+     0.12329052130500424,
+     44.69
+    ],
+    [
+     "C3",
+     2360,
+     239,
+     0.33152874593918846,
+     -1.0,
+     -0.7260347373305651,
+     1.167827142936595,
+     0.10642618530209194,
+     49.49
+    ],
+    [
+     "C4",
+     10961,
+     240,
+     0.4045092941286804,
+     -1.0,
+     -1.0,
+     1.2930677574964717,
+     0.1057895178190075,
+     50.84
+    ]
+   ],
+   "notes": "no discretion, no trailing: the mechanical floor of the process, not the operator's own execution"
+  },
+  "R9f": {
+   "title": "Structure-stop near-low rate vs a RANDOM-SESSION null (same names, same eval frame)",
+   "columns": [
+    "window",
+    "tolerance",
+    "stops n",
+    "stops near-low%",
+    "null n",
+    "null near-low%",
+    "lift (pp)",
+    "ratio"
+   ],
+   "rows": [
+    [
+     "+/-5",
+     "+/-1",
+     12811,
+     38.74,
+     64170,
+     18.55,
+     20.19,
+     2.088
+    ],
+    [
+     "+/-5",
+     "+/-2",
+     12811,
+     52.97,
+     64170,
+     31.43,
+     21.54,
+     1.685
+    ],
+    [
+     "+/-10",
+     "+/-1",
+     12786,
+     25.77,
+     64170,
+     9.43,
+     16.34,
+     2.732
+    ],
+    [
+     "+/-10",
+     "+/-2",
+     12786,
+     34.92,
+     64170,
+     15.73,
+     19.19,
+     2.22
+    ],
+    [
+     "+/-15",
+     "+/-1",
+     12754,
+     15.92,
+     64170,
+     6.46,
+     9.47,
+     2.465
+    ],
+    [
+     "+/-15",
+     "+/-2",
+     12754,
+     21.79,
+     64170,
+     10.74,
+     11.05,
+     2.028
+    ]
+   ],
+   "notes": "5 random sessions drawn per stop event, seeded 20260811; a stop can only be called 'at the low' relative to what an arbitrary session scores on the same window"
+  },
+  "R9g": {
+   "title": "MEASURED ambient near-low base on this panel (random sessions)",
+   "columns": [
+    "reference low",
+    "sessions drawn",
+    "names",
+    "near-low% (<= 5%)",
+    "median entry_vs_low"
+   ],
+   "rows": [
+    [
+     "backward P_low [T-45, T]",
+     12000,
+     240,
+     24.7,
+     0.09801729635020329
+    ],
+    [
+     "two-sided trough [T-45, T+15]",
+     12000,
+     240,
+     16.43,
+     0.11102936641574268
+    ]
+   ],
+   "notes": "seeded 20260812; the charter quoted ~16% from the U_W5 lens \u2014 this is the same statistic measured on THIS panel and THIS window"
+  },
+  "R9h": {
+   "title": "Backward-anchored vs TROUGH-REFERENCED entry, per lane (R2b pooled basis)",
+   "columns": [
+    "lane",
+    "episodes (with T+15)",
+    "names",
+    "near_low% (backward P_low)",
+    "median entry_vs_low",
+    "near_low% (trough-referenced)",
+    "median entry_vs_trough",
+    "near-low gap pp"
+   ],
+   "rows": [
+    [
+     "C0",
+     7859,
+     240,
+     8.88,
+     0.10032258404063477,
+     6.51,
+     0.10742766260096315,
+     2.37
+    ],
+    [
+     "C1",
+     7928,
+     240,
+     49.84,
+     0.050100512028857236,
+     33.5,
+     0.06468504613550485,
+     16.33
+    ],
+    [
+     "C2s",
+     3460,
+     239,
+     44.94,
+     0.05403077519657007,
+     30.9,
+     0.06843415142530063,
+     14.05
+    ],
+    [
+     "C2r",
+     3614,
+     239,
+     43.75,
+     0.05510540553887644,
+     30.16,
+     0.06931441616450795,
+     13.59
+    ],
+    [
+     "C3",
+     2386,
+     239,
+     55.28,
+     0.04570455154030706,
+     38.14,
+     0.06063142244735775,
+     17.14
+    ],
+    [
+     "C4",
+     11052,
+     240,
+     55.62,
+     0.04546711740460685,
+     37.63,
+     0.06187066554144727,
+     17.99
+    ],
+    [
+     "C1L",
+     3144,
+     238,
+     56.2,
+     0.04550798441486459,
+     38.68,
+     0.05911407747899633,
+     17.53
+    ]
+   ],
+   "notes": "the backward column is what a live surface can know; the trough column is the hindsight lens the operator's chart eye actually applies"
+  },
+  "R9i": {
+   "title": "Pre-trough vs post-trough fires, per lane",
+   "columns": [
+    "lane",
+    "episodes (with T+15)",
+    "names",
+    "pre-trough share%",
+    "survA% pre-trough",
+    "survA% post-trough",
+    "n pre",
+    "n post",
+    "false_bounce% pre",
+    "false_bounce% post"
+   ],
+   "rows": [
+    [
+     "C0",
+     7859,
+     240,
+     14.45,
+     7.97,
+     83.94,
+     1136,
+     6723,
+     65.58,
+     0.0
+    ],
+    [
+     "C1",
+     7928,
+     240,
+     37.76,
+     10.37,
+     78.27,
+     2994,
+     4934,
+     64.2,
+     0.0
+    ],
+    [
+     "C2s",
+     3460,
+     239,
+     35.66,
+     10.59,
+     79.36,
+     1234,
+     2226,
+     63.94,
+     0.0
+    ],
+    [
+     "C2r",
+     3614,
+     239,
+     35.06,
+     10.63,
+     79.27,
+     1267,
+     2347,
+     63.54,
+     0.0
+    ],
+    [
+     "C3",
+     2386,
+     239,
+     41.16,
+     11.26,
+     77.79,
+     982,
+     1404,
+     62.93,
+     0.0
+    ],
+    [
+     "C4",
+     11052,
+     240,
+     42.16,
+     10.61,
+     77.2,
+     4659,
+     6393,
+     64.95,
+     0.0
+    ],
+    [
+     "C1L",
+     3144,
+     238,
+     39.34,
+     10.62,
+     76.15,
+     1237,
+     1907,
+     62.25,
+     0.0
+    ]
+   ],
+   "notes": "td_to_trough < 0 = fired BEFORE the eventual trough (the knife is still falling); >= 0 = fired after it. The post-trough false-bounce column is 0 BY IDENTITY: if the two-sided argmin low over [T-45, T+15] lands at or before T, no forward low in (T, T+15] can undercut it, so the false-bounce test cannot fire. `false_bounce` is therefore very nearly a restatement of `td_to_trough < 0`, and every \u00a78 feature that separates false starts is to that extent separating pre-trough fires from post-trough ones."
+  },
+  "R9j": {
+   "title": "Episode-dedup sensitivity \u2014 keep-first (shipped) vs keep-last vs no dedup",
+   "columns": [
+    "lane",
+    "policy",
+    "episodes",
+    "names",
+    "near_low%",
+    "false_bounce%",
+    "survA%"
+   ],
+   "rows": [
+    [
+     "C0",
+     "keep-first (shipped)",
+     7918,
+     240,
+     8.83,
+     9.48,
+     72.96
+    ],
+    [
+     "C0",
+     "keep-last",
+     7919,
+     240,
+     8.85,
+     9.38,
+     73.1
+    ],
+    [
+     "C0",
+     "no dedup",
+     8181,
+     240,
+     9.12,
+     9.55,
+     72.85
+    ],
+    [
+     "C1",
+     "keep-first (shipped)",
+     7973,
+     240,
+     49.6,
+     24.24,
+     52.58
+    ],
+    [
+     "C1",
+     "keep-last",
+     7973,
+     240,
+     48.59,
+     23.41,
+     53.29
+    ],
+    [
+     "C1",
+     "no dedup",
+     8484,
+     240,
+     49.75,
+     24.05,
+     52.59
+    ],
+    [
+     "C2s",
+     "keep-first (shipped)",
+     3474,
+     240,
+     44.79,
+     22.8,
+     54.82
+    ],
+    [
+     "C2s",
+     "keep-last",
+     3474,
+     240,
+     44.16,
+     22.83,
+     55.13
+    ],
+    [
+     "C2s",
+     "no dedup",
+     3567,
+     240,
+     44.91,
+     22.63,
+     55.04
+    ],
+    [
+     "C2r",
+     "keep-first (shipped)",
+     3630,
+     240,
+     43.58,
+     22.27,
+     55.2
+    ],
+    [
+     "C2r",
+     "keep-last",
+     3630,
+     240,
+     42.95,
+     22.27,
+     55.49
+    ],
+    [
+     "C2r",
+     "no dedup",
+     3726,
+     240,
+     43.72,
+     22.1,
+     55.38
+    ],
+    [
+     "C3",
+     "keep-first (shipped)",
+     2396,
+     240,
+     55.09,
+     25.9,
+     50.4
+    ],
+    [
+     "C3",
+     "keep-last",
+     2396,
+     240,
+     54.72,
+     25.73,
+     50.8
+    ],
+    [
+     "C3",
+     "no dedup",
+     2459,
+     240,
+     55.27,
+     25.64,
+     50.6
+    ],
+    [
+     "C4",
+     "keep-first (shipped)",
+     11111,
+     240,
+     55.47,
+     27.38,
+     49.13
+    ],
+    [
+     "C4",
+     "keep-last",
+     11113,
+     240,
+     50.31,
+     25.07,
+     52.57
+    ],
+    [
+     "C4",
+     "no dedup",
+     15605,
+     240,
+     55.12,
+     27.16,
+     49.28
+    ]
+   ],
+   "notes": "the 10-session collapse is a reporting choice, not a signal property"
+  },
+  "R9k": {
+   "title": "Exemplar precision receipts (STLD, NEM)",
+   "columns": [
+    "item",
+    "value"
+   ],
+   "rows": [
+    [
+     "STLD C4 fire 2026-07-08 close",
+     228.75999450683594
+    ],
+    [
+     "STLD C1/C2r/C2s/C3 fire 2026-07-14 close",
+     233.35000610351562
+    ],
+    [
+     "STLD C0 buy signal_date 2026-08-07 close",
+     262.45001220703125
+    ],
+    [
+     "sessions 2026-07-08 -> 2026-08-07",
+     22
+    ],
+    [
+     "sessions 2026-07-14 -> 2026-08-07",
+     18
+    ],
+    [
+     "STLD July trough low / date",
+     "216.36 on 2026-07-02"
+    ],
+    [
+     "NEM trough low 2026-06-15..08-10 / date",
+     "88.75 on 2026-07-17"
+    ],
+    [
+     "NEM C1 2026-07-09 close",
+     94.80999755859375
+    ],
+    [
+     "NEM C1 2026-07-09 entry_vs_low (backward P_low)",
+     0.03981133188493646
+    ],
+    [
+     "NEM C1 2026-07-09 entry_vs_trough (two-sided)",
+     0.06828166263204216
+    ],
+    [
+     "NEM C0 2026-07-27 close",
+     93.47000122070312
+    ],
+    [
+     "NEM C0 2026-07-27 entry_vs_low (backward P_low)",
+     0.053183112345950745
+    ],
+    [
+     "NEM C0 2026-07-27 entry_vs_trough (two-sided)",
+     null
+    ],
+    [
+     "NEM 2026-07-27 C0 marker quality",
+     "block"
+    ],
+    [
+     "NEM 2026-07-27 marker type/reason",
+     "buy / counter-trend, held but no 200-reclaim"
+    ]
+   ],
+   "notes": "every number a narrative might quote, computed rather than recalled"
   }
  },
  "discriminator_lane": {
@@ -4268,9 +5407,25 @@
   },
   "strongest_feature": "f_k_cross"
  },
+ "redteam_appendix": {
+  "repeat_pit": {
+   "C2r": {
+    "flagged": 172,
+    "knowable": 130,
+    "shipped_spread": 0.12520766636786618,
+    "pit_spread": -0.022446410564279373
+   },
+   "C1": {
+    "flagged": 592,
+    "knowable": 415,
+    "shipped_spread": 0.17169387607108516,
+    "pit_spread": 0.0028561936309715596
+   }
+  }
+ },
  "split_out": {
   "episodes_parquet": "early_admission_bakeoff_episodes.parquet",
-  "episodes_rows": 36712,
+  "episodes_rows": 39877,
   "episodes_columns": [
    "ticker",
    "date",
@@ -4301,6 +5456,17 @@
    "fwd_sessions",
    "window_sessions",
    "c1z",
+   "entry_vs_trough",
+   "near_low_trough",
+   "atr14",
+   "stop_fix8",
+   "stop_atr2",
+   "stop_atr3",
+   "survive_fix8",
+   "survive_atr2",
+   "survive_atr3",
+   "r_mult_42",
+   "r2_target_pct",
    "basis",
    "type",
    "quality",
@@ -4367,7 +5533,24 @@
    "fwd21",
    "addon"
   ],
-  "compression": "zstd"
+  "compression": "zstd",
+  "episode_schema_version": 2,
+  "schema_v2_appended_columns": [
+   "entry_vs_trough",
+   "near_low_trough",
+   "atr14",
+   "stop_fix8",
+   "stop_atr2",
+   "stop_atr3",
+   "survive_fix8",
+   "survive_atr2",
+   "survive_atr3",
+   "r_mult_42",
+   "r2_target_pct"
+  ],
+  "redteam_lane_rows": {
+   "C1L": 3165
+  }
  },
  "price_meta": {
   "AAPL": {

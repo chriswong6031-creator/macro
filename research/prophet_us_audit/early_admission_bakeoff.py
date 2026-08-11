@@ -81,6 +81,17 @@ MIN_CELL_N = 20            # an extreme cell thinner than this gets no verdict
 MIN_CELL_NAMES = 20        # per-name-first spread needs this many names in each extreme cell
 BOOT_B = 500               # month-cluster bootstrap draws
 BOOT_SEED = 20260811
+# ---- §R9 red-team appendix (phase-3 adversarial review, reproduced as frozen tables) ----
+EPISODE_SCHEMA_VERSION = 2   # v2 appended the risk-equalized stop + trough-referenced cols
+ALT_STOP_FIX = 0.08          # alternative stop: fixed -8% from the entry close
+ALT_STOP_ATR = (2.0, 3.0)    # alternative stops: entry - k x ATR14
+NULL_DRAWS_PER_STOP = 5      # R9f: random sessions drawn per structure-stop event
+NULL_SEED = 20260811
+AMBIENT_DRAWS = 12000        # R9g: random panel sessions for the ambient near-low base
+AMBIENT_SEED = 20260812
+NEAR_WIN_GRID = (5, 10, 15)  # R9f window half-widths
+NEAR_TOL_GRID = (1, 2)       # R9f tolerances
+QUINTILES = 5                # R9d: entry_vs_low conditioning bins
 CURRENT_REGIME_FROM = "2026-01-01"
 TRACE_FROM, TRACE_TO = "2026-05-01", "2026-08-10"
 EXEMPLARS = ("STLD", "NEM", "HL", "UEC")
@@ -177,6 +188,9 @@ EPISODE_FIELDS = [
     "td_to_trough", "false_bounce", "mae_21", "stop_a", "stop_b", "survive_a", "survive_b",
     "mfe_42", "reached_2r", "fwd21", "fwd42", "ex21", "ex42", "fwd_sessions",
     "window_sessions", "c1z", "meta",
+    # --- schema v2, APPENDED for the §R9 red-team appendix (v1 column order untouched) ---
+    "entry_vs_trough", "near_low_trough", "atr14", "stop_fix8", "stop_atr2", "stop_atr3",
+    "survive_fix8", "survive_atr2", "survive_atr3", "r_mult_42", "r2_target_pct",
 ]
 STOP_FIELDS = ["ticker", "date", "close", "stop_level", "argmin_date", "gap",
                "near_low_stop", "full_window", "hist_rising", "m3_bull", "fwd10", "fwd21",
@@ -487,6 +501,43 @@ def gen_c1(nd: NameData) -> tuple[list[dict], list[dict], int]:
     return fires, c1z, unconfirmed
 
 
+def gen_c1_literal(nd: NameData) -> tuple[list[dict], int]:
+    """C1L — the CHARTER-LITERAL reading of C1 (§R9b, red-team appendix).
+
+    Charter §1 orders C1's legs: the 3D washout cross FIRST, "CONFIRMED by the first 1D
+    MACD-RSI bull cross ... within the next 10 sessions". This lane admits ONLY a FRESH 1D
+    cross-up strictly after the 3D cross's knowability date — no already-in-force admission.
+    The shipped C1 also fires immediately when a 1D cross is already in force at K (the
+    commissioning spec's added branch); the two are printed side by side, never merged."""
+    if not nd.ok:
+        return [], 0
+    k, d = nd.sf["k"], nd.sf["d"]
+    cross = _xup(k, d).fillna(False)
+    deep = (k < C1_OS_BAND) & (d < C1_OS_BAND)
+    zero = k.shift(1).rolling(C1_ZERO_LOOKBACK, min_periods=1).min() <= C1_ZERO_BOUND
+    sel = (cross & deep).fillna(False).to_numpy()
+    fires, unconfirmed = [], 0
+    for r in np.flatnonzero(sel):
+        kd = nd.sf_known[r]
+        if pd.isna(kd):
+            continue
+        i = nd.pos.get(pd.Timestamp(kd))
+        if i is None:
+            continue
+        j = None
+        for t in range(i + 1, min(i + 1 + C1_WAIT_MAX, len(nd.idx))):
+            if nd.xup1[t]:
+                j = t
+                break
+        if j is None:
+            unconfirmed += 1
+            continue
+        fires.append({"date": nd.idx[j], "pos": j, "confirm": "fresh_only",
+                      "cross_known": nd.idx[i], "wait_sessions": j - i,
+                      "zero_bound": bool(zero.iloc[r]), "row3": int(r)})
+    return fires, unconfirmed
+
+
 def _bars_since_at(flags: np.ndarray, i: int) -> int | None:
     """Sessions since the most recent True at or before i (0 = at i); None if never."""
     prior = np.flatnonzero(flags[: i + 1])
@@ -585,8 +636,16 @@ def rule_episode(nd: NameData, T: int, spy: pd.Series | None) -> dict | None:
         row["td_to_trough"] = int(T - (T - LOOKBACK_LOW + int(np.nanargmin(w))))
         fb = nd.l[T + 1: T + TROUGH_FWD + 1]
         row["false_bounce"] = bool(np.nanmin(fb) < p_low * FALSE_BOUNCE_K)
+        # §R9h: the same entry priced against the two-sided trough (hindsight lens), so the
+        # backward-anchored near-low rate can be read next to a trough-referenced one.
+        t_low = float(np.nanmin(w))
+        row["entry_vs_trough"] = (float(c0 / t_low - 1.0) if np.isfinite(t_low) and t_low > 0
+                                  else None)
+        row["near_low_trough"] = (None if row["entry_vs_trough"] is None
+                                  else bool(row["entry_vs_trough"] <= NEAR_LOW_PCT))
     else:
         row["td_to_trough"] = row["false_bounce"] = None
+        row["entry_vs_trough"] = row["near_low_trough"] = None
         row["trunc_trough"] = True
 
     if fwd_avail >= MAE_FWD:
@@ -600,6 +659,13 @@ def rule_episode(nd: NameData, T: int, spy: pd.Series | None) -> dict | None:
     stop_b = float(lo2 - STOP_B_ATR * atr) if np.isfinite(atr) else None
     row["stop_a"] = float(stop_a)
     row["stop_b"] = stop_b
+    # §R9d risk-equalized alternatives: stops whose DISTANCE does not depend on how far the
+    # entry sits above its decline low, so a feature's spread can be re-read with the
+    # stop-distance channel held (roughly) fixed.
+    row["atr14"] = float(atr) if np.isfinite(atr) else None
+    row["stop_fix8"] = float(c0 * (1.0 - ALT_STOP_FIX))
+    row["stop_atr2"] = float(c0 - ALT_STOP_ATR[0] * atr) if np.isfinite(atr) else None
+    row["stop_atr3"] = float(c0 - ALT_STOP_ATR[1] * atr) if np.isfinite(atr) else None
 
     if fwd_avail >= MIN_FWD_SESSIONS:
         end = min(T + FWD_MAX, n - 1)
@@ -618,8 +684,13 @@ def rule_episode(nd: NameData, T: int, spy: pd.Series | None) -> dict | None:
                 break
         row["reached_2r"] = bool(hit) if hit is not None else False
         row["window_sessions"] = int(end - T)
+        for key, lvl in (("survive_fix8", row["stop_fix8"]),
+                         ("survive_atr2", row["stop_atr2"]),
+                         ("survive_atr3", row["stop_atr3"])):
+            row[key] = (None if lvl is None else bool(not np.any(lows <= lvl)))
     else:
         row["survive_a"] = row["survive_b"] = row["mfe_42"] = row["reached_2r"] = None
+        row["survive_fix8"] = row["survive_atr2"] = row["survive_atr3"] = None
         row["trunc_forward"] = True
 
     for hz in (21, 42):
@@ -630,6 +701,14 @@ def rule_episode(nd: NameData, T: int, spy: pd.Series | None) -> dict | None:
                                                               row[key]))
         else:
             row[key] = row[f"ex{hz}"] = None
+    # mechanical hold-42 R-multiple (§R9e): -1R when stop A is touched inside the window,
+    # else the 42-session close-to-close move in units of the initial risk. Needs BOTH the
+    # survival verdict and fwd42, so it is computed after both.
+    risk = (c0 - stop_a) / c0
+    row["r_mult_42"] = (None if risk <= 0 or row.get("survive_a") is None
+                        or row.get("fwd42") is None
+                        else (-1.0 if not row["survive_a"] else float(row["fwd42"] / risk)))
+    row["r2_target_pct"] = float(R_MULTIPLE * risk) if risk > 0 else None
     return row
 
 
@@ -1085,6 +1164,466 @@ def run_discriminators(ep_path: Path, key_prefix: str = "R8") -> dict:
     return out
 
 
+# ---------------------------------------------------------------- §R9 red-team appendix
+R9_METRIC_COLS = ["subset", "episodes", "names", "near_low%", "entry_vs_low", "td_to_trough",
+                  "false_bounce%", "MAE_21", "survA%", "survB%", "MFE_42", "R2%", "fwd21",
+                  "fwd42", "ex21", "ex42", "near_low_open%"]
+
+
+def r9_metric_row(label: str, d: pd.DataFrame) -> list:
+    """One pooled R2b-shaped metric row, computed from the frozen episode plane."""
+    if d.empty:
+        return [label, 0, 0] + [None] * 14
+    g = lambda c: d[c].tolist()
+    return [label, len(d), int(d["ticker"].nunique()),
+            pct(rate(g("near_low"))), med(g("entry_vs_low")), med(g("td_to_trough")),
+            pct(rate(g("false_bounce"))), med(g("mae_21")), pct(rate(g("survive_a"))),
+            pct(rate(g("survive_b"))), med(g("mfe_42")), pct(rate(g("reached_2r"))),
+            med(g("fwd21")), med(g("fwd42")), med(g("ex21")), med(g("ex42")),
+            pct(rate(g("near_low_open")))]
+
+
+def label_under(d: pd.DataFrame, survive_col: str) -> pd.Series:
+    """The §8 label recomputed against an alternative stop column."""
+    sa, fb = d[survive_col], d["false_bounce"]
+    known = sa.notna() & fb.notna()
+    fs = known & ((~sa.fillna(False).astype(bool)) | fb.fillna(False).astype(bool))
+    du = known & sa.fillna(False).astype(bool) & (~fb.fillna(True).astype(bool))
+    return pd.Series(np.where(fs, "false_start", np.where(du, "durable", "excluded")),
+                     index=d.index)
+
+
+def spread_under(d: pd.DataFrame, key: str, kind: str, label: pd.Series) -> tuple:
+    """Top-vs-bottom false-start spread for one feature under a given label column."""
+    dd = d.assign(label=label)
+    graded = dd[dd["label"].isin(["false_start", "durable"])]
+    cells = cells_for(graded, key, kind)
+    if cells is None:
+        return None, 0
+    lo, hi = fs_rate(graded, cells[0][1]), fs_rate(graded, cells[-1][1])
+    if lo[0] is None or hi[0] is None or min(lo[1], hi[1]) < MIN_CELL_N:
+        return None, len(graded)
+    return hi[0] - lo[0], len(graded)
+
+
+def within_quintile_spread(d: pd.DataFrame, key: str, kind: str) -> tuple:
+    """Average within-entry_vs_low-quintile spread: the same feature read with stop DISTANCE
+    held roughly fixed. A feature that survives here is not a stop-distance proxy."""
+    dd = d.assign(label=label_episodes(d)["label"])
+    graded = dd[dd["label"].isin(["false_start", "durable"]) & dd["entry_vs_low"].notna()]
+    if len(graded) < QUINTILES * 3 * MIN_CELL_N:
+        return None, 0
+    try:
+        q = pd.qcut(graded["entry_vs_low"], QUINTILES, labels=False, duplicates="drop")
+    except Exception:
+        return None, 0
+    sps = []
+    for qi in sorted(set(q.dropna().astype(int))):
+        sub = graded[q == qi]
+        cells = cells_for(sub, key, kind)
+        if cells is None:
+            continue
+        lo, hi = fs_rate(sub, cells[0][1]), fs_rate(sub, cells[-1][1])
+        if lo[0] is None or hi[0] is None or min(lo[1], hi[1]) < MIN_CELL_N // 2:
+            continue
+        sps.append(hi[0] - lo[0])
+    return (mean(sps), len(sps)) if sps else (None, 0)
+
+
+def run_redteam(ep_path: Path, nds: dict, raw_fires: dict, panel: list, store: dict,
+                spy: pd.Series | None, c1l_fires: dict, c1l_unconfirmed: int,
+                name_years: float, stop_rows: list) -> dict:
+    """§R9 — the phase-3 adversarial checks, frozen as deterministic tables.
+
+    Reads the frozen episode plane back and re-derives everything that needs price paths
+    from the same in-memory OHLC the study ran on. Touches no R0-R8 table and no shipped
+    construction."""
+    ep = pd.read_parquet(ep_path)
+    ep = ep[~ep["addon"].astype(bool)]
+    out: dict = {}
+    panel_set = set(panel)
+
+    # ---- R9a: C0 quality split -------------------------------------------------------
+    c0 = ep[ep["construction"] == "C0"]
+    ta = Table("R9a", "C0 incumbent BUY split by the published marker `quality`",
+               R9_METRIC_COLS,
+               "the shipped buy filter REFUSES `block`, so the pooled C0 row in R2b is not "
+               "the row the product actually surfaces; `take` is")
+    ta.add(*r9_metric_row("C0 all (as in R2b)", c0))
+    for q in ("take", "block", "pending"):
+        ta.add(*r9_metric_row(f"C0 quality={q}", c0[c0["quality"] == q]))
+    other = c0[~c0["quality"].isin(["take", "block", "pending"])]
+    ta.add(*r9_metric_row("C0 quality missing/other", other))
+    ta.emit()
+    out["R9a"] = TABLES["R9a"]
+
+    # ---- R9b: charter-literal C1 vs shipped C1-relaxed ---------------------------------
+    c1 = ep[ep["construction"] == "C1"]
+    c1l = ep[ep["construction"] == "C1L"]
+    tb = Table("R9b", "C1 charter-literal (C1L, fresh 1D cross ONLY) vs the shipped "
+                      "C1-relaxed (also admits an already-in-force 1D cross)",
+               R9_METRIC_COLS, "same panel, same window, same ruler")
+    tb.add(*r9_metric_row("C1-relaxed (shipped)", c1))
+    tb.add(*r9_metric_row("C1L (charter-literal)", c1l))
+    tb.add(*r9_metric_row("C1-relaxed, waited-confirm only", c1[c1["confirm"] == "waited"]))
+    tb.add(*r9_metric_row("C1-relaxed, immediate-confirm only",
+                          c1[c1["confirm"] == "immediate"]))
+    tb.emit()
+    out["R9b"] = TABLES["R9b"]
+
+    tb2 = Table("R9b.economics", "C1L vs C1-relaxed — fire economics and C0 coverage",
+                ["lane", "episodes", "names", "fires/name-year", "unconfirmed 3D crosses "
+                 "(no fire)", "C0 coverage%", "median lead (sessions)", "median wait "
+                 "after the 3D cross"])
+    for lab, d, unconf in (("C1-relaxed (shipped)", c1, None),
+                           ("C1L (charter-literal)", c1l, c1l_unconfirmed)):
+        by: dict[str, list[int]] = {}
+        for t, p in zip(d["ticker"], d["pos"]):
+            by.setdefault(t, []).append(int(p))
+        cov, leads = 0, []
+        for t, p in zip(c0["ticker"], c0["pos"]):
+            cands = [x for x in by.get(t, []) if 0 <= int(p) - x <= 30]
+            if cands:
+                cov += 1
+                leads.append(float(int(p) - max(cands)))
+        tb2.add(lab, len(d), int(d["ticker"].nunique()),
+                round(len(d) / name_years, 4) if name_years else None,
+                unconf, pct(cov / len(c0)) if len(c0) else None, med(leads),
+                med(d["wait_sessions"].dropna().astype(float).tolist()))
+    tb2.emit()
+    out["R9b.economics"] = TABLES["R9b.economics"]
+
+    # ---- R9c: repeat-fire PIT audit ----------------------------------------------------
+    # stop A sits at p_low x 0.99 and the false-bounce trigger at p_low x 0.98, so the
+    # EARLIEST observable evidence of a prior fire's false start is its first stop-A touch.
+    lab_all = label_episodes(ep)
+    c2r_lab = lab_all[lab_all["construction"] == "C2r"]
+    # per ticker: (prior fire pos, session its stop-A touch first PRINTED), sorted by pos
+    first_breach: dict[str, np.ndarray] = {}
+    for t, g in c2r_lab.groupby("ticker"):
+        nd = nds.get(t)
+        if nd is None:
+            continue
+        rows = []
+        for p, sa, lb in zip(g["pos"], g["stop_a"], g["label"]):
+            if lb != "false_start":
+                continue
+            p = int(p)
+            end = min(p + FWD_MAX, len(nd.idx) - 1)
+            hit = np.flatnonzero(nd.l[p + 1: end + 1] <= sa)
+            rows.append((p, (p + 1 + int(hit[0])) if hit.size else 10 ** 9))
+        if rows:
+            first_breach[t] = np.array(sorted(rows), dtype="int64")
+
+    tc = Table("R9c", "Repeat-fire flag — point-in-time audit "
+                      "(was the prior fire's false start OBSERVABLE at T?)",
+               ["lane", "flagged n", "knowable at T n", "knowable%", "leaked n",
+                "leaked-subset false-start%", "shipped spread pp", "PIT-only spread pp",
+                "PIT spread pp (fixed -8%)", "PIT spread pp (entry-2ATR)",
+                "PIT spread pp (entry-3ATR)"],
+               "the shipped flag asks whether a prior fire's episode WAS a false start, a "
+               "label built from windows extending past T; the PIT flag asks only whether "
+               "its stop-A touch had already printed by T. The leaked subset scoring ~100% "
+               "false-start is STRUCTURAL, not a discovery: a prior fire whose stop-A touch "
+               "prints only after T breaks a low that sits inside the current episode's own "
+               "[T-45, T] window too, so the same breach stops the current fire. That is "
+               "the look-ahead, stated as an identity.")
+    r9c: dict = {}
+    for lane in ("C2r", "C1"):
+        d = lab_all[lab_all["construction"] == lane].copy()
+        d = add_repeat_flag(d, c2r_lab)
+        pit = []
+        for t, p in zip(d["ticker"], d["pos"]):
+            p = int(p)
+            arr = first_breach.get(t)
+            if arr is None:
+                pit.append(False)
+                continue
+            lo = int(np.searchsorted(arr[:, 0], p - REPEAT_BACK, side="left"))
+            hi = int(np.searchsorted(arr[:, 0], p, side="left"))
+            win = arr[lo:hi]
+            pit.append(bool(win.size and (win[:, 1] <= p).any()))
+        d["f_repeat_pit"] = pit
+        flagged = d[d["f_repeat_false"]]
+        knowable = flagged[flagged["f_repeat_pit"]]
+        leaked = flagged[~flagged["f_repeat_pit"]]
+        lk = leaked[leaked["label"].isin(["false_start", "durable"])]
+        ship_sp, _ = spread_under(d, "f_repeat_false", "b", d["label"])
+        pit_sp, _ = spread_under(d, "f_repeat_pit", "b", d["label"])
+        alts = [spread_under(d, "f_repeat_pit", "b", label_under(d, c))[0]
+                for c in ("survive_fix8", "survive_atr2", "survive_atr3")]
+        tc.add(lane, len(flagged), len(knowable),
+               pct(len(knowable) / len(flagged)) if len(flagged) else None, len(leaked),
+               pct(float((lk["label"] == "false_start").mean()) if len(lk) else None),
+               pct(ship_sp), pct(pit_sp), *[pct(x) for x in alts])
+        r9c[lane] = {"flagged": len(flagged), "knowable": len(knowable),
+                     "shipped_spread": ship_sp, "pit_spread": pit_sp}
+    tc.emit()
+    out["R9c"] = TABLES["R9c"]
+
+    # ---- R9d: risk-equalized relabels --------------------------------------------------
+    r9d_feats = [("f_k_cross", "t"), ("f_macd1_level", "t"), ("f_rs63", "t"),
+                 ("f_decline_depth", "t"), ("f_above200", "b"), ("f_dist_swing", "t"),
+                 ("f_zero_bound", "b"), ("entry_vs_low", "t")]
+    for lane in ("C2r", "C1"):
+        d = ep[ep["construction"] == lane]
+        td = Table(f"R9d.{lane}", f"§8 spreads under RISK-EQUALIZED stops — {lane}",
+                   ["feature", "graded n (shipped)", "spread pp shipped",
+                    "spread pp fixed -8%", "spread pp entry-2ATR", "spread pp entry-3ATR",
+                    "within-entry_vs_low-quintile avg spread pp (shipped)",
+                    "quintiles used"],
+                   "stop A's distance from the entry IS entry_vs_low, so any feature whose "
+                   "spread collapses under a distance-independent stop, or within an "
+                   "entry_vs_low quintile, was re-measuring stop geometry")
+        for key, kind in r9d_feats:
+            base_lab = label_episodes(d)["label"]
+            sp, n = spread_under(d, key, kind, base_lab)
+            alts = [spread_under(d, key, kind, label_under(d, c))[0]
+                    for c in ("survive_fix8", "survive_atr2", "survive_atr3")]
+            wq, nq = within_quintile_spread(d, key, kind)
+            td.add(key, n, pct(sp), *[pct(x) for x in alts], pct(wq), nq)
+        td.emit()
+        out[f"R9d.{lane}"] = TABLES[f"R9d.{lane}"]
+
+    # ---- R9e: R-multiple expectancy ----------------------------------------------------
+    te = Table("R9e", "Mechanical hold-42 R-multiple expectancy "
+                      "(R = close - stop A; -1R when stop A is touched first)",
+               ["lane", "episodes (full window)", "names", "mean R", "p25 R", "median R",
+                "p75 R", "median 2R target (% of entry)", "stop-out share%"],
+               "no discretion, no trailing: the mechanical floor of the process, not the "
+               "operator's own execution")
+    lanes_e = [("C0 all", ep[ep["construction"] == "C0"]),
+               ("C0 quality=take", ep[(ep["construction"] == "C0")
+                                      & (ep["quality"] == "take")])]
+    lanes_e += [(c, ep[ep["construction"] == c]) for c in ("C1", "C1L", "C2s", "C2r",
+                                                           "C3", "C4")]
+    for lab, d in lanes_e:
+        dd = d[d["r_mult_42"].notna()]
+        if dd.empty:
+            te.add(lab, 0, 0, *[None] * 6)
+            continue
+        v = dd["r_mult_42"].to_numpy(dtype="float64")
+        te.add(lab, len(dd), int(dd["ticker"].nunique()), float(np.mean(v)),
+               float(np.percentile(v, 25)), float(np.median(v)),
+               float(np.percentile(v, 75)),
+               med(dd["r2_target_pct"].tolist()),
+               pct(float((~dd["survive_a"].astype(bool)).mean())))
+    te.emit()
+    out["R9e"] = TABLES["R9e"]
+
+    # ---- R9f: structure-stop near-low vs a random-session null -------------------------
+    rng = np.random.default_rng(NULL_SEED)
+    stops_by_name: dict[str, list[int]] = {}
+    for r in stop_rows:
+        if r["ticker"] in panel_set:
+            stops_by_name.setdefault(r["ticker"], []).append(int(r["pos"]))
+    draws: dict[str, list[int]] = {}
+    for t, positions in stops_by_name.items():
+        nd = nds.get(t)
+        if nd is None or nd.eval_start_pos is None:
+            continue
+        lo, hi = nd.eval_start_pos, len(nd.idx) - 1
+        if hi - lo < 2 * max(NEAR_WIN_GRID) + 2:
+            continue
+        n = len(positions) * NULL_DRAWS_PER_STOP
+        draws[t] = rng.integers(lo + max(NEAR_WIN_GRID),
+                                hi - max(NEAR_WIN_GRID) + 1, n).tolist()
+
+    def near_rate(pos_by_name: dict[str, list[int]], win: int, tol: int) -> tuple:
+        hits = tot = 0
+        for t, ps in pos_by_name.items():
+            nd = nds.get(t)
+            if nd is None:
+                continue
+            n = len(nd.idx)
+            for p in ps:
+                a, b = p - win, p + win
+                if a < 0 or b > n - 1:
+                    continue
+                arg = a + int(np.nanargmin(nd.l[a: b + 1]))
+                tot += 1
+                hits += int(abs(p - arg) <= tol)
+        return (hits / tot if tot else None), tot
+
+    tf = Table("R9f", "Structure-stop near-low rate vs a RANDOM-SESSION null "
+                      "(same names, same eval frame)",
+               ["window", "tolerance", "stops n", "stops near-low%", "null n",
+                "null near-low%", "lift (pp)", "ratio"],
+               f"{NULL_DRAWS_PER_STOP} random sessions drawn per stop event, seeded "
+               f"{NULL_SEED}; a stop can only be called 'at the low' relative to what an "
+               "arbitrary session scores on the same window")
+    for win in NEAR_WIN_GRID:
+        for tol in NEAR_TOL_GRID:
+            sr, sn = near_rate(stops_by_name, win, tol)
+            nr, nn = near_rate(draws, win, tol)
+            tf.add(f"+/-{win}", f"+/-{tol}", sn, pct(sr), nn, pct(nr),
+                   pct(None if sr is None or nr is None else sr - nr),
+                   None if not sr or not nr else round(sr / nr, 3))
+    tf.emit()
+    out["R9f"] = TABLES["R9f"]
+
+    # ---- R9g: measured ambient near-low base -------------------------------------------
+    rng2 = np.random.default_rng(AMBIENT_SEED)
+    names = [t for t in panel if t in nds and nds[t].eval_start_pos is not None]
+    hits_b = hits_t = tot_b = tot_t = 0
+    evl, evt = [], []
+    per = max(1, AMBIENT_DRAWS // max(1, len(names)))
+    for t in names:
+        nd = nds[t]
+        lo, hi = max(nd.eval_start_pos, LOOKBACK_LOW), len(nd.idx) - 1 - TROUGH_FWD
+        if hi <= lo:
+            continue
+        for p in rng2.integers(lo, hi + 1, per):
+            p = int(p)
+            c0v = nd.c[p]
+            pl = float(np.nanmin(nd.l[p - LOOKBACK_LOW: p + 1]))
+            if np.isfinite(pl) and pl > 0 and c0v > 0:
+                e = c0v / pl - 1.0
+                evl.append(e)
+                tot_b += 1
+                hits_b += int(e <= NEAR_LOW_PCT)
+            tl = float(np.nanmin(nd.l[p - LOOKBACK_LOW: p + TROUGH_FWD + 1]))
+            if np.isfinite(tl) and tl > 0 and c0v > 0:
+                e = c0v / tl - 1.0
+                evt.append(e)
+                tot_t += 1
+                hits_t += int(e <= NEAR_LOW_PCT)
+    tg = Table("R9g", "MEASURED ambient near-low base on this panel (random sessions)",
+               ["reference low", "sessions drawn", "names", "near-low% (<= 5%)",
+                "median entry_vs_low"],
+               f"seeded {AMBIENT_SEED}; the charter quoted ~16% from the U_W5 lens — this "
+               "is the same statistic measured on THIS panel and THIS window")
+    tg.add("backward P_low [T-45, T]", tot_b, len(names), pct(hits_b / tot_b if tot_b else None),
+           med(evl))
+    tg.add("two-sided trough [T-45, T+15]", tot_t, len(names),
+           pct(hits_t / tot_t if tot_t else None), med(evt))
+    tg.emit()
+    out["R9g"] = TABLES["R9g"]
+
+    # ---- R9h: trough-referenced entry columns ------------------------------------------
+    th = Table("R9h", "Backward-anchored vs TROUGH-REFERENCED entry, per lane "
+                      "(R2b pooled basis)",
+               ["lane", "episodes (with T+15)", "names", "near_low% (backward P_low)",
+                "median entry_vs_low", "near_low% (trough-referenced)",
+                "median entry_vs_trough", "near-low gap pp"],
+               "the backward column is what a live surface can know; the trough column is "
+               "the hindsight lens the operator's chart eye actually applies")
+    for c in list(CONSTRUCTIONS) + ["C1L"]:
+        d = ep[(ep["construction"] == c) & ep["entry_vs_trough"].notna()]
+        if d.empty:
+            th.add(c, 0, 0, *[None] * 5)
+            continue
+        nb = rate(d["near_low"].tolist())
+        nt = rate(d["near_low_trough"].tolist())
+        th.add(c, len(d), int(d["ticker"].nunique()), pct(nb),
+               med(d["entry_vs_low"].tolist()), pct(nt),
+               med(d["entry_vs_trough"].tolist()),
+               pct(None if nb is None or nt is None else nb - nt))
+    th.emit()
+    out["R9h"] = TABLES["R9h"]
+
+    # ---- R9i: pre/post-trough decomposition --------------------------------------------
+    ti = Table("R9i", "Pre-trough vs post-trough fires, per lane",
+               ["lane", "episodes (with T+15)", "names", "pre-trough share%",
+                "survA% pre-trough", "survA% post-trough", "n pre", "n post",
+                "false_bounce% pre", "false_bounce% post"],
+               "td_to_trough < 0 = fired BEFORE the eventual trough (the knife is still "
+               "falling); >= 0 = fired after it. The post-trough false-bounce column is 0 "
+               "BY IDENTITY: if the two-sided argmin low over [T-45, T+15] lands at or "
+               "before T, no forward low in (T, T+15] can undercut it, so the false-bounce "
+               "test cannot fire. `false_bounce` is therefore very nearly a restatement of "
+               "`td_to_trough < 0`, and every §8 feature that separates false starts is to "
+               "that extent separating pre-trough fires from post-trough ones.")
+    for c in list(CONSTRUCTIONS) + ["C1L"]:
+        d = ep[(ep["construction"] == c) & ep["td_to_trough"].notna()]
+        if d.empty:
+            ti.add(c, 0, 0, *[None] * 7)
+            continue
+        pre, post = d[d["td_to_trough"] < 0], d[d["td_to_trough"] >= 0]
+        ti.add(c, len(d), int(d["ticker"].nunique()), pct(len(pre) / len(d)),
+               pct(rate(pre["survive_a"].tolist())), pct(rate(post["survive_a"].tolist())),
+               len(pre), len(post), pct(rate(pre["false_bounce"].tolist())),
+               pct(rate(post["false_bounce"].tolist())))
+    ti.emit()
+    out["R9i"] = TABLES["R9i"]
+
+    # ---- R9j: dedup sensitivity ---------------------------------------------------------
+    def dedup_last(fires: list[dict]) -> list[dict]:
+        kept, last = [], None
+        for f in sorted(fires, key=lambda x: -x["pos"]):
+            if last is not None and last - f["pos"] < DEDUP_SESSIONS:
+                continue
+            kept.append(f)
+            last = f["pos"]
+        return list(reversed(kept))
+
+    tj = Table("R9j", "Episode-dedup sensitivity — keep-first (shipped) vs keep-last vs "
+                      "no dedup",
+               ["lane", "policy", "episodes", "names", "near_low%", "false_bounce%",
+                "survA%"],
+               "the 10-session collapse is a reporting choice, not a signal property")
+    for c in CONSTRUCTIONS:
+        for policy, fn in (("keep-first (shipped)", dedup), ("keep-last", dedup_last),
+                           ("no dedup", lambda x: sorted(x, key=lambda f: f["pos"]))):
+            rows = []
+            for t, nd in nds.items():
+                if t not in panel_set or nd.eval_start_pos is None:
+                    continue
+                for f in fn(raw_fires[t][c]):
+                    if f["pos"] < nd.eval_start_pos:
+                        continue
+                    r = rule_episode(nd, f["pos"], None)
+                    if r is not None:
+                        rows.append(r)
+            if not rows:
+                tj.add(c, policy, 0, 0, None, None, None)
+                continue
+            tj.add(c, policy, len(rows), len({r["ticker"] for r in rows}),
+                   pct(rate([r["near_low"] for r in rows])),
+                   pct(rate([r["false_bounce"] for r in rows])),
+                   pct(rate([r["survive_a"] for r in rows])))
+    tj.emit()
+    out["R9j"] = TABLES["R9j"]
+
+    # ---- R9k: exemplar precision --------------------------------------------------------
+    tk = Table("R9k", "Exemplar precision receipts (STLD, NEM)", ["item", "value"],
+               "every number a narrative might quote, computed rather than recalled")
+    stld, nem = nds.get("STLD"), nds.get("NEM")
+    if stld is not None:
+        p8, p14, p87 = (stld.pos.get(pd.Timestamp(x)) for x in
+                        ("2026-07-08", "2026-07-14", "2026-08-07"))
+        tk.add("STLD C4 fire 2026-07-08 close", float(stld.c[p8]))
+        tk.add("STLD C1/C2r/C2s/C3 fire 2026-07-14 close", float(stld.c[p14]))
+        tk.add("STLD C0 buy signal_date 2026-08-07 close", float(stld.c[p87]))
+        tk.add("sessions 2026-07-08 -> 2026-08-07", int(p87 - p8))
+        tk.add("sessions 2026-07-14 -> 2026-08-07", int(p87 - p14))
+        tk.add("STLD July trough low / date", f"{float(stld.l[stld.pos[pd.Timestamp('2026-07-02')]]):.2f}"
+                                              " on 2026-07-02")
+    if nem is not None:
+        jl = nem.low[(nem.idx >= "2026-06-15") & (nem.idx <= "2026-08-10")]
+        tk.add("NEM trough low 2026-06-15..08-10 / date",
+               f"{float(jl.min()):.2f} on {jl.idxmin().date()}")
+        p9 = nem.pos.get(pd.Timestamp("2026-07-09"))
+        p27 = nem.pos.get(pd.Timestamp("2026-07-27"))
+        for lab, p in (("NEM C1 2026-07-09", p9), ("NEM C0 2026-07-27", p27)):
+            if p is None:
+                continue
+            r = rule_episode(nem, p, None)
+            tk.add(f"{lab} close", float(nem.c[p]))
+            tk.add(f"{lab} entry_vs_low (backward P_low)", r["entry_vs_low"])
+            tk.add(f"{lab} entry_vs_trough (two-sided)", r.get("entry_vs_trough"))
+        mk = [m for m in (store.get("NEM") or {}).get("markers", [])
+              if (m.get("signal_date") or m.get("date")) == "2026-07-27"]
+        tk.add("NEM 2026-07-27 C0 marker quality",
+               (mk[0].get("quality") if mk else None))
+        tk.add("NEM 2026-07-27 marker type/reason",
+               f"{mk[0].get('type')} / {mk[0].get('reason')}" if mk else None)
+    tk.emit()
+    out["R9k"] = TABLES["R9k"]
+    out["repeat_pit"] = r9c
+    return out
+
+
 # ---------------------------------------------------------------- main
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
@@ -1100,6 +1639,9 @@ def main() -> int:
     ap.add_argument("--discriminators", dest="discriminators", action="store_true",
                     default=True, help="run the §8 durable-vs-false-start lane (default)")
     ap.add_argument("--no-discriminators", dest="discriminators", action="store_false")
+    ap.add_argument("--redteam-appendix", dest="redteam", action="store_true", default=True,
+                    help="run the §R9 adversarial-review appendix (default)")
+    ap.add_argument("--no-redteam-appendix", dest="redteam", action="store_false")
     args = ap.parse_args()
 
     t_start = time.time()
@@ -1188,6 +1730,22 @@ def main() -> int:
         cv2 = None
         deviate("charting-app confluence_v2 has no warn_events; §4 stop lane SKIPPED.")
 
+    deviate("C1 AS SHIPPED IS 'C1-RELAXED', NOT THE CHARTER-LITERAL LANE. Charter §1 orders "
+            "C1's legs — 3D washout cross FIRST, then 'CONFIRMED by the first 1D MACD-RSI "
+            "bull cross ... within the next 10 sessions'. The commissioning spec added an "
+            "IMMEDIATE branch (fire at the 3D knowability date K when 1D macd >= sig at K "
+            "AND the last 1D cross-up was within the prior 5 sessions), which admits a 1D "
+            "cross already IN FORCE before the 3D leg — the opposite leg order. That branch "
+            "carries 5926 of C1's 7973 panel episodes (74%), so C1's headline numbers are "
+            "mostly not the charter's construction. Implemented as specified; the "
+            "charter-literal lane is measured beside it as C1L in R9b.")
+    deviate("C4's oversold qualifier is evaluated at the CONFIRM session p+3, not at the "
+            "pivot p. Charter §1 says the pivot must print 'while the last completed 3D "
+            "StochRSI %D < 20'; the commissioning spec pinned '%D < 20 as of p+3'. The p+3 "
+            "reading is the knowability-conservative one (at p the p+3 confirm does not yet "
+            "exist, and a %D read at p can still be revised by the bucket that closes "
+            "between p and p+3), but it is a different test from the charter's wording and "
+            "can admit a pivot whose oversold context arrived only after the pivot printed.")
     print(f"\nuniverse: store={len(store_names)}  priced-panel={len(panel)}  "
           f"add-on exemplars={addons}  unpriced={unpriced}")
 
@@ -1229,6 +1787,11 @@ def main() -> int:
     c2s_mapped = c2s_total = 0
     all_fires: dict[str, dict[str, list[dict]]] = {}
     raw_fires: dict[str, dict[str, list[dict]]] = {}
+    # §R9b: the charter-literal C1 lane lives entirely OUTSIDE the shipped construction set,
+    # so no R0-R8 table can see it.
+    rt_episodes: list[dict] = []
+    c1l_fires: dict[str, list[dict]] = {}
+    c1l_unconfirmed = 0
 
     for t, nd in nds.items():
         doc = store.get(t)
@@ -1278,6 +1841,25 @@ def main() -> int:
                 (addon_episodes if is_addon else episodes)[c].append(r)
                 if not is_addon:
                     win_counts[c] += 1
+        # --- §R9b charter-literal C1 (red-team lane; panel only, never pooled in R0-R8) ---
+        c1l, unconf_l = gen_c1_literal(nd)
+        c1l_unconfirmed += unconf_l
+        c1l = dedup(c1l)
+        c1l_fires[t] = c1l
+        if not is_addon:
+            for f in c1l:
+                if nd.eval_start_pos is None or f["pos"] < nd.eval_start_pos:
+                    continue
+                r = rule_episode(nd, f["pos"], spy)
+                if r is None:
+                    continue
+                r["construction"] = "C1L"
+                r["addon"] = False
+                r.update(features(nd, f["pos"], f, spy_ctx))
+                r["meta"] = {k: (str(v.date()) if isinstance(v, pd.Timestamp) else v)
+                             for k, v in f.items() if k != "pos"}
+                r["c1z"] = bool(f.get("zero_bound"))
+                rt_episodes.append(r)
 
     # ------------------------------------------------ §R0 substrate + gates
     stld = nds.get("STLD")
@@ -1952,7 +2534,7 @@ def main() -> int:
     ep_path = out_dir / "early_admission_bakeoff_episodes.parquet"
     st_path = out_dir / "early_admission_bakeoff_stops.parquet"
     all_eps = [e for c in CONSTRUCTIONS for e in episodes[c]] + \
-              [e for c in RECOMPUTED_LANES for e in addon_episodes[c]]
+              [e for c in RECOMPUTED_LANES for e in addon_episodes[c]] + rt_episodes
     ep_df = episodes_frame(all_eps)
     ep_df.to_parquet(ep_path, compression="zstd", index=False)
     st_df = pd.DataFrame([{f: r.get(f) for f in STOP_FIELDS} for r in stop_rows])
@@ -1972,6 +2554,15 @@ def main() -> int:
         print("§R8 DURABLE-BOTTOM vs FALSE-START DISCRIMINATOR LANE (charter §8)")
         print("=" * 100)
         r8 = run_discriminators(ep_path)
+
+    # ------------------------------------------------ §R9 red-team appendix
+    r9: dict = {}
+    if args.redteam:
+        print("\n" + "=" * 100)
+        print("§R9 RED-TEAM APPENDIX (phase-3 adversarial review, frozen as tables)")
+        print("=" * 100)
+        r9 = run_redteam(ep_path, nds, raw_fires, panel, store, spy, c1l_fires,
+                         c1l_unconfirmed, name_years, stop_rows)
 
     # ------------------------------------------------ deviations + notes
     print("\n" + "=" * 100)
@@ -2046,6 +2637,7 @@ def main() -> int:
         "notes": NOTES,
         "tables": TABLES,
         "discriminator_lane": {k: v for k, v in r8.items() if k != "labels"},
+        "redteam_appendix": {k: v for k, v in r9.items() if not k.startswith("R9")},
         # Episode-level detail is SPLIT OUT to zstd parquet so this JSON stays small enough
         # to read and diff; the §8 lane reads the parquet back rather than any in-memory state.
         "split_out": {
@@ -2059,6 +2651,12 @@ def main() -> int:
             "stops_rows": int(len(st_df)),
             "stops_columns": STOP_FIELDS,
             "compression": "zstd",
+            "episode_schema_version": EPISODE_SCHEMA_VERSION,
+            "schema_v2_appended_columns": [
+                "entry_vs_trough", "near_low_trough", "atr14", "stop_fix8", "stop_atr2",
+                "stop_atr3", "survive_fix8", "survive_atr2", "survive_atr3", "r_mult_42",
+                "r2_target_pct"],
+            "redteam_lane_rows": {"C1L": len(rt_episodes)},
         },
         "price_meta": price_meta,
     }
