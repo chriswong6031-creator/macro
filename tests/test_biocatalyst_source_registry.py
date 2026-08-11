@@ -4,7 +4,6 @@ from pathlib import Path
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_REGISTRY = ROOT / "config" / "biocatalyst_sources.yml"
 OUTCOME_POLICY = ROOT / "config" / "biocatalyst_outcomes.yml"
@@ -80,10 +79,9 @@ def test_only_clinicaltrials_is_enabled_for_bounded_beta() -> None:
         if source["production_ingest_allowed"]
     }
 
-    # RIGHTS-enabled, which is not the same as collecting. Record history was
-    # rights-cleared by the named operator ruling of 2026-08-07 (Ruling 1) and
-    # remains dark: no runtime enable, an empty allowlist, and no worker or
-    # timer. tests/test_biocatalyst_record_history_enablement.py holds that line.
+    # Rights permission and runtime arming remain separate controls. Record
+    # History was rights-cleared by the named 2026-08-07 ruling; the later
+    # forward-clock wave arms only its exact four-NCT canary universe.
     assert enabled == {"clinicaltrials_gov_v2", "clinicaltrials_gov_record_history"}
     clinical = registry["sources"]["clinicaltrials_gov_v2"]
     assert clinical["owner"] == "biocatalyst"
@@ -264,16 +262,13 @@ def test_launch_slo_manifest_covers_exact_critical_set_without_arming_it() -> No
     assert all(value is False for value in manifest["authority"].values())
 
 
-def test_record_history_canary_is_separate_bounded_and_dark_by_default() -> None:
+def test_record_history_canary_is_separate_bounded_and_exactly_armed() -> None:
     registry = _load_yaml(SOURCE_REGISTRY)
     source = registry["sources"]["clinicaltrials_gov_record_history"]
     canary = registry["b2_history_canary"]
 
-    # The RIGHTS gate was cleared by the named operator ruling of 2026-08-07
-    # (research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md, Ruling 1). That is one
-    # of three gates; this test's subject -- that the canary stays separate,
-    # bounded, and DARK BY DEFAULT -- is unchanged and is asserted below on the
-    # runtime and universe gates, which the ruling deliberately did not touch.
+    # The rights gate came from the named 2026-08-07 operator ruling. The
+    # separately reviewed forward-clock wave arms only the exact B1 universe;
     # tests/test_biocatalyst_record_history_enablement.py is the dedicated guard.
     assert source["production_ingest_allowed"] is True
     assert source["raw_archive"] == "private_only"
@@ -291,8 +286,14 @@ def test_record_history_canary_is_separate_bounded_and_dark_by_default() -> None
         "display_source_submitter_responsibility_note",
         "do_not_present_registry_as_government_validation",
     } <= set(source["distribution_obligations"])
-    assert canary["default_enabled"] is False
-    assert canary["default_allowlist"] == []
+    assert source["public_projection"] == "source_facts_with_attribution"
+    assert canary["default_enabled"] is True
+    assert canary["default_allowlist"] == [
+        "NCT04528082",
+        "NCT05020236",
+        "NCT06602479",
+        "NCT07218380",
+    ]
     assert canary["production_enable_env"] == "BIOCATALYST_HISTORY_ENABLED"
     assert canary["allowlist_config_env"] == "BIOCATALYST_CANARY_NCTS"
     assert canary["universe_relation"] == "exact_b1_current_nct_set"
