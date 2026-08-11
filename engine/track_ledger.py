@@ -24,6 +24,7 @@ Row compact keys:
     fl flags subset of [locked, susp, delisted]. Nulls allowed except t, d, st.
 Optional per-market row keys (consumers must tolerate their absence):
     xr exit reason · eb entry basis actually used (CN: t1_open|t1_hl2|t1_close) ·
+    ed actual fill date (distinct from d, the surfaced date) · bd board definition/era ·
     er re-derived entry that DISAGREES with the published one, disclosed not substituted ·
     erw plain-word reason for that disagreement. eb/er/erw are the 2026-08-08 CN
     entry-price-integrity fields (see scripts/build_china_library._cn_ledger_rows).
@@ -277,6 +278,11 @@ def from_board_ledger_grade(
                 "rk": gr.get("board_pos") or None,
                 "tr": None,
                 "fl": fl,
+                # Board-ledger rows already carry their selection-era stamp.  The
+                # popup never needed it, but cross-product receipt consumers do:
+                # a legacy HK call must not be relabelled as tonight's board.
+                "bd": gr.get("board_definition"),
+                "ed": gr.get("entry_date"),
             })
 
     hit = round(n_beat / n_matured, 3) if n_matured else None

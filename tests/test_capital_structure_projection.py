@@ -14,8 +14,25 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
-from engine.capital_structure.event_spine import build_event_version, build_review_queue, make_stable_span
-from engine.capital_structure.projection import build_projection_bundle, validate_projection_bundle
+from engine.capital_structure import biocatalyst_pit_adapter
+from engine.capital_structure.biocatalyst_pit_adapter import (
+    BioCatalystCapitalStructureAdapterError,
+    read_biocatalyst_capital_structure_pit,
+    validate_capital_structure_pit_read,
+)
+from engine.capital_structure.event_spine import (
+    build_event_version,
+    build_review_queue,
+    make_stable_span,
+)
+from engine.capital_structure.projection import (
+    build_projection_bundle,
+    validate_projection_bundle,
+)
+from engine.capital_structure.verified_projection_generation import (
+    VerifiedProjectionGeneration,
+)
+from engine.sector_intelligence.contracts import ContractValidationError
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -192,6 +209,28 @@ def _all_keys(value: object) -> set[str]:
     if isinstance(value, list):
         return set().union(*(_all_keys(child) for child in value)) if value else set()
     return set()
+
+
+def _adapter_generation(
+    events: list[dict],
+    *,
+    edges: list[dict] | None = None,
+    review_items: list[dict] | None = None,
+    telemetry: dict | None = None,
+) -> VerifiedProjectionGeneration:
+    edge_rows = edges or []
+    reviews = review_items or []
+    return VerifiedProjectionGeneration(
+        tuple(events),
+        tuple(edge_rows),
+        tuple(reviews),
+        telemetry
+        or _telemetry(
+            event_count=len(events),
+            edge_count=len(edge_rows),
+            review_count=len(reviews),
+        ),
+    )
 
 
 def test_projection_bundle_is_strict_schema_valid_context_only_and_public_safe():
@@ -408,3 +447,220 @@ def test_verified_telemetry_counts_and_source_clock_must_match_projection_inputs
             as_of="2026-08-11T00:00:00Z",
             generated_at="2026-08-12T00:00:00Z",
         )
+
+
+def test_biocatalyst_pit_adapter_replays_owner_corrections_at_system_time(
+    monkeypatch,
+):
+    original = _event(
+        "0000000001-26-000001", "S-3", seen="2026-08-01T10:00:00Z"
+    )
+    correction = _event(
+        "0000000001-26-000001",
+        "S-3",
+        seen="2026-08-03T10:00:00Z",
+        correction_version=2,
+        correction_of=original["event_id"],
+        source_suffix="correction",
+    )
+    generation = _adapter_generation([original, correction])
+    monkeypatch.setattr(
+        biocatalyst_pit_adapter,
+        "read_verified_projection_generation",
+        lambda _root: generation,
+    )
+
+    before = read_biocatalyst_capital_structure_pit(
+        {
+            "issuer_id": "sec:cik:0000000001",
+            "as_of": "2026-08-02T23:59:59-00:00",
+        },
+        root=ROOT / "unused",
+        generated_at=GENERATED_AT,
+    )
+    after = read_biocatalyst_capital_structure_pit(
+        {
+            "issuer_id": "sec:cik:0000000001",
+            "as_of": "2026-08-03T10:00:00Z",
+        },
+        root=ROOT / "unused",
+        generated_at=GENERATED_AT,
+    )
+
+    validate_capital_structure_pit_read(before)
+    assert before["available"] is True
+    assert before["query"]["as_of"] == "2026-08-02T23:59:59Z"
+    assert before["owner_projection"]["latest_observed_event"]["event_id"] == (
+        original["event_id"]
+    )
+    assert after["owner_projection"]["latest_observed_event"]["event_id"] == (
+        correction["event_id"]
+    )
+    assert before["unavailable_capabilities"] == UNAVAILABLE
+    assert before["authority"]["is_context_only"] is True
+    assert before["authority"]["rank_authority"] is False
+
+
+def test_biocatalyst_pit_adapter_returns_only_the_explicit_issuer(monkeypatch):
+    requested = _event(
+        "0000000001-26-000001", "S-3", seen="2026-08-01T10:00:00Z"
+    )
+    other = _event(
+        "0000000002-26-000001",
+        "S-3",
+        seen="2026-08-01T11:00:00Z",
+        issuer_id="sec:cik:0000000002",
+        cik="2",
+        ticker="DEF",
+    )
+    generation = _adapter_generation([requested, other])
+    monkeypatch.setattr(
+        biocatalyst_pit_adapter,
+        "read_verified_projection_generation",
+        lambda _root: generation,
+    )
+
+    result = read_biocatalyst_capital_structure_pit(
+        {"issuer_id": "sec:cik:0000000001", "as_of": GENERATED_AT},
+        root=ROOT / "unused",
+        generated_at=GENERATED_AT,
+    )
+
+    assert result["available"] is True
+    assert result["owner_projection"]["issuer_id"] == "sec:cik:0000000001"
+    wire = json.dumps(result, sort_keys=True)
+    assert "sec:cik:0000000002" not in wire
+    assert "DEF" not in wire
+    assert "object_key" not in wire
+
+
+@pytest.mark.parametrize(
+    ("params", "reason"),
+    [
+        ({"issuer_id": "ABC", "as_of": GENERATED_AT}, "invalid_issuer_id"),
+        (
+            {"issuer_id": "sec:cik:0000000001", "as_of": "2026-08-10"},
+            "invalid_as_of",
+        ),
+    ],
+)
+def test_biocatalyst_pit_adapter_rejects_identity_or_clock_shortcuts_without_reading(
+    monkeypatch, params, reason
+):
+    def forbidden(_root):
+        raise AssertionError("invalid queries must not touch owner storage")
+
+    monkeypatch.setattr(
+        biocatalyst_pit_adapter,
+        "read_verified_projection_generation",
+        forbidden,
+    )
+    result = read_biocatalyst_capital_structure_pit(
+        params, root=ROOT / "unused", generated_at=GENERATED_AT
+    )
+
+    assert result["available"] is False
+    assert result["unavailable_reason"] == reason
+    assert result["owner_receipt"] is None
+    assert result["owner_projection"] is None
+    assert result["coverage"]["absence_conclusion"] is False
+
+
+def test_biocatalyst_pit_adapter_compares_fractional_system_clocks_as_instants(
+    monkeypatch,
+):
+    generation = _adapter_generation([])
+    monkeypatch.setattr(
+        biocatalyst_pit_adapter,
+        "read_verified_projection_generation",
+        lambda _root: generation,
+    )
+
+    result = read_biocatalyst_capital_structure_pit(
+        {
+            "issuer_id": "sec:cik:0000000001",
+            "as_of": "2026-08-10T12:00:00.000001Z",
+        },
+        root=ROOT / "unused",
+        generated_at="2026-08-10T12:00:01Z",
+    )
+
+    assert result["available"] is False
+    assert result["unavailable_reason"] == "as_of_after_verified_generation"
+    assert result["owner_receipt"] is None
+
+
+def test_biocatalyst_pit_adapter_distinguishes_uncovered_from_integrity_failure(
+    monkeypatch,
+):
+    event = _event(
+        "0000000001-26-000001", "S-3", seen="2026-08-01T10:00:00Z"
+    )
+    generation = _adapter_generation([event])
+    monkeypatch.setattr(
+        biocatalyst_pit_adapter,
+        "read_verified_projection_generation",
+        lambda _root: generation,
+    )
+    uncovered = read_biocatalyst_capital_structure_pit(
+        {"issuer_id": "sec:cik:0000000002", "as_of": GENERATED_AT},
+        root=ROOT / "unused",
+        generated_at=GENERATED_AT,
+    )
+    assert uncovered["available"] is False
+    assert uncovered["unavailable_reason"] == "issuer_not_covered"
+    assert uncovered["owner_receipt"]["source_receipt"]["generation_id"]
+    assert uncovered["coverage"]["absence_conclusion"] is False
+
+    broken = _adapter_generation([event], telemetry=_telemetry(event_count=2))
+    monkeypatch.setattr(
+        biocatalyst_pit_adapter,
+        "read_verified_projection_generation",
+        lambda _root: broken,
+    )
+    with pytest.raises(
+        BioCatalystCapitalStructureAdapterError,
+        match="owner_generation_integrity_failure",
+    ):
+        read_biocatalyst_capital_structure_pit(
+            {"issuer_id": "sec:cik:0000000001", "as_of": GENERATED_AT},
+            root=ROOT / "unused",
+            generated_at=GENERATED_AT,
+        )
+
+
+def test_biocatalyst_pit_adapter_schema_refuses_capability_or_authority_widening(
+    monkeypatch,
+):
+    event = _event(
+        "0000000001-26-000001", "S-3", seen="2026-08-01T10:00:00Z"
+    )
+    generation = _adapter_generation([event])
+    monkeypatch.setattr(
+        biocatalyst_pit_adapter,
+        "read_verified_projection_generation",
+        lambda _root: generation,
+    )
+    result = read_biocatalyst_capital_structure_pit(
+        {"issuer_id": "sec:cik:0000000001", "as_of": GENERATED_AT},
+        root=ROOT / "unused",
+        generated_at=GENERATED_AT,
+    )
+
+    widened = copy.deepcopy(result)
+    widened["unavailable_capabilities"].remove("cash_runway")
+    with pytest.raises(ContractValidationError):
+        validate_capital_structure_pit_read(widened)
+
+    widened = copy.deepcopy(result)
+    widened["authority"]["rank_authority"] = True
+    with pytest.raises(ContractValidationError):
+        validate_capital_structure_pit_read(widened)
+
+    stale_receipt = copy.deepcopy(result)
+    stale_receipt["coverage"]["owner_reason"] = "schema_valid_but_tampered"
+    with pytest.raises(
+        BioCatalystCapitalStructureAdapterError,
+        match="read_payload_sha256_mismatch",
+    ):
+        validate_capital_structure_pit_read(stale_receipt)

@@ -49,7 +49,7 @@
     "ownership_registry_ref": {"const": "config/sector_intelligence_ownership.yml"},
     "ownership_registry_sha256": {"$ref": "#/$defs/sha256"},
     "reconciliation_receipt_ref": {
-      "const": "data/biocatalyst/fixtures/biocatalyst_f0_delta_reconciliation_receipt.v1.json"
+      "const": "data/biocatalyst/fixtures/biocatalyst_f0_delta_reconciliation_receipt.v2.json"
     },
     "reconciliation_receipt_id": {
       "type": "string",
@@ -363,6 +363,7 @@
             "dark_unarmed",
             "implemented_current_record_facts_only",
             "implemented_private_in_process_transcript_only",
+            "implemented_private_in_process_event_state_only",
             "dark_contract_and_hermetic_harness_only",
             "dark_b4a_private_only",
             "frozen_for_b0a",
@@ -418,7 +419,8 @@
                 "enum": [
                   "dark_unarmed",
                   "implemented_current_record_facts_only",
-                  "implemented_private_in_process_transcript_only"
+                  "implemented_private_in_process_transcript_only",
+                  "implemented_private_in_process_event_state_only"
                 ]
               }
             }
