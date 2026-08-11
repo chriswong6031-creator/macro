@@ -2145,12 +2145,53 @@ def failing_check_names(runs: list[dict[str, Any]]) -> set[str]:
     }
 
 
+def red_check_comment(names: list[str]) -> str:
+    """The refusal a red head gets, worded ONCE for both callers.
+
+    The full sweep and the failure-wake-up `mark_only_pass` post the same refusal
+    for the same reason, so the copy lives in one place. Two hand-maintained copies
+    of a comment that TEACHES A LAW ("here is how you take this pull request
+    manual") is two chances to teach half of it, and the half omitted below was the
+    one that mattered on 2026-08-11.
+    """
+    return (
+        "`merge-on-green` sweeper: **not merging.** These checks concluded "
+        "red on the head commit:\n\n"
+        + "\n".join(f"- `{name}`" for name in names)
+        + "\n\nThe sweeper never merges a red pull request. Fix the cause and "
+        "re-run the failed job (the label stays armed, so the next sweep merges "
+        "once the head is clean), or remove `merge-on-green` to take it manual — "
+        "but do not take it manual SILENTLY: in the same act, leave a marker "
+        "(`merge-blocked`, or a comment naming who owns the merge and why) and own "
+        "it through to merged-or-handed-back. An unlabeled, uncommented disarm is "
+        "invisible to every other session AND to this sweeper, which only ever "
+        "looks at labeled pull requests (PR #5291, 2026-08-11).\n\n"
+        "The known-spurious `Workers Builds: macro` check is already ignored."
+    )
+
+
 def mark_blocked(repo: str, pull: dict[str, Any], message: str, token: str) -> bool:
     """Add `merge-blocked` and explain it — but only on the transition.
 
     The comment is posted ONLY in the same call path that actually ADDS the
     label. A sweep runs every 10 minutes, so commenting on every pass over an
     already-blocked pull request would post ~144 comments a day.
+
+    A FAILED LABEL WRITE MUST NOT SILENCE THE EXPLANATION (2026-08-11, PR #5291).
+    This used to warn into the run log on an HTTP >= 400 from the label endpoint and
+    return WITHOUT commenting, so a 403 / 422 / momentary 502 there left the pull
+    request carrying NO visible marker at all — the entire record of the refusal was
+    one line in a run log nobody reads, on a lane whose whole job is to leave the
+    reason where the owner will find it. The label and the comment are two
+    independent ways of saying the same thing, so losing one is a reason to lean
+    HARDER on the other, never to go quiet.
+
+    Both writes are therefore attempted and both are checked, a failure of either is
+    an `::error` rather than a warning (a lost marker is the loss of the only visible
+    signal, not a curiosity), and the return value now answers the question the
+    callers actually ask — did a NEW marker land? — instead of "did the label call
+    return 2xx". Already-labeled still returns False without commenting: that is the
+    one-shot rule, and it is unchanged.
     """
     number = pull.get("number")
     if MERGE_BLOCKED_LABEL in label_names(pull):
@@ -2161,16 +2202,36 @@ def mark_blocked(repo: str, pull: dict[str, Any], message: str, token: str) -> b
         token,
         {"labels": [MERGE_BLOCKED_LABEL]},
     )
-    if status >= 400:
-        _annotate("warning", "merge-on-green", f"PR #{number}: could not label (HTTP {status}).")
-        return False
-    _request(
+    labeled = status < 400
+    if not labeled:
+        _annotate(
+            "error",
+            "merge-on-green",
+            f"PR #{number}: could not add `{MERGE_BLOCKED_LABEL}` (HTTP {status}); "
+            "posting the explanation anyway so the refusal stays visible on the "
+            "pull request.",
+        )
+    comment_status, _ = _request(
         "POST",
         f"{GITHUB_API}/repos/{repo}/issues/{number}/comments",
         token,
         {"body": message},
     )
-    return True
+    commented = comment_status < 400
+    if not commented:
+        _annotate(
+            "error",
+            "merge-on-green",
+            f"PR #{number}: could not post the explanatory comment "
+            f"(HTTP {comment_status})."
+            + (
+                ""
+                if labeled
+                else " The label failed too, so this refusal left NO visible marker "
+                "on the pull request — only this run log."
+            ),
+        )
+    return labeled or commented
 
 
 def clear_blocked(repo: str, pull: dict[str, Any], token: str) -> None:
@@ -2416,7 +2477,7 @@ def reprove(
             "— a concurrent sweep won the race. Nothing to do, nothing labeled.",
         )
         return f"already-{how}"
-    mark_blocked(
+    added = mark_blocked(
         repo,
         pull,
         (
@@ -2434,7 +2495,12 @@ def reprove(
     _annotate(
         "warning",
         "merge-on-green",
-        f"PR #{number}: stale proof and update-branch declined — labeled merge-blocked.",
+        f"PR #{number}: stale proof and update-branch declined — "
+        + (
+            "marker written."
+            if added
+            else "no new marker (already labeled, or both writes failed above)."
+        ),
     )
     return "conflict"
 
@@ -2577,25 +2643,16 @@ def sweep_pull(
             # What this sweep could not answer, for `ensure_main_baseline`.
             blocked_names |= bad_names
 
-        added = mark_blocked(
-            repo,
-            pull,
-            (
-                "`merge-on-green` sweeper: **not merging.** These checks concluded "
-                "red on the head commit:\n\n"
-                + "\n".join(f"- `{name}`" for name in names)
-                + "\n\nThe sweeper never merges a red pull request. Fix the cause and "
-                "re-run the failed job (the label stays armed, so the next sweep merges "
-                "once the head is clean), or remove `merge-on-green` to take it manual. "
-                "The known-spurious `Workers Builds: macro` check is already ignored."
-            ),
-            merge_token,
-        )
+        added = mark_blocked(repo, pull, red_check_comment(names), merge_token)
         _annotate(
             "warning",
             "merge-on-green",
             f"PR #{number}: red checks ({', '.join(names[:6])}); "
-            + ("labeled merge-blocked." if added else "already labeled merge-blocked."),
+            + (
+                "marker written."
+                if added
+                else "no new marker (already labeled, or both writes failed above)."
+            ),
         )
         return verdict
 
@@ -2678,7 +2735,11 @@ def sweep_pull(
             f"PR #{number}: live base...head diff is EMPTY — head "
             f"{head_sha[:12]} carries no changes against main (clobbered head, "
             "or a superseded/empty pull request); merge refused. "
-            + ("Labeled merge-blocked." if added else "Already labeled merge-blocked."),
+            + (
+                "Marker written."
+                if added
+                else "No new marker (already labeled, or both writes failed above)."
+            ),
         )
         return "empty-diff"
 
@@ -2753,6 +2814,173 @@ def sweep_pull(
     return "error"
 
 
+def mark_only_pass(
+    repo: str,
+    read_token: str,
+    merge_token: str,
+    trigger_head_sha: str,
+    budget: "SweepBudget | None" = None,
+) -> int:
+    """Leave a VISIBLE marker on the head a failed proof run just concluded on.
+
+    WHY THIS EXISTS (2026-08-11, PR #5291). The job-level `if:` in
+    .github/workflows/merge-on-green.yml used to skip every `failure` wake-up, and
+    the essay there argued it "fails SAFE — a red PR simply stays armed and unmerged,
+    which is the correct outcome either way". That assumed nothing else touches the
+    label during the window in which the red is real but unmarked. Measured:
+
+        02:05:18Z  ci run 31449929887 concludes FAILURE on #5291's head 9ce3c2ef
+        02:13:32Z  another session runs `gh pr edit 5291 --remove-label merge-on-green`
+        02:13:34Z  the arm label is gone: no `merge-blocked`, no comment, no marker
+        02:13:41Z  the next sweep lists the ARMED pull requests — #5291 is not in it
+
+    Eight minutes of red-and-unmarked, and then the pull request left the
+    label-filtered world this sweeper lives in permanently: with the arm label gone
+    the marker could never arrive on any later sweep, ever. The cron cannot be the
+    answer — measured ~0.5 sweeps/hour against a nominal 6 — so the marker has to
+    land BEFORE the window rather than after it, which means waking on the failure
+    that opens it.
+
+    DELIBERATELY NOT A SWEEP. This pass never merges, never `update-branch`es, never
+    clears a label and never dispatches a baseline. It reads one head's checks and
+    writes at most one marker, which is what keeps a failure wake-up affordable: ~4-8
+    requests (listing + one check-run page + at most the 4-request proof lookup + two
+    writes) against READ_TOKEN's 1,000/hr PER-REPOSITORY budget. Even at the measured
+    ~26 failure wake-ups an hour that is well inside the bucket a real sweep needs,
+    which is the only reason the `if:` may admit failures at all. Anything that would
+    make this pass expensive belongs in the full sweep, not here.
+
+    Always exits 0 on a red pull request: a red is the lane working, not a fault.
+    """
+    if not trigger_head_sha:
+        print(
+            "merge-on-green mark-only pass: the trigger carried no head sha, so there "
+            "is nothing to mark. Only a `workflow_run` event has one — a cron or "
+            "dispatch reaching here would be a routing bug, not a red pull request.",
+            flush=True,
+        )
+        return 0
+
+    try:
+        pulls = labeled_pulls(repo, read_token)
+    except RateLimited as exc:
+        _annotate(
+            "warning",
+            "merge-on-green",
+            f"Mark-only pass deferred: {exc}. Nothing marked.",
+        )
+        return 0
+    except Exception as exc:
+        _annotate("error", "merge-on-green", f"Could not list pull requests: {exc}")
+        return 1
+
+    wanted = trigger_head_sha.strip().lower()
+    matching = [
+        pull
+        for pull in pulls
+        if str((pull.get("head") or {}).get("sha") or "").lower() == wanted
+    ]
+    if not matching:
+        print(
+            "merge-on-green mark-only pass: no armed pull request sits at "
+            f"{trigger_head_sha[:12]}, so there is nothing to mark. A PUSH SUPERSEDES "
+            "ITS OWN RED — the failed run belongs to a head that has been replaced, "
+            "and the successor head must never be accused of an ancestor's failure. "
+            "The successor's own runs will conclude and wake their own pass.",
+            flush=True,
+        )
+        return 0
+
+    # Fetched at most ONCE, and only if a blocked verdict actually appears: a
+    # wake-up whose head turns out to be pending or already green must not spend the
+    # two-workflow proof lookup to discover that.
+    proof: MainProof | None = None
+    tally: dict[str, int] = {}
+    for pull in matching:
+        number = pull.get("number")
+        head_sha = str((pull.get("head") or {}).get("sha") or "")
+        try:
+            runs = head_check_runs(repo, head_sha, read_token)
+            verdict, names = decide_verdict(runs)
+            if verdict != "blocked":
+                # `pending`, `unproven` and `clean` are all the full sweep's business.
+                # One failed run does not make the HEAD red (a rerun may still be
+                # going), and nothing here may merge, so the only honest action is a
+                # line in the log.
+                print(
+                    f"PR #{number}: the run that woke this pass failed, but the head's "
+                    f"checks read `{verdict}` as a whole — nothing marked. The full "
+                    "sweep owns every outcome except a marker on a settled red.",
+                    flush=True,
+                )
+                tally[verdict] = tally.get(verdict, 0) + 1
+                continue
+
+            bad_names = failing_check_names(runs)
+            if proof is None:
+                proof = main_proof(repo, read_token)
+            if bad_names and proof.clean_names and bad_names <= proof.clean_names:
+                # Possibly a base-inherited red, and this pass is not equipped to
+                # decide: the refresh-vs-block call needs `proof_postdates_failures`,
+                # a refresh slot and an `update-branch`, all of which are the full
+                # sweep's. Marking on the name overlap alone would post the one-shot
+                # false-accusation comment on every armed head during a fleet-wide
+                # stale-base red — the exact daily audit the main-proof-too-old note
+                # in `sweep_pull` documents. Deferring costs a marker one sweep late;
+                # marking wrongly costs a comment that can never be taken back.
+                print(
+                    f"PR #{number}: red checks "
+                    f"({', '.join(sorted(bad_names)[:6])}) are all clean on main's own "
+                    "proof, so this may be a base-inherited red rather than this pull "
+                    "request's. Deferred to the full sweep, which owns the "
+                    "refresh-vs-block decision; nothing marked.",
+                    flush=True,
+                )
+                tally["base-red-deferred"] = tally.get("base-red-deferred", 0) + 1
+                continue
+
+            added = mark_blocked(repo, pull, red_check_comment(names), merge_token)
+            _annotate(
+                "warning",
+                "merge-on-green",
+                f"PR #{number}: red checks ({', '.join(names[:6])}); "
+                + (
+                    "marker written."
+                    if added
+                    else "no new marker (already labeled, or both writes failed above)."
+                ),
+            )
+            tally[verdict] = tally.get(verdict, 0) + 1
+        except RateLimited as exc:
+            _annotate(
+                "warning",
+                "merge-on-green",
+                f"Mark-only pass stopped at PR #{number}: {exc}.",
+            )
+            break
+        except Exception as exc:  # noqa: BLE001 — never fail the run over one PR
+            _annotate(
+                "warning",
+                "merge-on-green",
+                f"PR #{number}: mark-only pass failed ({exc}); the full sweep retries it.",
+            )
+            tally["error"] = tally.get("error", 0) + 1
+
+    left = budget.last_seen if budget is not None else None
+    print(
+        "merge-on-green mark-only pass: "
+        + f"{len(matching)} armed pull request(s) at {trigger_head_sha[:12]}; "
+        + (
+            ", ".join(f"{count} {verdict}" for verdict, count in sorted(tally.items()))
+            or "nothing judged"
+        )
+        + f" (~{left if left is not None else '?'} API requests left; "
+        + "no merge, no refresh, no baseline dispatch)",
+        flush=True,
+    )
+    return 0
+
+
 def main() -> int:
     repo = os.environ.get("GH_REPO", "").strip()
     read_token = os.environ.get("READ_TOKEN", "").strip()
@@ -2763,6 +2991,10 @@ def main() -> int:
     # one. Empty for the cron and for workflow_dispatch, which is harmless — it only
     # promotes a pull request within the per-sweep cap, never past a gate.
     trigger_head_sha = os.environ.get("TRIGGER_HEAD_SHA", "").strip()
+    # …and HOW it concluded. `failure` selects `mark_only_pass` below; every other
+    # value (including the empty string the cron and workflow_dispatch supply) runs
+    # the full sweep exactly as before.
+    trigger_conclusion = os.environ.get("TRIGGER_CONCLUSION", "").strip().lower()
     if not repo:
         _annotate("error", "merge-on-green", "GH_REPO is not set; nothing to sweep.")
         return 1
@@ -2777,6 +3009,18 @@ def main() -> int:
         _annotate("notice", "merge-on-green", f"Sweep deferred: {budget_detail}.")
         return 0
     print(f"API budget: {budget_detail}.", flush=True)
+
+    # A FAILURE WAKE-UP MARKS; IT DOES NOT SWEEP (2026-08-11, PR #5291). The workflow
+    # now runs this job on a failed proof run so a fresh red gets its marker in
+    # seconds instead of waiting for the ~0.5/hr cron or for the next green anywhere
+    # in the repository — see `mark_only_pass` for the eight-minute window that made
+    # the old skip unsafe. It must NOT fall through into the full sweep: a red run
+    # cannot make anything mergeable, and these wake-ups are ~5x more frequent than
+    # the greens, so paying a 25-pull-request pass for each of them would put the
+    # 1,000/hr per-repository READ_TOKEN bucket back where 2026-08-07 found it. The
+    # budget preflight above still applies — a starved lane marks nothing either.
+    if trigger_conclusion == "failure":
+        return mark_only_pass(repo, read_token, merge_token, trigger_head_sha, budget)
 
     try:
         pulls = labeled_pulls(repo, read_token)

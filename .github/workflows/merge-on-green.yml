@@ -115,9 +115,33 @@ jobs:
     # ride now falls to the cron or to the next green anywhere in the repo. It fails
     # SAFE in the only direction that matters — a red PR simply stays armed and
     # unmerged, which is the correct outcome either way.
+    #
+    # THAT LAST PARAGRAPH IS DISPROVEN (2026-08-11, PR #5291), so `failure` is
+    # admitted again — for a bounded MARK-ONLY pass, never a sweep. "A red PR simply
+    # stays armed" assumed nothing else touches the label during the window in which
+    # the red is real and unmarked. Measured: ci run 31449929887 concluded FAILURE at
+    # 02:05:18Z; at 02:13:34Z another session removed `merge-on-green` with no
+    # `merge-blocked` and no comment; the 02:13:41Z sweep listed the ARMED pull
+    # requests and #5291 was no longer among them. An external disarm inside the
+    # unmarked window (8 minutes here) makes the pull request permanently invisible
+    # to a label-filtered sweep, so no later sweep — and no cron, measured at ~0.5/hr
+    # against a nominal 6 — can ever deliver the marker. The marker must land BEFORE
+    # the window, not after it.
+    #
+    # COST BOUND, which is why this does not undo the 2026-08-06 arithmetic above: a
+    # failure wake-up runs `mark_only_pass`, which never merges, never refreshes,
+    # never dispatches a baseline and never walks the backlog. It costs ~4-8 REST
+    # calls (listing + one check-run page + at most the proof lookup + two writes)
+    # against READ_TOKEN's 1,000/hr PER-REPOSITORY budget, so even at ~26 failure
+    # wake-ups/hour it stays far inside the bucket a real sweep needs.
+    #
+    # `cancelled` and `skipped` stay skipped. A cancelled run is a SUPERSEDED head,
+    # not a red, and a skipped one judged nothing at all — marking on either would
+    # accuse a pull request no check has actually failed.
     if: >-
       github.event_name != 'workflow_run'
       || github.event.workflow_run.conclusion == 'success'
+      || github.event.workflow_run.conclusion == 'failure'
 
     # CONTROL PLANE, NOT RENDER WORKLOAD. Never route this job to macstudio or
     # render-linux: a sweep queued behind a long render cannot drain the merge queue.
@@ -211,4 +235,10 @@ jobs:
           # serve. Empty for schedule/workflow_dispatch, which is harmless — it only
           # reorders within the cap and never passes a gate.
           TRIGGER_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          # HOW that run concluded. `failure` selects the bounded mark-only pass (see
+          # the `if:` essay above and `mark_only_pass` in the script); anything else,
+          # including the empty string a cron or dispatch supplies, runs the full
+          # sweep unchanged. The script reads the value rather than the workflow
+          # branching on it, so the routing is testable without an Actions run.
+          TRIGGER_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: python3 scripts/merge_on_green.py

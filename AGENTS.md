@@ -200,6 +200,21 @@ is the merge's evidence — watch it to conclusion. `--admin` remains only for t
 spurious Workers X, docs-only pull requests that trigger no pack checks, and
 genuine wedges — never to outrun CI.
 
+**DISARMING IS NEVER SILENT (PR #5291, 2026-08-11).** The sweeper never removes
+`merge-on-green`; `scripts/merge_on_green.py` has no code path that does. Every
+removal is a session's deliberate act, so treat it as one: taking a pull request
+manual — your own or a sibling's — requires, IN THE SAME ACT, a visible marker
+(`merge-blocked`, or a PR comment naming your session and what you intend) and
+ownership of that pull request through to merged-or-handed-back. A bare
+`gh pr edit <n> --remove-label merge-on-green` with no marker is not a hand-off, it
+is a disappearance: the sweeper only ever lists LABELED pull requests, so a disarmed
+PR leaves its world entirely and no later sweep can label, comment on, or merge it.
+PR #5291 was stripped twice in one evening (02:13:34Z, 02:21:36Z) with no marker
+either time, sat red and unattributed, and needed a manual `--admin` merge at
+02:32:52Z to escape. The sweeper now marks a fresh red within seconds of the failed
+run (failure wake-ups run a bounded mark-only pass), but that only shrinks the
+window — it cannot make a silent disarm visible.
+
 **A `merge-blocked` backlog means main is UNPROVEN, not that the pull requests are
 bad (#5037, 2026-08-08).** The sweeper's base-inherited-red refresh — the mechanism
 that drains an armed backlog once main is healed — can only tell an inherited red
