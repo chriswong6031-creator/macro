@@ -6,6 +6,7 @@ This bundle supersedes/extends the earlier single-file study `research/MOMOEDGE_
 
 ## Start here
 - **`MASTER_BUILD_DOCKET.md`** — the spine. Parity matrix (8 surfaces × NOW/NOW-SOFT/NEW-DATA/PAID-TAPE), the shared-R2 data-bridge design + new JSON schemas, the sequenced build packages (A→Flow→Heatmap→GEX→PRISM→Tutorial→Prophet+Alerts), epistemics guardrails, and 7 operator questions.
+- **`MOMOEDGE_COMPLETION_BENCHMARK_PREREG_2026-08-11.md`** — the frozen, non-post-hoc catch-up-versus-surpass ruler. It requires production parity first, then point-in-time sparse selection and a same-basis prospective exact-option win; retrospective returns cannot close the goal.
 
 ## Source-RE specs (extracted from MomoEdge client JS — exact formulas/thresholds)
 - `oracle_spec.md` — **the crown jewel.** Full V1 (9-factor) + V2 (7-phase weighted) live-confidence engine, signal schema, client/server split, T2 gating (SOFI pattern), OCC option construction, 7-gate flow auto-logger, performance engine.
