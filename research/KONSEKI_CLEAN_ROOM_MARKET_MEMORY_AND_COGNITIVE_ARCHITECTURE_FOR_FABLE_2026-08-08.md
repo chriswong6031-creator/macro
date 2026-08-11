@@ -1306,6 +1306,18 @@ capability. The registration fixes the required evidence kinds, six-component
 salience policy, citation policy, bounded read tools, implementation hashes,
 resource limits, and zero-authority profile before a packet can be built.
 
+Ownership boundary: this W5A kernel is not `engine/neuralweb/cortex.py`; it
+neither imports nor replaces that nightly LLM runtime and cannot read or write
+`data/neuralweb/cortex/`, `site/neuralweb/cortex_memo.json`, or
+`data/reflexes/cortex_attention/`. It also does not produce or replace
+`data/neuralweb/attention_deterministic.json`, which remains owned by
+`engine/neuralweb/attention_deterministic.py` and its builder. The
+`attention_queue` and seven read methods here are packet-local projections over
+caller-supplied synthetic W5 evidence, not entries in either live attention
+registry or the live Cortex tool dispatcher. Any future handoff into the live
+Cortex requires a separately reviewed adapter; this contract alone grants no
+runtime or authority.
+
 Evidence and claim cards are content-addressed and bound to the exact query or
 selected analogue episode. Citations authenticate caller-supplied source bytes
 and a half-open byte span; this proves byte and reference closure only, never
