@@ -259,16 +259,18 @@ this commit the replay has been dry-run only.
 | `asof_utc` | string | ISO-8601 UTC timestamp when the payload was assembled by the publisher |
 | `session_date` | string | ISO-8601 date of the current trading session (ET date at publish time) |
 | `marks` | object | Map from OCC option symbol string → mark object (see below); may be empty `{}` |
+| `coverage` | object | Accounting receipt for canonical plans, unique contracts, source calls, available marks, and explicit abstentions |
 
 ## Mark object (values in `marks`)
 
 | Field | Type | Description |
 |---|---|---|
-| `bid` | float \| null | Best bid from ThetaData trade_quote, rounded to 4 decimal places |
-| `ask` | float \| null | Best ask from ThetaData trade_quote, rounded to 4 decimal places |
-| `mid` | float \| null | `(bid + ask) / 2`, rounded to 4 dp; `null` when either leg is absent (one-sided quote) |
+| `bid` | float | Trade-paired bid from the licensed history feed, rounded to 4 decimal places |
+| `ask` | float | Trade-paired ask from the licensed history feed, rounded to 4 decimal places |
+| `mid` | float | `(bid + ask) / 2`, rounded to 4 dp; crossed, missing, non-positive-ask, and over-age rows abstain instead of publishing a mark |
 | `last` | float \| null | Last trade price (`price` column), rounded to 4 dp |
-| `ts_utc` | string | ISO-8601 UTC timestamp of the **trade** that supplied the mark (from ThetaData `trade_timestamp`, which carries fractional seconds ET-naive, e.g. `'2026-07-02T06:30:16.218'`); falls back to publish-time with a WARNING log if parsing fails |
+| `ts_utc` | string | ISO-8601 UTC **quote timestamp** for bid/ask freshness; an absent, unparsable, non-RTH, non-causal, wrong-session, or over-age clock abstains and never substitutes publish time |
+| `trade_ts_utc` | string | ISO-8601 UTC timestamp of the paired trade, retained separately from the quote clock |
 
 ## OCC symbol key format
 
@@ -278,9 +280,36 @@ Example: `BA    260918C00220000` = BA 220.00-strike call expiring 2026-09-18.
 
 ## Consumer contract
 
-- `mid` may be `null` (one-sided quote) — consumers must handle gracefully.
+- The additive `coverage` field must be ignored by legacy consumers.
 - `ts_utc` is always present and parseable as ISO-8601 UTC.
 - When the R2 file is absent, >30 min stale, or `asof_utc` is outside RTH, the
   Item C overlay must fall back to EOD marks and display a staleness indicator.
 - The `marks` dict may be empty `{}` (no active plans with option contracts).
 - Keys are OCC symbols, not plan IDs; consumers must maintain plan→OCC mapping.
+
+## Prospective exact-option evidence
+
+Before the mutable public marks object advances, every admitted RTH cycle writes a
+schema-checked canonical observation to a caller-owned `0700` directory on the
+publisher host. Observation and head files are `0600`; observations are exclusively
+created, content-addressed, read back, and linked to the verified predecessor before
+the head advances atomically. The public object does not expose the private pointer,
+history, provider brand, or storage path.
+
+The private artifact accounts for every open plan carrying `option_contract` and
+records contract, source, clock, and entry-basis abstentions. It retains quote and
+trade clocks separately, deterministically selects by quote clock then trade clock and
+then source sequence when the collector exposes it, and ages bid/ask from an RTH quote
+clock. A legacy projection without sequence abstains on conflicting clock ties.
+Although upstream includes size, venue/exchange, and condition fields, this bounded
+artifact intentionally discards them. Its mark change compares the plan's entry
+premium only when explicitly labeled `freshness="EOD mark"` with the same OCC
+contract's trade-paired mid.
+
+This is a prerequisite mark path, not trade P&L or a lifecycle outcome. It contains no
+position, provider-observed entry, provider-observed exit, fill, NBBO, live,
+executable, rank, gate, sizing, issue, Prophet, Neural Web, training, or execution
+authority.
+The strict contract is
+`contracts/options/prophet.option_mark_observation.v1.schema.json`; the frozen claim
+boundary is `research/options_estate/PROPHET_OPTION_MARK_OBSERVATIONS.md`.

@@ -356,6 +356,102 @@ def test_untracked_collision_helper_fails_closed_outside_actions(tmp_path):
     assert list(runner_temp.iterdir()) == []
 
 
+def test_ignored_collision_reproduces_detach_failure_then_quarantines_safely(tmp_path):
+    lane, path = _untracked_collision_fixture(tmp_path, collision=True)
+    runner_only = lane / "data/generated/runner-only.json"
+    runner_only.write_text("keep")
+    info_exclude = lane / ".git" / "info" / "exclude"
+    info_exclude.write_text("data/generated/runner-only.json\n")
+    _git_output(lane, "commit", "-m", "engine outputs")
+    (lane / "README").write_text("runner dirt")
+
+    raw_rebase = subprocess.run(
+        ["git", "rebase", "--autostash", "origin/main"],
+        cwd=lane,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    raw_output = raw_rebase.stdout + raw_rebase.stderr
+    assert raw_rebase.returncode != 0
+    assert "untracked working tree files would be overwritten by checkout" in raw_output
+    assert "could not detach HEAD" in raw_output
+    assert (lane / path).read_text() == "local"
+
+    runner_temp = tmp_path / "runner-temp"
+    runner_temp.mkdir()
+    result = run_sh(
+        """
+        push_retry_init "engine outputs"
+        push_quarantine_untracked_collisions origin/main
+        git rebase --autostash origin/main
+        push_autostash_ok
+        """,
+        env={
+            "GITHUB_ACTIONS": "true",
+            "RUNNER_TEMP": str(runner_temp),
+        },
+        cwd=lane,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    quarantines = sorted(runner_temp.glob("push-untracked-collision.*"))
+    assert len(quarantines) == 1
+    quarantined_collision = quarantines[0] / "files" / path
+    assert quarantined_collision.read_text() == "local"
+    assert (lane / path).read_text() == "main"
+    assert runner_only.read_text() == "keep"
+    assert (lane / "README").read_text() == "runner dirt"
+
+
+def _daily_engine_commit_step() -> tuple[dict, dict]:
+    workflow = REPO_ROOT / ".github" / "workflows" / "daily.yml"
+    doc = yaml.safe_load(workflow.read_text())
+    step = next(
+        item
+        for item in doc["jobs"]["engine"]["steps"]
+        if item.get("name") == "commit engine outputs"
+    )
+    return doc, step
+
+
+def test_daily_engine_lane_uses_quarantine_helper_for_fast_main_retries():
+    _doc, step = _daily_engine_commit_step()
+    run = step["run"]
+    loop = run[run.index('push_retry_init "engine outputs"') :]
+    assert "while push_attempt; do" in loop
+    assert "push_fetch_main_for_rebase" in loop
+    assert "git rebase --autostash -X theirs origin/main" in loop
+    assert loop.index("push_fetch_main_for_rebase") < loop.index(
+        "git rebase --autostash"
+    )
+    assert "push_do" in loop
+    assert "push_backoff" in loop
+    assert "git pull --rebase --autostash -X theirs origin main" not in loop
+    assert "git ls-files --others --exclude-standard |" not in loop
+    assert 'rm -f -- "$f"' not in loop
+
+
+def test_daily_engine_push_loss_is_red_without_suppressing_delivery_tail():
+    doc, step = _daily_engine_commit_step()
+    run = step["run"]
+    lost_tail = run[run.index("push_lost") :]
+    assert "::error title=nightly engine outputs NOT pushed" in lost_tail
+    assert lost_tail.rstrip().endswith("exit 1")
+
+    steps = doc["jobs"]["engine"]["steps"]
+    commit_index = steps.index(step)
+    for delivery_step in steps[commit_index + 1 :]:
+        assert delivery_step.get("if") == "always()", delivery_step.get("name")
+
+    for job_name, job in doc["jobs"].items():
+        needs = job.get("needs", [])
+        if isinstance(needs, str):
+            needs = [needs]
+        if "engine" in needs:
+            assert str(job.get("if", "")).strip().startswith("always()"), job_name
+
+
 def _object_is_local(repo: Path, oid: str) -> bool:
     loose = repo / ".git" / "objects" / oid[:2] / oid[2:]
     if loose.exists():
