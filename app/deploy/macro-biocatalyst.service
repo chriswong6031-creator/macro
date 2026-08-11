@@ -17,6 +17,11 @@ User=macro-biocatalyst
 Group=macro-biocatalyst
 WorkingDirectory=/opt/macro
 EnvironmentFile=/etc/macro-biocatalyst.env
+# The launch-critical hourly lane carries forward pointer-bound history models
+# but never refreshes the archival source inline. A separate operator-armed
+# daily unit owns that slower evidence transaction so it cannot consume the
+# 900-second current-record opportunity window.
+Environment=BIOCATALYST_HISTORY_ENABLED=0
 Environment=BIOCATALYST_STATE_ROOT=/var/lib/macro-biocatalyst/state
 Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public
 Environment=BIOCATALYST_ACTIVATION_ROOT=/var/lib/macro-biocatalyst/activation

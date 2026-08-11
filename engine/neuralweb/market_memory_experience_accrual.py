@@ -243,6 +243,7 @@ class _TargetObservation:
     generation_capture_ordinals: dict[str, int]
     ancestry_generation_ids: tuple[str, ...]
     failure_reason: str | None = None
+    failure_attempted_at: str | None = None
 
 
 @dataclass(frozen=True)
@@ -254,6 +255,7 @@ class _RunOwnerView:
     trusted_candidates_by_session: dict[str, tuple[_TrustedCandidate, ...]]
     technical_candidates_by_session: dict[str, tuple[_TechnicalCandidate, ...]]
     failure_reason: str | None = None
+    failure_attempted_at: str | None = None
 
 
 @dataclass(frozen=True)
@@ -592,6 +594,7 @@ def _expected_registration_spec() -> dict[str, Any]:
             "owner_pair_retry_interval_seconds": OWNER_PAIR_RETRY_INTERVAL_SECONDS,
             "owner_pair_max_attempts": OWNER_PAIR_MAX_ATTEMPTS,
             "unstable_pair_policy": "retry_within_window_then_missed_owner_pair_not_stable_by_deadline",
+            "owner_failure_attribution": "exact_matching_session_and_in_window_attempt_required_for_specific_reason_generic_gap_has_no_attempt",
         },
         "state_inputs": {
             "trusted_profile": trusted_store.TRUSTED_STORE_PROFILE,
@@ -674,6 +677,7 @@ def _expected_registration_spec() -> dict[str, Any]:
             "late_target_policy": "append_late_source_resolution_preserve_unavailable_revision",
             "clock_tie_policy": "append_censored_no_capture_selection",
             "maturity_owner_miss_policy": "append_censored_preserve_late_resolution_chain",
+            "maturity_owner_failure_attribution": "exact_matching_target_session_and_in_window_attempt_required_for_specific_reason_generic_gap_has_no_attempt",
             "target_maturity_window_rule": "target_session_following_calendar_day_same_registered_window",
             "initial_maturity_persisted_view_recovery": "earliest_distinct_in_window_pair_observed_at.v1",
             "initial_maturity_persisted_view_equal_clock_policy": "fail_closed_ambiguous_no_generation_selection",
@@ -824,6 +828,30 @@ def _window(session: date) -> tuple[datetime, datetime]:
         session + timedelta(days=1), time(4, 30), tzinfo=timezone.utc
     )
     return opened, opened + timedelta(seconds=900)
+
+
+def _owner_failure_attempted_in_window(
+    failure_reason: str | None,
+    *,
+    failure_attempted_at: str | None,
+    session: date,
+) -> tuple[str, str] | None:
+    """Attribute one failed owner attempt only to its registered window.
+
+    The exact attempt clock is kept separate from the reconciliation clock.
+    Requiring it to land inside this session's own 04:30-04:45Z window keeps a
+    later attempt from being stamped onto an older opportunity or maturity.
+    """
+
+    if failure_reason is None or failure_attempted_at is None:
+        return None
+    attempted = _parse_utc(
+        failure_attempted_at, field="owner failure attempted_at"
+    )
+    opened, deadline = _window(session)
+    if opened <= attempted <= deadline:
+        return failure_reason, failure_attempted_at
+    return None
 
 
 def _terminal_window() -> tuple[datetime, datetime]:
@@ -1473,7 +1501,13 @@ def _observe_run_owner_view(
     current_reader = reader
     current_pins = initial_pins
     failure_reason = "owner_pair_not_stable_by_deadline"
+    failure_attempted_at: str | None = None
     for attempt in range(OWNER_PAIR_MAX_ATTEMPTS):
+        attempt_started_at = (
+            last_sample if attempt == 0 else _sample_clock(clock)
+        )
+        last_sample = max(last_sample, attempt_started_at)
+        attempt_sample: datetime | None = None
         try:
             if current_reader is None or current_pins is None:
                 current_reader, current_pins = _pin_owners(
@@ -1486,6 +1520,7 @@ def _observe_run_owner_view(
                 technical_root, maximum_capture_count=MAX_OWNER_GENERATION_CAPTURES
             )
             sampled = _sample_clock(clock)
+            attempt_sample = sampled
             after_trusted = current_reader.observe_generation_head(
                 maximum_capture_count=MAX_OWNER_GENERATION_CAPTURES
             )
@@ -1502,6 +1537,7 @@ def _observe_run_owner_view(
                     # that entered at the inclusive deadline but crossed it
                     # cannot publish a post-window owner view.
                     failure_reason = "owner_pair_not_stable_by_deadline"
+                    failure_attempted_at = None
                     break
                 trusted_pin = (
                     current_pins.trusted
@@ -1541,6 +1577,7 @@ def _observe_run_owner_view(
                 technical_by_session, pending_view = _prepare_technical_view(
                     root,
                     registration=registration,
+                    trusted_reader=current_reader,
                     technical_root=technical_root,
                     pin=technical_pin,
                     trusted_pin=trusted_pin,
@@ -1575,6 +1612,11 @@ def _observe_run_owner_view(
                     technical_candidates_by_session=technical_by_session,
                 )
             failure_reason = "owner_pair_not_stable_by_deadline"
+            failure_attempted_at = (
+                _format_utc(sampled)
+                if _inside_registered_owner_observation_window(sampled)
+                else None
+            )
         except (MarketMemoryExperienceAccrualError, MarketMemoryExperienceStoreError):
             raise
         except Exception as exc:
@@ -1590,6 +1632,12 @@ def _observe_run_owner_view(
             current_pins = None
             sampled = _sample_clock(clock)
             last_sample = max(last_sample, sampled)
+            attributed_attempt = attempt_sample or attempt_started_at
+            failure_attempted_at = (
+                _format_utc(attributed_attempt)
+                if _inside_registered_owner_observation_window(attributed_attempt)
+                else None
+            )
         if sampled >= retry_deadline or attempt + 1 >= OWNER_PAIR_MAX_ATTEMPTS:
             break
         remaining = (retry_deadline - sampled).total_seconds()
@@ -1610,6 +1658,7 @@ def _observe_run_owner_view(
         trusted_candidates_by_session={},
         technical_candidates_by_session={},
         failure_reason=failure_reason,
+        failure_attempted_at=failure_attempted_at,
     )
 
 
@@ -2421,24 +2470,115 @@ def _load_cached_technical_view(
     root: Path,
     *,
     registration: Registration,
-    pin: technical_store.PinnedTechnicalGenerationSnapshot,
 ) -> dict[str, Any] | None:
     view = _recover_technical_view_chain_head(
-        root, registration=registration, pin=pin
+        root, registration=registration, pin=None
     )
-    if view is None:
-        return None
-    active = {entry.capture_id: entry.as_dict() for entry in pin.captures}
-    for row in view["captures"]:
-        if active.get(row["index"]["capture_id"]) != row["index"]:
-            _fail("W2C cached technical index is not an immutable active prefix")
     return view
+
+
+def _authenticate_prior_technical_view_generation(
+    *,
+    technical_root: str | Path,
+    current_pin: technical_store.PinnedTechnicalGenerationSnapshot,
+    prior_ref: Mapping[str, Any],
+) -> None:
+    """Prove a changed technical pin descends from W2C's persisted tip."""
+
+    current_ref = _generation_ref(current_pin, technical=True)
+    if dict(prior_ref) == current_ref:
+        return
+    try:
+        before_membership = (
+            technical_store.observe_technical_actual_output_generation_head(
+                technical_root,
+                maximum_capture_count=MAX_OWNER_GENERATION_CAPTURES,
+            )
+        )
+        if not _pin_matches_head(current_pin, before_membership):
+            raise _OwnerObservationIntegrityError(
+                "technical owner HEAD changed before W2C ancestry proof"
+            )
+        prior_pin = technical_store.pin_technical_actual_output_generation(
+            technical_root,
+            generation_id=str(prior_ref.get("generation_id")),
+            maximum_capture_count=MAX_OWNER_GENERATION_CAPTURES,
+        )
+        # Bind the ancestry walk to the exact technical HEAD already
+        # sandwiched with the trusted owner.
+        after_membership = technical_store.observe_technical_actual_output_generation_head(
+            technical_root,
+            maximum_capture_count=MAX_OWNER_GENERATION_CAPTURES,
+        )
+        if not _pin_matches_head(current_pin, after_membership):
+            raise _OwnerObservationIntegrityError(
+                "technical owner HEAD changed during W2C ancestry proof"
+            )
+        if _generation_ref(prior_pin, technical=True) != dict(prior_ref):
+            raise _OwnerObservationIntegrityError(
+                "technical owner ancestry proof differs from W2C's persisted tip"
+            )
+    except _OwnerObservationIntegrityError:
+        raise
+    except Exception as exc:
+        raise _OwnerObservationIntegrityError(
+            "technical owner does not publish W2C's persisted tip in current ancestry"
+        ) from exc
+
+
+def _authenticate_prior_trusted_view_generation(
+    *,
+    reader: trusted_store.TrustedFileAsKnownAtReader | None,
+    current_pin: Any,
+    prior_ref: Mapping[str, Any],
+) -> None:
+    """Prove a changed trusted pin descends from W2C's persisted owner tip."""
+
+    current_ref = _generation_ref(current_pin, technical=False)
+    if dict(prior_ref) == current_ref:
+        return
+    if reader is None:
+        raise _OwnerObservationIntegrityError(
+            "changed trusted owner generation lacks an ancestry reader"
+        )
+    try:
+        before_membership = reader.observe_generation_head(
+            maximum_capture_count=MAX_OWNER_GENERATION_CAPTURES
+        )
+        if not _pin_matches_head(current_pin, before_membership):
+            raise _OwnerObservationIntegrityError(
+                "trusted owner HEAD changed before W2C ancestry proof"
+            )
+        prior_pin = reader.read_pinned_generation(
+            generation_id=str(prior_ref.get("generation_id")),
+            maximum_capture_count=MAX_OWNER_GENERATION_CAPTURES,
+        )
+        # The membership walk above authenticates against whatever HEAD it read.
+        # Bind that proof back to the exact generation already sandwiched by W2C.
+        after_membership = reader.observe_generation_head(
+            maximum_capture_count=MAX_OWNER_GENERATION_CAPTURES
+        )
+        if not _pin_matches_head(current_pin, after_membership):
+            raise _OwnerObservationIntegrityError(
+                "trusted owner HEAD changed during W2C ancestry proof"
+            )
+        if _generation_ref(prior_pin, technical=False) != dict(prior_ref):
+            raise _OwnerObservationIntegrityError(
+                "trusted owner ancestry proof differs from W2C's persisted tip"
+            )
+    except _OwnerObservationIntegrityError:
+        raise
+    except Exception as exc:
+        raise _OwnerObservationIntegrityError(
+            "trusted owner does not publish W2C's persisted tip in current ancestry"
+        ) from exc
 
 
 def _prepare_technical_view(
     root: Path,
     *,
     registration: Registration,
+    trusted_reader: trusted_store.TrustedFileAsKnownAtReader | None,
     technical_root: str | Path,
     pin: technical_store.PinnedTechnicalGenerationSnapshot,
     trusted_pin: Any,
@@ -2446,8 +2586,23 @@ def _prepare_technical_view(
 ) -> tuple[dict[str, tuple[_TechnicalCandidate, ...]], dict[str, Any] | None]:
     _parse_utc(pair_observed_at, field="technical-view owner pair")
     cached = _load_cached_technical_view(
-        root, registration=registration, pin=pin
+        root, registration=registration
     )
+    if cached is not None:
+        _authenticate_prior_technical_view_generation(
+            technical_root=technical_root,
+            current_pin=pin,
+            prior_ref=cached["technical_generation"],
+        )
+        _authenticate_prior_trusted_view_generation(
+            reader=trusted_reader,
+            current_pin=trusted_pin,
+            prior_ref=cached["trusted_generation"],
+        )
+        active = {entry.capture_id: entry.as_dict() for entry in pin.captures}
+        for row in cached["captures"]:
+            if active.get(row["index"]["capture_id"]) != row["index"]:
+                _fail("W2C cached technical index is not an immutable active prefix")
     cached_rows = [] if cached is None else list(cached["captures"])
     cached_ids = {row["index"]["capture_id"] for row in cached_rows}
     new_entries = [entry for entry in pin.captures if entry.capture_id not in cached_ids]
@@ -3171,6 +3326,8 @@ def _new_prepared(
             "deadline_at": _format_utc(deadline),
             "actual_cutoff_at": sandwich.sampled_at,
             "first_owner_observed_at": sandwich.sampled_at,
+            "owner_attempted_window_session": session.isoformat(),
+            "owner_attempted_at": sandwich.sampled_at,
             "reconciled_at": None,
             "clock_model": "session_ordinal_only_no_fabricated_market_close_timestamp",
         },
@@ -3219,7 +3376,8 @@ def _validate_prepared(
     cutoff = clean.get("cutoff")
     cutoff_fields = {
         "window_opens_at", "deadline_at", "actual_cutoff_at",
-        "first_owner_observed_at", "reconciled_at", "clock_model",
+        "first_owner_observed_at", "owner_attempted_window_session",
+        "owner_attempted_at", "reconciled_at", "clock_model",
     }
     if not isinstance(cutoff, Mapping) or set(cutoff) != cutoff_fields:
         _fail("W2C prepared cutoff fields are not canonical")
@@ -3229,6 +3387,8 @@ def _validate_prepared(
         cutoff.get("window_opens_at") != _format_utc(opened)
         or cutoff.get("deadline_at") != _format_utc(deadline)
         or cutoff.get("first_owner_observed_at") != cutoff.get("actual_cutoff_at")
+        or cutoff.get("owner_attempted_window_session") != session.isoformat()
+        or cutoff.get("owner_attempted_at") != cutoff.get("actual_cutoff_at")
         or cutoff.get("reconciled_at") is not None
         or cutoff.get("clock_model")
         != "session_ordinal_only_no_fabricated_market_close_timestamp"
@@ -3628,6 +3788,7 @@ def _missed_opportunity(
     reconciled_at: datetime,
     writer_commit: str,
     reason: str = "not_sealed_by_deadline",
+    owner_attempted_at: str | None = None,
 ) -> dict[str, Any]:
     opened, deadline = _window(session)
     if reconciled_at <= deadline:
@@ -3647,6 +3808,10 @@ def _missed_opportunity(
             "deadline_at": _format_utc(deadline),
             "actual_cutoff_at": None,
             "first_owner_observed_at": None,
+            "owner_attempted_window_session": (
+                session.isoformat() if owner_attempted_at is not None else None
+            ),
+            "owner_attempted_at": owner_attempted_at,
             "reconciled_at": timestamp,
             "clock_model": "session_ordinal_only_no_fabricated_market_close_timestamp",
         },
@@ -3707,7 +3872,8 @@ def _validate_opportunity_frozen(
     cutoff = clean.get("cutoff")
     cutoff_fields = {
         "window_opens_at", "deadline_at", "actual_cutoff_at",
-        "first_owner_observed_at", "reconciled_at", "clock_model",
+        "first_owner_observed_at", "owner_attempted_window_session",
+        "owner_attempted_at", "reconciled_at", "clock_model",
     }
     if not isinstance(cutoff, Mapping) or set(cutoff) != cutoff_fields:
         _fail("W2C opportunity cutoff fields are not canonical")
@@ -3721,6 +3887,22 @@ def _validate_opportunity_frozen(
         _fail("W2C opportunity window differs from registration")
     disposition = clean.get("disposition")
     reason = clean.get("reason")
+    specific_owner_miss_reasons = {
+        "owner_pair_not_stable_by_deadline",
+        "owner_unavailable_by_deadline",
+        "owner_integrity_failure_by_deadline",
+        "owner_pin_cap_exceeded_by_deadline",
+    }
+    attempted_session = cutoff.get("owner_attempted_window_session")
+    attempted_at = cutoff.get("owner_attempted_at")
+    if (attempted_session is None) != (attempted_at is None):
+        _fail("W2C opportunity owner-attempt identity is partial")
+    if attempted_at is not None:
+        attempted = _parse_utc(
+            attempted_at, field="opportunity owner attempted_at"
+        )
+        if attempted_session != session.isoformat() or not opened <= attempted <= deadline:
+            _fail("W2C opportunity owner attempt belongs to another window")
     if disposition == "missed":
         if (
             reason not in {
@@ -3736,6 +3918,14 @@ def _validate_opportunity_frozen(
             != "missed_without_authenticated_owner_pair"
             or cutoff.get("actual_cutoff_at") is not None
             or cutoff.get("first_owner_observed_at") is not None
+            or (
+                reason in specific_owner_miss_reasons
+                and attempted_at is None
+            )
+            or (
+                reason == "not_sealed_by_deadline"
+                and attempted_at is not None
+            )
             or cutoff.get("reconciled_at") is None
             or clean.get("claims")
             != _opportunity_claims(source_pins_authenticated=False)
@@ -3748,6 +3938,8 @@ def _validate_opportunity_frozen(
         if (
             cutoff.get("actual_cutoff_at") is None
             or cutoff.get("first_owner_observed_at") != cutoff.get("actual_cutoff_at")
+            or attempted_session != session.isoformat()
+            or attempted_at != cutoff.get("actual_cutoff_at")
             or cutoff.get("reconciled_at") is not None
             or clean.get("claims")
             != _opportunity_claims(source_pins_authenticated=True)
@@ -3906,6 +4098,7 @@ def _target_observation_from_run(
             generation_capture_ordinals={},
             ancestry_generation_ids=(),
             failure_reason=view.failure_reason,
+            failure_attempted_at=view.failure_attempted_at,
         )
     candidates = view.technical_candidates_by_session.get(
         target_session.isoformat(), ()
@@ -4285,6 +4478,7 @@ def _new_outcome_revision(
     revision_kind: str,
     reason: str,
     maturity_actual_pin: str | None,
+    maturity_owner_attempted_at: str | None,
     target_generation_pin: Mapping[str, Any] | None,
     target_candidate: _TechnicalCandidate | None,
     current_generation_group: list[_TechnicalCandidate] | None,
@@ -4358,6 +4552,12 @@ def _new_outcome_revision(
         },
         "maturity_cutoff": {
             "actual_pin_observed_at": maturity_actual_pin,
+            "owner_attempted_window_session": (
+                target_session.isoformat()
+                if maturity_owner_attempted_at is not None
+                else None
+            ),
+            "owner_attempted_at": maturity_owner_attempted_at,
             "rule": "target_session_following_calendar_day_same_registered_window",
         },
         "anchor_mark": anchor_mark,
@@ -4513,12 +4713,28 @@ def _validate_outcome_revision_frozen(
     cutoff = clean.get("maturity_cutoff")
     if (
         not isinstance(cutoff, Mapping)
-        or set(cutoff) != {"actual_pin_observed_at", "rule"}
+        or set(cutoff) != {
+            "actual_pin_observed_at", "owner_attempted_window_session",
+            "owner_attempted_at", "rule",
+        }
         or cutoff.get("rule")
         != "target_session_following_calendar_day_same_registered_window"
     ):
         _fail("W2C outcome maturity-cutoff fields are not canonical")
     actual_pin = cutoff.get("actual_pin_observed_at")
+    attempted_session = cutoff.get("owner_attempted_window_session")
+    owner_attempted_at = cutoff.get("owner_attempted_at")
+    if (attempted_session is None) != (owner_attempted_at is None):
+        _fail("W2C maturity owner-attempt identity is partial")
+    if owner_attempted_at is not None:
+        attempted = _parse_utc(
+            owner_attempted_at, field="maturity owner attempted_at"
+        )
+        if (
+            attempted_session != target_session.isoformat()
+            or not opened <= attempted <= deadline
+        ):
+            _fail("W2C maturity owner attempt belongs to another window")
     if actual_pin is not None:
         pin_dt = _parse_utc(actual_pin, field="outcome maturity actual pin")
         if not opened <= pin_dt <= deadline:
@@ -4641,10 +4857,17 @@ def _validate_outcome_revision_frozen(
             "maturity_owner_integrity_failure_by_deadline",
             "maturity_owner_pin_cap_exceeded_by_deadline",
         }:
+            specific_owner_miss = reason in {
+                "maturity_owner_unavailable_by_deadline",
+                "maturity_owner_integrity_failure_by_deadline",
+                "maturity_owner_pin_cap_exceeded_by_deadline",
+            }
             if (
                 target_pin is not None
                 or actual_pin is not None
                 or appended <= deadline
+                or (specific_owner_miss and owner_attempted_at is None)
+                or (not specific_owner_miss and owner_attempted_at is not None)
                 or target_capture is not None
                 or target_mark is not None
                 or measurement is not None
@@ -4660,6 +4883,7 @@ def _validate_outcome_revision_frozen(
             if (
                 target_pin is None
                 or actual_pin != target_pin["pin_observed_at"]
+                or owner_attempted_at is not None
                 or pin_clock is None
                 or not opened <= pin_clock <= deadline
                 or appended < pin_clock
@@ -4691,6 +4915,8 @@ def _validate_outcome_revision_frozen(
             != list(range(1, revision_number))
         ):
             _fail("W2C later outcome history is branched or gapped")
+        if cutoff != history[0]["maturity_cutoff"]:
+            _fail("W2C later outcome rewrites its initial maturity cutoff")
         selected_history = [
             row["target_capture"] for row in history
             if row.get("target_capture") is not None
@@ -5038,6 +5264,7 @@ def _append_initial_outcome(
             revision_kind="initial_maturity_absence",
             reason="target_capture_absent_at_maturity_cutoff",
             maturity_actual_pin=observation.pin_observed_at,
+            maturity_owner_attempted_at=None,
             target_generation_pin=observation.generation_pin,
             target_candidate=None,
             current_generation_group=[],
@@ -5103,6 +5330,7 @@ def _append_initial_outcome(
             revision_kind=kind,
             reason=reason,
             maturity_actual_pin=observation.pin_observed_at,
+            maturity_owner_attempted_at=None,
             target_generation_pin=observation.generation_pin,
             target_candidate=selected,
             current_generation_group=group,
@@ -5123,6 +5351,7 @@ def _append_maturity_owner_miss(
     opportunity: Mapping[str, Any],
     reconciled_at: datetime,
     reason: str = "maturity_owner_window_missed",
+    owner_attempted_at: str | None = None,
     writer_commit: str,
 ) -> dict[str, Any]:
     target_session = date.fromisoformat(str(opportunity["target_session"]))
@@ -5141,6 +5370,7 @@ def _append_maturity_owner_miss(
         revision_kind="initial_maturity_owner_miss",
         reason=reason,
         maturity_actual_pin=None,
+        maturity_owner_attempted_at=owner_attempted_at,
         target_generation_pin=None,
         target_candidate=None,
         current_generation_group=None,
@@ -5342,6 +5572,9 @@ def _append_later_target_revisions(
             revision_kind=kind,
             reason=reason,
             maturity_actual_pin=working[0]["maturity_cutoff"]["actual_pin_observed_at"],
+            maturity_owner_attempted_at=working[0]["maturity_cutoff"][
+                "owner_attempted_at"
+            ],
             target_generation_pin=effective_pin,
             target_candidate=target_candidate,
             current_generation_group=group,
@@ -5412,6 +5645,11 @@ def _accrue_outcomes(
             appended.extend(initial)
             chain = list(initial)
         elif now > deadline:
+            scoped_failure = _owner_failure_attempted_in_window(
+                initial_observation.failure_reason,
+                failure_attempted_at=initial_observation.failure_attempted_at,
+                session=target_session,
+            )
             maturity_miss_reason = {
                 "owner_unavailable_by_deadline":
                     "maturity_owner_unavailable_by_deadline",
@@ -5420,8 +5658,15 @@ def _accrue_outcomes(
                 "owner_pin_cap_exceeded_by_deadline":
                     "maturity_owner_pin_cap_exceeded_by_deadline",
             }.get(
-                initial_observation.failure_reason,
+                scoped_failure[0] if scoped_failure is not None else None,
                 "maturity_owner_window_missed",
+            )
+            owner_attempted_at = (
+                scoped_failure[1]
+                if scoped_failure is not None
+                and maturity_miss_reason
+                != "maturity_owner_window_missed"
+                else None
             )
             appended.append(
                 _append_maturity_owner_miss(
@@ -5430,6 +5675,7 @@ def _accrue_outcomes(
                     opportunity=opportunity,
                     reconciled_at=now,
                     reason=maturity_miss_reason,
+                    owner_attempted_at=owner_attempted_at,
                     writer_commit=writer_commit,
                 )
             )
@@ -5571,7 +5817,6 @@ def _new_population_receipt(
         owner_failure_reason_counts = {
             "integrity": sum(
                 row["reason"] in {
-                    "maturity_owner_window_missed",
                     "maturity_owner_integrity_failure_by_deadline",
                     "later_owner_capture_clock_tie_censored",
                     "later_owner_capture_order_integrity_censored",
@@ -8044,18 +8289,24 @@ def accrue_spy_experience(
                 else:
                     opened, deadline = _window(session)
                     if decision_now > deadline:
-                        miss_reason = (
-                            run_view.failure_reason
-                            or "owner_pair_not_stable_by_deadline"
-                            if not run_view.stable
-                            else "not_sealed_by_deadline"
-                        )
+                        miss_reason = "not_sealed_by_deadline"
+                        owner_attempted_at = None
+                        if not run_view.stable:
+                            scoped_failure = _owner_failure_attempted_in_window(
+                                run_view.failure_reason
+                                or "owner_pair_not_stable_by_deadline",
+                                failure_attempted_at=run_view.failure_attempted_at,
+                                session=session,
+                            )
+                            if scoped_failure is not None:
+                                miss_reason, owner_attempted_at = scoped_failure
                         existing = _missed_opportunity(
                             registration,
                             session=session,
                             reconciled_at=decision_now,
                             writer_commit=writer_commit,
                             reason=miss_reason,
+                            owner_attempted_at=owner_attempted_at,
                         )
                         _write_opportunity(root, existing)
                         opportunity_ids.append(existing["opportunity_id"])
@@ -8069,12 +8320,29 @@ def accrue_spy_experience(
                         )
                         if not sandwich.stable:
                             if observed > deadline:
+                                scoped_failure = _owner_failure_attempted_in_window(
+                                    run_view.failure_reason
+                                    or "owner_pair_not_stable_by_deadline",
+                                    failure_attempted_at=(
+                                        run_view.failure_attempted_at
+                                    ),
+                                    session=session,
+                                )
                                 existing = _missed_opportunity(
                                     registration,
                                     session=session,
                                     reconciled_at=observed,
                                     writer_commit=writer_commit,
-                                    reason="owner_pair_not_stable_by_deadline",
+                                    reason=(
+                                        scoped_failure[0]
+                                        if scoped_failure is not None
+                                        else "not_sealed_by_deadline"
+                                    ),
+                                    owner_attempted_at=(
+                                        scoped_failure[1]
+                                        if scoped_failure is not None
+                                        else None
+                                    ),
                                 )
                                 _write_opportunity(root, existing)
                                 opportunity_ids.append(existing["opportunity_id"])
