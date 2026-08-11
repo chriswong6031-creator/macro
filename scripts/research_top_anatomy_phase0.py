@@ -2914,7 +2914,7 @@ def p1_assign_age_tercile(values: pd.Series, edges: Sequence[float]) -> pd.Serie
     return out
 
 
-def p1_matched_controls(cases: pd.DataFrame, candidate_pool: pd.DataFrame, *,
+def p1_matched_controls(cases: pd.DataFrame, control_candidates: pd.DataFrame, *,
                         stratum_col: str | None = None,
                         max_controls: int = ta.MAX_CONTROLS) -> tuple[pd.DataFrame, dict]:
     """The frozen W4 key, optionally PLUS one stratum column (§1's DM move).
@@ -2933,11 +2933,11 @@ def p1_matched_controls(cases: pd.DataFrame, candidate_pool: pd.DataFrame, *,
     need = {"case_id", "segment", "ticker", "date", "r126", "rv63", "dvol21"}
     if stratum_col:
         need = need | {stratum_col}
-    for nm, fr in (("cases", cases), ("candidate_pool", candidate_pool)):
+    for nm, fr in (("cases", cases), ("control_candidates", control_candidates)):
         missing = need - set(fr.columns)
         if missing:
             raise ValueError(f"{nm} is missing columns: {sorted(missing)}")
-    if cases.empty or candidate_pool.empty:
+    if cases.empty or control_candidates.empty:
         return (pd.DataFrame(columns=["case_id", "segment", "ticker", "date",
                                       "control_segment", "control_ticker",
                                       "control_date"]),
@@ -2945,7 +2945,7 @@ def p1_matched_controls(cases: pd.DataFrame, candidate_pool: pd.DataFrame, *,
                  "n_dropped_no_control": int(len(cases)), "n_pairs": 0,
                  "stratum": stratum_col})
     ca = cases.copy()
-    co = candidate_pool.copy()
+    co = control_candidates.copy()
     ca["_arm"], co["_arm"] = "case", "control"
     both = pd.concat([ca, co], ignore_index=True)
     both["quarter"] = pd.PeriodIndex(pd.to_datetime(both["date"]), freq="Q").astype(str)
