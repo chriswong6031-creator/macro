@@ -880,3 +880,157 @@ def test_explicit_generation_identity_and_receipt_byte_bound_fail_closed(
             root,
             capture_id=stored.capture_receipt["capture_id"],
         )
+
+
+def test_public_pin_reads_published_ancestor_and_rejects_crash_orphan(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, stored = _capture(tmp_path, monkeypatch)
+    current = store.pin_technical_actual_output_generation(root)
+    state = store._load_state(root)
+    genesis_id = state.generation["previous_generation_id"]
+    assert genesis_id is not None
+    genesis = store.pin_technical_actual_output_generation(
+        root, generation_id=genesis_id
+    )
+    assert genesis.captures == ()
+    assert current.generation_id == stored.generation_id
+
+    orphan = store._new_generation(
+        store_id=state.manifest["store_id"],
+        previous_generation_id=current.generation_id,
+        captures=[row.as_dict() for row in current.captures],
+    )
+    orphan_body = store._canonical_bytes(orphan)
+    store._write_json_create_once(
+        root,
+        store._generation_path(root, orphan["generation_id"]),
+        orphan_body,
+        label="test technical crash orphan",
+        limit=store._MAX_GENERATION_BYTES,
+    )
+    with pytest.raises(store.MarketMemoryTechnicalStoreError, match="not published"):
+        store.pin_technical_actual_output_generation(
+            root, generation_id=orphan["generation_id"]
+        )
+
+
+@pytest.mark.parametrize("broken", ["nonempty_genesis", "missing_ancestor"])
+def test_public_pin_requires_full_chain_to_empty_genesis(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, broken: str
+) -> None:
+    root, stored = _capture(tmp_path, monkeypatch)
+    state = store._load_state(root)
+    previous = None if broken == "nonempty_genesis" else "mmactualgeneration_" + "f" * 64
+    forged = store._new_generation(
+        store_id=state.manifest["store_id"],
+        previous_generation_id=previous,
+        captures=[dict(row) for row in state.generation["captures"]],
+    )
+    body = store._canonical_bytes(forged)
+    store._write_json_create_once(
+        root,
+        store._generation_path(root, forged["generation_id"]),
+        body,
+        label="test broken technical ancestry",
+        limit=store._MAX_GENERATION_BYTES,
+    )
+    store._replace_head(root, store._new_head(forged, body=body))
+    message = "empty genesis" if broken == "nonempty_genesis" else "unavailable"
+    with pytest.raises(store.MarketMemoryTechnicalStoreError, match=message):
+        store.pin_technical_actual_output_generation(root)
+    assert stored.capture_receipt["capture_id"] == forged["captures"][0]["capture_id"]
+
+
+def test_public_pin_rejects_valid_content_addressed_ancestor_rewrite(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, _stored = _capture(tmp_path, monkeypatch)
+    state = store._load_state(root)
+    genesis_id = state.generation["previous_generation_id"]
+    assert genesis_id is not None
+    rewritten_entry = copy.deepcopy(state.generation["captures"][0])
+    rewritten_entry["receipt_sha256"] = "f" * 64
+    forged_older = store._new_generation(
+        store_id=state.manifest["store_id"],
+        previous_generation_id=genesis_id,
+        captures=[rewritten_entry],
+    )
+    forged_older_body = store._canonical_bytes(forged_older)
+    store._write_json_create_once(
+        root,
+        store._generation_path(root, forged_older["generation_id"]),
+        forged_older_body,
+        label="test rewritten technical ancestor",
+        limit=store._MAX_GENERATION_BYTES,
+    )
+    extra_entry = copy.deepcopy(state.generation["captures"][0])
+    extra_entry["capture_id"] = "mmactualcapture_" + "e" * 64
+    extra_entry["revision_id"] = "mmtechrev_" + "e" * 64
+    extra_entry["source_observation_id"] = "mmtechsrc_" + "e" * 64
+    extra_entry["snapshot_id"] = "mmtechsnap_" + "e" * 64
+    extra_entry["first_observed_at"] = "2026-08-10T02:01:00Z"
+    extra_entry["receipt_sha256"] = "e" * 64
+    forged_newer = store._new_generation(
+        store_id=state.manifest["store_id"],
+        previous_generation_id=forged_older["generation_id"],
+        captures=[dict(state.generation["captures"][0]), extra_entry],
+    )
+    forged_newer_body = store._canonical_bytes(forged_newer)
+    store._write_json_create_once(
+        root,
+        store._generation_path(root, forged_newer["generation_id"]),
+        forged_newer_body,
+        label="test technical rewrite head",
+        limit=store._MAX_GENERATION_BYTES,
+    )
+    store._replace_head(root, store._new_head(forged_newer, body=forged_newer_body))
+    with pytest.raises(store.MarketMemoryTechnicalStoreError, match="rewrites"):
+        store.pin_technical_actual_output_generation(root)
+
+
+def test_generation_orders_variable_fraction_utc_by_instant_then_capture_id(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, _stored = _capture(tmp_path, monkeypatch)
+    state = store._load_state(root)
+    base = dict(state.generation["captures"][0])
+
+    def entry(suffix: str, observed_at: str) -> dict[str, str]:
+        row = copy.deepcopy(base)
+        row.update(
+            {
+                "capture_id": "mmactualcapture_" + suffix * 64,
+                "revision_id": "mmtechrev_" + suffix * 64,
+                "source_observation_id": "mmtechsrc_" + suffix * 64,
+                "snapshot_id": "mmtechsnap_" + suffix * 64,
+                "first_observed_at": observed_at,
+                "receipt_sha256": suffix * 64,
+            }
+        )
+        return row
+
+    exact = entry("2", "2026-08-10T04:00:00Z")
+    exact_tie = entry("1", "2026-08-10T04:00:00Z")
+    later = entry("3", "2026-08-10T04:00:00.100000Z")
+    generation = store._new_generation(
+        store_id=state.manifest["store_id"],
+        previous_generation_id=state.generation["generation_id"],
+        captures=[later, exact, exact_tie],
+    )
+    assert [row["capture_id"] for row in generation["captures"]] == [
+        exact_tie["capture_id"],
+        exact["capture_id"],
+        later["capture_id"],
+    ]
+    assert store._validate_generation(
+        generation, store_id=state.manifest["store_id"]
+    ) == generation
+
+    forged = copy.deepcopy(generation)
+    forged["captures"] = [later, exact_tie, exact]
+    forged["generation_id"] = store._content_id(
+        "mmactualgeneration_", forged, field="generation_id"
+    )
+    with pytest.raises(store.MarketMemoryTechnicalStoreError, match="canonical"):
+        store._validate_generation(forged, store_id=state.manifest["store_id"])

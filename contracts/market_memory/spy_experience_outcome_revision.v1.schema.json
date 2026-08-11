@@ -1,0 +1,356 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/spy_experience_outcome_revision.v1.schema.json",
+  "title": "Market Memory SPY experience outcome revision v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "outcome_revision_id", "registration_id", "registration_sha256",
+    "opportunity_id", "revision_number", "previous_outcome_revision_id", "status",
+    "revision_kind", "reason", "maturity", "maturity_cutoff", "anchor_mark",
+    "target_generation_pin", "target_generation_progress", "target_capture", "target_mark", "measurement",
+    "absence_fact", "appended_at", "writer_commit", "evidence_policy", "claims", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.spy_experience_outcome_revision.v1"},
+    "outcome_revision_id": {"type": "string", "pattern": "^mmspyexpout_[a-f0-9]{64}$"},
+    "registration_id": {"type": "string", "pattern": "^mmspyexpreg_[a-f0-9]{64}$"},
+    "registration_sha256": {"$ref": "#/$defs/sha256"},
+    "opportunity_id": {"type": "string", "pattern": "^mmspyexpopp_[a-f0-9]{64}$"},
+    "revision_number": {"type": "integer", "minimum": 1, "maximum": 4096},
+    "previous_outcome_revision_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^mmspyexpout_[a-f0-9]{64}$"}
+      ]
+    },
+    "status": {"enum": ["observed", "unavailable", "censored"]},
+    "revision_kind": {
+      "enum": [
+        "initial_maturity_observation", "initial_maturity_absence",
+        "initial_maturity_censoring", "initial_maturity_owner_miss",
+        "source_correction", "late_source_resolution", "source_correction_censoring"
+      ]
+    },
+    "reason": {
+      "enum": [
+        "owner_capture_observed_at_maturity", "target_capture_absent_at_maturity_cutoff",
+        "target_capture_clock_tie_censored", "maturity_owner_window_missed",
+        "maturity_owner_unavailable_by_deadline",
+        "maturity_owner_integrity_failure_by_deadline",
+        "maturity_owner_pin_cap_exceeded_by_deadline",
+        "later_owner_source_revision", "late_owner_source_resolution_after_unavailable",
+        "late_owner_source_resolution_after_censored", "later_owner_capture_clock_tie_censored",
+        "later_owner_capture_order_integrity_censored"
+      ]
+    },
+    "maturity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["origin_session", "target_session", "horizon_sessions", "window_opens_at", "deadline_at", "clock_model"],
+      "properties": {
+        "origin_session": {"$ref": "#/$defs/session"},
+        "target_session": {"$ref": "#/$defs/session"},
+        "horizon_sessions": {"const": 5},
+        "window_opens_at": {"$ref": "#/$defs/utc"},
+        "deadline_at": {"$ref": "#/$defs/utc"},
+        "clock_model": {"const": "session_ordinal_only_no_fabricated_market_close_timestamp"}
+      }
+    },
+    "maturity_cutoff": {
+      "type": "object", "additionalProperties": false,
+      "required": ["actual_pin_observed_at", "rule"],
+      "properties": {
+        "actual_pin_observed_at": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]},
+        "rule": {"const": "target_session_following_calendar_day_same_registered_window"}
+      }
+    },
+    "anchor_mark": {"$ref": "#/$defs/mark"},
+    "target_generation_pin": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/targetGenerationPin"}]},
+    "target_generation_progress": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/targetGenerationProgress"}]},
+    "target_capture": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/technicalCapture"}]},
+    "target_mark": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/mark"}]},
+    "measurement": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/measurement"}]},
+    "absence_fact": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/absenceFact"}]},
+    "appended_at": {"$ref": "#/$defs/utc"},
+    "writer_commit": {"type": "string", "pattern": "^[a-f0-9]{40}(?:[a-f0-9]{24})?$"},
+    "evidence_policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["prospective_only", "calendar_session_derivation_authenticated", "append_only_revision", "terminal_absence_retained", "training_eligible", "promotion_eligible"],
+      "properties": {
+        "prospective_only": {"const": true},
+        "calendar_session_derivation_authenticated": {"const": true},
+        "append_only_revision": {"const": true},
+        "terminal_absence_retained": {"const": true},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false}
+      }
+    },
+    "claims": {"$ref": "#/$defs/claims"},
+    "authority": {"$ref": "spy_experience_registration.v1.schema.json#/$defs/authority"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "claims": {
+      "type": "object", "additionalProperties": false,
+      "required": ["external_clock_authenticated", "aba_resistance_authenticated", "calendar_session_derivation_authenticated", "target_generation_pin_authenticated"],
+      "properties": {
+        "external_clock_authenticated": {"const": false},
+        "aba_resistance_authenticated": {"const": false},
+        "calendar_session_derivation_authenticated": {"const": true},
+        "target_generation_pin_authenticated": {"type": "boolean"}
+      }
+    },
+    "session": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"},
+    "subject": {
+      "type": "object", "additionalProperties": false,
+      "required": ["symbol", "subject_id", "instrument_id", "identity_version", "mic", "currency"],
+      "properties": {
+        "symbol": {"const": "SPY"},
+        "subject_id": {"const": "mmsecurity_5fc37e8db34f74314b654c910ea8bacfa7de8b5d2d067f2e5421c9d5745ceb4c"},
+        "instrument_id": {"const": "mmsecurity_6f361f5bad9f06a3b2ff157585d5728f55f77198420959aadd8922d1045c3fea"},
+        "identity_version": {"const": "mmidentityv_65ec5e55473e953b55fa2d146f40e8b56dfae2e68a3df7423405db1034d16903"},
+        "mic": {"const": "ARCX"},
+        "currency": {"const": "USD"}
+      }
+    },
+    "calendar": {
+      "type": "object", "additionalProperties": false,
+      "required": ["calendar_id", "market_session"],
+      "properties": {
+        "calendar_id": {"const": "mmcalendar_a102c5367c17f9c0b4df3af5c2826824fc112935ec76e6d18d55833f53644e0c"},
+        "market_session": {"const": "XNYS_REGULAR"}
+      }
+    },
+    "priceBasis": {
+      "type": "object", "additionalProperties": false,
+      "required": ["raw_unadjusted", "split_adjusted", "dividend_adjusted", "economic_return"],
+      "properties": {
+        "raw_unadjusted": {"const": true},
+        "split_adjusted": {"const": false},
+        "dividend_adjusted": {"const": false},
+        "economic_return": {"const": false}
+      }
+    },
+    "targetGenerationPin": {
+      "type": "object", "additionalProperties": false,
+      "required": ["profile", "store_id", "generation_id", "generation_sha256", "capture_count", "pin_observed_at", "selection", "subject", "calendar"],
+      "properties": {
+        "profile": {"const": "market_memory.private.spy_raw_technical_actual_output.v1"},
+        "store_id": {"type": "string", "pattern": "^mmactualstore_[a-f0-9]{64}$"},
+        "generation_id": {"type": "string", "pattern": "^mmactualgeneration_[a-f0-9]{64}$"},
+        "generation_sha256": {"$ref": "#/$defs/sha256"},
+        "capture_count": {"type": "integer", "minimum": 0, "maximum": 256},
+        "pin_observed_at": {"$ref": "#/$defs/utc"},
+        "selection": {"const": "owner_observed_revision_chain.v1"},
+        "subject": {"$ref": "#/$defs/subject"},
+        "calendar": {"$ref": "#/$defs/calendar"}
+      }
+    },
+    "targetGenerationProgress": {
+      "type": "object", "additionalProperties": false,
+      "required": ["generation_id", "consumed_capture_ids", "current_group"],
+      "properties": {
+        "generation_id": {"type": "string", "pattern": "^mmactualgeneration_[a-f0-9]{64}$"},
+        "consumed_capture_ids": {
+          "type": "array", "maxItems": 256, "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^mmactualcapture_[a-f0-9]{64}$"}
+        },
+        "current_group": {
+          "type": "array", "maxItems": 256, "uniqueItems": true,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["capture_id", "first_observed_at"],
+            "properties": {
+              "capture_id": {"type": "string", "pattern": "^mmactualcapture_[a-f0-9]{64}$"},
+              "first_observed_at": {"$ref": "#/$defs/utc"}
+            }
+          }
+        }
+      }
+    },
+    "technicalCapture": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "capture_id", "revision_id", "source_observation_id", "snapshot_id",
+        "source_session", "first_observed_at", "spy_parquet_sha256",
+        "end_close_binary64_hex", "end_close_exact_decimal", "subject", "calendar", "price_basis"
+      ],
+      "properties": {
+        "capture_id": {"type": "string", "pattern": "^mmactualcapture_[a-f0-9]{64}$"},
+        "revision_id": {"type": "string", "pattern": "^mmtechrev_[a-f0-9]{64}$"},
+        "source_observation_id": {"type": "string", "pattern": "^mmtechsrc_[a-f0-9]{64}$"},
+        "snapshot_id": {"type": "string", "pattern": "^mmtechsnap_[a-f0-9]{64}$"},
+        "source_session": {"$ref": "#/$defs/session"},
+        "first_observed_at": {"$ref": "#/$defs/utc"},
+        "spy_parquet_sha256": {"$ref": "#/$defs/sha256"},
+        "end_close_binary64_hex": {"type": "string", "pattern": "^0x[0-9a-f]+\\.[0-9a-f]+p[+-][0-9]+$"},
+        "end_close_exact_decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?$", "maxLength": 768},
+        "subject": {"$ref": "#/$defs/subject"},
+        "calendar": {"$ref": "#/$defs/calendar"},
+        "price_basis": {"$ref": "#/$defs/priceBasis"}
+      }
+    },
+    "mark": {
+      "type": "object", "additionalProperties": false,
+      "required": ["session", "capture_id", "snapshot_id", "end_close_binary64_hex", "end_close_exact_decimal"],
+      "properties": {
+        "session": {"$ref": "#/$defs/session"},
+        "capture_id": {"type": "string", "pattern": "^mmactualcapture_[a-f0-9]{64}$"},
+        "snapshot_id": {"type": "string", "pattern": "^mmtechsnap_[a-f0-9]{64}$"},
+        "end_close_binary64_hex": {"type": "string", "pattern": "^0x[0-9a-f]+\\.[0-9a-f]+p[+-][0-9]+$"},
+        "end_close_exact_decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?$", "maxLength": 768}
+      }
+    },
+    "measurement": {
+      "type": "object", "additionalProperties": false,
+      "required": ["target", "formula", "input_encoding", "exact_decimal_encoding", "close_ratio_q18", "quantization", "rounding", "price_basis", "economic_return", "corporate_action_adjusted"],
+      "properties": {
+        "target": {"const": "spy.raw_unadjusted_daily_aggregate_close_ratio"},
+        "formula": {"const": "target_capture.feature.state.end_close/sealed_anchor_capture.feature.state.end_close"},
+        "input_encoding": {"const": "ieee754_binary64_exact_hex_and_integer_ratio"},
+        "exact_decimal_encoding": {"const": "python_decimal_from_float_exact"},
+        "close_ratio_q18": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{18}$"},
+        "quantization": {"const": "q18"},
+        "rounding": {"const": "exact_integer_ratio_half_even"},
+        "price_basis": {"const": "raw_unadjusted_daily_aggregate_close"},
+        "economic_return": {"const": false},
+        "corporate_action_adjusted": {"const": false}
+      }
+    },
+    "absenceFact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "reason", "observed_at"],
+      "properties": {
+        "kind": {"enum": ["missing", "censored"]},
+        "reason": {"enum": ["target_capture_absent_at_maturity_cutoff", "target_capture_clock_tie_censored", "maturity_owner_window_missed", "maturity_owner_unavailable_by_deadline", "maturity_owner_integrity_failure_by_deadline", "maturity_owner_pin_cap_exceeded_by_deadline", "later_owner_capture_clock_tie_censored", "later_owner_capture_order_integrity_censored"]},
+        "observed_at": {"$ref": "#/$defs/utc"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "observed"}}, "required": ["status"]},
+      "then": {"properties": {
+        "target_generation_pin": {"$ref": "#/$defs/targetGenerationPin"},
+        "target_generation_progress": {"$ref": "#/$defs/targetGenerationProgress"},
+        "target_capture": {"$ref": "#/$defs/technicalCapture"},
+        "target_mark": {"$ref": "#/$defs/mark"},
+        "measurement": {"$ref": "#/$defs/measurement"},
+        "absence_fact": {"type": "null"}
+      }}
+    },
+    {
+      "if": {"properties": {"status": {"const": "unavailable"}}, "required": ["status"]},
+      "then": {"properties": {
+        "reason": {"const": "target_capture_absent_at_maturity_cutoff"},
+        "target_generation_pin": {"$ref": "#/$defs/targetGenerationPin"},
+        "target_generation_progress": {"$ref": "#/$defs/targetGenerationProgress"},
+        "target_capture": {"type": "null"}, "target_mark": {"type": "null"},
+        "measurement": {"type": "null"},
+        "absence_fact": {"allOf": [{"$ref": "#/$defs/absenceFact"}, {"properties": {"kind": {"const": "missing"}, "reason": {"const": "target_capture_absent_at_maturity_cutoff"}}}]}
+      }}
+    },
+    {
+      "if": {"properties": {"reason": {"enum": ["maturity_owner_window_missed", "maturity_owner_unavailable_by_deadline", "maturity_owner_integrity_failure_by_deadline", "maturity_owner_pin_cap_exceeded_by_deadline"]}}, "required": ["reason"]},
+      "then": {"properties": {
+        "status": {"const": "censored"},
+        "target_generation_pin": {"type": "null"},
+        "target_generation_progress": {"type": "null"},
+        "target_capture": {"type": "null"}, "target_mark": {"type": "null"},
+        "measurement": {"type": "null"},
+        "maturity_cutoff": {"properties": {"actual_pin_observed_at": {"type": "null"}}},
+        "absence_fact": {"allOf": [{"$ref": "#/$defs/absenceFact"}, {"properties": {"kind": {"const": "censored"}}}]}
+      }}
+    },
+    {
+      "if": {"properties": {"reason": {"enum": ["target_capture_clock_tie_censored", "later_owner_capture_clock_tie_censored", "later_owner_capture_order_integrity_censored"]}}, "required": ["reason"]},
+      "then": {"properties": {
+        "status": {"const": "censored"},
+        "target_generation_pin": {"$ref": "#/$defs/targetGenerationPin"},
+        "target_generation_progress": {"$ref": "#/$defs/targetGenerationProgress"},
+        "target_capture": {"type": "null"}, "target_mark": {"type": "null"},
+        "measurement": {"type": "null"},
+        "absence_fact": {"allOf": [{"$ref": "#/$defs/absenceFact"}, {"properties": {"kind": {"const": "censored"}}}]}
+      }}
+    },
+    {
+      "if": {"properties": {"revision_number": {"const": 1}}, "required": ["revision_number"]},
+      "then": {
+        "properties": {"previous_outcome_revision_id": {"type": "null"}},
+        "oneOf": [
+          {"properties": {
+            "status": {"const": "observed"},
+            "revision_kind": {"const": "initial_maturity_observation"},
+            "reason": {"const": "owner_capture_observed_at_maturity"},
+            "maturity_cutoff": {"properties": {"actual_pin_observed_at": {"$ref": "#/$defs/utc"}}},
+            "target_generation_pin": {"$ref": "#/$defs/targetGenerationPin"},
+            "target_generation_progress": {"$ref": "#/$defs/targetGenerationProgress"},
+            "target_capture": {"$ref": "#/$defs/technicalCapture"},
+            "target_mark": {"$ref": "#/$defs/mark"},
+            "measurement": {"$ref": "#/$defs/measurement"},
+            "absence_fact": {"type": "null"}
+          }},
+          {"properties": {
+            "status": {"const": "unavailable"},
+            "revision_kind": {"const": "initial_maturity_absence"},
+            "reason": {"const": "target_capture_absent_at_maturity_cutoff"},
+            "maturity_cutoff": {"properties": {"actual_pin_observed_at": {"$ref": "#/$defs/utc"}}},
+            "target_generation_pin": {"$ref": "#/$defs/targetGenerationPin"},
+            "target_generation_progress": {"$ref": "#/$defs/targetGenerationProgress"},
+            "target_capture": {"type": "null"}, "target_mark": {"type": "null"},
+            "measurement": {"type": "null"},
+            "absence_fact": {"allOf": [{"$ref": "#/$defs/absenceFact"}, {"properties": {"kind": {"const": "missing"}, "reason": {"const": "target_capture_absent_at_maturity_cutoff"}}}]}
+          }},
+          {"properties": {
+            "status": {"const": "censored"},
+            "revision_kind": {"const": "initial_maturity_censoring"},
+            "reason": {"const": "target_capture_clock_tie_censored"},
+            "maturity_cutoff": {"properties": {"actual_pin_observed_at": {"$ref": "#/$defs/utc"}}},
+            "target_generation_pin": {"$ref": "#/$defs/targetGenerationPin"},
+            "target_generation_progress": {"$ref": "#/$defs/targetGenerationProgress"},
+            "target_capture": {"type": "null"}, "target_mark": {"type": "null"},
+            "measurement": {"type": "null"},
+            "absence_fact": {"allOf": [{"$ref": "#/$defs/absenceFact"}, {"properties": {"kind": {"const": "censored"}, "reason": {"const": "target_capture_clock_tie_censored"}}}]}
+          }},
+          {"properties": {
+            "status": {"const": "censored"},
+            "revision_kind": {"const": "initial_maturity_owner_miss"},
+            "reason": {"enum": ["maturity_owner_window_missed", "maturity_owner_unavailable_by_deadline", "maturity_owner_integrity_failure_by_deadline", "maturity_owner_pin_cap_exceeded_by_deadline"]},
+            "target_generation_pin": {"type": "null"},
+            "target_generation_progress": {"type": "null"},
+            "target_capture": {"type": "null"}, "target_mark": {"type": "null"},
+            "measurement": {"type": "null"},
+            "maturity_cutoff": {"properties": {"actual_pin_observed_at": {"type": "null"}}},
+            "absence_fact": {"allOf": [{"$ref": "#/$defs/absenceFact"}, {"properties": {"kind": {"const": "censored"}}}]}
+          }}
+        ]
+      },
+      "else": {
+        "properties": {
+          "previous_outcome_revision_id": {"type": "string", "pattern": "^mmspyexpout_[a-f0-9]{64}$"},
+          "target_generation_pin": {"$ref": "#/$defs/targetGenerationPin"},
+          "target_generation_progress": {"$ref": "#/$defs/targetGenerationProgress"},
+          "maturity_cutoff": {"properties": {"actual_pin_observed_at": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/utc"}]}}}
+        },
+        "oneOf": [
+          {"properties": {"status": {"const": "observed"}, "revision_kind": {"const": "source_correction"}, "reason": {"const": "later_owner_source_revision"}}},
+          {"properties": {"status": {"const": "observed"}, "revision_kind": {"const": "late_source_resolution"}, "reason": {"enum": ["late_owner_source_resolution_after_unavailable", "late_owner_source_resolution_after_censored"]}}},
+          {"properties": {
+            "status": {"const": "censored"},
+            "revision_kind": {"const": "source_correction_censoring"},
+            "reason": {"enum": ["later_owner_capture_clock_tie_censored", "later_owner_capture_order_integrity_censored"]},
+            "target_capture": {"type": "null"}, "target_mark": {"type": "null"},
+            "measurement": {"type": "null"},
+            "absence_fact": {"allOf": [{"$ref": "#/$defs/absenceFact"}, {"properties": {"kind": {"const": "censored"}}}]}
+          }}
+        ]
+      }
+    },
+    {
+      "if": {"properties": {"target_generation_pin": {"type": "null"}}, "required": ["target_generation_pin"]},
+      "then": {"properties": {"claims": {"properties": {"target_generation_pin_authenticated": {"const": false}}}}},
+      "else": {"properties": {"claims": {"properties": {"target_generation_pin_authenticated": {"const": true}}}}}
+    }
+  ]
+}
