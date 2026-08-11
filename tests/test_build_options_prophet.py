@@ -4,6 +4,9 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
+import plistlib
+import subprocess
 import sys
 from pathlib import Path
 
@@ -1130,6 +1133,91 @@ def test_prophet_marks_runner_uses_the_checkout_that_owns_it():
     plist_text = plist_path.read_text(encoding="utf-8")
     assert "/Users/chriswong/Documents/Cluade/Macro Dashboard" not in plist_text
     assert plist_text.count("<string>/Users/chriswong/flow-ops-wt</string>") == 2
+
+
+def test_prophet_marks_launchd_cadence_is_host_timezone_neutral():
+    """The Vancouver M1 must not interpret a 09:25 calendar hour as ET."""
+    repo = Path(__file__).resolve().parents[1]
+    plist_path = repo / "ops/launchd/com.mastermind.prophetmarks.plist"
+    payload = plistlib.loads(plist_path.read_bytes())
+
+    assert payload["StartInterval"] == 300
+    assert "StartCalendarInterval" not in payload
+    assert payload["KeepAlive"] is False
+
+
+def test_prophet_marks_runner_uses_et_window_on_vancouver_host(tmp_path):
+    """Admission boundaries stay ET even when the host environment is Vancouver."""
+    repo = Path(__file__).resolve().parents[1]
+    source = repo / "ops/launchd/run_prophet_marks_loop.sh"
+    fake_repo = tmp_path / "repo"
+    fake_runner = fake_repo / "ops/launchd/run_prophet_marks_loop.sh"
+    fake_runner.parent.mkdir(parents=True)
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_date = fake_bin / "date"
+    fake_date.write_text(
+        """#!/bin/sh
+test "$TZ" = "America/New_York" || exit 91
+case "$1" in
+  +%H) printf '%s\\n' "$FAKE_ET_HOUR" ;;
+  +%M) printf '%s\\n' "$FAKE_ET_MINUTE" ;;
+  *) printf '%s\\n' '2026-08-11T09:25:00-0400' ;;
+esac
+""",
+        encoding="utf-8",
+    )
+    fake_date.chmod(0o755)
+
+    fake_python = fake_bin / "python"
+    fake_python.write_text(
+        "#!/bin/sh\nprintf 'FAKE_PYTHON %s\\n' \"$*\"\n",
+        encoding="utf-8",
+    )
+    fake_python.chmod(0o755)
+
+    runner_text = source.read_text(encoding="utf-8").replace(
+        "/opt/homebrew/Caskroom/miniconda/base/bin/python",
+        str(fake_python),
+    )
+    fake_runner.write_text(runner_text, encoding="utf-8")
+    fake_runner.chmod(0o755)
+
+    def _run(hour: int, minute: int) -> subprocess.CompletedProcess[str]:
+        env = os.environ.copy()
+        env.update(
+            {
+                "TZ": "America/Vancouver",
+                "FAKE_ET_HOUR": f"{hour:02d}",
+                "FAKE_ET_MINUTE": f"{minute:02d}",
+                "PATH": f"{fake_bin}:/usr/bin:/bin",
+            }
+        )
+        return subprocess.run(
+            ["/bin/sh", str(fake_runner)],
+            cwd=fake_repo,
+            env=env,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+    before = _run(9, 24)
+    at_open = _run(9, 25)
+    before_close = _run(16, 4)
+    at_close = _run(16, 5)
+
+    assert before.returncode == 0
+    assert "FAKE_PYTHON" not in before.stdout
+    assert "outside 09:25–16:05 ET window" in before.stdout
+    assert at_open.returncode == 0
+    assert "FAKE_PYTHON -m scripts.build_prophet_marks --publish" in at_open.stdout
+    assert before_close.returncode == 0
+    assert "FAKE_PYTHON -m scripts.build_prophet_marks --publish" in before_close.stdout
+    assert at_close.returncode == 0
+    assert "FAKE_PYTHON" not in at_close.stdout
+    assert "outside 09:25–16:05 ET window" in at_close.stdout
 
 
 def test_prophet_marks_publish_uses_canonical_r2_and_tombstones_empty(monkeypatch):
