@@ -3784,6 +3784,18 @@ jobs:
           }
           cl_baskets() {
             brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
+            # GMI W1a: point-in-time US basket membership. data/baskets/membership.json is a
+            # single MUTABLE document and basket_freeze stores only membership HASHES, so
+            # before this there was no way to answer "who was in this basket on that date"
+            # for the US suite at all. Content-deduped (a dated side-car only when membership
+            # changed) + keep-first in the parquet, so a re-run is a no-op; the cadence stamp
+            # is rewritten every run so a deduping writer and an unwired one look different
+            # on disk. NIGHTLY ONLY — the PIT store is append-only and keep-FIRST per
+            # snapshot_date, so whoever stamps a date owns it forever (COLLECT_LANE=nightly,
+            # job-level env above, is the fail-closed gate). Deliberately NOT added to
+            # closing-bell / earlyclose / engine-render / render: those are data/-discarding
+            # lanes and nightly is the sole advancer.
+            brun baskets_snapshot "US basket membership snapshot (build_baskets --snapshot)" scripts.build_baskets --snapshot
             brun subsector_conf "subsector confluence desk + double-gated funnel (build_subsector_confluence)" scripts.build_subsector_confluence
             brun subsector_conf_ndx "nasdaq-100 subsector confluence desk (build_subsector_confluence --nasdaq)" scripts.build_subsector_confluence --nasdaq
             brun subsector_conf_rut "russell-2000 subsector confluence desk (build_subsector_confluence --russell)" scripts.build_subsector_confluence --russell
@@ -3902,7 +3914,7 @@ jobs:
           # check_builder_failstreaks, which globs *.rc and so catches a >=2-night
           # streak regardless of ORDER) — but a FIRST failure still passed silently,
           # with no log and no step-summary line for the TXI W1 chain tracker.
-          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics basket_washout rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow program_watch stage_analysis stage_analysis_page top_maturation winner_health_page"
+          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets baskets_snapshot subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics basket_washout rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow program_watch stage_analysis stage_analysis_page top_maturation winner_health_page"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
@@ -3919,6 +3931,15 @@ jobs:
             fi
           done
           exit 0
+      # Runs AFTER the band that contains `build_baskets --snapshot`, so it grades THIS
+      # run's stamp rather than last night's. The plane it watches can die with every
+      # signal green: both snapshot writers are content-deduped, so "membership has not
+      # changed" and "the writer has been unwired for a month" leave the identical trace
+      # on disk (nothing) — which is how the THS PIT store sat at 2 snapshots for six
+      # weeks while its nightly step ran green ~35 nights running. Advisory (exit 0):
+      # a cold membership plane must not red a nightly that landed every other store.
+      - name: membership snapshot freshness tripwire (advisory)
+        run: python3 scripts/check_membership_snapshot_freshness.py
       - name: builder fail-streak escalation (consecutive-night freeze detector)
         # brun() (above) BY DESIGN never aborts on a broken builder — but that makes a
         # builder failing MANY CONSECUTIVE nightlies look identical to a one-off at a
@@ -4005,7 +4026,7 @@ jobs:
       - name: OIP PIT — durable episodes + H+60 and declared-session-close proxy accrual
         id: options_signal_episode
         # Consumes only the date-keyed live_flow/events/{DATE}.jsonl raw stage,
-        # never capped/overwritten feed_current. The monotonic checkpoint and all three
+        # never capped/overwritten feed_current. The monotonic checkpoint and all four
         # committed JSONL ledgers advance only in COLLECT_LANE=nightly. H+60 v1 stays
         # frozen; EOD/1d/3d/5d/10d close rows accrue separately from the same exact
         # Polygon receipt. Session outcomes and coarse H+60 measurements remain
@@ -4022,14 +4043,14 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.build_options_signal_episode
-      - name: OIP PIT — checkpoint the four durable episode ledgers
+      - name: OIP PIT — checkpoint the five durable episode ledgers
         if: always() && steps.options_signal_episode.outcome == 'success'
         timeout-minutes: 10
         continue-on-error: true
         # This checkpoint is deliberately immediate and success-only. The broad
         # engine commit is hours later and may lose its push race or hit the job
         # cap; these append-only PIT rows cannot be reconstructed after the raw
-        # dated event stage ages out. Publish only the four builder-owned files.
+        # dated event stage ages out. Publish only the five builder-owned files.
         # The metadata replay overlays their object IDs on current origin/main in
         # a temporary index, so it never rebases, checks out, stashes, cleans, or
         # otherwise touches the thousands of unrelated dirty render outputs.
@@ -4044,6 +4065,7 @@ jobs:
             data/options_signal_episode/episodes.jsonl
             data/options_signal_episode/outcomes_h60.jsonl
             data/options_signal_episode/outcomes_session.jsonl
+            data/options_signal_episode/campaigns.jsonl
           )
           PUSH_ALARM=120
           PUSH_BUDGET_SECS=420
@@ -4073,9 +4095,10 @@ jobs:
               data/options_signal_episode/checkpoint.json|\
               data/options_signal_episode/episodes.jsonl|\
               data/options_signal_episode/outcomes_h60.jsonl|\
-              data/options_signal_episode/outcomes_session.jsonl) ;;
+              data/options_signal_episode/outcomes_session.jsonl|\
+              data/options_signal_episode/campaigns.jsonl) ;;
               *)
-                echo "::error title=options PIT checkpoint scope violation::staged path $OIP_PATH is outside the four-file allowlist"
+                echo "::error title=options PIT checkpoint scope violation::staged path $OIP_PATH is outside the five-file allowlist"
                 exit 1
                 ;;
             esac
@@ -4113,7 +4136,7 @@ jobs:
             push_backoff
           done
           push_lost
-          echo "::error title=options PIT checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the four ledgers remain only in the local engine commit fallback"
+          echo "::error title=options PIT checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the five ledgers remain only in the local engine commit fallback"
           exit 1
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
@@ -4464,6 +4487,15 @@ jobs:
           python -m scripts.grade_us_board --nightly; rc=$?
           if [ "$rc" -ne 0 ]; then echo "::warning title=grade_us_board::rc=$rc (non-fatal)"; fi
           exit 0
+      - name: Opportunity timeline (durable Prophet candidate receipts for Terminal)
+        # Pure projection over the four committed track_ledger/v1 artifacts.  It runs
+        # after grade_us_board so tonight's US episode marks are present; CN/HK are
+        # refreshed by asia-close.yml before this nightly checkout.  The builder
+        # flattens every historical definition but never promotes a board candidate
+        # into a Prophet plan or Oracle signal.  Its atomic/fail-closed write keeps the
+        # last complete timeline if any required source is missing or malformed, and
+        # the broad site/ commit below publishes the resulting artifact.
+        run: python -m scripts.build_opportunity_timeline || echo "::warning::opportunity timeline kept its last complete artifact (non-fatal)"
       # NOTE (2026-08-06): the Prophet US program's four post-board modules used to sit
       # HERE — emit_prophet_doors, grade_prophet_doors, grade_us_prophet_candidates and
       # run_prophet_miss_audit. They now run in the `us_prophet_ledgers` job (below,

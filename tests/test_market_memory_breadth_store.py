@@ -661,7 +661,7 @@ def test_explicit_generation_path_identity_and_capture_bounds_fail_closed(
     generation = store.load_breadth_actual_output_generation(root)
     fake_id = "mmactualgeneration_" + "f" * 64
     fake_path = root / "generations" / "ff" / f"{fake_id}.json"
-    fake_path.parent.mkdir(parents=True)
+    fake_path.parent.mkdir(parents=True, exist_ok=True)
     _write_canonical(fake_path, generation)
     with pytest.raises(store.MarketMemoryActualOutputStoreError):
         store.load_breadth_actual_output_generation(root, generation_id=fake_id)

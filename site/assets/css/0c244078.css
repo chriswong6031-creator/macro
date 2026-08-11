@@ -24,7 +24,7 @@
 .pvr-open{margin:14px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted);max-width:62ch}
 .pvr-ft{margin:9px 0 0;font-size:10.5px;color:var(--muted);opacity:.8}
 
-.pvr-era{border-bottom:1px dotted color-mix(in srgb,var(--muted) 55%,transparent)}
+.pvr-era,.pvr-recon[data-tip-en]{border-bottom:1px dotted color-mix(in srgb,var(--muted) 55%,transparent)}
 html[data-theme="light"] .pvr-g::before{background:color-mix(in srgb,var(--muted) 70%,transparent)}
 
 html[data-theme="light"] .pvr-g.is-near::before{background:var(--pv-wait)}

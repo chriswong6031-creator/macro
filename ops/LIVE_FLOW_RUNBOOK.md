@@ -104,24 +104,38 @@ after the session digest. It is the sole advancer of these committed artifacts:
   EOD/1d/3d/5d/10d underlying close outcomes. Each horizon is an exact NYSE
   session offset from the episode session; the exit is the declared target-session
   close under `nyse_session_window_recurring_schedule/v1` (including modeled
-  recurring early closes), not a fabricated bar open; and
+  recurring early closes), not a fabricated bar open;
+- `data/options_signal_episode/campaigns.jsonl` — immutable, abstaining research
+  cohorts for the first two-or-more-event, $3,000,000 exact rounded-premium prefix
+  of each exact session/ticker/expiration/strike/right group. Membership is
+  outcome-blind; persistence requires one valid reference-only H+60 anchor; and
 - `data/options_signal_episode/checkpoint.json` — per-session record count and
   canonical-record append-prefix SHA-256 (not the raw-byte publication digest).
+
+The campaign rule froze at `2026-08-11T08:22:28Z`, after the initial 2026-08-10
+corpus was inspected. Those initial rows are in-sample retrospective discovery,
+not forward evidence. Only rows formed at or after the freeze carry the
+prospective phase; any future evaluation must stratify phases and exclude the
+retrospective rows from prospective claims.
 
 The builder discovers at most the newest **64** retained sessions, using a
 credentialed R2 listing when available and the public 64-session dates index as
 fallback. It processes sessions oldest-first, so a missed nightly catches up
 without skipping earlier retained stages. Before advancing a checkpoint it
 verifies that the stage did not shrink and that the previously consumed prefix
-is canonically unchanged. `COLLECT_LANE=nightly` owns committed ledger
-advancement; dry runs and other lanes may derive a report but cannot append.
+is canonically unchanged. Append order is episodes, H+60 outcomes, session
+outcomes, campaigns after a persisted-H+60 reload, then checkpoint last. Any
+campaign failure leaves the source prefix replayable. `COLLECT_LANE=nightly`
+owns committed ledger advancement; dry runs and other lanes may derive a report
+but cannot append.
 
 Replay older than the 64-session live catch-up window belongs to an explicit
 offline/research restore job. It must consume preserved date-keyed raw stages,
 write separate replay outputs, and never mutate the live R2 keys, the live
 checkpoint, or `feed_current`. Coarse/delayed H+60 proxies and every session
-outcome stay training-ineligible. Every episode and outcome retains zero trade,
-pick, ranking, sizing, gating, escalation, and Prophet-training authority.
+outcome and every campaign stay training-ineligible. Every episode, outcome, and
+campaign retains zero trade, pick, ranking, sizing, gating, escalation, and
+Prophet-training authority.
 
 #### Receipt-bound Polygon price evidence
 
@@ -172,8 +186,8 @@ unmodeled schedule/source close mismatch stays pending. Hourly/coarse MFE/MAE
 are observed-path proxies, not full-RTH extrema. The calendar basis includes the
 repository's recurring early-close model but is not an authoritative one-off
 exchange schedule. The source checkpoint advances only after episodes, H+60
-rows, and session rows have all appended successfully; replay is byte-idempotent
-if a later step fails.
+rows, session rows, and campaigns have all appended successfully; replay is
+byte-idempotent if a later step fails.
 
 Offline diagnosis reads files only; it must not invoke the live poller:
 

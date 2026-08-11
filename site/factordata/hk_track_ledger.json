@@ -1,7 +1,7 @@
 {
  "schema": "track_ledger/v1",
  "market": "HK",
- "as_of": "2026-08-10",
+ "as_of": "2026-08-11",
  "state": "accruing",
  "bench": {
   "code": "_HSI",
@@ -10,18 +10,189 @@
  },
  "summary": {
   "state": "accruing",
-  "n_calls": 414,
-  "n_logged": 405,
-  "n_matured": 27,
-  "n_beat": 7,
-  "n_lag": 20,
-  "n_suspended": 58,
-  "hit_matured": 0.259,
-  "wilson_lo_pct": 13.2,
-  "wilson_hi_pct": 44.7,
+  "n_calls": 423,
+  "n_logged": 414,
+  "n_matured": 34,
+  "n_beat": 9,
+  "n_lag": 25,
+  "n_suspended": 55,
+  "hit_matured": 0.265,
+  "wilson_lo_pct": 14.6,
+  "wilson_hi_pct": 43.1,
   "first_read_est": "2026-08-24"
  },
  "rows": [
+  {
+   "t": "2338.HK",
+   "nm": "Weichai Power",
+   "sec": "Industrials & Transport",
+   "grp": "setting_up",
+   "d": "2026-08-10",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 1,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "9888.HK",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-10",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 2,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "1929.HK",
+   "nm": "Chow Tai Fook",
+   "sec": "Consumer",
+   "grp": "watch",
+   "d": "2026-08-10",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 3,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "2888.HK",
+   "nm": "Standard Chartered",
+   "sec": "Financials & Banks",
+   "grp": "watch",
+   "d": "2026-08-10",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 4,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "1801.HK",
+   "nm": "Innovent Biologics",
+   "sec": "Healthcare & Pharma",
+   "grp": "watch",
+   "d": "2026-08-10",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 5,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "2899.HK",
+   "nm": "Zijin Mining",
+   "sec": "Materials",
+   "grp": "watch",
+   "d": "2026-08-10",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 6,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "0392.HK",
+   "nm": "Beijing Enterprises",
+   "sec": "Industrials & Transport",
+   "grp": "watch",
+   "d": "2026-08-10",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 7,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "1208.HK",
+   "nm": "MMG",
+   "sec": "Materials",
+   "grp": "watch",
+   "d": "2026-08-10",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 8,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "0700.HK",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-10",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 9,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
   {
    "t": "1801.HK",
    "nm": "Innovent Biologics",
@@ -62,8 +233,8 @@
   },
   {
    "t": "9888.HK",
-   "nm": "Baidu",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-08-07",
    "e": null,
@@ -100,8 +271,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-08-07",
    "e": null,
@@ -119,8 +290,8 @@
   },
   {
    "t": "3993.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CMOC Group",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-08-07",
    "e": null,
@@ -176,8 +347,8 @@
   },
   {
    "t": "0700.HK",
-   "nm": "Tencent",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-08-07",
    "e": null,
@@ -195,8 +366,8 @@
   },
   {
    "t": "0358.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Jiangxi Copper",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-08-07",
    "e": null,
@@ -252,8 +423,8 @@
   },
   {
    "t": "9888.HK",
-   "nm": "Baidu",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-08-06",
    "e": null,
@@ -347,8 +518,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-08-06",
    "e": null,
@@ -423,8 +594,8 @@
   },
   {
    "t": "3993.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CMOC Group",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-08-06",
    "e": null,
@@ -480,8 +651,8 @@
   },
   {
    "t": "9888.HK",
-   "nm": "Baidu",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "entry_open",
    "d": "2026-08-05",
    "e": null,
@@ -556,8 +727,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-08-05",
    "e": null,
@@ -594,8 +765,8 @@
   },
   {
    "t": "0700.HK",
-   "nm": "Tencent",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-08-05",
    "e": null,
@@ -632,8 +803,8 @@
   },
   {
    "t": "0358.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Jiangxi Copper",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-08-05",
    "e": null,
@@ -727,8 +898,8 @@
   },
   {
    "t": "9888.HK",
-   "nm": "Baidu",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-08-04",
    "e": null,
@@ -765,8 +936,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-08-04",
    "e": null,
@@ -803,8 +974,8 @@
   },
   {
    "t": "0700.HK",
-   "nm": "Tencent",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-08-04",
    "e": null,
@@ -898,8 +1069,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "entry_open",
    "d": "2026-08-03",
    "e": null,
@@ -911,9 +1082,7 @@
    "m": false,
    "rk": 1,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "1024.HK",
@@ -930,9 +1099,7 @@
    "m": false,
    "rk": 2,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0763.HK",
@@ -949,14 +1116,12 @@
    "m": false,
    "rk": 3,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "9888.HK",
-   "nm": "Baidu",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-08-03",
    "e": null,
@@ -968,9 +1133,7 @@
    "m": false,
    "rk": 4,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "2015.HK",
@@ -987,14 +1150,12 @@
    "m": false,
    "rk": 5,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "2331.HK",
-   "nm": "Li Ning",
-   "sec": "Consumer",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-08-03",
    "e": null,
@@ -1006,14 +1167,12 @@
    "m": false,
    "rk": 6,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0700.HK",
-   "nm": "Tencent",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-08-03",
    "e": null,
@@ -1025,9 +1184,7 @@
    "m": false,
    "rk": 7,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "1658.HK",
@@ -1044,9 +1201,7 @@
    "m": false,
    "rk": 8,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "2888.HK",
@@ -1063,9 +1218,7 @@
    "m": false,
    "rk": 9,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "1208.HK",
@@ -1082,9 +1235,7 @@
    "m": false,
    "rk": 10,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "3618.HK",
@@ -1101,9 +1252,7 @@
    "m": false,
    "rk": 11,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "9626.HK",
@@ -1120,9 +1269,7 @@
    "m": false,
    "rk": 12,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0763.HK",
@@ -1194,8 +1341,8 @@
   },
   {
    "t": "2331.HK",
-   "nm": "Li Ning",
-   "sec": "Consumer",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-31",
    "e": null,
@@ -1211,8 +1358,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-31",
    "e": null,
@@ -1245,8 +1392,8 @@
   },
   {
    "t": "1378.HK",
-   "nm": "China Hongqiao",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-31",
    "e": null,
@@ -1398,8 +1545,8 @@
   },
   {
    "t": "2628.HK",
-   "nm": "China Life",
-   "sec": "Insurance",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-30",
    "e": null,
@@ -1449,8 +1596,8 @@
   },
   {
    "t": "2331.HK",
-   "nm": "Li Ning",
-   "sec": "Consumer",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-30",
    "e": null,
@@ -1602,8 +1749,8 @@
   },
   {
    "t": "2628.HK",
-   "nm": "China Life",
-   "sec": "Insurance",
+   "nm": null,
+   "sec": null,
    "grp": "entry_open",
    "d": "2026-07-29",
    "e": null,
@@ -1636,8 +1783,8 @@
   },
   {
    "t": "0762.HK",
-   "nm": "China Unicom",
-   "sec": "Telecom & Utilities",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-29",
    "e": null,
@@ -1755,8 +1902,8 @@
   },
   {
    "t": "2331.HK",
-   "nm": "Li Ning",
-   "sec": "Consumer",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-29",
    "e": null,
@@ -1789,8 +1936,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-29",
    "e": null,
@@ -1891,8 +2038,8 @@
   },
   {
    "t": "0762.HK",
-   "nm": "China Unicom",
-   "sec": "Telecom & Utilities",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-28",
    "e": null,
@@ -1925,8 +2072,8 @@
   },
   {
    "t": "2628.HK",
-   "nm": "China Life",
-   "sec": "Insurance",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-28",
    "e": null,
@@ -1976,8 +2123,8 @@
   },
   {
    "t": "2331.HK",
-   "nm": "Li Ning",
-   "sec": "Consumer",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-28",
    "e": null,
@@ -2044,8 +2191,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-28",
    "e": null,
@@ -2078,8 +2225,8 @@
   },
   {
    "t": "1288.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Agricultural Bank of China",
+   "sec": "Financials & Banks",
    "grp": "entry_open",
    "d": "2026-07-27",
    "e": null,
@@ -2163,8 +2310,8 @@
   },
   {
    "t": "0358.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Jiangxi Copper",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-27",
    "e": null,
@@ -2197,8 +2344,8 @@
   },
   {
    "t": "0083.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sino Land",
+   "sec": "Exchange & Diversified",
    "grp": "setting_up",
    "d": "2026-07-27",
    "e": null,
@@ -2248,8 +2395,8 @@
   },
   {
    "t": "0762.HK",
-   "nm": "China Unicom",
-   "sec": "Telecom & Utilities",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-27",
    "e": null,
@@ -2350,8 +2497,8 @@
   },
   {
    "t": "0960.HK",
-   "nm": "Longfor Group",
-   "sec": "Property",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-27",
    "e": null,
@@ -2452,8 +2599,8 @@
   },
   {
    "t": "2331.HK",
-   "nm": "Li Ning",
-   "sec": "Consumer",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-27",
    "e": null,
@@ -2503,8 +2650,8 @@
   },
   {
    "t": "0358.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Jiangxi Copper",
+   "sec": "Materials",
    "grp": "entry_open",
    "d": "2026-07-24",
    "e": null,
@@ -2537,8 +2684,8 @@
   },
   {
    "t": "1288.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Agricultural Bank of China",
+   "sec": "Financials & Banks",
    "grp": "entry_open",
    "d": "2026-07-24",
    "e": null,
@@ -2656,8 +2803,8 @@
   },
   {
    "t": "3993.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CMOC Group",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-24",
    "e": null,
@@ -2741,8 +2888,8 @@
   },
   {
    "t": "0083.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sino Land",
+   "sec": "Exchange & Diversified",
    "grp": "setting_up",
    "d": "2026-07-24",
    "e": null,
@@ -2775,8 +2922,8 @@
   },
   {
    "t": "0762.HK",
-   "nm": "China Unicom",
-   "sec": "Telecom & Utilities",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-24",
    "e": null,
@@ -2843,8 +2990,8 @@
   },
   {
    "t": "0960.HK",
-   "nm": "Longfor Group",
-   "sec": "Property",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-24",
    "e": null,
@@ -2996,8 +3143,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-24",
    "e": null,
@@ -3064,8 +3211,8 @@
   },
   {
    "t": "0358.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Jiangxi Copper",
+   "sec": "Materials",
    "grp": "entry_open",
    "d": "2026-07-23",
    "e": null,
@@ -3217,8 +3364,8 @@
   },
   {
    "t": "3993.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CMOC Group",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-23",
    "e": null,
@@ -3336,8 +3483,8 @@
   },
   {
    "t": "1288.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Agricultural Bank of China",
+   "sec": "Financials & Banks",
    "grp": "setting_up",
    "d": "2026-07-23",
    "e": null,
@@ -3387,8 +3534,8 @@
   },
   {
    "t": "0083.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sino Land",
+   "sec": "Exchange & Diversified",
    "grp": "setting_up",
    "d": "2026-07-23",
    "e": null,
@@ -3438,8 +3585,8 @@
   },
   {
    "t": "0728.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Telecom",
+   "sec": "Telecom & Utilities",
    "grp": "setting_up",
    "d": "2026-07-23",
    "e": null,
@@ -3455,8 +3602,8 @@
   },
   {
    "t": "0762.HK",
-   "nm": "China Unicom",
-   "sec": "Telecom & Utilities",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-23",
    "e": null,
@@ -3540,8 +3687,8 @@
   },
   {
    "t": "0960.HK",
-   "nm": "Longfor Group",
-   "sec": "Property",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-23",
    "e": null,
@@ -3761,8 +3908,8 @@
   },
   {
    "t": "0358.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Jiangxi Copper",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -3778,8 +3925,8 @@
   },
   {
    "t": "3993.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CMOC Group",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -3880,8 +4027,8 @@
   },
   {
    "t": "0016.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sun Hung Kai Properties",
+   "sec": "Property",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -3982,8 +4129,8 @@
   },
   {
    "t": "0728.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Telecom",
+   "sec": "Telecom & Utilities",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -3999,8 +4146,8 @@
   },
   {
    "t": "0083.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sino Land",
+   "sec": "Exchange & Diversified",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -4152,8 +4299,8 @@
   },
   {
    "t": "0960.HK",
-   "nm": "Longfor Group",
-   "sec": "Property",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -4203,8 +4350,8 @@
   },
   {
    "t": "1378.HK",
-   "nm": "China Hongqiao",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-21",
    "e": null,
@@ -4407,8 +4554,8 @@
   },
   {
    "t": "1288.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Agricultural Bank of China",
+   "sec": "Financials & Banks",
    "grp": "entry_open",
    "d": "2026-07-20",
    "e": null,
@@ -4560,8 +4707,8 @@
   },
   {
    "t": "0016.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sun Hung Kai Properties",
+   "sec": "Property",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -4577,8 +4724,8 @@
   },
   {
    "t": "0728.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Telecom",
+   "sec": "Telecom & Utilities",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -4645,8 +4792,8 @@
   },
   {
    "t": "0083.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sino Land",
+   "sec": "Exchange & Diversified",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -4798,8 +4945,8 @@
   },
   {
    "t": "0960.HK",
-   "nm": "Longfor Group",
-   "sec": "Property",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -4883,8 +5030,8 @@
   },
   {
    "t": "3993.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CMOC Group",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -5019,8 +5166,8 @@
   },
   {
    "t": "1378.HK",
-   "nm": "China Hongqiao",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-20",
    "e": null,
@@ -5121,8 +5268,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-20",
    "e": null,
@@ -5359,8 +5506,8 @@
   },
   {
    "t": "0016.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sun Hung Kai Properties",
+   "sec": "Property",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -5682,8 +5829,8 @@
   },
   {
    "t": "1378.HK",
-   "nm": "China Hongqiao",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-17",
    "e": null,
@@ -5801,8 +5948,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-17",
    "e": null,
@@ -5954,8 +6101,8 @@
   },
   {
    "t": "0700.HK",
-   "nm": "Tencent",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-16",
    "e": null,
@@ -6005,8 +6152,8 @@
   },
   {
    "t": "2628.HK",
-   "nm": "China Life",
-   "sec": "Insurance",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-15",
    "e": null,
@@ -6141,8 +6288,8 @@
   },
   {
    "t": "1378.HK",
-   "nm": "China Hongqiao",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-15",
    "e": null,
@@ -6175,8 +6322,8 @@
   },
   {
    "t": "2628.HK",
-   "nm": "China Life",
-   "sec": "Insurance",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-14",
    "e": null,
@@ -6396,8 +6543,8 @@
   },
   {
    "t": "0700.HK",
-   "nm": "Tencent",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-13",
    "e": null,
@@ -6453,11 +6600,11 @@
    "d": "2026-07-10",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -2.2,
+   "x": -8.15,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 1,
    "tr": null,
    "fl": []
@@ -6470,11 +6617,11 @@
    "d": "2026-07-10",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -16.7,
+   "x": -22.6,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 2,
    "tr": null,
    "fl": []
@@ -6487,11 +6634,11 @@
    "d": "2026-07-10",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -3.1,
+   "x": -9.04,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 3,
    "tr": null,
    "fl": []
@@ -6504,11 +6651,11 @@
    "d": "2026-07-10",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 17.6,
+   "x": 11.63,
+   "dy": 21,
+   "st": "beat",
+   "m": true,
    "rk": 4,
    "tr": null,
    "fl": []
@@ -6521,28 +6668,28 @@
    "d": "2026-07-10",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 23.2,
+   "x": 17.26,
+   "dy": 21,
+   "st": "beat",
+   "m": true,
    "rk": 5,
    "tr": null,
    "fl": []
   },
   {
    "t": "0700.HK",
-   "nm": "Tencent",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-10",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 2.9,
+   "x": -3.06,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 6,
    "tr": null,
    "fl": []
@@ -6555,11 +6702,11 @@
    "d": "2026-07-10",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -0.1,
+   "x": -6.06,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 7,
    "tr": null,
    "fl": []
@@ -6583,8 +6730,8 @@
   },
   {
    "t": "2628.HK",
-   "nm": "China Life",
-   "sec": "Insurance",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-08",
    "e": null,
@@ -6702,8 +6849,8 @@
   },
   {
    "t": "0700.HK",
-   "nm": "Tencent",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-08",
    "e": null,
@@ -7008,8 +7155,8 @@
   },
   {
    "t": "0002.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CLP Holdings",
+   "sec": "Telecom & Utilities",
    "grp": "watch",
    "d": "2026-07-03",
    "e": null,
@@ -7025,11 +7172,11 @@
   }
  ],
  "meta": {
-  "n_total": 405,
+  "n_total": 414,
   "truncated": 0,
   "grain": "board_day",
   "survivorship": {
-   "n_suspended": 58,
+   "n_suspended": 55,
    "note": "no delisting archive — vanished names leave the sample"
   }
  }

@@ -223,7 +223,7 @@ def test_correction_grammar_binds_to_the_o1a_lineage_record(policy: dict) -> Non
     assert grammar["lineage_record_contract"] in ContractRegistry(ROOT).contract_ids
 
 
-def test_identity_dependent_families_cite_the_blocked_ownership_adapters(
+def test_identity_dependent_families_cite_owned_adapters_and_keep_a_closed_gate(
     policy: dict,
 ) -> None:
     adapters = _load_yaml(OWNERSHIP)["read_adapters"]
@@ -233,13 +233,18 @@ def test_identity_dependent_families_cite_the_blocked_ownership_adapters(
             cited = True
             assert adapter_id in adapters, f"{name} cites unknown adapter {adapter_id}"
             adapter = adapters[adapter_id]
-            # A family may only depend on an identity adapter that is still
-            # blocked; that is exactly why its clock cannot open.
-            assert adapter["biocatalyst_eligible"] is False, adapter_id
-            assert adapter["blocker"] in family["entry_gate"]["blockers"], adapter_id
-            assert "eligible_identity_contract" in (
-                family["entry_gate"]["unsatisfied_preconditions"]
-            ), name
+            if adapter["biocatalyst_eligible"]:
+                assert adapter["blocker"] is None, adapter_id
+            else:
+                assert adapter["blocker"] in (
+                    family["entry_gate"]["blockers"]
+                ), adapter_id
+                assert "eligible_identity_contract" in (
+                    family["entry_gate"]["unsatisfied_preconditions"]
+                ), name
+        if family["entry_gate"]["required_identity_adapters"]:
+            assert family["entry_gate"]["satisfied"] is False
+            assert family["state"] == "clock_not_opened"
     assert cited
 
 

@@ -11,6 +11,9 @@ R2 facts; this nightly builder is the sole advancer of the committed split ledge
 The durable stage's notable events are recorded as ``watch`` episodes. They are
 not promoted into picks, and the option outcome stays null until a future source
 provides a complete executable bid/ask quote path.
+Exact-contract first-threshold campaigns are appended only after their H+60
+anchor is present in the persisted outcome ledger; they remain abstaining
+research cohorts and copy no outcome measurements.
 """
 from __future__ import annotations
 
@@ -35,6 +38,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.ledger_lane import nightly_advance_enabled
 from engine.options_signal_episode import (
+    CAMPAIGN_REL,
     EPISODE_REL,
     OUTCOME_REL,
     PRICE_BASIS,
@@ -43,15 +47,18 @@ from engine.options_signal_episode import (
     SESSION_OUTCOME_REL,
     TIMESTAMP_BASIS,
     ContractError,
+    append_campaigns,
     append_episodes,
     append_outcomes,
     append_session_outcomes,
     derive_h60_outcome,
+    derive_campaigns,
     derive_session_outcome,
     episode_from_live_event,
     load_jsonl,
     normalize_price_bars,
     validate_episode,
+    validate_campaign,
     validate_outcome,
     validate_outcome_against_episode,
     validate_session_outcome,
@@ -557,6 +564,7 @@ def run(
     episode_path = data_root / EPISODE_REL
     outcome_path = data_root / OUTCOME_REL
     session_outcome_path = data_root / SESSION_OUTCOME_REL
+    campaign_path = data_root / CAMPAIGN_REL
     now = computed_at or datetime.now(timezone.utc)
     if now.tzinfo is None:
         raise ContractError("computed_at must be timezone-aware")
@@ -578,6 +586,9 @@ def run(
         "session_outcomes_terminal_incomplete": 0,
         "session_outcomes_pending": 0,
         "session_outcomes_appended": 0,
+        "campaigns_valid": 0,
+        "campaigns_pending_h60": 0,
+        "campaigns_appended": 0,
         "session_pending_reasons": {},
         "pending_reasons": {},
         "rejection_reasons": {},
@@ -608,7 +619,7 @@ def run(
     for session_date in sorted(stages):
         records = stages[session_date]
         # Validate every retained prefix before deriving or writing anything.
-        # Checkpoints advance only after all three ledgers finish successfully below.
+        # Checkpoints advance only after all four ledgers finish successfully below.
         _advance_checkpoint(
             data_root / CHECKPOINT_REL, session_date, records, dry_run=True,
         )
@@ -817,9 +828,49 @@ def run(
         summary["session_outcomes_appended"] = max(0, appended)
         if appended < 0:
             summary["write_skipped"] = "COLLECT_LANE is not nightly"
-        # Ledger appends are idempotent. Advancing the source-prefix checkpoint
-        # last means a later checkpoint failure can safely replay every exact row,
-        # while a conversion/ledger failure can never bless an unconsumed prefix.
+
+    # Campaign membership is computed only after every outcome family has had
+    # its append opportunity. On the advancing lane, reload the persisted H+60
+    # bytes before binding a reference: in-memory derivations cannot authorize a
+    # campaign row that the durable outcome ledger does not yet contain.
+    if dry_run:
+        campaign_episode_rows = list(by_episode.values())
+        campaign_h60_rows = [*existing_outcomes, *outcomes]
+    else:
+        campaign_episode_rows = load_jsonl(episode_path)
+        campaign_h60_rows = load_jsonl(outcome_path)
+    campaigns, pending_campaign_anchors = derive_campaigns(
+        campaign_episode_rows,
+        campaign_h60_rows,
+    )
+    summary["campaigns_valid"] = len(campaigns)
+    summary["campaigns_pending_h60"] = len(pending_campaign_anchors)
+
+    expected_campaigns: dict[str, dict[str, Any]] = {}
+    for row in campaigns:
+        campaign_id = row["campaign_id"]
+        if campaign_id in expected_campaigns:
+            raise ContractError(f"duplicate derived campaign row: {campaign_id}")
+        expected_campaigns[campaign_id] = row
+    existing_campaign_ids: set[str] = set()
+    for row in load_jsonl(campaign_path):
+        validate_campaign(row)
+        campaign_id = row["campaign_id"]
+        if campaign_id in existing_campaign_ids:
+            raise ContractError(f"duplicate existing campaign row: {campaign_id}")
+        if expected_campaigns.get(campaign_id) != row:
+            raise ContractError(f"existing campaign payload drift: {campaign_id}")
+        existing_campaign_ids.add(campaign_id)
+
+    if not dry_run:
+        appended = append_campaigns(campaign_path, campaigns)
+        summary["campaigns_appended"] = max(0, appended)
+        if appended < 0:
+            summary["write_skipped"] = "COLLECT_LANE is not nightly"
+
+        # Episode, H+60, session, and campaign appends are idempotent. Advancing
+        # the source-prefix checkpoint last means any campaign failure leaves the
+        # stage replayable and cannot bless a partially consumed source prefix.
         for session_date in sorted(stages):
             _advance_checkpoint(
                 data_root / CHECKPOINT_REL,
@@ -834,7 +885,7 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
     parser = argparse.ArgumentParser(
         description=(
-            "Accrue PIT options episodes, H+60 labels, and declared-session-close proxies"
+            "Accrue PIT options episodes, H+60/session labels, and abstaining campaigns"
         )
     )
     parser.add_argument("--dry-run", action="store_true", help="derive and report; write nothing")

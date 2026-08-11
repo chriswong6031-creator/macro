@@ -73,7 +73,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 8 |
 | options-dislocation | 1 |
 | options-flow | 1 |
-| options-intelligence-program | 15 |
+| options-intelligence-program | 16 |
 | options-nw-entry-intelligence | 3 |
 | options-prophet-shadow | 1 |
 | oracle | 29 |
@@ -116,13 +116,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 371 |
 | infrastructure | 161 |
 | scored | 5 |
-| shadow | 98 |
+| shadow | 99 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 596 |
+| git | 597 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 17 |
@@ -899,6 +899,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-issue-desk-private-proposals | `runtime-private/options_issue_desk/proposals.jsonl` | jsonl | on-demand | infrastructure | 1 | 1 |
 | live-flow-event-stage-dated | `live_flow/events/<DATE>.jsonl` | jsonl | intraday | infrastructure | 1 | 0 |
 | options-session-ledger | `data/options_session/ledger.parquet` | parquet | daily-engine | display | 1 | 0 |
+| options-signal-campaigns | `data/options_signal_episode/campaigns.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | options-signal-episode-checkpoint | `data/options_signal_episode/checkpoint.json` | json | daily-engine | infrastructure | 1 | 0 |
 | options-signal-episode-h60-outcomes | `data/options_signal_episode/outcomes_h60.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | options-signal-episode-session-outcomes | `data/options_signal_episode/outcomes_session.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
