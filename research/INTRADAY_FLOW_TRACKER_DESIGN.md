@@ -12,10 +12,12 @@ Grounded in a 7-lane infrastructure census (2026-07-10) + the prior flow adjudic
 
 ## 1. What exists (census findings this build stands on)
 
-- **Intraday options tape is LIVE**: `live_flow_poller` (120 s cadence, 09:25–16:05 ET,
+- **Intraday options tape is source-stamped**: `live_flow_poller` (120 s poll floor,
+  09:25–16:05 ET,
   launchd) → R2 `live_flow/{tide_current,dte_tide_current,feed_current,enrich_current}.json`
   + per-root `live_flow/tickers/{ROOT}.json` (per-minute cumulative NCP/NPP, strikes,
-  sweeps). `engine/flow_enrich.py` (5-min cadence) adds deterministic badges
+  sweeps). `engine/flow_enrich.py` (scheduled every 5 min, while preserving the
+  feed's source clock) adds deterministic badges
   (WHALE/FRESH/Z_OUTLIER/SIZE_VS_OI/REPEAT_HITTER/LADDER/MULTI_LEG) + percentile session
   tiers. The full 116-name leaders universe (mag7 + AI + cyclical baskets) is inside the
   poller universe.
@@ -43,14 +45,15 @@ Grounded in a 7-lane infrastructure census (2026-07-10) + the prior flow adjudic
 New page **`site/intraday_flow.html`** ("Intraday Flow Tracker" / 盘中资金流追踪) — a
 leaders board over the configured universe with, per name:
 
-1. **Live tape block** (5-min freshness, client-computed from quotes.json):
+1. **Quote tape block** (scheduled browser refresh; provider delay labeled separately,
+   client-computed from quotes.json):
    last, %chg, day-range position, **RVOL_tod** = cumulative day volume ÷
    (ADV20_shares × expected-volume-share-at-time-of-day), volume pace arrow.
 2. **Durability block** (30-min fastpath, `site/live/flow_pulse.json`): session VWAP
    (hourly-bar approximation, labeled), spot-vs-VWAP %, **volume durability** = share of
    today's hourly bars closing in their upper half with volume ≥ time-of-day baseline,
    higher-lows count, cum-vol asof stamp.
-3. **Options-flow block** (2–5-min freshness, client-fetched from R2 `live_flow/*`):
+3. **Options-flow block** (source-stamped, client-fetched from R2 `live_flow/*`):
    cumulative ~net call prem (NCP) / ~net put prem, **flow velocity** = slope of
    cumulative NCP over trailing 15/30-min windows vs session mean pace (kinetics
    primitive ported from `engine/flow_velocity.py`), **flow durability** = share of last
@@ -82,7 +85,7 @@ Default sort: **RVOL_tod desc** (a single measured quantity — flow_desk top-mo
 precedent). K and any column are user-sortable client-side. The board annotates; it feeds
 no buy-strip, no alert queue, no authority surface (CONST-ART2).
 
-## 3. Architecture (three cadences, all reusing existing lanes)
+## 3. Architecture (scheduled lanes, all reusing existing producers)
 
 - **Nightly** (`scripts/build_intraday_flow.py --mode nightly`, daily.yml render band,
   cheap — reads existing parquets/JSONs only):
@@ -99,9 +102,11 @@ no buy-strip, no alert queue, no authority surface (CONST-ART2).
   (same Yahoo batch call, zero extra requests). Budget law: quotes.json must stay under
   the 500 KB browser budget — measure in a test; if over, carry the new fields for the
   leaders + CORE set only.
-- **2-min**: browser fetches R2 `live_flow/*` directly (existing public bucket + shim
-  precedent). Graceful absent-file fallback: options block renders "off-hours / feed
-  stale" from `meta.json` asof.
+- **Poll-floor-driven**: browser fetches R2 `live_flow/*` directly (existing public bucket
+  + shim precedent). `meta/v2.asof` owns source age; `poll_floor_sec` is only the
+  expected-opportunity denominator, while actual cycle spacing is observed separately.
+  Graceful absent-file fallback renders source time unavailable; off-hours renders the
+  last-session source stamp rather than claiming a live tape.
 
 Universe: config block `intraday_flow:` in config.yml — `universe_baskets` default
 [mag7, ai_infra, ai_software, ai_semiconductors, semicap_equipment, reshoring, defense,

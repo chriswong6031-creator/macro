@@ -32,6 +32,25 @@ sys.path.insert(0, str(_ROOT))
 log = logging.getLogger(__name__)
 
 
+def _canonical_utc_timestamp(value: object, *, field: str) -> str:
+    """Validate UTC provenance clocks; never substitute the derivative build clock."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field} must be a non-empty UTC timestamp")
+    raw = value.strip()
+    try:
+        parsed = datetime.fromisoformat(raw[:-1] + "+00:00" if raw.endswith("Z") else raw)
+    except ValueError as exc:
+        raise ValueError(f"{field} must be a valid UTC timestamp") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
+        raise ValueError(f"{field} must carry an explicit UTC offset")
+    return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _utc_instant(value: str) -> datetime:
+    """Parse a timestamp already canonicalized by `_canonical_utc_timestamp`."""
+    return datetime.fromisoformat(value[:-1] + "+00:00")
+
+
 # ─── Feed fetch ───────────────────────────────────────────────────────────────
 
 _FEED_KEY     = "live_flow/feed_current.json"
@@ -116,7 +135,13 @@ def _enrich_events(events: list[dict]) -> list[dict]:
 
 # ─── Envelope builder ─────────────────────────────────────────────────────────
 
-def build_envelope(campaigns_raw: list[dict], session_date: str, asof: str) -> dict:
+def build_envelope(
+    campaigns_raw: list[dict],
+    session_date: str,
+    source_asof: str,
+    *,
+    built_at: str | None = None,
+) -> dict:
     """Wrap aggregated campaigns in the options_flow.chain_heat/v1 envelope.
 
     The UI (FlowDeskView.tsx / ChainHeatRail) reads:
@@ -129,6 +154,14 @@ def build_envelope(campaigns_raw: list[dict], session_date: str, asof: str) -> d
     aggregate_chain_heat returns 'right' ("CALL"|"PUT"); we rename it to 'type'
     to match the UI interface (ChainHeatCampaign.type in FlowDeskView.tsx).
     """
+    source_asof = _canonical_utc_timestamp(source_asof, field="source_asof")
+    built_at = _canonical_utc_timestamp(
+        built_at if built_at is not None else source_asof,
+        field="built_at",
+    )
+    if _utc_instant(built_at) < _utc_instant(source_asof):
+        raise ValueError("built_at cannot precede source_asof")
+
     campaigns: list[dict] = []
     for c in campaigns_raw:
         campaign = dict(c)
@@ -152,7 +185,11 @@ def build_envelope(campaigns_raw: list[dict], session_date: str, asof: str) -> d
 
     return {
         "schema":        "options_flow.chain_heat/v1",
-        "asof":          asof,
+        # Legacy asof is bound to the source snapshot; recomputation time is
+        # disclosed separately and never makes unchanged source data look fresh.
+        "asof":          source_asof,
+        "source_asof":   source_asof,
+        "built_at":      built_at,
         "session_date":  session_date,
         "threshold_mn":  3,
         "note_en":       "DISPLAY-ONLY — intraday chain-heat snapshot. Not investment advice.",
@@ -206,8 +243,13 @@ def main(argv: list[str] | None = None) -> int:
         feed = fetch_feed()
         events = feed.get("events", [])
         session_date = feed.get("session_date", "")
-        feed_asof = feed.get("asof", "")
-        log.info("feed: session=%s asof=%s events=%d", session_date, feed_asof, len(events))
+        feed_source_asof = (
+            feed.get("source_asof") if "source_asof" in feed else feed.get("asof")
+        )
+        log.info(
+            "feed: session=%s source_asof=%s events=%d",
+            session_date, feed_source_asof, len(events),
+        )
 
         # 2. Enrich events with ask_share proxy from side field
         enriched = _enrich_events(events)
@@ -223,9 +265,13 @@ def main(argv: list[str] | None = None) -> int:
         log.info("aggregated %d campaigns", len(campaigns_raw))
 
         # 4. Wrap in envelope
-        # asof = now (when we built the snapshot); session_date from feed
-        asof_now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        payload = build_envelope(campaigns_raw, session_date, asof_now)
+        built_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        payload = build_envelope(
+            campaigns_raw,
+            session_date,
+            feed_source_asof,
+            built_at=built_at,
+        )
 
         # 5. Publish or write local
         if args.no_publish:

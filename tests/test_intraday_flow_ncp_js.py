@@ -149,7 +149,7 @@ def _region(src: str, start: str, end: str) -> str:
 REGIONS = (
     ("function snapUrl", "function computeLegs"),   # url helpers, ET clock, derived metrics
     ("function computeLegs", "function dealerOf"),  # the confluence legs incl. L5
-    ("var flowInflight", "function updateFlowStamp"),  # fetchFlow, bestTier, fetchRootFlow
+    ("var flowMeta", "function updateFlowStamp"),  # fetchFlow, bestTier, fetchRootFlow
 )
 
 
@@ -158,7 +158,15 @@ def _flow_js(path: Path) -> str:
     return "\n".join(_region(src, a, b) for a, b in REGIONS)
 
 
-def _run(path: Path, *, tide, tickers: dict[str, dict], enrich, leaders=(LEADER, OTHER_LEADER)) -> dict:
+def _run(
+    path: Path,
+    *,
+    tide,
+    tickers: dict[str, dict],
+    enrich,
+    meta=None,
+    leaders=(LEADER, OTHER_LEADER),
+) -> dict:
     """Execute fetchFlow() against the payloads; return flowState + legs + fetched URLs.
 
     `tickers` maps root -> payload; a root absent from it serves a non-ok response, which
@@ -166,7 +174,7 @@ def _run(path: Path, *, tide, tickers: dict[str, dict], enrich, leaders=(LEADER,
     """
     script = textwrap.dedent(
         """
-        var TIDE = %(tide)s, TICKERS = %(tickers)s, ENRICH = %(enrich)s;
+        var TIDE = %(tide)s, TICKERS = %(tickers)s, ENRICH = %(enrich)s, META = %(meta)s;
         var DUR_MIN = %(dur_min)s, RVOL_CONFIRM = 1.30, WASHOUT_LB = 10;
         var LEADERS_BY_TK = %(leaders)s;
         var flowState = {}, flowAsof = null, flowRTH = false;
@@ -179,6 +187,7 @@ def _run(path: Path, *, tide, tickers: dict[str, dict], enrich, leaders=(LEADER,
           var body = null;
           if (/tide_current/.test(url)) body = TIDE;
           else if (/enrich_current/.test(url)) body = ENRICH;
+          else if (/meta[.]json/.test(url)) body = META;
           else {
             var m = /tickers\\/([^.]+)\\.json/.exec(url);
             if (m) body = Object.prototype.hasOwnProperty.call(TICKERS, m[1]) ? TICKERS[m[1]] : null;
@@ -190,7 +199,7 @@ def _run(path: Path, *, tide, tickers: dict[str, dict], enrich, leaders=(LEADER,
         // The mocked fetch resolves synchronously, so one macrotask lands after every
         // microtask — including the per-root wave fetchFlow starts from its own .then.
         setTimeout(function () {
-          var out = {flowState: flowState, asof: flowAsof, fetched: FETCHED, legs: {}, K: {}};
+          var out = {flowState: flowState, asof: flowAsof, meta: flowMeta, fetched: FETCHED, legs: {}, K: {}};
           Object.keys(LEADERS_BY_TK).forEach(function (tk) {
             var conf = computeLegs({}, null, null, flowState[tk] || null);
             out.legs[tk] = conf.legs;
@@ -203,6 +212,7 @@ def _run(path: Path, *, tide, tickers: dict[str, dict], enrich, leaders=(LEADER,
         "tide": json.dumps(tide),
         "tickers": json.dumps(tickers),
         "enrich": json.dumps(enrich),
+        "meta": json.dumps(meta),
         "dur_min": json.dumps(DUR_MIN),
         "leaders": json.dumps({t: {"ticker": t} for t in leaders}),
         "js": _flow_js(path),
@@ -328,6 +338,37 @@ def test_enrich_badges_do_not_synthesise_a_lean(path):
     assert out["asof"] == ASOF_ENRICH
 
 
+@needs_node
+@PAGES
+def test_meta_v2_source_clock_wins_over_newer_derivative_build_clocks(path):
+    """The page stamps represented source age, not a newer tide/enrich rebuild."""
+    ds = _day_state({LEADER: ([100.0] * 10, -2000.0)})
+    source_asof = "2026-07-02T14:29:00Z"
+    meta = {
+        "schema": "live_flow.meta/v2",
+        "asof": source_asof,
+        "built_at": "2026-07-02T14:32:00Z",
+        "poll_floor_sec": 120,
+        "cycle_started_at": "2026-07-02T14:31:00Z",
+        "observed_start_to_start_sec": 605.0,
+        "fetch_compute_sec": 61.0,
+        "source_response_at_first": source_asof,
+        "source_response_at_last": source_asof,
+        "roots_requested": 1,
+        "roots_with_source_payload": 1,
+    }
+    out = _run(
+        path,
+        tide=_tide(ds),
+        tickers={LEADER: _ticker(LEADER, ds)},
+        enrich=_enrich(LEADER),
+        meta=meta,
+    )
+    assert out["asof"] == source_asof
+    assert out["meta"] == meta
+    assert any(url.endswith("live_flow/meta.json") for url in out["fetched"])
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 3. Coverage — every board name in the tide gets the call-only series
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -410,6 +451,16 @@ def test_the_unknown_side_is_disclosed_in_plain_words(path):
     """A name carrying only the net total is not a quiet tape — say what is unknown."""
     src = path.read_text(encoding="utf-8")
     assert src.count("lz('side unknown','方向未知')") == 2, "spotlight card + board row"
+
+
+@PAGES
+def test_flow_copy_makes_no_fixed_cadence_or_unstamped_live_claim(path):
+    src = path.read_text(encoding="utf-8")
+    assert "2-3min RTH" not in src
+    assert "asof ? 'as of '+asof : 'live'" not in src
+    assert "asof ? '截至 '+asof : '实时'" not in src
+    assert "last-session source as of" in src
+    assert "上一交易时段来源截至" in src
 
 
 @needs_node

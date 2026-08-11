@@ -77,20 +77,23 @@ profile[...],  walls[...],  surface[...],  smile[...],  term[...],  history[...]
 
 ### 1C. R2 `live_flow/` — Intraday Live Poller (ThetaData, RTH 09:25–16:05 ET)
 **Producer:** `scripts/live_flow_poller.py` → `engine/live_flow.py`
-**Cadence:** every ~120s during RTH (launchd on Mac Studio)
+**Schedule:** 120s minimum start-to-start poll floor during RTH (launchd on Mac Studio).
+Actual spacing is variable and emitted; the floor is not a source-age or latency promise.
 **R2 keys (prefix `live_flow/`):**
 ```
 feed_current.json    schema: live_flow.feed/v1
-                     {asof, session_date, session_pct, baseline_note,
+                     {asof, source_asof, session_date, session_pct, baseline_note,
                       events[{...}], unusual_names[{root, prem_z, gross_premium_today,
                               group, group_zh, call_prem_share,...}]}
 
 heat_current.json    schema: live_flow.heat/v1
-                     {asof, session_date, groups[...aggregated heat rows...]}
+                     {asof, source_asof, session_date, groups[...aggregated heat rows...]}
 
-meta.json            schema: live_flow.meta/v1
-                     {asof, cadence_sec_target, cadence_sec_measured, universe_n,
-                      roots_polled, requests_last_cycle, cycle_sec, delta_mode, notes}
+meta.json            schema: live_flow.meta/v2
+                     {asof, built_at, poll_floor_sec, cycle_started_at,
+                      observed_start_to_start_sec, fetch_compute_sec,
+                      source_response_at_first, source_response_at_last,
+                      roots_requested, roots_with_source_payload, delta_mode, notes}
 
 tide_current.json    — market tide (NCP/NPP/gross/vol cumulative minutes + sectors)
 dte_tide_current.json — DTE-bucket tide (5 buckets: 0DTE, 1-3d, 4-7d, 8-21d, >21d)
@@ -98,6 +101,10 @@ tickers/{ROOT}.json  — per-root drill (top ~40 by day gross premium;
                        {minutes[...], strikes[...], expiries[...], top_contracts[...]})
 archive/{YYYYMMDDTHH}.json — hourly snapshot of feed (48h retention)
 ```
+`asof` in meta is the newest represented successful source response and stays on
+the last-session clock across an unchanged or fully failed cycle. Enrich and
+chain-heat derivatives publish legacy `asof=source_asof` plus explicit
+`source_asof` and `built_at`; invalid source time fails closed before publication.
 **Universe:** ~22 ETF anchors (SPY/QQQ/IWM/GLD/SLV/TLT/HYG/XLF/XLE/XLU/XLK/XLV/XLI/XLB/XLY/XLP/XLRE/KRE/SMH/XBI/ARKK/DIA) + up to 100 single-name GEX symbols from `engine/options_universe.gex_symbols()`.
 **Data source:** ThetaData Terminal → `collectors/thetadata.bulk_trade_quote()`.
 **Reliability:** intraday event detection (sweep clusters, unusual activity by z-score vs 252d EOD baselines). Flow direction same caveats as flow desk above.
@@ -198,7 +205,7 @@ Config key: `r2_data_plane.public_base` (in `config.yml`). The live_flow_poller 
 |---|---|---|
 | Per-trade tape (true buy/sell) | ❌ Not entitled (403 on OPRA trades) | Databento `tbbo` ~$0 under signup credit for focused universe; not funded yet |
 | NBBO quote-rule signing | ❌ Not entitled | Same path as above |
-| Real-time / sub-minute flow | ❌ (ThetaData RTH at 120s cadence, not tick) | ThetaData streaming (~$80-160/mo) or Databento; deferred |
+| Real-time / sub-minute flow | ❌ (ThetaData RTH poll floor is 120s; observed spacing may be slower and is not tick data) | ThetaData streaming (~$80-160/mo) or Databento; deferred |
 | OI backfill (pre-2026-06-15) | ❌ blocked on massive.com (no OI in flat files) | Would need Cboe DataShop or similar; not funded |
 | Institutional block detection | Partial (vol>OI fresh_contracts + sweep_clusters in live poller) | No true Lee-Ready; sweep heuristics only |
 | IV backfill (2024-07-02→present) | ✅ FEASIBLE via massive `day_aggs_v1` BS-invert (~502 days, $0) | Not yet built (OPTIONS_ALPHA_MASTERPLAN F5) |

@@ -4,7 +4,7 @@ Mac-side loop: fetches bulk_trade_quote per root per cycle, runs the live_flow
 event engine, writes JSON artifacts locally and uploads to R2.
 
 Config block 'live_flow:' in config.yml:
-  cadence_sec:    120     # target poll interval
+  cadence_sec:    120     # minimum interval between cycle starts (poll floor)
   max_concurrent: 2       # HARD LAW — T1 backfill shares the 8-request cap
   etf_anchors:    [...]   # defaults to build_tape_flow's 21 + DIA
   top_names:      100     # resolved from gex_symbols() after anchors
@@ -43,6 +43,7 @@ import gc
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import resource
@@ -167,6 +168,20 @@ def _cfg() -> dict:
         return dict(config.load().get("live_flow", {}) or {})
     except Exception:  # noqa: BLE001
         return {}
+
+
+def _poll_floor_sec(cfg: dict) -> int:
+    """Configured minimum start-to-start interval; never an observed cadence.
+
+    A cycle whose fetch/compute work takes longer than this floor starts the next
+    cycle immediately.  Consumers therefore use this value as the expected-frame
+    denominator and use the separately measured start-to-start interval only as
+    descriptive evidence.
+    """
+    value = cfg.get("cadence_sec", 120)
+    if type(value) is not int or value <= 0:
+        raise ValueError("live_flow.cadence_sec must be an exact positive integer poll floor")
+    return value
 
 
 def _r2_public_base() -> str:
@@ -301,6 +316,33 @@ def _utc_now_iso(now_fn=None) -> str:
     if getattr(value, "tzinfo", None) is None:
         raise RuntimeError("poller clock must be a timezone-aware datetime")
     return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _canonical_utc_timestamp(value: object, *, field: str) -> str:
+    """Validate an aware UTC clock without inventing or discarding precision."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field} must be a non-empty UTC timestamp")
+    raw = value.strip()
+    try:
+        parsed = datetime.fromisoformat(
+            raw[:-1] + "+00:00" if raw.endswith("Z") else raw,
+        )
+    except ValueError as exc:
+        raise ValueError(f"{field} must be a valid UTC timestamp") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
+        raise ValueError(f"{field} must carry an explicit UTC offset")
+    return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _observed_interval_sec(value: object) -> float | None:
+    """Validate a descriptive monotonic start-to-start interval."""
+    if value is None:
+        return None
+    if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+        raise ValueError(
+            "observed_start_to_start_sec must be a finite non-negative number or null"
+        )
+    return round(float(value), 3)
 
 
 def _event_stage_path(session_date: str) -> Path:
@@ -1171,6 +1213,10 @@ def _load_day_state(session_date: str) -> dict:
             raise RuntimeError("day_state pending_learning_events must be a list")
         if not isinstance(raw.get("cycle_watermarks", {}), dict):
             raise RuntimeError("day_state cycle_watermarks must be an object")
+        if raw.get("source_asof") is not None:
+            raw["source_asof"] = _canonical_utc_timestamp(
+                raw["source_asof"], field="day_state.source_asof",
+            )
         raw.setdefault("pending_learning_events", [])
         raw.setdefault("cycle_watermarks", {})
         return raw
@@ -1215,6 +1261,13 @@ def _save_day_state(session_date: str, state: dict) -> Path:
         raw["root_gross_today"] = state.get("root_gross_today", {})
         raw["pending_learning_events"] = state.get("pending_learning_events", [])
         raw["cycle_watermarks"] = state.get("cycle_watermarks", {})
+        # Source age survives a process restart.  A fully failed recovery cycle
+        # must keep the last represented response clock instead of looking new.
+        source_asof = state.get("source_asof")
+        raw["source_asof"] = (
+            _canonical_utc_timestamp(source_asof, field="day_state.source_asof")
+            if source_asof is not None else None
+        )
         # Tuple-keyed dicts → string-keyed for JSON serialisation
         raw["contract_vol"]      = {_state_key(k): v
                                     for k, v in state.get("contract_vol", {}).items()}
@@ -1865,6 +1918,8 @@ def run_cycle(
     unusual_baseline: dict | None = None,  # flow.unusual_baseline/v1 artifact; None = fall back to heuristic
     event_stager=None,
     cycle_n: int | None = None,  # observability only; never enters signal/state clocks
+    cycle_started_at: str | None = None,
+    observed_start_to_start_sec: float | None = None,
 ) -> tuple[dict, dict, dict, dict, dict]:
     """Run one poll cycle.  Returns (feed_data, heat_data, meta_data, updated_day_state, tide_day_state).
 
@@ -1896,6 +1951,14 @@ def run_cycle(
         etf_anchors_set = set(etf_anchors)
 
     cycle_t0 = time.perf_counter()
+    cycle_started_at = _canonical_utc_timestamp(
+        _utc_now_iso() if cycle_started_at is None else cycle_started_at,
+        field="cycle_started_at",
+    )
+    observed_start_to_start_sec = _observed_interval_sec(
+        observed_start_to_start_sec,
+    )
+    poll_floor_sec = _poll_floor_sec(cfg)
     _log_rss_phase("pre_fetch", cycle_n=cycle_n)
 
     # FIX 2 — compute per-root start_time for time_window mode
@@ -1961,6 +2024,7 @@ def run_cycle(
 
     # Fetch in parallel (max_concurrent=2); per-root start_time in time_window mode
     fetch_results: dict[str, tuple] = {}
+    source_response_times: list[str] = []
     with ThreadPoolExecutor(max_workers=max_w) as pool:
         futs = {
             pool.submit(
@@ -1977,6 +2041,8 @@ def run_cycle(
             # network response and create false point-in-time provenance.
             observed_at = _utc_now_iso()
             fetch_results[r] = (calls_df, puts_df, observed_at)
+            if calls_df is not None or puts_df is not None:
+                source_response_times.append(observed_at)
             requests_count += 2  # two calls per root (call + put)
     _log_rss_phase("post_fetch", cycle_n=cycle_n)
 
@@ -2202,7 +2268,11 @@ def run_cycle(
                 except Exception:  # noqa: BLE001
                     pass  # fail-open: skip annotation for this root
 
-    cycle_sec = time.perf_counter() - cycle_t0
+    fetch_compute_sec = time.perf_counter() - cycle_t0
+    prior_source_asof = day_state.get("source_asof")
+    source_asof = source_response_times[-1] if source_response_times else prior_source_asof
+    if source_asof is not None:
+        source_asof = _canonical_utc_timestamp(source_asof, field="source_asof")
 
     # Build feed payload
     n_events = len(all_events)
@@ -2236,10 +2306,15 @@ def run_cycle(
 
     # The cumulative snapshot clock is taken only after all event processing, so
     # it can never predate an event's first-availability receipt.
-    payload_asof = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    payload_asof = _utc_now_iso()
     feed_payload = {
         "schema":       "live_flow.feed/v1",
         "asof":         payload_asof,
+        # Source age and build/availability age are different clocks.  ``asof``
+        # remains the display envelope clock for event-availability ordering;
+        # downstream derivative builders bind their legacy ``asof`` to this
+        # explicit source clock instead.
+        "source_asof":  source_asof,
         "session_date": session_date,
         "session_pct":  _session_pct(),
         "baseline_note": {
@@ -2253,19 +2328,34 @@ def run_cycle(
     heat_payload = {
         "schema":       "live_flow.heat/v1",
         "asof":         payload_asof,
+        "source_asof":  source_asof,
         "session_date": session_date,
         "groups":       agg_heat,
     }
 
     meta_payload = {
-        "schema":                "live_flow.meta/v1",
-        "asof":                  payload_asof,
-        "cadence_sec_target":    int(cfg.get("cadence_sec", 120)),
-        "cadence_sec_measured":  round(cycle_sec, 1),
+        "schema":                "live_flow.meta/v2",
+        # Snapshot age is anchored to the newest successful source response
+        # represented by the cumulative state, never to cycle completion.
+        "asof":                  source_asof,
+        "built_at":              payload_asof,
+        "poll_floor_sec":        poll_floor_sec,
+        "cycle_started_at":      cycle_started_at,
+        "observed_start_to_start_sec": observed_start_to_start_sec,
+        "fetch_compute_sec":     round(fetch_compute_sec, 3),
+        "source_response_at_first": (
+            source_response_times[0] if source_response_times else None
+        ),
+        "source_response_at_last": (
+            source_response_times[-1] if source_response_times else None
+        ),
+        "roots_requested":       len(roots),
+        "roots_with_source_payload": len(source_response_times),
+        # Compatibility aliases.  They no longer define cadence truth.
         "universe_n":            len(roots),
-        "roots_polled":          len(fetch_results),
+        "roots_polled":          len(source_response_times),
         "requests_last_cycle":   requests_count,
-        "cycle_sec":             round(cycle_sec, 1),
+        "cycle_sec":             round(fetch_compute_sec, 1),
         "delta_mode":            delta_mode,
         "max_concurrent":        max_w,
         "two_tier":              _two_tier_enabled(),
@@ -2310,6 +2400,9 @@ def run_cycle(
         "root_top_contracts":  root_top_contr,
         "sweep_clusters":      sweep_clusters_acc,
         "pending_learning_events": pending_learning_events,
+        # Retain the newest successful source response across a fully failed
+        # cycle so an unchanged cumulative snapshot cannot acquire a fresh age.
+        "source_asof":         source_asof,
     }
 
     return feed_payload, heat_payload, meta_payload, updated_state, tide_day_state
@@ -2607,7 +2700,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             archive_writes_enabled = False
             log.warning("poller: trading-calendar gate unavailable (%s) — dated tide/dte "
                         "archive lane DISABLED for this run", _cal_err)
-    cadence   = int(cfg.get("cadence_sec", 120))
+    poll_floor_sec = _poll_floor_sec(cfg)
 
     # FC-R6: log two-tier + max_concurrent configuration at startup
     if _two_tier_enabled():
@@ -2632,8 +2725,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
     )
 
     cycle_n = 0
+    previous_cycle_started_perf: float | None = None
     while True:
         loop_t0 = time.perf_counter()
+        cycle_started_at = _utc_now_iso()
+        observed_start_to_start_sec = (
+            loop_t0 - previous_cycle_started_perf
+            if previous_cycle_started_perf is not None else None
+        )
+        previous_cycle_started_perf = loop_t0
         cycle_n += 1
 
         # FC-R6: two-tier root selection (DEFAULT OFF)
@@ -2669,6 +2769,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 unusual_baseline=unusual_baseline,
                 event_stager=None,
                 cycle_n=cycle_n,
+                cycle_started_at=cycle_started_at,
+                observed_start_to_start_sec=observed_start_to_start_sec,
             )
             # Transaction boundary: the post-cycle engine state and exact fixed-clock
             # events become durable together before the append-only learning stage.
@@ -2690,7 +2792,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             feed["events"] = list(day_state.get("all_events", []))
             feed["asof"] = committed_asof
             heat["asof"] = committed_asof
-            meta["asof"] = committed_asof
+            # Meta ``asof`` remains the newest represented source response.
+            # Publication durability gets its own build clock instead of making
+            # an unchanged source snapshot appear fresh.
+            meta["built_at"] = committed_asof
         except Exception as e:  # noqa: BLE001
             log.error("poller: cycle #%d unhandled error: %s", cycle_n, e, exc_info=True)
             # Restore the last durable transaction. If it owns a pending event WAL,
@@ -2702,7 +2807,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 log.error("poller: durable day_state recovery failed", exc_info=True)
             if args.once:
                 return 1
-            time.sleep(cadence)
+            time.sleep(poll_floor_sec)
             continue
 
         # Write legacy JSON
@@ -2751,7 +2856,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                     paths_by_family={TIDE_FAMILY: tide_path, DTE_TIDE_FAMILY: dte_tide_path},
                     session_date=session_date,
                     asof=meta.get("asof", feed.get("asof", "")),
-                    cadence_sec=cadence,
+                    cadence_sec=poll_floor_sec,
                     retain_sessions=int(cfg.get("archive_retain_sessions",
                                                 ARCHIVE_RETAIN_SESSIONS) or
                                         ARCHIVE_RETAIN_SESSIONS),
@@ -2815,8 +2920,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         # walls + coverage come from tide_day_state["surface_quotes"] (this cycle's freshest
         # per-contract NBBO, tapped in run_cycle) joined to EOD-t-1 OI (session-cached).
         # Staged to the gitignored data/live_flow_out/surface/ dir + uploaded to R2 below.
-        # Cadence carried honestly = the poller's cadence_sec. A greek failure never blocks
-        # a root's netprem column (fenced in build_and_stage_surfaces). See
+        # The configured poll floor is the completeness denominator. Each public
+        # frame separately derives its observed spacing from truncated stamps; a
+        # slow/sparse session therefore cannot relabel itself complete. A greek
+        # failure never blocks a root's netprem column. See
         # scripts/build_flow_surface.py + engine/intraday_greeks.py + RECON §2 / MASTERPLAN §4.
         # M-XP(a): each cycle also stages date-keyed copies under
         # live_flow/surface/{ROOT}/{YYYY-MM-DD}/ plus the root's dates.json, so the Terminal
@@ -2841,7 +2948,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 roots=surf_roots,
                 session_date=session_date,
                 asof=meta.get("asof", feed.get("asof", "")),
-                cadence_sec=cadence,
+                cadence_sec=poll_floor_sec,
                 quotes_by_root=surf_quotes,
                 oi_by_root=surf_oi,
                 spot_fallback_by_root=surf_spot_fb,
@@ -2852,8 +2959,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         except Exception as surf_err:  # noqa: BLE001
             log.warning("poller: flow-surface store failed: %s", surf_err)
 
-        roots_ok_n    = meta.get("roots_polled", 0)
-        roots_total_n = meta.get("universe_n", len(roots))
+        roots_ok_n = meta.get(
+            "roots_with_source_payload", meta.get("roots_polled", 0),
+        )
+        roots_total_n = meta.get("roots_requested", meta.get("universe_n", len(roots)))
         roots_skip_n  = roots_total_n - roots_ok_n
 
         log.info("poller: cycle #%d events=%d unusual=%d heat_groups=%d "
@@ -2865,7 +2974,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                  len(tide_payload.get("minutes", [])),
                  len(tide_payload.get("sectors", [])),
                  ticker_count,
-                 meta.get("cycle_sec", 0))
+                 meta.get("fetch_compute_sec", meta.get("cycle_sec", 0)))
 
         # Item 6 — register live_flow_poller in the run_status/circuit-breaker pattern.
         # Mirrors the established pattern in scripts/collect.py + lib/store.write_status.
@@ -2974,7 +3083,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                         all_ok = all_ok and res["ok"]
                         if res["retained"]:
                             dates_local = _merge_dates(
-                                _sr, res["retained"], cadence_sec=cadence,
+                                _sr, res["retained"], cadence_sec=poll_floor_sec,
                                 asof=meta.get("asof", ""), retain=keep_n)
                             log.info("poller: surface retention %s → %d session(s) kept",
                                      _sr.upper(), len(dates_local))
@@ -3020,7 +3129,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                         all_ok = all_ok and res["ok"]
                         if res["retained"]:
                             kept = _merge_archive_dates(
-                                _fam, res["retained"], cadence_sec=cadence,
+                                _fam, res["retained"], cadence_sec=poll_floor_sec,
                                 asof=meta.get("asof", ""), retain=keep_n)
                             log.info("poller: archive retention %s → %d session(s) kept",
                                      _fam, len(kept))
@@ -3076,7 +3185,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
 
         # Sleep for remainder of cadence
         elapsed = time.perf_counter() - loop_t0
-        sleep_for = max(0.0, cadence - elapsed)
+        sleep_for = max(0.0, poll_floor_sec - elapsed)
         if sleep_for > 0:
             log.debug("poller: sleeping %.1fs", sleep_for)
             time.sleep(sleep_for)

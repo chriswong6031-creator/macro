@@ -10,8 +10,8 @@ Invariants (RECON §2, MASTERPLAN §3 Lane T item 5; surfaceContract.ts):
       and index.latest === stamps[-1] (checkIndexFilesContract law).
   (b) grid dimensions == len(price_levels) × len(time_steps) for every metric grid, and
       the orientation is grids[metric][levelIdx][timeIdx].
-  (c) cadence honesty: cadenceSec (int) + cadence (label) are present and reflect the
-      passed write interval — never a finer cadence than the caller supplied.
+  (c) cadence honesty: pollFloorSec remains the configured completeness denominator while
+      each frame reports observedCadenceSec from its own minute-truncated stamp spacing.
   (d) idempotent stamp append: re-appending an existing stamp overwrites that column in
       place; it does not duplicate the stamp or grow the time axis.
   (e) empty-session behavior: an empty strike rollup yields no column (skipped), and an
@@ -52,6 +52,7 @@ from scripts.build_flow_surface import (
     list_surface_session_dates,
     merge_surface_dates,
     net_prem_by_strike,
+    observed_cadence_sec,
     oi_by_contract,
     prune_surface_dates,
     resolve_surface_roots,
@@ -63,8 +64,11 @@ from scripts.build_flow_surface import (
 # Required top-level keys the Terminal validators / fixture path read. Extra keys are
 # tolerated by the validators (isSurfaceIndex/isSurfaceFrame check a subset), but our
 # materializer must at minimum emit these.
-IDX_REQUIRED_KEYS = {"date", "stamps", "latest", "cadenceSec"}
-FRAME_REQUIRED_KEYS = {"spot", "price_levels", "time_steps", "grids", "asof", "cadence"}
+IDX_REQUIRED_KEYS = {"date", "stamps", "latest", "pollFloorSec", "cadenceSec"}
+FRAME_REQUIRED_KEYS = {
+    "spot", "price_levels", "time_steps", "grids", "asof", "pollFloorSec",
+    "observedCadenceSec", "cadence",
+}
 
 # A verbatim slice of surface_idx_fixture.json (SPY) — the canonical index shape.
 VENDORED_IDX_FIXTURE = {
@@ -234,7 +238,8 @@ def test_cadence_honesty():
                      spot=1.0, asof="x", cadence_sec=120, session_date="d", root="SPY"),
         session_date="d", cadence_sec=120, root="SPY",
     )
-    assert idx["cadenceSec"] == 120
+    assert idx["pollFloorSec"] == 120
+    assert idx["cadenceSec"] == 120  # compatibility alias names the floor
     assert isinstance(idx["cadenceSec"], int) and not isinstance(idx["cadenceSec"], bool)
     assert idx["cadence"] == "2-min"
     # Label table + fallbacks (never claims finer than the true interval).
@@ -244,6 +249,61 @@ def test_cadence_honesty():
     assert cadence_label(45) == "45s"       # sub-minute honest label
     assert cadence_label(180) == "3-min"    # uncommon interval rounds to minutes
     assert cadence_label(0) == "" and cadence_label(-5) == ""
+
+
+def test_sparse_stamps_publish_observed_spacing_without_relaxing_completeness_floor():
+    """Six ten-minute frames remain six of the two-minute opportunities, never whole."""
+    full = None
+    stamps = ["0930", "0940", "0950", "1000", "1010", "1020"]
+    for stamp in stamps:
+        full = append_stamp(
+            full,
+            stamp=stamp,
+            time_step=f"{stamp[:2]}:{stamp[2:]}",
+            net_by_strike={600.0: 1.0},
+            spot=600.0,
+            asof="2026-07-06T14:20:00Z",
+            cadence_sec=120,
+            session_date="2026-07-06",
+            root="SPY",
+        )
+
+    idx = build_index(
+        full, session_date="2026-07-06", cadence_sec=120, root="SPY",
+    )
+    first = frame_for_stamp(full, stamps[0])
+    latest = frame_for_stamp(full, stamps[-1])
+    assert idx["pollFloorSec"] == idx["cadenceSec"] == 120
+    assert idx["stamps"] == stamps
+    assert first["pollFloorSec"] == 120
+    assert first["observedCadenceSec"] is None
+    assert latest["pollFloorSec"] == 120
+    assert latest["observedCadenceSec"] == 600
+    assert len(latest["time_steps"]) == 6
+
+
+def test_mid_session_floor_change_can_tighten_but_not_relax_denominator():
+    full = append_stamp(
+        None, stamp="0930", time_step="09:30", net_by_strike={600.0: 1.0},
+        spot=600.0, asof="a", cadence_sec=120, session_date="d", root="SPY",
+    )
+    full = append_stamp(
+        full, stamp="0940", time_step="09:40", net_by_strike={600.0: 2.0},
+        spot=600.0, asof="b", cadence_sec=600, session_date="d", root="SPY",
+    )
+    assert full["pollFloorSec"] == 120
+    assert build_index(full, session_date="d", cadence_sec=600, root="SPY")[
+        "pollFloorSec"
+    ] == 120
+
+
+def test_observed_cadence_rejects_malformed_or_nonincreasing_stamps():
+    assert observed_cadence_sec(["0930", "0940"]) == 600
+    assert observed_cadence_sec(["0930"]) is None
+    assert observed_cadence_sec(["0930", "0930"]) is None
+    assert observed_cadence_sec(["0940", "0930"]) is None
+    assert observed_cadence_sec(["0960", "1010"]) is None
+    assert observed_cadence_sec(["0930", "junk"]) is None
 
 
 # ── (d) idempotent stamp append ─────────────────────────────────────────────────────
@@ -830,7 +890,8 @@ def test_dates_json_shape_from_staging(tmp_path, monkeypatch):
     assert doc["latest"] == "2026-07-06"
     assert doc["count"] == 1
     assert doc["retain"] == SURFACE_RETAIN_SESSIONS
-    # Cadence honesty: carried verbatim from the true write interval, same law as idx.json.
+    # Poll floor stays the completeness denominator; legacy cadence aliases it.
+    assert doc["pollFloorSec"] == 300
     assert doc["cadenceSec"] == 300 and doc["cadence"] == "5-min"
     assert doc["asof"] == "2026-07-06T13:31:00Z"
     assert doc["source"] == "poller"
@@ -861,6 +922,9 @@ def test_is_surface_dates_rejects_bad_docs():
     assert not is_surface_dates({**good, "latest": "2026-07-01"})                 # ≠ dates[0]
     assert not is_surface_dates({**good, "dates": ["not-a-date"]})
     assert not is_surface_dates({**good, "cadenceSec": "120"})
+    assert not is_surface_dates({**good, "pollFloorSec": "120"})
+    assert not is_surface_dates({**good, "pollFloorSec": True})
+    assert not is_surface_dates({**good, "pollFloorSec": 0})
     assert not is_surface_dates({**good, "root": None})
     assert not is_surface_dates([])
     assert is_session_date("2026-07-06") and not is_session_date("2026-7-6")
