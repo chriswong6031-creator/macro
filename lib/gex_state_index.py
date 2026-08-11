@@ -7,9 +7,9 @@ before this file existed there was no cross-root positioning aggregate anywhere
 on R2 (site/gex/index.json is site-only and speaks the board's two-state regime
 vocabulary, not gex_state's six-state one).
 
-Transport is free by construction: the file lands in the gex_state directory, so
-it rides the nightly's ``git add site/`` AND the launchd R2 mirror's
-``src.glob("*.json")`` (ops/launchd/run_options_matrix.sh) with zero new plumbing.
+Transport is free by construction: the file lands in the gex_state directory,
+so it rides the nightly's ``git add site/`` and the dedicated launchd R2
+projection (``com.mastermind.gexstate-mirror``) as part of the exact bundle.
 
 Honesty rules:
 - Rows are built by GLOBBING the directory — the same set of files the mirror
