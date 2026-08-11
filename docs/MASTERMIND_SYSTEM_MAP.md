@@ -3588,7 +3588,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
 | `config/mastermind_programs.yml` | `1a458391ad95450ac9ee85f963a6679b6c1b1deb627ac20023937111350fed23` |
-| `config/synapse.yml` | `7dd23dd324449090bf565eed70ca717ad18940bb51ddad94a0be53baaab01188` |
+| `config/synapse.yml` | `0316b489c2ebe364455131d0de847cf6c605ca8c953471064fc82816028cd575` |
 
 ### Legacy registry compatibility notes
 
@@ -3596,7 +3596,7 @@ The curated semantic registry rejects duplicate keys. These pre-existing operati
 
 - config/synapse.yml: duplicate YAML key 'external_consumers' at line 10425, column 5; compatibility load kept the last value
 - config/synapse.yml: duplicate YAML key 'notes' at line 10426, column 5; compatibility load kept the last value
-- config/synapse.yml: duplicate YAML key 'external_consumers' at line 12791, column 5; compatibility load kept the last value
-- config/synapse.yml: duplicate YAML key 'notes' at line 12792, column 5; compatibility load kept the last value
+- config/synapse.yml: duplicate YAML key 'external_consumers' at line 12798, column 5; compatibility load kept the last value
+- config/synapse.yml: duplicate YAML key 'notes' at line 12799, column 5; compatibility load kept the last value
 
 The renderer records no wall-clock timestamp. Identical source bytes produce byte-identical output.
