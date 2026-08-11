@@ -1,0 +1,268 @@
+{
+  "as_of": "2026-08-11",
+  "coverage": {
+    "end": "2026-08-10",
+    "note": "daily rollup covers 10 session-date(s) from 2026-07-30 to 2026-08-10; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-07-30"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-08-10",
+      "events": [
+        {
+          "date": "2026-08-10",
+          "id": "cev-regime_flip-3df289330159",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-10#regime_china",
+          "tickers": [],
+          "title": "CHINA regime: Q3 Stagflation → Q4 Growth-scare",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-07",
+      "events": []
+    },
+    {
+      "date": "2026-08-06",
+      "events": [
+        {
+          "date": "2026-08-06",
+          "id": "cev-research_vault-2fe6ddd4e3c8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-eglyaiphi8v-4403b5",
+          "tickers": [],
+          "title": "Goldman Sachs: Expedia Group (EXPE) Q2'26 Earnings Review Strong Execution and B2B Momentum Drive Beat and Raise Quarter",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-05",
+      "events": [
+        {
+          "date": "2026-08-05",
+          "id": "cev-research_vault-3dd0e2f4cf3d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-tghtfv5ime3-1cfbdb",
+          "tickers": [],
+          "title": "UBS: Daily Asia",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-05",
+          "id": "cev-research_vault-868333f1e226",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-vv4eaqbkwkj-879842",
+          "tickers": [],
+          "title": "Societe Generale: 4 Aug 2026 US Equity Strategy",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-05",
+          "id": "cev-research_vault-dd581dc09dca",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-kvatyrzolpx-174a39",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM JPM US Market Intell",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-05",
+          "id": "cev-research_vault-ffe76dfaa1d8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-dmwuxfa2jd2-659cd1",
+          "tickers": [],
+          "title": "Societe Generale: Earnings Wrap Up 2Q26 reporting season Focus shifts to cash flows from capex",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-04",
+      "events": [
+        {
+          "date": "2026-08-04",
+          "id": "cev-research_vault-e2fa00b042dc",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-w1tihsut8gt-a94dcf",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM JPM US Market Intell",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-03",
+      "events": [
+        {
+          "date": "2026-08-03",
+          "id": "cev-research_vault-df7884c1dd18",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ovegn6rwo5n-3ac8f3",
+          "tickers": [],
+          "title": "UBS: Daily US",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-02",
+      "events": []
+    },
+    {
+      "date": "2026-08-01",
+      "events": []
+    },
+    {
+      "date": "2026-07-31",
+      "events": [
+        {
+          "date": "2026-07-31",
+          "id": "cev-research_vault-32f68ca29d0d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-0natz1tlzak-bf2676",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Europe Equity Research Today’s Morning Meeting",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-30",
+      "events": [
+        {
+          "date": "2026-07-30",
+          "id": "cev-regime_flip-195d6fe8d1a1",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-07-30#regime_us",
+          "tickers": [],
+          "title": "US regime: Q1 Goldilocks → Q2 Reflation",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-440862b5bab5",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-4aoajzqskpx-37ff8b",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell Afternoon Briefing 29.07",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-b7ed87c42ab2",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ehqbfjwfxxq-ad763b",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell Afternoon Briefing 29.07",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-e8a562f42fb9",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-edqlc1dtiqt-6b70f3",
+          "tickers": [],
+          "title": "Danske: fed review",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-e92917b59f7a",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ldth5h8jfxz-5a734d",
+          "tickers": [],
+          "title": "Goldman Sachs: General Dynamics Corp. (GD) 2Q26 First Take Solid quarter",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-ead602c95c3c",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-p4psqrhhf88-002ad1",
+          "tickers": [],
+          "title": "Std Chartered: Warsh delivers on not giving guidance",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-ec1450858036",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-2higjqlodn1-3b0200",
+          "tickers": [],
+          "title": "Scotiabank: latamdaily20260730",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-ed2b241ddcd0",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-qqmizsnc9ze-358cd5",
+          "tickers": [],
+          "title": "Safra: FSA FI Daily Commentary 29 July 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-f08f8a210853",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-4sjwyvv4wyj-b168af",
+          "tickers": [],
+          "title": "Other: WBC MorningReport30Jul2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-f8f6723a82a6",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-zix5c2xagsu-f8ec7b",
+          "tickers": [],
+          "title": "Other: Economics 07 2026 29 Update",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-fc26de1509b2",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-d0el2cpxhig-b5c9a7",
+          "tickers": [],
+          "title": "UBS: Gold",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-fe94e60d0b36",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-whhqdlxtxc3-117bf6",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Europe Equity Research | Today’s Morning Meeting",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}
