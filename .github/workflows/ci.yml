@@ -425,6 +425,19 @@ on:
       # live_flow poller loop for the Terminal surface pane (shape ↔ surfaceContract.ts).
       - "scripts/build_flow_surface.py"
       - "tests/test_flow_surface.py"
+      # Source-clock/cadence truth closes the producer, archives, display derivatives,
+      # static consumer, and operator documentation under the existing flow owners.
+      - "scripts/build_flow_archive.py"
+      - "scripts/build_flow_enrich.py"
+      - "scripts/build_chain_heat.py"
+      - "engine/flow_enrich.py"
+      - "tests/test_flow_archive.py"
+      - "tests/test_flow_enrich.py"
+      - "tests/test_build_chain_heat.py"
+      - "ops/LIVE_FLOW_RUNBOOK.md"
+      - "ops/launchd/com.mastermind.flowenrich.plist"
+      - "research/INTRADAY_FLOW_TRACKER_DESIGN.md"
+      - "research/momoedge/our_data_contracts.md"
       # PRISM daily matrix: exact-contract-side PIT UNUSUAL baseline and its payload
       # validator.  List every subject plus the suite explicitly even though
       # engine/** and tests/** also start CI, so the packed-job ownership seam
