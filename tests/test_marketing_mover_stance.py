@@ -43,6 +43,11 @@ WHAT EACH TEST PINS
       THE ENFORCEMENT SWEEP. Enumerates every mover / theme_list template, both
       tail pools, and both voice fillers, and fails on any line matching the
       instruct-the-reader shape. This is what a future "better line" trips.
+  test_every_theme_tail_is_v5_clean
+      THE VOICE-DOCTRINE-v5 SWEEP (2026-08-11), added when the tail banks were
+      rewritten off the first-person question. No "I / my / we / our", no "?",
+      no "!", no dash tells, ≤48 chars, no uncomputed stance, and every tail a
+      full statement. Fails pre-v5 on all eight retired entries.
   test_fslr_fixture_carries_no_uncomputed_instruction
       The named case, end to end through the real writer, in both the
       state-available and no-bars worlds.
@@ -53,6 +58,8 @@ WHAT EACH TEST PINS
       Shape (a) is the floor: no state, no stance, and still a real post.
 """
 from __future__ import annotations
+
+import re
 
 import pytest
 
@@ -123,11 +130,20 @@ _LAWFUL_COPY: tuple[str, ...] = (
     "MU has been back above its 50-day average only a few days, after "
     "three months on the other side.",
     "NVDA has been crossing its 50-day average in both directions lately.",
-    "No position. What it means needs chart work I have not done.",
-    "I have no explanation for it yet and I am not going to invent one.",
-    "That is the biggest move on my board today.",
-    "Am I watching a rotation or one loud day?",
-    "Do I know why they all went at once?",
+    # ── v5 register (Voice Doctrine v5, 2026-08-11) ──────────────────────────
+    # These five used to be first-person admissions and first-person questions
+    # ("No position. What it means needs chart work I have not done.", "Am I
+    # watching a rotation or one loud day?"). v5 bans first person and question
+    # marks in generated post copy, so a list titled LAWFUL could not keep
+    # advertising them. The intent is unchanged — the stance detector must stay
+    # quiet on a stated fact, an honest absence, and a breadth note — and the
+    # last two are now the LITERAL shipped tails from movers_source, which makes
+    # this list a real screen on the live bank rather than a paraphrase of it.
+    "No driver has been cited for the move yet.",
+    "There is no cited explanation for it, and none is being invented.",
+    "That is the biggest move on the board today.",
+    "Breadth inside the group, not one leader.",
+    "Every name on the list is lower.",
     # ── the descriptive buy/sell nouns (2026-08-04) ──────────────────────────
     # FOUND BY A MERGE, NOT BY REVIEW. The trend-bucket lines and this detector
     # shipped from two lanes for the SAME postmortem; each was green alone, and
@@ -208,6 +224,68 @@ def test_mover_and_theme_banks_carry_no_trading_instruction():
     )
 
 
+#: The v5 voice bans, as one screen. `\bI\b` stays case-SENSITIVE (a lower-case
+#: "i" is an enumeration letter, not the English pronoun); everything else is
+#: case-insensitive because a pronoun is capitalised exactly when it opens the
+#: sentence, which is the commonest place for it.
+_V5_FIRST_PERSON = re.compile(
+    r"\bI\b|I'm|I'd|I'll|I've|\b(?:my|mine|myself|me|we|us|our|ours)\b")
+_V5_FIRST_PERSON_CI = re.compile(
+    r"\b(?:my|mine|myself|me|we|us|our|ours)\b", re.IGNORECASE)
+
+
+def v5_voice_violations(line: str) -> list[str]:
+    """The Voice Doctrine v5 bans a generated bank line must clear. [] = clean.
+
+    Deliberately NOT a call into copywriter: this is the independent screen, so
+    a bank that regrows the v4 register fails here even if the generation-side
+    validator is loosened or renamed. See the module docstring of
+    engine/marketing/movers_source.py for the standing rule.
+    """
+    out: list[str] = []
+    if _V5_FIRST_PERSON.search(line) or _V5_FIRST_PERSON_CI.search(line):
+        out.append("first person: the subject of the sentence is the market")
+    if "?" in line:
+        out.append("question mark: the post states, it does not ask")
+    if "!" in line:
+        out.append("exclamation mark")
+    if "#" in line:
+        out.append("hashtag")
+    if "—" in line or "–" in line:
+        out.append("em/en dash (house dash tell)")
+    return out
+
+
+def test_every_theme_tail_is_v5_clean():
+    """THE v5 SWEEP over both tail pools (Voice Doctrine v5, 2026-08-11).
+
+    Fails pre-v5 on all eight entries: the retired bank was first-person
+    questions ("Am I getting a second session out of this?"). This is the
+    assertion a future "better line" trips, and it is a superset of the older
+    rules rather than a replacement for them — the length ceiling and the
+    uncomputed-stance screen are re-asserted here so one test names every
+    property a tail owes.
+    """
+    pools = {"_TAIL_DOWN": ms._TAIL_DOWN, "_TAIL_UP": ms._TAIL_UP}
+    bad: list[str] = []
+    for name, pool in pools.items():
+        assert len(pool) == 4, f"{name} has {len(pool)} tails, want 4"
+        for i, tail in enumerate(pool):
+            for v in v5_voice_violations(tail):
+                bad.append(f"{name}[{i}] {tail!r}: {v}")
+            if len(tail) > ms._TAIL_MAX_CHARS:
+                bad.append(f"{name}[{i}] {tail!r}: {len(tail)} chars "
+                           f"(max {ms._TAIL_MAX_CHARS})")
+            if copywriter.uncomputed_stance(tail):
+                bad.append(f"{name}[{i}] {tail!r}: "
+                           f"{copywriter.uncomputed_stance(tail)[0][:90]}")
+            if not tail.rstrip().endswith("."):
+                bad.append(f"{name}[{i}] {tail!r}: a tail is a full statement")
+    assert not bad, "\n".join(bad)
+    assert not (set(ms._TAIL_DOWN) & set(ms._TAIL_UP)), (
+        "a tail in both pools would render direction-keying decorative")
+
+
 def test_no_rewritten_headline_is_stranded_on_a_connective():
     """Collateral guard for a bank REWRITE, not for the stance rule.
 
@@ -221,7 +299,8 @@ def test_no_rewritten_headline_is_stranded_on_a_connective():
         "theme_name": "Solar", "theme_agg_pct": "+3.7%", "theme_direction": "up",
         "mover_state": "FSLR closed back above its 50-day average",
         "top_fact_text": "FSLR surged +10.3% today (Technology).",
-        "cashtag_list": "$A $B $C $D", "theme_question": "Am I sure?",
+        "cashtag_list": "$A $B $C $D",
+        "theme_question": "Breadth inside the group, not one leader.",
         "voice": "authoritative desk", "type": "mover",
     }
     bad = []

@@ -1245,7 +1245,58 @@ origin signatures. Every action-authority bit remains false,
 `context_only=true`, and ranking, gating, sizing, trading, execution, training,
 promotion, forecast, and outcome use remain disconnected.
 
-### 11.0.10 W6A Research Factory candidate conformance
+Route readiness also requires two complete generation spines even when one is
+empty. The trusted projector already owns trusted-v1 initialization; deployment
+now separately creates or authenticates W1A manifest/empty-genesis/HEAD metadata
+before API start or restart because W1A has no scheduled capture writer. This
+does not fabricate a context, receipt, query, packet, or opportunity. Only the
+deterministic empty-initialization prefix may be completed after interruption;
+capture-bearing namespace partials, generation-metadata tamper, unowned entries,
+unsafe modes or links, or unwritable state abort readiness. Packet bytes remain
+closure-validated only for returned playback rows, and readers retain no
+missing-HEAD fallback or request-time materialization path.
+
+### 11.0.10 W4A synthetic episodic-retrieval conformance
+
+W4A freezes one exact retrieval calculation without pretending that Market
+Memory can discover a complete historical analogue population. Its registration
+binds an exact W2A trial contract, must be created after that trial and before
+its frozen live-forward split, and preregisters one to thirty-two sorted
+coordinate identifiers with fixed positive scales. Coordinate values remain
+caller-supplied `synthetic_fixture_only` inputs: no W1/W2 feature projection,
+normalization fit, center, imputation, clipping, learned embedding, or
+candidate-pool rescaling is authenticated.
+
+The only distance is normalized Euclidean under the frozen
+`decimal64_half_even_q18/v1` convention. It computes with local Decimal
+precision 64, performs no intermediate quantization, and quantizes once to
+eighteen decimal places. A missing query coordinate abstains the whole supplied
+audit; a missing candidate coordinate makes only that candidate ineligible.
+Numeric, lexical, collection, context-dependency, and canonical-JSON bounds
+fail closed before unbounded parsing or traversal.
+
+Every supplied candidate is rejoined to its exact W2A state, forecast, and W1
+context bytes and appears exactly once in the result. Candidates must have the
+same subject and instrument, be strictly earlier than the query, and avoid the
+query's preregistered purge-plus-embargo interval. Distance-eligible rows sort
+by exact distance then forecast ID. The selector greedily retains the nearest
+rows whose half-open intervals do not overlap a previously selected row, and
+every overlap rejection names those earlier selected IDs. This is deterministic
+de-overlap of a supplied fixture, not a claim that the list is historically
+complete, globally nearest, independent, or suitable for evaluation.
+
+W4A reports only supplied, distance-eligible, and selected-nonoverlapping
+counts. Statistical effective sample size is permanently
+`not_estimated/dependence_model_not_evidence_ready`; selected count is never
+relabeled effective N. Outcomes, W2B scores, predictive-distribution changes,
+DTW, graph relations, bootstrap or conformal intervals, retrieval evaluation,
+cohort aggregation, winners, and skill are structurally absent. There is no
+store, writer, API, CLI, service, scheduler, environment switch, or public
+output. Every evidence and action claim remains false, `context_only=true`,
+`emission_enabled=false`, and forecast input, training, promotion, ranking,
+gating, sizing, trading, and execution remain forbidden.
+
+### 11.0.11 W6A Research Factory candidate conformance
 
 W6A adds a pure adapter from one exact W2A
 `market_memory.trial_registration.v1` byte string to the canonical
@@ -1451,11 +1502,25 @@ W3A operational playback preparation additions:
 - pinned-generation readers in `market_memory_pit.py` and
   `market_memory_trusted.py` — complete HEAD-to-genesis authentication with no
   crash-orphan, nearest, latest, or reconstruction fallback;
+- `scripts/initialize_market_memory_w1a.py` plus deploy reconciliation — the
+  sole metadata-only W1A genesis owner, run before API readiness and never from
+  a request path;
 - `app/market_memory.py` — the site-full, private/no-store, rate- and
   concurrency-bounded playback catalog read route; no writer or new store;
 - `tests/test_market_memory_playback.py` and
   `tests/test_market_memory_playback_api.py` — ancestry, tamper, resource,
   dual-provenance, pagination, schema/runtime, auth, cache, and no-leak guards.
+
+W4A synthetic retrieval additions:
+
+- `engine/neuralweb/market_memory_retrieval.py` and the strict
+  `retrieval_registration.v1` and `episodic_retrieval_record.v1` contracts —
+  exact W2A joins, fixed-scale Decimal retrieval, bounded supplied-candidate
+  audit, deterministic purge/embargo de-overlap, explicit effective-N
+  abstention, and zero authority;
+- `tests/test_market_memory_retrieval.py` — schema/runtime parity, exact joins,
+  known-answer arithmetic, missingness, half-open interval, tie, permutation,
+  tamper, loader, resource, purity, and no-skill/no-runtime guards.
 
 W6A Research Factory conformance additions:
 

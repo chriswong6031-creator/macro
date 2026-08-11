@@ -8,10 +8,17 @@ shippable forever) or one they REJECTED (must never ship again), in their words.
 The axis the batch separates on is not tone, length, or accuracy. It is whether
 the reaction COSTS the writer something:
 
-    APPROVED  "Hershey's closed green eight days in a row. I don't have a clever
-               explanation and I'm not going to invent one."   (refuses to fake insight)
+    APPROVED  "Hershey's closed green eight days in a row. No corroborated
+               driver on the tape for it yet."                 (refuses to fake insight)
     REJECTED  "EQT is back at the price where buyers kept showing up... that's
                the whole observation, no target, no thesis."   (thoughtfulness at no cost)
+
+VOICE DOCTRINE v5 (2026-08-11) kept that axis and moved the SUBJECT. The
+approved posts above were written in the first person; the reaction that costs
+something is now stated about the market, the level or the streak, never about
+the author. `cw.voice_v5_violations` is in this file's battery, so a fixture
+that drifts back to the narrator turns this suite red rather than certifying it.
+See docs/marketing_voice_doctrine_v5.md.
 
 Two of these guards replaced a MANDATE. Signal posts used to be REQUIRED to
 carry an invalidation phrase and an honesty caveat; stacking both into 275 chars
@@ -41,22 +48,39 @@ def _all_voice_violations(text: str, kind: str = "signal") -> list[str]:
     out += cw.number_soup_violations(text, kind=kind)
     out += cw.no_reaction_violations(text)
     out += cw.lecture_violations(text)
+    # VOICE DOCTRINE v5 (2026-08-11). Added here rather than left to the new
+    # census suite: this file's whole claim is that the fixtures below are the
+    # register the desks ship in, and a battery that omits the newest screen
+    # would keep certifying a register the gate now drops.
+    out += cw.voice_v5_violations(text, {"type": kind})
     return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# The two posts the operator approved. These are the target register.
+# The two posts the operator approved, CARRIED FORWARD INTO v5.
+#
+# What the operator approved about them is unchanged and is what these still
+# test: a post may refuse to fake an explanation, and a post may report a cost.
+# Voice doctrine v5 (2026-08-11) changed WHO the sentence is about. The 2026-07
+# wording was:
+#   "Hershey's closed green eight days in a row. I don't have a clever
+#    explanation and I'm not going to invent one..."
+#   "Ares is up about 12% in a month. I looked at it twice and passed both
+#    times. Adding it to the running list of things I was too clever about."
+# Both are now rejected BY DESIGN (`voice_v5_violations`), and keeping them here
+# as "the target register" would have made this file the thing certifying the
+# register the operator ordered replaced.
 # ─────────────────────────────────────────────────────────────────────────────
 APPROVED = [
     pytest.param(
-        "Hershey's closed green eight days in a row. I don't have a clever "
-        "explanation and I'm not going to invent one. Sometimes the boring names "
-        "just quietly work while everyone's arguing about semis.",
+        "Hershey's closed green eight days in a row. No corroborated driver on "
+        "the tape for it yet. Boring names quietly working is the part of this "
+        "market nobody is arguing about.",
         id="hershey-refuses-to-fake-insight",
     ),
     pytest.param(
-        "Ares is up about 12% in a month. I looked at it twice and passed both "
-        "times. Adding it to the running list of things I was too clever about.",
+        "Ares is up about 12% in a month. The move started from a level this "
+        "desk published and passed on twice. That level is still the line.",
         id="ares-admits-being-wrong",
     ),
 ]
@@ -138,8 +162,9 @@ def test_every_post_the_operator_rejected_is_blocked(text):
 # ─────────────────────────────────────────────────────────────────────────────
 HOUSE_VOICE = [
     pytest.param(
-        "Semis led again, breadth sat it out again. Generals without soldiers. "
-        "I'm watching the soldiers.",
+        # v5 (2026-08-11): the tail was "I'm watching the soldiers".
+        "Semis led again, breadth sat it out again. Generals without soldiers, "
+        "and that pairing preceded both prior pullbacks this year.",
         id="flagship-fact-pair",
     ),
     pytest.param(
@@ -168,14 +193,18 @@ HOUSE_VOICE = [
         id="specialist",
     ),
     pytest.param(
-        "We said under 42 kills it. Closed 41.80. Killed. Tuition paid, next.",
+        # v5 (2026-08-11): the lead was "We said under 42 kills it."
+        "Under 42 killed it. Closed 41.80. Killed. Tuition paid, next.",
         id="scorekeeper-loss",
     ),
     # Risk is still welcome on a signal post. Only the ego form and the
     # boilerplate form are banned.
     pytest.param(
-        "If it loses 33.8 the whole thing was noise. I've been early on this "
-        "twice already and it cost me both times.",
+        # v5 (2026-08-11): the cost used to be the author's ("I've been early
+        # on this twice already and it cost me both times"). Risk is still
+        # welcome on a signal post; it attaches to the LEVEL now.
+        "If it loses 33.8 the whole thing was noise. That line has broken twice "
+        "this year and both breaks kept going.",
         id="risk-stated-like-a-person",
     ),
 ]
@@ -199,7 +228,12 @@ _SLOTS = {
     "cashtag": "$ABCD", "ticker": "ABCD", "entry": "41.20", "t1": "46.40",
     "t2": "52.10", "inv": "38.90", "gain": "+9.6%", "target_label": "First target",
     "top_fact": "Held the level for six straight sessions.",
-    "theme_name": "Power", "theme_question": "Worth a look?",
+    # v5 (2026-08-11): was "Worth a look?". `movers_source._TAIL_UP/_TAIL_DOWN`
+    # is a bank of STATEMENTS now (the token keeps its historical name), and a
+    # fixture that still injects a question mark would fail every theme_list
+    # variant on a slot value no lane can produce.
+    "theme_name": "Power",
+    "theme_question": "Every name on the list is higher.",
     "cashtag_list": "$ABCD $EFGH",
 }
 

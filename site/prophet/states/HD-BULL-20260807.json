@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "HD-BULL-20260807",
-  "asof": "2026-08-09",
+  "asof": "2026-08-10",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 67.4,
-  "raw_confidence": 67.4,
-  "delta_vs_base": 7.4,
+  "management_confidence": 60.4,
+  "raw_confidence": 51.8,
+  "delta_vs_base": 0.4,
   "recommended_action": "wait",
   "human_state": "Awaiting Trigger",
   "components": {
-    "validity": 100.0,
-    "progress": 0.4,
-    "pace": 100.0,
+    "validity": 44.7,
+    "progress": 0.0,
+    "pace": 99.7,
     "retention": 50.0,
-    "overlay": 53.0
+    "overlay": 47.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.002,
-    "dist_to_t1_r": 1.498,
-    "dist_to_t2_r": 2.998,
-    "horizon_pct_used": 4.4,
-    "p1": 0.0012,
-    "p2": 0.0006,
+    "dist_to_stop_r": 0.551,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 6.7,
+    "p1": -0.2992,
+    "p2": -0.1496,
     "p3": null,
-    "move_r": 0.002,
+    "move_r": -0.449,
     "mfe_r": 0.002,
-    "mae_r": 0.0
+    "mae_r": -0.449
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Ahead of Schedule",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.019995117187477263,
-  "_mae": 0.0,
+  "_mae": -4.820001220703148,
   "_max_p1": 0.0012412620005014224,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 2,
-  "tau": 0.0444
+  "days_elapsed": 3,
+  "tau": 0.0667
 }
