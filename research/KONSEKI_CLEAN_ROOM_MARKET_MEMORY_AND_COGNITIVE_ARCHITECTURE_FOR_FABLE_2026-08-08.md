@@ -1285,6 +1285,40 @@ output. Every evidence and action claim remains false, `context_only=true`,
 `emission_enabled=false`, and forecast input, training, promotion, ranking,
 gating, sizing, trading, and execution remain forbidden.
 
+### 11.0.11 W5A synthetic Operating Cortex conformance
+
+W5A freezes a pure, caller-supplied structural review kernel over one exact W4A
+synthetic retrieval record. It revalidates the complete W4/W2 dependency chain
+before examining evidence, accepts no operational playback input, and has no
+filesystem, network, clock, LLM, store, writer, service, scheduler, or emission
+capability. The registration fixes the required evidence kinds, six-component
+salience policy, citation policy, bounded read tools, implementation hashes,
+resource limits, and zero-authority profile before a packet can be built.
+
+Evidence and claim cards are content-addressed and bound to the exact query or
+selected analogue episode. Citations authenticate caller-supplied source bytes
+and a half-open byte span; this proves byte and reference closure only, never
+semantic entailment. Salience uses the preregistered six fixed weights under a
+local Decimal64 half-even context and one final q18 quantization. A missing
+component abstains rather than imputes. The resulting order is only an attention
+queue within one supplied synthetic subject; it is not an asset, forecast, or
+trade rank.
+
+Contradictions are structural support-versus-challenge groups on an exact
+subject and claim key. Missingness means absent from the supplied synthetic
+evidence, not absent from the world. Falsifiers are audited but never invented.
+Claims without complete compatible citation closure are withheld with a
+deterministic reason, while structurally closed claims remain explicitly
+semantic-entailment-not-evaluated. The unsupported-claim scorecard is structural
+only, and attention quality is permanently `not_evaluated` because no
+preregistered attention outcomes exist.
+
+Every operational, population, provenance, entailment, truth, attention-quality,
+synthesis, hypothesis, forecast-input, aggregation, skill, and Prophet-input
+claim remains false. The input profile is `synthetic_fixture_only`, emission is
+disabled, and ranking, gating, sizing, trading, execution, training, and
+promotion authority remain structurally absent.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1463,6 +1497,18 @@ W4A synthetic retrieval additions:
 - `tests/test_market_memory_retrieval.py` — schema/runtime parity, exact joins,
   known-answer arithmetic, missingness, half-open interval, tie, permutation,
   tamper, loader, resource, purity, and no-skill/no-runtime guards.
+
+W5A synthetic Operating Cortex additions:
+
+- `engine/neuralweb/market_memory_operating_cortex.py` and the strict
+  `operating_cortex_registration.v1` and `operating_cortex_packet.v1`
+  contracts — exact W4/W2 revalidation, content-addressed evidence and citation
+  byte closure, deterministic salience, structural contradiction/missingness/
+  falsifier/citation audits, immutable bounded read views, and zero authority;
+- `tests/test_market_memory_operating_cortex.py` — schema/runtime and join
+  parity, content identity, source/span tamper, Decimal and permutation,
+  hostile morphology, missing-component abstention, reader immutability,
+  resource bounds, purity, and no-LLM/no-runtime/no-quality-claim guards.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 
