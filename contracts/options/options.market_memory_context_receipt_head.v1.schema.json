@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "options.market_memory_context_receipt_head/v1",
+  "title": "Atomic private options Market Memory receipt pointer",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "publication_id",
+    "deployed_commit",
+    "published_at",
+    "audit_id",
+    "audit_sha256",
+    "audit_object_key",
+    "reference_set_sha256",
+    "reference_set_object_sha256",
+    "reference_set_object_key",
+    "reference_count",
+    "evidence_policy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {
+      "const": "options.market_memory_context_receipt_head/v1"
+    },
+    "publication_id": {
+      "type": "string",
+      "pattern": "^omctxpub_[a-f0-9]{64}$"
+    },
+    "deployed_commit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40,64}$"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "audit_id": {
+      "type": "string",
+      "pattern": "^omctxaudit_[a-f0-9]{64}$"
+    },
+    "audit_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "audit_object_key": {
+      "type": "string",
+      "pattern": "^audits/[a-f0-9]{2}/[a-f0-9]{64}\\.json$"
+    },
+    "reference_set_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "reference_set_object_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "reference_set_object_key": {
+      "type": "string",
+      "pattern": "^reference_sets/[a-f0-9]{2}/[a-f0-9]{64}\\.json$"
+    },
+    "reference_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4096
+    },
+    "evidence_policy": {
+      "$ref": "../options.market_memory_context_reference/v1#/$defs/evidencePolicy"
+    },
+    "authority": {
+      "$ref": "../options.market_memory_context_reference/v1#/$defs/authority"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

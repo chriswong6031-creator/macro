@@ -58,8 +58,8 @@
           ]
         },
         "sha256": {"$ref": "#/$defs/sha256"},
-        "bytes": {"type": "integer", "minimum": 1, "maximum": 67108864},
-        "record_count": {"type": "integer", "minimum": 0, "maximum": 25000}
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 8388608},
+        "record_count": {"type": "integer", "minimum": 0, "maximum": 4096}
       }
     },
     "contextGeneration": {
@@ -92,14 +92,14 @@
         "exact_requested_as_of_context_absent"
       ],
       "properties": {
-        "references": {"type": "integer", "minimum": 0, "maximum": 25000},
-        "episode_references": {"type": "integer", "minimum": 0, "maximum": 25000},
-        "campaign_references": {"type": "integer", "minimum": 0, "maximum": 25000},
-        "bound": {"type": "integer", "minimum": 0, "maximum": 25000},
-        "abstained": {"type": "integer", "minimum": 0, "maximum": 25000},
-        "campaign_retrospective_discovery": {"type": "integer", "minimum": 0, "maximum": 25000},
-        "identity_not_operationally_supported": {"type": "integer", "minimum": 0, "maximum": 25000},
-        "exact_requested_as_of_context_absent": {"type": "integer", "minimum": 0, "maximum": 25000}
+        "references": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "episode_references": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "campaign_references": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "bound": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "abstained": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "campaign_retrospective_discovery": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "identity_not_operationally_supported": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "exact_requested_as_of_context_absent": {"type": "integer", "minimum": 0, "maximum": 4096}
       }
     },
     "evidencePolicy": {
