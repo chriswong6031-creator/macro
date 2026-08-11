@@ -874,6 +874,11 @@ jobs:
         run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow jsonschema fastapi httpx requests
       - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append, greek grids + walls + coverage + poller fence)
         run: python -m pytest tests/test_flow_surface.py -q
+      # PRISM's daily matrix shares this options data-plane lane.  Keep the
+      # exact-contract-side volume baseline suite distinct so PIT/no-zero-fill regressions
+      # cannot hide inside a broader surface invocation.
+      - name: PRISM per-side PIT UNUSUAL lens (observed-session median, sample floor, 3x boundary)
+        run: python -m pytest tests/test_options_matrix.py -q
       - name: options PIT episodes (causal clocks, durable stage, H+60 + declared-session-close proxies, R2/checkpoint integrity)
         run: python -m pytest tests/test_options_signal_episode.py -q
       - name: MSC R2.2-A Light U-CHAIN packets + monotonic R2 discovery publication
@@ -2046,8 +2051,13 @@ jobs:
         run: python scripts/check_research_factory_authority.py
       - name: authority guard selftest (gate fires on planted violation)
         run: python scripts/check_research_factory_authority.py --selftest
-      - name: research-factory state + schema tests
-        run: python -m pytest tests/test_research_factory_state.py tests/test_research_factory_schema.py -q
+      - name: research-factory state + schema + Market Memory conformance tests
+        run: >-
+          python -m pytest
+          tests/test_research_factory_state.py
+          tests/test_research_factory_schema.py
+          tests/test_research_factory_market_memory.py
+          -q
 
   cycle-pattern-authority:
     if: ${{ false }}
@@ -5547,7 +5557,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl xlrd scikit-learn
       - name: the macro-release forecast producer — projections, benchmarks and the graded forward ledger
         run: python -m pytest tests/test_content_stamp_freshness_sweep2.py tests/test_cpi_postmortem_fixes.py tests/test_release_combined.py tests/test_release_forecast_producer.py tests/test_release_forecast_v2.py tests/test_release_integration_2a.py tests/test_release_integration_2b.py tests/test_release_integration_w11g.py tests/test_release_market_context.py -q
       # Unrun backfill 2026-08-03: the CPI bridge (Track CB), the official-event
@@ -5560,10 +5570,10 @@ jobs:
       # reds main on them.  They join the producer lane that owns the
       # release-forecast estate: the inflation-intelligence engine + its
       # neural-web registration, the release-actuals reconciler, the defect
-      # ledger, and the target-truth vintage collector.  numpy/pandas ride the
-      # existing install line.
+      # ledger, and the target-truth vintage collector.  xlrd is explicit so
+      # the frozen 2012/2014 legacy-XLS BLS fixtures run rather than skip.
       - name: Release Radar — inflation truth, actuals, defects, target truth (#5153)
-        run: python -m pytest tests/test_inflation_intelligence.py tests/test_inflation_intelligence_nw.py tests/test_release_actuals.py tests/test_release_defects.py tests/test_release_target_truth.py -q
+        run: python -m pytest tests/test_inflation_intelligence.py tests/test_inflation_intelligence_nw.py tests/test_release_actuals.py tests/test_release_cpi_official_truth.py tests/test_release_cpi_target_history.py tests/test_release_defects.py tests/test_release_target_truth.py -q
 
   unrun-brain-desks:
     # master brain / AI desk / alt-data / risk brains behind the shipped desk verdicts.

@@ -64,6 +64,13 @@ _PARQUET_CACHE: dict[str, pd.DataFrame] = {}
 _OI_COLUMNS = (
     "root", "expiration", "strike", "right", "date", "open_interest",
 )
+_EOD_MATRIX_COLUMNS = (
+    "root", "expiration", "strike", "right", "date", "volume", "close",
+)
+_EOD_VOLUME_COLUMNS = (
+    "root", "expiration", "strike", "right", "date", "volume",
+)
+_EOD_SESSION_COLUMNS = ("root", "date")
 _CANONICAL_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
@@ -358,6 +365,180 @@ def oi_for_date(date: str, root: str,
             root_key, path.name, n_dropped, n_before, len(frame),
         )
     return frame.loc[:, list(_OI_COLUMNS)]
+
+
+def eod_matrix_for_date(
+    date: str,
+    root: str,
+    store: str | Path | None = None,
+) -> pd.DataFrame:
+    """Read one session's projected EOD matrix columns without broad caching.
+
+    This is the EOD companion to :func:`oi_for_date`: it reads only the exact
+    root/year shard, projects the fields required for matrix spot fallback and
+    current call/put volume, and never touches ``_PARQUET_CACHE``.
+    """
+    if not isinstance(date, str) or _CANONICAL_DATE_RE.fullmatch(date) is None:
+        raise ValueError("date must be canonical YYYY-MM-DD")
+    stamp = pd.Timestamp(date)
+    if stamp.date().isoformat() != date:
+        raise ValueError("date must be a real canonical YYYY-MM-DD date")
+    root_key = root.upper()
+    path = store_root(store) / "eod" / root_key / f"{stamp.year}.parquet"
+    if not path.is_file():
+        return pd.DataFrame(columns=_EOD_MATRIX_COLUMNS)
+
+    try:
+        frame = pd.read_parquet(
+            path,
+            columns=list(_EOD_MATRIX_COLUMNS),
+            filters=[("date", "==", stamp), ("root", "==", root_key)],
+        )
+    except Exception as filtered_exc:  # noqa: BLE001
+        # Older fixture/store shards may encode date as a string instead of a
+        # timestamp.  Preserve projection and post-filtering without falling
+        # back to the broad cached loader.
+        try:
+            frame = pd.read_parquet(path, columns=list(_EOD_MATRIX_COLUMNS))
+        except Exception as exc:  # noqa: BLE001
+            log.debug("skip %s: filtered=%s fallback=%s", path, filtered_exc, exc)
+            return pd.DataFrame(columns=_EOD_MATRIX_COLUMNS)
+
+    if frame.empty:
+        return pd.DataFrame(columns=_EOD_MATRIX_COLUMNS)
+    frame = _normalise_date(frame)
+    frame = frame[
+        (frame["date"] == date)
+        & (frame["root"].astype(str).str.upper() == root_key)
+    ].copy()
+    return frame.loc[:, list(_EOD_MATRIX_COLUMNS)].reset_index(drop=True)
+
+
+def eod_volume_history_before(
+    date: str,
+    root: str,
+    *,
+    strike_min: float,
+    strike_max: float,
+    expiration_max: str,
+    date_min: str | None = None,
+    store: str | Path | None = None,
+) -> pd.DataFrame:
+    """Read projected current/prior-year EOD volume rows strictly before date.
+
+    The matrix cohort supplies its current strike and expiration window.  Those
+    predicates are pushed into parquet when the shard schema permits, then
+    re-proven after reading.  Only six volume-identity columns are materialized,
+    and this reader deliberately bypasses ``_PARQUET_CACHE`` so the nightly
+    matrix lane cannot retain a second full-year EOD frame.
+    """
+    if not isinstance(date, str) or _CANONICAL_DATE_RE.fullmatch(date) is None:
+        raise ValueError("date must be canonical YYYY-MM-DD")
+    stamp = pd.Timestamp(date)
+    end_stamp = pd.Timestamp(expiration_max)
+    start_stamp = pd.Timestamp(date_min) if date_min is not None else None
+    if stamp.date().isoformat() != date or end_stamp.date().isoformat() != expiration_max:
+        raise ValueError("date and expiration_max must be real canonical dates")
+    if date_min is not None and (
+        _CANONICAL_DATE_RE.fullmatch(date_min) is None
+        or start_stamp.date().isoformat() != date_min
+        or start_stamp >= stamp
+    ):
+        raise ValueError("date_min must be a real canonical date before date")
+    if not np.isfinite(strike_min) or not np.isfinite(strike_max) or strike_min > strike_max:
+        raise ValueError("strike window must be finite and ordered")
+
+    root_key = root.upper()
+    frames: list[pd.DataFrame] = []
+    for year in (stamp.year - 1, stamp.year):
+        path = store_root(store) / "eod" / root_key / f"{year}.parquet"
+        if not path.is_file():
+            continue
+        filters = [
+            ("root", "==", root_key),
+            ("date", "<", stamp),
+            ("strike", ">=", float(strike_min)),
+            ("strike", "<=", float(strike_max)),
+            ("expiration", ">=", stamp),
+            ("expiration", "<=", end_stamp),
+        ]
+        if start_stamp is not None:
+            filters.append(("date", ">=", start_stamp))
+        try:
+            frame = pd.read_parquet(
+                path,
+                columns=list(_EOD_VOLUME_COLUMNS),
+                filters=filters,
+            )
+        except Exception as filtered_exc:  # noqa: BLE001
+            try:
+                frame = pd.read_parquet(path, columns=list(_EOD_VOLUME_COLUMNS))
+            except Exception as exc:  # noqa: BLE001
+                log.debug("skip %s: filtered=%s fallback=%s", path, filtered_exc, exc)
+                continue
+        if not frame.empty:
+            frames.append(frame)
+
+    if not frames:
+        return pd.DataFrame(columns=_EOD_VOLUME_COLUMNS)
+    frame = _normalise_date(pd.concat(frames, ignore_index=True))
+    expiry = pd.to_datetime(frame["expiration"], errors="coerce").dt.date.astype(str)
+    strike = pd.to_numeric(frame["strike"], errors="coerce")
+    frame = frame[
+        (frame["root"].astype(str).str.upper() == root_key)
+        & (frame["date"] < date)
+        & ((frame["date"] >= date_min) if date_min is not None else True)
+        & strike.between(float(strike_min), float(strike_max), inclusive="both")
+        & (expiry >= date)
+        & (expiry <= expiration_max)
+    ].copy()
+    frame["expiration"] = expiry.loc[frame.index]
+    return frame.loc[:, list(_EOD_VOLUME_COLUMNS)].reset_index(drop=True)
+
+
+def eod_sessions_before(
+    date: str,
+    root: str,
+    *,
+    limit: int,
+    store: str | Path | None = None,
+) -> list[str]:
+    """Return the latest distinct prior root EOD sessions without broad caching."""
+    if not isinstance(date, str) or _CANONICAL_DATE_RE.fullmatch(date) is None:
+        raise ValueError("date must be canonical YYYY-MM-DD")
+    stamp = pd.Timestamp(date)
+    if stamp.date().isoformat() != date:
+        raise ValueError("date must be a real canonical YYYY-MM-DD date")
+    if type(limit) is not int or limit < 1:
+        raise ValueError("limit must be a positive integer")
+    root_key = root.upper()
+    frames: list[pd.DataFrame] = []
+    for year in (stamp.year - 1, stamp.year):
+        path = store_root(store) / "eod" / root_key / f"{year}.parquet"
+        if not path.is_file():
+            continue
+        try:
+            frame = pd.read_parquet(
+                path,
+                columns=list(_EOD_SESSION_COLUMNS),
+                filters=[("root", "==", root_key), ("date", "<", stamp)],
+            )
+        except Exception as filtered_exc:  # noqa: BLE001
+            try:
+                frame = pd.read_parquet(path, columns=list(_EOD_SESSION_COLUMNS))
+            except Exception as exc:  # noqa: BLE001
+                log.debug("skip %s: filtered=%s fallback=%s", path, filtered_exc, exc)
+                continue
+        if not frame.empty:
+            frames.append(frame)
+    if not frames:
+        return []
+    frame = _normalise_date(pd.concat(frames, ignore_index=True))
+    frame = frame[
+        (frame["root"].astype(str).str.upper() == root_key)
+        & (frame["date"] < date)
+    ]
+    return sorted(frame["date"].dropna().astype(str).unique().tolist())[-limit:]
 
 
 def chain(date: str, root: str,

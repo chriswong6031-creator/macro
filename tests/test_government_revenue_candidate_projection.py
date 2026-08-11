@@ -59,10 +59,14 @@ _ISSUED_RECOVERY_OBSERVATIONS = {
 _ISSUED_RECOVERY_COHORT_SHA256 = (
     "a6a93726a9cde15da97e5d883d6f16c7c5ab6efe0ca07eecf0e414f0bef148ab"
 )
-# Frozen recovery clocks for the exact 5fc incident reconstructed below.
-CORRECTION_ACTIVATED_AT = "2026-08-10T04:35:00+00:00"
-CORRECTION_REPEAT_AT = "2026-08-10T04:36:00+00:00"
-FORWARD_DURING_ACTIVATION_AT = "2026-08-10T04:32:00+00:00"
+# Replay clocks for the exact 5fc incident reconstructed below.  The predecessor
+# queue/state bytes stay historically frozen, but the canonical latest/workspace
+# inputs are intentionally today's committed generation (see
+# government_revenue_candidate_fixture.py).  Anchor the replay to that coherent
+# source clock so a later collection cannot fail before the incident assertions.
+CORRECTION_ACTIVATED_AT = FROZEN_AT
+CORRECTION_REPEAT_AT = shifted(CORRECTION_ACTIVATED_AT, minutes=1)
+FORWARD_DURING_ACTIVATION_AT = shifted(CORRECTION_ACTIVATED_AT, minutes=-3)
 _INCIDENT_FIXTURE_DIRECTORY = (
     ROOT
     / "tests/fixtures/government_revenue/issuance_incident_5fc18d5"
