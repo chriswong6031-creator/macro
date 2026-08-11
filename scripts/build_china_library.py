@@ -1371,6 +1371,10 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict], _cst, *
             "tr": meta_by_admission.get((d0s, tk), {}).get("tier"),
             "fl": fl,
             "xr": sc.get("exit_reason") if matured else None,
+            # The surfaced date (`d`) and the actual T+1 fill date are distinct
+            # PIT facts.  Older track-ledger rows dropped the latter, forcing
+            # downstream consumers either to guess or to show an honest null.
+            "ed": sc.get("entry_date"),
             # 2026-08-08 entry-price integrity (additive; every consumer tolerates unknown keys):
             #   eb  the basis this row's entry ACTUALLY used (t1_open / t1_hl2 / t1_close) —
             #       replaces the old constant "t1_hl2" provenance claim, which was false for

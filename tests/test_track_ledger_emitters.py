@@ -176,6 +176,16 @@ class TestUSEmitLedger:
         for k in ("nm", "sec", "grp", "e", "l", "p", "x", "dy", "m", "rk", "tr", "fl"):
             assert k in row
 
+    def test_fill_date_and_selection_era_are_preserved(self, monkeypatch, tmp_path):
+        boards = _us_boards()
+        boards[0]["rank_by"] = "us_prophet_fixture_v1"
+        from scripts import grade_us_board as gub
+        monkeypatch.setattr(gub, "LEDGER_HISTORY_FROM", "1900-01-01")
+        d = gub.emit_ledger(boards, _us_closes(), None)
+        first = next(row for row in d["rows"] if row["t"] == "BBB")
+        assert first["bd"] == "us_prophet_fixture_v1"
+        assert first["ed"] > first["d"]
+
     def test_status_vocabulary_and_marking(self, monkeypatch, tmp_path):
         d = _run_us_emit(monkeypatch, tmp_path)
         by_t = {}
@@ -449,6 +459,11 @@ class TestCNEmitLedger:
         assert by["601318.SS"]["m"] is False
         assert by["601318.SS"]["st"] == "early"
 
+    def test_cn_fill_date_is_distinct_from_surfaced_date(self, monkeypatch, tmp_path):
+        _ok, d = _run_cn_emit(monkeypatch, tmp_path)
+        row = next(row for row in d["rows"] if row["t"] == "600519.SS")
+        assert row["ed"] > row["d"]
+
     def test_locked_limit_flag_and_exclusion(self, monkeypatch, tmp_path):
         _ok, d = _run_cn_emit(monkeypatch, tmp_path)
         by = {r["t"]: r for r in d["rows"]}
@@ -553,7 +568,8 @@ def _grade_dict(market: str) -> dict:
             "21d": [
                 {"date": "2026-06-01", "ticker": "0700.HK", "board_pos": 1, "group": "entry_open",
                  "edge_z": 1.2, "fwd_ret": 0.08, "bench_ret": 0.02, "excess_ret": 0.06,
-                 "suspended": False},   # matured beat
+                 "suspended": False, "board_definition": "hk_prophet_fixture_v1",
+                 "entry_date": "2026-06-02"},   # matured beat
                 {"date": "2026-06-01", "ticker": "0005.HK", "board_pos": 2, "group": "setting_up",
                  "edge_z": 0.5, "fwd_ret": -0.03, "bench_ret": 0.01, "excess_ret": -0.04,
                  "suspended": False},   # matured lag
@@ -620,6 +636,16 @@ class TestFromBoardLedgerGrade:
         by = {r["t"]: r for r in self._doc()["rows"]}
         assert by["0700.HK"]["nm"] == "Tencent"
         assert by["0700.HK"]["sec"] == "Tech"
+
+    def test_selection_era_is_not_dropped(self):
+        by = {r["t"]: r for r in self._doc()["rows"]}
+        assert by["0700.HK"]["bd"] == "hk_prophet_fixture_v1"
+        assert by["9988.HK"]["bd"] is None
+
+    def test_fill_date_is_not_dropped(self):
+        by = {r["t"]: r for r in self._doc()["rows"]}
+        assert by["0700.HK"]["ed"] == "2026-06-02"
+        assert by["9988.HK"]["ed"] is None
 
     def test_state_passthrough(self):
         assert self._doc(status="accruing")["state"] == "accruing"
