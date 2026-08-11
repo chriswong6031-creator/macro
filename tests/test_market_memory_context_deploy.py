@@ -511,6 +511,87 @@ def test_w1a_initializer_authenticates_existing_capture_without_mutation(
     assert after == before
 
 
+def test_w1a_initializer_readiness_is_current_head_bounded_at_4096(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    store = tmp_path / "cap-public"
+    rows = []
+    for index in range(pit._MAX_GENERATION_CAPTURES):
+        digest = f"{index:064x}"
+        rows.append(
+            {
+                "query_id": "mmquery_" + digest,
+                "context_id": "mmctx_" + digest,
+                "capture_id": "mmcapture_" + digest,
+                "packet_sha256": digest,
+            }
+        )
+    manifest = pit._new_store_manifest()
+    generation = pit._new_generation(
+        store_id=manifest["store_id"],
+        previous_generation_id="mmgeneration_" + "b" * 64,
+        captures=rows,
+    )
+    generation_body = pit._canonical_bytes(generation)
+    pit._mkdir_durable(store)
+    pit._write_create_once(
+        store,
+        pit._store_manifest_path(store),
+        pit._canonical_bytes(manifest),
+        label="cap store manifest",
+    )
+    pit._write_create_once(
+        store,
+        pit._generation_path(store, generation["generation_id"]),
+        generation_body,
+        label="cap active generation",
+    )
+    pit._replace_head(
+        store, pit._new_head(generation, generation_body=generation_body)
+    )
+    monkeypatch.setattr(
+        pit,
+        "_read_pinned_generation_from_state",
+        lambda *_args, **_kwargs: pytest.fail(
+            "initializer readiness must not replay cumulative ancestry"
+        ),
+    )
+    observed: dict[str, object] = {}
+
+    def bounded_namespace_audit(_store: Path, **kwargs: object) -> None:
+        observed.update(kwargs)
+
+    monkeypatch.setattr(
+        w1a_initializer, "_audit_namespace", bounded_namespace_audit
+    )
+
+    result = w1a_initializer.initialize_w1a_store(store)
+
+    assert result["capture_count"] == pit._MAX_GENERATION_CAPTURES
+    assert observed["expected_generation_files"] == 4_097
+    assert len(observed["expected_files"]) == 3 * 4_096 + 3
+
+
+def test_w1a_initializer_rejects_extra_complete_store_generation_archive(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    store = tmp_path / "orphan-complete"
+    monkeypatch.setattr(pit, "_utc_now", lambda: CAPTURED_AT)
+    pit.capture_context(store, _packet())
+    orphan_id = "mmgeneration_" + "f" * 64
+    orphan = pit._generation_path(store, orphan_id)
+    pit._mkdir_durable(orphan.parent)
+    orphan.write_bytes(b"{}")
+    orphan.chmod(0o600)
+
+    with pytest.raises(
+        pit.MarketMemoryStoreError,
+        match="generation archive count differs",
+    ):
+        w1a_initializer.initialize_w1a_store(store)
+
+
 def test_w1a_initializer_rejects_symlink_permission_and_tamper(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
