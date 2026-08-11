@@ -1,0 +1,9 @@
+{
+  "schema": "options.signal_episode_checkpoint/v1",
+  "sessions": {
+    "2026-08-10": {
+      "prefix_sha256": "fbc7f802cd6f999fdc600f25acccfe66a2f220de491b83b1d1d4ddebc0e8dd7f",
+      "records": 768
+    }
+  }
+}
