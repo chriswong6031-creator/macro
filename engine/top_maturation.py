@@ -1011,27 +1011,22 @@ def _load_us_themes(data_root: Path) -> dict[str, dict]:
     return out
 
 
-def _macro_backdrop(data_root: Path) -> dict:
-    """The froth quadrant slug + the topping count. Both optional, both fail-open."""
-    quad = None
-    p = Path(data_root) / "froth_fragility" / "log.jsonl"
-    try:
-        lines = [ln for ln in p.read_text().splitlines() if ln.strip()]
-        if lines:
-            quad = (json.loads(lines[-1]) or {}).get("quadrant")
-    except Exception:  # noqa: BLE001
-        quad = None
-    stage3 = None
-    sp = Path(data_root) / "stage_analysis" / "context" / "latest.json"
-    try:
-        counts = (json.loads(sp.read_text()) or {}).get("counts") or {}
-        for key in ("stage3", "stage_3", "topping"):
-            if isinstance(counts.get(key), int):
-                stage3 = int(counts[key])
-                break
-    except Exception:  # noqa: BLE001
-        stage3 = None
-    return {"froth_quadrant": quad, "stage3_count": stage3}
+#: The page's one-line macro backdrop, INJECTED by the builder — never read here.
+#:
+#: The index-scope froth instrument is firewalled by its own suite's
+#: `test_firewall_not_referenced_by_scoring_engines`, which lets exactly two modules under
+#: `engine/` name it — the instrument itself and `engine/run.py` (wiring) — and puts
+#: every display read in the site-builder layer instead (`scripts/build_site.py`
+#: holds the sanctioned view helper). That firewall exists so a market-scope gauge
+#: can never leak into a per-name derivation, which is precisely the mistake this
+#: module would be making: the backdrop is CONTEXT printed beside the board and has
+#: no part in any state, leg or threshold here.
+#:
+#: So the read moved OUT of `engine/` to `scripts/build_top_maturation.py`, the same
+#: layer `build_site.py` occupies, and arrives through this parameter. Laundering the
+#: literal (building the path from fragments to slip past the token scan) would have
+#: passed the test while keeping the exact dependency the firewall forbids.
+_EMPTY_BACKDROP = {"froth_quadrant": None, "stage3_count": None}
 
 
 def _rendered_ticker_pages(repo_root: Path | None) -> frozenset[str]:
@@ -1058,6 +1053,7 @@ def build_context(data_root: Path, *, out_root: Path | None = None,
                   repo_root: Path | None = None,
                   trailing: int = PANEL_TRAILING_SESSIONS,
                   asof: str | None = None, limit: int | None = None,
+                  macro_backdrop: Mapping[str, Any] | None = None,
                   log: Callable[[str], None] | None = None) -> tuple[dict, dict]:
     """The full `winner_health.v1` context, plus timing/coverage diagnostics."""
     say = log or _LOG
@@ -1301,7 +1297,7 @@ def build_context(data_root: Path, *, out_root: Path | None = None,
         "universe_n": len(screened),
         "extended_n": int(sum(len(v) for v in states.values())),
         "null_state": False,
-        "macro_backdrop": _macro_backdrop(data_root),
+        "macro_backdrop": dict(macro_backdrop) if macro_backdrop else dict(_EMPTY_BACKDROP),
         "library": {
             "track": track,
             "window_start": _ym(thr.get("window_start")),

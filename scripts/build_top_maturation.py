@@ -48,6 +48,42 @@ def _data_dir(root: str | None) -> Path:
         return _REPO_ROOT / "data"
 
 
+def _macro_backdrop(data_root: Path) -> dict:
+    """The page's one-line backdrop: the froth quadrant slug + the topping count.
+
+    Lives HERE, in the builder, and not in `engine/top_maturation.py`. The
+    index-scope froth instrument is firewalled to itself + `engine/run.py` inside
+    `engine/` (`tests/test_froth_fragility.py`), with every display read pushed out
+    to the site-builder layer — `scripts/build_site.py` holds the sanctioned view
+    helper and this is its sibling. The firewall's point is that a market-scope
+    gauge must never reach a per-name derivation; the backdrop is context printed
+    beside the board and feeds no state, leg or threshold, so the honest place for
+    it is the layer that assembles the page payload.
+
+    Both halves are optional and fail-open: a missing artifact prints no line
+    rather than a raw slug or a zero.
+    """
+    quad = None
+    p = Path(data_root) / "froth_fragility" / "log.jsonl"
+    try:
+        lines = [ln for ln in p.read_text().splitlines() if ln.strip()]
+        if lines:
+            quad = (json.loads(lines[-1]) or {}).get("quadrant")
+    except Exception:  # noqa: BLE001
+        quad = None
+    stage3 = None
+    sp = Path(data_root) / "stage_analysis" / "context" / "latest.json"
+    try:
+        counts = (json.loads(sp.read_text()) or {}).get("counts") or {}
+        for key in ("stage3", "stage_3", "topping"):
+            if isinstance(counts.get(key), int):
+                stage3 = int(counts[key])
+                break
+    except Exception:  # noqa: BLE001
+        stage3 = None
+    return {"froth_quadrant": quad, "stage3_count": stage3}
+
+
 def _store_vintage(data_root: Path) -> dict:
     """What the source tape says about itself — stamped beside our own read."""
     p = data_root / tm.STORE_REL / "_manifest.json"
@@ -101,6 +137,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         ctx, diag = tm.build_context(src_root, out_root=out_root, repo_root=_REPO_ROOT,
                                      trailing=a.trailing, asof=a.asof, limit=a.limit,
+                                     macro_backdrop=_macro_backdrop(src_root),
                                      log=lambda m: print(m, flush=True))
         thr = tm.load_thresholds(src_root)
         stamp["library_vintage"] = thr.get("vintage_utc")

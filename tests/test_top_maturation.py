@@ -655,6 +655,73 @@ def test_payload_carries_the_standing_law_and_the_leg_scoping(tmp_path, quiet_la
     assert tm.null_context("boom")["_STANDING_LAW"] == law
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# split-repair: the leading-gap bfill carries no look-ahead
+#
+# `_repair_tail` builds the cumulative split factor as `close / _split_adjust(close)`
+# and then `.ffill().bfill()`. The bfill is flagged by
+# tests/test_no_lookahead.py and allowlisted at `engine/top_maturation.py:266`; the
+# allowlist entry cites THESE tests, so the exemption rests on a measurement rather
+# than on a claim in a comment.
+# ══════════════════════════════════════════════════════════════════════════════
+def _split_bars(n=300, lead_nan=10, split_at=200, ratio=4.0):
+    """Bars with a LEADING unpriced gap and a 4:1 split partway through."""
+    idx = pd.bdate_range("2024-01-01", periods=n)
+    raw = np.full(n, 50.0) + np.arange(n) * 0.05
+    raw[split_at:] = raw[split_at:] / ratio          # as-printed post-split prints
+    close = pd.Series(raw, index=idx)
+    close.iloc[:lead_nan] = np.nan                   # not yet trading
+    vol = pd.Series(1_000_000.0, index=idx)
+    vol.iloc[:lead_nan] = np.nan
+    return pd.DataFrame({"close": close, "volume": vol})
+
+
+def test_leading_gap_bfill_rows_never_survive_into_the_panel():
+    """The bfilled region is exactly the region that gets dropped.
+
+    `factor` is NaN precisely where `close` is NaN, so every row ffill/bfill
+    touches has a NaN `close` — and the frame ends with `.dropna(subset=['close'])`.
+    A fill that only ever paints rows that are then deleted cannot leak anything.
+    """
+    bars = _split_bars()
+    out = tm._repair_tail(bars, trailing=400)
+    assert out is not None and not out.empty
+    first_priced = bars["close"].first_valid_index()
+    assert out.index.min() == first_priced
+    assert len(out) == int(bars["close"].notna().sum())
+
+
+def test_leading_gap_prefix_parity_bfill_changes_nothing_downstream():
+    """Prepending unpriced rows must change NO retained value.
+
+    The look-ahead question is whether the first valid bar's factor, propagated
+    backwards, can bend anything a trailing read can see. Truncating the input to
+    the first priced bar removes the bfill's entire domain; if the bfill carried
+    future information into the retained region, these two frames would differ.
+    """
+    bars = _split_bars()
+    truncated = bars.loc[bars["close"].first_valid_index():]
+    a = tm._repair_tail(bars, trailing=400)
+    b = tm._repair_tail(truncated, trailing=400)
+    assert a is not None and b is not None
+    pd.testing.assert_frame_equal(a, b)
+    # ...including the split-day flag, which is the one column read off the
+    # FILLED factor series rather than off `close`.
+    assert bool(a["split_day"].iloc[0]) is False
+    assert int(a["split_day"].sum()) == int(b["split_day"].sum()) == 1
+
+
+def test_split_repair_is_load_bearing_no_fabricated_crash_at_the_split():
+    """Dropping the repair would fabricate a split-sized crash — the thing the
+    repair exists to prevent. Pins WHY the factor is applied at all."""
+    bars = _split_bars()
+    out = tm._repair_tail(bars, trailing=400)
+    r = (out["close"] / out["close"].shift(1) - 1.0).dropna()
+    assert r.min() > -0.10, f"repaired series still shows a split-sized drop: {r.min()}"
+    raw_r = (bars["close"] / bars["close"].shift(1) - 1.0).dropna()
+    assert raw_r.min() < -0.70          # the as-printed tape does show the -75% step
+
+
 def test_panel_cache_round_trips_and_the_second_read_is_warm(tmp_path, quiet_lane):
     root = _store(tmp_path / "data")
     cache = root / tm.PANEL_CACHE_REL

@@ -73,9 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 625, (
-        f"Expected 625 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 626, (
+        f"Expected 626 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (TOP ANATOMY W1 registered top-maturation-latest — the nightly Winner"
+        " Health maturation read, display tier with zero authority = 625->626);"
         " (Price Pressure registered its current display projection and immutable"
         " point-in-time event ledger = 623->625);"
         " (Government Revenue registered the exact append-only issuance correction"
