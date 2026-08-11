@@ -8,6 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from engine.release_actuals import receipts_from_payload
 from scripts import vps_live_orchestrator as vlo
 from scripts import watch_release_publications as wrp
 from scripts.check_vps_live_health import evaluate as evaluate_live_health
@@ -54,6 +55,18 @@ BEA_JULY_30_FEED = b"""
   </item>
 </channel></rss>
 """
+
+BEA_ADVANCED_FEED = BEA_JULY_30_FEED.replace(
+    b"</channel>",
+    b"""
+  <item name="GDP">
+    <title>GDP, Third Quarter 2026</title>
+    <link>https://www.bea.gov/news/2026/gdp-third-quarter-2026</link>
+    <description>Later release retained beside the July archive entries.</description>
+    <pubDate>Fri, 07 Aug 2026 08:30:00 -0400</pubDate>
+  </item>
+</channel>""",
+)
 
 GDP_JULY_30_PAGE = b"""
 <html><body><h1>GDP (Advance Estimate), Second Quarter 2026</h1>
@@ -343,6 +356,372 @@ def test_three_simultaneous_releases_publish_independent_verified_results():
         for event_type, row in publications.items()
         if event_type in ("GDP", "PCE")
     )
+
+
+def test_bea_verified_document_bindings_survive_feed_304_and_reobservation():
+    first_tick = datetime(2026, 7, 30, 12, 31, tzinfo=timezone.utc)
+    state, payload = wrp.detect(now=first_tick, state={}, fetcher=_july_30_fetcher)
+    first = {
+        row["type"]: row
+        for row in payload["publications"]
+        if row["type"] in ("GDP", "PCE")
+    }
+
+    page_sha = {
+        "GDP": __import__("hashlib").sha256(GDP_JULY_30_PAGE).hexdigest(),
+        "PCE": __import__("hashlib").sha256(PCE_JULY_30_PAGE).hexdigest(),
+    }
+    feed_sha = __import__("hashlib").sha256(BEA_JULY_30_FEED).hexdigest()
+    assert first["GDP"]["source_url"] != first["PCE"]["source_url"]
+    assert all(
+        row["actual"]["source_url"] == row["source_url"] for row in first.values()
+    )
+    assert first["GDP"]["source_sha256"] == page_sha["GDP"]
+    assert first["PCE"]["source_sha256"] == page_sha["PCE"]
+    assert page_sha["GDP"] != page_sha["PCE"] != feed_sha
+
+    bound_fields = (
+        "actual",
+        "source_url",
+        "content_sha256",
+        "source_sha256",
+        "source_released_at",
+        "source_time_basis",
+        "reference_period",
+        "verified_at",
+    )
+
+    def binding(row):
+        return {field: row.get(field) for field in bound_fields}
+
+    expected = {event_type: binding(row) for event_type, row in first.items()}
+    feed_calls: list[str] = []
+
+    def not_modified_fetcher(spec, prior, timeout):
+        if spec.source_id in ("bea_gdp", "bea_pce") and spec.url.endswith("rss.xml"):
+            feed_calls.append(spec.url)
+            assert prior["fingerprint"] == feed_sha
+            return {
+                "status": 304,
+                "body": b"",
+                "fingerprint": prior["fingerprint"],
+                "etag": prior["etag"],
+                "last_modified": prior["last_modified"],
+                "content_type": prior["content_type"],
+            }
+        if spec.source_id in ("bea_gdp", "bea_pce"):
+            raise AssertionError("a feed 304 must not fetch a release detail page")
+        return _july_30_fetcher(spec, prior, timeout)
+
+    state, payload = wrp.detect(
+        now=first_tick + timedelta(minutes=1),
+        state=state,
+        fetcher=not_modified_fetcher,
+    )
+    after_304 = {
+        row["type"]: row
+        for row in payload["publications"]
+        if row["type"] in ("GDP", "PCE")
+    }
+    assert feed_calls == ["https://apps.bea.gov/rss/rss.xml"]
+    assert {
+        event_type: binding(row) for event_type, row in after_304.items()
+    } == expected
+    assert all(row["source_sha256"] != feed_sha for row in after_304.values())
+
+    _, payload = wrp.detect(
+        now=first_tick + timedelta(minutes=2),
+        state=state,
+        fetcher=_july_30_fetcher,
+    )
+    reobserved = {
+        row["type"]: row
+        for row in payload["publications"]
+        if row["type"] in ("GDP", "PCE")
+    }
+    assert {
+        event_type: binding(row) for event_type, row in reobserved.items()
+    } == expected
+
+
+def test_bea_known_feed_bound_state_repairs_only_from_successful_detail_page(
+    tmp_path: Path,
+):
+    first_tick = datetime(2026, 7, 30, 12, 31, tzinfo=timezone.utc)
+    state, payload = wrp.detect(now=first_tick, state={}, fetcher=_july_30_fetcher)
+    feed_sha = __import__("hashlib").sha256(BEA_JULY_30_FEED).hexdigest()
+    recorded_bad_sha = (
+        "29ae0bad7d568ca7ea59be2f74461b5dcf5da4393ff816544254cd47507f13e1"
+    )
+    page_sha = __import__("hashlib").sha256(PCE_JULY_30_PAGE).hexdigest()
+    assert feed_sha != recorded_bad_sha
+    pce_key = "pce:2026-07-30"
+    corrupted = state["publications"][pce_key]
+    assert corrupted["actual"]["source_url"] == corrupted["source_url"]
+    corrupted["content_sha256"] = recorded_bad_sha
+    corrupted["source_sha256"] = recorded_bad_sha
+
+    bad_payload = {
+        **payload,
+        "publications": list(state["publications"].values()),
+    }
+    bad_receipt = next(
+        row
+        for row in receipts_from_payload(
+            bad_payload,
+            defects_path=tmp_path / "no-defects.json",
+        )
+        if row["release"] == "pce_headline"
+    )
+
+    def failed_detail_fetcher(spec, prior, timeout):
+        if spec.source_id == "bea_pce" and not spec.url.endswith("rss.xml"):
+            raise TimeoutError("detail unavailable")
+        return _july_30_fetcher(spec, prior, timeout)
+
+    state, failed_payload = wrp.detect(
+        now=first_tick + timedelta(minutes=1),
+        state=state,
+        fetcher=failed_detail_fetcher,
+    )
+    still_bound_to_feed = next(
+        row for row in failed_payload["publications"] if row["event_id"] == pce_key
+    )
+    assert still_bound_to_feed["source_sha256"] == recorded_bad_sha
+    assert still_bound_to_feed["actual"] == corrupted["actual"]
+
+    state, repaired_payload = wrp.detect(
+        now=first_tick + timedelta(minutes=2),
+        state=state,
+        fetcher=_july_30_fetcher,
+    )
+    repaired = next(
+        row for row in repaired_payload["publications"] if row["event_id"] == pce_key
+    )
+    repaired_receipt = next(
+        row
+        for row in receipts_from_payload(repaired_payload)
+        if row["release"] == "pce_headline"
+    )
+
+    assert repaired["source_sha256"] == page_sha
+    assert repaired["content_sha256"] == page_sha
+    assert repaired["actual"]["source_url"] == repaired["source_url"]
+    assert repaired_receipt["source_sha256"] == page_sha
+    assert repaired_receipt["receipt_id"] != bad_receipt["receipt_id"]
+
+
+def test_bea_feed_entry_parse_cannot_promote_when_detail_fetch_fails(monkeypatch):
+    after = datetime(2026, 7, 30, 12, 31, tzinfo=timezone.utc)
+    original_parse = wrp._parse_actual
+
+    def false_positive_feed_parser(spec, body):
+        if spec.source_id == "bea_pce":
+            return {
+                "headline_mom": -0.1,
+                "core_mom": 0.2,
+                "reference_period": "2026-06",
+            }
+        return original_parse(spec, body)
+
+    monkeypatch.setattr(wrp, "_parse_actual", false_positive_feed_parser)
+
+    def failed_detail_fetcher(spec, prior, timeout):
+        if spec.source_id == "bea_pce" and not spec.url.endswith("rss.xml"):
+            raise TimeoutError("detail unavailable")
+        return _july_30_fetcher(spec, prior, timeout)
+
+    _, payload = wrp.detect(now=after, state={}, fetcher=failed_detail_fetcher)
+    pce = next(row for row in payload["publications"] if row["type"] == "PCE")
+    pce_receipts = [
+        receipt
+        for receipt in receipts_from_payload(payload)
+        if receipt["release"] in {"pce_headline", "pce_core"}
+    ]
+
+    assert pce["status"] == "published_unparsed"
+    assert pce["data_ready"] is False
+    assert "actual" not in pce
+    assert pce["source_url"] == "https://apps.bea.gov/rss/rss.xml"
+    assert pce["source_sha256"] == __import__("hashlib").sha256(
+        BEA_JULY_30_FEED
+    ).hexdigest()
+    assert pce_receipts == []
+
+
+def _aged_known_bad_pce_state():
+    first_tick = datetime(2026, 7, 30, 12, 31, tzinfo=timezone.utc)
+    state, _ = wrp.detect(now=first_tick, state={}, fetcher=_july_30_fetcher)
+    pce = state["publications"]["pce:2026-07-30"]
+    recorded_bad_sha = (
+        "29ae0bad7d568ca7ea59be2f74461b5dcf5da4393ff816544254cd47507f13e1"
+    )
+    pce["source_sha256"] = recorded_bad_sha
+    pce["content_sha256"] = recorded_bad_sha
+    # Mirror the two immutable July 30 production receipt identities governed
+    # by official_actual_defects.json; the later detail replay corrects core.
+    pce["actual"]["core_mom"] = 0.1
+    return state
+
+
+def test_aged_governed_pce_defect_forces_feed_and_detail_repair():
+    state = _aged_known_bad_pce_state()
+    repair_tick = datetime(2026, 8, 10, 16, 7, tzinfo=timezone.utc)
+    calls = []
+
+    def repair_fetcher(spec, prior, timeout):
+        calls.append((spec.url, dict(prior)))
+        assert prior == {}
+        if spec.source_id == "bea_pce" and spec.url.endswith("rss.xml"):
+            return _http_result(BEA_ADVANCED_FEED)
+        if spec.source_id == "bea_pce":
+            return _http_result(PCE_JULY_30_PAGE)
+        raise AssertionError(f"unexpected repair source: {spec.url}")
+
+    state, payload = wrp.detect(
+        now=repair_tick,
+        state=state,
+        fetcher=repair_fetcher,
+    )
+    repaired = next(
+        row for row in payload["publications"] if row["event_id"] == "pce:2026-07-30"
+    )
+    repair = state[wrp.DEFECT_REPAIR_STATE_KEY]["pce:2026-07-30"]
+    page_sha = __import__("hashlib").sha256(PCE_JULY_30_PAGE).hexdigest()
+    feed_sha = __import__("hashlib").sha256(BEA_ADVANCED_FEED).hexdigest()
+    eligible = [
+        receipt
+        for receipt in receipts_from_payload(payload)
+        if receipt["release"] in {"pce_headline", "pce_core"}
+    ]
+
+    assert feed_sha != repair["recorded_source_sha256"]
+    assert calls == [
+        ("https://apps.bea.gov/rss/rss.xml", {}),
+        (
+            "https://www.bea.gov/news/2026/personal-income-and-outlays-june-2026",
+            {},
+        ),
+    ]
+    assert repaired["source_sha256"] == page_sha
+    assert repaired["content_sha256"] == page_sha
+    assert repaired["actual"]["source_url"] == repaired["source_url"]
+    assert repair["status"] == "repaired"
+    assert repair["attempts"] == 1
+    assert repair["attempt_limit"] == 3
+    assert repair["repaired_source_sha256"] == page_sha
+    assert len(repair["defect_receipt_ids"]) == 2
+    assert {receipt["source_sha256"] for receipt in eligible} == {page_sha}
+    assert {receipt["release"] for receipt in eligible} == {
+        "pce_headline",
+        "pce_core",
+    }
+
+
+def test_aged_unlisted_binding_is_not_admitted_to_repair_queue():
+    state = _aged_known_bad_pce_state()
+    pce = state["publications"]["pce:2026-07-30"]
+    pce["source_sha256"] = "f" * 64
+    pce["content_sha256"] = "f" * 64
+    calls = []
+
+    def unexpected_fetcher(spec, prior, timeout):
+        calls.append(spec.url)
+        raise AssertionError(f"unlisted binding fetched: {spec.url}")
+
+    state, _ = wrp.detect(
+        now=datetime(2026, 8, 10, 16, 7, tzinfo=timezone.utc),
+        state=state,
+        fetcher=unexpected_fetcher,
+    )
+
+    assert calls == []
+    assert state[wrp.DEFECT_REPAIR_STATE_KEY] == {}
+
+
+def test_governed_defect_loader_handles_json_list_root(tmp_path: Path, monkeypatch):
+    defects_path = tmp_path / "official_actual_defects.json"
+    defects_path.write_text("[]\n", encoding="utf-8")
+    monkeypatch.setattr(wrp, "OFFICIAL_ACTUAL_DEFECTS_PATH", defects_path)
+
+    assert wrp._governed_source_binding_defects() == []
+
+
+def test_aged_governed_pce_defect_failure_is_quarantined_and_bounded():
+    state = _aged_known_bad_pce_state()
+    repair_tick = datetime(2026, 8, 10, 16, 7, tzinfo=timezone.utc)
+    calls = []
+
+    def failed_repair_fetcher(spec, prior, timeout):
+        calls.append((spec.url, dict(prior)))
+        assert prior == {}
+        if spec.source_id == "bea_pce" and spec.url.endswith("rss.xml"):
+            return _http_result(BEA_ADVANCED_FEED)
+        if spec.source_id == "bea_pce":
+            raise TimeoutError("detail unavailable")
+        raise AssertionError(f"unexpected repair source: {spec.url}")
+
+    state, payload = wrp.detect(
+        now=repair_tick,
+        state=state,
+        fetcher=failed_repair_fetcher,
+    )
+    repair = state[wrp.DEFECT_REPAIR_STATE_KEY]["pce:2026-07-30"]
+    bad_sha = repair["recorded_source_sha256"]
+    quarantined = next(
+        row for row in payload["publications"] if row["event_id"] == "pce:2026-07-30"
+    )
+    assert repair["status"] == "retry_wait"
+    assert repair["attempts"] == 1
+    assert repair["next_attempt_at"] == (
+        repair_tick + timedelta(minutes=60)
+    ).isoformat()
+    assert quarantined["source_sha256"] == bad_sha
+    assert not any(
+        receipt["release"] in {"pce_headline", "pce_core"}
+        for receipt in receipts_from_payload(payload)
+    )
+
+    calls_before_backoff = len(calls)
+    state, _ = wrp.detect(
+        now=repair_tick + timedelta(minutes=30),
+        state=state,
+        fetcher=failed_repair_fetcher,
+    )
+    assert len(calls) == calls_before_backoff
+    assert state[wrp.DEFECT_REPAIR_STATE_KEY]["pce:2026-07-30"]["attempts"] == 1
+
+    state, _ = wrp.detect(
+        now=repair_tick + timedelta(minutes=60),
+        state=state,
+        fetcher=failed_repair_fetcher,
+    )
+    second = state[wrp.DEFECT_REPAIR_STATE_KEY]["pce:2026-07-30"]
+    assert second["attempts"] == 2
+    assert second["next_attempt_at"] == (
+        repair_tick + timedelta(minutes=180)
+    ).isoformat()
+
+    state, _ = wrp.detect(
+        now=repair_tick + timedelta(minutes=180),
+        state=state,
+        fetcher=failed_repair_fetcher,
+    )
+    exhausted = state[wrp.DEFECT_REPAIR_STATE_KEY]["pce:2026-07-30"]
+    assert exhausted["status"] == "exhausted"
+    assert exhausted["attempts"] == wrp.DEFECT_REPAIR_MAX_ATTEMPTS
+    assert exhausted["next_attempt_at"] is None
+    assert exhausted["last_error"] == "TimeoutError"
+    assert len(calls) == wrp.DEFECT_REPAIR_MAX_ATTEMPTS * 2
+
+    calls_at_exhaustion = len(calls)
+    state, _ = wrp.detect(
+        now=repair_tick + timedelta(days=1),
+        state=state,
+        fetcher=failed_repair_fetcher,
+    )
+    assert len(calls) == calls_at_exhaustion
+    assert state[wrp.DEFECT_REPAIR_STATE_KEY]["pce:2026-07-30"] == exhausted
 
 
 def test_one_same_day_parser_failure_does_not_block_sibling_results():

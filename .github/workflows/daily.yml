@@ -3814,6 +3814,18 @@ jobs:
             python -m scripts.fetch_earnings_scores || echo "::warning title=fetch_earnings_scores::rc≠0 (non-fatal — earnings context absent this render)"
             brun stage_analysis "Stage Analysis context engine (build_stage_analysis)" scripts.build_stage_analysis
             brun stage_analysis_page "Stage Analysis page (build_stage_analysis_page)" scripts.build_stage_analysis_page
+            # TOP ANATOMY W1 (research/TOP_ANATOMY_MASTERPLAN_BY_FABLE.md §5-W1):
+            # Winner Health — the nightly maturation read over the massive_stock_day
+            # tape, display tier with zero authority. Data builder FIRST (it writes
+            # data/top_maturation/latest.json and advances the forward log), page
+            # builder second (pure SSR from that artifact). Both fail-open: a bad
+            # read writes a null_state artifact and the page renders its designed
+            # warming-up state rather than failing the band. The panel is
+            # incrementally cached under data/top_maturation/_panel_cache/
+            # (gitignored), so only source files the store actually touched are
+            # re-read. Engine is daily-only — nightly is the sole ledger advancer.
+            brun top_maturation "Winner Health context engine (build_top_maturation)" scripts.build_top_maturation
+            brun winner_health_page "Winner Health page (build_winner_health_page)" scripts.build_winner_health_page
           }
           cl_misc() {
             brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
@@ -3890,7 +3902,7 @@ jobs:
           # check_builder_failstreaks, which globs *.rc and so catches a >=2-night
           # streak regardless of ORDER) — but a FIRST failure still passed silently,
           # with no log and no step-summary line for the TXI W1 chain tracker.
-          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics basket_washout rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow program_watch stage_analysis stage_analysis_page"
+          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics basket_washout rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow program_watch stage_analysis stage_analysis_page top_maturation winner_health_page"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
@@ -3991,6 +4003,7 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.build_session_digest || echo "::warning::build_session_digest non-fatal failure"
       - name: OIP PIT — durable episodes + H+60 and declared-session-close proxy accrual
+        id: options_signal_episode
         # Consumes only the date-keyed live_flow/events/{DATE}.jsonl raw stage,
         # never capped/overwritten feed_current. The monotonic checkpoint and all three
         # committed JSONL ledgers advance only in COLLECT_LANE=nightly. H+60 v1 stays
@@ -4009,6 +4022,99 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.build_options_signal_episode
+      - name: OIP PIT — checkpoint the four durable episode ledgers
+        if: always() && steps.options_signal_episode.outcome == 'success'
+        timeout-minutes: 10
+        continue-on-error: true
+        # This checkpoint is deliberately immediate and success-only. The broad
+        # engine commit is hours later and may lose its push race or hit the job
+        # cap; these append-only PIT rows cannot be reconstructed after the raw
+        # dated event stage ages out. Publish only the four builder-owned files.
+        # The metadata replay overlays their object IDs on current origin/main in
+        # a temporary index, so it never rebases, checks out, stashes, cleans, or
+        # otherwise touches the thousands of unrelated dirty render outputs.
+        run: |
+          set -euo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          OIP_LEDGER_PATHS=(
+            data/options_signal_episode/checkpoint.json
+            data/options_signal_episode/episodes.jsonl
+            data/options_signal_episode/outcomes_h60.jsonl
+            data/options_signal_episode/outcomes_session.jsonl
+          )
+          PUSH_ALARM=120
+          PUSH_BUDGET_SECS=420
+          PUSH_MAX_ATTEMPTS=12
+          push_retry_init "options PIT episode ledgers"
+          push_on_main_ok || exit 0
+
+          # A foreign staged path would ride `git commit` even though this step's
+          # own add is narrow. Refuse that state instead of widening ownership.
+          if ! git diff --cached --quiet; then
+            echo "::error title=options PIT checkpoint index dirty::foreign staged paths predate the narrow checkpoint; refusing to publish"
+            exit 1
+          fi
+          for OIP_PATH in "${OIP_LEDGER_PATHS[@]}"; do
+            if [ ! -f "$OIP_PATH" ] || [ -L "$OIP_PATH" ]; then
+              echo "::error title=options PIT checkpoint path rejected::$OIP_PATH is missing or a symlink"
+              exit 1
+            fi
+          done
+          git add -- "${OIP_LEDGER_PATHS[@]}"
+          if git diff --cached --quiet; then
+            echo "options PIT episode ledgers unchanged"
+            exit 0
+          fi
+          while IFS= read -r OIP_PATH; do
+            case "$OIP_PATH" in
+              data/options_signal_episode/checkpoint.json|\
+              data/options_signal_episode/episodes.jsonl|\
+              data/options_signal_episode/outcomes_h60.jsonl|\
+              data/options_signal_episode/outcomes_session.jsonl) ;;
+              *)
+                echo "::error title=options PIT checkpoint scope violation::staged path $OIP_PATH is outside the four-file allowlist"
+                exit 1
+                ;;
+            esac
+          done < <(git diff --cached --name-only)
+          push_staged_clean "${OIP_LEDGER_PATHS[@]}" || exit 1
+
+          OIP_PARENT=$(git rev-parse HEAD)
+          git commit -m "options-pit: durable episode checkpoint $(date -u +%F)"
+          OIP_COMMIT=$(git rev-parse HEAD)
+          OIP_MESSAGE=$(git log -1 --format=%B "$OIP_COMMIT")
+          OIP_REPLAY_INDEX="${RUNNER_TEMP:-/tmp}/options-pit-replay-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}.idx"
+
+          while push_attempt; do
+            if ! perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin \
+              +refs/heads/main:refs/remotes/origin/main; then
+              PUSH_FAIL_CLASS="sync"
+              push_backoff
+              continue
+            fi
+            if OIP_PUBLISH=$(push_metadata_replay_commit "$OIP_PARENT" origin/main \
+                "$OIP_COMMIT" "$OIP_MESSAGE" "$OIP_REPLAY_INDEX"); then
+              if [ "$(git rev-parse "$OIP_PUBLISH^{tree}")" = "$(git rev-parse origin/main^{tree})" ]; then
+                echo "options PIT episode content already on origin/main — nothing to push"
+                push_won
+                exit 0
+              fi
+              if push_do origin "$OIP_PUBLISH:refs/heads/main"; then
+                echo "pushed options PIT episode ledgers on attempt $PUSH_ATTEMPT (metadata replay — dirty render tree untouched)"
+                push_won
+                exit 0
+              fi
+            else
+              PUSH_FAIL_CLASS="rebase-conflict"
+            fi
+            push_backoff
+          done
+          push_lost
+          echo "::error title=options PIT checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the four ledgers remain only in the local engine commit fallback"
+          exit 1
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
         # named US thematic baskets. Ported from China #2634. Reads sector_cycles
@@ -4358,6 +4464,15 @@ jobs:
           python -m scripts.grade_us_board --nightly; rc=$?
           if [ "$rc" -ne 0 ]; then echo "::warning title=grade_us_board::rc=$rc (non-fatal)"; fi
           exit 0
+      - name: Opportunity timeline (durable Prophet candidate receipts for Terminal)
+        # Pure projection over the four committed track_ledger/v1 artifacts.  It runs
+        # after grade_us_board so tonight's US episode marks are present; CN/HK are
+        # refreshed by asia-close.yml before this nightly checkout.  The builder
+        # flattens every historical definition but never promotes a board candidate
+        # into a Prophet plan or Oracle signal.  Its atomic/fail-closed write keeps the
+        # last complete timeline if any required source is missing or malformed, and
+        # the broad site/ commit below publishes the resulting artifact.
+        run: python -m scripts.build_opportunity_timeline || echo "::warning::opportunity timeline kept its last complete artifact (non-fatal)"
       # NOTE (2026-08-06): the Prophet US program's four post-board modules used to sit
       # HERE — emit_prophet_doors, grade_prophet_doors, grade_us_prophet_candidates and
       # run_prophet_miss_audit. They now run in the `us_prophet_ledgers` job (below,
@@ -4761,7 +4876,21 @@ jobs:
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         timeout-minutes: 20
-        run: python -m scripts.collect_release_target_vintages || echo "::warning::release target vintage collection failed (non-fatal — existing coherent stores stand)"
+        run: python -m scripts.collect_release_target_vintages || echo "::warning::release target vintage collection failed (non-fatal — completion authority remains withheld until a full cohort succeeds)"
+      - name: Release Radar official CPI Table 1 receipts (truth substrate, non-fatal)
+        # Collects the frozen preregistered BLS Supplemental Table 1 panel into
+        # immutable content-addressed source documents and source-bound receipts.
+        # The batch is resumable and validates retained bytes before reuse; a
+        # missing or drifting official document leaves the prior corpus standing.
+        timeout-minutes: 20
+        run: python -m scripts.collect_release_cpi_official_truth || echo "::warning::official CPI Table 1 collection failed (non-fatal — completion authority remains withheld if publication began)"
+      - name: Release Radar coherent CPI target parity (truth substrate, non-fatal)
+        # Reconstructs headline/core CPI targets from one ALFRED release vintage
+        # and publishes a completion receipt only after the preregistered BLS
+        # parity panel passes exactly.  This is a shadow truth gate: it does not
+        # alter champion coefficients, combined weights, or promotion authority.
+        timeout-minutes: 10
+        run: python -m scripts.build_release_cpi_truth_parity || echo "::warning::coherent CPI truth parity failed (non-fatal — no new completion boundary published)"
       - name: Release Radar official-actual reconciliation (truth substrate, non-fatal)
         # Converts verified BLS/BEA/DOL publication facts from the VPS live
         # sidecar into keep-first, source-hashed actual receipts.  No forecast is

@@ -71,6 +71,11 @@
            page itself is untouched). #}
         {% if intraday_flow_enabled is not defined or intraday_flow_enabled %}<a href="{{ NP }}intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span>{{ t('Intraday Flow Tracker', '盘中资金流追踪') }}<span class="d">{{ t('Live session board — volume, tape and stance lanes · ≈15-min delayed', '盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟') }}</span></a>{% endif %}
         <a href="{{ NP }}stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span>{{ t('Stage Analysis', '阶段分析') }}<span class="d">{{ t('Stage 1-4 cycle · fresh breakouts · earnings tone', '阶段1-4周期 · 新突破 · 财报语气') }}</span></a>
+        {# TOP ANATOMY W1 (research/top_anatomy/W1_SURFACE_DESIGN_SPEC.md): the
+           exit-side blind spot — every other US entry here is entry-side, and
+           nothing watched a winner age. Display tier; the row sits beside Stage
+           Analysis because both are per-name reads of where a move stands. #}
+        <a href="{{ NP }}winner_health.html"><span class="submenu-icon submenu-icon-leader" aria-hidden="true"></span>{{ t('Winner Health', '持仓健康度') }}<span class="d">{{ t('Big gains near their highs · how the move is aging · what similar past runs did', '涨幅可观且仍在高位 · 行情老化到什么程度 · 相似历史行情走过的路') }}</span></a>
         {# Sector Intelligence consolidation (2026-08-01, operator-chartered): the old
            4-entry Sector Central flyout (Sector Central / Thematic Baskets & Rotation /
            Subsector Rotation / Subsector Confluence) collapsed to two flat rows. Baskets +

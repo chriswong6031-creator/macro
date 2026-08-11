@@ -1256,6 +1256,190 @@ unsafe modes or links, or unwritable state abort readiness. Packet bytes remain
 closure-validated only for returned playback rows, and readers retain no
 missing-HEAD fallback or request-time materialization path.
 
+### 11.0.10 W4A synthetic episodic-retrieval conformance
+
+W4A freezes one exact retrieval calculation without pretending that Market
+Memory can discover a complete historical analogue population. Its registration
+binds an exact W2A trial contract, must be created after that trial and before
+its frozen live-forward split, and preregisters one to thirty-two sorted
+coordinate identifiers with fixed positive scales. Coordinate values remain
+caller-supplied `synthetic_fixture_only` inputs: no W1/W2 feature projection,
+normalization fit, center, imputation, clipping, learned embedding, or
+candidate-pool rescaling is authenticated.
+
+The only distance is normalized Euclidean under the frozen
+`decimal64_half_even_q18/v1` convention. It computes with local Decimal
+precision 64, performs no intermediate quantization, and quantizes once to
+eighteen decimal places. A missing query coordinate abstains the whole supplied
+audit; a missing candidate coordinate makes only that candidate ineligible.
+Numeric, lexical, collection, context-dependency, and canonical-JSON bounds
+fail closed before unbounded parsing or traversal.
+
+Every supplied candidate is rejoined to its exact W2A state, forecast, and W1
+context bytes and appears exactly once in the result. Candidates must have the
+same subject and instrument, be strictly earlier than the query, and avoid the
+query's preregistered purge-plus-embargo interval. Distance-eligible rows sort
+by exact distance then forecast ID. The selector greedily retains the nearest
+rows whose half-open intervals do not overlap a previously selected row, and
+every overlap rejection names those earlier selected IDs. This is deterministic
+de-overlap of a supplied fixture, not a claim that the list is historically
+complete, globally nearest, independent, or suitable for evaluation.
+
+W4A reports only supplied, distance-eligible, and selected-nonoverlapping
+counts. Statistical effective sample size is permanently
+`not_estimated/dependence_model_not_evidence_ready`; selected count is never
+relabeled effective N. Outcomes, W2B scores, predictive-distribution changes,
+DTW, graph relations, bootstrap or conformal intervals, retrieval evaluation,
+cohort aggregation, winners, and skill are structurally absent. There is no
+store, writer, API, CLI, service, scheduler, environment switch, or public
+output. Every evidence and action claim remains false, `context_only=true`,
+`emission_enabled=false`, and forecast input, training, promotion, ranking,
+gating, sizing, trading, and execution remain forbidden.
+
+### 11.0.11 W5A synthetic Operating Cortex conformance
+
+W5A freezes a pure, caller-supplied structural review kernel over one exact W4A
+synthetic retrieval record. It revalidates the complete W4/W2 dependency chain
+before examining evidence, accepts no operational playback input, and has no
+filesystem, network, clock, LLM, store, writer, service, scheduler, or emission
+capability. The registration fixes the required evidence kinds, six-component
+salience policy, citation policy, bounded read tools, implementation hashes,
+resource limits, and zero-authority profile before a packet can be built.
+Those W4 dependency and exact-source checks are invocation-local. Because the
+packet has no operational signer, its durable W4-join and citation-byte coverage
+flags remain false; a consumer must rerun the exact join validator with every
+external dependency rather than treat packet metadata as portable provenance.
+
+Ownership boundary: this W5A kernel is not `engine/neuralweb/cortex.py`; it
+neither imports nor replaces that nightly LLM runtime and cannot read or write
+`data/neuralweb/cortex/`, `site/neuralweb/cortex_memo.json`, or
+`data/reflexes/cortex_attention/`. It also does not produce or replace
+`data/neuralweb/attention_deterministic.json`, which remains owned by
+`engine/neuralweb/attention_deterministic.py` and its builder. The
+`attention_queue` and seven read methods here are packet-local projections over
+caller-supplied synthetic W5 evidence, not entries in either live attention
+registry or the live Cortex tool dispatcher. Any future handoff into the live
+Cortex requires a separately reviewed adapter; this contract alone grants no
+runtime or authority.
+
+Evidence and claim cards are content-addressed and bound to the exact query or
+selected analogue episode. Citations authenticate caller-supplied source bytes
+and a half-open byte span; this proves byte and reference closure only, never
+semantic entailment. Salience uses the preregistered six fixed weights under a
+local Decimal64 half-even context and one final q18 quantization. A missing
+component abstains rather than imputes. The resulting order is only an attention
+queue within one supplied synthetic subject; it is not an asset, forecast, or
+trade rank.
+
+Contradictions are structural support-versus-challenge groups on an exact
+subject and claim key. Missingness means absent from the supplied synthetic
+evidence, not absent from the world. Falsifiers are audited but never invented.
+Malformed or hash-mismatched source/span citation closure aborts packet
+construction. Claims with no evidence references, structurally incompatible
+references, or a missing preregistered evidence kind are withheld with a
+deterministic reason; structurally closed claims remain explicitly
+semantic-entailment-not-evaluated. The unsupported-claim scorecard is structural
+only, and attention quality is permanently `not_evaluated` because no
+preregistered attention outcomes exist.
+
+Every operational, population, provenance, entailment, truth, attention-quality,
+synthesis, hypothesis, forecast-input, aggregation, skill, and Prophet-input
+claim remains false. The input profile is `synthetic_fixture_only`, emission is
+disabled, and ranking, gating, sizing, trading, execution, training, and
+promotion authority remain structurally absent.
+
+### 11.0.12 W6A Research Factory candidate conformance
+
+W6A adds a pure adapter from one exact W2A
+`market_memory.trial_registration.v1` byte string to the canonical
+`research_factory.candidate.v1` shape. The Research Factory source, candidate
+type, and domain enums gain the matching values `market_memory`,
+`market_memory_candidate`, and `market_memory` atomically. The output is always
+`proposed`, display-only, and `trial_accounting.mode=read_only`; the adapter
+does not ingest the row, declare a trial family, write a ledger, execute an
+experiment, or advance a lifecycle.
+
+The exact W2A owner loader must accept the canonical bytes and content-bound
+registration ID before projection. The candidate spec binds the exact byte
+digest and length plus verbatim read-back of purge, embargo, trial budgets, and
+model/code/config implementation hashes. Semantic spec and candidate IDs do
+not include the adapter's `created_at`, so repeated projections cannot create
+new candidate identities by clock churn. W4 is represented only by a deferred
+null `episodic_retrieval_record_id`, and W5 only by a deferred null
+`operating_cortex_packet_id`; neither missing owner artifact is fabricated.
+Challenge completion, emission, training, promotion, and every
+action-authority bit remain false.
+
+Canonical Research Factory admission treats any reserved Market Memory marker
+anywhere in the whole row as a request for the whole sealed subtype. That
+ownership survives relabelled wrappers and includes the enum values, reserved
+identity prefixes, conformance/spec schemas, and distinctive trial read-back
+and W4/W5 join keys. The exact source/type/domain triple, inert
+proposal/accounting/evaluation state, empty lifecycle, canonical IDs, strict
+conformance/spec morphology, and zero authority are then all mandatory.
+Malformed owned input is recorded only through a fixed generic digest-only
+rejection envelope and marker-free audit identity; none of the submitted
+subtype payload is laundered into the candidate ledger. This generic validator
+is structural only because a candidate row cannot prove the source bytes named
+by its digest. Only the adapter validator authenticates the exact owner-valid
+W2A bytes and reconstructs the canonical projection.
+
+This slice has no registry, store, writer, filesystem/environment/network
+input, CLI, service, scheduler, API route, real candidate emission, or real
+experiment. It establishes schema conformance only. W6A identities are
+strictly proposed-only: generic state transitions, challenge admission, and
+paper-monitor admission all fail closed. Later work must supply owner-valid W4
+episodic retrieval and W5 Operating Cortex evidence in a new evidence-bearing
+version before that version can enter the existing human-gated Research
+Factory lifecycle without weakening either program's authority rails.
+
+### 11.0.13 W7 inert feature-promotion audit
+
+W7 does not promote a feature. It adds a pure, content-addressed negative audit
+over the frozen `market_memory.feature_registry.2026-08-09.v1` registry. The
+artifact enumerates exactly all 18 canonical feature IDs in sorted order and
+has no registry, data file, configuration, Synapse entry, store, writer, API,
+service, scheduler, or runtime consumer. Its structural v1 grammar admits only
+`failed` and `not_run` gate states; there is no `pass` state, eligible and
+promoted counts are fixed at zero, and exact W2A authority keeps emission,
+training, promotion, and every action bit false.
+
+The evidence checkpoint is negative. Only `macro.regime_state` has a current
+actual-output projection, and it remains degraded because its component source
+receipts are unauthenticated. The other 17 canonical features remain missing.
+The private technical lane is an unadjusted current-tip raw-close ratio rather
+than canonical `price.ret_20d`; private breadth is degraded current-membership
+partial coverage with survivor bias and no operational history; and the option
+OI canary is one bounded source-availability page without a complete, dated,
+atomic chain state. None can be substituted for a canonical observed feature.
+
+At the frozen 2026-08-11 checkpoint, W2 and W4 evidence is synthetic-only,
+while W5 and W6 are classified `not_operational_promotion_evidence`. This is a
+durable evidence classification, not a shipment-state assertion: dormant or
+synthetic code remains insufficient until it accrues owner-authenticated
+operational evidence, and later shipment cannot rewrite this audit. There
+is no operational forward sample size, calibration evidence, clustered
+dependence interval, incremental value after existing Prophet information, or
+shadow-forward evidence. Consequently G0-G7 cannot pass for any feature. The
+audit records G0 temporal/data integrity as `failed` for all 18 features and
+leaves G1-G7 `not_run`; later gates are not credited through a failed entry
+gate. It explicitly excludes a pass state, eligibility or promotion decisions,
+runtime/Synapse integration, training consumption, and action authority. A
+future audit requires a new version and owner-authenticated evidence; v1 cannot
+be edited into a promotion artifact.
+
+Current conformance topology: W4, W5, W6, and W7 are guardrail slices, not an
+operational W4-to-W7 dataflow. W4 can build a caller-supplied synthetic
+`episodic_retrieval_record`; W5 can revalidate that exact dependency set to
+build an unsigned structural Cortex packet whose portable external-coverage
+claims remain false. W6 currently consumes only exact W2A trial-registration
+bytes and carries deferred null `episodic_retrieval_record_id` and
+`operating_cortex_packet_id` owner references. W7 reads the frozen feature
+registry and this evidence checkpoint, not a W6 candidate. Real W5-to-W6 and
+W6-to-W7 edges require new owner-authenticated, evidence-bearing contract
+versions and separate review. The mere presence of a later contract is never
+operational or promotion evidence.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1426,6 +1610,50 @@ W3A operational playback preparation additions:
 - `tests/test_market_memory_playback.py` and
   `tests/test_market_memory_playback_api.py` — ancestry, tamper, resource,
   dual-provenance, pagination, schema/runtime, auth, cache, and no-leak guards.
+
+W4A synthetic retrieval additions:
+
+- `engine/neuralweb/market_memory_retrieval.py` and the strict
+  `retrieval_registration.v1` and `episodic_retrieval_record.v1` contracts —
+  exact W2A joins, fixed-scale Decimal retrieval, bounded supplied-candidate
+  audit, deterministic purge/embargo de-overlap, explicit effective-N
+  abstention, and zero authority;
+- `tests/test_market_memory_retrieval.py` — schema/runtime parity, exact joins,
+  known-answer arithmetic, missingness, half-open interval, tie, permutation,
+  tamper, loader, resource, purity, and no-skill/no-runtime guards.
+
+W5A synthetic Operating Cortex additions:
+
+- `engine/neuralweb/market_memory_operating_cortex.py` and the strict
+  `operating_cortex_registration.v1` and `operating_cortex_packet.v1`
+  contracts — invocation-local exact W4/W2 and citation-byte revalidation,
+  durable external-coverage abstention, content-addressed evidence,
+  deterministic salience, structural contradiction/missingness/falsifier/
+  citation audits, immutable bounded read views, and zero authority;
+- `tests/test_market_memory_operating_cortex.py` — schema/runtime and join
+  parity, content identity, source/span tamper, Decimal and permutation,
+  hostile morphology, missing-component abstention, reader immutability,
+  resource bounds, purity, and no-LLM/no-runtime/no-quality-claim guards.
+
+W6A Research Factory conformance additions:
+
+- `engine/research_factory/adapter_market_memory.py` — pure exact-W2A-byte to
+  canonical proposed-candidate projection with semantic IDs and zero authority;
+- additive canonical enums in `engine/research_factory/schema.py`; no new
+  candidate schema, registry, store, writer, or lifecycle;
+- `tests/test_research_factory_market_memory.py` — exact-byte, owner-control
+  read-back, deterministic-ID, null-join, no-I/O, no-callsite, and authority
+  mutation guards.
+
+W7 inert promotion-audit additions:
+
+- `contracts/market_memory/feature_promotion_audit.v1.schema.json` and
+  `engine/neuralweb/market_memory_promotion_audit.py` — strict failed/not-run
+  projection of all 18 owner-registry features with content identity and zero
+  authority; no decision or runtime seam;
+- `tests/test_market_memory_promotion_audit.py` — registry completeness,
+  evidence honesty, mutation, canonical-byte, bounds, no-I/O, no-callsite, and
+  CI-ownership guards.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 

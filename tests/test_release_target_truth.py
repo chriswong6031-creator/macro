@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -19,7 +20,10 @@ from engine.release_target_truth import (
     reconstruct_release_target,
     round_published_1dp,
 )
-from scripts.collect_release_target_vintages import collect_release_target_vintages
+from scripts.collect_release_target_vintages import (
+    collect_release_target_vintages,
+    seal_existing_release_target_vintages,
+)
 
 
 def _frame(series: str, rows: list[tuple[str, str, str, float]]) -> pd.DataFrame:
@@ -188,6 +192,7 @@ def test_as_of_before_release_cannot_observe_target():
 def test_conventional_one_decimal_rounding_is_half_up():
     assert round_published_1dp(0.25) == 0.3
     assert round_published_1dp(-0.25) == -0.3
+    assert str(round_published_1dp(-0.01)) == "0.0"
 
 
 def test_loader_requires_and_validates_output_type_marker(tmp_path: Path):
@@ -242,10 +247,35 @@ def test_collector_fails_open_without_key_and_never_calls_fetcher(tmp_path: Path
     assert not (tmp_path / "data").exists()
 
 
+def test_collector_dry_run_validates_without_creating_directories(tmp_path: Path):
+    def fake_fetcher(**kwargs):
+        return _frame(
+            kwargs["series_id"],
+            [("2025-01-01", "2025-02-12", "9999-12-31", 100.0)],
+        ).drop(columns=["series", "source_output_type"])
+
+    receipt = collect_release_target_vintages(
+        repo_root=tmp_path,
+        series_ids=["CPIAUCSL"],
+        api_key="test-key",
+        dry_run=True,
+        fetcher=fake_fetcher,
+    )
+
+    assert receipt["status"] == "dry_run"
+    assert receipt["publication_status"] == "not_requested"
+    assert not (tmp_path / "data").exists()
+
+
 def test_collector_requests_output_type_2_and_writes_self_identifying_store(
     tmp_path: Path,
 ):
     calls = []
+    stale_cpi_completion = (
+        tmp_path / "data/release_forecast/cpi_truth/build_completion.json"
+    )
+    stale_cpi_completion.parent.mkdir(parents=True)
+    stale_cpi_completion.write_bytes(b'{"stale_completion":true}\n')
 
     def fake_fetcher(**kwargs):
         calls.append(kwargs)
@@ -265,6 +295,7 @@ def test_collector_requests_output_type_2_and_writes_self_identifying_store(
     )
 
     assert receipt["status"] == "ok"
+    assert not stale_cpi_completion.exists()
     assert calls == [
         {
             "series_id": "PAYEMS",
@@ -289,6 +320,11 @@ def test_collector_requests_output_type_2_and_writes_self_identifying_store(
         manifest["series"]["PAYEMS"]["artifact_sha256"]
         == hashlib.sha256(output_bytes).hexdigest()
     )
+    assert receipt["series"]["PAYEMS"]["artifact_bytes"] == len(output_bytes)
+    assert (
+        receipt["series"]["PAYEMS"]["artifact_sha256"]
+        == hashlib.sha256(output_bytes).hexdigest()
+    )
     assert set(stored["series"]) == {"PAYEMS"}
     assert set(stored["source_output_type"]) == {2}
     reconstructed = reconstruct_release_target(
@@ -298,6 +334,174 @@ def test_collector_requests_output_type_2_and_writes_self_identifying_store(
         release_date="2025-02-07",
     )
     assert reconstructed["payroll_change_thousands"] == 57.0
+
+
+def test_collector_validation_failure_leaves_prior_cohort_and_markers_untouched(
+    tmp_path: Path,
+):
+    target_dir = tmp_path / "data/fred_vintage/release_targets"
+    target_dir.mkdir(parents=True)
+    prior_bytes: dict[str, bytes] = {}
+    for series_id in ("CPIAUCSL", "CPILFESL"):
+        path = default_vintage_path(tmp_path, series_id)
+        _frame(
+            series_id,
+            [("2025-01-01", "2025-02-12", "9999-12-31", 100.0)],
+        ).to_parquet(path, index=False)
+        prior_bytes[series_id] = path.read_bytes()
+    manifest = target_dir / "manifest.json"
+    completion = tmp_path / "data/release_forecast/cpi_truth/build_completion.json"
+    completion.parent.mkdir(parents=True)
+    manifest.write_bytes(b'{"prior_manifest":true}\n')
+    completion.write_bytes(b'{"prior_completion":true}\n')
+
+    def partial_fetcher(**kwargs):
+        series_id = kwargs["series_id"]
+        if series_id == "CPILFESL":
+            raise TimeoutError("simulated sibling fetch timeout")
+        return _frame(
+            series_id,
+            [("2025-01-01", "2025-02-12", "9999-12-31", 200.0)],
+        ).drop(columns=["series", "source_output_type"])
+
+    receipt = collect_release_target_vintages(
+        repo_root=tmp_path,
+        series_ids=["CPIAUCSL", "CPILFESL"],
+        api_key="test-key",
+        fetcher=partial_fetcher,
+    )
+
+    assert receipt["status"] == "partial"
+    assert receipt["publication_status"] == "aborted_before_source_mutation"
+    assert manifest.read_bytes() == b'{"prior_manifest":true}\n'
+    assert completion.read_bytes() == b'{"prior_completion":true}\n'
+    for series_id, expected in prior_bytes.items():
+        assert default_vintage_path(tmp_path, series_id).read_bytes() == expected
+    assert not list(target_dir.glob(".release-target-cohort.*"))
+
+
+def test_collector_mid_publication_failure_removes_old_completion_boundaries(
+    tmp_path: Path,
+):
+    target_dir = tmp_path / "data/fred_vintage/release_targets"
+    target_dir.mkdir(parents=True)
+    manifest = target_dir / "manifest.json"
+    completion = tmp_path / "data/release_forecast/cpi_truth/build_completion.json"
+    completion.parent.mkdir(parents=True)
+    manifest.write_bytes(b'{"prior_manifest":true}\n')
+    completion.write_bytes(b'{"prior_completion":true}\n')
+
+    def complete_fetcher(**kwargs):
+        series_id = kwargs["series_id"]
+        return _frame(
+            series_id,
+            [("2025-01-01", "2025-02-12", "9999-12-31", 200.0)],
+        ).drop(columns=["series", "source_output_type"])
+
+    published = 0
+
+    def fail_second_publish(staged: Path, output: Path) -> None:
+        nonlocal published
+        published += 1
+        assert not manifest.exists()
+        assert not completion.exists()
+        if published == 2:
+            raise OSError("simulated disk error")
+        output.parent.mkdir(parents=True, exist_ok=True)
+        os.replace(staged, output)
+
+    with pytest.raises(RuntimeError, match="cohort_publication_failed"):
+        collect_release_target_vintages(
+            repo_root=tmp_path,
+            series_ids=["CPIAUCSL", "CPILFESL"],
+            api_key="test-key",
+            fetcher=complete_fetcher,
+            publisher=fail_second_publish,
+        )
+
+    assert published == 2
+    assert not manifest.exists()
+    assert not completion.exists()
+
+
+def test_seal_existing_hash_binds_complete_cohort_without_refreshing_clock(
+    tmp_path: Path,
+):
+    store = default_vintage_path(tmp_path, "CPIAUCSL")
+    store.parent.mkdir(parents=True)
+    _frame(
+        "CPIAUCSL",
+        [
+            ("2025-01-01", "2025-02-12", "9999-12-31", 319.086),
+            ("2024-12-01", "2025-02-12", "9999-12-31", 317.603),
+        ],
+    ).to_parquet(store, index=False)
+    legacy_clock = "2026-08-10T03:31:09+00:00"
+    manifest = store.parent / "manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema": "release_target_vintage_collection.v1",
+                "status": "ok",
+                "collected_at": legacy_clock,
+                "realtime_start": "1997-01-01",
+            }
+        ),
+        encoding="utf-8",
+    )
+    completion = tmp_path / "data/release_forecast/cpi_truth/build_completion.json"
+    completion.parent.mkdir(parents=True)
+    completion.write_bytes(b'{"stale_completion":true}\n')
+
+    receipt = seal_existing_release_target_vintages(
+        repo_root=tmp_path,
+        series_ids=["CPIAUCSL"],
+    )
+
+    output_bytes = store.read_bytes()
+    row = receipt["series"]["CPIAUCSL"]
+    assert receipt["status"] == "ok"
+    assert receipt["mode"] == "seal_existing"
+    assert receipt["collected_at"] == legacy_clock
+    assert receipt["completed_at"] == legacy_clock
+    assert receipt["sealed_at"] >= legacy_clock
+    assert row["path"] == (
+        "data/fred_vintage/release_targets/CPIAUCSL_all_vintages.parquet"
+    )
+    assert not Path(row["path"]).is_absolute()
+    assert row["artifact_bytes"] == len(output_bytes)
+    assert row["artifact_sha256"] == hashlib.sha256(output_bytes).hexdigest()
+    assert not completion.exists()
+
+    sealed_bytes = manifest.read_bytes()
+    sealed_mtime_ns = manifest.stat().st_mtime_ns
+    completion.write_bytes(b'{"current_completion":true}\n')
+    repeated = seal_existing_release_target_vintages(
+        repo_root=tmp_path,
+        series_ids=["CPIAUCSL"],
+    )
+
+    assert repeated == receipt
+    assert manifest.read_bytes() == sealed_bytes
+    assert manifest.stat().st_mtime_ns == sealed_mtime_ns
+    assert completion.read_bytes() == b'{"current_completion":true}\n'
+
+
+def test_seal_existing_fails_before_manifest_replace_on_incomplete_cohort(
+    tmp_path: Path,
+):
+    manifest = tmp_path / "data/fred_vintage/release_targets/manifest.json"
+    manifest.parent.mkdir(parents=True)
+    original = b'{"schema":"legacy","sentinel":true}\n'
+    manifest.write_bytes(original)
+
+    with pytest.raises(FileNotFoundError, match="missing release-target store"):
+        seal_existing_release_target_vintages(
+            repo_root=tmp_path,
+            series_ids=["CPIAUCSL"],
+        )
+
+    assert manifest.read_bytes() == original
 
 
 def test_conflicting_duplicate_vintage_values_are_rejected():
