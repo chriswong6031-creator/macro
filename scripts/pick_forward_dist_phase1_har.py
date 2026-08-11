@@ -246,6 +246,8 @@ if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     logging.disable(logging.CRITICAL)
 
+from collectors.massive_stock_day import (                       # noqa: E402
+    StaleLocalMirrorError, check_local_mirror_freshness)
 from engine import pick_forward_dist as pfd                      # noqa: E402
 from engine import vol_forecast as vf                            # noqa: E402
 from engine.trial_ledger import TrialLedger                      # noqa: E402
@@ -1405,6 +1407,10 @@ def main() -> int:
     ap.add_argument("--max-names", type=int, default=None, help="smoke-run cap on files read")
     ap.add_argument("--out-json", default=str(RESULTS_JSON))
     ap.add_argument("--out-md", default=str(RESULTS_MD))
+    ap.add_argument("--allow-stale", action="store_true",
+                    help="run against a local massive_stock_day mirror 20+ trading "
+                         "sessions behind (refused by default; the mirror is not "
+                         "self-updating, so the study would be as of its frozen date)")
     args = ap.parse_args()
 
     store = p0.resolve_data_root(args.data_root)
@@ -1413,6 +1419,13 @@ def main() -> int:
               "(--data-root / $MACRO_PRIMARY_DATA / <repo>/data/massive_stock_day / "
               "primary checkout). Refusing to emit a study with no data.", flush=True)
         return 2
+    # Reachable is not current: the ladder happily resolves a mirror frozen weeks ago.
+    try:
+        check_local_mirror_freshness(store,
+                                     entrypoint="scripts/pick_forward_dist_phase1_har.py",
+                                     allow_stale=args.allow_stale)
+    except StaleLocalMirrorError:
+        sys.exit(2)   # the banner already printed the lag and the fix command
 
     out, _t, _h = run_study(store, max_names=args.max_names)
 

@@ -127,6 +127,8 @@ Positioning never fused (Signal Commons law); display/context + tape only; LLM e
 3. Substack path (session fetcher / email forwarding / manual drop).
 4. Display scope for Citrini-derived content (operator-authed only vs public, notwithstanding redistribution rights).
 
+**RESOLVED — operator ruling 2026-08-11** (recorded via the GMI program, `research/GLOBAL_MARKET_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` §10.3): *"existing themes from Citrini can be used, but we no longer use their feeds."* All four access questions are therefore moot: **CITR-0/1/3/4 (live tape, change events, substack extraction, forward grading of their changes) are CLOSED — no feed ingestion ever ships.** The surviving asset is the already-in-hand basket/theme **definitions**, usable as operator-reviewed curated crosswalk evidence (`source: citrini`; R-TIL-7's display/context posture unchanged; no live holdings diffs). CITR-2 survives in that definition-only form; `theme_crosswalk.yml`'s `citrini_basket_ids` column may be filled from the in-hand definitions.
+
 ## 8. Ops ledger
 - **BLOCKED-EXTERNAL:** `GRANTS_GOV_API_KEY`, `SAM_API_KEY` repo secrets absent (two pre-award activity legs dark); runner `ANTHROPIC_API_KEY` unverified for `foresight_analyst`/`narrative_brain` (LLM lanes dark by default).
 - **Collision watch:** #1891/#1840 hold synapse.yml + `engine/neuralweb/query.py` — W5 sequenced last-of-core.
