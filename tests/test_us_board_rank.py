@@ -2440,12 +2440,11 @@ class TestCommittedArtifactIntegration:
         """G0.3 at board grain: the committed board through score_rows with and
         without the basing opt-in.
 
-        The witness is injected rather than hoped for.  The 2026-07-31 artifact
-        happens to carry no BOTTOM WATCH buy row, so reading this fixture as-is would
-        pass on an engine that had never learned the state — the vacuous form of this
-        guard.  The board's own ledger says the state IS routine (41 buy-lane rows
-        over 13 of the 17 board days ending 07-31), so one real row is relabelled to
-        the state the ledger shows and the assertions below refuse an empty split.
+        The witness is injected rather than hoped for.  Some committed artifacts have
+        no BOTTOM WATCH buy row, so reading the fixture as-is could pass on an engine
+        that had never learned the state — the vacuous form of this guard.  When the
+        current artifact already carries genuine BOTTOM WATCH rows, those rows are
+        expected to move too; the injected witness guarantees the split is non-empty.
 
         The non-buy lanes are asserted as OBJECTS, not counts: score_rows is never
         handed watch/leaders/laggards/ran, and this is the test that says so.
@@ -2487,6 +2486,11 @@ class TestCommittedArtifactIntegration:
 
         raw_before, witness = _pool()
         raw_after, _ = _pool()
+        expected_moved = {
+            r["ticker"] for r in raw_before
+            if ubr.is_bottom_watch(r)
+            and ubr._status_of(r.get("entry_signal")) not in ubr._BLOCKED_STATUSES
+        }
         before = ubr.score_rows(raw_before, verdict_by=verdicts,
                                 board_asof=board["as_of"])
         after = ubr.score_rows(raw_after, verdict_by=verdicts,
@@ -2501,7 +2505,8 @@ class TestCommittedArtifactIntegration:
 
         moved = {t for t in by_before
                  if by_before[t]["stage"] != by_after[t]["stage"]}
-        assert moved == {witness}
+        assert witness in expected_moved
+        assert moved == expected_moved
         assert all(by_before[t]["stage"] == "blocked" for t in moved)
         assert all(by_after[t]["stage"] == "basing" for t in moved)
 
