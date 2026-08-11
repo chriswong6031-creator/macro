@@ -4601,6 +4601,53 @@ def _us_prophet_refusals(site: Path, doc: "dict | None") -> "dict | None":
         return None
 
 
+_PROPHET_OUTAGE_NOTE = {
+    "label_en": "Rebuilt after outage",
+    "label_zh": "中断后重建",
+    "tip_en": (
+        "This pick was reconstructed after an outage using the market data "
+        "available that weekend. Its later results stay separate from picks "
+        "published live."
+    ),
+    "tip_zh": (
+        "这条信号因系统中断而在事后重建，使用的是当时那个周末可用的市场数据。"
+        "后续表现会与实时发布的信号分开统计。"
+    ),
+}
+
+
+def _attach_prophet_outage_notes(site: Path, doc: "dict | None") -> "dict | None":
+    """Mark board cards backed by the one authorised reconstructed plan set.
+
+    ``build_prophet`` publishes the immutable provenance stamp into index.json.
+    This display-only join turns that internal stamp into the plain bilingual
+    Tier-2 note required by the force-majeure disclosure.  Unknown modes are not
+    guessed into copy; an unreadable or older index leaves the board unchanged.
+    """
+    if not doc:
+        return doc
+    try:
+        path = site / "prophet" / "index.json"
+        if not path.exists():
+            return doc
+        index = json.loads(path.read_text(encoding="utf-8"))
+        reconstructed = {
+            str(row.get("asset") or "").strip().upper()
+            for row in (index.get("plans") or [])
+            if isinstance(row, dict)
+            and row.get("origination_mode") == "outage_backfill_2026_08_09"
+            and row.get("asset")
+        }
+        if not reconstructed:
+            return doc
+        for card in doc.get("buy") or []:
+            if str(card.get("ticker") or "").strip().upper() in reconstructed:
+                card["prophet_outage_note"] = dict(_PROPHET_OUTAGE_NOTE)
+    except Exception as exc:  # noqa: BLE001 - disclosure join is display-only
+        log.warning("Prophet outage note unavailable (%s)", exc)
+    return doc
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -4836,6 +4883,10 @@ def main() -> int:
     # into _attach_board_display_chips so the post-build_library re-render (one-build-lag
     # fix, below) reuses the EXACT same enrichment and can never silently diverge.
     us_standouts = _attach_board_display_chips(site, us_standouts)
+    # Force-majeure disclosure: turn the index's internal provenance stamp into a
+    # plain bilingual note on the matching board card.  The join is display-only;
+    # no plan, rank, gate, or board membership changes here.
+    us_standouts = _attach_prophet_outage_notes(site, us_standouts)
     # ANTICIPATION §6.9 R5 — the per-name "why not" shelf under the board. Derived from
     # the SAME board dict the cards render from; see _us_prophet_refusals for the
     # build-order reason it cannot read the published prophet index for its reason list.
@@ -6220,6 +6271,7 @@ def main() -> int:
             _us_path = site / "factordata" / "us_standouts.json"
             _fresh_su = _attach_board_display_chips(
                 site, json.loads(_us_path.read_text())) if _us_path.exists() else None
+            _fresh_su = _attach_prophet_outage_notes(site, _fresh_su)
             _prior_as_of = (us_standouts or {}).get("as_of")
             _prior_stale = (us_standouts or {}).get("staleness") or {}
             if _fresh_su and (

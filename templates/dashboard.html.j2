@@ -15947,6 +15947,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% if n.get('new') %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
             'tip_en':'This signal fired in tonight’s run — the name was not on the board yesterday.',
             'tip_zh':'该信号在今晚这一轮才触发 — 昨天不在榜上。'}] %}{% endif %}
+          {# One-event outage disclosure. The index carries an internal immutable
+             provenance stamp; build_site translates it into this plain-language
+             bilingual Tier-2 note. Never print the mode slug or operator jargon. #}
+          {% set _pon = n.get('prophet_outage_note') %}
+          {% if _pon %}{% set _mk.rows = _mk.rows + [{'k':'replay',
+            'en':_pon.label_en, 'zh':_pon.label_zh,
+            'tip_en':_pon.tip_en, 'tip_zh':_pon.tip_zh}] %}{% endif %}
           {# W-L1 `Adjusted` (spec §2 C, §4.3, §6.4) — the receipt of a name that MOVED when
              the overnight pass countersigned last evening's board. Sits with `New` because
              both are recency-class facts ("what changed since you last looked"), ahead of

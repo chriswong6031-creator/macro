@@ -5752,6 +5752,8 @@ jobs:
       # segregation gate the moment it does.
       - name: force-majeure outage backfill (segregation both ways, nightly passthrough, collision rule, idempotence)
         run: python -m pytest tests/test_prophet_outage_backfill.py -q
+      - name: force-majeure outage disclosure surface (exact mode, bilingual plain copy, shared card)
+        run: python -m pytest tests/test_prophet_outage_surface.py -q
 
   coiled-mtf-anchor-era:
     # COILED bonus/fire + mtf trend.d3 absolute session anchor (era
