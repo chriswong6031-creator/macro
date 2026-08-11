@@ -1245,6 +1245,34 @@ origin signatures. Every action-authority bit remains false,
 `context_only=true`, and ranking, gating, sizing, trading, execution, training,
 promotion, forecast, and outcome use remain disconnected.
 
+### 11.0.10 W6A Research Factory candidate conformance
+
+W6A adds a pure adapter from one exact W2A
+`market_memory.trial_registration.v1` byte string to the canonical
+`research_factory.candidate.v1` shape. The Research Factory source, candidate
+type, and domain enums gain the matching values `market_memory`,
+`market_memory_candidate`, and `market_memory` atomically. The output is always
+`proposed`, display-only, and `trial_accounting.mode=read_only`; the adapter
+does not ingest the row, declare a trial family, write a ledger, execute an
+experiment, or advance a lifecycle.
+
+The exact W2A owner loader must accept the canonical bytes and content-bound
+registration ID before projection. The candidate spec binds the exact byte
+digest and length plus verbatim read-back of purge, embargo, trial budgets, and
+model/code/config implementation hashes. Semantic spec and candidate IDs do
+not include the adapter's `created_at`, so repeated projections cannot create
+new candidate identities by clock churn. W4 retrieval is an explicit deferred
+null join and W5 evaluation is explicitly `not_run` with a null evidence join;
+neither missing slice is fabricated. Challenge completion, emission, training,
+promotion, and every action-authority bit remain false.
+
+This slice has no registry, store, writer, filesystem/environment/network
+input, CLI, service, scheduler, API route, real candidate emission, or real
+experiment. It establishes schema conformance only. Later work must supply
+owner-valid W4 retrieval evidence and W5 evaluation evidence, then pass the
+existing human-gated Research Factory lifecycle without weakening either
+program's authority rails.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1412,6 +1440,16 @@ W3A operational playback preparation additions:
 - `tests/test_market_memory_playback.py` and
   `tests/test_market_memory_playback_api.py` — ancestry, tamper, resource,
   dual-provenance, pagination, schema/runtime, auth, cache, and no-leak guards.
+
+W6A Research Factory conformance additions:
+
+- `engine/research_factory/adapter_market_memory.py` — pure exact-W2A-byte to
+  canonical proposed-candidate projection with semantic IDs and zero authority;
+- additive canonical enums in `engine/research_factory/schema.py`; no new
+  candidate schema, registry, store, writer, or lifecycle;
+- `tests/test_research_factory_market_memory.py` — exact-byte, owner-control
+  read-back, deterministic-ID, null-join, no-I/O, no-callsite, and authority
+  mutation guards.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 

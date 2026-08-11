@@ -57,6 +57,9 @@ CANDIDATE_TYPES = frozenset({
     # 'oracle_compound' and 'alpha_family' are domain-specific.  See
     # engine/research_factory/adapter_cycle_pattern.py.
     "cycle_pattern_rule",
+    # Market Memory W6A is a candidate-conformance pointer only. It carries an
+    # exact W2A preregistration read-back and no experiment or lifecycle grant.
+    "market_memory_candidate",
 })
 
 # §5.1: source enum
@@ -69,6 +72,7 @@ SOURCES = frozenset({
     "research_queue",
     "domain_registry",   # A2 amendment (W7): RF-2 pointer adoption of existing domain-homed compounds
     "cycle_pattern_scan",  # CPI (P2): the cycle_pattern lattice/FT scan that emits pattern_candidates.jsonl
+    "market_memory",  # Market Memory W6A: pure preregistration conformance adapter
 })
 
 # §5.1: claim_shape — RESERVED for metabolism enum (RF-3).
@@ -101,6 +105,7 @@ DOMAINS = frozenset({
     "china",
     "us_stocks",
     "cycle_pattern",   # CPI (masterplan §6): Cycle-owned candidate lifecycle homed in the factory
+    "market_memory",  # W6A candidate conformance; no evaluator or lifecycle ownership
 })
 
 # §5.3: reviewer recommendation advisory enum

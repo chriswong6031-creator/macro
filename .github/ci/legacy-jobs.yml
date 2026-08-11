@@ -2046,8 +2046,13 @@ jobs:
         run: python scripts/check_research_factory_authority.py
       - name: authority guard selftest (gate fires on planted violation)
         run: python scripts/check_research_factory_authority.py --selftest
-      - name: research-factory state + schema tests
-        run: python -m pytest tests/test_research_factory_state.py tests/test_research_factory_schema.py -q
+      - name: research-factory state + schema + Market Memory conformance tests
+        run: >-
+          python -m pytest
+          tests/test_research_factory_state.py
+          tests/test_research_factory_schema.py
+          tests/test_research_factory_market_memory.py
+          -q
 
   cycle-pattern-authority:
     if: ${{ false }}
