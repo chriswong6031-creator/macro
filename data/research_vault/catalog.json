@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-11T22:30:27.958539+00:00",
-  "count": 950,
+  "generated_at": "2026-08-11T23:06:40.378857+00:00",
+  "count": 952,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -77,6 +77,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qnyqnuroxjh-253cda",
+      "title": "JPM Delta One Flows",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:57:57Z",
+      "summary_points": [
+        "**Fixed Income Short Dominance**: >80% of global fixed income instruments show \"Short\" CTA signals (red), with Americas/EMEA showing strong net inflows but negative OI changes signaling elevated volatility risk.",
+        "**Commodity Hedge Surge**: Precious Metals ($1.8T weekly inflows) and Broad Commodities ($560B weekly) show explosive capital allocation as inflation/hedge demand intensifies.",
+        "**Tech Rotation Divergence**: Semiconductors face $9.1B outflows (-2.2x) while QQQ gains $9.1B inflows (+2.2x), indicating sector-specific risk aversion amid strong Nasdaq demand.",
+        "**EM Asia Rotation**: EM Asia ETFs show robust 4w flows (+3.1z), driven by geopolitical shifts/policy changes, contrasting with US equity concentration risk.",
+        "**Oil-S&P 500 Sensitivity**: S&P 500 exhibits negative oil correlation (-8%) and positive oil change (2.7%), amplifying volatility during energy-driven shocks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-vko7e4zekvn-09bb9d",
       "title": "JPM US Market Intelligence Morning Briefing Aug 11",
       "institution": "J.P. Morgan",
@@ -115,6 +136,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lwx52b2fpsp-b07ab0",
+      "title": "market monitor",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T23:42:00Z",
+      "summary_points": [
+        "**Earnings Momentum**: S&P 500 EPS growth at 45% YoY (Q2), 80% of companies beat profit margin estimates, Energy sector +122% YoY.",
+        "**CPI Data Release**: US CPI YoY (Aug 12) at 3.4% near consensus (vs prior 3.5%), signaling potential Fed policy shifts and equity/fixed income volatility.",
+        "**AI Monetization**: 33% YoY S&P 500 earnings growth (strongest post-crisis), Microsoft/Amazon driving 50% capex growth in 2027 via AI spending.",
+        "**Corporate Credit Risk**: Elevated US HY Corp Spread (264 bps) and US IG Corp Spread (286 bps), necessitating defensive fixed income positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },

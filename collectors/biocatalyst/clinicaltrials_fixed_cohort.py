@@ -70,7 +70,9 @@ FIXED_COHORT_STUDY_FIELDS = ("protocolSection.identificationModule.nctId",)
 FIXED_COHORT_FIELDS_PARAM = ",".join(FIXED_COHORT_STUDY_FIELDS)
 FIXED_COHORT_HASH_SCOPE = "canonical_payload_excluding_run_payload_sha256"
 FIXED_COHORT_EVIDENCE_CLASS = "private_run_receipt_only"
-DEFAULT_USER_AGENT = "MastermindX-BioCatalyst/fixed-cohort-transport"
+DEFAULT_USER_AGENT = (
+    "MastermindX-BioCatalyst/1.0 (biocatalyst@mastermind-x.com)"
+)
 
 # Reviewed hard ceilings.  Defaults sit below every ceiling on purpose; a caller
 # may lower them and may never raise one.
@@ -152,7 +154,7 @@ def require_transport_gate(environ: Mapping[str, str] | None = None) -> None:
         )
 
 
-def _require_user_agent(user_agent: object) -> str:
+def require_fixed_cohort_user_agent(user_agent: object) -> str:
     if not isinstance(user_agent, str) or not user_agent.strip():
         raise ValueError("a descriptive user_agent is required")
     encoded = user_agent.encode("utf-8")
@@ -490,7 +492,7 @@ class BoundedFixedCohortHttpTransport:
     ) -> None:
         self._environ = environ
         require_transport_gate(environ)
-        self.user_agent = _require_user_agent(user_agent)
+        self.user_agent = require_fixed_cohort_user_agent(user_agent)
         self.limits = limits
         self.session = requests.Session() if session is None else session
         # No proxy, netrc, or CA-bundle environment inheritance may reach this
@@ -648,7 +650,7 @@ class ClinicalTrialsFixedCohortTransportRun:
         self.transport = transport
         self.limits = limits
         self.json_limits = limits.json_limits()
-        self.user_agent = _require_user_agent(user_agent)
+        self.user_agent = require_fixed_cohort_user_agent(user_agent)
         self.now_fn = now_fn
         self.query_params = fixed_cohort_query_params(snapshot)
         self._last_clock_value: datetime | None = None
