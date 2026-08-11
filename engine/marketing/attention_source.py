@@ -67,6 +67,9 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Union
 
+# stdlib-only by wire_format's own import-closure law — safe at module level.
+from engine.marketing.wire_format import humanize_money
+
 PathLike = Union[str, Path]
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -210,15 +213,16 @@ def _finite(v: object) -> float | None:
 
 
 def _human_dollars(v: float) -> str:
-    """$4.2B / $317M / $25.0M — a dollar figure a caption could survive."""
-    a = abs(v)
-    if a >= 1e12:
-        return f"${v / 1e12:.1f}T"
-    if a >= 1e9:
-        return f"${v / 1e9:.1f}B"
-    if a >= 1e6:
-        return f"${v / 1e6:.0f}M"
-    return f"${v:,.0f}"
+    """$4.20B / $317M / $2.5M — a dollar figure a caption could survive.
+
+    Delegates to :func:`wire_format.humanize_money`, the package's one money
+    register (voice doctrine ban #8). The local table this replaced printed a
+    $2.4M ADV as "$2M" (the digit that matters, discarded) and anything under
+    a million as a raw comma figure — "$450,000 a day" where a desk writes
+    "$450K a day" — and it put the dollar sign ahead of the minus on a
+    negative. The shared helper is a strict improvement on all three.
+    """
+    return humanize_money(v)
 
 
 def _rows(items: list[dict], n: int) -> list[dict]:

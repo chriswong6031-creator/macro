@@ -30,6 +30,7 @@ Public API:
     restatement_verdict(headline, body, ...) -> dict  # NO LINE MAY RESTATE ANOTHER
     wire_post_shape(headline, body, ...) -> dict      # additive | short_form
     clamp_for_x(headline, body, ...) -> dict
+    humanize_money(value, *, signed=False, sig=3) -> str   # "$7.64B", never "$1000K"
 """
 from __future__ import annotations
 
@@ -666,3 +667,160 @@ def clamp_for_x(
                 "reason": f"not one sentence fits {cap} chars"}
     return {"text": " ".join(kept) + tail, "clamped": True,
             "reason": f"trimmed to {len(kept)} sentence(s) ({len(body)} > {cap})"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Money register (voice doctrine ban #8) — ONE humanizer for the whole package
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# THE DEFECT THIS EXISTS TO NOT REPEAT. A census of 679 shipped items
+# (2026-08-11) found the breaking/wire lane printing raw comma-grouped dollar
+# figures — "$7,639,791,784 in market cap", "$220,529,779,571 in market cap on
+# August 3" — and a "$1000K" out of a K-suffix formatter whose mantissa rounded
+# up into a fourth digit instead of promoting a band. No desk writes either
+# one; a desk writes "$7.64B" and "$1.0M". Doctrine ban #8: number formatting
+# like traders write, big figures rounded to the digit that matters.
+#
+# The band table below is the contract. It is deliberately NOT pure
+# significant-figures: at and above $10M the extra digit is noise a reader
+# discards ("$83M", not "$83.4M"), while a billions mantissa is where the
+# precision a reader actually acts on lives, so B and T carry `sig`
+# significant figures and M/K/units carry a fixed desk width.
+
+#: (scale, suffix), largest first. There is no band above T — a quadrillion
+#: prints as a wide T mantissa rather than inventing a suffix nobody reads.
+_MONEY_SCALES: tuple[tuple[float, str], ...] = (
+    (1e12, "T"),
+    (1e9, "B"),
+    (1e6, "M"),
+    (1e3, "K"),
+)
+
+_MONEY_SIG_MIN = 1
+_MONEY_SIG_MAX = 6
+_MONEY_SIG_DEFAULT = 3
+
+
+def _money_finite(value: object) -> float | None:
+    """float(value) when it is finite, else None. Never raises.
+
+    Kept import-free on purpose: `math.isfinite` would be a second stdlib
+    import into a module whose docstring pins the closure at `re`.
+    """
+    try:
+        f = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if f != f:                      # NaN
+        return None
+    if f in (float("inf"), float("-inf")):
+        return None
+    return f
+
+
+def _money_sig_decimals(mantissa: float, sig: int) -> int:
+    """Decimals that give *mantissa* exactly *sig* significant figures.
+
+    A mantissa under 1 still counts one leading digit (0.99 -> "1.00" at
+    sig=3), which is what makes the band-carry below land on "$1.00B" rather
+    than a 4-digit "$1000M".
+    """
+    whole = int(abs(mantissa))
+    digits = len(str(whole)) if whole else 1
+    return max(0, int(sig) - digits)
+
+
+def _money_band_decimals(suffix: str, mantissa: float, sig: int) -> int:
+    if suffix in ("T", "B"):
+        return _money_sig_decimals(mantissa, sig)
+    if suffix == "M":
+        # No decimals at or above $10M; one decimal below it. "$2.1M" is the
+        # digit that matters; "$83.4M" is not.
+        return 0 if abs(mantissa) >= 10.0 else 1
+    return 0                        # K and bare units
+
+
+def humanize_money(value: object, *, signed: bool = False,
+                   sig: int = _MONEY_SIG_DEFAULT) -> str:
+    """A dollar figure in the register a desk actually writes. "" when unusable.
+
+    ============================  ==========================  ================
+    abs(value)                    mantissa width              example
+    ============================  ==========================  ================
+    >= 1e12  (T)                  `sig` significant figures   "$1.23T"
+    >= 1e9   (B)                  `sig` significant figures   "$7.64B"
+    >= 1e7   (M)                  no decimals                 "$83M"
+    >= 1e6   (M)                  one decimal                 "$2.1M"
+    >= 1e3   (K)                  no decimals                 "$450K"
+    <  1e3                        no decimals, comma-grouped   "$450"
+    ============================  ==========================  ================
+
+    Worked boundaries (all pinned in tests/test_marketing_money_format.py)::
+
+              999_999 -> "$1.0M"      # NEVER "$1000K" — the band carries
+            1_000_000 -> "$1.0M"
+            9_999_999 -> "$10M"       # and never "$10.0M" — 10 leaves the
+           10_000_000 -> "$10M"       #   one-decimal sub-band
+          999_999_999 -> "$1.00B"     # NEVER "$1000M"
+        1_000_000_000 -> "$1.00B"
+        7_639_791_784 -> "$7.64B"     # the doctrine's exemplar figure
+
+    A MANTISSA NEVER PRINTS FOUR DIGITS. After rounding, a mantissa that
+    reached 1000 is re-rendered one band up; that single rule is what kills
+    "$1000K", "$1000M" and "$1500B" at once, including the cases where only
+    the *rounding* crosses the line ($999,500 is under a million and still
+    prints "$1.0M").
+
+    Args:
+        value: anything float() accepts. None, NaN, +-inf and unparseable
+            input return "" — callers fall back rather than ship a crash.
+        signed: prefix "+" on positives. A negative always keeps its sign;
+            zero is never signed. The sign leads the symbol ("-$7.64B"),
+            matching the register already shipping from congress_feed.
+        sig: significant figures for the T and B bands, clamped to
+            [1, 6], default 3. `sig=2` gives the doctrine's shorter
+            "$7.6B"; M/K/units are already at the digit that matters and
+            ignore it.
+
+    Returns:
+        The formatted string, or "" — never raises.
+    """
+    f = _money_finite(value)
+    if f is None:
+        return ""
+
+    sig_f = _money_finite(sig)
+    sig_i = _MONEY_SIG_DEFAULT if sig_f is None else int(sig_f)
+    sig_i = max(_MONEY_SIG_MIN, min(_MONEY_SIG_MAX, sig_i))
+
+    a = abs(f)
+
+    # Index of the first band this magnitude reaches; len(_MONEY_SCALES) means
+    # "bare units", the band below K.
+    idx = len(_MONEY_SCALES)
+    for i, (scale, _suffix) in enumerate(_MONEY_SCALES):
+        if a >= scale:
+            idx = i
+            break
+
+    body = ""
+    while True:
+        if idx >= len(_MONEY_SCALES):
+            body = f"{a:,.0f}"
+            break
+        scale, suffix = _MONEY_SCALES[idx]
+        mantissa = a / scale
+        decimals = _money_band_decimals(suffix, mantissa, sig_i)
+        text = f"{mantissa:.{decimals}f}"
+        rounded = _money_finite(text) or 0.0
+        if rounded >= 1000.0 and idx > 0:
+            idx -= 1                # the rounding carried into the next band
+            continue
+        if suffix == "M" and decimals == 1 and rounded >= 10.0:
+            text = f"{mantissa:.0f}"    # "$10M", never "$10.0M"
+        body = text + suffix
+        break
+
+    if f < 0:
+        return f"-${body}"
+    return f"+${body}" if (signed and f > 0) else f"${body}"
