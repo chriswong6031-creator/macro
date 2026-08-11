@@ -991,10 +991,20 @@ class TestTheEarningsPostObeysTheHouseVoice:
         for text in (ahead, light):
             assert "B vs $" not in text, "the revenue figures are back in the copy"
 
-    def test_it_carries_a_reaction_that_costs_something(self, tmp_path):
-        """The house voice law: a fact PLUS a reaction that costs you."""
+    def test_it_carries_a_consequence_not_only_figures(self, tmp_path):
+        """The house voice law: a fact PLUS what it changes.
+
+        v5 (2026-08-11): the pinned line was "We don't trade the print, we
+        trade what the tape does with it" — a reaction about the DESK, which
+        `copywriter.voice_v5_violations` rejects, and it quarantined 100% of
+        this lane's own output on the pronoun. The property is unchanged (the
+        post may not end on a figure stack); the consequence is now stated
+        about the market.
+        """
         text = self._emit(tmp_path)
-        assert "don't trade the print" in text, text
+        assert "The session after it is the read." in text, text
+        assert not text.rstrip().endswith("%."), (
+            "the post ends on a figure, with no consequence at all", text)
 
     def test_it_passes_the_shared_guards(self, tmp_path):
         from engine.marketing.copywriter import banned_language
