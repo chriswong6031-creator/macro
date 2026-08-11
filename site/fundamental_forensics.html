@@ -31,30 +31,28 @@
   };
 })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Filing Forensics — MastermindX</title>
+<title>Filing Forensics — Understand What Changed — MastermindX</title>
 
 
 
-<meta name="description" content="Inspect review-worthy financial-statement changes through normalized values, transparent formulas, thresholds, and SEC source links.">
+<meta name="description" content="Compare a company&#39;s latest filing with the prior period, understand the changes that stand out, and verify every result with its SEC source.">
 <link rel="canonical" href="https://www.mastermind-x.com/fundamental_forensics.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MastermindX">
-<meta property="og:title" content="Filing Forensics — MastermindX">
-<meta property="og:description" content="Inspect review-worthy financial-statement changes through normalized values, transparent formulas, thresholds, and SEC source links.">
+<meta property="og:title" content="Filing Forensics — Understand What Changed — MastermindX">
+<meta property="og:description" content="Compare a company&#39;s latest filing with the prior period, understand the changes that stand out, and verify every result with its SEC source.">
 <meta property="og:url" content="https://www.mastermind-x.com/fundamental_forensics.html">
 <meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Filing Forensics — MastermindX">
-<meta name="twitter:description" content="Inspect review-worthy financial-statement changes through normalized values, transparent formulas, thresholds, and SEC source links.">
+<meta name="twitter:title" content="Filing Forensics — Understand What Changed — MastermindX">
+<meta name="twitter:description" content="Compare a company&#39;s latest filing with the prior period, understand the changes that stand out, and verify every result with its SEC source.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="theme.css?v=3005a06c">
-<link rel="stylesheet" href="tier_preview.css?v=1c64e203">
-<link rel="stylesheet" href="fundamental_forensics.css?v=2067ceb4">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=65bba21c">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="tier_preview.css">
+<link rel="stylesheet" href="fundamental_forensics.css?v=20260811-ux">
 </head>
 <body class="ff-page">
 
@@ -65,7 +63,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=65bba21c">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -277,10 +275,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -306,29 +304,49 @@
   <main class="ff-main" id="ff-main">
     <header class="ff-hero">
       <div class="ff-hero-copy">
-        <p class="ff-eyebrow"><span class="l-en">Fundamental forensics</span><span class="l-zh">基本面取证</span></p>
-        <h1><span class="l-en">Filing Change Radar</span><span class="l-zh">财报变化雷达</span></h1>
-        <p class="ff-deck"><span class="l-en">See what changed, why it was flagged, and the SEC source links behind it.</span><span class="l-zh">查看发生了什么变化、为何被标记，以及对应的 SEC 来源链接。</span></p>
+        <p class="ff-eyebrow"><span class="l-en">Filing forensics</span><span class="l-zh">财报取证</span></p>
+        <h1><span class="l-en">Spot the changes that matter.</span><span class="l-zh">找出真正重要的财报变化。</span></h1>
+        <p class="ff-deck"><span class="l-en">Pick a company. We compare its latest filing with the one before it, explain what stands out in plain English, and link every result to the SEC.</span><span class="l-zh">选择一家公司。我们会把最新财报与上一期逐项对比，用简单语言说明值得关注的变化，并把每项结果链接回 SEC 原文。</span></p>
+        <div class="ff-hero-promise" aria-label="How Filing Forensics works">
+          <span><span class="l-en">Compare the numbers</span><span class="l-zh">对比关键数字</span></span>
+          <span><span class="l-en">Read wording changes</span><span class="l-zh">阅读措辞变化</span></span>
+          <span><span class="l-en">Verify the source</span><span class="l-zh">核对原始来源</span></span>
+        </div>
       </div>
-      <dl class="ff-run-meta" aria-label="Dataset status">
-        <div>
-          <dt><span class="l-en">As of</span><span class="l-zh">数据截至</span></dt>
-          <dd id="ff-as-of">—</dd>
+      <div class="ff-hero-visual" aria-hidden="true">
+        <div class="ff-document ff-document-prior">
+          <span></span><span></span><span></span><span></span>
         </div>
-        <div>
-          <dt><span class="l-en">Generated</span><span class="l-zh">生成时间</span></dt>
-          <dd id="ff-generated-at">—</dd>
+        <div class="ff-document ff-document-current">
+          <span></span><span></span><span></span><span></span>
+          <i class="ff-document-signal"></i>
         </div>
-        <div>
-          <dt><span class="l-en">Basis</span><span class="l-zh">数据口径</span></dt>
-          <dd id="ff-source-label">—</dd>
-        </div>
-      </dl>
+        <svg class="ff-compare-arc" viewBox="0 0 160 86" fill="none">
+          <path d="M18 68C42 22 99 7 143 31" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 7"/>
+          <path d="m134 22 11 9-14 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="ff-visual-caption"><span class="l-en">Latest filing</span><span class="l-zh">最新财报</span></div>
+      </div>
     </header>
+
+    <dl class="ff-run-meta" aria-label="Dataset status">
+      <div>
+        <dt><span class="l-en">Filing data through</span><span class="l-zh">财报数据截至</span></dt>
+        <dd id="ff-as-of">—</dd>
+      </div>
+      <div>
+        <dt><span class="l-en">Last refreshed</span><span class="l-zh">最近更新</span></dt>
+        <dd id="ff-generated-at">—</dd>
+      </div>
+      <div>
+        <dt><span class="l-en">Built from</span><span class="l-zh">数据来源</span></dt>
+        <dd id="ff-source-label">—</dd>
+      </div>
+    </dl>
 
     <section class="ff-context-card" aria-labelledby="ff-company-label">
       <div class="ff-company-picker">
-        <label id="ff-company-label" for="ff-company-search"><span class="l-en">Company</span><span class="l-zh">公司</span></label>
+        <label id="ff-company-label" for="ff-company-search"><span class="l-en">Start with a company</span><span class="l-zh">先选择一家公司</span></label>
         <div class="ff-combobox-wrap">
           <span class="ff-search-icon" aria-hidden="true">
             <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="m12.6 12.6 4 4"></path></svg>
@@ -336,9 +354,9 @@
           <input id="ff-company-search" class="ff-company-search" type="search" autocomplete="off"
             role="combobox" aria-autocomplete="list" aria-expanded="false"
             aria-controls="ff-company-options" aria-activedescendant=""
-            data-placeholder-en="Search ticker or company"
+            data-placeholder-en="Search a ticker or company"
             data-placeholder-zh="搜索股票代码或公司"
-            placeholder="Search ticker or company">
+            placeholder="Search a ticker or company">
           <button class="ff-search-clear" id="ff-search-clear" type="button" hidden
             aria-label="Clear company search" data-label-en="Clear company search" data-label-zh="清除公司搜索">
             <span aria-hidden="true">×</span>
@@ -439,36 +457,104 @@
       </div>
     </section>
 
+    <section class="ff-overview" id="ff-overview" aria-labelledby="ff-overview-title">
+      <div class="ff-overview-lead">
+        <p class="ff-kicker"><span class="l-en">Latest filing snapshot</span><span class="l-zh">最新财报速览</span></p>
+        <div class="ff-overview-heading">
+          <div>
+            <h2 id="ff-overview-title"><span class="l-en">The important changes, up front</span><span class="l-zh">先看最重要的变化</span></h2>
+            <p><span class="l-en">A fast read of what stands out, followed by the numbers and SEC proof.</span><span class="l-zh">先快速了解值得关注的变化，再查看关键数字和 SEC 证据。</span></p>
+          </div>
+          <span class="ff-overview-status" id="ff-overview-status" data-state="loading"><span class="l-en">Building snapshot…</span><span class="l-zh">正在生成速览…</span></span>
+        </div>
+
+        <article class="ff-quick-signal" id="ff-quick-signal" data-priority="watch">
+          <div class="ff-quick-signal-icon" aria-hidden="true">
+            <svg viewBox="0 0 40 40" fill="none"><path d="M8 29V18m8 11V11m8 18V21m8 8V7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="m8 13 8-6 8 8 8-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="ff-quick-signal-copy">
+            <span class="ff-quick-signal-label" id="ff-quick-signal-label"><span class="l-en">First thing to understand</span><span class="l-zh">首先需要了解</span></span>
+            <h3 id="ff-quick-signal-title"><span class="l-en">Loading the latest comparison…</span><span class="l-zh">正在载入最新对比…</span></h3>
+            <p id="ff-quick-signal-summary"><span class="l-en">We are comparing the latest filing with the prior period.</span><span class="l-zh">正在将最新财报与上一期进行对比。</span></p>
+          </div>
+          <button class="ff-quick-signal-open" type="button" data-open-primary-finding>
+            <span class="l-en">See why it matters</span><span class="l-zh">查看为什么重要</span> <span aria-hidden="true">→</span>
+          </button>
+        </article>
+      </div>
+
+      <div class="ff-overview-side">
+        <div class="ff-snapshot-stats" aria-label="Latest filing summary">
+          <div class="ff-snapshot-stat is-attention">
+            <span class="ff-snapshot-stat-icon" aria-hidden="true">!</span>
+            <strong id="ff-stat-attention">—</strong>
+            <small><span class="l-en">Need attention</span><span class="l-zh">需要关注</span></small>
+          </div>
+          <div class="ff-snapshot-stat is-watch">
+            <span class="ff-snapshot-stat-icon" aria-hidden="true">◎</span>
+            <strong id="ff-stat-watch">—</strong>
+            <small><span class="l-en">Keep an eye on</span><span class="l-zh">持续观察</span></small>
+          </div>
+          <div class="ff-snapshot-stat is-coverage">
+            <span class="ff-snapshot-stat-icon" aria-hidden="true">◒</span>
+            <strong id="ff-stat-coverage">—</strong>
+            <small><span class="l-en">Metrics compared</span><span class="l-zh">已对比指标</span></small>
+          </div>
+          <div class="ff-snapshot-stat is-source">
+            <span class="ff-snapshot-stat-icon" aria-hidden="true">↗</span>
+            <strong id="ff-stat-sources">—</strong>
+            <small><span class="l-en">Source links</span><span class="l-zh">来源链接</span></small>
+          </div>
+        </div>
+
+        <div class="ff-next-steps">
+          <span class="ff-next-steps-title"><span class="l-en">Explore this filing</span><span class="l-zh">继续探索这份财报</span></span>
+          <button type="button" data-go-tab="compare"><span aria-hidden="true">01</span><span class="l-en">Compare key numbers</span><span class="l-zh">对比关键数字</span></button>
+          <button type="button" data-go-tab="disclosures"><span aria-hidden="true">02</span><span class="l-en">Read wording changes</span><span class="l-zh">阅读措辞变化</span></button>
+          <button type="button" data-go-tab="trace"><span aria-hidden="true">03</span><span class="l-en">Verify SEC sources</span><span class="l-zh">核对 SEC 来源</span></button>
+        </div>
+      </div>
+    </section>
+
     <nav class="ff-tabs" aria-label="Forensics views">
       <div class="ff-tablist" role="tablist" aria-label="Forensics views">
-        <button class="ff-tab is-active" id="ff-tab-radar" type="button" role="tab"
-          aria-selected="true" aria-controls="ff-panel-radar" tabindex="0" data-tab="radar">
-          <span class="ff-tab-index" aria-hidden="true">01</span><span class="l-en">Radar</span><span class="l-zh">雷达</span>
-        </button>
-        <button class="ff-tab" id="ff-tab-statements" type="button" role="tab"
-          aria-selected="false" aria-controls="ff-panel-statements" tabindex="-1" data-tab="statements">
-          <span class="ff-tab-index" aria-hidden="true">02</span><span class="l-en">Statements</span><span class="l-zh">财务报表</span>
-        </button>
-        <button class="ff-tab" id="ff-tab-disclosures" type="button" role="tab"
-          aria-selected="false" aria-controls="ff-panel-disclosures" tabindex="-1" data-tab="disclosures">
-          <span class="ff-tab-index" aria-hidden="true">03</span><span class="l-en">Filing changes</span><span class="l-zh">披露变化</span>
-        </button>
-        <button class="ff-tab" id="ff-tab-redlines" type="button" role="tab"
-          aria-selected="false" aria-controls="ff-panel-redlines" tabindex="-1" data-tab="redlines">
-          <span class="ff-tab-index" aria-hidden="true">04</span><span class="l-en">Redlines</span><span class="l-zh">逐字对照</span>
-        </button>
-        <button class="ff-tab" id="ff-tab-timeline" type="button" role="tab"
-          aria-selected="false" aria-controls="ff-panel-timeline" tabindex="-1" data-tab="timeline">
-          <span class="ff-tab-index" aria-hidden="true">05</span><span class="l-en">Filing trail</span><span class="l-zh">披露轨迹</span>
-        </button>
-        <button class="ff-tab" id="ff-tab-compare" type="button" role="tab"
-          aria-selected="false" aria-controls="ff-panel-compare" tabindex="-1" data-tab="compare">
-          <span class="ff-tab-index" aria-hidden="true">06</span><span class="l-en">Compare</span><span class="l-zh">期间对比</span>
-        </button>
-        <button class="ff-tab" id="ff-tab-trace" type="button" role="tab"
-          aria-selected="false" aria-controls="ff-panel-trace" tabindex="-1" data-tab="trace">
-          <span class="ff-tab-index" aria-hidden="true">07</span><span class="l-en">Sources &amp; receipt</span><span class="l-zh">来源与凭据</span>
-        </button>
+        <div class="ff-tab-group">
+          <span class="ff-tab-group-label"><span class="l-en">Understand</span><span class="l-zh">看懂</span></span>
+          <button class="ff-tab is-active" id="ff-tab-radar" type="button" role="tab"
+            aria-selected="true" aria-controls="ff-panel-radar" tabindex="0" data-tab="radar">
+            <span class="ff-tab-icon" aria-hidden="true">✦</span><span class="l-en">Key signals</span><span class="l-zh">关键信号</span>
+          </button>
+          <button class="ff-tab" id="ff-tab-statements" type="button" role="tab"
+            aria-selected="false" aria-controls="ff-panel-statements" tabindex="-1" data-tab="statements">
+            <span class="ff-tab-icon" aria-hidden="true">▥</span><span class="l-en">Financials</span><span class="l-zh">财务数据</span>
+          </button>
+        </div>
+        <div class="ff-tab-group">
+          <span class="ff-tab-group-label"><span class="l-en">Read the filing</span><span class="l-zh">阅读财报</span></span>
+          <button class="ff-tab" id="ff-tab-disclosures" type="button" role="tab"
+            aria-selected="false" aria-controls="ff-panel-disclosures" tabindex="-1" data-tab="disclosures">
+            <span class="ff-tab-icon" aria-hidden="true">◫</span><span class="l-en">What changed</span><span class="l-zh">披露变化</span>
+          </button>
+          <button class="ff-tab" id="ff-tab-redlines" type="button" role="tab"
+            aria-selected="false" aria-controls="ff-panel-redlines" tabindex="-1" data-tab="redlines">
+            <span class="ff-tab-icon" aria-hidden="true">≠</span><span class="l-en">Exact wording</span><span class="l-zh">逐字对照</span>
+          </button>
+          <button class="ff-tab" id="ff-tab-timeline" type="button" role="tab"
+            aria-selected="false" aria-controls="ff-panel-timeline" tabindex="-1" data-tab="timeline">
+            <span class="ff-tab-icon" aria-hidden="true">◷</span><span class="l-en">Filing history</span><span class="l-zh">披露历史</span>
+          </button>
+        </div>
+        <div class="ff-tab-group">
+          <span class="ff-tab-group-label"><span class="l-en">Verify</span><span class="l-zh">核对</span></span>
+          <button class="ff-tab" id="ff-tab-compare" type="button" role="tab"
+            aria-selected="false" aria-controls="ff-panel-compare" tabindex="-1" data-tab="compare">
+            <span class="ff-tab-icon" aria-hidden="true">↔</span><span class="l-en">Compare periods</span><span class="l-zh">期间对比</span>
+          </button>
+          <button class="ff-tab" id="ff-tab-trace" type="button" role="tab"
+            aria-selected="false" aria-controls="ff-panel-trace" tabindex="-1" data-tab="trace">
+            <span class="ff-tab-icon" aria-hidden="true">✓</span><span class="l-en">Sources</span><span class="l-zh">来源凭据</span>
+          </button>
+        </div>
       </div>
       <div class="ff-view-status" id="ff-view-status" role="status" aria-live="polite">
         <span class="l-en">Loading filing data…</span><span class="l-zh">正在载入财报数据…</span>
@@ -478,9 +564,9 @@
     <section class="ff-panel" id="ff-panel-radar" role="tabpanel" aria-labelledby="ff-tab-radar" tabindex="0">
       <header class="ff-panel-head">
         <div>
-          <p class="ff-kicker"><span class="l-en">Ranked review queue</span><span class="l-zh">优先审阅队列</span></p>
-          <h2><span class="l-en">What deserves a closer look</span><span class="l-zh">哪些变化值得深入查看</span></h2>
-          <p><span class="l-en">Rule-based checks surface changes; each result opens to its normalized inputs, rule math, and SEC source endpoints.</span><span class="l-zh">基于规则的检查会浮现变化；每项结果都可展开查看标准化输入、规则计算及 SEC 来源端点。</span></p>
+          <p class="ff-kicker"><span class="l-en">Key signals</span><span class="l-zh">关键信号</span></p>
+          <h2><span class="l-en">What changed in the latest filing</span><span class="l-zh">最新财报发生了哪些变化</span></h2>
+          <p><span class="l-en">Start with the plain-English explanation. Open any signal to see the numbers, the rule that spotted it, and the original SEC source.</span><span class="l-zh">先阅读简单解释。打开任一信号，即可查看关键数字、识别规则和 SEC 原始来源。</span></p>
         </div>
         <div class="ff-filter-summary" id="ff-filter-summary">—</div>
       </header>
@@ -492,11 +578,11 @@
           </button>
           <button type="button" class="ff-filter" data-priority="high" aria-pressed="false">
             <span class="ff-filter-symbol ff-filter-symbol-review" aria-hidden="true">!</span>
-            <span class="l-en">Review now</span><span class="l-zh">立即审阅</span> <span class="ff-filter-count" data-count-for="high">0</span>
+            <span class="l-en">Needs attention</span><span class="l-zh">需要关注</span> <span class="ff-filter-count" data-count-for="high">0</span>
           </button>
           <button type="button" class="ff-filter" data-priority="watch" aria-pressed="false">
             <span class="ff-filter-symbol ff-filter-symbol-watch" aria-hidden="true">○</span>
-            <span class="l-en">Watch</span><span class="l-zh">持续关注</span> <span class="ff-filter-count" data-count-for="watch">0</span>
+            <span class="l-en">Keep an eye on</span><span class="l-zh">持续观察</span> <span class="ff-filter-count" data-count-for="watch">0</span>
           </button>
         </div>
         <label class="ff-topic-filter" for="ff-topic-select">
@@ -513,9 +599,9 @@
     <section class="ff-panel" id="ff-panel-statements" role="tabpanel" aria-labelledby="ff-tab-statements" tabindex="0" hidden>
       <header class="ff-panel-head">
         <div>
-          <p class="ff-kicker"><span class="l-en">Normalized projection</span><span class="l-zh">标准化投影</span></p>
-          <h2><span class="l-en">Statement history</span><span class="l-zh">财务报表历史</span></h2>
-          <p><span class="l-en">SEC Company Facts values used by the current detector set. Quarterly flows may be derived from year-to-date facts; verify against the filing.</span><span class="l-zh">当前检测器使用的 SEC Company Facts 数值。季度流量可能由年初至今数据推导；请对照原始财报核验。</span></p>
+          <p class="ff-kicker"><span class="l-en">Financial history</span><span class="l-zh">财务历史</span></p>
+          <h2><span class="l-en">See the numbers across periods</span><span class="l-zh">查看各期间的财务数字</span></h2>
+          <p><span class="l-en">These are the SEC values used to compare filings. Some quarterly figures are calculated from year-to-date totals; open the source when you need the original.</span><span class="l-zh">这些是用于对比财报的 SEC 数值。部分季度数据由年初至今总额计算而来；需要原始数据时可打开来源。</span></p>
         </div>
       </header>
       <div id="ff-statements"></div>
@@ -524,9 +610,9 @@
     <section class="ff-panel" id="ff-panel-disclosures" role="tabpanel" aria-labelledby="ff-tab-disclosures" tabindex="0" hidden>
       <header class="ff-panel-head ff-disclosure-head">
         <div>
-          <p class="ff-kicker"><span class="l-en">Filing change feed</span><span class="l-zh">披露变化动态</span></p>
-          <h2><span class="l-en">What changed in the filing</span><span class="l-zh">财报披露有哪些变化</span></h2>
-          <p><span class="l-en">This is a text comparison, not an explanation of motive, materiality, or financial impact.</span><span class="l-zh">这是文本对比，不代表对动机、重大性或财务影响的解释。</span></p>
+          <p class="ff-kicker"><span class="l-en">Wording changes</span><span class="l-zh">措辞变化</span></p>
+          <h2><span class="l-en">See what the company added, removed, or rewrote</span><span class="l-zh">查看公司新增、删除或改写的内容</span></h2>
+          <p><span class="l-en">This compares language between filings. It shows what changed—not why it changed.</span><span class="l-zh">这里对比两份财报的文字，只显示发生了什么变化，不推测变化原因。</span></p>
         </div>
         <div class="ff-filter-summary" id="ff-disclosure-summary">—</div>
       </header>
@@ -537,7 +623,7 @@
             <option value="all">All sections / 全部章节</option>
           </select>
         </label>
-        <p class="ff-lexical-note"><span class="ff-lexical-glyph" aria-hidden="true">◇</span><span class="l-en">Observed wording only — open an item to read both source excerpts.</span><span class="l-zh">仅显示观察到的措辞变化；打开条目可阅读两个来源摘录。</span></p>
+        <p class="ff-lexical-note"><span class="ff-lexical-glyph" aria-hidden="true">◇</span><span class="l-en">Open any change to read the before-and-after SEC excerpts.</span><span class="l-zh">打开任一变化，即可阅读前后两段 SEC 原文。</span></p>
       </div>
       <div class="ff-disclosure-feed" id="ff-disclosure-feed" role="list" aria-label="Filing disclosure changes"></div>
     </section>
@@ -545,9 +631,9 @@
     <section class="ff-panel" id="ff-panel-redlines" role="tabpanel" aria-labelledby="ff-tab-redlines" tabindex="0" hidden>
       <header class="ff-panel-head">
         <div>
-          <p class="ff-kicker"><span class="l-en">Source redlines</span><span class="l-zh">来源逐字对照</span></p>
-          <h2><span class="l-en">Read the language side by side</span><span class="l-zh">并列阅读前后措辞</span></h2>
-          <p><span class="l-en">Every row links back to the matched SEC filing excerpts. Unchanged boilerplate stays out of the review queue.</span><span class="l-zh">每行都可回到匹配的 SEC 财报摘录；未变化的模板文本不会进入审阅队列。</span></p>
+          <p class="ff-kicker"><span class="l-en">Before and after</span><span class="l-zh">前后对照</span></p>
+          <h2><span class="l-en">Read changed wording side by side</span><span class="l-zh">并列阅读变化前后的措辞</span></h2>
+          <p><span class="l-en">Each row shows matching passages from both SEC filings. Unchanged repeated text is hidden.</span><span class="l-zh">每行显示两份 SEC 财报中的对应段落；未变化的重复文字会被隐藏。</span></p>
         </div>
         <div class="ff-filter-summary" id="ff-redline-summary">—</div>
       </header>
@@ -557,9 +643,9 @@
     <section class="ff-panel" id="ff-panel-timeline" role="tabpanel" aria-labelledby="ff-tab-timeline" tabindex="0" hidden>
       <header class="ff-panel-head">
         <div>
-          <p class="ff-kicker"><span class="l-en">Filing trail</span><span class="l-zh">披露轨迹</span></p>
-          <h2><span class="l-en">The filing record behind this review</span><span class="l-zh">本次审阅对应的财报记录</span></h2>
-          <p><span class="l-en">Confirm the reporting form, filing date, accession, and original SEC document before drawing a conclusion.</span><span class="l-zh">在得出结论前，请确认报表类型、披露日期、文件编号及 SEC 原文。</span></p>
+          <p class="ff-kicker"><span class="l-en">Filing history</span><span class="l-zh">财报历史</span></p>
+          <h2><span class="l-en">See which filings are being compared</span><span class="l-zh">查看正在对比的财报</span></h2>
+          <p><span class="l-en">Check the filing type, date, and original SEC document.</span><span class="l-zh">查看财报类型、日期和 SEC 原文。</span></p>
         </div>
       </header>
       <div class="ff-timeline" id="ff-timeline" aria-label="Filing comparison timeline"></div>
@@ -568,9 +654,9 @@
     <section class="ff-panel" id="ff-panel-compare" role="tabpanel" aria-labelledby="ff-tab-compare" tabindex="0" hidden>
       <header class="ff-panel-head ff-compare-head">
         <div>
-          <p class="ff-kicker"><span class="l-en">Period bridge</span><span class="l-zh">期间变化桥</span></p>
-          <h2><span class="l-en">Compare normalized periods</span><span class="l-zh">对比标准化期间</span></h2>
-          <p><span class="l-en">Changes are shown neutrally; direction alone is not an accounting verdict.</span><span class="l-zh">变化采用中性呈现；单凭方向并不代表会计结论。</span></p>
+          <p class="ff-kicker"><span class="l-en">Period comparison</span><span class="l-zh">期间对比</span></p>
+          <h2><span class="l-en">Compare the numbers side by side</span><span class="l-zh">并列对比财务数字</span></h2>
+          <p><span class="l-en">Choose any two reported periods. A rise or fall is context, not a verdict.</span><span class="l-zh">选择任意两个报告期间。上升或下降只是背景信息，并非结论。</span></p>
         </div>
         <div class="ff-period-controls" id="ff-period-controls">
           <label for="ff-current-period">
@@ -590,19 +676,19 @@
     <section class="ff-panel" id="ff-panel-trace" role="tabpanel" aria-labelledby="ff-tab-trace" tabindex="0" hidden>
       <header class="ff-panel-head">
         <div>
-          <p class="ff-kicker"><span class="l-en">Evidence &amp; receipt desk</span><span class="l-zh">证据与凭据台</span></p>
-          <h2><span class="l-en">Sources, scope, and the recorded trail</span><span class="l-zh">来源、范围与记录轨迹</span></h2>
-          <p><span class="l-en">Read the evidence map, then inspect a sealed publication receipt when one is available for this issuer.</span><span class="l-zh">先阅读证据映射；如该发行人有可用的密封发布凭据，再进行检查。</span></p>
+          <p class="ff-kicker"><span class="l-en">Verify the source</span><span class="l-zh">核对来源</span></p>
+          <h2><span class="l-en">Follow every result back to the SEC</span><span class="l-zh">追溯每项结果的 SEC 来源</span></h2>
+          <p><span class="l-en">The source map shows where each result came from. The run record shows how this page was produced.</span><span class="l-zh">来源地图显示每项结果来自哪里；运行记录显示本页面如何生成。</span></p>
         </div>
       </header>
       <div class="ff-source-tabs" id="ff-source-tabs" role="tablist" aria-label="Sources and receipt views">
         <button class="ff-source-tab is-active" id="ff-source-tab-map" type="button" role="tab"
           aria-selected="true" aria-controls="ff-source-panel-map" tabindex="0" data-source-mode="map">
-          <span class="ff-source-tab-mark" aria-hidden="true">↗</span><span class="l-en">Evidence map</span><span class="l-zh">证据映射</span>
+          <span class="ff-source-tab-mark" aria-hidden="true">↗</span><span class="l-en">Source map</span><span class="l-zh">来源地图</span>
         </button>
         <button class="ff-source-tab" id="ff-source-tab-receipt" type="button" role="tab"
           aria-selected="false" aria-controls="ff-source-panel-receipt" tabindex="-1" data-source-mode="receipt">
-          <span class="ff-source-tab-mark" aria-hidden="true">◇</span><span class="l-en">Sealed receipt</span><span class="l-zh">密封凭据</span>
+          <span class="ff-source-tab-mark" aria-hidden="true">◇</span><span class="l-en">Run record</span><span class="l-zh">运行记录</span>
         </button>
       </div>
       <section id="ff-source-panel-map" role="tabpanel" aria-labelledby="ff-source-tab-map" tabindex="-1">
@@ -617,8 +703,8 @@
   <aside class="ff-evidence" id="ff-evidence" aria-labelledby="ff-evidence-title" tabindex="-1">
     <header class="ff-evidence-head">
       <div>
-        <p class="ff-kicker"><span class="l-en">Evidence inspector</span><span class="l-zh">证据检查器</span></p>
-        <h2 id="ff-evidence-title"><span class="l-en">Select a finding</span><span class="l-zh">选择一项发现</span></h2>
+        <p class="ff-kicker"><span class="l-en">Signal details</span><span class="l-zh">信号详情</span></p>
+        <h2 id="ff-evidence-title"><span class="l-en">Choose a signal</span><span class="l-zh">选择一个信号</span></h2>
       </div>
       <button class="ff-evidence-close" id="ff-evidence-close" type="button"
         aria-label="Close evidence inspector" data-label-en="Close evidence inspector" data-label-zh="关闭证据检查器">
@@ -628,7 +714,7 @@
     <div class="ff-evidence-body" id="ff-evidence-body">
       <div class="ff-evidence-empty">
         <span class="ff-empty-mark" aria-hidden="true">↳</span>
-        <p><span class="l-en">Choose a result to inspect its values, formula, threshold, and SEC source links.</span><span class="l-zh">选择一项结果，查看数值、公式、阈值和 SEC 来源链接。</span></p>
+        <p><span class="l-en">Choose a signal to understand what it means, compare the numbers, and verify the SEC source.</span><span class="l-zh">选择一个信号，了解它的含义、对比关键数字并核对 SEC 来源。</span></p>
       </div>
     </div>
   </aside>
@@ -636,8 +722,8 @@
   <aside class="ff-receipt-inspector" id="ff-receipt-inspector" aria-labelledby="ff-receipt-inspector-title" tabindex="-1">
     <header class="ff-evidence-head">
       <div>
-        <p class="ff-kicker"><span class="l-en">Receipt waterfall</span><span class="l-zh">凭据瀑布</span></p>
-        <h2 id="ff-receipt-inspector-title"><span class="l-en">Select a receipt cell</span><span class="l-zh">选择一个凭据单元</span></h2>
+        <p class="ff-kicker"><span class="l-en">How this value was built</span><span class="l-zh">这个数值如何生成</span></p>
+        <h2 id="ff-receipt-inspector-title"><span class="l-en">Choose a value</span><span class="l-zh">选择一个数值</span></h2>
       </div>
       <button class="ff-evidence-close" id="ff-receipt-inspector-close" type="button"
         aria-label="Close receipt inspector" data-label-en="Close receipt inspector" data-label-zh="关闭凭据检查器">
@@ -647,7 +733,7 @@
     <div class="ff-evidence-body" id="ff-receipt-inspector-body">
       <div class="ff-evidence-empty">
         <span class="ff-empty-mark" aria-hidden="true">◇</span>
-        <p><span class="l-en">Choose a receipt cell to inspect its recorded selected-leaf trail.</span><span class="l-zh">选择一个凭据单元，以检查其已记录的选定叶节点轨迹。</span></p>
+        <p><span class="l-en">Choose a value to see its recorded source path.</span><span class="l-zh">选择一个数值，查看其记录的来源路径。</span></p>
       </div>
     </div>
   </aside>
@@ -657,12 +743,12 @@
 <template id="ff-loading-template">
   <div class="ff-loading" role="status">
     <span class="ff-loading-dot" aria-hidden="true"></span>
-    <span class="l-en">Loading filing review data…</span><span class="l-zh">正在载入财报审阅数据…</span>
+    <span class="l-en">Comparing the latest filing…</span><span class="l-zh">正在对比最新财报…</span>
   </div>
 </template>
 
-<script src="theme.js?v=e07e6c36" defer></script>
-<script src="tier_preview.js?v=567a3603" defer></script>
-<script src="fundamental_forensics.js?v=b65fbd5d" defer></script>
+<script src="theme.js" defer></script>
+<script src="tier_preview.js" defer></script>
+<script src="fundamental_forensics.js?v=20260811-ux" defer></script>
 </body>
 </html>
