@@ -5075,7 +5075,7 @@ jobs:
       # against a hand-copied field list — a test that asserted its own idea of the
       # shape would go green while the schema and the writer drifted apart.
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 lxml openpyxl scikit-learn jsonschema
+        run: pip install pytest pandas numpy scipy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 lxml openpyxl scikit-learn jsonschema
       - name: china + hk + canada library builders and their manifests
         run: python -m pytest tests/test_w0_5_10_8.py tests/test_hk_closes_fallback.py tests/test_canada_branch_b.py tests/test_stock_library_manifests.py tests/test_stocktable_hk_data.py -q
       - name: china intel/analog/facet organs + fx context render
@@ -5137,6 +5137,17 @@ jobs:
         run: TZ=UTC python -m pytest tests/test_theme_graph_crosswalk.py -q
       - name: CN limit-rule registry — schema, continuity, parity vs china_microstructure
         run: TZ=UTC python -m pytest tests/test_cn_limit_rules.py -q
+      # GMI W2 — the exposure-decomposition probe's pure math. The probe script itself is a
+      # one-shot research tool that is deliberately NOT wired into any lane, so its estimators
+      # would otherwise have no guard at all: a wrong causal shift, a share denominator that
+      # divides by an empty month, a coverage floor off by a boundary, or an era label keyed on
+      # the month END would all ship silently into the committed receipts under
+      # research/theme_graph/w2_probe/ and into whatever W4 charters from them. Every fixture
+      # here is synthetic — the suite reads no store, so it stays green on a runner that cannot
+      # see the gitignored narrative_flare history the probe reads locally. TZ=UTC to match the
+      # rest of this job; nothing in the suite is clock-dependent by construction.
+      - name: theme exposure probe — beta/causal shift, share denominator, coverage floor, era
+        run: TZ=UTC python -m pytest tests/test_theme_exposure_probe.py -q
       # The guard on the COMMITTED store, not only on its fixtures: --selftest proves it
       # can still see each incident, --strict proves the store shipped in this repo
       # satisfies the contract. A guard that only ever runs against its own fixtures is
