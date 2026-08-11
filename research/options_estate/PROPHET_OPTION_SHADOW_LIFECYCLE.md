@@ -118,7 +118,9 @@ readback blocks the lifecycle; the stale checkout copy is never a fallback.
 - `advance_boundaries/<base_state_id>.json`: a private immutable per-state transaction
   marker written only after the candidate validates and before its first event write;
   it pins the exact mark head and ledger receipt so a crash retry adopts byte-identical
-  enrollment/terminal events even after either source advances;
+  enrollment/terminal events even after either source advances. It also binds the
+  candidate state ID, lifecycle head, and ordered event pointers, so a code change
+  cannot reinterpret pinned sources into a parallel valid history on retry;
 - current state: content-identified and cross-checked against the complete event chain;
 - retries: source-derived event bytes are deterministic, so an event written before a
   failed state swap is safely adopted on retry rather than duplicated.

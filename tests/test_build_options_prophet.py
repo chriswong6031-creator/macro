@@ -2758,6 +2758,12 @@ def test_option_shadow_terminal_crash_retry_adopts_pinned_boundary_after_sources
     )
     assert boundary_path.is_file()
     boundary_before = boundary_path.read_bytes()
+    boundary = json.loads(boundary_before)
+    assert boundary["base_state_id"] == base_state_id
+    assert boundary["candidate_state_id"] != base_state_id
+    assert boundary["candidate_lifecycle_head"] == boundary["event_pointers"][-1]
+    assert len(boundary["event_pointers"]) == 1
+    assert f"{boundary['event_pointers'][0]['event_id']}.json" in event_files_before
 
     # Both mutable sources advance before retry. The retry must consume only the
     # immutable source boundary from the first attempt, then adopt the orphan event.
@@ -2812,6 +2818,93 @@ def test_option_shadow_terminal_crash_retry_adopts_pinned_boundary_after_sources
     assert caught_up["event_count"] == 0
     assert caught_up["ledger_row_count"] == 2
     assert len(list((lifecycle_root / "events").rglob("posle_*.json"))) == 3
+
+
+def test_option_shadow_crash_retry_blocks_reinterpreted_candidate_transaction(
+    monkeypatch,
+    tmp_path,
+):
+    mark_root, lifecycle_root, ledger_path, _ = _prepare_enrolled_lifecycle(
+        monkeypatch,
+        tmp_path,
+    )
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:10:00+00:00",
+        session_date="2026-08-11",
+        phase="at_t1",
+        mid=3.3,
+    )
+    _lifecycle_append_close(ledger_path)
+    state_before = (lifecycle_root / "current.json").read_bytes()
+    original_write_state = option_lifecycle._write_state
+
+    def fail_state(*_args, **_kwargs):
+        raise OSError("injected candidate state swap failure")
+
+    monkeypatch.setattr(option_lifecycle, "_write_state", fail_state)
+    with pytest.raises(OSError, match="candidate state swap"):
+        option_lifecycle.advance_lifecycle(
+            lifecycle_root=lifecycle_root,
+            mark_root=mark_root,
+            ledger_path=ledger_path,
+        )
+    event_files_before = {
+        path.name: path.read_bytes()
+        for path in (lifecycle_root / "events").rglob("posle_*.json")
+    }
+    assert len(event_files_before) == 3
+
+    original_terminal_event = option_lifecycle._terminal_event
+
+    def reinterpret_terminal(**kwargs):
+        event = original_terminal_event(**kwargs)
+        event["payload"]["shadow_return"][
+            "shadow_mark_to_mark_return_pct"
+        ] = 9.9999
+        identity = dict(event)
+        identity.pop("event_id", None)
+        event["event_id"] = "posle_" + hashlib.sha256(
+            option_lifecycle._canonical_json_bytes(identity)
+        ).hexdigest()
+        option_lifecycle._validate_event_schema(event)
+        return event
+
+    monkeypatch.setattr(option_lifecycle, "_write_state", original_write_state)
+    monkeypatch.setattr(
+        option_lifecycle,
+        "_terminal_event",
+        reinterpret_terminal,
+    )
+    with pytest.raises(ValueError, match="advance boundary candidate/source mismatch"):
+        option_lifecycle.advance_lifecycle(
+            lifecycle_root=lifecycle_root,
+            mark_root=mark_root,
+            ledger_path=ledger_path,
+        )
+    assert (lifecycle_root / "current.json").read_bytes() == state_before
+    assert {
+        path.name: path.read_bytes()
+        for path in (lifecycle_root / "events").rglob("posle_*.json")
+    } == event_files_before
+
+    monkeypatch.setattr(
+        option_lifecycle,
+        "_terminal_event",
+        original_terminal_event,
+    )
+    recovered = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+    )
+    assert recovered["terminal_count"] == 1
+    reachable = _lifecycle_events(lifecycle_root)
+    assert len(reachable) == len(event_files_before) == 3
+    assert reachable[-1]["payload"]["shadow_return"][
+        "shadow_mark_to_mark_return_pct"
+    ] == 10.0
 
 
 def test_option_shadow_sync_installs_exact_current_main_receipt_before_activation(

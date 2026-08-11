@@ -936,6 +936,9 @@ def _validate_advance_boundary(boundary: object) -> dict[str, object]:
         "mark_boundary",
         "mark_boundary_observed_at_utc",
         "ledger_boundary",
+        "candidate_state_id",
+        "candidate_lifecycle_head",
+        "event_pointers",
     }
     if not isinstance(boundary, dict) or set(boundary) != required:
         raise ValueError("option shadow lifecycle advance boundary is malformed")
@@ -955,6 +958,25 @@ def _validate_advance_boundary(boundary: object) -> dict[str, object]:
     if not isinstance(observed, str) or not observed:
         raise ValueError("option shadow lifecycle advance mark clock is malformed")
     _validate_ledger_receipt(boundary.get("ledger_boundary"))
+    candidate_state_id = boundary.get("candidate_state_id")
+    if (
+        not isinstance(candidate_state_id, str)
+        or not _STATE_ID_RE.fullmatch(candidate_state_id)
+    ):
+        raise ValueError("option shadow lifecycle candidate state id is malformed")
+    candidate_head = _validate_event_pointer(
+        boundary.get("candidate_lifecycle_head")
+    )
+    event_pointers = boundary.get("event_pointers")
+    if not isinstance(event_pointers, list):
+        raise ValueError("option shadow lifecycle candidate event pointers are malformed")
+    checked_pointers = [_validate_event_pointer(pointer) for pointer in event_pointers]
+    if len({pointer["event_id"] for pointer in checked_pointers}) != len(
+        checked_pointers
+    ):
+        raise ValueError("option shadow lifecycle candidate event pointers repeat")
+    if checked_pointers and checked_pointers[-1] != candidate_head:
+        raise ValueError("option shadow lifecycle candidate head is not its last event")
     return deepcopy(boundary)
 
 
@@ -964,7 +986,22 @@ def _make_advance_boundary(
     mark_pointer: dict[str, object],
     mark_observation: dict[str, object],
     ledger_receipt: dict[str, object],
+    candidate: dict[str, object],
+    events: list[dict[str, object]],
 ) -> dict[str, object]:
+    checked_candidate = _validate_state_shape(candidate)
+    candidate_head = _validate_event_pointer(checked_candidate["lifecycle_head"])
+    event_pointers = [_event_pointer(event) for event in events]
+    if event_pointers:
+        if event_pointers[-1] != candidate_head:
+            raise ValueError("option shadow lifecycle candidate head is not its last event")
+    elif candidate_head != state["lifecycle_head"]:
+        raise ValueError("eventless option shadow lifecycle candidate changed its head")
+    if (
+        checked_candidate["mark_cursor"] != mark_pointer
+        or checked_candidate["ledger_cursor"] != ledger_receipt
+    ):
+        raise ValueError("option shadow lifecycle candidate source cursor mismatch")
     boundary: dict[str, object] = {
         "schema": ADVANCE_BOUNDARY_SCHEMA,
         "boundary_id": None,
@@ -972,6 +1009,9 @@ def _make_advance_boundary(
         "mark_boundary": mark_pointer,
         "mark_boundary_observed_at_utc": mark_observation["observed_at_utc"],
         "ledger_boundary": ledger_receipt,
+        "candidate_state_id": checked_candidate["state_id"],
+        "candidate_lifecycle_head": candidate_head,
+        "event_pointers": event_pointers,
     }
     boundary["boundary_id"] = _advance_boundary_identity(boundary)
     return _validate_advance_boundary(boundary)
@@ -2082,11 +2122,15 @@ def advance_lifecycle(
             mark_pointer=advance_mark_pointer,
             mark_observation=advance_mark_observation,
             ledger_receipt=advance_ledger_receipt,
+            candidate=candidate,
+            events=events,
         )
         if advance_boundary is None:
             _write_advance_boundary(lifecycle_root, state, expected_boundary)
         elif advance_boundary != expected_boundary:
-            raise ValueError("option shadow lifecycle advance boundary source mismatch")
+            raise ValueError(
+                "option shadow lifecycle advance boundary candidate/source mismatch"
+            )
         _write_events(lifecycle_root, events)
         _validate_event_chain(lifecycle_root, candidate)
         _validate_source_references(
