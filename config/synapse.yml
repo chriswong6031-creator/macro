@@ -12051,14 +12051,16 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/release_cpi_coherent_shadow.py
     notes: >
       Manifest-bound headline/core CPI history reconstructed from T and T-1
       levels present on the same ALFRED release vintage. Rows retain latent MoM,
       half-up one-decimal print proxies, source-level coordinates and rejection
       disclosures. Top-level asof and candidate_data_asof both identify the
       bound ALFRED manifest completion clock. Candidate target epoch only; no
-      champion or combined weight.
+      champion or combined weight. coherent_ridge_v1 may consume it only with
+      the matching parity and completion receipts and remains display-only.
 
   release-cpi-truth-parity:
     path: data/release_forecast/cpi_truth/parity_report.json
@@ -12075,7 +12077,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/release_cpi_coherent_shadow.py
     notes: >
       Exact preregistered comparison between official archived BLS headline/core
       Table 1 release-edition observations and the same-release-vintage ALFRED
@@ -12101,7 +12104,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/release_cpi_coherent_shadow.py
     notes: >
       Publication boundary written and fsynced only after coherent history and
       parity artifacts succeed. Directly binds ALFRED manifest, official
@@ -12225,7 +12229,10 @@ artifacts:
       available). Keyed (release, period, row_type,
       asof_night) for idempotency — re-running the same night appends zero
       duplicate rows. New rows freeze model_epoch, target_epoch, code_receipt,
-      and input receipts. The nightly lane is the sole advancer (MRI-R8); no
+      and input receipts. coherent_ridge_v1 rows additionally freeze the governed
+      registry, preregistration, coherent-history, parity, completion, training,
+      and prior-OOS interval receipts; they remain excluded from combined_v1 and
+      carry no promotion authority. The nightly lane is the sole advancer (MRI-R8); no
       intraday or backtest lane writes here. Scored rows carry our MAE,
       benchmark MAEs, interval coverage hit, and skew-direction hit.
 

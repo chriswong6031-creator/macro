@@ -48,7 +48,7 @@
         "cutoff": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["rule", "following_calendar_days", "window_opens_utc_time", "admission_window_seconds", "actual_cutoff", "clock_model", "head_observation_model", "aba_adversary_model", "owner_pair_retry_interval_seconds", "owner_pair_max_attempts", "unstable_pair_policy"],
+          "required": ["rule", "following_calendar_days", "window_opens_utc_time", "admission_window_seconds", "actual_cutoff", "clock_model", "head_observation_model", "aba_adversary_model", "owner_pair_retry_interval_seconds", "owner_pair_max_attempts", "unstable_pair_policy", "owner_failure_attribution"],
           "properties": {
             "rule": {"const": "first_same_head_sandwich_observation_in_fixed_window"},
             "following_calendar_days": {"const": 1},
@@ -60,7 +60,8 @@
             "aba_adversary_model": {"const": "transient_a_to_b_to_a_between_reads_not_detectable_v1"},
             "owner_pair_retry_interval_seconds": {"const": 30},
             "owner_pair_max_attempts": {"const": 31},
-            "unstable_pair_policy": {"const": "retry_within_window_then_missed_owner_pair_not_stable_by_deadline"}
+            "unstable_pair_policy": {"const": "retry_within_window_then_missed_owner_pair_not_stable_by_deadline"},
+            "owner_failure_attribution": {"const": "exact_matching_session_and_in_window_attempt_required_for_specific_reason_generic_gap_has_no_attempt"}
           }
         },
         "state_inputs": {
@@ -189,7 +190,7 @@
             "horizon_sessions", "target", "formula", "source", "price_basis",
             "input_encoding", "exact_decimal_encoding", "quantization", "rounding",
             "economic_return", "corporate_action_adjusted", "missing_target_policy",
-            "late_target_policy", "clock_tie_policy", "maturity_owner_miss_policy",
+            "late_target_policy", "clock_tie_policy", "maturity_owner_miss_policy", "maturity_owner_failure_attribution",
             "target_maturity_window_rule", "initial_maturity_persisted_view_recovery",
             "initial_maturity_persisted_view_equal_clock_policy", "revision_selection", "correction_policy",
             "final_tail_xnys_sessions", "final_tail_sunset_session",
@@ -212,6 +213,7 @@
             "late_target_policy": {"const": "append_late_source_resolution_preserve_unavailable_revision"},
             "clock_tie_policy": {"const": "append_censored_no_capture_selection"},
             "maturity_owner_miss_policy": {"const": "append_censored_preserve_late_resolution_chain"},
+            "maturity_owner_failure_attribution": {"const": "exact_matching_target_session_and_in_window_attempt_required_for_specific_reason_generic_gap_has_no_attempt"},
             "target_maturity_window_rule": {"const": "target_session_following_calendar_day_same_registered_window"},
             "initial_maturity_persisted_view_recovery": {"const": "earliest_distinct_in_window_pair_observed_at.v1"},
             "initial_maturity_persisted_view_equal_clock_policy": {"const": "fail_closed_ambiguous_no_generation_selection"},
