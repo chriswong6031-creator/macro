@@ -1629,16 +1629,19 @@ def test_mover_and_theme_copy_survives_the_clarity_gate(monkeypatch, tmp_path):
     assert not bad, "unvalidated mover/theme copy trips the gate:\n" + "\n".join(bad)
 
 
-def test_every_movers_desk_question_survives_the_clarity_gate():
-    """Both reply-bait pools land verbatim in theme bodies — walk all of them.
+def test_every_movers_desk_tail_survives_the_clarity_gate():
+    """Both tail pools land verbatim in theme bodies — walk all of them.
 
     A single content_plan run only reaches the tails its theme names hash to,
     so the pools are walked directly to cover the ones the tapes miss.
 
-    Renamed from _QUESTION_* to _TAIL_* on 2026-07-31, when the reply-bait
-    pools were replaced by stance / watch-condition tails (see movers_source:
-    a question aimed at the READER costs the author nothing). The clarity gate
-    is unchanged and every line still has to pass it.
+    NAME AND REGISTER HISTORY. The constants were renamed from _QUESTION_* to
+    _TAIL_* on 2026-07-31, when the reply-bait pools became stance /
+    watch-condition tails (a question aimed at the READER costs the author
+    nothing). Voice doctrine v5 (2026-08-11) finished the job: the pools are
+    fact-forward STATEMENTS now — a volume multiple, a streak, a breadth count
+    — and no tail carries a question mark or a first-person marker at all. The
+    clarity gate is unchanged and every line still has to pass it.
     """
     from engine.marketing.movers_source import _TAIL_DOWN, _TAIL_UP
 
