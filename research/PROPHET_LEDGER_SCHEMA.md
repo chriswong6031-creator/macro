@@ -152,10 +152,13 @@ after a multi-day origination outage. Design of record:
 **Scope — exactly one event.** The 2026-08-09 22:59Z Sunday bake RAN the current
 intake end to end and refused all 30 eligible candidates at `clock_provenance`,
 because the board it read carried a poisoned
-`staleness.inputs.panel.mixed_vintage=true`. PR #5241 healed the derivation; the same
-board, re-derived, reports `mixed_vintage: false`. The exception permits replaying
-that ONE refusal against that ONE pinned board, at `recorded_at=2026-08-09`. It does
-not permit any other date:
+`staleness.inputs.panel.mixed_vintage=true`. PR #5241 healed the derivation. The
+replay uses the recovered 79-row incident board and applies that one proven session-
+clamp correction to its staleness receipt before the unchanged engine sees it; every
+ranked row stays untouched. The durable checkpoint from run `31340764145` is loaded
+as an immutable 30-identity allowlist, and the write refuses unless the healed replay
+partitions exactly those 30 rows. The exception permits replaying that ONE refusal at
+`recorded_at=2026-08-09`. It does not permit any other date:
 
 * **2026-08-03 → 2026-08-06 stay refused.** Standing ruling
   `us-board-frozen-alpha-2026-08` (`data/us_board_ledger/disclosed_gaps.json`, decided
@@ -188,10 +191,14 @@ rows without reading the per-plan files. A plan minted by this lane WITHOUT the 
 is a defect.
 
 **Where the exception is enumerated.** `data/prophet/backfill_disclosures.json` — the
-window, the authority, the pinned input SHAs (board commit + plans baseline), the
-executing commit, and the full counterfactual set: every plan minted, every collision
-that the live lane won, every candidate a gate still refused with its reason, and the
-dates that were deliberately NOT reconstructed.
+window, the authority, the three pinned input SHAs (incident board, event-time plan
+baseline, and later live-collision baseline), the immutable refusal-checkpoint SHA,
+the executing commit, and the full counterfactual set: every plan minted, every
+collision that the live lane won, every candidate a gate still refused with its
+reason, and the dates that were deliberately NOT reconstructed. The board card turns
+the internal stamp into a bilingual reader note: “Rebuilt after outage” / “中断后重建”,
+with plain-language detail that the weekend data was used and later results stay
+separate. Internal mode strings and incident jargon never reach that surface.
 
 **What keeps the carve-out from widening.**
 `tests/test_prophet_outage_backfill.py` asserts a both-directions set equality: every
@@ -201,6 +208,8 @@ authorised mode string is `outage_backfill_2026_08_09` and the only authorised
 `recorded_at` is `2026-08-09`. A future backfill of any other date therefore turns
 the suite red on arrival, and needs its own operator authority, its own disclosure
 row and its own dated addendum here — deleting the test is not the remedy.
+`tests/test_prophet_outage_surface.py` separately pins the exact mode-to-card join,
+both languages, and the front-facing banned-vocabulary fence.
 
 **Producer.** `scripts/backfill_prophet_outage.py`, a one-off that refuses to run
 twice: the disclosure artifact is its idempotence lock.
