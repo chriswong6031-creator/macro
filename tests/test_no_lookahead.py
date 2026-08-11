@@ -56,6 +56,29 @@ ALLOWLIST: dict[str, tuple[str, str]] = {
         " fixture) — exactly the false crash split_adjust exists to prevent."
         " Disclosed as REVIEW-10 in research/PICK_FORWARD_DIST_PHASE0.md.",
     ),
+    "engine/top_maturation.py:266": (
+        ".ffill().bfill()",
+        "Split-repair back-adjustment factor, not a feature — the same construction"
+        " as engine/pick_forward_dist.py:95 above, in the Winner Health trailing"
+        " panel. `factor = close / _split_adjust(close)` is the cumulative split"
+        " multiplier; _split_adjust() dropna()s its input, so after the reindex the"
+        " factor is NaN at EXACTLY the rows where close is NaN. ffill covers interior"
+        " and trailing gaps; bfill covers ONLY a LEADING gap, and no split is"
+        " detectable before the first valid price, so the first priced bar already"
+        " carries the full cumulative factor and bfill propagates that one constant"
+        " backwards. Here the exemption is stronger than the sibling's: the frame ends"
+        " `.dropna(subset=['close'])`, and every row the fill touches has a NaN close"
+        " by construction — so the bfilled rows are DELETED before anything reads"
+        " them. Measured, not asserted (tests/test_top_maturation.py::"
+        "test_leading_gap_bfill_rows_never_survive_into_the_panel and"
+        " ::test_leading_gap_prefix_parity_bfill_changes_nothing_downstream):"
+        " prepending unpriced rows leaves the repaired frame byte-identical, split_day"
+        " column included — that flag is the only column read off the FILLED factor"
+        " series rather than off close, and it is unchanged. It is also load-bearing"
+        " (::test_split_repair_is_load_bearing_no_fabricated_crash_at_the_split):"
+        " without the repair a 4:1 split prints as a -75% single-day crash. Display"
+        " tier — this panel feeds no score, rank, gate or size.",
+    ),
 }
 
 

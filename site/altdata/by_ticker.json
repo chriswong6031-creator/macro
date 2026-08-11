@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-11",
-  "generated_utc": "2026-08-11T02:40:57.053517+00:00",
+  "generated_utc": "2026-08-11T05:00:18.186927+00:00",
   "n_tickers": 2604,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
@@ -2716,6 +2716,9 @@
       ],
       "weighted_score": 0.2,
       "hf_downloads_30d": 203244604.0,
+      "days_to_earnings": 9,
+      "next_earnings": "2026-08-20",
+      "earnings_surprise_pct": -106.9,
       "congress_position_usd": 77968000.0,
       "convergence_score": 1,
       "trump_linked": false,
@@ -3467,20 +3470,6 @@
       "news_bull_ratio": 0.88,
       "congress_position_usd": 103708000.0,
       "convergence_score": 2,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "DELL": {
-      "ticker": "DELL",
-      "channels": [
-        "activist_13d"
-      ],
-      "weighted_score": 0.2,
-      "days_to_earnings": 16,
-      "next_earnings": "2026-08-27",
-      "earnings_surprise_pct": 66.0,
-      "donor_usd": 85000.0,
-      "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },
@@ -5293,6 +5282,17 @@
       ],
       "weighted_score": 0.2,
       "donor_usd": 89434.0,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "DELL": {
+      "ticker": "DELL",
+      "channels": [
+        "activist_13d"
+      ],
+      "weighted_score": 0.2,
+      "donor_usd": 85000.0,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false

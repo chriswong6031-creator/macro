@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
+import errno
 from hashlib import sha256
 import json
 import os
@@ -13,6 +14,7 @@ from typing import Callable
 import fcntl
 import pytest
 
+import engine.biocatalyst.publication as publication_module
 from engine.biocatalyst.publication import PublicationError, PublicGenerationPublisher
 from engine.biocatalyst.activation import activation_target_binding_sha256
 from engine.biocatalyst.storage import (
@@ -666,6 +668,45 @@ def test_success_mirrors_every_private_artifact_then_promotes_one_sanitized_gene
     assert "test-secret" not in public_text
     assert '"canonical_study"' not in public_text
     assert '"raw_object_key"' not in public_text
+
+
+def test_generation_publication_survives_separate_state_and_public_bind_mounts(
+    tmp_path,
+    monkeypatch,
+):
+    """Systemd ReadWritePaths make the direct stage->public rename return EXDEV."""
+
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    real_replace = publication_module.os.replace
+    cross_mount_attempts = 0
+
+    def replace_with_separate_mounts(source, target):
+        nonlocal cross_mount_attempts
+        source_path = Path(source)
+        target_path = Path(target)
+        if source_path.name == "public-final" and target_path.parent.name == "generations":
+            cross_mount_attempts += 1
+            raise OSError(errno.EXDEV, "Invalid cross-device link")
+        return real_replace(source, target)
+
+    monkeypatch.setattr(publication_module.os, "replace", replace_with_separate_mounts)
+    result = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+
+    assert result.status == "success"
+    assert cross_mount_attempts == 1
+    publisher = PublicGenerationPublisher(cfg.public_root)
+    committed = publisher.read_committed()
+    assert committed is not None
+    assert committed.generation_id == result.generation_id
+    assert publisher.read_operational_health(now=NOW)["observed_nct_count"] == 1
+    assert not list((cfg.public_root / "generations").glob(".*.incoming"))
+    assert not list((cfg.state_root / "dead-letter").iterdir())
 
 
 def test_prospective_first_success_is_a_private_baseline_with_zero_public_changes(tmp_path):

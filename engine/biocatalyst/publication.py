@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
+import errno
 from hashlib import sha256
 import json
 import os
@@ -1007,6 +1008,84 @@ def _tree_equal(left: Path, right: Path) -> bool:
         return all((left / rel).read_bytes() == (right / rel).read_bytes() for rel in left_files)
     except OSError:
         return False
+
+
+def _copy_generation_across_mounts(stage: Path, target: Path) -> None:
+    """Copy a validated generation into the public mount, then rename locally.
+
+    The hardened systemd unit exposes the private state root and public root as
+    separate ``ReadWritePaths`` bind mounts.  A direct ``os.replace`` across
+    those mount boundaries returns ``EXDEV`` even when both paths live on the
+    same underlying filesystem.  The public pointer remains the commit marker,
+    so the safe fallback is: copy regular bytes into a hidden directory under
+    the public generations root, fsync them, verify byte-for-byte parity, and
+    perform the final rename entirely inside that public mount.
+    """
+
+    generations_root = target.parent
+    incoming = Path(
+        tempfile.mkdtemp(
+            prefix=f".{target.name}.",
+            suffix=".incoming",
+            dir=generations_root,
+        )
+    )
+    try:
+        directories, files = _regular_tree_inventory(stage)
+        for relative in directories:
+            (incoming / relative).mkdir(mode=0o700)
+        for relative in files:
+            source = stage / relative
+            destination = incoming / relative
+            read_flags = os.O_RDONLY | os.O_CLOEXEC
+            if hasattr(os, "O_NOFOLLOW"):
+                read_flags |= os.O_NOFOLLOW
+            source_descriptor = -1
+            destination_descriptor = -1
+            try:
+                source_descriptor = os.open(source, read_flags)
+                source_metadata = os.fstat(source_descriptor)
+                if not stat.S_ISREG(source_metadata.st_mode):
+                    raise OSError("generation source is not a regular file")
+                write_flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC
+                if hasattr(os, "O_NOFOLLOW"):
+                    write_flags |= os.O_NOFOLLOW
+                destination_descriptor = os.open(destination, write_flags, 0o600)
+                with os.fdopen(source_descriptor, "rb") as source_handle:
+                    source_descriptor = -1
+                    with os.fdopen(destination_descriptor, "wb") as destination_handle:
+                        destination_descriptor = -1
+                        shutil.copyfileobj(source_handle, destination_handle)
+                        destination_handle.flush()
+                        os.fsync(destination_handle.fileno())
+            except OSError as exc:
+                raise PublicationError("PUBLIC_GENERATION_INSTALL_FAILED") from exc
+            finally:
+                if source_descriptor >= 0:
+                    os.close(source_descriptor)
+                if destination_descriptor >= 0:
+                    os.close(destination_descriptor)
+
+        for relative in sorted(
+            directories,
+            key=lambda value: (value.count("/"), value),
+            reverse=True,
+        ):
+            _fsync_directory(incoming / relative)
+        _fsync_directory(incoming)
+        if not _tree_equal(stage, incoming):
+            raise PublicationError("PUBLIC_GENERATION_ARTIFACT_MISMATCH")
+        try:
+            os.replace(incoming, target)
+            _fsync_directory(generations_root)
+        except OSError as exc:
+            raise PublicationError("PUBLIC_GENERATION_INSTALL_FAILED") from exc
+    finally:
+        if incoming.exists():
+            try:
+                shutil.rmtree(incoming)
+            except OSError:
+                pass
 
 
 def archive_private_stage(
@@ -2126,8 +2205,20 @@ class PublicGenerationPublisher:
                 raise PublicationError("PUBLIC_GENERATION_COLLISION")
             shutil.rmtree(stage)
             return target
-        os.replace(stage, target)
-        _fsync_directory(target.parent)
+        try:
+            os.replace(stage, target)
+            _fsync_directory(target.parent)
+        except OSError as exc:
+            if exc.errno != errno.EXDEV:
+                raise PublicationError("PUBLIC_GENERATION_INSTALL_FAILED") from exc
+            _copy_generation_across_mounts(stage, target)
+            try:
+                shutil.rmtree(stage)
+            except OSError:
+                # The pointer has not moved yet and the copied target is fully
+                # fsynced.  A disposable private-stage cleanup failure must not
+                # turn a valid public generation into an incident.
+                pass
         manifest = self._load_generation_manifest(prepared.generation_id)
         if manifest["manifest_sha256"] != prepared.manifest_sha256:
             raise PublicationError("PUBLIC_GENERATION_ARTIFACT_MISMATCH")

@@ -263,9 +263,13 @@ ARTIFACT_MANIFEST = [
     # required item field waits on a committed render that proves the builder emits them.
     # 1.7.0 -> 1.8.0 (2026-08-07): `universe_sources` registered as OPTIONAL (see the
     # note in optional_fields below for why it is not required).
+    # 1.8.0 -> 1.9.0 (2026-08-11): `candidate_pool` is the lossless,
+    # display-only US candidate-lane disclosure.  The board builder deliberately
+    # wraps it in a fail-open try/except, so absence means the additive disclosure
+    # failed; it cannot be promoted to a required field.
     {"artifact": "site/factordata/us_standouts.json",
      "kind": "board",
-     "schema_version": "1.8.0",
+     "schema_version": "1.9.0",
      "schema_fields": [
          # 1.6.0 GRADUATION (2026-08-03): board_definition / ran / ranking /
          # themes_in_favour moved up from optional_fields after the first committed
@@ -297,7 +301,8 @@ ARTIFACT_MANIFEST = [
          # optional_fields exists to prevent. Consumers must not read its absence as a
          # complete universe — absence means the disclosure itself failed.
          # (List order is alphabetical — test_contract_drift asserts it sorted.)
-         "anchor", "earnings_soon", "post_earnings_move", "universe_sources",
+         "anchor", "candidate_pool", "earnings_soon", "post_earnings_move",
+         "universe_sources",
      ],
      "schema_item_fields": [
          "above_trend", "adv_dollar_20d_median", "adv_dollar_21d", "align_tier", "alpha",
