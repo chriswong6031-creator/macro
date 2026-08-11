@@ -1,12 +1,12 @@
-# B1 BioCatalyst source-canonical ClinicalTrials.gov collector.
+# BioCatalyst B2 ClinicalTrials.gov history archive.
 #
-# This unit is deliberately dark by default.  `biocatalyst-setup.sh` installs
-# it and prepares a dedicated service identity and private state; an operator
-# must separately populate /etc/macro-biocatalyst.env, verify its prerequisites,
-# and explicitly arm the timer. The worker owns its non-blocking lock so manual
-# invocations and timer firings cannot overlap publication work.
+# This unit is installed disabled and is armed only with the B1 source soak.
+# It deliberately shares the primary worker's state and non-blocking lock: an
+# overlap with the launch-critical hourly poll becomes a safe no-op instead of
+# two competing publication transactions. The hourly unit explicitly disables
+# history refreshes; this daily unit is the only scheduled refresh owner.
 [Unit]
-Description=Mastermind BioCatalyst ClinicalTrials.gov evidence canary
+Description=Mastermind BioCatalyst daily ClinicalTrials.gov history archive
 After=network-online.target
 Wants=network-online.target
 ConditionPathExists=/etc/macro-biocatalyst.env
@@ -17,20 +17,16 @@ User=macro-biocatalyst
 Group=macro-biocatalyst
 WorkingDirectory=/opt/macro
 EnvironmentFile=/etc/macro-biocatalyst.env
-# The launch-critical hourly lane carries forward pointer-bound history models
-# but never refreshes the archival source inline. A separate operator-armed
-# daily unit owns that slower evidence transaction so it cannot consume the
-# 900-second current-record opportunity window.
-Environment=BIOCATALYST_HISTORY_ENABLED=0
+Environment=BIOCATALYST_HISTORY_ENABLED=1
 Environment=BIOCATALYST_STATE_ROOT=/var/lib/macro-biocatalyst/state
 Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public
 Environment=BIOCATALYST_ACTIVATION_ROOT=/var/lib/macro-biocatalyst/activation
 Environment=BIOCATALYST_R2_ACTIVATION_GATE_PATH=/var/lib/macro-biocatalyst/activation/gate.json
 Environment=BIOCATALYST_R2_ACTIVATION_HEARTBEAT_PATH=/var/lib/macro-biocatalyst/activation/heartbeat.json
 ExecStart=/opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_worker --mode canary_poll
-# Keep a failed source poll bounded well inside the hourly cadence.  The worker
-# itself owns a non-blocking lock; systemd is not the concurrency control plane.
-TimeoutStartSec=900
+# History collection and immutable R2 verification are intentionally outside
+# the 900-second current-record window, but remain bounded below one hour.
+TimeoutStartSec=2700
 Nice=12
 CPUWeight=20
 CPUQuota=60%

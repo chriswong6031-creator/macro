@@ -149,6 +149,20 @@
     -->
     <key>LIVE_FLOW_TWO_TIER</key>
     <string>1</string>
+    <!--
+      Prospective SPY Market Memory context capture. The key is a dedicated
+      forced-command key: it can invoke only the bounded W1A stdin writer on
+      the VPS and cannot obtain a shell, forward ports, or mutate owner
+      ledgers. The private key itself remains outside the repository.
+    -->
+    <key>MARKET_MEMORY_OPTIONS_CONTEXT_CAPTURE</key>
+    <string>1</string>
+    <key>MARKET_MEMORY_OPTIONS_CONTEXT_OUTBOX</key>
+    <string>/Users/chriswong/liveflow-ops-wt/data/live_flow_state/market_memory_options_context</string>
+    <key>MARKET_MEMORY_OPTIONS_CONTEXT_SSH_TARGET</key>
+    <string>root@146.190.142.17</string>
+    <key>MARKET_MEMORY_OPTIONS_CONTEXT_SSH_KEY</key>
+    <string>/Users/chriswong/.ssh/market_memory_options_context_capture</string>
   </dict>
 
   <key>StandardOutPath</key>

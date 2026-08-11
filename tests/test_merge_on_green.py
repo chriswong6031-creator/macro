@@ -27,6 +27,7 @@ import scripts.merge_on_green as MOG
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "merge-on-green.yml"
 BASELINE_WORKFLOW = ROOT / ".github" / "workflows" / "integration-baseline.yml"
+DEPLOY_SECRETS_WORKFLOW = ROOT / ".github" / "workflows" / "deploy-api-secrets.yml"
 
 
 @pytest.fixture(autouse=True)
@@ -97,24 +98,25 @@ def test_the_workflow_is_event_driven_with_a_ten_minute_recovery_schedule():
 
 
 def test_the_sweep_never_queues_behind_the_workload_it_arbitrates():
-    """Keep the control plane on the pool with live spare capacity.
+    """Keep the control plane on the one runner reserved for the arbiter.
 
-    The 2026-08-08 self-hosted move escaped a capped hosted backlog. Enterprise raised
-    that ceiling to 180; on 2026-08-09 hosted usage was 34 while render-linux was 4/4
-    busy and sweeps queued. Routing back is the same invariant under the new capacity:
-    the merge arbiter must not wait behind render work.
+    On 2026-08-11 the hosted pool was pinned at 180/180 with 91 jobs queued while
+    mac-builder-4 sat online and idle. Its unique label is the isolation boundary;
+    shared workload labels would merely move the priority inversion.
     """
     job = _workflow()["jobs"]["sweep"]
     labels = json.dumps(job["runs-on"])
-    assert job["runs-on"] == "ubuntu-latest"
-    assert "self-hosted" not in labels
+    assert job["runs-on"] == ["self-hosted", "macOS", "ARM64", "merge-control"]
+    assert "merge-control" in labels
     assert "render-linux" not in labels
+    assert "render-heavy" not in labels
     assert "macstudio" not in labels
+    assert "parked" not in labels
     assert int(job["timeout-minutes"]) == 15
 
 
-def test_the_hosted_sweep_keeps_a_minimal_runner_contract():
-    """The hosted route needs only the image's Python and network.
+def test_the_dedicated_sweep_keeps_a_minimal_runner_contract():
+    """The dedicated route needs only the runner's Python and network.
 
     The integration-baseline job has its own routing/setup-python contract; adding a
     setup step to this lightweight sweep must fail here rather than silently making the
@@ -125,6 +127,27 @@ def test_the_hosted_sweep_keeps_a_minimal_runner_contract():
     assert not [entry for entry in used if entry.startswith("actions/setup-python")], (
         f"the sweep must stay runner-agnostic; found {used}"
     )
+
+
+def test_no_bare_self_hosted_job_can_steal_the_merge_control_runner():
+    """No literal self-hosted route may also match mac-builder-4's full label set."""
+    parsed = yaml.safe_load(DEPLOY_SECRETS_WORKFLOW.read_text(encoding="utf-8"))
+    assert parsed["jobs"]["deploy"]["runs-on"] == ["self-hosted", "macstudio-light"]
+    controller_labels = {"self-hosted", "macOS", "ARM64", "parked", "merge-control"}
+    for path in (ROOT / ".github" / "workflows").glob("*.yml"):
+        payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            continue
+        for name, job in (payload.get("jobs") or {}).items():
+            if not isinstance(job, dict):
+                continue
+            route = job.get("runs-on")
+            labels = {route} if isinstance(route, str) else set(route or [])
+            if "self-hosted" not in labels or not labels <= controller_labels:
+                continue
+            assert (path.name, name) == ("merge-on-green.yml", "sweep"), (
+                f"{path.name}:{name} route {route!r} can steal merge-control"
+            )
 
 
 def test_the_workflow_can_actually_merge_and_label():
@@ -146,40 +169,36 @@ def test_the_workflow_can_actually_merge_and_label():
     )
 
 
-def test_no_concurrency_group_may_serialise_this_lane():
-    """The 2026-08-06 livelock. Do not reintroduce `concurrency:` here.
+def test_concurrency_coalesces_full_sweeps_without_swallowing_red_markers():
+    """The 2026-08-06 livelock, repaired without losing #5291 markers.
 
-    `group: merge-on-green` + `cancel-in-progress: false` was chosen so a
-    mid-merge sweep could finish. It achieved the opposite: `cancel-in-progress:
-    false` protects only an IN-PROGRESS run, GitHub keeps exactly ONE pending run
-    per group and cancels it on every new arrival, and the pending state includes
-    the wait for a runner. `ci` and `fences` shared the then-capacity-limited hosted
-    pool with this job (48 and 34 queued against 8 and 1 running when measured), so the
-    group was held for 25-107 minutes by a sweep that had not started, while
-    triggers arriving every 50 s destroyed each other in the single pending slot.
+    A workflow-wide constant group serialized a 25-107 minute hosted queue wait,
+    so triggers arriving every ~50 seconds replaced the only pending run: 98
+    cancelled and 0 successful. The group is safe only at job scope on the
+    dedicated runner, and failure wakeups must be keyed by head SHA because each
+    bounded pass marks exactly one failed head.
 
-    Result over the 100 runs before the fix: 98 cancelled, 0 successful, and 94 of
-    those 98 died within 3 seconds of the next run's creation. ~58 PRs sat armed
-    and unmerged with nothing to merge them.
+    Full sweeps are level-triggered and therefore share `sweep`; duplicates for
+    one failed head may coalesce, but different failed heads cannot.
     """
     parsed = _workflow()
-    assert "concurrency" not in parsed, (
-        "a concurrency group here serialises the RUNNER QUEUE, not the sweep — "
-        "it livelocked the lane to 0 successes in 100 runs. Runner-minute control "
-        "belongs in the job-level `if:` gate, which costs nothing when it skips."
-    )
+    assert "concurrency" not in parsed, "workflow-level grouping repeats the old livelock"
+    concurrency = parsed["jobs"]["sweep"]["concurrency"]
+    group = str(concurrency["group"])
+    assert concurrency["cancel-in-progress"] is False
+    assert "workflow_run.conclusion == 'failure'" in group
+    assert "workflow_run.head_sha" in group and "mark-{0}" in group
+    assert "|| 'sweep'" in group
     source = WORKFLOW.read_text(encoding="utf-8")
     assert "livelock" in source.lower(), "the postmortem must stay in the file"
-    assert "46 SECONDS" in source or "46 seconds" in source, (
-        "the sweep-duration-vs-queue-wait contrast is the whole finding"
-    )
+    assert "25-107 minutes" in source and "dedicated runner" in source
 
 
 def test_the_sweep_wakes_for_a_green_to_merge_and_for_a_red_to_MARK():
-    """Removing the concurrency group means every trigger now produces a run, so
-    the runner budget is defended by SKIPPING instead of by cancelling — a skipped
-    job costs no runner, no queue slot and no minutes, where a cancelled one cost
-    us the sweep. Only a green triggering run can make a PR mergeable (ci's last
+    """The event gate admits only triggers that can merge or must mark.
+
+    A skipped job costs no runner, no queue slot and no minutes. Only a green
+    triggering run can make a PR mergeable (ci's last
     100 completed runs: 51 failure, 25 cancelled, 18 skipped, 6 success).
 
     `failure` is admitted TOO, since 2026-08-11 (PR #5291), and not for merging: it
@@ -492,7 +511,9 @@ def _fake_api(
     check_pages,
     merge_status=200,
     update_status=422,
+    update_message="merge conflict between base and head",
     pull_payload=None,
+    pull_status=200,
     main_commits=((BEFORE_THE_PROOF, ["data/nightly.json"]),),
     pr_files=("engine/signal_quality.py",),
     compare_files=None,
@@ -547,7 +568,7 @@ def _fake_api(
         if url.endswith("/update-branch"):
             if update_status in {200, 202}:
                 return update_status, {"message": "Updating pull request branch."}
-            return update_status, {"message": "merge conflict between base and head"}
+            return update_status, {"message": update_message}
         if url.endswith("/merge"):
             if merge_status == 200:
                 return 200, {"sha": "c" * 40, "merged": True}
@@ -558,7 +579,9 @@ def _fake_api(
                 return 200, []
             return 200, [{"filename": name} for name in pr_files]
         if method == "GET" and "/pulls/" in url:
-            return 200, dict(pull_payload or {})
+            if pull_status >= 400:
+                return pull_status, None
+            return pull_status, dict(pull_payload or {})
         return 200, {}
 
     monkeypatch.setattr(MOG, "_request", fake_request)
@@ -581,7 +604,10 @@ def test_a_clean_pull_request_is_squash_merged(monkeypatch, capsys):
     assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness()) == "merged"
     merges = [call for call in calls if call[1].endswith("/merge")]
     assert len(merges) == 1
-    assert merges[0][0] == "PUT" and merges[0][2] == {"merge_method": "squash"}
+    assert merges[0][0] == "PUT" and merges[0][2] == {
+        "merge_method": "squash",
+        "sha": "a" * 40,
+    }, "the merge must pin the exact head whose checks were judged"
     # Tidy-up is best-effort but must actually be attempted.
     assert any(call[0] == "DELETE" and "git/refs/heads" in call[1] for call in calls)
 
@@ -642,17 +668,108 @@ def test_a_real_conflict_is_reported_as_merge_blocked(monkeypatch, capsys):
     )
 
 
+def test_a_head_that_moves_during_update_is_retried_not_called_a_conflict(
+    monkeypatch, capsys
+):
+    """A 422 with a different live head means the expected-SHA fence worked."""
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success")],
+            }
+        },
+        merge_status=409,
+        update_status=422,
+        pull_payload={"state": "open", "head": {"sha": "b" * 40}},
+    )
+    pull = _pull(labels=("merge-on-green", "merge-blocked"))
+    assert MOG.sweep_pull(
+        "acme/widgets", pull, "read", "write", _freshness()
+    ) == "head-moved"
+    assert not [call for call in calls if call[0] == "POST"], (
+        "the new head must not inherit a stale conflict label or comment"
+    )
+    assert any(
+        call[0] == "DELETE" and "labels/merge-blocked" in call[1] for call in calls
+    ), "a stale blocker must be cleared when another updater advances the head"
+    assert "Another updater" in capsys.readouterr().out
+
+
+def test_the_definitive_expected_SHA_mismatch_wins_over_a_failed_reread(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success")],
+            }
+        },
+        merge_status=409,
+        update_status=422,
+        update_message="expected head sha didn't match current head ref",
+        pull_status=502,
+    )
+    assert MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", _freshness()
+    ) == "head-moved"
+    assert not [call for call in calls if call[0] == "POST"]
+
+
+def test_an_update_API_failure_is_retried_not_called_a_content_conflict(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success")],
+            }
+        },
+        merge_status=409,
+        update_status=500,
+        update_message="Server Error",
+    )
+    assert MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", _freshness()
+    ) == "update-retry"
+    assert not [call for call in calls if call[0] == "POST"]
+
+
+def test_an_unknown_422_on_the_same_head_is_retried_not_called_a_conflict(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success")],
+            }
+        },
+        merge_status=409,
+        update_status=422,
+        update_message="Validation Failed",
+        pull_payload={
+            "state": "open",
+            "head": {"sha": "a" * 40},
+            "mergeable_state": "unknown",
+        },
+    )
+    assert MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", _freshness()
+    ) == "update-retry"
+    assert not [call for call in calls if call[0] == "POST"]
+
+
 def test_a_pull_request_another_sweep_already_merged_is_never_labeled_blocked(
     monkeypatch, capsys
 ):
     """The race the removed concurrency group was supposed to prevent — and the
     only place overlapping sweeps are actually unsafe.
 
-    Sweeps may now overlap (the group serialised a 25-107 minute runner queue, not
-    the 46-second sweep, and livelocked the lane to 0 successes in 100 runs). Two
-    sweeps can therefore both judge PR #4242 clean; one wins the squash merge and
-    the other is answered 405/409 by GitHub — the SAME status a stale base or a
-    real conflict produces.
+    Full sweeps now coalesce on a dedicated runner, but pre-deploy/out-of-band runs
+    can still race. Two actors can therefore both judge PR #4242 clean; one wins
+    the squash merge and the other is answered 405/409 by GitHub — the SAME status
+    a stale base or a real conflict produces.
 
     Without `already_settled`, the loser reads that as a conflict: it calls
     update-branch (422 on a merged PR), then labels a SUCCESSFULLY MERGED pull
@@ -1617,7 +1734,7 @@ def test_one_source_file_defeats_the_pipeline_bake_exclusion():
 
 
 def test_a_commit_changing_the_check_definitions_re_proves_every_pull_request():
-    """A ci.yml / legacy-jobs.yml edit changes WHAT would run. No pull request's
+    """A legacy-jobs.yml edit changes WHAT would run. No pull request's
     existing green describes those checks, whatever its own footprint is — note the
     footprint here shares nothing with the commit."""
     freshness = _freshness(
@@ -1629,6 +1746,55 @@ def test_a_commit_changing_the_check_definitions_re_proves_every_pull_request():
         _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
     )
     assert stale and "check definitions" in reason, reason
+
+
+@pytest.mark.parametrize("workflow", ["ci.yml", "fences.yml"])
+def test_a_PR_workflow_definition_re_proves_every_pull_request(workflow):
+    """Only workflows that actually publish PR proof are global definitions."""
+    gates = [
+        {"workflow": "ci.yml", "patterns": ["engine/**"]},
+        {"workflow": "fences.yml", "patterns": None},
+    ]
+    freshness = _freshness(
+        commits=[(MAIN_MOVED_AT_1026, [f".github/workflows/{workflow}"])],
+        gates=gates,
+        pull_files={4242: ["engine/signal_quality.py"]},
+    )
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+    assert stale and "check definitions" in reason, reason
+
+
+def test_removing_a_proof_workflows_PR_trigger_still_invalidates_old_proof():
+    """Post-change discovery alone cannot see a trigger the commit just removed."""
+    freshness = _freshness(
+        commits=[(MAIN_MOVED_AT_1026, [".github/workflows/fences.yml"])],
+        # Simulate fences.yml no longer appearing in post-change load_pr_gates().
+        gates=[{"workflow": "ci.yml", "patterns": ["engine/**"]}],
+        pull_files={4242: ["engine/signal_quality.py"]},
+    )
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+    assert stale and "check definitions" in reason, reason
+
+
+@pytest.mark.parametrize(
+    "workflow",
+    ["deploy-api-secrets.yml", "render.yml", "merge-on-green.yml", "daily.yml"],
+)
+def test_a_non_PR_workflow_edit_does_not_globally_invalidate_green_proof(workflow):
+    """Dispatch/render/control edits do not alter the checks a PR already passed."""
+    freshness = _freshness(
+        commits=[(MAIN_MOVED_AT_1026, [f".github/workflows/{workflow}"])],
+        gates=[{"workflow": "ci.yml", "patterns": ["engine/**"]}],
+        pull_files={4242: ["engine/signal_quality.py"]},
+    )
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+    assert not stale, reason
 
 
 def test_the_proof_instant_is_the_oldest_run_not_the_newest():
@@ -2042,9 +2208,9 @@ def test_re_proving_never_labels_a_pull_request_a_concurrent_sweep_just_merged(
 ):
     """#4647's hazard, arriving through the new door.
 
-    Sweeps overlap by design (the concurrency group serialised the RUNNER QUEUE and
-    livelocked the lane to 0 successes in 100 runs). So two sweeps can both judge this
-    pull request clean AND stale. One of them re-proves or merges it; the other's
+    Pre-deploy/out-of-band sweeps can race even though current full sweeps coalesce.
+    Two actors can both judge this pull request clean AND stale. One of them re-proves
+    or merges it; the other's
     `update-branch` is answered 422 — because the pull request is MERGED, not because
     it conflicts — and labelling that `merge-blocked` with the one-shot "not merging"
     comment makes a falsehood permanent on a successfully merged PR.
@@ -2083,6 +2249,28 @@ def test_re_proving_never_labels_a_pull_request_a_concurrent_sweep_just_merged(
     )
 
 
+def test_re_proving_leaves_a_concurrently_advanced_head_unblocked(monkeypatch):
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [
+                    _run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)
+                ],
+            }
+        },
+        main_commits=[(MAIN_MOVED_AT_1026, [".github/workflows/ci.yml"])],
+        update_status=422,
+        pull_payload={"state": "open", "head": {"sha": "b" * 40}},
+    )
+    freshness = MOG.ProofFreshness.build("acme/widgets", "read")
+    assert MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", freshness
+    ) == "head-moved"
+    assert not [call for call in calls if call[0] == "POST"]
+
+
 # --- the API budget: the deadlock that killed this lane ------------------------
 #
 # Measured 2026-08-07. READ_TOKEN is the job's own GITHUB_TOKEN, whose Actions
@@ -2098,7 +2286,14 @@ def test_re_proving_never_labels_a_pull_request_a_concurrent_sweep_just_merged(
 # the backlog stays big. These tests pin the three places that loop is now cut.
 
 
-def _main_harness(monkeypatch, pulls, *, readings=(1000,), verdict="pending"):
+def _main_harness(
+    monkeypatch,
+    pulls,
+    *,
+    readings=(1000,),
+    limit=1000,
+    verdict="pending",
+):
     """Run `main()` with everything but the budget and the ordering stubbed out.
 
     `readings` is what successive `core_rate_limit` polls return (remaining), the
@@ -2117,7 +2312,7 @@ def _main_harness(monkeypatch, pulls, *, readings=(1000,), verdict="pending"):
     def fake_limit(_token):
         index = min(len(polls), len(readings) - 1)
         polls.append(index)
-        return readings[index], 1000
+        return readings[index], limit
 
     monkeypatch.setattr(MOG, "core_rate_limit", fake_limit)
     monkeypatch.setattr(MOG, "labeled_pulls", lambda *_a: list(pulls))
@@ -2184,33 +2379,51 @@ def test_an_unreadable_rate_limit_fails_OPEN_and_still_sweeps(monkeypatch):
     assert seen == [1]
 
 
+def test_an_unreadable_rate_limit_uses_the_known_safe_25_pull_fallback(monkeypatch):
+    armed = [_pull(number) for number in range(1, MOG.FALLBACK_PULL_CAP + 9)]
+    seen = _main_harness(monkeypatch, armed)
+    monkeypatch.setattr(MOG, "core_rate_limit", lambda _t: None)
+    assert MOG.main() == 0
+    assert len(seen) == MOG.FALLBACK_PULL_CAP
+
+
 def test_the_per_sweep_cap_bounds_the_work_and_names_what_it_deferred(
     monkeypatch, capsys
 ):
     """(2) The cap. NO SILENT CAPS — a sweep that quietly evaluated a quarter of the
     backlog would look identical in the log to one that evaluated all of it, and that
     difference is the entire reason the lane stopped working."""
-    armed = [_pull(number) for number in range(1, MOG.MAX_PULLS_PER_SWEEP + 8)]
+    armed = [_pull(number) for number in range(1, MOG.FALLBACK_PULL_CAP + 8)]
     seen = _main_harness(monkeypatch, armed)
     assert MOG.main() == 0
 
-    assert len(seen) == MOG.MAX_PULLS_PER_SWEEP, (
-        f"expected at most {MOG.MAX_PULLS_PER_SWEEP} pull requests per sweep, "
+    assert len(seen) == MOG.FALLBACK_PULL_CAP, (
+        f"expected at most {MOG.FALLBACK_PULL_CAP} pull requests per sweep, "
         f"got {len(seen)}"
     )
-    expected = MOG.sweep_order(armed)
-    assert seen == [pull["number"] for pull in expected[: MOG.MAX_PULLS_PER_SWEEP]]
+    expected = MOG.sweep_order(armed, cap=MOG.FALLBACK_PULL_CAP)
+    assert seen == [pull["number"] for pull in expected[: MOG.FALLBACK_PULL_CAP]]
 
-    deferred = sorted(pull["number"] for pull in expected[MOG.MAX_PULLS_PER_SWEEP :])
+    deferred = sorted(pull["number"] for pull in expected[MOG.FALLBACK_PULL_CAP :])
     notices = [
         line
         for line in capsys.readouterr().out.splitlines()
         if line.startswith("::notice") and "Per-sweep cap" in line
     ]
     assert notices, "the cap must announce itself"
-    assert f"{MOG.MAX_PULLS_PER_SWEEP} of {len(armed)}" in notices[0]
+    assert f"{MOG.FALLBACK_PULL_CAP} of {len(armed)}" in notices[0]
+    assert "observed core limit is 1000" in notices[0]
     for number in deferred[:3]:
         assert f"#{number}" in notices[0], f"deferred #{number} must be named"
+
+
+def test_the_live_enterprise_quota_expands_the_window_to_100(monkeypatch, capsys):
+    armed = [_pull(number) for number in range(1, 94)]
+    seen = _main_harness(monkeypatch, armed, readings=(14_904,), limit=15_000)
+    assert MOG.main() == 0
+    assert MOG.pull_cap_for_limit(15_000) == MOG.MAX_PULL_CAP == 100
+    assert len(seen) == len(armed), "the measured 29-PR deferral must be gone"
+    assert "Per-sweep cap" not in capsys.readouterr().out
 
 
 def test_the_sweep_stops_cleanly_when_the_budget_runs_out_mid_pass(monkeypatch, capsys):
@@ -2221,7 +2434,7 @@ def test_the_sweep_stops_cleanly_when_the_budget_runs_out_mid_pass(monkeypatch, 
     half-way through on a 403 spends calls the NEXT sweep needed — the loop that
     made this outage self-sustaining.
     """
-    armed = [_pull(number) for number in range(1, MOG.MAX_PULLS_PER_SWEEP + 1)]
+    armed = [_pull(number) for number in range(1, MOG.FALLBACK_PULL_CAP + 1)]
     # Poll 0 is the preflight, poll 1 is pull request index 0, poll 2 is index
     # BUDGET_RECHECK_EVERY — and by then the budget is gone.
     seen = _main_harness(
@@ -2349,11 +2562,16 @@ def test_the_rotation_reaches_every_pull_request_so_none_can_be_starved():
     start advances by `cap` each bucket, which tiles the whole ring.
     """
     armed = [_pull(number) for number in range(1, 94)]  # the measured backlog
-    buckets = -(-len(armed) // MOG.MAX_PULLS_PER_SWEEP)  # ceil
+    cap = MOG.FALLBACK_PULL_CAP
+    buckets = -(-len(armed) // cap)  # ceil
     reached: set[int] = set()
     for bucket in range(buckets):
-        window = MOG.sweep_order(armed, now=bucket * MOG.ROTATION_BUCKET_SECONDS)
-        reached.update(pull["number"] for pull in window[: MOG.MAX_PULLS_PER_SWEEP])
+        window = MOG.sweep_order(
+            armed,
+            now=bucket * MOG.ROTATION_BUCKET_SECONDS,
+            cap=cap,
+        )
+        reached.update(pull["number"] for pull in window[:cap])
     assert reached == {pull["number"] for pull in armed}, (
         f"{len(armed) - len(reached)} pull request(s) were starved across "
         f"{buckets} rotations"
@@ -2412,19 +2630,18 @@ def test_the_workflow_hands_the_sweeper_the_triggering_CONCLUSION_too():
     )
 
 
-def test_the_budget_floor_can_actually_fund_a_capped_sweep():
-    """A floor below what a capped pass costs would defer forever; a cap above what
-    the hourly bucket affords would starve the lane again.
+def test_the_dynamic_cap_preserves_the_proven_budget_share():
+    """The old 25/1,000 policy scales with the quota and stays bounded at 100.
 
     The fixed overhead is ~12, NOT the ~6 this arithmetic originally used. #4854 spent
     the difference walking main newest->oldest for a commit that published checks; the
     2026-08-08 rework spends it on `main_proof` (4: two workflows x newest run + its
     jobs) plus up to 3 for `ensure_main_baseline`'s in-flight polls and dispatch — the
     same order of magnitude, now with a fixed ceiling instead of a walk. So a capped
-    pass costs ~12 + 25 = ~37, sustainable up to floor(1000/37) = 27 sweeps/hour. The
-    worst hour ever observed was 28, which overshoots by ~4% — absorbed by
-    RATE_LIMIT_RESERVE, which stops the pass mid-sweep rather than letting it 403.
-    Compare the uncapped cost that caused the outage: ~121/sweep.
+    At the historical limit, a typical pass costs ~12 + 25 = ~37, sustainable up
+    to floor(1000/37) = 27 sweeps/hour. Enterprise gives this repository 15,000;
+    the 100 ceiling drains the whole current backlog, while a partly spent bucket
+    shrinks the window to the work it can actually fund.
     """
     fixed = 12
     assert 2 * len(MOG.MAIN_PROOF_WORKFLOWS) + 3 <= fixed, (
@@ -2434,18 +2651,34 @@ def test_the_budget_floor_can_actually_fund_a_capped_sweep():
     # 6 per pull request = check runs + files + the pre-merge live compare (the
     # clobbered-head invariant) + merge + settled + update-branch — the
     # clean-but-refused worst case.
-    worst_case = fixed + MOG.MAX_PULLS_PER_SWEEP * 6 + MOG.MAX_REFRESHES_PER_SWEEP
+    assert MOG.pull_cap_for_limit(None) == MOG.FALLBACK_PULL_CAP == 25
+    assert MOG.pull_cap_for_limit(1_000) == 25
+    assert MOG.pull_cap_for_limit(5_000) == MOG.MAX_PULL_CAP
+    assert MOG.pull_cap_for_limit(15_000) == MOG.MAX_PULL_CAP == 100
+
+    worst_case = fixed + MOG.FALLBACK_PULL_CAP * 6 + MOG.MAX_REFRESHES_PER_SWEEP
     assert MOG.RATE_LIMIT_FLOOR >= worst_case * 0.9, (
-        f"floor {MOG.RATE_LIMIT_FLOOR} cannot fund a {MOG.MAX_PULLS_PER_SWEEP}-PR pass"
+        f"floor {MOG.RATE_LIMIT_FLOOR} cannot fund a {MOG.FALLBACK_PULL_CAP}-PR pass"
     )
     assert MOG.RATE_LIMIT_FLOOR < 1000, "a floor at the whole bucket never opens"
-    typical = fixed + MOG.MAX_PULLS_PER_SWEEP
+    typical = fixed + MOG.FALLBACK_PULL_CAP
     assert typical * 27 <= 1000, (
-        f"{MOG.MAX_PULLS_PER_SWEEP} pull requests x 27 sweeps/hour costs "
+        f"{MOG.FALLBACK_PULL_CAP} pull requests x 27 sweeps/hour costs "
         f"{typical * 27} of a 1,000/hr budget"
     )
     assert typical * 3 < 121, "the cap must be a real reduction on the measured cost"
     assert MOG.RATE_LIMIT_RESERVE < MOG.RATE_LIMIT_FLOOR
+
+    assert MOG.pull_cap_for_budget(14_904, 15_000) == MOG.MAX_PULL_CAP
+    assert MOG.pull_cap_for_budget(200, 15_000) == 20
+    affordable_cost = (
+        MOG.FULL_SWEEP_FIXED_REQUESTS
+        + 20 * MOG.MAX_REQUESTS_PER_PULL
+        + MOG.MAX_REFRESHES_PER_SWEEP
+        + MOG.RATE_LIMIT_RESERVE
+    )
+    assert affordable_cost == 200, "the shrunken window must fit the remaining bucket"
+    assert MOG.MARK_ONLY_RATE_LIMIT_FLOOR < MOG.RATE_LIMIT_FLOOR
 
 
 # --- base-inherited reds: the thing that regenerated the backlog ---------------
@@ -2539,6 +2772,27 @@ def test_a_head_already_current_falls_through_and_cannot_loop(monkeypatch, capsy
     assert any(
         call[0] == "POST" and call[1].endswith("/labels") for call in calls
     ), "and then blocked exactly as before"
+
+
+def test_an_inherited_red_does_not_block_a_head_another_updater_advanced(monkeypatch):
+    pages = {
+        1: {
+            "total_count": 1,
+            "check_runs": [_run("ci-pack-3", conclusion="failure")],
+        }
+    }
+    calls = _fake_api(
+        monkeypatch,
+        check_pages=pages,
+        update_status=422,
+        pull_payload={"state": "open", "head": {"sha": "b" * 40}},
+    )
+    verdict = MOG.sweep_pull(
+        "acme/widgets", _pull(), "read", "write", _freshness(), _proof("ci-pack-3")
+    )
+    assert verdict == "head-moved"
+    assert not [call for call in calls if call[0] == "POST"]
+
 
 # --- main's proof: resolved from WORKFLOW RUNS, never from a commit walk -------
 #
@@ -3270,8 +3524,8 @@ def test_a_baseline_that_has_not_CONCLUDED_is_never_stampeded(monkeypatch, state
 def test_a_baseline_ordered_inside_the_interval_floor_is_not_re_ordered(monkeypatch):
     """The bound that survives the race the status check cannot win.
 
-    Sweeps overlap by design (no `concurrency:` block, and three wake-ups can arrive
-    within seconds), so several can all read "nothing in flight" and all dispatch.
+    Current full sweeps coalesce, but pre-deploy/out-of-band actors can still all
+    read "nothing in flight" and dispatch.
     Until 2026-08-09 that was catastrophic — ci.yml cancelled newest-wins on every
     ref, so the SECOND dispatch on main CANCELLED THE FIRST (31148430602 /
     31151246743, 53 minutes apart; then the 2026-08-09 cascade where no main proof
@@ -4288,14 +4542,19 @@ def test_a_failure_wake_up_runs_the_mark_only_pass_and_never_the_full_sweep(
     """The routing, end to end through `main()`.
 
     A red cannot make anything mergeable and failure wake-ups outnumber the greens
-    ~5:1, so falling through into a 25-pull-request pass would put the READ_TOKEN
-    bucket back where 2026-08-07 found it.
+    ~5:1, so falling through into a full sweep would put the READ_TOKEN bucket back
+    where 2026-08-07 found it.
     """
     monkeypatch.setenv("GH_REPO", "acme/widgets")
     monkeypatch.setenv("READ_TOKEN", "read")
     monkeypatch.setenv("MERGE_TOKEN", "write")
     monkeypatch.setenv("TRIGGER_HEAD_SHA", "9ce3c2ef" + "0" * 32)
     monkeypatch.setenv("TRIGGER_CONCLUSION", "failure")
+    monkeypatch.setattr(
+        MOG,
+        "core_rate_limit",
+        lambda _token: (MOG.MARK_ONLY_RATE_LIMIT_FLOOR, 15_000),
+    )
     monkeypatch.setattr(
         MOG,
         "labeled_pulls",
