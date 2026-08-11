@@ -417,11 +417,14 @@ Until all five: display tier, everywhere, forever.
 
 1. **R4-gradient prereg** — "down-shock continuation weakens as market
    liquidity tightens": frozen VIX breakpoints, forward-ledger graded.
-   **REGISTERED 2026-08-10** → `research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md`
-   (VIXCLS trailing-252d percentile, calm < 0.5 vs stressed ≥ 0.8 — the LSR-P0
-   reopener sighting's own cells, disclosed and frozen ex ante; R4-A h=5
-   replication + R4-B h=21 conjunctive product claim; stressed arm accrues
-   nothing at the current calm tape — check floors each session, never grade early).
+   **REGISTERED 2026-08-10 (rev 2 — 10 red-team blockers folded pre-merge)** →
+   `research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md` (VIXCLS trailing-252d
+   percentile, calm < 0.5 vs stressed ≥ 0.8 — the LSR-P0 reopener sighting's own
+   cells, disclosed and frozen ex ante; **R4-A h=5 is the sole gating claim** with
+   power-based floors of 240 stressed dates across ≥8 regime runs / 480 calm —
+   ~5.5y clock at backfill accrual rates; **R4-B h=21 is descriptive-only forever**,
+   measured weak in-sample by the red-team pass; the stamped `vix_pctile` is the
+   tripwire and the recompute the estimand; check floors each session, never grade early).
 2. **Revisions firewall clock** — re-test information separation when
    `data/revisions/history.parquet` covers ≥ ~2y of events (≈2028+).
 3. **Tape-grade exhaustion** — when the tick plane exposes signed
@@ -556,3 +559,25 @@ promotion gates (F14), MU printed as a measured non-fire (B1 arm), CDE
 basket-honesty framing (B1 arm). The review also *measured* MU's worst
 April-2025 residual z at −2.44 (never crosses the −3 fence) — §6's scope
 statement is empirical twice over.
+
+**R4 prereg red-team (2026-08-10, session 2, pre-freeze).** A second opus
+adversarial pass on `research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md`
+returned 10 BLOCKER + 7 MINOR findings; all folded (rev 2) before first
+merge. The structural ones: the terminal literal is `RECOVERED_21D` (every
+terminal is horizon-suffixed except `DELISTED_OR_HALTED`); the ledger's
+stamped `vix_pctile` and the reopener's recompute forked (resolved: stamped =
+tripwire, recompute = estimand, 1% mismatch aborts) — and forward rows stamp
+NULL there anyway because FRED publishes VIXCLS a session late; the named
+`date_block_ci` machinery has no two-sample form (the estimator is now
+written out: calm arm 5-date circular blocks, stressed arm resampled at
+regime-run level since 268 stressed sessions collapse to 36 runs); the
+§7-law minimum floors would have engineered a false null (MDE 2.4–4.9× the
+sighted effect — floors are now power-based: 240 stressed dates / ≥8 runs /
+480 calm, ~5.5y clock), and h=21 measured weak in-sample (Δ +0.719%, CI
+spans zero) so **R4-B demoted to descriptive-only forever**; the trailing
+percentile marks ~20% of sessions stressed at ANY vol level (2017 median
+VIX 15.55 in the ≥0.8 bucket) — registered as a known weakness with
+mandatory realized-VIX prints at grading; maturity and dead-tape-NaN
+denominators pinned. Lesson repeated from session 1: the review *measured*
+rather than argued — value-counted the terminal vocabulary, power-computed
+the floors, and run-counted the stressed regime structure.
