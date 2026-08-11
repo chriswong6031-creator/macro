@@ -929,18 +929,30 @@ def test_zero_claims_has_null_rate_and_zero_evidence_refs_are_accepted() -> None
         "buy_signal",
         "buySignal",
         "buyingSignal",
+        "buyingsignal",
         "BuySignal",
         "authority",
+        "authoritytoken",
         "permissions",
         "proposal_weight",
         "safeProposalWeightV1",
         "may_rank",
         "rankingGate",
+        "rankinggate",
+        "rankingsignal",
         "executeNow",
+        "executenow",
+        "forecastsignal",
         "promotion_eligible",
+        "promotioncandidate",
+        "prophetinput",
         "outcomeFree",
         "recommendationEngine",
+        "sellingsignal",
+        "tradingsignal",
         "mayTrainProphet",
+        "permissiontoken",
+        "ｂｕｙｉｎｇＳｉｇｎａｌ",
     ],
 )
 def test_action_and_authority_morphology_is_rejected_from_caller_codes(
@@ -984,18 +996,30 @@ def test_morphology_applies_to_source_refs_kinds_claim_keys_and_falsifier_codes(
             cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
 
 
-def test_morphology_does_not_reject_safe_substring_only_codes() -> None:
+@pytest.mark.parametrize(
+    "registration_key",
+    [
+        "constraint.audit.v1",
+        "classification.signal.audit",
+        "buyer.profile.v1",
+        "executioner.nowcast.v1",
+        "prophetic.context.audit",
+    ],
+)
+def test_morphology_does_not_reject_safe_substring_only_codes(
+    registration_key: str,
+) -> None:
     fixture = _fixture()
     registration = cortex.build_operating_cortex_registration(
         retrieval_registration=fixture["retrieval_registration"],
         trial_registration=fixture["trial"],
-        registration_key="constraint.audit.v1",
+        registration_key=registration_key,
         registered_at="2026-08-01T19:00:00.000000Z",
         required_evidence_kinds=["macro_fact"],
         producer_code_sha256="a" * 64,
         producer_config_sha256="b" * 64,
     )
-    assert registration["registration_key"] == "constraint.audit.v1"
+    assert registration["registration_key"] == registration_key
 
 
 def test_exact_source_bytes_may_contain_action_words_without_gaining_authority() -> (
@@ -1131,6 +1155,142 @@ def test_self_validator_rejects_rehashed_derived_claim_coverage_forgery(
     _rehash(packet, field="operating_cortex_packet_id", prefix="mmcortexpacket_")
     with pytest.raises(cortex.MarketMemoryOperatingCortexContractError):
         cortex.validate_operating_cortex_packet(packet)
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "integer"),
+    [
+        ("claims", "attention_quality_evaluated", 0),
+        ("coverage", "evidence_population_complete", 0),
+        ("coverage", "w4_exact_join_validated", 1),
+    ],
+)
+def test_packet_boolean_blocks_reject_fully_rehashed_integer_aliases(
+    section: str, field: str, integer: int
+) -> None:
+    fixture = _fixture()
+    packet = fixture["packet"]
+    packet[section][field] = integer
+    _rehash(packet, field="operating_cortex_packet_id", prefix="mmcortexpacket_")
+
+    with pytest.raises(ValidationError):
+        _validate_schema("operating_cortex_packet.v1.schema.json", packet)
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError):
+        cortex.validate_operating_cortex_packet(packet)
+
+
+def test_registration_claims_reject_fully_rehashed_integer_boolean_alias() -> None:
+    fixture = _fixture()
+    registration = fixture["registration"]
+    registration["claims"]["attention_quality_evaluated"] = 0
+    _rehash(
+        registration,
+        field="operating_cortex_registration_id",
+        prefix="mmcortexregistration_",
+    )
+
+    with pytest.raises(ValidationError):
+        _validate_schema("operating_cortex_registration.v1.schema.json", registration)
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError):
+        cortex.validate_operating_cortex_registration_record(registration)
+
+
+@pytest.mark.parametrize(
+    ("path", "malformed", "match"),
+    [
+        (("episode_scope", 0, "episode_role"), ["query"], "episode_role"),
+        (
+            ("evidence_manifest", 0, "episode_role"),
+            ["query"],
+            "episode_role",
+        ),
+        (
+            ("evidence_manifest", 0, "citation", "source_sha256"),
+            ["a" * 64],
+            "source_sha256",
+        ),
+        (
+            ("evidence_manifest", 0, "citation", "source_bytes"),
+            [1],
+            "source_bytes",
+        ),
+        (
+            ("evidence_manifest", 0, "citation", "span_sha256"),
+            ["a" * 64],
+            "span_sha256",
+        ),
+        (
+            ("evidence_manifest", 0, "citation", "citation_id"),
+            ["mmcitation_" + "a" * 64],
+            "citation_id",
+        ),
+        (
+            ("evidence_manifest", 0, "evidence_card_id"),
+            ["mmevidencecard_" + "a" * 64],
+            "evidence_card_id",
+        ),
+    ],
+)
+def test_list_shaped_identity_fields_fail_as_contract_errors_in_validator_and_loader(
+    path: tuple[str | int, ...], malformed: list[Any], match: str
+) -> None:
+    fixture = _fixture()
+    packet = fixture["packet"]
+    target: Any = packet
+    for key in path[:-1]:
+        target = target[key]
+    target[path[-1]] = malformed
+
+    if path[:2] == ("evidence_manifest", 0):
+        card = packet["evidence_manifest"][0]
+        if path[2] == "citation":
+            citation = card["citation"]
+            if path[-1] != "citation_id":
+                _rehash(citation, field="citation_id", prefix="mmcitation_")
+        if path[-1] != "evidence_card_id":
+            _rehash(card, field="evidence_card_id", prefix="mmevidencecard_")
+    _rehash(packet, field="operating_cortex_packet_id", prefix="mmcortexpacket_")
+
+    with pytest.raises(ValidationError):
+        _validate_schema("operating_cortex_packet.v1.schema.json", packet)
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match=match):
+        cortex.validate_operating_cortex_packet(packet)
+    body = forward.canonical_json_bytes(packet)
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match=match):
+        cortex.load_operating_cortex_packet_join_json(body, **fixture["join_kwargs"])
+
+
+@pytest.mark.parametrize(
+    ("path", "malformed", "match"),
+    [
+        (("episode_role",), ["query"], "episode_role"),
+        (("citation", "source_sha256"), ["a" * 64], "source_sha256"),
+        (("citation", "source_bytes"), [1], "source_bytes"),
+        (("citation", "span_sha256"), ["a" * 64], "span_sha256"),
+        (
+            ("citation", "citation_id"),
+            ["mmcitation_" + "a" * 64],
+            "citation_id",
+        ),
+        (
+            ("evidence_card_id",),
+            ["mmevidencecard_" + "a" * 64],
+            "evidence_card_id",
+        ),
+    ],
+)
+def test_list_shaped_evidence_input_fields_fail_as_contract_errors_in_builder(
+    path: tuple[str, ...], malformed: list[Any], match: str
+) -> None:
+    fixture = _fixture()
+    card = fixture["build_kwargs"]["evidence_inputs"][0]["evidence_card"]
+    target: Any = card
+    for key in path[:-1]:
+        target = target[key]
+    target[path[-1]] = malformed
+
+    with pytest.raises(cortex.MarketMemoryOperatingCortexContractError, match=match):
+        cortex.build_operating_cortex_packet(**fixture["build_kwargs"])
 
 
 def test_join_rejects_fully_rehashed_source_span_and_dependency_forgery() -> None:
@@ -1283,6 +1443,12 @@ def test_reader_is_detached_immutable_seven_view_and_has_no_generic_field_access
         reader.packet = fixture["packet"]
     backing = reader._OperatingCortexReader__attention_queue
     assert type(backing) is bytes
+    with pytest.raises(AttributeError):
+        reader._OperatingCortexReader__attention_queue = b"[]"
+    with pytest.raises(AttributeError):
+        del reader._OperatingCortexReader__sealed
+    with pytest.raises(AttributeError):
+        del reader._OperatingCortexReader__attention_queue
     with pytest.raises(AttributeError):
         reader._OperatingCortexReader__attention_queue = b"[]"
     assert reader.read_attention_queue() == fixture["packet"]["attention_queue"]

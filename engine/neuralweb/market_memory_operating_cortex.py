@@ -235,6 +235,20 @@ _FORBIDDEN_COMPACT = frozenset(
         "trainingeligible",
     }
 )
+_FORBIDDEN_COMPOUND_SUFFIXES = frozenset(
+    {
+        "candidate",
+        "context",
+        "eligible",
+        "engine",
+        "free",
+        "gate",
+        "input",
+        "now",
+        "signal",
+        "token",
+    }
+)
 
 _REGISTRATION_FIELDS = frozenset(
     {
@@ -444,12 +458,19 @@ def _semantic_forms(text: str) -> tuple[set[str], str]:
 
 
 def _opaque(value: object, *, field: str) -> str:
+    if type(value) is str:
+        words, compact = _semantic_forms(value)
+        if (
+            words & _FORBIDDEN_WORDS
+            or any(token in compact for token in _FORBIDDEN_COMPACT)
+            or any(
+                f"{word}{suffix}" in compact
+                for word in _FORBIDDEN_WORDS
+                for suffix in _FORBIDDEN_COMPOUND_SUFFIXES
+            )
+        ):
+            _fail(f"{field} contains a forbidden action or authority token")
     text = _match(value, _OPAQUE, field=field)
-    words, compact = _semantic_forms(text)
-    if words & _FORBIDDEN_WORDS or any(
-        token in compact for token in _FORBIDDEN_COMPACT
-    ):
-        _fail(f"{field} contains a forbidden action or authority token")
     return text
 
 
@@ -535,8 +556,22 @@ def _sorted_unique_opaque(
 def _claims(value: object) -> dict[str, bool]:
     payload = _require_fields(value, frozenset(CLAIMS), field="claims")
     expected = dict(CLAIMS)
-    if payload != expected:
+    if any(
+        type(payload[name]) is not bool or payload[name] is not required
+        for name, required in expected.items()
+    ):
         _fail("all W5A evidence and authority claims must remain false")
+    return expected
+
+
+def _coverage(value: object) -> dict[str, bool]:
+    payload = _require_fields(value, frozenset(COVERAGE), field="coverage")
+    expected = dict(COVERAGE)
+    if any(
+        type(payload[name]) is not bool or payload[name] is not required
+        for name, required in expected.items()
+    ):
+        _fail("packet coverage differs from the frozen honest coverage block")
     return expected
 
 
@@ -912,7 +947,7 @@ def _clean_episode_scope(
     for index, raw in enumerate(value):
         row = _require_fields(raw, _EPISODE_FIELDS, field=f"episode_scope[{index}]")
         role = row["episode_role"]
-        if role not in {"query", "analogue"}:
+        if type(role) is not str or role not in ("query", "analogue"):
             _fail("episode_role must be query or analogue")
         if (index == 0) != (role == "query"):
             _fail("episode_scope must contain exactly one leading query row")
@@ -972,9 +1007,16 @@ def _clean_citation(
         source_length = len(exact_source_bytes)
         source_sha = hashlib.sha256(exact_source_bytes).hexdigest()
         supplied_source_sha = row["source_sha256"]
-        if supplied_source_sha not in {"", source_sha}:
+        if type(supplied_source_sha) is not str or supplied_source_sha not in (
+            "",
+            source_sha,
+        ):
             _fail(f"{field}.source_sha256 differs from exact source bytes")
-        if row["source_bytes"] not in {0, source_length}:
+        supplied_source_length = row["source_bytes"]
+        if type(supplied_source_length) is not int or supplied_source_length not in (
+            0,
+            source_length,
+        ):
             _fail(f"{field}.source_bytes differs from exact source length")
         span_sha = ""
     end = _exact_int(
@@ -987,7 +1029,11 @@ def _clean_citation(
         _fail("citation spans must be non-empty half-open byte intervals")
     if exact_source_bytes is not None:
         span_sha = hashlib.sha256(exact_source_bytes[start:end]).hexdigest()
-        if row["span_sha256"] not in {"", span_sha}:
+        supplied_span_sha = row["span_sha256"]
+        if type(supplied_span_sha) is not str or supplied_span_sha not in (
+            "",
+            span_sha,
+        ):
             _fail(f"{field}.span_sha256 differs from exact span bytes")
     clean = {
         "citation_id": "",
@@ -1003,7 +1049,7 @@ def _clean_citation(
         "mmcitation_", clean, field="citation_id", maximum=_MAX_SOURCE_BYTES * 2
     )
     supplied_id = row["citation_id"]
-    if supplied_id not in {"", expected_id}:
+    if type(supplied_id) is not str or supplied_id not in ("", expected_id):
         _fail(f"{field}.citation_id does not bind canonical citation content")
     clean["citation_id"] = expected_id
     return clean
@@ -1019,7 +1065,7 @@ def _clean_evidence_card(
 ) -> dict[str, Any]:
     row = _require_fields(value, _EVIDENCE_FIELDS, field=field)
     role = row["episode_role"]
-    if role not in {"query", "analogue"}:
+    if type(role) is not str or role not in ("query", "analogue"):
         _fail(f"{field}.episode_role must be query or analogue")
     episode_id = _match(
         row["episode_forecast_id"],
@@ -1040,7 +1086,11 @@ def _clean_evidence_card(
     ):
         _fail(f"{field}.known_at exceeds its exact W4 episode decision cutoff")
     stance = row["stance"]
-    if stance not in {"supports", "challenges", "neutral"}:
+    if type(stance) is not str or stance not in (
+        "supports",
+        "challenges",
+        "neutral",
+    ):
         _fail(f"{field}.stance must be supports, challenges, or neutral")
     components = _require_dict(
         row["salience_components"], field=f"{field}.salience_components"
@@ -1081,7 +1131,7 @@ def _clean_evidence_card(
         maximum=_MAX_PACKET_BYTES,
     )
     supplied_id = row["evidence_card_id"]
-    if supplied_id not in {"", expected_id}:
+    if type(supplied_id) is not str or supplied_id not in ("", expected_id):
         _fail(f"{field}.evidence_card_id does not bind canonical evidence content")
     clean["evidence_card_id"] = expected_id
     return clean
@@ -1160,7 +1210,11 @@ def _clean_claim_card(
     if subject != dict(packet_subject):
         _fail(f"{field}.subject differs from exact W4 packet subject")
     stance = row["stance"]
-    if stance not in {"supports", "challenges", "neutral"}:
+    if type(stance) is not str or stance not in (
+        "supports",
+        "challenges",
+        "neutral",
+    ):
         _fail(f"{field}.stance must be supports, challenges, or neutral")
     refs_raw = row["evidence_card_refs"]
     if type(refs_raw) is not list or len(refs_raw) > _MAX_REFS:
@@ -1186,7 +1240,7 @@ def _clean_claim_card(
         "mmclaim_", clean, field="claim_id", maximum=_MAX_PACKET_BYTES
     )
     supplied_id = row["claim_id"]
-    if supplied_id not in {"", expected_id}:
+    if type(supplied_id) is not str or supplied_id not in ("", expected_id):
         _fail(f"{field}.claim_id does not bind canonical claim content")
     clean["claim_id"] = expected_id
     return clean
@@ -1624,8 +1678,7 @@ def validate_operating_cortex_packet(value: Mapping[str, Any]) -> dict[str, Any]
             _fail(f"packet {name} differs from its content-bound inputs")
     if payload["read_tools"] != list(READ_TOOLS):
         _fail("packet read_tools differ from the frozen seven-view surface")
-    if payload["coverage"] != dict(COVERAGE):
-        _fail("packet coverage differs from the frozen honest coverage block")
+    _coverage(payload["coverage"])
     if (
         payload["input_profile"] != INPUT_PROFILE
         or payload["emission_enabled"] is not False
@@ -1762,6 +1815,9 @@ class OperatingCortexReader:
         if getattr(self, "_OperatingCortexReader__sealed", False):
             raise AttributeError("OperatingCortexReader is immutable")
         object.__setattr__(self, name, value)
+
+    def __delattr__(self, name: str) -> None:
+        raise AttributeError("OperatingCortexReader is immutable")
 
     def read_attention_queue(self) -> list[dict[str, Any]]:
         return json.loads(self.__attention_queue)
