@@ -1162,6 +1162,46 @@ false, `context_only=true`, and training and promotion remain false. A real
 opportunity writer, completeness receipt, proper-score evaluator, and any use
 of these records remain later evidence-gated work.
 
+### 11.0.8 W2B1 synthetic per-event scoring kernel
+
+W2B1 adds a pure scoring grammar over exact W2A records, not an operational
+evaluator. A baseline bundle must cover every preregistered baseline exactly
+and bind the candidate forecast, state, context, event, target, horizon, and
+outcome definition. A `predecision_fit` row binds a fit cutoff no later than
+the candidate decision cutoff; a fixed-rule row carries no fit clock. Because
+`operational_seal_authenticated=false`, this synthetic record does not prove
+that its distributions existed before the outcome and cannot support a real
+baseline comparison. It contains no delta, winner, or skill claim.
+
+One event-score record binds that exact bundle and one caller-supplied exact W2A
+outcome revision. Candidate and baseline rows use the same preregistered proper
+score and exact revision; W2B1 does not select or authenticate the active store
+revision. Issued complete records are scored; abstained,
+unavailable, censored, and missing cases remain named `not_scored` rows and are
+never omitted or replaced with zero. Intrinsic forecast abstention and baseline
+unavailability take reason precedence inside their score rows, while the
+top-level outcome status independently preserves later censoring or missingness.
+Supported formulas are scalar squared and absolute error, mean pinball loss
+over the complete frozen quantile grid, and multiclass log and Brier loss.
+Categorical probability mass must equal one under exact Decimal conversion;
+near-one inputs are rejected rather than normalized. Arithmetic is frozen as
+`decimal64_half_even_q18/v1`: precision 64, half-even rounding, one final
+quantization to 18 decimal places. Zero-probability log loss is an explicit
+tagged positive infinity; clipping and JSON non-finite numbers are forbidden.
+
+This slice admits only `synthetic_fixture_only` records. It authenticates no
+operational seal or opportunity population and exposes no cohort aggregate,
+paired delta, skill, winner, confidence interval, effective sample size,
+calibration fit, writer, store, filesystem root, environment switch, CLI, API,
+service, scheduler, or public output. Aggregate eligibility, skill-claim
+eligibility, emission, training, promotion, and every action-authority bit
+remain false. Evaluator code and configuration hashes are content-bound and
+the exact-join API requires out-of-band expected hashes, but this pure module
+does not inspect executable bytes or authenticate the caller-supplied
+evaluation clock. A production opportunity schedule and completeness receipt,
+prospectively sealed real baselines, outcome adapters, dependence-aware cohort
+inference, and any promotion decision remain later evidence-gated work.
+
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1302,6 +1342,18 @@ W2A private forward-contract additions:
   `tests/test_market_memory_forward_store.py` — schema/runtime parity, W1
   provenance, preregistration, mark separation, tamper, crash, replay, CI
   ownership, and absence-of-authority fixtures.
+
+W2B1 synthetic scoring additions:
+
+- `engine/neuralweb/market_memory_scoring.py` and the strict
+  `baseline_forecast_bundle` and `event_score_record` v1 contracts — exact
+  prospective baseline binding, deterministic per-event proper scores,
+  correction-specific identities, explicit not-scored states, and zero
+  authority;
+- `tests/test_market_memory_scoring.py` — schema/runtime parity, known-answer
+  Decimal fixtures, prospective-fit and dependency joins, outcome correction,
+  infinity, tamper, loader-bound, import-fence, and no-aggregate/no-skill
+  fixtures.
 
 Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 

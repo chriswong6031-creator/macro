@@ -124,7 +124,11 @@ def _trial(
         abstention={
             "required": True,
             "minimum_observed_domains": 2,
-            "allowed_reasons": ["insufficient_domains", "required_domain_missing"],
+            "allowed_reasons": [
+                "insufficient_domains",
+                "policy_expired",
+                "required_domain_missing",
+            ],
         },
         expiry={"expires_at": "2027-01-01T00:00:00.000000Z", "action": "abstain"},
         demotion={"enabled": True, "triggers": ["broken_lineage"]},
