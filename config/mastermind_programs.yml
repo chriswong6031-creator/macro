@@ -1,0 +1,3893 @@
+schema: mastermind_programs.v1
+
+meta:
+  title: Mastermind-X global semantic system registry
+  canonical_home: macro
+  generated_output: docs/MASTERMIND_SYSTEM_MAP.md
+  description: >
+    Operator-curated semantic truth for the complete three-repository Mastermind-X
+    organism. This layer explains durable ownership, relationships, repository
+    boundaries, product exposure, and authority boundaries. It does not replace
+    Synapse artifact truth, lobe charters, runtime contracts, rulings, or the
+    project Active Build Map.
+  authority: architecture_and_advisory_only
+  repository_baselines:
+    macro: b49eae4ef69b97581208cd872004f111786381cd
+    terminal: eb5216452d17822b76c6d1177e3761f8477dfa95
+    mastermind: 26b31066f4a850445b1bd25c4ee45d4f59938537
+  source_registries:
+    - repo: macro
+      path: config/synapse.yml
+    - repo: macro
+      path: config/lobe_charters.yml
+    - repo: macro
+      path: config/context_index.yml
+    - repo: macro
+      path: research/DO_NOT_REBUILD.md
+  maintenance: >
+    Change this file only when durable architecture changes. Put live PR state,
+    collisions, and recently merged work in the project Active Build Map.
+  known_unresolveds:
+    - No direct current-head Terminal to Mastermind Portfolio import, API, or schema contract is proven.
+    - Portfolio vendor/macro is a symlink to a managed sparse checkout that floats with Macro origin/main; no live imported Macro SHA is attested.
+    - The live Portfolio Prophet adapter is absent from Portfolio config/contracts.yml.
+    - Macro publishes Neural Web context with all authority booleans false, but Portfolio defaults context prompts on and decision mode to shrink while its authority map says both default off; deployed runtime authority is un-attested.
+    - Several live Terminal bridges rely on implementation tests rather than formal schemas under Terminal contracts.
+    - Macro owner labels codex-b5, engine-fix, and hk-canada remain explicitly split instead of being force-mapped.
+    - Nine lobe charters use the causal-hypothesis-factory owner even though its canonical charter defines CHF as a program, not a lobe; this operational-registry contradiction remains unresolved.
+
+ontology:
+  program_kinds:
+    - cognitive_system
+    - cognitive_service
+    - decision_engine
+    - intelligence_program
+    - semantic_rail
+    - data_plane
+    - research_program
+    - infrastructure
+    - project_infrastructure
+  lifecycle_states:
+    - operating
+    - building
+    - planned
+    - parked
+    - dormant
+    - deprecated
+  scopes:
+    - repository
+    - project
+  relationship_types:
+    - contains
+    - extends
+    - consumes_from
+    - feeds_context_to
+    - governs
+    - evaluates
+    - persists
+    - renders_through
+    - coordinates_with
+  relationship_modes:
+    - conceptual
+    - planned
+    - implemented
+    - contracted
+    - research_adapter
+  repository_roles:
+    - implementation_owner
+    - producer
+    - consumer
+    - adapter
+    - renderer
+    - publisher
+    - control_plane
+    - state_owner
+    - product_host
+  contract_flow_types:
+    - data
+    - context
+    - decision_receipt
+    - presentation
+    - publication
+    - authentication
+    - provider_capacity
+    - operational_control
+    - retrieval
+  authority_classes:
+    - advisory_only
+    - context_only
+    - display_only
+    - research_only
+    - decision_bearing
+    - deterministic_control
+    - presentation_only
+    - operational_control
+  owner_dispositions:
+    - mapped
+    - alias_of
+    - subprogram_of
+    - infrastructure_only
+    - dormant
+    - deprecated
+    - unresolved_split
+    - unresolved
+  domain_dispositions:
+    - mapped
+    - infrastructure_only
+    - proposal_only
+    - prototype_not_deployed
+    - unresolved
+
+categories:
+  cognitive_architecture:
+    name: Cognitive architecture
+    description: Memory, synthesis, retrieval, and operator-facing reasoning systems.
+  decision_and_portfolio:
+    name: Decision and portfolio systems
+    description: Candidate selection, paper-book decisions, deterministic controls, and accountability.
+  market_intelligence:
+    name: Market intelligence
+    description: Durable domain programs that produce evidence, context, and research.
+  terminal_capabilities:
+    name: Terminal analytical capabilities
+    description: Workstation-owned market data, charting, signal records, alerts, and user-state behavior.
+  semantic_and_data_rails:
+    name: Semantic and data rails
+    description: Governed context, contracts, and publication paths between systems.
+  project_infrastructure:
+    name: Project infrastructure
+    description: Shared coordination, authentication, provider, retrieval, and governance services.
+
+repositories:
+  macro:
+    name: Macro Dashboard
+    github: mastermindx-market-intelligence/macro
+    default_branch: main
+    role: >
+      Global semantic home, market-intelligence production system, Neural Web and
+      Prophet host, web dashboard publisher, entitlement authority, and shared
+      cross-repository context plane.
+    owns:
+      - Market and macro intelligence artifacts and their evidence contracts
+      - Neural Web context publication and Prophet upstream decisions
+      - Canonical billing and entitlement state
+      - Global ontology, Context Index, rulings, and signal registry
+    does_not_own:
+      - Terminal chart interaction or user workspace state
+      - Mastermind paper-book sizing, settlement, or portfolio ledgers
+    canonical_orientation:
+      - repo: macro
+        path: CLAUDE.md
+      - repo: macro
+        path: docs/SIGNAL_BUS.md
+      - repo: macro
+        path: research/MASTERMIND_SUPERINTELLIGENCE_MASTERPLAN.md
+  terminal:
+    name: Mastermind Terminal
+    github: mastermindx-market-intelligence/mastermind-terminal
+    default_branch: master
+    role: >
+      Canonical responsive market workstation and presentation/control plane,
+      with its own quote, ingest, signal-record, alert, and user-state systems.
+    owns:
+      - Interactive charts, drawings, indicators, workspaces, and user state
+      - BFF validation, quote ingestion, signal records, and alert behavior
+      - Terminal product composition and native thin-shell behavior
+    does_not_own:
+      - Macro upstream intelligence, Prophet, Neural Web, or billing authority
+      - Mastermind autonomous paper-book allocation
+    canonical_orientation:
+      - repo: terminal
+        path: AGENTS.md
+      - repo: terminal
+        path: DEPLOY.md
+      - repo: terminal
+        path: terminal/AGENTS.md
+  mastermind:
+    name: Mastermind Portfolio
+    github: mastermindx-market-intelligence/Mastermind
+    default_branch: master
+    role: >
+      Seven-book paper-only portfolio operating system with deterministic managed-book
+      sizing, deterministic constraints for user-sized self-directed orders, marking,
+      settlement, control-plane governance, learning, and bounded publication to Macro.
+    owns:
+      - Paper portfolio state, mandates, managed-book sizing, self-directed constraints, and simulated settlement
+      - Portfolio decision and outcome ledgers
+      - Portfolio learning, experiments, and operator workflows
+    does_not_own:
+      - Macro signal origination or Prophet sizing authority
+      - Terminal charting and user analytics
+      - Broker execution
+    canonical_orientation:
+      - repo: mastermind
+        path: AGENTS.md
+      - repo: mastermind
+        path: research/MASTERMIND_CHARTER_V2.md
+      - repo: mastermind
+        path: research/MASTERMIND_V2_ARCHITECTURE.md
+
+programs:
+  mastermind-semantic-system-map:
+    name: Mastermind-X Semantic System Map
+    category: project_infrastructure
+    kind: project_infrastructure
+    lifecycle_state: operating
+    scope: project
+    purpose: Provide one durable self-model for the complete three-repository organism.
+    strategic_role: Let agents place work correctly before inventing a program, contract, or product seam.
+    owns:
+      - Durable program identity and conceptual ownership
+      - Repository-aware relationships and product bindings
+      - Explicit ontology coverage dispositions
+    does_not_own:
+      - Live PR state or path collisions
+      - Artifact runtime facts, lobe lifecycle, or decision authority
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      coordinates_with:
+        - project-active-build-control
+        - cross-repo-contract-governance
+        - macro-context-index
+    canonical_docs:
+      - repo: macro
+        path: docs/MASTERMIND_SYSTEM_MAP.md
+    implementation:
+      - repo: macro
+        roots:
+          - config/mastermind_programs.yml
+          - scripts/build_mastermind_system_map.py
+    product_surfaces: []
+    decision_boundary:
+      authority_class: advisory_only
+      summary: Names architecture and points to authority owners but changes no runtime behavior.
+
+  project-active-build-control:
+    name: Project Active Build Control
+    category: project_infrastructure
+    kind: project_infrastructure
+    lifecycle_state: operating
+    scope: project
+    purpose: Show current and recently merged work, collisions, and declared cross-repo dependencies across all three repositories.
+    strategic_role: Reduce duplicate builds and cross-session merge collisions without becoming a release gate.
+    owns:
+      - Advisory live-build inventory
+      - Same-repository changed-path collision detection
+      - Explicit PR dependency extraction
+    does_not_own:
+      - Durable program truth
+      - Merge authorization or runtime gating
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      coordinates_with:
+        - mastermind-semantic-system-map
+        - cross-repo-contract-governance
+    canonical_docs:
+      - repo: macro
+        path: docs/PROJECT_ACTIVE_BUILD_MAP.md
+      - repo: macro
+        path: docs/ACTIVE_BUILD_MAP.md
+    implementation:
+      - repo: macro
+        roots:
+          - scripts/build_project_active_build_map.py
+          - data/governance/project_active_builds.json
+    product_surfaces: []
+    decision_boundary:
+      authority_class: advisory_only
+      summary: Reports live coordination state and gates nothing.
+
+  cross-repo-contract-governance:
+    name: Cross-Repository Contract Governance
+    category: project_infrastructure
+    kind: project_infrastructure
+    lifecycle_state: building
+    scope: project
+    purpose: Make producer, consumer, presentation, privacy, and authority seams explicit across repositories.
+    strategic_role: Detect hidden dependencies and fallback-green failures before they become product drift.
+    owns:
+      - Global contract inventory and boundary findings
+      - Repo-aware producer and consumer responsibility descriptions
+    does_not_own:
+      - Payload schemas owned by implementation contracts
+      - Runtime promotion or trading authority
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+      - repo: terminal
+        role: consumer
+      - repo: mastermind
+        role: consumer
+    relationships:
+      governs:
+        - macro-intelligence-adapter
+        - portfolio-publication
+        - shared-auth-entitlements
+        - shared-ai-provider-control
+      coordinates_with:
+        - project-active-build-control
+    canonical_docs:
+      - repo: macro
+        path: research/CROSS_REPO_CONTRACT_BOUNDARY_AUDIT_2026-08-11.md
+    implementation:
+      - repo: macro
+        roots:
+          - config/mastermind_programs.yml
+    product_surfaces: []
+    decision_boundary:
+      authority_class: advisory_only
+      summary: Audits seams and records owners without changing payload behavior.
+
+  shared-auth-entitlements:
+    name: Shared Authentication and Entitlements
+    category: project_infrastructure
+    kind: project_infrastructure
+    lifecycle_state: operating
+    scope: project
+    purpose: Carry authenticated identity and canonical paid-product entitlement between Macro and Terminal.
+    strategic_role: Keep billing authority centralized while allowing repository-local fail-closed presentation gates.
+    owns:
+      - Macro-to-Terminal identity and entitlement boundary
+      - Separation of canonical billing state from UI hints
+    does_not_own:
+      - Terminal user-workspace contents
+      - Portfolio operator bearer authentication, personal-portfolio CRUD, or mutation-route policy
+    repo_bindings:
+      - repo: macro
+        role: control_plane
+      - repo: terminal
+        role: adapter
+    relationships:
+      coordinates_with:
+        - terminal-user-services
+        - macro-mastermind-ai
+    canonical_docs:
+      - repo: terminal
+        path: terminal/AGENTS.md
+      - repo: macro
+        path: CLAUDE.md
+    implementation:
+      - repo: macro
+        roots:
+          - app/
+      - repo: terminal
+        roots:
+          - terminal/lib/entitlement.ts
+          - terminal/app/api/billing/
+    product_surfaces:
+      - macro-dashboard
+      - terminal-workstation
+    decision_boundary:
+      authority_class: operational_control
+      summary: Macro owns canonical billing state; Terminal owns its fail-closed entitlement proxy and UI behavior. Portfolio uses a separate operator bearer plane.
+      authority_sources:
+        - repo: macro
+          path: CLAUDE.md
+        - repo: terminal
+          path: terminal/AGENTS.md
+
+  shared-ai-provider-control:
+    name: Shared AI Provider Control Plane
+    category: project_infrastructure
+    kind: project_infrastructure
+    lifecycle_state: operating
+    scope: project
+    purpose: Share provider discovery, authentication pools, cooling, and quota state across Macro and Portfolio reasoning services.
+    strategic_role: Prevent isolated credential islands while keeping deterministic fallbacks local to the caller.
+    owns:
+      - Provider availability and capacity coordination
+      - Shared authentication-pool and cooling semantics
+    does_not_own:
+      - Portfolio book tools or deterministic fallbacks
+      - Reasoning product semantics
+    repo_bindings:
+      - repo: macro
+        role: control_plane
+      - repo: mastermind
+        role: adapter
+    relationships:
+      coordinates_with:
+        - macro-mastermind-ai
+        - portfolio-mastermind-ai
+        - portfolio-desk
+    canonical_docs:
+      - repo: mastermind
+        path: AGENTS.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/codex_provider.py
+          - engine/llm_auth.py
+          - engine/neuralweb/key_pool.py
+      - repo: mastermind
+        roots:
+          - brain/provider_waterfall.py
+          - brain/key_rotor.py
+          - brain/client.py
+    product_surfaces:
+      - macro-mastermind-ai
+      - portfolio-operator
+    decision_boundary:
+      authority_class: operational_control
+      summary: Coordinates provider capacity only; it grants no market or portfolio authority.
+      authority_sources:
+        - repo: macro
+          path: CLAUDE.md
+        - repo: mastermind
+          path: AGENTS.md
+
+  macro-context-index:
+    name: Macro Context Index
+    category: project_infrastructure
+    kind: project_infrastructure
+    lifecycle_state: building
+    scope: project
+    purpose: Retrieve governed project context from Macro and the two sibling repositories.
+    strategic_role: Give agents one authority-classed retrieval entry point without duplicating source documents.
+    owns:
+      - Context source discovery and authority-class metadata
+      - Project-aware retrieval routes
+    does_not_own:
+      - Source-document truth or semantic program ownership
+      - Runtime market context
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+      - repo: terminal
+        role: consumer
+      - repo: mastermind
+        role: consumer
+    relationships:
+      consumes_from:
+        - mastermind-semantic-system-map
+      coordinates_with:
+        - macro-context-rail
+    canonical_docs:
+      - repo: macro
+        path: research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - config/context_index.yml
+          - engine/context_index/
+    product_surfaces: []
+    decision_boundary:
+      authority_class: advisory_only
+      summary: Retrieves project sources; it does not convert them into decision authority.
+
+  neural-web:
+    name: Neural Web
+    category: cognitive_architecture
+    kind: cognitive_system
+    lifecycle_state: operating
+    scope: project
+    purpose: Govern memory, context routing, evidence synthesis, attention, contradiction, and system learning.
+    strategic_role: Connect specialized intelligence without turning one cognitive layer into every decision engine.
+    owns:
+      - Cognitive routing, memory, metabolism, and governance
+      - Context synthesis and evidence-aware attention
+      - Context publication to authorized consumers
+    does_not_own:
+      - Signal origination, stock picks, portfolio sizing, or execution
+      - Oracle rotation or Prophet decision authority
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+      - repo: terminal
+        role: consumer
+      - repo: mastermind
+        role: consumer
+    relationships:
+      contains:
+        - operating-cortex
+        - market-memory
+      consumes_from:
+        - macro-context-rail
+        - thematic-intelligence
+        - market-regime-risk
+        - causal-hypothesis-factory
+      feeds_context_to:
+        - prophet
+        - macro-mastermind-ai
+        - portfolio-desk
+        - target: terminal-charting
+          mode: contracted
+          contract: macro-terminal-neural-web
+          note: Terminal renders the contracted display-only context; no signal or decision authority transfers.
+      coordinates_with:
+        - signal-governance
+    canonical_docs:
+      - repo: macro
+        path: research/NEURAL_WEB_MASTERPLAN_BY_FABLE.md
+      - repo: macro
+        path: docs/NEURAL_WEB_CASE_LAW.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/neuralweb/
+          - scripts/build_neuralweb_brief.py
+          - site/neuralwebdata/
+    product_surfaces:
+      - macro-dashboard
+      - terminal-workstation
+      - portfolio-operator
+    decision_boundary:
+      authority_class: context_only
+      summary: Context and cognition only unless a separate ratified consumer contract explicitly promotes an input.
+
+  operating-cortex:
+    name: Operating Cortex
+    category: cognitive_architecture
+    kind: cognitive_service
+    lifecycle_state: operating
+    scope: repository
+    purpose: Provide deterministic attention, contradiction, retrieval, and hypothesis support inside Neural Web.
+    strategic_role: Turn governed evidence into inspectable cognitive assistance for operator and agent workflows.
+    owns:
+      - Attention and contradiction surfaces
+      - Context retrieval and hypothesis assistance
+    does_not_own:
+      - Ranking, gating, sizing, veto, execution, or signal origination
+      - Synthetic Market Memory research outputs not wired into the live cortex
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      consumes_from:
+        - macro-context-rail
+      coordinates_with:
+        - target: market-memory
+          mode: planned
+          note: No live Market Memory adapter is wired into engine/neuralweb/cortex.py.
+      feeds_context_to:
+        - macro-mastermind-ai
+    canonical_docs:
+      - repo: macro
+        path: research/MASTERMIND_SUPERINTELLIGENCE_MASTERPLAN.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/neuralweb/cortex.py
+          - engine/neuralweb/ask_brain.py
+    product_surfaces:
+      - macro-mastermind-ai
+    decision_boundary:
+      authority_class: context_only
+      summary: Assists cognition but cannot alter money-path decisions.
+
+  market-memory:
+    name: Market Memory
+    category: cognitive_architecture
+    kind: data_plane
+    lifecycle_state: building
+    scope: repository
+    purpose: Preserve point-in-time, as-known-at historical state and analogue-retrieval foundations.
+    strategic_role: Let cognition compare current conditions with honest prior states without hindsight leakage.
+    owns:
+      - Point-in-time memory foundations and replayable context
+      - Analogue evidence stores and provenance
+    does_not_own:
+      - A complete market simulator
+      - Domain facts, options episodes, Prophet decisions, or portfolio authority
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - target: research-factory
+          mode: research_adapter
+          evidence_refs:
+            - macro:engine/research_factory/adapter_market_memory.py
+          note: The implemented adapter is research-only and is not wired into the live Operating Cortex.
+      coordinates_with:
+        - target: operating-cortex
+          mode: planned
+          note: The synthetic W5A kernel is not the live Cortex; a live adapter requires separate review.
+        - neural-web
+        - causal-hypothesis-factory
+        - signal-episode-atlas
+    canonical_docs:
+      - repo: macro
+        path: research/KONSEKI_CLEAN_ROOM_MARKET_MEMORY_AND_COGNITIVE_ARCHITECTURE_FOR_FABLE_2026-08-08.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/neuralweb/market_memory.py
+          - contracts/market_memory/
+    product_surfaces: []
+    decision_boundary:
+      authority_class: context_only
+      summary: Historical context and research foundation only.
+
+  macro-mastermind-ai:
+    name: Mastermind AI for Macro
+    category: cognitive_architecture
+    kind: cognitive_service
+    lifecycle_state: operating
+    scope: repository
+    purpose: Provide an operator-facing Analyst OS over governed Macro evidence and tools.
+    strategic_role: Make the intelligence system interrogable without handing the language layer hidden market authority.
+    owns:
+      - Macro user conversation, explanation, and governed tool orchestration
+      - Brain-to-Terminal chart command origin and quota boundary
+    does_not_own:
+      - Portfolio scheduled-manager reasoning
+      - Deterministic rank, gate, size, or execution authority
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+      - repo: terminal
+        role: renderer
+    relationships:
+      consumes_from:
+        - operating-cortex
+        - neural-web
+        - prophet
+      renders_through:
+        - terminal-charting
+      coordinates_with:
+        - shared-auth-entitlements
+        - shared-ai-provider-control
+    canonical_docs:
+      - repo: macro
+        path: research/MASTERMIND_SUPERINTELLIGENCE_MASTERPLAN.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/neuralweb/brain_gateway.py
+          - site/mm_brain.js
+      - repo: terminal
+        roots:
+          - terminal/components/BrainWidget.tsx
+          - terminal/lib/chartBus.ts
+    product_surfaces:
+      - macro-mastermind-ai
+      - terminal-brain
+    decision_boundary:
+      authority_class: advisory_only
+      summary: Explains and orchestrates governed tools but does not silently acquire their authority.
+
+  portfolio-mastermind-ai:
+    name: Mastermind AI for Portfolio
+    category: cognitive_architecture
+    kind: cognitive_service
+    lifecycle_state: operating
+    scope: repository
+    purpose: Provide portfolio-operator reflection, nudges, directives, and chat.
+    strategic_role: Expose portfolio accountability and reasoning separately from scheduled book-manager brains.
+    owns:
+      - Operator-facing portfolio reflection and dialogue
+      - Portfolio nudges and directives
+    does_not_own:
+      - Scheduled portfolio-manager decisions
+      - Deterministic sizing, gates, settlement, or broker execution
+    repo_bindings:
+      - repo: mastermind
+        role: implementation_owner
+    relationships:
+      consumes_from:
+        - portfolio-learning-accountability
+        - macro-intelligence-adapter
+      coordinates_with:
+        - shared-ai-provider-control
+    canonical_docs:
+      - repo: mastermind
+        path: research/MASTERMIND_CHARTER_V2.md
+    implementation:
+      - repo: mastermind
+        roots:
+          - brain/mastermind_ai.py
+          - brain/nw_reflection.py
+          - brain/advisor.py
+          - app/web.py
+    product_surfaces:
+      - portfolio-operator
+    decision_boundary:
+      authority_class: advisory_only
+      summary: Operator cognition only; portfolio engines retain binding controls.
+
+  research-factory:
+    name: Research Factory
+    category: cognitive_architecture
+    kind: research_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Govern candidate research, deduplication, challenge design, and evidence progression.
+    strategic_role: Convert curiosity into inspectable research without prematurely promoting claims.
+    owns:
+      - Candidate lifecycle, deduplication, challenge, and evidence receipts
+      - Research provenance and progression through nonbinding stages
+    does_not_own:
+      - Live signal admission or portfolio decisions
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - neural-web
+        - signal-governance
+      coordinates_with:
+        - causal-hypothesis-factory
+    canonical_docs:
+      - repo: macro
+        path: research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/research_factory/
+          - scripts/research_factory_run.py
+    product_surfaces:
+      - macro-research-workbenches
+    decision_boundary:
+      authority_class: research_only
+      summary: Produces candidates and evidence, not live decisions.
+
+  causal-hypothesis-factory:
+    name: Causal Hypothesis Factory
+    category: cognitive_architecture
+    kind: research_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Generate and falsify causal explanations around observed market conditions.
+    strategic_role: Act as an idea immune system rather than a signal generator.
+    owns:
+      - Hypothesis generation, challenge, falsification, and evidence receipts
+    does_not_own:
+      - Signals, ranks, gates, sizes, or trades
+      - A lobe identity or lobe-cap slot; its canonical charter defines CHF as a program
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      coordinates_with:
+        - target: market-memory
+          mode: planned
+          note: Market Memory has no live store or adapter into CHF at the audited baseline.
+      feeds_context_to:
+        - neural-web
+        - research-factory
+    canonical_docs:
+      - repo: macro
+        path: research/CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/neuralweb/causal_frontier.py
+          - scripts/run_causal_brainstorm.py
+    product_surfaces:
+      - macro-research-workbenches
+    notes: >
+      Raw lobe-charter coverage currently reports nine charters under this owner.
+      That conflicts with the canonical CHF program-not-lobe ruling and is surfaced
+      as an unresolved operational-registry inconsistency, not endorsed here.
+    decision_boundary:
+      authority_class: research_only
+      summary: Hypotheses remain nonbinding until another governed system qualifies them.
+    ontology_status:
+      classification: program_not_lobe
+      consumes_lobe_cap: false
+      source:
+        repo: macro
+        path: research/CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md
+      conflict_note: Nine raw lobe-charter rows still carry this owner label and remain an explicit operational-registry contradiction.
+
+  macro-context-rail:
+    name: Neural Web Macro Context Rail
+    category: semantic_and_data_rails
+    kind: semantic_rail
+    lifecycle_state: operating
+    scope: repository
+    purpose: Normalize governed runtime macro context for Neural Web consumers.
+    strategic_role: Separate retrieval indexing from live as-of-aware context consumption.
+    owns:
+      - Runtime macro-context envelopes and reader semantics
+    does_not_own:
+      - Project-document retrieval
+      - Underlying domain facts or decision authority
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - neural-web
+        - operating-cortex
+      coordinates_with:
+        - macro-context-index
+    canonical_docs:
+      - repo: macro
+        path: research/NW_MACRO_CONTEXT_RAIL_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - scripts/build_macro_context.py
+    product_surfaces: []
+    decision_boundary:
+      authority_class: context_only
+      summary: Carries runtime context and inherits the authority of its source contracts.
+
+  signal-governance:
+    name: Signal Governance and Metabolism
+    category: semantic_and_data_rails
+    kind: infrastructure
+    lifecycle_state: operating
+    scope: repository
+    purpose: Govern artifact identity, qualification, lifecycle evidence, and safe promotion boundaries.
+    strategic_role: Keep semantic description separate from machine-enforced signal and lobe authority.
+    owns:
+      - Synapse, lobe-charter, qualification, and metabolism governance
+      - Machine-readable signal and artifact authority facts
+    does_not_own:
+      - High-level program purpose or product identity
+      - Portfolio sizing or execution
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      governs:
+        - neural-web
+        - prophet
+        - thematic-intelligence
+        - options-intelligence
+      coordinates_with:
+        - mastermind-semantic-system-map
+    canonical_docs:
+      - repo: macro
+        path: docs/SIGNAL_BUS.md
+    implementation:
+      - repo: macro
+        roots:
+          - config/synapse.yml
+          - config/lobe_charters.yml
+          - engine/metabolism/
+    product_surfaces: []
+    decision_boundary:
+      authority_class: deterministic_control
+      summary: Existing registries and contracts own binding machine authority; this semantic map only points to them.
+      authority_sources:
+        - repo: macro
+          path: config/synapse.yml
+        - repo: macro
+          path: config/lobe_charters.yml
+        - repo: macro
+          path: docs/SIGNAL_BUS.md
+
+  prophet:
+    name: Prophet
+    category: decision_and_portfolio
+    kind: decision_engine
+    lifecycle_state: operating
+    scope: project
+    purpose: Convert governed candidate evidence into regional paper decision plans and trade geometry.
+    strategic_role: Own candidate selection within its ratified regional contracts while remaining separate from portfolio sizing.
+    owns:
+      - Prophet candidate and plan authority defined by regional contracts
+      - Entry, target, stop, invalidation, and decision receipts
+    does_not_own:
+      - Portfolio position sizing, broker execution, or LLM discretion
+      - Neural Web context generation or Oracle rotation
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+      - repo: terminal
+        role: renderer
+      - repo: mastermind
+        role: consumer
+    relationships:
+      contains:
+        - prophet-us
+        - prophet-cn
+      consumes_from:
+        - neural-web
+        - market-regime-risk
+        - thematic-intelligence
+        - price-pressure
+      feeds_context_to:
+        - portfolio-desk
+        - macro-mastermind-ai
+      renders_through:
+        - terminal-charting
+    canonical_docs:
+      - repo: macro
+        path: research/PROPHET_MASTERPLAN_BY_FABLE.md
+      - repo: macro
+        path: research/PROPHET_LEDGER_SCHEMA.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/neuralweb/prophet_governor.py
+          - engine/prophet_bridge.py
+          - scripts/build_prophet.py
+          - data/prophet/
+    product_surfaces:
+      - macro-prophet-boards
+      - terminal-options
+      - portfolio-operator
+    decision_boundary:
+      authority_class: decision_bearing
+      summary: Regional Prophet contracts can select candidates and geometry; they never size Portfolio books.
+      authority_sources:
+        - repo: macro
+          path: research/PROPHET_MASTERPLAN_BY_FABLE.md
+        - repo: macro
+          path: research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md
+        - repo: macro
+          path: research/PROPHET_CN_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md
+
+  prophet-us:
+    name: Prophet US
+    category: decision_and_portfolio
+    kind: decision_engine
+    lifecycle_state: operating
+    scope: repository
+    purpose: Produce governed US equity paper-pick decisions and accountability receipts.
+    strategic_role: Specialize Prophet admission and lifecycle for the US market.
+    owns:
+      - US Prophet candidate admission and regional decision receipts
+    does_not_own:
+      - Portfolio sizing or CN market decisions
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      extends:
+        - prophet
+      consumes_from:
+        - market-timing-intelligence
+        - price-pressure
+      feeds_context_to:
+        - portfolio-desk
+    canonical_docs:
+      - repo: macro
+        path: research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md
+      - repo: macro
+        path: research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md
+      - repo: macro
+        path: research/PROPHET_BOARD_PRIORITY_ENGINE_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/signal_gate.py
+          - engine/us_board_rank.py
+          - engine/prophet_bridge.py
+          - scripts/build_stock_library.py
+          - scripts/build_prophet.py
+          - data/us_board_ledger/
+    product_surfaces:
+      - macro-prophet-boards
+    decision_boundary:
+      authority_class: decision_bearing
+      summary: Bounded US candidate and geometry authority under its own evidence gates.
+      authority_sources:
+        - repo: macro
+          path: research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md
+        - repo: macro
+          path: research/PROPHET_BOARD_PRIORITY_ENGINE_MASTERPLAN_BY_FABLE.md
+
+  prophet-cn:
+    name: Prophet CN
+    category: decision_and_portfolio
+    kind: decision_engine
+    lifecycle_state: operating
+    scope: repository
+    purpose: Produce governed mainland-China paper-pick decisions and accountability receipts.
+    strategic_role: Specialize Prophet for China market mechanics, limits, and regional evidence.
+    owns:
+      - CN Prophet candidate admission and regional decision receipts
+    does_not_own:
+      - Portfolio sizing or the broader China intelligence system
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      extends:
+        - prophet
+      consumes_from:
+        - china-system
+        - thematic-intelligence
+      feeds_context_to:
+        - portfolio-desk
+    canonical_docs:
+      - repo: macro
+        path: research/PROPHET_CN_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/china_board_rank.py
+          - engine/china_standout_track.py
+          - scripts/build_china_library.py
+          - data/china_standout_track/
+    product_surfaces:
+      - macro-prophet-boards
+    decision_boundary:
+      authority_class: decision_bearing
+      summary: Bounded CN candidate and geometry authority under its own evidence gates.
+      authority_sources:
+        - repo: macro
+          path: research/PROPHET_CN_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md
+        - repo: macro
+          path: research/PROPHET_MASTERPLAN_BY_FABLE.md
+
+  portfolio-desk:
+    name: Mastermind Portfolio Desk
+    category: decision_and_portfolio
+    kind: decision_engine
+    lifecycle_state: operating
+    scope: repository
+    purpose: Operate seven paper books with paper-only lifecycle, marking, settlement, and accountability; managed books use deterministic sizing, while self-directed orders use user-requested size under deterministic constraints.
+    strategic_role: Convert governed evidence and manager intent into inspectable paper portfolios without broker execution.
+    owns:
+      - Seven paper-book states and mandates
+      - Managed-book deterministic sizing, self-directed cash/share/long-only clamps, simulated settlement, and marking
+      - Portfolio decision and outcome ledgers
+    does_not_own:
+      - Macro signal origination or Prophet sizing authority
+      - Terminal user portfolio state or broker execution
+    repo_bindings:
+      - repo: mastermind
+        role: implementation_owner
+      - repo: macro
+        role: product_host
+    relationships:
+      consumes_from:
+        - macro-intelligence-adapter
+        - prophet
+        - neural-web
+      renders_through:
+        - portfolio-publication
+      coordinates_with:
+        - shared-ai-provider-control
+    canonical_docs:
+      - repo: mastermind
+        path: research/MASTERMIND_CHARTER_V2.md
+      - repo: mastermind
+        path: research/MASTERMIND_V2_ARCHITECTURE.md
+    implementation:
+      - repo: mastermind
+        roots:
+          - portfolio/
+          - bot/
+          - brain/committee.py
+          - app/scheduler.py
+    product_surfaces:
+      - portfolio-operator
+      - portfolio-public-snapshot
+    decision_boundary:
+      authority_class: deterministic_control
+      summary: Manager reasoning may propose paper intent; deterministic engines own sizing and caps for managed books. In self_directed, the user chooses requested paper size and the engine enforces long-only, cash, share, settlement, and fill constraints.
+      authority_sources:
+        - repo: mastermind
+          path: AGENTS.md
+    books:
+      - flagship
+      - heavyweight
+      - autonomous
+      - etf
+      - china
+      - hk
+      - self_directed
+
+  portfolio-control-plane:
+    name: Portfolio Control Plane
+    category: decision_and_portfolio
+    kind: infrastructure
+    lifecycle_state: operating
+    scope: repository
+    purpose: Enforce portfolio artifact, authority-mode, packet, lock, and scheduler governance.
+    strategic_role: Keep binding portfolio controls deterministic and inspectable.
+    owns:
+      - Portfolio authority modes and artifact contracts
+      - Decision-packet gates, locks, and scheduler control
+    does_not_own:
+      - Market intelligence or free-form manager reasoning
+    repo_bindings:
+      - repo: mastermind
+        role: control_plane
+    relationships:
+      governs:
+        - portfolio-desk
+        - portfolio-publication
+      coordinates_with:
+        - shared-ai-provider-control
+    canonical_docs:
+      - repo: mastermind
+        path: research/MASTERMIND_CONTROL_PLANE_MASTERPLAN.md
+    implementation:
+      - repo: mastermind
+        roots:
+          - control_plane/
+          - config/authority_map.yml
+          - config/contracts.yml
+    product_surfaces:
+      - portfolio-operator
+    decision_boundary:
+      authority_class: deterministic_control
+      summary: Binding behavior depends on declared runtime modes and promotion evidence, not semantic prose.
+      authority_sources:
+        - repo: mastermind
+          path: AGENTS.md
+        - repo: mastermind
+          path: config/authority_map.yml
+        - repo: mastermind
+          path: config/contracts.yml
+
+  portfolio-learning-accountability:
+    name: Portfolio Learning and Accountability
+    category: decision_and_portfolio
+    kind: research_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Grade portfolio decisions, calibrate managers, govern experiments, and maintain a forward-paper evidence loop.
+    strategic_role: Improve paper managers without retrospectively rewriting official ledgers or bypassing release gates.
+    owns:
+      - Outcome grading, calibration, benchmark ledgers, and experiment registry
+      - Offline research and forward-paper qualification
+    does_not_own:
+      - Live sizing promotion without forward evidence
+      - Market signal origination
+    repo_bindings:
+      - repo: mastermind
+        role: implementation_owner
+    relationships:
+      evaluates:
+        - portfolio-desk
+      feeds_context_to:
+        - portfolio-mastermind-ai
+    canonical_docs:
+      - repo: mastermind
+        path: research/MASTERMIND_LEARNING_DESIGN.md
+    implementation:
+      - repo: mastermind
+        roots:
+          - brain/calibration.py
+          - brain/outcomes.py
+          - brain/experiment_registry.py
+          - loop/
+    product_surfaces:
+      - portfolio-operator
+    decision_boundary:
+      authority_class: research_only
+      summary: Research and grading require explicit promotion before they can change binding controls.
+
+  oracle:
+    name: Oracle Rotation Intelligence
+    category: decision_and_portfolio
+    kind: decision_engine
+    lifecycle_state: operating
+    scope: repository
+    purpose: Govern market and sector rotation interpretation on its own tactical clock.
+    strategic_role: Keep rotation decisions distinct from Neural Web cognition and Prophet picks.
+    owns:
+      - Ratified Oracle rotation state and tactical rotation evidence
+    does_not_own:
+      - Neural Web, GMI themes, Prophet picks, or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      consumes_from:
+        - sector-rotation-intelligence
+        - market-regime-risk
+      feeds_context_to:
+        - prophet
+    canonical_docs:
+      - repo: macro
+        path: research/ORACLE_ROTATION_TM_CODEX_ADJUDICATION.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/oracle/
+          - data/oracle/
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: decision_bearing
+      summary: Owns only its ratified rotation decisions, not stock selection or allocation.
+      authority_sources:
+        - repo: macro
+          path: research/ORACLE_ROTATION_TM_CODEX_ADJUDICATION.md
+
+  gmi-theme-graph:
+    name: Global Market Intelligence Theme Graph
+    category: market_intelligence
+    kind: data_plane
+    lifecycle_state: building
+    scope: repository
+    purpose: Connect global themes, evidence, transmission, and contagion into a governed graph.
+    strategic_role: Extend TIL toward cross-market causal composition using participation evidence owned by Group Reads.
+    owns:
+      - Theme-graph entities, evidence edges, and transmission context
+      - Cross-market theme composition under the GMI masterplan
+    does_not_own:
+      - Basket participation or earnings read-through, which belong to Group Reads
+      - TIL theme lifecycle and evidence-leg state
+      - Prophet decisions, portfolio sizing, or Neural Web authority
+      - A dedicated product surface before one is implemented
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      extends:
+        - thematic-intelligence
+      consumes_from:
+        - group-reads
+        - price-pressure
+        - policy-transmission-intelligence
+      feeds_context_to:
+        - neural-web
+        - prophet
+        - macro-mastermind-ai
+      coordinates_with:
+        - market-memory
+    canonical_docs:
+      - repo: macro
+        path: research/GLOBAL_MARKET_INTELLIGENCE_MASTERPLAN_BY_FABLE.md
+      - repo: macro
+        path: research/theme_graph/THEME_ORGAN_DISPOSITION_SWEEP.md
+    implementation: []
+    product_surfaces: []
+    decision_boundary:
+      authority_class: context_only
+      summary: Theme-graph state provides context and cannot originate or promote decisions by itself.
+    notes:
+      - Planned GMI-owned theme-graph runtime roots are absent at the audited baseline; TIL and Group Reads are inputs, not GMI implementation.
+
+  thematic-intelligence:
+    name: Thematic Intelligence Layer
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Detect, structure, and monitor investable themes and their live evidence legs.
+    strategic_role: Own thematic state, lifecycle, evidence legs, falsifiers, and crosswalks while Group Reads owns participation evidence.
+    owns:
+      - Theme phase, lifecycle, evidence legs, falsifiers, and crosswalk state
+      - Governance of Group Reads as a contained capability without absorbing its ownership
+    does_not_own:
+      - Basket participation or earnings read-through, which belong to Group Reads
+      - Cross-market GMI graph composition
+      - Prophet candidate decisions or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      contains:
+        - group-reads
+      feeds_context_to:
+        - gmi-theme-graph
+        - neural-web
+        - prophet
+    canonical_docs:
+      - repo: macro
+        path: research/THEMATIC_INTELLIGENCE_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - config/theme_crosswalk.yml
+          - engine/neuralweb/thematic_state.py
+          - engine/neuralweb/theme_thesis.py
+          - engine/neuralweb/theme_pathways.py
+          - engine/neuralweb/theme_asymmetry.py
+          - data/neuralweb/theme_phase_history.jsonl
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Owns thematic state and evidence lifecycle, not Group Reads participation, selection, or sizing.
+
+  group-reads:
+    name: Group Reads
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Aggregate basket participation, earnings read-through, sympathy, and linked-outsider evidence into thematic context.
+    strategic_role: Supply TIL and GMI with inspectable group-level participation rather than isolated ticker anecdotes.
+    owns:
+      - Basket participation and group breadth
+      - Group earnings read-through, sympathy, and linked-outsider context
+    does_not_own:
+      - Theme lifecycle, stock selection, or portfolio authority
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - thematic-intelligence
+        - gmi-theme-graph
+        - neural-web
+    canonical_docs:
+      - repo: macro
+        path: research/GROUP_READS_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/group_pulse.py
+          - engine/group_earnings.py
+          - engine/group_linked_outsiders.py
+          - data/group_pulse/
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Owns participation and read-through evidence only; it does not rank securities or originate decisions.
+
+  market-regime-risk:
+    name: Market Regime and Risk Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Describe market regime, breadth, volatility, and risk state for downstream consumers.
+    strategic_role: Provide a shared, point-in-time risk context without becoming every consumer's gate.
+    owns:
+      - Macro regime, breadth, market state, and risk-state artifacts
+      - Macro Fed-put and capitulation dislocation gauge
+    does_not_own:
+      - Consumer-specific entry gates, Prophet decisions, or portfolio sizing
+      - Historical engine-fix artifacts whose semantic ownership remains split
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+      - repo: terminal
+        role: consumer
+      - repo: mastermind
+        role: consumer
+    relationships:
+      feeds_context_to:
+        - neural-web
+        - prophet
+        - terminal-signal-layer
+        - portfolio-desk
+    canonical_docs:
+      - repo: macro
+        path: docs/SIGNAL_BUS.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/regime.py
+          - engine/dislocation.py
+          - data/regime/
+          - site/riskdata/
+    product_surfaces:
+      - macro-dashboard
+      - terminal-workstation
+      - portfolio-operator
+    decision_boundary:
+      authority_class: context_only
+      summary: Context may be consumed by separately ratified gates; the regime program does not inherit those decisions.
+
+  price-pressure:
+    name: Per-Name Price Pressure and Residual Shocks
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Detect and describe per-name residual shocks, washout, pressure, and reversal context.
+    strategic_role: Own per-name price-pressure evidence while keeping macro and options dislocation at their distinct grains.
+    owns:
+      - Per-name residual-shock, price-pressure, and washout evidence
+    does_not_own:
+      - The macro Fed-put and capitulation gauge in engine/dislocation.py
+      - Options information-dislocation in engine/options_dislocation.py
+      - A universal reversal-buy signal
+      - Portfolio sizing or automatic trade admission
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+      - repo: terminal
+        role: consumer
+    relationships:
+      feeds_context_to:
+        - prophet
+        - gmi-theme-graph
+        - terminal-signal-layer
+        - top-anatomy
+    canonical_docs:
+      - repo: macro
+        path: research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md
+      - repo: macro
+        path: research/DISLOCATION_RECOVERY_LOBE_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/price_pressure/
+          - data/price_pressure/
+    product_surfaces:
+      - macro-dashboard
+      - terminal-workstation
+    decision_boundary:
+      authority_class: context_only
+      summary: Macro output is context; Terminal owns its separately ratified live entry-admission use.
+
+  short-side:
+    name: Short-Side Risk Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Identify deterioration, avoid conditions, and asymmetric downside risk.
+    strategic_role: Supply risk and avoid evidence without implying directional short execution.
+    owns:
+      - Short-side evidence, deterioration, and avoid classifications
+    does_not_own:
+      - Short trade execution or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      consumes_from:
+        - top-anatomy
+        - market-regime-risk
+      feeds_context_to:
+        - neural-web
+        - prophet
+    canonical_docs:
+      - repo: macro
+        path: research/SHORT_SIDE_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/short_pressure.py
+          - scripts/research/sp1_short_pressure_study.py
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Risk and avoid context only; no autonomous shorting.
+
+  top-anatomy:
+    name: Top Anatomy
+    category: market_intelligence
+    kind: research_program
+    lifecycle_state: building
+    scope: repository
+    purpose: Study maturation and topping anatomy using preregistered evidence.
+    strategic_role: Improve deterioration context without converting pattern research into an unearned short trigger.
+    owns:
+      - Top-maturation research and evidence receipts
+    does_not_own:
+      - Directional short entry or portfolio authority
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - short-side
+        - neural-web
+    canonical_docs:
+      - repo: macro
+        path: research/TOP_ANATOMY_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/top_anatomy.py
+          - data/top_anatomy/
+    product_surfaces:
+      - macro-research-workbenches
+    decision_boundary:
+      authority_class: research_only
+      summary: Research evidence remains nonbinding.
+
+  signal-episode-atlas:
+    name: Signal Episode Atlas
+    category: market_intelligence
+    kind: research_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Preserve comparable signal and market episodes for honest retrospective and forward study.
+    strategic_role: Give research and Market Memory a shared episode vocabulary without creating decisions.
+    owns:
+      - Episode definitions, cohorts, and study receipts
+    does_not_own:
+      - Signal promotion, ranking, or portfolio decisions
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - market-memory
+        - research-factory
+      coordinates_with:
+        - signal-governance
+    canonical_docs:
+      - repo: macro
+        path: research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - scripts/research/risk_radar_episode_atlas.py
+          - reports/risk-radar-episode-atlas.md
+    product_surfaces:
+      - macro-research-workbenches
+    decision_boundary:
+      authority_class: research_only
+      summary: Episode evidence only.
+
+  rates-inflation-command:
+    name: Rates and Inflation Command
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: building
+    scope: repository
+    purpose: Unify rates, inflation, release, transmission, OPEX-window, and policy evidence under one command model.
+    strategic_role: Replace fragmented macro clocks with an inspectable context program.
+    owns:
+      - Rates and inflation context, clocks, transmission, and evidence windows
+    does_not_own:
+      - Directional return targets or automatic trade decisions
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      contains:
+        - macro-release-intel
+        - policy-transmission-intelligence
+      feeds_context_to:
+        - market-regime-risk
+        - neural-web
+        - prophet
+    canonical_docs:
+      - repo: macro
+        path: research/RATES_INFLATION_COMMAND_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/rates_inflation_command.py
+          - scripts/build_rates_command.py
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Display and context authority only until explicit forward evidence promotes a consumer path.
+
+  macro-release-intel:
+    name: Macro Release Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: building
+    scope: repository
+    purpose: Separate current inflation conditions, official releases, forecasts, and release evidence clocks.
+    strategic_role: Make macro-release interpretation point-in-time and provenance-aware.
+    owns:
+      - Release calendars, official-print context, forecasts, and truth receipts
+    does_not_own:
+      - Predictive-skill claims without forward evidence
+      - Portfolio or Prophet authority
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      extends:
+        - rates-inflation-command
+      feeds_context_to:
+        - market-regime-risk
+        - neural-web
+    canonical_docs:
+      - repo: macro
+        path: research/MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/release_forecast.py
+          - site/news/macro_releases.json
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Release intelligence remains display and context unless forward scoring earns promotion.
+
+  government-revenue-foresight:
+    name: Government Revenue Foresight
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Build point-in-time government contract, revenue, and catalyst evidence with correction-safe provenance.
+    strategic_role: Turn public fiscal evidence into accountable company context without hindsight repair.
+    owns:
+      - Government revenue evidence, ledgers, correction manifests, and catalyst research
+    does_not_own:
+      - Prophet decisions or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - fundamental-forensics
+        - thematic-intelligence
+        - prophet
+    canonical_docs:
+      - repo: macro
+        path: research/GOVERNMENT_REVENUE_FORESIGHT_MASTERPLAN_FOR_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/government_revenue/
+          - data/government_revenue/
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Evidence and context only.
+
+  biocatalyst:
+    name: BioCatalyst Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: building
+    scope: repository
+    purpose: Track biopharma catalysts, clinical clocks, seasonality, and event evidence.
+    strategic_role: Provide auditable catalyst timing without promoting unscored event anecdotes.
+    owns:
+      - BioCatalyst event, clinical, and seasonality intelligence
+    does_not_own:
+      - Portfolio sizing or an unproven live Neural Web consumer path
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - thematic-intelligence
+        - neural-web
+    canonical_docs:
+      - repo: macro
+        path: research/BIOCATALYST_FULL_PARITY_SUPERINTELLIGENCE_BUILD_HANDOFF_FOR_FABLE_2026-08-02.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/biocatalyst/
+          - data/biocatalyst/
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Catalyst intelligence remains context until consumer wiring and qualification are proven.
+
+  factor-intelligence:
+    name: Factor Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Measure factor exposures, crowding, orthogonality, and regime behavior.
+    strategic_role: Explain factor context without turning descriptive scores into selection authority.
+    owns:
+      - Factor definitions, exposures, and validation evidence
+    does_not_own:
+      - Stock selection or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - neural-web
+        - prophet
+        - portfolio-desk
+    canonical_docs:
+      - repo: macro
+        path: research/FACTOR_INTELLIGENCE_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - scripts/build_factor_intelligence_state.py
+          - data/neuralweb/factor_intelligence_state.json
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Factor evidence is descriptive unless a separate contract promotes it.
+
+  china-system:
+    name: China Intelligence System
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Own mainland and Hong Kong market mechanics, native evidence, sector context, and intelligence infrastructure.
+    strategic_role: Supply region-specific truth to Prophet CN and other consumers without collapsing intelligence into decisions.
+    owns:
+      - China and Hong Kong market mechanics, native data, policy, sector, and alpha research
+    does_not_own:
+      - Prophet CN decision authority or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - prophet-cn
+        - neural-web
+        - portfolio-desk
+    canonical_docs:
+      - repo: macro
+        path: research/CHINA_SYSTEM_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/china_intel_bus.py
+          - data/china/
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Regional intelligence only; Prophet and Portfolio retain their own authority.
+
+  fundamental-forensics:
+    name: Fundamental Forensics
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: building
+    scope: repository
+    purpose: Build source-preserving SEC, filing, disclosure, and company-fundamental evidence.
+    strategic_role: Ground intelligence products in primary evidence and auditable transformations.
+    owns:
+      - SEC source archives, disclosure projections, and fundamental evidence
+    does_not_own:
+      - Market ranking, Prophet decisions, or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+      - repo: terminal
+        role: consumer
+    relationships:
+      consumes_from:
+        - earnings-intelligence
+        - government-revenue-foresight
+        - capital-structure-intelligence
+      feeds_context_to:
+        - terminal-market-data
+        - macro-mastermind-ai
+    canonical_docs:
+      - repo: macro
+        path: research/CALCBENCH_FUNDAMENTAL_FORENSICS_ENGINE_ASSESSMENT_AND_BUILD_DOCKET_FOR_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/fundamental_forensics/
+          - data/fundamental_forensics/
+    product_surfaces:
+      - macro-dashboard
+      - terminal-company-analysis
+    decision_boundary:
+      authority_class: context_only
+      summary: Source evidence and interpretation only.
+
+  crypto-intelligence:
+    name: Crypto Cockpit and BTC Vector
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Describe crypto market state, vector evidence, and cross-asset context.
+    strategic_role: Keep crypto intelligence governed as a domain rather than scattered ad hoc feeds.
+    owns:
+      - BTC vector and crypto-cockpit context
+    does_not_own:
+      - Portfolio sizing, execution, or generalized macro regime
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - neural-web
+        - market-regime-risk
+    canonical_docs:
+      - repo: macro
+        path: research/CRYPTO_COCKPIT_MASTERPLAN.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/crypto_market_state.py
+          - site/crypto_cockpit.json
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Domain context only.
+
+  options-intelligence:
+    name: Options Intelligence Program
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: building
+    scope: project
+    purpose: Govern options flow, structure, exposure, dislocation, Prophet overlays, and issue-desk evidence.
+    strategic_role: Separate upstream options intelligence from Terminal presentation and user interaction.
+    owns:
+      - Macro options flow, structure, exposure, grades, and upstream payload semantics
+      - Options information-dislocation evidence
+      - Options-to-Neural-Web and options-to-Prophet context
+    does_not_own:
+      - Terminal visualization and interaction
+      - Portfolio sizing or broker execution
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+      - repo: terminal
+        role: renderer
+    relationships:
+      contains:
+        - options-alpha
+        - momoedge-options-platform
+      feeds_context_to:
+        - neural-web
+        - prophet
+        - terminal-signal-layer
+      renders_through:
+        - terminal-charting
+    canonical_docs:
+      - repo: macro
+        path: research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md
+      - repo: terminal
+        path: docs/OPTIONS_SUPERINTELLIGENCE_MASTERPLAN_2026-07-31.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/options_hub.py
+          - engine/options_dislocation.py
+          - contracts/options/
+      - repo: terminal
+        roots:
+          - terminal/app/(shell)/options/
+          - terminal/app/api/flow/
+    product_surfaces:
+      - macro-options-intelligence
+      - terminal-options
+    decision_boundary:
+      authority_class: context_only
+      summary: Macro owns upstream intelligence; any decision-bearing consumer requires its own ratified contract.
+
+  options-alpha:
+    name: Options Alpha Research
+    category: market_intelligence
+    kind: research_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Research options features, era partitions, flow scores, and forward evidence.
+    strategic_role: Keep exploratory options alpha separated from production authority.
+    owns:
+      - Options research cohorts, preregistration, and forward evidence
+    does_not_own:
+      - Production gates, portfolio sizing, or execution
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - options-intelligence
+    canonical_docs:
+      - repo: macro
+        path: research/OPTIONS_ALPHA_MASTERPLAN.md
+    implementation:
+      - repo: macro
+        roots:
+          - scripts/research/options_history_gauntlet.py
+    product_surfaces:
+      - macro-research-workbenches
+    decision_boundary:
+      authority_class: research_only
+      summary: Research evidence only.
+
+  momoedge-options-platform:
+    name: MomoEdge Options Platform
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Provide structural momentum and options-market context as a distinct platform capability.
+    strategic_role: Preserve the broader platform identity instead of treating it as a Prophet alias.
+    owns:
+      - MomoEdge structural options and momentum context
+    does_not_own:
+      - Prophet decisions or Portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - options-intelligence
+        - prophet
+    canonical_docs:
+      - repo: macro
+        path: research/OPTIONS_HUB_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - scripts/research/momoedge_oracle_history_replay.py
+    product_surfaces:
+      - macro-options-intelligence
+    decision_boundary:
+      authority_class: context_only
+      summary: Structural context only.
+
+  qualitative-intelligence:
+    name: Qualitative Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Structure qualitative, narrative, policy, and company evidence with explicit provenance.
+    strategic_role: Let soft evidence inform cognition without becoming opaque machine conviction.
+    owns:
+      - Qualitative evidence, narrative context, and provenance
+    does_not_own:
+      - Deterministic ranks, gates, sizes, or trades
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      consumes_from:
+        - agentic-media
+        - policy-transmission-intelligence
+      feeds_context_to:
+        - thematic-intelligence
+        - neural-web
+    canonical_docs:
+      - repo: macro
+        path: research/QUALITATIVE_INTELLIGENCE_MASTERPLAN.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/qbus.py
+          - data/qbus/
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Qualitative context only.
+
+  sector-rotation-intelligence:
+    name: Sector and Cross-Sector Rotation Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Measure sector leadership, cross-sector rotation, liquidity transmission, and institutional participation.
+    strategic_role: Supply rotation evidence to Oracle, GMI, and downstream context consumers.
+    owns:
+      - Sector pulse, rotation command, cross-sector clocks, and institutional sector evidence
+    does_not_own:
+      - Oracle decisions, Prophet picks, or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - oracle
+        - gmi-theme-graph
+        - neural-web
+    canonical_docs:
+      - repo: macro
+        path: research/ROTATION_COMMAND_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/us_sector_rotation.py
+          - data/us_sector_rotation/
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Rotation evidence only; Oracle owns any ratified rotation decision.
+
+  market-timing-intelligence:
+    name: Market Timing and Setup Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Structure tactical setup species, personality, ignition, intraday flow, and leader evidence.
+    strategic_role: Consolidate historical tactical-owner labels without pretending they are separate strategic programs.
+    owns:
+      - Tactical setup, ignition, personality, leader, and fast-turn evidence
+    does_not_own:
+      - Prophet decision authority or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - prophet-us
+        - neural-web
+    canonical_docs:
+      - repo: macro
+        path: research/PROPHET_US_IGNITION_LAYER_W8_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/stock_personality.py
+          - engine/ignition_radar.py
+          - engine/setups.py
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Tactical evidence does not become a decision until a governed consumer admits it.
+
+  long-hold-intelligence:
+    name: Long-Hold Thesis Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Maintain 12-to-36-month ownership evidence on a clock separated from tactical entry signals.
+    strategic_role: Prevent short-clock evidence from silently rewriting long-horizon theses.
+    owns:
+      - Hold-thesis evidence, clocks, and long-horizon context
+    does_not_own:
+      - Tactical entry timing or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      consumes_from:
+        - fundamental-forensics
+        - earnings-intelligence
+      feeds_context_to:
+        - portfolio-desk
+        - neural-web
+    canonical_docs:
+      - repo: macro
+        path: research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/long_hold_clocks.py
+          - data/research/long_hold_labels.parquet
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Long-horizon thesis context only.
+
+  earnings-intelligence:
+    name: Earnings Evidence Spine
+    category: market_intelligence
+    kind: semantic_rail
+    lifecycle_state: operating
+    scope: repository
+    purpose: Preserve exact earnings and transcript evidence with provenance and bounded consumption.
+    strategic_role: Ground downstream company reasoning in inspectable primary evidence.
+    owns:
+      - Earnings evidence packets, transcript provenance, and read-through context
+    does_not_own:
+      - Selection, ranking, sizing, gates, or execution
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+      - repo: terminal
+        role: consumer
+    relationships:
+      feeds_context_to:
+        - fundamental-forensics
+        - terminal-market-data
+        - neural-web
+    canonical_docs:
+      - repo: macro
+        path: research/EARNINGS_WIRE_PROGRAM.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/earnings_narrative/
+          - data/earnings/
+    product_surfaces:
+      - terminal-company-analysis
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Evidence rail only.
+
+  market-structure-intelligence:
+    name: Market Structure Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: project
+    purpose: Describe breadth, internals, liquidity, structure, and market-mechanics evidence.
+    strategic_role: Supply structure context while Terminal owns interactive presentation and its own signal records.
+    owns:
+      - Macro market-structure and internals evidence
+    does_not_own:
+      - Terminal chart rendering or Portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+      - repo: terminal
+        role: consumer
+    relationships:
+      feeds_context_to:
+        - terminal-market-data
+        - terminal-signal-layer
+        - neural-web
+    canonical_docs:
+      - repo: macro
+        path: research/IVORY_HILL_MARKET_STRUCTURE_MASTERPLAN_BY_FABLE.md
+      - repo: terminal
+        path: docs/MARKET_STRUCTURE_CORE_MASTERPLAN_2026-08-01.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/market_structure_context.py
+      - repo: terminal
+        roots:
+          - ingest/
+          - signal_layer/
+    product_surfaces:
+      - macro-dashboard
+      - terminal-workstation
+    decision_boundary:
+      authority_class: context_only
+      summary: Macro evidence and Terminal record authority remain separately governed.
+
+  international-risk-intelligence:
+    name: International Risk Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Structure international, cross-border flow, and regional-risk evidence outside the dedicated China system.
+    strategic_role: Consolidate historical international desk aliases behind one durable semantic owner.
+    owns:
+      - International risk, cross-border flows, and regional evidence bridges
+    does_not_own:
+      - China-system mechanics or portfolio allocation
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - market-regime-risk
+        - gmi-theme-graph
+        - neural-web
+    canonical_docs:
+      - repo: macro
+        path: research/MACRO_SIGNALS_FX_CONTEXT_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/intl_risk.py
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: International context only.
+
+  policy-transmission-intelligence:
+    name: Policy and Transmission Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Track policy shocks, government actions, and their cross-asset transmission pathways.
+    strategic_role: Connect policy evidence to rates, themes, and risk without creating trades.
+    owns:
+      - Policy events, shock context, and transmission evidence
+    does_not_own:
+      - Directional decisions or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - rates-inflation-command
+        - gmi-theme-graph
+        - qualitative-intelligence
+    canonical_docs:
+      - repo: macro
+        path: research/RATE_INFLATION_TRANSMISSION.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/transmission_chains.py
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Policy context only.
+
+  capital-structure-intelligence:
+    name: Capital Structure and Credit Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Describe corporate credit, balance-sheet, issuance, and capital-structure evidence.
+    strategic_role: Supply company and regime analysis with credit context grounded in source evidence.
+    owns:
+      - Corporate credit-watch and capital-structure evidence
+    does_not_own:
+      - Equity selection or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - fundamental-forensics
+        - market-regime-risk
+    canonical_docs:
+      - repo: macro
+        path: research/STOCK_FUNDAMENTALS_PLAN.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/capital_structure/
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Credit and capital-structure context only.
+
+  agentic-media:
+    name: Agentic Media Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Structure media, chronology, and narrative evidence for governed qualitative consumption.
+    strategic_role: Preserve provenance and timeline context around otherwise noisy narrative inputs.
+    owns:
+      - Media evidence timelines and narrative chronology
+    does_not_own:
+      - Market decisions, ranking, or portfolio sizing
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - qualitative-intelligence
+        - thematic-intelligence
+    canonical_docs:
+      - repo: macro
+        path: research/agentic_media/CHRONICLE_CONTEXT_TIMELINE_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/chronicle/
+          - research/agentic_media/
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: context_only
+      summary: Media context only.
+
+  marketing-intelligence:
+    name: Marketing Intelligence
+    category: market_intelligence
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Govern product messaging, distribution evidence, and audience feedback as a distinct nonmarket domain.
+    strategic_role: Keep growth intelligence from being mistaken for financial-signal authority.
+    owns:
+      - Marketing research, distribution context, and audience evidence
+    does_not_own:
+      - Market signals or portfolio decisions
+    repo_bindings:
+      - repo: macro
+        role: implementation_owner
+    relationships:
+      feeds_context_to:
+        - macro-mastermind-ai
+    canonical_docs:
+      - repo: macro
+        path: research/NEURAL_WEB_AUTONOMOUS_MARKETING_LOBE_GRANDMASTER_PLAN_FOR_FABLE.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/marketing/
+    product_surfaces:
+      - macro-dashboard
+    decision_boundary:
+      authority_class: advisory_only
+      summary: Product and distribution intelligence only.
+
+  terminal-market-data:
+    name: Terminal Market Data and Quote Plane
+    category: terminal_capabilities
+    kind: data_plane
+    lifecycle_state: operating
+    scope: repository
+    purpose: Ingest, validate, normalize, and publish stable market-data shapes for Terminal products.
+    strategic_role: Give the workstation a reliable local data and BFF plane without taking ownership of Macro source intelligence.
+    owns:
+      - Terminal quote hub, ingest freshness, normalization, and public data publication
+      - Stable consumer-facing Terminal shapes
+    does_not_own:
+      - Macro source analysis or upstream entitlement truth
+    repo_bindings:
+      - repo: terminal
+        role: implementation_owner
+      - repo: macro
+        role: producer
+    relationships:
+      consumes_from:
+        - fundamental-forensics
+        - earnings-intelligence
+        - market-structure-intelligence
+        - market-regime-risk
+      feeds_context_to:
+        - terminal-signal-layer
+        - terminal-charting
+    canonical_docs:
+      - repo: terminal
+        path: DEPLOY.md
+      - repo: terminal
+        path: docs/COMPANY_INTELLIGENCE_WORKSPACE.md
+    implementation:
+      - repo: terminal
+        roots:
+          - ingest/
+          - hub/
+          - terminal/app/api/
+    product_surfaces:
+      - terminal-workstation
+      - terminal-company-analysis
+      - terminal-discovery
+      - terminal-options
+    decision_boundary:
+      authority_class: operational_control
+      summary: Owns validation and freshness of Terminal shapes, not the upstream intelligence conclusion.
+      authority_sources:
+        - repo: terminal
+          path: AGENTS.md
+        - repo: terminal
+          path: DEPLOY.md
+
+  terminal-signal-layer:
+    name: Terminal Signal and Confluence Layer
+    category: terminal_capabilities
+    kind: intelligence_program
+    lifecycle_state: operating
+    scope: repository
+    purpose: Maintain the Python record truth for Terminal confluence, backtests, alert logic, and ratified entry rules.
+    strategic_role: Keep browser calculations presentational while preserving inspectable signal records.
+    owns:
+      - Terminal signal contracts, confluence records, backtests, and alert logic
+      - Ratified Terminal-specific entry-admission behavior
+    does_not_own:
+      - Macro upstream artifact authority
+      - Broker execution or Mastermind portfolio sizing
+    repo_bindings:
+      - repo: terminal
+        role: implementation_owner
+      - repo: macro
+        role: producer
+    relationships:
+      consumes_from:
+        - terminal-market-data
+        - price-pressure
+        - market-regime-risk
+        - options-intelligence
+      feeds_context_to:
+        - terminal-charting
+        - terminal-user-services
+    canonical_docs:
+      - repo: terminal
+        path: signal_layer/contracts.py
+      - repo: terminal
+        path: AGENTS.md
+    implementation:
+      - repo: terminal
+        roots:
+          - signal_layer/
+          - ingest/alerts_engine.py
+    product_surfaces:
+      - terminal-workstation
+      - terminal-alerts
+    decision_boundary:
+      authority_class: decision_bearing
+      summary: May own explicitly ratified Terminal entry and alert logic; it has no execution or Portfolio authority.
+      authority_sources:
+        - repo: terminal
+          path: AGENTS.md
+        - repo: terminal
+          path: signal_layer/contracts.py
+
+  terminal-charting:
+    name: Terminal Charting and Interaction Engine
+    category: terminal_capabilities
+    kind: cognitive_service
+    lifecycle_state: operating
+    scope: repository
+    purpose: Own interactive charts, panes, drawings, indicators, replay, scripts, and typed chart commands.
+    strategic_role: Provide the canonical analytical workstation while keeping computation and upstream intelligence boundaries visible.
+    owns:
+      - Chart interaction, drawing, indicator, script, replay, and workspace behavior
+      - Validation and application of Brain chart commands
+    does_not_own:
+      - Macro reasoning or intelligence authority
+      - Mastermind paper-book allocation
+    repo_bindings:
+      - repo: terminal
+        role: implementation_owner
+    relationships:
+      consumes_from:
+        - terminal-market-data
+        - terminal-signal-layer
+      coordinates_with:
+        - terminal-user-services
+        - macro-mastermind-ai
+    canonical_docs:
+      - repo: terminal
+        path: docs/CHART_ENGINE_MASTERPLAN.md
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/components/TerminalShell.tsx
+          - terminal/lib/chart-engine/
+          - terminal/lib/drawing-engine/
+          - terminal/lib/pine-engine/
+    product_surfaces:
+      - terminal-workstation
+      - terminal-scripts
+      - terminal-brain
+      - terminal-native-shell
+    decision_boundary:
+      authority_class: presentation_only
+      summary: Validates and renders interaction; it does not inherit upstream signal or portfolio authority.
+
+  terminal-user-services:
+    name: Terminal User State and Alert Services
+    category: terminal_capabilities
+    kind: infrastructure
+    lifecycle_state: operating
+    scope: repository
+    purpose: Manage owner-scoped watchlists, Conviction Book state, scripts, alerts, and delivery preferences.
+    strategic_role: Keep personal workstation state separate from autonomous Mastermind Portfolio books.
+    owns:
+      - Terminal Supabase user state, watchlists, scripts, alert configuration, and delivery
+    does_not_own:
+      - Mastermind autonomous paper books
+      - Macro canonical entitlement state or live trade execution
+    repo_bindings:
+      - repo: terminal
+        role: state_owner
+    relationships:
+      consumes_from:
+        - terminal-signal-layer
+        - shared-auth-entitlements
+      coordinates_with:
+        - terminal-charting
+    canonical_docs:
+      - repo: terminal
+        path: terminal/AGENTS.md
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/app/(shell)/portfolio/
+          - terminal/app/(shell)/alerts/
+          - terminal/app/(shell)/scripts/
+          - supabase/
+    product_surfaces:
+      - terminal-user-portfolio
+      - terminal-alerts
+      - terminal-scripts
+    decision_boundary:
+      authority_class: operational_control
+      summary: Owns user state and notifications only; no autonomous portfolio or execution authority.
+      authority_sources:
+        - repo: terminal
+          path: terminal/AGENTS.md
+
+  macro-intelligence-adapter:
+    name: Macro to Portfolio Intelligence Adapter
+    category: semantic_and_data_rails
+    kind: semantic_rail
+    lifecycle_state: operating
+    scope: project
+    purpose: Bring Macro evidence, Prophet plans, and Neural Web context into Mastermind Portfolio through bounded readers.
+    strategic_role: Let Portfolio consume shared intelligence without importing unrestricted upstream authority.
+    owns:
+      - Portfolio-side Macro refresh, validation, and context adapters
+    does_not_own:
+      - Macro source intelligence or Portfolio sizing
+      - A genuinely pinned vendor state until implementation is corrected
+    repo_bindings:
+      - repo: macro
+        role: producer
+      - repo: mastermind
+        role: adapter
+    relationships:
+      consumes_from:
+        - neural-web
+        - prophet
+        - market-regime-risk
+        - factor-intelligence
+      feeds_context_to:
+        - portfolio-desk
+        - portfolio-mastermind-ai
+    canonical_docs:
+      - repo: mastermind
+        path: config/contracts.yml
+    implementation:
+      - repo: mastermind
+        roots:
+          - data_layer/macro_refresh.py
+          - brain/neural_web_context.py
+          - portfolio/prophet_feed.py
+    product_surfaces:
+      - portfolio-operator
+    decision_boundary:
+      authority_class: context_only
+      summary: Adapters are required to preserve upstream labels. Neural Web effective runtime authority is un-attested and must be treated fail-closed; Portfolio controls govern any separately proven local use.
+
+  portfolio-publication:
+    name: Portfolio to Macro Public Projection
+    category: semantic_and_data_rails
+    kind: semantic_rail
+    lifecycle_state: operating
+    scope: project
+    purpose: Publish bounded paper-book state and Neural Web feedback from Portfolio to Macro products.
+    strategic_role: Expose paper-book accountability and bounded context while keeping authoritative ledgers, per-position fill economics, share counts, and notional or market values out of the public projection.
+    owns:
+      - Bounded snapshot and feedback projections
+      - Position and pending-order key projection, feedback construction, and publication schemas
+    does_not_own:
+      - Authoritative portfolio ledgers or per-position fill economics
+      - Macro product rendering
+    repo_bindings:
+      - repo: mastermind
+        role: publisher
+      - repo: macro
+        role: consumer
+    relationships:
+      consumes_from:
+        - portfolio-desk
+        - portfolio-learning-accountability
+      feeds_context_to:
+        - neural-web
+        - macro-mastermind-ai
+    canonical_docs:
+      - repo: mastermind
+        path: docs/design/desk/07-data-contracts-and-build-plan.md
+    implementation:
+      - repo: mastermind
+        roots:
+          - bridge/macro_snapshot.py
+          - bridge/nw_feedback.py
+          - scripts/export_macro_snapshot.py
+      - repo: macro
+        roots:
+          - site/mastermind/
+    product_surfaces:
+      - portfolio-public-snapshot
+      - macro-dashboard
+    decision_boundary:
+      authority_class: presentation_only
+      summary: Portfolio builds and currently pushes the public projections; Macro hosts and renders them. Portfolio source ledgers remain authoritative.
+
+  portfolio-private-ops-publication:
+    name: Portfolio Non-Site Operations Publication
+    category: semantic_and_data_rails
+    kind: semantic_rail
+    lifecycle_state: operating
+    scope: project
+    purpose: Commit exact-path cost, key-event, and provider-pool operational metadata into Macro data paths outside site/.
+    strategic_role: Centralize operator visibility using metadata that must be public-repository-safe.
+    owns:
+      - Non-site operational metadata export from Portfolio to Macro data paths
+    does_not_own:
+      - Public portfolio state or market decisions
+    repo_bindings:
+      - repo: mastermind
+        role: publisher
+      - repo: macro
+        role: consumer
+    relationships:
+      coordinates_with:
+        - shared-ai-provider-control
+        - portfolio-publication
+    canonical_docs:
+      - repo: mastermind
+        path: docs/DELIVERY_WORKFLOW.md
+    implementation:
+      - repo: mastermind
+        roots:
+          - scripts/export_macro_snapshot.py
+          - app/scheduler.py
+    product_surfaces: []
+    decision_boundary:
+      authority_class: operational_control
+      summary: These artifacts are not served from Macro site/ paths, but they are committed to a public repository and must be treated as public-repository-visible.
+      authority_sources:
+        - repo: mastermind
+          path: docs/DELIVERY_WORKFLOW.md
+
+product_surfaces:
+  macro-dashboard:
+    name: Macro Dashboard
+    purpose: Publish the broad web intelligence, research, regime, Prophet, and portfolio-context product.
+    repo_bindings:
+      - repo: macro
+        role: product_host
+    programs:
+      - neural-web
+      - market-regime-risk
+      - thematic-intelligence
+      - prophet
+      - options-intelligence
+      - portfolio-publication
+    implementation:
+      - repo: macro
+        roots:
+          - site/
+          - templates/
+
+  macro-mastermind-ai:
+    name: Macro Mastermind AI
+    purpose: Provide the Analyst OS conversation, explanation, and governed tool surface.
+    repo_bindings:
+      - repo: macro
+        role: product_host
+    programs:
+      - macro-mastermind-ai
+      - operating-cortex
+      - neural-web
+    implementation:
+      - repo: macro
+        roots:
+          - site/mm_brain.js
+          - engine/neuralweb/brain_gateway.py
+
+  macro-prophet-boards:
+    name: Macro Prophet Boards
+    purpose: Render regional Prophet candidates, plans, receipts, and accountability.
+    repo_bindings:
+      - repo: macro
+        role: product_host
+    programs:
+      - prophet
+      - prophet-us
+      - prophet-cn
+    implementation:
+      - repo: macro
+        roots:
+          - site/prophet/
+          - templates/_prophet_card.html.j2
+
+  macro-options-intelligence:
+    name: Macro Options Intelligence
+    purpose: Publish upstream options flow, structure, exposure, issue-desk, and research views.
+    repo_bindings:
+      - repo: macro
+        role: product_host
+    programs:
+      - options-intelligence
+      - options-alpha
+      - momoedge-options-platform
+    implementation:
+      - repo: macro
+        roots:
+          - site/options.html
+          - docs/OPTIONS_ISSUE_DESK.md
+
+  macro-research-workbenches:
+    name: Macro Research Workbenches
+    purpose: Expose nonbinding research, evidence, experiments, and diagnostic surfaces.
+    repo_bindings:
+      - repo: macro
+        role: product_host
+    programs:
+      - research-factory
+      - causal-hypothesis-factory
+      - top-anatomy
+      - signal-episode-atlas
+      - options-alpha
+    implementation:
+      - repo: macro
+        roots:
+          - research/
+          - site/research/
+
+  terminal-workstation:
+    name: Terminal Chart Workstation
+    purpose: Provide the canonical responsive chart, drawing, indicator, replay, and market-analysis workspace.
+    repo_bindings:
+      - repo: terminal
+        role: product_host
+    programs:
+      - terminal-charting
+      - terminal-market-data
+      - terminal-signal-layer
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/components/TerminalShell.tsx
+          - terminal/app/terminal/
+
+  terminal-company-analysis:
+    name: Terminal Company Analysis
+    purpose: Present normalized company, filing, transcript, institutional, and theme evidence.
+    repo_bindings:
+      - repo: terminal
+        role: product_host
+    programs:
+      - terminal-market-data
+      - fundamental-forensics
+      - earnings-intelligence
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/app/(shell)/analysis/
+          - terminal/app/api/company-intelligence/
+
+  terminal-discovery:
+    name: Terminal Discovery
+    purpose: Provide screener, heatmap, leaders, and radar exploration.
+    repo_bindings:
+      - repo: terminal
+        role: product_host
+    programs:
+      - terminal-market-data
+      - terminal-signal-layer
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/app/(shell)/discover/
+
+  terminal-options:
+    name: Terminal Options Workspace
+    purpose: Compose options tape, volatility, exposure, structure, Prophet, Levels, and issue-desk interaction.
+    repo_bindings:
+      - repo: terminal
+        role: product_host
+      - repo: macro
+        role: producer
+    programs:
+      - options-intelligence
+      - terminal-market-data
+      - terminal-charting
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/app/(shell)/options/
+          - terminal/app/api/flow/
+
+  terminal-user-portfolio:
+    name: Terminal User Portfolio and Conviction Book
+    purpose: Manage owner-scoped watchlists and user-entered conviction state in the workstation.
+    repo_bindings:
+      - repo: terminal
+        role: product_host
+    programs:
+      - terminal-user-services
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/app/(shell)/portfolio/
+          - terminal/app/api/portfolio-brief/
+
+  terminal-alerts:
+    name: Terminal Alerts
+    purpose: Configure and deliver price, confluence, regime, and suite alerts without execution authority.
+    repo_bindings:
+      - repo: terminal
+        role: product_host
+    programs:
+      - terminal-user-services
+      - terminal-signal-layer
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/app/(shell)/alerts/
+          - terminal/app/api/alerts/
+
+  terminal-scripts:
+    name: Terminal Script Editor
+    purpose: Run built-in and owner-scoped Pine-style scripts inside the chart workspace.
+    repo_bindings:
+      - repo: terminal
+        role: product_host
+    programs:
+      - terminal-charting
+      - terminal-user-services
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/app/(shell)/scripts/
+          - terminal/app/api/scripts/
+
+  terminal-brain:
+    name: Terminal Brain Control Surface
+    purpose: Render Macro Brain conversation and apply validated typed chart commands.
+    repo_bindings:
+      - repo: macro
+        role: producer
+      - repo: terminal
+        role: product_host
+    programs:
+      - macro-mastermind-ai
+      - terminal-charting
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/components/BrainWidget.tsx
+          - terminal/lib/chartBus.ts
+
+  terminal-native-shell:
+    name: Terminal Native Shell
+    purpose: Provide thin iOS navigation and operating-system integration over canonical web and data products.
+    repo_bindings:
+      - repo: terminal
+        role: product_host
+    programs:
+      - terminal-charting
+    implementation:
+      - repo: terminal
+        roots:
+          - apps/ios/
+          - contracts/native-shell.v1.schema.json
+
+  portfolio-operator:
+    name: Mastermind Portfolio Operator
+    purpose: Operate, inspect, research, and grade seven paper books and their control plane.
+    repo_bindings:
+      - repo: mastermind
+        role: product_host
+    programs:
+      - portfolio-desk
+      - portfolio-control-plane
+      - portfolio-learning-accountability
+      - portfolio-mastermind-ai
+    implementation:
+      - repo: mastermind
+        roots:
+          - app/
+          - app/static/
+
+  portfolio-public-snapshot:
+    name: Public Portfolio Snapshot
+    purpose: Render a bounded public paper-book projection, including composition, reasoning, and aggregate simulated performance, through Macro-hosted surfaces.
+    repo_bindings:
+      - repo: mastermind
+        role: publisher
+      - repo: macro
+        role: product_host
+    programs:
+      - portfolio-desk
+      - portfolio-publication
+    implementation:
+      - repo: mastermind
+        roots:
+          - bridge/macro_snapshot.py
+      - repo: macro
+        roots:
+          - site/mastermind/
+
+cross_repo_contracts:
+  terminal-auth-entitlement:
+    name: Macro entitlement gateway to Terminal
+    flow_type: authentication
+    purpose: Carry Terminal Supabase identity to Macro canonical billing and entitlement truth.
+    participants:
+      - repo: macro
+        role: control_plane
+      - repo: terminal
+        role: adapter
+    authority_note: >
+      Macro owns Stripe secrets and canonical tier/status. Terminal owns fail-closed
+      proxy and UI behavior. Terminal profile flags are hints only, negative or error
+      results are not cached, and client authorization is not forwarded upstream.
+    canonical_refs:
+      - repo: terminal
+        path: terminal/AGENTS.md
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/lib/entitlement.ts
+          - terminal/app/api/billing/gateway.ts
+
+  macro-brain-terminal-chart-bus:
+    name: Macro Brain to Terminal Chart Bus
+    flow_type: operational_control
+    purpose: Deliver typed chart commands and streaming Brain output to the Terminal renderer.
+    participants:
+      - repo: macro
+        role: producer
+      - repo: terminal
+        role: renderer
+    authority_note: >
+      Macro owns reasoning, quota, entitlement, and command origin. Terminal validates
+      and applies bounded chart mutations. AI drawings remain ephemeral unless a user
+      separately saves them.
+    canonical_refs:
+      - repo: terminal
+        path: docs/CHART_ENGINE_MASTERPLAN.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/neuralweb/brain_gateway.py
+          - site/mm_brain.js
+      - repo: terminal
+        roots:
+          - terminal/components/BrainWidget.tsx
+          - terminal/app/api/brain/
+          - terminal/lib/chartBus.ts
+
+  macro-terminal-embed:
+    name: Macro to Terminal Embedded Chart
+    flow_type: presentation
+    purpose: Embed the Terminal chart through an exact-origin iframe and bounded postMessage protocol.
+    participants:
+      - repo: macro
+        role: product_host
+      - repo: terminal
+        role: renderer
+    authority_note: The embed transfers navigation and symbol presentation only, never signal or portfolio authority.
+    canonical_refs:
+      - repo: terminal
+        path: terminal/AGENTS.md
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/components/EmbeddedTerminalBridge.tsx
+
+  macro-terminal-market-intelligence:
+    name: Macro intelligence to Terminal data plane
+    flow_type: data
+    purpose: Pull Macro stock and regional intelligence into validated Terminal intel/v1 presentation shapes.
+    participants:
+      - repo: macro
+        role: producer
+      - repo: terminal
+        role: adapter
+    authority_note: Macro owns source analysis; Terminal owns validation, freshness fail-close, and stable local shapes.
+    canonical_refs:
+      - repo: terminal
+        path: docs/COMPANY_INTELLIGENCE_WORKSPACE.md
+    implementation:
+      - repo: terminal
+        roots:
+          - ingest/pull_macro_intel.py
+          - ingest/pull_cn_hk_intel.py
+
+  macro-terminal-market-context:
+    name: Macro risk and washout context to Terminal
+    flow_type: context
+    purpose: Publish regime, risk, washout-current, and washout-history context to Terminal.
+    participants:
+      - repo: macro
+        role: producer
+      - repo: terminal
+        role: adapter
+    authority_note: >
+      Risk and history are display context. Current washout is Macro point-in-time
+      context, but Terminal separately owns its ratified use in entry admission.
+    canonical_refs:
+      - repo: terminal
+        path: signal_layer/contracts.py
+    implementation:
+      - repo: terminal
+        roots:
+          - ingest/pull_macro_risk.py
+          - ingest/pull_macro_washout.py
+          - ingest/pull_macro_washout_history.py
+          - signal_layer/washout_override.py
+
+  macro-terminal-opportunity-receipts:
+    name: Macro opportunity receipts to Terminal
+    flow_type: decision_receipt
+    purpose: Publish opportunity_timeline.v1 sibling receipts into per-symbol Terminal context.
+    participants:
+      - repo: macro
+        role: producer
+      - repo: terminal
+        role: adapter
+    authority_note: >
+      Receipts remain opaque. Terminal validates the whole artifact before writes,
+      preserves last-good state for omitted symbols, and clears only on explicit empty.
+    canonical_refs:
+      - repo: terminal
+        path: ingest/pull_macro_opportunities.py
+    implementation:
+      - repo: terminal
+        roots:
+          - ingest/pull_macro_opportunities.py
+
+  macro-terminal-options-prophet:
+    name: Macro Options and Prophet to Terminal
+    flow_type: data
+    purpose: Deliver options flow, structure, Prophet, Levels, grades, and issue-desk state to Terminal options surfaces.
+    participants:
+      - repo: macro
+        role: producer
+      - repo: terminal
+        role: renderer
+    authority_note: >
+      Macro owns upstream intelligence and issue-desk authority. Terminal owns
+      validation, UI composition, and its local flow_score_v1. Private issue-desk
+      writes return to Macro for operator reauthorization.
+    canonical_refs:
+      - repo: macro
+        path: docs/OPTIONS_ISSUE_DESK.md
+      - repo: terminal
+        path: docs/OPTIONS_SUPERINTELLIGENCE_MASTERPLAN_2026-07-31.md
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/app/api/flow/
+          - terminal/lib/flowSource.ts
+          - terminal/lib/upstreams.ts
+
+  macro-terminal-neural-web:
+    name: Macro Neural Web context to Terminal
+    flow_type: context
+    purpose: Render Macro Neural Web state in Terminal without transferring decision authority.
+    participants:
+      - repo: macro
+        role: producer
+      - repo: terminal
+        role: renderer
+    from_program: neural-web
+    to_program: terminal-charting
+    authority_note: Display-only context with no Oracle, Prophet, signal, or portfolio authority.
+    canonical_refs:
+      - repo: macro
+        path: research/NEURAL_WEB_MASTERPLAN_BY_FABLE.md
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/app/api/nw/
+
+  macro-terminal-portfolio-brief:
+    name: Macro portfolio brief to Terminal
+    flow_type: presentation
+    purpose: Deliver the fully composed portfolio_brief.v1 into Terminal Conviction Book context.
+    participants:
+      - repo: macro
+        role: producer
+      - repo: terminal
+        role: renderer
+    authority_note: >
+      Macro owns Pro authorization and composed bilingual facts. Terminal selects
+      language and order only, and does not recompose or truncate the payload.
+    canonical_refs:
+      - repo: terminal
+        path: terminal/lib/portfolioBrief.ts
+    implementation:
+      - repo: terminal
+        roots:
+          - terminal/app/api/portfolio-brief/
+          - terminal/lib/portfolioBrief.ts
+
+  macro-mastermind-vendored-intelligence:
+    name: Macro vendored intelligence to Portfolio
+    flow_type: data
+    purpose: Refresh bounded Macro artifacts for Portfolio sizing-freeze inputs and context readers.
+    participants:
+      - repo: macro
+        role: producer
+      - repo: mastermind
+        role: adapter
+    authority_note: >
+      Portfolio validates and consumes whitelisted inputs under local controls. Current
+      implementation follows latest Macro origin/main through a tracked symlink and is
+      not genuinely pinned despite stale submodule wording.
+    canonical_refs:
+      - repo: mastermind
+        path: config/contracts.yml
+    implementation:
+      - repo: mastermind
+        roots:
+          - data_layer/macro_refresh.py
+
+  macro-mastermind-prophet:
+    name: Macro Prophet to Portfolio
+    flow_type: decision_receipt
+    purpose: Supply prophet.index/v1 candidates and trade geometry to Portfolio managers.
+    participants:
+      - repo: macro
+        role: producer
+      - repo: mastermind
+        role: adapter
+    authority_note: Prophet is additive discovery and geometry only; it cannot size, gate, or vote in Portfolio.
+    canonical_refs:
+      - repo: mastermind
+        path: portfolio/prophet_feed.py
+    implementation:
+      - repo: mastermind
+        roots:
+          - portfolio/prophet_feed.py
+
+  macro-mastermind-neural-web:
+    name: Macro Neural Web context to Portfolio
+    flow_type: context
+    purpose: Supply freshness-gated mastermind_context.json to Portfolio reasoning.
+    participants:
+      - repo: macro
+        role: producer
+      - repo: mastermind
+        role: adapter
+    authority_note: >
+      Macro declares the artifact context-only and publishes all authority booleans false.
+      Portfolio source currently defaults MASTERMIND_NW_CONTEXT on and
+      MASTERMIND_NW_DECISION to shrink, contrary to config/authority_map.yml default-off
+      claims. Effective runtime authority is un-attested; fail closed until producer
+      contract, consumer defaults, governance map, tests, and deployment agree.
+    canonical_refs:
+      - repo: mastermind
+        path: brain/neural_web_context.py
+    implementation:
+      - repo: mastermind
+        roots:
+          - brain/neural_web_context.py
+
+  mastermind-macro-public-snapshot:
+    name: Portfolio public snapshot to Macro
+    flow_type: publication
+    purpose: Publish mastermind_snapshot.v1 across all registered paper books to Macro-hosted surfaces.
+    participants:
+      - repo: mastermind
+        role: publisher
+      - repo: macro
+        role: product_host
+    authority_note: >
+      Position and pending-order rows use key projections, while other selected book
+      fields and the performance block are copied as constructed. The public projection
+      excludes per-position cost_basis, entry_price, current_price, shares, and
+      notional or market value. It intentionally includes tickers, weights, reasoning
+      and entry-level prose, plus aggregate simulated starting_nav, current_nav, cash,
+      invested, and dollar-valued series and notes. Portfolio ledgers remain authoritative.
+    canonical_refs:
+      - repo: mastermind
+        path: bridge/macro_snapshot.py
+    implementation:
+      - repo: mastermind
+        roots:
+          - bridge/macro_snapshot.py
+      - repo: macro
+        roots:
+          - site/mastermind/
+
+  mastermind-macro-neural-feedback:
+    name: Portfolio Neural Web feedback to Macro
+    flow_type: context
+    purpose: Publish mastermind_nw_feedback.v3 counts, codes, outcomes, audits, reflection, bounded nudge detail, and intake-scrubbed operator directives to Macro consumers.
+    participants:
+      - repo: mastermind
+        role: publisher
+      - repo: macro
+        role: consumer
+    authority_note: >
+      Structured ledger-derived fields omit tickers, position sizes, and notional
+      values. Bounded operator-directive prose is public, is not ticker-scrubbed,
+      and receives pattern-based secret redaction; it transfers no portfolio-control
+      authority. The public v3 payload also includes up to ten bot-authored nudge
+      detail strings plus opaque IDs and dates. Macro re-whitelists its derived
+      summary to counts and codes with all authority booleans false.
+    canonical_refs:
+      - repo: mastermind
+        path: bridge/nw_feedback.py
+    implementation:
+      - repo: mastermind
+        roots:
+          - bridge/nw_feedback.py
+
+  mastermind-macro-private-ops:
+    name: Portfolio non-site operations to Macro data
+    flow_type: publication
+    purpose: Commit exact-path cost, key-event, and provider-pool status artifacts into Macro administration.
+    participants:
+      - repo: mastermind
+        role: publisher
+      - repo: macro
+        role: consumer
+    authority_note: >
+      These artifacts are outside HTTP-served site/ paths but are committed to Macro's
+      public repository. Treat cost, key-event, provider-key ID, and pool-status metadata
+      as public-repository-visible; move transport out of public Git if confidentiality
+      is required.
+    canonical_refs:
+      - repo: mastermind
+        path: docs/DELIVERY_WORKFLOW.md
+    implementation:
+      - repo: mastermind
+        roots:
+          - scripts/export_macro_snapshot.py
+          - app/scheduler.py
+
+  shared-provider-control-plane:
+    name: Macro provider capacity to Portfolio adapter
+    flow_type: provider_capacity
+    purpose: Share provider discovery, authentication pool, cooling, quota, and administrative ledger state.
+    participants:
+      - repo: macro
+        role: control_plane
+      - repo: mastermind
+        role: adapter
+    authority_note: Macro owns shared capacity state; Portfolio owns typed execution, book tools, and deterministic fallback.
+    canonical_refs:
+      - repo: mastermind
+        path: AGENTS.md
+    implementation:
+      - repo: macro
+        roots:
+          - engine/codex_provider.py
+          - engine/llm_auth.py
+          - engine/neuralweb/key_pool.py
+      - repo: mastermind
+        roots:
+          - brain/provider_waterfall.py
+          - brain/key_rotor.py
+
+  project-context-retrieval:
+    name: Macro Context Index across all repositories
+    flow_type: retrieval
+    purpose: Retrieve governed Macro, Terminal, and Portfolio documents through one project context architecture.
+    participants:
+      - repo: macro
+        role: control_plane
+      - repo: terminal
+        role: consumer
+      - repo: mastermind
+        role: consumer
+    authority_note: Retrieval preserves source authority classes and does not create new runtime authority.
+    canonical_refs:
+      - repo: macro
+        path: config/context_index.yml
+    implementation:
+      - repo: macro
+        roots:
+          - config/context_index.yml
+          - engine/context_index/
+
+repository_domain_coverage:
+  macro:
+    - domain: semantic_and_authority_config
+      roots:
+        - config/
+        - contracts/
+      disposition: mapped
+      programs:
+        - mastermind-semantic-system-map
+        - signal-governance
+        - macro-context-index
+        - cross-repo-contract-governance
+      product_surfaces: []
+      notes: Synapse, lobe charters, Context Index, and semantic truth remain distinct canonical layers.
+    - domain: intelligence_engines
+      roots:
+        - engine/
+      disposition: mapped
+      programs:
+        - neural-web
+        - prophet
+        - thematic-intelligence
+        - market-regime-risk
+        - options-intelligence
+        - market-structure-intelligence
+      product_surfaces:
+        - macro-dashboard
+      notes: Detailed artifact ownership is audited through all Synapse and lobe owner identities below.
+    - domain: builders_collectors_and_ops
+      roots:
+        - scripts/
+        - collectors/
+        - ops/
+        - worker/
+      disposition: infrastructure_only
+      programs:
+        - signal-governance
+        - portfolio-publication
+        - project-active-build-control
+      product_surfaces: []
+      notes: Operational implementation is not promoted into a separate semantic program per script.
+    - domain: research_and_governance
+      roots:
+        - research/
+        - docs/
+        - knowledge/
+      disposition: mapped
+      programs:
+        - research-factory
+        - mastermind-semantic-system-map
+        - cross-repo-contract-governance
+        - macro-context-index
+      product_surfaces:
+        - macro-research-workbenches
+      notes: Research sources remain canonical at their own declared authority classes.
+    - domain: web_product_and_api
+      roots:
+        - site/
+        - templates/
+        - app/
+        - admin/
+        - content/
+        - reports/
+      disposition: mapped
+      programs:
+        - macro-mastermind-ai
+        - shared-auth-entitlements
+        - portfolio-publication
+      product_surfaces:
+        - macro-dashboard
+        - macro-mastermind-ai
+        - macro-prophet-boards
+        - macro-options-intelligence
+      notes: Product output is separate from the intelligence programs it renders.
+    - domain: durable_and_generated_state
+      roots:
+        - data/
+        - calibration/
+      disposition: infrastructure_only
+      programs:
+        - signal-governance
+        - market-memory
+      product_surfaces: []
+      notes: Artifact-level paths and authority stay in Synapse and implementation contracts.
+
+  terminal:
+    - domain: terminal
+      roots:
+        - terminal/
+      disposition: mapped
+      programs:
+        - terminal-charting
+        - terminal-market-data
+        - terminal-user-services
+      product_surfaces:
+        - terminal-workstation
+        - terminal-company-analysis
+        - terminal-discovery
+        - terminal-options
+        - terminal-user-portfolio
+        - terminal-alerts
+        - terminal-scripts
+        - terminal-brain
+      notes: Sole canonical responsive web product and BFF plane.
+    - domain: ingest
+      roots:
+        - ingest/
+      disposition: mapped
+      programs:
+        - terminal-market-data
+        - terminal-signal-layer
+      product_surfaces:
+        - terminal-workstation
+      notes: Production data collection, Macro pulls, publication, and alert refresh.
+    - domain: signal_layer
+      roots:
+        - signal_layer/
+      disposition: mapped
+      programs:
+        - terminal-signal-layer
+      product_surfaces:
+        - terminal-workstation
+        - terminal-alerts
+      notes: Production Python record authority for confluence and ratified Terminal rules.
+    - domain: hub
+      roots:
+        - hub/
+      disposition: mapped
+      programs:
+        - terminal-market-data
+      product_surfaces:
+        - terminal-workstation
+      notes: Quote and runtime data hub.
+    - domain: contracts_and_config
+      roots:
+        - contracts/
+        - config/
+      disposition: infrastructure_only
+      programs:
+        - terminal-market-data
+        - terminal-signal-layer
+        - cross-repo-contract-governance
+      product_surfaces: []
+      notes: Repository-local schemas and runtime configuration remain their own truth.
+    - domain: user_state
+      roots:
+        - supabase/
+      disposition: mapped
+      programs:
+        - terminal-user-services
+        - shared-auth-entitlements
+      product_surfaces:
+        - terminal-user-portfolio
+        - terminal-alerts
+        - terminal-scripts
+      notes: Owner-scoped Terminal state, not autonomous Mastermind Portfolio state.
+    - domain: operations
+      roots:
+        - ops/
+        - scripts/
+      disposition: infrastructure_only
+      programs:
+        - terminal-market-data
+        - terminal-signal-layer
+      product_surfaces: []
+      notes: Production deployment and data orchestration from origin/master.
+    - domain: native_apps
+      roots:
+        - apps/
+      disposition: mapped
+      programs:
+        - terminal-charting
+      product_surfaces:
+        - terminal-native-shell
+      notes: iOS thin shell only; no duplicate signal, chart-math, or entitlement authority.
+    - domain: indicator_engine
+      roots:
+        - indicator_engine/
+      disposition: proposal_only
+      programs: []
+      product_surfaces: []
+      notes: PineTS and PyneCore sidecar design only; no implemented deployed engine.
+    - domain: api
+      roots:
+        - api/
+      disposition: prototype_not_deployed
+      programs: []
+      product_surfaces: []
+      notes: Phase-0 FastAPI sample; scan route returns 501 and VPS deployment excludes it.
+    - domain: legacy_web
+      roots:
+        - web/
+      disposition: prototype_not_deployed
+      programs: []
+      product_surfaces: []
+      notes: Excluded from the current origin/master deployment surface.
+    - domain: canonical_docs
+      roots:
+        - docs/
+      disposition: infrastructure_only
+      programs:
+        - terminal-charting
+        - terminal-market-data
+        - terminal-signal-layer
+      product_surfaces: []
+      notes: Current masterplans and contracts orient implementation; stale README and HANDOFF claims do not override code.
+
+  mastermind:
+    - domain: portfolio
+      roots:
+        - portfolio/
+      disposition: mapped
+      programs:
+        - portfolio-desk
+      product_surfaces:
+        - portfolio-operator
+        - portfolio-public-snapshot
+      notes: Registry, state, managed-book deterministic sizing, self-directed user-size constraints, risk, marking, and settlement for seven paper books.
+    - domain: bot
+      roots:
+        - bot/
+      disposition: mapped
+      programs:
+        - portfolio-desk
+      product_surfaces:
+        - portfolio-operator
+      notes: Scheduled book builders and orchestration.
+    - domain: brain
+      roots:
+        - brain/
+      disposition: mapped
+      programs:
+        - portfolio-desk
+        - portfolio-mastermind-ai
+        - portfolio-learning-accountability
+        - macro-intelligence-adapter
+        - shared-ai-provider-control
+      product_surfaces:
+        - portfolio-operator
+      notes: Manager reasoning, Macro context adapters, accountability, and operator Mastermind AI remain separate capabilities.
+    - domain: control_plane
+      roots:
+        - control_plane/
+      disposition: mapped
+      programs:
+        - portfolio-control-plane
+      product_surfaces:
+        - portfolio-operator
+      notes: Artifact, authority-mode, packet, lock, and governance machinery.
+    - domain: config
+      roots:
+        - config/
+      disposition: infrastructure_only
+      programs:
+        - portfolio-control-plane
+        - portfolio-desk
+        - macro-intelligence-adapter
+      product_surfaces: []
+      notes: Contracts, doctrine, provider, mandate, and authority configuration.
+    - domain: loop
+      roots:
+        - loop/
+      disposition: mapped
+      programs:
+        - portfolio-learning-accountability
+      product_surfaces:
+        - portfolio-operator
+      notes: Offline research, frozen judge, and forward-paper qualification.
+    - domain: bridge
+      roots:
+        - bridge/
+      disposition: mapped
+      programs:
+        - portfolio-publication
+        - portfolio-private-ops-publication
+      product_surfaces:
+        - portfolio-public-snapshot
+      notes: Bounded Macro public projection and Neural Web feedback; selected aggregate simulated dollar fields and scrubbed prose remain intentionally visible.
+    - domain: data_layer
+      roots:
+        - data_layer/
+      disposition: mapped
+      programs:
+        - macro-intelligence-adapter
+      product_surfaces:
+        - portfolio-operator
+      notes: Macro refresh, live feeds, storage, and dashboard-only price snapshots.
+    - domain: app
+      roots:
+        - app/
+      disposition: mapped
+      programs:
+        - portfolio-desk
+        - portfolio-mastermind-ai
+        - portfolio-control-plane
+      product_surfaces:
+        - portfolio-operator
+      notes: FastAPI, dashboard, operator triggers, scheduler, and personal-portfolio CRUD.
+    - domain: vendor_macro
+      roots:
+        - vendor/
+      disposition: mapped
+      programs:
+        - macro-intelligence-adapter
+      product_surfaces: []
+      notes: Current implementation floats to Macro origin/main and is not genuinely pinned despite stale wording.
+    - domain: docs_and_research
+      roots:
+        - docs/
+        - research/
+      disposition: infrastructure_only
+      programs:
+        - portfolio-desk
+        - portfolio-control-plane
+        - portfolio-learning-accountability
+      product_surfaces: []
+      notes: Canonical charter, architecture, desk contracts, and learning design; README is not canonical.
+    - domain: operations_and_storage
+      roots:
+        - ops/
+        - scripts/
+        - sql/
+        - data/
+      disposition: infrastructure_only
+      programs:
+        - portfolio-control-plane
+        - portfolio-publication
+        - portfolio-private-ops-publication
+      product_surfaces: []
+      notes: VPS operations, export, durable state, and database support.
+    - domain: prototype
+      roots:
+        - prototype/
+      disposition: proposal_only
+      programs: []
+      product_surfaces: []
+      notes: Prototype material is not current paper-book authority.
+
+owner_program_dispositions:
+  XSR:
+    disposition: alias_of
+    program: sector-rotation-intelligence
+    note: Historical shorthand for cross-sector rotation fast clocks.
+  active-build-map:
+    disposition: infrastructure_only
+    program: project-active-build-control
+    note: Advisory build coordination, not a market-intelligence program.
+  agentic_media:
+    disposition: alias_of
+    program: agentic-media
+  biopharma-seasonality-intelligence:
+    disposition: subprogram_of
+    program: biocatalyst
+  blocked-entry-override:
+    disposition: subprogram_of
+    program: prophet-us
+  btc-vector:
+    disposition: alias_of
+    program: crypto-intelligence
+  capital-structure-intelligence:
+    disposition: mapped
+    program: capital-structure-intelligence
+  causal-hypothesis-factory:
+    disposition: mapped
+    program: causal-hypothesis-factory
+  cbf:
+    disposition: alias_of
+    program: international-risk-intelligence
+    note: Historical shorthand for cross-border-flow regimes.
+  ccw:
+    disposition: alias_of
+    program: capital-structure-intelligence
+    note: Historical shorthand for corporate credit watch.
+  china-alpha:
+    disposition: subprogram_of
+    program: china-system
+  china-intel-hub:
+    disposition: subprogram_of
+    program: china-system
+  china-pick-lab:
+    disposition: subprogram_of
+    program: prophet-cn
+  china-system:
+    disposition: mapped
+    program: china-system
+  codex-b5:
+    disposition: unresolved_split
+    candidate_programs:
+      - rates-inflation-command
+      - earnings-intelligence
+      - market-timing-intelligence
+    note: Event-window artifacts span macro releases, company events, and tactical clocks; no safe wholesale owner exists.
+  codex-docket-b6:
+    disposition: infrastructure_only
+    program: project-active-build-control
+    note: Historical implementation docket rather than durable semantic ownership.
+  crypto-cockpit:
+    disposition: alias_of
+    program: crypto-intelligence
+  cycle-intelligence:
+    disposition: subprogram_of
+    program: market-regime-risk
+  dannytrades:
+    disposition: subprogram_of
+    program: market-timing-intelligence
+  earnings-evidence-spine:
+    disposition: mapped
+    program: earnings-intelligence
+  engine-fix:
+    disposition: unresolved_split
+    candidate_programs:
+      - market-regime-risk
+      - market-structure-intelligence
+      - signal-governance
+      - prophet
+    note: Historical catch-all owns artifacts across regime, breadth, risk, allocation, trials, and products; binding it wholesale would be false.
+  entry-stack-expansion:
+    disposition: subprogram_of
+    program: prophet-us
+  factor-intelligence:
+    disposition: mapped
+    program: factor-intelligence
+  fast-turn:
+    disposition: subprogram_of
+    program: market-timing-intelligence
+  flow-continuity:
+    disposition: subprogram_of
+    program: options-intelligence
+  flow-leaders-desk:
+    disposition: subprogram_of
+    program: options-intelligence
+  fundamental-forensics:
+    disposition: mapped
+    program: fundamental-forensics
+  government-revenue-foresight:
+    disposition: mapped
+    program: government-revenue-foresight
+  hk-canada:
+    disposition: unresolved_split
+    candidate_programs:
+      - china-system
+      - international-risk-intelligence
+    note: One historical label combines Hong Kong and Canada ledgers that belong to different regional semantics.
+  hk-pick-lab:
+    disposition: subprogram_of
+    program: prophet-cn
+  ignition-radar:
+    disposition: subprogram_of
+    program: market-timing-intelligence
+  ihm:
+    disposition: alias_of
+    program: market-timing-intelligence
+    note: Historical shorthand for index hybrid momentum.
+  institutional-sector-intelligence:
+    disposition: subprogram_of
+    program: sector-rotation-intelligence
+  intl-fix:
+    disposition: alias_of
+    program: international-risk-intelligence
+    note: Historical international-system evidence bridge.
+  intraday-flow-tracker:
+    disposition: subprogram_of
+    program: market-timing-intelligence
+  ird:
+    disposition: alias_of
+    program: international-risk-intelligence
+    note: Historical shorthand for international risk desk.
+  leader-radar:
+    disposition: subprogram_of
+    program: market-timing-intelligence
+  long-hold:
+    disposition: mapped
+    program: long-hold-intelligence
+  macro-context-rail:
+    disposition: mapped
+    program: macro-context-rail
+  macro-release-intel:
+    disposition: mapped
+    program: macro-release-intel
+  mag7-regime:
+    disposition: subprogram_of
+    program: market-regime-risk
+  mag7-washout:
+    disposition: subprogram_of
+    program: price-pressure
+  market-structure:
+    disposition: mapped
+    program: market-structure-intelligence
+  marketing:
+    disposition: mapped
+    program: marketing-intelligence
+  mastermind-feedback-contract:
+    disposition: alias_of
+    program: portfolio-publication
+  metabolism-phase-a:
+    disposition: subprogram_of
+    program: signal-governance
+  metabolism-phase-v2a:
+    disposition: subprogram_of
+    program: signal-governance
+  metabolism-phase-v2b:
+    disposition: subprogram_of
+    program: signal-governance
+  metabolism-phase-v2c:
+    disposition: subprogram_of
+    program: signal-governance
+  metabolism-phase-v2d:
+    disposition: subprogram_of
+    program: signal-governance
+  metabolism-phase0:
+    disposition: subprogram_of
+    program: signal-governance
+  mlc:
+    disposition: alias_of
+    program: market-timing-intelligence
+    note: Historical shorthand for megacap leadership coherence.
+  momoedge:
+    disposition: mapped
+    program: momoedge-options-platform
+  narrative-ignition:
+    disposition: subprogram_of
+    program: qualitative-intelligence
+  nasdaq-internals:
+    disposition: subprogram_of
+    program: market-structure-intelligence
+  neural-web:
+    disposition: mapped
+    program: neural-web
+  next3:
+    disposition: subprogram_of
+    program: neural-web
+  nw-context-intelligence:
+    disposition: subprogram_of
+    program: macro-context-rail
+  nw-mastermind-bridge:
+    disposition: subprogram_of
+    program: neural-web
+  nw-rails:
+    disposition: subprogram_of
+    program: signal-governance
+  options-alpha:
+    disposition: mapped
+    program: options-alpha
+  options-dislocation:
+    disposition: subprogram_of
+    program: options-intelligence
+  options-flow:
+    disposition: subprogram_of
+    program: options-intelligence
+  options-intelligence-program:
+    disposition: mapped
+    program: options-intelligence
+  options-nw-entry-intelligence:
+    disposition: subprogram_of
+    program: options-intelligence
+  options-prophet-shadow:
+    disposition: subprogram_of
+    program: options-intelligence
+  oracle:
+    disposition: mapped
+    program: oracle
+  personality-timing:
+    disposition: subprogram_of
+    program: market-timing-intelligence
+  pick-lab:
+    disposition: subprogram_of
+    program: prophet-us
+  policy-shock:
+    disposition: subprogram_of
+    program: policy-transmission-intelligence
+  price-pressure:
+    disposition: mapped
+    program: price-pressure
+  prophet:
+    disposition: mapped
+    program: prophet
+  qualitative-intelligence:
+    disposition: mapped
+    program: qualitative-intelligence
+  rates-inflation-command:
+    disposition: mapped
+    program: rates-inflation-command
+  research-factory:
+    disposition: mapped
+    program: research-factory
+  rlt:
+    disposition: alias_of
+    program: sector-rotation-intelligence
+    note: Historical shorthand for rebalance liquidity transmission.
+  rotation-command:
+    disposition: alias_of
+    program: sector-rotation-intelligence
+  rri:
+    disposition: alias_of
+    program: international-risk-intelligence
+    note: Historical international risk-radar study family.
+  rsr:
+    disposition: alias_of
+    program: sector-rotation-intelligence
+    note: Historical risk-scoring revamp within the rotation family.
+  sector-pulse:
+    disposition: subprogram_of
+    program: sector-rotation-intelligence
+  setup-species:
+    disposition: subprogram_of
+    program: market-timing-intelligence
+  short-side:
+    disposition: mapped
+    program: short-side
+  signal-commons:
+    disposition: subprogram_of
+    program: signal-governance
+  signal-foundry:
+    disposition: subprogram_of
+    program: signal-governance
+  standout-accountability:
+    disposition: subprogram_of
+    program: prophet
+  stock-personality:
+    disposition: subprogram_of
+    program: market-timing-intelligence
+  tech-internals:
+    disposition: subprogram_of
+    program: market-structure-intelligence
+  thematic-intelligence:
+    disposition: mapped
+    program: thematic-intelligence
+  til-w10-clinical:
+    disposition: subprogram_of
+    program: thematic-intelligence
+  til-w11-options-witness:
+    disposition: subprogram_of
+    program: thematic-intelligence
+  til-w7-hiring-intent:
+    disposition: subprogram_of
+    program: thematic-intelligence
+  til-w8-trade-flows:
+    disposition: subprogram_of
+    program: thematic-intelligence
+  til-w9-discovery-v2:
+    disposition: subprogram_of
+    program: thematic-intelligence
+  top-anatomy:
+    disposition: mapped
+    program: top-anatomy
+  transmission-intelligence:
+    disposition: subprogram_of
+    program: policy-transmission-intelligence
+  turn-sensitivity:
+    disposition: subprogram_of
+    program: market-timing-intelligence
+  us-stocks-prebreakout:
+    disposition: alias_of
+    program: prophet-us
+  whitehouse-desk:
+    disposition: subprogram_of
+    program: policy-transmission-intelligence
