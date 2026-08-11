@@ -309,7 +309,8 @@ selects controls; it never enters a feature value).
   registered kill printed in §3.2 of this revision); the mechanism claim overstated measured
   gradients (restated over the actual sub-session steps with 6× slope spread); the DM-F1
   diagnostic family was absent (now leads §4); the B3-primary attribution said "duration" when the
-  same summary's day-weighted arm proves it is the sampling half (corrected in §1.1/§4.2). All 14
+  same summary's day-weighted arm locates it in the sampling half (corrected in §1.1/§4.2; framing
+  hedged further in the pass-2 entry below). All 14
   must-fix and 7 nits applied. Corrections binding on the earlier §8 entry and logged append-only
   in prereg §7.
 - 2026-08-11 — G0.5 verification pass 2: NOT PRESENTABLE — 2 fresh blockers, both introduced by
