@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from engine.price_pressure import completion as _completion
 from engine.price_pressure import context as _ctx
 from engine.price_pressure import detect as _detect
 from engine.price_pressure import ledger as _ledger
@@ -32,6 +33,16 @@ def load_sectors(data_dir: Path) -> pd.Series:
     if not p.exists():
         return pd.Series(dtype="object")
     return pd.read_parquet(p).set_index("ticker")["sector"]
+
+
+def _restore_ledger_bytes(path: Path, before: bytes | None) -> None:
+    """Rollback a local completion transaction before the broad nightly commit."""
+    if before is None:
+        path.unlink(missing_ok=True)
+        return
+    rollback = path.with_name(f".{path.name}.completion-rollback")
+    rollback.write_bytes(before)
+    rollback.replace(path)
 
 
 def prepare(store: Path, cache: Path, data_dir: Path) -> dict:
@@ -109,6 +120,14 @@ def advance(prep: dict, data_root: Path, *, mode: str = "nightly",
 
     ``mode="backfill"`` — the whole panel span, era ``backfill``, refusing to
     touch any row already forward or gap.
+
+    The nightly additionally runs the §10.1 VIXCLS stamp-completion pass after
+    the advance (``completion.py``): the FRED store trails the tape at harvest,
+    so a row's own ``vix_pctile`` often arrives a night late, and completing it
+    inside the row's maturity window is what keeps the R4 evidence arms from
+    starving to zero.  The backfill does not run it — the prereg names the
+    nightly producer, and a historical seed's rows are stamped from a store that
+    already carries their dates.
     """
     t0 = time.time()
     sessions = prep["sessions"]
@@ -132,10 +151,50 @@ def advance(prep: dict, data_root: Path, *, mode: str = "nightly",
     merged = _ledger.assign_episodes(merged, sessions)
     graded, gstats = _ledger.grade(merged, prep["d"]["cum"], sessions)
 
+    # §10.1 stamp completion — AFTER the advance, and only on the nightly, which
+    # is the producer the prereg names.  It runs against the VIXCLS store as of
+    # this run: the FRED collector refreshes and commits that store in the
+    # earlier `collect` job, so a t0 close that FRED published late simply lands
+    # on the next night, inside the row's own window.  Receipts are held back
+    # until the ledger write is known to have landed (completion module
+    # docstring) — a receipt filed against a skipped write would fence the row
+    # out of its own window forever.
+    cstats: dict = {}
+    creceipts: list[dict] = []
+    completion_writer = (
+        mode == "nightly" and write
+        and _ledger.ledger_write_allowed(require_nightly_lane=require_nightly_lane)
+    )
+    if completion_writer:
+        comp = _completion.run(graded, data_root, data_dir=prep["data_dir"],
+                               sessions=sessions, asof=asof_session)
+        graded, creceipts, cstats = comp["ledger"], comp["receipts"], comp["stats"]
+
     wstats = {"written": False, "reason": "write=False", "rows": int(len(graded))}
+    ledger_file = _ledger.ledger_path(data_root)
+    ledger_before = (
+        ledger_file.read_bytes() if creceipts and ledger_file.exists() else None
+    )
     if write:
-        wstats = _ledger.write_ledger(graded, data_root,
-                                      require_nightly_lane=require_nightly_lane)
+        try:
+            wstats = _ledger.write_ledger(
+                graded, data_root, require_nightly_lane=require_nightly_lane,
+            )
+        except Exception:
+            if creceipts:
+                _restore_ledger_bytes(ledger_file, ledger_before)
+            raise
+
+    if cstats:
+        try:
+            appended = (_completion.append_receipts(data_root, creceipts)
+                        if (creceipts and wstats.get("written")) else 0)
+        except Exception:
+            _restore_ledger_bytes(ledger_file, ledger_before)
+            raise
+        cstats["receipts"] = appended
+        if cstats.get("candidates"):
+            print(_completion.log_line(cstats), flush=True)
 
     stats = {
         "mode": mode,
@@ -146,6 +205,7 @@ def advance(prep: dict, data_root: Path, *, mode: str = "nightly",
         "ledger_max_before": str(ledger_max.date()) if ledger_max is not None and pd.notna(ledger_max) else None,
         "merge": mstats,
         "grade": gstats,
+        "completion": cstats,
         "write": wstats,
         "elapsed_s": round(time.time() - t0, 1),
     }
