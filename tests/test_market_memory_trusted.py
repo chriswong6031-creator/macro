@@ -13,11 +13,14 @@ from types import SimpleNamespace
 import pytest
 from jsonschema import Draft202012Validator, ValidationError
 
+from engine import options_market_memory_context as options_context
+from engine import options_signal_episode
 from engine.neuralweb import market_memory as mm
 from engine.neuralweb import market_memory_identity as identity
 from engine.neuralweb import market_memory_pit as pit
 from engine.neuralweb import market_memory_projection as projection
 from engine.neuralweb import market_memory_trusted as trusted
+from scripts import audit_options_market_memory_context as options_context_audit
 from tests.test_market_memory_pit import (
     _api_client,
     _assert_private,
@@ -25,6 +28,11 @@ from tests.test_market_memory_pit import (
 )
 from tests.test_market_memory_pit import (
     _packet as _w1a_packet,
+)
+from tests.test_options_signal_episode import (
+    _campaign_episode,
+    _campaign_h60_outcome,
+    _episode,
 )
 
 SNAPSHOT_CLOCK = datetime(2026, 8, 10, 10, 0, 0, tzinfo=timezone.utc)
@@ -138,6 +146,61 @@ def _capture(candidate: Candidate) -> pit.StoredMarketMemoryContext:
         identity_evidence=candidate.identity_evidence,
         raw_source_body=candidate.raw_body,
         deployed_commit=DEPLOYED_COMMIT,
+    )
+
+
+def _options_context_candidate(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> Candidate:
+    snapshot_clock = datetime(2026, 8, 11, 14, 30, tzinfo=timezone.utc)
+    identity_clock = snapshot_clock + timedelta(minutes=1)
+    capture_clock = identity_clock + timedelta(seconds=1)
+    source = tmp_path / "options-context-regime.json"
+    raw = _raw_regime()
+    raw.update({"asof": "2026-08-11", "date": "2026-08-11"})
+    raw["freshness"].update(
+        {"asof": "2026-08-11", "built_at": "2026-08-11T14:25:00Z"}
+    )
+    raw_body = (
+        json.dumps(raw, allow_nan=False, sort_keys=True).encode("utf-8") + b"\n"
+    )
+    source.write_bytes(raw_body)
+    monkeypatch.setattr(projection, "_utc_now", lambda: snapshot_clock)
+    snapshot = projection.build_macro_regime_snapshot(source)
+    monkeypatch.setattr(identity, "_utc_now", lambda: identity_clock)
+    identity_evidence = identity.build_current_spy_identity()
+    monkeypatch.setattr(trusted, "_utc_now", lambda: capture_clock)
+    return Candidate(
+        public=tmp_path / "options-context-public" / "trusted-v1",
+        private=tmp_path / "options-context-private",
+        source=source,
+        raw_body=raw_body,
+        snapshot=snapshot,
+        identity_evidence=identity_evidence,
+    )
+
+
+def _episode_for_context(
+    stored: pit.StoredMarketMemoryContext,
+    *,
+    source_event_id: str = "options-context-spy",
+    seconds: int = 0,
+) -> dict:
+    clock = datetime.fromisoformat(
+        stored.packet["clocks"]["event_time"].replace("Z", "+00:00")
+    ) + timedelta(seconds=seconds)
+    timestamp = clock.isoformat().replace("+00:00", "Z")
+    return _episode(
+        id=source_event_id,
+        ts=timestamp,
+        observed_at=timestamp,
+        decision_at=timestamp,
+        available_at=timestamp,
+        source_snapshot_asof=timestamp,
+        root="SPY",
+        exp="2026-08-21",
+        dte=10,
+        oi_vintage="2026-08-10",
     )
 
 
@@ -1045,3 +1108,382 @@ def test_public_objects_strip_labels_outcomes_options_episodes_and_prophet_write
     assert "u-chain" not in implementation
     assert "build_prophet" not in implementation
     assert "write_prophet" not in implementation
+
+
+def _empty_w1a_store(root: Path) -> Path:
+    store = pit.validate_store_root(root)
+    pit._mkdir_durable(store)
+    pit._initialize_or_load_store(store)
+    return store
+
+
+def _options_context_reader(
+    candidate: Candidate, w1a_root: Path
+) -> options_context.PinnedCompositeAsKnownAtReader:
+    composite = trusted.CompositeAsKnownAtReader(w1a_root, candidate.public)
+    return options_context.PinnedCompositeAsKnownAtReader(composite)
+
+
+def test_options_context_reference_binds_only_the_exact_requested_as_of_capture(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _options_context_candidate(monkeypatch, tmp_path)
+    stored = _capture(candidate)
+    w1a_root = _empty_w1a_store(tmp_path / "options-context-w1a")
+    monkeypatch.setattr(
+        pit,
+        "_utc_now",
+        lambda: datetime(2026, 8, 11, 16, 0, tzinfo=timezone.utc),
+    )
+    reader = _options_context_reader(candidate, w1a_root)
+    episode = _episode_for_context(stored)
+    reference = options_context.resolve_episode_context_reference(
+        episode, reader=reader
+    )
+
+    schema = json.loads(
+        (
+            Path(__file__).resolve().parents[1]
+            / "contracts/options/options.market_memory_context_reference.v1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate(reference)
+    assert reference["disposition"] == "bound"
+    assert reference["reason"] is None
+    assert reference["owner"]["record_sha256"] == sha256(
+        _canonical_bytes(episode)
+    ).hexdigest()
+    assert reference["query"] == {
+        "subject": stored.packet["subject"],
+        "identity_config_sha256": candidate.identity_evidence.config_sha256,
+        "event_time": episode["event_time"],
+        "as_known_at": episode["available_at"],
+        "mode": "operational_pit",
+        "fallback_policy": "exact_no_fallback",
+    }
+    assert reference["context"]["context_id"] == stored.packet["context_id"]
+    assert reference["context"]["capture_id"] == stored.capture_receipt["capture_id"]
+    assert (
+        reference["context"]["capture_schema"]
+        == trusted.TRUSTED_CAPTURE_RECEIPT_SCHEMA
+    )
+    assert reference["evidence_policy"] == options_context.EVIDENCE_POLICY
+    assert reference["authority"] == dict(mm.AUTHORITY)
+    assert {
+        "feature_values",
+        "coordinates",
+        "outcome",
+        "forward_return",
+        "selection",
+        "trade",
+    }.isdisjoint(_all_keys(reference))
+
+    one_second_later = _episode_for_context(
+        stored, source_event_id="options-context-spy-later", seconds=1
+    )
+    absent = options_context.resolve_episode_context_reference(
+        one_second_later, reader=reader
+    )
+    assert absent["disposition"] == "abstained"
+    assert absent["reason"] == "exact_requested_as_of_context_absent"
+    assert absent["context"] is None
+
+
+def test_options_context_binds_a_prospective_campaign_at_its_crossing_clock(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _options_context_candidate(monkeypatch, tmp_path)
+    stored = _capture(candidate)
+    event_time = stored.packet["clocks"]["event_time"]
+    available_at = stored.packet["clocks"]["as_known_at"]
+    crossing_clock = datetime.fromisoformat(event_time.replace("Z", "+00:00"))
+    first_clock = (crossing_clock - timedelta(minutes=1)).isoformat().replace(
+        "+00:00", "Z"
+    )
+
+    common = {
+        "root": "SPY",
+        "exp": "2026-08-21",
+        "strike": 105.0,
+        "right": "C",
+        "dte": 10,
+        "size": 10_000,
+        "avg_price": 1.5,
+        "premium": 1_500_000.0,
+        "vol_gt_oi": True,
+        "oi_vintage": "2026-08-10",
+    }
+    first = _episode(
+        id="prospective-first",
+        ts=first_clock,
+        observed_at=first_clock,
+        decision_at=first_clock,
+        available_at=first_clock,
+        source_snapshot_asof=first_clock,
+        **common,
+    )
+    crossing = _episode(
+        id="prospective-crossing",
+        ts=event_time,
+        observed_at=available_at,
+        decision_at=available_at,
+        available_at=available_at,
+        source_snapshot_asof=available_at,
+        **common,
+    )
+    episodes = [first, crossing]
+    outcomes = [_campaign_h60_outcome(row) for row in episodes]
+    campaigns, pending = options_signal_episode.derive_campaigns(episodes, outcomes)
+    assert pending == []
+    assert len(campaigns) == 1
+    assert campaigns[0]["evidence_phase"] == "prospective_after_rule_freeze"
+
+    w1a_root = _empty_w1a_store(tmp_path / "prospective-campaign-w1a")
+    monkeypatch.setattr(
+        pit,
+        "_utc_now",
+        lambda: datetime(2026, 8, 11, 16, 0, tzinfo=timezone.utc),
+    )
+    reference = options_context.resolve_campaign_context_reference(
+        campaigns[0],
+        episodes=episodes,
+        h60_outcomes=outcomes,
+        reader=_options_context_reader(candidate, w1a_root),
+    )
+
+    assert reference["disposition"] == "bound"
+    assert reference["owner"]["event_time"] == event_time
+    assert reference["owner"]["requested_as_of"] == available_at
+    assert (
+        reference["owner"]["requested_as_of_basis"]
+        == "campaign_formed_at_anchor_available_at"
+    )
+    assert reference["context"]["context_id"] == stored.packet["context_id"]
+
+
+def test_options_context_rejects_a_reader_that_returns_a_nearby_capture(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _options_context_candidate(monkeypatch, tmp_path)
+    stored = _capture(candidate)
+    episode = _episode_for_context(
+        stored, source_event_id="options-context-nearby", seconds=1
+    )
+
+    class NearbyReader:
+        def read_stored_as_known_at(
+            self, **_query: object
+        ) -> pit.StoredMarketMemoryContext:
+            return stored
+
+    with pytest.raises(
+        options_context.OptionsMarketMemoryContextError,
+        match="clocks differ from the exact options request",
+    ):
+        options_context.resolve_episode_context_reference(
+            episode, reader=NearbyReader()
+        )
+
+
+def test_options_context_abstains_before_lookup_for_retrospective_or_unsupported_owner(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    class ForbiddenReader:
+        def read_stored_as_known_at(
+            self, **_query: object
+        ) -> pit.StoredMarketMemoryContext:
+            pytest.fail("an ineligible owner must not reach Market Memory lookup")
+
+    first = _campaign_episode("retro-first", 1_500_000.0)
+    second = _campaign_episode(
+        "retro-second", 1_500_000.0, available_at="2026-07-02T14:32:00Z"
+    )
+    episodes = [first, second]
+    outcomes = [_campaign_h60_outcome(row) for row in episodes]
+    campaigns, pending = options_signal_episode.derive_campaigns(episodes, outcomes)
+    assert pending == []
+    assert len(campaigns) == 1
+    retrospective = options_context.resolve_campaign_context_reference(
+        campaigns[0],
+        episodes=episodes,
+        h60_outcomes=outcomes,
+        reader=ForbiddenReader(),
+    )
+    assert retrospective["disposition"] == "abstained"
+    assert retrospective["reason"] == "campaign_retrospective_discovery"
+    assert retrospective["query"]["subject"] is None
+
+    canary_identity = options_context.load_canary_identity_snapshot()
+    unsupported = options_context.resolve_episode_context_reference(
+        first,
+        reader=ForbiddenReader(),
+        canary_identity=canary_identity,
+    )
+    assert unsupported["disposition"] == "abstained"
+    assert unsupported["reason"] == "identity_not_operationally_supported"
+    assert unsupported["query"]["subject"] is None
+
+    with pytest.raises(
+        options_context.OptionsMarketMemoryContextError,
+        match="differs from its validated config bytes",
+    ):
+        options_context.CanaryIdentitySnapshot(
+            symbol=canary_identity.symbol,
+            subject_id=canary_identity.subject_id,
+            instrument_id=canary_identity.instrument_id,
+            config_sha256="f" * 64,
+            config_body=canary_identity.config_body,
+        )
+    with pytest.raises(TypeError):
+        options_context.EVIDENCE_POLICY[
+            "training_eligible"
+        ] = True  # type: ignore[index]
+
+
+def test_options_context_audit_seals_sorted_owners_generations_and_closed_counts(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _options_context_candidate(monkeypatch, tmp_path)
+    stored = _capture(candidate)
+    w1a_root = _empty_w1a_store(tmp_path / "audit-w1a")
+    monkeypatch.setattr(
+        pit,
+        "_utc_now",
+        lambda: datetime(2026, 8, 11, 16, 0, tzinfo=timezone.utc),
+    )
+    reader = _options_context_reader(candidate, w1a_root)
+    bound = options_context.resolve_episode_context_reference(
+        _episode_for_context(stored), reader=reader
+    )
+    unsupported = options_context.resolve_episode_context_reference(
+        _campaign_episode("audit-unsupported", 50_000.0), reader=reader
+    )
+    references = sorted(
+        [unsupported, bound],
+        key=lambda row: (row["owner"]["schema"], row["owner"]["id"]),
+    )
+    sources = [
+        {
+            "path": "config/market_memory_canary.v1.json",
+            "sha256": "1" * 64,
+            "bytes": 1,
+            "record_count": 1,
+        },
+        {
+            "path": "data/options_signal_episode/campaigns.jsonl",
+            "sha256": "2" * 64,
+            "bytes": 2,
+            "record_count": 0,
+        },
+        {
+            "path": "data/options_signal_episode/episodes.jsonl",
+            "sha256": "3" * 64,
+            "bytes": 3,
+            "record_count": 2,
+        },
+        {
+            "path": "data/options_signal_episode/outcomes_h60.jsonl",
+            "sha256": "4" * 64,
+            "bytes": 4,
+            "record_count": 0,
+        },
+    ]
+    audit = options_context.build_audit_receipt(
+        references=references,
+        source_artifacts=sources,
+        context_generations=reader.generation_receipts(),
+        audited_at="2026-08-11T16:00:00Z",
+    )
+
+    schema = json.loads(
+        (
+            Path(__file__).resolve().parents[1]
+            / "contracts/options/options.market_memory_context_audit.v1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate(audit)
+    assert audit["counts"] == {
+        "references": 2,
+        "episode_references": 2,
+        "campaign_references": 0,
+        "bound": 1,
+        "abstained": 1,
+        "campaign_retrospective_discovery": 0,
+        "identity_not_operationally_supported": 1,
+        "exact_requested_as_of_context_absent": 0,
+    }
+    assert [row["profile"] for row in audit["context_generations"]] == sorted(
+        row["profile"] for row in audit["context_generations"]
+    )
+    assert (
+        options_context.validate_audit_receipt(audit, references=references) == audit
+    )
+
+    reversed_references = list(reversed(references))
+    with pytest.raises(
+        options_context.OptionsMarketMemoryContextError, match="sorted"
+    ):
+        options_context.build_audit_receipt(
+            references=reversed_references,
+            source_artifacts=sources,
+            context_generations=reader.generation_receipts(),
+            audited_at="2026-08-11T16:00:00Z",
+        )
+    tampered = copy.deepcopy(audit)
+    tampered["counts"]["bound"] = 2
+    with pytest.raises(options_context.OptionsMarketMemoryContextError):
+        options_context.validate_audit_receipt(tampered, references=references)
+
+
+def test_options_context_live_audit_replays_the_frozen_repository_corpus(
+    tmp_path: Path,
+) -> None:
+    source_root = Path(__file__).resolve().parents[1]
+    repository_root = tmp_path / "repository"
+    data_root = repository_root / "data/options_signal_episode"
+    config_root = repository_root / "config"
+    data_root.mkdir(parents=True)
+    config_root.mkdir()
+    for name in ("episodes.jsonl", "campaigns.jsonl", "outcomes_h60.jsonl"):
+        source = source_root / "data/options_signal_episode" / name
+        (data_root / name).write_bytes(source.read_bytes())
+    config_path = config_root / "market_memory_canary.v1.json"
+    config_path.write_bytes(
+        (source_root / "config/market_memory_canary.v1.json").read_bytes()
+    )
+    w1a_root = _empty_w1a_store(tmp_path / "live-audit-w1a")
+    trusted_root = tmp_path / "live-audit-trusted"
+    trusted.initialize_trusted_store(trusted_root)
+
+    audit = options_context_audit.build_live_audit(
+        repository_root=repository_root,
+        w1a_store_root=w1a_root,
+        trusted_store_root=trusted_root,
+        config_path=config_path,
+    )
+
+    episode_count = len(
+        options_signal_episode._decode_jsonl(
+            (data_root / "episodes.jsonl").read_bytes(),
+            data_root / "episodes.jsonl",
+        )
+    )
+    campaign_count = len(
+        options_signal_episode._decode_jsonl(
+            (data_root / "campaigns.jsonl").read_bytes(),
+            data_root / "campaigns.jsonl",
+        )
+    )
+    assert audit["counts"]["references"] == episode_count + campaign_count
+    assert audit["counts"]["episode_references"] == episode_count
+    assert audit["counts"]["campaign_references"] == campaign_count
+    assert audit["counts"]["bound"] == 0
+    assert audit["counts"]["abstained"] == episode_count + campaign_count
+    assert [row["path"] for row in audit["source_artifacts"]] == [
+        "config/market_memory_canary.v1.json",
+        "data/options_signal_episode/campaigns.jsonl",
+        "data/options_signal_episode/episodes.jsonl",
+        "data/options_signal_episode/outcomes_h60.jsonl",
+    ]

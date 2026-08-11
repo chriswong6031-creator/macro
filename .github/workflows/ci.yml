@@ -2858,6 +2858,15 @@ on:
       - "scripts/run_falsosc_trial_v1.py"
       - "scripts/study_construction_divergence.py"
       # unrun-serving-admin — admin control surfaces + the brain/tape serving edges
+      # Project runtime truth: durable topology + strict private schema + one shared
+      # collector used by both the CLI and authenticated admin route.  Keep every
+      # half on this lane so a schema-only or topology-only drift cannot ship dark.
+      - "config/production_topology.yml"
+      - "contracts/runtime/mastermind.runtime_state.v1.schema.json"
+      - "docs/PRODUCTION_RUNTIME_TRUTH.md"
+      - "lib/project_runtime_state.py"
+      - "scripts/build_project_runtime_state.py"
+      - "tests/test_project_runtime_state.py"
       - "tests/test_admin_config_store.py"
       - "tests/test_admin_flags.py"
       - "tests/test_admin_health.py"

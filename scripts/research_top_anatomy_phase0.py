@@ -38,9 +38,18 @@ DATA HONESTY
   * The run's last data day is derived FROM THE PANEL, never from a manifest, and
     stamped on every artifact alongside the git sha.
 
+W2 TIER-WIDENING ARMS (`--w2-arm`, `research/top_anatomy/TOPA_W2_PREREG.md`)
+  The same pipeline with ONE moved variable: the §4.1 trigger term, taken from the
+  engine's existing `extended_mask(variant=...)` arms (`r63`, `atrz`). Track W only.
+  Each arm reports two panels — FULL (all arm episodes) and DISJOINT (arm episodes
+  sharing zero EXT days with the phase-0 primary mask, where the generalization
+  claim lives) — a §5 coverage gate that leads the result, five one-sided
+  confirmatory legs, and the other 31 features as exploratory. No engine change.
+
 Run:
   python -m scripts.research_top_anatomy_phase0 --data-root <primary>/data
   python -m scripts.research_top_anatomy_phase0 --data-root <...> --track W --quick 300
+  python -m scripts.research_top_anatomy_phase0 --data-root <...> --w2-arm r63
 """
 from __future__ import annotations
 
@@ -178,8 +187,19 @@ def _finish_panel(
     tag: str,
     *,
     residual_up_ratio_break: float | None = None,
+    ext_variant: str | None = None,
 ) -> dict:
-    """Identity-segment a per-ticker store, widen it, and cache the frames."""
+    """Identity-segment a per-ticker store, widen it, and cache the frames.
+
+    ``ext_variant`` stamps which §4.1 EXTENSION DEFINITION the cached content is
+    downstream of. Panel content is upstream of every EXT mask — `repair_bars` and
+    `split_identity_segments` read raw prints and tape gaps only, and the sole
+    `extended_mask` call in this function feeds `meta["repair_impact"]` diagnostics,
+    never a panel leg — so a panel is written with `None`, meaning "no extension
+    definition entered this content". Anything a caller builds downstream of an EXT
+    mask (episodes, races, cases, matching, estimates) must pass its arm name, and
+    `_load_cached` then refuses a cache built under a different one.
+    """
     calendar = pd.DatetimeIndex(sorted({d for b in bars.values() for d in b.index}))
     gap_segs = ta.split_identity_segments(bars, calendar)
     segs = ta.split_identity_segments(
@@ -214,6 +234,7 @@ def _finish_panel(
             "n_split_factor_step_days": (int(panel["split_day"].to_numpy().sum())
                                          if not panel["split_day"].empty else 0),
             "residual_up_ratio_break": residual_up_ratio_break,
+            "ext_variant": ext_variant,
             "n_tickers_residual_up_split": len(residual_split),
             "n_residual_up_breaks": int(len(segs) - len(gap_segs))}
     if residual_up_ratio_break is not None:
@@ -249,6 +270,7 @@ def _load_cached(
     cache: Path,
     *,
     residual_up_ratio_break: float | None = None,
+    ext_variant: str | None = None,
 ) -> dict | None:
     if not (cache / "meta.json").exists():
         return None
@@ -262,6 +284,18 @@ def _load_cached(
             f"{meta.get('residual_up_ratio_break', meta.get('identity_rules', 'unstamped'))}"
             f", this track needs {residual_up_ratio_break} ({W_REPAIR_ARM} on W, "
             "gap-only on D) — rebuilding rather than seeding features from it")
+        return None
+    # W2 arm keying (TOPA_W2_PREREG §2). `None` is the STAMPED value of an
+    # EXT-independent panel, not an absent stamp: `_finish_panel` never lets an
+    # extension definition into panel content, so every panel ever written — before
+    # or after this key existed — is honestly `None`. A caller asking for an arm's
+    # downstream cache therefore mismatches a panel-only cache and rebuilds, which
+    # is the hard-check the prereg asks for; a caller asking for the panel keeps its
+    # cache hit and phase-0 behaviour is unchanged.
+    if meta.get("ext_variant") != ext_variant:
+        say(f"cache at {cache} was built under extension variant "
+            f"{meta.get('ext_variant')!r}, this run needs {ext_variant!r} — rebuilding "
+            "rather than reading an arm's episodes/races/cases off another arm's mask")
         return None
     missing = [c for c in _REQUIRED_PANEL_LEGS
                if not (cache / f"panel_{c}.parquet").exists()]
@@ -1737,6 +1771,849 @@ def _today_tape(close: pd.DataFrame, ext: pd.DataFrame, feats: pd.DataFrame,
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# W2 — tier-widening arms (research/top_anatomy/TOPA_W2_PREREG.md)
+#
+# Plumbing only. Every construction decision is frozen in that file: the arms are
+# the existing `extended_mask(variant=...)` masks, the pipeline below them is
+# phase-0 run-3 unchanged, and the ONLY moved variable is the §4.1 trigger term.
+# Track W only (§2): the D-track's absence is a declared decision, not an omission.
+# ══════════════════════════════════════════════════════════════════════════════
+W2_FAMILY = "top_anatomy_w2"
+W2_PREREG = "research/top_anatomy/TOPA_W2_PREREG.md"
+W2_ARMS = ("r63", "atrz")
+#: §3 confirmatory set — the five phase-0 W-track survivors with the direction the
+#: phase-0 result observed. One-sided IN THAT DIRECTION; nothing else in W2 can earn
+#: a confirmatory grade.
+W2_CONFIRMATORY: tuple[tuple[str, int], ...] = (
+    ("A4_r252", -1), ("B2_rsi14", +1), ("C6_tr5_over_tr63", -1),
+    ("D1_dvol_z", -1), ("D3_updown_dvol_ratio21", -1),
+)
+W2_CONFIRMATORY_LEGS: tuple[str, ...] = tuple(f for f, _ in W2_CONFIRMATORY)
+W2_DECLARED_DIRECTION: dict[str, int] = dict(W2_CONFIRMATORY)
+#: The other 31 — two-sided within-family BH, grade capped at EXPLORATORY-DISCOVERY.
+W2_EXPLORATORY: tuple[str, ...] = tuple(f for f in ta.FEATURES
+                                        if f not in W2_DECLARED_DIRECTION)
+#: §5 coverage gate: the motivating exemplars, named. AI leadership reuses the
+#: phase-0 G0.5 watchlist verbatim so the two censuses are read on one list.
+W2_MINER_WATCH = ("NEM", "GOLD", "AEM", "WPM", "FNV", "RGLD", "PAAS", "KGC", "HL",
+                  "AGI", "SSRM", "HMY", "GFI", "AU", "BVN", "SBSW")
+#: §6 declared fallback — an arm past this wall is DEFERRED with its reason printed,
+#: never silently capped and never subsampled.
+W2_WALL_LIMIT_SECONDS = 12 * 3600
+#: Conventional display bands for the roster composition sketch (§5c). Nothing rides
+#: on them: they label a census, they are not a population definition.
+W2_MCAP_TIERS = ((2e9, "micro/small <$2B"), (1e10, "mid $2–10B"),
+                 (2e11, "large $10–200B"), (float("inf"), "mega >=$200B"))
+W2_MCAP_REFERENCE = "polygon_universe/reference.parquet"
+
+
+def _num(x) -> float | None:
+    """JSON-safe float: a non-finite estimate is emitted as `null`, never as `NaN`.
+
+    `_records` already does this via `to_json`; the W2 tables are assembled as plain
+    dicts, so they need the same discipline or the deliverable stops being strict
+    JSON for every parser that is not Python's.
+    """
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return None
+    return v if np.isfinite(v) else None
+
+
+def _sha256(path: Path) -> str | None:
+    """Content hash of the frozen prereg — the freeze proof travels with the result."""
+    import hashlib
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def _w2_wall_exceeded() -> bool:
+    return (time.time() - _T0) > W2_WALL_LIMIT_SECONDS
+
+
+def w2_one_sided_p(two_sided_p: float, median_delta: float, direction: int, *,
+                   b: int) -> float:
+    """One-sided p in the DECLARED direction, read off the same block-bootstrap draws.
+
+    `ta.matched_delta_stats` reports the two-sided sign-tail p that `_median_ci`
+    computes as ``2·min(a, c)`` with ``a = P(draw <= 0)``, ``c = P(draw >= 0)`` over
+    the B episode-peak-month block resamples of the median, floored at ``1/(B+1)``.
+    The declared-direction one-sided p is the bootstrap mass on the NULL side of the
+    declared sign: ``a`` for a declared POSITIVE direction, ``c`` for a NEGATIVE one.
+
+    ``min(a, c)`` is always the tail opposite the observed median, so that mass is
+    exactly ``two_sided / 2`` when the observed median carries the declared sign and
+    its complement ``1 − two_sided / 2`` when it does not (``a + c = 1 + P(draw = 0)``,
+    and a bootstrap median of a continuous panel is a.s. non-zero). Re-floored at
+    ``1/(B+1)``: halving a two-sided p that was already at its floor would otherwise
+    print a one-sided p finer than B resamples can resolve.
+
+    An observed median of exactly zero matches no declared sign and lands on the
+    complement branch, which is the honest read — a distribution centred on zero has
+    ~half its mass on the null side whichever direction was declared.
+    """
+    if not np.isfinite(two_sided_p) or not np.isfinite(median_delta):
+        return float("nan")
+    sign_matches = (direction > 0 and median_delta > 0) or \
+                   (direction < 0 and median_delta < 0)
+    p = (two_sided_p / 2.0) if sign_matches else (1.0 - two_sided_p / 2.0)
+    return float(min(max(p, 1.0 / (b + 1.0)), 1.0))
+
+
+def w2_confirmatory_table(stats: pd.DataFrame, *, b: int) -> list[dict]:
+    """§3 — the five legs, one-sided in the declared direction, BH-FDR over the 5.
+
+    ``stats`` is a `ta.matched_delta_stats` frame computed over the FULL 36-feature
+    tuple, so every per-feature bootstrap seed keeps its phase-0 ordinal and the
+    confirmatory and exploratory tables are read off ONE set of draws. The engine's
+    own `q_value` there is a two-sided BH over all 36 within six letter families; it
+    is carried through under an explicit name and is NOT what grades a leg.
+
+    The multiplicity family is exactly these five one-sided tests (prereg §3), so BH
+    runs over the 5 together rather than within letter families.
+    """
+    rows = []
+    for feat in W2_CONFIRMATORY_LEGS:
+        r = stats[stats["feature"] == feat]
+        if r.empty:
+            rows.append({"feature": feat,
+                         "declared_direction": W2_DECLARED_DIRECTION[feat],
+                         "reason_absent": "feature not present in the panel's deltas"})
+            continue
+        r = r.iloc[0].to_dict()
+        direction = W2_DECLARED_DIRECTION[feat]
+        med = float(r["median_delta"])
+        p1 = w2_one_sided_p(float(r["p_value"]), med, direction, b=b)
+        rows.append({
+            "feature": feat, "family": r["family"], "declared_direction": direction,
+            "n_episodes": int(r["n_episodes"]), "n_blocks": int(r["n_blocks"]),
+            "coverage": _num(r["coverage"]),
+            "meets_coverage_floor": bool(r["interpretable"]),
+            "meets_peak_month_floor": bool(int(r["n_blocks"]) >= ta.MIN_EPISODE_MONTHS),
+            "median_delta": _num(med), "ci_lo": _num(r["ci_lo"]), "ci_hi": _num(r["ci_hi"]),
+            "ci_excludes_zero": bool((r["ci_lo"] > 0) or (r["ci_hi"] < 0)),
+            "sign_matches_declared": bool((direction > 0 and med > 0)
+                                          or (direction < 0 and med < 0)),
+            "p_value_two_sided": _num(r["p_value"]),
+            "p_value_one_sided": _num(p1),
+            "q_value_two_sided_all36_letter_family": _num(r["q_value"]),
+            "ticker_ci_lo": _num(r["ticker_ci_lo"]), "ticker_ci_hi": _num(r["ticker_ci_hi"]),
+        })
+    have = [r for r in rows if r.get("p_value_one_sided") is not None]
+    if have:
+        q = ta.bh_fdr(np.array([r["p_value_one_sided"] for r in have], dtype=float))
+        for r, qv in zip(have, q):
+            r["q_value_one_sided"] = _num(qv)
+            r["passes_q"] = bool(np.isfinite(qv) and qv <= ta.FDR_Q)
+            r["separates_one_sided"] = bool(r["sign_matches_declared"] and r["passes_q"])
+    for r in rows:
+        r.setdefault("q_value_one_sided", None)
+        r.setdefault("passes_q", False)
+        r.setdefault("separates_one_sided", False)
+    return rows
+
+
+def w2_exploratory_table(stats: pd.DataFrame, *, ranked: bool) -> dict:
+    """§3 exploratory set — the other 31 under phase-0's two-sided within-family BH.
+
+    The five confirmatory legs are removed BEFORE the BH step: they are declared as
+    their own family of five one-sided tests, so leaving them in the letter families
+    would spend their trial budget twice. Grade is capped at EXPLORATORY-DISCOVERY —
+    no W2 result creates or upgrades a registration.
+
+    ``ranked=False`` (the DISJOINT panels) prints the same table with no grade
+    attached: the numbers are printed regardless of sign or significance, but the
+    panel carries no discovery ranking.
+    """
+    e = stats[stats["feature"].isin(W2_EXPLORATORY)].copy()
+    if e.empty:
+        return {"ranked": ranked, "n_features": 0, "table": [], "separating": []}
+    e["q_value"] = np.nan
+    for _fam, g in e.groupby("family", sort=False):
+        e.loc[g.index, "q_value"] = ta.bh_fdr(g["p_value"].to_numpy(dtype=float))
+    ci_excl = (e["ci_lo"] > 0) | (e["ci_hi"] < 0)
+    sign_ok = np.where(e["direction"] > 0, e["median_delta"] > 0,
+                       np.where(e["direction"] < 0, e["median_delta"] < 0, True))
+    e["separates"] = (ci_excl & pd.Series(sign_ok, index=e.index)
+                      & (e["q_value"] <= ta.FDR_Q) & e["interpretable"]
+                      & (e["n_blocks"] >= ta.MIN_EPISODE_MONTHS)).astype(bool)
+    e["grade"] = np.where(e["separates"] & ranked, "EXPLORATORY-DISCOVERY", "")
+    e = e.sort_values(["family", "feature"], ignore_index=True)
+    return {
+        "ranked": ranked,
+        "bh_family": "letter family, within the 31 exploratory features only",
+        "grade_cap": ("EXPLORATORY-DISCOVERY" if ranked else
+                      "none — printed unranked on the DISJOINT panel (prereg §3)"),
+        "n_features": int(len(e)),
+        "n_separating": int(e["separates"].sum()),
+        "separating": sorted(e.loc[e["separates"], "feature"]),
+        "table": _records(e),
+    }
+
+
+def w2_episode_overlap(ext_arm: pd.DataFrame, ext_primary: pd.DataFrame,
+                       close: pd.DataFrame, episodes: pd.DataFrame) -> pd.DataFrame:
+    """§4 panel assignment — how much of each arm episode the phase-0 bar already saw.
+
+    An episode's EXT-day set is the (identity-segment, session) pairs where the ARM
+    mask is true inside [start, end] on the segment's own bars — the same
+    `mask & bars` rule `extract_episodes` and `episode_peaks` use, so the count here
+    is the episode's own `n_ext_days`, not a recount on a different calendar.
+
+    DISJOINT: zero of those days are also phase-0-PRIMARY EXT days. PARTIAL_OVERLAP:
+    some. FULLY_SHARED: all. Only DISJOINT episodes carry a generalization claim.
+    """
+    cols = ["episode_id", "segment", "n_ext_days_in_span", "n_shared_with_primary",
+            "share_shared", "overlap_class"]
+    if episodes.empty:
+        return pd.DataFrame(columns=cols)
+    prim = ext_primary.reindex(index=ext_arm.index, columns=ext_arm.columns)
+    pos = pd.Series(np.arange(len(ext_arm.index)), index=ext_arm.index)
+    rows = []
+    for seg, g in episodes.groupby("segment", sort=False):
+        if seg not in ext_arm.columns:
+            continue
+        bars = close[seg].notna().to_numpy(dtype=bool) if seg in close.columns \
+            else np.ones(len(ext_arm.index), dtype=bool)
+        a = ext_arm[seg].fillna(False).to_numpy(dtype=bool) & bars
+        s = a & prim[seg].fillna(False).to_numpy(dtype=bool)
+        ca = np.concatenate([[0], np.cumsum(a)])
+        cs = np.concatenate([[0], np.cumsum(s)])
+        for r in g.itertuples():
+            if r.start not in pos.index or r.end not in pos.index:
+                continue
+            i0, i1 = int(pos[r.start]), int(pos[r.end])
+            n_arm = int(ca[i1 + 1] - ca[i0])
+            n_sh = int(cs[i1 + 1] - cs[i0])
+            rows.append({
+                "episode_id": r.episode_id, "segment": seg,
+                "n_ext_days_in_span": n_arm, "n_shared_with_primary": n_sh,
+                "share_shared": (float(n_sh / n_arm) if n_arm else None),
+                "overlap_class": ("DISJOINT" if n_sh == 0 else
+                                  "FULLY_SHARED" if n_sh >= n_arm else
+                                  "PARTIAL_OVERLAP"),
+            })
+    return pd.DataFrame(rows, columns=cols)
+
+
+def w2_coverage_census(close: pd.DataFrame, ext_arm: pd.DataFrame,
+                       episodes: pd.DataFrame, gates: pd.DataFrame,
+                       data_root: Path, *, arm: str) -> dict:
+    """§5 coverage gate — the wave's FIRST question, before any statistic.
+
+    (a) the vintage-date extended roster and its size, (b) the motivating exemplars
+    BY NAME on two separate readings — in the roster on the vintage date, and holding
+    ANY arm episode anywhere on the tape — and (c) a composition sketch. Absence is
+    split into "not in the tape at all" and "in the tape, never cleared this arm's
+    bar", because those are different findings and only the second is about the bar.
+    """
+    asof = close.index.max()
+    row = ext_arm.loc[asof]
+    live = list(row.index[row.fillna(False).to_numpy(dtype=bool)])
+    roster = sorted({ta.segment_ticker(s) for s in live})
+    roster_set = set(roster)
+    ever = set(episodes["ticker"].astype(str)) if not episodes.empty else set()
+    in_tape = {ta.segment_ticker(c) for c in close.columns}
+
+    watch = {"ai_leaders": tuple(TAPE_LEADERSHIP_WATCH),
+             "gold_pgm_miners": W2_MINER_WATCH}
+    by_name: dict[str, dict] = {}
+    for group, names in watch.items():
+        by_name[group] = {
+            "n_watched": len(names),
+            "in_roster_on_vintage_date": sorted(t for t in names if t in roster_set),
+            "absent_from_roster_on_vintage_date": sorted(
+                t for t in names if t not in roster_set),
+            "has_any_arm_episode_ever": sorted(t for t in names if t in ever),
+            "no_arm_episode_ever": sorted(t for t in names if t not in ever),
+            "not_in_the_tape_at_all": sorted(t for t in names if t not in in_tape),
+            "in_the_tape_but_no_arm_episode": sorted(
+                t for t in names if t in in_tape and t not in ever),
+        }
+
+    sketch: dict = {"n_roster_names": len(roster), "n_roster_segments": len(live)}
+    g = gates[gates["date"] == asof]
+    g = g[g["segment"].isin(live)] if not g.empty else g
+    if not g.empty:
+        sketch["dvol21_usd"] = _describe(g["dvol21"])
+        sketch["r126"] = _describe(g["r126"])
+        sketch["rv63"] = _describe(g["rv63"])
+        dv = pd.to_numeric(g["dvol21"], errors="coerce").dropna()
+        sketch["dvol21_bands"] = {
+            "under_10m": int((dv < 1e7).sum()), "10m_to_100m": int(((dv >= 1e7) & (dv < 1e8)).sum()),
+            "100m_to_1b": int(((dv >= 1e8) & (dv < 1e9)).sum()), "at_or_over_1b": int((dv >= 1e9).sum())}
+    px = close.loc[asof, live].astype(float) if live else pd.Series(dtype=float)
+    if not px.empty:
+        sketch["close_bands"] = {
+            "under_10": int((px < 10).sum()), "10_to_50": int(((px >= 10) & (px < 50)).sum()),
+            "50_to_200": int(((px >= 50) & (px < 200)).sum()),
+            "at_or_over_200": int((px >= 200).sum())}
+
+    # (c) mcap tiers — cheap, but the only reference the repo carries is a large-cap
+    # index roster, so its COVERAGE is printed beside every tier count. A tier table
+    # over 5% of the roster is a statement about who is missing from the reference,
+    # not about the cohort, and must not be read as the latter.
+    ref_path = data_root / W2_MCAP_REFERENCE
+    mcap: dict = {"source": W2_MCAP_REFERENCE, "available": ref_path.exists()}
+    if ref_path.exists():
+        try:
+            ref = pd.read_parquet(ref_path)
+            caps = pd.to_numeric(ref["market_cap_usd"], errors="coerce")
+            caps.index = ref.index.astype(str)
+            hit = caps.reindex(roster).dropna()
+            tiers = {label: 0 for _, label in W2_MCAP_TIERS}
+            for v in hit.to_numpy(dtype=float):
+                for edge, label in W2_MCAP_TIERS:
+                    if v < edge:
+                        tiers[label] += 1
+                        break
+            mcap.update({
+                "reference_asof": (str(ref["asof"].iloc[0]) if "asof" in ref.columns
+                                   and len(ref) else None),
+                "reference_n_names": int(len(ref)),
+                "n_roster_names_with_mcap": int(len(hit)),
+                "coverage_share_of_roster": (round(float(len(hit) / len(roster)), 4)
+                                             if roster else None),
+                "tiers_on_covered_names_only": tiers,
+                "sector_counts_on_covered_names_only": (
+                    ref.reindex(hit.index)["gics_sector"].value_counts().to_dict()
+                    if "gics_sector" in ref.columns else {}),
+                "note": ("the reference carries a large-cap index roster only, so the "
+                         "uncovered remainder of the roster is not 'unknown mcap' at "
+                         "random — it is everything outside that index"),
+            })
+        except Exception as exc:  # noqa: BLE001 — a census sketch never kills the run
+            mcap["error"] = str(exc)
+    sketch["mcap"] = mcap
+
+    return {
+        "vintage_date": str(pd.Timestamp(asof).date()),
+        "vintage_date_source": "derived from the panel's last session, never a manifest",
+        "arm": arm,
+        "n_extended_on_vintage_date": len(live),
+        "n_distinct_names_on_vintage_date": len(roster),
+        "n_names_with_any_arm_episode_ever": len(ever),
+        "n_names_in_the_tape": len(in_tape),
+        "roster_names_on_vintage_date": roster,
+        "exemplars": by_name,
+        "composition_sketch": sketch,
+    }
+
+
+def w2_panel_slice(name: str, ids: set[str] | None, race: pd.DataFrame,
+                   dtp: pd.DataFrame, ext: pd.DataFrame,
+                   close: pd.DataFrame) -> dict:
+    """The four EXT-day populations one §4 panel runs on.
+
+    ``ids=None`` is the FULL panel and applies NO restriction at all, so FULL is the
+    phase-0 pipeline with the arm's mask substituted and nothing else moved. The
+    DISJOINT panel restricts every population to its episodes: cases, the CONTINUED
+    control pool, the all-EXT-day E1b/ruler population, and the ruler's own mask.
+    `dtp` is the day→episode map — `episode_peaks` emits one row per EXT day inside
+    an episode, so no interval join is needed and no EXT day is assigned twice.
+    """
+    if ids is None:
+        return {"panel": name, "race": race, "dtp": dtp, "ext": ext,
+                "restricted": False}
+    keep_dtp = dtp[dtp["episode_id"].isin(ids)]
+    keyed = race.merge(keep_dtp[["segment", "date", "episode_id"]],
+                       on=["segment", "date"], how="left")
+    keep_race = keyed[keyed["episode_id"].notna()].drop(columns=["episode_id"])
+    sub = pd.DataFrame(False, index=ext.index, columns=ext.columns)
+    for seg, g in keep_dtp.groupby("segment", sort=False):
+        if seg in sub.columns:
+            sub.loc[sub.index.isin(pd.DatetimeIndex(g["date"])), seg] = True
+    return {"panel": name, "race": keep_race, "dtp": keep_dtp,
+            "ext": sub & ext, "restricted": True}
+
+
+def run_w2_panel(panel_name: str, sl: dict, *, episodes: pd.DataFrame,
+                 close: pd.DataFrame, gates: pd.DataFrame, feats: pd.DataFrame,
+                 seed: int, quick: bool, run_e_series: bool | str) -> dict:
+    """One §4 panel end to end: cases → matched controls → E1 → (E1b / E2 / ruler).
+
+    ``run_e_series="floor"`` is the DISJOINT rule: the E-series runs only where the
+    ≥12 distinct peak-month floor is met, and the floor verdict prints either way.
+    """
+    race, dtp, ext = sl["race"], sl["dtp"], sl["ext"]
+    out: dict = {"panel": panel_name, "restricted_to_panel_episodes": sl["restricted"]}
+    ep_ids = set(dtp["episode_id"]) if not dtp.empty else set()
+    eps = episodes[episodes["episode_id"].isin(ep_ids)] if sl["restricted"] else episodes
+    e1_eps = eps[~eps["micro"]]
+    topped_eps = e1_eps[e1_eps["outcome"] == "TOPPED"]
+    out["episodes"] = {
+        "n_episodes": int(len(eps)),
+        "n_micro_under_5_ext_days": int(eps["micro"].sum()) if len(eps) else 0,
+        "n_e1_eligible": int(len(e1_eps)),
+        "n_names": int(eps["ticker"].nunique()) if len(eps) else 0,
+        "n_topped_e1_eligible": int(len(topped_eps)),
+        "outcomes": {k: int(v) for k, v in
+                     eps["outcome"].value_counts().to_dict().items()} if len(eps) else {},
+        "n_peak_window_censored": (int(eps["peak_window_censored"].sum())
+                                   if len(eps) else 0),
+        "n_ext_days": int(ext.to_numpy().sum()),
+    }
+    out["race"] = {"counts": {k: int(v) for k, v in
+                              race["label"].value_counts().to_dict().items()}}
+    if topped_eps.empty or race.empty:
+        out["null_reason"] = "no TOPPED E1-eligible episodes on this panel"
+        return out
+
+    dtp_e1 = dtp[dtp["episode_id"].isin(set(e1_eps["episode_id"]))]
+    topped_ids = set(topped_eps["episode_id"])
+    cases = dtp_e1[dtp_e1["episode_id"].isin(topped_ids)
+                   & dtp_e1["days_to_peak"].isin(ta.CASE_OFFSETS)].copy()
+    cases["offset"] = cases["days_to_peak"]
+    cases["case_id"] = cases["episode_id"] + "@" + cases["offset"].astype(str)
+    pool = race[race["label"] == "CONTINUED"][["segment", "ticker", "date"]].copy()
+    pool["case_id"] = ["p%d" % i for i in range(len(pool))]
+    out["cases"] = {"n_cases": int(len(cases)),
+                    "n_case_episodes": int(cases["episode_id"].nunique()),
+                    "per_offset": {int(k): int(v) for k, v in
+                                   cases["offset"].value_counts().to_dict().items()},
+                    "n_control_candidates": int(len(pool))}
+    cases = _pick(gates, cases).dropna(subset=["r126", "rv63", "dvol21"])
+    pool = _pick(gates, pool).dropna(subset=["r126", "rv63", "dvol21"])
+    say(f"[W2 {panel_name}] {len(cases)} cases vs {len(pool)} CONTINUED candidates")
+    pairs, diag = ta.matched_controls(cases, pool)
+    out["matching"] = dict(diag)
+    out["matching"]["bin_edges"] = ("quintile/tercile edges cut WITHIN CALENDAR "
+                                    "QUARTER over this panel's own case+control "
+                                    "union (prereg §2: bins are population-relative)")
+    say(f"[W2 {panel_name}] matched {diag['n_matched']}/{diag['n_cases']} cases")
+    if pairs.empty:
+        out["null_reason"] = "no matched pairs on this panel"
+        return out
+
+    b = ta.BOOTSTRAP_B if not quick else 400
+    case_deltas = ta.matched_deltas(pairs, feats)
+    ep_deltas = ta.episode_deltas(case_deltas, cases, eps)
+    stats = ta.matched_delta_stats(ep_deltas, b=b, seed=seed,
+                                   coverage_floor=COVERAGE_FLOOR)
+    n_months = (int(pd.to_datetime(ep_deltas["peak_date"]).dt.to_period("M").nunique())
+                if not ep_deltas.empty else 0)
+    floor_met = n_months >= ta.MIN_EPISODE_MONTHS
+    out["e1"] = {
+        "aggregation": "episode-first (median over the episode's {21,10,5} snapshots)",
+        "bootstrap_b": b, "seed": seed,
+        "n_case_sets": int(len(case_deltas)), "n_episodes": int(len(ep_deltas)),
+        "n_distinct_peak_months": n_months,
+        "min_peak_months_required": ta.MIN_EPISODE_MONTHS,
+        "meets_peak_month_floor": bool(floor_met),
+        "peak_month_floor_verdict": (
+            f"{n_months} distinct episode-peak months vs the "
+            f"{ta.MIN_EPISODE_MONTHS} required — "
+            + ("floor MET" if floor_met else "floor NOT met")),
+        "min_finite_controls": ta.MIN_FINITE_CONTROLS,
+        "feature_coverage_floor": COVERAGE_FLOOR,
+        "snapshots_per_episode": (_describe(ep_deltas["n_snapshots"])
+                                  if not ep_deltas.empty else _describe([])),
+    }
+    out["confirmatory"] = {
+        "legs": list(W2_CONFIRMATORY_LEGS),
+        "test": "one-sided in the declared direction, from the same episode-peak-month "
+                "block bootstrap; BH-FDR over exactly these 5 tests",
+        "one_sided_derivation": (w2_one_sided_p.__doc__ or "").strip().split("\n")[0],
+        "q_threshold": ta.FDR_Q,
+        "table": w2_confirmatory_table(stats, b=b),
+    }
+    out["exploratory"] = w2_exploratory_table(stats, ranked=(panel_name == "FULL"))
+    out["feature_coverage"] = {f: float(feats[f].notna().mean())
+                               for f in ta.FEATURES if f in feats.columns}
+    out["features_below_coverage_floor"] = sorted(
+        f for f, c in out["feature_coverage"].items() if c < COVERAGE_FLOOR)
+
+    # E2 / E1b / ruler ride on whatever SEPARATED on this panel — the union of the
+    # confirmatory legs that cleared their one-sided q and the exploratory flags.
+    # These are descriptive readouts (§4.7/§4.8), never a second registered test, so
+    # the leg set carries no inferential weight; it is stated rather than implied.
+    conf_sep = [r["feature"] for r in out["confirmatory"]["table"]
+                if r.get("separates_one_sided")]
+    survivors = sorted(set(conf_sep) | set(out["exploratory"]["separating"]))
+    out["survivors"] = survivors
+    out["survivor_definition"] = ("confirmatory legs clearing the one-sided q on this "
+                                  "panel, plus exploratory features flagged separating "
+                                  "— descriptive readouts only")
+    do_e = bool(floor_met) if run_e_series == "floor" else bool(run_e_series)
+    if not do_e:
+        out["e_series_skipped"] = (
+            "E1b / E2 / ruler are run on FULL panels and on DISJOINT panels only where "
+            f"the >={ta.MIN_EPISODE_MONTHS} distinct peak-month floor is met "
+            f"(prereg §2); this panel: {out['e1']['peak_month_floor_verdict']}")
+        return out
+
+    obs = {r["feature"]: r["median_delta"] for r in _records(stats)}
+    grades = {f: "EXPLORATORY-DISCOVERY" for f in out["exploratory"]["separating"]}
+    say(f"[W2 {panel_name}] E1b pooled AUC increment")
+    out["e1b"] = _e1b(feats, race, eps, race[["segment", "date"]], close.index,
+                      seed=seed, quick=quick)
+    say(f"[W2 {panel_name}] E2 lead-time profiles on {len(survivors)} leg(s)")
+    e2_days = _pick(gates, _e2_case_days(dtp_e1, topped_ids)) \
+        .dropna(subset=["r126", "rv63", "dvol21"])
+    out["e2"] = _e2(e2_days, pool, feats, survivors, eps, grades,
+                    seed=seed, quick=quick)
+    say(f"[W2 {panel_name}] remaining-upside ruler on {len(survivors)} leg(s)")
+    out["ruler"] = _ruler(feats, ext, eps, close, pool, survivors, obs,
+                          seed=seed, quick=quick)
+    return out
+
+
+def run_w2_arm(arm: str, panel: dict, meta: dict, data_root: Path, *, seed: int,
+               quick: bool, n_files: int = 0) -> dict:
+    """One tier-widening arm: variant EXT mask, then the frozen phase-0 pipeline."""
+    close = panel["close"]
+    volume = panel.get("volume")
+    dvol = (close * volume).reindex_like(close) if volume is not None and not volume.empty \
+        else pd.DataFrame(np.nan, index=close.index, columns=close.columns)
+    raw_close, raw_dvol = panel.get("raw_close"), panel.get("raw_dvol")
+    split_day = panel.get("split_day")
+    floors = {"raw_close_df": raw_close if raw_close is not None and not raw_close.empty
+              else None,
+              "raw_dollar_vol_df": raw_dvol if raw_dvol is not None and not raw_dvol.empty
+              else None,
+              "split_day_df": split_day if split_day is not None and not split_day.empty
+              else None}
+    out: dict = {"arm": arm, "track": "W", "panel": dict(meta)}
+    out["panel"].update({
+        "n_sessions": int(close.shape[0]), "n_segments": int(close.shape[1]),
+        "first_session": str(close.index.min().date()) if len(close) else None,
+        "last_session": str(close.index.max().date()) if len(close) else None,
+        "floors_on_raw_prints": floors["raw_close_df"] is not None,
+        "panel_cache_shared_with_phase0": True,
+        "panel_cache_sharing_basis": (
+            "panel content is upstream of every EXT mask — split repair reads raw "
+            "prints, identity segmentation reads tape gaps and repaired-close "
+            "up-ratios, and no panel leg is a function of an extension definition"),
+    })
+
+    elig = ta.eligibility_mask(close, dvol, **floors)
+    min_cross_names = 20 if not quick else 1
+    eqw = ta.equal_weight_median_index(close, elig, min_names=min_cross_names)
+    cross_returns = ta.cross_sectional_median_returns(close, elig,
+                                                      min_names=min_cross_names)
+    out["prefix_parity_gate"] = assert_prefix_parity(panel, f"W2-{arm}", eqw,
+                                                     cross_returns)
+    out["prefix_parity_gate"]["note"] = (
+        "the §3 repair gate is a PANEL property; its internal episode anchor uses the "
+        "primary variant, so this receipt is about the repair, not about the arm")
+
+    say(f"[W2 {arm}] EXT mask (variant={arm}) and the phase-0 primary mask for §4 panels")
+    ext = ta.extended_mask(close, dvol, variant=arm, high_df=panel.get("high"),
+                           low_df=panel.get("low"), **floors)
+    ext_primary = ta.extended_mask(close, dvol, variant="primary",
+                                   high_df=panel.get("high"), low_df=panel.get("low"),
+                                   **floors)
+    n_ext = int(ext.to_numpy().sum())
+    per_day = ext.sum(axis=1)
+    out["ext"] = {
+        "variant": arm, "n_ext_days": n_ext,
+        "n_ext_days_primary": int(ext_primary.to_numpy().sum()),
+        "n_ext_days_shared_with_primary": int((ext & ext_primary).to_numpy().sum()),
+        "n_eligible_days": int(elig.to_numpy().sum()),
+        "n_segments_with_ext": int((ext.sum() > 0).sum()),
+        "first_ext_day": (str(per_day[per_day > 0].index.min().date())
+                          if bool((per_day > 0).any()) else None),
+        "n_sessions_zero_ext": int((per_day == 0).sum()),
+    }
+    out["census"] = _instrument_census(panel, ext, elig, n_files)
+    say(f"[W2 {arm}] {n_ext:,} EXT days on {out['ext']['n_segments_with_ext']} segments "
+        f"({out['ext']['n_ext_days_shared_with_primary']:,} shared with primary)")
+    if n_ext == 0:
+        out["null_reason"] = "no EXT days under this arm"
+        return out
+
+    say(f"[W2 {arm}] episodes")
+    episodes = ta.extract_episodes(ext, close)
+    say(f"[W2 {arm}] race labels on {len(episodes)} episodes")
+    race = ta.race_labels(close, ext)
+    say(f"[W2 {arm}] episode peaks")
+    episodes, dtp = ta.episode_peaks(close, episodes, ext)
+
+    say(f"[W2 {arm}] §4 panel assignment (arm episodes vs the primary EXT-day set)")
+    overlap = w2_episode_overlap(ext, ext_primary, close, episodes)
+    counts = overlap["overlap_class"].value_counts().to_dict() if not overlap.empty else {}
+    disjoint_ids = set(overlap.loc[overlap["overlap_class"] == "DISJOINT", "episode_id"])
+    out["episode_census"] = {
+        "n_episodes": int(len(episodes)),
+        "n_disjoint": int(counts.get("DISJOINT", 0)),
+        "n_partial_overlap": int(counts.get("PARTIAL_OVERLAP", 0)),
+        "n_fully_shared": int(counts.get("FULLY_SHARED", 0)),
+        "n_unassigned": int(len(episodes) - len(overlap)),
+        "share_shared_days": _describe(overlap["share_shared"]) if not overlap.empty
+        else _describe([]),
+        "definition": ("DISJOINT = the episode's arm EXT-day set shares ZERO "
+                       "(segment, session) days with the phase-0 primary EXT-day set"),
+    }
+    say(f"[W2 {arm}] episode census {out['episode_census']['n_disjoint']} disjoint / "
+        f"{out['episode_census']['n_partial_overlap']} partial / "
+        f"{out['episode_census']['n_fully_shared']} fully shared")
+
+    gates = _gate_context(close, dvol)
+    say(f"[W2 {arm}] §5 coverage gate")
+    out["coverage_gate"] = w2_coverage_census(close, ext, episodes, gates, data_root,
+                                              arm=arm)
+    ex = out["coverage_gate"]["exemplars"]
+    say(f"[W2 {arm}] coverage: roster {out['coverage_gate']['n_distinct_names_on_vintage_date']} "
+        f"names; AI leaders in-roster {len(ex['ai_leaders']['in_roster_on_vintage_date'])}"
+        f"/{ex['ai_leaders']['n_watched']}, ever-episode "
+        f"{len(ex['ai_leaders']['has_any_arm_episode_ever'])}; miners in-roster "
+        f"{len(ex['gold_pgm_miners']['in_roster_on_vintage_date'])}"
+        f"/{ex['gold_pgm_miners']['n_watched']}, ever-episode "
+        f"{len(ex['gold_pgm_miners']['has_any_arm_episode_ever'])}")
+
+    if _w2_wall_exceeded():
+        out["deferral"] = _w2_deferral(arm, "after the coverage gate")
+        return out
+
+    # ONE feature pass for both panels: the FULL panel's need-set is every EXT day
+    # (E1b/ruler are pinned to all of them), and DISJOINT is a subset of it, so a
+    # second pass would recompute identical values under the same arm episodes.
+    need = race[["segment", "ticker", "date"]].drop_duplicates(["segment", "date"])
+    say(f"[W2 {arm}] features on {len(need):,} (segment, day) points")
+    bars = _segment_bars(panel, sorted(set(need["segment"])))
+    feats = ta.feature_library(bars, eqw, need[["segment", "date"]], episodes=episodes,
+                               cross_sectional_returns=cross_returns)
+    out["feature_panel"] = {
+        "n_rows": int(len(feats)), "n_segments": int(need["segment"].nunique()),
+        "arm_keyed": True,
+        "arm_keying_basis": ("the F family (F1_episode_age / F2_drawdown_in_episode / "
+                             "F5_reclaim_speed) is anchored on `episodes`, which come "
+                             "from this arm's EXT mask — feature values are NOT "
+                             "EXT-definition-independent, so this panel is built per "
+                             "arm and never shared with the phase-0 pass"),
+    }
+
+    out["panels"] = {}
+    for panel_name, ids in (("FULL", None), ("DISJOINT", disjoint_ids)):
+        if _w2_wall_exceeded():
+            out["deferral"] = _w2_deferral(arm, f"before the {panel_name} panel")
+            break
+        say(f"[W2 {arm}] ── {panel_name} panel ──")
+        sl = w2_panel_slice(panel_name, ids, race, dtp, ext, close)
+        out["panels"][panel_name] = run_w2_panel(
+            panel_name, sl, episodes=episodes, close=close, gates=gates, feats=feats,
+            seed=seed, quick=quick,
+            run_e_series=(True if panel_name == "FULL" else "floor"))
+        say(f"[W2 {arm}] {panel_name} panel complete")
+
+    out["confirmatory_grades"] = w2_grade(out.get("panels", {}))
+    return out
+
+
+#: The leg the G0.5 red-team asks a current-cohort question about. Phase-0's review
+#: demanded the same read for D3; W2's confirmed leg is B2, so B2 is what gets read.
+W2_ROSTER_READ_FEATURE = "B2_rsi14"
+
+
+def w2_vintage_roster_read(arm: str, panel: dict, arm_result: dict, *, seed: int,
+                           quick: bool,
+                           feature: str = W2_ROSTER_READ_FEATURE) -> dict:
+    """POST-HOC descriptive read: where the vintage-date roster sits on one leg.
+
+    Display-tier reporting, computed AFTER the confirmatory results were read and
+    therefore carrying no confirmatory standing whatever it shows — it answers "what
+    does the discovered leg say about the cohort that exists on the vintage date",
+    which is the current-cohort question phase-0's G0.5 red-team asked of D3.
+
+    Three levels are put side by side on ONE construction: the roster's own value on
+    the vintage date, the DISJOINT panel's topped-episode value, and that panel's
+    matched-control value. Case and control levels are aggregated exactly as §4.5
+    aggregates the contrast — per case the control arm is the MEAN of its finite
+    controls, then each episode collapses to the median over its {21,10,5}
+    snapshots, then the median is taken across DISTINCT EPISODES — so the two are on
+    the same footing as the Δ the arm reports, not a snapshot-pooled lookalike.
+
+    The fire threshold is READ from the arm's own DISJOINT ruler leg rather than
+    recomputed, so "at or beyond" means the same thing here as it does in the ruler.
+    Feature values come from `ta.feature_library`; no statistic here re-implements a
+    feature the engine already owns.
+    """
+    close = panel["close"]
+    volume = panel.get("volume")
+    dvol = (close * volume).reindex_like(close) if volume is not None and not volume.empty \
+        else pd.DataFrame(np.nan, index=close.index, columns=close.columns)
+    floors = {k: (v if v is not None and not v.empty else None) for k, v in
+              (("raw_close_df", panel.get("raw_close")),
+               ("raw_dollar_vol_df", panel.get("raw_dvol")),
+               ("split_day_df", panel.get("split_day")))}
+    out: dict = {
+        "post_hoc": True, "arm": arm, "feature": feature,
+        "provenance": ("computed AFTER the confirmatory results for this arm were "
+                       "read, at the commissioning session's request; descriptive "
+                       "display-tier reporting, not a registered quantity and not "
+                       "part of the prereg's declared test set"),
+        "tier": "research/display tier; no rank, no size, no gate, no exit rule",
+    }
+    leg = ((arm_result.get("panels", {}).get("DISJOINT", {}).get("ruler", {}) or {})
+           .get("legs", {}) or {}).get(feature)
+    if not leg or leg.get("threshold") is None:
+        out["threshold_available"] = False
+        out["reason"] = (f"{feature} carries no DISJOINT ruler leg on this arm, so "
+                         "there is no fire threshold to read the roster against")
+        return out
+
+    thr, tail = float(leg["threshold"]), float(leg["control_tail"])
+    say(f"[W2 {arm}] post-hoc roster read on {feature} "
+        f"(DISJOINT ruler threshold {thr:.4f}, control tail {tail:.2f})")
+    elig = ta.eligibility_mask(close, dvol, **floors)
+    min_cross = 20 if not quick else 1
+    eqw = ta.equal_weight_median_index(close, elig, min_names=min_cross)
+    xr = ta.cross_sectional_median_returns(close, elig, min_names=min_cross)
+    ext = ta.extended_mask(close, dvol, variant=arm, high_df=panel.get("high"),
+                           low_df=panel.get("low"), **floors)
+    prim = ta.extended_mask(close, dvol, variant="primary", high_df=panel.get("high"),
+                            low_df=panel.get("low"), **floors)
+    episodes = ta.extract_episodes(ext, close)
+    race = ta.race_labels(close, ext)
+    episodes, dtp = ta.episode_peaks(close, episodes, ext)
+    ov = w2_episode_overlap(ext, prim, close, episodes)
+    ids = set(ov.loc[ov["overlap_class"] == "DISJOINT", "episode_id"])
+    need = race[["segment", "ticker", "date"]].drop_duplicates(["segment", "date"])
+    feats = ta.feature_library(_segment_bars(panel, sorted(set(need["segment"]))), eqw,
+                               need[["segment", "date"]], episodes=episodes,
+                               cross_sectional_returns=xr)
+
+    # ── the vintage-date roster ──────────────────────────────────────────────
+    asof = close.index.max()
+    row = ext.loc[asof]
+    live = list(row.index[row.fillna(False).to_numpy(dtype=bool)])
+    r = feats[(feats["date"] == asof) & (feats["segment"].isin(live))]
+    vals = pd.to_numeric(r[feature], errors="coerce")
+    finite = vals.dropna()
+    fires = (finite >= thr) if tail >= 0.5 else (finite <= thr)
+    out.update({
+        "vintage_date": str(pd.Timestamp(asof).date()),
+        "threshold_available": True,
+        "fire_threshold": thr, "control_tail": tail,
+        "fires_when": "at or above" if tail >= 0.5 else "at or below",
+        "threshold_source": ("this arm's DISJOINT-panel ruler leg for the feature — "
+                             "read, not recomputed"),
+        "n_roster_segments": len(live),
+        "n_roster_names": len({ta.segment_ticker(s) for s in live}),
+        "n_roster_with_finite_feature": int(len(finite)),
+        "n_roster_at_or_beyond_threshold": int(fires.sum()),
+        "share_roster_at_or_beyond_threshold": (
+            round(float(fires.mean()), 4) if len(finite) else None),
+        "share_denominator": "roster segments carrying a finite feature value",
+        "roster_names_at_or_beyond_threshold": sorted(
+            r.loc[fires[fires].index, "ticker"].astype(str)) if bool(fires.any()) else [],
+    })
+
+    # ── the DISJOINT panel's own two levels, on the §4.5 aggregation ─────────
+    sl = w2_panel_slice("DISJOINT", ids, race, dtp, ext, close)
+    d_dtp, d_race = sl["dtp"], sl["race"]
+    eps = episodes[episodes["episode_id"].isin(set(d_dtp["episode_id"]))]
+    e1_eps = eps[~eps["micro"]]
+    topped = set(e1_eps.loc[e1_eps["outcome"] == "TOPPED", "episode_id"])
+    d_e1 = d_dtp[d_dtp["episode_id"].isin(set(e1_eps["episode_id"]))]
+    cases = d_e1[d_e1["episode_id"].isin(topped)
+                 & d_e1["days_to_peak"].isin(ta.CASE_OFFSETS)].copy()
+    cases["case_id"] = cases["episode_id"] + "@" + cases["days_to_peak"].astype(str)
+    pool = d_race[d_race["label"] == "CONTINUED"][["segment", "ticker", "date"]].copy()
+    pool["case_id"] = ["p%d" % i for i in range(len(pool))]
+    gates = _gate_context(close, dvol)
+    cases = _pick(gates, cases).dropna(subset=["r126", "rv63", "dvol21"])
+    pool = _pick(gates, pool).dropna(subset=["r126", "rv63", "dvol21"])
+    pairs, diag = ta.matched_controls(cases, pool)
+
+    def _episode_first(frame: pd.DataFrame, col: str) -> tuple[float | None, int]:
+        """Episode-first median of a LEVEL: snapshots -> episode median -> across."""
+        if frame.empty:
+            return None, 0
+        per_ep = frame.groupby("episode_id")[col].median()
+        per_ep = per_ep[np.isfinite(per_ep)]
+        return ((float(per_ep.median()), int(len(per_ep))) if len(per_ep) else (None, 0))
+
+    fp = feats.copy()
+    fp["date"] = pd.to_datetime(fp["date"])
+    key = fp.set_index(["segment", "date"])[feature]
+    key = key[~key.index.duplicated(keep="first")]
+    case_lv = cases[["episode_id", "segment", "date"]].copy()
+    case_lv["date"] = pd.to_datetime(case_lv["date"])
+    case_lv[feature] = key.reindex(
+        pd.MultiIndex.from_arrays([case_lv["segment"], case_lv["date"]])).to_numpy()
+    case_med, n_case_eps = _episode_first(case_lv, feature)
+
+    ctrl_med, n_ctrl_eps = None, 0
+    if not pairs.empty:
+        p = pairs.copy()
+        p["control_date"] = pd.to_datetime(p["control_date"])
+        p[feature] = key.reindex(pd.MultiIndex.from_arrays(
+            [p["control_segment"], p["control_date"]])).to_numpy()
+        # §4.5: the control arm of a matched set is the MEAN of its finite controls.
+        per_case = p.groupby("case_id")[feature].mean().rename(feature).reset_index()
+        per_case = per_case.merge(cases[["case_id", "episode_id"]], on="case_id",
+                                  how="left")
+        ctrl_med, n_ctrl_eps = _episode_first(per_case, feature)
+
+    out["levels"] = {
+        "aggregation": ("episode-first: per case the control arm is the mean of its "
+                        "finite controls, each episode collapses to the median over "
+                        "its {21,10,5} snapshots, then the median across episodes"),
+        "vintage_roster_median": (float(finite.median()) if len(finite) else None),
+        "disjoint_topped_episode_median": case_med,
+        "disjoint_matched_control_median": ctrl_med,
+        "n_roster_finite": int(len(finite)),
+        "n_disjoint_topped_episodes": n_case_eps,
+        "n_disjoint_control_episodes": n_ctrl_eps,
+        "n_matched_cases": int(diag.get("n_matched", 0)),
+    }
+    lv = out["levels"]
+    say(f"[W2 {arm}] roster {feature} median {lv['vintage_roster_median']} vs DISJOINT "
+        f"topped {lv['disjoint_topped_episode_median']} vs matched-control "
+        f"{lv['disjoint_matched_control_median']}; "
+        f"{out['n_roster_at_or_beyond_threshold']}/{out['n_roster_with_finite_feature']} "
+        "roster names at or beyond the ruler threshold")
+    return out
+
+
+def _w2_deferral(arm: str, where: str) -> dict:
+    """§6 declared fallback — print the deferral, never a silent cap or a subsample."""
+    hrs = (time.time() - _T0) / 3600.0
+    msg = (f"arm {arm} passed the declared {W2_WALL_LIMIT_SECONDS / 3600:.0f} h wall "
+           f"at {hrs:.2f} h ({where}); prereg §6 defers the arm to its own wave with "
+           "the reason printed rather than capping or subsampling it")
+    say(f"[W2 {arm}] DEFERRED — {msg}")
+    return {"deferred": True, "wall_hours": hrs,
+            "wall_limit_hours": W2_WALL_LIMIT_SECONDS / 3600.0,
+            "stopped_at": where, "reason": msg,
+            "subsampled": False, "capped": False}
+
+
+def w2_grade(panels: dict) -> dict:
+    """§3 grades — DISJOINT is where a generalization claim lives; FULL is support."""
+    def _row(panel: str, feat: str) -> dict | None:
+        t = (panels.get(panel, {}).get("confirmatory", {}) or {}).get("table", [])
+        return next((r for r in t if r["feature"] == feat), None)
+
+    out: dict = {}
+    for feat, direction in W2_CONFIRMATORY:
+        dj, fu = _row("DISJOINT", feat), _row("FULL", feat)
+        dj_ok = bool(dj and dj.get("separates_one_sided"))
+        fu_ok = bool(fu and fu.get("separates_one_sided"))
+        grade = ("W2-CONFIRMED" if dj_ok else
+                 "W2-PARTIAL" if fu_ok else "W2-NOT-CONFIRMED")
+        keep = ("median_delta", "ci_lo", "ci_hi", "q_value_one_sided",
+                "p_value_one_sided", "n_episodes", "n_blocks", "coverage",
+                "sign_matches_declared", "meets_peak_month_floor")
+        out[feat] = {
+            "declared_direction": direction, "grade": grade,
+            "disjoint": ({k: dj.get(k) for k in keep} if dj else None),
+            "full": ({k: fu.get(k) for k in keep} if fu else None),
+        }
+    counts: dict[str, int] = {}
+    for v in out.values():
+        counts[v["grade"]] = counts.get(v["grade"], 0) + 1
+    return {"grades": out, "counts": counts,
+            "rule": ("W2-CONFIRMED = DISJOINT sign matches the declared direction AND "
+                     "one-sided BH q <= 0.10; W2-PARTIAL = the same on FULL only; "
+                     "W2-NOT-CONFIRMED = neither. Printed with equal prominence.")}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # report
 # ══════════════════════════════════════════════════════════════════════════════
 def _fmt(x, nd: int = 4) -> str:
@@ -2678,6 +3555,124 @@ def _git_sha() -> str:
         return "unknown"
 
 
+def _last_commit_for(path: str) -> str:
+    """The commit that last touched a path — resolved at run time, never hardcoded.
+
+    The G0.1 freeze proof is the ORDER (the prereg lands before any result), and
+    that survives a rebase; a literal short SHA does not, because a branch rebased
+    onto a moving main rewrites it. The content hash beside this field is the
+    rebase-invariant half of the proof.
+    """
+    try:
+        r = subprocess.run(["git", "log", "-1", "--format=%h", "--", path], cwd=_REPO,
+                           capture_output=True, text=True, timeout=20)
+        return r.stdout.strip() or "unknown"
+    except Exception:  # noqa: BLE001
+        return "unknown"
+
+
+def w2_out_json(arm: str, quick: int | None = None) -> Path:
+    """The arm-keyed deliverable path (prereg §6). The arm rides in the FILENAME."""
+    return _REPO / (f"data/research/top_anatomy_w2_{arm}_summary"
+                    + (f"_quick{quick}" if quick else "") + ".json")
+
+
+def _main_w2_roster_read(a, *, quick: bool) -> int:
+    """`--w2-roster-read`: add the post-hoc roster read to an ALREADY-WRITTEN summary.
+
+    Kept as its own mode rather than folded into `run_w2_arm` for one reason: the
+    read was requested AFTER the arms had reported, and a run that emitted it inline
+    would present it as part of the preregistered output. Injecting it under a
+    `post_hoc` key from a named command keeps the artifact reproducible AND keeps its
+    standing legible — the block says what it is, and so does the command that made it.
+    """
+    arm = a.w2_arm
+    path = a.w2_roster_read
+    summary = json.loads(path.read_text())
+    if summary.get("arm") != arm:
+        raise SystemExit(f"{path} is arm {summary.get('arm')!r}, not {arm!r}")
+    cache = a.data_root / CACHE_SUBDIR / (f"W_quick{a.quick}" if quick else "W")
+    built = build_panel_w(a.data_root, cache, quick=a.quick, allow_stale=a.allow_stale)
+    block = w2_vintage_roster_read(arm, built["panel"], summary["arm_result"],
+                                   seed=a.seed, quick=quick)
+    block["computed_at_utc"] = pd.Timestamp.now("UTC").isoformat()
+    block["computed_at_git_sha"] = _git_sha()
+    block["reproduce"] = ("python -m scripts.research_top_anatomy_phase0 --data-root "
+                          f"{a.data_root} --w2-arm {arm} --w2-roster-read {path}"
+                          + (" --allow-stale" if a.allow_stale else ""))
+    summary["vintage_roster_b2_read"] = block
+    path.write_text(json.dumps(summary, indent=2, default=str))
+    say(f"wrote the post-hoc roster read into {path}")
+    return 0
+
+
+def _main_w2(a, *, quick: bool) -> int:
+    """The `--w2-arm` entry point: track W, one arm, one summary, no report prose."""
+    arm = a.w2_arm
+    if a.track not in ("W", "both"):
+        raise SystemExit("W2 runs track W only (prereg §2) — drop --track or pass W")
+    prereg = _REPO / W2_PREREG
+    cache_root = a.data_root / CACHE_SUBDIR
+    # The panel cache is SHARED with phase-0 on purpose: panel content carries no
+    # extension definition (see `_finish_panel`), and `_load_cached`'s arm stamp is
+    # what keeps anything downstream of an EXT mask from being read off it.
+    cache = cache_root / (f"W_quick{a.quick}" if quick else "W")
+    out_json = a.out_json if a.out_json != _REPO / "data/research/top_anatomy_p0_summary.json" \
+        else w2_out_json(arm, a.quick)
+    summary = {
+        "family": W2_FAMILY,
+        "arm": arm,
+        "run_date": pd.Timestamp.now("UTC").strftime("%Y-%m-%d"),
+        "run_timestamp_utc": pd.Timestamp.now("UTC").isoformat(),
+        "git_sha": _git_sha(),
+        "prereg": W2_PREREG,
+        "prereg_frozen": "2026-08-11",
+        "prereg_sha256": _sha256(prereg),
+        "prereg_frozen_commit": _last_commit_for(W2_PREREG),
+        "phase0_prereg": "research/top_anatomy/TOPA_PHASE0_PREREG.md",
+        "phase0_summary": "data/research/top_anatomy_p0_summary.json",
+        "seed": a.seed,
+        "quick": a.quick,
+        "bootstrap_b": ta.BOOTSTRAP_B if not quick else 400,
+        "track": "W",
+        "track_note": ("track W only — the D-track's absence is a declared decision "
+                       "(prereg §2), not an omission"),
+        "reproduce": ("python -m scripts.research_top_anatomy_phase0 "
+                      f"--data-root {a.data_root} --w2-arm {arm}"
+                      + (f" --quick {a.quick}" if quick else "")
+                      + (" --allow-stale" if a.allow_stale else "")),
+        # The W2 tape is DELIBERATELY the phase-0 vintage (prereg §2: "the SAME
+        # vintage as phase-0 — tier definition is the only moved variable"; §7
+        # re-verified it at 2026-07-02 and accepted same-vintage comparability as a
+        # feature). #5319's local-mirror refusal fires at 20 trading sessions
+        # behind, which that vintage now is, so a W2 re-run needs --allow-stale —
+        # the guard's banner is the receipt that the staleness is chosen, not
+        # unnoticed. Refreshing the store instead would BREAK the prereg.
+        "vintage_is_prereg_declared": True,
+        "vintage_note": ("prereg §2 pins the phase-0 tape vintage; post-#5319 a "
+                         "re-run requires --allow-stale, and the printed banner is "
+                         "the receipt that the vintage is chosen rather than stale "
+                         "by accident"),
+        "allow_stale": bool(a.allow_stale),
+        "engine_frozen": ("engine/top_anatomy.py is byte-frozen at main for this wave; "
+                          "the arms are its existing extended_mask(variant=...) masks"),
+        "tier": ("research/display tier, zero scored authority; AVOID-not-SHORT; "
+                 "no rank, no size, no gate, no exit rule"),
+        "wall_limit_seconds": W2_WALL_LIMIT_SECONDS,
+    }
+    built = build_panel_w(a.data_root, cache, quick=a.quick,
+                          allow_stale=a.allow_stale)
+    n_files = _source_file_count(a.data_root, "W", a.quick)
+    summary["arm_result"] = run_w2_arm(arm, built["panel"], built["meta"], a.data_root,
+                                       seed=a.seed, quick=quick, n_files=n_files)
+    summary["wall_seconds"] = time.time() - _T0
+    out_json.parent.mkdir(parents=True, exist_ok=True)
+    out_json.write_text(json.dumps(summary, indent=2, default=str))
+    say(f"wrote {out_json}")
+    say(f"done in {summary['wall_seconds']:.0f}s")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--data-root", required=True, type=Path,
@@ -2685,10 +3680,20 @@ def main(argv=None) -> int:
     ap.add_argument("--track", choices=("W", "D", "both"), default="both")
     ap.add_argument("--quick", type=int, default=None,
                     help="first N tickers alphabetically per track (smoke run)")
+    ap.add_argument("--w2-arm", choices=W2_ARMS, default=None,
+                    help="run the W2 tier-widening arm instead of phase-0 "
+                         f"({W2_PREREG}); track W only, writes its own summary")
+    ap.add_argument("--w2-roster-read", type=Path, default=None,
+                    help="add the POST-HOC vintage-date roster read for "
+                         f"{W2_ROSTER_READ_FEATURE} to an already-written W2 arm "
+                         "summary (needs --w2-arm); descriptive, never a registered "
+                         "quantity")
     ap.add_argument("--allow-stale", action="store_true",
                     help="run track W against a local massive_stock_day mirror that is "
                          "20+ trading sessions behind (refused by default; the banner "
-                         "still prints and the numbers are as of the mirror's date)")
+                         "still prints and the numbers are as of the mirror's date). "
+                         "REQUIRED by --w2-arm: W2 pins the phase-0 vintage on purpose "
+                         "(prereg §2), and that mirror is now past the refusal bar")
     ap.add_argument("--out-json", type=Path,
                     default=_REPO / "data/research/top_anatomy_p0_summary.json")
     ap.add_argument("--out-report", type=Path,
@@ -2697,6 +3702,12 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
 
     quick = a.quick is not None
+    if a.w2_roster_read is not None:
+        if not a.w2_arm:
+            raise SystemExit("--w2-roster-read needs --w2-arm to name the arm")
+        return _main_w2_roster_read(a, quick=quick)
+    if a.w2_arm:
+        return _main_w2(a, quick=quick)
     cache_root = a.data_root / CACHE_SUBDIR
     tracks = ["W", "D"] if a.track == "both" else [a.track]
     summary = {
