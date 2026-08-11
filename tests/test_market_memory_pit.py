@@ -340,7 +340,9 @@ def test_active_generation_ack_is_single_head_bounded_at_declared_cap(
 
     monkeypatch.setattr(pit, "_read_canonical_object", tracked_read)
 
-    active = pit.FileAsKnownAtReader(tmp_path).read_active_generation()
+    reader = pit.FileAsKnownAtReader(tmp_path)
+    active = reader.read_active_generation()
+    assert reader.read_active_generation() is active
 
     assert active.generation_id == generation["generation_id"]
     assert active.generation_sha256 == head["generation_sha256"]

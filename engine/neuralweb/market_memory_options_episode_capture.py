@@ -1425,9 +1425,9 @@ class OptionsContextDispatcher:
 
     @staticmethod
     def _remove_state(path: Path, proof_path: Path | None = None) -> None:
-        _unlink_durable(path)
         if proof_path is not None:
             _unlink_durable(proof_path)
+        _unlink_durable(path)
 
     def prepare(
         self, *, owner_event: Mapping[str, Any], session_date: str
@@ -1516,9 +1516,40 @@ class OptionsContextDispatcher:
                 ):  # pragma: no cover - owner proof permits recovery
                     raise OptionsEpisodeContextCaptureError(
                         "cannot prove pending capture request"
-                    )
+                )
                 return request["request_id"]
             path = self.prepared / f"{request['request_id']}.json"
+            proof_path = self.prepared_proofs / f"{request['request_id']}.json"
+            owner_path = self.owner_available / f"{request['request_id']}.json"
+            if owner_path.exists() or owner_path.is_symlink():
+                owner = validate_owner_availability_receipt(
+                    _strict_object(
+                        _read_file(
+                            owner_path,
+                            maximum=MAX_REQUEST_BYTES,
+                            label="owner availability receipt",
+                        ),
+                        label="owner availability receipt",
+                        maximum=MAX_REQUEST_BYTES,
+                    ),
+                    request=request,
+                )
+                _write_create_once(
+                    owner_path,
+                    _canonical_bytes(owner),
+                    label="owner availability receipt",
+                    recover_existing=True,
+                )
+                if not path.exists() or not _has_publication_proof(
+                    path,
+                    body,
+                    proof_path=proof_path,
+                    label="prepared capture request",
+                ):
+                    raise OptionsEpisodeContextCaptureError(
+                        "stage cannot repair a precommit after owner availability"
+                    )
+                return request["request_id"]
             if not path.exists() and len(prepared) + len(pending) >= MAX_PENDING_REQUESTS:
                 raise OptionsEpisodeContextCaptureError(
                     "capture outbox reached its uncompleted-request bound"
@@ -1534,7 +1565,7 @@ class OptionsContextDispatcher:
             if not _write_proven_create_once(
                 path,
                 body,
-                proof_path=self.prepared_proofs / f"{request['request_id']}.json",
+                proof_path=proof_path,
                 label="prepared capture request",
                 may_reprove_unproven=True,
             ):  # pragma: no cover - stage is the pre-availability recovery boundary
@@ -1559,7 +1590,11 @@ class OptionsContextDispatcher:
         body = _canonical_bytes(request)
         request_id = request["request_id"]
         expected_binding = owner_availability_binding(request)
-        if owner_binding is not None and dict(owner_binding) != expected_binding:
+        if owner_binding is None:
+            raise OptionsEpisodeContextCaptureError(
+                "commit requires the durable owner availability binding"
+            )
+        if dict(owner_binding) != expected_binding:
             raise OptionsEpisodeContextCaptureError(
                 "owner availability binding differs from the exact request"
             )
@@ -1572,12 +1607,6 @@ class OptionsContextDispatcher:
             receipt_path = self.receipts / f"{request_id}.json"
             owner_path = self.owner_available / f"{request_id}.json"
             owner_receipt = _owner_availability_receipt(request)
-            _write_create_once(
-                owner_path,
-                _canonical_bytes(owner_receipt),
-                label="owner availability receipt",
-                recover_existing=True,
-            )
             if receipt_path.exists():
                 _fsync_directory(self.receipts)
                 validate_transport_receipt(
@@ -1615,6 +1644,12 @@ class OptionsContextDispatcher:
                         )
                     self._remove_state(pending_path, pending_proof)
                 return request_id
+            _write_create_once(
+                owner_path,
+                _canonical_bytes(owner_receipt),
+                label="owner availability receipt",
+                recover_existing=True,
+            )
             if pending_path.exists():
                 existing = _read_file(
                     pending_path,
@@ -1708,15 +1743,9 @@ class OptionsContextDispatcher:
         if expected is None:
             return None
         if owner_binding is None:
-            # Compatibility for direct callers that already own the durable
-            # cutoff: absence still cannot manufacture a request.
-            request_id = expected["request_id"]
-            if not (
-                (self.prepared / f"{request_id}.json").exists()
-                or (self.pending / f"{request_id}.json").exists()
-                or (self.receipts / f"{request_id}.json").exists()
-            ):
-                return None
+            # Legacy availability rows never bound a request and therefore can
+            # only remain an explicit abstention; replay must not manufacture it.
+            return None
         return self.commit(expected, owner_binding=owner_binding)
 
     def enqueue(self, *, owner_event: Mapping[str, Any], session_date: str) -> str | None:

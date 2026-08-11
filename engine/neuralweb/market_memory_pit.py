@@ -1401,13 +1401,13 @@ class FileAsKnownAtReader(market_memory.AsKnownAtReader):
         byte cap even when the pilot reaches its declared capture limit.
         """
 
+        if self._active_snapshot is not None:
+            return self._active_snapshot
         state = _load_store_state(self.root)
         key = (
             str(state.generation["generation_id"]),
             str(state.head["generation_sha256"]),
         )
-        if self._active_snapshot_key == key and self._active_snapshot is not None:
-            return self._active_snapshot
         snapshot = _snapshot_from_generation(
             state.generation,
             generation_sha256=str(state.head["generation_sha256"]),

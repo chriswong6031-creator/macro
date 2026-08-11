@@ -3892,7 +3892,7 @@ class TestProspectiveOptionsMarketMemoryCapture:
         assert [kind for kind, _raw in calls] == ["stage", "commit", "recover"]
 
     def test_replay_promotes_only_an_exact_preavailability_precommit(
-        self, tmp_path,
+        self, tmp_path, monkeypatch,
     ):
         from engine.neuralweb import market_memory_options_episode_capture as capture
 
@@ -3915,12 +3915,14 @@ class TestProspectiveOptionsMarketMemoryCapture:
         assert not (dispatcher.pending / f"{request_id}.json").exists()
 
         assert dispatcher.recover(
-            owner_event=self._enriched_event(), session_date=self.SESSION,
+            owner_event=self._enriched_event(),
+            session_date=self.SESSION,
+            owner_binding=capture.owner_availability_binding(request),
         ) == request_id
         assert not (dispatcher.prepared / f"{request_id}.json").exists()
         assert (dispatcher.pending / f"{request_id}.json").exists()
 
-        # A replay without exact precommitted bytes cannot create a request.
+        # A legacy replay with no binding cannot manufacture a request.
         fresh = capture.OptionsContextDispatcher(
             tmp_path / "fresh-outbox",
             anchor=self._anchor(),
@@ -3932,6 +3934,21 @@ class TestProspectiveOptionsMarketMemoryCapture:
         ) is None
         assert list(fresh.prepared.iterdir()) == []
         assert list(fresh.pending.iterdir()) == []
+
+        # A bound owner obligation with missing precommit bytes becomes an
+        # explicit permanent abstention, never a reconstructed request.
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+        )
+        assert fresh.recover(
+            owner_event=self._enriched_event(),
+            session_date=self.SESSION,
+            owner_binding=capture.owner_availability_binding(request),
+        ) == request_id
+        receipt = json.loads((fresh.receipts / f"{request_id}.json").read_text())
+        assert receipt["status"] == "abstained_missing_proven_precommit"
 
     def test_parent_durability_failure_keeps_precommit_non_sendable(
         self, tmp_path, monkeypatch,
@@ -4561,6 +4578,18 @@ class TestProspectiveOptionsMarketMemoryCapture:
         assert not (
             dispatcher.prepared_proofs / f"{request['request_id']}.json"
         ).exists()
+        owner_path = dispatcher.owner_available / f"{request['request_id']}.json"
+        capture._write_create_once(
+            owner_path,
+            capture._canonical_bytes(capture._owner_availability_receipt(request)),
+            label="owner availability receipt",
+            recover_existing=True,
+        )
+        with pytest.raises(
+            capture.OptionsEpisodeContextCaptureError,
+            match="cannot repair.*after owner availability",
+        ):
+            dispatcher.stage(request)
         assert dispatcher.commit(
             request, owner_binding=capture.owner_availability_binding(request)
         ) == request["request_id"]
