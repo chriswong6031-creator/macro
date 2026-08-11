@@ -201,22 +201,38 @@ def _watch_level(lv: dict[str, Any]) -> str:
     if lv["above50"] and not lv["above20"]:
         return f"getting back over {_fmt(lv['sma20'])} is what flips it back constructive"
     if lv["above20"] and not lv["above50"]:
-        return f"the 50-day at {_fmt(lv['sma50'])} is the level I want reclaimed"
+        # v5: was "is the level I want reclaimed".
+        return f"the 50-day at {_fmt(lv['sma50'])} is the level still overhead"
     # Under both MAs. Near the low → the low is the line that matters; otherwise
     # the nearest overhead line (20-day) is the first hurdle back.
     if lv["pct_from_lo"] <= 8:
-        return f"watching whether {_fmt(lv['lo52'])} holds or gives way"
+        # v5: was "watching whether {lo} holds or gives way".
+        return f"{_fmt(lv['lo52'])} is the line between a base and a new low"
     return f"the 20-day at {_fmt(lv['sma20'])} is the first hurdle back"
 
 
-# Rotated honest tails — all say the same true thing (watching, not advising).
-# No em dashes: copywriter.validate_copy rejects U+2014 as a model tell, and the
-# floor must clear the same bar as the LLM lane it stands in for.
+# THE ROTATED TAIL, v5 (voice doctrine, 2026-08-11). This tuple shipped
+#     "On the watch list, not a call." / "Watching, no position." /
+#     "On the radar, tracking it, not touching it." / "Levels, not advice."
+# and it welded one of those four onto the end of EVERY weekend post. Two of
+# them are named in the doctrine's kill list by exact string ("Watching, no
+# position", "Levels, not advice") and `copywriter.voice_v5_violations` now
+# rejects both plus the "not advice" family outright, so the whole rotation had
+# to go: a confession or a disclaimer is not a read, and this lane was ending
+# every post on one. "On the radar, tracking it, not touching it" additionally
+# trips `copywriter.uncomputed_stance` today (trade decision 'touching' inside a
+# prescriptive frame), so the old tuple could not clear the gate it stands in
+# for either.
+#
+# The replacement carries what a weekend post actually knows: the levels are
+# drawn from the name's own weekly bars, they are re-drawn next weekend, and the
+# next week is what grades them. No em dashes (copywriter.validate_copy rejects
+# U+2014 as a model tell), no first person, no question marks.
 _TAILS: tuple[str, ...] = (
-    "On the watch list, not a call.",
-    "Watching, no position.",
-    "On the radar, tracking it, not touching it.",
-    "Levels, not advice.",
+    "Levels drawn off the weekly bars.",
+    "Re-drawn next weekend.",
+    "The week ahead grades it.",
+    "Same levels until price moves them.",
 )
 
 # X hard limit. A post over this is never emitted (caller skips it).
@@ -226,97 +242,131 @@ _MAX_LEN: int = 280
 # opener AND its own read, so a weekend run (which spans several states) does not
 # read as one template. {wk}=week clause, {s20}/{s50}/{lo}=levels, {px}=close.
 # One level per post: the doctrine demotes technicals, and a post that names the
-# 20-, the 50-, the high and the range position is a data dump, not a read.
-# FOUR shapes per state, not two. A weekend batch is NOT evenly spread across
+# 20-, the 50-, the high and the range position is a data dump, not a read. THE
+# EXECUTABLE FORM IS A SUBSTRING COUNT — a rendered body may contain "-day" AT
+# MOST ONCE (tests/test_marketing_card_parity.py::
+# test_floor_copy_names_at_most_one_moving_average), so a frame that needs to
+# mention the other average says "the longer line" / "both moving averages" and
+# prints only the cited level's number. The v5 rewrite tripped this in 12 of 36
+# frames on the first pass; it is cheap to breach and invisible until rendered.
+# SIX shapes per state, not two. A weekend batch is NOT evenly spread across
 # states: market moves correlate, so a down week puts five of eight names in
 # "downtrend" and they all draw from the same small pool. With two frames that
 # produced literal twins ($AMZN and $META shipped the same sentence with
-# different numbers). Four shapes plus the per-state spread in build_items means
-# a run has to reach five names in ONE state before any shape repeats.
+# different numbers). Six shapes plus the per-state spread in build_items means
+# a run has to reach seven names in ONE state before any shape repeats.
 #
 # No frame may open with the words a headline in the same state uses, or the two
 # halves stutter ("$MSFT is still heavy" over "Still heavy, down 3%...").
+#
+# VOICE DOCTRINE v5 (2026-08-11) — WHAT THE 36 LINES BELOW WERE REWRITTEN FROM.
+# Every frame used to put the AUTHOR in the sentence: "Nothing broken here, and
+# I'd rather respect that than argue with it", "Good for anyone already in; I'm
+# not paying up here", "{s20} is the level I want reclaimed", "I have seen plenty
+# of these fail at the next line". That is a persona performing a reaction to a
+# trade, and measured across the live queue it was 25.8% of the corpus — the
+# single biggest thing v5 deletes. THE READ IS IN THE SELECTION, NOT IN A
+# PERFORMED REACTION: this lane already decided which fifteen tickers are worth a
+# weekend post, and that decision is the opinion. The sentence's job is to say
+# what the TAPE did.
+#
+# So every frame now obeys three rules on top of the two above:
+#   * **The subject is the market.** No I / I'm / I'd / my / we / our. Price,
+#     the trend, the average, the range — those are the subjects.
+#   * **No questions, no exclamation marks, no advice imperatives.** Not
+#     "watch {s20}", not "get back over {s20}"; the level is stated as a fact and
+#     the reader draws the consequence. `copywriter.uncomputed_stance` is the
+#     executable half of this and every line below is screened through it.
+#   * **The invalidation is a fact about the LEVEL, not about trust.** "Below
+#     {s20} the near-term trend is the first thing gone", never "I trust it only
+#     above {s20}".
+# Placeholders per index are UNCHANGED from the v4 bank (the {wk}/{wk_cap}
+# alternation and the state's cited level), because `cited_level` pairs the state
+# with the line the card actually draws and tests pin that pairing.
 _FRAMES: dict[str, tuple[str, ...]] = {
     "leading": (
-        "Up at 52-week highs, {wk}. Nothing broken here, and I'd rather respect "
-        "that than argue with it. {s20} is the line I want it to keep.",
+        "At the 52-week high, {wk}. Both moving averages sit under price, and "
+        "the nearer of the two is the 20-day at {s20}.",
         # Was "Strength worth respecting, not chasing up here" — retired as house
         # boilerplate 2026-07-30 (it was leaking onto nearly every post).
-        "{wk_cap} and pressing new highs. Good for anyone already in; I'm not "
-        "paying up here. First thing I'd watch on a pullback is {s20}.",
-        "New highs, {wk}. This is what leadership looks like while it lasts. "
-        "{s20} is where I'd start paying attention.",
-        "{wk_cap}, right at the highs. No cracks I can point at. If that changes "
-        "it shows up at {s20} first.",
-        "Sitting at the highs, {wk}. I would rather own strength than argue with "
-        "it. {s20} is the first thing I would watch.",
-        "{wk_cap}. Leadership is a nice problem to have. {s20} is the level that "
-        "keeps it.",
+        "{wk_cap}, at the top of its 52-week range. Both moving averages sit "
+        "below price. The 20-day is {s20}.",
+        "Highs again, {wk}. Price is above both moving averages at once. Below "
+        "{s20} the near-term trend is the first thing gone.",
+        "{wk_cap}. The 52-week high is the level price is working against, and "
+        "the 20-day at {s20} is the first line beneath it.",
+        "The top of the 52-week range, {wk}. Both averages are underneath. "
+        "{s20} is where the shorter one runs.",
+        "{wk_cap}, and price is at its 52-week high. The 20-day is {s20}.",
     ),
     "uptrend": (
-        "{wk_cap}, still above both its moving averages. Constructive without "
-        "being stretched. {s20} is the first line that matters.",
-        "Holding its trend, {wk}. Not much to fix. I'm watching {s20} as the "
-        "first sign that changes.",
-        "{wk_cap}. It keeps doing enough and nothing more, which is fine by me. "
-        "{s20} is the level I'd want held.",
-        "Trend intact, {wk}. I'm not adding up here, just letting it work. "
-        "{s20} is the line.",
-        "It keeps climbing, {wk}. Nothing exciting, which is usually the point. "
-        "{s20} is the line I care about.",
-        "{wk_cap}, above both lines. I am content to sit with it. {s20} first.",
+        "{wk_cap}, and price is above both moving averages. The trend is intact "
+        "without being stretched. The 20-day is {s20}.",
+        "Price has held above both moving averages, {wk}. Nothing in the "
+        "structure has changed. {s20} is the nearer line beneath it.",
+        "{wk_cap}. The trend keeps doing enough and nothing more. The 20-day at "
+        "{s20} is the level that defines it.",
+        "Both averages sit below price, {wk}. Neither line is close to it. "
+        "The 20-day is {s20}.",
+        "The climb has continued, {wk}. Price sits above both moving averages. "
+        "{s20} is where the shorter one runs.",
+        "{wk_cap}, above both lines. The 20-day is {s20}, the nearer of the two.",
     ),
     "cooling": (
-        "Slipped under its 20-day average this week, {wk}. Looks like a pause "
-        "rather than a break so far. Getting back over {s20} is what settles it.",
-        "{wk_cap} but it slipped under its 20-day average. Still above the "
-        "50-day, so I'm giving it room. {s20} is the number to get back.",
-        "It gave up its 20-day average, {wk}. Not worried yet, but I want it "
-        "back quickly. {s20} is the ask.",
-        "{wk_cap}, and the 20-day average went. The 50-day is still underneath, "
-        "so this is a pause until it isn't. {s20} is the tell.",
-        "Some air came out this week, {wk}. Still above the longer line, so I am "
-        "patient. {s20} is the reclaim.",
-        "{wk_cap}, and it lost the shorter line. Not a break yet. {s20} decides.",
+        "The 20-day average gave way this week, {wk}. The longer line is still "
+        "underneath price. The level that went is {s20}.",
+        "{wk_cap}, and the 20-day average at {s20} is gone. Price is still "
+        "above the longer line.",
+        "The shorter average went, {wk}. It is the first of the two lines to "
+        "go, and it sits at {s20}.",
+        "{wk_cap}, with the 20-day lost and the longer line intact. Above "
+        "{s20} the pause is over.",
+        "Some air came out, {wk}. Price is under the shorter average and over "
+        "the longer one. The 20-day is {s20}.",
+        "{wk_cap}. One average is gone and one is not. {s20} is the line that "
+        "separates them.",
     ),
     "reclaiming": (
-        "Back above its 20-day average after a rough stretch, {wk}. Early, and "
-        "I've been burned by early. {s50} is the level that would make it real.",
-        "{wk_cap} and it's clawed back its 20-day average. The 50-day at {s50} "
-        "is the actual test, so I'm waiting on that.",
-        "It's off the mat, {wk}. One line back does not make a trend. {s50} is "
-        "the one that would.",
-        "{wk_cap}, back over its 20-day average. I want to see it hold more "
-        "than I want to see it spike. {s50} next.",
-        "It found a bid, {wk}. I have seen plenty of these fail at the next line. "
-        "{s50} is that line.",
-        "{wk_cap}. Better, not fixed. {s50} is what turns better into fixed.",
+        "Price closed back above its 20-day average, {wk}. The longer line is "
+        "still overhead, and it runs at {s50}.",
+        "{wk_cap} and the 20-day average is back. One line reclaimed, one to "
+        "go: the longer one at {s50}.",
+        "The 20-day average has been taken back, {wk}. The longer line has "
+        "not. It sits at {s50}.",
+        "{wk_cap}, back over the 20-day average. Price is still under the "
+        "longer line, which runs at {s50}.",
+        "One line cleared, {wk}. Price took the 20-day average and stalled "
+        "under the longer one, at {s50}.",
+        "{wk_cap}. Better, not fixed: the 20-day is back and the longer line "
+        "at {s50} is not.",
     ),
     "basing": (
-        "Down near the low end of the year, {wk}. Watching for a bottom setup, "
-        "not catching it yet. {lo} is the line that matters.",
-        "{wk_cap}, sitting near its 52-week low. No interest until it stops going "
-        "down. {lo} is where I find out.",
-        "Still near the lows, {wk}. Cheap is not a reason on its own. {lo} "
-        "holding would be.",
-        "{wk_cap}. It has been falling long enough that people stopped asking "
-        "about it. {lo} is the level I care about.",
-        "It has been left for dead, {wk}. That is usually where they stop going "
-        "down, eventually. {lo} is the marker.",
-        "{wk_cap}, down at the lows. I want evidence, not a discount. {lo} is it.",
+        "Price is down at the low end of its 52-week range, {wk}. Both moving "
+        "averages are overhead. The 52-week low is {lo}.",
+        "{wk_cap}, and price is sitting near its 52-week low. Nothing in the "
+        "structure has turned. The low is {lo}.",
+        "Still at the bottom of the 52-week range, {wk}. The decline has not "
+        "stopped. {lo} is the low itself.",
+        "{wk_cap}. The 52-week low is the only level left underneath price, "
+        "and it is {lo}.",
+        "The range low is the nearest reference now, {wk}. Both averages sit "
+        "above price. The 52-week low is {lo}.",
+        "{wk_cap}, down at the lows. Below {lo} there is no prior level on the "
+        "year.",
     ),
     "downtrend": (
-        "{wk_cap}, under both moving averages. No reason to be early in something "
-        "going the wrong way. {s20} is the first hurdle back.",
-        "Another week lower, {wk}. I'm not trying to be the hero here. {s20} is "
-        "what it has to take back.",
-        "{wk_cap}. Sellers still have the ball, and I'd rather let someone else "
-        "find the bottom. Watching {s20}.",
-        "It keeps giving back ground, {wk}. Nothing here says the selling is "
-        "done. {s20} would be the first thing that did.",
-        "It is still going out with the tide, {wk}. No urgency to be involved. "
-        "{s20} is the first sign of one.",
-        "{wk_cap}, and every bounce has been sold. {s20} is where that changes.",
+        "{wk_cap}, under both moving averages. Price has reclaimed neither. "
+        "The 20-day is the nearer one, at {s20}.",
+        "Another week lower, {wk}. Both averages sit above price. The 20-day "
+        "is the first of them, at {s20}.",
+        "{wk_cap}. Price is below the 20- and the 50-day, and the shorter line "
+        "at {s20} is the first one back.",
+        "Ground keeps getting given back, {wk}. Nothing in the structure has "
+        "turned. Above {s20} that starts to change.",
+        "The slide continued, {wk}. Both moving averages are above price. The "
+        "20-day runs at {s20}.",
+        "{wk_cap}, and price is under both lines. The 20-day at {s20} is the "
+        "first one overhead.",
     ),
 }
 

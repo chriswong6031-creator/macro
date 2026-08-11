@@ -703,6 +703,7 @@ on:
       - "config/market_memory_option_oi_source.v1.json"
       - "scripts/collect_release_target_vintages.py"
       - "scripts/capture_market_memory_context.py"
+      - "scripts/initialize_market_memory_w1a.py"
       - "scripts/ingest_market_memory_sources.py"
       - "scripts/project_market_memory_context.py"
       - "scripts/ingest_market_memory_identity.py"

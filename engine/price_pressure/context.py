@@ -122,20 +122,54 @@ def spy_return_z(data_dir: Path, sessions: pd.DatetimeIndex,
         return pd.Series(np.nan, index=idx, name="spy_ret_z", dtype="float64")
 
 
+def vix_store_path(data_dir: Path) -> Path:
+    """The ONE VIXCLS artifact this lobe reads — named once, so the §10.1
+    completion receipt can hash exactly the bytes the stamp transform saw."""
+    return Path(data_dir) / "fred" / "VIXCLS.parquet"
+
+
+def clean_vix_closes(df: pd.DataFrame) -> pd.Series:
+    """The store frame reduced to the series the §3 transform actually ranks.
+
+    dropna -> normalize -> ``duplicated(keep="last")`` -> sort.  Split out of
+    ``vix_percentile`` so the stamp-completion pass (``completion.py``) ranks
+    the SAME construction rather than a re-typed lookalike: a second copy of
+    these four steps is how a completed stamp quietly stops matching the
+    harvest-night stamp it is standing in for.
+    """
+    col = "vix_close" if "vix_close" in df.columns else df.columns[0]
+    v = pd.to_numeric(df[col], errors="coerce").dropna()
+    v.index = pd.DatetimeIndex(v.index).normalize()
+    return v[~v.index.duplicated(keep="last")].sort_index()
+
+
+def vix_percentile_of(closes: pd.Series, window: int = VIX_WINDOW) -> pd.Series:
+    """Trailing-``window``-observation percentile rank, inclusive of the row's
+    own close — the §3 transform, on an already-cleaned series."""
+    return closes.rolling(window, min_periods=60).rank(pct=True)
+
+
+def vix_close_series(data_dir: Path) -> pd.Series:
+    """Cleaned VIXCLS closes off the store, or an empty series.  Never raises."""
+    path = vix_store_path(data_dir)
+    if not path.exists():
+        return pd.Series(dtype="float64", index=pd.DatetimeIndex([]), name="vix_close")
+    try:
+        return clean_vix_closes(pd.read_parquet(path))
+    except Exception as exc:  # noqa: BLE001
+        log.debug("price_pressure: VIX store unreadable (%s)", exc)
+        return pd.Series(dtype="float64", index=pd.DatetimeIndex([]), name="vix_close")
+
+
 def vix_percentile(data_dir: Path, sessions: pd.DatetimeIndex,
                    window: int = VIX_WINDOW) -> pd.Series:
     """VIX level as a trailing-252-session percentile (FRED VIXCLS, LSR source)."""
     idx = pd.DatetimeIndex(sessions)
-    path = Path(data_dir) / "fred" / "VIXCLS.parquet"
-    if not path.exists():
-        return pd.Series(np.nan, index=idx, name="vix_pctile", dtype="float64")
     try:
-        df = pd.read_parquet(path)
-        col = "vix_close" if "vix_close" in df.columns else df.columns[0]
-        v = pd.to_numeric(df[col], errors="coerce").dropna()
-        v.index = pd.DatetimeIndex(v.index).normalize()
-        v = v[~v.index.duplicated(keep="last")].sort_index()
-        pct = v.rolling(window, min_periods=60).rank(pct=True)
+        v = vix_close_series(data_dir)
+        if v.empty:
+            return pd.Series(np.nan, index=idx, name="vix_pctile", dtype="float64")
+        pct = vix_percentile_of(v, window)
         return pct.reindex(idx.normalize()).set_axis(idx).astype("float64").rename("vix_pctile")
     except Exception as exc:  # noqa: BLE001
         log.debug("price_pressure: VIX percentile unavailable (%s)", exc)

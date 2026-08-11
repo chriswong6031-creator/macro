@@ -228,10 +228,21 @@ ABSTENTION_LIVE = [
     "passed. 🔍",
 ]
 
-#: FIRST PERSON IS 26% OF THE CORPUS AND THE VOICE LAW REQUIRES IT. Every line
-#: here is a real stance in the first person and MUST survive — this is the check
-#: that matters most, because the way this fix fails is by taking the voice with
-#: the defect.
+#: THE ANTI-OVERREACH HALF: `abstention_violations` must refuse the did-nothing
+#: PAYLOAD without swallowing a real stance that happens to be phrased in the
+#: first person. Every line here is such a stance and MUST survive this
+#: detector, because the way that fix fails is by taking the voice with the
+#: defect.
+#:
+#: NOTE ON REGISTER (voice doctrine v5, 2026-08-11). This block used to be
+#: headed "FIRST PERSON IS 26% OF THE CORPUS AND THE VOICE LAW REQUIRES IT",
+#: and that justification is dead: v5 bans first person in every post lane, and
+#: `copywriter.voice_v5_violations` rejects all eleven lines below. They stay
+#: HERE, verbatim, because this suite asserts them against
+#: `abstention_violations` ONLY — a scoped detector that must stay narrow, and
+#: whose over-reach is invisible unless it is probed with the register it is
+#: most likely to over-reach on. A fixture for a scoped detector is not a
+#: statement about what the house ships.
 STANCE_SURVIVORS = [
     "$VST up 9% and every target on the street just got lapped. I'm not paying "
     "this price.",
@@ -303,8 +314,16 @@ class TestD3Abstention:
     def test_the_theme_tails_no_longer_advertise_indecision(self):
         """The 2026-08-03 tail bank kept the cost by making the author admit he
         could not read the group ("Is my read on this group any good today?").
-        The replacement asks about the TAPE'S next move instead, and still has to
-        satisfy every structural rule the tail cannot escape."""
+        The 2026-08-06 replacement asked about the TAPE'S next move instead, but
+        kept the "I" and the "?".
+
+        VOICE DOCTRINE v5 (2026-08-11) deletes the narrator entirely: the tail is
+        a declarative structural note about what the GROUP did. The abstention
+        rule and the length ceiling are unchanged; the ``endswith("?")``
+        assertion is INVERTED, because copywriter.validate_copy's theme_list "?"
+        REQUIREMENT became a "?" BAN and `_tail_is_bait` now rejects any
+        interrogative tail whoever it is about.
+        """
         from engine.marketing import movers_source as ms
         from engine.marketing.publish_time_content import _tail_is_bait
 
@@ -312,7 +331,9 @@ class TestD3Abstention:
         assert len(pools) >= 8
         for tail in pools:
             assert cw.abstention_violations(tail) == [], tail
-            assert tail.endswith("?"), tail
+            assert not tail.endswith("?"), tail
+            assert not re.search(
+                r"\bI\b|I'm|I'd|I'll|I've|\b(?:my|we|our|us|me)\b", tail), tail
             assert not _tail_is_bait(tail), tail
             assert len(tail) <= ms._TAIL_MAX_CHARS, tail
 

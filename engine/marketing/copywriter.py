@@ -1627,10 +1627,22 @@ def validate_copy(
             violations.append(
                 f"theme_list cashtags not in member list: {invalid_cashtags[:3]}"
             )
-        # theme_list body MUST end with a question mark (reply-bait)
-        body_stripped = body.strip()
-        if not body_stripped.endswith("?"):
-            violations.append("theme_list body must end with a question mark (reply-bait)")
+        # THE "?" REQUIREMENT IS NOW A "?" BAN (voice doctrine v5, 2026-08-11).
+        # This rule used to read: a theme_list body MUST end on a question mark,
+        # because a group post was designed as reply-bait. That single line is
+        # why every theme post the desk has ever shipped ends on "Am I getting a
+        # second session out of this?" — the requirement was upstream of the
+        # bank, so no better line could be written while it stood. Under v5 the
+        # group post ends on the breadth fact (see the composition law in
+        # docs/marketing_voice_doctrine_v5.md); the general "?" screen in
+        # `voice_v5_violations` enforces it for every kind, and this stays as the
+        # named tombstone so the inverted rule cannot be "restored" by someone
+        # reading the old test.
+        if body.strip().endswith("?"):
+            violations.append(
+                "theme_list body ends on a question: v5 ends the group post on "
+                "the breadth fact, never on reply-bait"
+            )
 
     # 2. Length > 275 characters.
     # two_part is the exception and it is a contract exception, not a loophole:
@@ -1655,6 +1667,15 @@ def validate_copy(
     # cheese). Shared with the publisher's post-time gate via banned_language()
     # so the generation bar and the last-gate bar cannot drift apart.
     violations.extend(banned_language(full_text))
+
+    # 4d-bis. VOICE DOCTRINE v5 (2026-08-11). The register screen: first person,
+    # question marks, the two confession closers, meta-language, "so far today",
+    # exclamation marks, hashtags and un-humanized dollar figures. Wired HERE
+    # rather than only in validate_copy_v2 because this function is the shared
+    # bar — the deterministic banks, the LLM writer and the publisher's
+    # post-time gate all pass through it, and the v4 register got in precisely
+    # because the deterministic path had no register screen at all.
+    violations.extend(voice_v5_violations(full_text, ctx))
 
     # 4e. Clarity: a stranger must be able to decode the post cold (2026-07-26).
     # Both are hard violations, not warnings, and that is deliberate: a failed
@@ -1980,9 +2001,9 @@ CHART_COPY_SHAPES: dict[str, str] = {
     "enumerate_and_circle": (
         "ENUMERATE AND CIRCLE: the caption lines map one to one onto the "
         "circles on the chart, in the same order, each line two or three words "
-        "with a check or a question mark on it. The last one is the question "
-        "mark, because it is the one happening now. Never enumerate more "
-        "instances than the chart actually draws."
+        "with a check or a cross on it. The last one is the open case, because "
+        "it is the one happening now. Never enumerate more instances than the "
+        "chart actually draws."
     ),
     "superlative": (
         "SUPERLATIVE: say the record, scoped to the window the chart shows. The "
@@ -1990,11 +2011,18 @@ CHART_COPY_SHAPES: dict[str, str] = {
         "fact, and the chart draws exactly that window. Never say ever, never "
         "say in history."
     ),
-    "question_delegation": (
-        "QUESTION DELEGATION: end on a real question a trader would ask, or "
-        "hand the read to somebody else. This is how a directional lean gets "
-        "said without you making the call. A rhetorical question that sets up "
-        "your own answer is NOT this shape."
+    # WAS "question_delegation" ("end on a real question a trader would ask").
+    # Voice doctrine v5 bans question marks outright, so that shape ordered the
+    # one thing the gate now drops: an instruction whose compliance is a
+    # rejection, which is the self-cancelling failure the 2026-07-31 autopsy
+    # class exists to catch. The job it did (say a directional read without
+    # forecasting) is done by stating the consequence as a fact.
+    "consequence_line": (
+        "CONSEQUENCE LINE: end on what the level or the streak now means, "
+        "stated as a fact rather than a forecast. 'Below 209 the volume shelf "
+        "is gone.' 'Five touches since last August, five holds.' This is how a "
+        "directional read gets said without making a call and without asking "
+        "the timeline a question."
     ),
 }
 
@@ -4179,6 +4207,231 @@ def register_v4_violations(text: str, ctx: dict | None) -> list[str]:
     return out[:4]
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# VOICE DOCTRINE v5 — the register screen (docs/marketing_voice_doctrine_v5.md)
+#
+# THE THESIS: the read is in the SELECTION, not in a performed reaction. A post
+# earns its place by surfacing a dated numeric market fact plus the context that
+# makes it mean something. The account's personality is its beat and its format
+# signature, never manufactured interiority.
+#
+# WHY THIS EXISTS. v4 commanded the opposite in this very module: the system
+# prompt said "Mix 'I' and 'we'... Give a stance: watching, leaning, respecting,
+# fading", `CORPUS_EXEMPLARS` fed first-person lines, and `validate_copy`
+# REQUIRED a theme_list to end on "?". The output was a model performing a
+# trader having feelings about a trade: "I'm leaning on that history unless the
+# rebound stalls here", "Am I getting a second session out of this?",
+# "Watching, no position." Measured on the 679-item shipped corpus (census
+# 2026-08-11): first person in 175 items (25.8%), "so far today" x79, and the
+# two confession closers above dominating the 72 items that end on a zinger.
+# Across 205 posts from 12 real data accounts, rhetorical-question hooks, topic
+# hashtags and exclamation emphasis appear ZERO times.
+#
+# THE WIRE FAMILY IS EXEMPT FROM THE PRONOUN AND QUESTION SCREENS, and the
+# exemption is evidence-driven rather than a convenience. A wire post RELAYS a
+# source's words, so both tokens arrive as quoted material the desk did not
+# author: of the 4 breaking items carrying "?" in the census, 2 are relayed
+# source headlines ("$400 Billion Pharma Megadeal? Jefferies Calls...", "Europe
+# Was Once Bigger Than The US Economy. What Happened?"), and 2 of the 3 carrying
+# first person are relayed source copy. The doctrine says the wire register is
+# already correct and leaves it unchanged; screening it here would darken
+# correct posts. Every OTHER v5 ban still applies to the wire.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: First person, uppercase branch. Written case-sensitively on purpose: the
+#: pronoun "I" is uppercase in English, and a case-insensitive "\bi\b" fires on
+#: "i.e." and on a stray list marker.
+_V5_FIRST_PERSON_UPPER_RE = re.compile(r"(?<!\$)\bI(?:'m|'d|'ll|'ve)?\b")
+
+#: The rest of the first-person family. "us" and "mine" are DELIBERATELY absent:
+#: "US" is the country in every macro post this house writes, and "mine" is a
+#: noun on any commodities desk. "we" is caught here and exempted by value below.
+_V5_FIRST_PERSON_LOWER_RE = re.compile(
+    r"(?<!\$)\b(?:my|me|we|our|ours)\b", re.IGNORECASE)
+
+#: The one first-person phrase the house keeps: it states what the business
+#: DOES (publishes graded calls), which is a fact about the product rather than
+#: a narrator's feeling. Subtracted by value before the screen runs.
+_V5_FIRST_PERSON_EXEMPT: tuple[str, ...] = ("we publish",)
+
+#: Closer families the census found dominating the ≤3-word tails. Both are
+#: confession or disclaimer cheese; "not advice" covers the disclaimer family
+#: wherever it lands in the text.
+_V5_BANNED_CLOSERS: tuple[tuple[str, str], ...] = (
+    ("Watching, no position", r"watching,\s*no position"),
+    ("Levels, not advice", r"levels,\s*not advice"),
+    ("not advice", r"\bnot (?:financial )?advice\b"),
+)
+
+#: Meta-language: a sentence about the post, the number or the setup instead of
+#: about the market. Each pattern is a shipped tell, not a guess.
+_V5_META_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("the context the number needs", r"the context (?:the|this) number needs"),
+    ("naming the post itself", r"\bthat(?:'s| is) the post\b|\bthis post\b|"
+                               r"\bthe whole post\b"),
+    ("worth watching", r"\bworth (?:watching|a watch)\b"),
+    ("the setup goes stale", r"\bthe setup (?:goes|gets|is going) stale\b"),
+)
+
+#: "so far today": 79 items in the census, a wire-lane verbal tic that adds no
+#: information a timestamped post does not already carry.
+_V5_STALE_TIME_RE = re.compile(r"\bso far today\b", re.IGNORECASE)
+
+# THE ORACLE TEASE (CMO review of the v5 build, 2026-08-11). The SECOND
+# degenerate register this doctrine produced, and it arrived the same way the
+# first one did: a style law with no positive requirement becomes a generator.
+# Banning "I" removed the narrator and left portentous vagueness as the lazy
+# optimum, so ~4 of 10 samples in the first v5 pass gestured at a payoff while
+# withholding it: "The chart carries the rest of it", "One thing is still
+# absent before it triggers. The market provides it or it does not", "The
+# closest matches went a particular way", "The group reads differently from
+# that starting point".
+#
+# THE RULE: A TAIL NAMES ITS PAYOFF. A number, a level, a dated precedent, a
+# counted breadth, or a condition the packet actually names. A deterministic
+# template renders over every ticker, so it may only name a payoff through a
+# TOKEN the packet fills or a statement true by construction of the kind; where
+# neither exists, the tail states the absence concretely ("No corroborated
+# driver on the tape for it yet") instead of pointing at a hidden one.
+#
+# PHRASE FAMILIES, NOT A SHAPE RULE. A blanket "the last sentence must contain a
+# digit" would reject doctrine exemplar 1, whose closer is "The most-traded
+# price of the summer is now underneath" — digit-free and the strongest line in
+# the set. Each pattern below is a shipped tell from the v5 sample review.
+_V5_TEASE_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("the chart carries the rest",
+     r"(?:charts?|pictures?|frames?)\s+(?:carries|carry|says|does)\s+the rest"
+     r"|carries the rest of it|the rest is on the (?:chart|frame|picture)"),
+    ("withheld condition",
+     r"\bthe missing piece\b|\bone thing is (?:still )?(?:absent|missing|carrying)\b"
+     r"|\bone thing left to do\b"),
+    ("the market provides it or it does not", r"\bor it does not\b"),
+    ("a particular way", r"\ba (?:particular|certain) way\b"),
+    ("reads differently", r"\breads? differently\b"),
+    ("says which", r"\bsays which\b|\bpicks the direction\b|\bwhich is which\b"),
+    ("that is the part", r"\bthat is the part\b|\bthe part that matters\b"),
+    ("worth knowing", r"\bworth (?:knowing|a look)\b"),
+    ("tells you something",
+     r"\b(?:saying|says|tells you|meant|means) something\b"),
+    ("filler tail",
+     r"\bwhere it stands right now\b|\blive right now\b|\bon the tape right now\b"),
+    ("that is all of it",
+     r"\bgenuinely all\b|\ball there is so far\b"),
+    ("vague deixis",
+     r"\bdifferent fact from\b|\bhave not answered it\b"),
+)
+
+#: A dollar figure the reader has to count digits on. Traders write $7.6B, never
+#: $7,639,791,784 (census: 10-digit market-cap figures shipping on the wire).
+#: A figure that already carries a K/M/B/T suffix, or a word unit ("$200
+#: billion"), is humanized and passes.
+_V5_RAW_MONEY_RE = re.compile(
+    r"\$\s?(\d[\d,]*)(\.\d+)?\s*(?:([KMBTkmbt])\b|"
+    r"(thousand|million|billion|trillion)\b)?")
+_V5_RAW_MONEY_MAX_DIGITS = 5
+
+
+def voice_v5_violations(text: str, ctx: dict | None = None) -> list[str]:
+    """Voice doctrine v5 register screen. [] = clean. Never raises.
+
+    Additive to every existing gate: it can only ADD violations, never license a
+    post another rule would refuse. Each string is written to be echoed verbatim
+    into the repair turn, so it names the defect AND the fix, and carries no
+    banned dash of its own.
+
+    `ctx` is optional so the publisher's post-time gate and any bank-walking
+    test can call it with the text alone; the wire exemption documented above
+    needs `ctx["type"]` / `ctx["account"]` and defaults to "not the wire".
+    """
+    raw = str(text or "")
+    if not raw.strip():
+        return []
+    cfgx = ctx if isinstance(ctx, dict) else {}
+    kind = str(cfgx.get("type") or cfgx.get("kind") or "")
+    account = str(cfgx.get("account") or "")
+    is_wire = kind in WIRE_KINDS or account in WIRE_ACCOUNTS
+    out: list[str] = []
+
+    if not is_wire:
+        screened = raw
+        for phrase in _V5_FIRST_PERSON_EXEMPT:
+            screened = re.sub(re.escape(phrase), " ", screened, flags=re.IGNORECASE)
+        hit = (_V5_FIRST_PERSON_UPPER_RE.search(screened)
+               or _V5_FIRST_PERSON_LOWER_RE.search(screened))
+        if hit:
+            out.append(
+                f"first person '{hit.group(0)}': the subject of the sentence is "
+                f"the market, not the author. State what the tape did"
+            )
+        if "?" in raw:
+            out.append("question mark: the post states, it does not ask. "
+                       "End on the fact")
+
+    for label, pattern in _V5_BANNED_CLOSERS:
+        if re.search(pattern, raw, re.IGNORECASE):
+            out.append(f"banned closer '{label}': a disclaimer is not a read. "
+                       f"End on the strongest fact in the packet")
+            break
+
+    for label, pattern in _V5_META_PATTERNS:
+        if re.search(pattern, raw, re.IGNORECASE):
+            out.append(f"meta-language '{label}': the post talks about itself "
+                       f"instead of about the market")
+            break
+
+    # The oracle tease. Applies to the WIRE too: a relay may carry a source's
+    # pronoun and a source's question mark, but nothing licenses the desk's own
+    # copy to gesture at a payoff it is not printing.
+    for label, pattern in _V5_TEASE_PATTERNS:
+        if re.search(pattern, raw, re.IGNORECASE):
+            out.append(
+                f"oracle tease '{label}': the tail points at a payoff instead "
+                f"of printing one. Name it: the number, the level, the dated "
+                f"precedent, the counted breadth, or the condition the packet "
+                f"gives you"
+            )
+            break
+
+    if _V5_STALE_TIME_RE.search(raw):
+        out.append("'so far today': say 'today', or say nothing. The timestamp "
+                   "already carries it")
+
+    if "!" in raw:
+        out.append("exclamation mark: zero of 679 shipped items and zero of 205 "
+                   "real reference posts carry one")
+
+    if _HASHTAG_RE.search(raw):
+        out.append("hashtag: a cashtag is the only tag this register uses")
+
+    for m in _V5_RAW_MONEY_RE.finditer(raw):
+        suffix = str(m.group(3) or "").upper()
+        if suffix:
+            # A suffix alone is not enough: the defect that motivated this
+            # gate was literally "$1000K". K/M/B all have a reviewed next
+            # band, so a four-digit mantissa means the producer failed to
+            # promote it. T is the documented ceiling ("$1000T" stays
+            # readable rather than inventing a Q suffix).
+            mantissa = float(m.group(1).replace(",", "") + (m.group(2) or ""))
+            if suffix in {"K", "M", "B"} and mantissa >= 1000.0:
+                out.append(
+                    f"four-digit dollar mantissa '{m.group(0).strip()}': "
+                    f"promote it to the next K/M/B/T band"
+                )
+                break
+            continue  # already humanized ($7.6B)
+        if m.group(4):
+            continue  # already humanized ($200 billion)
+        digits = m.group(1).replace(",", "")
+        if len(digits) > _V5_RAW_MONEY_MAX_DIGITS:
+            out.append(
+                f"raw dollar figure '{m.group(0).strip()}': humanize it "
+                f"(7,639,791,784 is $7.64B, 83,000,000 is $83M)"
+            )
+            break
+
+    return out[:4]
+
+
 def validate_copy_v2(
     text: str,
     ctx: dict,
@@ -4362,200 +4615,198 @@ def filing_fact_lock_violations(text: str, payload: dict, kind: str) -> list[str
 _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
 
     # ── signal / authoritative desk ───────────────────────────────────────────
-    # NOTE: every signal body must carry an invalidation cue (a close below / kills
-    # it) AND an honesty caveat (historical / graded / publicly) so validate_copy
-    # passes. Keep both, keep it human, keep it dry (doctrine v3).
+    # VOICE DOCTRINE v5 (2026-08-11). Every body in this family used to end on
+    # the author's interiority: "I've talked myself out of setups that looked
+    # exactly like this", "I don't have a tidy explanation for why now". The
+    # invalidation now attaches to the LEVEL, which is where risk actually
+    # lives: "Below {entry} the base is gone", never "I'm wrong below {entry}".
     ("signal", "authoritative desk"): [
-        # LEVELS LIVE ON THE CHART, NOT IN THE COPY (operator 2026-07-30).
-        # Every body in this family used to print entry + target + stop and then
-        # close on a compliance caveat. Three prices in 275 chars is the "number
-        # soup" the operator named ("shut up with all of these numbers, its
-        # literally so AI like"), and "I'm wrong below {inv}" drew "no human will
-        # ever say that". Since every ticker post now ships a chart by law, the
-        # picture carries the levels and the copy carries ONE number and a
-        # reaction that costs the writer something. number_soup_violations and
-        # machine_risk_violations reject the old bodies outright, so these are
-        # not a style preference — the previous bank could no longer ship.
         (
-            "Flagged {cashtag} at {entry}",
-            "{top_fact}. Flagged at {entry}. I've talked myself out of setups that "
-            "looked exactly like this and regretted it, so I'm not being clever here.",
+            "{cashtag} flagged at {entry}",
+            "{top_fact}. The line is {entry}. Below it the base that built this "
+            "is gone.",
         ),
         (
             "{cashtag} | {entry} is the line",
-            # "We called it at" is the house framing and the honest one: we
-            # publish graded CALLS, we never claim to hold a position. (WAS
-            # "We're long from {entry}", a first-person position claim in breach
-            # of AM-R1's first hard line.)
-            "{top_fact}. We called it at {entry}. If it loses that the whole read "
-            "was noise, and I'd rather find that out than talk myself into it.",
+            # "We called it at" was the house framing here. Under v5 the desk
+            # does not appear in its own copy at all: the level was published,
+            # and the level is what the sentence is about.
+            "{top_fact}. Published at {entry}. A close under that level ends "
+            "the structure this was built on.",
         ),
         (
-            "{cashtag} setting up again",
-            "{top_fact}. Bases like this fail more often than they work and I keep "
-            "having to remind myself of that before I get comfortable.",
+            "{cashtag} back in the base",
+            "{top_fact}. {entry} is the level the base is built on. Bases like "
+            "this fail more often than they hold, and {entry} is the number "
+            "that separates the two.",
         ),
         (
-            "Adding {cashtag} around {entry}",
-            "{top_fact}. In around {entry}. I don't have a tidy explanation for why "
-            "now and I'm not going to invent one.",
+            "{cashtag} at {entry}",
+            "{top_fact}. The level is {entry}. Everything above it is the "
+            "range, everything below it is a different name.",
         ),
         (
-            "{cashtag} at {entry}. Simple read.",
-            "{top_fact}. Levels are on the chart. I've been early on this name before "
-            "and it cost me, so I'm taking it slower this time.",
+            "{cashtag} | the level is {entry}",
+            "{top_fact}. Price is at {entry}, and that level is support until "
+            "a close takes it out.",
         ),
     ],
 
     # ── signal / dry, receipts-forward ───────────────────────────────────────
     ("signal", "dry, receipts-forward"): [
         # A template asserts the same sentence about every ticker it renders, so
-        # it may never carry a FACT of its own — no invented streak, no "my last
-        # three went flat". Only {top_fact} and the packet's numbers are true.
-        # The costly reaction has to come from stance, not fabricated history.
+        # it may never carry a FACT of its own — no invented streak, no "the
+        # last three went flat". Only {top_fact} and the packet's numbers are
+        # true. Under v5 the closing sentence is a property of the LEVEL, which
+        # is true by construction for every name this renders over.
         (
-            "{cashtag}, in at {entry}",
-            "{top_fact}. In at {entry}. I'd rather be early and quiet about it than "
-            "loud and right for one afternoon.",
+            "{cashtag} flagged, {entry}",
+            "{top_fact}. Published at {entry}. The level is the whole trade: "
+            "above it the base holds, under it there is nothing to hold.",
         ),
         (
-            "{cashtag} | the call is out there",
-            "{top_fact}. It gets published whether it works or not. That's the only part "
-            "of this I actually control.",
+            "{cashtag} | the call is published",
+            "{top_fact}. It is on the record at {entry}, and the result gets "
+            "posted whichever way it goes.",
         ),
         (
             "{cashtag} flagged at {entry}",
-            "{top_fact}. Flagged at {entry}. No adjectives, and no interest in "
-            "defending it if the chart stops cooperating.",
+            "{top_fact}. Flagged at {entry}. No adjectives on it, and no second "
+            "version of it later.",
         ),
         (
             "New line: {cashtag}",
-            "{top_fact}. Out in public now, so if it doesn't work I don't get to quietly "
-            "forget I said it.",
+            "{top_fact}. The level is {entry}. Published means published: the "
+            "outcome lands on the record either way.",
         ),
     ],
 
     # ── signal / specialist ───────────────────────────────────────────────────
     ("signal", "specialist"): [
         (
-            "{cashtag} at {entry}, and the group's confirming",
-            "{top_fact}. The rest of the space is moving with it. I've been burned "
-            "assuming the group carries the laggard, so I'm watching more than acting.",
+            "{cashtag} at {entry}, and the group agrees",
+            "{top_fact}. The rest of the space is moving with it. One name "
+            "moving is a story, the group moving is a fact.",
         ),
         (
-            "{cashtag} | the setup I wait for in this group",
-            "{top_fact}. One name moving is noise. I ignored this exact tell earlier "
-            "in the year because I thought I knew better.",
+            "{cashtag} | the shape this group makes",
+            "{top_fact}. The level is {entry}. A group that confirms turns one "
+            "name into a read on the whole space.",
         ),
         (
-            "{cashtag} in my corner at {entry}",
-            "{top_fact}. In around {entry}. This is my group and that makes me softer "
-            "on it than I should be, which I'm trying to account for.",
+            "{cashtag} at {entry} in the group",
+            "{top_fact}. Price is at {entry}. The group read starts from that "
+            "level, not from the name.",
         ),
         (
             "{cashtag} | the group got there first",
-            "{top_fact}. The space has been leaning this way for a while and I was "
-            "slow to it. Adding it to the list of things I was too clever about.",
+            "{top_fact}. The space moved before the name did. The level on the "
+            "name is {entry}.",
         ),
     ],
 
     # ── signal / educational ──────────────────────────────────────────────────
     ("signal", "educational"): [
-        # "educational" is a VOICE here, not a lesson. The operator: "no one likes
-        # being lectured... education posts show YOUR OWN working on something
-        # real". So this family shows the writer's own reasoning and its cost; it
-        # never explains a concept to the reader.
+        # "educational" is a VOICE here, not a lesson: it shows the mechanics of
+        # the level, never the writer's inner life and never the reader's
+        # mistakes (`lecture_violations` is the executable half of that).
         (
             "A live one: {cashtag} at {entry}",
-            "{top_fact}. In around {entry}. Setups in the abstract are easy and I've "
-            "been humbled plenty of times by ones that looked this clean.",
+            "{top_fact}. The level is {entry}. What makes it a level is that "
+            "price has had to answer it before.",
         ),
         (
-            "{cashtag} | this is the one I'd have skipped",
-            "{top_fact}. A year ago I'd have passed on this because it looked too "
-            "quiet. That habit cost me more than any single bad trade did.",
+            "{cashtag} | the quiet ones look like this",
+            "{top_fact}. Price sits at {entry}. Quiet bases are the ones that "
+            "read as nothing right up until they do not.",
         ),
         (
             "Most days nothing qualifies. {cashtag} does.",
-            "{top_fact}. Most days I look at this list and do nothing, and the days "
-            "I forced something are the ones I'd take back.",
+            "{top_fact}. The level is {entry}. A list that flags everything is "
+            "a list that says nothing.",
         ),
         (
-            "{cashtag} at {entry} | watching it with you",
-            "{top_fact}. In around {entry}. I'll be wrong in public on some of these "
-            "and I'd rather that than quietly deleting the ones that don't work.",
+            "{cashtag} at {entry}, in public",
+            "{top_fact}. Published at {entry}. The number that ends it is the "
+            "same number that started it.",
         ),
     ],
 
     # ── signal / fast, reactive ───────────────────────────────────────────────
     ("signal", "fast, reactive"): [
         (
-            "{cashtag} moving. In at {entry}",
-            "{top_fact}. In at {entry}. Fast ones are where I make my worst "
-            "decisions, so I'm going smaller than the chart is tempting me to.",
+            "{cashtag} moving. {entry} is the line",
+            "{top_fact}. Live at {entry}. Fast moves resolve fast, and the close "
+            "is the vote that counts.",
         ),
         (
             "{cashtag} | live at {entry}",
-            "{top_fact}. Live at {entry}. Chasing this kind of move has cost me "
-            "before and I'm aware I'm close to doing it again.",
+            "{top_fact}. Price is at {entry}. Half of these give it back by the "
+            "close, and the close is the only vote that counts.",
         ),
         (
-            "{cashtag}, right now",
-            "{top_fact}. Levels are on the chart. Half of these fade by the close "
-            "and I've never once been good at telling which half in advance.",
+            "{cashtag} at {entry}, live",
+            "{top_fact}. The level is {entry}. A close under {entry} and the "
+            "move was noise.",
         ),
         (
             "{cashtag} triggering at {entry}",
-            "{top_fact}. Triggered around {entry}. Saying it out loud now so I can't "
-            "pretend later that I only liked the ones that worked.",
+            "{top_fact}. Triggered around {entry}. Said out loud now so the "
+            "record cannot be edited later.",
         ),
     ],
 
     # ── signal / pattern/history ──────────────────────────────────────────────
     ("signal", "pattern/history"): [
         (
-            "{cashtag} is tracing something I've seen before",
-            "{top_fact}. In around {entry}. I've read a shape like this correctly "
-            "and I've read one exactly like it wrong, which keeps me honest.",
+            "{cashtag} is tracing a shape with history",
+            "{top_fact}. The level is {entry}. The shape has resolved both ways "
+            "before, and the level is what separates them.",
         ),
         (
-            "{cashtag} | the precedent's worth a look",
-            "{top_fact}. History doesn't repeat but it leaves charts. It also leaves "
-            "the ones I pattern-matched into a loss, and I remember those better.",
+            "{cashtag} | the precedent sits here",
+            "{top_fact}. Price is at {entry}. History does not repeat, but it "
+            "leaves charts, and this one has been drawn before.",
         ),
         (
-            "{cashtag} | pattern's live at {entry}",
-            "{top_fact}. Live around {entry}. The last time I leaned hard on this "
-            "shape it went nowhere for ages and I got bored out of it.",
+            "{cashtag} | the pattern is live at {entry}",
+            "{top_fact}. Live around {entry}. Shapes like this take longer than "
+            "they look like they will.",
         ),
         (
-            "{cashtag}, same old song",
-            "{top_fact}. Levels are on the chart. I trust the shape more than I "
-            "should and I'd rather say that out loud than pretend otherwise.",
+            "{cashtag}, the same shape again",
+            "{top_fact}. The level is {entry}. Same shape, and the number under "
+            "it is what makes it a trade instead of a resemblance.",
         ),
     ],
 
     # ── chart / authoritative desk ────────────────────────────────────────────
+    # A chart post ships a picture. The caption orients the eye and states the
+    # one thing the picture cannot; it never narrates who is looking at it.
     ("chart", "authoritative desk"): [
         (
             "{ticker}, one chart",
-            "{cashtag}: {top_fact}. The level I care about is {entry}. That's the post.",
+            "{cashtag}: {top_fact}. The level that matters is {entry}.",
         ),
         (
             "{cashtag} | {entry} is the line",
-            "{top_fact}. Sitting right at {entry}. No hot take, the picture's doing the work.",
+            "{top_fact}. Sitting right at {entry}, the line drawn across the "
+            "frame.",
         ),
         (
-            "{cashtag} chart I keep coming back to",
-            "{top_fact}. {entry} is where it gets interesting. Draw your own conclusions, mine's on the chart.",
+            "{cashtag} keeps coming back to {entry}",
+            "{top_fact}. {entry} is where the chart gets interesting. Every "
+            "attempt at it is drawn in the frame.",
         ),
         (
-            "{ticker} | worth a look",
-            "{cashtag}: {top_fact}. Key level {entry}. Quietly one of the better charts I'm tracking.",
+            "{ticker} | where it stands",
+            "{cashtag}: {top_fact}. The level is {entry}, and the chart shows "
+            "what it has cost so far.",
         ),
         (
             "{cashtag} this week",
-            "{top_fact}. Price at {entry}. The chart says it better than I would.",
+            "{top_fact}. Price at {entry}, the line this frame is drawn "
+            "around.",
         ),
     ],
 
@@ -4563,20 +4814,21 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("chart", "dry, receipts-forward"): [
         (
             "{ticker} chart",
-            "{cashtag}: {top_fact}. Level {entry}. The rest is on the chart.",
+            "{cashtag}: {top_fact}. {entry} is the line drawn on it.",
         ),
         (
             "{cashtag} | no spin",
-            "{top_fact}. {ticker} at {entry}. Numbers only, adjectives are free elsewhere.",
+            "{top_fact}. {ticker} at {entry}. Numbers only, adjectives are free "
+            "elsewhere.",
         ),
         (
             "{ticker} | where it stands",
-            "{top_fact}. {cashtag} at {entry}. I like it here and I've been wrong liking "
-            "things here before.",
+            "{top_fact}. {cashtag} at {entry}. The level has held every test "
+            "the frame draws.",
         ),
         (
             "{cashtag} | the tape",
-            "{top_fact}. Level {entry}. Logged.",
+            "{top_fact}. Level {entry}. Posted flat.",
         ),
     ],
 
@@ -4584,39 +4836,45 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("chart", "specialist"): [
         (
             "{ticker} chart, and the group should care",
-            "{cashtag}: {top_fact}. When this one moves the rest usually follow. Level {entry}.",
+            "{cashtag}: {top_fact}. When this one moves the rest usually "
+            "follow. Level {entry}.",
         ),
         (
             "{cashtag} | the group in one chart",
-            "{top_fact}. {ticker} at {entry}. This is the name I read the whole space through.",
+            "{top_fact}. {ticker} at {entry}. This name is where the whole "
+            "space shows up first.",
         ),
         (
             "{ticker} | the tell for the theme",
-            "{cashtag}: {top_fact}. Level {entry}. The group rarely lies for long.",
+            "{cashtag}: {top_fact}. Level {entry}. The group rarely lies for "
+            "long.",
         ),
         (
-            "{cashtag} | on my desk all week",
-            "{top_fact}. {ticker} at {entry}. One picture, whole thesis.",
+            "{cashtag} | the chart the group trades off",
+            "{top_fact}. {ticker} at {entry}. One picture, the whole space.",
         ),
     ],
 
     # ── chart / educational ───────────────────────────────────────────────────
     ("chart", "educational"): [
         (
-            "{ticker}, walk through this chart with me",
-            "{cashtag}: {top_fact}. Watch how {entry} keeps mattering. Levels work because everyone's staring at the same ones.",
+            "{ticker}, and the number on it",
+            "{cashtag}: {top_fact}. {entry} keeps mattering because everyone is "
+            "looking at the same number.",
         ),
         (
-            "{ticker} | one thing to notice",
-            "{top_fact}. That's most of why {cashtag} at {entry} is worth your attention.",
+            "{ticker} | what {entry} is doing",
+            "{top_fact}. {cashtag} is at {entry}, and that is the level the "
+            "chart is drawn around.",
         ),
         (
             "What {ticker}'s chart is quietly saying",
-            "{cashtag}: {top_fact}. Level {entry}. The chart usually says it before the news does.",
+            "{cashtag}: {top_fact}. Level {entry}. The chart usually says it "
+            "before the news does.",
         ),
         (
-            "{cashtag} | a chart worth studying",
-            "{top_fact}. {ticker} at {entry}. No rush, good reads age fine.",
+            "{cashtag} | a chart with one number on it",
+            "{top_fact}. {ticker} at {entry}. Good charts age fine.",
         ),
     ],
 
@@ -4624,35 +4882,39 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("chart", "fast, reactive"): [
         (
             "{ticker} chart, quick",
-            "{cashtag}: {top_fact}. Level {entry}. Your move.",
+            "{cashtag}: {top_fact}. Level {entry}. The frame is live.",
         ),
         (
             "{cashtag} right now",
-            "{top_fact}. {ticker} at {entry}. Tape's doing the talking.",
+            "{top_fact}. {ticker} at {entry}. The tape is doing the talking.",
         ),
         (
             "{ticker} | fast look",
-            "{cashtag}: {top_fact}. {entry} is the level. Watching it live.",
+            "{cashtag}: {top_fact}. Price is at {entry}, the line drawn on "
+            "the frame.",
         ),
         (
             "{ticker} | tape check",
-            "{top_fact}. {cashtag} at {entry}. Worth thirty seconds of your day.",
+            "{top_fact}. {cashtag} at {entry}. Thirty seconds of chart.",
         ),
     ],
 
     # ── chart / pattern/history ───────────────────────────────────────────────
     ("chart", "pattern/history"): [
         (
-            "{ticker} | this chart looks familiar",
-            "{cashtag}: {top_fact}. Matches a shape I've traded before. Level {entry}.",
+            "{ticker} | this chart has a precedent",
+            "{cashtag}: {top_fact}. The shape has been drawn before. Level "
+            "{entry}.",
         ),
         (
-            "{cashtag} | history's in the picture",
-            "{top_fact}. {ticker} at {entry}. The old playbook is right there if you've seen it.",
+            "{cashtag} | history is in the picture",
+            "{top_fact}. {ticker} at {entry}. The old playbook is right there "
+            "in the frame.",
         ),
         (
-            "{ticker} chart | last time this shape showed up",
-            "{top_fact}. {cashtag} at {entry}. What followed last time is why I'm posting it.",
+            "{ticker} chart | the last time this shape showed up",
+            "{top_fact}. {cashtag} at {entry}. What followed it last time is "
+            "drawn on the same chart.",
         ),
         (
             "{cashtag} | a chart with a memory",
@@ -4661,224 +4923,245 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ],
 
     # ── education (all voices use shared variants; persona-specific below) ────
+    # v5: education returns only as MARKET MECHANICS, never a method essay and
+    # never a lecture. The bank shipped 20 items of account navel-gazing ("Why I
+    # post the losers", "How I keep myself honest") before the tilt was zeroed;
+    # `lecture_violations` and the v5 first-person screen keep both out.
     ("education", "authoritative desk"): [
         (
-            "What flagging something actually means",
-            "A name on the board means the setup lined up, not a certainty. "
-            "The level next to it says where we're wrong. Knowing where you're wrong is the whole product.",
+            "What a flagged level actually is",
+            "A level is a price the market has already had to answer. The "
+            "answer is the information, and the number next to it is where the "
+            "idea stops being true.",
         ),
         (
             "The stop matters more than the target",
-            "A target is a hope with a number on it. A stop is a decision made while you're still calm. "
-            "Most of this job is the second one.",
+            "A target is a hope with a number on it. A stop is a decision made "
+            "while the tape is still calm. The second one survives contact.",
         ),
         (
-            "The part most people skip",
-            "You can nail the direction and still lose money. "
-            "Size against the stop decides the outcome, not the thesis. Unglamorous, true anyway.",
+            "Position size is the whole outcome",
+            "Direction can be right and the trade can still lose. The stop sets "
+            "the size, and the size decides the outcome. Unglamorous, true "
+            "anyway.",
         ),
         (
-            "How something earns a spot on the board",
-            "Most setups don't make it. The ones that do have a level that says the idea failed. "
-            "If I can't tell you where I'm wrong, I don't post it.",
+            "How a name earns a level",
+            "Most bases never finish. The ones that do carry a price that says "
+            "the idea failed, and that price is what makes it publishable.",
         ),
     ],
     ("education", "dry, receipts-forward"): [
         (
-            "How I keep myself honest",
-            "Every call gets its result posted, win or lose, same flat tone. "
-            "The winners don't get extra adjectives and the losers don't get excuses.",
+            "What a result post is",
+            "Entry, outcome, number. Posted whichever way it went. Everything "
+            "else in this business is marketing.",
         ),
         (
-            "Why I post the losers",
-            "Losses are information. The stop did its job, my ego filed a complaint, "
-            "the number went on the page anyway.",
-        ),
-        (
-            "What a result post actually is",
-            "Entry, outcome, number. Posted whichever way it went. "
-            "Everything else in this business is marketing.",
+            "Why the losers get posted",
+            "A loss is information about the level. The stop did its job and "
+            "the number went on the record with the same font as the wins.",
         ),
         (
             "The whole method, plainly",
-            "Call goes up. Result goes up. No cherry-picking, no memory-holing the bad ones. "
-            "If it's on the page it stays on the page.",
+            "Call goes up. Result goes up. No cherry-picking, no quiet deletion "
+            "of the bad ones.",
+        ),
+        (
+            "Why the tone stays flat",
+            "Winners get no extra adjectives and losers get no excuses. Same "
+            "voice on both makes the record readable.",
         ),
     ],
     ("education", "specialist"): [
         (
-            "The thing most people get wrong about this group",
-            "Most folks read these names through the index lens. The group has its own weather. "
-            "Get that right first and the single names get a lot easier.",
+            "How a group actually moves",
+            "A sector has its own weather. The group read comes first, and the "
+            "single names get easier after it.",
         ),
         (
-            "What actually moves these names",
-            "Not the headline everyone watches. One quieter driver has run this group for years, "
-            "and the people who know it don't tweet much.",
+            "What really moves these names",
+            "Not the headline everybody watches. One quieter driver has run "
+            "this group for years, and it rarely makes the front page.",
         ),
         (
             "Why the group beats the single name",
-            "The tide moves most of the boats here. One name ripping is a story. "
-            "The whole group ripping is a fact. I trade the facts.",
+            "The tide moves most of the boats here. One name ripping is a "
+            "story. The whole group ripping is a fact.",
         ),
         (
-            "Timing in these names, honestly",
-            "Early looks identical to wrong for longer than anyone admits. "
-            "The checklist I run before flagging anything is short and boring on purpose.",
+            "What early looks like in a group",
+            "Early and wrong look identical for months. The group confirming is "
+            "the difference between the two, and it shows up in breadth.",
         ),
     ],
     ("education", "educational"): [
         (
-            "Plain English: what's a 'setup'?",
-            "A price picture that's historically been worth attention. Not a buy button. "
-            "The difference between those two sentences is most of trading.",
+            "What a setup is, in plain words",
+            "A price picture that has historically been worth attention. It is "
+            "not permission, and the gap between those two sentences is the "
+            "job.",
         ),
         (
-            "The 'where am I wrong' line is the whole thing",
-            "Every real call names the price that kills it. That line is the idea. "
-            "Everything else is decoration, and decoration is expensive.",
+            "The invalidation is the idea",
+            "Every real call names the price that kills it. That line is the "
+            "call. Everything else on the post is decoration.",
         ),
         (
-            "The half of trading nobody talks about",
-            "Direction is the fun half. Knowing exactly where you were wrong is the paid half. "
-            "That level is your stop, and yes, it needs a number.",
+            "Direction is the easy half",
+            "The paid half is knowing exactly where the idea was wrong. That "
+            "level is the stop, and it needs a number.",
         ),
         (
-            "What 'it goes on the page' means",
-            "Win, lose, or nothing happened, the result gets posted. "
-            "Anyone can show winners. The full list is the only honest one.",
+            "What a published record means",
+            "Win, lose or nothing happened, the outcome gets posted. A partial "
+            "list is a marketing document.",
         ),
     ],
     ("education", "fast, reactive"): [
         (
-            "Quick: what's a setup?",
-            "A price picture usually worth watching. Not a buy signal. "
-            "A reason to pay attention before everyone else does.",
+            "A setup, in ten seconds",
+            "A price picture with a history. Not a buy signal. A reason to look "
+            "before the crowd does.",
         ),
         (
             "Why the stop beats the target",
-            "Target is where you're hoping. Stop is where you're wrong. "
-            "Blow through the stop and the target was never real.",
+            "The target is where the hope is. The stop is where the idea was "
+            "wrong. Through the stop, the target was never real.",
         ),
         (
-            "One-minute version: sizing",
+            "Sizing, one minute",
             "Risk the same small amount every time. The stop sets the size. "
-            "Boring, works, next question.",
+            "Boring, and it works.",
         ),
         (
             "Invalidation, fast",
-            "The level that says you were wrong. Price hits it, you're out. "
-            "No ego, no averaging down, no praying.",
+            "The price that says the idea failed. Price hits it, the trade is "
+            "over. No averaging down, no negotiating.",
         ),
     ],
     ("education", "pattern/history"): [
         (
-            "When history rhymes, read it carefully",
-            "Old analogues set expectations, they don't make calls. "
-            "Useful and dangerous is the same tool, held differently.",
+            "How to read a rhyme",
+            "Old analogs set expectations. They do not make calls. The same "
+            "tool is useful and dangerous depending on how it is held.",
         ),
         (
-            "Last time the tape looked like this",
-            "I'm not calling a repeat, I'm counting how often it worked before. "
-            "Base rates over vibes, every time.",
+            "What a base rate does",
+            "Counting how often a shape worked beats arguing about whether it "
+            "will. The count is context. It does not make the call.",
         ),
         (
             "The base-rate way of thinking",
-            "What usually happened from a similar spot is context, not destiny. "
-            "The market's under no obligation to rhyme on schedule.",
+            "What usually happened from a similar spot is context, never "
+            "destiny. The market is under no obligation to rhyme on schedule.",
         ),
         (
-            "Using analogues without kidding yourself",
-            "The shape matters less than the conditions around it. "
-            "Filter first, compare second, hold the conclusion loosely.",
+            "Using analogs without kidding yourself",
+            "The shape matters less than the conditions around it. Filter "
+            "first, compare second, hold the conclusion loosely.",
         ),
     ],
 
     # ── macro (all voices) — {top_fact} carries plain observable macro/tape text ─
+    # v5: the synthesis line ships ONLY when it is a statement about the prints
+    # in {top_fact}. No "I'd rather own quality", no "how much risk I want on".
     ("macro", "authoritative desk"): [
         (
-            "What the data's actually saying",
-            "{top_fact} I'd rather own quality and be patient than chase this tape.",
+            "What the data says",
+            "{top_fact} That is the mix the tape has to price, and it has not "
+            "finished doing it.",
         ),
         (
             "The macro read this week",
-            "{top_fact} Not a comfortable mix. Cautious until it clears.",
+            "{top_fact} Not a comfortable mix, and not a resolved one.",
         ),
         (
             "Where the big picture stands",
             "{top_fact} That sets the tone for everything else today.",
         ),
         (
-            "One thing worth watching at these highs",
-            "{top_fact} How this resolves decides how much risk I want on.",
+            "One number carrying the week",
+            "{top_fact} How that resolves decides what the rest of the data "
+            "means.",
         ),
         (
             "Quick macro note",
-            "{top_fact} The piece I care about most right now. The rest is noise with a chyron.",
+            "{top_fact} That is the piece the tape is actually trading. The "
+            "rest is noise with a chyron.",
         ),
         (
-            "The honest macro read",
-            "{top_fact} One data point, no spin. The spin is available elsewhere, free of charge.",
+            "Macro, one data point",
+            "{top_fact} One print, no spin. The spin is available elsewhere, "
+            "free of charge.",
         ),
     ],
     ("macro", "dry, receipts-forward"): [
         (
             "Macro, plainly",
-            "{top_fact} I'll update when the picture shifts, not when the coverage does.",
+            "{top_fact} The picture moves when the data moves, not when the "
+            "coverage does.",
         ),
         (
             "Where things stand at the highs",
-            "{top_fact} Staying selective on risk until this clears.",
+            "{top_fact} Same prints, higher prices. That is the whole tension.",
         ),
         (
             "Macro note",
-            "{top_fact} Logged. Waiting on the next print.",
+            "{top_fact} On the record until the next print says otherwise.",
         ),
         (
             "Macro | numbers first",
-            "{top_fact} That's the state of play. Feelings not included.",
+            "{top_fact} That is the state of play. Feelings not included.",
         ),
     ],
     ("macro", "specialist"): [
         (
-            "Why the macro matters for these names",
-            "{top_fact} That flows straight into the group I watch, whether the group likes it or not.",
+            "Why the macro matters for this group",
+            "{top_fact} That flows straight into the group, whether the group "
+            "has priced it or not.",
         ),
         (
-            "The current my group is swimming in",
-            "{top_fact} Fighting it is expensive. Plenty of people keep trying anyway.",
+            "The current this group swims in",
+            "{top_fact} Fighting it is expensive. Plenty of people keep trying "
+            "anyway.",
         ),
         (
-            "How the big picture hits my corner",
-            "{top_fact} A couple of my names care a lot. The rest can pretend for another week.",
+            "How the big picture reaches the group",
+            "{top_fact} A couple of these names care a lot. The rest can "
+            "pretend for another week.",
         ),
         (
-            "The one macro driver I'm tracking",
-            "{top_fact} One thing is carrying the read here. Everything else is commentary.",
+            "The macro driver this group trades",
+            "{top_fact} That print is the one the group trades off. Everything "
+            "else is commentary.",
         ),
     ],
     ("macro", "educational"): [
         (
             "The macro in plain words",
-            "{top_fact} Watching which side blinks first.",
+            "{top_fact} Two sides of that data disagree, and the next print "
+            "settles which one was right.",
         ),
         (
             "Reading the big picture",
-            "{top_fact} Most of what you'll hear today is noise. That part isn't.",
+            "{top_fact} Most of the coverage today is noise. That part is not.",
         ),
         (
             "Macro without the jargon",
-            "{top_fact} None of this says what to buy. It says what the weather is, and you dress for the weather.",
+            "{top_fact} None of it says what to own. It says what the weather "
+            "is.",
         ),
         (
-            "Why this changes how you size",
-            "{top_fact} The honest response is smaller and pickier, not smarter and louder.",
+            "Why this changes the arithmetic",
+            "{top_fact} The number moved, so everything priced off it moved "
+            "with it.",
         ),
     ],
     ("macro", "fast, reactive"): [
         (
             "Fast macro read",
-            "{top_fact} Adjusting for it, not arguing with it.",
+            "{top_fact} The tape adjusted before the commentary did.",
         ),
         (
             "Macro, quick",
@@ -4886,64 +5169,67 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "What just shifted at the highs",
-            "{top_fact} Market's still chewing. Watching the reaction more than the print.",
+            "{top_fact} The market is still chewing it. The reaction is what the "
+            "tape is trading now.",
         ),
         (
             "Macro note, fast",
-            "{top_fact} That's the one that stands out. Moving on.",
+            "{top_fact} That is the one that stands out today.",
         ),
     ],
     ("macro", "pattern/history"): [
         (
-            "This macro setup rhymes with something",
-            "{top_fact} There's a parallel worth knowing before the crowd rediscovers it.",
+            "This macro setup has a precedent",
+            "{top_fact} Precedent starts from that number, not from the "
+            "commentary around it.",
         ),
         (
             "Last time the data looked like this",
-            "{top_fact} The closest matches went a particular way. Not destiny, worth knowing.",
+            "{top_fact} Precedent is a count, not a forecast.",
         ),
         (
             "The rhyme, not a prediction",
-            "{top_fact} Just pointing at how it went before. Markets ignore history right up until they don't.",
+            "{top_fact} That is how it went before. Markets ignore history "
+            "right up until they do not.",
         ),
         (
-            "History's take on this print",
-            "{top_fact} This kind of read has a base rate. Most hot takes don't.",
+            "History's version of this print",
+            "{top_fact} This kind of read has a base rate. Most hot takes do "
+            "not.",
         ),
     ],
 
     # ── receipt (all voices) — ONLY used when graded_receipts provides real data ──
-    # Losses get the gallows line, wins get no lap (doctrine v3 §2).
+    # Losses get the gallows line, wins get no lap (doctrine v3 §2, unchanged).
+    # v5 removes the author from the sentence: the trade is the subject.
     ("receipt", "authoritative desk"): [
         (
             "{cashtag} | {target_label} hit for {gain}",
-            "The {cashtag} flag from {entry} tagged {target_label} at {t1}, {gain}. "
-            "No lap. The runner's still working.",
+            "The {cashtag} level at {entry} tagged {target_label} at {t1}, "
+            "{gain}. No lap. The runner is still open.",
         ),
         (
             "{cashtag} | {gain} on {target_label}",
-            # No first-person POSITION or P&L claim here (AM-R1): we publish
-            # graded CALLS, we never say we traded one. "I trimmed earlier than
-            # I meant to" was the first draft and the dial caught it.
-            "Entry {entry}. {target_label} hit, {gain}. I nearly talked myself out "
-            "of calling this one, so I'm taking no credit for the timing.",
+            # No first-person POSITION or P&L claim here (AM-R1): the desk
+            # publishes graded CALLS and never says it traded one.
+            "Entry {entry}. {target_label} hit, {gain}. The timing was the "
+            "level's, not anybody's.",
         ),
         (
             "{cashtag} stopped out, {loss}",
-            "Entry {entry}, out at {stop}, {loss}. The stop did its job, my ego filed a complaint. "
-            "Next.",
+            "Entry {entry}, out at {stop}, {loss}. The stop did its job. Next.",
         ),
         (
-            "{cashtag} | partial won, runner didn't",
-            "{target_label} hit at {t1} ({gain}), runner stopped at {stop} ({loss}). "
-            "Entry {entry}. Took the base hit, gave back the trail. That's the job.",
+            "{cashtag} | partial won, runner did not",
+            "{target_label} hit at {t1} ({gain}), runner stopped at {stop} "
+            "({loss}). Entry {entry}. Base hit taken, trail given back.",
         ),
     ],
     ("receipt", "dry, receipts-forward"): [
         (
             "{cashtag} | {target_label}: {gain}",
-            "Entry {entry}. {target_label} hit, {gain}. Posted the losing ones too, which "
-            "is the only reason this one counts for anything.",
+            "Entry {entry}. {target_label} hit, {gain}. The losing ones are "
+            "posted the same way, which is what makes this one count.",
         ),
         (
             "{cashtag} stopped, {loss}",
@@ -4951,107 +5237,115 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | {gain} then {loss}",
-            "Entry {entry}. {target_label} hit {t1} ({gain}). Stopped at {stop} ({loss}). "
-            "Two outcomes, one trade, both posted.",
+            "Entry {entry}. {target_label} hit {t1} ({gain}). Stopped at {stop} "
+            "({loss}). Two outcomes, one trade, both posted.",
         ),
         (
             "{cashtag} | closed: {gain}",
-            "Entry {entry}. {target_label} at {t1}, {gain}. The number speaks. I don't have to.",
+            "Entry {entry}. {target_label} at {t1}, {gain}. The number carries it.",
         ),
     ],
     ("receipt", "specialist"): [
         (
             "{cashtag} | the group read paid, {gain}",
-            "Called off the group's move. {cashtag}: entry {entry}, {target_label} at {t1}, {gain}. "
-            "The space told you first.",
+            "Called off the group's move. {cashtag}: entry {entry}, "
+            "{target_label} at {t1}, {gain}. The space moved first.",
         ),
         (
-            "{cashtag} | didn't work, {loss}",
-            "Entry {entry}, stopped at {stop}, {loss}. The group zigged, this one zagged. "
-            "Posted anyway.",
+            "{cashtag} | stopped out, {loss}",
+            "Entry {entry}, stopped at {stop}, {loss}. The group zigged, this "
+            "one zagged. Posted anyway.",
         ),
         (
             "{cashtag} | mixed result",
-            "{target_label} hit ({gain}), runner stopped ({loss}). {cashtag} entry {entry}. "
-            "The partial paid for the lesson.",
+            "{target_label} hit ({gain}), runner stopped ({loss}). {cashtag} "
+            "entry {entry}. The partial paid for the lesson.",
         ),
         (
             "{cashtag} follow-up | {gain} on {target_label}",
-            "Entry {entry}. {target_label} at {t1} for {gain}. The group read held. "
-            "It usually knows before the name does.",
+            "Entry {entry}. {target_label} at {t1} for {gain}. The group read "
+            "held. It usually knows before the name does.",
         ),
     ],
     ("receipt", "educational"): [
         (
-            "{cashtag} | showing the work",
-            "Called {cashtag} at {entry}. {target_label} at {t1}, {gain}. "
-            "Wins and losses get the same font size here.",
+            "{cashtag} | the work, shown",
+            "Called {cashtag} at {entry}. {target_label} at {t1}, {gain}. Wins "
+            "and losses get the same font size here.",
         ),
         (
             "{cashtag} stopped | a loss, posted flat",
-            "Entry {entry}. Out at {stop}, {loss}. The stop did exactly what stops are for. "
-            "No drama, no thread about lessons.",
+            "Entry {entry}. Out at {stop}, {loss}. The stop did exactly what "
+            "stops are for. No drama, no thread about lessons.",
         ),
         (
             "{cashtag} | a real mixed result",
-            "{target_label} at {t1} ({gain}), runner stopped at {stop} ({loss}). Entry {entry}. "
-            "This is what partials look like outside the highlight reels.",
+            "{target_label} at {t1} ({gain}), runner stopped at {stop} "
+            "({loss}). Entry {entry}. Partials look like this outside a "
+            "highlight reel.",
         ),
         (
-            "{cashtag} | said we'd post it, here it is",
-            "Entry {entry}, {gain}. I said I'd post these whichever way they went, "
-            "and the ones I'd rather skip are why that promise was worth making.",
+            "{cashtag} | published, then resolved",
+            "Entry {entry}, {gain}. The promise was that these get posted "
+            "whichever way they go, and the awkward ones are why it was worth "
+            "making.",
         ),
     ],
     ("receipt", "fast, reactive"): [
         (
             "{cashtag} | {target_label} tagged, {gain}",
-            "Entry {entry}. Target hit, {gain}. Moving on before I start believing I'm "
-            "smarter than the tape.",
+            "Entry {entry}. Target hit, {gain}. On to the next one.",
         ),
         (
             "{cashtag} stopped, {loss}",
-            "Entry {entry}. Out at {stop}. {loss}. Clean exit, no averaging, no praying.",
+            "Entry {entry}. Out at {stop}. {loss}. Clean exit, no averaging.",
         ),
         (
             "{cashtag} | {gain} then {loss}",
-            "Entry {entry}. {target_label} hit ({gain}). Stop {stop} ({loss}). Both real, both posted.",
+            "Entry {entry}. {target_label} hit ({gain}). Stop {stop} ({loss}). "
+            "Both real, both posted.",
         ),
         (
             "{cashtag} | done, {gain}",
-            "Entry {entry}. {target_label} at {t1}, {gain}. Next setup's already loading.",
+            "Entry {entry}. {target_label} at {t1}, {gain}. The next one is "
+            "already loading.",
         ),
     ],
     ("receipt", "pattern/history"): [
         (
             "{cashtag} | the rhyme held, {gain}",
-            "Flagged at {entry}. {target_label} at {t1}, {gain}. "
-            "Followed the old script almost to the beat.",
+            "Flagged at {entry}. {target_label} at {t1}, {gain}. It followed "
+            "the old script almost to the beat.",
         ),
         (
             "{cashtag} | the rhyme broke, {loss}",
-            "Entry {entry}. Out at {stop}, {loss}. "
-            "History rhymed right up until it didn't. Posted anyway.",
+            "Entry {entry}. Out at {stop}, {loss}. History rhymed right up "
+            "until it did not. Posted anyway.",
         ),
         (
             "{cashtag} | a verse and a coda",
-            "Entry {entry}. {target_label} hit ({gain}), runner stopped ({loss}). "
-            "Most of the old pattern, not all of it.",
+            "Entry {entry}. {target_label} hit ({gain}), runner stopped "
+            "({loss}). Most of the old pattern, not all of it.",
         ),
         (
             "{cashtag} | precedent held, {gain}",
-            "Entry {entry}. {target_label} at {t1}, {gain}. Same shape, same result. "
-            "One more data point for the file.",
+            "Entry {entry}. {target_label} at {t1}, {gain}. Same shape, same "
+            "result. One more line in the file.",
         ),
     ],
 
-    # ── theme_list (all voices) — THE reach king: multi-cashtag + reply-bait ──
-    # MUST contain ≥4 cashtags from {cashtag_list} and end with "?"
+    # ── theme_list (all voices) — the multi-cashtag group post ────────────────
+    # MUST contain ≥4 cashtags from {cashtag_list}.
     # {cashtag_list} = "$NVDA $AMD $SMCI $AVGO"
     # {theme_name} = "Artificial Intelligence"
     # {theme_direction} = "down" | "up"
     # {theme_agg_pct} = "-2.1%"
-    # {theme_question} = "Which one comes back first?"
+    # {theme_question} = the structural tail from movers_source. THE NAME IS
+    #   HISTORICAL: under voice doctrine v5 that bank is fact-forward statements
+    #   (a volume multiple, a gap rank, a streak), never a question. The token
+    #   keeps its name because movers_source builds the key; the CONTENT law is
+    #   in movers_source._TAIL_UP/_TAIL_DOWN and in `voice_v5_violations`, which
+    #   rejects any post that ends on "?" whatever produced it.
     # {top_fact} = theme aggregate text
     # Optional 3rd element = applicability tags (see _variant_allowed): a
     # down-flavored headline must never ship on an up-tape theme.
@@ -5062,8 +5356,9 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             ("down_only",),
         ),
         (
-            "Whole {theme_name} group moving together",
-            "{cashtag_list}\nOne name is noise. This many is a message. {top_fact} {theme_question}",
+            "The whole {theme_name} group moved together",
+            "{cashtag_list}\nOne name is noise. This many is a message. "
+            "{top_fact} {theme_question}",
         ),
         (
             "{theme_name}, {theme_agg_pct} average today",
@@ -5075,7 +5370,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             ("down_only",),
         ),
         (
-            "The whole {theme_name} group just moved",
+            "{theme_name} moved as one group",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
@@ -5094,7 +5389,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{theme_name} | the whole list",
-            "{cashtag_list}\nNumbers below, commentary optional. {top_fact} {theme_question}",
+            "{cashtag_list}\nNumbers below, commentary optional. {top_fact} "
+            "{theme_question}",
         ),
         (
             "{theme_name} tape today",
@@ -5103,8 +5399,9 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ],
     ("theme_list", "specialist"): [
         (
-            "{theme_name} doesn't move like this on nothing",
-            "{cashtag_list}\nWhen the whole group goes at once I pay attention. {top_fact} {theme_question}",
+            "{theme_name} does not move like this on nothing",
+            "{cashtag_list}\nBreadth, not one name: the whole group printed "
+            "the same direction. {top_fact} {theme_question}",
         ),
         (
             "{theme_name} | pressure across the group",
@@ -5112,18 +5409,19 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             ("down_only",),
         ),
         (
-            "Every {theme_name} name I track moved today",
+            "Every {theme_name} name on the list moved today",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} | the group's telling you something",
+            "{theme_name} | breadth did the work",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
     ],
     ("theme_list", "educational"): [
         (
-            "When a whole group moves together, notice",
-            "{cashtag_list}\nA group-wide move says more than any single name. {top_fact} {theme_question}",
+            "A whole group moving at once is the signal",
+            "{cashtag_list}\nA group-wide move says more than any single name. "
+            "{top_fact} {theme_question}",
         ),
         (
             "This is what group-wide selling looks like",
@@ -5160,25 +5458,26 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ],
     ("theme_list", "pattern/history"): [
         (
-            "Last time {theme_name} moved like this it meant something",
-            "{cashtag_list}\nGroup moves this clean have marked turns before. {top_fact} {theme_question}",
+            "{theme_name} has moved this cleanly before",
+            "{cashtag_list}\nGroup moves this clean have marked turns before. "
+            "{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} under pressure | seen this one",
+            "{theme_name} under pressure | a familiar shape",
             "{cashtag_list}\n{top_fact} {theme_question}",
             ("down_only",),
         ),
         (
-            "{theme_name} | a rhyme worth watching",
+            "{theme_name} | a rhyme with a precedent",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} | the old pattern's back",
+            "{theme_name} | the old pattern is back",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
     ],
 
-    # ── mover (all voices) — biggest single mover, charted, bearish framing ok ──
+    # ── mover (all voices) — biggest single mover, charted ────────────────────
     # {cashtag} = "$ISRG"  {top_fact} = "ISRG fell -14.2% today (Healthcare)."
     # {mover_pct} = "-14.2%"
     # {mover_state} = "ISRG closed back above its 50-day average for the first
@@ -5190,31 +5489,18 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     #   "needs_state"/"no_state" — the two lawful shapes below; they partition
     #   the bank on whether a COMPUTED technical state exists for this name
     #
-    # THE 2026-08-03 STANCE REWRITE. Every body in this bank used to end on a
-    # canned trading instruction: "I'd let it settle first", "Watching, not
-    # chasing", "Logged. Not stepping in.", "read it, don't chase it", "Moves
-    # this size need time". The variant was picked by a sha256 of
-    # ticker|account|slot — a hash that has never seen a chart — so the desk was
-    # issuing a directional call at random and being wrong about half the time.
-    # The live cost, operator 2026-08-03: "$FSLR, biggest move in the index
-    # today / FSLR surged +10.3% today (Technology). Real strength or real
-    # damage, either way I'd let it settle first." — written over a name that
-    # had just crossed up out of a two-month washout, i.e. the setup momentum
-    # traders buy. "us saying to let it settle is the dumbest thing ever and
-    # just ruins our reputation."
-    #
-    # The rule now: WE DO NOT ISSUE A DIRECTIONAL STANCE WE HAVE NOT COMPUTED.
-    # Two shapes are lawful and every line below is one of them:
-    #   (a) "no_state" — the move, an honest admission of what we have not done,
-    #       and stop. It still carries a reaction that COSTS (the house voice
-    #       law): "I have no explanation for it yet" is falsifiable and cheap to
-    #       be wrong about; "I'd let it settle" is neither.
-    #   (b) "needs_state" — the move plus the real technical situation it landed
-    #       in, computed from the name's own daily bars. THAT is a stance the
-    #       desk earned, and it survives being read back a week later.
-    # `uncomputed_stance` is the executable form of the rule and
-    # tests/test_marketing_mover_stance.py walks this whole bank through it, so
-    # the retired shape cannot come back by way of a "better line".
+    # THE 2026-08-03 STANCE RULE, UNCHANGED: we do not issue a directional
+    # stance we have not computed. Two shapes are lawful:
+    #   (a) "no_state" — the move plus an honest statement of what is not known
+    #       about it yet, and stop;
+    #   (b) "needs_state" — the move plus the computed technical situation it
+    #       landed in.
+    # WHAT VOICE DOCTRINE v5 CHANGED (2026-08-11): the "no_state" shape used to
+    # spend its honesty on the author ("I have no explanation for it yet", "no
+    # position", "work I owe, not work I have done"). The absence of a read is a
+    # fact about the TAPE, so it is now stated as one. `uncomputed_stance` still
+    # walks this whole bank in tests/test_marketing_mover_stance.py, and
+    # `voice_v5_violations` rejects the pronoun the old lines were built on.
     ("mover", "authoritative desk"): [
         (
             "{cashtag} | {mover_pct} today",
@@ -5223,48 +5509,48 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | {mover_pct}, and the state underneath",
-            "{top_fact} {mover_state}. That is the part I can show work on.",
+            "{top_fact} {mover_state}. That state is computed off the name's "
+            "own daily bars.",
             ("needs_state",),
         ),
         (
             "{cashtag}, one of the biggest moves on the tape today",
-            "{top_fact} I have no explanation for it yet and I am not going to invent one.",
+            "{top_fact} No corroborated driver on the tape for it yet.",
             ("no_state",),
         ),
         (
-            "{cashtag} | {mover_pct}, noted",
-            "{top_fact} No position. Reading it properly is work I have not done yet.",
+            "{cashtag} | {mover_pct}, on the list",
+            "{top_fact} The move is real, the explanation is not in yet.",
             ("no_state",),
         ),
         # ── trend-context lines (FSLR postmortem 2026-08-03) ────────────────
         # Selectable ONLY when movers_source.trend_context put that shape on
-        # the chart, and preferred over the generic caution when it did. The
-        # stance is still an observation, never a recommendation. House copy
-        # law: no em dashes in rendered strings (validate_copy bans U+2014).
+        # the chart, and preferred over the generic line when it did. The
+        # stance is an observation about the tape, never a recommendation.
+        # House copy law: no em dashes in rendered strings.
         (
             "{cashtag} | first swing off the lows",
-            "{top_fact} First green that means anything after months of selling. "
-            "Bottoms and dead-cat bounces start identically. The next few closes "
-            "decide which this is.",
+            "{top_fact} First green that means anything after months of "
+            "selling. Bottoms and dead-cat bounces open identically, and the "
+            "next few closes separate them.",
             ("washout_only",),
         ),
         (
             "{cashtag} pressing the highs",
-            "{top_fact} Strength at the top of the range is not a bounce, it's "
-            "leadership until proven otherwise. Chasing it here is a separate "
-            "decision from respecting it.",
+            "{top_fact} Strength at the top of the range is leadership until "
+            "the range gives way.",
             ("breakout_only",),
         ),
         (
             "{cashtag} | first crack",
-            "{top_fact} First real crack after a long run. One red day isn't a "
-            "top, but every top starts with one of these.",
+            "{top_fact} First real crack after a long run. One red day is a "
+            "change of character, not a top.",
             ("crack_only",),
         ),
         (
             "{cashtag} | late-stage flush",
             "{top_fact} A flush this hard, this deep into a decline, is "
-            "capitulation territory. Watching the close, not guessing the bottom.",
+            "capitulation tape. The reclaim separates a low from a pause.",
             ("capitulation_only",),
         ),
     ],
@@ -5276,118 +5562,132 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | biggest mover, {mover_pct}",
-            "{top_fact} {mover_state}. Logged with the number.",
+            "{top_fact} {mover_state}. On the record with the number.",
             ("needs_state",),
         ),
         (
             "{cashtag} | {mover_pct} today",
-            "{top_fact} Logged. No position, and no read I can back up yet.",
+            "{top_fact} On the list. No corroborated driver yet.",
             ("no_state",),
         ),
         (
             "{cashtag} | {mover_pct}",
-            "{top_fact} On the list. I do not know why it happened yet.",
+            "{top_fact} The move is the only confirmed fact so far.",
             ("no_state",),
         ),
         (
             "{cashtag} | {mover_pct} off the lows",
-            "{top_fact} First bounce after a long slide. Logged. Follow-through "
-            "or it didn't happen.",
+            "{top_fact} First bounce after a long slide. Follow-through or it "
+            "did not happen.",
             ("washout_only",),
         ),
         (
             "{cashtag} | {mover_pct} at the highs",
-            "{top_fact} Strength on strength. Noted. Trend intact until it isn't.",
+            "{top_fact} Strength on strength. The trend is intact until the "
+            "range breaks.",
             ("breakout_only",),
         ),
         (
             "{cashtag} | {mover_pct} from the top",
-            "{top_fact} First dent in an uptrend. Logged, watching the next few "
-            "sessions.",
+            "{top_fact} First dent in an uptrend. The next few sessions carry "
+            "the answer.",
             ("crack_only",),
         ),
         (
             "{cashtag} | {mover_pct}, deep in the decline",
-            "{top_fact} Late flush. Capitulation watch, nothing else yet.",
+            "{top_fact} Late flush, deep into the decline. Capitulation tape.",
             ("capitulation_only",),
         ),
     ],
     ("mover", "specialist"): [
         (
             "{cashtag} {mover_pct} | the starting point",
-            "{top_fact} {mover_state}. The group reads differently from that starting point.",
+            "{top_fact} {mover_state}. That close is the level the rest of "
+            "the space now trades against.",
             ("needs_state",),
         ),
         (
             "{cashtag} | {mover_pct}, and it echoes",
-            "{top_fact} {mover_state}, which is the part the rest of the space has to price.",
+            "{top_fact} {mover_state}, which is the part the rest of the space "
+            "has to price.",
             ("needs_state",),
         ),
         (
             "{cashtag} moved {mover_pct} today",
-            "{top_fact} One name is not a group read, and I do not have the group work yet.",
+            "{top_fact} One name is not a group read, and the group work is "
+            "not in yet.",
             ("no_state",),
         ),
         (
-            "{cashtag} | {mover_pct}, group read",
-            "{top_fact} Chart below. Whether the neighbours agree is not something I know yet.",
+            "{cashtag} | {mover_pct}, group context",
+            "{top_fact} Chart below. No corroborated driver, and no group "
+            "read yet.",
             ("no_state", "needs_chart"),
         ),
         (
             "{cashtag} | the washed-out one just moved",
-            "{top_fact} When the most sold-off name in a group swings first, the "
-            "group usually votes within days. Watching the neighbors.",
+            "{top_fact} When the most sold-off name in a group swings first, "
+            "the group usually votes within days.",
             ("washout_only",),
         ),
         (
             "{cashtag} | leadership check",
-            "{top_fact} A group leader printing range highs either pulls the rest "
-            "along or it doesn't, and that answer comes fast.",
+            "{top_fact} A group leader printing range highs either pulls the "
+            "rest of the space to its own highs within days, or it prints "
+            "them alone.",
             ("breakout_only",),
         ),
         (
             "{cashtag} | the strong one just cracked",
             "{top_fact} When a group's strongest name takes the first hit, the "
-            "rest usually answer within days. Watching how the neighbors take it.",
+            "rest usually answer within days.",
             ("crack_only",),
         ),
         (
             "{cashtag} | flushing late in the decline",
-            "{top_fact} Late-decline flushes in one name often mark the group's "
-            "low-water line. Watching who follows it down, and who refuses to.",
+            "{top_fact} Late-decline flushes in one name often mark the "
+            "group's low-water line.",
             ("capitulation_only",),
         ),
     ],
     ("mover", "educational"): [
         (
             "{cashtag} {mover_pct} | the state it landed in",
-            "{top_fact} {mover_state}. A one-day move reads differently depending on that.",
+            "{top_fact} {mover_state}. That close is what the move has to be "
+            "read against.",
             ("needs_state",),
         ),
         (
             "{cashtag} {mover_pct} | the chart underneath",
-            "{top_fact} {mover_state}. That is the difference between a turn and a step.",
+            "{top_fact} {mover_state}. That is the difference between a turn "
+            "and a step.",
             ("needs_state",),
         ),
         (
-            "{cashtag} {mover_pct} | a move worth understanding",
-            "{top_fact} The honest version is that I have not done the work on it yet.",
+            "{cashtag} {mover_pct} | a move without a driver",
+            "{top_fact} The honest version is that no source corroborates a "
+            "reason yet.",
             ("no_state",),
         ),
         (
             "How a move like {cashtag} gets read",
-            "{top_fact} I am not sure yet what it changes. Guessing would be worse than saying so.",
+            "{top_fact} No source corroborates a reason yet, and a guess "
+            "would be worse than the gap.",
             ("no_state",),
         ),
         (
             "{cashtag} {mover_pct} | bounce or bottom",
-            "{top_fact} After a long decline, the first big green day is "
-            "information: durable bottoms get follow-through, dead cats don't. "
-            "Day two and three tell you which one you're looking at.",
+            "{top_fact} After a long decline the first big green day is "
+            "information: durable lows get follow-through, dead cats do not. "
+            "Day two and day three say which.",
             ("washout_only",),
         ),
         (
-            "{cashtag} {mover_pct} | what strength up here means",
+            # Headline kept structurally distinct from the dry desk's
+            # "{cashtag} | {mover_pct} at the highs": the batch gate rejects a
+            # Jaccard>0.8 headline pair, and two voices on the same trend bucket
+            # render side by side.
+            "{cashtag} {mover_pct} | what a range-top move is",
             "{top_fact} A big move at the top of the range is trend behavior, "
             "not a dip. Different setup, different rules.",
             ("breakout_only",),
@@ -5401,15 +5701,15 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} {mover_pct} | capitulation math",
             "{top_fact} The hardest selling often comes nearest the end of a "
-            "decline. That's a fact about crowds, not a buy signal. The "
-            "difference is what the next week does with it.",
+            "decline. That is a fact about crowds, not a signal. The next week "
+            "is what settles it.",
             ("capitulation_only",),
         ),
     ],
     ("mover", "fast, reactive"): [
         (
             "{cashtag} {mover_pct} 👀",
-            "{top_fact} {mover_state}. That is where it stands right now.",
+            "{top_fact} {mover_state}.",
             ("needs_state",),
         ),
         (
@@ -5419,60 +5719,62 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} {mover_pct}",
-            "{top_fact} Tape check. I have no read on it yet and I am not faking one.",
+            "{top_fact} Tape check. No corroborated driver on it yet.",
             ("no_state",),
         ),
         (
             "{cashtag} | {mover_pct}, fast look",
-            "{top_fact} Big number, and that is genuinely all I know about it right now.",
+            "{top_fact} The percentage is confirmed. The reason is not.",
             ("no_state",),
         ),
         (
             "{cashtag} woke up 👀",
-            "{top_fact} One of the most washed-out names out there just swung. "
-            "Bounce or bottom, next few closes decide. What's your read?",
+            "{top_fact} One of the most washed-out names on the tape just "
+            "swung. The next few closes decide bounce or bottom.",
             ("washout_only",),
         ),
         (
             "{cashtag} through the highs 👀",
-            "{top_fact} Leaders lead until they don't. Who's chasing this one?",
+            "{top_fact} Leaders lead until they do not, and this one is still "
+            "leading.",
             ("breakout_only",),
         ),
         (
             "{cashtag} just cracked 👀",
-            "{top_fact} First red day that matters in this uptrend. Blip or turn?",
+            "{top_fact} First red day that mattered in this uptrend.",
             ("crack_only",),
         ),
         (
             "{cashtag} | full flush 👀",
-            "{top_fact} This deep into a decline, that's capitulation tape. "
-            "Who's still selling down here?",
+            "{top_fact} This deep into a decline, that is capitulation tape.",
             ("capitulation_only",),
         ),
     ],
     ("mover", "pattern/history"): [
         (
             "{cashtag} {mover_pct} | rhyme, not repeat",
-            "{top_fact} {mover_state}. The precedent worth checking starts there.",
+            "{top_fact} {mover_state}. The precedent worth checking starts "
+            "there.",
             ("needs_state",),
         ),
         (
             "{cashtag} | {mover_pct}, the precedent",
-            "{top_fact} {mover_state}. Any comparison to older moves starts from that.",
+            "{top_fact} {mover_state}. Any comparison to older moves starts "
+            "from that.",
             ("needs_state",),
         ),
         (
-            "{cashtag} {mover_pct} | seen this movie",
-            "{top_fact} I have not gone back through the precedents yet, so I will not pretend.",
+            "{cashtag} {mover_pct} | a familiar size",
+            "{top_fact} The precedents on moves this size are not counted yet.",
             ("no_state",),
         ),
         (
-            "{cashtag} {mover_pct} today | no precedent read yet",
-            "{top_fact} The history on moves this size is work I owe, not work I have done.",
+            "{cashtag} {mover_pct} today | no precedent count yet",
+            "{top_fact} The precedent count on moves this size is not in yet.",
             ("no_state",),
         ),
         (
-            "{cashtag} | seen this shape before",
+            "{cashtag} | a shape with precedent",
             "{top_fact} Long slide, then one violent green day. Durable lows "
             "have started exactly like this, and so have bull traps. "
             "Follow-through is the tell, and it shows up within days.",
@@ -5481,105 +5783,92 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} | familiar strength",
             "{top_fact} Range-top strength has a habit of running further than "
-            "anyone's comfortable with. The pattern says respect it.",
+            "it looks like it should.",
             ("breakout_only",),
         ),
         (
             "{cashtag} | this is how turns have started",
-            "{top_fact} Long run, first hard red day. The precedent says "
-            "respect it and count the sessions until the level's reclaimed.",
+            "{top_fact} Long run, then the first hard red day. The precedent "
+            "counts the sessions until the level is reclaimed.",
             ("crack_only",),
         ),
         (
             "{cashtag} | endgame tape",
-            "{top_fact} Declines this mature usually end on a day that looks "
-            "exactly like this one. They also sometimes just keep going. The "
-            "reclaim tells you which.",
+            "{top_fact} Declines this mature often end on a day that looks "
+            "exactly like this one. They also sometimes keep going. The "
+            "first close back above the prior swing high is the reclaim.",
             ("capitulation_only",),
         ),
     ],
 
     # ── watchlist, RUNAWAY — the name blew through the entry ───────────────────
     # Selected when watch_reason == WATCH_RUNAWAY. The ordinary watchlist copy
-    # below is proximity copy ("Near entry", "close, not triggered", "closest
-    # name to triggering") and every line of it is FALSE for a name trading well
-    # above the level we flagged.
+    # below is proximity copy ("close, not triggered") and every line of it is
+    # FALSE for a name trading well above the level we flagged.
     #
-    # REWRITTEN 2026-08-06, and this family is the reason the whole abstention
-    # law exists. Every line here used to be a confession: "went without me",
-    # "missed, no position", "gone, not chasing", "ran before I got there". The
-    # argument for it was that "a desk that publicly declines to chase is worth
-    # more than one that pretends it is still early" — true, and it smuggled in
-    # a third option nobody had asked for. The operator: "it makes us look
-    # indecisive and provides zero value... It kills authority and causes
-    # unfollows." A reader gets nothing from our regret.
-    #
-    # The situation is still real and still worth posting: a level we published
-    # got cleared and the name kept going. So the payload moves from OUR feelings
-    # to THE READER'S next decision — the old level becomes the new one, and the
-    # post says what has to happen at it. Same fact, same honesty about not being
-    # in it (never claims a position, never implies we caught the move), but the
-    # sentence a reader keeps is a condition rather than a shrug.
-    #
-    # `{top_fact}` carries the level and the move; these lines carry the read.
+    # REWRITTEN 2026-08-06 (the abstention law): every line here used to be a
+    # confession ("went without me", "missed, no position"). The situation is
+    # still worth posting: a published level got cleared and the name kept
+    # going, so the payload is the READER'S next decision. Voice doctrine v5
+    # finished the job in 2026-08-11 by removing the last first-person traces:
+    # the level was PUBLISHED, and the sentence is about the level.
     ("watchlist_runaway", "authoritative desk"): [
         (
             "{cashtag} cleared the level and kept going",
-            "{top_fact} The level I flagged is support now, not entry. It has to "
-            "hold on the first pullback or the breakout was noise.",
+            "{top_fact} The published level is support now. A first pullback that "
+            "holds keeps it that way, and one that fails makes the breakout "
+            "one day of tape.",
         ),
         (
-            # NOT "turned my entry into support" — AM-R1 reads "my entry" as a
-            # first-person POSITION claim, and this desk holds none. The level
-            # was PUBLISHED, not taken.
             "{cashtag} turned that level into support",
-            "{top_fact} A breakout that never retests is a breakout on one day's "
-            "buyers. The retest is where the setup exists again.",
+            "{top_fact} A breakout that never retests is a breakout on one day of "
+            "demand. The retest is where the level exists again.",
         ),
         (
             "The {cashtag} level did its job",
-            "{top_fact} It went straight through. Nothing about that changes where "
-            "the idea fails. That number is still the number.",
+            "{top_fact} Price went straight through it. That changes nothing "
+            "about where the idea fails: the number is still the number.",
         ),
     ],
     ("watchlist_runaway", "dry, receipts-forward"): [
         (
-            "{cashtag} | level cleared, no entry taken",
-            "{top_fact} On the record: no position. The level stands, and it is "
-            "where this stops being a breakout.",
+            "{cashtag} | level cleared",
+            "{top_fact} On the record: the level stands, and it is where this "
+            "stops being a breakout.",
         ),
         (
             "{cashtag} ran through the level",
-            "{top_fact} That is now the line the move has to defend. First close "
-            "back under it and the run was a squeeze.",
+            "{top_fact} That is now the line the move has to defend. A first "
+            "close back under that line turns the run into a squeeze.",
         ),
     ],
     ("watchlist_runaway", "specialist"): [
         (
-            "{cashtag} is trading well above the setup",
-            "{top_fact} Paying up here buys the part of the move that already "
-            "happened. The pullback into the level is the part with a stop.",
+            "{cashtag} is trading well above the published level",
+            "{top_fact} Price up here has already paid for the move that "
+            "happened. The pullback into the published level is the only "
+            "entry with a stop behind it.",
         ),
     ],
     ("watchlist_runaway", "educational"): [
         (
-            "What {cashtag} costs you from here",
-            "{top_fact} Buying after a run like this puts the nearest sane stop "
-            "miles below. The distance to that stop is the whole problem.",
+            "What {cashtag} costs from here",
+            "{top_fact} After a run like this the nearest sane stop sits miles "
+            "below. The distance to that stop is the whole problem.",
         ),
     ],
     ("watchlist_runaway", "fast, reactive"): [
         (
             "{cashtag} blew through the level",
-            "{top_fact} Now it defends it or it doesn't. That first retest tells "
-            "you which move this was.",
+            "{top_fact} A retest that holds makes the level support. A "
+            "retest that fails makes the run a squeeze.",
         ),
     ],
     ("watchlist_runaway", "pattern/history"): [
         (
             "{cashtag} resolved without a pullback",
-            "{top_fact} Breakouts that skip the retest tend to come back for it. "
-            "The level is where this gets interesting again.",
+            "{top_fact} Breakouts that skip the retest tend to come back for "
+            "it. The level is where this gets interesting again.",
         ),
     ],
 
@@ -5595,319 +5884,345 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # _variant_allowed partitions the bank by context, so neither shape can be
     # selected for the other's lane. Any new line here is classified by its own
     # tokens — nothing to declare, nothing to forget.
+    #
+    # VOICE DOCTRINE v5 (2026-08-11). This family was the single largest source
+    # of first person in the shipped corpus (78 of 175 items): "on my radar",
+    # "watching, no position", "sitting on my hands", "I post entries, not
+    # previews". The doctrine's rule for the kind is that a watchlist post ships
+    # only when it carries a ranked or contextual hook, and the sentence is
+    # about the NAME and its level, never about the desk's patience.
     ("watchlist", "authoritative desk"): [
         (
-            "{cashtag} on my radar this week",
-            "{top_fact} Watching {ticker}, haven't touched it. "
-            "The setup isn't finished and I don't front-run my own rules.",
+            "{cashtag} is near its level",
+            "{top_fact} {ticker} has not triggered. The level is what has to "
+            "give first, and it has not given.",
         ),
         (
-            "Watching {cashtag}, not buying yet",
-            "{top_fact} Interesting name, unfinished setup. The list stays honest that way.",
+            "{cashtag} is close, and unfinished",
+            "{top_fact} Interesting name, unfinished base. The list stays "
+            "honest that way.",
         ),
-        # "hands in pockets" and "patience is a position too" were the closers
-        # here until 2026-08-06. Both said only that the desk was doing nothing;
-        # the fix is not a softer way to say that, it is to spend the sentence on
-        # what the reader should watch for instead (abstention law).
         (
             "{cashtag} is close",
-            "{top_fact} Near the level I care about. The entry gets posted when it "
-            "triggers, and the level is what has to give first.",
+            "{top_fact} Near the level that matters. The trigger gets published "
+            "the session it happens.",
         ),
         (
-            "Keeping {cashtag} close this week",
-            "{top_fact} The setup is unfinished. What finishes it is a close through "
-            "that level that holds into the next session.",
+            "What finishes the {cashtag} base",
+            "{top_fact} The base is unfinished. What finishes it is a close "
+            "through {entry} that survives the next session.",
         ),
         (
-            "Circling {cashtag}",
-            "{top_fact} Closest name to triggering on my list. More when it goes.",
+            "{cashtag} is the closest name on the list",
+            "{top_fact} Closest on the list to a close through {entry}. The "
+            "post comes when that close does.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
             "The watch list this week",
-            "{top_fact} A few names are close. None have triggered. "
-            "Entries get posted when they trigger, not before.",
+            "{top_fact} A few names are close. None have triggered. Entries "
+            "get published when they trigger.",
         ),
         (
-            "Nothing has triggered yet. That's the update",
-            "{top_fact} Every name on the list is waiting on the same thing: a close "
+            "Nothing has triggered yet. That is the update",
+            "{top_fact} Every name on the list needs the same thing: a close "
             "through its level that survives the next open.",
         ),
         (
-            "Patience week on the desk",
-            "{top_fact} The setups I track are forming, not finished. "
-            "Waiting is part of the job, so I wait.",
+            "A quiet week on the list",
+            "{top_fact} The bases are forming, not finished. A forming base has "
+            "nothing to trigger.",
         ),
     ],
     ("watchlist", "dry, receipts-forward"): [
         (
-            "{cashtag} | watching, no position",
-            "{top_fact} On the list, not in. I'll post when it triggers.",
+            "{cashtag} | near, not triggered",
+            "{top_fact} On the list, not in it. The entry post comes when the "
+            "level goes.",
         ),
         (
-            "{cashtag} is on my radar",
-            "{top_fact} Tracking it, nothing more. I have a habit of getting attached at "
-            "this stage and it rarely helps.",
+            "{cashtag} is on the list",
+            "{top_fact} Tracked, nothing more. The level has not moved and "
+            "neither has the plan.",
         ),
         (
             "{cashtag} close, not triggered",
-            "{top_fact} Near. No entry. The entry post comes when it comes.",
+            "{top_fact} Near. Not triggered. The post comes when the level goes.",
         ),
         (
-            "{cashtag} | watching only",
-            "{top_fact} Conditions not met. That's the whole update.",
+            "{cashtag} | conditions unmet",
+            "{top_fact} The level has not gone. That is the whole update.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
-            "Watch list check: no entries",
-            "{top_fact} Names are setting up. Nothing triggered. "
-            "I post entries, not previews.",
+            "List check: nothing triggered",
+            "{top_fact} Names are setting up. Nothing triggered. Triggers get "
+            "published, previews do not.",
         ),
         (
-            "Still watching, still flat",
-            "{top_fact} The list is live. No triggers. "
-            "Nothing to report is also a report.",
+            "The list is live. No triggers",
+            "{top_fact} Setups forming, none confirmed. Nothing to report is "
+            "also a report.",
         ),
         (
             "List update: zero triggers",
-            "{top_fact} Setups forming. Conditions unmet. Next post when that changes.",
+            "{top_fact} Bases forming. Conditions unmet. The next post lands "
+            "when that changes.",
         ),
     ],
     ("watchlist", "specialist"): [
         (
-            "{cashtag} is the one I'm watching in my group",
-            "{top_fact} Setting up, not triggered. The group's leaning the right way, which helps.",
+            "{cashtag} is the one that matters in this group",
+            "{top_fact} Setting up, not triggered. The group is leaning the "
+            "right way, which is half of it.",
         ),
         (
-            "Watching {cashtag}, sitting on my hands",
-            "{top_fact} Near my conditions. The hard part of this job is the waiting. "
-            "The easy part is tweeting about it.",
+            "{cashtag} is near its conditions",
+            "{top_fact} Near the level. The hard part of this list is that the "
+            "group decides the timing, not the list.",
         ),
         (
-            "{cashtag} near entry in my corner",
-            "{top_fact} Not finished setting up. Close.",
+            "{cashtag} is close in this group",
+            "{top_fact} The base is unfinished. Close is not triggered.",
         ),
         (
-            "{cashtag} setup in progress",
-            "{top_fact} Monitoring. The entry isn't clean yet, and dirty entries are donations.",
+            "{cashtag} | base in progress",
+            "{top_fact} The trigger is not clean yet, and a dirty trigger is a "
+            "donation.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
-            "This week's watch in my corner",
-            "{top_fact} A couple of setups forming in my group. None finished. "
-            "The group decides when, not me.",
+            "This week in the group",
+            "{top_fact} A couple of bases forming in the space. None finished. "
+            "The group decides when.",
         ),
         (
             "Group check: forming, not ready",
-            "{top_fact} My lane is showing early shapes. Early is not an entry.",
+            "{top_fact} The lane is showing early shapes. An early shape has "
+            "nothing to trigger yet.",
         ),
         (
-            "What my group is telling me this week",
-            "{top_fact} Constructive, not conclusive. "
-            "I trade my corner when it confirms, and it hasn't.",
+            "What the group says this week",
+            "{top_fact} Constructive, not conclusive. The confirmation has not "
+            "arrived.",
         ),
     ],
     ("watchlist", "educational"): [
         (
             "What earns a spot on a watch list",
-            "{top_fact} Not every interesting name is ready. {cashtag} is interesting and not ready. "
-            "Both facts matter.",
+            "{top_fact} Not every interesting name is ready. {cashtag} is "
+            "interesting and not ready. Both facts matter.",
         ),
         (
-            "How I filter what I watch",
-            "{top_fact} {cashtag} stays on watch until the missing piece shows up. "
-            "Rushing doesn't make it show up faster.",
+            "What keeps a name on the list",
+            "{top_fact} {cashtag} stays on the list until it closes through "
+            "{entry}. Rushing does not make that close come sooner.",
         ),
         (
-            "Why show the watch list at all",
-            "{top_fact} It keeps me honest about what almost made it. {cashtag} is the near-miss this week.",
+            "Why the near-misses get published",
+            "{top_fact} The near-miss is the honest part of the record, and "
+            "{cashtag} is this week's.",
         ),
         (
-            "What I'm waiting on with {cashtag}",
-            "{top_fact} One thing still missing before it triggers. The market will provide it or it won't.",
+            "What {cashtag} still has to do",
+            "{top_fact} The condition is a close through {entry} that holds "
+            "into the next session. Until that close it is a name on a list.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
             "Why a watch list beats a buy list",
-            "{top_fact} A watch list is a filter with patience built in. "
-            "Most names never make it through. That's the point.",
+            "{top_fact} A watch list is a filter with patience built into it. "
+            "Names that never make it through are the point.",
         ),
         (
-            "What a quiet watch list tells you",
-            "{top_fact} No triggers is information too. The market isn't offering "
-            "the setup, and you don't have to swing this week.",
+            "What a quiet watch list says",
+            "{top_fact} No triggers is information too. The market is not "
+            "offering the setup this week.",
         ),
         (
-            "The discipline a watch list enforces",
-            "{top_fact} Writing a name down is a commitment to wait for conditions. "
-            "Skipping the wait is how good lists become bad trades.",
+            "The discipline a list enforces",
+            "{top_fact} Writing a name down commits it to conditions. Skipping "
+            "the conditions is how good lists become bad trades.",
         ),
     ],
     ("watchlist", "fast, reactive"): [
         (
-            "Watching {cashtag} right now",
-            "{top_fact} On the list, not triggered. Eyes on it.",
+            "{cashtag} is live on the list",
+            "{top_fact} On the list, not triggered. The level is the trigger.",
         ),
         (
-            "{cashtag} watching, not acting",
-            "{top_fact} Close setup, no entry. I'll post when it goes.",
+            "{cashtag} near, not triggered",
+            "{top_fact} Close base, no trigger. The post comes when the level "
+            "goes.",
         ),
         (
-            "Radar check on {cashtag}",
-            "{top_fact} Near entry. Nothing's triggered. Patience, annoyingly, is the play.",
+            "{cashtag} is at its level",
+            "{top_fact} Price is at {entry}. Nothing has triggered.",
         ),
         (
             "{cashtag} close to going",
-            "{top_fact} Almost there. Haven't touched it. Watching live.",
+            "{top_fact} Almost there. Not there.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
-            "Watch list is live. Nothing triggered",
-            "{top_fact} Eyes on the tape. Names are close. "
-            "The moment one goes, it gets posted.",
+            "The list is live. Nothing triggered",
+            "{top_fact} Names are close. The moment one goes, it gets "
+            "published.",
         ),
         (
             "Quick list check",
-            "{top_fact} Setups forming, none confirmed. Fast doesn't mean early.",
+            "{top_fact} Bases forming, none confirmed. Fast does not mean "
+            "premature.",
         ),
         (
-            "Live watch, no entries yet",
-            "{top_fact} A few names near their levels. Near doesn't count. "
+            "Live list, nothing triggered",
+            "{top_fact} A few names near their levels. Near does not count. "
             "Triggered counts.",
         ),
     ],
     ("watchlist", "pattern/history"): [
         (
-            "Watching a pattern in {cashtag}",
-            "{top_fact} Tracing a shape worth monitoring. Half-formed patterns are just art, "
-            "so I'm not acting yet.",
+            "A pattern forming in {cashtag}",
+            "{top_fact} The shape is half-built. Half-formed patterns are art, "
+            "and art does not trigger.",
         ),
         (
             "Old shapes showing up in {cashtag}",
-            "{top_fact} It has analogues I've watched before. No entry yet.",
+            "{top_fact} Prior instances of this shape sit on the same chart. "
+            "No close through {entry} yet.",
         ),
         (
-            "{cashtag} rhyming with an old setup",
-            "{top_fact} Seen this shape resolve both ways. Waiting for it to pick a direction.",
+            "{cashtag} rhyming with an old base",
+            "{top_fact} This shape has resolved both ways. A close through "
+            "{entry} is the version that counts.",
         ),
         (
-            "{cashtag} | a setup with a memory",
-            "{top_fact} Not every one completes. Worth the watch anyway.",
+            "{cashtag} | a base with a memory",
+            "{top_fact} Not every one of these completes. The record says how "
+            "often.",
         ),
         # ── ticker-free (planner's scheduled watchlist slot) ──
         (
             "The shapes forming this week",
-            "{top_fact} A few familiar patterns across the list. "
-            "History says wait for the completion, not the sketch.",
+            "{top_fact} A few familiar patterns across the list. History says "
+            "the completion is the signal, not the sketch.",
         ),
         (
             "Old patterns, new week",
-            "{top_fact} The list rhymes with setups I've tracked before. "
-            "Rhyme isn't a trigger.",
+            "{top_fact} The list rhymes with bases that have a record. A rhyme "
+            "is not a trigger.",
         ),
         (
-            "Pattern watch: forming, not resolved",
-            "{top_fact} A half-built pattern carries no obligation. "
-            "The completed ones get posted.",
+            "Pattern check: forming, not resolved",
+            "{top_fact} A half-built pattern carries no obligation. The "
+            "completed ones get published.",
         ),
     ],
 
     # ── event (all voices) — {top_fact} carries today's catalyst read ────────
+    # v5: the aphorism must be about the MARKET. The v4 bank ended these on the
+    # author ("That's the early read. If the close disagrees, I go with the
+    # close.", "My same-day reads are the ones I revise most.").
     ("event", "authoritative desk"): [
         (
-            # The aphorism must AGREE with the headline: a post titled "my read"
-            # cannot end "I wait for the second one" — that announces a read and
-            # then disowns it (shipped 2026-07-27, read as bot copy). Give the
-            # read, then state the revision rule.
-            "My read on today's move",
-            "{top_fact} That's the early read. If the close disagrees, "
-            "I go with the close.",
+            "Today's move, read plainly",
+            "{top_fact} That is the early read, and the close is the one that "
+            "counts.",
         ),
         (
-            "What just happened, and what it changes",
-            "{top_fact} Less than the coverage suggests, more than zero. Watching the follow-through.",
+            "Today, and what it changed",
+            "{top_fact} Less than the coverage suggests, more than zero. The "
+            "follow-through is the tell.",
         ),
         (
             "Two reads on today",
-            "{top_fact} The knee-jerk and the one you keep. Mine's the second.",
+            "{top_fact} There is the knee-jerk and there is the one that "
+            "survives the close. The second one is the read.",
         ),
         (
-            "What I'm watching after today",
-            "{top_fact} It's in the books. The next session tells you if it mattered.",
+            "After today's event",
+            "{top_fact} It is in the books. The next session says whether it "
+            "mattered.",
         ),
         (
             "One clean read on today",
-            "{top_fact} The piece I'd actually act on. The rest is programming.",
+            "{top_fact} That is the piece carrying a number. The rest is "
+            "programming.",
         ),
     ],
     ("event", "dry, receipts-forward"): [
         (
             "Today's event, numbers first",
-            "{top_fact} A few of my names actually care about this one. I usually "
-            "overestimate how much the rest of them do.",
+            "{top_fact} A handful of names actually care about this one. The "
+            "index mostly does not.",
         ),
         # Template sentences must stay FACT-NEUTRAL: "the board barely moved" /
         # "not much drama in the numbers" are claims about the day that the
         # template cannot know — on a big day they ship as falsehoods. Only
         # {top_fact} may describe the tape.
         (
-            "Event, logged",
+            "Event, on the record",
             "{top_fact} Noted and filed. No conclusions before the close.",
         ),
         (
             "What actually shifted today",
-            "{top_fact} The numbers are the story. The commentary is decoration.",
+            "{top_fact} The numbers are the story. The commentary is "
+            "decoration.",
         ),
         (
-            "Reaction noted",
-            "{top_fact} Watching for confirmation next session. Reactions lie, follow-through doesn't.",
+            "Reaction, on the record",
+            "{top_fact} Reactions lie and follow-through does not. The next "
+            "session is the one with the answer in it.",
         ),
     ],
     ("event", "specialist"): [
         (
-            "What today's event does to my group",
-            "{top_fact} Flows straight into the names I watch, whether they've noticed yet or not.",
+            "What today's event does to the group",
+            "{top_fact} It flows straight into the names in this space, "
+            "whether they have priced it yet or not.",
         ),
         (
-            "How this hits my corner",
-            "{top_fact} My names take events differently than the index. Watching which ones actually react.",
+            "How this reaches the group",
+            "{top_fact} These names take events differently from the index, "
+            "and the difference shows up within a session.",
         ),
         (
-            "Does the group's reaction add up?",
-            "{top_fact} Sometimes the group knows better than the headline. Checking which one's lying today.",
+            "The group's reaction, checked",
+            "{top_fact} Sometimes the group knows better than the headline. "
+            "Today one of them is wrong.",
         ),
         (
-            "My take on the group's reaction",
-            "{top_fact} The names have already voted on it. I've misread that vote enough "
-            "times to hold the read loosely.",
+            "The group has already voted",
+            "{top_fact} The names priced it before the commentary did. That "
+            "vote is the read.",
         ),
     ],
     ("event", "educational"): [
         (
             "How the group took today's event",
-            "{top_fact} The pricing and the coverage rarely agree, and I keep learning that "
-            "the hard way.",
+            "{top_fact} The pricing and the coverage rarely agree, and the "
+            "pricing is the one with money behind it.",
         ),
         (
             "Why markets moved on this",
-            "{top_fact} Markets move on surprise, not news. Worth asking how "
-            "much of today actually surprised anyone.",
+            "{top_fact} Markets move on surprise, not on news. How much of "
+            "today was actually a surprise is the whole question.",
         ),
         (
             "How to read what just happened",
-            "{top_fact} The oversimplified takes go both ways. The tape settles the argument eventually.",
+            "{top_fact} The oversimplified takes go both ways. The tape "
+            "settles the argument eventually.",
         ),
         (
             "Cutting through today's noise",
-            "{top_fact} Loud day. The part that matters is quieter, as usual.",
+            "{top_fact} Everything else today was commentary.",
         ),
     ],
     ("event", "fast, reactive"): [
         (
             "What just happened",
-            "{top_fact} Fast take, so discount it accordingly. My same-day reads are the "
-            "ones I revise most.",
+            "{top_fact} Fast read, and a fast read is worth what the close "
+            "says it is worth.",
         ),
         (
             "Quick read on today",
@@ -5918,27 +6233,30 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{top_fact} Simpler than the headline made it. Usually is.",
         ),
         (
-            "Price moved, here's the tape",
-            "{top_fact} The tape's version is shorter than the article's. I trust the tape.",
+            "The tape's version of today",
+            "{top_fact} The tape's version is shorter than the article's.",
         ),
     ],
     ("event", "pattern/history"): [
         (
             "How days like this have gone before",
-            "{top_fact} We've seen this kind of session. Watching if it rhymes.",
+            "{top_fact} Sessions with this shape have a record, and it is "
+            "worth counting before the takes harden.",
         ),
         (
-            "This one rhymes with something",
-            "{top_fact} The closest matches went a particular way. Worth a look before the hot takes harden.",
+            "This one has a precedent",
+            "{top_fact} Comparable sessions get counted before the takes "
+            "harden.",
         ),
         (
-            "What happened last time we saw this",
-            "{top_fact} The setup into it has precedent. The reaction never does, and I "
-            "keep forgetting that part.",
+            "What happened after the last one",
+            "{top_fact} The setup into it has precedent. The reaction to it "
+            "never does.",
         ),
         (
             "The usual pattern after days like this",
-            "{top_fact} Comparable sessions tend to rhyme. Not predicting, filing.",
+            "{top_fact} Comparable sessions tend to rhyme. Counted, not "
+            "predicted.",
         ),
     ],
 }
@@ -5955,16 +6273,16 @@ _CHART_VOICE_FILLER: dict[str, str] = {
     "specialist": "This group's names are at an inflection point",
     "educational": "Read the trend before you read the headlines",
     "fast, reactive": "Tape doesn't lie, and it's setting up",
-    "pattern/history": "This chart shape has a history worth knowing",
+    "pattern/history": "The same shape appears earlier in this frame",
 }
 
 # Filler for theme_list when top_fact is empty (theme agg context)
 _THEME_VOICE_FILLER: dict[str, str] = {
     "authoritative desk": "The whole group is moving today.",
     "dry, receipts-forward": "Group-wide move, noted.",
-    "specialist": "The group I watch is moving together today.",
+    "specialist": "The whole group is moving together today.",
     "educational": "When a whole group moves at once, notice.",
-    "fast, reactive": "Whole group's on the tape right now.",
+    "fast, reactive": "Every name in the group moved together today.",
     "pattern/history": "This group has moved like this before.",
 }
 
@@ -5979,16 +6297,16 @@ _THEME_VOICE_FILLER: dict[str, str] = {
 _MOVER_VOICE_FILLER: dict[str, str] = {
     "authoritative desk": "One of the bigger moves in the index today.",
     "dry, receipts-forward": "Big move, chart below. Number's above.",
-    "specialist": "Biggest move in my group today.",
+    "specialist": "Biggest move in the group today.",
     "educational": "A real single-day move worth studying.",
-    "fast, reactive": "Biggest mover on the tape right now.",
+    "fast, reactive": "Biggest single-day move on the tape today.",
     "pattern/history": "A move this size has precedent worth checking.",
 }
 
 # When receipt has no graded data (gain/loss both absent), use this filler
 # to keep bodies distinct across voices (pending outcome)
 _RECEIPT_VOICE_PENDING: dict[str, str] = {
-    "authoritative desk": "Still open. I'll post the result when it resolves.",
+    "authoritative desk": "Still open. The result gets posted when it resolves.",
     "dry, receipts-forward": "Open. Result goes up on close.",
     "specialist": "Still running. Result when it's done.",
     "educational": "Every call gets a result. This one posts on the next close.",
@@ -7028,27 +7346,44 @@ def write_posts_llm(
 #: caps line, the numbers desk stacks blank-line-separated escalations, the
 #: trader voice runs dense multi-line call-outs. Kept as a constant so the test
 #: suite can pin that the prompt still ships them.
+# VOICE DOCTRINE v5 (2026-08-11). Fourteen of the lines below are the doctrine's
+# own exemplars (docs/marketing_voice_doctrine_v5.md), written to be fed here
+# verbatim; the rest are the measured-corpus lines from the 2026-08-08 pass that
+# already obey v5. Every first-person line the v4 block carried is GONE, and so
+# is the "trader / setup (stance first)" register whose whole premise was a
+# performed stance. What replaced it is the doctrine's register set: the subject
+# of the first sentence is the entity or the fact, the urgency comes from dated
+# precedent, and the consequence is stated as a fact about the level or the
+# streak. Two exemplars (the $NVDA and SPX breadth lines) are shown in two_part
+# form because their prose runs 155 chars and a single line is capped at 140 —
+# the words are the doctrine's, the blank line is the shape gate's.
 CORPUS_EXEMPLARS: dict[str, tuple[str, ...]] = {
+    "level and structure note (the level is a fact, never a matter of trust)": (
+        "$NVDA closed above 209 for the first time in three weeks.\n\n"
+        "That level capped four rallies since June. The most-traded price of "
+        "the summer is now underneath.",
+        "$WS held the same long-term trendline for the fifth time in a year. "
+        "Five touches since last August, five holds. The line is 41.20.",
+        "SPX breadth: 4 of 11 sectors above their 50-day.\n\n"
+        "The index made a high anyway. Thin leadership is the pattern that "
+        "preceded both prior pullbacks this year.",
+    ),
+    "dry juxtaposition (two facts set against each other, tension left standing)": (
+        "Powell takes four dissents and the 2-year doesn't move a basis point. "
+        "The bond market graded that meeting before the presser started.",
+        "GDPNow tracking 5.8% while claims run 12% below last year. The "
+        "growth-scare trade keeps paying for not existing.",
+        "The Nasdaq 100 $QQQ is down 5%+ over the last week, while the S&P 500 "
+        "Equalweight $RSP is up 2%+.",
+    ),
     "wire / breaking (terse, fact-first, no hedging)": (
+        "🔴 BLINK CHARGING cuts FY26 revenue guidance to $83-90M from "
+        "$105-115M. Street was at $106M. Third guide-down this year.",
         "KOSPI plunges 9.6% as losses deepen following resumption of trading "
         "after circuit breakers.",
         "JPMorgan raises Sherwin-Williams target price to $380 from $365.",
         "BREAKING: South Korean's stock market index, KOSPI, has fallen more "
         "than 7.5% today.\n\nIt is down more than 30% this month alone.",
-    ),
-    "numbers desk (escalation, dollar translations, since-dates)": (
-        # Trimmed from the corpus original (114 chars before the blank line) so
-        # the shown target obeys the 90-char two_part headline cap the prompt
-        # states three paragraphs above it. An exemplar that breaks the rule it
-        # illustrates teaches the rule is optional.
-        "BREAKING: SanDisk $SNDK falls -17% on the day, now -55% from its "
-        "record high.\n\nThat's officially over -$200 billion in lost market "
-        "cap since June 22nd.",
-        "SanDisk $SNDK was the best performing Russell 1,000 stock in the first "
-        "half.\n\nIt's now down 51.3% this month.",
-        "The Nasdaq 100 $QQQ is down 5%+ over the last week, while the S&P 500 "
-        "Equalweight $RSP is up 2%+.",
-        "$XLI lower, yet the Dow is up more than 1%.\n\nDon't see that everyday.",
     ),
     # ── Structure exemplars distilled from the 2026-08-08 corpus (W2) ────────
     # Chosen for SHAPE, never copied: each one is written here in house voice
@@ -7056,6 +7391,11 @@ CORPUS_EXEMPLARS: dict[str, tuple[str, ...]] = {
     # skeleton a real desk uses, and a verbatim lift teaches the model to
     # reproduce another account's sentences instead of its structure.
     "stacked list (one fact per line, every line carries its own figure)": (
+        "Coherent, $COHR, down 10.3% after earnings.\n"
+        "1. Q4 revenue $1.58B, in line\n"
+        "2. FY27 guide trimmed on datacom mix\n"
+        "3. Now 20% off the June record\n"
+        "$7.6B in market cap gone in two sessions.",
         "Percent below their all-time high\n"
         "Semis: 4%\n"
         "Software: 19%\n"
@@ -7065,10 +7405,47 @@ CORPUS_EXEMPLARS: dict[str, tuple[str, ...]] = {
         "Average since 1949: 67 months\n"
         "Longest: 128 months\n"
         "Shortest: 12 months",
-        "Three things the close said.\n"
-        "Breadth narrowed again\n"
-        "Oil did not believe the headline\n"
-        "Rate vol still is not paying attention",
+    ),
+    "rotation desk (group move, leaders with aligned %, breadth inside it)": (
+        "Metals did the work today: group +7.2% average.\n"
+        "$WWR +88% $AREC +21% $CENX +12% $CDE +11%\n"
+        "Third straight session the group has led. Breadth inside the group: "
+        "19 of 22 green.",
+        "Software's bid is back. $TEAM +35% on earnings, the group +3.7%, 8 of "
+        "10 leaders green. First group-wide move since the July selloff.",
+        "$TSLA down 9 of the last 10 days\n$AMZN down 8 of the last 9 days\n"
+        "$META down 9 days in a row",
+    ),
+    "single-name desk (the driver named, cashtag as an appositive)": (
+        "Atlassian, $TEAM, up 35% on the quarter. Cloud revenue +31%, guide "
+        "raised, and one session cleared every close since March.",
+        "A $DVA director bought $2.1M on the open market Tuesday. Largest "
+        "insider buy in the name since 2023, three weeks after the earnings "
+        "drop.",
+        "SanDisk $SNDK was the best performing Russell 1,000 stock in the first "
+        "half.\n\nIt's now down 51.3% this month.",
+    ),
+    "history desk (dated precedent, base rate, no promised outcome)": (
+        "Nasdaq up 8 of 9 sessions. Runs this long have happened 14 times since "
+        "2020, and day nine closed green in 9 of them.",
+        "Chipmaker valuations are now higher than they were at the peak of the "
+        "dot-com bubble.\n\nAI may be revolutionary, but the price you pay "
+        "still matters.",
+        # Trimmed from the corpus original (105 chars before the blank line) so
+        # the shown target obeys the 90-char two_part headline cap the prompt
+        # states three paragraphs above it. An exemplar that breaks the rule it
+        # illustrates teaches the rule is optional.
+        "Momentum's 3-year excess return over the S&P 500 was 100th percentile "
+        "coming into July.\n\nEven after the chip crash, it is still in the "
+        "99th percentile.",
+    ),
+    "macro stat stack (dense prints, the read only when the prints carry it)": (
+        "jobless claims 199k. gdpnow 5.8%. median cpi 2.1%. the soft landing "
+        "isn't a forecast anymore, it's the print.",
+        "9 of 11 sectors green. equal-weight beat cap-weight by 80bps. broad "
+        "days like this opened the last three legs up, not closed them.",
+        "June new home sales rose +1.6% m/m vs. +4.8% est. & -4.3% prior "
+        "(revised up from -7.3%)",
     ),
     "quote relay (attribution first, statement flat, no commentary)": (
         "Powell: the labour market is not a source of inflation pressure right now.",
@@ -7084,27 +7461,6 @@ CORPUS_EXEMPLARS: dict[str, tuple[str, ...]] = {
         "$NET back above the November shelf 👀",
         "Best day for the group since April.",
         "Fourth test of 122. Still holding.",
-    ),
-    "trader / setup (stance first, chart does the rest)": (
-        "$SKHY Huge after hrs reversal. $118's to $138's.",
-        "$TSLA down 9 of the last 10 days\n$AMZN down 8 of the last 9 days\n"
-        "$META down 9 days in a row",
-        "After 6 weeks of sideways grinding on the major indices, $QQQ, $SPY, "
-        "$TQQQ are still very much holding steady in a very bullish formation.\n"
-        "Consolidations of this type almost always breakout to the upside",
-        "The canary in the mine $MSFT",
-    ),
-    "macro color (dense prints, no narrative framing)": (
-        "June new home sales rose +1.6% m/m vs. +4.8% est. & -4.3% prior "
-        "(revised up from -7.3%)",
-        "Chipmaker valuations are now higher than they were at the peak of the "
-        "dot-com bubble.\n\nAI may be revolutionary, but the price you pay "
-        "still matters.",
-        # Trimmed from the corpus original (105 chars before the blank line) for
-        # the same reason as the SanDisk exemplar above.
-        "Momentum's 3-year excess return over the S&P 500 was 100th percentile "
-        "coming into July.\n\nEven after the chip crash, it is still in the "
-        "99th percentile.",
     ),
 }
 
@@ -7268,12 +7624,21 @@ _V2_PAYLOAD_CONTRACT_BLOCK = (
 #: payload contract and the per-account persona section. What is GONE is v1's
 #: two-line assumption and its batch-JSON framing — this prompt writes ONE post.
 _V2_SYSTEM_PROMPT_BASE = (
-    "You're a trader posting on X. Not a research desk, not a brand, not a "
-    "model. You've lost real money before and you find the whole circus mildly "
-    "funny. Your one job: sound like a real person your readers would follow. "
-    "They are market professionals and men grinding toward financial freedom; "
-    "they clock AI text instantly and punish cheese with the quote-tweet. If a "
-    "line would sound weird said out loud to a trading buddy, rewrite it.\n\n"
+    # VOICE DOCTRINE v5 (2026-08-11). The opener used to read "You're a trader
+    # posting on X... You've lost real money before and you find the whole
+    # circus mildly funny", and that premise is what shipped a model performing
+    # a trader's interiority: "I'm leaning on that history unless the rebound
+    # stalls here", "Am I getting a second session out of this?". The premise is
+    # now the desk's actual job. Everything downstream of this paragraph that
+    # grounds a claim in the packet is UNCHANGED.
+    "You write for a market desk that publishes on X. Not a brand, not a "
+    "research note, not a narrator with feelings about a trade. Your readers "
+    "are market professionals and men grinding toward financial freedom; they "
+    "clock AI text instantly and punish cheese with the quote-tweet. Your one "
+    "job: surface the fact that changes the picture, plus the context that "
+    "makes it mean something. The read is in what you SELECT, never in a "
+    "reaction you perform. If a line would sound weird said out loud on a "
+    "trading desk, rewrite it.\n\n"
     "You write ONE post. The item you are given carries the account's persona, "
     "the facts our engine computed, the shape this post must take, and the "
     "angle it must work. The engine decides WHAT. You decide how it is said.\n\n"
@@ -7384,10 +7749,10 @@ _V2_SYSTEM_PROMPT_BASE = (
     "through the close'.\n"
     "- the level that changes the read: 'under 33.8 the whole thing is a "
     "different conversation'.\n"
-    "- what you do not know: 'no idea who is doing the buying, and that is the "
-    "part I would want before sizing up'.\n"
-    "- what you will do next, said plainly: 'I'll post how it ends either "
-    "way'.\n"
+    "- what you do not know, said flatly and with nobody narrating it: 'no "
+    "corroborated driver on the tape for it yet'.\n"
+    "- what the next session settles: 'the next close either holds the "
+    "reclaim or it does not'.\n"
     "If you have a base rate, the base rate IS the hedge. Print it and let it "
     "do the work: '11 of 14 since March, which is also 3 that did not'.\n\n"
 
@@ -7412,19 +7777,33 @@ _V2_SYSTEM_PROMPT_BASE = (
     "registers a signature habit that contradicts one of them, the card wins, "
     "inside the cap the card names and nowhere else. A habit no card registers "
     "is not yours to use:\n"
+    # THE STANCE LAW, v5 (2026-08-11). It replaces two bullets that COMMANDED
+    # the register the operator ordered destroyed: "Mix 'I' and 'we'. 'I' for
+    # takes and watching" and "Give a stance: watching, leaning, respecting,
+    # fading, waiting, not chasing". Those two lines are the measured source of
+    # first person in 175 of 679 shipped items and of every "Watching, no
+    # position." tail. `voice_v5_violations` is the executable form of the
+    # paragraph below, so the prompt and the gate now say the same thing.
+    "- THE STANCE LIVES IN THE SELECTION, NOT IN A NARRATOR. Lead with the "
+    "fact that changes the picture. Anchor it to dated precedent when the "
+    "packet carries one (first since, Nth straight, most since). State what is "
+    "now true: the level gone, the streak intact, the guide cut. Never narrate "
+    "yourself: no 'I', no 'my', no 'we'. No questions. No advice verbs (watch, "
+    "chase, fade). No meta-language about the setup or the post. End on a "
+    "fact, not a shrug. If the packet supports no consequence, end on the "
+    "strongest fact.\n"
+    "- The consequence is a fact about the LEVEL, never about your confidence. "
+    "'Below 209 the volume shelf is gone' is the shape. 'I trust it only above "
+    "209' is the shape that gets the post dropped.\n"
     "- X is casual. Contractions always. Fragments are fine. Short is good, "
     "but natural-short, the way people type, not clipped telegraph style. "
     "Three fragments in a row is a telegram, not a voice.\n"
-    "- Mix 'I' and 'we'. 'I' for takes and watching; 'we' for the shop and the "
-    "track record. All-'we' reads pretentious.\n"
-    "- Every post carries a level, a take, or a real question. Give a stance: "
-    "watching, leaning, respecting, fading, waiting, not chasing.\n"
     "- The default humor is deadpan understatement ('Ugly.' 'Not ideal.'). "
     "Most posts carry zero jokes; when wit shows up it carries the read, it "
     "never decorates it. One dry line, never two.\n"
     "- Dry skepticism aimed at sell-side target herding, 'one-off' charges, "
-    "consensus flips, euphoria at highs, and our own stopped-out trades. NEVER "
-    "at named people, the reader, or politics.\n"
+    "consensus flips and euphoria at highs. NEVER at named people, the reader, "
+    "or politics.\n"
     "- The cheese test: if the line would survive with a laughing emoji "
     "appended, cut it. By default no puns and no exclamation marks: both are "
     "card-granted habits, so use one only if your card names it, once, and "
@@ -7471,17 +7850,39 @@ _V2_SYSTEM_PROMPT_BASE = (
     "- NO engagement asks: 'follow for more', 'like and retweet', 'link in "
     "bio', 'RT if', 'tag a friend'. The post is the product. Nobody in the "
     "corpus asks for a metric.\n"
-    "- Exclamation marks are effectively absent: 496 of 500 posts carry zero. "
-    "Only a card that registers one may use one, once.\n"
+    # v5 (2026-08-11): this line used to end "Only a card that registers one may
+    # use one, once." No card registers one now, and `voice_v5_violations`
+    # rejects the mark outright on every non-wire kind, so the licence had to go
+    # with it: an instruction whose compliance is a rejection is the
+    # self-cancelling failure the 2026-07-31 autopsy class exists to catch.
+    "- Exclamation marks are absent: 496 of 500 reference posts carry zero, and "
+    "so do all 679 items this desk has shipped. Never use one.\n"
     "- NO hedging softeners: 'I think', 'IMO', 'in my opinion', 'maybe', 'I "
     "guess', 'sort of'. State what you see, or state plainly what you do not "
     "know. A weakened claim is not a careful one.\n"
     "- NO announced prequestion. 'What just happened, and what it changes' "
     "describes the post instead of being it. Open on the fact.\n"
     "- NO orphan superlative. 'The biggest drawdown' needs what it is the "
-    "biggest of and over what window, in the same sentence.\n\n"
+    "biggest of and over what window, in the same sentence.\n"
+    # VOICE PACK v5 (2026-08-11). Same discipline as the v4 block above: every
+    # line is a measurement on the 679-item shipped corpus or on the 205-post
+    # reference corpus, and every one of them is enforced by
+    # `voice_v5_violations` so the prompt and the gate cannot drift apart.
+    "- NO first person, anywhere: 'I', 'I'm', 'I'd', 'my', 'me', 'we', 'our'. "
+    "Measured in 175 of 679 shipped items and it is the single loudest tell "
+    "that a machine wrote the post. The market is the subject of the sentence.\n"
+    "- NO question marks. Not as a hook, not as a tail, not as reply-bait. "
+    "Zero rhetorical questions across 205 posts from 12 real data accounts.\n"
+    "- NO confession or disclaimer closers: 'Watching, no position', 'Levels, "
+    "not advice', 'not advice', 'no position'. They were the dominant tails in "
+    "the shipped corpus and they say nothing about the market.\n"
+    "- NO 'so far today' (79 shipped items). Write 'today', or write nothing: "
+    "the post is timestamped.\n"
+    "- Dollar figures are written the way a trader writes them: $7.64B, $83M, "
+    "$2.1M. Never $1000K, never $7,639,791,784.\n\n"
 
-    "EXEMPLARS (real posts from real accounts, this is the target):\n"
+    "EXEMPLARS (the target register: measured reference-account posts, plus "
+    "the house lines written to match them):\n"
     + _exemplar_block() + "\n\n"
 
     "THESE SHIPPED FROM THIS DESK AND SHOULD NOT HAVE:\n"

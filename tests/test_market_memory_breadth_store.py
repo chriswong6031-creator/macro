@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import functools
 import hashlib
 import io
 import json
@@ -31,6 +32,7 @@ _SOURCE_PATHS = {
     "canary_identity_config": "config/market_memory_canary.v1.json",
     "xnys_calendar_module": "lib/nyse_calendar.py",
 }
+_FROZEN_FIXTURE_SESSION = "2026-08-07"
 
 
 def _git_blob_oid(body: bytes) -> str:
@@ -38,12 +40,26 @@ def _git_blob_oid(body: bytes) -> str:
     return hashlib.sha1(framed).hexdigest()
 
 
+@functools.lru_cache(maxsize=1)
+def _frozen_breadth_body() -> bytes:
+    """Keep store clock tests independent of the nightly breadth append."""
+
+    frame = pd.read_parquet(
+        ROOT / _SOURCE_PATHS["breadth_actual_output"],
+        engine="pyarrow",
+    )
+    frozen = frame.loc[:_FROZEN_FIXTURE_SESSION].copy()
+    assert frozen.index[-1].date().isoformat() == _FROZEN_FIXTURE_SESSION
+    return _parquet_bytes(frozen)
+
+
 def _inputs(
     *, breadth_body: bytes | None = None, pinned_commit: str = "1" * 40
 ) -> breadth.PinnedBreadthInputs:
     bodies = {role: (ROOT / path).read_bytes() for role, path in _SOURCE_PATHS.items()}
-    if breadth_body is not None:
-        bodies["breadth_actual_output"] = breadth_body
+    bodies["breadth_actual_output"] = (
+        _frozen_breadth_body() if breadth_body is None else breadth_body
+    )
     return breadth.PinnedBreadthInputs(
         pinned_commit=pinned_commit,
         breadth_body=bodies["breadth_actual_output"],

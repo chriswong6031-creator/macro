@@ -713,9 +713,56 @@ def compose_text(headline: object, body: object) -> str:
     already reconstructs a plan post's outbox text as headline + blank line +
     body when it joins usage back onto the plan. Producers that want the two
     halves separately readable keep them as top-level ``headline``/``body``.
+
+    A BODY THAT ALREADY SAYS THE HEADLINE IS ONE COMPOSITION, NOT TWO. Four
+    shipped breaking items (``ob-2026-08-01-170b51e475``,
+    ``ob-2026-08-01-c3d08a7993``, ``ob-2026-08-02-e731cc12b9``,
+    ``ob-2026-08-03-6e554a3eb1``) carried their own headline twice inside one
+    text, joined here by a wire opener::
+
+        Fed's Williams: central bank very committed to returning inflation to 2%
+
+        On the tape: Fed's Williams: central bank very committed to returning
+        inflation to 2%
+
+    The upstream cause is `breaking_summary._deterministic_summary`, whose
+    documented fallback relay is ``"{headline} -- {source_name}"`` — an honest
+    WHOLE POST when the headline is all the packet gave us, and a duplicate the
+    moment somebody joins it BEHIND that same headline. press_lane gates it
+    today (`wire_format.wire_post_shape` returns short_form, which blanks the
+    headline), but THE GATE LIVES IN THE CALLER: `fastlane` and
+    `engine/press/research_lane` join here with no gate at all, so the defect
+    is one new call site away from returning. The join is the seam, so the join
+    refuses — it emits the body alone, which is the enriched half (it carries
+    the opener and the source clause), and is byte-identical to what the
+    downstream gate produces today.
+
+    The test is verbatim CONTAINMENT of a substantial headline, not a coverage
+    ratio: a body that merely shares vocabulary with line 1 is untouched, and a
+    short label headline ("$AAPL") can never collapse a legitimate two-line
+    post. Fuzzy restatement stays where it already lives — `wire_format`'s
+    `restatement_verdict`, which owns thresholds and their escapes.
     """
-    parts = [str(headline or "").strip(), str(body or "").strip()]
+    head = str(headline or "").strip()
+    text = str(body or "").strip()
+    if head and text and _body_restates_headline(head, text):
+        return text
+    parts = [head, text]
     return "\n\n".join(p for p in parts if p)
+
+
+#: A headline shorter than this (in words) is a label, not a statement, so its
+#: appearance inside the body is not a restatement. The shipped duplicates were
+#: 10-16 word sentences.
+_RESTATED_HEADLINE_MIN_WORDS = 5
+
+
+def _body_restates_headline(headline: str, body: str) -> bool:
+    """True when *body* already contains *headline* verbatim (modulo spacing)."""
+    head = _normalize_text(headline).casefold()
+    if len(head.split()) < _RESTATED_HEADLINE_MIN_WORDS:
+        return False
+    return head in _normalize_text(body).casefold()
 
 
 def _value_gate_enforced(cfg: dict | None, kind: str | None = None) -> bool:

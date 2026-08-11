@@ -344,6 +344,17 @@ options_fail_closed_on_exit() {
 trap options_fail_closed_on_exit EXIT
 # END W1B5_TIMER_EXIT_GUARD
 
+# W1A has no scheduled context writer, so directory provisioning alone cannot
+# create its manifest/genesis/HEAD. Reconcile and authenticate that metadata on
+# every tick before API unit validation or restart. Any unsafe partial, tampered,
+# symlinked, or unwritable store aborts readiness; no capture is fabricated.
+if ! /opt/macro-api/.venv/bin/python "$APP_DIR/scripts/initialize_market_memory_w1a.py" \
+	--repository-root "$APP_DIR" \
+	--store /var/lib/macro-market-memory/public; then
+	echo "macro-update: W1A public generation initialization failed; refusing API readiness" >&2
+	exit 1
+fi
+
 # A healthy no-op updater must not cancel and recreate the nonpersistent daily
 # timer.  Validate first; disarm only when identity/anchor repair is required.
 if ! bash "$APP_DIR/app/deploy/market-memory-options-prereqs.sh" \

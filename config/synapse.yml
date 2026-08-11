@@ -11548,12 +11548,18 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_site.py
+      - engine/us_candidate_lanes.py
     external_consumers:
       - terminal:oracle-tab
     notes: >
       Prophet active plans index — all active plans + management state summaries inline.
       Also mirrored to R2 key prophet/index.json when --publish flag is passed.
       authority_tier=display. NOT wired into daily.yml in this PR.
+      engine/us_candidate_lanes.py reads the OPEN-PLAN TICKER SET ONLY
+      (load_open_plan_tickers), for the same reason build_site does and with the same
+      safety: the nightly reads LAST NIGHT'S index, and an open plan persists across
+      nights, so "already has a plan running" cannot go stale the way a refusal reason
+      would. Fail-soft to an empty set; nothing about admission depends on it.
 
   # --- prophet-ledger: Prophet forward outcome ledger ---
   prophet-ledger:
@@ -11598,7 +11604,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers: [engine/us_prophet_grades.py, scripts/grade_us_prophet_candidates.py,
-                engine/prophet_miss_audit.py]
+                engine/prophet_miss_audit.py, engine/us_candidate_lanes.py]
     external_consumers: []
     notes: >
       US Context Vector point-in-time candidate store (PROPHET US roadmap §2 keystone).
@@ -11641,6 +11647,19 @@ artifacts:
       measured for this name tonight", never "false" (#4485). Named debts
       (turnover_pctile_60d data-blocked; stoch_ob/stoch_bear/macd_bear not exposed by
       confluence_tiers) are documented in data/us_prophet_rank/README.md.
+      CANDIDATE-POOL LANES (operator commission 2026-08-11): nine additional pool_*
+      columns carry the DISPLAY-TIER lossless four-lane partition of tonight's
+      cascade-eligible pool (CN parity with china_board_rank._partition), produced by
+      engine/us_candidate_lanes.py and stamped by the same build_stock_library run.
+      That module is also the store's fourth CONSUMER, read-only: it projects
+      HISTORY_COLUMNS out of prior months through load_candidates() to derive the
+      display-only graduation annotations (days_in_pool / score_delta_5d /
+      lane_transitions). It inherits the same zero authority — nothing on the admission
+      path imports it, pinned by tests/test_us_candidate_lanes.py::TestNoAuthorityLeak.
+      pool_* is null for every name outside tonight's eligible set (~144 of ~1,540) and
+      for every scan-tier row, which are never admitted. `originated` is deliberately
+      NOT a column: build_stock_library stamps before build_prophet originates anything
+      and backfill is forbidden, so origination stays build_prophet's fact.
 
   # --- us-prophet-grades: full-population forward grades (§W7, operator 2026-08-05) ---
   us-prophet-grades:
@@ -18394,6 +18413,43 @@ artifacts:
       a gaps[] note rather than dropping the file. Masterplan:
       research/DISLOCATION_RECOVERY_LOBE_MASTERPLAN_BY_FABLE.md.
 
+  price-pressure-completion-receipts:
+    path: data/price_pressure/completion_receipts.jsonl
+    format: jsonl
+    producer: scripts/build_price_pressure.py
+    known_extra_writers: []
+    owner_program: price-pressure
+    cadence: daily-engine
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: null
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_price_pressure.py
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: >
+      Append-only, immutable completion receipts for the ONE sanctioned write into
+      price-pressure-events' frozen identity block
+      (research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md §3 / §10.1). FRED publishes
+      VIXCLS one session behind the tape at the 22:30Z harvest, so a forward row
+      typically stamps vix_pctile NULL through no property of its own; the first
+      subsequent nightly on which t0 is present in the store fills that null with t0's
+      OWN close percentile under the shipped §3 transform — an exact late-arriving
+      value, never a forward-fill, never a revision of a non-null stamp — and files one
+      line binding {ticker, date, side, vix_pctile, observed_at, vixcls_sha256,
+      engine_version}. Only era=forward rows dated on/after the registered 2026-08-11
+      evidence boundary are eligible; gap/backfill and the ineligible 2026-08-10
+      forward slice remain frozen. The hash is of the exact VIXCLS file bytes the value
+      was computed from. Lines are never rewritten or reordered. A row whose fwd5
+      window closes with no receipt is missing forever and is counted, not repaired.
+      Grading may CONSUME a receipt and is forbidden to complete a stamp itself. No
+      freshness SLA: a night with no late-arriving stamp correctly writes nothing.
+
   price-pressure-events:
     path: data/price_pressure/events.parquet
     format: parquet
@@ -18426,4 +18482,13 @@ artifacts:
       never rewritten. Names that stop trading keep their rows and grade
       DELISTED_OR_HALTED inside the terminal shares: resolution-conditioned denominators
       delete losers. Sibling artifact data/price_pressure/base_rates.json is frozen by
-      the manual backfill only and is never refrozen by the nightly.
+      the manual backfill only and is never refrozen by the nightly. The identity block
+      has exactly ONE sanctioned exception, ledger.complete_vix_stamps
+      (research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md §10.1): FRED publishes VIXCLS
+      one session behind the tape at the 22:30Z harvest, so a forward row typically
+      stamps vix_pctile NULL through no property of its own — a null stamp is completed
+      ONCE with t0's own close percentile by a later nightly, inside the row's fwd5
+      window and only for an eligible era=forward event dated on/after 2026-08-11,
+      against an append-only receipt in
+      data/price_pressure/completion_receipts.jsonl. A non-null stamp stays immutable
+      and no other column is reachable from that seam.
