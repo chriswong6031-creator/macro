@@ -4018,6 +4018,13 @@ jobs:
         run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_outbox_garbage.py tests/test_marketing_metrics_poll.py tests/test_marketing_weekend_levels.py -q
       - name: stale backlog quarantine + optional publish-time phrase fallback
         run: python -m pytest tests/test_marketing_stale_purge.py tests/test_publish_time_llm_phrase.py -q
+      - name: liveness tripwire rule engine (the green-and-dark alarm)
+        # 2026-08-06→08-10: Buffer 429'd, the kill-switch went to 0, Buffer was
+        # fixed and nobody re-armed — five days of GREEN sweeps posting nothing.
+        # scripts/marketing_liveness_tripwire.py is the observer for that shape,
+        # so it is named by a run step from the day it lands: an alarm nobody
+        # tests is the same silence one layer up. stdlib + pyyaml, tmp_path only.
+        run: python -m pytest tests/test_marketing_liveness_tripwire.py -q
 
   marketing-media-pipeline:
     if: ${{ false }}
@@ -6670,6 +6677,8 @@ jobs:
           tests/test_market_memory_forward.py
           tests/test_market_memory_forward_store.py
           tests/test_market_memory_scoring.py
+          tests/test_market_memory_playback.py
+          tests/test_market_memory_playback_api.py
           tests/test_market_memory_projection.py
           tests/test_market_memory_trusted.py
           tests/test_market_memory_context_deploy.py

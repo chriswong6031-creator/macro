@@ -683,6 +683,101 @@ def test_exact_reader_has_no_nearest_latest_or_context_guessing(
     assert not hasattr(reader, "read_nearest")
 
 
+def test_trusted_pinned_generation_reads_published_empty_ancestor_and_rejects_orphan(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _candidate(monkeypatch, tmp_path)
+    trusted.initialize_trusted_store(candidate.public)
+    reader = trusted.TrustedFileAsKnownAtReader(candidate.public)
+    empty = reader.read_pinned_generation()
+    stored = _capture(candidate)
+    current = reader.read_pinned_generation()
+
+    assert empty.captures == ()
+    assert reader.read_pinned_generation(generation_id=empty.generation_id) == empty
+    assert (
+        reader.read_stored_from_pinned_generation(
+            current, query_id=stored.capture_receipt["query_id"]
+        )
+        == stored
+    )
+    state = trusted._load_state(candidate.public)
+    orphan = pit._new_generation(
+        store_id=state.manifest["store_id"],
+        previous_generation_id=current.generation_id,
+        captures=[row.as_dict() for row in current.captures],
+    )
+    orphan_body = pit._canonical_bytes(orphan)
+    pit._write_create_once(
+        candidate.public,
+        pit._generation_path(candidate.public, orphan["generation_id"]),
+        orphan_body,
+        label="test trusted crash-orphan generation",
+    )
+    with pytest.raises(pit.MarketMemoryContextNotFound, match="not published"):
+        reader.read_pinned_generation(generation_id=orphan["generation_id"])
+
+
+def test_trusted_repeated_pin_rewalks_ancestor_under_unchanged_head(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _candidate(monkeypatch, tmp_path)
+    _capture(candidate)
+    reader = trusted.TrustedFileAsKnownAtReader(candidate.public)
+    reader.read_pinned_generation()
+    state = trusted._load_state(candidate.public)
+    ancestor_id = state.generation["previous_generation_id"]
+    assert ancestor_id is not None
+    pit._generation_path(candidate.public, ancestor_id).unlink()
+
+    with pytest.raises(pit.MarketMemoryStoreError, match="unavailable"):
+        reader.read_pinned_generation()
+
+
+def test_trusted_pinned_receipt_rejects_cross_store_owner(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _candidate(monkeypatch, tmp_path)
+    first = _capture(candidate)
+    second_candidate = replace(
+        candidate,
+        public=tmp_path / "second-public" / "trusted-v1",
+        private=tmp_path / "second-state" / "context-projection",
+    )
+    second = _capture(second_candidate)
+    first_state = trusted._load_state(candidate.public)
+    genesis_id = first_state.generation["previous_generation_id"]
+    assert genesis_id is not None
+    forged = pit._new_generation(
+        store_id=first_state.manifest["store_id"],
+        previous_generation_id=genesis_id,
+        captures=[pit._capture_entry(second.capture_receipt)],
+    )
+    body = pit._canonical_bytes(forged)
+    pit._write_create_once(
+        candidate.public,
+        pit._generation_path(candidate.public, forged["generation_id"]),
+        body,
+        label="test trusted cross-owner generation",
+    )
+    pit._replace_head(candidate.public, pit._new_head(forged, generation_body=body))
+    receipt_body = pit._canonical_bytes(second.capture_receipt)
+    pit._query_path(candidate.public, second.capture_receipt["query_id"]).write_bytes(
+        receipt_body
+    )
+    pit._context_path(
+        candidate.public, second.capture_receipt["context_id"]
+    ).write_bytes(receipt_body)
+    reader = trusted.TrustedFileAsKnownAtReader(candidate.public)
+    pinned = reader.read_pinned_generation()
+
+    with pytest.raises(pit.MarketMemoryStoreError, match="another store"):
+        reader.read_pinned_capture_receipt(
+            pinned, query_id=second.capture_receipt["query_id"]
+        )
+    assert first.capture_receipt["store_id"] != second.capture_receipt["store_id"]
+
+
 def test_composite_serves_each_exact_store_and_rejects_cross_store_conflict(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

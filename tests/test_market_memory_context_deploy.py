@@ -3,16 +3,23 @@
 from __future__ import annotations
 
 import ast
+import json
+import os
 import re
+import stat
 import subprocess
+import sys
 from hashlib import sha256
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+from engine.neuralweb import market_memory_pit as pit
 from engine.neuralweb import market_memory_trusted as trusted
+from scripts import initialize_market_memory_w1a as w1a_initializer
 from scripts import project_market_memory_context as writer_module
+from tests.test_market_memory_pit import CAPTURED_AT, _packet
 
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOY = ROOT / "app" / "deploy"
@@ -23,7 +30,9 @@ SETUP = DEPLOY / "api-setup.sh"
 UPDATE = DEPLOY / "update.sh"
 WRITER = ROOT / "scripts" / "project_market_memory_context.py"
 API_ROUTER = ROOT / "app" / "market_memory.py"
+W1A_INITIALIZER = ROOT / "scripts" / "initialize_market_memory_w1a.py"
 
+W1A_ROOT = "/var/lib/macro-market-memory/public"
 PUBLIC_ROOT = "/var/lib/macro-market-memory/public/trusted-v1"
 PRIVATE_ROOT = "/var/lib/macro-market-memory/state/context-projection"
 
@@ -227,6 +236,14 @@ def test_setup_provisions_then_initializes_the_context_lane_before_api_start() -
     assert setup.index(
         "systemctl start macro-market-memory-context.service"
     ) < setup.index("systemctl restart macro-api")
+    initializer = (
+        '"$VENV/bin/python" "$APP_DIR/scripts/initialize_market_memory_w1a.py" '
+        '\\\n  --repository-root "$APP_DIR" '
+        f"\\\n  --store {W1A_ROOT}"
+    )
+    assert initializer in setup
+    assert setup.index(initializer) < setup.index("systemctl restart macro-api")
+    assert "refusing API readiness" in setup
     assert "systemctl enable --now macro-market-memory-context.timer" in setup
 
 
@@ -239,6 +256,12 @@ def test_update_verifies_installs_arms_and_immediately_reprojects() -> None:
     assert update.index(f"install -d -m 0700 {PRIVATE_ROOT}") < update.index(
         'systemd-analyze verify "$APP_DIR/app/deploy/macro-api.service"'
     )
+    initializer = '/opt/macro-api/.venv/bin/python "$APP_DIR/scripts/initialize_market_memory_w1a.py"'
+    assert initializer in update
+    assert update.index(initializer) < update.index(
+        'systemd-analyze verify "$APP_DIR/app/deploy/macro-api.service"'
+    )
+    assert "W1A public generation initialization failed" in update
 
     assert "MARKET_MEMORY_CONTEXT_UNIT_SOURCES=(" in block
     assert 'systemd-analyze verify "${MARKET_MEMORY_CONTEXT_UNIT_SOURCES[@]}"' in block
@@ -286,6 +309,242 @@ def test_projector_is_the_only_production_writer_and_uses_canonical_inputs(
         trusted.default_private_evidence_root("/opt/macro")
         == Path(PRIVATE_ROOT).resolve()
     )
+
+
+def test_w1a_initializer_is_the_only_production_genesis_owner() -> None:
+    assert _production_calls("initialize_w1a_store") == {
+        Path("scripts/initialize_market_memory_w1a.py")
+    }
+    source = _text(W1A_INITIALIZER)
+    assert "capture_context" not in source
+    assert "request" not in source
+    assert "initialize_w1a_store" in source
+
+
+def test_w1a_initializer_entrypoint_is_cwd_independent(tmp_path: Path) -> None:
+    store = tmp_path / "public"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(W1A_INITIALIZER),
+            "--repository-root",
+            str(ROOT),
+            "--store",
+            str(store),
+        ],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    payload = json.loads(result.stdout)
+    assert payload["capture_count"] == 0
+    assert pit.FileAsKnownAtReader(store).read_pinned_generation().captures == ()
+
+
+def test_w1a_initializer_creates_only_idempotent_empty_metadata(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    store = tmp_path / "public"
+
+    assert w1a_initializer.main(["--store", str(store)]) == 0
+    first = json.loads(capsys.readouterr().out)
+    first_files = {
+        path.relative_to(store): path.read_bytes()
+        for path in store.rglob("*")
+        if path.is_file()
+    }
+    assert first["profile"] == pit.STORE_PROFILE
+    assert first["capture_count"] == 0
+    assert set(first_files) == {
+        Path("store_manifest.json"),
+        Path("HEAD.json"),
+        next(path for path in first_files if path.parts[0] == "generations"),
+    }
+    assert not any(
+        (store / name).exists() for name in ("objects", "contexts", "queries")
+    )
+    assert all(
+        stat.S_IMODE(path.stat().st_mode) == 0o700
+        for path in (store, *(path for path in store.rglob("*") if path.is_dir()))
+    )
+    assert all(
+        stat.S_IMODE(path.stat().st_mode) == 0o600
+        for path in store.rglob("*")
+        if path.is_file()
+    )
+
+    assert w1a_initializer.main(["--store", str(store)]) == 0
+    second = json.loads(capsys.readouterr().out)
+    second_files = {
+        path.relative_to(store): path.read_bytes()
+        for path in store.rglob("*")
+        if path.is_file()
+    }
+    assert second == first
+    assert second_files == first_files
+
+
+def test_w1a_initializer_authenticates_existing_capture_without_mutation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    store = tmp_path / "public"
+    monkeypatch.setattr(pit, "_utc_now", lambda: CAPTURED_AT)
+    stored = pit.capture_context(store, _packet())
+    before = {
+        path.relative_to(store): path.read_bytes()
+        for path in store.rglob("*")
+        if path.is_file()
+    }
+
+    result = w1a_initializer.initialize_w1a_store(store)
+
+    after = {
+        path.relative_to(store): path.read_bytes()
+        for path in store.rglob("*")
+        if path.is_file()
+    }
+    assert result["capture_count"] == 1
+    assert (
+        result["generation_id"]
+        == pit.FileAsKnownAtReader(store).read_pinned_generation().generation_id
+    )
+    assert stored.capture_receipt["query_id"] in {
+        row.query_id
+        for row in pit.FileAsKnownAtReader(store).read_pinned_generation().captures
+    }
+    assert after == before
+
+
+def test_w1a_initializer_rejects_symlink_permission_and_tamper(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    target = tmp_path / "target"
+    target.mkdir()
+    alias = tmp_path / "public"
+    alias.symlink_to(target, target_is_directory=True)
+    assert w1a_initializer.main(["--store", str(alias)]) == 2
+    assert "symlink" in capsys.readouterr().err
+    assert list(target.iterdir()) == []
+
+    denied = tmp_path / "denied"
+    original_mkdir = pit._mkdir_durable
+
+    def permission_denied(_path: Path) -> None:
+        raise PermissionError("injected permission denial")
+
+    monkeypatch.setattr(pit, "_mkdir_durable", permission_denied)
+    assert w1a_initializer.main(["--store", str(denied)]) == 2
+    assert "cannot be initialized safely" in capsys.readouterr().err
+    monkeypatch.setattr(pit, "_mkdir_durable", original_mkdir)
+
+    partial = tmp_path / "interrupted"
+    original_write = pit._write_create_once
+    interrupted = False
+
+    def interrupt_empty_generation(
+        root: Path, path: Path, body: bytes, *, label: str
+    ) -> bool:
+        nonlocal interrupted
+        if label == "empty store generation" and not interrupted:
+            interrupted = True
+            raise pit.MarketMemoryStoreError("injected empty-init interruption")
+        return original_write(root, path, body, label=label)
+
+    monkeypatch.setattr(pit, "_write_create_once", interrupt_empty_generation)
+    assert w1a_initializer.main(["--store", str(partial)]) == 2
+    assert "interruption" in capsys.readouterr().err
+    assert (partial / "store_manifest.json").is_file()
+    assert not (partial / "HEAD.json").exists()
+    monkeypatch.setattr(pit, "_write_create_once", original_write)
+    assert w1a_initializer.main(["--store", str(partial)]) == 0
+    recovered = json.loads(capsys.readouterr().out)
+    assert recovered["capture_count"] == 0
+    assert not any(
+        (partial / name).exists() for name in ("objects", "contexts", "queries")
+    )
+
+    store = tmp_path / "tampered"
+    assert w1a_initializer.main(["--store", str(store)]) == 0
+    capsys.readouterr()
+    head = store / "HEAD.json"
+    head.write_text("{}", encoding="utf-8")
+    before = head.read_bytes()
+    assert w1a_initializer.main(["--store", str(store)]) == 2
+    assert "HEAD" in capsys.readouterr().err
+    assert head.read_bytes() == before
+
+
+def test_w1a_initializer_rejects_unowned_namespace_hardlinks_and_mode_drift(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    unknown_root = tmp_path / "unknown"
+    unknown_root.mkdir(mode=0o700)
+    unknown = unknown_root / "unexpected"
+    unknown.write_bytes(b"unowned")
+    unknown.chmod(0o600)
+    before = unknown.read_bytes()
+    assert w1a_initializer.main(["--store", str(unknown_root)]) == 2
+    assert "unowned file" in capsys.readouterr().err
+    assert unknown.read_bytes() == before
+
+    orphan_root = tmp_path / "orphan"
+    assert w1a_initializer.main(["--store", str(orphan_root)]) == 0
+    capsys.readouterr()
+    (orphan_root / "HEAD.json").unlink()
+    orphan = orphan_root / "generations" / "ff" / f"mmgeneration_{'f' * 64}.json"
+    orphan.parent.mkdir(mode=0o700)
+    orphan.write_bytes(b"{}")
+    orphan.chmod(0o600)
+    before_orphan = orphan.read_bytes()
+    assert w1a_initializer.main(["--store", str(orphan_root)]) == 2
+    assert "unowned" in capsys.readouterr().err
+    assert orphan.read_bytes() == before_orphan
+    assert not (orphan_root / "HEAD.json").exists()
+
+    hardlink_root = tmp_path / "hardlink"
+    assert w1a_initializer.main(["--store", str(hardlink_root)]) == 0
+    capsys.readouterr()
+    hardlink = tmp_path / "HEAD.hardlink"
+    os.link(hardlink_root / "HEAD.json", hardlink)
+    assert w1a_initializer.main(["--store", str(hardlink_root)]) == 2
+    assert "hardlinked" in capsys.readouterr().err
+
+    mode_root = tmp_path / "mode"
+    assert w1a_initializer.main(["--store", str(mode_root)]) == 0
+    capsys.readouterr()
+    generation = next((mode_root / "generations").rglob("*.json"))
+    generation.chmod(0o666)
+    assert w1a_initializer.main(["--store", str(mode_root)]) == 2
+    assert "mode is not 0600" in capsys.readouterr().err
+
+
+def test_w1a_initializer_rejects_symlinked_ancestor_and_preserves_trusted_child(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    real_parent = tmp_path / "real"
+    real_parent.mkdir(mode=0o700)
+    alias = tmp_path / "alias"
+    alias.symlink_to(real_parent, target_is_directory=True)
+    assert w1a_initializer.main(["--store", str(alias / "public")]) == 2
+    assert "symlinked ancestor" in capsys.readouterr().err
+    assert list(real_parent.iterdir()) == []
+
+    store = tmp_path / "with-trusted"
+    store.mkdir(mode=0o700)
+    trusted_root = store / "trusted-v1"
+    trusted_root.mkdir(mode=0o700)
+    sentinel = trusted_root / "separate-owner-sentinel"
+    sentinel.write_bytes(b"trusted owner bytes")
+    sentinel.chmod(0o600)
+    before = sentinel.read_bytes()
+    assert w1a_initializer.main(["--store", str(store)]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["capture_count"] == 0
+    assert sentinel.read_bytes() == before
 
 
 def _stub_writer_inputs(
@@ -370,10 +629,13 @@ def test_api_uses_the_composite_reader_and_updater_restarts_its_import_closure()
     router = _text(API_ROUTER)
     restart = _api_restart_block()
 
-    assert (
-        "from engine.neuralweb import market_memory, market_memory_pit, "
-        "market_memory_trusted"
-    ) in router
+    for module in (
+        "market_memory",
+        "market_memory_pit",
+        "market_memory_playback",
+        "market_memory_trusted",
+    ):
+        assert module in router
     pit_reader = router.split("def _pit_reader()", 1)[1].split("\n\n", 1)[0]
     assert "market_memory_trusted.CompositeAsKnownAtReader(" in pit_reader
     assert "market_memory_pit.default_store_root(repository)" in pit_reader
@@ -385,6 +647,7 @@ def test_api_uses_the_composite_reader_and_updater_restarts_its_import_closure()
         if line.startswith('if [ "$API_UNIT_UPDATED"')
     )
     assert "market_memory_trusted" in restart_predicate
+    assert "market_memory_playback" in restart_predicate
     assert "market_memory_projection" in restart_predicate
 
 
@@ -411,6 +674,7 @@ def test_public_router_has_no_raw_source_or_evidence_route() -> None:
         ("get", "/as-known-at"),
         ("get", "/context/{context_id}"),
         ("get", "/macro"),
+        ("get", "/playback/catalog"),
         ("get", "/symbol/{ticker}"),
     }
     forbidden = ("source", "artifact", "evidence", "raw", "snapshot")
