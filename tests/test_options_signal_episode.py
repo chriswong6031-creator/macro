@@ -32,7 +32,6 @@ from engine.options_signal_episode import (
     load_jsonl,
     validate_episode,
     validate_campaign,
-    validate_campaign_against_sources,
     validate_outcome,
     validate_outcome_against_episode,
     validate_session_outcome,
@@ -46,6 +45,7 @@ from engine.options_signal_episode import (
 )
 from engine.session_digest import session_window_et
 from lib import nyse_calendar
+from scripts import audit_options_market_memory_context as options_context_audit
 
 
 def _event(**overrides) -> dict:
@@ -4499,19 +4499,69 @@ def test_campaign_locked_append_is_concurrently_idempotent_and_conflict_strict(
     assert load_jsonl(path) == campaigns
 
 
-def test_committed_campaign_ledger_equals_live_recomputation_without_count_pin() -> None:
+def test_committed_campaign_ledger_is_exact_frozen_corpus_not_future_recomputation() -> None:
     repo = Path(__file__).resolve().parent.parent
     ledger_root = repo / "data/options_signal_episode"
+    campaign_body = (ledger_root / "campaigns.jsonl").read_bytes()
     episodes = load_jsonl(ledger_root / "episodes.jsonl")
     outcomes = load_jsonl(ledger_root / "outcomes_h60.jsonl")
     committed = load_jsonl(ledger_root / "campaigns.jsonl")
-    recomputed, pending = derive_campaigns(episodes, outcomes)
-    assert pending == []
-    assert committed
-    assert committed == recomputed
+    assert len(committed) == 8
+    assert len(campaign_body) == 10_492
+    assert hashlib.sha256(campaign_body).hexdigest() == (
+        "db326f5c772ab417c43b8579ad50abb0434916922bda3a13c2da5b8303813910"
+    )
     assert {row["evidence_phase"] for row in committed} == {"retrospective_discovery"}
-    for campaign in committed:
-        validate_campaign_against_sources(campaign, episodes, outcomes)
+    options_context_audit._validate_frozen_legacy_campaign_ledger(
+        body=campaign_body,
+        campaigns=committed,
+        episodes=episodes,
+        h60_outcomes=outcomes,
+    )
+
+    future_episodes = [
+        _campaign_episode(
+            "retired-v1-future-one",
+            1_500_000,
+            session_date="2026-08-12",
+            available_at="2026-08-12T14:31:00Z",
+            ticker="RETIRED",
+            expiration="2026-09-18",
+        ),
+        _campaign_episode(
+            "retired-v1-future-two",
+            1_500_000,
+            session_date="2026-08-12",
+            available_at="2026-08-12T14:32:00Z",
+            ticker="RETIRED",
+            expiration="2026-09-18",
+        ),
+    ]
+    future_outcomes = [_campaign_h60_outcome(row) for row in future_episodes]
+    expanded, pending = derive_campaigns(
+        [*episodes, *future_episodes], [*outcomes, *future_outcomes]
+    )
+    assert pending == []
+    assert len(expanded) == len(committed) + 1
+    assert {row["campaign_id"] for row in committed} < {
+        row["campaign_id"] for row in expanded
+    }
+    options_context_audit._validate_frozen_legacy_campaign_ledger(
+        body=campaign_body,
+        campaigns=committed,
+        episodes=[*episodes, *future_episodes],
+        h60_outcomes=[*outcomes, *future_outcomes],
+    )
+    with pytest.raises(
+        options_context_audit.AuditInputError,
+        match="frozen eight-row corpus",
+    ):
+        options_context_audit._validate_frozen_legacy_campaign_ledger(
+            body=campaign_body + b"\n",
+            campaigns=committed,
+            episodes=episodes,
+            h60_outcomes=outcomes,
+        )
 
 
 def test_campaign_registry_has_one_writer_and_no_authority_consumers() -> None:

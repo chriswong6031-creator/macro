@@ -93,7 +93,12 @@ than smuggling a refused append through `git add data/`.
 
 ## Required falsifiers and promotion gate
 
-- shuffled inputs produce byte-identical groups, revisions, and outcomes;
+- shuffled in-memory group/map enumeration over one exact immutable source prefix
+  produces byte-identical revisions and outcomes; rewriting or shuffling the
+  source ledger itself is prefix drift and fails closed;
+- final-member clocks immediately before, exactly at, and immediately after the
+  frozen instant classify as retrospective, prospective, and prospective;
+- adjacent integer strikes above `2^53` remain distinct exact campaign keys;
 - singleton groups persist and threshold-based admission cannot reappear;
 - late members append linked revisions; backdated insertion, shrink, reorder,
   source drift, duplicate semantic keys, and forged receipts fail closed;

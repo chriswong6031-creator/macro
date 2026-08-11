@@ -478,6 +478,14 @@ def validate_campaign(row: dict[str, Any]) -> None:
         raise CampaignContractError("campaign availability must be the final member clock")
     if row["policies"] != _policies():
         raise CampaignContractError("campaign policies differ from the frozen contract")
+    frozen_at = _canonical_utc(RULE_FROZEN_AT, "rule frozen_at")[1]
+    expected_phase = (
+        "prospective_after_rule_freeze"
+        if _canonical_utc(row["formed_at"], "campaign formed_at")[1] >= frozen_at
+        else "retrospective_context"
+    )
+    if row["evidence_phase"] != expected_phase:
+        raise CampaignContractError("campaign evidence phase disagrees with rule freeze")
     if row["training_eligible"] is not False or row["authority"] != FALSE_AUTHORITY:
         raise CampaignContractError("campaign authority must remain identically false")
 

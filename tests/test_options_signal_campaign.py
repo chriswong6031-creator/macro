@@ -215,6 +215,32 @@ def test_census_keeps_singletons_exact_contracts_stable_and_zero_authority(
     }
 
 
+def test_group_map_iteration_is_byte_identical_for_one_exact_source_prefix(
+    tmp_path: Path,
+) -> None:
+    episodes = [
+        _episode("map-nvda", "2026-08-10T14:02:00Z"),
+        _episode("map-aapl", "2026-08-10T14:03:00Z", ticker="AAPL"),
+        _episode("map-put", "2026-08-10T14:04:00Z", right="P"),
+    ]
+    root = _root(tmp_path, episodes)
+    snapshot = campaign_engine.load_ledger(
+        root / campaign_engine.EPISODES_PATH,
+        campaign_engine.EPISODES_PATH,
+    )
+    groups = campaign_engine._validated_episode_groups(snapshot)
+    reversed_groups = dict(reversed(tuple(groups.items())))
+    forward = campaign_engine._derive_campaign_revisions_from_groups(
+        snapshot, groups, {}
+    )
+    reversed_rows = campaign_engine._derive_campaign_revisions_from_groups(
+        snapshot, reversed_groups, {}
+    )
+    assert b"".join(canonical_bytes(row) + b"\n" for row in forward) == b"".join(
+        canonical_bytes(row) + b"\n" for row in reversed_rows
+    )
+
+
 def test_late_source_extension_appends_revision_and_backdated_member_rejects(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -519,6 +545,38 @@ def test_member_order_uses_parsed_time_across_exact_and_fractional_seconds(
     assert campaign["formed_at"] == fractional["available_at"]
 
 
+def test_evidence_phase_is_exact_before_at_and_after_rule_freeze(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    root = _root(
+        tmp_path,
+        [_episode("phase-template", "2026-08-11T14:00:00Z")],
+    )
+    run(root_dir=root)
+    template = _read_jsonl(root / CAMPAIGNS_PATH)[0]
+    cases = (
+        ("2026-08-11T13:23:59.999999Z", "retrospective_context"),
+        ("2026-08-11T13:24:00Z", "prospective_after_rule_freeze"),
+        ("2026-08-11T13:24:00.000001Z", "prospective_after_rule_freeze"),
+    )
+    rows = []
+    for clock, phase in cases:
+        row = copy.deepcopy(template)
+        row["formed_at"] = clock
+        row["members"][-1]["available_at"] = clock
+        row["descriptive"]["first_available_at"] = clock
+        row["descriptive"]["last_available_at"] = clock
+        row["evidence_phase"] = phase
+        campaign_engine.validate_campaign(row)
+        rows.append(row)
+
+    mislabeled = copy.deepcopy(rows[0])
+    mislabeled["evidence_phase"] = "prospective_after_rule_freeze"
+    with pytest.raises(CampaignContractError, match="evidence phase"):
+        campaign_engine.validate_campaign(mislabeled)
+
+
 def test_grouping_never_merges_across_any_exact_contract_dimension(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -552,6 +610,30 @@ def test_grouping_never_merges_across_any_exact_contract_dimension(
             for row in campaigns
         }
     ) == 6
+
+
+def test_grouping_preserves_adjacent_integer_strikes_above_float_safe_range(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    strikes = (9_007_199_254_740_992, 9_007_199_254_740_993)
+    episodes = [
+        _episode(
+            f"high-strike-{index}",
+            f"2026-08-10T14:0{index}:00Z",
+            strike=strike,
+        )
+        for index, strike in enumerate(strikes)
+    ]
+    root = _root(tmp_path, episodes)
+    run(root_dir=root)
+    campaigns = _read_jsonl(root / CAMPAIGNS_PATH)
+    assert len(campaigns) == 2
+    assert {row["group"]["strike"] for row in campaigns} == set(strikes)
+    assert {row["group"]["strike_key"] for row in campaigns} == {
+        str(strike) for strike in strikes
+    }
+    assert len({row["campaign_id"] for row in campaigns}) == 2
 
 
 def test_legacy_threshold_rows_are_byte_frozen_and_episode_builder_is_decoupled() -> None:
