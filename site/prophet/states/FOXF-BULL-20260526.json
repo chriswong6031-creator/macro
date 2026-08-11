@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FOXF-BULL-20260526",
-  "asof": "2026-08-09",
+  "asof": "2026-08-10",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 71.7,
-  "raw_confidence": 72.0,
-  "delta_vs_base": 11.7,
+  "management_confidence": 71.3,
+  "raw_confidence": 70.7,
+  "delta_vs_base": 11.3,
   "recommended_action": "hold",
   "human_state": "Advancing Cleanly",
   "components": {
     "validity": 100.0,
-    "progress": 51.8,
-    "pace": 69.8,
+    "progress": 50.5,
+    "pace": 67.0,
     "retention": 50.0,
-    "overlay": 59.0
+    "overlay": 53.0
   },
   "geometry": {
-    "dist_to_stop_r": 2.044,
-    "dist_to_t1_r": 0.456,
-    "dist_to_t2_r": 1.956,
-    "horizon_pct_used": 55.6,
-    "p1": 0.6957,
-    "p2": 0.3479,
+    "dist_to_stop_r": 2.01,
+    "dist_to_t1_r": 0.49,
+    "dist_to_t2_r": 1.99,
+    "horizon_pct_used": 57.8,
+    "p1": 0.6734,
+    "p2": 0.3367,
     "p3": null,
-    "move_r": 1.044,
+    "move_r": 1.01,
     "mfe_r": 1.044,
     "mae_r": -0.07
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 25,
-  "tau": 0.5556
+  "days_elapsed": 26,
+  "tau": 0.5778
 }

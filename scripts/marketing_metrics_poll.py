@@ -88,7 +88,16 @@ def _is_rate_limited(error: object) -> bool:
 #: polling one post on all 30 sweeps buys nothing and spends the posting budget
 #: 30x over. Sized so a full day of polling stays a small fraction of the token's
 #: allowance even if the once-a-day workflow gate is ever removed.
-_MAX_CALLS_PER_RUN = 25
+#:
+#: 25 -> 8 (2026-08-11). The cap must stay WELL under the Buffer plan's daily API
+#: allowance, because the publisher posts on this same token and a call spent
+#: here is a post refused there — measured: run 31453875632 took `429 retry after
+#: 37768s` on a live post attempt, and that retry-after resolves to the previous
+#: day's metrics poll + 24h. The workflow gate had also been double-firing, so
+#: the real spend was 2x this number. Eight covers the freshest posts (the target
+#: list is newest-first) and the rest keep until tomorrow — this loop stops and
+#: keeps rather than dropping, so a capped run loses nothing but latency.
+_MAX_CALLS_PER_RUN = 8
 
 
 def _metrics_ledger_path(root: Path) -> Path:

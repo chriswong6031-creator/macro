@@ -706,7 +706,11 @@ def test_critic_reject_then_a_clean_repair_ships_as_llm_repair(monkeypatch):
         if state["writer"] == 1:
             return '{"text": "$ARES at 122. Not done. Close."}'
         assert "A SECOND READER" in user, "the repair turn must carry the critic's reasons"
-        return '{"text": "$ARES found buyers at 122 again and I am still watching."}'
+        # v5 (2026-08-11): the repaired line was "...and I am still watching",
+        # which `voice_v5_violations` now rejects. The property under test is
+        # that a clean repair ships as llm_repair, so the fixture's repair has
+        # to be clean under the CURRENT gate, not the 2026-07 one.
+        return '{"text": "$ARES found buyers at 122 again, the fourth test of that level."}'
 
     _arm(monkeypatch, handler)
     posts = cw.write_posts_llm_v2([_chart_ctx()], ARMED_CFG)
@@ -2670,7 +2674,11 @@ class TestPromptBanQuotingHeads:
         """...and now they are actually screened, which is the point of the
         deletion rather than a side effect of it."""
         prompt = cw._v2_system_prompt({})
-        for header in ("EXEMPLARS (real posts", "THESE SHIPPED FROM THIS DESK"):
+        # v5 (2026-08-11): the header used to read "EXEMPLARS (real posts from
+        # real accounts...". The block now carries the doctrine's own house
+        # lines beside the measured reference posts, so the header says so.
+        for header in ("EXEMPLARS (the target register",
+                       "THESE SHIPPED FROM THIS DESK"):
             assert header in prompt, header
         assert _prompt_self_contradictions(prompt) == []
 
@@ -2957,7 +2965,14 @@ class TestPersonaCardOutranksTheHouseDefaults:
             if _is_critic(system):
                 return json.dumps({"verdict": "pass", "reasons": []})
             seen.append(system)
-            return json.dumps({"text": "$ARES held 122 into the close. Fine by me."})
+            # v5 (2026-08-11): was "Fine by me." — first person, which
+            # `voice_v5_violations` now rejects, so the writer took its repair
+            # turn and `seen` collected four system prompts instead of two. The
+            # assertion under test is about WHICH card rides the system turn,
+            # not about the model's line, so the fixture line is v5-legal now.
+            return json.dumps(
+                {"text": "$ARES held 122 into the close. That level has capped "
+                         "every rally since June."})
 
         _arm(monkeypatch, handler)
         cfg = dict(ARMED_CFG)

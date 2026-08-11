@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_capital_structure_pit_read.v1.schema.json",
+  "title": "BioCatalyst Capital Structure point-in-time read v1",
+  "description": "A private, owner-built, one-issuer point-in-time projection over the verified Capital Structure event generation. It accepts only an explicit SEC issuer id, preserves owner unavailable capabilities, performs no identity resolution or financial calculation, persists nothing, and grants no signal or decision authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "adapter_id", "read_id", "generated_at",
+    "query", "available", "unavailable_reason", "coverage", "owner_receipt",
+    "owner_projection", "unavailable_capabilities", "limitations",
+    "integrity_scope", "authority", "hash_scope", "read_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_capital_structure_pit_read.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "adapter_id": {"const": "biocatalyst_capital_structure_pit_adapter.v1"},
+    "read_id": {"type": "string", "pattern": "^biocatalyst_capital_structure_pit_read_[a-f0-9]{24}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "query": {"$ref": "#/$defs/query"},
+    "available": {"type": "boolean"},
+    "unavailable_reason": {
+      "type": ["string", "null"],
+      "enum": [
+        "invalid_issuer_id", "invalid_as_of", "as_of_after_verified_generation",
+        "owner_generation_unavailable", "issuer_not_covered", null
+      ]
+    },
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "owner_receipt": {
+      "anyOf": [{"type": "null"}, {"$ref": "#/$defs/ownerReceipt"}]
+    },
+    "owner_projection": {
+      "anyOf": [
+        {"type": "null"},
+        {"$ref": "https://mastermind-x.com/contracts/capital_structure_projection.schema.json#/$defs/projection"}
+      ]
+    },
+    "unavailable_capabilities": {
+      "const": [
+        "active_instrument_overhang", "cash_runway", "financing_probability",
+        "fully_diluted_shares", "instruments", "normalized_terms",
+        "offering_ability", "remaining_capacity"
+      ]
+    },
+    "limitations": {
+      "const": [
+        "caller_supplied_sec_issuer_id_only", "event_state_only",
+        "explicit_owner_generation_coverage_only",
+        "no_cash_burn_runway_or_dilution_calculation", "no_identity_resolution",
+        "no_model_or_signal_authority", "no_negative_issuer_coverage_conclusion",
+        "private_in_process_only"
+      ]
+    },
+    "integrity_scope": {"$ref": "#/$defs/integrityScope"},
+    "authority": {
+      "$ref": "https://mastermind-x.com/contracts/capital_structure_projection.schema.json#/$defs/authority"
+    },
+    "hash_scope": {"const": "canonical_payload_excluding_read_id_and_read_payload_sha256"},
+    "read_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"available": {"const": true}}, "required": ["available"]},
+      "then": {
+        "properties": {
+          "unavailable_reason": {"const": null},
+          "coverage": {"properties": {"state": {"const": "available"}}},
+          "owner_receipt": {"$ref": "#/$defs/ownerReceipt"},
+          "owner_projection": {"$ref": "https://mastermind-x.com/contracts/capital_structure_projection.schema.json#/$defs/projection"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"available": {"const": false}}, "required": ["available"]},
+      "then": {
+        "properties": {
+          "unavailable_reason": {"type": "string"},
+          "coverage": {"properties": {"state": {"const": "unavailable"}}},
+          "owner_projection": {"type": "null"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer_id", "as_of", "selection_scope"],
+      "properties": {
+        "issuer_id": {
+          "anyOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^sec:cik:[0-9]{10}$"}
+          ]
+        },
+        "as_of": {
+          "anyOf": [{"type": "null"}, {"type": "string", "format": "date-time"}]
+        },
+        "selection_scope": {"const": "verified_owner_generation_system_time_one_issuer"}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "owner_state", "owner_reason", "absence_conclusion"],
+      "properties": {
+        "state": {"enum": ["available", "unavailable"]},
+        "owner_state": {"enum": ["complete", "partial", "unavailable", "contradicted"]},
+        "owner_reason": {"type": "string", "minLength": 1},
+        "absence_conclusion": {"const": false}
+      }
+    },
+    "ownerReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_receipt", "projection_generation_id", "projection_version",
+        "projection_as_of"
+      ],
+      "properties": {
+        "source_receipt": {
+          "$ref": "https://mastermind-x.com/contracts/capital_structure_projection.schema.json#/$defs/source_receipt"
+        },
+        "projection_generation_id": {"type": "string", "pattern": "^projection:cs:[a-f0-9]{24}$"},
+        "projection_version": {"const": "capital-structure-event-projection/1.0.0"},
+        "projection_as_of": {"type": "string", "format": "date-time"}
+      }
+    },
+    "integrityScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["validation", "authorized_transport", "persistence_authorized", "owner_truth_plane"],
+      "properties": {
+        "validation": {"const": "verified_owner_generation_and_projection_contract"},
+        "authorized_transport": {"const": "private_in_process_only"},
+        "persistence_authorized": {"const": false},
+        "owner_truth_plane": {"const": "capital_structure"}
+      }
+    }
+  }
+}

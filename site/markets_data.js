@@ -6,7 +6,7 @@
 (function(){
   "use strict";
   window.MARKET_META = {
-  "asOf": "2026-08-10",
+  "asOf": "2026-08-11",
   "today": 2026.48,
   "xDomain": [
     2000,
@@ -209,11 +209,11 @@
       }
     ],
     "now": {
-      "level": 7757.64,
-      "asOf": "2026-08-07",
+      "level": 7753.11,
+      "asOf": "2026-08-10",
       "ath": 7757.64,
       "athDate": "2026-08",
-      "pctFromATH": 0.0,
+      "pctFromATH": -0.1,
       "ytd": 10.9,
       "ret1y": 25,
       "pos": 82,
@@ -388,9 +388,9 @@
       }
     ],
     "now": {
-      "level": 61.3,
-      "asOf": "2026-08-07",
-      "ath": 61.3,
+      "level": 61.5,
+      "asOf": "2026-08-10",
+      "ath": 61.5,
       "athDate": "2026-08",
       "pctFromATH": 0.0,
       "ytd": 9.9,
@@ -1075,11 +1075,11 @@
       }
     ],
     "now": {
-      "level": 9258.7,
-      "asOf": "2026-08-10",
+      "level": 9235.6,
+      "asOf": "2026-08-11",
       "ath": 9271.6,
       "athDate": "2026-08",
-      "pctFromATH": -0.1,
+      "pctFromATH": -0.4,
       "ytd": 1.3,
       "ret1y": 3.1,
       "pos": 80,
@@ -1397,11 +1397,11 @@
       }
     ],
     "now": {
-      "level": 6363.69,
-      "asOf": "2026-08-10",
+      "level": 6222.79,
+      "asOf": "2026-08-11",
       "ath": 9114.55,
       "athDate": "2026-06",
-      "pctFromATH": -30.2,
+      "pctFromATH": -31.7,
       "ytd": 62.5,
       "ret1y": 124.2,
       "pos": 97,
@@ -1754,11 +1754,11 @@
       }
     ],
     "now": {
-      "level": 22.71,
-      "asOf": "2026-08-07",
+      "level": 22.8,
+      "asOf": "2026-08-10",
       "ath": 24.16,
       "athDate": "2026-05",
-      "pctFromATH": -6.0,
+      "pctFromATH": -5.6,
       "ytd": -6.9,
       "ret1y": 4,
       "pos": 44,

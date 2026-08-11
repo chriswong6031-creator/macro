@@ -2,6 +2,22 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-08-11",
+      "tickers": [
+        "AGNT",
+        "AMZN",
+        "BRK.B",
+        "CB",
+        "CTS",
+        "FBIN",
+        "FBRT",
+        "FTI",
+        "GTES",
+        "PRCT",
+        "WFC"
+      ]
+    },
+    {
       "as_of": "2026-08-10",
       "tickers": [
         "ADAM",
@@ -58,13 +74,6 @@
       "tickers": [
         "SOC",
         "TEAM"
-      ]
-    },
-    {
-      "as_of": "2026-08-04",
-      "tickers": [
-        "JBLU",
-        "TPR"
       ]
     }
   ]

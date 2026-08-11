@@ -564,7 +564,7 @@ def _mover_text(pct: float = 0.5) -> str:
     # closer (operator 2026-07-30) and the publisher's voice gate quarantines
     # it on sight. These tests are about auto-approve ROUTING, so the fixture
     # copy has to be copy that would actually ship.
-    return f"$PLTR +{pct:.1f}% today, and I keep underestimating this one."
+    return f"$PLTR +{pct:.1f}% today. Volume led the close."
 
 
 def test_scoped_auto_approves_publisher_lane_mover(monkeypatch, tmp_path):
@@ -1336,7 +1336,7 @@ def test_language_gate_passes_plain_copy(monkeypatch, tmp_path):
     ok_item = _seed_item_bypassing_enqueue_guard(
         tmp_path,
         text=("$AVGO is holding the line\n\n$AVGO held 379.32, the price where "
-              "the most shares changed hands lately. Watching, no position."),
+              "the most shares changed hands lately. Volume held into the close."),
         as_of="2026-07-20", kind="watchlist")
     assert transition(ok_item, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
@@ -1358,7 +1358,7 @@ def test_language_gate_passes_plain_copy(monkeypatch, tmp_path):
 # headline-bearing kind; quarantine is terminal, so ambiguity means skip.
 
 _FRAGMENT_TEXT = ("Radar check on\n\nThree names set up for the week. "
-                  "Watching, no position.")
+                  "Breadth held into the close.")
 
 
 def test_headline_gate_quarantines_fragment_live(monkeypatch, tmp_path):
@@ -1442,7 +1442,7 @@ def test_headline_gate_passes_clean_two_block(monkeypatch, tmp_path):
     ok_item = _seed_item_bypassing_enqueue_guard(
         tmp_path,
         text=("$AVGO is holding the line\n\n$AVGO held 379.32, the price where "
-              "the most shares changed hands lately. Watching, no position."),
+              "the most shares changed hands lately. Volume held into the close."),
         as_of="2026-07-20", kind="watchlist")
     assert transition(ok_item, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
@@ -2155,11 +2155,9 @@ class TestSilentNightAlarm:
 #: tape gate, which is a different test's subject). Over the shapeless budget of
 #: 2, inside the `stack` budget of 3.
 _THREE_NUMBER_STACK = (
-    "Three numbers off this morning's claims print, and then I will shut up "
-    "about it.\n\n"
+    "Three numbers off this morning's claims print.\n\n"
     "Initial claims 218.0 thousand, the four-week average 223.5 thousand, "
-    "continuing claims 1.94 million. I had been braced for a worse number "
-    "and I hedged into it, which cost me a decent week."
+    "continuing claims 1.94 million. The spread closed narrower than last week."
 )
 
 
@@ -2213,3 +2211,30 @@ def test_a_shapeless_item_still_gets_the_narrow_budget(monkeypatch, tmp_path):
     notes = _voice_quarantine_notes(tmp_path, iid)
     assert len(notes) == 1, notes
     assert "number soup (3 numbers" in notes[0], notes
+
+
+def test_voice_v5_rechecks_old_queued_copy_at_the_last_send_gate(
+    monkeypatch, tmp_path,
+):
+    """A v4 row approved before v5 existed cannot bypass the new register."""
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    iid = _seed_queued_kind(
+        tmp_path,
+        kind="macro",
+        provenance="content_studio",
+        text="I read initial claims at 218 thousand. The print held into the close.",
+    )
+
+    fake = _FakePublisher(ok=True)
+    _run_publisher(
+        monkeypatch,
+        tmp_path,
+        ["--live", "--post-now", iid],
+        fake_publisher=fake,
+        kill_switch=True,
+    )
+
+    notes = _voice_quarantine_notes(tmp_path, iid)
+    assert len(notes) == 1, notes
+    assert "first person 'I'" in notes[0], notes
+    assert fake.calls == [], "copy that fails v5 reached the network backend"

@@ -1165,6 +1165,21 @@ def _refusal_codes(row: Mapping[str, Any]) -> list[str]:
     return sorted(set(codes), key=lambda c: order.get(c, len(REFUSAL_ORDER)))
 
 
+def refusal_codes(row: Mapping[str, Any]) -> list[str]:
+    """PUBLIC reader for :func:`_refusal_codes` — the per-row "why not" vocabulary.
+
+    Added for ``engine/us_candidate_lanes.py``, which places every cascade-eligible name
+    into a display lane and must reuse THIS vocabulary rather than coin a second one.
+    A thin alias on purpose: importing the private helper would let its semantics move
+    under a consumer that never sees the rename, and re-implementing the gate list is
+    exactly the drift ``_refusal_codes`` exists to prevent.
+
+    DISPLAY TIER, both ways — this reports the gate and never moves it, and nothing this
+    function is called from reaches admission.
+    """
+    return _refusal_codes(row)
+
+
 def _refusal_era() -> dict[str, str]:
     """The selection era as a Tier-1 date plus its Tier-2 identifier.
 

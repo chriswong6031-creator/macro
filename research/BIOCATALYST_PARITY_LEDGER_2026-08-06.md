@@ -55,7 +55,7 @@ Legend — **EXCL** formally excluded · **LIC** licensed-later · **DESIGN** co
 | 10 | Safety / label / recall / shortage | BLOCK | openFDA production ingest not allowed — needs a separate rights/source lane | Rights decision, then W4-A |
 | 11 | Patents / exclusivities | TODO | Orange Book / Purple Book lanes unstarted; each needs its own rights record | BioCatalyst W4-A |
 | 12 | Licensing / partnership economics | BLOCK | Corporate documents/spans blocked except the narrow transcript seam (#4442). BioCatalyst must not build a second document archive | Corporate document owner |
-| 13 | Cash / runway / dilution | BLOCK | Capital Structure PIT adapter blocked; #4740 and #4746 own that lineage and are unmerged. BioCatalyst may not present a duplicate "true runway" | Capital Structure owner |
+| 13 | Cash / runway / dilution | BLOCK | The private Capital Structure PIT adapter now supplies one-issuer filing-event context, but its owner contract still declares cash runway, fully diluted shares, instruments, remaining capacity, and financing probability unavailable. BioCatalyst may not turn event context into a duplicate "true runway" | Capital Structure owner |
 | 14 | Historical catalysts / outcomes | TODO | Needs `BC-O1b` forecast/outcome homes plus an eligible market-data join | BioCatalyst W6-A/B |
 | 15 | Probability of success | TODO | W6-C baseline. Requires point-in-time, correction-aware, non-leaking cohorts that do not exist yet | BioCatalyst W6-C |
 | 16 | Catalyst timing | TODO | W6-C timing baseline; same cohort prerequisite | BioCatalyst W6-C |
@@ -82,7 +82,7 @@ Legend — **EXCL** formally excluded · **LIC** licensed-later · **DESIGN** co
 
 The BLOCK rows above are not inherited from prose. Read directly from
 `data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json` at the audited base —
-**2 of 6 shared-plane adapters are eligible**:
+**3 of 6 shared-plane adapters are eligible**:
 
 | Adapter | Eligible | State / blocker |
 |---|:--:|---|
@@ -91,18 +91,15 @@ The BLOCK rows above are not inherited from prose. Read directly from
 | `biocatalyst_company_identity_pit_adapter.v1` | no | `blocked_no_pit_identity_adapter` → needs `reviewed_point_in_time_company_identity_contract` |
 | `biocatalyst_security_identity_pit_adapter.v1` | no | `unavailable_bootstrap_roster_only` → needs `complete_point_in_time_security_and_corporate_actions_contract` |
 | `biocatalyst_corporate_document_span_adapter.v1` | no | `blocked_no_cross_domain_read_adapter` → needs `versioned_document_and_exact_span_read_contract` |
-| `biocatalyst_capital_structure_pit_adapter.v1` | no | `blocked_current_projection_has_no_biocatalyst_pit_adapter` → needs `versioned_internal_pit_adapter_with_unavailable_state_semantics` |
+| `biocatalyst_capital_structure_pit_adapter.v1` | **yes** | `implemented_private_in_process_event_state_only`; explicit SEC issuer + system-time read, with cash/runway/dilution capabilities still unavailable |
 
-Those four blocker strings are the literal cause of rows 5, 6, 7, 12, 13, 19, 20, 23, 24, 25,
-and 29.
+The three remaining blocker strings still govern rows 5, 6, 7, 12, 19, 20, 23, 24, 25,
+and 29. Row 13 remains blocked by declared owner capabilities, not by the read-adapter seam.
 
-**The eligibility record is itself stale.** Both `reconciled_against_commit` in
-`config/sector_intelligence_ownership.yml` and `baseline_commit` in the adapter fixture are
-pinned to `e124f4ed2edcf77a82295c78f4feabc6c3e7bc90` (2026-08-03) — **984 commits behind**
-`origin/main` at the audit. Nothing above can be trusted as *current* until that baseline moves,
-which is precisely the `BC-F0-delta` reconciliation lane's job. A re-audit that changes no
-adapter's verdict is still a required and valuable result: it converts a stale claim into a
-fresh one.
+The eligibility record was reconciled against
+`22cf8a9f8f54e341e2efb63c6d5c6984476252db` before the BC-C2 promotion. The successor
+receipt binds the exact post-promotion registry and fixture bytes and records the one eligibility
+change without widening any Capital Structure capability or authority.
 
 ---
 

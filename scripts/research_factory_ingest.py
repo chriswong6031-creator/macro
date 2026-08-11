@@ -30,9 +30,9 @@ RF-13/RF-14/RF-15.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -41,13 +41,14 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 # W1 engine imports
+from engine.research_factory import ledger as rf_ledger
 from engine.research_factory.schema import (
+    has_market_memory_owned_marker,
     validate_candidate,
     validate_transition,
-    is_valid_rf_family_name,
 )
-from engine.research_factory.state import transition as state_transition, IllegalTransition
-from engine.research_factory import ledger as rf_ledger
+from engine.research_factory.state import IllegalTransition
+from engine.research_factory.state import transition as state_transition
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -1302,20 +1303,24 @@ def _canonical_proposal_hash(cand: dict) -> str:
     """Deterministic content hash for a proposal/candidate dict (schema_rejected key).
 
     We exclude fields that change between runs (candidate_id, created_at, as_of)
-    and hash the semantic content: hypothesis, mechanism, entry_rule, domain,
-    candidate_type, source.  This makes the hash stable even when _make_candidate_id
-    produces a different date-stamped id on re-ingest.
+    and hash every other submitted field. This makes the hash stable even when
+    ``_make_candidate_id`` produces a different date-stamped id on re-ingest,
+    while still binding nested malformed/subtype content that must not be
+    copied into the rejection ledger.
     """
     stable = {
-        "hypothesis": cand.get("hypothesis") or "",
-        "mechanism": cand.get("mechanism") or "",
-        "domain": cand.get("domain") or "",
-        "candidate_type": cand.get("candidate_type") or "",
-        "source": cand.get("source") or "",
-        "entry_rule": cand.get("artifacts", {}).get("entry_rule")
-            or cand.get("entry_rule"),
+        key: value
+        for key, value in dict.items(cand)
+        if key not in {"candidate_id", "created_at", "as_of"}
     }
-    return json.dumps(stable, sort_keys=True, separators=(",", ":"))
+    body = json.dumps(
+        stable,
+        allow_nan=False,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(body).hexdigest()
 
 
 def _load_existing_drop_keys(
@@ -1350,7 +1355,11 @@ def _load_existing_drop_keys(
 
 
 def _write_drop_candidate_and_transition(
-    cand: dict, trans: dict, out_dir: Path
+    cand: dict,
+    trans: dict,
+    out_dir: Path,
+    *,
+    market_memory_owned: bool = False,
 ) -> None:
     """Append a drop candidate and its transition to the ledgers.
 
@@ -1360,11 +1369,74 @@ def _write_drop_candidate_and_transition(
     """
     candidates_path = out_dir / "candidates.jsonl"
     transitions_path = out_dir / "transitions.jsonl"
+    # Rejection rows intentionally bypass candidate validation so the audit
+    # ledger can retain malformed proposals. A Market Memory-shaped rejection
+    # is different: no W6A-owned identity, schema, or subtype key may survive
+    # into a generic candidate ledger. Replace the entire proposal with a fixed
+    # digest-only envelope; the transition retains the audit hash and reason.
+    cand = rf_ledger.detached_json_object(
+        cand,
+        label="research_factory_ingest rejection candidate",
+    )
+    trans = rf_ledger.detached_json_object(
+        trans,
+        label="research_factory_ingest rejection transition",
+    )
+    if market_memory_owned or has_market_memory_owned_marker(cand):
+        proposal_hash = trans.get("_proposal_hash")
+        if type(proposal_hash) is not str or not proposal_hash:
+            proposal_hash = hashlib.sha256(
+                json.dumps(
+                    cand,
+                    allow_nan=False,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ).hexdigest()
+            trans["_proposal_hash"] = proposal_hash
+        rejection_id = "rf-schema-rejected-" + hashlib.sha256(
+            proposal_hash.encode("utf-8")
+        ).hexdigest()
+        created_at = trans.get("as_of")
+        if type(created_at) is not str or not created_at:
+            created_at = _now_iso()
+        cand = {
+            "schema": "research_factory.candidate.v1",
+            "authority": "display_only",
+            "candidate_id": rejection_id,
+            "created_at": created_at,
+            "source": "schema_rejected_input",
+            "candidate_type": "schema_rejected_input",
+            "domain": "schema_rejected_input",
+            "status": "schema_rejected",
+            "hypothesis": "Rejected proposal retained by digest only.",
+            "mechanism": "Malformed subtype content omitted from candidate ledger.",
+            "claim_shape": None,
+            "spec_ref": None,
+            "expected_failure_modes": [],
+            "decay_conditions": [],
+            "falsifiers": [],
+            "trial_accounting": {
+                "mode": "read_only",
+                "family": None,
+                "declared_at": None,
+            },
+            "evaluation_plan": _default_evaluation_plan(),
+            "lineage": {
+                "respin_of": None,
+                "superseded_by": None,
+                "refinement_generation": 0,
+            },
+            "flags": ["schema_rejected", "validation_error"],
+            "artifacts": {},
+            "transition_log": [],
+        }
+        trans["candidate_id"] = rejection_id
     # Candidates schema requires authority; drops carry status in the dict.
     # Use append_row without validate_fn for drop candidates because
     # schema_rejected candidates intentionally fail validate_candidate.
     if cand.get("authority") != "display_only":
-        cand = dict(cand)
         cand["authority"] = "display_only"
     rf_ledger.append_row(candidates_path, cand)
     rf_ledger.append_row(transitions_path, trans, validate_fn=validate_transition)
@@ -1633,7 +1705,12 @@ def run_ingest(
                         actor_ref=actor_ref,
                         _proposal_hash=proposal_hash,
                     )
-                    _write_drop_candidate_and_transition(drop_cand, drop_trans, out_dir)
+                    _write_drop_candidate_and_transition(
+                        drop_cand,
+                        drop_trans,
+                        out_dir,
+                        market_memory_owned=has_market_memory_owned_marker(cand),
+                    )
             continue
 
         # --- Within-batch dedup ---
