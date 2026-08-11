@@ -88,7 +88,7 @@ mm_options_runtime_boundary_ready() {
 	mm_loaded_unit_ready \
 		"$APP_DIR/app/deploy/macro-api.service" \
 		/etc/systemd/system/macro-api.service macro-api.service || return 1
-	for profile in source context identity breadth technicals production-records; do
+	for profile in source context identity breadth technicals experience production-records; do
 		mm_loaded_unit_ready \
 			"$APP_DIR/app/deploy/macro-market-memory-$profile.service" \
 			"/etc/systemd/system/macro-market-memory-$profile.service" \
