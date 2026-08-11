@@ -721,6 +721,29 @@ jobs:
       # race posture as flowleaders above; also rewrites
       # site/basketdata/foresight_cascade.json in the same pass as the page it pairs
       # with. (Also restored 2026-07-30 after #3834's stale-base clobber.)
+      # ---- builders DELIBERATELY omitted from this lane (vetted 2026-07-25) ----
+      # Moved out of the run: block 2026-08-10, same reason and same shape as the
+      # foresight rationale above: comments inside a run: scalar count toward
+      # GitHub's 21,000-character expression limit, and this step had grown to
+      # 20,776. Nothing here changed but its location; the in-block pointer at the
+      # omission site names this heading.
+      #  • build_odds — a collector wearing a builder's name: refetches all 119
+      #    universe tickers from yfinance on EVERY run (odds.stale_trading_days: 0)
+      #    with no timeout, and its data/odds_ohlcv store is gitignored → wiped by
+      #    this job's clean checkout, so every express run would COLD-START a
+      #    full-history backfill (5-15+ min of third-party network on the render
+      #    path — the gdelt-stall class). Its site/oddsmatrix payloads are gitignored
+      #    and R2-published by daily.yml only, so advancing catalog.json here would
+      #    silence the page's staleness banner over stale R2 matrices. Same class as
+      #    the gex_board omission in engine-render; odds.html keeps the last
+      #    nightly's values. (daily.yml's build_odds step points at this bullet.)
+      #  (build_leader_radar was omitted here for the same 2026-07-25 vetting; its
+      #   three named bake-side blockers — the unguarded pick_lab as_of consumption,
+      #   the built_at/elapsed_s churn, and the undisclosed rs_series vintage skew —
+      #   were fixed in #3578, so the builder is now admitted above (#3612) as a
+      #   serial post-band step.)
+      # (This block was collateral damage in #3834's stale-base clobber; restored
+      #  2026-07-30 — daily.yml's build_odds comment had been pointing at nothing.)
       - name: re-render pages from committed data (resilient; no collect / no LLM / no EDGAR)
         id: render_pages
         # Mirrors the RENDER steps of daily.yml's `engine` job, minus the collectors,
@@ -829,24 +852,9 @@ jobs:
           # block above this step (moved out 2026-08-01: 21,000-char run limit).
           foresightpage() { [ -n "$FORESIGHT_DONE" ] && return 0; FORESIGHT_DONE=1; run_py "thematic foresight desk (build_foresight)" scripts.build_foresight; }
 
-          # DELIBERATELY omitted from this lane (vetted 2026-07-25):
-          #  • build_odds — a collector wearing a builder's name: refetches all 119
-          #    universe tickers from yfinance on EVERY run (odds.stale_trading_days: 0)
-          #    with no timeout, and its data/odds_ohlcv store is gitignored → wiped by
-          #    this job's clean checkout, so every express run would COLD-START a
-          #    full-history backfill (5-15+ min of third-party network on the render
-          #    path — the gdelt-stall class). Its site/oddsmatrix payloads are gitignored
-          #    and R2-published by daily.yml only, so advancing catalog.json here would
-          #    silence the page's staleness banner over stale R2 matrices. Same class as
-          #    the gex_board omission in engine-render; odds.html keeps the last
-          #    nightly's values. (daily.yml's build_odds step points at this bullet.)
-          #  (build_leader_radar was omitted here for the same 2026-07-25 vetting; its
-          #   three named bake-side blockers — the unguarded pick_lab as_of consumption,
-          #   the built_at/elapsed_s churn, and the undisclosed rs_series vintage skew —
-          #   were fixed in #3578, so the builder is now admitted above (#3612) as a
-          #   serial post-band step.)
-          # (This block was collateral damage in #3834's stale-base clobber; restored
-          #  2026-07-30 — daily.yml's build_odds comment had been pointing at nothing.)
+          # builders DELIBERATELY omitted from this lane (build_odds, and the history
+          # of build_leader_radar's admission): rationale in the comment block above
+          # this step (moved out 2026-08-10: 21,000-char run limit).
 
           # ---- special situations: page-only rebake, NO EDGAR sweep ----
           # The nightly owns the ~28m filing sweep; this lane re-renders the desk
