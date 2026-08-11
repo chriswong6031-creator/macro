@@ -9,7 +9,9 @@ This repository is operated by multiple Claude accounts and Codex sessions. Repo
    `~/.claude/projects/-Users-chriswong-Documents-Cluade-Macro-Dashboard/memory/MEMORY.md`
    and open the entries relevant to the task. For delivery work, always include
    `session-finish-full-git-chain`, `auto-finish-commit-push-pr`, and
-   `go-live-deploy-mechanics`.
+   `go-live-deploy-mechanics` — read all three under §CI handoff is terminal,
+   which outranks them: they describe the SYSTEM's delivery chain, not how long
+   one worker stays alive.
 3. Treat `/Users/chriswong/Documents/Cluade/charting-app` as the connected Terminal
    repository. Authentication, subscriptions, data contracts, APIs, and deployment
    changes may require checking both repositories.
@@ -123,10 +125,49 @@ Do NOT save tokens by reducing reasoning effort — output is only 17% of burn, 
 cutting thinking degrades quality for at most a sixth of the cost. The savings
 are in where work happens and how large the context is.
 
+## CI handoff is terminal (HIGHEST PRECEDENCE)
+
+"System done" and "worker done" are different states, and wherever any rule
+below appears to say otherwise, this section wins. System done is still the
+full delivery chain in the next section. Worker done is earlier: a worker still
+breathing past it is re-asking, on the one shared 5,000/hr REST bucket, a
+question the `merge-on-green` sweeper already re-derives from GitHub's live
+state every ten minutes.
+
+A worker task is COMPLETE and MUST terminate once all five conditions hold:
+
+1. the intended changes are committed and pushed;
+2. the remote pull request head equals the expected local HEAD;
+3. the pull request carries `merge-on-green`;
+4. at least one non-spurious check has started, or a no-CI proof exists;
+5. no concluded genuine-red check exists.
+
+The worker then runs `python3 scripts/ci_handoff.py`, emits the `CI_HANDOFF=`
+receipt line it prints, gives its final response, and terminates. That CLI is
+agent-agnostic on purpose — Codex, a shell script, or a workflow step asks the
+same question and gets the same answer, because it and the Claude `Stop` hook in
+`.claude/hooks/ship_loop_guard.py` hold ONE classifier,
+`scripts/ci_handoff_contract.py`; the pair silently disagreeing is how work gets
+orphaned. It takes one finite snapshot: no watch mode, no poll, no retry loop
+exists anywhere in it. Exit 0 releases the worker; exits 2-7 each NAME the
+condition that failed (2 red, 3 unproven, 4 checkout or head mismatch, 5 no armed
+pull request, 6 sink, 7 infrastructure), so a refusal is a work item, never a
+reason to wait.
+
+After `CI_HANDOFF`, waiting, polling, rerunning, merging, observing the
+deployment, and continuing the next phase in the same session are FORBIDDEN. The
+external controller owns those states. Nothing in the delivery contract is
+removed by this: the sweeper still merges, the shared render lane still bakes,
+and the VPS still pulls main every three minutes — the worker is simply not the
+party sitting there watching them. Condition 4 is why an unproven head still
+blocks: an absence of red is not a pass (#4779), and releasing on a head that
+nothing proves ORPHANS the work, because the sweeper will refuse it for exactly
+the same reason.
+
 ## Definition of done
 
-For every substantive, verified change, complete the full delivery chain without
-asking the operator to finish it:
+SYSTEM done for a substantive, verified change is the full delivery chain, which
+is never abandoned partway and never handed back to the operator to finish:
 
 1. commit;
 2. push;
@@ -136,7 +177,13 @@ asking the operator to finish it:
 6. deploy or wait for the repository's normal deploy lane, then verify the change
    on the real live URL.
 
-Do not stop at a local commit or an open PR. The only holds are an explicit operator
+That is the SYSTEM's obligation, not one session's lifetime. A worker owns steps
+1-3 plus arming `merge-on-green`, then hands off and terminates per §CI handoff
+is terminal, which outranks this section; the sweeper owns step 5, and the shared
+render lane and the VPS's 3-minute pull own step 6. Do not stop at a local commit
+or an unarmed, un-handed-off pull request — that is abandoned work, not delivered
+work — and equally, do not stay alive to watch steps 5 and 6 happen, because
+watching is not delivery. The only holds are an explicit operator
 request to hold, a genuine non-spurious failing check, or a real deployment blocker.
 For Macro, the `Workers Builds: macro` red X is known-spurious. Template/source
 changes must include their paired `site/` artifact when required, and “merged” is
@@ -183,7 +230,9 @@ and merges IMMEDIATELY (verified PR #3889, 2026-07-28 — merged ~1 min after ar
 with packs still pending).
 
 **DEFAULT FINISH — hand the wait to the sweeper, do not sit on it.** After opening
-the pull request, run `gh pr edit <n> --add-label merge-on-green` and stop.
+the pull request, run `gh pr edit <n> --add-label merge-on-green`, then
+`python3 scripts/ci_handoff.py`, emit the `CI_HANDOFF=` marker, and stop
+(§CI handoff is terminal).
 `.github/workflows/merge-on-green.yml` (GitHub-hosted `ubuntu-latest`, every 10 minutes,
 deliberately off every self-hosted render pool) squash-merges the
 pull request once every check has CONCLUDED clean, with the known-spurious
@@ -194,8 +243,11 @@ next sweep. `ship_loop_guard.py` releases a session whose armed pull request
 carries no concluded red — a head with NO non-spurious checks at all is unproven
 and still blocks, because the sweeper will never merge that either. This is what
 ends the 20-60 minute CI-hostage wait; the merge-on-CONCLUDED discipline itself is
-unchanged, only who waits. Merging by hand on concluded-green stays valid whenever
-you prefer to watch it. After any accidental fast merge, the surviving PR proof run
+unchanged, only who waits. Merging by hand on concluded-green stays mechanically
+valid but is now the EXCEPTION rather than a preference: take it only on an explicit
+operator request to watch this one through, or on a wedge the sweeper provably
+cannot clear — otherwise it spends a live worker for 20-60 minutes duplicating a
+sweep that runs every ten. After any accidental fast merge, the surviving PR proof run
 is the merge's evidence — watch it to conclusion. `--admin` remains only for the
 spurious Workers X, docs-only pull requests that trigger no pack checks, and
 genuine wedges — never to outrun CI.
@@ -254,6 +306,10 @@ instead of dispatching. Dispatch only over a clear field, or over a run stuck
 dispatch is then the mercy kill, not a murder).
 
 ### Waiting on CI without jamming every other session
+
+Waiting is the EXCEPTION now (§CI handoff is terminal): the default finish hands
+the wait to the sweeper and terminates. What follows governs the rare sanctioned
+wait — an operator-requested watch, or a wedge the sweeper cannot clear.
 
 `gh` authenticates as ONE account token, so GitHub REST's 5,000/hr `core` pool is a
 single bucket shared by every parallel session, the babysitter lane, and the hooks.
@@ -346,7 +402,11 @@ their own.
 The contract is actively enforced for Claude by the tracked `SessionStart` and
 `Stop` hook in `.claude/hooks/ship_loop_guard.py`. It snapshots pre-existing dirty
 files, then refuses a normal stop while session-created work is uncommitted,
-unpushed, unmerged, awaiting a render, or absent from production.
+unpushed, unmerged, awaiting a render, or absent from production. It does NOT
+require a worker to outlive its handoff: an armed pull request satisfying
+§CI handoff is terminal RELEASES the session at the unmerged gate instead of
+pinning it, because the guard exists to prove work was delivered, not to keep a
+model breathing while other lanes finish.
 The dirty snapshot judges only this checkout's own work. Untracked entries under
 another fleet's worktree roots (`.claude/worktrees/`, `.claire/worktrees/`,
 `.codex-worktrees/`) are excluded — a blocked session can neither commit another
