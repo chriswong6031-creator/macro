@@ -15,8 +15,10 @@ import pytest
 from engine.neuralweb import market_memory
 from engine.neuralweb import market_memory_forward as forward
 from engine.research_factory import adapter_market_memory as adapter
+from engine.research_factory import challenge as rf_challenge
 from engine.research_factory import ledger as rf_ledger
 from engine.research_factory import schema as rf_schema
+from engine.research_factory import state as rf_state
 from scripts import research_factory_ingest as rf_ingest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -208,6 +210,15 @@ def test_generic_ingest_never_persists_invalid_market_memory_discriminators(
         rf_dir=rf_dir,
         dry_run=False,
     )
+    rf_ingest.run_ingest(
+        [copy.deepcopy(hostile)],
+        oracle_registry_path=tmp_path / "absent-oracle.jsonl",
+        species_registry_path=tmp_path / "absent-species.json",
+        machine_registry_path=tmp_path / "absent-machine.jsonl",
+        trial_ledger_path=tmp_path / "absent-trials.jsonl",
+        rf_dir=rf_dir,
+        dry_run=False,
+    )
 
     assert len(result.registered) == 0
     assert len(result.dropped) == 1
@@ -384,6 +395,80 @@ def test_ledger_rejects_validator_mutation_before_creating_path(tmp_path: Path) 
     assert not path.exists()
 
 
+def test_write_jsonl_rejects_scored_masked_dict_without_creating_path(
+    tmp_path: Path,
+) -> None:
+    class ScoredMaskedDict(dict):
+        def get(self, key: object, default: object = None) -> object:
+            if key == "authority":
+                return "display_only"
+            return super().get(key, default)
+
+    hostile = ScoredMaskedDict({"authority": "scored", "value": "hidden"})
+    path = tmp_path / "nested" / "masked.jsonl"
+    with pytest.raises(ValueError, match="row must be an exact dict"):
+        rf_ledger.write_jsonl(path, [hostile])
+    assert not path.parent.exists()
+
+
+def test_write_jsonl_candidate_path_validates_before_any_write(tmp_path: Path) -> None:
+    valid = _generic_candidate()
+    hostile = _mutate(
+        _candidate(),
+        ("artifacts", "market_memory_conformance", "authority_granted"),
+        True,
+    )
+    path = tmp_path / "nested" / "candidates.jsonl"
+
+    with pytest.raises(ValueError, match="candidate schema validation"):
+        rf_ledger.write_jsonl(path, [valid, hostile])
+    assert not path.parent.exists()
+
+
+def test_candidate_append_cannot_bypass_owned_validator_with_permissive_callback(
+    tmp_path: Path,
+) -> None:
+    hostile = _mutate(
+        _candidate(),
+        ("artifacts", "market_memory_conformance", "authority_granted"),
+        True,
+    )
+    path = tmp_path / "candidates.jsonl"
+    with pytest.raises(ValueError, match="failed schema validation"):
+        rf_ledger.append_row(path, hostile, validate_fn=lambda _row: [])
+    assert not path.exists()
+
+
+def test_write_jsonl_rejects_candidate_validator_mutation_without_write(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    candidate = _generic_candidate()
+
+    def mutate(frozen: dict[str, Any]) -> list[str]:
+        frozen["authority"] = "scored"
+        return []
+
+    monkeypatch.setattr(rf_schema, "validate_candidate", mutate)
+    path = tmp_path / "nested" / "candidates.jsonl"
+    with pytest.raises(ValueError, match="candidate validator mutated"):
+        rf_ledger.write_jsonl(path, [candidate])
+    assert not path.parent.exists()
+
+
+def test_write_jsonl_generic_candidate_uses_frozen_canonical_bytes(
+    tmp_path: Path,
+) -> None:
+    candidate = _generic_candidate()
+    expected = forward.canonical_json_bytes(candidate) + b"\n"
+    path = tmp_path / "candidates.jsonl"
+
+    rf_ledger.write_jsonl(path, [candidate])
+
+    candidate["authority"] = "scored"
+    assert path.read_bytes() == expected
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [
@@ -410,6 +495,120 @@ def test_generic_candidate_without_reserved_market_memory_marker_is_unchanged() 
         }
     }
     assert rf_schema.validate_candidate(generic) == []
+
+
+@pytest.mark.parametrize(
+    "marker",
+    [
+        "research_factory.market_memory_candidate_conformance.v1",
+        "research_factory.market_memory_candidate_spec.v1",
+        "rf-market-memory-fully-relabelled",
+        "mmrfspec_fully_relabelled",
+        "mmtrial_fully_relabelled",
+        "market_memory",
+        "market_memory_candidate",
+        "market_memory_w2a_preregistration",
+        {"trial_read_back": {}},
+        {"w4_retrieval_join": {}},
+        {"w5_evaluation_join": {}},
+        {"trial_registration_id": "renamed"},
+        {"trial_registration_sha256": "renamed"},
+        {"trial_registration_bytes": 1},
+    ],
+    ids=(
+        "conformance-schema",
+        "spec-schema",
+        "candidate-prefix",
+        "spec-prefix",
+        "trial-prefix",
+        "source-value",
+        "type-value",
+        "spec-source-value",
+        "read-back-key",
+        "w4-join-key",
+        "w5-join-key",
+        "trial-id-key",
+        "trial-sha-key",
+        "trial-bytes-key",
+    ),
+)
+@pytest.mark.parametrize("placement", ["root", "nested-dict", "nested-list"])
+def test_recursive_market_memory_ownership_survives_relabel_and_any_placement(
+    tmp_path: Path,
+    marker: object,
+    placement: str,
+) -> None:
+    hostile = _generic_candidate()
+    hostile.update(source="human", candidate_type="external_idea", domain="macro")
+    if placement == "root":
+        hostile["renamed_subtype"] = copy.deepcopy(marker)
+    elif placement == "nested-dict":
+        hostile["artifacts"] = {
+            "renamed_outer": {"renamed_inner": copy.deepcopy(marker)}
+        }
+    else:
+        hostile["artifacts"] = {
+            "renamed_outer": [
+                {"renamed_inner": [copy.deepcopy(marker)]},
+            ]
+        }
+
+    violations = rf_schema.validate_candidate(hostile)
+    assert any("Market Memory structural projection" in row for row in violations)
+    assert any("discriminator tuple must be exact" in row for row in violations)
+
+    path = tmp_path / f"{placement}.jsonl"
+    with pytest.raises(ValueError, match="failed schema validation"):
+        rf_ledger.append_row(path, hostile, validate_fn=rf_schema.validate_candidate)
+    assert not path.exists()
+
+
+def test_recursive_market_memory_rejection_persists_only_generic_audit_envelope(
+    tmp_path: Path,
+) -> None:
+    hostile = _generic_candidate()
+    hostile.update(source="human", candidate_type="external_idea", domain="macro")
+    hostile["artifacts"] = {
+        "renamed_outer": [
+            {
+                "renamed_inner": {
+                    "trial_read_back": {},
+                    "identity": "mmtrial_fully-relabelled",
+                }
+            }
+        ]
+    }
+    stable_proposal = {
+        key: value
+        for key, value in hostile.items()
+        if key not in {"candidate_id", "created_at", "as_of"}
+    }
+    expected_proposal_hash = hashlib.sha256(
+        forward.canonical_json_bytes(stable_proposal)
+    ).hexdigest()
+    rf_dir = tmp_path / "rf"
+
+    result = rf_ingest.run_ingest(
+        [hostile],
+        oracle_registry_path=tmp_path / "absent-oracle.jsonl",
+        species_registry_path=tmp_path / "absent-species.json",
+        machine_registry_path=tmp_path / "absent-machine.jsonl",
+        trial_ledger_path=tmp_path / "absent-trials.jsonl",
+        rf_dir=rf_dir,
+        dry_run=False,
+    )
+
+    assert len(result.registered) == 0
+    assert len(result.dropped) == 1
+    candidates = rf_ledger.load_jsonl(rf_dir / "candidates.jsonl")
+    transitions = rf_ledger.load_jsonl(rf_dir / "transitions.jsonl")
+    assert len(candidates) == len(transitions) == 1
+    assert candidates[0]["candidate_id"].startswith("rf-schema-rejected-")
+    assert transitions[0]["candidate_id"] == candidates[0]["candidate_id"]
+    assert transitions[0]["_proposal_hash"] == expected_proposal_hash
+    assert "Market Memory structural projection" in transitions[0]["reason_text"]
+    assert not rf_schema.has_market_memory_owned_marker(candidates[0])
+    assert not rf_schema.has_market_memory_owned_marker(transitions[0])
 
 
 @pytest.mark.parametrize(
@@ -659,6 +858,180 @@ def test_candidate_is_proposed_read_only_and_exactly_zero_authority() -> None:
         )
         == candidate
     )
+
+
+def test_market_memory_is_inert_across_transition_challenge_and_monitor_chain(
+    tmp_path: Path,
+) -> None:
+    candidate = _candidate()
+    candidate_id = candidate["candidate_id"]
+    ingest_dir = tmp_path / "ingest"
+    ingest_result = rf_ingest.run_ingest(
+        [copy.deepcopy(candidate)],
+        oracle_registry_path=tmp_path / "absent-oracle.jsonl",
+        species_registry_path=tmp_path / "absent-species.json",
+        machine_registry_path=tmp_path / "absent-machine.jsonl",
+        trial_ledger_path=tmp_path / "absent-trials.jsonl",
+        rf_dir=ingest_dir,
+        dry_run=False,
+    )
+    assert len(ingest_result.registered) == 0
+    assert [row[1] for row in ingest_result.dropped] == ["transition_rejected"]
+    assert not ingest_dir.exists()
+
+    transition = {
+        "schema": "research_factory.transition.v1",
+        "authority": "display_only",
+        "candidate_id": candidate_id,
+        "from": "proposed",
+        "to": "registered",
+        "reason_code": "schema_valid",
+        "reason_text": "generic lifecycle admission attempt",
+        "actor": "script",
+        "actor_ref": None,
+        "artifact_refs": [],
+        "kill_evidence": None,
+        "as_of": "2026-08-10T12:01:00.000000Z",
+    }
+    assert any(
+        "proposed-only" in row for row in rf_schema.validate_transition(transition)
+    )
+    with pytest.raises(rf_state.IllegalTransition, match="proposed-only"):
+        rf_state.transition(
+            "proposed",
+            "registered",
+            "script",
+            transition,
+            candidate=candidate,
+        )
+    transition_path = tmp_path / "transitions.jsonl"
+    with pytest.raises(ValueError, match="failed schema validation"):
+        rf_ledger.append_row(
+            transition_path,
+            transition,
+            validate_fn=lambda _row: [],
+        )
+    assert not transition_path.exists()
+
+    challenge = {
+        "schema": "research_factory.challenge.v1",
+        "authority": "display_only",
+        "candidate_id": candidate_id,
+        "challenged_at": "2026-08-10T12:02:00.000000Z",
+        "mechanical_probes": {},
+    }
+    assert any(
+        "proposed-only" in row for row in rf_schema.validate_challenge(challenge)
+    )
+    with pytest.raises(ValueError, match="proposed-only"):
+        rf_challenge.build_challenge_input(candidate, root=tmp_path)
+    with pytest.raises(ValueError, match="proposed-only"):
+        rf_challenge.write_challenge(
+            candidate_id,
+            {"mechanical_probes": {}},
+            root=tmp_path,
+        )
+    with pytest.raises(ValueError, match="proposed-only"):
+        rf_challenge.apply_challenge_transitions(
+            candidate_id,
+            tmp_path / "never-created.json",
+            root=tmp_path,
+        )
+    assert not (tmp_path / "data" / "research_factory").exists()
+
+    paper_monitor = {
+        "schema": "research_factory.paper_monitor.v1",
+        "authority": "display_only",
+        "candidate_id": candidate_id,
+        "as_of": "2026-08-10T12:03:00.000000Z",
+        "paper_status": "warmup",
+        "action": "continue",
+    }
+    assert any(
+        "proposed-only" in row
+        for row in rf_schema.validate_paper_monitor(paper_monitor)
+    )
+    monitor_path = tmp_path / "paper_monitor.jsonl"
+    with pytest.raises(ValueError, match="failed schema validation"):
+        rf_ledger.append_row(
+            monitor_path,
+            paper_monitor,
+            validate_fn=lambda _row: [],
+        )
+    assert not monitor_path.exists()
+
+
+def test_relabelled_transition_is_blocked_by_detached_market_memory_candidate() -> None:
+    candidate = _candidate()
+    transition = {
+        "schema": "research_factory.transition.v1",
+        "authority": "display_only",
+        "candidate_id": "rf-generic-relabelled",
+        "from": "proposed",
+        "to": "registered",
+        "reason_code": "schema_valid",
+        "reason_text": "relabel attempt",
+        "actor": "script",
+        "actor_ref": None,
+        "artifact_refs": [],
+        "kill_evidence": None,
+        "as_of": "2026-08-10T12:01:00.000000Z",
+    }
+    with pytest.raises(rf_state.IllegalTransition, match="proposed-only"):
+        rf_state.transition(
+            "proposed",
+            "registered",
+            "script",
+            transition,
+            candidate=candidate,
+        )
+
+
+def test_generic_research_factory_lifecycle_admission_is_unchanged() -> None:
+    candidate = _generic_candidate()
+    candidate["status"] = "proposed"
+    candidate["transition_log"] = []
+    candidate_id = candidate["candidate_id"]
+    transition = {
+        "schema": "research_factory.transition.v1",
+        "authority": "display_only",
+        "candidate_id": candidate_id,
+        "from": "proposed",
+        "to": "registered",
+        "reason_code": "schema_valid",
+        "reason_text": "generic lifecycle remains enabled",
+        "actor": "script",
+        "actor_ref": None,
+        "artifact_refs": [],
+        "kill_evidence": None,
+        "as_of": "2026-08-10T12:01:00.000000Z",
+    }
+    assert rf_schema.validate_transition(transition) == []
+    rf_state.transition(
+        "proposed",
+        "registered",
+        "script",
+        transition,
+        candidate=candidate,
+    )
+
+    challenge = {
+        "schema": "research_factory.challenge.v1",
+        "authority": "display_only",
+        "candidate_id": candidate_id,
+        "challenged_at": "2026-08-10T12:02:00.000000Z",
+        "mechanical_probes": {},
+    }
+    assert rf_schema.validate_challenge(challenge) == []
+    paper_monitor = {
+        "schema": "research_factory.paper_monitor.v1",
+        "authority": "display_only",
+        "candidate_id": candidate_id,
+        "as_of": "2026-08-10T12:03:00.000000Z",
+        "paper_status": "warmup",
+        "action": "continue",
+    }
+    assert rf_schema.validate_paper_monitor(paper_monitor) == []
 
 
 def test_semantic_candidate_and_spec_ids_exclude_projection_created_at() -> None:

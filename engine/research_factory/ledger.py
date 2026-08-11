@@ -154,12 +154,32 @@ def append_row(path: str | Path, row: dict, *, validate_fn=None) -> None:
     row         : Dict to serialise and append.
     validate_fn : Optional callable; returns a list of violation strings.
     """
+    p = Path(path)
     frozen, canonical_body = _freeze_exact_json_object(row, label="append_row")
     if frozen.get("authority") != "display_only":
         raise ValueError(
             f"append_row: row must carry authority='display_only' (RF-11); "
             f"got authority={frozen.get('authority')!r}"
         )
+    # A caller-supplied permissive validator (or no validator) must not turn a
+    # W6A-owned row into a generic lifecycle write. Preserve legacy audit-drop
+    # behaviour for unrelated malformed rows while making the dormant subtype
+    # unbypassable on every owned ledger path.
+    from engine.research_factory import schema as rf_schema
+
+    if rf_schema.has_market_memory_owned_marker(frozen):
+        owned_validator = {
+            "candidates.jsonl": rf_schema.validate_candidate,
+            "transitions.jsonl": rf_schema.validate_transition,
+            "paper_monitor.jsonl": rf_schema.validate_paper_monitor,
+        }.get(p.name)
+        if owned_validator is not None:
+            owned_errs = owned_validator(frozen)
+            if owned_errs:
+                raise ValueError(
+                    "append_row: W6A-owned row failed schema validation for path:\n  "
+                    + "\n  ".join(owned_errs)
+                )
     if validate_fn is not None:
         errs = validate_fn(frozen)
         if errs:
@@ -176,7 +196,6 @@ def append_row(path: str | Path, row: dict, *, validate_fn=None) -> None:
         )
         if validated_body != canonical_body or validated != frozen:
             raise ValueError("append_row: validate_fn mutated the frozen row")
-    p = Path(path)
     with _WRITE_LOCK:
         p.parent.mkdir(parents=True, exist_ok=True)
         with p.open("ab") as fh:
@@ -217,25 +236,68 @@ def write_jsonl(path: str | Path, rows: list[dict]) -> None:
     """Atomically overwrite ``path`` with ``rows`` (one JSON line each).
 
     Uses tempfile + os.replace for atomicity (same approach as trial_ledger.py).
-    All rows must carry ``authority == 'display_only'``.  Raises ValueError
-    if any row violates this.
+    Every input row is first frozen to one detached exact-JSON view. Authority
+    and any path-owned schema are checked against that view, and the exact same
+    canonical bytes are then written. Candidate-ledger rewrites cannot bypass
+    :func:`schema.validate_candidate` merely by choosing this bulk helper.
     """
+    p = Path(path)
+    path_validator = None
+    if p.name in {"candidates.jsonl", "transitions.jsonl", "paper_monitor.jsonl"}:
+        from engine.research_factory import schema as rf_schema
+
+        path_validator = {
+            "candidates.jsonl": rf_schema.validate_candidate,
+            "transitions.jsonl": rf_schema.validate_transition,
+            "paper_monitor.jsonl": rf_schema.validate_paper_monitor,
+        }[p.name]
+    frozen_rows: list[tuple[dict, bytes]] = []
     for i, row in enumerate(rows):
-        if row.get("authority") != "display_only":
+        frozen, canonical_body = _freeze_exact_json_object(
+            row,
+            label=f"write_jsonl row[{i}]",
+        )
+        if frozen.get("authority") != "display_only":
             raise ValueError(
                 f"write_jsonl: row[{i}] must carry authority='display_only' (RF-11); "
-                f"got authority={row.get('authority')!r}"
+                f"got authority={frozen.get('authority')!r}"
             )
-    p = Path(path)
+        if path_validator is not None:
+            errs = path_validator(frozen)
+            if errs:
+                schema_label = {
+                    "candidates.jsonl": "candidate",
+                    "transitions.jsonl": "transition",
+                    "paper_monitor.jsonl": "paper-monitor",
+                }[p.name]
+                raise ValueError(
+                    f"write_jsonl: row[{i}] failed {schema_label} schema validation:\n  "
+                    + "\n  ".join(errs)
+                )
+            validated, validated_body = _freeze_exact_json_object(
+                frozen,
+                label=f"write_jsonl row[{i}]",
+            )
+            if validated_body != canonical_body or validated != frozen:
+                schema_label = {
+                    "candidates.jsonl": "candidate",
+                    "transitions.jsonl": "transition",
+                    "paper_monitor.jsonl": "paper-monitor",
+                }[p.name]
+                raise ValueError(
+                    f"write_jsonl: {schema_label} validator mutated row[{i}]"
+                )
+        frozen_rows.append((frozen, canonical_body))
+
     p.parent.mkdir(parents=True, exist_ok=True)
     with _WRITE_LOCK:
         fd, tmp_path = tempfile.mkstemp(
             dir=str(p.parent), prefix=".tmp_", suffix=".jsonl"
         )
         try:
-            with os.fdopen(fd, "w", encoding="utf-8") as fh:
-                for row in rows:
-                    fh.write(json.dumps(row, default=str) + "\n")
+            with os.fdopen(fd, "wb") as fh:
+                for _frozen, canonical_body in frozen_rows:
+                    fh.write(canonical_body + b"\n")
             os.replace(tmp_path, str(p))
         except Exception:
             try:

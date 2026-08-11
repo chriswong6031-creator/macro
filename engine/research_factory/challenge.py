@@ -23,6 +23,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from engine.research_factory.schema import has_market_memory_owned_marker
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -227,6 +229,12 @@ def build_challenge_input(
 
     Returns a JSON-serialisable dict.  Does NOT write to disk (caller's job).
     """
+    if has_market_memory_owned_marker(candidate):
+        raise ValueError(
+            "build_challenge_input: Market Memory W6A is proposed-only; "
+            "challenge admission is disabled until a future evidence-bearing version"
+        )
+
     from engine.research_factory.probes import (
         collect_flags,
         gauntlet_legs,
@@ -480,11 +488,20 @@ def write_challenge(
     ------
     ValueError  : If reviewer_response fails validation.
     """
-    from engine.research_factory.ledger import DEFAULT_RF_DIR
+    from engine.research_factory.ledger import (
+        DEFAULT_RF_DIR,
+        detached_json_object,
+    )
+    from engine.research_factory.schema import validate_challenge
+
+    packet = detached_json_object(packet, label="write_challenge packet")
+    if has_market_memory_owned_marker({"candidate_id": candidate_id, "packet": packet}):
+        raise ValueError(
+            "write_challenge: Market Memory W6A is proposed-only; challenge "
+            "admission is disabled until a future evidence-bearing version"
+        )
 
     _root = root or Path(".")
-    challenges_dir = _root / DEFAULT_RF_DIR / "challenges"
-    challenges_dir.mkdir(parents=True, exist_ok=True)
 
     # Build the §5.3 challenge row
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -516,7 +533,16 @@ def write_challenge(
             "human_review_question": reviewer_response.get("human_review_question"),
         }
 
+    row_errs = validate_challenge(row)
+    if row_errs:
+        raise ValueError(
+            f"write_challenge: challenge failed schema validation for "
+            f"{candidate_id!r}:\n  " + "\n  ".join(row_errs)
+        )
+
     # Atomic write via tempfile + replace
+    challenges_dir = _root / DEFAULT_RF_DIR / "challenges"
+    challenges_dir.mkdir(parents=True, exist_ok=True)
     out_path = challenges_dir / f"{candidate_id}.json"
     fd, tmp = tempfile.mkstemp(dir=str(challenges_dir), prefix=".tmp_", suffix=".json")
     try:
@@ -666,6 +692,12 @@ def apply_challenge_transitions(
     the append-only audit log.  Re-running --ingest-response on a candidate
     that is already in ``challenged`` or ``human_review`` is a caller error.
     """
+    if has_market_memory_owned_marker(candidate_id):
+        raise ValueError(
+            "apply_challenge_transitions: Market Memory W6A is proposed-only; "
+            "challenge transitions are disabled until a future evidence-bearing version"
+        )
+
     _root = root or Path(".")
     current_status = _get_candidate_current_status(candidate_id, _root)
 

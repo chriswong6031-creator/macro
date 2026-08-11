@@ -300,9 +300,34 @@ _MARKET_MEMORY_CONFORMANCE_SCHEMA = (
     "research_factory.market_memory_candidate_conformance.v1"
 )
 _MARKET_MEMORY_SPEC_SCHEMA = "research_factory.market_memory_candidate_spec.v1"
-_MARKET_MEMORY_RESERVED_PREFIXES = (
-    ("candidate_id", "rf-market-memory-"),
-    ("spec_ref", "mmrfspec_"),
+_MARKET_MEMORY_RESERVED_STRING_PREFIXES = (
+    "rf-market-memory-",
+    "mmrfspec_",
+    "mmtrial_",
+)
+_MARKET_MEMORY_RESERVED_STRING_VALUES = frozenset(
+    {
+        *_MARKET_MEMORY_TRIPLE,
+        _MARKET_MEMORY_CONFORMANCE_SCHEMA,
+        _MARKET_MEMORY_SPEC_SCHEMA,
+        "market_memory_w2a_preregistration",
+        "market_memory_context_only",
+        "w4_join_deferred",
+        "w5_join_deferred",
+        "w4_retrieval_not_available",
+        "w5_evaluation_not_run",
+    }
+)
+_MARKET_MEMORY_RESERVED_KEYS = frozenset(
+    {
+        "market_memory_conformance",
+        "trial_read_back",
+        "w4_retrieval_join",
+        "w5_evaluation_join",
+        "trial_registration_id",
+        "trial_registration_sha256",
+        "trial_registration_bytes",
+    }
 )
 _MARKET_MEMORY_RESERVED_TOP_LEVEL = {
     "expected_failure_modes": [
@@ -325,6 +350,21 @@ _MARKET_MEMORY_RESERVED_TOP_LEVEL = {
         "w5_join_deferred",
     ],
 }
+
+
+def _market_memory_reserved_string(
+    value: object,
+    *,
+    exact_values: frozenset[str],
+    prefixes: tuple[str, ...] = (),
+) -> bool:
+    """Compare a stored string through ``str``'s built-in implementation."""
+
+    if not isinstance(value, str):
+        return False
+    return any(str.__eq__(value, marker) is True for marker in exact_values) or any(
+        str.startswith(value, prefix) for prefix in prefixes
+    )
 
 
 def _market_memory_object(
@@ -405,29 +445,47 @@ def _market_memory_real_canonical_utc(value: object) -> bool:
     )
 
 
-def _has_market_memory_reserved_schema(value: object) -> bool:
-    """Return whether an artifacts tree carries a W6A-owned schema marker."""
+def has_market_memory_owned_marker(value: object) -> bool:
+    """Return whether any placement in ``value`` carries a W6A-owned marker.
 
+    W6A ownership is deliberately recursive and independent of generic RF
+    labels.  A caller cannot evade the inert subtype seal by moving a reserved
+    schema, identity, or distinctive conformance key into a renamed wrapper.
+    Built-in container iterators are used so dict/list subclasses cannot mask
+    their stored contents from this inspection.
+    """
     pending = [value]
     visited: set[int] = set()
     while pending:
         current = pending.pop()
-        if type(current) not in {dict, list}:
-            continue
-        identity = id(current)
-        if identity in visited:
-            continue
-        visited.add(identity)
-        if type(current) is dict:
-            schema = current.get("schema")
-            if type(schema) is str and schema in {
-                _MARKET_MEMORY_CONFORMANCE_SCHEMA,
-                _MARKET_MEMORY_SPEC_SCHEMA,
-            }:
+        if isinstance(current, str):
+            if _market_memory_reserved_string(
+                current,
+                exact_values=_MARKET_MEMORY_RESERVED_STRING_VALUES,
+                prefixes=_MARKET_MEMORY_RESERVED_STRING_PREFIXES,
+            ):
                 return True
-            pending.extend(current.values())
-        else:
-            pending.extend(current)
+            continue
+        if isinstance(current, dict):
+            identity = id(current)
+            if identity in visited:
+                continue
+            visited.add(identity)
+            for key, child in dict.items(current):
+                if _market_memory_reserved_string(
+                    key,
+                    exact_values=_MARKET_MEMORY_RESERVED_KEYS,
+                ):
+                    return True
+                pending.append(key)
+                pending.append(child)
+            continue
+        if isinstance(current, list):
+            identity = id(current)
+            if identity in visited:
+                continue
+            visited.add(identity)
+            pending.extend(list.__iter__(current))
     return False
 
 
@@ -440,41 +498,22 @@ def _is_market_memory_owned_candidate(row: dict) -> bool:
     Market Memory-shaped row with positive authority.
     """
 
-    supplied = (row.get("source"), row.get("candidate_type"), row.get("domain"))
-    if any(
-        type(value) is str and value == marker
-        for value, marker in zip(supplied, _MARKET_MEMORY_TRIPLE)
-    ):
+    if has_market_memory_owned_marker(row):
         return True
 
-    for field, prefix in _MARKET_MEMORY_RESERVED_PREFIXES:
-        value = row.get(field)
-        if type(value) is str and value.startswith(prefix):
-            return True
-
     hypothesis = row.get("hypothesis")
-    if (
-        type(hypothesis) is str
-        and _MARKET_MEMORY_HYPOTHESIS_RE.fullmatch(hypothesis) is not None
-    ):
+    if type(hypothesis) is str and _MARKET_MEMORY_HYPOTHESIS_RE.fullmatch(
+        hypothesis
+    ) is not None:
         return True
     mechanism = row.get("mechanism")
     if type(mechanism) is str and mechanism == _MARKET_MEMORY_MECHANISM:
         return True
 
-    for field, expected in _MARKET_MEMORY_RESERVED_TOP_LEVEL.items():
-        if _market_memory_exact_json(row.get(field), expected):
-            return True
-
-    artifacts = row.get("artifacts")
-    if type(artifacts) is dict:
-        if any(
-            type(key) is str and key == "market_memory_conformance" for key in artifacts
-        ):
-            return True
-        if _has_market_memory_reserved_schema(artifacts):
-            return True
-    return False
+    return any(
+        _market_memory_exact_json(row.get(field), expected)
+        for field, expected in _MARKET_MEMORY_RESERVED_TOP_LEVEL.items()
+    )
 
 
 def _validate_market_memory_candidate_structure(
@@ -871,6 +910,12 @@ def validate_transition(row: dict) -> list[str]:
     _req(row, "candidate_id", errs, label)
     _req(row, "as_of", errs, label)
 
+    if has_market_memory_owned_marker(row):
+        errs.append(
+            f"{label}: Market Memory W6A is proposed-only; generic transition "
+            "admission is disabled until a future evidence-bearing version"
+        )
+
     from_state = row.get("from")
     to_state = row.get("to")
     if from_state is not None and from_state not in STATES:
@@ -911,6 +956,12 @@ def validate_challenge(row: dict) -> list[str]:
 
     _req(row, "candidate_id", errs, label)
     _req(row, "challenged_at", errs, label)
+
+    if has_market_memory_owned_marker(row):
+        errs.append(
+            f"{label}: Market Memory W6A is proposed-only; challenge admission "
+            "is disabled until a future evidence-bearing version"
+        )
 
     reviewer = row.get("reviewer")
     if reviewer is not None:
@@ -960,6 +1011,12 @@ def validate_paper_monitor(row: dict) -> list[str]:
 
     _req(row, "candidate_id", errs, label)
     _req(row, "as_of", errs, label)
+
+    if has_market_memory_owned_marker(row):
+        errs.append(
+            f"{label}: Market Memory W6A is proposed-only; paper-monitor admission "
+            "is disabled until a future evidence-bearing version"
+        )
 
     status = row.get("paper_status")
     if status is not None and status not in PAPER_STATUSES:

@@ -1266,20 +1266,28 @@ null join and W5 evaluation is explicitly `not_run` with a null evidence join;
 neither missing slice is fabricated. Challenge completion, emission, training,
 promotion, and every action-authority bit remain false.
 
-Canonical Research Factory ingestion treats any one Market Memory enum as a
-request for the whole sealed subtype: the exact source/type/domain triple,
-inert proposal/accounting/evaluation state, empty lifecycle, canonical IDs,
-strict conformance/spec morphology, and zero authority are all mandatory. This
-generic validator is structural only because a candidate row cannot prove the
-source bytes named by its digest. Only the adapter validator authenticates the
-exact owner-valid W2A bytes and reconstructs the canonical projection.
+Canonical Research Factory admission treats any reserved Market Memory marker
+anywhere in the whole row as a request for the whole sealed subtype. That
+ownership survives relabelled wrappers and includes the enum values, reserved
+identity prefixes, conformance/spec schemas, and distinctive trial read-back
+and W4/W5 join keys. The exact source/type/domain triple, inert
+proposal/accounting/evaluation state, empty lifecycle, canonical IDs, strict
+conformance/spec morphology, and zero authority are then all mandatory.
+Malformed owned input is recorded only through a fixed generic digest-only
+rejection envelope and marker-free audit identity; none of the submitted
+subtype payload is laundered into the candidate ledger. This generic validator
+is structural only because a candidate row cannot prove the source bytes named
+by its digest. Only the adapter validator authenticates the exact owner-valid
+W2A bytes and reconstructs the canonical projection.
 
 This slice has no registry, store, writer, filesystem/environment/network
 input, CLI, service, scheduler, API route, real candidate emission, or real
-experiment. It establishes schema conformance only. Later work must supply
-owner-valid W4 retrieval evidence and W5 evaluation evidence, then pass the
-existing human-gated Research Factory lifecycle without weakening either
-program's authority rails.
+experiment. It establishes schema conformance only. W6A identities are
+strictly proposed-only: generic state transitions, challenge admission, and
+paper-monitor admission all fail closed. Later work must supply owner-valid W4
+retrieval evidence and W5 evaluation evidence in a new evidence-bearing
+version before that version can enter the existing human-gated Research
+Factory lifecycle without weakening either program's authority rails.
 
 ### 11.1 File ownership
 
