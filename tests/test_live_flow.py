@@ -871,10 +871,16 @@ class TestAPIRoutes:
         assert resp.status_code == 200
 
     def test_meta_route(self, client, monkeypatch):
-        payload = {"schema": "live_flow.meta/v1", "asof": BATCH_TS,
-                   "cadence_sec_target": 120, "cadence_sec_measured": 95.0,
+        payload = {"schema": "live_flow.meta/v2", "asof": BATCH_TS,
+                   "built_at": BATCH_TS, "poll_floor_sec": 120,
+                   "cycle_started_at": BATCH_TS,
+                   "observed_start_to_start_sec": 122.5,
+                   "fetch_compute_sec": 95.0,
+                   "source_response_at_first": BATCH_TS,
+                   "source_response_at_last": BATCH_TS,
+                   "roots_requested": 22, "roots_with_source_payload": 22,
                    "universe_n": 22, "roots_polled": 22,
-                   "requests_last_cycle": 44, "cycle_sec": 95.0,
+                   "requests_last_cycle": 44,
                    "delta_mode": "full_day", "notes": []}
         monkeypatch.setattr("app.main._flow_fetch", lambda name: payload)
         resp = client.get("/api/flow/meta")
@@ -2325,7 +2331,10 @@ class TestRunCycleEndToEnd:
 
     def _run_real_cycle(self, monkeypatch, frames: dict,
                         day_state: dict | None = None,
-                        cycle_watermarks: dict | None = None) -> tuple:
+                        cycle_watermarks: dict | None = None,
+                        cycle_started_at: str | None = None,
+                        observed_start_to_start_sec: float | None = None,
+                        cadence_sec: int = 120) -> tuple:
         """Invoke the real run_cycle with all I/O stubbed.
 
         `frames` maps root → canned calls DataFrame (the puts leg returns an empty
@@ -2362,6 +2371,7 @@ class TestRunCycleEndToEnd:
 
         cfg = {
             "max_concurrent": 2,
+            "cadence_sec": cadence_sec,
             "etf_floor": 0,
             "name_floor": 0,
             "etf_anchors": ["SPY", "QQQ", "IWM"],
@@ -2384,7 +2394,103 @@ class TestRunCycleEndToEnd:
             cycle_watermarks=cycle_watermarks if cycle_watermarks is not None else {},
             forced_full_day=True,
             event_stager=fake_stager,
+            cycle_started_at=cycle_started_at,
+            observed_start_to_start_sec=observed_start_to_start_sec,
         )
+
+    def test_meta_v2_separates_poll_source_and_compute_clocks(self, monkeypatch):
+        started = "2026-07-02T18:29:59Z"
+        feed, heat, meta, state, _ = self._run_real_cycle(
+            monkeypatch,
+            {"SPY": self._root_frame("SPY", "09:30", seq_base=1000)},
+            cycle_started_at=started,
+            observed_start_to_start_sec=611.25,
+        )
+
+        assert meta["schema"] == "live_flow.meta/v2"
+        assert meta["poll_floor_sec"] == 120
+        assert meta["cycle_started_at"] == started
+        assert meta["observed_start_to_start_sec"] == 611.25
+        assert isinstance(meta["fetch_compute_sec"], float)
+        assert meta["fetch_compute_sec"] >= 0
+        assert meta["roots_requested"] == 1
+        assert meta["roots_with_source_payload"] == 1
+        assert meta["source_response_at_first"] == "2026-07-02T18:30:00Z"
+        assert meta["source_response_at_last"] == "2026-07-02T18:30:00Z"
+        assert meta["asof"] == "2026-07-02T18:30:00Z"
+        assert feed["source_asof"] == meta["asof"]
+        assert heat["source_asof"] == meta["asof"]
+        assert state["source_asof"] == meta["asof"]
+        assert {
+            "cycle_sec",
+            "cadence_sec_target",
+            "cadence_sec_measured",
+            "observed_cadence_sec",
+        }.isdisjoint(meta)
+
+    @pytest.mark.parametrize("invalid", [0, -1, True, "120", 120.0])
+    def test_run_cycle_rejects_coercible_invalid_poll_floor(self, monkeypatch, invalid):
+        with pytest.raises(ValueError, match="exact positive integer poll floor"):
+            self._run_real_cycle(
+                monkeypatch,
+                {},
+                cadence_sec=invalid,
+            )
+
+    @pytest.mark.parametrize("invalid", [-1, True, "120", float("nan"), float("inf")])
+    def test_run_cycle_rejects_invalid_observed_start_spacing(self, monkeypatch, invalid):
+        with pytest.raises(ValueError, match="finite non-negative"):
+            self._run_real_cycle(
+                monkeypatch,
+                {},
+                observed_start_to_start_sec=invalid,
+            )
+
+    @pytest.mark.parametrize(
+        "invalid",
+        ["", "not-a-time", "2026-07-02T18:29:59", "2026-07-02T19:29:59+01:00"],
+    )
+    def test_run_cycle_rejects_invalid_or_non_utc_cycle_start(self, monkeypatch, invalid):
+        with pytest.raises(ValueError, match="cycle_started_at"):
+            self._run_real_cycle(
+                monkeypatch,
+                {},
+                cycle_started_at=invalid,
+            )
+
+    def test_fully_failed_cycle_retains_prior_source_clock(self, monkeypatch):
+        import scripts.live_flow_poller as poller
+
+        monkeypatch.setattr(
+            poller,
+            "_fetch_root",
+            lambda root, *_args, **_kwargs: (root, None, None),
+        )
+        prior_source = "2026-07-02T17:45:00Z"
+        feed, heat, meta, state, _ = poller.run_cycle(
+            roots=["SPY"],
+            session_date=SESSION_DATE,
+            delta_mode="full_day",
+            day_state={"source_asof": prior_source},
+            baselines={},
+            cfg={
+                "max_concurrent": 2,
+                "cadence_sec": 120,
+                "etf_floor": 0,
+                "name_floor": 0,
+                "etf_anchors": ["SPY"],
+            },
+            cycle_watermarks={},
+        )
+
+        assert meta["asof"] == prior_source
+        assert feed["source_asof"] == prior_source
+        assert heat["source_asof"] == prior_source
+        assert state["source_asof"] == prior_source
+        assert meta["roots_requested"] == 1
+        assert meta["roots_with_source_payload"] == 0
+        assert meta["source_response_at_first"] is None
+        assert meta["source_response_at_last"] is None
 
     def test_engine_failure_does_not_advance_root_watermark(self, monkeypatch):
         frames = {
@@ -2905,6 +3011,28 @@ class TestDayStateVersionDiscard:
         assert ss[seq_key] == pytest.approx(500.0)
         # All per-contract state is root-scoped and must round-trip identically.
         assert cv_key in loaded["contract_vol"]
+
+    def test_source_clock_roundtrips_on_restart(self, tmp_path, monkeypatch):
+        """A restart followed by a failed fetch cannot freshen or erase source age."""
+        from scripts.live_flow_poller import _load_day_state, _save_day_state
+
+        state_dir = tmp_path / "live_flow_state"
+        state_dir.mkdir()
+        monkeypatch.setattr(
+            "scripts.live_flow_poller._state_dir", lambda: state_dir,
+        )
+        source_asof = "2026-07-02T18:30:00Z"
+        _save_day_state(
+            SESSION_DATE,
+            {
+                "emitted_ids": set(),
+                "seen_sequences": {},
+                "contract_vol": {},
+                "notability_history": {},
+                "source_asof": source_asof,
+            },
+        )
+        assert _load_day_state(SESSION_DATE)["source_asof"] == source_asof
 
 
 class TestDayStateLearningWal:
