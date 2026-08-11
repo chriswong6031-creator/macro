@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-11T19:53:11.526898+00:00",
-  "count": 937,
+  "generated_at": "2026-08-11T21:36:56.316466+00:00",
+  "count": 948,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -59,6 +59,231 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-gbjaregqbxy-f1fd18",
+      "title": "JPM Europe Equity Research | Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T12:01:54Z",
+      "summary_points": [
+        "**CSG**: 60% upside potential over next 17 months despite 30% discount to IPO price, driven by conservative estimates and unchanged guidance - **Amadeus**: Upgraded EPS estimates to ~MSD% for 2026-28, Dec-27 PT lifted to €70, offering ~20% upside from margin expansion and revenue growth acceleration - **Aperam/Outokumpu**: OW upgrades driven by rebound in 2027 CFC yields, valuation (6x 2027E EV/EBITDA), and expansion into aerospace/defense/data centers - **Cybersecurity**: Top risk factor for global banks, surpassing credit risk as critical concern - **JPM Events**: September sustainability/AI events (Sep 2,17,30) signaling heightened ESG/tech investment interest and market sentiment shifts - **Back-to-School Series**: Concentrated healthcare/chemicals virtual events driving Q3/Q4 sector flows and institutional positioning - **Holmen**: -21.5% EPS change highlighting severe earnings contraction risk amid sector-wide volatility"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vko7e4zekvn-09bb9d",
+      "title": "JPM US Market Intelligence Morning Briefing Aug 11",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:24:59Z",
+      "summary_points": [
+        "**CPI Data Dominates Inflation Narrative**: Headline MoM +0.12% (3.4% YoY), Core MoM +0.22% (2.5% YoY) critical for Fed policy; core YoY deceleration (2.5% vs 2.9% May) signals cooling inflation, impacting September hike probability.",
+        "**Iran-US Geopolitics & Oil**: Trump shifts to economic leverage on Iran; WTI +5% (Energy Equities dominant), pending White House action on WTI/gasoline/10Y yield; Iran hardens stance on Hormuz, tempers reopening hopes.",
+        "**Fixed Income Rotation & Flows**: Fixed Income ETF inflows surged to $16.1Bn in August (vs $8.1Bn early July), signaling institutional shift from equities; IEF outflows ($4.1Bn) to TLT inflows ($2.9Bn) indicate yield curve positioning.",
+        "**Mag7 Valuation Gap & AI ROI**: Mag7 trading 2 SD below 2018Q3 mean (forward P/E), implying ~30% upside to mean; strong AI ROI (backlog +150% YoY, net new ARR +150%) drives bullish case despite near-term consolidation.",
+        "**US Data Catalysts for Fed**: Critical August 12 CPI (inflation), Real Avg Hourly Earnings (wages), and Mortgage Applications (housing) pivotal for Fed policy; Core MoM scenarios drive SPX moves (40% chance of 0.20-0.25% = SPX up 25bp-75bp)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nal7r2gm25q-0e6c2a",
+      "title": "JPM US Market Intelligence Afternoon Briefing Aug 10",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T00:07:31Z",
+      "summary_points": [
+        "**US Market Data & Energy Anomaly**: SPX/Nasdaq down slightly amid oil surge (WTI $82.16), with Energy/Software outperforming; rare energy-beta exposure chase (OFS +2.25z, smid energy +2.25z) deviating from typical E&P behavior during geopolitical escalation (Houthi/Saudi attacks).",
+        "**CPI Data & Fed Catalyst**: Feroli’s Core MoM +0.22% (2.5% YoY) confirms tactical bullish stance; 50% probability of Core MoM >0.30% triggering 1.5%-2.5% SPX decline, critical for Fed hike expectations ahead of Aug 12 CPI.",
+        "**Apple Margin Threat**: iPhone 18 Pro BOM cost surge (memory prices +38% YoY, 34% of BOM) forces margin cuts, directly threatening tech portfolio profitability amid memory inflation.",
+        "**NVDA Rotation Risk**: Bear case triggered by US data lagging global peers and Semis-driven NVDA rotation, challenging AI bull narrative and Fed policy assumptions.",
+        "**Geopolitical Energy Flow**: Iran-Hormuz reopening stance (oil +2%) and US-Japan intervention eroding gains; Houthi/Saudi Aramco attacks causing energy product bid, diverging from historical E&P beta."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bofolrubwr5-0a382a",
+      "title": "TDAGeneric NAM",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-10T22:22:21Z",
+      "summary_points": [
+        "**Geopolitical Risk (Iran Strait)**: Iran tensions drove equities lower, oil up 4.86%, and Treasuries down as CPI/PPI data influenced Fed rate expectations.",
+        "**Intel Capital Shift**: $15B share sale funds chip manufacturing expansion, shifting focus from buybacks to growth amid 5x stock rally—critical for semiconductor positioning.",
+        "**Nvidia AI Capital Flow**: Partnership with Apollo/Blackstone ($730B+ institutional capital) signals major institutional inflows into AI infrastructure—key tech portfolio driver.",
+        "**Meta/Google/TikTok Lawsuits**: Tech sector faces legal risk as lawsuits proceed over social media addiction, with Section 230 no longer shielding firms.",
+        "**Inflation Data Catalyst**: Core CPI (0.2% vs 0.0%), Fed deficit ($346B vs $120B) signal persistent inflation and rate hike risks, dominating market catalysts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-diubsw9r87b-7ea4c2",
+      "title": "Transformational Innovation Opportunities (TRIO)",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T22:18:43Z",
+      "summary_points": [
+        "**China Internet Revisit Rationale**: Competitive intensity easing (Alibaba food delivery, cloud growth), credible AI monetization (Tencent Hunyuan 3), and supportive capital flows driving valuation rebound; Alibaba Cloud 45% Q2 growth (vs 36%/38% prior) and Tencent AI adoption surge (WorkBuddy 115% user growth) are key catalysts.",
+        "**Capital Flows Reversal**: Chinese internet stocks reversing depressed valuations as capital flows shift; Alibaba’s 40% rally fueled by AI progress (Qwen, MaaS) and CY2026 growth momentum, with semiconductor stocks gaining inflows.",
+        "**Semiconductor Geopolitical Risks**: US-China tensions intensify via sanctions (ASM Pacific Tech, ASML, ARM Holdings), semiconductor cyclical demand (Applied Materials, Broadcom), and policy shifts (Infineon), threatening margins and supply chains.",
+        "**Alibaba Cloud Acceleration**: 45% revenue growth (Q2), improving margins, with credible long-term targets (USD 100bn revenue in 5y, 20% margin) supporting AI demand and AI monetization.",
+        "**Reverse Convertibles Risk Exposure**: High frequency of SPL - Equity Reverse Convertibles Tactical Opportunity List selections (Applied Materials, Broadcom) signaling credit/volatility risks and aggressive tactical positioning amplifying short-term market exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-iabsklnuj34-921c53",
+      "title": "Charlie McElligott Equities Update",
+      "institution": "Nomura",
+      "side": "sell",
+      "desk": "McElligott",
+      "published_at": "2026-08-10T17:47:24Z",
+      "summary_points": [
+        "**US Equity Volatility Extreme**: SPX \"Up Vol\" @22.2 vs \"Down Vol\" @2.8 (highest since 1985) signals severe \"Spot Up, Vol Up\" panic, with NDX/SMH/RTY elevated ratios indicating heightened reversal risk.",
+        "**Earnings Shift & Geopolitical Policy Crosscurrents**: S&P 500 \"Other 493\" earnings growth contribution tripled (vs.",
+        "Mag7), driven by 87% EPS upside and 75% revenue beat, amid Iran Ceasefire v33 (risk-on) and dovish Fed impulse.",
+        "**Volatility Skew Dynamics**: Put Skew flattening and Call Skew steepening signal heightened \"Right Tail\" fear, lifting OTM Calls as investors prioritize extreme downside risks over upside potential.",
+        "**Inflation/Fed Policy Risk**: CPI/PPI data (this week) and hypothetical \"Hawkish Fed Impulse\" threaten sentiment, though Vol market currently prices more weight on NVDA earnings and Jackson Hole than CPI/PPI."
+      ],
+      "tags": [
+        "McElligott"
+      ],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-knyv6slrn7p-a37db9",
+      "title": "RBC UK & EUROPEAN RESEARCH AT A GLANCE",
+      "institution": "RBC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T15:01:34Z",
+      "summary_points": [
+        "**Amrize Margins Deterioration**: Downgrade to Underperform; margins disappoint despite volume beats, EPS/EBITDA estimates cut 12-15% (FY26E-FY28E), missed Q2 guidance vs peers (CRH, MLM, VMC beat) - **Siemens Healthineers Earnings Pressure**: Guidance downgrades driving model cuts, signaling critical earnings risk despite prior belief; US business sale risk ($280m erosion) impacts valuation - **Chemring Structural Catalyst**: Upgrade to Outperform; NATO-qualified military explosives supplier with Energistics growth, depleted missile stockpiles, pricing tailwinds, structural scarcity value (PT $580) - **Kingspan Undervaluation**: EBITDA estimates up 6-8% (FY26-FY27), valuation 15% below 10yr avg (14.2x), 2% below subsector (12.3x); organic growth + EPS outperformance, November CMD/M&A catalyst (PT EUR122) - **WuXi AppTec Geopolitical Relief**: D.C.",
+        "court suspends 1260H designation (DoD factual error), H1 2026 revenue +57% YoY, FY guidance raised 35-39%; anti-China legislative direction unchanged but BIOSECURE delays structural supply chain risk"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ozycb5rdqy2-4f6534",
+      "title": "JPM US Market Intell | Morning Briefing 2026 08 10",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:21:21Z",
+      "summary_points": [
+        "**CPI Scenario Analysis**: Headline MoM +0.12% (3.4% YoY), Core MoM +0.22% (2.5% YoY) critical for Fed hike assessment (57%→44% probability), driving positioning ahead of Retail Sales and NVDA earnings.",
+        "**SPX vs GDP Divergence**: S&P 500 surged 200%+ since 2020 vs.",
+        "slower nominal/chained GDP growth, signaling market valuation decoupling from economic expansion—a key portfolio risk.",
+        "**Geopolitical Risk**: Middle East tensions (Houthi attacks, Iran-US Strait deal) spiked NatGas +586bps; Saudi-Pakistan-Turkey defense pact mimics NATO, escalating regional volatility.",
+        "**Tech Valuation Catalyst**: Mag7/hyperscalers trading 2 SD below 2018Q3 mean (forward P/E), implying ~30% upside to mean; backlog growth >150% YoY ($1.7T) supports catch-up trade."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jjobc2bjtae-72c93d",
+      "title": "Key CPI print; AMAT could be a positive catalyst for semis",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T11:20:53Z",
+      "summary_points": [
+        "**CPI & Fed Rate Outlook**: July CPI forecast 0.1% m/m (3.4% y/y), core CPI 0.2% m/m (2.5% y/y); core services PCE firming supports September rate hike, Fed prioritizing inflation over labor.",
+        "**AMAT Semis Catalyst**: AMAT (B-1-7, $539.14) reports Aug 13; 20% DRAM share as bottleneck play; $720 target (36x CY28E P/E) justified by WFE outgrowth, near high end of historical P/E range.",
+        "**Earnings Options Low Vol Plays**: Stocks like ASTS (Aggregate Score -0.17) show low implied volatility vs history (e.g., 10.5% vs 12.7% avg), indicating optimal pricing for earnings surprise trades.",
+        "**Semiconductor BUY List**: 23 semiconductor firms rated BUY (AMD, NVIDIA, Intel, Broadcom) signal strong institutional confidence amid sector expansion; Vivek Arya covers 17 of 27 rated companies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rijqwshec0p-9a8050",
+      "title": "Investment Traffic Lights EN",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-09T22:16:49Z",
+      "summary_points": [
+        "**Geopolitical & Fed Pressures**: Gulf conflict driving Brent crude to $100+, 30-yr US Treasury yield at 5.27%; Fed’s \"no short-term fine-tuning\" stance amplifying volatility amid AI narrative fatigue and tech stock pressure (S&P 500 +15% YoY).",
+        "**Sector Rotation & Risk**: Euro High Yield Corporate Bonds downgraded to \"minus 1\" due to soaring energy prices; semiconductor sector (SOX, KOSPI) down 21-22% with extreme volatility (9+ days >5% moves).",
+        "**Tech Sector Dynamics**: Software sector upgraded (P/E 18x vs.",
+        "28x), IT sector at P/E 14 (cheap vs.",
+        "24 EPS forecast); risks include capex limits (2027-2028), China semiconductor progress, U.S."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qizqgapurqm-a2313f",
+      "title": "MRB Asset Allocation The Beginning Of The End August 7 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-09T22:16:27Z",
+      "summary_points": [
+        "**Asset Allocation Shift**: Downgrade equities (neutral → underweight) due to U.S.",
+        "tech dominance, elevated valuations, and inflation; upgrade fixed income (underweight → neutral/overweight) with focus on inflation-protected, high-yield EM, and short-duration bonds.",
+        "**Tech/AI Overconcentration Risk**: U.S.",
+        "tech earnings growth rolling over, semiconductor overbought signals (DRAM price surge), and \"hurdle for margin expansion\" creating significant downside risk for U.S.",
+        "equities."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 22,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-a4azjz2hgsd-f09120",
       "title": "AEJ Week Ahead China inflation and credit data, India inflation, and Singapore and Malaysia GDP",

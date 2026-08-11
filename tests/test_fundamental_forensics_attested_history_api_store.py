@@ -1006,6 +1006,7 @@ def test_dedicated_readonly_credentials_are_delivered_to_macro_api_only() -> Non
         "FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY",
         "FF_ATTESTED_R2_READONLY_BUCKET",
     ):
+        assert f"_require {name} " in workflow, name
         assert f"_add {name} " in workflow, name
     assert (
         'grep -vE "^FF_ATTESTED_R2_READONLY_(ENDPOINT|ACCESS_KEY_ID|SECRET_ACCESS_KEY|BUCKET)="'

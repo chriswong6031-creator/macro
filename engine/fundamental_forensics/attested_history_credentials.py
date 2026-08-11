@@ -47,6 +47,37 @@ class R2TemporaryCredentialError(ValueError):
     """A parent R2 credential cannot be narrowed into an admitted child."""
 
 
+_VALUE_FREE_CREDENTIAL_ERRORS = frozenset(
+    {
+        "R2 endpoint is invalid",
+        "R2 endpoint host is invalid",
+        "R2 parent access key ID is invalid",
+        "R2 parent secret access key is invalid",
+        "R2 bucket is invalid",
+        "R2 child scope is invalid",
+        "R2 child actions are invalid",
+        "R2 child actions exceed the exact role",
+        "R2 child prefix is invalid",
+        "R2 child TTL is invalid",
+        "R2 child issue clock is invalid",
+    }
+)
+
+
+def value_free_credential_error(exc: R2TemporaryCredentialError) -> str:
+    """Return an operator-safe reason without echoing credential material.
+
+    Every current minter rejection is a fixed literal. Keep an explicit
+    allow-list anyway: a future validation message that interpolates an
+    endpoint, bucket, key, or secret collapses to the generic reason until it
+    receives an intentional security review.
+    """
+    reason = str(exc)
+    if reason in _VALUE_FREE_CREDENTIAL_ERRORS:
+        return reason
+    return "R2 parent credential is invalid"
+
+
 @dataclass(frozen=True)
 class R2TemporaryCredentials:
     """Short-lived R2 S3 credential derived without calling Cloudflare APIs.
