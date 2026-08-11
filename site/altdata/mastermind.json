@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
-  "as_of": "2026-08-10",
-  "generated_utc": "2026-08-10T22:51:25.395119+00:00",
+  "as_of": "2026-08-11",
+  "generated_utc": "2026-08-11T00:12:54.346966+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": "The desk sees broad, multi-channel convergence in mega-cap AI-enablers (NVDA, MSFT) with strong political/smart-money footprints, while a smaller set of soft-signal names lack the weight to clear the bar. The absence of a track record forces low default conviction.",
   "brain_present": true,
@@ -1123,6 +1123,37 @@
       "clamped": null
     },
     {
+      "ticker": "AMD",
+      "signal_score": 46,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.4,
+      "convergence_score": 4,
+      "channels": [
+        "congress_cluster",
+        "github_momentum",
+        "retail_buzz",
+        "stocktwits_bull"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 3.1,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -16.8,
+      "ret_20d": -13.4,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "META",
       "signal_score": 43,
       "conviction": "high",
@@ -1500,36 +1531,6 @@
       "clamped": null
     },
     {
-      "ticker": "AMD",
-      "signal_score": 20,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.6,
-      "convergence_score": 3,
-      "channels": [
-        "github_momentum",
-        "retail_buzz",
-        "stocktwits_bull"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 3.1,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -16.8,
-      "ret_20d": -13.4,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "LHX",
       "signal_score": 20,
       "conviction": "medium",
@@ -1731,17 +1732,45 @@
       "clamped": null
     },
     {
+      "ticker": "WMT",
+      "signal_score": 11,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.55,
+      "convergence_score": 2,
+      "channels": [
+        "app_demand",
+        "stocktwits_bull"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -18.9,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -16.7,
+      "ret_20d": -1.8,
+      "above_50dma": false,
+      "entry_tier": "T1",
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "QCOM",
-      "signal_score": 14,
+      "signal_score": 0,
       "conviction": "low",
       "action": "AVOID",
       "direction": "short",
       "source": "brain",
-      "weighted_score": 1.55,
-      "convergence_score": 4,
+      "weighted_score": 1.1,
+      "convergence_score": 3,
       "channels": [
         "affiliation",
-        "congress_buy",
         "patent_cluster",
         "special_situation"
       ],
@@ -1775,35 +1804,6 @@
           "horizon_d": 30
         }
       },
-      "clamped": null
-    },
-    {
-      "ticker": "WMT",
-      "signal_score": 11,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.55,
-      "convergence_score": 2,
-      "channels": [
-        "app_demand",
-        "stocktwits_bull"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -18.9,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -16.7,
-      "ret_20d": -1.8,
-      "above_50dma": false,
-      "entry_tier": "T1",
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
       "clamped": null
     }
   ],

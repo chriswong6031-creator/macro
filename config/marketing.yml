@@ -671,6 +671,15 @@ publish:
   backend: buffer          # only "buffer" is implemented today
   require_approval: true   # only outbox items an operator approved may post
 
+  # ── LIVENESS TRIPWIRE — scripts/marketing_liveness_tripwire.py ────────────
+  # 2026-08-06 Buffer's plan locked (429s); 08-08 MARKETING_PUBLISH_ENABLED was
+  # set to 0; Buffer was fixed and nobody re-armed it. For FIVE DAYS (08-06→08-10)
+  # every 30-minute sweep concluded GREEN while the account posted nothing.
+  # These two knobs are how long silence is allowed to go unremarked.
+  liveness:
+    stale_post_alarm_hours: 8    # ARMED + no live post this long (17:00Z-00:30Z) → ::error, red sweep
+    disarmed_alarm_hours: 24     # DARK this long → ::warning every sweep, ::error + red at 13:00Z
+
   # ── One numeric fact, one post, network-wide (operator 2026-08-06) ────────
   # "holy fuck the 203k claims it was posted so many times everywhere."
   # MEASURED: 203k jobless claims / 5.0% GDPNow / 2.1% median CPI was generated
