@@ -71,10 +71,18 @@ LICENSE_VENDOR = (True, True, False)
 VENDOR_SUITES: frozenset[str] = frozenset({THS_SUITE})
 
 #: Edge fields compared when deciding whether tonight's view differs from the stored
-#: belief. src/dst/type/valid_from are already inside edge_id, so a change in any of
-#: them mints a different edge rather than updating this one.
+#: belief — the ASSERTION, and only the assertion. src/dst/type/valid_from are already
+#: inside edge_id, so a change in any of them mints a different edge rather than
+#: updating this one.
+#:
+#: `era` and `belief_time` are deliberately NOT here. They describe how and when the row
+#: was produced, not what it claims about the world, and including `era` made the first
+#: nightly after a backfill re-append the ENTIRE graph: every reconstruction row differed
+#: from its observed recomputation on that label alone, so an unchanged night looked like
+#: a total rewrite. A reconstruction row stays the current belief until the fact itself
+#: moves — which is the whole point of storing beliefs rather than snapshots.
 MATERIAL_EDGE_FIELDS: tuple[str, ...] = (
-    "valid_to", "evidence_time", "era", "source_class", "date_provenance",
+    "valid_to", "evidence_time", "source_class", "date_provenance",
     "evidence_refs", "confidence_basis",
 )
 
@@ -564,15 +572,40 @@ def build(*, era: str, belief_time: str | None = None,
 # Nightly diff
 # ---------------------------------------------------------------------------
 
+def _null(v: object) -> bool:
+    """True for None and for pandas' own nulls.
+
+    LOAD-BEARING. A parquet column that is entirely null reads back as object/None, but
+    a MIXED one (valid_to: 18 closed intervals among 5,628 open ones) reads back with
+    NaN in the empty cells. Comparing a computed None against a stored NaN made every
+    open edge look changed, and the first nightly over the real committed store proposed
+    re-appending 5,610 of 5,628 edges — while the fixture suite, whose valid_to column
+    happened to be all-null, saw a clean no-op. Hence the mixed-column test beside the
+    fixture one.
+    """
+    if v is None:
+        return True
+    if isinstance(v, str) or hasattr(v, "__len__"):
+        return False
+    try:
+        return bool(pd.isna(v))
+    except (TypeError, ValueError):  # pragma: no cover — exotic scalars
+        return False
+
+
 def _material(row: dict) -> tuple:
     out = []
     for f in MATERIAL_EDGE_FIELDS:
         v = row.get(f)
         if f == "evidence_refs":
-            v = tuple(sorted(str(x) for x in (list(v) if v is not None else [])))
-        elif v is not None and not isinstance(v, (str, bool, int, float)):
-            v = str(v)
-        out.append(v)
+            items = [] if _null(v) else list(v)
+            out.append(tuple(sorted(str(x) for x in items)))
+        elif _null(v):
+            out.append(None)
+        elif isinstance(v, (str, bool, int, float)):
+            out.append(v)
+        else:
+            out.append(str(v))
     return tuple(out)
 
 

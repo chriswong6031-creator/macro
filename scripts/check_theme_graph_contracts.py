@@ -449,6 +449,7 @@ def selftest(tmp_root: Path | None = None) -> int:
     import tempfile  # noqa: PLC0415
 
     tmp_root = tmp_root or Path(tempfile.mkdtemp(prefix="theme_graph_selftest_"))
+    tmp_root.mkdir(parents=True, exist_ok=True)
     empty_breaks = tmp_root / "no_breaks.yml"
     empty_breaks.write_text("breaks: []\n", encoding="utf-8")
     checks: list[tuple[bool, str]] = []
