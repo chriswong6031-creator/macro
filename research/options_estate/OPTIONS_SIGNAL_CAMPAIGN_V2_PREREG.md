@@ -1,11 +1,12 @@
 # Options signal campaign v2 — frozen preregistration
 
-Status: rule and authority freeze at exactly `2026-08-11T13:24:00Z`, before
-canonical v2 publication. The immutable 2026-08-10 episode corpus was already
-available when this contract was designed. Any revision whose final member
-predates the freeze is therefore labeled `retrospective_context` and cannot be
-counted as forward evidence. A final-member clock at or after the freeze is
-`prospective_after_rule_freeze`.
+Status: the effective rule and authority boundary is exactly
+`2026-08-12T13:30:00Z`, the next NYSE session open after the executable v2
+contract was finalized and hosted. The earlier `2026-08-11T13:24:00Z` draft
+timestamp preceded those executable semantics and is not a valid forward-evidence
+boundary. Every 2026-08-11 revision is therefore `retrospective_context` and
+cannot be counted as forward evidence. A final-member clock at or after the
+effective boundary is `prospective_after_rule_freeze`.
 
 The pre-existing eight-row `options.signal_campaign/v1` threshold cohort is a
 frozen legacy retrospective ledger. It is neither this canonical contract nor
@@ -96,8 +97,9 @@ than smuggling a refused append through `git add data/`.
 - shuffled in-memory group/map enumeration over one exact immutable source prefix
   produces byte-identical revisions and outcomes; rewriting or shuffling the
   source ledger itself is prefix drift and fails closed;
-- final-member clocks immediately before, exactly at, and immediately after the
-  frozen instant classify as retrospective, prospective, and prospective;
+- the formerly admitted 2026-08-11 14:00Z row remains retrospective, while
+  final-member clocks immediately before, exactly at, and immediately after the
+  effective boundary classify as retrospective, prospective, and prospective;
 - adjacent integer strikes above `2^53` remain distinct exact campaign keys;
 - singleton groups persist and threshold-based admission cannot reappear;
 - late members append linked revisions; backdated insertion, shrink, reorder,

@@ -50,7 +50,7 @@ MEMBER_ORDER_POLICY = "available-at-then-episode-id/v1"
 REVISION_POLICY = "strict-source-prefix-extension/v1"
 OUTCOME_ANCHOR_POLICY = "final-member-availability/v1"
 CHECKPOINT_POLICY = "checkpoint-last-exact-prefix/v1"
-RULE_FROZEN_AT = "2026-08-11T13:24:00Z"
+RULE_FROZEN_AT = "2026-08-12T13:30:00Z"
 
 EPISODES_PATH = "data/options_signal_episode/episodes.jsonl"
 H60_PATH = "data/options_signal_episode/outcomes_h60.jsonl"

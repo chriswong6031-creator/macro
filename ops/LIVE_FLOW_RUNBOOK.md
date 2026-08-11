@@ -152,13 +152,15 @@ It is the sole advancer of a separate canonical namespace:
 - `data/options_signal_campaign/checkpoint.json` — deterministic exact-prefix
   receipts over all three episode sources and both canonical outputs.
 
-The v2 rule froze at `2026-08-11T13:24:00Z`, after the 2026-08-10 corpus was
-available. Revisions whose final-member availability precedes that clock are
-`retrospective_context`; only later revisions are
-`prospective_after_rule_freeze`. The campaign writer validates source and output
-prefixes, atomically writes revisions, atomically writes outcomes, then writes
-the checkpoint last. A crash before checkpoint is byte-idempotently replayable;
-shrink, drift, backdated membership, or forged receipts fail closed.
+The effective v2 evidence boundary is `2026-08-12T13:30:00Z`, the next NYSE
+session open after the executable contract was finalized and hosted. The earlier
+`2026-08-11T13:24:00Z` draft clock is not an admissible forward boundary, so all
+2026-08-11 revisions remain `retrospective_context`; only revisions at or after
+the effective boundary are `prospective_after_rule_freeze`. The campaign writer
+validates source and output prefixes, atomically writes revisions, atomically
+writes outcomes, then writes the checkpoint last. A crash before checkpoint is
+byte-idempotently replayable; shrink, drift, backdated membership, or forged
+receipts fail closed.
 
 The episode publisher owns exactly its four files; the campaign publisher owns
 exactly its three files. Both use narrow metadata replay. Their steps may let

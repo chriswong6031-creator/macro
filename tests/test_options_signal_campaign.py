@@ -578,10 +578,15 @@ def test_evidence_phase_is_exact_before_at_and_after_rule_freeze(
     )
     run(root_dir=root)
     template = _read_jsonl(root / CAMPAIGNS_PATH)[0]
+    # This row was incorrectly admitted by the superseded 13:24Z draft clock.
+    # The effective boundary begins at the next NYSE session open, so every
+    # August 11 revision remains retrospective.
+    assert template["formed_at"] == "2026-08-11T14:00:00Z"
+    assert template["evidence_phase"] == "retrospective_context"
     cases = (
-        ("2026-08-11T13:23:59.999999Z", "retrospective_context"),
-        ("2026-08-11T13:24:00Z", "prospective_after_rule_freeze"),
-        ("2026-08-11T13:24:00.000001Z", "prospective_after_rule_freeze"),
+        ("2026-08-12T13:29:59.999999Z", "retrospective_context"),
+        ("2026-08-12T13:30:00Z", "prospective_after_rule_freeze"),
+        ("2026-08-12T13:30:00.000001Z", "prospective_after_rule_freeze"),
     )
     rows = []
     for clock, phase in cases:
