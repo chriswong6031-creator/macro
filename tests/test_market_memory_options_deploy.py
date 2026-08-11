@@ -67,6 +67,8 @@ OPTION_CLOSURE_PATHS = (
     "app/deploy/macro-market-memory-breadth.timer",
     "app/deploy/macro-market-memory-technicals.service",
     "app/deploy/macro-market-memory-technicals.timer",
+    "app/deploy/macro-market-memory-experience.service",
+    "app/deploy/macro-market-memory-experience.timer",
     "app/deploy/macro-market-memory-production-records.service",
     "app/deploy/macro-market-memory-production-records.timer",
     "app/deploy/README.md",
@@ -198,6 +200,7 @@ def test_option_service_uses_static_identity_and_only_a_systemd_credential() -> 
         "macro-market-memory-identity.service",
         "macro-market-memory-breadth.service",
         "macro-market-memory-technicals.service",
+        "macro-market-memory-experience.service",
         "macro-market-memory-production-records.service",
     }
     assert set(_setting_values(service, "Conflicts")[0].split()) == reciprocal_services
@@ -655,6 +658,7 @@ def test_updater_reconciles_disarms_and_runs_exact_option_closure() -> None:
         "app/deploy/market-memory-options-runtime-fence.sh",
         "app/deploy/market-memory-options-dropin-migration.sh",
         "app/deploy/macro-market-memory-source.timer",
+        "app/deploy/macro-market-memory-experience.service",
         "scripts/capture_market_memory_option_oi.py",
         "scripts/__init__.py",
         "engine/__init__.py",
@@ -940,6 +944,11 @@ CHANGED={shlex.quote(changed)}
     assert "stop macro-market-memory-source.service" in self_update_trace
     timer_trace = trace_for("app/deploy/macro-market-memory-source.timer")
     assert "stop macro-market-memory-source.timer" in timer_trace
+    experience_trace = trace_for(
+        "engine/neuralweb/market_memory_experience_accrual.py"
+    )
+    assert "stop macro-market-memory-experience.timer" in experience_trace
+    assert "stop macro-market-memory-experience.service" in experience_trace
     scripts_init_trace = trace_for("scripts/__init__.py")
     assert "stop macro-market-memory-options.service" in scripts_init_trace
     assert "stop macro-market-memory-source.service" in scripts_init_trace

@@ -254,6 +254,24 @@ def test_production_store_refuses_to_fall_back_to_shared_research_credentials(mo
         operator.build_readonly_operator_store()
 
 
+def test_production_store_reports_a_value_free_credential_reason(monkeypatch):
+    operator = _operator_module()
+    invalid_endpoint = "0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com"
+    values = {
+        "FF_ATTESTED_R2_READONLY_ENDPOINT": invalid_endpoint,
+        "FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID": "A" * 32,
+        "FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY": "reader-parent-secret",
+        "FF_ATTESTED_R2_READONLY_BUCKET": "attested-history",
+    }
+    for name, value in values.items():
+        monkeypatch.setenv(name, value)
+
+    with pytest.raises(operator.OperatorPreflightError, match="R2 endpoint is invalid") as caught:
+        operator.build_readonly_operator_store()
+
+    assert invalid_endpoint not in str(caught.value)
+
+
 def test_production_packet_captures_once_then_binds_that_exact_byte_packet_to_head_and_index(monkeypatch, tmp_path):
     operator = _operator_module()
     packet = tmp_path / "arbitrary.json"
