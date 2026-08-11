@@ -18498,7 +18498,14 @@ artifacts:
     known_extra_writers: []
     owner_program: price-pressure
     cadence: daily-engine
-    storage: git
+    # R2-canonical since 2026-08-11 (R2 key `price_pressure/events.parquet`; the local
+    # path above is where fetch_r2 lands it). Was `git`: the ~10.8 MB parquet is
+    # rewritten WHOLE every successful night by the advance + the §10.1 completion
+    # pass, so tracking it cost ~4 GB/yr of binary churn. Flipping this field is not
+    # bookkeeping — engine/neuralweb/health.py reads it, and a git-storage row whose
+    # file is gitignored reports the lobe `missing` on every checkout instead of
+    # `not_locally_verifiable`. The JSON sidecars in the same dir stay git-tracked.
+    storage: r2
     asof_field: date
     freshness_sla_hours: 30
     schema: implicit

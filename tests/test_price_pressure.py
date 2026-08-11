@@ -1291,6 +1291,186 @@ def test_missing_store_annotates_at_line_start_and_exits_zero(tmp_path):
     assert not pp_artifact.artifact_path(data_dir).exists()
 
 
+# ---------------------------------------------------------------------------
+# ledger restore gate (events.parquet is R2-canonical since 2026-08-11)
+# ---------------------------------------------------------------------------
+#
+# The parquet is gitignored and restored by `fetch_r2 --dirs price_pressure`
+# before the builder runs, so "the restore came up empty" and "the restore
+# returned last month's copy" are live failure modes that git used to make
+# impossible.  Unguarded they are SILENT: read_ledger answers an absent or torn
+# parquet with an empty typed frame, so the nightly would harvest its catch-up
+# window against nothing, write a few hundred rows over the 35k-row history, and
+# publish that back as the new canonical ledger.  The gate compares the restored
+# parquet's newest event date against the git-TRACKED latest.json asof, which the
+# same run writes from `ledger["date"].max()`.
+
+def _synthetic_bar_store(data_dir: Path, tickers: tuple[str, ...] = ("AAA", "AAB")) -> Path:
+    """A `massive_stock_day` tree just real enough to clear the BAR-store gate.
+
+    That gate is ``store.glob("*.parquet")`` plus an optional ``_manifest.json``
+    staleness read — writing no manifest means no staleness measure, which is what
+    carries these tests past it and onto the ledger gate under test.
+    """
+    store = data_dir / "massive_stock_day"
+    store.mkdir(parents=True, exist_ok=True)
+    idx = _dates(30)
+    for t in tickers:
+        pd.DataFrame({"date": idx, "open": 100.0, "high": 101.0, "low": 99.0,
+                      "close": 100.0, "volume": 1e6}).to_parquet(
+                          store / f"{t}.parquet", index=False)
+    return store
+
+
+def _tracked_artifact(data_dir: Path, asof: str) -> Path:
+    """The git-tracked sidecar the gate treats as truth."""
+    d = data_dir / "price_pressure"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / "latest.json"
+    p.write_text(json.dumps({"schema": "price_pressure.v1", "asof": asof}),
+                 encoding="utf-8")
+    return p
+
+
+def _restored_ledger(data_dir: Path, max_date: str) -> Path:
+    """A restored events.parquet whose newest row lands on ``max_date``."""
+    df = pd.DataFrame({"date": pd.to_datetime([max_date]), "ticker": ["AAA"],
+                       "side": ["down"], "era": ["forward"]})
+    pp_ledger.write_ledger(df, data_dir, require_nightly_lane=False)
+    return pp_ledger.ledger_path(data_dir)
+
+
+def _run_builder(data_dir: Path, tmp_path: Path):
+    return subprocess.run(
+        [sys.executable, "-m", "scripts.build_price_pressure",
+         "--data-root", str(data_dir)],
+        cwd=str(ROOT), capture_output=True, text=True, timeout=300,
+        env={"PATH": "/usr/bin:/bin", "PYTHONPATH": str(ROOT), "TZ": "UTC",
+             "HOME": str(tmp_path)},
+    )
+
+
+def test_absent_restored_ledger_refuses_and_leaves_artifacts_untouched(tmp_path):
+    """(a) No events.parquet — the failed-restore shape.  Refuse, do not re-fork."""
+    data_dir = tmp_path / "data"
+    _synthetic_bar_store(data_dir)
+    artifact = _tracked_artifact(data_dir, "2026-07-02")
+    before = artifact.read_bytes()
+
+    proc = _run_builder(data_dir, tmp_path)
+
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    hits = [ln for ln in proc.stdout.splitlines()
+            if ln.startswith("::warning title=price-pressure-ledger-stale::")]
+    assert hits, proc.stdout
+    # The annotation must NAME both dates — a warning that says "stale" without the
+    # numbers cannot be triaged from the Actions summary alone.
+    assert "none" in hits[0] and "2026-07-02" in hits[0], hits[0]
+    # Artifacts untouched: no ledger conjured from nothing, sidecar byte-identical.
+    assert not pp_ledger.ledger_path(data_dir).exists()
+    assert artifact.read_bytes() == before
+
+
+def test_restored_ledger_older_than_the_tracked_asof_refuses(tmp_path):
+    """(b) A stale/partial restore: last month's parquet under this month's asof."""
+    data_dir = tmp_path / "data"
+    _synthetic_bar_store(data_dir)
+    artifact = _tracked_artifact(data_dir, "2026-07-02")
+    ledger = _restored_ledger(data_dir, "2026-06-01")
+    art_before, led_before = artifact.read_bytes(), ledger.read_bytes()
+
+    proc = _run_builder(data_dir, tmp_path)
+
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    hits = [ln for ln in proc.stdout.splitlines()
+            if ln.startswith("::warning title=price-pressure-ledger-stale::")]
+    assert hits, proc.stdout
+    assert "2026-06-01" in hits[0] and "2026-07-02" in hits[0], hits[0]
+    assert artifact.read_bytes() == art_before
+    assert ledger.read_bytes() == led_before
+
+
+def test_restored_ledger_at_or_past_the_tracked_asof_proceeds(tmp_path):
+    """(c) A healthy restore must NOT be refused — at the asof, or past it."""
+    for max_date in ("2026-07-02", "2026-07-31"):
+        data_dir = tmp_path / max_date / "data"
+        _tracked_artifact(data_dir, "2026-07-02")
+        _restored_ledger(data_dir, max_date)
+        st = pp_ledger.restore_status(data_dir)
+        assert st["ok"], (max_date, st)
+        assert st["reason"] is None
+        assert st["ledger_max"] == max_date
+        assert st["artifact_asof"] == "2026-07-02"
+
+    # …and the builder actually gets past the gate on that state.  The synthetic
+    # bar store cannot carry the run to completion, which is fine and deliberate:
+    # the contract under test is that NEITHER refuse-to-run gate fired.  Asserting
+    # on both is what stops this from going vacuous — a test that only checked the
+    # ledger annotation would still pass if the bar gate started refusing first,
+    # and would then be pinning nothing at all.
+    data_dir = tmp_path / "wired" / "data"
+    _synthetic_bar_store(data_dir)
+    _tracked_artifact(data_dir, "2026-07-02")
+    _restored_ledger(data_dir, "2026-07-02")
+    proc = _run_builder(data_dir, tmp_path)
+    refusals = [ln for ln in proc.stdout.splitlines()
+                if ln.startswith("::warning title=price-pressure-store-stale::")
+                or ln.startswith("::warning title=price-pressure-ledger-stale::")]
+    assert not refusals, proc.stdout
+
+
+def test_restore_status_refuses_a_zero_row_ledger(tmp_path):
+    """An empty-but-present parquet is the other half of a failed restore."""
+    data_dir = tmp_path / "data"
+    _tracked_artifact(data_dir, "2026-07-02")
+    pp_ledger.write_ledger(pp_ledger.empty_ledger(), data_dir,
+                           require_nightly_lane=False)
+    st = pp_ledger.restore_status(data_dir)
+    assert not st["ok"]
+    assert st["rows"] == 0
+    assert "no dated rows" in st["reason"]
+
+
+def test_restore_status_is_tolerant_only_where_there_is_nothing_to_compare(tmp_path):
+    """No tracked asof = the genuine pre-seed state, not evidence of staleness."""
+    data_dir = tmp_path / "data"
+    _restored_ledger(data_dir, "2026-07-02")
+    st = pp_ledger.restore_status(data_dir)     # no latest.json at all
+    assert st["ok"] and st["artifact_asof"] is None
+
+    (data_dir / "price_pressure" / "latest.json").write_text(
+        json.dumps({"schema": "price_pressure.v1", "asof": None}), encoding="utf-8")
+    assert pp_ledger.restore_status(data_dir)["ok"]
+
+    # …but a MISSING parquet is refused even with no artifact to compare to: the
+    # tolerance is about the comparison, never about the ledger existing.
+    pp_ledger.ledger_path(data_dir).unlink()
+    (data_dir / "price_pressure" / "latest.json").unlink()
+    assert not pp_ledger.restore_status(data_dir)["ok"]
+
+
+def test_ledger_is_registered_as_an_r2_data_dir_store(tmp_path):
+    """The parquet is gitignored, so the R2 registry IS its delivery path.
+
+    fetch_r2 imports this same registry (`from scripts.publish_r2 import _DATA_DIRS`),
+    so one entry wires both legs.  The floors are what stop a bare checkout — the two
+    tracked sidecars, no parquet — from being published over the canonical store.
+    """
+    from scripts import publish_r2
+
+    assert "price_pressure" in publish_r2._DATA_DIRS
+    assert "price_pressure" not in publish_r2.DEFAULT_DIRS   # gated nightly lane only
+    assert "price_pressure" not in publish_r2._APPEND_ONLY_DIRS  # legitimate whole rewrite
+
+    sidecars_only = publish_r2._data_dir_syncable("price_pressure", 2, 73_000)
+    assert not sidecars_only[0], sidecars_only
+    # The count alone stops being sharp once completion_receipts.jsonl is committed;
+    # the bytes floor is what still refuses that tree.
+    with_receipts = publish_r2._data_dir_syncable("price_pressure", 3, 80_000)
+    assert not with_receipts[0], with_receipts
+    assert publish_r2._data_dir_syncable("price_pressure", 3, 11_400_000)[0]
+
+
 def test_backfill_requires_an_explicit_panel_cache(tmp_path):
     from scripts import build_price_pressure as mod
 

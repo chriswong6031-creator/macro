@@ -33,10 +33,13 @@ run, --no-manifest silently replaced it anyway, and audit_r2's freshness anchor 
 warm on nights the publisher's put never happened.
 
 Append-only stores (_APPEND_ONLY_DIRS, e.g. attention/) additionally refuse per-file
-uploads SMALLER than the R2 object, plus a per-dir total-bytes floor: when the
-fetch_r2 restore fails, the collector rebuilds the same ~966 filenames as
-real-but-short files, so a runner tree can pass the min-files guard yet must never
-clobber the deep-history objects. Restore the download leg with scripts/fetch_r2.
+uploads SMALLER than the R2 object: when the fetch_r2 restore fails, the collector
+rebuilds the same ~966 filenames as real-but-short files, so a runner tree can pass
+the min-files guard yet must never clobber the deep-history objects. The per-dir
+total-bytes floor (_DATA_DIR_MIN_BYTES) is a SEPARATE fence keyed only on _DATA_DIRS
+— stores that legitimately rewrite whole files (price_pressure) take it without the
+per-file one, and it also covers the empty-remote case the per-file guard has no
+remote size to compare against. Restore the download leg with scripts/fetch_r2.
 
 Usage: python -m scripts.publish_r2 [--dirs ohlc,stockdata,...] [--dry-run]
                                     [--no-manifest] [--force-manifest]
@@ -122,6 +125,21 @@ _DATA_DIRS = {
                   # kept CURRENT by daily.yml's collect job (fetch_r2 restore ->
                   # wiki_pageviews upsert -> outcome-gated publish-back). See
                   # reports/slf048-wiki-attention-phase0.md §Nightly wiring.
+    "price_pressure",  # DRL W1 event ledger (data/price_pressure/events.parquet,
+                  # gitignored 2026-08-11): ~10.8 MB REWRITTEN whole every night by
+                  # the advance + the §10.1 completion pass, so tracking it in git
+                  # costs ~4 GB/yr of binary churn. Same restore->advance->gated
+                  # publish-back loop as attention, wired into daily.yml's
+                  # price-pressure step. The three JSON sidecars in the same dir
+                  # (latest.json, base_rates.json, completion_receipts.jsonl) stay
+                  # GIT-TRACKED — latest.json in particular is the tracked truth
+                  # engine.price_pressure.ledger.restore_status compares the restored
+                  # parquet's max event date against. Deliberately NOT in
+                  # _APPEND_ONLY_DIRS: the parquet is a legitimate whole-file rewrite
+                  # (a re-grade can recompress smaller), so the per-file shrink guard
+                  # would refuse honest nights; the freshness guard in the builder and
+                  # the bytes floor below are the clobber protection instead.
+                  # Not in DEFAULT_DIRS: only the nightly's gated lane publishes it.
     "index_gex_history",  # OIP E3c: reconstructed index dealer-gamma history
                   # (data/index_gex_history/<ROOT>.parquet, ~210 KB each, GIT-TRACKED).
                   # Small enough to commit, so R2 is the OFFSITE copy rather than the
@@ -142,7 +160,15 @@ _DATA_DIR_MIN_FILES = 100
 # so the floor is 5 — "all four roots AND the manifest". 4 would have passed a
 # three-roots-plus-manifest tree, which is precisely the partial rebuild this guard is
 # for; the count is a whole-store floor, not a parquet count.
-_DATA_DIR_MIN_FILES_OVERRIDE = {"index_gex_history": 5}
+# price_pressure is 3: latest.json + base_rates.json + events.parquet — "both tracked
+# sidecars AND the parquet". A CI/engine checkout of that dir holds ONLY the tracked
+# JSON (the parquet is gitignored and restored from R2), which is exactly 2, so 3 is
+# the line between a restored store and a bare checkout. The count alone cannot stay
+# that sharp forever — completion_receipts.jsonl is tracked too and appears the first
+# night the §10.1 pass files one, which would make a bare checkout 3 files — so the
+# bytes floor below (not the count) is the fence that survives that: a sidecars-only
+# tree is ~73 KB against an ~11 MB store.
+_DATA_DIR_MIN_FILES_OVERRIDE = {"index_gex_history": 5, "price_pressure": 3}
 # History-append stores whose R2 objects hold DEEP history (data/attention/*.parquet:
 # backfilled 2015-07→ SLF-048 2026-07-06; gitignored since same day). The nightly
 # collect job materialises the store via scripts/fetch_r2 BEFORE the wiki_pageviews
@@ -166,8 +192,19 @@ _DATA_DIR_MIN_FILES_OVERRIDE = {"index_gex_history": 5}
 # each (~846 KB with the manifest), so 600 KB is the floor a genuine store clears and a
 # one-or-two-root rebuild does not. The builder's own shrink guard is the first fence;
 # these are the ones that survive a builder bypass.
+#
+# price_pressure takes the DIR fence only, NOT the per-file one (it is not in
+# _APPEND_ONLY_DIRS): its single parquet is rewritten whole every night and may
+# legitimately land a few bytes smaller after a re-grade, so a per-file shrink refusal
+# would block honest nights. The dir floor still separates the two shapes cleanly —
+# a bare checkout's tracked sidecars are ~73 KB, the seeded store is ~11.4 MB — so
+# 4 MB refuses a sidecars-only tree (with or without a receipts file) while leaving
+# ~65% of headroom for any plausible recompression. The append-only history fence is
+# not the right tool here; the builder's ledger.restore_status freshness gate is, and
+# it compares CONTENT dates rather than sizes.
 _APPEND_ONLY_DIRS = {"attention", "index_gex_history"}
-_DATA_DIR_MIN_BYTES = {"attention": 15_000_000, "index_gex_history": 600_000}
+_DATA_DIR_MIN_BYTES = {"attention": 15_000_000, "index_gex_history": 600_000,
+                       "price_pressure": 4_000_000}
 _CT = {".json": "application/json", ".js": "application/javascript",
        ".html": "text/html; charset=utf-8", ".csv": "text/csv"}
 

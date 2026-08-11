@@ -4762,10 +4762,65 @@ jobs:
         # run can never overwrite a good ledger. The frozen base rates
         # (data/price_pressure/base_rates.json) are produced by a manual local
         # backfill only and are never refrozen here.
-        # Outputs covered by 'git add data/' in 'commit engine outputs' below.
+        # Outputs covered by 'git add data/' in 'commit engine outputs' below —
+        # EXCEPT events.parquet, which is gitignored and R2-canonical (see below).
+        #
+        # THREE R2 legs live inside this one step, all non-fatal, in order:
+        #
+        # 1. BAR-STORE COLD-RESTORE. data/massive_stock_day is restored, advanced and
+        #    published by the COLLECT job — in the COLLECT job's own workspace. Workspace
+        #    state cannot cross a job boundary, so when this job lands on a runner whose
+        #    checkout has never held that store (a cold spare), the store is simply
+        #    absent and the builder's staleness gate correctly refuses: run 31440972065
+        #    (2026-08-10) landed on actions-runner-2 and warned
+        #    "price-pressure-store-stale ... artifacts left untouched" — a whole night
+        #    of the lobe lost to a scheduling accident. The existence probe below is a
+        #    `find -print -quit`, not a `ls *.parquet` glob: this store is ~20k files and
+        #    the glob would expand ~800 KB of argv. Warm runner = one stat-ish walk that
+        #    stops at the first hit, ~0 cost, no R2 call at all. Cold runner = a full
+        #    ~617 MB / ~20k-object download (fetch_r2's delta is per FILE — an absent
+        #    file downloads whole; only an already-current file is skipped by md5/ETag).
+        # 2. LEDGER RESTORE. data/price_pressure/events.parquet is R2-canonical and
+        #    gitignored (2026-08-11): the advance + the §10.1 completion pass rewrite
+        #    all ~10.8 MB every successful night, which is ~4 GB/yr of binary git churn.
+        #    Restore it BEFORE the builder so the nightly extends the 35k-row history
+        #    instead of re-forking it. The three JSON sidecars stay git-tracked, and
+        #    engine.price_pressure.ledger.restore_status refuses to advance when the
+        #    restored parquet is absent or older than tracked latest.json's asof — so a
+        #    failed restore costs a night, never the ledger.
+        # 3. PUBLISH-BACK, GATED. Mirrors the massive_stock_day pair in the collect job:
+        #    the upload runs ONLY when the restore leg exited 0 AND the builder exited 0.
+        #    "restore failed" must mean "do not publish this tree over the deep store"
+        #    (fetch_r2 exits 1 on a zero-object list or any failed download), and a red
+        #    builder means the local tree is whatever the last step left behind. publish_r2's
+        #    _DATA_DIR_MIN_FILES_OVERRIDE (3) + _DATA_DIR_MIN_BYTES (4 MB) floors are the
+        #    second fence — a sidecars-only checkout is ~73 KB and gets refused there.
+        #    Not anchored in the audit_r2 --strict list on purpose: that anchor keys on
+        #    the manifest's Last-Modified, which would go red on every legitimate
+        #    refuse-to-run night (the exact posture leg 1 exists to survive), and the
+        #    builder's content-date freshness gate is the sharper tripwire anyway.
         timeout-minutes: 20
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
-          python -m scripts.build_price_pressure || echo "::warning::build_price_pressure failed (non-fatal — last committed artifact stands)"
+          if [ -z "$(find data/massive_stock_day -maxdepth 1 -name '*.parquet' -print -quit 2>/dev/null)" ]; then
+            echo "price_pressure: bar store has no parquet bars locally (cold runner) — restoring from R2"
+            python -m scripts.fetch_r2 --dirs massive_stock_day --workers 24 || echo "::warning::massive_stock_day restore failed (non-fatal — the builder's staleness gate refuses and leaves artifacts untouched)"
+          else
+            echo "price_pressure: bar store present locally — no R2 restore needed"
+          fi
+          PP_RESTORE=ok
+          python -m scripts.fetch_r2 --dirs price_pressure || { PP_RESTORE=failed; echo "::warning::price_pressure ledger restore failed (non-fatal — the builder's freshness gate refuses and leaves artifacts untouched)"; }
+          PP_BUILD=ok
+          python -m scripts.build_price_pressure || { PP_BUILD=failed; echo "::warning::build_price_pressure failed (non-fatal — last committed artifact stands)"; }
+          if [ "$PP_RESTORE" = ok ] && [ "$PP_BUILD" = ok ]; then
+            python -m scripts.publish_r2 --dirs price_pressure || echo "::warning::price_pressure R2 publish failed (non-fatal — R2 ledger goes stale; tomorrow's restore+freshness gate refuses rather than re-forking)"
+          else
+            echo "::warning::price_pressure R2 publish SKIPPED (restore=$PP_RESTORE build=$PP_BUILD) — a failed restore or build must never overwrite the canonical ledger"
+          fi
       - name: Release Radar coherent-target vintage stores (truth substrate, non-fatal)
         # Full ALFRED output_type=2 matrices let the target engine select current
         # and prior levels from ONE release-date vintage.  They are additive to

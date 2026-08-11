@@ -1197,9 +1197,37 @@ lanes:
                    data/baskets/membership.json, data/yahoo/SPY.parquet,
                    data/fred/VIXCLS.parquet, data/revisions/history.parquet,
                    data/price_pressure/base_rates.json]
-          outputs: [data/price_pressure/events.parquet,
+          The STEP also runs two scripts.fetch_r2 restores ahead of the builder, in the
+          same shell block (undeclared as steps, like this job's two other in-step
+          restores at the render preamble — the conformance checker caps re-invocation
+          multiplicity per module and the engine job already under-declares this one):
+          (1) data/massive_stock_day, COLD-RUNNER ONLY behind an existence probe. That
+          store is restored and advanced by the COLLECT job in the COLLECT job's own
+          workspace, and workspace state cannot cross a job boundary — run 31440972065
+          (2026-08-10) landed this job on a cold spare with no store and the staleness
+          gate correctly refused for the whole night. Warm runner = probe short-circuits,
+          no R2 call; cold = a full ~617 MB restore (fetch_r2's skip is per FILE).
+          (2) data/price_pressure, unconditionally: events.parquet is R2-canonical and
+          gitignored since 2026-08-11 (~10.8 MB rewritten whole nightly = ~4 GB/yr of git
+          churn if tracked), so it must be restored before the builder can extend it.
+          inputs additionally: [data/price_pressure/events.parquet (R2-restored above)]
+          outputs: [data/price_pressure/events.parquet (R2-published below, NOT git),
                     data/price_pressure/latest.json,
                     data/price_pressure/completion_receipts.jsonl]
+      - id: publish_r2_price_pressure
+        module: scripts.publish_r2
+        args: [--dirs, price_pressure]
+        note: >
+          non-fatal; the ledger's publish-back leg, DOUBLE-GATED inside the step on both
+          the restore leg's exit code and the builder's — "restore failed" must mean "do
+          not publish this tree over the deep store" (same contract as the collect job's
+          massive_stock_day pair). publish_r2's own floors are the second fence: a bare
+          checkout of data/price_pressure holds only the tracked JSON sidecars (~73 KB, 2
+          files) and is refused by both _DATA_DIR_MIN_FILES_OVERRIDE (3) and
+          _DATA_DIR_MIN_BYTES (4 MB). Deliberately NOT in the audit_r2 --strict anchor
+          list: that anchor keys on the manifest's Last-Modified and would red the job on
+          every legitimate refuse-to-run night, while the builder's content-date freshness
+          gate already catches a stale R2 copy the following night.
       - id: collect_release_target_vintages
         module: scripts.collect_release_target_vintages
         note: >

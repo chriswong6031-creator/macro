@@ -22,7 +22,7 @@ Watch band on the stocks hub. This doc is the session-chain state; update, don't
    `era="gap"`, that CDE's 2026-08 earnings shock appears (family `filing-coverage-unknown`,
    basket framing vs the precious-metals basket), and the band + market-packet block render it.
    Then update masterplan §6 exemplars with the actual readout.
-2. **Live verification debt**: (a) after both merges + a covering render, confirm the band renders on /stocks/ (warm state until first nightly, then populated); (b) after the first nightly, confirm gap-era rows + CDE episode + market-packet PRESSURE section; (c) decide events.parquet storage (10.8 MB nightly rewrite ≈ 4 GB/yr git growth) — move to R2 with restore/publish pair in the nightly step, or accept; decide BEFORE many nights accrue.
+2. **Live verification debt**: (a) after both merges + a covering render, confirm the band renders on /stocks/ (warm state until first nightly, then populated); (b) after the first nightly, confirm gap-era rows + CDE episode + market-packet PRESSURE section; (c) ~~decide events.parquet storage~~ **DECIDED + SHIPPED 2026-08-11: moved to R2.** `price_pressure` is registered in `publish_r2._DATA_DIRS` (floors: 3 files / 4 MB), the parquet is gitignored, and the nightly step now runs restore → build → outcome-gated publish-back. Fail-closed: `ledger.restore_status` refuses to advance when the restored parquet is absent or older than tracked `latest.json`'s `asof`, so an empty restore costs a night and never re-forks the ledger. Same PR carried the cold-runner `massive_stock_day` restore (run 31440972065 landed the engine job on a spare with no bar store and the whole night was lost to a correct refusal). Still to verify live: the first post-merge nightly's restore/publish pair in the step log, and that `data/price_pressure/events.parquet` no longer appears in the nightly data commit.
 3. **§8 leg 1 — R4 VIX-gradient prereg**: **DONE 2026-08-10, amended twice
    pre-evidence (§9 sibling audit + §10 red-team reconciliation, 2026-08-11)** —
    `research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md`. R4-A h=5 sole gating claim
@@ -51,6 +51,10 @@ Watch band on the stocks hub. This doc is the session-chain state; update, don't
   templates` before building/testing, or failures are fake.
 - Store freshness: R2 is canonical; every local checkout's `data/massive_stock_day` is a
   stale cache (manifest is tracked and tells the truth; parquets don't).
+- `data/price_pressure/events.parquet` is R2-canonical and gitignored since 2026-08-11, so a
+  base_rates re-freeze — or any local research over the ledger — needs
+  `python -m scripts.fetch_r2 --dirs price_pressure` FIRST; a checkout holds only the tracked
+  JSON sidecars, and the builder refuses to advance rather than re-fork from an empty restore.
 
 ## Session-2 entry point
 
