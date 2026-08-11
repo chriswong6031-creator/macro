@@ -18,7 +18,6 @@ import os
 import tempfile
 import threading
 from pathlib import Path
-from typing import Any
 
 _WRITE_LOCK = threading.Lock()
 
@@ -51,11 +50,93 @@ def load_jsonl(path: str | Path) -> list[dict]:
                     continue
                 try:
                     rows.append(json.loads(line))
-                except Exception:
-                    continue  # tolerate a torn final line; never crash
+                except Exception:  # noqa: BLE001, S112 -- tolerate torn rows
+                    continue
     except OSError:
         return []
     return rows
+
+
+def _require_exact_json_tree(
+    value: object,
+    *,
+    label: str,
+    active_containers: set[int] | None = None,
+) -> None:
+    """Reject values whose Python behaviour can differ from persisted JSON.
+
+    In particular, ``dict`` and ``str`` subclasses can override ``get``,
+    equality, or hashing so validation observes a different value from the one
+    emitted by :mod:`json`.  Ledger admission therefore accepts only exact
+    JSON-native Python types before making its detached canonical snapshot.
+    """
+    if value is None or type(value) in {bool, int, float, str}:
+        return
+    if type(value) not in {dict, list}:
+        raise ValueError(
+            f"{label}: row contains a non-exact or non-JSON-native value"
+        )
+
+    if active_containers is None:
+        active_containers = set()
+    identity = id(value)
+    if identity in active_containers:
+        raise ValueError(f"{label}: row contains a cyclic JSON value")
+    active_containers.add(identity)
+    try:
+        if type(value) is dict:
+            for key, child in dict.items(value):
+                if type(key) is not str:
+                    raise ValueError(
+                        f"{label}: row contains a non-exact JSON object key"
+                    )
+                _require_exact_json_tree(
+                    child,
+                    label=label,
+                    active_containers=active_containers,
+                )
+        else:
+            for child in value:
+                _require_exact_json_tree(
+                    child,
+                    label=label,
+                    active_containers=active_containers,
+                )
+    finally:
+        active_containers.remove(identity)
+
+
+def _freeze_exact_json_object(
+    row: object,
+    *,
+    label: str,
+) -> tuple[dict, bytes]:
+    """Return one detached plain-dict view and its canonical JSON bytes."""
+    if type(row) is not dict:
+        raise ValueError(f"{label}: row must be an exact dict")
+    try:
+        _require_exact_json_tree(row, label=label)
+        body = json.dumps(
+            row,
+            allow_nan=False,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+        detached = json.loads(body)
+    except (RecursionError, TypeError, ValueError, UnicodeEncodeError) as exc:
+        if isinstance(exc, ValueError) and str(exc).startswith(f"{label}:"):
+            raise
+        raise ValueError(f"{label}: row is not canonical JSON") from exc
+    if type(detached) is not dict:  # pragma: no cover - guarded by exact root
+        raise ValueError(f"{label}: canonical JSON root must be an object")
+    return detached, body
+
+
+def detached_json_object(row: object, *, label: str) -> dict:
+    """Return an exact, detached JSON-object snapshot for safe sanitization."""
+    detached, _body = _freeze_exact_json_object(row, label=label)
+    return detached
 
 
 def append_row(path: str | Path, row: dict, *, validate_fn=None) -> None:
@@ -73,23 +154,33 @@ def append_row(path: str | Path, row: dict, *, validate_fn=None) -> None:
     row         : Dict to serialise and append.
     validate_fn : Optional callable; returns a list of violation strings.
     """
-    if row.get("authority") != "display_only":
+    frozen, canonical_body = _freeze_exact_json_object(row, label="append_row")
+    if frozen.get("authority") != "display_only":
         raise ValueError(
             f"append_row: row must carry authority='display_only' (RF-11); "
-            f"got authority={row.get('authority')!r}"
+            f"got authority={frozen.get('authority')!r}"
         )
     if validate_fn is not None:
-        errs = validate_fn(row)
+        errs = validate_fn(frozen)
         if errs:
             raise ValueError(
                 "append_row: row failed schema validation:\n  "
                 + "\n  ".join(errs)
             )
+        # Validators are inspection-only.  Persisting a post-validation
+        # mutation would recreate the split-view admission bug this snapshot
+        # is designed to eliminate.
+        validated, validated_body = _freeze_exact_json_object(
+            frozen,
+            label="append_row",
+        )
+        if validated_body != canonical_body or validated != frozen:
+            raise ValueError("append_row: validate_fn mutated the frozen row")
     p = Path(path)
     with _WRITE_LOCK:
         p.parent.mkdir(parents=True, exist_ok=True)
-        with p.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(row, default=str) + "\n")
+        with p.open("ab") as fh:
+            fh.write(canonical_body + b"\n")
 
 
 def keep_first(rows: list[dict],

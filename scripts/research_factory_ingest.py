@@ -1366,7 +1366,10 @@ def _write_drop_candidate_and_transition(
     # deliberately non-conforming audit row as a canonical W6A projection.
     # Strip only those three reserved markers; the transition's proposal hash
     # and reason_text retain the rejection evidence without impersonating W6A.
-    cand = dict(cand)
+    cand = rf_ledger.detached_json_object(
+        cand,
+        label="research_factory_ingest rejection candidate",
+    )
     for field, marker in (
         ("source", "market_memory"),
         ("candidate_type", "market_memory_candidate"),

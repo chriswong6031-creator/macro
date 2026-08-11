@@ -382,12 +382,14 @@ def _validate_market_memory_candidate_structure(
     """Seal generic ledger admission; exact W2A byte authentication is adapter-owned."""
 
     supplied = (row.get("source"), row.get("candidate_type"), row.get("domain"))
-    if not any(
-        value == marker for value, marker in zip(supplied, _MARKET_MEMORY_TRIPLE)
-    ):
+    discriminator_matches = tuple(
+        type(value) is str and value == marker
+        for value, marker in zip(supplied, _MARKET_MEMORY_TRIPLE)
+    )
+    if not any(discriminator_matches):
         return
     mm_label = f"{label}: Market Memory structural projection"
-    if supplied != _MARKET_MEMORY_TRIPLE:
+    if not all(discriminator_matches):
         errs.append(f"{mm_label}: discriminator tuple must be exact")
 
     if set(row) != _MARKET_MEMORY_CANDIDATE_FIELDS:
@@ -659,6 +661,9 @@ def validate_candidate(row: dict) -> list[str]:
 
     Returns a list of human-readable violation strings (empty = clean).
     """
+    if type(row) is not dict:
+        return ["candidate: row must be an exact dict"]
+
     errs: list[str] = []
     label = f"candidate({row.get('candidate_id', '?')})"
 
@@ -675,17 +680,26 @@ def validate_candidate(row: dict) -> list[str]:
 
     # source is required (§4 proposed row); must be a known enum value when present.
     source = _req(row, "source", errs, label)
-    if source is not None and source not in SOURCES:
-        errs.append(f"{label}: source {source!r} not in {sorted(SOURCES)}")
+    if source is not None:
+        if type(source) is not str:
+            errs.append(f"{label}: source must be an exact string")
+        elif source not in SOURCES:
+            errs.append(f"{label}: source {source!r} not in {sorted(SOURCES)}")
 
     # candidate_type is required (§4 proposed row); must be a known enum value when present.
     ctype = _req(row, "candidate_type", errs, label)
-    if ctype is not None and ctype not in CANDIDATE_TYPES:
-        errs.append(f"{label}: candidate_type {ctype!r} not in {sorted(CANDIDATE_TYPES)}")
+    if ctype is not None:
+        if type(ctype) is not str:
+            errs.append(f"{label}: candidate_type must be an exact string")
+        elif ctype not in CANDIDATE_TYPES:
+            errs.append(f"{label}: candidate_type {ctype!r} not in {sorted(CANDIDATE_TYPES)}")
 
     domain = row.get("domain")
-    if domain is not None and domain not in DOMAINS:
-        errs.append(f"{label}: domain {domain!r} not in {sorted(DOMAINS)}")
+    if domain is not None:
+        if type(domain) is not str:
+            errs.append(f"{label}: domain must be an exact string")
+        elif domain not in DOMAINS:
+            errs.append(f"{label}: domain {domain!r} not in {sorted(DOMAINS)}")
 
     status = row.get("status")
     if status is not None and status not in STATES:

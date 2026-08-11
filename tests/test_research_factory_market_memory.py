@@ -274,6 +274,112 @@ def test_generic_ledger_rejects_regex_shaped_impossible_market_memory_utc(
     assert not path.exists()
 
 
+def test_candidate_and_ledger_reject_dict_subclass_masked_get_without_write(
+    tmp_path: Path,
+) -> None:
+    class MaskedGetDict(dict):
+        def get(self, key: object, default: object = None) -> object:
+            if key == "authority":
+                return "display_only"
+            if key == "source":
+                return "human"
+            return super().get(key, default)
+
+    hostile = MaskedGetDict(_candidate())
+    dict.__setitem__(hostile, "authority", "scored")
+    path = tmp_path / "candidates.jsonl"
+
+    assert rf_schema.validate_candidate(hostile) == [
+        "candidate: row must be an exact dict"
+    ]
+    with pytest.raises(ValueError, match="row must be an exact dict"):
+        rf_ledger.append_row(path, hostile, validate_fn=rf_schema.validate_candidate)
+    assert not path.exists()
+    drop_dir = tmp_path / "drops"
+    with pytest.raises(ValueError, match="row must be an exact dict"):
+        rf_ingest._write_drop_candidate_and_transition(hostile, {}, drop_dir)
+    assert not drop_dir.exists()
+
+
+@pytest.mark.parametrize("field", ["source", "candidate_type", "domain"])
+def test_candidate_and_ledger_reject_stateful_string_subclass_without_write(
+    tmp_path: Path,
+    field: str,
+) -> None:
+    class StatefulString(str):
+        comparisons = 0
+
+        def __eq__(self, other: object) -> bool:
+            type(self).comparisons += 1
+            return type(self).comparisons % 2 == 1
+
+        def __hash__(self) -> int:
+            return hash("market_memory")
+
+    hostile = _candidate()
+    hostile[field] = StatefulString(hostile[field])
+    path = tmp_path / f"{field}.jsonl"
+
+    violations = rf_schema.validate_candidate(hostile)
+    assert any(f"{field} must be an exact string" in row for row in violations)
+    assert StatefulString.comparisons == 0
+    with pytest.raises(
+        ValueError,
+        match="non-exact or non-JSON-native value",
+    ):
+        rf_ledger.append_row(path, hostile, validate_fn=rf_schema.validate_candidate)
+    assert StatefulString.comparisons == 0
+    assert not path.exists()
+    drop_dir = tmp_path / "drops"
+    with pytest.raises(
+        ValueError,
+        match="non-exact or non-JSON-native value",
+    ):
+        rf_ingest._write_drop_candidate_and_transition(hostile, {}, drop_dir)
+    assert StatefulString.comparisons == 0
+    assert not drop_dir.exists()
+
+
+def test_ledger_validates_and_persists_one_detached_canonical_view(
+    tmp_path: Path,
+) -> None:
+    row = {
+        "z": 1,
+        "authority": "display_only",
+        "nested": {"value": "safe"},
+    }
+    seen: list[dict[str, Any]] = []
+
+    def validate(frozen: dict[str, Any]) -> list[str]:
+        assert frozen is not row
+        assert type(frozen) is dict
+        assert type(frozen["nested"]) is dict
+        row["nested"]["value"] = "mutated-after-freeze"
+        seen.append(frozen)
+        return []
+
+    path = tmp_path / "one-view.jsonl"
+    rf_ledger.append_row(path, row, validate_fn=validate)
+
+    assert seen[0]["nested"]["value"] == "safe"
+    assert path.read_bytes() == (
+        b'{"authority":"display_only","nested":{"value":"safe"},"z":1}\n'
+    )
+
+
+def test_ledger_rejects_validator_mutation_before_creating_path(tmp_path: Path) -> None:
+    row = {"authority": "display_only", "value": "safe"}
+
+    def mutate(frozen: dict[str, Any]) -> list[str]:
+        frozen["authority"] = "scored"
+        return []
+
+    path = tmp_path / "validator-mutation.jsonl"
+    with pytest.raises(ValueError, match="validate_fn mutated the frozen row"):
+        rf_ledger.append_row(path, row, validate_fn=mutate)
+    assert not path.exists()
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [
