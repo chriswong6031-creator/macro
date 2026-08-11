@@ -1024,6 +1024,9 @@ w2c_reconcile_timer
 def test_market_memory_ci_owns_every_experience_contract_and_trigger() -> None:
     body = _legacy_job_body(_text(LEGACY_JOBS), "market-memory-contract")
     workflow = _text(CI_WORKFLOW)
+    assert re.findall(
+        r"^    timeout-minutes: ([0-9]+)$", body, re.MULTILINE
+    ) == ["15"]
     for test in (
         "tests/test_market_memory_experience_accrual.py",
         "tests/test_market_memory_experience_deploy.py",
