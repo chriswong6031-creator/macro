@@ -7,22 +7,74 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import stat
+import subprocess
 import sys
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 from engine import options_market_memory_context as context_bridge
+from engine import options_market_memory_receipt_store as receipt_store
 from engine import options_signal_episode
 from engine.neuralweb import market_memory_pit
 from engine.neuralweb import market_memory_trusted
 
-_MAX_LEDGER_BYTES = 48 * 1024 * 1024
+_MAX_LEDGER_BYTES = 8 * 1024 * 1024
+_MAX_LEDGER_ROWS = 4_096
 _MAX_CONFIG_BYTES = 32 * 1024
+_COMMIT = re.compile(r"[a-f0-9]{40,64}\Z")
 
 
 class AuditInputError(RuntimeError):
     """An exact source artifact could not be read or authenticated."""
+
+
+@dataclass(frozen=True)
+class LiveAuditBundle:
+    """The complete reference set and its authenticated compact receipt."""
+
+    deployed_commit: str | None
+    references: tuple[dict, ...]
+    audit: dict
+
+
+def _repository_commit(root: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise AuditInputError(
+            "cannot bind the options receipt to the deployed checkout"
+        ) from exc
+    commit = result.stdout.strip()
+    if not _COMMIT.fullmatch(commit):
+        raise AuditInputError("deployed checkout commit is malformed")
+    return commit
+
+
+def _tracked_bytes(root: Path, commit: str, relative_path: str) -> bytes:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "show", f"{commit}:{relative_path}"],
+            check=True,
+            capture_output=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise AuditInputError(
+            f"cannot bind {relative_path} to the deployed checkout"
+        ) from exc
+    return result.stdout
 
 
 def _stable_read(path: Path, *, maximum: int) -> bytes:
@@ -84,21 +136,27 @@ def _ledger(path: Path) -> tuple[bytes, list[dict]]:
         rows = options_signal_episode._decode_jsonl(body, path)
     except options_signal_episode.ContractError as exc:
         raise AuditInputError(f"owner ledger is malformed: {path}") from exc
-    if len(rows) > 25_000:
+    if len(rows) > _MAX_LEDGER_ROWS:
         raise AuditInputError(f"owner ledger exceeds the row boundary: {path}")
     return body, rows
 
 
-def build_live_audit(
+def build_live_audit_bundle(
     *,
     repository_root: Path,
     w1a_store_root: Path,
     trusted_store_root: Path,
     config_path: Path,
-) -> dict:
+    expected_deployed_commit: str | None = None,
+) -> LiveAuditBundle:
     root = repository_root.expanduser().resolve()
     if root.is_symlink() or not root.is_dir():
         raise AuditInputError("repository root must be an existing directory")
+    if expected_deployed_commit is not None:
+        if not _COMMIT.fullmatch(expected_deployed_commit):
+            raise AuditInputError("expected deployed checkout commit is malformed")
+        if _repository_commit(root) != expected_deployed_commit:
+            raise AuditInputError("deployed checkout differs before options audit")
     data_root = root / "data" / "options_signal_episode"
     episode_path = data_root / "episodes.jsonl"
     campaign_path = data_root / "campaigns.jsonl"
@@ -109,18 +167,32 @@ def build_live_audit(
     h60_body, h60_outcomes = _ledger(h60_path)
     config_body = _stable_read(config_path, maximum=_MAX_CONFIG_BYTES)
 
+    bodies = {
+        campaign_path: campaign_body,
+        episode_path: episode_body,
+        h60_path: h60_body,
+        config_path: config_body,
+    }
+    if expected_deployed_commit is not None:
+        for path, body in bodies.items():
+            try:
+                relative = path.resolve().relative_to(root).as_posix()
+            except ValueError as exc:
+                raise AuditInputError(
+                    "options audit source escaped the deployed checkout"
+                ) from exc
+            if _tracked_bytes(root, expected_deployed_commit, relative) != body:
+                raise AuditInputError(
+                    f"{relative} bytes are not owned by the deployed checkout"
+                )
+
     try:
         for row in episodes:
             options_signal_episode.validate_episode(row)
-        expected_campaigns, _pending = options_signal_episode.derive_campaigns(
-            episodes, h60_outcomes
-        )
     except options_signal_episode.ContractError as exc:
         raise AuditInputError(
             "options owner ledgers fail their frozen contracts"
         ) from exc
-    if campaigns != expected_campaigns:
-        raise AuditInputError("campaign ledger differs from exact owner replay")
 
     canary_identity = context_bridge.load_canary_identity_snapshot(config_path)
     if canary_identity.config_sha256 != hashlib.sha256(config_body).hexdigest():
@@ -139,14 +211,13 @@ def build_live_audit(
         for row in episodes
     ]
     references.extend(
-        context_bridge.resolve_campaign_context_reference(
-            row,
+        context_bridge.resolve_campaign_context_references(
+            campaigns,
             episodes=episodes,
             h60_outcomes=h60_outcomes,
             reader=pinned,
             canary_identity=canary_identity,
         )
-        for row in campaigns
     )
     references.sort(key=lambda row: (row["owner"]["schema"], row["owner"]["id"]))
 
@@ -157,12 +228,70 @@ def build_live_audit(
         _artifact(config_path, config_body, root=root, rows=1),
     ]
     sources.sort(key=lambda row: str(row["path"]))
+    if (
+        expected_deployed_commit is not None
+        and _repository_commit(root) != expected_deployed_commit
+    ):
+        raise AuditInputError("deployed checkout changed during options audit")
     audited_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-    return context_bridge.build_audit_receipt(
+    audit = context_bridge.build_audit_receipt(
         references=references,
         source_artifacts=sources,
         context_generations=pinned.generation_receipts(),
         audited_at=audited_at,
+    )
+    return LiveAuditBundle(
+        deployed_commit=expected_deployed_commit,
+        references=tuple(references),
+        audit=audit,
+    )
+
+
+def build_live_audit(
+    *,
+    repository_root: Path,
+    w1a_store_root: Path,
+    trusted_store_root: Path,
+    config_path: Path,
+) -> dict:
+    """Build an in-memory audit for tests and read-only operator inspection."""
+
+    return build_live_audit_bundle(
+        repository_root=repository_root,
+        w1a_store_root=w1a_store_root,
+        trusted_store_root=trusted_store_root,
+        config_path=config_path,
+    ).audit
+
+
+def publish_live_audit(
+    *,
+    repository_root: Path,
+    w1a_store_root: Path,
+    trusted_store_root: Path,
+    config_path: Path,
+    publication_root: Path,
+    expected_deployed_commit: str | None = None,
+) -> dict:
+    """Publish a complete private receipt bound to exact deployed Git bytes."""
+
+    root = repository_root.expanduser().resolve()
+    deployed_commit = expected_deployed_commit or _repository_commit(root)
+    bundle = build_live_audit_bundle(
+        repository_root=root,
+        w1a_store_root=w1a_store_root,
+        trusted_store_root=trusted_store_root,
+        config_path=config_path,
+        expected_deployed_commit=deployed_commit,
+    )
+    if _repository_commit(root) != deployed_commit:
+        raise AuditInputError("deployed checkout changed before receipt publication")
+    return receipt_store.publish_receipt_set(
+        publication_root,
+        deployed_commit=deployed_commit,
+        references=bundle.references,
+        audit=bundle.audit,
+        repository_root=root,
     )
 
 
@@ -177,6 +306,17 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--w1a-store-root", type=Path)
     parser.add_argument("--trusted-store-root", type=Path)
     parser.add_argument("--config-path", type=Path)
+    output = parser.add_mutually_exclusive_group(required=True)
+    output.add_argument(
+        "--publish-root",
+        type=Path,
+        help="private durable receipt root",
+    )
+    output.add_argument(
+        "--stdout-only",
+        action="store_true",
+        help="explicitly inspect a compact receipt without durable publication",
+    )
     return parser
 
 
@@ -194,12 +334,21 @@ def main(argv: list[str] | None = None) -> int:
         repository_root / "config" / "market_memory_canary.v1.json"
     )
     try:
-        audit = build_live_audit(
-            repository_root=repository_root,
-            w1a_store_root=w1a_root,
-            trusted_store_root=trusted_root,
-            config_path=config_path,
-        )
+        if args.publish_root is None:
+            result = build_live_audit(
+                repository_root=repository_root,
+                w1a_store_root=w1a_root,
+                trusted_store_root=trusted_root,
+                config_path=config_path,
+            )
+        else:
+            result = publish_live_audit(
+                repository_root=repository_root,
+                w1a_store_root=w1a_root,
+                trusted_store_root=trusted_root,
+                config_path=config_path,
+                publication_root=args.publish_root,
+            )
     except (
         AuditInputError,
         options_signal_episode.ContractError,
@@ -210,7 +359,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     print(
         json.dumps(
-            audit,
+            result,
             allow_nan=False,
             ensure_ascii=False,
             separators=(",", ":"),
