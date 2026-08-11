@@ -1529,7 +1529,7 @@ Govern options flow, structure, exposure, dislocation, Prophet overlays, and iss
 
 - Synapse owners: `flow-continuity`, `flow-leaders-desk`, `options-dislocation`, `options-flow`, `options-intelligence-program`, `options-nw-entry-intelligence`, `options-prophet-shadow`
 - Lobe owners: `flow-continuity`, `flow-leaders-desk`, `options-dislocation`, `options-flow`, `options-intelligence-program`, `options-nw-entry-intelligence`, `options-prophet-shadow`
-- Synapse artifacts: **27**; tier mix: display=13, infrastructure=7, shadow=7
+- Synapse artifacts: **30**; tier mix: display=13, infrastructure=8, shadow=9
 - Lobe charters: **2**
 - Information domains: `tactical_entry`
 
@@ -3486,7 +3486,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | `macro` | `options-alpha` | `mapped` | `options-alpha` | 8 | 0 |
 | `macro` | `options-dislocation` | `subprogram_of` | `options-intelligence` | 1 | 0 |
 | `macro` | `options-flow` | `subprogram_of` | `options-intelligence` | 1 | 0 |
-| `macro` | `options-intelligence-program` | `mapped` | `options-intelligence` | 16 | 0 |
+| `macro` | `options-intelligence-program` | `mapped` | `options-intelligence` | 19 | 0 |
 | `macro` | `options-nw-entry-intelligence` | `subprogram_of` | `options-intelligence` | 3 | 2 |
 | `macro` | `options-prophet-shadow` | `subprogram_of` | `options-intelligence` | 1 | 0 |
 | `macro` | `oracle` | `mapped` | `oracle` | 29 | 1 |
@@ -3588,7 +3588,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
 | `config/mastermind_programs.yml` | `1a458391ad95450ac9ee85f963a6679b6c1b1deb627ac20023937111350fed23` |
-| `config/synapse.yml` | `af05197900d310c71ec68318e70524ea150b7f77439da2b1cec976706a11f137` |
+| `config/synapse.yml` | `0316b489c2ebe364455131d0de847cf6c605ca8c953471064fc82816028cd575` |
 
 ### Legacy registry compatibility notes
 
