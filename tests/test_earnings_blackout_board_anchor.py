@@ -17,6 +17,10 @@ the board's own inputs.
 Every test here freezes the host clock via a ``date`` subclass monkeypatched into
 engine.earnings_blackout, and pins the board session explicitly — nothing reads the
 real wall clock, so the suite passes at any hour in any timezone (CI runs UTC).
+
+§6 covers the SIBLING defect on the display tier: ``_eb_chip_payload`` (the earnings
+chip) made TWO unanchored clock reads, so its section freezes the BUILDER module's
+``date`` as well — the chip's second read lives there, not in the engine.
 """
 from __future__ import annotations
 
@@ -30,9 +34,11 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import engine.earnings_blackout as eb  # noqa: E402
+import scripts.build_stock_library as bsl  # noqa: E402  — the builder's OWN date read
 from scripts.build_stock_library import (  # noqa: E402
     _apply_earnings_blackout_gate,
     _eb_board_session_date,
+    _eb_chip_payload,
 )
 
 # ── the board's own session (a Friday) + the three fixture names ────────────
@@ -82,6 +88,19 @@ def _fake_date_cls(host_date: date):
 
 def _freeze_host(monkeypatch, host_date: date) -> None:
     monkeypatch.setattr(eb, "date", _fake_date_cls(host_date))
+
+
+def _freeze_host_and_builder(monkeypatch, host_date: date) -> None:
+    """Freeze BOTH clock reads the display chip used to make.
+
+    The chip path is a two-clock defect: ``assess()``'s internal default (engine
+    module) and the ``today`` argument handed to ``board_row_fields`` (builder
+    module, ``from datetime import date``).  Freezing only the engine leaves the
+    builder's own ``date.today()`` live, and the pre-fix payload then depends on the
+    real wall clock — an unpinnable shape.
+    """
+    _freeze_host(monkeypatch, host_date)
+    monkeypatch.setattr(bsl, "date", _fake_date_cls(host_date))
 
 
 def _inputs():
@@ -283,3 +302,97 @@ class TestBoardSessionDate:
         """Only when BOTH anchors are unusable does the caller fall back to the clock."""
         assert _eb_board_session_date("not-a-date", None) is None
         assert _eb_board_session_date("not-a-date", pd.DatetimeIndex([])) is None
+
+
+# ── 6. The DISPLAY-TIER chip is anchored to the same session ────────────────
+
+class TestChipPayloadIsHostClockIndependent:
+    """The sibling defect: the chip block read the clock TWICE and neither read was
+    anchored — ``assess(t)`` with no ``today=`` plus ``date.today()`` handed to
+    ``board_row_fields`` — so one board as_of printed a different countdown and a
+    different chip sentence depending on which host rendered it.  Display tier only:
+    nothing here has gate/rank/size power, and the assertions below are about the
+    payload the row receives, never about membership.
+    """
+
+    def test_chip_identical_on_both_host_dates(self, tmp_path, monkeypatch):
+        p = _make_store(tmp_path)
+
+        payloads = []
+        for host in (HOST_ON_SESSION, HOST_PAST_EARNINGS):
+            _freeze_host_and_builder(monkeypatch, host)
+            payloads.append(
+                _eb_chip_payload("AAA", {}, False, BOARD_SESSION, store_path=p))
+
+        assert payloads[0] == payloads[1], (
+            f"chip payload moved with the host clock: {payloads[0]} vs {payloads[1]}")
+        chip = payloads[0]["earnings_soon"]
+        assert chip is not None, "AAA reports 1 td out — the chip shape must render"
+        assert chip["days_to"] == 3            # 2026-08-07 -> 2026-08-10, calendar days
+        assert chip["chip_en"] == "Reports in 3 d"
+        assert chip["days_to_report"] == 1     # one trading session
+        assert chip["in_blackout"] is True
+
+    def test_chip_memoises_the_anchored_assessment(self, tmp_path, monkeypatch):
+        """The map the helper mutates carries the ANCHORED verdict, not the host's."""
+        p = _make_store(tmp_path)
+        _freeze_host_and_builder(monkeypatch, HOST_PAST_EARNINGS)
+
+        blackout_map: dict[str, dict] = {}
+        _eb_chip_payload("AAA", blackout_map, False, BOARD_SESSION, store_path=p)
+
+        assert blackout_map["AAA"]["in_blackout"] is True
+        assert blackout_map["AAA"]["days_to_earnings"] == 1
+
+    def test_seeded_map_row_is_used_verbatim(self, tmp_path, monkeypatch):
+        """A row the gate already assessed is never re-assessed (the memo survives)."""
+        p = _make_store(tmp_path)
+        _freeze_host_and_builder(monkeypatch, HOST_PAST_EARNINGS)
+
+        seeded = {"in_blackout": True, "days_to_earnings": 1,
+                  "next_date": "2026-08-10", "next_time": "time-after-hours",
+                  "as_of_age_td": 0, "stale": False, "reason": "inside_window"}
+        blackout_map = {"AAA": dict(seeded)}
+        out = _eb_chip_payload("AAA", blackout_map, False, BOARD_SESSION, store_path=p)
+
+        assert blackout_map["AAA"] == seeded
+        assert out["earnings_soon"]["days_to"] == 3
+
+    def test_stale_store_row_is_never_assessed(self, tmp_path, monkeypatch):
+        """store_stale=True => no assess(), no payload (the inline guard, preserved)."""
+        p = _make_store(tmp_path)
+        _freeze_host_and_builder(monkeypatch, HOST_ON_SESSION)
+
+        blackout_map: dict[str, dict] = {}
+        out = _eb_chip_payload("AAA", blackout_map, True, BOARD_SESSION, store_path=p)
+
+        assert out == {}
+        assert blackout_map == {}
+
+
+class TestChipFallbackIsTheLegacyHostClock:
+    """``board_session=None`` documents the fallback, not the bug.
+
+    The gate keeps the same legacy escape hatch (both anchors unavailable => host
+    clock), so the chip must too — and running it is the control that proves BOTH
+    frozen clocks bite: with no anchor the SAME row swings from the chip shape
+    ("Reports in 3 d") to the disclosure shape (already reported, no countdown, no
+    sentence) across the very rollover the class above pins shut.
+    """
+
+    def test_unanchored_chip_payload_moves_with_the_host(self, tmp_path, monkeypatch):
+        p = _make_store(tmp_path)
+
+        payloads = []
+        for host in (HOST_ON_SESSION, HOST_PAST_EARNINGS):
+            _freeze_host_and_builder(monkeypatch, host)
+            payloads.append(_eb_chip_payload("AAA", {}, False, None, store_path=p))
+
+        assert payloads[0]["earnings_soon"]["days_to"] == 3
+        assert payloads[0]["earnings_soon"]["chip_en"] == "Reports in 3 d"
+        # Host past the print: assess() falls open on next_date_in_past, so the chip
+        # branch is skipped and the row renders nothing (no `days_to`, no chip text).
+        assert "days_to" not in payloads[1]["earnings_soon"], (
+            "host-clock drift no longer reproduces — this control is vacuous")
+        assert payloads[1]["earnings_soon"]["days_to_report"] == -1
+        assert payloads[0] != payloads[1]

@@ -2522,6 +2522,62 @@ def _apply_earnings_blackout_gate(buyable: list[tuple],
             "store_stale": _eb_store_stale}
 
 
+def _eb_chip_payload(ticker: str,
+                     blackout_map: dict[str, dict],
+                     store_stale: bool,
+                     board_session: date | None,
+                     closes=None,
+                     store_path: Path | None = None) -> dict:
+    """DISPLAY-TIER earnings payload for ONE board row — chip + catalyst + reaction.
+
+    Extracted from main() (2026-08-11) for the same two reasons the gate above was.
+    (1) ANCHOR: the inline block read the clock TWICE — a bare ``assess(t)`` (the
+    engine defaults ``today`` to ``date.today()``) and the ``date.today()`` handed to
+    ``board_row_fields`` — so two hosts straddling local midnight printed different
+    days_to_report/chip text for one identical board as_of.  ``board_session`` is the
+    board's own session (:func:`_eb_board_session_date`); None restores the pre-fix
+    host-clock behaviour, the same legacy fallback the gate keeps.  (2) TESTABLE: the
+    block was unreachable from a test, which is how the W4 note below could record
+    that its predecessor's only "test" re-implemented the chip text and pinned nothing.
+
+    DISPLAY TIER (masterplan §0 G0.1): zero gate/rank/size/veto power — the caller
+    attaches the returned fields to the row and nothing else reads them here.
+    ``blackout_map`` is mutated in place with a freshly assessed row (the memo the
+    inline block kept).  Never raises: every failure degrades to an empty payload.
+
+    Returns ``board_row_fields``' shape — ``{"earnings_soon": …,
+    "post_earnings_move": …}`` — or ``{}`` when there is nothing to attach.
+    """
+    _row = blackout_map.get(ticker)
+    if _row is None and not store_stale:
+        # Name was not assessed yet (e.g. watch/laggard rows not in the buy pipeline)
+        try:
+            _row = _eb.assess(ticker, today=board_session, store_path=store_path)
+            blackout_map[ticker] = _row
+        except Exception:  # noqa: BLE001
+            _row = None
+    if not _row:
+        return {}
+    # W4 (2026-08-04): the whole earnings payload — chip + catalyst fields +
+    # post-earnings reaction — now comes from engine/earnings_catalyst so it is
+    # unit-testable against the code the builder actually runs (the pre-W4 block
+    # lived inline here and its only "test" re-implemented the chip text in the
+    # test file, which pinned nothing). DISPLAY-TIER, masterplan §0 G0.1: zero
+    # gate/rank/size/veto power, and earnings_blackout.assess above is untouched.
+    # The chip shape is unchanged; what is new is the DISCLOSURE shape emitted for
+    # a STALE row — `days_to_report: null` + `stale: true`, no `days_to`, no chip
+    # text — because a stale row is exactly where the veto fails open in silence.
+    # Nothing new renders this wave: every consumer gates on `days_to`
+    # (dashboard.html.j2, build_prophet, stock_dossier) or `in_blackout is True`
+    # (us_board_rank), and the disclosure shape carries neither. W2 owns display.
+    try:
+        return _ecat.board_row_fields(
+            _row, board_session or date.today(), closes=closes,
+            surprises=_eb.surprise_history(ticker, store_path=store_path)) or {}
+    except Exception:  # noqa: BLE001 — display-only; never fatal
+        return {}
+
+
 def main() -> int:
     _main_t0 = time.time()
     site = config.ROOT / config.load()["storage"]["site_dir"]
@@ -4544,6 +4600,12 @@ def main() -> int:
         # Injection: pass the already-built close-series index as the trading-day
         # calendar so earnings_blackout skips the redundant data/stocks/*.parquet
         # re-read (_build_td_calendar cold cost ~5s on 224+ files).
+        #
+        # Bound BEFORE the try: the display-tier chip below reads this anchor too, and
+        # the fail-open except-path never reaches the assignment inside the try — an
+        # unbound name there would NameError inside the chip's own swallowing except,
+        # killing the chip silently on every row.
+        _eb_today: date | None = None
         try:
             _td_dates: "pd.DatetimeIndex | None" = None
             try:
@@ -4895,39 +4957,20 @@ def main() -> int:
             # attach the upcoming earnings date chip when days_to_earnings <= 14d (MLC-W5
             # extended from the original 7d; disclosure only per MLC-R10 — never gates).
             # For suppressed names: they are not on the board, so no chip needed here.
-            _eb_row = _eb_blackout_map.get(t)
-            if _eb_row is None and not _eb_store_stale:
-                # Name was not assessed yet (e.g. watch/laggard rows not in the buy pipeline)
-                try:
-                    _eb_row = _eb.assess(t)
-                    _eb_blackout_map[t] = _eb_row
-                except Exception:  # noqa: BLE001
-                    _eb_row = None
-            # W4 (2026-08-04): the whole earnings payload — chip + catalyst fields +
-            # post-earnings reaction — now comes from engine/earnings_catalyst so it is
-            # unit-testable against the code the builder actually runs (the pre-W4 block
-            # lived inline here and its only "test" re-implemented the chip text in the
-            # test file, which pinned nothing). DISPLAY-TIER, masterplan §0 G0.1: zero
-            # gate/rank/size/veto power, and earnings_blackout.assess above is untouched.
-            # The chip shape is unchanged; what is new is the DISCLOSURE shape emitted for
-            # a STALE row — `days_to_report: null` + `stale: true`, no `days_to`, no chip
-            # text — because a stale row is exactly where the veto fails open in silence.
-            # Nothing new renders this wave: every consumer gates on `days_to`
-            # (dashboard.html.j2, build_prophet, stock_dossier) or `in_blackout is True`
-            # (us_board_rank), and the disclosure shape carries neither. W2 owns display.
-            if _eb_row:
-                try:
-                    _ecl = (_ext_closes[t].dropna()
-                            if "_ext_closes" in dir() and t in _ext_closes.columns else None)
-                    _epay = _ecat.board_row_fields(
-                        _eb_row, date.today(), closes=_ecl,
-                        surprises=_eb.surprise_history(t))
-                    if _epay.get("earnings_soon"):
-                        r["earnings_soon"] = _epay["earnings_soon"]
-                    if _epay.get("post_earnings_move"):
-                        r["post_earnings_move"] = _epay["post_earnings_move"]
-                except Exception:  # noqa: BLE001 — display-only; never fatal
-                    pass
+            # The payload (and both of its date reads) lives in _eb_chip_payload; the
+            # close-series lookup stays HERE because `"_ext_closes" in dir()` probes
+            # main()'s OWN locals and means nothing inside a module-level helper.
+            try:
+                _ecl = (_ext_closes[t].dropna()
+                        if "_ext_closes" in dir() and t in _ext_closes.columns else None)
+                _epay = _eb_chip_payload(t, _eb_blackout_map, _eb_store_stale,
+                                         _eb_today, closes=_ecl)
+                if _epay.get("earnings_soon"):
+                    r["earnings_soon"] = _epay["earnings_soon"]
+                if _epay.get("post_earnings_move"):
+                    r["post_earnings_move"] = _epay["post_earnings_move"]
+            except Exception:  # noqa: BLE001 — display-only; never fatal
+                pass
             # W6-US fix 8: emit cand_depth_pct from the ladder onto every board row so
             # it is a first-class field available for the US-2 ledger study (depth vs
             # forward returns for FRESH-BUY rows). NOT a gate — we do NOT filter on it
