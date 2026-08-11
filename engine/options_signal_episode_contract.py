@@ -24,6 +24,9 @@ H60_MEASUREMENT_VERSION = "h60-aligned-bars/v1"
 SESSION_MEASUREMENT_VERSION = "session-close-aligned-bars/v1"
 PRICE_RECEIPT_SCHEMA = "polygon.intraday_price_receipt/v1"
 SESSION_HORIZONS = {"eod": 0, "1d": 1, "3d": 3, "5d": 5, "10d": 10}
+SOURCE_DISPOSITIONS = {"fire", "watch", "suppressed", "abstain"}
+SOURCE_UNDERLYING_DIRECTIONS = {"long", "short", "none"}
+SOURCE_OPTION_ACTIONS = {"buy", "sell", "none"}
 
 SOURCE_FALSE_AUTHORITY = {
     "may_originate": False,
@@ -168,15 +171,15 @@ def validate_episode_pit(row: dict[str, Any]) -> None:
     decision = row.get("decision")
     if not isinstance(decision, dict) or decision.get("authority") != SOURCE_FALSE_AUTHORITY:
         raise EpisodeSourceContractError("episode decision authority must remain false")
-    if (
-        decision.get("disposition") != "watch"
-        or decision.get("reason") != "notable_flow_event"
-        or decision.get("underlying_direction") != "none"
-        or decision.get("option_action") != "none"
-    ):
-        raise EpisodeSourceContractError(
-            "episode is outside the frozen descriptive watch census"
-        )
+    if decision.get("disposition") not in SOURCE_DISPOSITIONS:
+        raise EpisodeSourceContractError("episode decision disposition is invalid")
+    reason = decision.get("reason")
+    if type(reason) is not str or not reason or reason != reason.strip():
+        raise EpisodeSourceContractError("episode decision reason must be normalized")
+    if decision.get("underlying_direction") not in SOURCE_UNDERLYING_DIRECTIONS:
+        raise EpisodeSourceContractError("episode underlying direction is invalid")
+    if decision.get("option_action") not in SOURCE_OPTION_ACTIONS:
+        raise EpisodeSourceContractError("episode option action is invalid")
 
     features = row.get("feature_snapshot")
     if not isinstance(features, dict):

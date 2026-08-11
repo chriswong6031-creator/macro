@@ -675,3 +675,29 @@ def test_source_episode_authority_must_remain_zero(
     root = _root(tmp_path, [unsafe])
     with pytest.raises(CampaignContractError, match="may_rank"):
         run(root_dir=root)
+
+
+def test_source_episode_preserves_the_full_canonical_decision_vocabulary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    episode = _episode("canonical-decision", "2026-08-10T14:02:00Z")
+    episode["decision"].update(
+        {
+            "disposition": "fire",
+            "reason": "valid owner-defined reason",
+            "underlying_direction": "long",
+            "option_action": "buy",
+        }
+    )
+    root = _root(tmp_path, [episode])
+
+    summary = run(root_dir=root)
+
+    assert summary["campaign_revisions_total"] == 1
+    campaign = _read_jsonl(root / CAMPAIGNS_PATH)[0]
+    assert campaign["authority"] == FALSE_AUTHORITY
+    assert campaign["disposition"] == "abstain"
+    assert campaign.get("reason") != episode["decision"]["reason"]
+    for forbidden in ("underlying_direction", "option_action"):
+        assert forbidden not in campaign
