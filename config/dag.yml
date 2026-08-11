@@ -1328,9 +1328,17 @@ lanes:
           from persisted regime artifacts — no LLM calls). Runs AFTER collect
           (release-day capture needs same-night ALFRED vintage refresh).
           display_only=True; all authority booleans False (MRI-R7).
+          Wave 2B adds coherent_ridge_v1 as a fail-closed CPI shadow only after
+          the frozen model registry and complete Wave 2A history/parity receipt
+          validate. It has zero combined_v1 weight and no promotion authority.
           Ledger is append-only (MRI-R8); idempotent per asof_night.
           inputs: [data/fred_vintage/vintages.parquet,
                    data/fred_vintage/release_targets/manifest.json,
+                   data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json,
+                   data/release_forecast/cpi_truth/parity_report.json,
+                   data/release_forecast/cpi_truth/build_completion.json,
+                   config/release_forecast_model_registry.yml,
+                   research/release_forecast/PREREG_COHERENT_RIDGE_V1.md,
                    data/release_forecast/official_actuals.jsonl,
                    data/release_forecast/defect_notices.json,
                    data/cleveland_nowcast/nowcast.parquet,
