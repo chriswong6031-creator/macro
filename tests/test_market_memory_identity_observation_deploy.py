@@ -33,7 +33,7 @@ def _setting_values(unit: str, setting: str) -> list[str]:
 def _identity_update_block() -> str:
     update = _text(UPDATE)
     start = update.index("# W1B.2 private identity-observation publisher:")
-    end = update.index("# macro-api: restart ONLY", start)
+    end = update.index("# W1B.3B private SPY raw-close technical", start)
     return update[start:end]
 
 
