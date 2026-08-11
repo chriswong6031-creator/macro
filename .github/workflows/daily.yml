@@ -5464,26 +5464,20 @@ jobs:
                                  # retries burn only ~2 min, so the raised budget above would never bind
           push_retry_init "engine outputs"
           while push_attempt; do
-            # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
-            # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
-            # refuses ("untracked working tree files would be overwritten") and --autostash can't
-            # clear it (it parks tracked modifications only), so every retry dies identically.
-            # Everything this step publishes is already committed above, so a path untracked HERE
-            # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
-            # Gitignored files and untracked paths origin/main doesn't track never enter the
-            # intersection (runner-local stores and caches are untouched).
-            # (Asia paths unstaged above: when newly tracked on main, deleting the local stale
-            # copy lets the rebase materialize asia-close's fresh commit — the W0b intent.)
-            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
-            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
-                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
-              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            # Fetch the exact named ref before rebasing. The shared helper sees normal
+            # AND ignored untracked collisions, quarantines only paths tracked by that
+            # exact target under RUNNER_TEMP, and never removes unrelated runner data.
+            if ! push_fetch_main_for_rebase; then
+              push_abort_rebase
+              push_backoff
+              continue
+            fi
             # rename/rename on content-hashed site/assets/css/* is deterministic across
             # retries (path conflict; -X theirs can't settle it — 2026-07-22 asia-close
             # run 29904079071 dropped a day's outputs this way). The autoresolver keeps
             # both sides' hashed files (next externalize_css prunes the orphan) and
             # finishes the rebase; anything else is left for the abort+retry below.
-            if { perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; } && push_autostash_ok; then
+            if { perl -e 'alarm 420; exec @ARGV or die' -- git rebase --autostash -X theirs origin/main || bash scripts/rebase_autoresolve_hashed_css.sh; } && push_autostash_ok; then
               # post-rebase template↔site re-sync (ui.template_site_sync): -X theirs can
               # resurrect this run's checkout-time template copies over a reword that merged
               # mid-nightly (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's
@@ -5543,11 +5537,12 @@ jobs:
             push_backoff
           done
           push_lost
-          # Loud but non-fatal: publish/oracle/tech-lab/briefs jobs `needs: engine`, so a
-          # hard fail here would cascade-skip the deploy. The real loss is the data/
-          # forward-ledger day (sole-advancer law) — surface it where eyes are.
+          # A lost runner-only commit must turn the run red. Every remaining engine
+          # delivery step and every downstream job that needs engine uses always(),
+          # so Pages/R2/off-render delivery still runs after this failure.
           echo "::error title=nightly engine outputs NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — the nightly's data/ forward ledgers + rendered site/ exist only on this runner and are lost at the next checkout (the site still deploys via artifact, the LEDGER DAY does not). See scripts/rebase_autoresolve_hashed_css.sh."
           echo "### ❌ nightly engine outputs NOT pushed after $PUSH_ATTEMPT attempts ($PUSH_STOP) — forward-ledger day at risk (site still deploys via artifact)" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - name: assemble machine-consumable feeds (site/feeds -> R2)
         if: always()
         # Handoff H4 (2026-07-02 incident): risk_radar snapshot, froth/dislocation
