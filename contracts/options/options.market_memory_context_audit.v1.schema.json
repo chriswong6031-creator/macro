@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "options.market_memory_context_audit/v1",
+  "title": "Pinned-generation options/Market Memory context coverage audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "audit_id", "audited_at", "source_artifacts",
+    "context_generations", "reference_set_sha256", "counts",
+    "evidence_policy", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "options.market_memory_context_audit/v1"},
+    "audit_id": {"type": "string", "pattern": "^omctxaudit_[a-f0-9]{64}$"},
+    "audited_at": {"$ref": "#/$defs/timestamp"},
+    "source_artifacts": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sourceArtifact"}
+    },
+    "context_generations": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/contextGeneration"}
+    },
+    "reference_set_sha256": {"$ref": "#/$defs/sha256"},
+    "counts": {"$ref": "#/$defs/counts"},
+    "evidence_policy": {"$ref": "#/$defs/evidencePolicy"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"
+    },
+    "sourceArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes", "record_count"],
+      "properties": {
+        "path": {
+          "enum": [
+            "config/market_memory_canary.v1.json",
+            "data/options_signal_episode/campaigns.jsonl",
+            "data/options_signal_episode/episodes.jsonl",
+            "data/options_signal_episode/outcomes_h60.jsonl"
+          ]
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 67108864},
+        "record_count": {"type": "integer", "minimum": 0, "maximum": 25000}
+      }
+    },
+    "contextGeneration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile", "store_id", "generation_id", "generation_sha256",
+        "capture_count"
+      ],
+      "properties": {
+        "profile": {
+          "enum": [
+            "market_memory.trusted.macro_regime_canary.v1",
+            "market_memory.w1a.missing_only.v1"
+          ]
+        },
+        "store_id": {"type": "string", "pattern": "^mmstore_[a-f0-9]{64}$"},
+        "generation_id": {"type": "string", "pattern": "^mmgeneration_[a-f0-9]{64}$"},
+        "generation_sha256": {"$ref": "#/$defs/sha256"},
+        "capture_count": {"type": "integer", "minimum": 0, "maximum": 4096}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "references", "episode_references", "campaign_references", "bound",
+        "abstained", "campaign_retrospective_discovery",
+        "identity_not_operationally_supported",
+        "exact_requested_as_of_context_absent"
+      ],
+      "properties": {
+        "references": {"type": "integer", "minimum": 0, "maximum": 25000},
+        "episode_references": {"type": "integer", "minimum": 0, "maximum": 25000},
+        "campaign_references": {"type": "integer", "minimum": 0, "maximum": 25000},
+        "bound": {"type": "integer", "minimum": 0, "maximum": 25000},
+        "abstained": {"type": "integer", "minimum": 0, "maximum": 25000},
+        "campaign_retrospective_discovery": {"type": "integer", "minimum": 0, "maximum": 25000},
+        "identity_not_operationally_supported": {"type": "integer", "minimum": 0, "maximum": 25000},
+        "exact_requested_as_of_context_absent": {"type": "integer", "minimum": 0, "maximum": 25000}
+      }
+    },
+    "evidencePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exact_requested_as_of_required", "nearest_or_latest_fallback_allowed",
+        "reconstruction_fallback_allowed", "hindsight_context_allowed",
+        "context_only", "proposal_weight", "retrieval_authority",
+        "forecast_authority", "training_eligible", "promotion_eligible"
+      ],
+      "properties": {
+        "exact_requested_as_of_required": {"const": true},
+        "nearest_or_latest_fallback_allowed": {"const": false},
+        "reconstruction_fallback_allowed": {"const": false},
+        "hindsight_context_allowed": {"const": false},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "retrieval_authority": {"const": false},
+        "forecast_authority": {"const": false},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier", "horizon_role", "context_only", "proposal_weight", "may_rank",
+        "may_gate", "may_size", "may_escalate", "may_trade", "may_originate",
+        "may_select_options_candidate", "may_execute", "may_write_options_episode",
+        "may_append_outcome", "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}
