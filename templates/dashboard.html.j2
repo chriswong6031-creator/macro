@@ -15962,7 +15962,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             {% endif %}
             {# Smartmoney 13F (Source 7): A/B-grade fund new/add — quarterly lag caveat required. #}
             {% if n.smartmoney_chip %}{% set _sm = n.smartmoney_chip %}
-              <span class="nb-ev nb-ev-sm" data-tip-en="{{ _sm.get('n_funds_adding') }} closely watched fund{{ '' if _sm.get('n_funds_adding') == 1 else 's' }} reported adding shares, led by {{ _sm.get('best_fund','') }}. These filings can be more than a month old, so do not read this as current buying." data-tip-zh="{{ _sm.get('n_funds_adding') }} 只重点跟踪基金披露增持，由 {{ _sm.get('best_fund','') }} 领衔。这些申报可能已超过一个月，请勿视为实时买入。"><span class="l-en">Funds added</span><span class="l-zh">基金增持</span></span>
+              <span class="nb-ev nb-ev-sm" data-tip-en="{{ _sm.get('n_funds_adding') }} closely watched fund{{ '' if _sm.get('n_funds_adding') == 1 else 's' }} reported adding shares, led by {{ _sm.get('best_fund','') }}. These filings can be more than a month old, so do not read this as current buying." data-tip-zh="{{ _sm.get('n_funds_adding') }} 只重点跟踪基金披露增持，由 {{ _sm.get('best_fund','') }} 领衔。这些持仓披露可能已超过一个月，请勿视为实时买入。"><span class="l-en">Funds added</span><span class="l-zh">基金增持</span></span>
             {% endif %}
             {# Confluence+ badge: k >= 2 independent group votes. Display-only. #}
             {% if n.confluence_plus and (n.confluence_plus.get('k') or 0) >= 2 %}{% set _cp = n.confluence_plus %}
