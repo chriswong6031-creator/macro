@@ -536,7 +536,7 @@ def track_record_stats(root: Path | str | None = None,
                 # graded_receipts: this is the read that decides the denominator, and
                 # a stat computed over a population that includes rebuilt rows is
                 # wrong even when every individual receipt is later dropped.
-                from engine.prophet_bridge import is_reconstructed  # noqa: PLC0415
+                from engine.prophet_integrity import is_reconstructed  # noqa: PLC0415
                 plans = [p for p in plans if not is_reconstructed(p)]
             except Exception as exc:  # noqa: BLE001
                 log.warning("allies.track_record_stats: could not read prophet index: %s", exc)

@@ -999,10 +999,10 @@ class TestReconstructedPlansNeverReachALiveSurface:
         produce the leak; if it does not, the test above passes for the wrong reason
         (e.g. the fixture never qualified as a receipt at all).
         """
-        import engine.prophet_bridge as pb
+        import engine.prophet_integrity as provenance
         from engine.marketing import receipt_source
 
-        monkeypatch.setattr(pb, "is_reconstructed", lambda row: False)
+        monkeypatch.setattr(provenance, "is_reconstructed", lambda row: False)
         tickers = {
             str(r.get("ticker") or "").upper()
             for r in receipt_source.graded_receipts(

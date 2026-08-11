@@ -3525,7 +3525,7 @@ def content_plan(
     # a sixth to be added without the exclusion. Non-receipt uses lose nothing:
     # today's population contains no reconstructed rows at all, and after the replay
     # the excluded rows are exactly the ones no marketing surface may show.
-    from engine.prophet_bridge import is_reconstructed  # noqa: PLC0415
+    from engine.prophet_integrity import is_reconstructed  # noqa: PLC0415
 
     plans = [p for p in (plans or []) if not is_reconstructed(p)]
 

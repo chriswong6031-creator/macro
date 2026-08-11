@@ -163,7 +163,7 @@ def graded_receipts(
     # the 2026-08-09 outage replay's rows were written after the fact — publishing
     # one here would claim a track record the desk did not have on the day. Excluded
     # at the single choke point every caller passes through, not per caller.
-    from engine.prophet_bridge import is_reconstructed  # noqa: PLC0415
+    from engine.prophet_integrity import is_reconstructed  # noqa: PLC0415
 
     for plan in plans:
         if not isinstance(plan, dict):
