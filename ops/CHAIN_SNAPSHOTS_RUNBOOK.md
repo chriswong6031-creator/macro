@@ -63,6 +63,16 @@ byte-for-byte manifest match before loading launchd. A pathname, size, hash, or
 missing/extra-file difference is a rollout blocker—do not select a partial
 subset or reconstruct receipt authority from Parquet or `_meta.json`.
 
+On the M1, the physical authority remains at
+`/Users/chriswong/flow-ops-wt/data/chain_snapshots`, while the producer code
+runs from the dedicated shallow clone
+`/Users/chriswong/chainsnap-ops-wt`. The deploy clone's
+`data/chain_snapshots` must be an exact symlink to that physical directory.
+This isolates governed code from the mixed-vintage `flow-ops-wt` without moving
+or duplicating authority bytes. Validate manifests through both paths while the
+producer is stopped and require byte equality before launchd is loaded. Never
+refresh or reset the dirty shared `flow-ops-wt` as part of this lane's rollout.
+
 Never copy or restore this state after the producer starts. Copying a live
 directory can combine ledger and Parquet moments that never coexisted under the
 writer lock. Only after the pre/post manifest matches may the launchd install
@@ -211,19 +221,258 @@ A full ~150-root sweep ≈ 300 snapshot requests ≈ ~5 min wall at concurrency 
 
 ## launchd install
 
-The job follows the deploy-worktree doctrine (see `ops/LIVE_FLOW_RUNBOOK.md`):
-launchd runs from the installed shared M1 ops worktree
-`/Users/chriswong/flow-ops-wt`, never from the main checkout. The actual M1
-lane/data/log state remains a supervised rollout gate; do not infer it from
+The job follows the deploy-tree doctrine (see `ops/LIVE_FLOW_RUNBOOK.md`):
+launchd runs from the dedicated standalone shallow clone
+`/Users/chriswong/chainsnap-ops-wt`, never from the shared dirty
+`flow-ops-wt`, the live-flow tree, or an agent checkout. Its only connection to
+the old tree is the exact physical-authority symlink described above. The actual
+M1 lane/data/log state remains a supervised rollout gate; do not infer it from
 repository tests or perform a manual/historical live sweep as verification.
 
+Build or replace the deploy clone only outside the NYSE session and close + 20
+minute recovery window, after both launchd and `pgrep` prove the producer is
+stopped. Use the repo-scoped deploy key and pin the checkout to the reviewed
+merge. Before loading launchd, build a relative-path/byte-size/SHA-256 manifest
+from the physical state and a second manifest through the symlink; they must be
+byte-identical. The symlink itself must resolve to the exact physical path.
+
+The M1 rollout sequence is:
+
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.mastermind.chainsnapshots.plist 2>/dev/null || true
-cp /Users/chriswong/flow-ops-wt/ops/launchd/com.mastermind.chainsnapshots.plist ~/Library/LaunchAgents/
-plutil -lint ~/Library/LaunchAgents/com.mastermind.chainsnapshots.plist
-launchctl load ~/Library/LaunchAgents/com.mastermind.chainsnapshots.plist
-launchctl print gui/$(id -u)/com.mastermind.chainsnapshots
+rollout() (
+set -euo pipefail
+LABEL=com.mastermind.chainsnapshots
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+DOMAIN="gui/$(id -u)"
+DEPLOY="$HOME/chainsnap-ops-wt"
+STATE="$HOME/flow-ops-wt/data/chain_snapshots"
+PY="$HOME/miniconda3/envs/plane/bin/python"
+EXPECTED_MERGE="${EXPECTED_MERGE:?set the reviewed merged SHA}"
+
+# STOP during RTH and close recovery. Never kill a live producer to deploy.
+HHMM=$(date +%H%M)
+DOW=$(date +%u)
+if [ "$DOW" -le 5 ] && [ "$HHMM" -ge 0600 ] && [ "$HHMM" -lt 1325 ]; then
+  echo "STOP: RTH/close-recovery window" >&2
+  exit 1
+fi
+! pgrep -f 'scripts[.]chain_snapshot_poller' >/dev/null
+test -d "$STATE"
+test ! -L "$STATE"                  # physical authority, never a redirect
+test -f "$PLIST"
+
+STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+NEW="$DEPLOY.new-$STAMP"
+ROLLBACK="$DEPLOY.rollback-$STAMP"
+FAILED="$DEPLOY.failed-$STAMP"
+PLIST_BACKUP="$PLIST.rollback-$STAMP"
+MANIFEST_DIR="$HOME/chainsnap-state-manifests"
+mkdir -p "$MANIFEST_DIR"
+for path in "$NEW" "$ROLLBACK" "$FAILED"; do
+  test ! -e "$path"
+  test ! -L "$path"
+done
+test ! -L "$DEPLOY"
+
+HAD_DEPLOY=0
+if [ -e "$DEPLOY" ]; then
+  test -d "$DEPLOY/.git"
+  HAD_DEPLOY=1
+fi
+WAS_LOADED=0
+if launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1; then
+  WAS_LOADED=1
+fi
+cp -p "$PLIST" "$PLIST_BACKUP"       # backup BEFORE unregistering
+
+ROLLOUT_COMMITTED=0
+restore_on_error() {
+  rc=$?
+  trap - EXIT INT TERM HUP
+  set +e
+  set +u
+  if [ "$rc" -ne 0 ] && [ "$ROLLOUT_COMMITTED" -eq 0 ]; then
+    ROLLBACK_STOPPED=0
+    if launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1; then
+      if ! launchctl bootout "$DOMAIN/$LABEL" >/dev/null 2>&1; then
+        echo "ROLLBACK ERROR: new scheduler could not be unregistered" >&2
+      fi
+    fi
+    if ! launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1 && \
+       ! pgrep -f 'scripts[.]chain_snapshot_poller' >/dev/null; then
+      ROLLBACK_STOPPED=1
+    else
+      echo "HARD MANUAL STOP: scheduler/PID still active; deploy paths will not be moved" >&2
+    fi
+
+    PLIST_RESTORED=0
+    if cp -p "$PLIST_BACKUP" "$PLIST"; then
+      PLIST_RESTORED=1
+    else
+      echo "ROLLBACK ERROR: prior plist could not be restored" >&2
+    fi
+
+    PRIOR_DEPLOY_READY=0
+    if [ "$ROLLBACK_STOPPED" -eq 1 ]; then
+      # Infer the interrupted swap phase from the paths themselves. This covers
+      # a signal between either atomic mv and the following shell assignment.
+      if [ "$HAD_DEPLOY" -eq 1 ] && \
+         { [ -e "$ROLLBACK" ] || [ -L "$ROLLBACK" ]; }; then
+        if [ -e "$DEPLOY" ] || [ -L "$DEPLOY" ]; then
+          if ! mv "$DEPLOY" "$FAILED"; then
+            echo "ROLLBACK ERROR: failed new deploy could not be preserved" >&2
+          fi
+        fi
+        if ! { [ -e "$DEPLOY" ] || [ -L "$DEPLOY" ]; }; then
+          if ! mv "$ROLLBACK" "$DEPLOY"; then
+            echo "ROLLBACK ERROR: prior deploy could not be restored" >&2
+          fi
+        fi
+      elif [ "$HAD_DEPLOY" -eq 0 ] && \
+           { [ -e "$DEPLOY" ] || [ -L "$DEPLOY" ]; } && \
+           ! { [ -e "$NEW" ] || [ -L "$NEW" ]; }; then
+        if ! mv "$DEPLOY" "$FAILED"; then
+          echo "ROLLBACK ERROR: failed first deploy could not be preserved" >&2
+        fi
+      fi
+
+      if [ "$HAD_DEPLOY" -eq 1 ]; then
+        if [ -d "$DEPLOY/.git" ] && [ ! -L "$DEPLOY" ] && \
+           ! { [ -e "$ROLLBACK" ] || [ -L "$ROLLBACK" ]; }; then
+          PRIOR_DEPLOY_READY=1
+        fi
+      elif ! { [ -e "$DEPLOY" ] || [ -L "$DEPLOY" ]; }; then
+        PRIOR_DEPLOY_READY=1
+      fi
+    fi
+
+    if [ "$WAS_LOADED" -eq 1 ] && [ "$ROLLBACK_STOPPED" -eq 1 ] && \
+       [ "$PLIST_RESTORED" -eq 1 ] && [ "$PRIOR_DEPLOY_READY" -eq 1 ]; then
+      if ! launchctl bootstrap "$DOMAIN" "$PLIST"; then
+        echo "ROLLBACK ERROR: previous scheduler could not be reloaded" >&2
+      fi
+    fi
+    if [ "$ROLLBACK_STOPPED" -eq 1 ]; then
+      echo "rollout failed; prior plist/deploy restored, failed clone preserved" >&2
+    fi
+  fi
+  exit "$rc"
+}
+trap restore_on_error EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+if [ "$WAS_LOADED" -eq 1 ]; then
+  launchctl bootout "$DOMAIN/$LABEL"
+fi
+! launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1
+! pgrep -f 'scripts[.]chain_snapshot_poller' >/dev/null
+
+manifest() {
+  ROOT="$1" OUT="$2" "$PY" - <<'PY'
+import hashlib
+import os
+import stat
+from pathlib import Path
+
+root = Path(os.environ["ROOT"]).resolve(strict=True)
+rows = []
+for path in sorted(root.rglob("*")):
+    metadata = path.lstat()
+    if not stat.S_ISREG(metadata.st_mode):
+        continue
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+            digest.update(chunk)
+    rows.append(
+        f"{path.relative_to(root).as_posix()}\t{metadata.st_size}\t"
+        f"{digest.hexdigest()}\n"
+    )
+Path(os.environ["OUT"]).write_text("".join(rows))
+PY
+}
+BEFORE_MANIFEST="$MANIFEST_DIR/$STAMP.before.tsv"
+VIA_DEPLOY_MANIFEST="$MANIFEST_DIR/$STAMP.via-deploy.tsv"
+manifest "$STATE" "$BEFORE_MANIFEST"
+
+git clone --depth 1 --single-branch --branch main \
+  --config "core.sshCommand=ssh -i $HOME/.ssh/macro_dashboard_deploy -o IdentitiesOnly=yes" \
+  git@github.com:mastermindx-market-intelligence/macro.git "$NEW"
+
+# Prove the reviewed merge is actually on current remote main. Main may move
+# between fetch and ls-remote, so retry the read a bounded three times.
+for _ in 1 2 3; do
+  git -C "$NEW" fetch --depth 512 origin main
+  LOCAL_MAIN=$(git -C "$NEW" rev-parse origin/main)
+  REMOTE_MAIN=$(git -C "$NEW" ls-remote origin refs/heads/main | awk '{print $1}')
+  [ -n "$REMOTE_MAIN" ] && [ "$LOCAL_MAIN" = "$REMOTE_MAIN" ] && break
+done
+test "$LOCAL_MAIN" = "$REMOTE_MAIN"
+git -C "$NEW" cat-file -e "$EXPECTED_MERGE^{commit}"
+git -C "$NEW" merge-base --is-ancestor "$EXPECTED_MERGE" origin/main
+git -C "$NEW" checkout --detach "$EXPECTED_MERGE"
+test -z "$(git -C "$NEW" status --porcelain)"
+
+install -m 600 "$HOME/flow-ops-wt/.env" "$NEW/.env"
+test ! -e "$NEW/data/chain_snapshots"
+ln -s "$STATE" "$NEW/data/chain_snapshots"
+test "$(readlink "$NEW/data/chain_snapshots")" = "$STATE"
+
+manifest "$NEW/data/chain_snapshots" "$VIA_DEPLOY_MANIFEST"
+cmp "$BEFORE_MANIFEST" "$VIA_DEPLOY_MANIFEST"
+test -z "$(git -C "$NEW" status --porcelain)"
+PYTHONPATH="$NEW" "$PY" -m scripts.chain_snapshot_poller --help >/dev/null
+(
+  cd "$NEW"
+  PYTHONPATH="$NEW" "$PY" -m pytest tests/test_chain_snapshot_poller.py -q
+)
+plutil -lint "$NEW/ops/launchd/$LABEL.plist"
+
+if [ "$HAD_DEPLOY" -eq 1 ]; then
+  mv "$DEPLOY" "$ROLLBACK"
+fi
+mv "$NEW" "$DEPLOY"
+install -m 644 "$DEPLOY/ops/launchd/$LABEL.plist" "$PLIST"
+cmp "$DEPLOY/ops/launchd/$LABEL.plist" "$PLIST"
+plutil -lint "$PLIST"
+launchctl bootstrap "$DOMAIN" "$PLIST"
+launchctl print "$DOMAIN/$LABEL" | grep -F "$DEPLOY"
+
+# KeepAlive.SuccessfulExit=false may cause one inert outside-RTH launch. First
+# require a stopped/clean status, then prove the run count stays fixed for more
+# than the 60-second crash throttle. A restart loop rolls the transaction back.
+for _ in $(seq 1 24); do
+  ROW=$(launchctl list | awk -v label="$LABEL" '$3 == label {print $1 " " $2}')
+  if [ "$ROW" = "- 0" ] && ! pgrep -f 'scripts[.]chain_snapshot_poller' >/dev/null; then
+    break
+  fi
+  sleep 5
+done
+test "$ROW" = "- 0"
+RUNS=$(launchctl print "$DOMAIN/$LABEL" | awk '/^[[:space:]]*runs =/ {print $3; exit}')
+test -n "$RUNS"
+for _ in $(seq 1 13); do
+  sleep 5
+  test "$(launchctl list | awk -v label="$LABEL" '$3 == label {print $1 " " $2}')" = "- 0"
+  test "$(launchctl print "$DOMAIN/$LABEL" | awk '/^[[:space:]]*runs =/ {print $3; exit}')" = "$RUNS"
+  ! pgrep -f 'scripts[.]chain_snapshot_poller' >/dev/null
+done
+
+ROLLOUT_COMMITTED=1
+trap - EXIT INT TERM HUP
+echo "scheduler installed; plist backup and prior deploy rollback retained at $STAMP"
+)
+rollout
 ```
+
+`BEFORE_MANIFEST` and `VIA_DEPLOY_MANIFEST` are mandatory external files made
+with the manifest procedure above; neither may live under the authority root.
+The same block handles a later reviewed refresh: it always builds beside the
+live clone, recreates only `.env` and the exact authority symlink, validates
+both manifests, preserves the prior clone at `ROLLBACK`, and rolls back on any
+failure. Do not hard-reset a dirty deploy clone.
 
 The plist fires weekdays at 06:30 PT (= 09:30 ET); the poller waits for the
 actual-open + 5 minute window start and self-exits after the actual regular or early close
@@ -241,6 +490,11 @@ standard `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and
 `R2_BUCKET` variables must be present in the sourced deploy-worktree `.env`.
 Missing credentials fail only the projection hook; local source completion stays
 truthful and retryable.
+
+Do not use `launchctl kickstart` and do not invoke `--once` as deployment proof.
+Loading outside RTH may cause an inert launch; that is not evidence. Only the
+next untouched `StartCalendarInterval` run and its governed receipt ledger can
+prove the deployment.
 
 ## Safe verification (no historical/manual live collection)
 
