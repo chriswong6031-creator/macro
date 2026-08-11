@@ -20,6 +20,7 @@ EXPECTED_ICON_FAMILIES = {
     "forex",
     "heatmap",
     "intelligence",
+    "leader",
     "narrative",
     "news",
     "options",
@@ -81,10 +82,21 @@ EXPECTED_ICON_FAMILIES = {
 # standing alone. Daily Movers was later consolidated into the stocks hub and
 # removed from navigation, so its one submenu-icon-stocks span takes 52 -> 51;
 # the family remains emitted by every regional Stock Dashboard row.
+# TOP ANATOMY W1 "Winner Health" (nav 52 -> 52 spans + 1, i.e. 51 -> 52): a family
+# RE-ENTERS. submenu-icon-leader left EXPECTED_ICON_FAMILIES entirely at the OIP W1
+# regroup above, when flow_leaders — its only user anywhere in this menu — left the
+# Options flyout. The new Winner Health row (United States group, beside Stage
+# Analysis) is its next user, so it comes back to the set rather than being added as
+# a new family: product-nav-icons.css has drawn `.submenu-icon-leader` continuously
+# through both events (it never left the stylesheet, and dashboard-icons.js kept
+# using it), so nothing is registered here that was not already drawn. The glyph —
+# ascending bars under a rising arrow — is the board's own population: names that
+# have already run a long way up. Exactly one span is added, counted off the
+# re-rendered _navlinks.html.j2 rather than by hand.
 EXPECTED_EMITTED_ICON_FAMILIES = EXPECTED_ICON_FAMILIES - {
     "allocation", "bitcoin", "rotation",
 }
-EXPECTED_EMITTED_ICON_COUNT = 51
+EXPECTED_EMITTED_ICON_COUNT = 52
 LEGACY_SUBMENU_MARKS = (
     "📊", "📈", "📶", "🧠", "🧺", "🌀", "💫", "🎛", "📰", "🚨",
     "🧲", "🌊", "🏆", "🌑", "🏗", "📡", "🔥", "🔬", "🛰", "🏛",
