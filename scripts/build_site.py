@@ -4564,11 +4564,14 @@ def _us_prophet_refusals(site: Path, doc: "dict | None") -> "dict | None":
     above it render from makes the two the same generation by construction: they can
     disagree only if the board disagrees with itself.
 
-    The one thing that IS read from last night's index is the OPEN-PLAN ticker set, and
-    that is safe for the opposite reason: open plans persist across nights (a plan opened
-    last night is still open now), while every refusal REASON comes from tonight's rows.
-    Its own try/except, so an unreadable index costs at most the "already has a plan
-    running" grouping — never the whole shelf.
+    TWO things ARE read from last night's index, and both are safe for the opposite
+    reason: the OPEN-PLAN ticker set (open plans persist across nights — a plan opened
+    last night is still open now) and the count of those open plans that were
+    RECONSTRUCTED after the outage rather than originated live (§0.10 — an origination
+    mode is a settled fact about a plan's past, which no later night rewrites).  Every
+    refusal REASON still comes from tonight's rows.  One try/except covers both, so an
+    unreadable index costs at most the "already has a plan running" grouping and the
+    reconstructed footnote clause — never the whole shelf.
 
     `originated_tickers` is deliberately NOT passed: this call site knows the admission
     gate but not tonight's origination run, and a receipt it cannot honestly compute is
@@ -4581,21 +4584,33 @@ def _us_prophet_refusals(site: Path, doc: "dict | None") -> "dict | None":
     if not doc:
         return None
     try:
-        from engine.prophet_bridge import refusal_receipts  # noqa: PLC0415
+        from engine.prophet_bridge import (  # noqa: PLC0415
+            is_reconstructed,
+            refusal_receipts,
+        )
 
         open_tickers: list[str] = []
+        reconstructed: list[dict] = []
         _pidx = site / "prophet" / "index.json"
         if _pidx.exists():
             try:
                 _pdoc = json.loads(_pidx.read_text())
-                open_tickers = [
-                    str(p.get("asset"))
-                    for p in (_pdoc.get("plans") or [])
+                _open = [
+                    p for p in (_pdoc.get("plans") or [])
                     if isinstance(p, dict) and p.get("asset") and not p.get("closed")
                 ]
+                open_tickers = [str(p.get("asset")) for p in _open]
+                # SECOND THING READ FROM LAST NIGHT'S INDEX, and safe for the SAME reason
+                # the open-plan set above is (§0.10).  How a plan was ORIGINATED is a
+                # settled fact about its past: tonight's run can close it, but no later
+                # night can make a reconstructed plan into a live one, so a count taken
+                # from last night's file cannot go stale into a wrong number the way a
+                # refusal REASON would.  Open plans only — a closed plan is not on the
+                # board the footnote sits under, so counting it there would overstate.
+                reconstructed = [p for p in _open if is_reconstructed(p)]
             except Exception as _pe:  # noqa: BLE001 — costs the already-open group only
                 log.warning("prophet index unreadable for receipts (%s)", _pe)
-        return refusal_receipts(doc, open_tickers)
+        return refusal_receipts(doc, open_tickers, reconstructed_plans=reconstructed)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("prophet refusal receipts unavailable (%s)", e)
         return None

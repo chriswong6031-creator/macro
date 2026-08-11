@@ -322,6 +322,68 @@ class TestDiffer:
         errors = _diff_lane(declared, actual, "fake / lane", divergences)
         assert errors == [], f"Covered reorder should be GREEN but got: {errors}"
 
+    # ---- multiplicity semantics (2026-08-11 fetch_r2 census ruling) -----------
+    # The order check caps ACTUAL occurrences at the DECLARED count per module — a
+    # deliberate tolerance for scope-arm workflows (case "$SCOPE" arms re-run the
+    # same modules).  Its cost: in a serial-only lane an UNDER-declared
+    # re-invocation is invisible (daily.yml's engine ran three preamble fetch_r2
+    # restores against one declared step for weeks; presence passes set-wise).
+    # Ruling: keep the cap (arm-aware parsing is not worth the complexity), fix
+    # the registry to declaration-exactness — each re-invocation is its own dag.yml
+    # step — and pin BOTH directions here so the tradeoff stays a decision, not an
+    # accident.  The reverse direction (declared re-invocation the workflow no
+    # longer runs) is a hard error via the length-surplus branch.
+
+    def test_green_reinvocation_declared_as_separate_steps(self):
+        """Declaration-exactness: N invocations = N declared steps is GREEN."""
+        declared = ["scripts.a", "scripts.f", "scripts.b", "scripts.f"]
+        actual = ["scripts.a", "scripts.f", "scripts.b", "scripts.f"]
+        assert _diff_lane(declared, actual, "fake/lane", []) == []
+
+    def test_green_actual_reinvocations_beyond_declared_count_are_capped(self):
+        """Deliberate cap tolerance: extra ACTUAL occurrences beyond the declared
+        multiplicity are dropped, not flagged (scope-arm duplicate support)."""
+        declared = ["scripts.a", "scripts.f", "scripts.b"]
+        actual = ["scripts.a", "scripts.f", "scripts.b", "scripts.f", "scripts.f"]
+        assert _diff_lane(declared, actual, "fake/lane", []) == []
+
+    def test_red_subset_declaration_misaligns_order(self):
+        """Declaring only a SUBSET of re-invocations is unstable: the cap keeps the
+        FIRST actual occurrences, so declaring a later one while skipping an earlier
+        one misaligns the order comparison.  (Why the 2026-08-11 reconciliation
+        declared ALL of the engine preamble restores, not just new ones.)"""
+        declared = ["scripts.a", "scripts.b", "scripts.f"]
+        actual = ["scripts.a", "scripts.f", "scripts.b", "scripts.f"]
+        errors = _diff_lane(declared, actual, "fake/lane", [])
+        assert errors, "subset declaration should RED via order misalignment"
+        assert any("ORDER" in e for e in errors), f"expected order error: {errors}"
+
+    def test_red_declared_reinvocation_removed_from_workflow_tail(self):
+        """zip() truncation used to swallow this: declared [a,f,b,f] vs actual
+        [a,f,b] has an equal zipped prefix, so no pairwise divergence exists and
+        the surplus declared re-invocation vanished unreported."""
+        declared = ["scripts.a", "scripts.f", "scripts.b", "scripts.f"]
+        actual = ["scripts.a", "scripts.f", "scripts.b"]
+        errors = _diff_lane(declared, actual, "fake/lane", [])
+        assert errors, "declared re-invocation absent from the workflow must RED"
+        assert any(
+            "RE-INVOCATION COUNT MISMATCH" in e and "scripts.f" in e for e in errors
+        ), f"expected re-invocation count error naming scripts.f: {errors}"
+
+    def test_green_declared_reinvocation_removal_covered_by_divergence(self):
+        """The length-surplus branch honors divergence coverage like every other."""
+        declared = ["scripts.a", "scripts.f", "scripts.b", "scripts.f"]
+        actual = ["scripts.a", "scripts.f", "scripts.b"]
+        divergences = [
+            {
+                "lanes": ["fake"],
+                "differs": "second scripts.f re-invocation retired",
+                "reason": "test",
+            }
+        ]
+        errors = _diff_lane(declared, actual, "fake / lane", divergences)
+        assert errors == [], f"covered surplus should be GREEN but got: {errors}"
+
 
 # ---------------------------------------------------------------------------
 # 2b. Parser-driven positive-control test (regression guard for the parser fix)
