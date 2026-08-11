@@ -235,3 +235,39 @@ gauntlet.
   are **1.28×** (r63: +4.947 vs +3.87) and **0.74×** (atrz: +2.885 vs +3.92); both points remain
   INSIDE W2's CIs and the declared branch conclusion is unchanged. (Primary vs phase-0's +1.29 is
   0.74× — the likely source of the transposition.)
+- **2026-08-11 — G0.5 RED-TEAM PASS 1 (NOT PRESENTABLE) + REFINED RULING (append-only).** The Opus
+  reviewer reproduced every registered cell, diagnostic, census, floor, era block, and fence field
+  exactly (zero transcription errors) and returned 5 blockers / 14 must-fix / 7 nits, all
+  adjudication-level. Material corrections to the record: (1) the report had read exploratory
+  structure off sign-gated survivor lists — the act §3 of this prereg forbids — hiding two
+  wrong-sign 3/3 DM replications (`E3f_rs_peak_lag` −2.000/−2.979/−3.000, q≤0.005;
+  `F2_drawdown_in_episode` +0.0059/+0.0120/+0.0052, q≤0.002; `F4` 2/3), both anchor-adjacent; now
+  printed. (2) DISCLOSURE the construction-failure ruling owed: the plumbing commit had declared a
+  magnitude-only collapse reading PRE-RESULTS and it returned `construction_failure=False` on all
+  three AM panels; the ruling above is therefore a POST-results adjudicator override, and under the
+  mechanical reading the §3 "Collapse is a result" clause plus the B2 branch would have delivered
+  the registered kill ("matching geometry, not anatomy") and a MANDATORY W1/W2b surface-copy
+  correction (`inside_w2_interval=false`, ratios −0.876/−0.964). The override STANDS on three
+  grounds now printed in the report: the frozen prose ("collapse toward zero") outranks the
+  plumbing operationalization and a flip to 44–89% of anchor magnitude is not a collapse; the
+  failure is outcome-independent (case anchor median 2.0/1.0/2.0, mean 6.99/3.92/5.64, vs controls
+  at exactly 0 with p25=p75=0; control episode-age median 6/1/3 vs case 24/7/20 — design facts);
+  and the reversal is non-heat-specific (B1/B4/B5/B6/A1/A2 all reverse at q≈0.0005 while
+  A3/A4 go positive — a lifecycle-position-mismatch signature, not cooling). The displaced
+  counterfactual binds AM-v2's urgency, and W2b's "unaffected" status is CONDITIONAL on this
+  ruling — if AM-v2 lands on the kill side, the surface-copy obligation REVIVES. (3) B3-primary
+  attribution corrected: the day-weighted sensitivity WITH the age stratum still applied restores
+  B3 to +1.371 [+0.393,+2.328] q=0.0045 (floors met) — the kill mechanism is the length-biased-
+  SAMPLING half of mechanism (2), not episode age. (4) Mechanism claim restated over the actual
+  measured steps (0.25/0.33/1.00-session gaps, ΔB2 2.774/1.237/1.868, ΔB3 3.511/3.925/2.479,
+  slopes spread ~6×, residual at gap 0 unmeasured, pool sizes move with the dial) — "comparable to
+  the largest registered effects over sub-session steps," not "larger than every registered
+  effect" (false against r63 DM +4.947/+4.885). (5) DM-F1 diagnostics now lead §4 (+0.250/−0.125/
+  0.000 vs anchors −9.69/−2.20/−17.00; ratios 0.026/0.057/0.000). (6) B2 discharge scoped to
+  floor-clearing panels (atrz margin 0.085 above W2's CI floor at 0.74×, printed; r63 carries no
+  directional claim), the ATRZ A-family extension-shift rival printed (A1–A8 all positive, only
+  r126 in the key), primary-DM-B2's single-stratum non-separability printed, fade-fence
+  monotone-blindness printed (era3 < era2 on all three DM panels). (7) Unit corrections: match
+  rate = matched/eligible EPISODES (2,097/3,407 etc.); r63 day-weighted arm = 240 episodes (2.7×),
+  not 399 case-sets; r63 case census 338/814, not "323-episode panel". Report rewritten in full;
+  reviewer verification pass commissioned.
