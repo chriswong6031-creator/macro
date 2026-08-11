@@ -182,6 +182,10 @@ on:
       - "scripts/build_spr.py"
       - "scripts/build_spvector.py"
       - "scripts/build_stage_analysis_page.py"
+      # TOP ANATOMY W1 (Winner Health) — beside its stage-analysis sibling: both
+      # are page-only re-renders in this lane's cl_misc band, so an edit to either
+      # builder must be able to start the render that ships it.
+      - "scripts/build_winner_health_page.py"
       - "scripts/build_state_of_themes.py"
       - "scripts/build_stock_library.py"
       - "scripts/build_ticker_pages.py"
@@ -930,6 +934,12 @@ jobs:
               # SGA: page-only re-render from the committed data/stage_analysis/context/latest.json.
               # The stage ENGINE is daily-only (forward-ledger single-writer law) — never add it here.
               brun stage_analysis_page "Stage Analysis page (build_stage_analysis_page)" scripts.build_stage_analysis_page
+              # Winner Health (TOP ANATOMY W1): same rule as SGA — page-only re-render from the
+              # committed data/top_maturation/latest.json, so the board never sits on stale shared
+              # chrome between nightlies. Pure SSR, no fetch, ~1s. The maturation ENGINE
+              # (build_top_maturation) is daily-only — it advances the forward log, and nightly is
+              # the sole advancer — so it must NEVER be added here.
+              brun winner_health_page "Winner Health page (build_winner_health_page)" scripts.build_winner_health_page
               # TLT: page-only rebake from the COMMITTED site/factordata/tech_screener.json +
               # tech_lab.json — the page is a shell (tables fetch those JSONs client-side), so
               # this is ~0.5s and site/-only. The DATA generator (build_tech_lab_data,
@@ -953,7 +963,7 @@ jobs:
             # fail silently in the very lanes it added (its own /research/ SEO pages
             # going dark again with no annotation). Band membership without ORDER
             # membership is a builder that runs unwatched.
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow flow_desk options_skew options_ivspread options_screener options_entry baskets news methodology seasonality stock_seasonality_page reports research_vault sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes stage_analysis_page tech_lab impulse"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow flow_desk options_skew options_ivspread options_screener options_entry baskets news methodology seasonality stock_seasonality_page reports research_vault sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes stage_analysis_page winner_health_page tech_lab impulse"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue

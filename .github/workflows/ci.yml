@@ -2879,6 +2879,12 @@ on:
       - "scripts/build_sector_map.py"
       - "scripts/build_sp500_heatmap.py"
       - "scripts/build_stage_analysis_page.py"
+      # TOP ANATOMY W1 (Winner Health): the page builder's twin, same reason as
+      # its stage-analysis sibling directly above — provenance for a builder that
+      # renders from a committed artifact in three lanes (daily, render,
+      # engine-render). Coverage registration, never an exemption: this key is
+      # `on.pull_request.paths` and ci.yml has no `paths-ignore` at all.
+      - "scripts/build_winner_health_page.py"
       # unrun-builders-stores — store/ops builders behind the nightly data lanes
       - "tests/test_append_sync_gauge.py"
       - "tests/test_audit_fred_groups.py"

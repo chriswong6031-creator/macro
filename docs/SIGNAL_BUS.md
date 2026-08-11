@@ -103,6 +103,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | til-w7-hiring-intent | 3 |
 | til-w8-trade-flows | 2 |
 | til-w9-discovery-v2 | 3 |
+| top-anatomy | 1 |
 | transmission-intelligence | 1 |
 | turn-sensitivity | 1 |
 | us-stocks-prebreakout | 2 |
@@ -112,7 +113,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 370 |
+| display | 371 |
 | infrastructure | 158 |
 | scored | 5 |
 | shadow | 92 |
@@ -121,7 +122,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 586 |
+| git | 587 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 17 |
@@ -1212,6 +1213,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-github-adoption | `site/basketdata/github_adoption.json` | json | collect | display | 1 | 0 |
 | site-phrase-velocity | `site/basketdata/phrase_velocity.json` | json | collect | display | 1 | 0 |
 | neuralweb-discovery-confluence | `data/neuralweb/discovery_confluence.json` | json | collect | display | 0 | 0 |
+
+### top-anatomy
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| top-maturation-latest | `data/top_maturation/latest.json` | json | daily-engine | display | 0 | 1 |
 
 ### transmission-intelligence
 

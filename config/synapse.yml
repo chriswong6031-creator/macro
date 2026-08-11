@@ -12245,6 +12245,47 @@ artifacts:
       until scripts/build_stage_analysis.py first runs; all consumers fail-open
       (block=None or honest-null).
 
+  top-maturation-latest:
+    path: data/top_maturation/latest.json
+    format: json
+    producer: scripts/build_top_maturation.py
+    known_extra_writers: []
+    owner_program: top-anatomy
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 36
+    schema: winner_health.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:context
+    notes: >
+      Winner Health (TOP ANATOMY W1) — the nightly maturation read for US names
+      that are EXTENDED (large trailing six-month gain, still inside 10% of their
+      252-day high), grouped by how the move is aging into four DISPLAY states
+      (extended_healthy / extended_watch / thinning / breaking). Every derivation
+      is engine.top_anatomy verbatim; this artifact adds nine plain-word display
+      legs cut against FROZEN thresholds (data/top_anatomy/thresholds.json, recut
+      only by scripts/export_top_anatomy_library.py) plus an analog memory — a kNN
+      lookup into the Phase-0 episode library on shape and age alone, reported as
+      episode-level counts with an honest-N floor. AVOID-not-SHORT lobe: states
+      are groups and never a ranking, library counts are history and never
+      forecasts or probabilities, there is no model, and nothing here ranks,
+      gates, sizes or escalates (DNR:KILL-DIRECTIONAL-SHORTING). Of the nine legs
+      only updown_volume is a researched discriminator; the other eight are
+      descriptive facts about the name's own behaviour. The payload carries its
+      own _STANDING_LAW and _LEGS_PROVENANCE so no consumer can lift the numbers
+      without the constraint. Board membership is the trailing-21-session EXT
+      window (a name that has just left EXT is eligible for `breaking` only) and
+      is intersected with the house US stock metadata so exchange-traded products
+      stay off it. Absent until scripts/build_top_maturation.py first runs; the
+      page and every consumer fail-open to an honest null. Promotion to any
+      authority needs its own pre-registered gauntlet and an operator ruling.
+
   darkpool-context-latest:
     path: data/darkpool/context/latest.json
     format: json
