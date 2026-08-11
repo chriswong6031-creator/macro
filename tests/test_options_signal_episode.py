@@ -2982,9 +2982,13 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
         "      - name: OIP PIT — fail closed after unrelated rendering completes"
     )
     assert final_gate > following_start
-    assert "steps.options_signal_campaign_publish.outcome != 'success'" in workflow[
-        final_gate:
-    ]
+    final_gate_block = workflow[final_gate:]
+    assert "        if: always()" in final_gate_block
+    assert "OIP_EPISODE_BUILD_OUTCOME" in final_gate_block
+    assert "OIP_EPISODE_PUBLISH_OUTCOME" in final_gate_block
+    assert "OIP_CAMPAIGN_BUILD_OUTCOME" in final_gate_block
+    assert "OIP_CAMPAIGN_PUBLISH_OUTCOME" in final_gate_block
+    assert 'if [ "$OIP_EPISODE_BUILD_OUTCOME" = success ]' in final_gate_block
 
 
 def test_narrow_commit_tree_candidate_cannot_advance_head_on_interruption(

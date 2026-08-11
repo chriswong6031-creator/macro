@@ -5758,13 +5758,20 @@ jobs:
             exit 1
           fi
       - name: OIP PIT — fail closed after unrelated rendering completes
-        if: >-
-          always() &&
-          (steps.options_signal_episode.outcome != 'success' ||
-           steps.options_signal_episode_publish.outcome != 'success' ||
-           steps.options_signal_campaign.outcome != 'success' ||
-           steps.options_signal_campaign_publish.outcome != 'success')
+        if: always()
+        env:
+          OIP_EPISODE_BUILD_OUTCOME: ${{ steps.options_signal_episode.outcome }}
+          OIP_EPISODE_PUBLISH_OUTCOME: ${{ steps.options_signal_episode_publish.outcome }}
+          OIP_CAMPAIGN_BUILD_OUTCOME: ${{ steps.options_signal_campaign.outcome }}
+          OIP_CAMPAIGN_PUBLISH_OUTCOME: ${{ steps.options_signal_campaign_publish.outcome }}
         run: |
+          if [ "$OIP_EPISODE_BUILD_OUTCOME" = success ] && \
+             [ "$OIP_EPISODE_PUBLISH_OUTCOME" = success ] && \
+             [ "$OIP_CAMPAIGN_BUILD_OUTCOME" = success ] && \
+             [ "$OIP_CAMPAIGN_PUBLISH_OUTCOME" = success ]; then
+            echo "OIP PIT integrity passed"
+            exit 0
+          fi
           echo "::error title=OIP PIT integrity::episode/campaign build or narrow publication failed"
           exit 1
       - name: timings ledger + 85% budget tripwire (W2)
