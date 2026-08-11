@@ -65,6 +65,7 @@ from engine.marketing.media_publish import (  # noqa: E402
 from engine.marketing.copywriter import headline_fragments as _headline_fragments  # noqa: E402
 from engine.marketing.copywriter import queued_voice_violations as _queued_voice_violations  # noqa: E402
 from engine.marketing.copywriter import queued_relay_violations as _queued_relay_violations  # noqa: E402
+from engine.marketing.copywriter import voice_v5_violations as _voice_v5_violations  # noqa: E402
 from engine.marketing.cold_read import cold_read_verdict as _cold_read_verdict  # noqa: E402
 from engine.marketing.cold_read import resolve_action as _cold_read_action  # noqa: E402
 from engine.marketing.cold_read import reset_run_budget as _cold_read_reset  # noqa: E402
@@ -2710,6 +2711,18 @@ def main(argv: list[str] | None = None) -> int:
         _voice = _queued_voice_violations(
             text, str(it.get("kind") or ""),
             shape=str(_voice_src.get("shape") or ""),
+        )
+        # Voice v5 landed after many of these rows were already approved. Run
+        # the same deterministic register screen at the last send gate so an
+        # older queued item cannot bypass the new law. The item's own kind and
+        # account are load-bearing: wire copy may faithfully relay a source's
+        # pronoun or question, while every other v5 rule still applies to it.
+        _voice += _voice_v5_violations(
+            text,
+            {
+                "type": str(it.get("kind") or ""),
+                "account": account,
+            },
         )
         if _voice:
             reason = "voice laws (queue vintage): " + "; ".join(_voice[:2])
