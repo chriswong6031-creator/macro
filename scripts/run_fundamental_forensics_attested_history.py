@@ -44,6 +44,7 @@ sys.path.insert(0, str(_ROOT))
 from engine.fundamental_forensics.attested_history_credentials import (
     R2TemporaryCredentialError,
     mint_r2_temporary_credentials,
+    value_free_credential_error,
 )  # noqa: E402
 from engine.fundamental_forensics.attested_history_materializer import (
     B4D_REJECTION_REASON_CODES,
@@ -753,7 +754,8 @@ def build_readonly_operator_store(*, local_dir: str | Path | None = None) -> Str
         )
     except R2TemporaryCredentialError as exc:
         raise OperatorPreflightError(
-            "dedicated read-only R2 parent credential cannot mint a scoped child"
+            "dedicated read-only R2 parent rejected: "
+            + value_free_credential_error(exc)
         ) from exc
     finally:
         # The workflow already scopes parent secrets to this process step. Drop
