@@ -63,6 +63,10 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Iterable
 
+# wire_format is stdlib-only by its own import-closure law, so this stays a
+# top-level import (unlike the copywriter, which display_price loads lazily).
+from engine.marketing.wire_format import humanize_money
+
 __all__ = [
     # shared filing-lane primitives
     "LagDisclosureError",
@@ -182,6 +186,14 @@ def display_pct(value: Any, *, signed: bool = False) -> str:
         return (s[:-2] if s.endswith(".0") else s) + "%"
 
 
+def _mantissa_overflows(mantissa: str) -> bool:
+    """True when a rendered mantissa reached four digits ("1000" -> promote)."""
+    try:
+        return abs(float(str(mantissa).replace(",", ""))) >= 1000.0
+    except (TypeError, ValueError):
+        return False
+
+
 def display_usd(value: Any) -> str:
     """``298500`` → ``"$298K"``; ``6_920_000`` → ``"$6.92M"``; ``1001`` → ``"$1,001"``.
 
@@ -194,6 +206,16 @@ def display_usd(value: Any) -> str:
     ABBREVIATION STARTS AT 10K, not 1K, because the mantissa law pads below ten:
     $1,001 came out as "$1.00K", which is both uglier and less precise than the
     number it replaced. Under the threshold the figure is written in full.
+
+    A MANTISSA NEVER PRINTS FOUR DIGITS. The mantissa law rounds, and a rounded
+    mantissa can climb out of its own band: a $999,500 insider position shipped
+    as "$1000K" (census of 679 items, 2026-08-11 — "a director opened a new
+    roughly $1000K position"), which is the exact form voice doctrine ban #8
+    names. Above $1T the table simply ran out of bands and would have printed
+    "$1500B". Both are band problems, not rounding problems, so they are handed
+    to :func:`wire_format.humanize_money` — the package's one promotion rule —
+    rather than growing a second table here. Everything that fits its band is
+    untouched, so "$6.92M" / "$298K" / "$1,001" ship exactly as before.
     """
     f = _finite(value)
     if f is None:
@@ -203,7 +225,10 @@ def display_usd(value: Any) -> str:
     for scale, suffix in ((1e9, "B"), (1e6, "M"), (1e4, "K")):
         if a >= scale:
             # The K leg divides by 1e3 even though it triggers at 1e4.
-            return f"{sign}${display_price(a / (1e3 if suffix == 'K' else scale))}{suffix}"
+            mantissa = display_price(a / (1e3 if suffix == "K" else scale))
+            if a >= 1e12 or _mantissa_overflows(mantissa):
+                return humanize_money(f)
+            return f"{sign}${mantissa}{suffix}"
     return f"{sign}${a:,.0f}"
 
 

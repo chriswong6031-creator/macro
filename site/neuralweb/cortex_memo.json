@@ -1,11 +1,13 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-10T20:08:09+00:00",
-  "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
+  "as_of": "2026-08-11T04:16:20+00:00",
+  "summary": "Budget exhausted after 2 tool-call batches (7 individual calls). Partial deliberation only.",
   "what_fired": [],
   "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
   "decaying_families": [],
-  "deserves_operator": [],
+  "deserves_operator": [
+    "[context_stale] cortex deliberated over world_state from 2026-08-10T03:34:40Z; current run=2026-08-11T04:16:20+00:00"
+  ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
     "as_of": "2026-08-10",
@@ -23,13 +25,21 @@
     },
     "is_context_only": true
   },
-  "tool_call_census": {},
+  "tool_call_census": {
+    "read_world_state": 1,
+    "read_factor_state": 1,
+    "query_spine": 1,
+    "read_contradictions": 1,
+    "list_factor_contradictions": 1,
+    "read_kernel": 1,
+    "read_master_brain_theses": 1
+  },
   "is_context_only": true,
   "run_status": {
-    "status": "degraded",
-    "degraded": true,
-    "degradation_reason": "model_unavailable",
-    "model_used": "claude-sonnet-4-6",
+    "status": "warn",
+    "degraded": false,
+    "degradation_reason": null,
+    "model_used": "claude-opus-4-8",
     "provider_attempts": [
       {
         "provider": "oauth",
@@ -37,7 +47,7 @@
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdufxPWvQYAmyWUKeCUwU'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdvKBUTFhJZmUCziPTbVo'}"
       },
       {
         "provider": "oauth",
@@ -45,7 +55,7 @@
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdufygmXX5cRMzYSRshPL'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdvKCpyK3Ww77K8KRnbx7'}"
       },
       {
         "provider": "oauth",
@@ -53,7 +63,7 @@
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cdug4KQ3SNq7NsMsAefXf'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdvKHSg1XiPyaP3i4ayHz'}"
       },
       {
         "provider": "oauth",
@@ -61,77 +71,37 @@
         "attempted": true,
         "ok": false,
         "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdugJ7oRQTWxNU2SUSuea'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdvKWv2AvKvkvhayynmTt'}"
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
-      },
-      {
-        "provider": "codex",
-        "model": "gpt-5.6-sol",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdugNXhDP2yZvn87BByv3'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdugNkmmiMPoy112mkLg9'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdugNwjq7UiJ6LdvsszL8'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdugP8A91hQ4sH6K6LHfG'}"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       }
     ],
-    "tool_call_batches": 0,
-    "individual_tool_calls": 0,
+    "tool_call_batches": 2,
+    "individual_tool_calls": 7,
     "expected_min_tool_calls": 1,
-    "context_stale": false,
+    "context_stale": true,
     "context_as_of": "2026-08-10T03:34:40Z"
   }
 }

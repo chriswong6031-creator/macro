@@ -17,7 +17,8 @@ Tests:
 14. theme_facts: no indicator vocab in fact texts
 15. theme_facts shape: {facts, numbers_whitelist} always returned
 16. mover_facts shape: {facts, numbers_whitelist} always returned
-17. full build: produces ≥1 theme_list post with ≥4 cashtags ending in '?'
+17. full build: produces ≥1 theme_list post with ≥4 cashtags, and NO
+    generated theme_list body ends on '?' (voice doctrine v5)
 18. full build: every number in a theme_list post body is in the whitelist (no invented numbers)
 19. full build: multi-cashtag validate passes for a real member list
 20. full build: validate FAILS for an unrelated cashtag in theme_list
@@ -275,13 +276,32 @@ def test_theme_lists_direction_correct():
         )
 
 
-def test_theme_lists_question_present():
+def test_theme_lists_tail_present_and_is_a_statement():
+    """Every theme item carries its direction-keyed tail, and that tail is a
+    STATEMENT.
+
+    INVERTED FOR VOICE DOCTRINE v5 (2026-08-11). This used to assert
+    ``"?" in ti["question"]`` — the v4 law was that a theme_list body must end on
+    a question, because the group post was designed as reply-bait. v5 bans the
+    question mark outright (copywriter.validate_copy's requirement became a ban,
+    publish_time_content._tail_is_bait now rejects any interrogative tail), so
+    the old assertion pins a rule that no longer exists. The KEY is still called
+    "question" — it is load-bearing across content_studio, the outbox rows and
+    the {theme_question} template token — and only the VALUE's shape changed.
+    """
+    from engine.marketing import movers_source as ms
     from engine.marketing.movers_source import theme_lists
     data = _synthetic_movers_data()
     result = theme_lists(data, min_members=4)
+    assert result, "fixture produced no themes - the assertions below are vacuous"
     for ti in result:
-        assert ti.get("question"), f"Theme {ti['theme']} has no question"
-        assert "?" in ti["question"], f"Theme {ti['theme']} question has no '?'"
+        tail = ti.get("question")
+        assert tail, f"Theme {ti['theme']} has no tail"
+        assert "?" not in tail, f"Theme {ti['theme']} tail asks a question: {tail!r}"
+        assert not re.search(r"\bI\b|I'm|I'd|I'll|I've|\b(?:my|we|our|us|me)\b",
+                             tail), f"Theme {ti['theme']} tail is first person: {tail!r}"
+        pool = ms._TAIL_DOWN if ti["direction"] == "down" else ms._TAIL_UP
+        assert tail in pool, f"Theme {ti['theme']} drew a {ti['direction']} tail from the other pool"
 
 
 def test_theme_lists_min_members_filter():
@@ -352,7 +372,7 @@ def test_theme_facts_whitelist_covers_every_member_pct_and_agg():
             {"ticker": "AVGO", "pct": -3.8},
         ],
         "agg_pct": -4.9,
-        "question": "Which one comes back first?",
+        "question": "Every name on the list is lower.",   # v5 tail, not a question
     }
     result = theme_facts(theme_item)
     wl = set(result["numbers_whitelist"])
@@ -377,7 +397,7 @@ def test_theme_facts_no_indicator_vocab():
             {"ticker": "SOFI", "pct": 2.9},
         ],
         "agg_pct": 3.3,
-        "question": "Which one leads higher?",
+        "question": "Every name on the list is higher.",  # v5 tail, not a question
     }
     result = theme_facts(theme_item)
     for f in result["facts"]:
@@ -439,8 +459,26 @@ def _make_test_cfg():
     return cfg, plans
 
 
-def test_full_build_produces_theme_list_posts_with_cashtags_and_question():
-    """Full build must produce ≥1 theme_list post with ≥4 cashtags ending in '?'"""
+def test_full_build_produces_theme_list_posts_with_cashtags_and_no_question():
+    """≥1 theme_list post carries ≥4 cashtags, and NO body ends on '?'.
+
+    INVERTED FOR VOICE DOCTRINE v5 (2026-08-11), and both halves are load
+    bearing for different reasons.
+
+    THE CASHTAG HALF IS UNCHANGED and it is the half that matters most: a
+    theme_list post IS the multi-name leaders list, so a build that emits one
+    carrying fewer than four member cashtags has produced a group post with no
+    group in it. `copywriter.validate_copy` enforces ≥4 per post; this asserts
+    the BUILD actually reaches that shape end to end.
+
+    THE QUESTION HALF IS REVERSED. It used to require a body ending on '?',
+    mirroring the v4 rule in `copywriter.validate_copy` that a theme_list body
+    must end on a question mark because the group post was designed as
+    reply-bait. That single upstream requirement is why every theme post the
+    desk ever shipped ended on "Am I getting a second session out of this?" —
+    no better tail could be written while it stood. v5 inverts the rule to a
+    ban, so the assertion inverts with it: no generated body may end on '?'.
+    """
     sp500_path = ROOT / "site" / "marketdata" / "sp500_heatmap.json"
     themes_path = ROOT / "site" / "marketdata" / "themes_heatmap.json"
     if not sp500_path.exists() or not themes_path.exists():
@@ -453,16 +491,25 @@ def test_full_build_produces_theme_list_posts_with_cashtags_and_question():
     theme_items = _get_all_queue_items(plan, "theme_list")
     assert theme_items, "No theme_list posts in content plan"
 
-    # At least one must have ≥4 cashtags and end in '?'
+    # Half 1 (unchanged): the build reaches the multi-cashtag leaders shape.
     good = []
     for item in theme_items:
         body = item.get("body", "")
         cashtags_in_body = re.findall(r"\$[A-Z]{1,5}", body)
-        if len(cashtags_in_body) >= 4 and body.strip().endswith("?"):
+        if len(cashtags_in_body) >= 4:
             good.append(item)
     assert good, (
-        f"No theme_list post with ≥4 cashtags ending in '?'. "
+        f"No theme_list post carries ≥4 cashtags, so the build never reached "
+        f"the leaders-list shape. "
         f"Sample bodies: {[i['body'][:120] for i in theme_items[:2]]}"
+    )
+
+    # Half 2 (inverted for v5): none of them may end on reply-bait.
+    baited = [i["body"][:120] for i in theme_items
+              if i.get("body", "").strip().endswith("?")]
+    assert not baited, (
+        f"theme_list bodies ending on '?': v5 ends the group post on the "
+        f"breadth fact, never on a question. {baited}"
     )
 
 
@@ -507,7 +554,11 @@ def test_validate_copy_passes_for_real_theme_list():
         "cashtags": ["$NVDA", "$AMD", "$SMCI", "$AVGO"],
     }
     headline = "Artificial Intelligence -4.9% avg today"
-    body = "$NVDA -4.5% $AMD -6.2% $SMCI -5.1% $AVGO -3.8% Which one comes back first?"
+    # v5 tail (2026-08-11): the body used to end on "Which one comes back
+    # first?" because validate_copy REQUIRED a theme_list to end on a question.
+    # That requirement is now a ban, so the v4 fixture would fail the very
+    # validator this test says passes it.
+    body = "$NVDA -4.5% $AMD -6.2% $SMCI -5.1% $AVGO -3.8% Every name on the list is lower."
     violations = validate_copy(headline, body, ctx)
     # Should have no violations
     real_v = [v for v in violations if "cashtag" not in v.lower() or "valid" in v.lower()]
@@ -526,7 +577,8 @@ def test_validate_copy_fails_for_unrelated_cashtag_in_theme_list():
     }
     headline = "AI names getting hit"
     # $TSLA is NOT in the member list
-    body = "$NVDA -4.5% $AMD -6.2% $SMCI -5.1% $AVGO -3.8% $TSLA -2.0% Which one comes back first?"
+    body = ("$NVDA -4.5% $AMD -6.2% $SMCI -5.1% $AVGO -3.8% $TSLA -2.0% "
+            "Every name on the list is lower.")
     violations = validate_copy(headline, body, ctx)
     # Must flag $TSLA as invalid cashtag
     invalid_v = [v for v in violations if "member list" in v.lower() or "cashtag" in v.lower()]
@@ -658,7 +710,11 @@ def test_top_movers_real_data_has_real_tickers():
 
 
 def test_theme_question_deterministic_across_processes():
-    """Reply-bait question must be stable run-to-run (crc32, not salted hash())."""
+    """The tail must be stable run-to-run (crc32, not salted hash()).
+
+    (The "question" key name is v4 vintage; under v5 the value is a declarative
+    breadth statement. The determinism property is unchanged.)
+    """
     import subprocess, sys
     code = (
         "from engine.marketing.movers_source import load_movers, theme_lists;"
@@ -763,10 +819,17 @@ def test_a_direction_label_cannot_override_the_sign():
     assert "higher" in text, text
 
 
-def test_every_tail_costs_the_author_and_is_direction_keyed():
-    """PINS defect 5's table. Each tail must (a) end on "?" — copywriter requires
-    it of a theme_list body — (b) put the question on the AUTHOR, and (c) carry no
-    banned language. The pre-fix pools ("Which one breaks out first?") fail (b)."""
+def test_every_tail_is_a_statement_and_is_direction_keyed():
+    """PINS defect 5's table, INVERTED FOR VOICE DOCTRINE v5 (2026-08-11).
+
+    The v4 version asserted each tail (a) ends on "?" — copywriter then REQUIRED
+    it of a theme_list body — and (b) puts the question on the AUTHOR rather than
+    the reader, which is what `_tail_is_bait` used to check. v5 deletes both
+    halves: the "?" requirement became a "?" ban and `_tail_is_bait` now rejects
+    every interrogative tail whoever it is about, so the v4 pins would fail the
+    compliant bank and pass the retired one. What SURVIVES unchanged is (c) no
+    banned language, plus the direction-keying and the disjoint pools.
+    """
     from engine.marketing import movers_source as ms
     from engine.marketing.copywriter import banned_language
     from engine.marketing.publish_time_content import _tail_is_bait
@@ -774,7 +837,8 @@ def test_every_tail_costs_the_author_and_is_direction_keyed():
     for pool in (ms._TAIL_DOWN, ms._TAIL_UP):
         assert len(pool) >= 4
         for tail in pool:
-            assert tail.rstrip().endswith("?"), tail
+            assert not tail.rstrip().endswith("?"), tail
+            assert tail.rstrip().endswith("."), tail
             assert not _tail_is_bait(tail), tail
             assert banned_language(tail) == [], (tail, banned_language(tail))
     assert not (set(ms._TAIL_DOWN) & set(ms._TAIL_UP))

@@ -11438,11 +11438,21 @@ artifacts:
     notes: >
       Strike × expiration matrix for PRISM tab. Engine: engine/options_matrix.py
       (Package E). Schema defined in engine/options_structure.py (Package A).
-      Lenses: GEX (assumption-signed), OI (reliable), VOL (reliable), delta_oi (reliable).
-      UNUSUAL deferred (needs 30d per-strike baseline). VEX deferred (greeks-path stability).
+      Lenses: GEX (assumption-signed), OI (reliable), VOL (reliable), delta_oi (reliable),
+      UNUSUAL (reliable magnitude), and VEX (experimental). UNUSUAL reports call and
+      put independently: today's observed side volume divided by the median of its
+      observations inside the 30 most recent strictly-prior root EOD sessions for the
+      exact (expiration,strike,right) contract side. It requires at least 10 samples,
+      retains an explicitly observed zero, never fills a missing contract-day with zero,
+      and labels ratios >=3.0
+      unusual, otherwise normal. Published ratios are conservatively truncated to two
+      decimals so a sub-3x value cannot display as 3.00.
+      VEX remains closed-form BS vanna x OI[t-1], experimental and assumption-signed.
       heat_seeker note field CI-enforced as "descriptive — not a recommendation".
       GEX sign: calls +, puts − (dealer-short assumption). delta_oi = OI[t-1]−OI[t-2] (both lagged).
-      NOT wired into nightly schedule — scheduling follows when PRISM tab is ready.
+      The whole artifact is display/context only: no scoring, money path, or authority
+      promotion. Wired to the weekday launchd options-matrix lane with a ThetaData-store
+      freshness gate; it is not built in daily.yml.
 
   # --- options-structure.structural: structural detector state (shadow) ---
   options-structure-structural:
@@ -11548,12 +11558,18 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_site.py
+      - engine/us_candidate_lanes.py
     external_consumers:
       - terminal:oracle-tab
     notes: >
       Prophet active plans index — all active plans + management state summaries inline.
       Also mirrored to R2 key prophet/index.json when --publish flag is passed.
       authority_tier=display. NOT wired into daily.yml in this PR.
+      engine/us_candidate_lanes.py reads the OPEN-PLAN TICKER SET ONLY
+      (load_open_plan_tickers), for the same reason build_site does and with the same
+      safety: the nightly reads LAST NIGHT'S index, and an open plan persists across
+      nights, so "already has a plan running" cannot go stale the way a refusal reason
+      would. Fail-soft to an empty set; nothing about admission depends on it.
 
   # --- prophet-ledger: Prophet forward outcome ledger ---
   prophet-ledger:
@@ -11598,7 +11614,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers: [engine/us_prophet_grades.py, scripts/grade_us_prophet_candidates.py,
-                engine/prophet_miss_audit.py]
+                engine/prophet_miss_audit.py, engine/us_candidate_lanes.py]
     external_consumers: []
     notes: >
       US Context Vector point-in-time candidate store (PROPHET US roadmap §2 keystone).
@@ -11641,6 +11657,19 @@ artifacts:
       measured for this name tonight", never "false" (#4485). Named debts
       (turnover_pctile_60d data-blocked; stoch_ob/stoch_bear/macd_bear not exposed by
       confluence_tiers) are documented in data/us_prophet_rank/README.md.
+      CANDIDATE-POOL LANES (operator commission 2026-08-11): nine additional pool_*
+      columns carry the DISPLAY-TIER lossless four-lane partition of tonight's
+      cascade-eligible pool (CN parity with china_board_rank._partition), produced by
+      engine/us_candidate_lanes.py and stamped by the same build_stock_library run.
+      That module is also the store's fourth CONSUMER, read-only: it projects
+      HISTORY_COLUMNS out of prior months through load_candidates() to derive the
+      display-only graduation annotations (days_in_pool / score_delta_5d /
+      lane_transitions). It inherits the same zero authority — nothing on the admission
+      path imports it, pinned by tests/test_us_candidate_lanes.py::TestNoAuthorityLeak.
+      pool_* is null for every name outside tonight's eligible set (~144 of ~1,540) and
+      for every scan-tier row, which are never admitted. `originated` is deliberately
+      NOT a column: build_stock_library stamps before build_prophet originates anything
+      and backfill is forbidden, so origination stays build_prophet's fact.
 
   # --- us-prophet-grades: full-population forward grades (§W7, operator 2026-08-05) ---
   us-prophet-grades:
@@ -12244,6 +12273,47 @@ artifacts:
       is_context_only=true, display_only=true — no score or ranking authority. Absent
       until scripts/build_stage_analysis.py first runs; all consumers fail-open
       (block=None or honest-null).
+
+  top-maturation-latest:
+    path: data/top_maturation/latest.json
+    format: json
+    producer: scripts/build_top_maturation.py
+    known_extra_writers: []
+    owner_program: top-anatomy
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 36
+    schema: winner_health.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:context
+    notes: >
+      Winner Health (TOP ANATOMY W1) — the nightly maturation read for US names
+      that are EXTENDED (large trailing six-month gain, still inside 10% of their
+      252-day high), grouped by how the move is aging into four DISPLAY states
+      (extended_healthy / extended_watch / thinning / breaking). Every derivation
+      is engine.top_anatomy verbatim; this artifact adds nine plain-word display
+      legs cut against FROZEN thresholds (data/top_anatomy/thresholds.json, recut
+      only by scripts/export_top_anatomy_library.py) plus an analog memory — a kNN
+      lookup into the Phase-0 episode library on shape and age alone, reported as
+      episode-level counts with an honest-N floor. AVOID-not-SHORT lobe: states
+      are groups and never a ranking, library counts are history and never
+      forecasts or probabilities, there is no model, and nothing here ranks,
+      gates, sizes or escalates (DNR:KILL-DIRECTIONAL-SHORTING). Of the nine legs
+      only updown_volume is a researched discriminator; the other eight are
+      descriptive facts about the name's own behaviour. The payload carries its
+      own _STANDING_LAW and _LEGS_PROVENANCE so no consumer can lift the numbers
+      without the constraint. Board membership is the trailing-21-session EXT
+      window (a name that has just left EXT is eligible for `breaking` only) and
+      is intersected with the house US stock metadata so exchange-traded products
+      stay off it. Absent until scripts/build_top_maturation.py first runs; the
+      page and every consumer fail-open to an honest null. Promotion to any
+      authority needs its own pre-registered gauntlet and an operator ruling.
 
   darkpool-context-latest:
     path: data/darkpool/context/latest.json
@@ -18394,6 +18464,43 @@ artifacts:
       a gaps[] note rather than dropping the file. Masterplan:
       research/DISLOCATION_RECOVERY_LOBE_MASTERPLAN_BY_FABLE.md.
 
+  price-pressure-completion-receipts:
+    path: data/price_pressure/completion_receipts.jsonl
+    format: jsonl
+    producer: scripts/build_price_pressure.py
+    known_extra_writers: []
+    owner_program: price-pressure
+    cadence: daily-engine
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: null
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_price_pressure.py
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: >
+      Append-only, immutable completion receipts for the ONE sanctioned write into
+      price-pressure-events' frozen identity block
+      (research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md §3 / §10.1). FRED publishes
+      VIXCLS one session behind the tape at the 22:30Z harvest, so a forward row
+      typically stamps vix_pctile NULL through no property of its own; the first
+      subsequent nightly on which t0 is present in the store fills that null with t0's
+      OWN close percentile under the shipped §3 transform — an exact late-arriving
+      value, never a forward-fill, never a revision of a non-null stamp — and files one
+      line binding {ticker, date, side, vix_pctile, observed_at, vixcls_sha256,
+      engine_version}. Only era=forward rows dated on/after the registered 2026-08-11
+      evidence boundary are eligible; gap/backfill and the ineligible 2026-08-10
+      forward slice remain frozen. The hash is of the exact VIXCLS file bytes the value
+      was computed from. Lines are never rewritten or reordered. A row whose fwd5
+      window closes with no receipt is missing forever and is counted, not repaired.
+      Grading may CONSUME a receipt and is forbidden to complete a stamp itself. No
+      freshness SLA: a night with no late-arriving stamp correctly writes nothing.
+
   price-pressure-events:
     path: data/price_pressure/events.parquet
     format: parquet
@@ -18426,4 +18533,13 @@ artifacts:
       never rewritten. Names that stop trading keep their rows and grade
       DELISTED_OR_HALTED inside the terminal shares: resolution-conditioned denominators
       delete losers. Sibling artifact data/price_pressure/base_rates.json is frozen by
-      the manual backfill only and is never refrozen by the nightly.
+      the manual backfill only and is never refrozen by the nightly. The identity block
+      has exactly ONE sanctioned exception, ledger.complete_vix_stamps
+      (research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md §10.1): FRED publishes VIXCLS
+      one session behind the tape at the 22:30Z harvest, so a forward row typically
+      stamps vix_pctile NULL through no property of its own — a null stamp is completed
+      ONCE with t0's own close percentile by a later nightly, inside the row's fwd5
+      window and only for an eligible era=forward event dated on/after 2026-08-11,
+      against an append-only receipt in
+      data/price_pressure/completion_receipts.jsonl. A non-null stamp stays immutable
+      and no other column is reachable from that seam.

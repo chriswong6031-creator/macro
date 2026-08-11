@@ -28,6 +28,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# stdlib-only by wire_format's own import-closure law — safe at module level.
+from engine.marketing.wire_format import humanize_money
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Calendar reader
@@ -176,14 +179,11 @@ def build_earnings_post(
             f"EPS ${actual:.2f} vs ${est:.2f} est [{surp_str}]"
         )
         if rev_actual is not None and rev_est is not None:
+            # Revenue in the package's one money register (voice doctrine
+            # ban #8) — "$42.0B", not the old four-significant-figure
+            # "$42.00B", and never a raw comma figure under a million.
             def _short_rev(v: float) -> str:
-                if v >= 1e12:
-                    return f"${v / 1e12:.2f}T"
-                if v >= 1e9:
-                    return f"${v / 1e9:.2f}B"
-                if v >= 1e6:
-                    return f"${v / 1e6:.1f}M"
-                return f"${v:,.0f}"
+                return humanize_money(v)
             headline += f" | Rev {_short_rev(rev_actual)} vs {_short_rev(rev_est)} est"
 
         # Trim to 280 chars (safety)

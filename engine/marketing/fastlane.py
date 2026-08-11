@@ -435,9 +435,13 @@ def _build_earnings_copy(event: dict[str, Any]) -> dict[str, Any]:
     #     its surprise are the claim; the revenue pair is the same claim told
     #     twice, so it goes into WORDS. Three figures, inside the budget of four
     #     that `earnings` now carries for exactly this reason.
-    #   * A FACT PLUS A REACTION THAT COSTS US. "We don't trade the print"
-    #     concedes that we are not acting on the thing we just reported, which
-    #     is the admission the house voice is built on, and it is true.
+    #   * A FACT PLUS A CONSEQUENCE. This line used to read "We don't trade the
+    #     print, we trade what the tape does with it" — an admission ABOUT THE
+    #     DESK, which voice doctrine v5 (2026-08-11) removed from every post
+    #     lane: `copywriter.voice_v5_violations` rejects the pronoun and this
+    #     lane quarantined 100% of its own output on it. The same true thing,
+    #     said about the market: the print is a fact, the session that follows
+    #     it is the read.
     # A VERB, NOT A LABEL. `verdict` is BEAT/MISS/INLINE — a machine token, and
     # lowercasing it straight into a sentence produced "$AAPL miss on the
     # Q3 2026", which is not English and reads exactly as generated as it is.
@@ -452,7 +456,7 @@ def _build_earnings_copy(event: dict[str, Any]) -> dict[str, Any]:
                     else "came in light")
         body_parts.append(f"Revenue {_rev_dir}.")
     body_parts.append(session_note)
-    body_parts.append("We don't trade the print, we trade what the tape does with it.")
+    body_parts.append("The print is the fact. The session after it is the read.")
     body = " ".join(body_parts)
 
     # Dedupe whitelist

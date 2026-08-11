@@ -134,6 +134,7 @@ def _nightly(args: argparse.Namespace) -> int:
           f"window={st['window']} appended={st['merge'].get('appended')} "
           f"forward={st['merge'].get('era_forward')} gap={st['merge'].get('era_gap')} "
           f"advanced={st['grade'].get('advanced')} closed={st['grade'].get('closed')} "
+          f"vix_completed={(st.get('completion') or {}).get('completed', 0)} "
           f"ledger_write={st['write'].get('written')}", flush=True)
     if not st["write"].get("written"):
         log.info("price_pressure: ledger not advanced (%s)", st["write"].get("reason"))

@@ -6,7 +6,11 @@ conflating them is how a PIT ledger quietly becomes a lookahead artifact:
 
 **Identity / PIT block** — frozen at t0, never rewritten.  Every field is
 computable from data that existed at the close of t0.  Nothing in it can move
-when tomorrow's bars arrive.
+when tomorrow's bars arrive.  It has exactly ONE sanctioned exception,
+``complete_vix_stamps`` (prereg §10.1): a NULL ``vix_pctile`` — the shape a row
+takes when the FRED store trailed the tape on its harvest night — may be filled
+once with t0's own close percentile, against an immutable receipt.  A non-null
+stamp stays immutable, and no other column is reachable from that seam.
 
 **Grading block** — advanced by the nightly as windows mature.  A horizon field
 is NULL until its window has fully elapsed (no partial peeking).  The display
@@ -184,7 +188,7 @@ def write_ledger(df: pd.DataFrame, data_root: Path, *,
     is an operator-run one-shot off CI, which is exactly the case the gate is
     not meant to catch.
     """
-    if require_nightly_lane and not _ledger_advance_enabled():
+    if not ledger_write_allowed(require_nightly_lane=require_nightly_lane):
         log.info("price_pressure: ledger write skipped (COLLECT_LANE != nightly)")
         return {"written": False, "reason": "off_nightly_lane", "rows": int(len(df))}
     p = ledger_path(data_root)
@@ -193,6 +197,11 @@ def write_ledger(df: pd.DataFrame, data_root: Path, *,
     out.to_parquet(p, index=False)
     return {"written": True, "rows": int(len(out)), "path": str(p),
             "closed": int(out["closed"].sum()), "open": int((~out["closed"]).sum())}
+
+
+def ledger_write_allowed(*, require_nightly_lane: bool = True) -> bool:
+    """Whether this process is the sanctioned writer for the persisted ledger."""
+    return not require_nightly_lane or _ledger_advance_enabled()
 
 
 def sort_ledger(df: pd.DataFrame) -> pd.DataFrame:
@@ -389,6 +398,85 @@ def identity_rows(ev: pd.DataFrame, *, era: str, harvested_asof: str,
     out["peer_shock_count"] = peer_counts
 
     return sort_ledger(_coerce(out))
+
+
+# ---------------------------------------------------------------------------
+# the ONE sanctioned write into the frozen identity block (prereg §10.1)
+# ---------------------------------------------------------------------------
+
+#: The single identity-block field a completion may ever fill.  Named as a
+#: constant so the exception is greppable and so the guard below reads off the
+#: same name the caller does.
+COMPLETABLE_COLUMN = "vix_pctile"
+
+
+def complete_vix_stamps(df: pd.DataFrame,
+                        completions: list[dict] | tuple[dict, ...]) -> pd.DataFrame:
+    """Fill NULL ``vix_pctile`` cells named by ``completions``.  Nothing else.
+
+    The identity block is frozen at t0 and this is its ONLY sanctioned
+    exception, registered in ``research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md``
+    §3/§10.1: the VIXCLS store trails the tape by one session at the 22:30Z
+    harvest, so a forward row typically stamps NULL through no property of its
+    own, and under §9's exclusion rule both evidence arms would have starved to
+    zero forever.  A null-at-harvest stamp is therefore completed ONCE with
+    t0's own close percentile — an exact late-arriving value, never a
+    forward-fill, never a revision.
+
+    Each completion is ``{"pos", "ticker", "date", "side", "vix_pctile"}`` where
+    ``pos`` is a POSITIONAL index into ``df``.  The key fields are not
+    decoration: they are re-checked against the row at that position, so a
+    caller that hands over a stale plan raises instead of stamping the wrong
+    name.  Three invariants are asserted BEFORE the frame is returned —
+
+    * every target cell was null (a non-null stamp is immutable, §3);
+    * ``vix_pctile`` only ever gains values, never loses one;
+    * every OTHER column, the row order and the row count are untouched.
+
+    Structural, not conventional: the function writes into exactly one column by
+    name and then proves the rest of the frame is byte-semantics-identical.
+    """
+    if df.empty or not len(completions):
+        return df
+    out = df.copy()
+    col = COMPLETABLE_COLUMN
+    before = pd.to_numeric(df[col], errors="coerce")
+    vals = before.to_numpy(dtype="float64", copy=True)
+
+    dates = pd.to_datetime(df["date"]).dt.normalize()
+    tickers = df["ticker"].to_numpy()
+    sides = df["side"].to_numpy()
+    for c in completions:
+        pos = int(c["pos"])
+        if not (0 <= pos < len(out)):
+            raise AssertionError(f"complete_vix_stamps: position {pos} outside the ledger")
+        key = (pd.Timestamp(dates.iloc[pos]), str(tickers[pos]), str(sides[pos]))
+        want = (pd.Timestamp(c["date"]).normalize(), str(c["ticker"]), str(c["side"]))
+        if key != want:
+            raise AssertionError(
+                f"complete_vix_stamps: row {pos} is {key}, plan says {want}")
+        if not np.isnan(vals[pos]):
+            raise AssertionError(
+                f"complete_vix_stamps: {want} already stamped {vals[pos]!r} — "
+                "a non-null stamp is immutable (prereg §3)")
+        v = float(c[col])
+        if not np.isfinite(v):
+            raise AssertionError(f"complete_vix_stamps: {want} completion value {v!r}")
+        vals[pos] = v
+    out[col] = vals
+
+    after = pd.to_numeric(out[col], errors="coerce")
+    filled = before.isna() & after.notna()
+    if int(filled.sum()) != len(completions):
+        raise AssertionError("complete_vix_stamps: filled cell count != completions")
+    if not after[before.notna()].equals(before[before.notna()]):
+        raise AssertionError("complete_vix_stamps: an existing stamp moved")
+    if bool((before.notna() & after.isna()).any()):
+        raise AssertionError("complete_vix_stamps: an existing stamp was cleared")
+    others = [c for c in out.columns if c != col]
+    if not out[others].equals(df[others]):
+        raise AssertionError("complete_vix_stamps: a column outside vix_pctile moved")
+    return out
 
 
 # ---------------------------------------------------------------------------

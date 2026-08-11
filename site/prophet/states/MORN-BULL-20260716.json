@@ -1,31 +1,31 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "MORN-BULL-20260716",
-  "asof": "2026-08-09",
+  "asof": "2026-08-10",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 70.4,
-  "raw_confidence": 70.1,
-  "delta_vs_base": 10.4,
+  "management_confidence": 69.9,
+  "raw_confidence": 69.2,
+  "delta_vs_base": 9.9,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
-    "progress": 43.8,
-    "pace": 70.3,
+    "progress": 44.2,
+    "pace": 66.9,
     "retention": 50.0,
-    "overlay": 59.0
+    "overlay": 56.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.833,
-    "dist_to_t1_r": 0.667,
-    "dist_to_t2_r": 2.167,
-    "horizon_pct_used": 44.4,
-    "p1": 0.5556,
-    "p2": 0.2778,
+    "dist_to_stop_r": 1.844,
+    "dist_to_t1_r": 0.656,
+    "dist_to_t2_r": 2.156,
+    "horizon_pct_used": 46.7,
+    "p1": 0.5627,
+    "p2": 0.2814,
     "p3": null,
-    "move_r": 0.833,
-    "mfe_r": 0.833,
+    "move_r": 0.844,
+    "mfe_r": 0.844,
     "mae_r": 0.0
   },
   "rr_ratio": 1.5,
@@ -39,12 +39,12 @@
     "recommended_action": "display \u2014 narrate, not authoritative order",
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
-  "_mfe": 28.860003662109364,
+  "_mfe": 29.229998779296864,
   "_mae": 0.0,
-  "_max_p1": 0.5555877112736427,
+  "_max_p1": 0.5627105357454397,
   "_first_trigger_ts": "2026-08-08",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 20,
-  "tau": 0.4444
+  "days_elapsed": 21,
+  "tau": 0.4667
 }

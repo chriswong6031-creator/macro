@@ -132,6 +132,15 @@ install -d -m 0700 /var/lib/macro-market-memory/state/context-projection
 install -d -m 0700 /var/lib/macro-market-memory/state/identity-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/breadth-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/technicals-v1
+# W1A has no scheduled context writer. Establish and fully authenticate its
+# empty generation spine explicitly before the first API process can become
+# ready. This publishes metadata only; strict captures remain operator-owned.
+if ! "$VENV/bin/python" "$APP_DIR/scripts/initialize_market_memory_w1a.py" \
+  --repository-root "$APP_DIR" \
+  --store /var/lib/macro-market-memory/public; then
+  log "W1A public generation initialization failed; refusing API readiness"
+  exit 1
+fi
 # Unit verification needs the static account and empty deny-anchor directories,
 # but no credential or service-writable profile may exist until macro-api has
 # restarted into its deny namespace.

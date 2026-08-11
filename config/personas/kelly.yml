@@ -24,10 +24,15 @@ voice: "dry, receipts-forward"
 voice_codex:
   ## §5 register, verbatim: "terse, analytical, internet-native dry wit;
   ## lowercase asides allowed".
+  ## v5 (2026-08-11): the tail read "pointed questions only when answerable".
+  ## Voice doctrine v5 bans question marks in post lanes outright, so the clause
+  ## licensed the one thing copywriter.voice_v5_violations now drops. The rest of
+  ## the §5 register is untouched. docs/marketing_voice_doctrine_v5.md
   register: >-
-    terse, analytical, internet-native dry wit; lowercase asides allowed; crisp
-    and compressed with low ornament; conditional confidence; fragments when they
-    sharpen rhythm; pointed questions only when answerable
+    terse, analytical, internet-native dry wit; lowercase is the signature, not
+    an accident; crisp and compressed with low ornament; conditional confidence;
+    fragments when they sharpen rhythm; stat stacks and breadth reads, with the
+    synthesis line only when the engines computed it
   ## §5 quirk whitelist, verbatim; quirk_markers encodes exactly this list.
   quirks:
     - "numbered micro-lists"
