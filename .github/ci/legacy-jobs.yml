@@ -5913,6 +5913,14 @@ jobs:
       # check on prophet_bridge.select_candidates.
       - name: US candidate-pool lanes (lossless partition + store columns + no authority leak)
         run: python -m pytest tests/test_us_candidate_lanes.py -q
+      # W1.5 board-session anchor (#5303/#5307): the earnings-blackout gate and the
+      # display-tier chip read the BOARD's session, never the render host's wall
+      # clock — hosts straddling local midnight flipped membership (78 vs 81 buy
+      # rows at one identical as_of) and the chip countdown. Rides this job because
+      # the gate prunes the same candidate pool the lanes above partition, and the
+      # suite imports the same scripts.build_stock_library this job already loads.
+      - name: US board-session anchor (earnings gate + display chip, host-clock determinism)
+        run: python -m pytest tests/test_earnings_blackout_board_anchor.py -q
       # The candidates store this job guards is TRACKED IN A PUBLIC REPO, and
       # context_api.context_frame flattens each dimension's whole `value` dict
       # with no allowlist — so a dimension that grows a paid body ships it to
@@ -6960,6 +6968,7 @@ jobs:
       - scripts/export_top_anatomy_library.py
       - tests/test_alert_zh_completeness.py
       - tests/test_falsifier_tripwires.py
+      - tests/test_massive_local_staleness.py
       - tests/test_price_pressure.py
       - tests/test_top_anatomy.py
       - tests/test_top_maturation.py
@@ -7023,6 +7032,12 @@ jobs:
       # Phase-0 contract.  The derived scope follows its engine/script/read closure.
       - name: TOP ANATOMY point-in-time engine and preregistration contracts
         run: python -m pytest tests/test_top_anatomy.py -q
+      # Local research entrypoints must refuse a massive_stock_day mirror frozen
+      # past the declared trading-session ceiling while staying inert in Actions.
+      # The packed selector derives this suite's full import/path-literal closure,
+      # so collector, calendar, and all four wired entrypoint edits select this owner.
+      - name: massive-stock-day local mirror staleness tripwire
+        run: python -m pytest tests/test_massive_local_staleness.py -q
       # Nightly display-only consumer of the frozen TOP ANATOMY library. Keep
       # its point-in-time state machine and generated page beside the research
       # owner so changes to either side cannot leave the shipped read dark.
