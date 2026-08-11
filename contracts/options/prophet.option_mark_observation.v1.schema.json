@@ -98,7 +98,7 @@
         "last": {"type": ["number", "null"], "minimum": 0},
         "quote_ts_utc": {"type": "string", "format": "date-time"},
         "trade_ts_utc": {"type": "string", "format": "date-time"},
-        "source_sequence": {"type": "integer"},
+        "source_sequence": {"type": ["integer", "null"]},
         "quote_age_seconds": {
           "type": "integer",
           "minimum": 0,
@@ -170,7 +170,7 @@
         "quote_label": {"const": "trade_paired_bid_ask"},
         "maximum_quote_age_seconds": {"const": 1800},
         "latest_selection": {
-          "const": "max_quote_timestamp_then_trade_timestamp_then_sequence"
+          "const": "max_quote_then_trade_then_sequence_when_available"
         },
         "nbbo": {"const": false},
         "live": {"const": false},

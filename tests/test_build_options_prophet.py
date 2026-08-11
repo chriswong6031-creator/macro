@@ -1636,6 +1636,29 @@ def test_prophet_marks_selects_latest_trade_paired_quote_deterministically(
         "source_sequence": 8,
     }
 
+    legacy_rows = [
+        {key: value for key, value in row.items() if key != "sequence"}
+        for row in rows[:2]
+    ]
+
+    class LegacyThetaData:
+        @staticmethod
+        def trade_quote(**_kwargs):
+            return FakeFrame(reversed(legacy_rows))
+
+    monkeypatch.setattr(collectors, "thetadata", LegacyThetaData, raising=False)
+    legacy_selected = prophet_marks._fetch_contract_quote(
+        "SOFI", "C", "2026-10-16", 16.0, date(2026, 8, 11)
+    )
+    assert legacy_selected == {
+        "bid": 2.91,
+        "ask": 3.05,
+        "last": 2.91,
+        "quote_ts_utc": "2026-08-11T13:45:43.000000+00:00",
+        "trade_ts_utc": "2026-08-11T13:45:45.000000+00:00",
+        "source_sequence": None,
+    }
+
     class ConflictingThetaData:
         @staticmethod
         def trade_quote(**_kwargs):
@@ -1650,6 +1673,33 @@ def test_prophet_marks_selects_latest_trade_paired_quote_deterministically(
         collectors,
         "thetadata",
         ConflictingThetaData,
+        raising=False,
+    )
+    assert (
+        prophet_marks._fetch_contract_quote(
+            "SOFI", "C", "2026-10-16", 16.0, date(2026, 8, 11)
+        )
+        is None
+    )
+
+    class ConflictingLegacyThetaData:
+        @staticmethod
+        def trade_quote(**_kwargs):
+            return FakeFrame(
+                [
+                    {key: value for key, value in rows[-1].items() if key != "sequence"},
+                    {
+                        key: value
+                        for key, value in {**rows[-1], "bid": 9.99}.items()
+                        if key != "sequence"
+                    },
+                ]
+            )
+
+    monkeypatch.setattr(
+        collectors,
+        "thetadata",
+        ConflictingLegacyThetaData,
         raising=False,
     )
     assert (

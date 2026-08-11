@@ -24,12 +24,14 @@ artifact cannot rank, gate, size, issue, train, trade, or steer Prophet or Neura
 - Entry basis: `option_contract.entry_premium` only when the plan explicitly labels
   `freshness="EOD mark"`; an absent or different basis abstains from mark change.
 - Observation basis: midpoint of the latest deterministic trade-paired bid/ask. Latest
-  is maximum quote timestamp, then trade timestamp, then source sequence. A conflicting
-  complete key or an unorderable source row abstains instead of inheriting frame order.
+  is maximum quote timestamp, then trade timestamp, then source sequence when the
+  collector projection exposes it. A legacy projection with no sequence still orders
+  by both clocks and abstains on a conflicting clock tie instead of inheriting frame
+  order. A mixed or unorderable response also abstains.
 - Clock fence: retain quote and trade timestamps separately, age bid/ask from the quote
-  clock, and retain the exact signed source sequence used for ordering. Require both
-  clocks to be causal and on the session date, require the quote clock inside
-  09:30–16:00 ET, and require quote age at most 30 minutes.
+  clock, and retain the exact signed source sequence used for ordering when available.
+  Require both clocks to be causal and on the session date, require the quote clock
+  inside 09:30–16:00 ET, and require quote age at most 30 minutes.
 - Coverage: every open plan carrying `option_contract` produces one row. Invalid
   identity, expired contract, missing source, malformed quote, non-causal clocks,
   wrong-session clocks, an out-of-RTH quote, and an over-age quote are explicit

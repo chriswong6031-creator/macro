@@ -298,11 +298,13 @@ history, provider brand, or storage path.
 
 The private artifact accounts for every open plan carrying `option_contract` and
 records contract, source, clock, and entry-basis abstentions. It retains quote and
-trade clocks separately, deterministically selects by quote clock then trade clock
-then sequence, and ages bid/ask from an RTH quote clock. Although upstream includes
-size, venue/exchange, and condition fields, this bounded artifact intentionally
-discards them. Its mark change compares the plan's entry premium only when explicitly
-labeled `freshness="EOD mark"` with the same OCC contract's trade-paired mid.
+trade clocks separately, deterministically selects by quote clock then trade clock and
+then source sequence when the collector exposes it, and ages bid/ask from an RTH quote
+clock. A legacy projection without sequence abstains on conflicting clock ties.
+Although upstream includes size, venue/exchange, and condition fields, this bounded
+artifact intentionally discards them. Its mark change compares the plan's entry
+premium only when explicitly labeled `freshness="EOD mark"` with the same OCC
+contract's trade-paired mid.
 
 This is a prerequisite mark path, not trade P&L or a lifecycle outcome. It contains no
 position, provider-observed entry, provider-observed exit, fill, NBBO, live,

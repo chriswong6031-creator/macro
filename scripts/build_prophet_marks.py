@@ -403,9 +403,10 @@ def _fetch_contract_quote(
     Per-contract (specific expiry+strike) is accepted by ThetaData v3 for
     current-day (unlike wildcard-exp bulk which is rejected — see #1774).
 
-    Latest means max quote clock, then trade clock, then exact source sequence.
-    Conflicting rows at the same complete key abstain instead of inheriting frame
-    order.  Both source clocks are retained; bid/ask age is always the quote clock.
+    Latest means max quote clock, then trade clock, then exact source sequence when
+    the collector projection exposes it. A legacy projection with no sequence still
+    sorts deterministically by both clocks and abstains on a conflicting clock tie.
+    Both source clocks are retained; bid/ask age is always the quote clock.
     """
     try:
         from collectors import thetadata as td
@@ -446,6 +447,19 @@ def _fetch_contract_quote(
         )
         return None
 
+    sequence_presence = {
+        "sequence" in row
+        for row in records
+        if isinstance(row, dict)
+    }
+    if len(sequence_presence) > 1:
+        log.warning(
+            "prophet_marks: trade_quote response for %s mixes sequence capability",
+            asset,
+        )
+        return None
+    sequence_available = sequence_presence == {True}
+
     candidates: list[tuple[tuple[datetime, datetime, int], dict[str, object]]] = []
     for row in records:
         if not isinstance(row, dict):
@@ -457,7 +471,11 @@ def _fetch_contract_quote(
         try:
             quote_at = _source_datetime(row.get("quote_timestamp"))
             trade_at = _source_datetime(row.get("trade_timestamp"))
-            sequence = _source_sequence(row.get("sequence"))
+            sequence = (
+                _source_sequence(row.get("sequence"))
+                if sequence_available
+                else None
+            )
         except ValueError as exc:
             # A row with no orderable source clocks could be newer than every valid
             # row.  Refuse the whole response instead of silently selecting around it.
@@ -475,7 +493,7 @@ def _fetch_contract_quote(
             "trade_ts_utc": _source_utc_iso(trade_at),
             "source_sequence": sequence,
         }
-        candidates.append(((quote_at, trade_at, sequence), projected))
+        candidates.append(((quote_at, trade_at, sequence or 0), projected))
 
     if not candidates:
         return None
@@ -542,7 +560,10 @@ def _validated_quote(
     try:
         quote_at = _source_datetime(quote_ts_raw)
         trade_at = _source_datetime(trade_ts_raw)
-        source_sequence = _source_sequence(raw.get("source_sequence"))
+        sequence_raw = raw.get("source_sequence")
+        source_sequence = (
+            _source_sequence(sequence_raw) if sequence_raw is not None else None
+        )
     except ValueError:
         return None, "QUOTE_SHAPE_INVALID"
     observed = observed_at.astimezone(timezone.utc)
@@ -808,7 +829,7 @@ def _build_observation(
             "quote_label": "trade_paired_bid_ask",
             "maximum_quote_age_seconds": MAX_QUOTE_AGE_SECONDS,
             "latest_selection": (
-                "max_quote_timestamp_then_trade_timestamp_then_sequence"
+                "max_quote_then_trade_then_sequence_when_available"
             ),
             "nbbo": False,
             "live": False,
