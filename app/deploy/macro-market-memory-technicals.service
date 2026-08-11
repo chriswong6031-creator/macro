@@ -49,6 +49,7 @@ InaccessiblePaths=/var/lib/macro-market-memory/state/sources
 InaccessiblePaths=/var/lib/macro-market-memory/state/context-projection
 InaccessiblePaths=/var/lib/macro-market-memory/state/identity-v1
 InaccessiblePaths=/var/lib/macro-market-memory/state/breadth-v1
+InaccessiblePaths=/var/lib/macro-market-memory/state/production-record-options-episode-v1
 InaccessiblePaths=-/var/lib/macro-api
 InaccessiblePaths=-/var/lib/macro-biocatalyst
 InaccessiblePaths=-/var/lib/macro-codex
