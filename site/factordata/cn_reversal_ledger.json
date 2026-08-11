@@ -32,8 +32,8 @@
   "capture_undefined_pct": null,
   "n_logged": 91,
   "n_locked_excluded": 0,
-  "n_skipped_awaiting_t1": 0,
-  "n_skipped_total": 0,
+  "n_skipped_awaiting_t1": 12,
+  "n_skipped_total": 12,
   "board_definition": "cn_reversal_watch_v1"
  },
  "rows": [
@@ -289,7 +289,7 @@
    "l": 19.2,
    "p": -0.1,
    "x": null,
-   "dy": 2,
+   "dy": 1,
    "st": "early",
    "m": false,
    "rk": 8,
@@ -509,7 +509,7 @@
    "l": 35.79,
    "p": 0.9,
    "x": null,
-   "dy": 2,
+   "dy": 1,
    "st": "early",
    "m": false,
    "rk": 2,
@@ -2047,8 +2047,8 @@
   "survivorship": {
    "n_locked_excluded": 0,
    "n_skipped_no_price": 0,
-   "n_skipped_awaiting_t1": 0,
-   "n_skipped_total": 0,
+   "n_skipped_awaiting_t1": 12,
+   "n_skipped_total": 12,
    "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
   },
   "board_definition": "cn_reversal_watch_v1",
@@ -16213,8 +16213,8 @@
     "capture_undefined_pct": null,
     "n_logged": 32,
     "n_locked_excluded": 0,
-    "n_skipped_awaiting_t1": 0,
-    "n_skipped_total": 0,
+    "n_skipped_awaiting_t1": 5,
+    "n_skipped_total": 5,
     "board_definition": "cn_prophet_v2_shadow"
    },
    "rows": [
@@ -16470,7 +16470,7 @@
      "l": 7.69,
      "p": -1.0,
      "x": null,
-     "dy": 2,
+     "dy": 1,
      "st": "early",
      "m": false,
      "rk": 10,
@@ -16479,8 +16479,8 @@
      "xr": null,
      "ed": "2026-08-11",
      "eb": "t1_open",
-     "er": 38.64,
-     "erw": "re-derivation on today's bars gives 38.6400 (t1_open) against the published entry 38.4700 (t1_open); the published entry is point-in-time and is not restated"
+     "er": null,
+     "erw": null
     },
     {
      "t": "600688.SS",
@@ -16492,7 +16492,7 @@
      "l": 2.84,
      "p": -1.4,
      "x": null,
-     "dy": 2,
+     "dy": 1,
      "st": "early",
      "m": false,
      "rk": 13,
@@ -16501,8 +16501,8 @@
      "xr": null,
      "ed": "2026-08-11",
      "eb": "t1_open",
-     "er": 41.97,
-     "erw": "re-derivation on today's bars gives 41.9700 (t1_open) against the published entry 42.0800 (t1_open); the published entry is point-in-time and is not restated"
+     "er": null,
+     "erw": null
     },
     {
      "t": "603225.SS",
@@ -16558,7 +16558,7 @@
      "l": 31.37,
      "p": -0.3,
      "x": null,
-     "dy": 2,
+     "dy": 1,
      "st": "early",
      "m": false,
      "rk": 5,
@@ -16931,8 +16931,8 @@
     "survivorship": {
      "n_locked_excluded": 0,
      "n_skipped_no_price": 0,
-     "n_skipped_awaiting_t1": 0,
-     "n_skipped_total": 0,
+     "n_skipped_awaiting_t1": 5,
+     "n_skipped_total": 5,
      "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
     },
     "exit_rule": "10-session forced verdict · T+1 open fill · no oscillator target (3D thresholds not yet refit for A-shares)",
@@ -16971,8 +16971,8 @@
     "capture_undefined_pct": null,
     "n_logged": 57,
     "n_locked_excluded": 0,
-    "n_skipped_awaiting_t1": 0,
-    "n_skipped_total": 0,
+    "n_skipped_awaiting_t1": 9,
+    "n_skipped_total": 9,
     "board_definition": "cn_prophet_v3"
    },
    "rows": [
@@ -17083,42 +17083,20 @@
      "xr": null,
      "ed": "2026-08-11",
      "eb": "t1_open",
-     "er": 42.11,
-     "erw": "re-derivation on today's bars gives 42.1100 (t1_open) against the published entry 41.5300 (t1_open); the published entry is point-in-time and is not restated"
+     "er": null,
+     "erw": null
     },
     {
      "t": "002460.SZ",
      "nm": "Ganfeng Lithium Group Co., Ltd. / 赣锋锂业",
      "sec": "Basic Materials",
      "grp": null,
-     "d": "2026-08-07",
-     "e": 16.88,
-     "l": 16.7,
-     "p": -1.1,
+     "d": "2026-08-10",
+     "e": 54.14,
+     "l": 53.42,
+     "p": -1.3,
      "x": null,
-     "dy": 2,
-     "st": "early",
-     "m": false,
-     "rk": 12,
-     "tr": "T1",
-     "fl": [],
-     "xr": null,
-     "ed": "2026-08-10",
-     "eb": "t1_open",
-     "er": 16.83,
-     "erw": "re-derivation on today's bars gives 16.8300 (t1_open) against the published entry 16.8800 (t1_open); the published entry is point-in-time and is not restated"
-    },
-    {
-     "t": "300061.SZ",
-     "nm": "Qitian Technology Group Co., Ltd. / 旗天科技",
-     "sec": "Technology",
-     "grp": null,
-     "d": "2026-08-07",
-     "e": 6.74,
-     "l": 6.7,
-     "p": -0.6,
-     "x": null,
-     "dy": 2,
+     "dy": 1,
      "st": "early",
      "m": false,
      "rk": 10,
@@ -17127,8 +17105,8 @@
      "xr": null,
      "ed": "2026-08-11",
      "eb": "t1_open",
-     "er": 6.64,
-     "erw": "re-derivation on today's bars gives 6.6400 (t1_open) against the published entry 6.7400 (t1_open); the published entry is point-in-time and is not restated"
+     "er": null,
+     "erw": null
     },
     {
      "t": "002465.SZ",
@@ -18261,8 +18239,8 @@
     "survivorship": {
      "n_locked_excluded": 0,
      "n_skipped_no_price": 0,
-     "n_skipped_awaiting_t1": 0,
-     "n_skipped_total": 0,
+     "n_skipped_awaiting_t1": 9,
+     "n_skipped_total": 9,
      "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
     },
     "exit_rule": "10-session forced verdict · T+1 open fill · no oscillator target (3D thresholds not yet refit for A-shares)",
