@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from jinja2 import Environment, FileSystemLoader
+
 from scripts.build_site import (
     _PROPHET_OUTAGE_NOTE,
     _attach_prophet_outage_notes,
@@ -75,3 +77,18 @@ def test_dashboard_routes_the_note_through_the_shared_card_mark(tmp_path):
     assert "n.get('prophet_outage_note')" in dashboard
     assert "'k':'replay'" in dashboard
     assert ".pv-mk-replay" in card
+
+    env = Environment(loader=FileSystemLoader(root / "templates"), autoescape=True)
+    html = str(env.get_template("_prophet_card.html.j2").module.pv_card({
+        "href": "#", "tk": "AAA", "name": "AAA", "sec": "Technology",
+        "verb": "buy", "marks": [{
+            "k": "replay",
+            "en": _PROPHET_OUTAGE_NOTE["label_en"],
+            "zh": _PROPHET_OUTAGE_NOTE["label_zh"],
+            "tip_en": _PROPHET_OUTAGE_NOTE["tip_en"],
+            "tip_zh": _PROPHET_OUTAGE_NOTE["tip_zh"],
+        }],
+    }))
+    assert 'class="pv-mk-i pv-mk-replay"' in html
+    assert _PROPHET_OUTAGE_NOTE["label_en"] in html
+    assert _PROPHET_OUTAGE_NOTE["label_zh"] in html
