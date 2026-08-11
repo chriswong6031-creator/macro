@@ -23,6 +23,7 @@ RECIPROCAL_PROFILES = (
     "identity",
     "breadth",
     "technicals",
+    "experience",
     "production-records",
 )
 CAPTURE_CLOSURE = (
@@ -170,7 +171,7 @@ def test_setup_provisions_verifies_installs_runs_and_arms_lane() -> None:
     assert provision < verify < service_install < reload < run < arm
     assert f'"$APP_DIR/app/deploy/{service_name}"' in setup[verify:service_install]
     assert f'"$APP_DIR/app/deploy/{timer_name}"' in setup[verify:timer_install]
-    assert "source context identity breadth technicals production-records" in setup
+    assert "source context identity breadth technicals experience production-records" in setup
 
 
 def test_updater_reconciles_exact_capture_closure_and_retries() -> None:
@@ -224,7 +225,7 @@ def test_updater_reconciles_exact_capture_closure_and_retries() -> None:
 
 
 def test_expanded_reciprocal_boundary_is_exact_and_invalidates_old_receipt() -> None:
-    profiles = "source context identity breadth technicals production-records"
+    profiles = "source context identity breadth technicals experience production-records"
     setup = _text(SETUP)
     update = _text(UPDATE)
     fence = _text(RUNTIME_FENCE)
@@ -248,6 +249,12 @@ def test_private_store_is_hidden_from_api_and_every_other_writer() -> None:
     for profile in RECIPROCAL_PROFILES[:-1]:
         service = _text(DEPLOY / f"macro-market-memory-{profile}.service")
         assert f"InaccessiblePaths={STORE_ROOT}" in service
+
+    production_records = _text(SERVICE)
+    assert (
+        "InaccessiblePaths=/var/lib/macro-market-memory/state/experience-v1"
+        in production_records
+    )
 
     # The credentialed option writer denies the entire Market Memory tree.
     assert "InaccessiblePaths=/var/lib/macro-market-memory" in _text(OPTIONS_SERVICE)
