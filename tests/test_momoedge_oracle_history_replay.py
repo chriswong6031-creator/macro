@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -33,6 +34,15 @@ from scripts.research.momoedge_oracle_history_replay import (
 
 ROOT = Path(__file__).resolve().parents[1]
 TRACKED_RECEIPT = ROOT / "research" / "momoedge" / "history_replay_wave0_receipt.json"
+COMPLETION_PREREG = (
+    ROOT / "research" / "momoedge" / "completion_benchmark_prereg_v1.json"
+)
+COMPLETION_PREREG_SCHEMA = (
+    ROOT
+    / "contracts"
+    / "research"
+    / "momoedge_oracle_completion_benchmark_prereg.v1.schema.json"
+)
 
 
 def _record(
@@ -174,8 +184,156 @@ def test_replay_contracts_are_valid_draft_2020_12_schemas() -> None:
         FEATURE_RECEIPT_SCHEMA,
         AGGREGATE_SCHEMA,
         THETA_REMOTE_INVENTORY_SCHEMA,
+        COMPLETION_PREREG_SCHEMA,
     ):
         Draft202012Validator.check_schema(json.loads(path.read_text(encoding="utf-8")))
+
+
+def test_completion_benchmark_is_digest_frozen_and_separates_catch_up_from_surpass() -> None:
+    prereg = json.loads(COMPLETION_PREREG.read_text(encoding="utf-8"))
+    validate_document(prereg, COMPLETION_PREREG_SCHEMA)
+
+    canonical = json.dumps(
+        prereg["benchmark"],
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    assert hashlib.sha256(canonical).hexdigest() == prereg["registration"][
+        "benchmark_digest_sha256"
+    ]
+    assert prereg["registration"]["effective_freeze_rule"] == (
+        "later_of_registered_at_and_first_origin_main_commit_containing_exact_"
+        "benchmark_digest"
+    )
+
+    benchmark = prereg["benchmark"]
+    completion = benchmark["completion_rule"]
+    catch_up_ids = [gate["gate_id"] for gate in benchmark["catch_up_gates"]]
+    surpass_ids = [gate["gate_id"] for gate in benchmark["surpass_gates"]]
+    assert catch_up_ids == [
+        "CU_FEATURE_PARITY",
+        "CU_CADENCE_TRUTH",
+        "CU_LIFECYCLE_AND_RETURN_READINESS",
+        "CU_BILINGUAL_MOBILE",
+        "CU_AUTHORITY_HONESTY",
+    ]
+    assert surpass_ids == [
+        "SP_POINT_IN_TIME_PROVENANCE",
+        "SP_SPARSE_ABSTENTION",
+        "SP_PROSPECTIVE_OPTION_SUPERIORITY",
+    ]
+    assert completion["catch_up_requires"] == catch_up_ids
+    assert completion["surpass_requires"] == surpass_ids
+    assert completion["surpass_requires_catch_up"] is True
+    assert completion["goal_complete_state"] == "surpass"
+    assert completion["partial_substitution_allowed"] is False
+    assert completion["current_state_at_registration"] == "not_complete"
+    assert all(gate["stage"] == "catch_up" for gate in benchmark["catch_up_gates"])
+    assert all(gate["stage"] == "surpass" for gate in benchmark["surpass_gates"])
+
+    criterion_ids = [
+        criterion["criterion_id"]
+        for gate in benchmark["catch_up_gates"] + benchmark["surpass_gates"]
+        for criterion in gate["criteria"]
+    ]
+    assert len(criterion_ids) == len(set(criterion_ids))
+
+
+def test_completion_benchmark_forbids_retrospective_return_evidence() -> None:
+    prereg = json.loads(COMPLETION_PREREG.read_text(encoding="utf-8"))
+    benchmark = prereg["benchmark"]
+    protocol = benchmark["prospective_return_protocol"]
+    fence = protocol["phase_fence"]
+    assert fence == {
+        "retrospective_phase": "retrospective_discovery",
+        "prospective_phase": "prospective_after_benchmark_freeze",
+        "prospective_clock_field": "decision_available_at",
+        "prospective_digest_field": "benchmark_digest_sha256",
+        "retrospective_may_define_features": True,
+        "retrospective_may_satisfy_return_gate": False,
+        "missing_or_mismatched_phase_action": "exclude_and_count_as_incomplete",
+    }
+    assert benchmark["baselines"]["momoedge"]["use_policy"] == {
+        "feature_definition": True,
+        "historical_context": True,
+        "prospective_return_gate": False,
+    }
+    ours = benchmark["baselines"]["mastermindx"]
+    assert ours["claim_state"] == "not_complete_no_prospective_return_cohort"
+    assert all(row["prospective_row_count"] == 0 for row in ours["ledgers"])
+    assert all(
+        observation["claim_use"]
+        == "registration_baseline_only_not_completion_evidence"
+        for observation in ours["live_observations"]
+    )
+
+    historical = json.loads(TRACKED_RECEIPT.read_text(encoding="utf-8"))
+    source = benchmark["baselines"]["momoedge"]["source_receipt"]
+    assert hashlib.sha256(TRACKED_RECEIPT.read_bytes()).hexdigest() == source["sha256"]
+    metrics = benchmark["baselines"]["momoedge"]["metrics"]
+    additive = historical["displayed_additive_metrics"]
+    assert metrics["history_records"] == historical["input"]["record_count"] == 157
+    assert metrics["headline_wins"] == additive["headline_wins"] == 103
+    assert metrics["headline_win_rate_pct"] == additive["headline_win_rate_pct"] == 65.6
+    assert metrics["headline_total_alpha_pct"] == additive["headline_total_alpha_pct"]
+    assert metrics["option_return_observed_records"] == additive[
+        "option_return_observed_records"
+    ]
+    assert metrics["reconstruction_is_track_record"] is False
+
+
+def test_completion_benchmark_pins_same_basis_option_return_and_sparse_selector() -> None:
+    benchmark = json.loads(COMPLETION_PREREG.read_text(encoding="utf-8"))["benchmark"]
+    protocol = benchmark["prospective_return_protocol"]
+    quotes = protocol["quote_basis"]
+    cohort = protocol["cohort"]
+    stats = protocol["statistics"]
+
+    assert quotes["nbbo_required"] is True
+    assert quotes["entry_side"] == "first_valid_ask_at_or_after_trigger"
+    assert quotes["exit_side"] == (
+        "first_valid_bid_at_or_after_terminal_event_with_1555_et_expiry_liquidation"
+    )
+    assert quotes["max_quote_available_lag_sec"] == 600
+    assert quotes["fee_per_contract_per_side_usd"] == 0.65
+    assert quotes["mid_last_eod_substitution_allowed"] is False
+    assert cohort["minimum_covered_sessions"] == 63
+    assert cohort["minimum_closed_exact_option_outcomes_per_system"] == 60
+    assert cohort["minimum_capture_coverage_ratio"] == 0.95
+    assert cohort["maximum_authenticated_capture_gap_sec"] == 900
+    assert stats["bootstrap_replicates"] == 10_000
+    assert stats["random_seed"] == 20_260_811
+    assert stats["primary_pass_rule"] == (
+        "lower_confidence_bound_strictly_greater_than_zero"
+    )
+    assert stats["downside_noninferiority_margin_pct_points"] == 5.0
+    assert stats["headline_win_rate_role"] == (
+        "reported_context_only_not_a_pass_threshold"
+    )
+
+    sparse_gate = next(
+        gate for gate in benchmark["surpass_gates"] if gate["gate_id"] == "SP_SPARSE_ABSTENTION"
+    )
+    sparse_text = " ".join(
+        criterion["pass_condition"] for criterion in sparse_gate["criteria"]
+    )
+    assert "exactly one issued or abstained decision" in sparse_text
+    assert "may issue zero plans" in sparse_text
+    assert "never issue more than three new plans" in sparse_text
+    assert "no minimum quota or forced fill" in sparse_text
+
+    authority = benchmark["authority"]
+    assert authority["tier"] == "research_only"
+    for field in (
+        "signal_origination",
+        "prophet_promotion",
+        "neural_web_promotion",
+        "automatic_training",
+        "brokerage",
+        "completion_receipt_promotes_authority",
+    ):
+        assert authority[field] is False
 
 
 def test_tracked_receipt_is_aggregate_only_and_has_no_signal_authority() -> None:

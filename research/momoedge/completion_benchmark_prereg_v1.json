@@ -1,0 +1,457 @@
+{
+  "schema": "momoedge.completion_benchmark_prereg/v1",
+  "registration": {
+    "registered_at": "2026-08-11T14:30:19Z",
+    "repository": "mastermindx-market-intelligence/macro",
+    "baseline_commit": "e1100ee158a8b18576bbc6130276ef6f8becd373",
+    "effective_freeze_rule": "later_of_registered_at_and_first_origin_main_commit_containing_exact_benchmark_digest",
+    "canonicalization": "json_utf8_sort_keys_compact_no_ascii_escape/v1",
+    "benchmark_digest_sha256": "20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42"
+  },
+  "benchmark": {
+    "question": "Has MastermindX first caught up to MomoEdge's options workflow and then surpassed it with stronger point-in-time evidence, sparse abstention, and prospectively superior exact-option outcomes under one frozen comparison basis?",
+    "baselines": {
+      "momoedge": {
+        "source_receipt": {
+          "path": "research/momoedge/history_replay_wave0_receipt.json",
+          "sha256": "2ae7fcdefbe94fef9c50362116e84612b229c2f87b65873cc6478dc086c19b3f",
+          "schema": "momoedge.oracle_history_replay_wave0_receipt/v1",
+          "captured_at": "2026-08-09T03:27:52.187Z",
+          "authorization_validated": true
+        },
+        "metrics": {
+          "history_records": 157,
+          "headline_wins": 103,
+          "headline_win_rate_pct": 65.6,
+          "headline_total_alpha_pct": 1249.5,
+          "headline_definition": "SUM OF PER-TRADE RETURNS",
+          "option_records": 129,
+          "option_return_observed_records": 124,
+          "reconstructed_visible_option_sum_pct": 7206.6,
+          "visible_positive_returns": 100,
+          "visible_zero_returns": 4,
+          "visible_negative_returns": 53,
+          "reconstruction_is_track_record": false
+        },
+        "use_policy": {
+          "feature_definition": true,
+          "historical_context": true,
+          "prospective_return_gate": false
+        },
+        "limitations": [
+          "All 157 issue times are date-only, so no historical row proves an intraday decision cutoff.",
+          "The 124 visible option returns are reconstructed observations, not a capital-constrained or same-quote-basis track record.",
+          "The 65.6 percent headline win rate and 1249.5 percent additive headline remain context; neither is a threshold for the prospective option-return gate.",
+          "Twenty rows require unresolved temporal correction overlays and raw values remain uncorrected.",
+          "Eighteen history rows have no close date, so the 157-row display is not 157 timestamp-complete closes.",
+          "Authenticated raw rows and authorization material remain private outside git."
+        ]
+      },
+      "mastermindx": {
+        "commit": "e1100ee158a8b18576bbc6130276ef6f8becd373",
+        "ledgers": [
+          {
+            "path": "data/options_signal_episode/episodes.jsonl",
+            "sha256": "f2177c9ace2ecb2965a6356caa2a81c67495754ed06a63d84c0f34939521bc95",
+            "row_count": 384,
+            "prospective_row_count": 0,
+            "authority": "research_only"
+          },
+          {
+            "path": "data/options_signal_episode/outcomes_h60.jsonl",
+            "sha256": "462a92ed71dd442670948785cf57a4560a076c39b6519fa15ab117d192f0d697",
+            "row_count": 301,
+            "prospective_row_count": 0,
+            "authority": "research_only"
+          },
+          {
+            "path": "data/options_signal_episode/outcomes_session.jsonl",
+            "sha256": "8012a6d9b51b9300d23b2e515465f975ab1b297cfe725f6230ba66943cdb3ef0",
+            "row_count": 270,
+            "prospective_row_count": 0,
+            "authority": "research_only"
+          },
+          {
+            "path": "data/options_signal_episode/campaigns.jsonl",
+            "sha256": "db326f5c772ab417c43b8579ad50abb0434916922bda3a13c2da5b8303813910",
+            "row_count": 8,
+            "prospective_row_count": 0,
+            "authority": "research_only"
+          }
+        ],
+        "live_observations": [
+          {
+            "observation_id": "production_health",
+            "url": "https://mastermind-x.com/api/health",
+            "observed_at": "2026-08-11T14:30:19Z",
+            "response_sha256": "31139e6c04e2bf04d896637896cd6dc099ab4e285cc257fd5fae1974a7655d96",
+            "schema_or_status": "status=ok",
+            "facts": [
+              "checkout=e1100ee158a8b18576bbc6130276ef6f8becd373",
+              "render_commit=4b6644e27bc"
+            ],
+            "claim_use": "registration_baseline_only_not_completion_evidence"
+          },
+          {
+            "observation_id": "live_flow_meta",
+            "url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/live_flow/meta.json",
+            "observed_at": "2026-08-11T14:30:19Z",
+            "response_sha256": "9b86979a7f8d1d812b2df335ce8d9ac6099e37a235090b206f35025e6dbb9448",
+            "schema_or_status": "live_flow.meta/v2",
+            "facts": [
+              "source_asof=2026-08-11T14:18:41.939550Z",
+              "built_at=2026-08-11T14:18:55.313435Z",
+              "poll_floor_sec=120",
+              "observed_start_to_start_sec=561.518",
+              "fetch_compute_sec=705.765",
+              "roots_with_source_payload=53/53"
+            ],
+            "claim_use": "registration_baseline_only_not_completion_evidence"
+          },
+          {
+            "observation_id": "prophet_live_marks",
+            "url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/live_flow/prophet_marks.json",
+            "observed_at": "2026-08-11T14:30:19Z",
+            "response_sha256": "c626d98f5310f66171c87484a3b6079aab3bb7ae180908d52010e64633365ba3",
+            "schema_or_status": "prophet.live_marks/v1",
+            "facts": [
+              "payload_asof=2026-08-11T14:25:20Z",
+              "session_date=2026-08-11",
+              "exact_contract_mark_count=2",
+              "quotes_younger_than_15_minutes_at_observation=1/2",
+              "quote_time_range=2026-08-11T13:40:00Z..2026-08-11T14:18:03Z"
+            ],
+            "claim_use": "registration_baseline_only_not_completion_evidence"
+          }
+        ],
+        "claim_state": "not_complete_no_prospective_return_cohort"
+      }
+    },
+    "completion_rule": {
+      "catch_up_requires": [
+        "CU_FEATURE_PARITY",
+        "CU_CADENCE_TRUTH",
+        "CU_LIFECYCLE_AND_RETURN_READINESS",
+        "CU_BILINGUAL_MOBILE",
+        "CU_AUTHORITY_HONESTY"
+      ],
+      "surpass_requires_catch_up": true,
+      "surpass_requires": [
+        "SP_POINT_IN_TIME_PROVENANCE",
+        "SP_SPARSE_ABSTENTION",
+        "SP_PROSPECTIVE_OPTION_SUPERIORITY"
+      ],
+      "goal_complete_state": "surpass",
+      "partial_substitution_allowed": false,
+      "current_state_at_registration": "not_complete"
+    },
+    "catch_up_gates": [
+      {
+        "gate_id": "CU_FEATURE_PARITY",
+        "stage": "catch_up",
+        "all_required": true,
+        "criteria": [
+          {
+            "criterion_id": "CU_FEATURE_WORKFLOWS",
+            "pass_condition": "All eight capability workflows are reachable in the normal production product, backed by non-fixture data, and carry a schema, source clock, freshness state, and authority label: FLOW; PRICE_FLOW_HEATMAP; GEX_STRUCTURE; PRISM_GEX_OI_VOL_UNUSUAL_VEX; UNUSUAL_BASELINE; PROPHET_EXACT_OPTION_PLAN_LIFECYCLE_HISTORY; OPTIONS_ALERTS_AND_PREFERENCES; ONBOARDING_AND_EXPLANATIONS.",
+            "evidence_required": [
+              "Exact deployed commit or descendant for every producer and consumer.",
+              "Production URL and response or DOM receipt for every workflow.",
+              "A source-fresh, source-stale, and source-unavailable acceptance case for every data-backed workflow."
+            ]
+          },
+          {
+            "criterion_id": "CU_ALERT_CAPABILITIES",
+            "pass_condition": "Production alerts cover covered-tape premium, covered-tape 0DTE, gamma flip, call wall, and put wall; users can enable or disable types, set quiet hours, and receive deduplicated severity-labelled events. A stale or EOD-only source cannot fire an intraday structural alert.",
+            "evidence_required": [
+              "Production no-write preflight using current-session source receipts.",
+              "Deterministic stale, EOD placeholder, retained post-close quote, root-identity, deduplication, quiet-hours, and preference tests."
+            ]
+          },
+          {
+            "criterion_id": "CU_NO_FALSE_MARKET_WIDE_CLAIM",
+            "pass_condition": "Flow, unusual, heatmap, and alert copy names the covered roots or covered options tape and never implies complete market-wide observation when the source universe is bounded.",
+            "evidence_required": [
+              "Bilingual rendered-copy scan.",
+              "Machine-readable requested-root and successful-root coverage receipt."
+            ]
+          }
+        ]
+      },
+      {
+        "gate_id": "CU_CADENCE_TRUTH",
+        "stage": "catch_up",
+        "all_required": true,
+        "criteria": [
+          {
+            "criterion_id": "CU_FLOW_CADENCE",
+            "pass_condition": "Across 20 preregistered RTH observations scheduled at 10:00, 11:30, 13:00, and 14:30 America/New_York on each of five distinct NYSE sessions, with actual capture no more than 300 seconds from each scheduled clock, at least 19 observations have source age no greater than 900 seconds and successful-root coverage no lower than 0.90; every observation discloses poll_floor_sec, observed_start_to_start_sec, fetch_compute_sec, source-response clocks, and root counts; p95 observed_start_to_start_sec is no greater than 900 seconds.",
+            "evidence_required": [
+              "Twenty immutable live_flow.meta/v2 observation receipts.",
+              "Deterministic schedule manifest proving observations were not selected after values were known."
+            ]
+          },
+          {
+            "criterion_id": "CU_OPTION_MARK_CADENCE",
+            "pass_condition": "Across the same observations, at least 90 percent of independently quote-eligible active exact contracts are published or carry a reason-coded skip; at least 95 percent of published eligible marks have quote event age no greater than 900 seconds and payload publication age no greater than 600 seconds. Schedule configuration alone never satisfies this criterion.",
+            "evidence_required": [
+              "Active-plan denominator and independent quote-eligibility receipts.",
+              "prophet.live_marks/v1 or successor payload receipts with quote and publication clocks.",
+              "Reason-coded missing-quote ledger with no silent drops."
+            ]
+          },
+          {
+            "criterion_id": "CU_CADENCE_LABELS",
+            "pass_condition": "Every surface derives freshness from source and publication clocks; EOD data is labelled EOD, delayed data is labelled delayed, stale data is labelled stale, and no fixed refresh claim is inferred from a scheduler interval or poll floor.",
+            "evidence_required": [
+              "Production EN and ZH DOM receipts for fresh, delayed, stale, EOD, and unavailable states.",
+              "Clock-skew and after-hours falsifier tests."
+            ]
+          }
+        ]
+      },
+      {
+        "gate_id": "CU_LIFECYCLE_AND_RETURN_READINESS",
+        "stage": "catch_up",
+        "all_required": true,
+        "criteria": [
+          {
+            "criterion_id": "CU_EXACT_OPTION_PLAN",
+            "pass_condition": "Every issued Prophet plan fixes one exact OCC contract, direction, entry trigger, invalidation, at least one target, expiry, horizon, evidence digest, rule digest, and event and availability clocks before any return is observed; incomplete plans abstain.",
+            "evidence_required": [
+              "Strict schema and adversarial mutation tests.",
+              "Immutable production plan receipt with no option outcome fields at issue time."
+            ]
+          },
+          {
+            "criterion_id": "CU_LIFECYCLE_STATES",
+            "pass_condition": "The immutable lifecycle supports candidate to abstained or issued; issued to monitoring; monitoring to triggered, expired_untriggered, or cancelled_data_fault; triggered to active; active to target_1_hit, target_2_hit, invalidated, expired, or closed_early; and any terminal state to closed. Replays are byte-idempotent and an earlier conflicting transition fails closed.",
+            "evidence_required": [
+              "Transition-table tests covering every legal and illegal edge.",
+              "Production lifecycle receipt showing causal event, observed, and available clocks."
+            ]
+          },
+          {
+            "criterion_id": "CU_RETURN_READINESS",
+            "pass_condition": "At least ten post-freeze prospectively issued and terminal exact-option plans have complete returns under the frozen NBBO ask-to-bid formula in prospective_return_protocol, with outcome completeness at least 0.90 among quote-eligible terminal plans; no mid, last, EOD, underlying-return, reconstructed, or retrospective substitute is allowed.",
+            "evidence_required": [
+              "Aggregate privacy-preserving prospective return receipt bound to this benchmark digest.",
+              "Exact entry and exit quote receipts for every included outcome.",
+              "Explicit missingness and exclusion counts for every terminal plan."
+            ]
+          }
+        ]
+      },
+      {
+        "gate_id": "CU_BILINGUAL_MOBILE",
+        "stage": "catch_up",
+        "all_required": true,
+        "criteria": [
+          {
+            "criterion_id": "CU_LANGUAGE_PARITY",
+            "pass_condition": "Every visible label, guide, alert, lifecycle state, freshness state, reason code, warning, and empty state in the eight capability workflows has reviewed EN and ZH copy; ticker, OCC, source, schema, and numeric values remain untranslated; translated text is not hidden in title attributes.",
+            "evidence_required": [
+              "Automated visible-string inventory with zero missing EN or ZH keys.",
+              "Rendered EN and ZH receipts for every capability workflow."
+            ]
+          },
+          {
+            "criterion_id": "CU_RESPONSIVE_LAYOUT",
+            "pass_condition": "Every capability workflow passes in EN and ZH at 390x844, 768x1024, and 1440x900: no page-level horizontal overflow, clipped primary action, overlapping text, inaccessible lifecycle state, or freshness disclosure; dense tables may scroll only inside an explicit contained scroller.",
+            "evidence_required": [
+              "Automated containment assertions at all six language and viewport combinations per workflow.",
+              "Visual screenshots and keyboard-reachability receipts at 390x844 and 1440x900."
+            ]
+          }
+        ]
+      },
+      {
+        "gate_id": "CU_AUTHORITY_HONESTY",
+        "stage": "catch_up",
+        "all_required": true,
+        "criteria": [
+          {
+            "criterion_id": "CU_DIRECTION_AND_GEX_AUTHORITY",
+            "pass_condition": "Options direction without validated NBBO trade signing remains soft context; single-name dealer-sign GEX remains assumption-labelled; index and single-name structure are not conflated; stale, missing, or EOD evidence removes intraday availability instead of being reused as current evidence.",
+            "evidence_required": [
+              "Authority fields in every producer and consumer contract.",
+              "Falsifier tests for unsigned flow, stale GEX, missing root, and index versus single-name confusion."
+            ]
+          },
+          {
+            "criterion_id": "CU_LLM_AND_PROMOTION_FENCE",
+            "pass_condition": "LLM output may narrate or de-escalate deterministic evidence but cannot originate a direction, rank, score, lifecycle transition, alert escalation, or trade. Catch-up or surpass completion never promotes Prophet, Neural Web, training, or brokerage authority by itself.",
+            "evidence_required": [
+              "Consumer graph audit and prompt-output adversarial tests.",
+              "Separate promotion-receipt requirement in every scored or training consumer."
+            ]
+          }
+        ]
+      }
+    ],
+    "surpass_gates": [
+      {
+        "gate_id": "SP_POINT_IN_TIME_PROVENANCE",
+        "stage": "surpass",
+        "all_required": true,
+        "criteria": [
+          {
+            "criterion_id": "SP_CAUSAL_INPUT_COVERAGE",
+            "pass_condition": "Every candidate decision, issued plan, transition, quote, and outcome in the prospective cohort has stable identity, event_time, observed_at, available_at, source-vintage identity, source digest, rule digest, missingness, and quality; all input available_at clocks are no later than the decision they inform. Coverage is exactly 1.00 with no inferred clocks.",
+            "evidence_required": [
+              "Append-only cohort manifest and reproducible aggregate coverage receipt.",
+              "As-of replay showing byte-identical decisions without later revisions."
+            ]
+          },
+          {
+            "criterion_id": "SP_EVIDENCE_FAMILY_COVERAGE",
+            "pass_condition": "Every issued plan has a point-in-time price_technical receipt, options_structure receipt, and at least one macro_regime or news_alt_data receipt, plus a predeclared falsifier. Missing or late evidence produces abstention and cannot be imputed after the decision.",
+            "evidence_required": [
+              "Per-plan evidence-family manifest and as-of clocks.",
+              "Negative-evidence and missing-family abstention tests."
+            ]
+          }
+        ]
+      },
+      {
+        "gate_id": "SP_SPARSE_ABSTENTION",
+        "stage": "surpass",
+        "all_required": true,
+        "criteria": [
+          {
+            "criterion_id": "SP_COMPLETE_CANDIDATE_DENOMINATOR",
+            "pass_condition": "Before scoring, each session publishes an immutable candidate-manifest digest. Every prospectively available candidate in that manifest receives exactly one issued or abstained decision by the next selector cycle; denominator coverage is 1.00 and silent drops are forbidden.",
+            "evidence_required": [
+              "Candidate manifest, selector output, and one-to-one reconciliation receipt for every covered session.",
+              "Late-arrival, duplicate, reordered, missing, and conflicting-candidate falsifier tests."
+            ]
+          },
+          {
+            "criterion_id": "SP_SPARSE_ISSUANCE",
+            "pass_condition": "The selector may issue zero plans, may never issue more than three new plans in one NYSE session, has no minimum quota or forced fill, and records a stable reason-code vector for every abstention. A plan cannot be promoted merely to meet the prospective sample minimum.",
+            "evidence_required": [
+              "Per-session issue and abstention counts with reason-code distribution.",
+              "Zero-candidate, all-fail, tie, and more-than-three-passing-candidate tests."
+            ]
+          }
+        ]
+      },
+      {
+        "gate_id": "SP_PROSPECTIVE_OPTION_SUPERIORITY",
+        "stage": "surpass",
+        "all_required": true,
+        "criteria": [
+          {
+            "criterion_id": "SP_SAME_BASIS_COHORT",
+            "pass_condition": "MastermindX and MomoEdge are evaluated only on new exact-option calls first observed after the effective freeze, across the same covered RTH sessions, under the same licensed NBBO entry, exit, fee, missingness, and close rules. Both systems meet every cohort and capture minimum in prospective_return_protocol.",
+            "evidence_required": [
+              "Authorized private competitor capture with aggregate tracked receipt.",
+              "Two-system inclusion, exclusion, quote-coverage, and lifecycle-coverage reconciliation."
+            ]
+          },
+          {
+            "criterion_id": "SP_PRIMARY_RETURN_SUPERIORITY",
+            "pass_condition": "The frozen 95 percent stationary-block-bootstrap lower confidence bound for mean net exact-option return difference, MastermindX minus MomoEdge, is strictly greater than zero after at least 63 covered sessions and at least 60 complete closed exact-option outcomes per system.",
+            "evidence_required": [
+              "Reproducible metric code pinned to this benchmark digest and random seed 20260811.",
+              "Aggregate bootstrap distribution digest and confidence interval receipt."
+            ]
+          },
+          {
+            "criterion_id": "SP_DOWNSIDE_NONINFERIORITY",
+            "pass_condition": "MastermindX's tenth-percentile net exact-option return is no lower than MomoEdge's tenth percentile minus 5.0 percentage points on the same frozen cohort. Headline win rate is reported but cannot substitute for the primary or downside rule.",
+            "evidence_required": [
+              "Two-system percentile receipt with exact denominators.",
+              "No wins-only, additive-sum-only, best-trade, or post-hoc subgroup substitution."
+            ]
+          }
+        ]
+      }
+    ],
+    "prospective_return_protocol": {
+      "phase_fence": {
+        "retrospective_phase": "retrospective_discovery",
+        "prospective_phase": "prospective_after_benchmark_freeze",
+        "prospective_clock_field": "decision_available_at",
+        "prospective_digest_field": "benchmark_digest_sha256",
+        "retrospective_may_define_features": true,
+        "retrospective_may_satisfy_return_gate": false,
+        "missing_or_mismatched_phase_action": "exclude_and_count_as_incomplete"
+      },
+      "competitor_capture": {
+        "authentication": "user_controlled_authorized_subscription",
+        "raw_storage": "private_outside_git",
+        "tracked_output": "aggregate_privacy_preserving_receipt_only",
+        "session_coverage_rule": "exclude_session_from_both_systems_when_capture_gap_exceeds_limit"
+      },
+      "inclusion_requirements": [
+        "Decision or competitor first-observation available_at is at or after the effective freeze clock.",
+        "The row carries the exact benchmark digest and an unchanged selector and lifecycle rule version.",
+        "One exact OCC contract and one immutable trigger and terminal lifecycle are identified.",
+        "Entry and exit quotes are licensed OPRA NBBO observations with event and available clocks.",
+        "Every input quote was available no later than the metric computation clock.",
+        "The issue session is a covered two-system RTH capture session.",
+        "An otherwise open contract on its last tradable session receives a frozen expiry-liquidation terminal event at 15:55 America/New_York; it remains incomplete if no qualifying bid is available.",
+        "Duplicate contracts remain separate only when stable signal identifiers and trigger clocks differ."
+      ],
+      "exclusion_reasons": [
+        "before_effective_freeze",
+        "retrospective_or_missing_phase",
+        "benchmark_digest_mismatch",
+        "selector_or_lifecycle_version_mismatch",
+        "missing_exact_occ_contract",
+        "missing_or_late_entry_nbbo",
+        "missing_or_late_exit_nbbo",
+        "crossed_or_invalid_nbbo",
+        "missing_terminal_clock",
+        "uncovered_capture_session",
+        "duplicate_stable_signal_identity"
+      ],
+      "quote_basis": {
+        "source_class": "licensed_opra_nbbo_with_event_and_available_clocks",
+        "nbbo_required": true,
+        "entry_side": "first_valid_ask_at_or_after_trigger",
+        "exit_side": "first_valid_bid_at_or_after_terminal_event_with_1555_et_expiry_liquidation",
+        "max_quote_available_lag_sec": 600,
+        "fee_per_contract_per_side_usd": 0.65,
+        "contracts_per_observation": 1,
+        "return_formula": "100*((100*exit_bid-fee)-(100*entry_ask+fee))/(100*entry_ask+fee)",
+        "mid_last_eod_substitution_allowed": false
+      },
+      "cohort": {
+        "session_scope": "NYSE_RTH_sessions_after_effective_freeze",
+        "minimum_covered_sessions": 63,
+        "minimum_closed_exact_option_outcomes_per_system": 60,
+        "minimum_capture_coverage_ratio": 0.95,
+        "maximum_authenticated_capture_gap_sec": 900,
+        "same_window_required": true,
+        "open_outcomes_at_cutoff": "retained_open_not_counted_closed"
+      },
+      "statistics": {
+        "primary_metric": "mean_net_exact_option_return_pct_difference_ours_minus_momoedge",
+        "resampling_unit": "issue_session_stationary_block_bootstrap",
+        "block_length_sessions": 5,
+        "bootstrap_replicates": 10000,
+        "random_seed": 20260811,
+        "confidence_level": 0.95,
+        "primary_pass_rule": "lower_confidence_bound_strictly_greater_than_zero",
+        "downside_metric": "tenth_percentile_net_exact_option_return_pct",
+        "downside_noninferiority_margin_pct_points": 5.0,
+        "downside_pass_rule": "ours_greater_than_or_equal_to_momoedge_minus_margin",
+        "headline_win_rate_role": "reported_context_only_not_a_pass_threshold"
+      },
+      "retuning_policy": "any_selector_lifecycle_quote_or_metric_change_starts_a_new_version_and_new_forward_cohort"
+    },
+    "authority": {
+      "tier": "research_only",
+      "signal_origination": false,
+      "prophet_promotion": false,
+      "neural_web_promotion": false,
+      "automatic_training": false,
+      "brokerage": false,
+      "completion_receipt_promotes_authority": false,
+      "direction_without_nbbo": "soft_context_only",
+      "llm_role": "narrate_and_deescalate_only_never_originate_rank_or_escalate"
+    }
+  }
+}
