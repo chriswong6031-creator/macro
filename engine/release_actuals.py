@@ -118,6 +118,15 @@ _EXPLICIT_REFERENCE_FIELDS = (
     "forecast_period",
     "reference_period",
 )
+_DEFECT_SIDECAR_SCHEMA = "official_actual_defects.v1"
+_SOURCE_BINDING_DEFECT = "known_source_binding_defect"
+_DEFECT_SIDECAR_INVALID = "official_actual_defect_sidecar_invalid"
+DEFAULT_DEFECTS_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "data"
+    / "release_forecast"
+    / "official_actual_defects.json"
+)
 
 
 def _monthly_period(release_day: date) -> str:
@@ -323,7 +332,54 @@ def _receipt_id(payload: dict[str, Any]) -> str:
     return "official_actual:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:24]
 
 
-def normalize_publication(publication: dict[str, Any]) -> list[dict[str, Any]]:
+def _known_receipt_defect_errors(
+    row: Any,
+    *,
+    defects_path: str | Path = DEFAULT_DEFECTS_PATH,
+) -> list[str]:
+    """Return immutable sidecar defects without silently dropping bad governance data.
+
+    An absent sidecar means no local quarantine policy and therefore fails open.
+    Once a sidecar exists, an unreadable/invalid root fails closed for every receipt.
+    A receipt ID present in the keyed defect map remains quarantined even when its
+    matching metadata is malformed; a damaged entry must never revive known-bad
+    scoring truth.
+    """
+    try:
+        payload = json.loads(Path(defects_path).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return []
+    except (OSError, ValueError, TypeError):
+        return [_DEFECT_SIDECAR_INVALID]
+
+    if (
+        not isinstance(payload, dict)
+        or payload.get("schema") != _DEFECT_SIDECAR_SCHEMA
+        or not isinstance(payload.get("defects_by_receipt"), dict)
+    ):
+        return [_DEFECT_SIDECAR_INVALID]
+
+    receipt_id = row.get("receipt_id") if isinstance(row, dict) else None
+    defects = payload["defects_by_receipt"]
+    if not isinstance(receipt_id, str) or receipt_id not in defects:
+        return []
+
+    defect = defects[receipt_id]
+    if not isinstance(defect, dict):
+        return [_SOURCE_BINDING_DEFECT]
+    # Receipt-ID membership is the immutable quarantine decision.  The remaining
+    # fields are audit metadata; malformed matching metadata fails closed under the
+    # same explicit defect rather than accidentally unquarantining the receipt.
+    if defect.get("defect_code") != _SOURCE_BINDING_DEFECT:
+        return [_SOURCE_BINDING_DEFECT]
+    return [_SOURCE_BINDING_DEFECT]
+
+
+def normalize_publication(
+    publication: dict[str, Any],
+    *,
+    defects_path: str | Path = DEFAULT_DEFECTS_PATH,
+) -> list[dict[str, Any]]:
     """Normalize one verified live-publication row; fail closed to ``[]``.
 
     Parser prose is required to resolve to the source/feed reference period (or
@@ -424,10 +480,18 @@ def normalize_publication(publication: dict[str, Any]) -> list[dict[str, Any]]:
                 "authority": False,
             }
         )
-    return [row for row in rows if not receipt_integrity_errors(row)]
+    return [
+        row
+        for row in rows
+        if not receipt_integrity_errors(row, defects_path=defects_path)
+    ]
 
 
-def receipt_integrity_errors(row: Any) -> list[str]:
+def receipt_integrity_errors(
+    row: Any,
+    *,
+    defects_path: str | Path = DEFAULT_DEFECTS_PATH,
+) -> list[str]:
     """Return scoring-integrity violations for one persisted actual receipt."""
     if not isinstance(row, dict):
         return ["not_object"]
@@ -544,22 +608,31 @@ def receipt_integrity_errors(row: Any) -> list[str]:
         }
         if row.get("receipt_id") != _receipt_id(identity):
             errors.append("receipt_id_mismatch")
+    errors.extend(_known_receipt_defect_errors(row, defects_path=defects_path))
     return errors
 
 
-def is_scoring_truth_eligible(row: Any) -> bool:
+def is_scoring_truth_eligible(
+    row: Any,
+    *,
+    defects_path: str | Path = DEFAULT_DEFECTS_PATH,
+) -> bool:
     """Whether a receipt may serve as canonical scoring truth."""
-    return not receipt_integrity_errors(row)
+    return not receipt_integrity_errors(row, defects_path=defects_path)
 
 
-def receipts_from_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
+def receipts_from_payload(
+    payload: dict[str, Any],
+    *,
+    defects_path: str | Path = DEFAULT_DEFECTS_PATH,
+) -> list[dict[str, Any]]:
     """Extract de-duplicated official receipts from ``release_publications.v2``."""
     if not isinstance(payload, dict) or payload.get("schema") != "release_publications.v2":
         return []
     rows: list[dict[str, Any]] = []
     seen: set[str] = set()
     for publication in payload.get("publications") or []:
-        for row in normalize_publication(publication):
+        for row in normalize_publication(publication, defects_path=defects_path):
             receipt_id = row["receipt_id"]
             if receipt_id not in seen:
                 rows.append(row)
@@ -584,7 +657,10 @@ def load_actual_ledger(path: str | Path) -> list[dict[str, Any]]:
 
 
 def reconcile_receipts(
-    payload: dict[str, Any], existing: Iterable[dict[str, Any]]
+    payload: dict[str, Any],
+    existing: Iterable[dict[str, Any]],
+    *,
+    defects_path: str | Path = DEFAULT_DEFECTS_PATH,
 ) -> list[dict[str, Any]]:
     """Return only novel keep-first receipts.
 
@@ -597,12 +673,12 @@ def reconcile_receipts(
     existing_ids = {str(row.get("receipt_id")) for row in existing_rows}
     first_by_key: dict[tuple[str, str, str], dict[str, Any]] = {}
     for row in existing_rows:
-        if is_scoring_truth_eligible(row):
+        if is_scoring_truth_eligible(row, defects_path=defects_path):
             key = (str(row.get("release")), str(row.get("period")), str(row.get("sequence") or "first"))
             first_by_key.setdefault(key, row)
 
     novel: list[dict[str, Any]] = []
-    for row in receipts_from_payload(payload):
+    for row in receipts_from_payload(payload, defects_path=defects_path):
         if row["receipt_id"] in existing_ids:
             continue
         key = (row["release"], row["period"], row["sequence"])
@@ -622,12 +698,16 @@ def reconcile_receipts(
 
 
 def canonical_actual(
-    rows: Iterable[dict[str, Any]], release: str, period: str
+    rows: Iterable[dict[str, Any]],
+    release: str,
+    period: str,
+    *,
+    defects_path: str | Path = DEFAULT_DEFECTS_PATH,
 ) -> dict[str, Any] | None:
     """Return the keep-first canonical official actual for a target."""
     candidates = [
         row for row in rows
-        if is_scoring_truth_eligible(row)
+        if is_scoring_truth_eligible(row, defects_path=defects_path)
         and row.get("release") == release
         and row.get("period") == period
     ]
