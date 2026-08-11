@@ -443,3 +443,90 @@ def test_the_prompt_and_the_gate_state_the_same_law():
     for retired in ("Mix 'I' and 'we'",
                     "Give a stance: watching, leaning, respecting, fading"):
         assert retired not in prompt, retired
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The offer side. Every test above screens what the model WROTE; these three
+# screen what the house OFFERS it. A ban plus a standing offer of the banned
+# thing is the self-cancelling shape, and all three of these shipped that way
+# (#5291 follow-ups 1, 2 and 5, closed 2026-08-11).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_the_stance_glyph_set_offers_no_question_mark():
+    """FOLLOW-UP 1. `❔` is a rhetorical question with its punctuation drawn
+    instead of typed. v5 bans the question register, and the glyph set is read
+    by the prompt (the offer) AND by `chart_caption_violations` (the gate), so
+    leaving it in one place kept the register legal in both."""
+    for glyph in ("❔", "❓", "⁉️"):
+        assert glyph not in cw.CHART_STANCE_GLYPHS, glyph
+    cfg = (ROOT / "config/marketing.yml").read_text(encoding="utf-8")
+    offers = [ln for ln in cfg.splitlines()
+              if "stance glyph" in ln and not ln.lstrip().startswith("#")]
+    assert offers, "the config's stance-glyph law line vanished; re-point this test"
+    for line in offers:
+        assert "❔" not in line, (
+            "config/marketing.yml still offers the question glyph the module "
+            f"retired — the two sides must move together: {line.strip()[:90]}")
+    # And the gate now SEES it, rather than passing it as an allowed glyph.
+    ctx = {"type": "chart", "shape": "caption"}
+    assert any("outside the stance set" in v
+               for v in cw.chart_caption_violations("NVDA holds 209 ❔", ctx))
+
+
+def test_no_persona_dial_grants_what_the_copy_gate_rejects():
+    """FOLLOW-UP 2. Meagan's §5 grant of one exclamation per post outlived the
+    v5 ban, and the ban is fail-CLOSED: the post is dropped, not downgraded. So
+    a desk exercising its registered quirk lost the post.
+
+    Written as the general law rather than as "meagan has no grant": any future
+    dial grant whose output `voice_v5_violations` rejects is the same defect."""
+    from engine.marketing import expression_dial as ed  # noqa: PLC0415
+
+    roster = sorted(ed.codex_index(ROOT))
+    assert len(roster) >= 5, ("ANTI-VACUOUS: the roster walk resolved almost "
+                              f"nothing, so it can prove nothing: {roster}")
+    rejected = cw.voice_v5_violations("The dollar agreed!", {"type": "chart"})
+    assert rejected, ("ANTI-VACUOUS: the gate stopped rejecting '!' — this test "
+                      "would then pass for the wrong reason")
+
+    granted_by = [a for a in roster
+                  if (c := ed.codex_for(a, root=ROOT)) is not None
+                  and "exclamation" in c.granted]
+    assert not granted_by, (
+        f"{granted_by} carry a dial grant for a mark the post-time gate rejects "
+        f"outright ({rejected[0]}) — the grant buys a dropped post, not a voice")
+
+
+def test_the_retired_time_marker_is_gone_from_the_producers_not_the_detector():
+    """FOLLOW-UP 5. "so far today" was 79 of 679 shipped items. The gate landed
+    with #5291 but two PRODUCERS kept offering the phrase: the wire's rth marker
+    pair and the Hot Tape prompt's live-marker line.
+
+    `market_clock` keeps it and MUST — that list is a DETECTOR, and a phrase the
+    desk no longer writes still has to be recognised in relayed and archived
+    copy. Deleting it there would be the shrink-direction blindness, not a fix.
+    """
+    from engine.marketing import hot_tape_llm as htl  # noqa: PLC0415
+    from engine.marketing import hot_tape_wire as htw  # noqa: PLC0415
+    from engine.marketing import market_clock as mc  # noqa: PLC0415
+
+    census = htw.static_strings()
+    assert len(census) >= 50, ("ANTI-VACUOUS: the wire's static-copy census "
+                               f"resolved {len(census)} strings")
+    offenders = [s for s in census if "so far today" in s.lower()]
+    assert not offenders, offenders
+    assert "so far today" not in " ".join(htw._LIVE_MARKERS["rth"]).lower()
+    assert htw._LIVE_MARKERS["rth"], "the rth phase lost its marker pair entirely"
+
+    # The prompt quotes every marker it OFFERS. It may still name the phrase to
+    # forbid it, which is why this pins the quoted form rather than the words.
+    assert '"so far today"' not in htl.SYSTEM_PROMPT, (
+        "the Hot Tape prompt still offers the retired marker in the same "
+        "quoted form as the live ones")
+    assert '"today"' in htl.SYSTEM_PROMPT, (
+        "ANTI-VACUOUS: the live markers are quoted in this prompt, and the "
+        "assertion above means nothing if that convention changed")
+
+    assert any("so far today" in str(p).lower() for p in mc._TODAY_WORDS), (
+        "the market_clock DETECTOR must keep the phrase — a producer sweep that "
+        "blinds the detector deletes the evidence instead of the defect")

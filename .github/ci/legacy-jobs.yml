@@ -4030,7 +4030,15 @@ jobs:
         # multi-account tests were asserting behaviour the fix deliberately
         # narrows. Unrun, that would have been a silent rot. Same deps as the
         # rest of this lane, verified green.
-        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_outbox_single_composition.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_outbox_garbage.py tests/test_marketing_metrics_poll.py tests/test_marketing_weekend_levels.py -q
+        # test_marketing_metrics_poll_quota joins 2026-08-11 (#5306 follow-up).
+        # It shipped WITH the 429 fix and was baselined unrun in the same breath,
+        # so the poller's own two bounds — stop-on-first-429 and cap-the-run —
+        # had no job at all, and #5306 had to duplicate three coarser pins into
+        # test_marketing_metrics_poll.py to get ANY guard that executes. Both
+        # halves now run in one step, next to the sibling they were split from.
+        # Same deps, zero network: the Buffer publisher is a counting stub and
+        # every write goes to tmp_path.
+        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_outbox_single_composition.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_outbox_garbage.py tests/test_marketing_metrics_poll.py tests/test_marketing_metrics_poll_quota.py tests/test_marketing_weekend_levels.py -q
       - name: stale backlog quarantine + optional publish-time phrase fallback
         run: python -m pytest tests/test_marketing_stale_purge.py tests/test_publish_time_llm_phrase.py -q
       - name: liveness tripwire rule engine (the green-and-dark alarm)

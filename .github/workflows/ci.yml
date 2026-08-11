@@ -2435,6 +2435,9 @@ on:
       # covers the engine changes; the poller script + its tests are explicit.
       - "scripts/marketing_metrics_poll.py"
       - "tests/test_marketing_metrics_poll.py"
+      # Both halves on purpose: the quota suite was wired 2026-08-11 and an edit
+      # to a test that no path selects is a test nobody can prove they changed.
+      - "tests/test_marketing_metrics_poll_quota.py"
       - "tests/test_marketing_chart_png.py"
       - "tests/test_marketing_media_publish.py"
       - "tests/test_share_cards.py"

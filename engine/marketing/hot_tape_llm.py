@@ -164,7 +164,7 @@ LAWS
 3. No advice and no calls. Nothing that tells the reader to do anything — no buying, selling, entries, exits, targets, sizing or positions. You report the tape.
 4. Zoom out when the packet has the layers: today's move, then the multi-day move, then the distance from the high, then the dollar translation.
 5. Use the "since <date>" quantifiers and the streak counts the packet gives you. That is the differentiating stat and it is the whole product. A bare percent-move post is the flop case.
-6. Live markers where the packet says they are true: "today", "so far today", "right now". BREAKING and ALL-CAPS sparingly — wire register, not shouting.
+6. Live markers where the packet says they are true: "today", "right now". Never write so far today: inside the session today already means it, and a validator rejects the longer form. BREAKING and ALL-CAPS sparingly — wire register, not shouting.
 7. No hashtags. No emoji. Cashtags: use exactly the cashtags the packet lists. For a single-name item the primary cashtag appears exactly once.
 8. {SOFT_CHAR_CAP} characters maximum. The hard cap is 280 — leave the headroom.
 9. Output the post text only. No JSON, no quotes around it, no preamble, no sign-off.
@@ -568,16 +568,69 @@ def _fmt_plain(v: float) -> str:
     return f"{v:g}"
 
 
+#: Key-name tokens that make a numeric leaf a DOLLAR AMOUNT rather than a count.
+#: Split on non-alphanumerics, so "mcap_live_usd" -> {mcap, live, usd} hits twice.
+_MONEY_KEY_TOKENS: frozenset[str] = frozenset({
+    "mcap", "marketcap", "cap", "usd", "dollar", "dollars", "value",
+    "revenue", "notional", "valuation", "aum", "proceeds", "sales",
+})
+
+
+def _money_magnitudes(node: Any, key: str = "") -> set[float]:
+    """Absolute magnitudes of numeric leaves reached under a MONEY-NAMED key.
+
+    The nearest enclosing key governs, so a list of figures under ``mcap_usd``
+    is money all the way down. Keyless containers (a top-level list) inherit
+    whatever key they arrived under, which is the same rule the reader applies.
+    """
+    if isinstance(node, bool):
+        return set()
+    if isinstance(node, (int, float)):
+        toks = set(re.split(r"[^a-z0-9]+", str(key).lower()))
+        if not toks & _MONEY_KEY_TOKENS:
+            return set()
+        try:
+            f = abs(float(node))
+        except (TypeError, ValueError, OverflowError):
+            return set()
+        return {f} if math.isfinite(f) else set()
+    if isinstance(node, dict):
+        out: set[float] = set()
+        for k, v in node.items():
+            out |= _money_magnitudes(v, str(k))
+        return out
+    if isinstance(node, (list, tuple, set)):
+        out = set()
+        for v in node:
+            out |= _money_magnitudes(v, key)
+        return out
+    return set()
+
+
 def numbers_whitelist(packet: dict) -> list[str]:
     """The ALLOWED NUMBERS list handed to the model, in display form.
 
     One entry per engine-computed fact, formatted the way the corpus writes it:
-    plain integers/decimals for percents and counts, and BOTH the scale form
-    ("$200 billion") and the written-out form ("200,000,000,000") for anything
-    a reader would not parse as digits. Date strings ride along verbatim — the
-    "since <date>" device is the differentiating stat, not decoration.
+    plain integers/decimals for percents and counts, and the scale form
+    ("$200 billion") for anything a reader would not parse as digits. Date
+    strings ride along verbatim — the "since <date>" device is the
+    differentiating stat, not decoration.
+
+    A MONEY LEAF OVER A MILLION IS OFFERED IN THE SCALE FORM ONLY (v5 ban 8,
+    #5291 follow-up 4). This list is the model's entire vocabulary of numbers,
+    and it used to hand over BOTH "$7.64 billion" AND "7,639,791,784" for the
+    same market cap, because it was type-blind: a leaf was a magnitude and
+    nothing else. The model took the digits, and `$7,639,791,784` shipped —
+    against a house law (`wire_format.humanize_money`) that says a dollar figure
+    is written the way a trader writes it. Offering a form the copy may never
+    carry is the self-cancelling shape the 2026-07-31 autopsy class exists to
+    catch, so the fix is at the source: the raw forms are not offered at all.
+
+    COUNTS ARE UNTOUCHED. "19 of 22 members" and a seven-figure share volume are
+    facts a reader parses as digits, and no law reshapes them.
     """
     numbers, strings = _packet_leaves(packet)
+    money = _money_magnitudes(packet)
     seen: set[str] = set()
     out: list[str] = []
 
@@ -593,6 +646,8 @@ def numbers_whitelist(packet: dict) -> list[str]:
                 if a >= div:
                     _add(f"${_fmt_plain(a / div)} {word}")
                     break
+            if a in money:
+                continue
             _add(f"{a:,.0f}")
         _add(_fmt_plain(v))
 

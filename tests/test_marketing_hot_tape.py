@@ -578,7 +578,10 @@ class TestSessionMarkers:
         packet = rich_packets()["mover_drop"]
         packet.session = "pre_open"
         text = W.compose_wire(packet)["text"]
-        assert not any(m in text for m in ("at the close", "so far today", "right now"))
+        # "today" replaced "so far today" as rth's other marker on 2026-08-11
+        # (v5 ban 6, #5291 follow-up 5), so it is now what a pre_open post must
+        # not borrow: premarket is not the session.
+        assert not any(m in text for m in ("at the close", "today", "right now"))
 
 
 class TestEasternWindow:

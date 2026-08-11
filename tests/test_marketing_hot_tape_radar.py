@@ -1443,7 +1443,10 @@ class TestLLMPhrasing:
         assert out["cashtag"] is None                  # breadth post, no primary
         assert "severity" not in json.dumps(out)
         assert "1799999999999" not in json.dumps(out)
-        assert out["live_marker"] in ("so far today", "right now")
+        # "so far today" was the other rth marker until 2026-08-11 (v5 ban 6,
+        # #5291 follow-up 5); inside the session "today" already means it, and
+        # the copy gate rejects the longer form on the wire too.
+        assert out["live_marker"] in ("today", "right now")
 
     def test_the_llm_packet_lists_every_cashtag_the_copy_may_name(self):
         packet = FactPacket(

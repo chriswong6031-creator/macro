@@ -158,6 +158,17 @@ _LAWFUL_COPY: tuple[str, ...] = (
     "A flush this deep after weeks of selling is capitulation territory.",
     "That's a fact about crowds, not a buy signal.",
     "Sell pressure finally let up.",
+    # ── the plural AGENT nouns (2026-08-11, #5291 follow-up 3) ───────────────
+    # Same class one word further on. "buyers" only had to reach `buy\w*` to be
+    # read as a trade decision, and any frame word in the sentence supplied the
+    # other half: the SHIPPED weekend downtrend headline below was quarantined
+    # by the word "not". Naming which crowd is absent describes the tape and
+    # prescribes nothing. The first entry is the live bank literal
+    # (weekend_levels._HEADLINES["downtrend"]), not a paraphrase of it; the
+    # must-fire direction is pinned by the carve-out test below.
+    "$T is not finding buyers",
+    "No buyers showed up at 209.",
+    "Sellers are not done yet.",
 )
 
 
@@ -178,6 +189,32 @@ def test_detector_stays_quiet_on_lawful_copy():
     noisy = [(s, copywriter.uncomputed_stance(s)[:1]) for s in _LAWFUL_COPY
              if copywriter.uncomputed_stance(s)]
     assert not noisy, f"detector over-fires on lawful copy: {noisy}"
+
+
+def test_the_agent_noun_carve_out_does_not_reach_the_desks_own_participation():
+    """THE OTHER SIDE OF FOLLOW-UP 3. Stripping the plural crowd noun narrows
+    the rule; stripping it everywhere would DISARM it, because "worth being
+    buyers under 33" is the desk joining the crowd, which is a stance and the
+    exact thing this detector exists for.
+
+    The singular is never stripped and "be/being/been buyers" is carved back
+    out, so both shapes still fire."""
+    for stance in ("Worth being buyers under 33.",
+                   "Worth being a buyer here.",
+                   "Not a buyer until it stops going down."):
+        assert copywriter.uncomputed_stance(stance), (
+            f"the agent-noun carve-out swallowed a real stance: {stance!r}")
+
+    from engine.marketing import weekend_levels as wl  # noqa: PLC0415
+
+    shipped = wl._HEADLINES["downtrend"]
+    assert "$T is not finding buyers" in shipped, (
+        "the headline this narrowing was written for left the bank; re-point "
+        f"this test at whatever replaced it: {shipped}")
+    quarantined = [h for h in shipped if copywriter.uncomputed_stance(h)]
+    assert not quarantined, (
+        "the weekend downtrend headlines describe a tape and prescribe "
+        f"nothing, but the detector reads them as instructions: {quarantined}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

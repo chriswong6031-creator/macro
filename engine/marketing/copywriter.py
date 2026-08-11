@@ -1987,7 +1987,16 @@ _CAPTION_SHAPES: frozenset[str] = frozenset({"caption", "one_liner"})
 #: allow-list, not suggestion: a glyph outside it is either the alarm register
 #: (🚨, which belongs to the wire lanes) or the ledger register (🟢🔴, which
 #: belongs to receipts), and the three registers never mix.
-CHART_STANCE_GLYPHS: tuple[str, ...] = ("👀", "🔥", "🩸", "🌶️", "😬", "✅", "❔", "📌")
+#:
+#: ❔ WAS REMOVED 2026-08-11 (v5 ban 2, #5291 follow-up 1). It is a rhetorical
+#: question with the punctuation drawn instead of typed: the doctrine bans the
+#: question register outright, and banning `?` while the allow-list still hands
+#: the model the emoji spelling of one is how a killed register comes back. The
+#: set is read by BOTH the prompt (offer) and `chart_caption_violations`
+#: (enforcement), so it leaves in one edit — and because the glyph sits in the
+#: 0x2600 block `_is_emoji` already covers, a caption that carries it now reports
+#: as outside the stance set rather than passing.
+CHART_STANCE_GLYPHS: tuple[str, ...] = ("👀", "🔥", "🩸", "🌶️", "😬", "✅", "📌")
 
 #: The four chart-family copy shapes, kept as data so the prompt and any
 #: validator read the same text.
@@ -2967,11 +2976,22 @@ def abstention_violations(text: str) -> list[str]:
 #:      "the buy side". These name a phenomenon, and copy most often reaches for
 #:      them to DENY one ("that's a fact about crowds, not a buy signal"), which
 #:      is the exact opposite of issuing an instruction.
+#:   3. the PLURAL AGENT NOUN - "$T is not finding buyers", "no sellers left".
+#:      Shipped (weekend_levels `downtrend` headline #2) and quarantined by this
+#:      detector on the frame word "not", which is the shape-rule failure the
+#:      carve-out above already exists for: "buyers" is a crowd on the tape, and
+#:      naming who is absent prescribes nothing. The word only had to reach
+#:      `buy\w*` to be read as a trade decision.
+#:      SINGULAR IS LEFT ALONE, and "being buyers" is carved back out of the
+#:      strip: "worth being a buyer here" / "worth being buyers under 33" is the
+#:      desk casting ITSELF as the participant, which is a stance and must keep
+#:      firing. Absent that guard this narrowing would be a disarm.
 _STANCE_DESCRIPTIVE_ACTION_RE = re.compile(
     r"\b(?:of|after|through|amid|despite|during|following)\s+"
     r"(?:\w+\s+){0,2}?(?:buy\w*|sell\w*|dip[-\s]?buy\w*)\b"
     r"|\b(?:buy|sell)\s+"
-    r"(?:signal|side|pressure|flow|program|order|wall|volume|tape)\b",
+    r"(?:signal|side|pressure|flow|program|order|wall|volume|tape)\b"
+    r"|(?<!\bbe\s)(?<!\bbeing\s)(?<!\bbeen\s)\b(?:buyers|sellers)\b",
     re.IGNORECASE,
 )
 

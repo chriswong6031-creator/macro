@@ -260,11 +260,11 @@ def test_the_signature_emoji_of_another_desk_is_off_signature():
 
 
 def test_sophia_may_not_carry_an_exclamation_at_any_dial():
-    """§5: 'zero exclamations'. Meagan is the only desk granted one."""
+    """§5: 'zero exclamations'. NOBODY is granted one any more — see
+    test_no_desk_on_the_roster_is_granted_an_exclamation."""
     for kind in ("macro", "chart"):
         out = _dial_violations("sophia", "The dollar agreed!", kind=kind)
         assert any("unwhitelisted quirk 'exclamation'" in v for v in out), out
-    assert "exclamation" in ED.codex_for("meagan", root=ROOT).granted
 
 
 def test_the_founders_whitelist_is_deliberately_empty():
@@ -654,9 +654,25 @@ def test_apply_pass_downgrades_an_ungranted_exclamation():
     assert bd.endswith("agreed.")
 
 
-def test_apply_pass_leaves_a_granted_exclamation_alone():
+def test_no_desk_on_the_roster_is_granted_an_exclamation():
+    """WAS test_apply_pass_leaves_a_granted_exclamation_alone, which pinned
+    Meagan's §5 grant of one exclamation per post.
+
+    The grant was RETIRED 2026-08-11 (v5 ban 6, #5291 follow-up 2). It was the
+    last one on the roster, and it had become a grant of a DROPPED POST:
+    `copywriter.voice_v5_violations` rejects any '!' on a non-wire kind and that
+    gate is fail-closed. With the dial no longer granting it, her exclamation is
+    downgraded to a period on the way in, which is a repair rather than a loss.
+
+    The `granted` branch in `apply_pass` is deliberately left in the module: the
+    dial is generic, and a marker with no current holder is not dead code."""
+    for account in _DIAL_ACCOUNTS:
+        codex = ED.codex_for(account, root=ROOT)
+        assert codex is None or "exclamation" not in codex.granted, (
+            f"{account} grants an exclamation the copy gate rejects outright — "
+            "the dial must never grant what validate_copy drops the post for")
     _hl, bd = ED.apply_pass("h", "The dollar agreed!", account="meagan", kind="chart")
-    assert bd.endswith("agreed!")
+    assert bd.endswith("agreed."), bd
 
 
 def test_apply_pass_is_a_no_op_off_the_dial():

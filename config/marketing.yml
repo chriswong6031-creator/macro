@@ -2212,7 +2212,10 @@ copywriter:
     - 'a post with a chart attached aims for 7 to 12 words and never exceeds 100 characters on a single-line shape; the chart says the rest'
     - 'the timeframe is printed in the chart header (TICKER WEEKLY); never spend caption words restating the horizon'
     - 'a number in a chart caption is only allowed when the chart already restates it in frame (a level tag, a measurement box, a callout); a validator enforces this and drops the post otherwise, so reach for the number only when the picture is carrying it'
-    - 'the stance glyph is terminal punctuation and comes from this set only: 👀 🔥 🩸 🌶️ 😬 ✅ ❔ 📌. Tension reads better than celebration. Alarm 🚨 and ledger 🟢🔴 glyphs belong to other lanes and never appear on a chart post'
+    # ❔ left this set 2026-08-11 with the same glyph in copywriter.CHART_STANCE_GLYPHS
+    # (v5 ban 2, #5291 follow-up 1): it is a rhetorical question with its
+    # punctuation drawn instead of typed, and the question register is banned.
+    - 'the stance glyph is terminal punctuation and comes from this set only: 👀 🔥 🩸 🌶️ 😬 ✅ 📌. Tension reads better than celebration. Alarm 🚨 and ledger 🟢🔴 glyphs belong to other lanes and never appear on a chart post'
     - 'stage language is plain words: base building, marking up, stalling out, under distribution. The numbered Weinstein form is a CHART LABEL and never appears in copy'
     - 'a superlative ("heaviest week of volume in three years", "longest red run since 2022") may only carry the scope the fact layer computed, and the chart must draw that whole window; never "ever", never "in history"'
   personas:

@@ -158,6 +158,37 @@ def test_trillion_scale_form_accepted():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 3b. The OFFER — `numbers_whitelist` is the model's whole vocabulary of numbers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_a_money_leaf_is_offered_in_the_scale_form_only():
+    """#5291 follow-up 4. The list was TYPE-BLIND: every leaf over a million
+    came with BOTH "$200 billion" and "200,000,000,000", because a leaf was a
+    magnitude and nothing else. The model took the digits and `$7,639,791,784`
+    shipped, against the house money law (`wire_format.humanize_money`).
+
+    The OFFER narrows; the GATE deliberately does not (see the test above — a
+    gate that started rejecting the written-out form would drop a post over
+    formatting, which is worse than the defect)."""
+    allowed = htl.numbers_whitelist(_packet("P1"))  # dollar_change_abs = 2.0e11
+    assert "$200 billion" in allowed, allowed
+    for raw in ("200,000,000,000", "200000000000"):
+        assert raw not in allowed, (
+            f"ALLOWED NUMBERS still hands the model {raw!r} for a dollar figure "
+            "the humanize-money law forbids it to write")
+
+
+def test_a_count_over_a_million_keeps_its_written_out_form():
+    """The narrowing is keyed on the KEY, not on the magnitude. A seven-figure
+    count is a fact a reader parses as digits, and no law reshapes it — the
+    same sweep applied by size would have deleted it."""
+    allowed = htl.numbers_whitelist(
+        {"cashtag": "$AAPL", "volume_shares": 7639791, "breadth_total": 22})
+    assert "7,639,791" in allowed, allowed
+    assert "22" in allowed, allowed
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 4. Dates and years
 # ─────────────────────────────────────────────────────────────────────────────
 

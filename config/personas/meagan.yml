@@ -55,9 +55,9 @@ voice_codex:
       max_per_post: 1
       note: "§5 'em-dash asides', realised as PARENTHETICAL asides. The house no-em-dash copy law (copy_laws #2, banned_language()) removes the notation outright, so the aside survives and the dash does not. Constitution §5.3 already describes it as an 'occasional parenthetical aside'."
     exclamation:
-      enabled: true
+      enabled: false
       max_per_post: 1
-      note: "§5: ≤1 exclamation/post. Meagan is the only desk on the roster allowed one at all."
+      note: "RETIRED 2026-08-11 (voice doctrine v5 ban 6, #5291 follow-up 2). §5 granted ≤1/post and she was the only desk on the roster allowed one at all, but voice_v5_violations now rejects ANY '!' on a non-wire kind, and that gate is fail-CLOSED: the post is dropped, not downgraded. So the grant could no longer produce an exclamation, only a lost post — the dial must never grant what validate_copy rejects. Disabled rather than deleted so the cap survives with its history: with enabled:false the dial's apply_pass downgrades her '!' to a period like every other desk's, which is a repair instead of a drop. Her card no longer asks for one (#5291)."
     signature_emoji:
       enabled: true
       max_per_post: 1
