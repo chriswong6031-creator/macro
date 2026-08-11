@@ -1,0 +1,688 @@
+schema: mastermind.production_topology.v1
+project_id: mastermind-x
+version: 1
+owner: macro-admin
+
+runtime_state_policy:
+  visibility: private_authenticated
+  collection: on_demand
+  commit: never
+  public_publish: never
+  semantic_program_id_pattern: "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+
+repositories:
+  - id: macro
+    slug: mastermindx-market-intelligence/macro
+    branch: main
+    deployment_contract: origin/main is pulled into /opt/macro and served atomically.
+    deployed_probe: {kind: git_head, path: /opt/macro}
+    canonical_probe: {kind: git_remote_ref, remote: "https://github.com/mastermindx-market-intelligence/macro.git", ref: refs/heads/main}
+    runtime_probe: {kind: http_json, url: "http://127.0.0.1:8000/api/health", sha_field: commit}
+    runtime_match_policy: selective_restart
+    refs: [app/deploy/update.sh, app/deploy/setup.sh, app/deploy/macro-api.service]
+    semantic_program_id: null
+  - id: terminal
+    slug: mastermindx-market-intelligence/mastermind-terminal
+    branch: master
+    deployment_contract: origin/master is built from /opt/terminal/.gitsrc into /opt/terminal/terminal.
+    deployed_probe: {kind: text_file, path: /opt/terminal/terminal/.deployment-id, resolve_path: /opt/terminal/.gitsrc}
+    canonical_probe: {kind: git_remote_ref, remote: "https://github.com/mastermindx-market-intelligence/mastermind-terminal.git", ref: refs/heads/master}
+    runtime_probe: {kind: http_html_attribute, url: "http://127.0.0.1:3000/terminal", attribute: data-dpl-id}
+    refs: [mastermind-terminal:DEPLOY.md, mastermind-terminal:ops/terminal-build.sh]
+    semantic_program_id: null
+  - id: portfolio
+    slug: mastermindx-market-intelligence/Mastermind
+    branch: master
+    deployment_contract: the exact current origin/master archive is deployed to /opt/mastermind.
+    deployed_probe: {kind: text_file, path: /opt/mastermind/.deployed_git_sha}
+    canonical_probe: {kind: github_ref, slug: mastermindx-market-intelligence/Mastermind, ref: master}
+    runtime_probe: {kind: http_json, url: "http://127.0.0.1:8001/health", sha_field: version}
+    refs: [Mastermind:scripts/deploy_from_git.sh, Mastermind:scripts/deploy_code_to_vps.sh]
+    semantic_program_id: null
+
+services:
+  - id: macro.edge
+    repo: macro
+    owner: macro-admin
+    kind: web_service
+    host_class: vps
+    units: [caddy.service]
+    expected_state: active
+    refs: [app/deploy/Caddyfile, app/deploy/setup.sh]
+    semantic_program_id: null
+  - id: macro.api
+    repo: macro
+    owner: macro-admin
+    kind: api_service
+    host_class: vps
+    units: [macro-api.service]
+    expected_state: active
+    health_probe: {kind: http_json, url: "http://127.0.0.1:8000/api/health"}
+    refs: [app/deploy/macro-api.service, app/deploy/api-setup.sh]
+    semantic_program_id: null
+  - id: macro.admin
+    repo: macro
+    owner: macro-admin
+    kind: api_service
+    host_class: vps
+    units: [admin.service]
+    expected_state: active
+    health_probe: {kind: http, url: "http://127.0.0.1:8787/healthz"}
+    refs: [admin/deploy/admin.service, admin/deploy/setup-admin.sh]
+    semantic_program_id: null
+  - id: terminal.web
+    repo: terminal
+    owner: macro-admin
+    kind: web_service
+    host_class: vps
+    units: [terminal.service]
+    expected_state: active
+    health_probe: {kind: http, url: "http://127.0.0.1:3000/terminal"}
+    refs: [mastermind-terminal:DEPLOY.md, mastermind-terminal:ops/terminal-build.sh]
+    semantic_program_id: null
+  - id: terminal.quote_hub
+    repo: terminal
+    owner: macro-admin
+    kind: api_service
+    host_class: vps
+    units: [quote-hub.service]
+    expected_state: active
+    health_probe: {kind: http_json, url: "http://127.0.0.1:3100/health"}
+    refs: [mastermind-terminal:hub/README.md, mastermind-terminal:hub/hub.js]
+    semantic_program_id: null
+  - id: portfolio.api_scheduler
+    repo: portfolio
+    owner: macro-admin
+    kind: scheduler
+    host_class: vps
+    units: [mastermind.service]
+    expected_state: active
+    health_probe: {kind: http_json, url: "http://127.0.0.1:8001/health"}
+    refs: [Mastermind:ops/mastermind-vps.service.d/authoritative.conf, Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: macro.marketing_press
+    repo: macro
+    owner: macro-admin
+    kind: worker
+    host_class: vps
+    units: [marketing-press-feeds.service]
+    expected_state: operator_armed
+    refs: [app/deploy/marketing-press-feeds.service, scripts/marketing_fastlane_daemon.py]
+    semantic_program_id: null
+  - id: macro.marketing_reply_desk
+    repo: macro
+    owner: macro-admin
+    kind: worker
+    host_class: vps
+    units: [marketing-reply-desk.service]
+    expected_state: operator_armed
+    refs: [app/deploy/marketing-reply-desk.service, scripts/marketing_fastlane_daemon.py, docs/reply_desk_runbook.md]
+    semantic_program_id: null
+
+scheduled_systems:
+  - id: macro.release_update
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: release_match, deployed_repo: /opt/macro, canonical_ref: origin/main, canonical_remote: "https://github.com/mastermindx-market-intelligence/macro.git", required_cron_id: macro_update}
+    expected_state: active
+    cadence: every_3_minutes
+    refs: [app/deploy/update.sh, app/deploy/setup.sh]
+    semantic_program_id: null
+  - id: macro.live_fast
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-live-fast.timer}
+    expected_state: active
+    cadence: every_minute
+    refs: [app/deploy/macro-live-fast.timer, app/deploy/macro-live-fast.service]
+    semantic_program_id: null
+  - id: macro.live_snapshot
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-live-snapshot.timer}
+    expected_state: active
+    cadence: five_minutes_weekdays
+    refs: [app/deploy/macro-live-snapshot.timer, app/deploy/macro-live-snapshot.service]
+    semantic_program_id: null
+  - id: macro.live_bars
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-live-bars.timer}
+    expected_state: active
+    cadence: hourly_us_window_weekdays
+    refs: [app/deploy/macro-live-bars.timer, app/deploy/macro-live-bars.service]
+    semantic_program_id: null
+  - id: macro.live_closepass
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-live-closepass.timer}
+    expected_state: active
+    cadence: five_minutes_evening_window_weekdays
+    refs: [app/deploy/macro-live-closepass.timer, app/deploy/macro-live-closepass.service]
+    semantic_program_id: null
+  - id: macro.live_prophet
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-live-prophet.timer}
+    expected_state: active
+    cadence: five_minutes_us_window_weekdays
+    refs: [app/deploy/macro-live-prophet.timer, app/deploy/macro-live-prophet.service]
+    semantic_program_id: null
+  - id: macro.market_memory_source
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-market-memory-source.timer}
+    expected_state: active
+    cadence: hourly
+    refs: [app/deploy/macro-market-memory-source.timer, app/deploy/macro-market-memory-source.service]
+    semantic_program_id: null
+  - id: macro.market_memory_context
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-market-memory-context.timer}
+    expected_state: active
+    cadence: hourly
+    refs: [app/deploy/macro-market-memory-context.timer, app/deploy/macro-market-memory-context.service]
+    semantic_program_id: null
+  - id: macro.market_memory_identity
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-market-memory-identity.timer}
+    expected_state: active
+    cadence: hourly
+    refs: [app/deploy/macro-market-memory-identity.timer, app/deploy/macro-market-memory-identity.service]
+    semantic_program_id: null
+  - id: macro.market_memory_breadth
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-market-memory-breadth.timer}
+    expected_state: active
+    cadence: hourly
+    refs: [app/deploy/macro-market-memory-breadth.timer, app/deploy/macro-market-memory-breadth.service]
+    semantic_program_id: null
+  - id: macro.market_memory_technicals
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-market-memory-technicals.timer}
+    expected_state: active
+    cadence: hourly
+    refs: [app/deploy/macro-market-memory-technicals.timer, app/deploy/macro-market-memory-technicals.service]
+    semantic_program_id: null
+  - id: macro.market_memory_options
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-market-memory-options.timer}
+    expected_state: optional
+    cadence: weekday_morning
+    refs: [app/deploy/macro-market-memory-options.timer, docs/ops/market-memory-option-oi-canary.md]
+    semantic_program_id: null
+  - id: macro.sentinel
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-sentinel.timer}
+    expected_state: active
+    cadence: every_30_minutes
+    refs: [app/deploy/macro-sentinel.timer, scripts/freshness_sentinel.py]
+    semantic_program_id: null
+  - id: macro.biocatalyst
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-biocatalyst.timer}
+    expected_state: operator_armed
+    cadence: hourly_when_armed
+    refs: [app/deploy/macro-biocatalyst.timer, app/deploy/macro-biocatalyst.service]
+    semantic_program_id: null
+  - id: macro.biocatalyst_activation
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-biocatalyst-activation-heartbeat.timer}
+    expected_state: operator_armed
+    cadence: hourly_when_armed
+    refs: [app/deploy/macro-biocatalyst-activation-heartbeat.timer, app/deploy/biocatalyst-activation-heartbeat.sh]
+    semantic_program_id: null
+  - id: macro.biocatalyst_fixed_cohort
+    repo: macro
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: macro-biocatalyst-fixed-cohort.timer}
+    expected_state: operator_armed
+    cadence: hourly_when_armed
+    refs: [app/deploy/biocatalyst-fixed-cohort.timer, app/deploy/biocatalyst-fixed-cohort.service, app/deploy/biocatalyst-fixed-cohort-setup.sh]
+    semantic_program_id: null
+  - id: macro.github_daily
+    repo: macro
+    owner: macro-admin
+    kind: cron
+    host_class: github_actions
+    probe: {kind: none}
+    expected_state: scheduled
+    cadence: {kind: github_actions, window_aware: true}
+    refs: [.github/workflows/daily.yml]
+    semantic_program_id: null
+  - id: macro.github_asia_close
+    repo: macro
+    owner: macro-admin
+    kind: cron
+    host_class: github_actions
+    probe: {kind: none}
+    expected_state: scheduled
+    cadence: {kind: github_actions, window_aware: true}
+    refs: [.github/workflows/asia-close.yml]
+    semantic_program_id: null
+  - id: macro.github_heartbeat
+    repo: macro
+    owner: macro-admin
+    kind: cron
+    host_class: github_actions
+    probe: {kind: none}
+    expected_state: scheduled
+    cadence: {kind: github_actions, window_aware: true}
+    refs: [.github/workflows/heartbeat.yml]
+    semantic_program_id: null
+  - id: macro.github_vps_heartbeat
+    repo: macro
+    owner: macro-admin
+    kind: cron
+    host_class: github_actions
+    probe: {kind: none}
+    expected_state: scheduled
+    cadence: {kind: github_actions, window_aware: true}
+    refs: [.github/workflows/vps-live-heartbeat.yml]
+    semantic_program_id: null
+  - id: terminal.nightly_data
+    repo: terminal
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: artifact, path: /opt/terminal/terminal/public/data/manifest.json, as_of_field: as_of}
+    expected_state: scheduled
+    cadence: daily_2130_utc
+    refs: [mastermind-terminal:ops/README.md, mastermind-terminal:ops/terminal-data]
+    semantic_program_id: null
+  - id: portfolio.macro_refresh
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe:
+      kind: scheduler_api
+      url: "http://127.0.0.1:8001/api/scheduler"
+      job_id: macro_refresh
+      last_run_field: last_finished
+      outcome_field: last_status
+      next_expected_field: next_run_time
+      max_run_seconds: 21600
+      max_age_seconds: 21600
+      outcome_map: {ok: succeeded, error: failed, skipped: skipped, no_change: ran_no_change}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py, Mastermind:control_plane/run_events.py]
+    semantic_program_id: null
+  - id: portfolio.daily_mark
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: daily_mark, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.daily_loop
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: daily_loop, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.autonomous_daily
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: autonomous_daily, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.etf_daily
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: etf_daily, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.heavyweight_daily
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: heavyweight_daily, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.china_daily
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: china_daily, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.hk_daily
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: hk_daily, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.settle_pending
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: settle_pending, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.settle_brain_asia
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: settle_brain_asia, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.watch_us_overnight
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: watch_us_overnight, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.watch_asia_overnight
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: watch_asia_overnight, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.derisk_us_intraday
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: derisk_us_intraday, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.prewarm_marks
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: prewarm_marks, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 1800}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.publish_macro_snapshot
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: publish_macro_snapshot, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py, Mastermind:bridge/nw_feedback.py]
+    semantic_program_id: null
+  - id: portfolio.cio_weekly
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: cio_weekly, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true, max_age_seconds: 864000}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.improvement_agenda_weekly
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: improvement_agenda_weekly, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true, max_age_seconds: 864000}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.loop_maintenance
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: loop_maintenance, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.experiment_maturity
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: experiment_maturity, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.portfolio_risk_compose
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: portfolio_risk_compose, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.portfolio_risk_daily
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: portfolio_risk_daily, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: scheduled
+    cadence: {kind: apscheduler, window_aware: true}
+    refs: [Mastermind:app/scheduler.py]
+    semantic_program_id: null
+  - id: portfolio.vps_state_sync
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: scheduler_api, url: "http://127.0.0.1:8001/api/scheduler", job_id: vps_state_sync, last_run_field: last_finished, outcome_field: last_status, next_expected_field: next_run_time, max_run_seconds: 21600}
+    expected_state: disabled
+    cadence: {kind: apscheduler, window_aware: true, max_age_seconds: 7200}
+    refs: [Mastermind:app/scheduler.py, Mastermind:control_plane/run_events.py]
+    semantic_program_id: null
+  - id: portfolio.restart
+    repo: portfolio
+    owner: macro-admin
+    host_class: vps
+    probe: {kind: systemd_timer, unit: mastermind-restart.timer}
+    expected_state: active
+    cadence: systemd_timer
+    refs: [Mastermind:ops/mastermind-vps.service.d/authoritative.conf]
+    semantic_program_id: null
+
+data_planes:
+  - id: macro.freshness
+    repo: macro
+    owner: macro-admin
+    probe:
+      kind: json_file
+      path: /var/lib/macro-live/public/live/staleness.json
+      status_field: ok
+      timestamp_field: generated_at
+      as_of_field: null
+      max_age_seconds: 3600
+      direct_status_map: {"true": healthy, "false": stale}
+    refs: [scripts/freshness_sentinel.py, docs/VPS_LIVE_ORCHESTRATION.md]
+    semantic_program_id: null
+  - id: macro.neuralweb
+    repo: macro
+    owner: macro-admin
+    probe:
+      kind: json_file
+      path: /opt/macro/data/neuralweb/health.json
+      status_field: overall_status
+      timestamp_field: produced_at
+      as_of_field: as_of
+      max_age_seconds: 93600
+      direct_status_map: {ok: healthy, warn: degraded, degraded: degraded, unknown: indeterminate}
+      metric_fields:
+        total_lobes: summary_counts.total_lobes
+        fresh: summary_counts.fresh
+        fresh_partial: summary_counts.fresh_partial
+        stale: summary_counts.stale
+        missing: summary_counts.missing
+        not_locally_verifiable: summary_counts.not_locally_verifiable
+    refs: [engine/neuralweb/health.py, scripts/build_neuralweb_health.py]
+    semantic_program_id: null
+  - id: macro.first_fresh_sla
+    repo: macro
+    owner: macro-admin
+    probe:
+      kind: json_file
+      path: /var/lib/macro-live/public/live/staleness.json
+      timestamp_field: generated_at
+      max_age_seconds: 3600
+      minimum_field: sla.us_board_provisional.consecutive_met
+      minimum_value: 5
+      metric_fields:
+        consecutive_met: sla.us_board_provisional.consecutive_met
+        sessions_required: sla.us_board_provisional.sessions_required
+    refs: [scripts/freshness_sentinel.py, docs/VPS_LIVE_ORCHESTRATION.md]
+    semantic_program_id: null
+  - id: terminal.manifest
+    repo: terminal
+    owner: macro-admin
+    probe:
+      kind: json_file
+      path: /opt/terminal/terminal/public/data/manifest.json
+      status_field: null
+      timestamp_field: null
+      as_of_field: as_of
+      max_age_seconds: 129600
+      allow_mtime: true
+      freshness_basis: mtime
+      direct_status_map: {}
+    refs: [mastermind-terminal:ops/terminal-data, mastermind-terminal:ops/README.md]
+    semantic_program_id: null
+
+bridges:
+  - id: macro.to_terminal
+    producer_repo: macro
+    consumer_repo: terminal
+    owner: macro-admin
+    authority: display_only
+    probe:
+      kind: json_file
+      path: /opt/terminal/terminal/public/data/JNJ.intel.json
+      status_field: tape.stale
+      timestamp_field: null
+      as_of_field: asof
+      max_age_seconds: 432000
+      direct_status_map: {"false": healthy, "true": stale}
+      healthy_result_state: degraded
+    refs: [mastermind-terminal:ingest/pull_macro_intel.py, mastermind-terminal:ops/terminal-data, mastermind-terminal:terminal/public/data/manifest.json]
+    semantic_program_id: null
+  - id: macro.to_portfolio
+    producer_repo: macro
+    consumer_repo: portfolio
+    owner: macro-admin
+    authority: governed_context
+    probe:
+      kind: symlink_and_json
+      path: /opt/mastermind/vendor/macro
+      expected_target: /opt/macro
+      artifact_path: /opt/mastermind/vendor/macro/data/neuralweb/mastermind_context.json
+      as_of_field: as_of
+      timestamp_field: generated_utc
+      max_age_seconds: 259200
+    refs: [scripts/build_nw_mastermind_context.py, engine/neuralweb/mastermind_context.py, Mastermind:data_layer/macro_refresh.py, Mastermind:config/authority_map.yml]
+    semantic_program_id: null
+  - id: portfolio.to_macro
+    producer_repo: portfolio
+    consumer_repo: macro
+    owner: macro-admin
+    authority: context_only
+    probe:
+      kind: json_file
+      path: /opt/macro/data/governance/mastermind_feedback_summary.json
+      status_field: state
+      timestamp_field: generated_utc
+      as_of_field: null
+      max_age_seconds: 129600
+      direct_status_map: {present: healthy, current: healthy, fresh: healthy, stale: stale, absent: missing, missing: missing, disabled: disabled}
+    refs: [Mastermind:app/scheduler.py, Mastermind:bridge/nw_feedback.py, scripts/build_mastermind_feedback_summary.py]
+    semantic_program_id: null
+
+storage:
+  - id: macro.r2
+    repo: macro
+    owner: macro-admin
+    kind: object_store
+    expected_state: healthy
+    probe: {kind: sentinel_surface, path: /var/lib/macro-live/public/live/staleness.json, surface_id: r2_massive_stock_day}
+    refs: [scripts/publish_r2.py, scripts/freshness_sentinel.py]
+    semantic_program_id: null
+  - id: terminal.supabase
+    repo: terminal
+    owner: macro-admin
+    kind: database
+    expected_state: indeterminate
+    expected_schema: 0006_lock_is_pro
+    probe: {kind: schema_contract_only}
+    refs: [mastermind-terminal:supabase/migrations/0006_lock_is_pro.sql]
+    semantic_program_id: null
+  - id: portfolio.live_state
+    repo: portfolio
+    owner: macro-admin
+    kind: filesystem
+    expected_state: healthy
+    probe: {kind: path_exists, path: /opt/mastermind-live-data}
+    refs: [Mastermind:ops/mastermind-vps.service.d/authoritative.conf, Mastermind:control_plane/run_events.py]
+    semantic_program_id: null
+
+providers:
+  - id: macro.shared_ai_pool
+    repo: macro
+    owner: macro-admin
+    expected_state: healthy
+    probe:
+      kind: jsonl_summary
+      path: /opt/macro/data/ai_costs/provider_health.jsonl
+      timestamp_field: ts
+      status_field: ok
+      max_age_seconds: 21600
+      allowed_fields: [ts, ok, event, rung, latency_ms]
+      roles: {codex: primary, oauth: fallback, anthropic: fallback, deepseek: fallback, ollama: fallback}
+      direct_status_map: {"true": healthy, "false": degraded}
+    refs: [engine/provider_health.py, engine/llm_auth.py, Mastermind:ops/mastermind-vps.service.d/authoritative.conf]
+    semantic_program_id: null
