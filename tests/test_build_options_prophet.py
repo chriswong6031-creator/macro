@@ -2023,9 +2023,12 @@ def _lifecycle_emit_mark(
     mid: float = 3.0,
     strike: float = 16.0,
     plan_id: str = "SOFI-BULL-20260803",
+    plan_overrides: dict | None = None,
 ) -> tuple[dict, dict]:
     monkeypatch.setenv("PROPHET_OPTION_EVIDENCE_STATE_ROOT", str(mark_root))
     plan = _option_mark_plan(plan_id, phase=phase)
+    if plan_overrides:
+        plan.update(plan_overrides)
     plan["option_contract"]["strike"] = strike
     plan["option_contract"]["expiry"] = "2026-10-16"
     index = {
@@ -2280,7 +2283,7 @@ def test_option_shadow_lifecycle_is_prospective_and_enrolls_once(
         mark_root,
         observed_at="2026-08-11T14:20:00+00:00",
         session_date="2026-08-11",
-        phase="triggered_pre_t1",
+        phase="at_t1",
         mid=3.2,
     )
     repeated = option_lifecycle.advance_lifecycle(
@@ -2293,6 +2296,7 @@ def test_option_shadow_lifecycle_is_prospective_and_enrolls_once(
     assert len(state["enrollments"]) == 1
     latest = state["latest_marks"]["SOFI-BULL-20260803"]
     assert latest["sessions"]["2026-08-11"] == second_fresh_pointer
+    assert latest["plan_identity_drift"] is False
 
     events = _lifecycle_events(lifecycle_root)
     assert [event["event_kind"] for event in events] == [
@@ -2443,6 +2447,10 @@ def test_option_shadow_terminal_uses_latest_same_session_mid_without_writing_led
     ("scenario", "expected_reason"),
     [
         ("missing_same_session", "NO_SAME_SESSION_ADMITTED_MARK"),
+        ("identity_asset", "PLAN_IDENTITY_DRIFT"),
+        ("identity_plan_asof", "PLAN_IDENTITY_DRIFT"),
+        ("identity_recorded_at", "PLAN_IDENTITY_DRIFT"),
+        ("identity_entry_date", "PLAN_IDENTITY_DRIFT"),
         ("contract_drift", "CONTRACT_DRIFT"),
         ("no_entry", "CANONICAL_NO_ENTRY"),
         ("close_predates", "CANONICAL_CLOSE_PREDATES_ENROLLMENT"),
@@ -2471,6 +2479,23 @@ def test_option_shadow_terminal_unavailable_reasons_are_immutable(
             phase="triggered_pre_t1",
             mid=3.2,
             strike=17.0,
+        )
+    elif scenario.startswith("identity_"):
+        field = scenario.removeprefix("identity_")
+        mutated = {
+            "asset": "SOF1",
+            "plan_asof": "2026-08-04",
+            "recorded_at": "2026-08-04",
+            "entry_date": "2026-08-04",
+        }[field]
+        _lifecycle_emit_mark(
+            monkeypatch,
+            mark_root,
+            observed_at="2026-08-11T14:10:00+00:00",
+            session_date="2026-08-11",
+            phase="at_t1",
+            mid=3.3,
+            plan_overrides={field: mutated},
         )
     _lifecycle_append_close(
         ledger_path,

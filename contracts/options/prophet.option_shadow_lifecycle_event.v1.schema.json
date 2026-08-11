@@ -267,6 +267,7 @@
           "enum": [
             null,
             "NO_SAME_SESSION_ADMITTED_MARK",
+            "PLAN_IDENTITY_DRIFT",
             "CONTRACT_DRIFT",
             "CANONICAL_NO_ENTRY",
             "CANONICAL_CLOSE_PREDATES_ENROLLMENT"
@@ -311,6 +312,7 @@
           "enum": [
             null,
             "NO_SAME_SESSION_ADMITTED_MARK",
+            "PLAN_IDENTITY_DRIFT",
             "CONTRACT_DRIFT",
             "CANONICAL_NO_ENTRY",
             "CANONICAL_CLOSE_PREDATES_ENROLLMENT"

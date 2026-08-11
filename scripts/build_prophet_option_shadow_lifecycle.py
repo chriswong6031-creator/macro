@@ -97,10 +97,18 @@ CANONICAL_OUTCOMES = frozenset(
 UNAVAILABLE_REASONS = frozenset(
     {
         "NO_SAME_SESSION_ADMITTED_MARK",
+        "PLAN_IDENTITY_DRIFT",
         "CONTRACT_DRIFT",
         "CANONICAL_NO_ENTRY",
         "CANONICAL_CLOSE_PREDATES_ENROLLMENT",
     }
+)
+STABLE_PLAN_IDENTITY_FIELDS = (
+    "id",
+    "asset",
+    "plan_asof",
+    "recorded_at",
+    "entry_date",
 )
 
 _SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
@@ -944,13 +952,20 @@ def _validate_state_shape(state: object) -> dict[str, object]:
         if not isinstance(details, dict) or set(details) != {
             "contract_occ_symbol",
             "contract_drift",
+            "plan_identity_drift",
             "sessions",
         }:
             raise ValueError(f"latest mark state for {plan_id} is malformed")
         occ = details.get("contract_occ_symbol")
-        drift = details.get("contract_drift")
+        contract_drift = details.get("contract_drift")
+        identity_drift = details.get("plan_identity_drift")
         sessions = details.get("sessions")
-        if not isinstance(occ, str) or len(occ) != 21 or not isinstance(drift, bool):
+        if (
+            not isinstance(occ, str)
+            or len(occ) != 21
+            or not isinstance(contract_drift, bool)
+            or not isinstance(identity_drift, bool)
+        ):
             raise ValueError(f"latest mark contract state for {plan_id} is malformed")
         if not isinstance(sessions, dict):
             raise ValueError(f"latest mark session state for {plan_id} is malformed")
@@ -1056,12 +1071,14 @@ def _reconstruct_admitted_marks(
     mark_root: Path,
     enrollment: dict[str, object],
     head_pointer: dict[str, object],
-) -> tuple[dict[str, dict[str, object]], bool]:
+) -> tuple[dict[str, dict[str, object]], bool, bool]:
     payload = enrollment["payload"]
     plan_id = str(payload["plan"]["id"])
+    enrolled_identity = _stable_plan_identity(payload["plan"])
     contract = payload["contract"]
     sessions: dict[str, dict[str, object]] = {}
     contract_drift = False
+    plan_identity_drift = False
     for pointer, observation in _mark_history_from_enrollment(
         mark_root=mark_root,
         enrollment=enrollment,
@@ -1074,8 +1091,12 @@ def _reconstruct_admitted_marks(
         if isinstance(row_contract, dict) and row_contract != contract:
             contract_drift = True
         plan = row.get("plan")
+        identity_matches = _stable_plan_identity(plan) == enrolled_identity
+        if not identity_matches:
+            plan_identity_drift = True
         eligible = (
             isinstance(plan, dict)
+            and identity_matches
             and plan.get("phase") in POST_TRIGGER_PHASES
             and row.get("quote_status") == "available"
             and isinstance(row.get("quote"), dict)
@@ -1083,7 +1104,7 @@ def _reconstruct_admitted_marks(
         )
         if eligible:
             sessions[str(observation["session_date"])] = pointer
-    return sessions, contract_drift
+    return sessions, contract_drift, plan_identity_drift
 
 
 def _validate_source_references(
@@ -1124,7 +1145,7 @@ def _validate_source_references(
 
     for plan_id, details in state["latest_marks"].items():
         enrollment = enrollment_events[plan_id]
-        sessions, drift = _reconstruct_admitted_marks(
+        sessions, contract_drift, identity_drift = _reconstruct_admitted_marks(
             mark_root=mark_root,
             enrollment=enrollment,
             head_pointer=state["mark_cursor"],
@@ -1132,7 +1153,8 @@ def _validate_source_references(
         if (
             details["contract_occ_symbol"]
             != enrollment["payload"]["contract"]["occ_symbol"]
-            or details["contract_drift"] is not drift
+            or details["contract_drift"] is not contract_drift
+            or details["plan_identity_drift"] is not identity_drift
             or details["sessions"] != sessions
         ):
             raise ValueError(f"latest admitted mark state mismatch for {plan_id}")
@@ -1175,7 +1197,7 @@ def _validate_source_references(
 
         terminal_head = mark_chain._validate_pointer(payload["mark_chain_head"])
         _new_mark_observations(mark_root, state["mark_cursor"], terminal_head)
-        sessions, drift = _reconstruct_admitted_marks(
+        sessions, contract_drift, identity_drift = _reconstruct_admitted_marks(
             mark_root=mark_root,
             enrollment=enrollment,
             head_pointer=terminal_head,
@@ -1188,7 +1210,10 @@ def _validate_source_references(
         elif close_date < enrollment_date:
             expected_reason = "CANONICAL_CLOSE_PREDATES_ENROLLMENT"
             expected_pointer = None
-        elif drift:
+        elif identity_drift:
+            expected_reason = "PLAN_IDENTITY_DRIFT"
+            expected_pointer = None
+        elif contract_drift:
             expected_reason = "CONTRACT_DRIFT"
             expected_pointer = None
         else:
@@ -1342,17 +1367,31 @@ def _activation_event(
     )
 
 
+def _stable_plan_identity(plan: object) -> dict[str, object]:
+    if not isinstance(plan, dict):
+        raise ValueError("option lifecycle plan identity is malformed")
+    identity = {field: plan.get(field) for field in STABLE_PLAN_IDENTITY_FIELDS}
+    if (
+        not isinstance(identity["id"], str)
+        or not identity["id"]
+        or not isinstance(identity["asset"], str)
+        or not identity["asset"]
+    ):
+        raise ValueError("option lifecycle plan identity is malformed")
+    for field in ("plan_asof", "recorded_at", "entry_date"):
+        if identity[field] is not None and not isinstance(identity[field], str):
+            raise ValueError(f"option lifecycle plan identity {field} is malformed")
+    return identity
+
+
 def _plan_from_mark_row(row: dict[str, object]) -> dict[str, object]:
     plan = row.get("plan")
     if not isinstance(plan, dict):
         raise ValueError("option mark row plan is malformed")
+    identity = _stable_plan_identity(plan)
     return {
-        "id": plan["id"],
-        "asset": plan["asset"],
+        **identity,
         "phase": plan["phase"],
-        "plan_asof": plan["plan_asof"],
-        "recorded_at": plan["recorded_at"],
-        "entry_date": plan["entry_date"],
     }
 
 
@@ -1498,6 +1537,8 @@ def _terminal_event(
         reason = "CANONICAL_NO_ENTRY"
     elif date.fromisoformat(close_date) < date.fromisoformat(enrollment_session):
         reason = "CANONICAL_CLOSE_PREDATES_ENROLLMENT"
+    elif latest_state.get("plan_identity_drift") is True:
+        reason = "PLAN_IDENTITY_DRIFT"
     elif latest_state.get("contract_drift") is True:
         reason = "CONTRACT_DRIFT"
     else:
@@ -1509,7 +1550,12 @@ def _terminal_event(
             mark_pointer = mark_chain._validate_pointer(mark_pointer)
             observation = _load_mark_observation(mark_root, mark_pointer)
             row = _row_for_plan(observation, plan_id)
-            if row.get("contract") != enrollment_payload["contract"]:
+            if (
+                _stable_plan_identity(row.get("plan"))
+                != _stable_plan_identity(enrollment_payload["plan"])
+            ):
+                reason = "PLAN_IDENTITY_DRIFT"
+            elif row.get("contract") != enrollment_payload["contract"]:
                 reason = "CONTRACT_DRIFT"
             elif observation.get("session_date") != close_date:
                 raise ValueError("terminal mark reference is not from the close session")
@@ -1751,17 +1797,28 @@ def advance_lifecycle(
                     raise ValueError("option mark observation plan id is missing")
                 if plan_id in terminals:
                     continue
-                if plan_id in enrollments and isinstance(contract, dict):
+                identity_matches = True
+                if plan_id in enrollments:
                     enrolled = pending_enrollments.get(plan_id) or _load_enrollment(
                         lifecycle_root,
                         enrollments[plan_id],
                         plan_id,
                     )
-                    if contract != enrolled["payload"]["contract"]:
+                    identity_matches = (
+                        _stable_plan_identity(plan)
+                        == _stable_plan_identity(enrolled["payload"]["plan"])
+                    )
+                    if not identity_matches:
+                        latest_marks[plan_id]["plan_identity_drift"] = True
+                    if (
+                        isinstance(contract, dict)
+                        and contract != enrolled["payload"]["contract"]
+                    ):
                         latest_marks[plan_id]["contract_drift"] = True
                 close_date = current_closes.get(plan_id)
                 eligible = (
                     (plan_id in enrollments or plan_id not in all_closed_ids)
+                    and identity_matches
                     and (
                         close_date is None
                         or str(observation["session_date"]) <= close_date
@@ -1788,6 +1845,7 @@ def advance_lifecycle(
                     latest_marks[plan_id] = {
                         "contract_occ_symbol": contract["occ_symbol"],
                         "contract_drift": False,
+                        "plan_identity_drift": False,
                         "sessions": {},
                     }
                 enrolled = pending_enrollments.get(plan_id) or _load_enrollment(

@@ -44,6 +44,11 @@ An open plan enrolls exactly once on the first later mark observation for which:
    `between_t1_t2`, `post_t1_failed_hold`, `at_t2`, `post_t2`, or `overtime`); and
 4. the exact OCC contract is valid and has not drifted.
 
+Enrollment also freezes stable plan identity: `id`, `asset`, `plan_asof`,
+`recorded_at`, and `entry_date`. `phase` may evolve through the post-trigger states,
+but any later row that mutates a stable field permanently marks the lifecycle as
+identity-drifted and can never supply a terminal mark or return.
+
 `pre_trigger`, stale, malformed, wrong-session, outside-RTH, source-unavailable, and
 already-closed rows abstain. The enrollment mark is labeled
 `first_fresh_post_trigger_trade_paired_mid`; `position_assumed=false` and
@@ -75,6 +80,7 @@ If no lawful terminal mark exists, the terminal event is still complete and immu
 with a null return and one explicit reason:
 
 - `NO_SAME_SESSION_ADMITTED_MARK`
+- `PLAN_IDENTITY_DRIFT`
 - `CONTRACT_DRIFT`
 - `CANONICAL_NO_ENTRY`
 - `CANONICAL_CLOSE_PREDATES_ENROLLMENT`
@@ -137,6 +143,7 @@ Advancement must fail closed, without moving either cursor, when any of these oc
 - mark head, predecessor, digest, content identity, schema, or private mode is invalid;
 - stored mark cursor is not an ancestor of the current head;
 - event/state identity, event predecessor, enrollment pointer, or permissions fail;
+- a post-enrollment mark mutates stable plan identity but remains return-eligible;
 - canonical ledger no longer extends the exact stored prefix;
 - canonical snapshot/receipt source, exact-main commit, path, digest, mode, or
   readback is invalid;
