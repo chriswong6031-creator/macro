@@ -22,7 +22,9 @@ import logging
 import math
 import os
 import re
+import secrets
 import stat
+import subprocess
 from copy import deepcopy
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
@@ -39,6 +41,7 @@ EVENT_SCHEMA = "prophet.option_shadow_lifecycle_event/v1"
 EVENT_POINTER_SCHEMA = "prophet.option_shadow_lifecycle_pointer/v1"
 STATE_SCHEMA = "prophet.option_shadow_lifecycle_state/v1"
 ACTIVATION_BOUNDARY_SCHEMA = "prophet.option_shadow_lifecycle_activation_boundary/v1"
+LEDGER_SNAPSHOT_RECEIPT_SCHEMA = "prophet.canonical_ledger_snapshot_receipt/v1"
 EVENT_PREFIX = "events"
 
 _REPO = Path(__file__).resolve().parents[1]
@@ -51,9 +54,23 @@ DEFAULT_EVENT_SCHEMA_PATH = (
     / "options"
     / "prophet.option_shadow_lifecycle_event.v1.schema.json"
 )
-DEFAULT_LEDGER_PATH = _REPO / "data" / "prophet" / "ledger.jsonl"
+DEFAULT_LEDGER_DIRECTORY = DEFAULT_STATE_ROOT / "canonical_ledger"
+DEFAULT_LEDGER_PATH = DEFAULT_LEDGER_DIRECTORY / "ledger.jsonl"
+DEFAULT_LEDGER_RECEIPT_PATH = DEFAULT_LEDGER_DIRECTORY / "receipt.json"
+
+CANONICAL_LEDGER_REPOSITORY = (
+    "https://github.com/mastermindx-market-intelligence/macro"
+)
+CANONICAL_LEDGER_GIT_REMOTE = CANONICAL_LEDGER_REPOSITORY + ".git"
+CANONICAL_LEDGER_REF = "refs/heads/main"
+CANONICAL_LEDGER_SOURCE_PATH = "data/prophet/ledger.jsonl"
+CANONICAL_LEDGER_RAW_TEMPLATE = (
+    "https://raw.githubusercontent.com/mastermindx-market-intelligence/macro/"
+    "{commit}/data/prophet/ledger.jsonl"
+)
 
 MAX_LEDGER_BYTES = 32 * 1024 * 1024
+MAX_RECEIPT_BYTES = 64 * 1024
 MAX_CHAIN_DEPTH = 20_000
 
 POST_TRIGGER_PHASES = frozenset(
@@ -87,6 +104,7 @@ UNAVAILABLE_REASONS = frozenset(
 )
 
 _SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
+_GIT_COMMIT_RE = re.compile(r"^[a-f0-9]{40,64}$")
 _EVENT_ID_RE = re.compile(r"^posle_[a-f0-9]{64}$")
 _STATE_ID_RE = re.compile(r"^posls_[a-f0-9]{64}$")
 
@@ -376,22 +394,74 @@ def _new_mark_observations(
     raise ValueError("private option mark cursor is not an ancestor of the current head")
 
 
-def _read_ledger(path: Path) -> bytes:
+def _read_private_blob(path: Path, *, max_bytes: int, label: str) -> bytes:
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
     try:
-        info = path.lstat()
+        fd = os.open(path, flags)
     except OSError as exc:
-        raise ValueError(f"canonical Prophet ledger is unavailable: {path}: {exc}") from exc
-    if (
-        not stat.S_ISREG(info.st_mode)
-        or stat.S_ISLNK(info.st_mode)
-        or info.st_size <= 0
-        or info.st_size > MAX_LEDGER_BYTES
-    ):
-        raise ValueError("canonical Prophet ledger file shape is unsafe")
-    body = path.read_bytes()
-    if len(body) != info.st_size:
-        raise ValueError("canonical Prophet ledger changed length during read")
-    if body and not body.endswith(b"\n"):
+        raise ValueError(f"{label} is unavailable: {path}: {exc}") from exc
+    try:
+        info = os.fstat(fd)
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_uid != os.getuid()
+            or stat.S_IMODE(info.st_mode) != 0o600
+            or info.st_nlink != 1
+            or info.st_size <= 0
+            or info.st_size > max_bytes
+        ):
+            raise ValueError(f"{label} is not a caller-owned 0600 regular file")
+        body = b""
+        while len(body) < info.st_size:
+            chunk = os.read(fd, info.st_size - len(body))
+            if not chunk:
+                break
+            body += chunk
+        if len(body) != info.st_size or os.read(fd, 1):
+            raise ValueError(f"{label} changed length during read")
+        return body
+    finally:
+        os.close(fd)
+
+
+def _atomic_private_write(path: Path, body: bytes, *, max_bytes: int) -> None:
+    if not body or len(body) > max_bytes:
+        raise ValueError("private canonical ledger write has an unsafe size")
+    mark_chain._require_private_directory(path.parent)
+    temporary = path.parent / f".{path.name}.{os.getpid()}.{secrets.token_hex(8)}.tmp"
+    flags = (
+        os.O_WRONLY
+        | os.O_CREAT
+        | os.O_EXCL
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    fd = os.open(temporary, flags, 0o600)
+    try:
+        os.fchmod(fd, 0o600)
+        mark_chain._write_all(fd, body)
+        os.fsync(fd)
+    except Exception:
+        os.close(fd)
+        temporary.unlink(missing_ok=True)
+        raise
+    else:
+        os.close(fd)
+    try:
+        os.replace(temporary, path)
+        mark_chain._fsync_directory(path.parent)
+    finally:
+        temporary.unlink(missing_ok=True)
+    if _read_private_blob(path, max_bytes=max_bytes, label="private canonical ledger file") != body:
+        raise ValueError("private canonical ledger atomic write readback mismatch")
+
+
+def _read_ledger(path: Path) -> bytes:
+    body = _read_private_blob(
+        path,
+        max_bytes=MAX_LEDGER_BYTES,
+        label="canonical Prophet ledger snapshot",
+    )
+    if not body.endswith(b"\n"):
         raise ValueError("canonical Prophet ledger does not end on a line boundary")
     return body
 
@@ -449,8 +519,18 @@ def _ledger_rows(body: bytes) -> list[dict[str, object]]:
     return rows
 
 
-def _ledger_receipt(body: bytes, rows: list[dict[str, object]]) -> dict[str, object]:
+def _ledger_receipt(
+    body: bytes,
+    rows: list[dict[str, object]],
+    *,
+    source_commit: str,
+) -> dict[str, object]:
     return {
+        "schema": LEDGER_SNAPSHOT_RECEIPT_SCHEMA,
+        "source_repository": CANONICAL_LEDGER_REPOSITORY,
+        "source_ref": CANONICAL_LEDGER_REF,
+        "source_commit": source_commit,
+        "source_path": CANONICAL_LEDGER_SOURCE_PATH,
         "bytes": len(body),
         "sha256": sha256(body).hexdigest(),
         "row_count": len(rows),
@@ -458,8 +538,28 @@ def _ledger_receipt(body: bytes, rows: list[dict[str, object]]) -> dict[str, obj
 
 
 def _validate_ledger_receipt(receipt: object) -> dict[str, object]:
-    if not isinstance(receipt, dict) or set(receipt) != {"bytes", "sha256", "row_count"}:
+    required = {
+        "schema",
+        "source_repository",
+        "source_ref",
+        "source_commit",
+        "source_path",
+        "bytes",
+        "sha256",
+        "row_count",
+    }
+    if not isinstance(receipt, dict) or set(receipt) != required:
         raise ValueError("canonical Prophet ledger cursor shape is malformed")
+    if (
+        receipt.get("schema") != LEDGER_SNAPSHOT_RECEIPT_SCHEMA
+        or receipt.get("source_repository") != CANONICAL_LEDGER_REPOSITORY
+        or receipt.get("source_ref") != CANONICAL_LEDGER_REF
+        or receipt.get("source_path") != CANONICAL_LEDGER_SOURCE_PATH
+    ):
+        raise ValueError("canonical Prophet ledger cursor source is malformed")
+    source_commit = receipt.get("source_commit")
+    if not isinstance(source_commit, str) or not _GIT_COMMIT_RE.fullmatch(source_commit):
+        raise ValueError("canonical Prophet ledger cursor commit is malformed")
     size = receipt.get("bytes")
     digest = receipt.get("sha256")
     count = receipt.get("row_count")
@@ -472,6 +572,37 @@ def _validate_ledger_receipt(receipt: object) -> dict[str, object]:
     return dict(receipt)
 
 
+def _read_ledger_snapshot(
+    ledger_path: Path,
+    receipt_path: Path,
+) -> tuple[bytes, list[dict[str, object]], dict[str, object]]:
+    body = _read_ledger(ledger_path)
+    rows = _ledger_rows(body)
+    raw_receipt = _read_private_blob(
+        receipt_path,
+        max_bytes=MAX_RECEIPT_BYTES,
+        label="canonical Prophet ledger receipt",
+    )
+    try:
+        receipt_object = json.loads(raw_receipt.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("canonical Prophet ledger receipt is invalid JSON") from exc
+    if (
+        not isinstance(receipt_object, dict)
+        or _canonical_json_bytes(receipt_object) != raw_receipt
+    ):
+        raise ValueError("canonical Prophet ledger receipt is not canonical JSON")
+    receipt = _validate_ledger_receipt(receipt_object)
+    expected = _ledger_receipt(
+        body,
+        rows,
+        source_commit=str(receipt["source_commit"]),
+    )
+    if receipt != expected:
+        raise ValueError("canonical Prophet ledger snapshot does not match its receipt")
+    return body, rows, receipt
+
+
 def _verify_ledger_prefix(body: bytes, cursor: object) -> dict[str, object]:
     checked = _validate_ledger_receipt(cursor)
     size = int(checked["bytes"])
@@ -480,6 +611,182 @@ def _verify_ledger_prefix(body: bytes, cursor: object) -> dict[str, object]:
     if body[:size] and not body[:size].endswith(b"\n"):
         raise ValueError("canonical Prophet ledger cursor is not on a line boundary")
     return checked
+
+
+def _ledger_paths(
+    lifecycle_root: Path,
+    *,
+    ledger_path: Path | None,
+    ledger_receipt_path: Path | None,
+    create: bool,
+) -> tuple[Path, Path]:
+    if ledger_path is None:
+        raw = os.environ.get(
+            "PROPHET_LEDGER_PATH",
+            str(lifecycle_root / "canonical_ledger" / "ledger.jsonl"),
+        )
+        ledger_path = Path(raw).expanduser()
+    if ledger_receipt_path is None:
+        raw_receipt = os.environ.get(
+            "PROPHET_LEDGER_RECEIPT_PATH",
+            str(ledger_path.parent / "receipt.json"),
+        )
+        ledger_receipt_path = Path(raw_receipt).expanduser()
+    if ledger_path == ledger_receipt_path or ledger_path.parent != ledger_receipt_path.parent:
+        raise ValueError("canonical Prophet ledger and receipt must be distinct siblings")
+    parent = _validate_private_root_location(
+        ledger_path.parent,
+        label="private canonical Prophet ledger",
+    )
+    if ledger_receipt_path.parent.resolve(strict=False) != parent.resolve(strict=False):
+        raise ValueError("canonical Prophet ledger receipt parent is ambiguous")
+    if create:
+        parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    mark_chain._require_private_directory(parent)
+    return ledger_path, ledger_receipt_path
+
+
+def _resolve_current_main_commit() -> str:
+    environment = dict(os.environ)
+    environment["GIT_TERMINAL_PROMPT"] = "0"
+    try:
+        result = subprocess.run(
+            [
+                "/usr/bin/git",
+                "ls-remote",
+                CANONICAL_LEDGER_GIT_REMOTE,
+                CANONICAL_LEDGER_REF,
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env=environment,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ValueError(f"could not resolve canonical current main: {exc}") from exc
+    matches: list[str] = []
+    for line in result.stdout.splitlines():
+        fields = line.split()
+        if len(fields) == 2 and fields[1] == CANONICAL_LEDGER_REF:
+            matches.append(fields[0])
+    if result.returncode != 0 or len(matches) != 1 or not _GIT_COMMIT_RE.fullmatch(matches[0]):
+        detail = result.stderr.strip()[:240] or f"exit {result.returncode}"
+        raise ValueError(f"canonical current-main ref resolution failed: {detail}")
+    return matches[0]
+
+
+def _download_current_main_ledger(source_commit: str) -> bytes:
+    if not _GIT_COMMIT_RE.fullmatch(source_commit):
+        raise ValueError("canonical current-main commit is malformed")
+    url = CANONICAL_LEDGER_RAW_TEMPLATE.format(commit=source_commit)
+    try:
+        result = subprocess.run(
+            [
+                "/usr/bin/curl",
+                "--fail",
+                "--silent",
+                "--show-error",
+                "--location",
+                "--max-time",
+                "30",
+                "--max-filesize",
+                str(MAX_LEDGER_BYTES),
+                "--proto",
+                "=https",
+                "--user-agent",
+                "macro-prophet-shadow-lifecycle/1",
+                url,
+            ],
+            check=False,
+            capture_output=True,
+            timeout=35,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ValueError(f"canonical current-main ledger download failed: {exc}") from exc
+    body = result.stdout
+    if result.returncode != 0 or not body or len(body) > MAX_LEDGER_BYTES:
+        detail = result.stderr.decode("utf-8", errors="replace").strip()[:240]
+        raise ValueError(
+            "canonical current-main ledger response is unsafe"
+            + (f": {detail}" if detail else "")
+        )
+    return body
+
+
+def sync_canonical_ledger(
+    *,
+    lifecycle_root: Path | None = None,
+    ledger_path: Path | None = None,
+    ledger_receipt_path: Path | None = None,
+) -> dict[str, object]:
+    """Install an exact, receipt-bound current-main ledger in the private plane."""
+    if lifecycle_root is None:
+        lifecycle_root = _state_root()
+    else:
+        _validate_private_root_location(
+            lifecycle_root,
+            label="private lifecycle state",
+        )
+        mark_chain._require_private_directory(lifecycle_root)
+    ledger_path, ledger_receipt_path = _ledger_paths(
+        lifecycle_root,
+        ledger_path=ledger_path,
+        ledger_receipt_path=ledger_receipt_path,
+        create=True,
+    )
+
+    with mark_chain._private_ledger_lock(lifecycle_root):
+        source_commit = _resolve_current_main_commit()
+        body = _download_current_main_ledger(source_commit)
+        rows = _ledger_rows(body)
+        receipt = _ledger_receipt(body, rows, source_commit=source_commit)
+
+        # A source refresh may only extend evidence already made durable.  This also
+        # recovers safely from a crash between the two atomic file swaps: the durable
+        # lifecycle cursor or activation marker remains the governing old prefix.
+        state = _load_state(lifecycle_root)
+        boundary = _load_activation_boundary(lifecycle_root)
+        if state is not None:
+            _verify_ledger_prefix(body, state["ledger_cursor"])
+        elif boundary is not None:
+            _verify_ledger_prefix(body, boundary["ledger_boundary"])
+
+        existing: tuple[bytes, list[dict[str, object]], dict[str, object]] | None = None
+        try:
+            existing = _read_ledger_snapshot(ledger_path, ledger_receipt_path)
+        except ValueError:
+            # Missing/mismatched pair is a recoverable interrupted install.  Unsafe
+            # paths/modes are still rejected by the atomic readback after replacement.
+            existing = None
+        if existing is not None:
+            _verify_ledger_prefix(body, existing[2])
+            if existing[0] == body and existing[2] == receipt:
+                return {
+                    "status": "unchanged",
+                    "source_commit": source_commit,
+                    "sha256": receipt["sha256"],
+                    "row_count": receipt["row_count"],
+                }
+
+        _atomic_private_write(ledger_path, body, max_bytes=MAX_LEDGER_BYTES)
+        _atomic_private_write(
+            ledger_receipt_path,
+            _canonical_json_bytes(receipt),
+            max_bytes=MAX_RECEIPT_BYTES,
+        )
+        installed_body, installed_rows, installed_receipt = _read_ledger_snapshot(
+            ledger_path,
+            ledger_receipt_path,
+        )
+        if installed_body != body or installed_rows != rows or installed_receipt != receipt:
+            raise ValueError("canonical current-main ledger install readback mismatch")
+        return {
+            "status": "installed",
+            "source_commit": source_commit,
+            "sha256": receipt["sha256"],
+            "row_count": receipt["row_count"],
+        }
 
 
 def _activation_boundary_identity(boundary: dict[str, object]) -> str:
@@ -1327,6 +1634,7 @@ def advance_lifecycle(
     lifecycle_root: Path | None = None,
     mark_root: Path | None = None,
     ledger_path: Path | None = None,
+    ledger_receipt_path: Path | None = None,
 ) -> dict[str, object]:
     """Advance lifecycle state once; fail closed before advancing any cursor."""
     if lifecycle_root is None:
@@ -1343,15 +1651,19 @@ def advance_lifecycle(
             mark_root, label="private option mark evidence"
         )
         mark_chain._require_private_directory(mark_root)
-    ledger_path = ledger_path or Path(
-        os.environ.get("PROPHET_LEDGER_PATH", str(DEFAULT_LEDGER_PATH))
-    ).expanduser()
+    ledger_path, ledger_receipt_path = _ledger_paths(
+        lifecycle_root,
+        ledger_path=ledger_path,
+        ledger_receipt_path=ledger_receipt_path,
+        create=False,
+    )
 
     with mark_chain._private_ledger_lock(lifecycle_root):
         current_mark_pointer, current_mark = _mark_head(mark_root)
-        ledger_body = _read_ledger(ledger_path)
-        rows = _ledger_rows(ledger_body)
-        ledger_receipt = _ledger_receipt(ledger_body, rows)
+        ledger_body, rows, ledger_receipt = _read_ledger_snapshot(
+            ledger_path,
+            ledger_receipt_path,
+        )
         state = _load_state(lifecycle_root)
 
         if state is None:
@@ -1575,28 +1887,57 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="advance the private prospective lifecycle once",
     )
+    parser.add_argument(
+        "--sync-current-main-ledger",
+        action="store_true",
+        help=(
+            "resolve origin main, install its exact canonical Prophet ledger and "
+            "write a private source receipt before any requested advancement"
+        ),
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    if not args.advance:
+    if not args.advance and not args.sync_current_main_ledger:
         _parser().print_help()
         return 2
     try:
-        summary = advance_lifecycle()
+        sync_summary = None
+        if args.sync_current_main_ledger:
+            sync_summary = sync_canonical_ledger()
+        if args.advance:
+            # Production CLI advancement is never permitted to skip the exact-main
+            # refresh.  Python callers can still inject a receipt-bound fixture.
+            if not args.sync_current_main_ledger:
+                raise ValueError(
+                    "CLI advancement requires --sync-current-main-ledger"
+                )
+            summary = advance_lifecycle()
+        else:
+            summary = None
     except Exception as exc:  # noqa: BLE001
         log.error("prophet option shadow lifecycle refused advancement: %s", exc)
         return 1
-    log.info(
-        "prophet option shadow lifecycle: status=%s events=%s enrollments=%s "
-        "terminals=%s head=%s",
-        summary["status"],
-        summary["event_count"],
-        summary["enrollment_count"],
-        summary["terminal_count"],
-        summary["lifecycle_head"],
-    )
+    if sync_summary is not None:
+        log.info(
+            "canonical Prophet ledger: status=%s commit=%s rows=%s sha256=%s",
+            sync_summary["status"],
+            sync_summary["source_commit"],
+            sync_summary["row_count"],
+            sync_summary["sha256"],
+        )
+    if summary is not None:
+        log.info(
+            "prophet option shadow lifecycle: status=%s events=%s enrollments=%s "
+            "terminals=%s head=%s",
+            summary["status"],
+            summary["event_count"],
+            summary["enrollment_count"],
+            summary["terminal_count"],
+            summary["lifecycle_head"],
+        )
     return 0
 
 

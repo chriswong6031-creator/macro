@@ -1132,9 +1132,13 @@ def test_prophet_marks_runner_uses_the_checkout_that_owns_it():
     assert 'SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)' in runner
     assert 'REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)' in runner
     assert '"$PYTHON" -m "$MARKS_MODULE" --publish' in runner
-    assert '"$PYTHON" -m "$LIFECYCLE_MODULE" --advance' in runner
+    assert (
+        '"$PYTHON" -m "$LIFECYCLE_MODULE" '
+        "--sync-current-main-ledger --advance"
+        in runner
+    )
     assert runner.index('"$PYTHON" -m "$MARKS_MODULE" --publish') < runner.index(
-        '"$PYTHON" -m "$LIFECYCLE_MODULE" --advance'
+        '"$PYTHON" -m "$LIFECYCLE_MODULE" --sync-current-main-ledger --advance'
     )
 
     plist_path = repo / "ops/launchd/com.mastermind.prophetmarks.plist"
@@ -1222,13 +1226,17 @@ esac
     assert at_open.returncode == 0
     assert "FAKE_PYTHON -m scripts.build_prophet_marks --publish" in at_open.stdout
     assert (
-        "FAKE_PYTHON -m scripts.build_prophet_option_shadow_lifecycle --advance"
+        "FAKE_PYTHON -m scripts.build_prophet_option_shadow_lifecycle "
+        "--sync-current-main-ledger --advance"
         in at_open.stdout
     )
+    assert "PROPHET_LEDGER_PATH" in runner_text
+    assert "PROPHET_LEDGER_RECEIPT_PATH" in runner_text
     assert before_close.returncode == 0
     assert "FAKE_PYTHON -m scripts.build_prophet_marks --publish" in before_close.stdout
     assert (
-        "FAKE_PYTHON -m scripts.build_prophet_option_shadow_lifecycle --advance"
+        "FAKE_PYTHON -m scripts.build_prophet_option_shadow_lifecycle "
+        "--sync-current-main-ledger --advance"
         in before_close.stdout
     )
     assert at_close.returncode == 0
@@ -2075,8 +2083,42 @@ def _lifecycle_emit_mark(
 
 
 def _lifecycle_ledger(path: Path) -> Path:
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    path.parent.chmod(0o700)
     path.write_text("# canonical test ledger\n", encoding="utf-8")
+    path.chmod(0o600)
+    _lifecycle_refresh_ledger_receipt(path)
     return path
+
+
+def _lifecycle_receipt_path(path: Path) -> Path:
+    return path.parent / "receipt.json"
+
+
+def _lifecycle_refresh_ledger_receipt(
+    path: Path,
+    *,
+    source_commit: str = "a" * 40,
+) -> dict:
+    body = path.read_bytes()
+    row_count = sum(
+        bool(line.strip()) and not line.lstrip().startswith(b"#")
+        for line in body.splitlines()
+    )
+    receipt = {
+        "schema": option_lifecycle.LEDGER_SNAPSHOT_RECEIPT_SCHEMA,
+        "source_repository": option_lifecycle.CANONICAL_LEDGER_REPOSITORY,
+        "source_ref": option_lifecycle.CANONICAL_LEDGER_REF,
+        "source_commit": source_commit,
+        "source_path": option_lifecycle.CANONICAL_LEDGER_SOURCE_PATH,
+        "bytes": len(body),
+        "sha256": hashlib.sha256(body).hexdigest(),
+        "row_count": row_count,
+    }
+    receipt_path = _lifecycle_receipt_path(path)
+    receipt_path.write_bytes(option_lifecycle._canonical_json_bytes(receipt))
+    receipt_path.chmod(0o600)
+    return receipt
 
 
 def _lifecycle_append_close(
@@ -2097,6 +2139,7 @@ def _lifecycle_append_close(
     }
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(row, allow_nan=False) + "\n")
+    _lifecycle_refresh_ledger_receipt(path)
     return row
 
 
@@ -2414,7 +2457,7 @@ def test_option_shadow_lifecycle_refuses_ledger_rewrite_and_option_result_claim(
     )
     state_before = (lifecycle_root / "current.json").read_bytes()
     ledger_path.write_text("# rewritten ledger prefix\n", encoding="utf-8")
-    with pytest.raises(ValueError, match="no longer extends"):
+    with pytest.raises(ValueError, match="does not match its receipt|no longer extends"):
         option_lifecycle.advance_lifecycle(
             lifecycle_root=lifecycle_root,
             mark_root=mark_root,
@@ -2581,6 +2624,138 @@ def test_option_shadow_lifecycle_crash_retry_adopts_identical_event(
         lifecycle_root,
         _lifecycle_state(lifecycle_root),
     )
+
+
+def test_option_shadow_sync_installs_exact_current_main_receipt_before_activation(
+    monkeypatch,
+    tmp_path,
+):
+    lifecycle_root = _lifecycle_private_dir(tmp_path / "private-lifecycle")
+    source_ledger = _lifecycle_ledger(tmp_path / "source-ledger" / "ledger.jsonl")
+    _lifecycle_append_close(source_ledger, plan_id="ALREADY-CLOSED")
+    source_body = source_ledger.read_bytes()
+    source_commit = "c" * 40
+    monkeypatch.setattr(
+        option_lifecycle,
+        "_resolve_current_main_commit",
+        lambda: source_commit,
+    )
+    monkeypatch.setattr(
+        option_lifecycle,
+        "_download_current_main_ledger",
+        lambda commit: source_body if commit == source_commit else b"",
+    )
+
+    synced = option_lifecycle.sync_canonical_ledger(
+        lifecycle_root=lifecycle_root,
+    )
+    ledger_path = lifecycle_root / "canonical_ledger" / "ledger.jsonl"
+    receipt_path = lifecycle_root / "canonical_ledger" / "receipt.json"
+    assert synced == {
+        "status": "installed",
+        "source_commit": source_commit,
+        "sha256": hashlib.sha256(source_body).hexdigest(),
+        "row_count": 1,
+    }
+    assert ledger_path.read_bytes() == source_body
+    assert ledger_path.stat().st_mode & 0o777 == 0o600
+    assert receipt_path.stat().st_mode & 0o777 == 0o600
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    assert receipt["source_commit"] == source_commit
+    assert receipt["source_path"] == "data/prophet/ledger.jsonl"
+    assert receipt["source_ref"] == "refs/heads/main"
+
+    mark_root = tmp_path / "private-marks"
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:00:00+00:00",
+        session_date="2026-08-11",
+        phase="pre_trigger",
+    )
+    activated = option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+    )
+    assert activated["status"] == "activated"
+    activation = _lifecycle_events(lifecycle_root)[0]
+    assert activation["payload"]["ledger_boundary"] == receipt
+
+
+def test_option_shadow_sync_refuses_current_main_ledger_rewrite_without_replacing_snapshot(
+    monkeypatch,
+    tmp_path,
+):
+    lifecycle_root = _lifecycle_private_dir(tmp_path / "private-lifecycle")
+    source_ledger = _lifecycle_ledger(tmp_path / "source-ledger" / "ledger.jsonl")
+    _lifecycle_append_close(source_ledger, plan_id="ALREADY-CLOSED")
+    original_body = source_ledger.read_bytes()
+    source_commit = "d" * 40
+    monkeypatch.setattr(
+        option_lifecycle,
+        "_resolve_current_main_commit",
+        lambda: source_commit,
+    )
+    monkeypatch.setattr(
+        option_lifecycle,
+        "_download_current_main_ledger",
+        lambda _commit: original_body,
+    )
+    option_lifecycle.sync_canonical_ledger(lifecycle_root=lifecycle_root)
+
+    mark_root = tmp_path / "private-marks"
+    _lifecycle_emit_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:00:00+00:00",
+        session_date="2026-08-11",
+        phase="pre_trigger",
+    )
+    option_lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+    )
+    ledger_path = lifecycle_root / "canonical_ledger" / "ledger.jsonl"
+    receipt_path = lifecycle_root / "canonical_ledger" / "receipt.json"
+    receipt_before = receipt_path.read_bytes()
+
+    rewritten = original_body.replace(b'"outcome": "T1_HIT"', b'"outcome": "EXPIRED"')
+    assert rewritten != original_body
+    monkeypatch.setattr(
+        option_lifecycle,
+        "_resolve_current_main_commit",
+        lambda: "e" * 40,
+    )
+    monkeypatch.setattr(
+        option_lifecycle,
+        "_download_current_main_ledger",
+        lambda _commit: rewritten,
+    )
+    with pytest.raises(ValueError, match="no longer extends"):
+        option_lifecycle.sync_canonical_ledger(lifecycle_root=lifecycle_root)
+    assert ledger_path.read_bytes() == original_body
+    assert receipt_path.read_bytes() == receipt_before
+
+
+def test_option_shadow_cli_never_advances_when_current_main_sync_fails(monkeypatch):
+    advanced = []
+
+    def fail_sync():
+        raise ValueError("injected current-main outage")
+
+    monkeypatch.setattr(option_lifecycle, "sync_canonical_ledger", fail_sync)
+    monkeypatch.setattr(
+        option_lifecycle,
+        "advance_lifecycle",
+        lambda: advanced.append(True),
+    )
+    assert (
+        option_lifecycle.main(["--sync-current-main-ledger", "--advance"])
+        == 1
+    )
+    assert advanced == []
+    assert option_lifecycle.main(["--advance"]) == 1
+    assert advanced == []
 
 
 def test_option_shadow_lifecycle_has_no_public_writer_or_ledger_mutator():

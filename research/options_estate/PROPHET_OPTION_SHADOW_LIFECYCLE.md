@@ -25,7 +25,8 @@ The first successful invocation writes one immutable `activation_boundary` event
 sets both cursors to facts already present:
 
 - the exact private mark-chain head; and
-- the byte length, SHA-256, and parsed-row count of the canonical forward ledger.
+- the exact `refs/heads/main` commit plus repository path, byte length, SHA-256, and
+  parsed-row count of the canonical forward ledger.
 
 Nothing at or before either cursor is eligible. A pre-existing fresh quote cannot be
 turned into a retrospective enrollment. The ledger must continue byte-for-byte from
@@ -80,6 +81,22 @@ backfill lane.
 Default root:
 `~/.mastermind_private/prophet_option_shadow_lifecycle_v1`
 
+The processor never trusts the mixed-vintage deploy checkout's tracked
+`data/prophet/ledger.jsonl`. Before every CLI advancement it resolves the official
+repository's exact current `refs/heads/main` commit, downloads that commit-pinned
+ledger path, validates every row, and atomically installs these caller-owned `0600`
+siblings:
+
+- `canonical_ledger/ledger.jsonl`
+- `canonical_ledger/receipt.json`
+
+The receipt is canonical JSON under
+`prophet.canonical_ledger_snapshot_receipt/v1` and binds repository, ref, exact
+commit, tracked path, byte count, SHA-256, and row count. The runner explicitly sets
+`PROPHET_LEDGER_PATH` and `PROPHET_LEDGER_RECEIPT_PATH` to those host-private files.
+A failed ref lookup, commit-pinned download, validation, receipt match, or atomic
+readback blocks the lifecycle; the stale checkout copy is never a fallback.
+
 - root and event directories: caller-owned `0700`;
 - lock, current state, and event files: caller-owned regular `0600` files;
 - events: schema-checked, content-addressed, `O_EXCL`, fsynced, read back, and linked
@@ -99,7 +116,8 @@ provider label, return, or append-only history.
 `ops/launchd/run_prophet_marks_loop.sh` runs:
 
 1. `scripts.build_prophet_marks --publish`; then
-2. `scripts.build_prophet_option_shadow_lifecycle --advance`.
+2. `scripts.build_prophet_option_shadow_lifecycle --sync-current-main-ledger
+   --advance`.
 
 The second step runs even when no new RTH mark was admitted, allowing the 09:25 ET
 cycle to consume a canonical close written after the prior session. Either non-zero
@@ -114,6 +132,8 @@ Advancement must fail closed, without moving either cursor, when any of these oc
 - stored mark cursor is not an ancestor of the current head;
 - event/state identity, event predecessor, enrollment pointer, or permissions fail;
 - canonical ledger no longer extends the exact stored prefix;
+- canonical snapshot/receipt source, exact-main commit, path, digest, mode, or
+  readback is invalid;
 - a new canonical row is malformed, duplicated, future-reversed, or already claims an
   option result;
 - runtime event-schema validation fails; or

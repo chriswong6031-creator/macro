@@ -51,8 +51,24 @@
     "ledgerReceipt": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["bytes", "sha256", "row_count"],
+      "required": [
+        "schema",
+        "source_repository",
+        "source_ref",
+        "source_commit",
+        "source_path",
+        "bytes",
+        "sha256",
+        "row_count"
+      ],
       "properties": {
+        "schema": {"const": "prophet.canonical_ledger_snapshot_receipt/v1"},
+        "source_repository": {
+          "const": "https://github.com/mastermindx-market-intelligence/macro"
+        },
+        "source_ref": {"const": "refs/heads/main"},
+        "source_commit": {"type": "string", "pattern": "^[a-f0-9]{40,64}$"},
+        "source_path": {"const": "data/prophet/ledger.jsonl"},
         "bytes": {"type": "integer", "minimum": 1},
         "sha256": {"$ref": "#/$defs/sha256"},
         "row_count": {"type": "integer", "minimum": 0}
