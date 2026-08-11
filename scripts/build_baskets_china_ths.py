@@ -48,38 +48,56 @@ log = logging.getLogger("build_baskets_china_ths")
 def snapshot_membership() -> int:
     """Append a dated PIT snapshot of THS concept membership (content-deduped, never fatal).
 
-    Two stores, one lane.  The dated JSON side-car below is the original
-    (2026-06-30 / 2026-07-08 are its only rows); ``_snapshot_membership_pit``
-    stamps the SAME membership into the queryable per-suite parquet the relay
-    program needs, and does the curated suite at the same time.  Both are
-    content-deduped and keep-first, so a same-day re-run is a no-op in either.
+    Two stores plus one stamp, one lane.  The dated JSON side-car below is the
+    original (2026-06-30 / 2026-07-08 were its only rows until GMI W1a wired an
+    actual producer); ``_snapshot_membership_pit`` stamps the SAME membership into
+    the queryable per-suite parquet the relay program needs, and does the curated
+    suite at the same time.  Both are content-deduped and keep-first, so a same-day
+    re-run is a no-op in either.
+
+    ``_cadence.json`` is rewritten UNCONDITIONALLY, including on every early return
+    above — and that is the point of it.  This step ran green ~35 nights in a row
+    writing nothing at all, because it hashes today's membership.json against the
+    newest side-car, matches, and skips; membership.json had been frozen since
+    2026-06-30 because nothing was refreshing it (the scraper and seeder appeared in
+    no workflow).  A deduping writer and an unwired writer leave the identical trace
+    on disk: nothing.  The cadence stamp is what tells them apart, and
+    ``scripts/check_membership_snapshot_freshness.py`` is what reads it.
     """
     import hashlib
 
+    from engine import basket_membership_pit as _pit  # noqa: PLC0415
+
+    suite = _pit.SUITE_THS
     _snapshot_membership_pit()
+    sha = None
     try:
         src = config.data_dir() / "baskets_china_ths" / "membership.json"
+        # NO early return on any path below: each one falls through to the stamp, so a
+        # writer that ran and found nothing looks different from a writer nobody wired.
         if not src.exists():
-            log.warning("ths snapshot: membership.json missing — skipping")
-            return 0
-        snap_dir = config.data_dir() / "baskets_china_ths" / "snapshots"
-        snap_dir.mkdir(parents=True, exist_ok=True)
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        dest = snap_dir / f"{today}.json"
-        if dest.exists():
-            log.info("ths snapshot: %s already stamped — skipping", today)
-            return 0
-        raw = src.read_bytes()
-        prior = sorted(p for p in snap_dir.glob("????-??-??.json"))
-        if prior:
-            last = prior[-1]
-            if hashlib.sha256(last.read_bytes()).hexdigest() == hashlib.sha256(raw).hexdigest():
-                log.info("ths snapshot: membership unchanged since %s — dedup skip", last.stem)
-                return 0
-        dest.write_bytes(raw)
-        log.info("ths snapshot: wrote %s (%d bytes)", dest.name, len(raw))
+            log.warning("ths snapshot: membership.json missing — nothing to stamp")
+        else:
+            snap_dir = config.data_dir() / "baskets_china_ths" / "snapshots"
+            snap_dir.mkdir(parents=True, exist_ok=True)
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            dest = snap_dir / f"{today}.json"
+            raw = src.read_bytes()
+            sha = hashlib.sha256(raw).hexdigest()
+            if dest.exists():
+                log.info("ths snapshot: %s already stamped — skipping", today)
+            else:
+                prior = _pit.dated_snapshots(suite)
+                if prior and hashlib.sha256(prior[-1].read_bytes()).hexdigest() == sha:
+                    log.info("ths snapshot: membership unchanged since %s — dedup skip",
+                             prior[-1].stem)
+                else:
+                    dest.write_bytes(raw)
+                    log.info("ths snapshot: wrote %s (%d bytes)", dest.name, len(raw))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("ths snapshot failed (%s)", e)
+    _pit.write_cadence_stamp(suite, writer="scripts.build_baskets_china_ths",
+                             membership_sha=sha)
     return 0
 
 

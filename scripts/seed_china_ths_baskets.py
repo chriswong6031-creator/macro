@@ -39,6 +39,13 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("seed_china_ths_baskets")
 
 SEED = "2021-06-15"  # china_search cache start; first-run members seeded here (hindsight-curated)
+# DATE-SHAPED, never "*.json". The snapshots dir also carries working files that are NOT
+# snapshots — `_cadence.json`, the liveness stamp both nightly side-car writers rewrite every
+# run (GMI W1a). Under a bare "*.json" glob those would be read as snapshots, and worse: "_"
+# sorts AFTER every digit in ASCII, so `max(..., key=stem)` and `sorted(...)[-1]` would both
+# resolve the stamp as the NEWEST snapshot — which is the one this file treats as the
+# authoritative current board list (see _pit_members and the auto-import loop below).
+SNAPSHOT_GLOB = "????-??-??.json"
 # A latest snapshot whose board for a theme is smaller than this fraction of that theme's historical
 # max is treated as a (possibly truncated) scrape: we trust NO removals from it and carry every
 # ever-seen member forward as active. Guards against the collector handing us a partial member list
@@ -232,10 +239,10 @@ def _latest_snapshot(refresh: bool) -> dict[str, list[dict]]:
     from collectors import china_ths_concepts as ths
     snap_dir = config.data_dir() / "baskets_china_ths" / "snapshots"
     names = [row[1] for row in CURATED]
-    if refresh or not snap_dir.exists() or not list(snap_dir.glob("*.json")):
+    if refresh or not snap_dir.exists() or not list(snap_dir.glob(SNAPSHOT_GLOB)):
         log.info("fetching fresh THS snapshot (%d themes)…", len(names))
         return ths.snapshot(names)
-    latest = max(snap_dir.glob("*.json"), key=lambda p: p.stem)
+    latest = max(snap_dir.glob(SNAPSHOT_GLOB), key=lambda p: p.stem)
     log.info("building from existing snapshot %s", latest.name)
     return json.loads(latest.read_text())
 
@@ -244,7 +251,7 @@ def _all_snapshots() -> list[tuple[str, dict]]:
     """All dated snapshots, oldest→newest, as [(date, {theme:[{ticker,name}]})]."""
     snap_dir = config.data_dir() / "baskets_china_ths" / "snapshots"
     out = []
-    for p in sorted(snap_dir.glob("*.json"), key=lambda x: x.stem):
+    for p in sorted(snap_dir.glob(SNAPSHOT_GLOB), key=lambda x: x.stem):
         try:
             out.append((p.stem, json.loads(p.read_text())))
         except Exception as e:  # noqa: BLE001
