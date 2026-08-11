@@ -3,12 +3,12 @@
  "charter": "research/prophet_us_audit/FOOTPRINT_PICKER_PREREG_2026-08-11.md",
  "tier": "measurement/display \u2014 no gate, rank, veto or engine change ships from this",
  "run_metadata": {
-  "run_utc": "2026-08-11T18:01:56+00:00",
-  "runtime_seconds": 35.2,
+  "run_utc": "2026-08-11T18:19:58+00:00",
+  "runtime_seconds": 34.8,
   "argv": []
  },
  "provenance": {
-  "repo_sha": "11236e7c84e709f6dfcab55ea52e5906a6eedb4b",
+  "repo_sha": "3edfce99e522cffd3f7f5fc2b60694797f5bcae5",
   "episodes_sha": "305990306ef",
   "episodes_path": "/private/tmp/claude-501/-Users-chriswong-Documents-Cluade-Macro-Dashboard--claude-worktrees-stoch-rsi-macd-confluence-2959db/de6f64ca-9a78-4c79-aa23-591e0d75d36c/scratchpad/episodes_305990306ef.parquet",
   "episodes_rows": 39877,
@@ -115,7 +115,7 @@
    "rows": [
     [
      "repo SHA",
-     "11236e7c84e709f6dfcab55ea52e5906a6eedb4b"
+     "3edfce99e522cffd3f7f5fc2b60694797f5bcae5"
     ],
     [
      "branch",
@@ -346,7 +346,7 @@
      true
     ]
    ],
-   "notes": "the charter's coverage gate: a construction that cannot show its work on the motivating exemplars does not get presented on pooled means"
+   "notes": "the charter's coverage gate: a construction that cannot show its work on the motivating exemplars does not get presented on pooled means. 2 of 5 exemplar rows are UNGRADED (NEM 2026-07-09, STLD 2026-07-14): fewer than 30 forward sessions exist past them on a tape ending 2026-08-10, so their label columns are blank by the truncation rule and they contribute to NO pooled cell."
   },
   "R2": {
    "title": "\u00a71 label accounting \u2014 three stop bases, no false-bounce leg",
@@ -482,7 +482,7 @@
      0.0107340513654548
     ]
    ],
-   "notes": "conditioning on 'the low held k sessions' deletes early stop-outs and manufactures edge (bake-off \u00a7RT), so the structural tier is measured as decision policies over the SAME fire set \u2014 fires never entered are counted, never dropped. No scalar winner is pre-declared."
+   "notes": "conditioning on 'the low held k sessions' deletes early stop-outs and manufactures edge (bake-off \u00a7RT), so the structural tier is measured as decision policies over the SAME fire set \u2014 fires never entered are counted, never dropped. No scalar winner is pre-declared. HORIZON MISALIGNMENT (measured, not asserted): P0 is graded over exactly [T, T+42], but each policy re-anchors its own +42 window to its LATER entry \u2014 P1 enters a median 5 / p95 7 sessions after T (grading to ~T+47 / T+49) and P2 a median 9 / p95 16 (grading to ~T+51 / T+58). A longer window gives a position more time BOTH to be stopped and to run, so this row-set comparison confounds the policy with its clock; R8b re-runs P1 on the fire's own stop and horizon to separate them."
   },
   "R4": {
    "title": "\u00a75 FEATURE LEDGER \u2014 deep battery, stop-out rate by cell (primary basis X = entry - 2xATR14)",
@@ -767,7 +767,7 @@
      null
     ]
    ],
-   "notes": "load-bearing honesty: the dark-pool deep panel starts 2023-08 and the options-flow store 2026-01, and both need >= 40 trailing observations before a z exists at all, so the thin battery speaks for a small and RECENT slice of a 12-year plane. Every thin verdict is capped at PROBE for this reason."
+   "notes": "load-bearing honesty: the dark-pool deep panel starts 2023-08 and the options-flow store 2026-01, and both need >= 40 trailing observations before a z exists at all, so the thin battery speaks for a small and RECENT slice of a 12-year plane. Every thin verdict is capped at PROBE for this reason. DIFFERENTIAL TRUNCATION (measured): the 107 truncated rows carry a T1 value 73.83% of the time against 12.05% of the 9698 graded rows \u2014 a 61.78pp gap, because both the thin feeds and the ungraded right edge live in the same recent window. The thin lane's gradeable sample is therefore biased away from the newest fires it is otherwise best placed to see."
   },
   "R6b": {
    "title": "Thin-feed substrate diagnosis \u2014 what the feeds actually contain",
@@ -856,6 +856,228 @@
     ]
    ],
    "notes": "no other combination was searched (charter \u00a75)"
+  },
+  "R8a": {
+   "title": "\u00a7R8 POLICY DECOMPOSITION \u2014 skipped fires vs common fires vs the chase cap",
+   "columns": [
+    "policy",
+    "block",
+    "n",
+    "names",
+    "P0 stop-out%",
+    "P0 mean R",
+    "P0 sum R",
+    "policy sum R",
+    "delta R (policy - P0)",
+    "R per name-year"
+   ],
+   "rows": [
+    [
+     "P1",
+     "(a) skipped by the policy, graded by P0",
+     1851,
+     237,
+     82.66,
+     -0.19715054008276886,
+     -364.9256496932052,
+     null,
+     null,
+     -0.1267
+    ],
+    [
+     "P1",
+     "(b) entered by BOTH, graded by both",
+     7835,
+     240,
+     50.35,
+     0.49027282059514615,
+     3841.28754936297,
+     2749.545234965923,
+     -1091.7423143970468,
+     -0.379
+    ],
+    [
+     "P2",
+     "(a) skipped by the policy, graded by P0",
+     2191,
+     238,
+     77.77,
+     -0.13998831341294604,
+     -306.71439468776475,
+     null,
+     null,
+     -0.1065
+    ],
+    [
+     "P2",
+     "(b) entered by BOTH, graded by both",
+     7487,
+     240,
+     50.26,
+     0.5060684101799359,
+     3788.93418701718,
+     2800.015320192021,
+     -988.9188668251591,
+     -0.3433
+    ],
+    [
+     "P1",
+     "(c) skipped & P0 STOPPED (avoided losses)",
+     1530,
+     237,
+     100.0,
+     -1.0,
+     -1530.0,
+     null,
+     null,
+     -0.5312
+    ],
+    [
+     "P1",
+     "(c) skipped & P0 SURVIVED (forgone runaways)",
+     321,
+     167,
+     0.0,
+     3.6295151099900145,
+     1165.0743503067947,
+     null,
+     null,
+     0.4045
+    ]
+   ],
+   "notes": "P0 enters every fire, so a policy's per-name-year R gap is exactly the R it declined on SKIPPED fires plus the R it gained or lost by entering the COMMON fires later. Blocks (a) and (b) partition the gap; block (c) prices the chase cap specifically."
+  },
+  "R8b": {
+   "title": "\u00a7R8 P1 VARIANT \u2014 same entry, the FIRE's stop and the FIRE's horizon (plus the fair common-set P0 vs P1)",
+   "columns": [
+    "variant",
+    "n entered",
+    "names",
+    "graded",
+    "stop-out%",
+    "mean R",
+    "median R",
+    "sum R",
+    "R per name-year",
+    "vs P0 on the common set"
+   ],
+   "rows": [
+    [
+     "P1v (fire stop, fire horizon)",
+     7843,
+     240,
+     7843,
+     50.35,
+     0.37126344001173534,
+     -1.0,
+     2911.8191600120404,
+     1.0109,
+     null
+    ],
+    [
+     "... P0 on that SAME set",
+     7843,
+     240,
+     7843,
+     50.35,
+     0.49008120956907825,
+     -1.0,
+     3843.706926650281,
+     1.3344,
+     -931.8878
+    ],
+    [
+     "SHIPPED P1 on the common set",
+     7835,
+     240,
+     7835,
+     57.41,
+     0.3509311084832065,
+     -1.0,
+     2749.545234965923,
+     0.9545,
+     null
+    ],
+    [
+     "... P0 on that SAME common set",
+     7835,
+     240,
+     7835,
+     50.35,
+     0.49027282059514615,
+     -1.0,
+     3841.28754936297,
+     1.3336,
+     -1091.7423
+    ]
+   ],
+   "notes": "the shipped P1 re-anchors BOTH the stop and the clock to its later entry, so R3's comparison mixes a policy effect with a horizon effect. P1v holds the fire's stop (entry-2xATR14 at T) and the fire's T+42 fixed, changing only WHEN the position is taken."
+  },
+  "R8c": {
+   "title": "\u00a7R8 MECHANISM \u2014 stop WIDTH by cell for the two features that moved",
+   "columns": [
+    "feature",
+    "cell",
+    "n",
+    "names",
+    "median ATR14 (% of entry)",
+    "median 2xATR stop width (% of entry)",
+    "median entry_vs_low",
+    "stop-out% (X)"
+   ],
+   "rows": [
+    [
+     "D2  flush-on-shelf \u2014 |P_low / rolling_poc(126,24) - 1|",
+     "bottom (<= 0.05002)",
+     3269,
+     237,
+     0.019306219381818656,
+     0.03861243876363731,
+     0.04456397072926532,
+     60.36
+    ],
+    [
+     "D2  flush-on-shelf \u2014 |P_low / rolling_poc(126,24) - 1|",
+     "middle",
+     3268,
+     239,
+     0.021970971283012355,
+     0.04394194256602471,
+     0.05012502821026166,
+     58.34
+    ],
+    [
+     "D2  flush-on-shelf \u2014 |P_low / rolling_poc(126,24) - 1|",
+     "top (> 0.1073)",
+     3268,
+     240,
+     0.03104420044365879,
+     0.06208840088731758,
+     0.06880268745522844,
+     50.75
+    ],
+    [
+     "D1a AVWAP reclaim \u2014 close(T) above the 126d-high-anchored VWAP",
+     "False",
+     7823,
+     240,
+     0.02383344594630654,
+     0.04766689189261308,
+     0.04713338534498579,
+     55.23
+    ],
+    [
+     "D1a AVWAP reclaim \u2014 close(T) above the 126d-high-anchored VWAP",
+     "True",
+     1982,
+     239,
+     0.021053304969596443,
+     0.042106609939192886,
+     0.08036891264303736,
+     61.48
+    ]
+   ],
+   "notes": "basis X is entry-anchored but not width-constant: a cell whose names carry a wider ATR gets a wider stop and is mechanically harder to touch. This is the stop-width tell in the units the stop is actually set in."
   }
  },
  "ledger": {
@@ -1223,6 +1445,24 @@
    }
   ]
  },
+ "review_appendix": {
+  "r8a": {
+   "P1": {
+    "skipped_n": 1851,
+    "skipped_sum_R": -364.9256496932052,
+    "common_n": 7835,
+    "common_P0_sum_R": 3841.28754936297,
+    "common_policy_sum_R": 2749.545234965923
+   },
+   "P2": {
+    "skipped_n": 2191,
+    "skipped_sum_R": -306.71439468776475,
+    "common_n": 7487,
+    "common_P0_sum_R": 3788.93418701718,
+    "common_policy_sum_R": 2800.015320192021
+   }
+  }
+ },
  "features_parquet": "footprint_picker_features.parquet",
  "features_rows": 9805,
  "features_columns": [
@@ -1279,6 +1519,12 @@
   "P2_stopped",
   "P2_r_mult",
   "P2_truncated",
-  "P2_entry_vs_low"
+  "P2_entry_vs_low",
+  "P1v_entered",
+  "P1v_entry_pos",
+  "P1v_entry_close",
+  "P1v_stopped",
+  "P1v_r_mult",
+  "P1v_risk_pct"
  ]
 }

@@ -86,31 +86,49 @@ names / 2,880.5 name-years. All gates passed; deviations: HL/UEC add-ons exclude
 pooling (bake-off law), T3 options net-premium **uncomputable** (the signed column begins
 2026-07-02 — ~19 rows/name; no 252d z can exist; printed as an empty lane rather than
 re-specified), P1's search bounded at T+42, thin-lane windows truncated at T−1 per the
-knowability rule.
+knowability rule. Exemplar-gate note: the two motivating 2026-07 fires (NEM 07-09, STLD
+07-14) print all features but are label-truncated (<30 forward sessions; outcomes mature
+~2026-09) and sit in no pooled cell; the thin dark-pool lane is edge-biased the same way
+(73.8% of truncated rows carry a T1 value vs 12.1% of graded — the feed lives in the
+window truncation removes).
 
 **R2 — labels.** Primary basis X (entry − 2×ATR14, median risk 4.6% of entry): stop-out
 56.5%, mean R +0.36, median R −1.0 — tighter than the bake-off's P_low anchor (46.2%) and
 harsher; the union book's central outcome is a stop-out, with the mean carried by the right
 tail. Bases A/F: 46.2% / 37.1% stop-outs.
 
-**R3 — the policies FAIL their pre-stated win condition.** P1 (wait 5 sessions, still
-alive, ≤+5%) enters 80.6% of fires; P2 (confirmed r3 pivot holding above the reference low
-within 15 sessions) enters 77.1%. Neither lowers the stop-out share (57.4% / 56.1% vs P0's
-56.5%) and both LOSE per-name-year R (0.95 / 0.97 vs 1.21) by forgoing 19–23% of fires.
-**Simple patience does not harvest the ex-post pre/post-trough split** (bake-off R9i): a
-confirmed pivot frequently prints inside a still-falling decline (the same reason C4
-carried a 42% pre-trough share), so the PIT proxies tested here do not select survivors.
-The 67%-win post-trough ceiling remains ex-post only — no construction measured to date
-reaches it at actionable prices.
+**R3 — the policies FAIL their pre-stated win condition, and the frozen decomposition
+(R8a/R8b, added after the red-team) says exactly why.** P1 (wait 5 sessions, still alive,
+≤+5%) enters 80.6% of fires; P2 (confirmed r3 pivot holding above the reference low within
+15 sessions) 77.1%. Per-name-year R: 0.95 / 0.97 vs P0's 1.21. The mechanism, correctly
+attributed: **skipping was the part that worked** — the fires the policies declined stopped
+out 82.7% / 77.8% under P0, and P1's chase-cap ledger nets +365R saved (1,530 avoided
+stop-outs vs 321 forgone runaways). **The entire deficit is the later entry on the common
+fires** (−1,092R / −989R; −0.38 / −0.34 per name-year). And the stop-out claim must be
+read carefully: under the fire's own risk contract (keep the original stop and the
+original T+42 — R8b), waiting changes the stop-out rate by exactly nothing (50.35% =
+50.35%); the shipped policy's higher stop-out was an artifact of re-anchoring a new,
+later stop. **Waiting does not get you stopped out more; it gets you less of the move.**
+The horizon misalignment of the shipped spec (P1 grades to ~T+47, P2 to ~T+58) is
+disclosed in the table notes and biases toward the policies — the null is conservative.
+The redirect for any future evidence construction: the SELECTION signal exists ex-post
+(the declined fires really were the losers — the largest separation in this file) but is
+not knowable at T through wait-k or pivot-confirm; a richer sequencing prereg must beat
+R3/R8 as its baseline. The bake-off's 67%-win post-trough ceiling remains ex-post only.
 
-**R4 — deep battery: every feature null under the charter's stability bar.** The two
-largest spreads both run OPPOSITE to their motivating stories and fail cross-basis sign
-stability: D2 flush-on-shelf — a washout low landing FAR from the volume POC stops out
-LESS (50.7% vs 60.4%; −9.6pp on X, CI [−15.4,−3.5]) but flips to +12.4pp on basis F → null;
-D1 AVWAP-reclaimed names stop out MORE (+6.3pp; the reclaimed cell enters at 0.080 vs
-0.047 entry-vs-low — it is the already-ran cohort). D3/D4/D5 flat. The cross-tab: within
-D2's better cell, MORE absorption at the low WORSENS outcomes (47.8% → 56.0%) — the
-"someone absorbed the flush" daily-bar story does not measure what it hopes to.
+**R4 — deep battery: every feature null under the charter's stability bar, and the two
+near-misses are mechanism-explained (R8c).** D2 flush-on-shelf — a washout low landing FAR
+from the volume POC stops out LESS (50.7% vs 60.4%; −9.6pp on X, CI [−15.4,−3.5]) — is a
+**volatility proxy, not a chip-distribution read**: its top tercile carries a 61%-wider
+ATR stop (6.2% of entry vs 3.9%; median ATR% 1.9→3.1 across cells), and on the
+non-ATR-normalized basis F the spread flips to +12.4pp — the near-mirror image that says
+the stop width, not the shelf, was doing the work. D1 AVWAP-reclaimed names stop out MORE
+(+6.3pp; the reclaimed cell = the already-ran cohort, entry 0.080 vs 0.047, on a NARROWER
+ATR stop). D3/D4/D5 flat. The cross-tab: within D2's better cell, MORE absorption at the
+low WORSENS outcomes (47.8% → 56.0%). These features were not measuring accumulation at
+all. (Design clause for future runs: the LIVE rule's basis-A sign requirement re-imports a
+stop-width-dominated axis — inert in this run, since no verdict was decided by A, but a
+genuinely entry-anchored future feature should be judged on X + F.)
 
 **R5/R6 — thin lanes: PROBE nulls on 12.7% coverage** (129/240 names, darkpool z spreads
 +2.4/−0.3pp, CIs straddling 0); options lane empty. **R5ref — the methodology receipt:**
@@ -124,7 +142,8 @@ the FEATURES, not artifacts of the ruler.
 1. **The CN chip-distribution concept does not transfer to US daily bars with these
    constructions.** Five volume-profile/absorption features at full 12-year depth, two
    dark-pool features at 3-year depth, two patience policies: nothing clears the
-   pre-stated bars, and the two biggest effects point away from the accumulation story.
+   pre-stated bars, and the two biggest effects are mechanism-explained as stop-width
+   (R8c) — at daily grain these constructions were not measuring accumulation at all.
    Per the ORE law these are construction-scoped nulls — the ledger records them; the
    space stays open where the data does not yet exist to search it.
 2. **Where the picker could still live (named waits-for-data, not kills):** the PIT

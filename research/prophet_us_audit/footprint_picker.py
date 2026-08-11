@@ -367,6 +367,26 @@ def policies(nd: dict, T: int, p_low: float) -> dict:
             s2 = p + PIVOT_R
             break
     out["P2"] = grade(s2)
+
+    # P1v (§R8b) — the SAME entry as P1 but the fire's own risk contract retained: stop stays
+    # at the fire-date entry - 2xATR14(T) and the horizon stays the FIRE's T+42, so P1 is
+    # compared with P0 on one aligned clock instead of a later, longer one.
+    end = min(T + FWD_MAX, n - 1)
+    if s1 is None or stop_x is None or n - 1 - T < MIN_FWD or s1 >= end:
+        out["P1v"] = {"entered": False, "entry_pos": None, "entry_close": None,
+                      "stopped": None, "r_mult": None, "risk_pct": None}
+    else:
+        risk = (cl[s1] - stop_x) / cl[s1]
+        if risk <= 0:
+            out["P1v"] = {"entered": True, "entry_pos": int(s1),
+                          "entry_close": float(cl[s1]), "stopped": None, "r_mult": None,
+                          "risk_pct": None}
+        else:
+            hit = bool(np.any(lo[s1 + 1: end + 1] <= stop_x))
+            out["P1v"] = {"entered": True, "entry_pos": int(s1),
+                          "entry_close": float(cl[s1]), "stopped": hit,
+                          "r_mult": (-1.0 if hit else float((cl[end] / cl[s1] - 1.0) / risk)),
+                          "risk_pct": float(risk)}
     return out
 
 
@@ -588,6 +608,136 @@ def ledger(d: pd.DataFrame, tier: str, key_prefix: str) -> list[dict]:
     return rows
 
 
+# ------------------------------------------------------------------ §R8 review appendix
+def _sumr(x: pd.Series) -> float | None:
+    v = x.dropna().to_numpy(dtype="float64")
+    return float(np.sum(v)) if v.size else None
+
+
+def run_review_appendix(d: pd.DataFrame, name_years: float) -> dict:
+    """§R8 — the phase-2 review's three explanation-level receipts, frozen as tables.
+
+    R3 shows P1/P2 losing per-name-year R against P0 but cannot say WHERE the loss comes
+    from: the fires a policy skipped, the fires it entered later, or the horizon it was
+    graded on. These tables decompose exactly that, and price the D2 result in ATR units."""
+    out: dict = {}
+    g0 = d["P0_stopped"].notna()
+
+    # ---- R8a: where does the policy's R go? ------------------------------------------
+    ta = Table("R8a", "§R8 POLICY DECOMPOSITION — skipped fires vs common fires vs the "
+                      "chase cap",
+               ["policy", "block", "n", "names", "P0 stop-out%", "P0 mean R", "P0 sum R",
+                "policy sum R", "delta R (policy - P0)", "R per name-year"],
+               "P0 enters every fire, so a policy's per-name-year R gap is exactly the R it "
+               "declined on SKIPPED fires plus the R it gained or lost by entering the "
+               "COMMON fires later. Blocks (a) and (b) partition the gap; block (c) prices "
+               "the chase cap specifically.")
+    r8a: dict = {}
+    for pk in ("P1", "P2"):
+        ent = d[f"{pk}_entered"].astype(bool)
+        gp = d[f"{pk}_stopped"].notna()
+        skipped = (~ent) & g0
+        common = ent & g0 & gp
+        s = d[skipped]
+        ta.add(pk, "(a) skipped by the policy, graded by P0", len(s),
+               int(s["ticker"].nunique()), pct(rate(s["P0_stopped"].tolist())),
+               mean_(s["P0_r_mult"].tolist()), _sumr(s["P0_r_mult"]), None, None,
+               round((_sumr(s["P0_r_mult"]) or 0.0) / name_years, 4) if name_years else None)
+        c = d[common]
+        p0s, pks = _sumr(c["P0_r_mult"]), _sumr(c[f"{pk}_r_mult"])
+        ta.add(pk, "(b) entered by BOTH, graded by both", len(c),
+               int(c["ticker"].nunique()), pct(rate(c["P0_stopped"].tolist())),
+               mean_(c["P0_r_mult"].tolist()), p0s, pks,
+               None if p0s is None or pks is None else pks - p0s,
+               round(((pks or 0.0) - (p0s or 0.0)) / name_years, 4) if name_years else None)
+        r8a[pk] = {"skipped_n": len(s), "skipped_sum_R": _sumr(s["P0_r_mult"]),
+                   "common_n": len(c), "common_P0_sum_R": p0s, "common_policy_sum_R": pks}
+    # (c) the chase cap, priced: what P1 declined, split by what P0 then did with it
+    ent1 = d["P1_entered"].astype(bool)
+    sk = d[(~ent1) & g0]
+    for lab, part in (("(c) skipped & P0 STOPPED (avoided losses)",
+                       sk[sk["P0_stopped"].astype(bool)]),
+                      ("(c) skipped & P0 SURVIVED (forgone runaways)",
+                       sk[~sk["P0_stopped"].astype(bool)])):
+        ta.add("P1", lab, len(part), int(part["ticker"].nunique()),
+               pct(rate(part["P0_stopped"].tolist())), mean_(part["P0_r_mult"].tolist()),
+               _sumr(part["P0_r_mult"]), None, None,
+               round((_sumr(part["P0_r_mult"]) or 0.0) / name_years, 4)
+               if name_years else None)
+    ta.emit()
+    out["R8a"] = TABLES["R8a"]
+
+    # ---- R8b: P1 on the FIRE's own risk contract + the fair same-set comparison --------
+    tb = Table("R8b", "§R8 P1 VARIANT — same entry, the FIRE's stop and the FIRE's horizon "
+                      "(plus the fair common-set P0 vs P1)",
+               ["variant", "n entered", "names", "graded", "stop-out%", "mean R",
+                "median R", "sum R", "R per name-year", "vs P0 on the common set"],
+               "the shipped P1 re-anchors BOTH the stop and the clock to its later entry, so "
+               "R3's comparison mixes a policy effect with a horizon effect. P1v holds the "
+               "fire's stop (entry-2xATR14 at T) and the fire's T+42 fixed, changing only "
+               "WHEN the position is taken.")
+    gv = d["P1v_stopped"].notna()
+    ent1g = ent1 & g0
+    v = d[gv]
+    rv = v["P1v_r_mult"].dropna().to_numpy(dtype="float64")
+    tb.add("P1v (fire stop, fire horizon)", int(d["P1v_entered"].astype(bool).sum()),
+           int(v["ticker"].nunique()), len(v), pct(rate(v["P1v_stopped"].tolist())),
+           float(np.mean(rv)) if rv.size else None,
+           float(np.median(rv)) if rv.size else None, _sumr(v["P1v_r_mult"]),
+           round((_sumr(v["P1v_r_mult"]) or 0.0) / name_years, 4) if name_years else None,
+           None)
+    both = d[gv & g0]
+    p0s, pvs = _sumr(both["P0_r_mult"]), _sumr(both["P1v_r_mult"])
+    tb.add("... P0 on that SAME set", len(both), int(both["ticker"].nunique()), len(both),
+           pct(rate(both["P0_stopped"].tolist())), mean_(both["P0_r_mult"].tolist()),
+           med(both["P0_r_mult"].tolist()), p0s,
+           round((p0s or 0.0) / name_years, 4) if name_years else None,
+           None if p0s is None or pvs is None else round(pvs - p0s, 4))
+    # the fair same-set comparison under the SHIPPED spec
+    cs = d[ent1g & d["P1_stopped"].notna()]
+    tb.add("SHIPPED P1 on the common set", len(cs), int(cs["ticker"].nunique()), len(cs),
+           pct(rate(cs["P1_stopped"].tolist())), mean_(cs["P1_r_mult"].tolist()),
+           med(cs["P1_r_mult"].tolist()), _sumr(cs["P1_r_mult"]),
+           round((_sumr(cs["P1_r_mult"]) or 0.0) / name_years, 4) if name_years else None,
+           None)
+    p0c = _sumr(cs["P0_r_mult"])
+    tb.add("... P0 on that SAME common set", len(cs), int(cs["ticker"].nunique()), len(cs),
+           pct(rate(cs["P0_stopped"].tolist())), mean_(cs["P0_r_mult"].tolist()),
+           med(cs["P0_r_mult"].tolist()), p0c,
+           round((p0c or 0.0) / name_years, 4) if name_years else None,
+           None if p0c is None else round((_sumr(cs["P1_r_mult"]) or 0.0) - p0c, 4))
+    tb.emit()
+    out["R8b"] = TABLES["R8b"]
+
+    # ---- R8c: the D2 / D1a result priced in ATR units ---------------------------------
+    tc = Table("R8c", "§R8 MECHANISM — stop WIDTH by cell for the two features that moved",
+               ["feature", "cell", "n", "names", "median ATR14 (% of entry)",
+                "median 2xATR stop width (% of entry)", "median entry_vs_low",
+                "stop-out% (X)"],
+               "basis X is entry-anchored but not width-constant: a cell whose names carry a "
+               "wider ATR gets a wider stop and is mechanically harder to touch. This is the "
+               "stop-width tell in the units the stop is actually set in.")
+    dd = d.copy()
+    dd["_atr_pct"] = dd["atr14"] / dd["close"]
+    dd["_width"] = STOP_X_ATR * dd["_atr_pct"]
+    for key, kind in (("d2_poc_dist", "t"), ("d1_avwap_above", "b")):
+        cells = cells_for(dd, key, kind)
+        if cells is None:
+            tc.add(key, "(degenerate)", 0, 0, None, None, None, None)
+            continue
+        label = dict((k, lb) for k, lb, _, _ in FEATURE_SPEC)[key]
+        for cname, cmask in cells:
+            part = dd[cmask]
+            tc.add(label, cname, len(part), int(part["ticker"].nunique()),
+                   med(part["_atr_pct"].tolist()), med(part["_width"].tolist()),
+                   med(part["entry_vs_low"].tolist()),
+                   pct(rate(part["stopped_X"].tolist())))
+    tc.emit()
+    out["R8c"] = TABLES["R8c"]
+    out["r8a"] = r8a
+    return out
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
@@ -599,6 +749,9 @@ def main() -> int:
     ap.add_argument("--tickers", default="", help="comma list; debug subset run")
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent
                                          / "footprint_picker_results.json"))
+    ap.add_argument("--review-appendix", dest="review", action="store_true", default=True,
+                    help="run the §R8 review appendix (default)")
+    ap.add_argument("--no-review-appendix", dest="review", action="store_false")
     args = ap.parse_args()
     t_start = time.time()
 
@@ -741,6 +894,13 @@ def main() -> int:
     print("\n" + "=" * 100)
     print("§R1 EXEMPLAR GATE — named union fires with every feature value, before any pool")
     print("=" * 100)
+    exm_all = d[d["ticker"].isin(EXEMPLARS) & (d["date"] >= EXEMPLAR_FROM)]
+    exm_ung = exm_all[exm_all["stopped_X"].isna()]
+    ex_note = (f"{len(exm_ung)} of {len(exm_all)} exemplar rows are UNGRADED "
+               f"({', '.join(f'{r.ticker} {r.date.date()}' for r in exm_ung.itertuples())}): "
+               f"fewer than {MIN_FWD} forward sessions exist past them on a tape ending "
+               f"{str(d['date'].max().date()) if len(d) else 'n/a'}, so their label columns "
+               "are blank by the truncation rule and they contribute to NO pooled cell.")
     t1 = Table("R1", "STLD and NEM 2026 union fires — every feature at the fire instant",
                ["ticker", "date", "lane", "close", "P_low", "entry_vs_low", "ATR14",
                 "stop X", "stopped X", "r_mult X", "stopped A", "stopped F",
@@ -748,7 +908,7 @@ def main() -> int:
                 "D3 poc_hold", "D4 absorption", "D5 quiet", "T1 part_z", "T2 streak",
                 "T3 prem_z", "P1 entered", "P2 entered"],
                "the charter's coverage gate: a construction that cannot show its work on the "
-               "motivating exemplars does not get presented on pooled means")
+               "motivating exemplars does not get presented on pooled means. " + ex_note)
     exm = d[d["ticker"].isin(EXEMPLARS) & (d["date"] >= EXEMPLAR_FROM)].sort_values(
         ["ticker", "date"])
     for _, r in exm.iterrows():
@@ -784,6 +944,23 @@ def main() -> int:
     t2.emit()
 
     # ---------------------------------------------- R3 policies
+    # HORIZON MISALIGNMENT, measured: each policy re-anchors its +42 window to its OWN entry
+    hz = {}
+    for pk in ("P1", "P2"):
+        off = (d.loc[d[f"{pk}_entered"].astype(bool), f"{pk}_entry_pos"]
+               - d.loc[d[f"{pk}_entered"].astype(bool), "pos"]).dropna().astype(float)
+        hz[pk] = (float(off.median()) if len(off) else None,
+                  float(np.percentile(off, 95)) if len(off) else None)
+    hz_note = (
+        "HORIZON MISALIGNMENT (measured, not asserted): P0 is graded over exactly [T, T+"
+        f"{FWD_MAX}], but each policy re-anchors its own +{FWD_MAX} window to its LATER "
+        f"entry — P1 enters a median {hz['P1'][0]:.0f} / p95 {hz['P1'][1]:.0f} sessions "
+        f"after T (grading to ~T+{FWD_MAX + (hz['P1'][0] or 0):.0f} / T+"
+        f"{FWD_MAX + (hz['P1'][1] or 0):.0f}) and P2 a median {hz['P2'][0]:.0f} / p95 "
+        f"{hz['P2'][1]:.0f} (grading to ~T+{FWD_MAX + (hz['P2'][0] or 0):.0f} / T+"
+        f"{FWD_MAX + (hz['P2'][1] or 0):.0f}). A longer window gives a position more time "
+        "BOTH to be stopped and to run, so this row-set comparison confounds the policy with "
+        "its clock; R8b re-runs P1 on the fire's own stop and horizon to separate them.")
     t3 = Table("R3", "§4 POST-TROUGH EVIDENCE AS POLICIES (basis X, entries at real closes)",
                ["policy", "definition", "fires", "names", "entered", "entry rate%",
                 "never entered", "graded", "stop-out%", "mean R", "median R", "p25 R",
@@ -791,7 +968,7 @@ def main() -> int:
                "conditioning on 'the low held k sessions' deletes early stop-outs and "
                "manufactures edge (bake-off §RT), so the structural tier is measured as "
                "decision policies over the SAME fire set — fires never entered are counted, "
-               "never dropped. No scalar winner is pre-declared.")
+               "never dropped. No scalar winner is pre-declared. " + hz_note)
     p0_entry = d.set_index(["ticker", "pos"])["P0_entry_close"]
     for pk, defn in (("P0", "enter at the fire close"),
                      ("P1", f"first session >= T+{P1_WAIT} with no stop touch printed "
@@ -827,6 +1004,18 @@ def main() -> int:
     ref_rows = ledger(d, "ref", "R5ref")
 
     # ---------------------------------------------- R6 coverage (gate 6)
+    # DIFFERENTIAL TRUNCATION: the thin feeds are RECENT, and so are the ungraded rows
+    tr = d[d["stopped_X"].isna()]
+    gd = d[d["stopped_X"].notna()]
+    tr_share = rate(tr["t1_part_z"].notna().tolist())
+    gd_share = rate(gd["t1_part_z"].notna().tolist())
+    trunc_note = (
+        f"DIFFERENTIAL TRUNCATION (measured): the {len(tr)} truncated rows carry a T1 value "
+        f"{pct(tr_share)}% of the time against {pct(gd_share)}% of the {len(gd)} graded rows "
+        f"— a {pct(None if tr_share is None or gd_share is None else tr_share - gd_share)}pp "
+        "gap, because both the thin feeds and the ungraded right edge live in the same recent "
+        "window. The thin lane's gradeable sample is therefore biased away from the newest "
+        "fires it is otherwise best placed to see.")
     t6 = Table("R6", "Thin-battery COVERAGE — how many union episodes can the thin feeds "
                      "actually see?",
                ["feature", "episodes with a value", "share of union%", "names", "first date",
@@ -834,7 +1023,8 @@ def main() -> int:
                "load-bearing honesty: the dark-pool deep panel starts 2023-08 and the "
                "options-flow store 2026-01, and both need >= 40 trailing observations before "
                "a z exists at all, so the thin battery speaks for a small and RECENT slice "
-               "of a 12-year plane. Every thin verdict is capped at PROBE for this reason.")
+               "of a 12-year plane. Every thin verdict is capped at PROBE for this reason. "
+               + trunc_note)
     for key, label, _, grp in FEATURE_SPEC:
         if grp != "thin":
             continue
@@ -916,6 +1106,14 @@ def main() -> int:
             t7.add(best["label"], "(degenerate on the D4 subset)", "-", 0, 0, None)
     t7.emit()
 
+    # ---------------------------------------------- §R8 review appendix
+    r8: dict = {}
+    if args.review:
+        print("\n" + "=" * 100)
+        print("§R8 REVIEW APPENDIX (phase-2 explanation-level receipts, frozen as tables)")
+        print("=" * 100)
+        r8 = run_review_appendix(d, name_years)
+
     # ---------------------------------------------- deviations + notes
     print("\n" + "=" * 100)
     print("DEVIATIONS (visible, never silent)")
@@ -982,6 +1180,7 @@ def main() -> int:
         "notes": NOTES,
         "tables": TABLES,
         "ledger": {"deep": deep_rows, "thin": thin_rows, "reference": ref_rows},
+        "review_appendix": {k: v for k, v in r8.items() if not k.startswith("R8")},
         "features_parquet": feat_path.name,
         "features_rows": int(len(dd)),
         "features_columns": list(dd.columns),
