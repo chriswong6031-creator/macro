@@ -496,10 +496,10 @@ def test_r24_bridge_waterfall_uses_contribution_pp():
 # ---------------------------------------------------------------------------
 
 def test_r24_v3_shadow_challenger_label_bilingual():
-    """v3_factor challenger shadow label is bilingual."""
+    """The V3 comparison-model label is plain-language and bilingual."""
     src = _rr_section_src()
-    assert "v3_factor challenger" in src, "EN 'v3_factor challenger' label missing"
-    assert "v3因子挑战者" in src, "ZH 'v3因子挑战者' label missing"
+    assert "V3 Factor · comparison model" in src, "EN V3 comparison-model label missing"
+    assert "V3 因子 · 对比模型" in src, "ZH V3 comparison-model label missing"
 
 
 def test_r24_v3_shadow_warning_rendered():
@@ -672,7 +672,7 @@ def test_new_helpers_bilingual_labels():
         ("above expectations", "高于预期"),
         ("fresh", "充分"),
         ("Component-bridge waterfall", "组件桥接瀑布"),
-        ("v3_factor challenger", "v3因子挑战者"),
+        ("V3 Factor · comparison model", "V3 因子 · 对比模型"),
     ]
     for en, zh in pairs:
         assert en in src, f"Missing EN label: {en!r}"
@@ -816,7 +816,7 @@ def test_r39_svg_cone_has_benchmark_ticks():
 
 
 def test_r39_model_dot_plot_function_defined():
-    """MRI-R39: modelDotPlot() helper is defined for the Models tab SVG dot plot."""
+    """MRI-R39: modelDotPlot() is defined for the Models tab shared-axis comparison."""
     src = _rr_section_src()
     assert "function modelDotPlot(" in src, "modelDotPlot helper missing (MRI-R39 MODELS tab)"
 
@@ -834,6 +834,35 @@ def test_r39_model_dot_plot_market_implied_basis_guard():
     assert "rr-mkt-row" in fn_body, "modelDotPlot market-implied missing rr-mkt-row class"
 
 
+def test_r39_model_comparison_keeps_native_text_and_shared_axis():
+    """Model labels must stay native HTML text; SVG textLength visibly distorted them."""
+    src = _rr_section_src()
+    fn_start = src.find("function modelDotPlot(")
+    fn_end = src.find("\n    /* surprise anatomy", fn_start)
+    fn_body = src[fn_start:fn_end] if fn_end > fn_start else ""
+    assert "rr-model-plot" in fn_body
+    assert "rr-model-track" in fn_body
+    assert "textLength=" not in fn_body
+    assert "lengthAdjust=" not in fn_body
+
+
+def test_r39_modal_uses_contained_responsive_layout():
+    """The detail surface needs roomy cards and grid rows that collapse on small screens."""
+    src = _rr_section_src()
+    assert "max-width:760px" in src
+    assert ".rr-tab-body{min-height:0;overflow-y:auto" in src
+    assert "grid-template-columns:minmax(126px,160px)" in src
+    assert ".rr-row-status" in src
+    assert "grid-column:1 / -1" in src
+
+
+def test_r39_footer_uses_plain_language_research_guard():
+    src = _rr_section_src()
+    assert "Display-only research context." in src
+    assert "Every forecast is scored after release." in src
+    assert "仅供研究参考。" in src
+
+
 def test_r39_null_tab_suppression_in_openmodal():
     """MRI-R39: openModal filters tabs with skip flag (null tabs hidden entirely)."""
     src = _rr_section_src()
@@ -846,9 +875,9 @@ def test_r39_null_tab_suppression_in_openmodal():
 
 
 def test_r39_mobile_css_fullscreen_sheet():
-    """MRI-R39: Mobile ≤480px styles give full-screen sheet layout."""
+    """MRI-R39: Narrow screens use the full-width bottom-sheet layout."""
     src = _rr_section_src()
-    assert "max-width:480px" in src or "@media(max-width:480px)" in src, (
+    assert "@media(max-width:600px)" in src, (
         "Mobile sheet CSS missing (MRI-R39 RR-13)"
     )
     assert "44px" in src or "min-height:44px" in src, (
@@ -930,16 +959,16 @@ def test_r39_tabular_nums_everywhere():
     )
 
 
-def test_r39_group_label_border_bottom_once_per_group():
-    """MRI-R39 RR-4: Single bottom-border per tab-section group (rr-grp), not per section."""
+def test_r39_group_uses_one_contained_surface_per_section():
+    """MRI-R39 RR-4: Each tab section is one padded, contained panel."""
     src = _rr_section_src()
-    # rr-grp should use a single bottom border
     assert "rr-grp" in src, "rr-grp class missing"
-    # Find the CSS rule for rr-grp
     grp_css_start = src.find(".rr-grp{")
     if grp_css_start >= 0:
-        grp_css = src[grp_css_start:grp_css_start + 200]
-        assert "border-bottom" in grp_css, "rr-grp CSS missing border-bottom"
+        grp_css = src[grp_css_start:grp_css_start + 420]
+        assert "border:1px" in grp_css, "rr-grp CSS missing contained border"
+        assert "border-radius:12px" in grp_css, "rr-grp CSS missing rounded panel"
+        assert "background:" in grp_css, "rr-grp CSS missing panel background"
 
 
 def test_r39_fixture_benchmark_only_claims_handled():

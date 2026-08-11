@@ -73,7 +73,11 @@ E2_LABELS = {(22, 63): "EARLY", (6, 21): "MID", (1, 5): "LATE",
              (-5, 0): "POST-TOP CONFIRMATION"}
 PARITY_SAMPLE_NAMES = 3               # §3 hard pre-run gate, per track
 PARITY_TOLERANCE = 1e-9
-W_ERAS = (("2021H2-2022", "2021-07-01", "2022-12-31"),
+#: The W store opens 2021-07-06 and MIN_PRIOR_SESSIONS=260 is served INSIDE a
+#: segment, so no EXT day can exist before 2022-07-18. The first era cell is named
+#: for the span it can actually hold; "2021H2" would advertise an empty period.
+W_EXT_LEFT_EDGE = "2022-07-18"
+W_ERAS = (("2022H2", W_EXT_LEFT_EDGE, "2022-12-31"),
           ("2023-2024", "2023-01-01", "2024-12-31"),
           ("2025-2026", "2025-01-01", "2099-12-31"))
 D_ERAS = (("1997-2003", "1997-01-01", "2003-12-31"),
@@ -81,9 +85,22 @@ D_ERAS = (("1997-2003", "1997-01-01", "2003-12-31"),
           ("2013-2020", "2013-01-01", "2020-12-31"),
           ("2021-2026", "2021-01-01", "2099-12-31"))
 COVERAGE_FLOOR = 0.60
-TODAY_TAPE_CAP = 200
+#: §4.6 fields whose observed separation runs AGAINST the declared direction. They
+#: register nothing; they are profiled so the anchor counter-explanation is testable.
+WRONG_SIGN_EXHIBITS = ("F1_episode_age", "F3_days_since_63d_high", "B3_rsi14_chg10")
+#: G0.5 is a COVERAGE gate: run-1's fabricated extensions were found by reading the
+#: whole cohort, so the appendix prints every extended name. Display-only; no frozen
+#: quantity rides on it. `None` = uncapped.
+TODAY_TAPE_CAP: int | None = None
 W_REPAIR_ARM = "sanity-segmented"
 W_RESIDUAL_UP_RATIO_BREAK = ta.RESIDUAL_UP_RATIO_BREAK
+#: Run-1 (`pre-repair`, gap rule only) and run-2 (`sanity-segmented` on the
+#: pre-audit instrument) are retained beside the headline summary as audit arms.
+PREREPAIR_SUMMARY = _REPO / "data/research/top_anatomy_p0_summary_prerepair.json"
+RUN2_SUMMARY = _REPO / "data/research/top_anatomy_p0_summary_run2_preaudit.json"
+#: Run-2 executed an UNCOMMITTED working tree; its summary stamps the committed head
+#: instead. The code survives only here, unpushed, so run-2 cannot be re-run.
+RUN2_INSTRUMENT_SHA = "9f4a38b83be"
 
 _T0 = time.time()
 
@@ -234,10 +251,15 @@ def _load_cached(
     if not (cache / "meta.json").exists():
         return None
     meta = json.loads((cache / "meta.json").read_text())
-    if residual_up_ratio_break is not None \
-            and meta.get("residual_up_ratio_break") != residual_up_ratio_break:
-        say(f"cache at {cache} predates the {W_REPAIR_ARM} identity rule "
-            "— rebuilding rather than allowing a residual split to seed features")
+    # The stamp must be PRESENT and EQUAL. An absent stamp is a panel some other
+    # line segmented: track D is gap-only here, so accepting an unstamped cache
+    # would silently run D on whatever rule wrote it. A missing key is a mismatch.
+    if "residual_up_ratio_break" not in meta \
+            or meta["residual_up_ratio_break"] != residual_up_ratio_break:
+        say(f"cache at {cache} carries identity rule "
+            f"{meta.get('residual_up_ratio_break', meta.get('identity_rules', 'unstamped'))}"
+            f", this track needs {residual_up_ratio_break} ({W_REPAIR_ARM} on W, "
+            "gap-only on D) — rebuilding rather than seeding features from it")
         return None
     missing = [c for c in _REQUIRED_PANEL_LEGS
                if not (cache / f"panel_{c}.parquet").exists()]
@@ -252,6 +274,242 @@ def _load_cached(
     if not panel["split_day"].empty:
         panel["split_day"] = panel["split_day"].fillna(False).astype(bool)
     return {"panel": panel, "meta": meta}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# §6 repair arm — what the PRE-REPAIR arm counted on fabricated extension
+# ══════════════════════════════════════════════════════════════════════════════
+def _read_panel(cache: Path) -> dict[str, pd.DataFrame]:
+    """Raw panel read with NO identity-rule check — for auditing a pre-repair cache."""
+    panel = {}
+    for c in W_PANEL_COLS:
+        f = cache / f"panel_{c}.parquet"
+        panel[c] = pd.read_parquet(f) if f.exists() else pd.DataFrame()
+    if not panel.get("split_day", pd.DataFrame()).empty:
+        panel["split_day"] = panel["split_day"].fillna(False).astype(bool)
+    return panel
+
+
+def jump_table(close: pd.DataFrame,
+               min_ratio: float = W_RESIDUAL_UP_RATIO_BREAK
+               ) -> tuple[pd.DataFrame, dict[str, np.ndarray]]:
+    """Every residual single-day up-ratio >= `min_ratio` in a repaired close panel.
+
+    Returns the long table (segment / date / ratio / the two closes) and a
+    segment -> bar-position map, which is what the contamination attribution needs
+    to ask "was a fabricated bar inside this day's trailing 126 sessions?".
+    """
+    rows, pos_map = [], {}
+    for col in close.columns:
+        c = close[col]
+        c = c[c.notna()]
+        if len(c) < 2:
+            continue
+        br = ta.residual_up_break_positions(c, min_ratio=min_ratio)
+        if br.size == 0:
+            continue
+        pos_map[col] = br
+        v = c.to_numpy(dtype=float)
+        for i in br:
+            rows.append({"segment": col, "ticker": ta.segment_ticker(col),
+                         "date": c.index[int(i)], "prev_close": float(v[int(i) - 1]),
+                         "close": float(v[int(i)]),
+                         "ratio": float(v[int(i)] / v[int(i) - 1])})
+    cols = ["segment", "ticker", "date", "prev_close", "close", "ratio"]
+    return pd.DataFrame(rows, columns=cols), pos_map
+
+
+def _tape_contamination(close: pd.DataFrame, ext: pd.DataFrame,
+                        pos_map: dict[str, np.ndarray]) -> dict:
+    """Of the names EXTENDED on the last session, how many rode a fabricated bar?"""
+    if close.empty or ext.empty:
+        return {"tape_names_extended": 0, "tape_names_contaminated": 0, "tape_names": []}
+    asof = close.index.max()
+    row = ext.loc[asof]
+    live = list(row.index[row.fillna(False).to_numpy(dtype=bool)])
+    hit = []
+    for col in live:
+        jp = pos_map.get(col)
+        if jp is None or jp.size == 0:
+            continue
+        c = close[col]
+        c = c[c.notna()]
+        if asof not in c.index:
+            continue
+        p = int(pd.Series(np.arange(len(c)), index=c.index)[asof])
+        k = int(np.searchsorted(jp, p, side="right")) - 1
+        if k >= 0 and (p - jp[k]) < 126:
+            hit.append({"segment": col, "ticker": ta.segment_ticker(col),
+                        "jump_date": str(pd.Timestamp(c.index[int(jp[k])]).date()),
+                        "ratio": float(c.iloc[int(jp[k])] / c.iloc[int(jp[k]) - 1])})
+    hit.sort(key=lambda r: -r["ratio"])
+    return {"tape_asof": str(pd.Timestamp(asof).date()),
+            "tape_names_extended": len(live),
+            "tape_names_contaminated": len(hit),
+            "tape_names": hit[:25]}
+
+
+def run1_contamination_audit(cache: Path, *,
+                             min_ratio: float = W_RESIDUAL_UP_RATIO_BREAK) -> dict:
+    """Quantify what the PRE-REPAIR arm counted on fabricated extension (§6).
+
+    Reads a panel exactly as run-1 segmented it (gap rule only), finds the residual
+    up-jumps the split repair missed, and attributes run-1's own EXT days, episodes
+    and matched cases to them. A day is CONTAMINATED when a fabricated bar sits
+    inside its trailing 126 sessions — the window `r126` reads, and therefore the
+    window that decides EXTENDED.
+
+    Cases are re-derived without race labels (they only need episodes + peaks), so
+    this audit costs one EXT/episode/peak pass rather than a second full pipeline.
+    """
+    if not (cache / "panel_close.parquet").exists():
+        return {"available": False,
+                "reason": f"no pre-repair panel at {cache} to audit"}
+    meta_f = cache / "meta.json"
+    meta = json.loads(meta_f.read_text()) if meta_f.exists() else {}
+    # Two stamp formats have existed for the repaired rule; a cache carrying EITHER
+    # holds no residual jumps by construction, and its zeros would read as
+    # "run-1 was clean" — the opposite of the measurement. Fail closed on both.
+    stamped = (meta.get("residual_up_ratio_break") is not None
+               or (meta.get("identity_rules") or {}).get("jump_ratio") is not None
+               or meta.get("repair_arm") is not None)
+    if stamped:
+        say("repair arm: the cached panel is already sanity-segmented — the "
+            "contamination audit needs the PRE-REPAIR panel and is reported as "
+            "unavailable rather than as a spurious zero")
+        return {"available": False,
+                "reason": ("the panel at this path was already rebuilt under the "
+                           "sanity-segmented identity rules, so it contains no "
+                           "residual jumps by construction; the pre-repair counts "
+                           "stand as recorded in the first repaired run")}
+    say(f"repair arm: auditing the PRE-REPAIR panel at {cache}")
+    panel = _read_panel(cache)
+    close = panel["close"]
+    vol = panel.get("volume")
+    dvol = (close * vol).reindex_like(close) if vol is not None and not vol.empty \
+        else pd.DataFrame(np.nan, index=close.index, columns=close.columns)
+    floors = {"raw_close_df": panel.get("raw_close"),
+              "raw_dollar_vol_df": panel.get("raw_dvol"),
+              "split_day_df": panel.get("split_day")}
+    floors = {k: (v if v is not None and not v.empty else None) for k, v in floors.items()}
+
+    jumps, pos_map = jump_table(close, min_ratio)
+    if jumps.empty:
+        # An unstamped cache can still be a repaired one. Zero jumps is what a
+        # sanity-segmented panel looks like, so it is refused, not reported.
+        say("repair arm: the cached panel carries no residual up-jumps at all — "
+            "indistinguishable from a sanity-segmented panel; reported as unavailable")
+        return {"available": False,
+                "reason": ("the panel at this path carries no residual up-jumps at "
+                           "all, which is exactly what a sanity-segmented panel looks "
+                           "like by construction; a zero here is not a measurement "
+                           "that the pre-repair arm was clean")}
+    say(f"repair arm: {len(jumps)} residual >={min_ratio}x up-days on "
+        f"{len(pos_map)} of {close.shape[1]} pre-repair segments")
+
+    ext = ta.extended_mask(close, dvol, high_df=panel.get("high"),
+                           low_df=panel.get("low"), **floors)
+    episodes = ta.extract_episodes(ext, close)
+    episodes, dtp = ta.episode_peaks(close, episodes, ext)
+
+    def _contaminated(col: str, dates) -> np.ndarray:
+        """Which of `dates` on `col` had a fabricated bar in the trailing 126 sessions?"""
+        jp = pos_map.get(col)
+        c = close[col]
+        c = c[c.notna()]
+        p = pd.Series(np.arange(len(c)), index=c.index).reindex(dates).to_numpy(dtype=float)
+        if jp is None or jp.size == 0:
+            return np.zeros(len(p), dtype=bool)
+        k = np.searchsorted(jp, p, side="right") - 1
+        ok = k >= 0
+        out = np.zeros(len(p), dtype=bool)
+        out[ok] = (p[ok] - jp[k[ok]]) < 126
+        return out
+
+    n_ext_total = int(ext.to_numpy().sum())
+    ext_hit, ext_on_seg = 0, 0
+    bad_segments = set(pos_map)
+    for col in close.columns:
+        if col not in bad_segments or not bool(ext[col].any()):
+            continue
+        dates = ext.index[ext[col].fillna(False).to_numpy(dtype=bool)]
+        ext_on_seg += len(dates)
+        ext_hit += int(_contaminated(col, dates).sum())
+
+    dtp = dtp.copy()
+    dtp["bad"] = False
+    for col, g in dtp.groupby("segment", sort=False):
+        if col in bad_segments:
+            dtp.loc[g.index, "bad"] = _contaminated(col, pd.DatetimeIndex(g["date"]))
+    bad_eps = set(dtp.loc[dtp["bad"], "episode_id"])
+
+    e1_eps = episodes[~episodes["micro"]]
+    topped = set(e1_eps.loc[e1_eps["outcome"] == "TOPPED", "episode_id"])
+    cases = dtp[dtp["episode_id"].isin(topped)
+                & dtp["days_to_peak"].isin(ta.CASE_OFFSETS)]
+
+    tape = _tape_contamination(close, ext, pos_map)
+    out = {
+        "available": True, "arm": "pre-repair (gap rule only)",
+        "recomputed_this_run": True,
+        "jump_ratio": float(min_ratio),
+        "pre_repair_segments": int(close.shape[1]),
+        "n_jump_days": int(len(jumps)),
+        "n_segments_with_jump": int(len(bad_segments)),
+        "max_ratio": float(jumps["ratio"].max()) if not jumps.empty else None,
+        "top_offenders": _records(jumps.sort_values("ratio", ascending=False).head(15)),
+        "run1_ext_days": n_ext_total,
+        "run1_ext_days_on_jump_segments": int(ext_on_seg),
+        "run1_ext_days_contaminated_r126": int(ext_hit),
+        "run1_episodes": int(len(episodes)),
+        "run1_episodes_contaminated": int(len(bad_eps)),
+        "run1_topped_e1_episodes": int(len(topped)),
+        "run1_topped_e1_episodes_contaminated": int(len(topped & bad_eps)),
+        "run1_cases": int(len(cases)),
+        "run1_cases_contaminated": int(cases["bad"].sum()),
+        "run1_case_episodes": int(cases["episode_id"].nunique()),
+        "run1_case_episodes_contaminated": int(
+            cases.loc[cases["bad"], "episode_id"].nunique()),
+        **tape,
+    }
+    say(f"repair arm: run-1 counted {out['run1_ext_days_contaminated_r126']:,} "
+        f"contaminated EXT days ({out['run1_episodes_contaminated']:,} episodes, "
+        f"{out['run1_cases_contaminated']:,} cases); "
+        f"{out['tape_names_contaminated']} of {out['tape_names_extended']} "
+        "today's-tape names carried a fabricated bar in their trailing 126 sessions")
+    return out
+
+
+def preserved_contamination(path: Path, live_reason: str | None = None) -> dict | None:
+    """Carry the recorded pre-repair measurement when its panel no longer exists.
+
+    Run-2 rebuilt `data/research/top_anatomy_p0_{W,D}` in place under the repaired
+    identity rules, so the pre-repair panel cannot be re-read and the audit above
+    can only report `available: False`. The numbers it produced survive in the
+    preserved run-2 summary and are carried forward VERBATIM with provenance —
+    never recomputed from a sanity-segmented panel, which would print zeros.
+    """
+    if not path.exists():
+        return None
+    try:
+        block = json.loads(path.read_text()).get("repair_arm", {}).get("contamination")
+    except Exception as exc:  # noqa: BLE001 — the audit trail never kills the run
+        say(f"repair arm: could not read the preserved contamination block: {exc}")
+        return None
+    if not isinstance(block, dict) or not block.get("available"):
+        return None
+    out = dict(block)
+    out["recomputed_this_run"] = False
+    out["source_artifact"] = str(path.relative_to(_REPO))
+    out["provenance"] = (
+        "measured on run-1's panel, 2026-08-10, preserved artifact "
+        f"{path.relative_to(_REPO)}; the pre-repair panel cache no longer exists on "
+        "disk (run-2 rebuilt it in place under the repaired identity rules), so "
+        "these counts are carried forward rather than recomputed")
+    if live_reason:
+        out["live_audit_unavailable_reason"] = live_reason
+    say(f"repair arm: carrying the preserved run-1 contamination measurement from {path.name}")
+    return out
 
 
 def build_panel_w(data_root: Path, cache: Path, *, quick: int | None = None) -> dict:
@@ -273,6 +531,15 @@ def build_panel_w(data_root: Path, cache: Path, *, quick: int | None = None) -> 
         files = files[:quick]
     say(f"track W: scanning {len(files)} ticker files in {data_root / 'massive_stock_day'}")
     keep: dict[str, pd.DataFrame] = {}
+    # MF-10 left-edge census, counted EXACTLY during the scan (never sampled): the
+    # study's survivorship honesty is RIGHT-edge honesty. A name whose tape is too
+    # short to serve the 260-session history floor contributes zero observations,
+    # and one that also died before the first possible EXT day is invisible to every
+    # table in the report — including the "who is missing" section.
+    left_edge = pd.Timestamp(W_EXT_LEFT_EDGE)
+    drops = {"n_dropped_short_history": 0, "n_short_but_liquid": 0,
+             "n_short_liquid_dead_before_ext_left_edge": 0}
+    short_liquid_dead: list[str] = []
     for k, f in enumerate(files):
         if k and k % 2500 == 0:
             say(f"track W: ...{k}/{len(files)} scanned, {len(keep)} kept")
@@ -280,22 +547,44 @@ def build_panel_w(data_root: Path, cache: Path, *, quick: int | None = None) -> 
             df = pd.read_parquet(f)
         except Exception:  # noqa: BLE001 — one torn vendor file must not kill the scan
             continue
-        if len(df) < 261 or not {"close", "volume"} <= set(df.columns):
+        if not {"close", "volume"} <= set(df.columns):
             continue
         df = df[~df.index.duplicated(keep="last")].sort_index()
         px = pd.to_numeric(df["close"], errors="coerce").dropna()
         vol = pd.to_numeric(df["volume"], errors="coerce").reindex(px.index)
-        if len(px) < 261 or float(px.max()) < ta.MIN_CLOSE:
+        dv21 = (px * vol).rolling(21, min_periods=21).median() if len(px) >= 21 \
+            else pd.Series(dtype=float)
+        if len(px) < 261:
+            drops["n_dropped_short_history"] += 1
+            if float(px.max() if len(px) else 0.0) >= ta.MIN_CLOSE \
+                    and bool(len(dv21) and dv21.max() >= ta.MIN_MEDIAN_DVOL21):
+                drops["n_short_but_liquid"] += 1
+                if px.index.max() < left_edge:
+                    drops["n_short_liquid_dead_before_ext_left_edge"] += 1
+                    if len(short_liquid_dead) < 12:
+                        short_liquid_dead.append(f.stem)
             continue
-        dv21 = (px * vol).rolling(21, min_periods=21).median()
+        if float(px.max()) < ta.MIN_CLOSE:
+            continue
         if not (dv21.max() >= ta.MIN_MEDIAN_DVOL21):
             continue
         frame = repair_bars(df)
         if len(frame) >= 261:
             keep[f.stem] = frame
-    say(f"track W: {len(keep)} tickers pass the superset pre-filter")
-    return _finish_panel(keep, cache, "track W",
-                         residual_up_ratio_break=W_RESIDUAL_UP_RATIO_BREAK)
+    say(f"track W: {len(keep)} tickers pass the superset pre-filter; "
+        f"{drops['n_dropped_short_history']} dropped under 261 bars "
+        f"({drops['n_short_but_liquid']} of them once-liquid, "
+        f"{drops['n_short_liquid_dead_before_ext_left_edge']} dead before "
+        f"{W_EXT_LEFT_EDGE})")
+    built = _finish_panel(keep, cache, "track W",
+                          residual_up_ratio_break=W_RESIDUAL_UP_RATIO_BREAK)
+    built["meta"]["left_edge_census"] = {
+        "n_files_scanned": len(files), **drops,
+        "ext_left_edge": W_EXT_LEFT_EDGE,
+        "examples_short_liquid_dead": short_liquid_dead,
+    }
+    (cache / "meta.json").write_text(json.dumps(built["meta"], indent=2))
+    return built
 
 
 _D_RUNGS = (("baskets_ohlcv", "baskets/ohlcv"), ("yahoo", "yahoo"), ("data_stocks", "stocks"))
@@ -614,9 +903,18 @@ def run_track(track: str, panel: dict, meta: dict, *, seed: int, quick: bool,
     ext = ta.extended_mask(close, dvol, high_df=panel.get("high"),
                            low_df=panel.get("low"), **floors)
     n_ext = int(ext.to_numpy().sum())
+    per_day = ext.sum(axis=1)
     out["ext"] = {"n_ext_days": n_ext,
                   "n_eligible_days": int(elig.to_numpy().sum()),
-                  "n_segments_with_ext": int((ext.sum() > 0).sum())}
+                  "n_segments_with_ext": int((ext.sum() > 0).sum()),
+                  # The left edge is a STRUCTURAL fact, not a data gap: the history
+                  # floor is served inside a segment, so the store's opening months
+                  # can hold no EXT day at all and no era table may claim them.
+                  "first_ext_day": (str(per_day[per_day > 0].index.min().date())
+                                    if bool((per_day > 0).any()) else None),
+                  "n_sessions_zero_ext": int((per_day == 0).sum()),
+                  "pct_sessions_zero_ext": (round(100.0 * float((per_day == 0).mean()), 1)
+                                            if len(per_day) else None)}
     out["census"] = _instrument_census(panel, ext, elig, n_files)
     say(f"[{track}] {n_ext} EXT days on {out['ext']['n_segments_with_ext']} segments")
     c = out["census"]
@@ -675,6 +973,26 @@ def run_track(track: str, panel: dict, meta: dict, *, seed: int, quick: bool,
     out["episodes"]["outcomes"] = {k: int(v) for k, v in
                                    episodes["outcome"].value_counts().to_dict().items()}
     out["episodes"]["n_peak_window_censored"] = int(episodes["peak_window_censored"].sum())
+    # Peak-window censoring is not spread evenly: an episode peaking inside the last
+    # PEAK_SEAL_WINDOW sessions can only be sealed TOPPED if its -20% prints before
+    # the tape ends, so the right edge selects for FAST toppers and censors the rest.
+    _cens = episodes[episodes["peak_window_censored"]]
+    _last = close.index.max()
+    _cut = (close.index[-ta.PEAK_SEAL_WINDOW] if len(close.index) > ta.PEAK_SEAL_WINDOW
+            else close.index.min())
+    out["episodes"]["peak_window_censored_by_year"] = {
+        str(k): int(v) for k, v in
+        sorted(pd.to_datetime(_cens["peak_date"]).dt.year.value_counts().to_dict().items())}
+    # `_cut` is the PEAK_SEAL_WINDOW-th session from the end, so an episode peaking
+    # ON it already has fewer than a full sealing window behind it: the boundary is
+    # inclusive, and the printed wording must say "on or after" to match the count.
+    out["episodes"]["right_edge_selection"] = {
+        "seal_window": ta.PEAK_SEAL_WINDOW,
+        "peaks_on_or_after": str(_cut.date()),
+        "last_session": str(_last.date()),
+        "n_censored_peaking_in_seal_window": int(
+            (pd.to_datetime(_cens["peak_date"]) >= _cut).sum()),
+    }
     out["episodes"]["days_to_peak"] = _describe(dtp["days_to_peak"])
     topped_eps = episodes[(episodes["outcome"] == "TOPPED") & (~episodes["micro"])]
     out["episodes"]["n_topped_e1_eligible"] = int(len(topped_eps))
@@ -792,6 +1110,16 @@ def run_track(track: str, panel: dict, meta: dict, *, seed: int, quick: bool,
     say(f"[{track}] E2 lead-time profiles on {len(survivors)} survivor(s)")
     out["e2"] = _e2(e2_days, pool, feats, survivors, episodes, grades,
                     seed=seed, quick=quick)
+    # The wrong-sign exhibits carry mechanical counter-explanations (a case day
+    # anchored near the episode argmax; a rising leg by construction; length-biased
+    # day-weighted controls). The four-window profile is what discriminates: a PURE
+    # anchor artefact strengthens monotonically toward the peak. Same machinery as
+    # the survivors' profile, so the two tables are read on one scale.
+    wrong_sign = [f for f in WRONG_SIGN_EXHIBITS if f in feats.columns]
+    if wrong_sign:
+        say(f"[{track}] E2 four-window profile on {len(wrong_sign)} wrong-sign exhibit(s)")
+        out["e2_wrong_sign"] = _e2(e2_days, pool, feats, wrong_sign, episodes, {},
+                                   seed=seed, quick=quick)
     say(f"[{track}] E3 ordering")
     out["e3"] = _e3(feats, dtp, topped_ids, pool, survivors, obs)
     say(f"[{track}] E4 era / dollar-volume stability")
@@ -806,7 +1134,7 @@ def run_track(track: str, panel: dict, meta: dict, *, seed: int, quick: bool,
     # ── G0.2 + today's tape ──────────────────────────────────────────────────
     out["g0_2_delisting"] = _delisting_check(close, episodes)
     out["today_tape"] = _today_tape(close, ext, feats, bars, eqw, cross_returns,
-                                     episodes, gates)
+                                     episodes, gates, ruler=out["ruler"])
     out["episodes_table_sample"] = _records(
         episodes.sort_values("n_ext_days", ascending=False).head(25)
         [["episode_id", "ticker", "start", "end", "n_ext_days", "peak_date",
@@ -1270,6 +1598,28 @@ def _delisting_check(close: pd.DataFrame, episodes: pd.DataFrame) -> dict:
     }
     known = [r for r in named if r["ticker"] in terminal]
     verified = [r for r in known if r["last_bar"] == terminal[r["ticker"]]]
+    # The episode-membership list above resolves to ACQUISITIONS, which prove the
+    # tape keeps trading names but say nothing about names that FAILED. These are
+    # audited failure terminal bars, checked against the panel WITHOUT the episode
+    # filter — most never cleared the extension bar at all, and that absence is
+    # itself the survivorship receipt this gate exists to print.
+    failures = {
+        "SIVB": "2023-03-09", "SBNY": "2023-03-10", "FRC": "2023-04-28",
+        "RIDE": "2023-07-06", "VLDR": "2023-02-10", "PTRA": "2023-08-16",
+        "TWTR": "2022-10-27", "CTXS": "2022-09-29", "WE": "2023-11-03",
+    }
+    seen: dict[str, dict] = {}
+    for s, v in lasts.items():
+        tk = ta.segment_ticker(s)
+        if tk not in failures or pd.isna(v):
+            continue
+        bar = str(pd.Timestamp(v).date())
+        if tk not in seen or bar > seen[tk]["last_bar"]:
+            seen[tk] = {"segment": s, "ticker": tk, "last_bar": bar,
+                        "expected_last_bar": failures[tk],
+                        "terminal_bar_verified": bar == failures[tk],
+                        "held_an_ext_day": s in in_ep}
+    failed_named = sorted(seen.values(), key=lambda r: r["last_bar"])
     return {
         "last_data_day": str(last_day.date()),
         "cutoff_last_bar_before": str(pd.Timestamp(cutoff).date()),
@@ -1278,14 +1628,25 @@ def _delisting_check(close: pd.DataFrame, episodes: pd.DataFrame) -> dict:
         "named": named[:40],
         "known_delistings_found": known,
         "known_terminal_bars_verified": verified,
+        "verified_failures": failed_named,
+        "n_verified_failures": sum(1 for r in failed_named
+                                   if r["terminal_bar_verified"]),
+        "n_verified_failures_with_ext_day": sum(
+            1 for r in failed_named if r["terminal_bar_verified"] and r["held_an_ext_day"]),
         "gate_g0_2_satisfied": len(verified) >= 3,
     }
+
+
+#: Names whose absence from the cohort is itself the G0.5 finding: the program was
+#: motivated by moderate-velocity leadership, and a +50%/126d bar excludes it.
+TAPE_LEADERSHIP_WATCH = ("NVDA", "AVGO", "AMD", "MU", "SMCI", "VRT", "ANET",
+                         "MRVL", "PLTR", "ORCL", "ARM", "CRDO", "ALAB", "DELL")
 
 
 def _today_tape(close: pd.DataFrame, ext: pd.DataFrame, feats: pd.DataFrame,
                 bars: dict, eqw: pd.Series, cross_returns: pd.DataFrame,
                 episodes: pd.DataFrame,
-                gates: pd.DataFrame) -> dict:
+                gates: pd.DataFrame, ruler: dict | None = None) -> dict:
     """G0.5 — the CURRENT extended cohort with its feature readout (display-tier)."""
     if close.empty or ext.empty:
         return {"asof": None, "rows": []}
@@ -1309,16 +1670,56 @@ def _today_tape(close: pd.DataFrame, ext: pd.DataFrame, feats: pd.DataFrame,
         have = pd.concat([have.dropna(subset=["A3_r126"]), extra], ignore_index=True)
     g = gates[gates["date"] == asof][["segment", "r126", "rv63", "dvol21"]]
     have = have.merge(g, on="segment", how="left")
-    have = have.sort_values("r126", ascending=False).head(TODAY_TAPE_CAP)
+    have = have.sort_values("r126", ascending=False)
+    if TODAY_TAPE_CAP is not None:
+        have = have.head(TODAY_TAPE_CAP)
+    # G0.5 asks whether the DISCOVERED discriminators say anything about the cohort
+    # that exists now, so every survivor leg rides along with its fire flag at the
+    # ruler's own direction-aligned control-tail threshold. Printing only one leg
+    # would let the appendix look answered while four fifths of the finding is absent.
+    legs = dict((ruler or {}).get("legs", {}))
+    cohort: dict = {}
+    for f, v in legs.items():
+        if f not in have.columns:
+            continue
+        thr, tail = v.get("threshold"), v.get("control_tail")
+        if thr is None or tail is None:
+            continue
+        fired = (have[f] >= thr) if tail >= 0.5 else (have[f] <= thr)
+        fired = fired.fillna(False)
+        have[f"fires_{f}"] = fired
+        cohort[f] = {
+            "threshold": float(thr), "control_tail": float(tail),
+            "fires_when": "at or above" if tail >= 0.5 else "at or below",
+            "n_fires": int(fired.sum()),
+            "pct_fires": round(100.0 * float(fired.mean()), 1) if len(have) else None,
+            "n_null": int(have[f].isna().sum()),
+            "cohort_min": float(have[f].min()), "cohort_median": float(have[f].median()),
+            "cohort_max": float(have[f].max()),
+            "names": sorted(have.loc[fired, "ticker"].astype(str)),
+        }
+    fire_cols = [c for c in have.columns if c.startswith("fires_")]
+    n_legs_firing = (have[fire_cols].sum(axis=1) if fire_cols
+                     else pd.Series(0, index=have.index))
+    present = set(have["ticker"].astype(str))
     keep = ["segment", "ticker", "date", "r126", "rv63", "dvol21",
+            "A4_r252", "B2_rsi14", "C6_tr5_over_tr63", "D1_dvol_z",
+            "D3_updown_dvol_ratio21",
             "A5_ext_ma50_atr21", "A6_ext_ma200_atr21", "A7_late_gain_share",
             "B1_accel_r21", "C2_rv21_over_rv63", "C3_semivol_ratio63",
-            "D3_updown_dvol_ratio21", "D6_churn21", "E3f_rs_peak_lag",
+            "D6_churn21", "E3f_rs_peak_lag",
             "E4f_price_rs_gap", "E5f_rs_decel", "F1_episode_age",
-            "F2_drawdown_in_episode", "F3_days_since_63d_high"]
+            "F2_drawdown_in_episode", "F3_days_since_63d_high", *fire_cols]
     keep = [c for c in keep if c in have.columns]
     return {"asof": str(asof.date()), "n_extended_today": len(live),
             "n_rows": int(len(have)), "capped_at": TODAY_TAPE_CAP,
+            "survivor_legs": cohort,
+            "n_legs_firing": {str(k): int(v) for k, v in
+                              n_legs_firing.value_counts().sort_index().to_dict().items()},
+            "leadership_watch_present": sorted(
+                t for t in TAPE_LEADERSHIP_WATCH if t in present),
+            "leadership_watch_absent": sorted(
+                t for t in TAPE_LEADERSHIP_WATCH if t not in present),
             "rows": _records(have[keep])}
 
 
@@ -1350,6 +1751,263 @@ def _e1_table(rows: list[dict]) -> list[str]:
     return out
 
 
+def _arm_headline(summary: dict) -> dict:
+    """Per-track numbers one arm is diffed against another with in §1a."""
+    out = {"run_date": summary.get("run_date"), "git_sha": summary.get("git_sha")}
+    for tk, t in (summary.get("tracks") or {}).items():
+        e1 = t.get("e1", {})
+        b = t.get("e1b", {})
+        out[tk] = {
+            "n_segments": t.get("panel", {}).get("n_segments"),
+            "n_ext_days": t.get("ext", {}).get("n_ext_days"),
+            "n_episodes": t.get("episodes", {}).get("n_episodes"),
+            "n_topped_e1": t.get("episodes", {}).get("n_topped_e1_eligible"),
+            "e1_n_episodes": e1.get("n_episodes"),
+            "e1_registered": e1.get("registered_separating", []),
+            "e1_exploratory": e1.get("exploratory_separating", []),
+            "e1b_increment_grouped": b.get("increment_grouped"),
+            "e1b_increment_walk_forward": b.get("increment_walk_forward"),
+            "ruler_legs": sorted((t.get("ruler", {}).get("legs") or {}).keys()),
+            "e2_labels": t.get("e2", {}).get("labels", {}),
+            "tape_extended": t.get("today_tape", {}).get("n_extended_today"),
+        }
+    return out
+
+
+#: §1a movement rows: (label, `_arm_headline` key).
+_MOVEMENT_ROWS = (("segments", "n_segments"), ("EXT days", "n_ext_days"),
+                  ("episodes", "n_episodes"),
+                  ("TOPPED E1-eligible episodes", "n_topped_e1"),
+                  ("E1 N (episodes)", "e1_n_episodes"),
+                  ("today's-tape EXTENDED", "tape_extended"))
+
+
+def _window_table(A, block: dict) -> None:
+    """One row per feature per §4.8 window, medians with their episode-block CIs."""
+    buckets = block.get("buckets", {})
+    feats: list[str] = []
+    for blk in buckets.values():
+        for r in blk.get("table", []):
+            if r["feature"] not in feats:
+                feats.append(r["feature"])
+    if not feats:
+        return
+    heads = [f"{b.get('window', t)} `{t}`" for t, b in buckets.items()]
+    A("| feature | " + " | ".join(heads) + " |")
+    A("|---" * (len(heads) + 1) + "|")
+    for f in feats:
+        cells = []
+        for blk in buckets.values():
+            r = next((x for x in blk.get("table", []) if x["feature"] == f), None)
+            cells.append("null" if not r else
+                         f"{_fmt(r['median_delta'], 4)} [{_fmt(r['ci_lo'], 3)}, "
+                         f"{_fmt(r['ci_hi'], 3)}]")
+        A(f"| `{f}` | " + " | ".join(cells) + " |")
+    A("")
+    A("| feature | " + " | ".join(f"n eps `{t}`" for t in buckets) + " |")
+    A("|---" * (len(buckets) + 1) + "|")
+    for f in feats:
+        cells = []
+        for blk in buckets.values():
+            r = next((x for x in blk.get("table", []) if x["feature"] == f), None)
+            cells.append("null" if not r else _fmt(r.get("n_episodes")))
+        A(f"| `{f}` | " + " | ".join(cells) + " |")
+
+
+def _stability_table(A, blk: dict, feature: str, eras) -> None:
+    """The 6 stability cells for one leg, WITH the primary block CI in every cell."""
+    rows = []
+    for name, _, _ in eras:
+        e = blk.get("eras", {}).get(name)
+        if e:
+            rows.append((f"era {name}", e))
+    for t, e in blk.get("dvol_terciles", {}).items():
+        rows.append((f"dollar-volume {t}", e))
+    if not rows:
+        return
+    A(f"**`{feature}` stability cells** — point estimate, primary episode-peak-month "
+      "block CI, and the block count the CI rests on.")
+    A("")
+    A("| cell | episodes | peak-month blocks | median Δ | 95% CI (primary) | p "
+      "| CI excludes 0 |")
+    A("|---|---|---|---|---|---|---|")
+    n_excl = 0
+    for label, e in rows:
+        r = next((x for x in e.get("table", []) if x["feature"] == feature), None)
+        if not r:
+            A(f"| {label} | {_fmt(e.get('n_episodes'))} | — | null | null | null | — |")
+            continue
+        excl = (r["ci_lo"] > 0) or (r["ci_hi"] < 0)
+        n_excl += bool(excl)
+        A(f"| {label} | {_fmt(r.get('n_episodes'))} | {_fmt(r.get('n_blocks'))} | "
+          f"{_fmt(r['median_delta'], 4)} | [{_fmt(r['ci_lo'], 3)}, "
+          f"{_fmt(r['ci_hi'], 3)}] | {_fmt(r.get('p_value'), 3)} | "
+          f"{'**yes**' if excl else 'no'} |")
+    A("")
+    A(f"Excludes zero in **{n_excl} of {len(rows)}** cells. A cell resting on few "
+      "peak-month blocks is not credible evidence on its own: the ≥"
+      f"{ta.MIN_EPISODE_MONTHS}-block registration guard applies to the E1 separates "
+      "flag, NOT to these descriptive cells.")
+    A("")
+
+
+def _repair_arm_section(A, summary: dict, w: dict, d: dict) -> None:
+    """§1a — the `sanity-segmented` arm: trigger, rule, cost, and what moved."""
+    ra = summary.get("repair_arm", {})
+    A("## 1a. Repair arm — `sanity-segmented` (prereg §6)")
+    A("")
+    A(f"**Trigger.** {ra.get('trigger', '')}. Run-1's today's-tape appendix is what "
+      "surfaced it: names showing +1,000% to +12,000% single days that are reverse "
+      "splits, not moves.")
+    A("")
+    A(f"**Rule.** {ra.get('rule', '')} — the same segmentation machinery as the "
+      "60-session tape-gap rule, so each side is an independent name with its own "
+      "260-session history floor and nothing (window, race, or feature) spans the "
+      f"break. **What was NOT done:** {ra.get('not_done', '')}.")
+    A("")
+
+    repair = w.get("panel", {}).get("repair_impact", {})
+    if repair:
+        pre_repair = repair.get("pre_repair_affected_names", {})
+        repaired = repair.get("sanity_segmented_affected_names", {})
+        removed = repair.get("removed_from_affected_names", {})
+        A(f"**What the rule did to THIS run's panel** (track W, arm "
+          f"`{w.get('panel', {}).get('repair_arm')}`; recomputed from the raw bars, "
+          "not carried). A repaired-close up-jump ≥"
+          f"{_fmt(w.get('panel', {}).get('residual_up_ratio_break'), 1)}x starts a new "
+          "identity; there is no down-jump screen. "
+          f"{_fmt(repair.get('n_tickers_affected'))} tickers gained "
+          f"{_fmt(repair.get('n_additional_identity_segments'))} boundaries. On those "
+          f"affected names, pre-repair → headline accounting is "
+          f"{_fmt(pre_repair.get('n_segments'))} → {_fmt(repaired.get('n_segments'))} "
+          f"segments, {_fmt(pre_repair.get('n_ext_days'))} → "
+          f"{_fmt(repaired.get('n_ext_days'))} EXT days, and "
+          f"{_fmt(pre_repair.get('n_episodes'))} → "
+          f"{_fmt(repaired.get('n_episodes'))} episodes (removed: "
+          f"{_fmt(removed.get('n_ext_days'))} EXT days / "
+          f"{_fmt(removed.get('n_episodes'))} episodes). The pre-repair arm is audit-only.")
+        A("")
+
+    c = ra.get("contamination", {})
+    if c.get("available"):
+        prov = c.get("provenance")
+        A("**How much of run-1 was fabricated** (measured on run-1's own panel, before "
+          "the rebuild):")
+        A("")
+        A("| pre-repair quantity | count | of which contaminated |")
+        A("|---|---|---|")
+        A(f"| residual ≥{_fmt(c.get('jump_ratio'), 1)}x up-days | "
+          f"{_fmt(c.get('n_jump_days'))} | — |")
+        A(f"| segments carrying one | {_fmt(c.get('n_segments_with_jump'))} of "
+          f"{_fmt(c.get('pre_repair_segments'))} | — |")
+        A(f"| EXT days | {_fmt(c.get('run1_ext_days'))} | "
+          f"**{_fmt(c.get('run1_ext_days_contaminated_r126'))}** with a fabricated bar "
+          f"inside the trailing 126 sessions ({_fmt(c.get('run1_ext_days_on_jump_segments'))} "
+          "on an affected segment at all) |")
+        A(f"| episodes | {_fmt(c.get('run1_episodes'))} | "
+          f"**{_fmt(c.get('run1_episodes_contaminated'))}** |")
+        A(f"| TOPPED E1-eligible episodes | {_fmt(c.get('run1_topped_e1_episodes'))} | "
+          f"**{_fmt(c.get('run1_topped_e1_episodes_contaminated'))}** |")
+        A(f"| matched cases | {_fmt(c.get('run1_cases'))} | "
+          f"**{_fmt(c.get('run1_cases_contaminated'))}** "
+          f"(across {_fmt(c.get('run1_case_episodes_contaminated'))} of "
+          f"{_fmt(c.get('run1_case_episodes'))} case-episodes) |")
+        A(f"| today's-tape EXTENDED names ({c.get('tape_asof')}) | "
+          f"{_fmt(c.get('tape_names_extended'))} | "
+          f"**{_fmt(c.get('tape_names_contaminated'))}** carried one inside their "
+          "trailing 126 sessions |")
+        A("")
+        if prov:
+            A(f"*Provenance: {prov}. The audit code that produced them "
+              "(`run1_contamination_audit`) still runs against any pre-repair cache and "
+              "refuses to report a sanity-segmented panel's structural zeros as a "
+              "measurement.*")
+            A("")
+        off = c.get("top_offenders", [])
+        if off:
+            A("Worst fabrications in the pre-repair tape:")
+            A("")
+            A("| ticker | date | close before → after | ratio |")
+            A("|---|---|---|---|")
+            for r in off[:10]:
+                # Significant digits, not fixed decimals: a sub-cent pre-split print
+                # is the evidence, and 2dp would render it as "0.00 -> 0.00".
+                px = [f"{float(r[k]):.8g}" for k in ("prev_close", "close")]
+                A(f"| {r['ticker']} | {str(r['date'])[:10]} | {px[0]} → "
+                  f"{px[1]} | {_fmt(r['ratio'], 1)}x |")
+            A("")
+    else:
+        A(f"*Contamination not quantified: {c.get('reason', 'no pre-repair panel')}.*")
+        A("")
+
+    r1, r2 = ra.get("run1", {}), ra.get("run2", {})
+    if not (r1 or r2):
+        return
+    r3 = _arm_headline(summary)
+    A("**What moved across the three arms.** Run-1 = pre-repair (gap rule only). "
+      f"Run-2 = `sanity-segmented` on the PRE-AUDIT instrument ({r2.get('run_date', 'n/a')}), "
+      "retained as a cross-check arm. Run-3 = the reconciled instrument "
+      "(independent-audit compliance repairs + the same declared ≥3.0x residual "
+      "up-jump rule) and is the HEADLINE arm.")
+    A("")
+    # A run stamps the COMMITTED head, not the working tree it executed. Run-2's code
+    # was uncommitted at run time and survives only as an unpushed local snapshot, so
+    # the stamped sha does not identify the instrument and must not be cited as if it did.
+    A(f"*Reproducibility limitation: run-2's summary stamps git "
+      f"`{r2.get('git_sha', 'n/a')}`, which is the committed HEAD at run time, NOT the "
+      f"code that ran. The run-2 instrument is local snapshot commit "
+      f"`{RUN2_INSTRUMENT_SHA}`, which was never pushed — run-2 is therefore not "
+      "independently reproducible from the repository, and its column below is a "
+      "preserved reading rather than a re-runnable arm.*")
+    A("")
+    A("**Each step changes exactly one variable, which is why run-2 is kept.** "
+      "run-1 → run-2 holds the ESTIMATOR fixed and changes the PANEL: that movement "
+      "is contamination removal. run-2 → run-3 holds the PANEL fixed and changes the "
+      "ESTIMATOR: that movement is the audit's compliance repairs (all-EXT-day E1b "
+      "and ruler, micro-spell days in the control pool, literal same-day cross-"
+      "sectional medians for E1f/E2f, window-bounded B6, simple-daily-return C3/D6, "
+      "frozen-rule E2 labels, within-name ruler shares). The track W panel rows "
+      "below are IDENTICAL across run-2 and run-3 — segments, EXT days, episodes and "
+      "TOPPED counts all match — which is the receipt that the second comparison is "
+      "clean. Neither step changed a frozen quantity, threshold, population, or "
+      "outcome rule.")
+    A("")
+    A("| | run-1 W | run-2 W | run-3 W | run-1 D | run-2 D | run-3 D |")
+    A("|---|---|---|---|---|---|---|")
+    for lab, key in _MOVEMENT_ROWS:
+        cells = [_fmt(r.get(tk, {}).get(key)) for tk in ("W", "D") for r in (r1, r2, r3)]
+        A(f"| {lab} | " + " | ".join(cells) + " |")
+    A("")
+    A("*Track D reads differently across the arms by construction: the ≥3.0x residual "
+      "up-jump rule is a repair for the UNADJUSTED massive store, so it is applied to "
+      "track W only. Run-2's line also applied it to the adjusted D ladder; run-3 "
+      "returns D to gap-only segmentation, which is what run-1 used. A D column that "
+      "moves 1→2 and back 2→3 is that instrument difference, not a data change.*")
+    A("")
+    for tk in ("W", "D"):
+        a1, a2, a3 = (r.get(tk, {}) for r in (r1, r2, r3))
+        A(f"- **Track {tk} E1 registered:** run-1 `{a1.get('e1_registered') or 'none'}` "
+          f"→ run-2 `{a2.get('e1_registered') or 'none'}` → run-3 "
+          f"`{a3.get('e1_registered') or 'none'}`")
+        A(f"- **Track {tk} E1 exploratory:** run-1 `{a1.get('e1_exploratory') or 'none'}` "
+          f"→ run-2 `{a2.get('e1_exploratory') or 'none'}` → run-3 "
+          f"`{a3.get('e1_exploratory') or 'none'}`")
+        A(f"- **Track {tk} E1b ΔAUC (grouped):** run-1 "
+          f"{_fmt(a1.get('e1b_increment_grouped'), 3)} → run-2 "
+          f"{_fmt(a2.get('e1b_increment_grouped'), 3)} → run-3 "
+          f"{_fmt(a3.get('e1b_increment_grouped'), 3)}")
+        A(f"- **Track {tk} ruler legs:** run-1 `{a1.get('ruler_legs') or 'none'}` → "
+          f"run-2 `{a2.get('ruler_legs') or 'none'}` → run-3 "
+          f"`{a3.get('ruler_legs') or 'none'}`")
+        A(f"- **Track {tk} E2 labels:** run-1 `{a1.get('e2_labels') or {}}` → run-2 "
+          f"`{a2.get('e2_labels') or {}}` → run-3 `{a3.get('e2_labels') or {}}`")
+    A("")
+    A(f"Run-1 is retained at `{ra.get('prerepair_summary')}` as the **pre-repair arm** "
+      f"and run-2 at `{ra.get('run2_summary')}` as the **pre-audit-instrument "
+      "cross-check arm**. The reconciled run-3 above is the headline arm.")
+    A("")
+
+
 def write_report(path: Path, summary: dict) -> None:
     """The house phase-0 report: verdict first, nulls printed, honest N everywhere."""
     w = summary["tracks"].get("W", {})
@@ -1376,6 +2034,10 @@ def write_report(path: Path, summary: dict) -> None:
 
     A("# TOP ANATOMY Phase-0 — extended-move anatomy: topped vs continued")
     A("")
+    # Placeholder only. The SHIPPED report carries four ratified prose paragraphs
+    # (verdict / who this describes / what the anatomy says / instrument honesty)
+    # written in a post-run prose pass and corrected by the G0.5 red-team; a fresh
+    # run re-emits this line and the prose pass is re-applied on top.
     A(f"**Verdict: {verdict}.** *(prose pass pending — numbers below are the run's own.)*")
     A("")
     A(f"- **Date:** {summary['run_date']} · **Family:** `{FAMILY}`")
@@ -1420,26 +2082,7 @@ def write_report(path: Path, summary: dict) -> None:
       f"`(c−MA200)/ATR63≥6` = {_fmt(w.get('ext_variants', {}).get('atrz'))}.")
     A("")
 
-    repair = w.get("panel", {}).get("repair_impact", {})
-    if repair:
-        pre_repair = repair.get("pre_repair_affected_names", {})
-        repaired = repair.get("sanity_segmented_affected_names", {})
-        removed = repair.get("removed_from_affected_names", {})
-        A(f"**Track W headline repair arm: `{w.get('panel', {}).get('repair_arm')}`.** "
-          f"A repaired-close up-jump ≥"
-          f"{_fmt(w.get('panel', {}).get('residual_up_ratio_break'), 1)}x starts a new "
-          "identity; there is no down-jump screen. "
-          f"{_fmt(repair.get('n_tickers_affected'))} tickers gained "
-          f"{_fmt(repair.get('n_additional_identity_segments'))} boundaries. On those "
-          f"affected names, pre-repair → headline accounting is "
-          f"{_fmt(pre_repair.get('n_segments'))} → {_fmt(repaired.get('n_segments'))} "
-          f"segments, {_fmt(pre_repair.get('n_ext_days'))} → "
-          f"{_fmt(repaired.get('n_ext_days'))} EXT days, and "
-          f"{_fmt(pre_repair.get('n_episodes'))} → "
-          f"{_fmt(repaired.get('n_episodes'))} episodes (removed: "
-          f"{_fmt(removed.get('n_ext_days'))} EXT days / "
-          f"{_fmt(removed.get('n_episodes'))} episodes). The pre-repair arm is audit-only.")
-        A("")
+    _repair_arm_section(A, summary, w, d)
 
     A("## 1b. Instrument / dead-name census (§3) and the §3 parity gate")
     A("")
@@ -1475,6 +2118,25 @@ def write_report(path: Path, summary: dict) -> None:
       "open/high/low/close and multiplies volume, so repaired dollar volume is "
       "invariant across the repair.")
     A("")
+    lec = w.get("panel", {}).get("left_edge_census") or {}
+    if lec:
+        pct = (100.0 * lec["n_dropped_short_history"] / lec["n_files_scanned"]
+               if lec.get("n_files_scanned") else None)
+        ex = lec.get("examples_short_liquid_dead") or []
+        A("**The survivorship honesty in §11 is RIGHT-edge honesty.** Counted exactly "
+          f"during the scan: {_fmt(lec.get('n_dropped_short_history'))} of "
+          f"{_fmt(lec.get('n_files_scanned'))} scanned files "
+          f"({_fmt(pct, 1)}%) were dropped for carrying fewer than 261 bars — too "
+          "short to serve the 260-session in-segment history floor. "
+          f"{_fmt(lec.get('n_short_but_liquid'))} of those were ONCE LIQUID (they "
+          "cleared the $3 price and $2M median-dollar-volume ceilings at some point), "
+          f"and {_fmt(lec.get('n_short_liquid_dead_before_ext_left_edge'))} of them "
+          f"had already stopped trading before {lec.get('ext_left_edge')}, the first "
+          "date on which any extended day can exist. Those names contribute ZERO "
+          "observations to every table in this report and cannot appear in the "
+          "dead-name census either"
+          + (f" (e.g. {', '.join(ex[:6])})." if ex else "."))
+        A("")
     A("## 2. Race labels (§4.3) — the outcome, with its nulls printed")
     A("")
     A("| label | track W | track D |")
@@ -1488,6 +2150,21 @@ def write_report(path: Path, summary: dict) -> None:
       f"{cr.get('data_end', 0):,} at the tape's end (delisting without a −20% print; a "
       "delisting that collapses fires TOPPED on its own bars).")
     A("")
+    eps_w = w.get("episodes", {})
+    by_year = eps_w.get("peak_window_censored_by_year") or {}
+    rsel = eps_w.get("right_edge_selection") or {}
+    if by_year:
+        A(f"**Peak-window censoring is a RIGHT-EDGE selection, not a uniform loss.** "
+          f"{_fmt(eps_w.get('n_peak_window_censored'))} episodes are peak-window "
+          "censored, by peak year: "
+          + ", ".join(f"{y} {v:,}" for y, v in by_year.items()) + ". "
+          f"{_fmt(rsel.get('n_censored_peaking_in_seal_window'))} of them peak on or "
+          f"after **{rsel.get('peaks_on_or_after')}** — inside the final "
+          f"{rsel.get('seal_window')}-session sealing window. An episode peaking there "
+          f"can be sealed TOPPED only if its −20% prints before the tape ends "
+          f"({rsel.get('last_session')}), so the recent end of the sample keeps FAST "
+          "toppers and censors slow ones. Every recent-era cell inherits that tilt.")
+        A("")
 
     A("## 3. E1 — matched-control separation (registration track W)")
     A("")
@@ -1526,6 +2203,41 @@ def write_report(path: Path, summary: dict) -> None:
     A("")
     L.extend(_e1_table(e1.get("table", [])))
     A("")
+    tab = e1.get("table", [])
+    seps = e1.get("separating") or []
+    if tab and seps:
+        qa = dict(zip((r["feature"] for r in tab),
+                      ta.bh_fdr([r["p_value"] for r in tab])))
+        passes = [f for f in seps if qa.get(f, 1.0) <= ta.FDR_Q]
+        fails = [f for f in seps if qa.get(f, 1.0) > ta.FDR_Q]
+        A("**Under a FAMILY-WIDE BH instead of the prereg's within-family BH**, the "
+          "survivors read "
+          + ", ".join(f"`{f}` {_fmt(qa.get(f), 3)}" for f in seps)
+          + f" — {', '.join('`%s`' % f for f in passes) or 'none'} still pass at "
+          f"q ≤ {ta.FDR_Q}"
+          + (f", and **{', '.join('`%s`' % f for f in fails)} would not**." if fails
+             else "."))
+        # BH is monotone-adjusted, so a feature's reported q can be INHERITED from a
+        # worse-ranked sibling. Printing the raw step value keeps that legible.
+        fam: dict[str, list[dict]] = {}
+        for r in tab:
+            fam.setdefault(r["family"], []).append(r)
+        for f in seps:
+            row = next((r for r in tab if r["feature"] == f), None)
+            if not row:
+                continue
+            sib = sorted(fam[row["family"]], key=lambda r: r["p_value"])
+            rank = [r["feature"] for r in sib].index(f) + 1
+            step = row["p_value"] * len(sib) / rank
+            if step > row["q_value"] + 1e-9:
+                A(f"`{f}`'s within-family q ({_fmt(row['q_value'], 3)}) is INHERITED by "
+                  f"BH monotonicity from a worse-ranked sibling; its own step value is "
+                  f"{_fmt(step, 3)}.")
+        A("")
+    A("The block CI and the p-value are two readings of the SAME percentile "
+      "distribution, so a CI that excludes zero and a small p are one piece of "
+      "evidence, not two independent confirmations.")
+    A("")
     below = w.get("features_below_coverage_floor", [])
     A(f"Features under the 60% coverage floor on track W (not interpreted): "
       f"{', '.join('`%s`' % f for f in below) if below else 'none'}.")
@@ -1556,16 +2268,59 @@ def write_report(path: Path, summary: dict) -> None:
               f"{_fmt(g.get('auc'), 3)} {gci} | {_fmt(wf.get('auc'), 3)} {wci} | "
               f"{_fmt(g.get('episode_auc'), 3)} |")
         A("")
-        gci = b.get("increment_grouped_ci") or [None, None]
-        wci = b.get("increment_walk_forward_ci") or [None, None]
-        A(f"AUC(M2) − AUC(M1), paired episode-block CI: grouped "
-          f"{_fmt(b.get('increment_grouped'), 3)} [{_fmt(gci[0], 3)}, {_fmt(gci[1], 3)}], "
-          f"walk-forward {_fmt(b.get('increment_walk_forward'), 3)} "
-          f"[{_fmt(wci[0], 3)}, {_fmt(wci[1], 3)}] — "
-          f"sign-consistent: **{b.get('sign_consistent')}**. "
+        # §4.7 declares day-level AND episode-level paired increments under BOTH CV
+        # schemes. Printing the day-level pair alone hides a sign disagreement.
+        A("All four preregistered paired increments, AUC(M2) − AUC(M1), episode-block CI:")
+        A("")
+        A("| level | CV scheme | ΔAUC | 95% CI |")
+        A("|---|---|---|---|")
+        for lvl, scheme, key in (("day", "grouped by ticker", "increment_grouped"),
+                                 ("day", "walk-forward", "increment_walk_forward"),
+                                 ("episode", "grouped by ticker", "episode_increment_grouped"),
+                                 ("episode", "walk-forward",
+                                  "episode_increment_walk_forward")):
+            ci = b.get(f"{key}_ci") or [None, None]
+            A(f"| {lvl} | {scheme} | {_fmt(b.get(key), 3)} | "
+              f"[{_fmt(ci[0], 3)}, {_fmt(ci[1], 3)}] |")
+        A("")
+        dg, dw = b.get("increment_grouped"), b.get("increment_walk_forward")
+        eg = b.get("episode_increment_grouped")
+        ew = b.get("episode_increment_walk_forward")
+        egc = b.get("episode_increment_grouped_ci") or [None, None]
+        ewc = b.get("episode_increment_walk_forward_ci") or [None, None]
+        scope = ""
+        if None not in (dg, dw, eg, ew) and (eg < 0) != (ew < 0):
+            scope = (f" — **sign-consistent at day level only** ({_fmt(dg, 3)} / "
+                     f"{_fmt(dw, 3)}); at episode level the two schemes disagree "
+                     f"(grouped {_fmt(eg, 3)} [{_fmt(egc[0], 3)}, {_fmt(egc[1], 3)}], "
+                     f"walk-forward {_fmt(ew, 3)} [{_fmt(ewc[0], 3)}, "
+                     f"{_fmt(ewc[1], 3)}])")
+        A(f"The run's `sign_consistent` flag reads **{b.get('sign_consistent')}** and is "
+          f"computed on the DAY-level pair{scope}. "
           f"n = {_fmt(b.get('n_rows'))} EXT days on {_fmt(b.get('n_names'))} names / "
           f"{_fmt(b.get('n_episodes_in_sample'))} episodes, base rate TOPPED = "
           f"{_fmt(b.get('base_rate_topped'), 3)}. Descriptive — E1b registers no test.")
+        A("")
+        m0 = (b.get("models", {}).get("M0", {}).get("walk_forward", {}) or {}).get("auc")
+        m2 = (b.get("models", {}).get("M2", {}).get("walk_forward", {}) or {}).get("auc")
+        if None not in (m0, m2):
+            A(f"**The full library does not beat trailing return alone out of sample:** "
+              f"walk-forward M2 − M0 = {_fmt((m2 - m0), 3)} "
+              f"(M0 {_fmt(m0, 3)} vs M2 {_fmt(m2, 3)}).")
+            A("")
+        dm = d.get("e1b", {}).get("models", {})
+        daucs = {k: (dm.get(k, {}).get("walk_forward", {}) or {}).get("auc")
+                 for k in ("M0", "M1", "M2")}
+        if daucs.get("M2") is not None and all(
+                v is not None and v < 0.5 for v in daucs.values()):
+            A(f"**Track D's walk-forward AUCs are below 0.50 for every model** "
+              f"(M0 {_fmt(daucs['M0'], 3)}, M1 {_fmt(daucs['M1'], 3)}, "
+              f"M2 {_fmt(daucs['M2'], 3)}), so its "
+              f"{_fmt(d.get('e1b', {}).get('increment_walk_forward'), 3)} M2−M1 "
+              "increment is movement inside a sub-coin-flip regime, not evidence of "
+              "structure; D is survivorship-tilted context and registers nothing "
+              "either way.")
+            A("")
     A("")
 
     A("## 5. E2 — lead-time labels (§4.8; G0.4 is mandatory)")
@@ -1584,31 +2339,75 @@ def write_report(path: Path, summary: dict) -> None:
     else:
         A(f"No survivors to profile — {w.get('e2', {}).get('note', '')}.")
     A("")
-    A("")
     A("Windows are stated **positive-before-peak** (`days_to_peak = peak_date − d`): "
       "EARLY +22..+63, MID +6..+21, LATE +1..+5, POST-TOP CONFIRMATION 0..−5.")
+    A("")
+    _window_table(A, w.get("e2", {}))
+    A("")
+    A("**Read the columns, not the row.** These bucket populations are a LARGER "
+      "sample than E1's three frozen offsets (prereg §6-iii samples up to 2 extra EXT "
+      "days per episode per bucket to populate the descriptive profile), and each "
+      "window is computed on a DIFFERENT episode set — so a trend across windows is "
+      "composition-confounded as well as timing-driven.")
     for tag, blk in w.get("e2", {}).get("buckets", {}).items():
         A(f"- `{tag}` ({blk.get('window', '')}): {_fmt(blk.get('n_episodes'))} episodes "
-          f"from {_fmt(blk.get('n_cases'))} matched cases.")
+          f"from {_fmt(blk.get('n_cases'))} matched cases "
+          f"({_fmt(blk.get('n_episodes_available'))} available).")
     A("")
+
+    ws = w.get("e2_wrong_sign", {})
+    if ws.get("buckets"):
+        A("## 5a. The wrong-sign exhibits against the anchor explanation")
+        A("")
+        A("`F1`, `F3` and `B3` separate AGAINST their declared directions, and each "
+          "has a mechanical counter-explanation this design cannot exclude: `F3` is "
+          "partly definitional (the case day sits 5/10/21 sessions before the episode "
+          "argmax while controls carry no local-max anchor), `B3` is measured over a "
+          "rising leg by construction, and `F1` is what length-biased, day-weighted "
+          "control sampling produces when nothing matches on age or episode length. "
+          "A PURE anchor artefact strengthens monotonically as the case day "
+          "approaches the peak; the same four-window machinery that profiles the "
+          "survivors is the discriminating diagnostic.")
+        A("")
+        _window_table(A, ws)
+        A("")
+        A("These register nothing — the sign discipline exists so a tight CI cannot "
+          "promote a backwards hypothesis — and the profile does not settle the "
+          "mechanism either way. Any phase-1 re-registration must carry an "
+          "anchor-matched control design that can tell anatomy from the anchor.")
+        A("")
 
     A("## 6. E3 — first-crossing order (descriptive)")
     A("")
     order = w.get("e3", {}).get("order", [])
     if order:
-        A("| survivor | control tail | threshold | episodes crossing "
-          "| median days_to_peak at first cross |")
-        A("|---|---|---|---|---|")
+        n_e1 = w.get("e1", {}).get("n_episodes")
+        A("| survivor | control tail | threshold | episodes crossing (of "
+          f"{_fmt(n_e1)}) | median | p25 | p75 |")
+        A("|---|---|---|---|---|---|---|")
         for r in order:
+            n_x = r.get("n_episodes_crossing")
+            share = (f" ({100.0 * n_x / n_e1:.1f}%)"
+                     if n_x is not None and n_e1 else "")
             A(f"| `{r['feature']}` | P{int(r.get('control_tail', 0.9) * 100)} | "
-              f"{_fmt(r['threshold'])} | {_fmt(r['n_episodes_crossing'])} | "
-              f"{_fmt(r['median_days_to_peak_at_first_cross'], 1)} |")
+              f"{_fmt(r['threshold'])} | {_fmt(n_x)}{share} | "
+              f"{_fmt(r['median_days_to_peak_at_first_cross'], 1)} | "
+              f"{_fmt(r.get('p25'), 1)} | {_fmt(r.get('p75'), 1)} |")
+        A("")
+        A("Positive = sessions BEFORE the peak, so a NEGATIVE quartile is a crossing "
+          "that lands AFTER the top. The denominator is every TOPPED E1 episode: an "
+          "episode that never crosses contributes no row, which is why the crossing "
+          "count is the honest N for this table and the median is a median over "
+          "crossers only.")
     else:
         A(f"Nothing to order — {w.get('e3', {}).get('note', 'no survivors')}.")
     A("")
 
     A("## 7. E4 — era and dollar-volume stability (descriptive)")
     A("")
+    for f in (w.get("e1", {}).get("registered_separating") or []) \
+            + (w.get("e1", {}).get("exploratory_separating") or []):
+        _stability_table(A, w.get("e4", {}), f, W_ERAS)
     for track_key, blk, eras in (("W", w.get("e4", {}), W_ERAS), ("D", d.get("e4", {}), D_ERAS)):
         A(f"**Track {track_key}**"
           + (" — survivorship-TILTED, era context only, never a registration claim."
@@ -1636,16 +2435,46 @@ def write_report(path: Path, summary: dict) -> None:
     legs = w.get("ruler", {}).get("legs", {})
     if legs:
         A("| survivor leg @ direction-aligned control tail | fires | episodes "
-          "| median remaining upside to peak | within 5% of peak price "
-          "| within ±10td of peak | fwd-63 excess vs all-EXT null |")
-        A("|---|---|---|---|---|---|---|")
+          "| median remaining upside to peak [95% CI] | all-EXT null remaining upside "
+          "| within 5% of peak price | within ±10td of peak | fwd-63 of fires "
+          "| fwd-63 excess vs null |")
+        A("|---|---|---|---|---|---|---|---|---|")
         for f, r in legs.items():
+            ci = r.get("median_remaining_upside_ci") or [None, None]
             A(f"| `{f}` @P{int(r.get('control_tail', 0.9) * 100)} | "
               f"{_fmt(r.get('n_fires'))} | {_fmt(r.get('n_fire_episodes'))} | "
-              f"{_fmt(r.get('median_remaining_upside'), 3)} | "
+              f"{_fmt(r.get('median_remaining_upside'), 3)} "
+              f"[{_fmt(ci[0], 3)}, {_fmt(ci[1], 3)}] | "
+              f"{_fmt(r.get('null_median_remaining_upside'), 4)} | "
               f"{_fmt(r.get('share_within_peak_price'), 3)} | "
               f"{_fmt(r.get('share_within_peak_time'), 3)} | "
+              f"{_fmt(r.get('fwd_63_fires'), 4)} | "
               f"{_fmt(r.get('fwd_63_excess'), 4)} |")
+        A("")
+        ups = [r.get("median_remaining_upside") for r in legs.values()
+               if r.get("median_remaining_upside") is not None]
+        nul = next((r.get("null_median_remaining_upside") for r in legs.values()
+                    if r.get("null_median_remaining_upside") is not None), None)
+        abso = [r.get("fwd_63_fires") for r in legs.values()
+                if r.get("fwd_63_fires") is not None]
+        exc = [r.get("fwd_63_excess") for r in legs.values()
+               if r.get("fwd_63_excess") is not None]
+        tms = [r.get("share_within_peak_time") for r in legs.values()
+               if r.get("share_within_peak_time") is not None]
+        if ups and nul is not None:
+            A(f"**Every leg's fires carry MORE remaining upside than a random extended "
+              f"day** ({_fmt(min(ups), 3)}–{_fmt(max(ups), 3)} vs the all-EXT null "
+              f"{_fmt(nul, 4)}) — the fires are, if anything, EARLIER in the move than "
+              "the average extended day, which is the opposite of a top call.")
+        if tms:
+            A(f"The median NAME places at most {_fmt(100.0 * max(tms), 0)}% of its "
+              f"fires within ±10 sessions of the peak "
+              f"({sum(1 for t in tms if t == 0)} of {len(tms)} legs place 0%).")
+        if abso and exc:
+            A(f"Forward-63 after a fire is better than the all-extended-day base "
+              f"(excess up to {_fmt(max(exc), 4)}) but still NEGATIVE in absolute terms "
+              f"({_fmt(min(abso), 4)} to {_fmt(max(abso), 4)}). **A warning that leaves "
+              "you better off than the average extended day is not a top call.**")
         A("")
         A("Every metric is computed per NAME first and then pooled by median, so one "
           "heavily-fired name cannot carry a number. A warning with large remaining "
@@ -1664,29 +2493,111 @@ def write_report(path: Path, summary: dict) -> None:
     A("")
     named = g.get("known_delistings_found") or g.get("named", [])[:10]
     if named:
+        A("Episode-carrying dead names (these resolve to ACQUISITIONS — a name that was "
+          "bought is not evidence that the tape keeps names that FAILED):")
+        A("")
         A("| segment | ticker | last bar |")
         A("|---|---|---|")
         for r in named[:15]:
             A(f"| `{r['segment']}` | {r['ticker']} | {r['last_bar']} |")
+        A("")
+    fails = g.get("verified_failures") or []
+    if fails:
+        A("Audited **failure** terminal bars, checked against the panel without the "
+          "episode filter:")
+        A("")
+        A("| ticker | segment | last bar | expected | verified | held an EXT day |")
+        A("|---|---|---|---|---|---|")
+        for r in fails:
+            A(f"| {r['ticker']} | `{r['segment']}` | {r['last_bar']} | "
+              f"{r['expected_last_bar']} | "
+              f"{'**yes**' if r['terminal_bar_verified'] else 'NO'} | "
+              f"{'yes' if r['held_an_ext_day'] else 'no'} |")
+        A("")
+        A(f"{_fmt(g.get('n_verified_failures'))} of {_fmt(len(fails))} terminal bars "
+          f"match their audited date, and "
+          f"{_fmt(g.get('n_verified_failures_with_ext_day'))} of them ever held an "
+          "extended day. The bank failures, EV collapses and take-unders are all "
+          "IN the tape with bars through their final session — they simply never "
+          "cleared the +50%/126-session bar, so they contribute nothing to any table "
+          "above. That absence is the survivorship receipt, not a gap.")
     A("")
 
     A("## 10. Today's tape (G0.5) — the current extended cohort")
     A("")
     t = w.get("today_tape", {})
+    cap = t.get("capped_at")
+    cohort = t.get("survivor_legs", {}) or {}
+    reg = (w.get("e1", {}).get("registered_separating") or [None])[0]
+    if reg and reg in cohort:
+        c = cohort[reg]
+        A(f"**The registered leg against the cohort that exists now.** `{reg}` fires on "
+          f"**{_fmt(c.get('n_fires'))} of {_fmt(t.get('n_extended_today'))} "
+          f"({_fmt(c.get('pct_fires'), 1)}%)** — "
+          + ("below" if (c.get("pct_fires") or 0) <
+             100.0 * min(c.get("control_tail", 0.1), 1 - c.get("control_tail", 0.1))
+             else "at or above")
+          + " its own "
+          f"{_fmt(100.0 * min(c.get('control_tail', 0.1), 1 - c.get('control_tail', 0.1)), 0)}% "
+          f"control-tail base rate: {', '.join(c.get('names', [])) or 'none'} "
+          f"(cohort `{reg}` min {_fmt(c.get('cohort_min'), 3)} / median "
+          f"{_fmt(c.get('cohort_median'), 3)} / max {_fmt(c.get('cohort_max'), 3)}).")
+        A("")
+    absent = t.get("leadership_watch_absent") or []
+    if absent:
+        A(f"**Zero extended AI leaders**: {', '.join(absent)} are all absent from the "
+          "cohort — the same exclusion that keeps gold/PGM miners out. The "
+          "moderate-velocity leadership that motivated this program does not clear a "
+          "+50%/126-session bar, so nothing here describes it.")
+        A("")
+    if cohort:
+        A("| leg | fires when | threshold | fires | % of cohort | cohort min "
+          "| cohort median | cohort max |")
+        A("|---|---|---|---|---|---|---|---|")
+        for f, c in cohort.items():
+            A(f"| `{f}` | {c.get('fires_when')} | {_fmt(c.get('threshold'), 4)} | "
+              f"{_fmt(c.get('n_fires'))} | {_fmt(c.get('pct_fires'), 1)}% | "
+              f"{_fmt(c.get('cohort_min'), 3)} | {_fmt(c.get('cohort_median'), 3)} | "
+              f"{_fmt(c.get('cohort_max'), 3)} |")
+        A("")
+        legs_firing = t.get("n_legs_firing", {})
+        if legs_firing:
+            A("Legs firing per name: "
+              + ", ".join(f"{v} name(s) fire {k}" for k, v in legs_firing.items())
+              + ". These are counts at descriptive thresholds — never a score, a rank, "
+              "or a probability.")
+            A("")
     A(f"As of **{t.get('asof')}**: {_fmt(t.get('n_extended_today'))} names are EXTENDED "
-      f"under the primary definition (showing the top {_fmt(t.get('n_rows'))} by r126, "
-      f"capped at {TODAY_TAPE_CAP}).")
+      f"under the primary definition; all {_fmt(t.get('n_rows'))} print below, ordered "
+      f"by r126 ({'uncapped' if cap is None else f'capped at {cap}'}). G0.5 is a "
+      "COVERAGE gate — run-1's fabricated extensions were found by reading the whole "
+      "cohort, and a truncated appendix is exactly what would have hidden them. The "
+      "cohort admits LEVERAGED ETFs under the floors-only eligibility (LABU, TNA, URTY "
+      "and the inverse YANG are present; TNA and URTY are near-duplicate small-cap 3x "
+      "vehicles), so read them as instruments, not as independent names.")
     A("")
     rows = t.get("rows", [])
     if rows:
-        cols = ["ticker", "r126", "A6_ext_ma200_atr21", "A7_late_gain_share",
-                "C3_semivol_ratio63", "D3_updown_dvol_ratio21", "E3f_rs_peak_lag",
-                "E4f_price_rs_gap", "F1_episode_age", "F3_days_since_63d_high"]
+        # Every survivor leg AND its fire flag: G0.5 asks what the discovered
+        # discriminators say about the cohort that exists now, and one leg of five
+        # cannot answer that.
+        fire_cols = [c for c in rows[0] if c.startswith("fires_")]
+        cols = ["ticker", "r126", "A4_r252", "B2_rsi14", "C6_tr5_over_tr63",
+                "D1_dvol_z", "D3_updown_dvol_ratio21", "A6_ext_ma200_atr21",
+                "A7_late_gain_share", "C3_semivol_ratio63", "E3f_rs_peak_lag",
+                "E4f_price_rs_gap", "F1_episode_age", "F3_days_since_63d_high",
+                *fire_cols]
         cols = [c for c in cols if c in rows[0]]
-        A("| " + " | ".join(cols) + " |")
+        heads = [c.replace("fires_", "fires ") for c in cols]
+        A("| " + " | ".join(heads) + " |")
         A("|" + "---|" * len(cols))
-        for r in rows[:40]:
-            A("| " + " | ".join(_fmt(r.get(c), 3) for c in cols) + " |")
+        for r in rows:
+            cells = []
+            for c in cols:
+                v = r.get(c)
+                cells.append(("**Y**" if v else "·") if c.startswith("fires_")
+                             else _fmt(v, 3))
+            A("| " + " | ".join(cells) + " |")
         A("")
         A("*Display-tier readout only: these are present-tense descriptive facts about "
           "names that are already extended, not a ranking, a call, or a probability.*")
@@ -1712,6 +2623,13 @@ def write_report(path: Path, summary: dict) -> None:
       "acquired, or dropped from basket curation before the current universe was drawn. "
       "The topped arm is therefore UNDERSTATED on D, and every D number above is era "
       "context for a W finding — never standalone evidence.")
+    A("")
+    # Like the four opening paragraphs, §12 is adjudication PROSE written in a
+    # post-run pass; the run emits the stub so the section exists in a fresh report.
+    A("## 12. Adjudication — what this buys, and what it does not")
+    A("")
+    A("*(prose pass pending — chartered/not-chartered rulings and standing debts are "
+      "written against the numbers above.)*")
     A("")
     A("---")
     A("")
@@ -1781,6 +2699,41 @@ def main(argv=None) -> int:
                  "no rank, no size, no gate, no exit rule"),
         "tracks": {},
     }
+    # §6 repair arm. The audit runs against the PRE-REPAIR panel; once that cache has
+    # been rebuilt under the repaired rules it cannot be recomputed, so the recorded
+    # measurement is carried from the preserved artifact rather than re-derived.
+    summary["repair_arm"] = {
+        "arm": W_REPAIR_ARM,
+        "trigger": ("scripts/replay_standout_pipeline._COMMON_SPLITS carries reverse "
+                    "splits only to 1:10, so 1:15..1:125 reverse splits survive the "
+                    "repair as fabricated +900%..+12,200% single days and manufacture "
+                    "EXTENDED days out of a corporate action"),
+        "rule": (f"identity break at any residual single-day close ratio >= "
+                 f"{W_RESIDUAL_UP_RATIO_BREAK} in the REPAIRED series (UP side only; "
+                 "the down side is deliberately unscreened because a one-day collapse "
+                 "is a real event)"),
+        "not_done": ("_COMMON_SPLITS was NOT widened: a dense reverse grid at 10% snap "
+                     "tolerance would 'repair' real squeezes — a genuine +400% day lands "
+                     "exactly on 1/5"),
+        "prerepair_summary": (str(PREREPAIR_SUMMARY.relative_to(_REPO))
+                              if PREREPAIR_SUMMARY.exists() else None),
+        "run2_summary": (str(RUN2_SUMMARY.relative_to(_REPO))
+                         if RUN2_SUMMARY.exists() else None),
+    }
+    if "W" in tracks:
+        audit = run1_contamination_audit(
+            cache_root / (f"W_quick{a.quick}" if quick else "W"))
+        if not audit.get("available"):
+            audit = preserved_contamination(RUN2_SUMMARY, audit.get("reason")) or audit
+        summary["repair_arm"]["contamination"] = audit
+    for label, src in (("run1", PREREPAIR_SUMMARY), ("run2", RUN2_SUMMARY)):
+        if not src.exists():
+            continue
+        try:
+            summary["repair_arm"][label] = _arm_headline(json.loads(src.read_text()))
+        except Exception as exc:  # noqa: BLE001 — the audit trail never kills the run
+            summary["repair_arm"][f"{label}_error"] = str(exc)
+
     for tk in tracks:
         cache = cache_root / (f"W_quick{a.quick}" if (tk == "W" and quick) else
                               f"D_quick{a.quick}" if (tk == "D" and quick) else tk)
