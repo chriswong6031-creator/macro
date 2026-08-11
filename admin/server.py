@@ -51,6 +51,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                program_watch,
                prophet,
                revenue,
+               runtime_state,
                services, settings, site_gate,
                support_tickets,
                system, trade_memory, umami, uptime_board, users, vector_override)
@@ -83,6 +84,7 @@ _API_CACHE_BYPASS_PATHS = {
     "/api/session",
     "/api/auth-check",
     "/api/live_runs",
+    "/api/runtime-state",
     "/api/analytics/fp/realtime",
 }
 
@@ -974,6 +976,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(system.snapshot())
             if path == "/api/services":
                 return self._json(services.status())
+            if path == "/api/runtime-state":
+                payload, code = runtime_state.snapshot()
+                return self._json(payload, code)
             if path == "/api/alerts":
                 # Operator capture feed (RUL-8: authed only, no public write endpoint).
                 limit = _int_param(q, "limit", 60, 1, 1000)
