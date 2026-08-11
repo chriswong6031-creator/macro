@@ -2018,25 +2018,38 @@ _SLOT_SUFFIX_TIMES = {
     "EOD": "T20:15:00Z",
 }
 
-# The 30-minute Pacific signal ladder (operator re-spec 2026-07-28): 28 slots at
-# 30-min steps from 4:00 AM to 5:30 PM LOCAL, resolved per-date through zoneinfo
-# so the Pacific→UTC offset tracks DST — never hardcode -7/-8, it would drift the
-# whole ladder an hour twice a year.
+# The 15-minute Pacific signal ladder (W2C-1 throughput unlock, 2026-08-11): 55
+# slots at 15-min steps from 4:00 AM to 5:30 PM LOCAL, resolved per-date through
+# zoneinfo so the Pacific→UTC offset tracks DST — never hardcode -7/-8, it would
+# drift the whole ladder an hour twice a year.
 #
-# Was 19 slots at 45-min steps (2026-07-27). The operator asked for a 30-minute
-# flagship cadence and up to 20 posts/day there, which 19 slots cannot hold. The
-# window is unchanged (4:00 AM–5:30 PM) so no post moves into low-engagement
-# hours; only the step tightens, which is what makes room for 28.
+# THE WINDOW IS INVARIANT ACROSS EVERY WIDENING — 4:00 AM–5:30 PM, three ladders
+# running (19 slots @45min 2026-07-27 → 28 @30min 2026-07-28 → 55 @15min now).
+# Only the STEP tightens, so no post ever moves into low-engagement hours and the
+# LAST rung stays at exactly 17:30 PT. That last property is load-bearing:
+# publish_time_content._after_close_slot() derives the after-close read's slot as
+# `max(_LADDER_PT_TIMES, key=clock)`, so a ladder change that moved the final rung
+# would silently move the daily read. 55 (not 56) is chosen for exactly this
+# reason — 4:00 AM + 54*15min = 17:30 PT lands on the nose, where a 56th rung
+# would push the tail to 17:45.
+#
+# WHY 55 RUNGS. `content_studio.ladder_shape_for` sizes a desk's day as
+# ceil(cap × per_day_headroom) clamped to this ladder, and the clamp was the
+# binding constraint: every desk sits at cap 30 × headroom 2.0 = 60, clamped to
+# 28, and ~65% survival through the reuse budget/cooldowns/near-dup gates left
+# ~18 posts/day against a 20/day operator floor. At 55 the clamp stops binding
+# (~36 survivors) and the daily cap becomes the constraint, which is where the
+# control belongs.
 #
 # Slot NUMBERS therefore point at different clock times than they did (old S9 was
-# 10:00, new S9 is 8:00). Nothing in flight moves: outbox items carry an absolute
+# 8:00, new S9 is 6:00). Nothing in flight moves: outbox items carry an absolute
 # `scheduled_at` stamped at enqueue time, and this table is only consulted when a
 # plan slot is first resolved. Generated from a step so the table cannot drift
 # out of arithmetic — the previous hand-written dict is exactly the kind of thing
 # that rots when someone inserts a slot.
 _LADDER_START_PT = (4, 0)      # 4:00 AM Pacific
-_LADDER_STEP_MIN = 30
-_LADDER_N_SLOTS = 28           # 4:00 AM + 27*30min = 5:30 PM
+_LADDER_STEP_MIN = 15
+_LADDER_N_SLOTS = 55           # 4:00 AM + 54*15min = 5:30 PM (window UNCHANGED)
 
 _LADDER_PT_TIMES = {
     f"S{i + 1}": (
@@ -2053,8 +2066,8 @@ def slot_datetime(as_of: str, slot: str) -> str | None:
 
     A day slot is ``D<n>-<suffix>``: day n runs on ``as_of + (n-1) days`` (D1 is
     as_of itself). Two suffix families resolve:
-      * ladder ``S1``..``S28`` — the Pacific clock ladder (4:00 AM–5:30 PM
-        local, 30-min steps: see _LADDER_START_PT / _LADDER_STEP_MIN /
+      * ladder ``S1``..``S55`` — the Pacific clock ladder (4:00 AM–5:30 PM
+        local, 15-min steps: see _LADDER_START_PT / _LADDER_STEP_MIN /
         _LADDER_N_SLOTS, which are the only source of truth), converted to UTC
         per-date via zoneinfo so DST is handled correctly. This line read
         "S1..S19 … 45-min steps" through two widenings of the ladder; the movers

@@ -299,3 +299,102 @@ def test_nightly_gate_default_allocates_event_and_is_unchanged():
                             seed=0, tilt=None, drop_types=set())      # new default call
     assert "event" in {it.type for it in default}
     assert [it.as_dict() for it in default] == [it.as_dict() for it in empty]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. THE SHIPPED CONFIG — arming is a two-step act, and `slot:` is a landmine
+#    (W2C-1, 2026-08-11)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _shipped_cfg() -> dict:
+    import yaml
+    root = Path(__file__).resolve().parent.parent
+    return yaml.safe_load(
+        (root / "config" / "marketing.yml").read_text(encoding="utf-8"))
+
+
+def test_the_shipped_config_completes_both_arming_steps():
+    """Arming is TWO edits and half of it is silent.
+
+    `enabled: true` alone makes the read enqueue and then sit forever waiting for
+    a manual approval that no evening operator exists to give — the lane would
+    read as armed in config and ship nothing. The scoped auto-approve is what
+    closes it, and it only applies to this lane's provenance.
+    """
+    cfg = _shipped_cfg()
+    pub = cfg.get("publish") or {}
+    assert (pub.get("publish_time_read") or {}).get("enabled") is True, (
+        "publish.publish_time_read.enabled is not true — the read lane is dark")
+    assert "event" in (pub.get("auto_approve_kinds") or []), (
+        "`event` missing from publish.auto_approve_kinds — the read would enqueue "
+        "and wait for an approval nobody gives at 17:30 PT (arming step 2 of 2)")
+
+
+def test_the_shipped_config_carries_no_slot_literal():
+    """THE LANDMINE. `slot:` must stay ABSENT so the derived after-close rung wins.
+
+    `_read_cfg` seeds `slot` from `_after_close_slot()` and then lets a PRESENT
+    config key override it — so a literal silently outranks the self-healing
+    derivation. The committed value was `slot: "S8"`, commented "(18:00 PT)",
+    which was true only of the retired 2-hour 8-rung ladder: under the 28-rung
+    30-min ladder S8 meant 7:30 AM PT, and under today's 55-rung 15-min ladder it
+    means 5:45 AM PT. Arming the lane with it in place would have posted the
+    "after-close daily read" before the opening bell, every day, silently.
+
+    A future operator who wants a different rung should move the LADDER or the
+    derivation, not re-pin a number that goes stale on every ladder change.
+    """
+    block = ((_shipped_cfg().get("publish") or {}).get("publish_time_read")) or {}
+    assert "slot" not in block, (
+        f"config/marketing.yml pins publish.publish_time_read.slot="
+        f"{block.get('slot')!r}; remove the key so _after_close_slot() resolves it")
+
+
+def test_the_resolved_slot_is_the_after_close_rung_under_the_shipped_config():
+    """End of the chain: what the lane will ACTUALLY compare against tonight."""
+    from engine.marketing import outbox as OB
+
+    resolved = pt._read_cfg(_shipped_cfg())["slot"]
+    assert resolved == _after_close()
+    assert OB._LADDER_PT_TIMES[resolved] == (17, 30), (
+        f"the read lane resolved to {resolved}, which is "
+        f"{OB._LADDER_PT_TIMES.get(resolved)} PT — not the after-close block")
+
+
+def test_a_composed_read_item_clears_the_v5_copy_gate(tmp_path):
+    """END-TO-END: compose one read through generate_read_item and prove the copy
+    is clean, rather than trusting that the event bank was migrated.
+
+    The bank this lane draws from is the SAME deterministic event template bank
+    the nightly ladder uses, rewritten to Voice Doctrine v5 by #5291. This lane is
+    fail-closed on violations — a bad post is DROPPED, not published — so a
+    regression in the bank surfaces as SILENCE, not as bad copy. Silence is
+    exactly the failure mode that kept the marketing publisher dark for five days,
+    so assert on the drop reasons too, not only on the output.
+    """
+    _write_brief(tmp_path)
+    rep = _gen(tmp_path, _cfg(), now=NOW_S8, live=True)
+
+    copy_drops = [d for d in rep["dropped"]
+                  if d.get("reason") in {"copy_violation", "copy_error", "empty_copy"}]
+    assert not copy_drops, f"the v5 gate rejected the composed read: {copy_drops}"
+    assert len(rep["generated"]) == 1, rep
+
+    rows = _rows(tmp_path)
+    assert len(rows) == 1
+    text = rows[0]["text"]
+    assert text.strip(), "the read composed to empty text"
+
+    # Independent re-validation through the v5 gate, with a ctx built the way the
+    # lane builds it — so this asserts the gate PASSES, rather than merely that
+    # the lane did not raise.
+    from engine.marketing import copywriter
+    ctx = copywriter.build_context(
+        {"type": pt._READ_KIND, "account": "flagship", "ticker": ""},
+        persona={"name": "The Desk", "voice_notes": "terse. Emoji budget: 0-1"})
+    ctx["type"] = pt._READ_KIND
+    ctx["voice"] = "authoritative desk"
+    ctx["slot"] = f"LIVE-{_after_close()}"
+    ctx["has_chart"] = False
+    violations = copywriter.validate_copy_v2(text, ctx)
+    assert not violations, f"composed read fails validate_copy v5: {violations}"

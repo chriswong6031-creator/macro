@@ -488,10 +488,29 @@ def test_governor_content_plan_accounts_have_tilt(tmp_path):
     build_and_write(root=tmp_path)
 
     cp = json.loads((tmp_path / "data" / "marketing" / "content_plan.json").read_text())
+
+    # The tilt carries every planned kind EXCEPT the ones a publish-time lane has
+    # taken ownership of. `event` leaves the nightly tilt when
+    # publish.publish_time_read is armed (content_studio drop_types) precisely so
+    # the read cannot double-post — so the expected key set is derived from the
+    # shipped config, not pinned at a bare 9. Pinning the count alone would either
+    # fail the day a lane is armed (it did, 2026-08-11) or, if loosened to `<= 9`,
+    # stop noticing a family that vanished by accident — which is the thing this
+    # test exists to catch.
+    import yaml
+
+    from engine.marketing.content_studio import _TYPE_IDS
+    cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+    _read_armed = bool(((cfg.get("publish") or {}).get("publish_time_read")
+                        or {}).get("enabled"))
+    expected = set(_TYPE_IDS) - ({"event"} if _read_armed else set())
+
     for acct in cp["accounts"]:
         tilt = acct.get("tilt", {})
         assert isinstance(tilt, dict), f"account {acct['id']} has no tilt"
-        assert len(tilt) == 9, f"account {acct['id']} tilt has {len(tilt)} keys"
+        assert set(tilt) == expected, (
+            f"account {acct['id']} tilt keys {sorted(set(tilt) ^ expected)} differ "
+            f"from the expected {sorted(expected)}")
         assert tilt.get("signal", 0) > 0, f"account {acct['id']} signal weight is 0"
 
 

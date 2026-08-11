@@ -879,7 +879,13 @@ publish:
   # posting from live quotes, sentinel-capped and re-verified by the live tape
   # gate. Operator-authored/nightly items of ANY kind still require approval.
   # Empty list = no exception (fully manual).
-  auto_approve_kinds: [mover, theme_list]
+  # `event` added 2026-08-11 (W2C-1) as step 2 of arming publish_time_read below —
+  # the read enqueues as provenance publisher_live_movers and would otherwise sit
+  # waiting for manual approval every evening. Nightly-authored event posts are
+  # unaffected: this exception is scoped to the publish-time provenance, and the
+  # nightly stops allocating `event` entirely once the read is armed
+  # (content_studio.py drop_types).
+  auto_approve_kinds: [mover, theme_list, event]
 
   # Post-time live tape gate (engine/marketing/live_verify.py). The content
   # plan is written off yesterday's EOD close; posting slots run mid-session
@@ -1042,8 +1048,18 @@ publish:
   #      listed there; without it the read enqueues but waits for manual approval).
   # Eyeball dry-runs (--dry-run) before doing either.
   publish_time_read:
-    enabled: false           # DARK by default — operator arms after dry-runs (see above)
-    slot: "S8"               # after-close ladder slot the daily read fires on (18:00 PT; once/day)
+    enabled: true            # ARMED 2026-08-11 (W2C-1) — both steps above done together
+    # `slot:` IS DELIBERATELY ABSENT. Do not re-add it. publish_time_content
+    # ._after_close_slot() DERIVES the after-close rung as the latest entry in
+    # outbox._LADDER_PT_TIMES, and _read_cfg only overrides that when this key is
+    # PRESENT — so an absent key is the self-healing setting and a literal is a
+    # landmine that fires the "after-close" read mid-morning. It had already gone
+    # stale twice over: this line read `slot: "S8"` commented "(18:00 PT)", which
+    # was true only of the retired 2-hour 8-rung ladder. Under the 28-rung 30-min
+    # ladder S8 meant 7:30 AM PT, and under today's 55-rung 15-min ladder it means
+    # 5:45 AM PT — so arming the lane with the literal in place would have posted
+    # the daily read before the market opened. Derived, it is 17:30 PT on every
+    # ladder, which is the same instant the old 28-rung S28 resolved to.
     # Per-call lane allowlist (XG-W1) — same reasoning as publish_time_movers
     # above: this lane picks accounts straight from desk_network and never reads
     # tilt, so the employee desks' zeroed event weight cannot reach it. Enforces
@@ -2675,7 +2691,12 @@ shapes:
 congress_lane:
   enabled: true
   # Fleet-wide, per day. Two is a lane; five is a congressional newsletter.
-  max_per_day: 2
+  # 2 -> 4 (W2C-1, 2026-08-11). The filter widening below (W3, #4997) is what
+  # makes this safe: the lane was revived from never-having-posted, and its
+  # candidate supply now exceeds what a 2/day fleet-wide cap can spend. Four is
+  # still a lane, not a newsletter — and it is fleet-wide across 13 desks, so no
+  # single timeline sees more than a fraction of it.
+  max_per_day: 4
   # Materiality floor on the disclosed RANGE MIDPOINT. 73,206 of the parquet's
   # 99,585 rows sit in the $1,001–$15,000 bucket — that bucket IS the noise.
   #
@@ -2743,7 +2764,9 @@ congress_lane:
 
 insider_lane:
   enabled: true
-  max_per_day: 2
+  # Fleet-wide, per day. 2 -> 4 (W2C-1, 2026-08-11) — same reasoning as
+  # congress_lane above: post-#4997 filter widening, supply supports 4.
+  max_per_day: 4
   # Absolute-size floor. Below this the relative arithmetic is noise too — a
   # 400% increase on a 50-share stake is not a fact about a company.
   min_value_usd: 100000

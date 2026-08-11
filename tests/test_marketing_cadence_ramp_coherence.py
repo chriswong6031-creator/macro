@@ -118,6 +118,28 @@ def _ladder_constants():
     return step, slots, step * (slots - 1)          # step, rungs, span in minutes
 
 
+def _sweep_interval_min() -> int:
+    """The TIGHTEST gap between two publisher sweeps, in minutes, from the cron.
+
+    THIS, NOT THE LADDER STEP, is what paces real throughput (W2C-1, 2026-08-11).
+    The two were the same number — 30 — from #3904 until the ladder tightened to a
+    15-min step, and this suite had been reading the ladder step as a stand-in for
+    the sweep interval. That stand-in is what made three tests here fail on a
+    change that cannot affect any of them: the publisher's cadence comes from its
+    own cron, so a denser PLAN grid books more rungs without giving the publisher
+    one extra chance to post. Derive it from the cron and the relation is about
+    the thing it is named after.
+
+    The minimum is the right reduction: the grid has a long overnight gap, and a
+    floor that fits the tightest gap fits every gap.
+    """
+    sweeps = sorted(h * 60 + m for h, m in _sweep_times_utc())
+    assert len(sweeps) >= 2, "a single daily sweep has no interval"
+    gaps = [b - a for a, b in zip(sweeps, sweeps[1:])]
+    gaps.append(sweeps[0] + 24 * 60 - sweeps[-1])   # wrap past midnight
+    return min(gaps)
+
+
 def _reachable_caps(cfg, acct: dict) -> dict[str, "int | None"]:
     """``{tier: max_posts_per_account_per_day}`` for every tier this desk ages into.
 
@@ -214,32 +236,52 @@ def test_the_ladder_and_cron_constants_this_suite_assumes_are_the_shipped_ones()
     it would still pass while guarding a cadence that no longer exists — the exact
     way the persona specs themselves went stale. Change these deliberately."""
     step, slots, span = _ladder_constants()
-    assert (step, slots, span) == (30, 28, 810), (
-        "the ladder moved (30-min step, 28 rungs, 4:00 AM-5:30 PM PT = 810 min). "
+    assert (step, slots, span) == (15, 55, 810), (
+        "the ladder moved (15-min step, 55 rungs, 4:00 AM-5:30 PM PT = 810 min). "
         "Re-derive the spacing relations in this suite before re-pinning it."
     )
+    # THE SPAN IS THE INVARIANT, and it is deliberately unchanged at 810 min across
+    # all three ladders (19@45min, 28@30min, 55@15min): every widening tightens the
+    # STEP inside a fixed 4:00 AM-5:30 PM window, so no post moves into a
+    # low-engagement hour and the last rung stays at 17:30 PT. Only the step and
+    # rung count above are expected to move.
+    assert span == 810, "the 4:00 AM-5:30 PM posting window itself moved"
     assert _publish_cron() == "0,30 0,1,11-23 * * *", (
         "the publisher's sweep grid moved — the sweep-quantisation relation and "
         "the session-fence count are both computed from it"
     )
     # 30 sweeps per UTC day, which is what has to hold a 20-post desk day.
     assert len(_sweep_times_utc()) == 30
+    # The sweep interval is the pacing quantity (see _sweep_interval_min); it is
+    # INDEPENDENT of the ladder step and no longer equal to it.
+    assert _sweep_interval_min() == 30
 
 
-def test_every_ramp_tier_paces_to_the_ladder_step(cfg):
-    """The ramp's own spacing knob and the ladder step are the same number by
-    construction (#3904 tightened the ladder to 30 min *because* the ramp says
-    30). A tier row that drifts off it means the ladder can no longer deliver
-    that tier's volume."""
+def test_every_ramp_tier_paces_to_the_publisher_sweep(cfg):
+    """The ramp's own spacing knob and the publisher's SWEEP interval are the same
+    number by construction (#3904 set the ramp to 30 because a sweep is 30).
+
+    Re-derived W2C-1 (2026-08-11): this asserted against the ladder STEP, which was
+    also 30 until the ladder tightened to 15. The ladder step was never the reason
+    — a plan grid books rungs, a sweep posts them — so a tier row is coherent when
+    it matches the sweep interval, and the ladder only has to be able to EXPRESS
+    that floor (i.e. divide it), which a finer grid always can.
+    """
     step, _slots, _span = _ladder_constants()
+    sweep = _sweep_interval_min()
     ramp = (cfg.get("sentinel") or {}).get("ramp") or {}
     tiers = {k: v for k, v in ramp.items() if isinstance(v, dict) and k != "account_overrides"}
     assert tiers, "sentinel.ramp has no tier rows — the ramp would be a no-op"
     for name, row in tiers.items():
         if "min_minutes_between_posts" in row:
-            assert int(row["min_minutes_between_posts"]) == step, (
+            assert int(row["min_minutes_between_posts"]) % step == 0, (
+                f"sentinel.ramp.{name}.min_minutes_between_posts "
+                f"({row['min_minutes_between_posts']}m) is not a whole number of "
+                f"{step}m ladder rungs — the floor cannot land on the clock table")
+            assert int(row["min_minutes_between_posts"]) == sweep, (
                 f"sentinel.ramp.{name}.min_minutes_between_posts is "
-                f"{row['min_minutes_between_posts']}, ladder step is {step}"
+                f"{row['min_minutes_between_posts']}, publisher sweep interval "
+                f"is {sweep}"
             )
 
 
@@ -347,18 +389,28 @@ def test_the_spacing_floor_fits_inside_one_sweep_minus_the_send_jitter(
     """The relation that decides real throughput, and the one no config value
     shows you.
 
-    The publisher sweeps every ladder step, books each post at ``now + jitter``
+    The publisher sweeps on ITS OWN cron, books each post at ``now + jitter``
     (publish.post_jitter_max_min), and the resolver measures elapsed time from that
-    BOOKED stamp — so at the next sweep the gap it sees is ``step - send_jitter``
-    at worst. A floor above that refuses the next rung and the desk waits two,
-    running at half cadence with every number in the config still looking right.
-    Measured on the shipped grid: a 30-minute floor (which merely MATCHES the
-    ramp's stated min_minutes_between_posts) delivers ~15 posts/day against a
-    20/day tier.
+    BOOKED stamp — so at the next sweep the gap it sees is
+    ``sweep_interval - send_jitter`` at worst. A floor above that refuses the next
+    rung and the desk waits two, running at half cadence with every number in the
+    config still looking right. Measured on the shipped grid: a 30-minute floor
+    (which merely MATCHES the ramp's stated min_minutes_between_posts) delivers
+    ~15 posts/day against a 20/day tier.
+
+    THE BUDGET IS A SWEEP, NOT A RUNG (re-derived W2C-1, 2026-08-11). This read
+    ``_ladder_constants()[0]`` while the ladder step and the sweep interval were
+    both 30, and the substitution is wrong in the direction that matters: the
+    ladder is the PLAN grid (which rung a post is booked against) and the cron is
+    the POST grid (when the publisher can actually send). Tightening the ladder to
+    15 min books more rungs per day without creating a single extra send
+    opportunity, so it cannot shorten the gap the resolver sees — yet the old
+    derivation reported all seven desks as suddenly mis-specced. Reading the cron
+    keeps the relation attached to the mechanism it describes.
     """
-    step, _slots, _span = _ladder_constants()
+    sweep = _sweep_interval_min()
     send_jitter = int((cfg.get("publish") or {}).get("post_jitter_max_min", 0))
-    budget = step - send_jitter
+    budget = sweep - send_jitter
     failures = []
     for acct in enabled_desks:
         acct_id = str(acct["id"])
@@ -368,8 +420,8 @@ def test_the_spacing_floor_fits_inside_one_sweep_minus_the_send_jitter(
             failures.append(
                 f"{acct_id}: min_spacing_min {prof.min_spacing_min} + jitter_min "
                 f"{prof.jitter_min} = {worst} min > {budget} min "
-                f"(ladder step {step} - send jitter {send_jitter}); every post "
-                f"would miss its next rung"
+                f"(sweep interval {sweep} - send jitter {send_jitter}); every post "
+                f"would miss its next sweep"
             )
     assert not failures, "\n".join(failures)
 

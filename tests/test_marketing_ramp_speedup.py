@@ -504,16 +504,37 @@ class TestTheShippedSchedule:
 
     def test_the_spacing_floor_did_not_move(self, cfg):
         """NOT part of the relaxation and deliberately so: min_minutes_between_posts
-        is coupled to the 28-rung 30-minute Pacific ladder
-        (outbox._LADDER_PT_TIMES / content_studio._LADDER_SLOTS), so changing it
-        desyncs slot times from the clock table."""
+        stays at 30 and must remain EXPRESSIBLE on the Pacific ladder
+        (outbox._LADDER_PT_TIMES / content_studio._LADDER_SLOTS), or the stated
+        spacing desyncs from the clock table.
+
+        The relation is DIVIDES, not equals (re-pinned W2C-1, 2026-08-11, when the
+        ladder went 28 rungs @30min → 55 @15min). Equality was the right test while
+        the two numbers happened to match, but it encodes the wrong idea: what makes
+        a spacing floor honest is that the grid can LAND on it. A 15-minute grid
+        expresses a 30-minute floor exactly (use every other rung); a 45-minute grid
+        could not express it at all. Tightening the grid therefore leaves this floor
+        untouched and reachable, while loosening it past the floor would not — which
+        is the drift worth failing on.
+
+        Note the floor is a plan-tier statement, not a post-time one:
+        `engine/marketing/cadence_resolver.py` (module docstring, "NOT YET
+        COMPOSED") records that nothing consumes the ramp's
+        min_minutes_between_posts at post time — real spacing comes from the
+        persona spec's `cadence.min_spacing_min`."""
         from engine.marketing import outbox as OB
 
+        step = int(OB._LADDER_STEP_MIN)
         ramp = (cfg.get("sentinel") or {}).get("ramp") or {}
         tiers = {k: v for k, v in ramp.items()
                  if isinstance(v, dict) and k != "account_overrides"}
         assert tiers
         for name, row in tiers.items():
-            assert int(row["min_minutes_between_posts"]) == int(OB._LADDER_STEP_MIN), (
-                f"sentinel.ramp.{name}.min_minutes_between_posts drifted off the "
-                f"ladder step")
+            floor = int(row["min_minutes_between_posts"])
+            assert floor == 30, (
+                f"sentinel.ramp.{name}.min_minutes_between_posts moved off 30 — "
+                f"the spacing floor is not part of any throughput change")
+            assert floor % step == 0, (
+                f"sentinel.ramp.{name}.min_minutes_between_posts ({floor}m) is not "
+                f"a whole number of {step}m ladder rungs — the stated spacing floor "
+                f"cannot be expressed on the clock table")
