@@ -1,0 +1,53 @@
+# config/theme_graph_identity_breaks.yml — ratified company-identity breaks for the
+# GMI theme graph (masterplan §4.1, reused-ticker zombie law).
+#
+# THE RULE
+# --------
+# A company node id NEVER re-points. `co:<market>:<SYMBOL>` identifies the company that
+# held that symbol, not the symbol. When a ticker is reused — a delisting followed by a
+# different issuer taking the string, a shell rebirth, a reverse-merger — the graph does
+# NOT silently start attaching the new company's memberships to the old node. Instead:
+#
+#   1. the old node is RETIRED (status=retired, retire_date set); its edges keep their
+#      intervals and stay queryable forever (dead entities never leave a denominator);
+#   2. the new holder is minted at the next epoch — `co:<market>:<SYMBOL>#2`, then #3 …;
+#   3. a row is appended here recording who ratified the break and on what evidence.
+#
+# Without this, a reused ticker quietly merges two companies' histories into one node,
+# and every membership, breadth and survivorship answer downstream inherits the merge.
+#
+# DETECTORS PROPOSE, CURATION RATIFIES
+# ------------------------------------
+# Two existing organs produce the candidates; neither may write here:
+#
+#   * scripts/audit_reused_tickers.py — zombie / rebirth classes (a dead key that
+#     refills, a print reappearing under a new issuer);
+#   * engine/top_anatomy.py — its >60-session identity gap, which separates "quiet"
+#     from "this is not the same listing any more".
+#
+# Ratification is a CURATED act (an operator, or a curation session explicitly delegated
+# by one). Rows are APPEND-ONLY: a break that turns out to be wrong is corrected by a
+# later row, never by editing or deleting an earlier one — the graph must be able to say
+# what it believed and when.
+#
+# ROW SHAPE (all fields required)
+#   - symbol: "XYZ"                     # vendor symbol as written in the membership docs
+#     market: us                        # us | cn | hk | ca | intl
+#     break_date: "2026-01-31"          # first date the NEW holder owns the symbol
+#     prior_node_retired_as: "co:us:XYZ"  # the node id retired at this break
+#     new_epoch: 2                      # epoch of the node minted for the new holder
+#     evidence: "<dated source: filing, exchange notice, audit run + date>"
+#     ratified_by: "<operator | delegated curation session>"
+#
+# ENFORCEMENT
+# -----------
+# scripts/check_theme_graph_contracts.py refuses any node with identity_epoch >= 2 that
+# has no matching row here. So an epoch cannot be minted by a builder deciding on its
+# own that two listings are different companies — the decision has to be written down
+# first, with its evidence, in this file.
+#
+# W1b ships the scaffold with zero rows: every node is epoch 1. That is a statement
+# about ratifications, not about the world — reused tickers exist; none has been
+# ratified as a graph identity break yet.
+
+breaks: []
