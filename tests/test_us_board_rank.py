@@ -50,6 +50,29 @@ def _row(ticker="AAA", *, status="buy_now", tier="T2", ticks=1, alpha=1.0,
     return row
 
 
+def _require_unique_nonempty_tickers(rows):
+    """Protect ticker-keyed evidence comparisons from identity collapse."""
+    tickers = [row.get("ticker") for row in rows]
+    assert all(isinstance(ticker, str) and ticker
+               and ticker == ticker.strip() for ticker in tickers), (
+        "ticker-keyed evidence requires canonical non-empty string tickers")
+    assert len(tickers) == len(set(tickers)), (
+        "ticker-keyed evidence requires unique tickers")
+    return tickers
+
+
+class TestTickerIdentityEvidenceGuard:
+    @pytest.mark.parametrize("ticker", [None, "", " ", " LPX", "LPX "])
+    def test_rejects_missing_blank_or_noncanonical_identity(self, ticker):
+        with pytest.raises(AssertionError, match="canonical non-empty"):
+            _require_unique_nonempty_tickers([{"ticker": ticker}])
+
+    def test_rejects_duplicate_identity_before_a_dict_can_collapse_it(self):
+        with pytest.raises(AssertionError, match="unique tickers"):
+            _require_unique_nonempty_tickers([{"ticker": "LPX"},
+                                              {"ticker": "LPX"}])
+
+
 def assert_runway_coverage_consistent(board, rows):
     """The era-independent M1 contract: the artifact's disclosed runway coverage must
     DESCRIBE the rows it shipped with.
@@ -2440,12 +2463,11 @@ class TestCommittedArtifactIntegration:
         """G0.3 at board grain: the committed board through score_rows with and
         without the basing opt-in.
 
-        The witness is injected rather than hoped for.  The 2026-07-31 artifact
-        happens to carry no BOTTOM WATCH buy row, so reading this fixture as-is would
-        pass on an engine that had never learned the state — the vacuous form of this
-        guard.  The board's own ledger says the state IS routine (41 buy-lane rows
-        over 13 of the 17 board days ending 07-31), so one real row is relabelled to
-        the state the ledger shows and the assertions below refuse an empty split.
+        The witness is injected rather than hoped for.  A committed render may carry
+        zero or many natural BOTTOM WATCH buy rows, so one separate real row is always
+        relabelled and the expected movers are derived from the whole injected input.
+        That keeps the guard non-vacuous without mistaking a newly rendered natural
+        BOTTOM WATCH row for collateral ranking churn.
 
         The non-buy lanes are asserted as OBJECTS, not counts: score_rows is never
         handed watch/leaders/laggards/ran, and this is the test that says so.
@@ -2460,6 +2482,7 @@ class TestCommittedArtifactIntegration:
         def _pool():
             raw = [json.loads(json.dumps(r)) for r in board["buy"]]
             assert len(raw) >= 2, "committed board must have room for a witness"
+            _require_unique_nonempty_tickers(raw)
             # The witness must be a row the shelf CAN move, and that is not every row:
             # `stage_for` checks the entry status FIRST, and an explicit blocked/exit/
             # avoid verdict outranks the cycle read by design ("Blocked wins over
@@ -2468,40 +2491,65 @@ class TestCommittedArtifactIntegration:
             # than on behaviour. That is what happened when the nightly re-bake left ORA
             # (the board's only blocked-status buy row, 1 of 62) last: this test picked
             # `raw[-1]` and reddened main while the shelf worked correctly.
-            # Pick the LAST row whose status cannot pre-empt the split, and refuse to
-            # run rather than silently witness nothing.
+            # Pick the LAST non-BOTTOM-WATCH row whose status cannot pre-empt the
+            # split.  Reusing a natural BOTTOM WATCH row would only appear to inject a
+            # witness and let the guard become fixture-dependent again.
             idx = next((i for i in range(len(raw) - 1, -1, -1)
                         if ubr._status_of(raw[i].get("entry_signal"))
-                        not in ubr._BLOCKED_STATUSES), None)
+                        not in ubr._BLOCKED_STATUSES
+                        and not ubr.is_bottom_watch(raw[i])), None)
             assert idx is not None, (
-                "every buy row carries a blocked/exit/avoid entry status, so no row can "
-                "witness the basing split — the fixture, not the shelf, is the problem")
+                "no non-BOTTOM-WATCH buy row can witness the basing split — the "
+                "fixture, not the shelf, is the problem")
             raw[idx].update({"state": "BOTTOM WATCH", "label": "NEARING A LOW",
                              "dir": "down"})
             raw[idx].pop("label_zh", None)
-            return raw, raw[idx]["ticker"]
+            witness = raw[idx]["ticker"]
+            movable = {
+                row["ticker"] for row in raw
+                if ubr.is_bottom_watch(row)
+                and ubr._status_of(row.get("entry_signal"))
+                not in ubr._BLOCKED_STATUSES
+            }
+            blocked = {
+                row["ticker"] for row in raw
+                if ubr.is_bottom_watch(row)
+                and ubr._status_of(row.get("entry_signal"))
+                in ubr._BLOCKED_STATUSES
+            }
+            assert witness in movable and movable, (
+                "the injected row must make the movable BOTTOM WATCH cohort non-empty")
+            return raw, witness, movable, blocked
 
         lanes_before = json.dumps(
             {lane: board.get(lane) for lane in
              ("watch", "leaders", "laggards", "ran")}, sort_keys=True)
 
-        raw_before, witness = _pool()
-        raw_after, _ = _pool()
+        raw_before, witness, expected_moved, blocked_bottom_watch = _pool()
+        raw_after, witness_after, expected_after, blocked_after = _pool()
+        assert (witness_after, expected_after, blocked_after) == (
+            witness, expected_moved, blocked_bottom_watch)
         before = ubr.score_rows(raw_before, verdict_by=verdicts,
                                 board_asof=board["as_of"])
         after = ubr.score_rows(raw_after, verdict_by=verdicts,
                                board_asof=board["as_of"],
                                bottom_watch_stage=ubr.STAGE_BASING)
 
+        before_tickers = _require_unique_nonempty_tickers(before)
+        after_tickers = _require_unique_nonempty_tickers(after)
+        assert set(before_tickers) == set(after_tickers)
         by_before = {r["ticker"]: r for r in before}
         by_after = {r["ticker"]: r for r in after}
-        assert by_before[witness]["stage"] == "blocked", (
-            "witness must be blocked without the opt-in or this proves nothing")
-        assert by_after[witness]["stage"] == "basing"
+        assert all(by_before[t]["stage"] == "blocked" for t in expected_moved), (
+            "every movable BOTTOM WATCH row must be blocked without the opt-in")
+        assert all(by_after[t]["stage"] == "basing" for t in expected_moved)
+        assert all(by_before[t]["stage"] == by_after[t]["stage"] == "blocked"
+                   for t in blocked_bottom_watch), (
+            "blocked/exit/avoid entry status must outrank the basing shelf")
 
         moved = {t for t in by_before
                  if by_before[t]["stage"] != by_after[t]["stage"]}
-        assert moved == {witness}
+        assert moved == expected_moved
         assert all(by_before[t]["stage"] == "blocked" for t in moved)
         assert all(by_after[t]["stage"] == "basing" for t in moved)
 
