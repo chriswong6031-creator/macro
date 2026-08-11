@@ -358,3 +358,45 @@ def test_the_surface_is_wired_and_not_inert():
     # inventory, never in a page-local header (CLAUDE.md navigation law).
     navlinks = (ROOT / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
     assert "winner_health.html" in navlinks, "surface is unreachable from the product nav"
+
+
+#: §14.1 — the figure cell is 92px and its caption is uppercased at 10px with 0.8px
+#: letter-spacing, so a caption that renders wider than the column wraps to two lines
+#: and takes the row's baseline with it.
+#:
+#: THE SPEC'S "<=13 CHARACTERS" IS A PROXY, AND IT IS THE WRONG ONE — measured in the
+#: browser on the built page: `IN SIX MONTHS` is 13 chars and renders 90px (fits);
+#: `THREE MONTHS` is 12 chars and renders 92px (WRAPS, because every glyph is a wide
+#: capital). Character count and rendered width disagree in exactly the range these
+#: captions live in, so a char-count assertion here would pass while the page wraps —
+#: a guard giving false confidence about the defect it was written for.
+#:
+#: A Jinja unit test has no layout engine, so this FREEZES the exact strings instead.
+#: Each was measured in-browser at 1360px; changing one fails this test and forces the
+#: re-measurement rather than letting a plausible-looking caption ship unverified.
+MEASURED_CAPTIONS = {
+    "primary": ("in six months", 90),   # 13 chars, 90px — fits, 2px of headroom
+    "r63": ("three months", 92),        # 12 chars, 92px — WRAPS; see the §4.5 amendment
+    "atrz": ("above trend", 76),        # 11 chars — fits
+}
+
+
+def test_w2b_figure_captions_are_frozen_at_their_measured_strings():
+    """§14.1 / §4.5 — captions are pinned to strings whose rendered width was measured.
+
+    Asserted on the RENDERED caption of every tier rather than on a copy table, so the
+    guard cannot be satisfied by a spec edit that never reached the template.
+    """
+    import re
+    for key, figure_kw in (("primary", {"r126": 0.62}), ("r63", {"r63": 0.41}),
+                           ("atrz", {"atr_x": 7.2})):
+        ctx = _three_tier(tiers=[_tier(key, {"extended_healthy": [
+            _row(ticker="ABC", **figure_kw)]})])
+        html = _template().render(wh=ctx)
+        caps = re.findall(r'<span class="cap"><span class="l-en">([^<]*)</span>', html)
+        assert caps, f"{key}: no figure caption rendered"
+        want, px = MEASURED_CAPTIONS[key]
+        assert caps[0].strip() == want, (
+            f"{key}: caption changed to {caps[0].strip()!r} — the pinned string was "
+            f"{want!r} at {px}px in a 92px column. Re-measure the new string in a "
+            f"browser before changing this pin; character count does not predict it.")

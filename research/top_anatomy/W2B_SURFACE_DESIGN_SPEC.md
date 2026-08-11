@@ -199,7 +199,7 @@ pages.** Grounds, in order:
 │ ══ Fast three-month runs ═══════════════════════════════════════ (?) ══      │
 │ Up 35% or more over the last three months                                    │
 │  [ladder]                                                                    │
-│  … 4 groups, rows sorted A→Z, +41% / IN THREE MONTHS …                       │
+│  … 4 groups, rows sorted A→Z, +41% / THREE MONTHS …                          │
 │                                                                              │
 │ ══ Far above trend ═════════════════════════════════════════════ (?) ══      │
 │ At least six of its own typical daily moves above its 200-day average price  │
@@ -400,9 +400,43 @@ The four W1 states — names, ZH names, stances, sub-lines — are **unchanged o
 | Cell | primary | r63 | atrz |
 |---|---|---|---|
 | figure | `+62%` directional ink | `+41%` directional ink | `7.2×` **neutral ink** |
-| caption EN | IN SIX MONTHS | IN THREE MONTHS | ABOVE TREND |
+| caption EN | IN SIX MONTHS | THREE MONTHS | ABOVE TREND |
 | caption ZH | 近六个月 | 近三个月 | 高于均线 |
 | missing value | `—` (unchanged honest dash) | `—` | `—` |
+
+**AMENDED 2026-08-11 (commissioning-session ruling).** The r63 caption was pinned as
+`IN THREE MONTHS` and shipped that way in the W2b build, where it reproduced the very
+defect §14.1 records: 15 characters wrap the 92px column, and the build measured the
+caption at **31px (two lines) against primary's 16px**, taking the row from 64px to 79px.
+Re-pinned to **`THREE MONTHS`** — 12 characters, inside §14.1's ≤13-char limit, and it
+keeps the spelled-word family parallel with `IN SIX MONTHS` rather than abbreviating to
+`IN 3 MONTHS`. Dropping the preposition is the smallest edit that fits the column; the
+window is already unambiguous beside a figure. The ZH caption is unchanged — 近三个月 is
+four glyphs and sets on one line (measured: 16px, row 64px).
+
+**STILL WRAPS — the ≤13-character rule is the wrong proxy (measured 2026-08-11).**
+`THREE MONTHS` renders **92px in a 92px column** and still breaks to two lines
+(38px `THREE` + 51px `MONTHS`), so the r63 row stays 79px against primary's 64px. The
+constraint is RENDERED WIDTH, not character count, and the two disagree exactly in the
+range these captions occupy: `IN SIX MONTHS` is *13* characters but only **90px**
+because `I` and `X` are narrow, while `THREE MONTHS` is *12* characters of uniformly
+wide capitals. Any future caption for this cell must be measured, not counted.
+
+Measured at 10px / 600 / 0.8px letter-spacing, uppercased, in the live cell — the
+options that FIT, for the design lane to choose from (this builder did not pick one):
+
+| candidate | px | fits 92px | keeps the spelled-word family |
+|---|---|---|---|
+| `3 MONTHS` | 62 | yes | no |
+| `IN 3 MONTHS` | 78 | yes | no (keeps the preposition) |
+| `THREE-MONTH` | 87 | yes | **yes** (hyphenated adjective form) |
+| `3-MONTH GAIN` | 89 | yes | no |
+| `THREE MONTHS` *(current pin)* | 92 | **no** | yes |
+| `LAST 3 MONTHS` / `PAST 3 MONTHS` | 95 | no | no |
+| `IN THREE MONTHS` *(original)* | 108 | no | yes |
+
+Note also that `IN SIX MONTHS` clears by only **2px**, so the primary caption is itself
+one font-stack change away from the same defect.
 
 The trend distance is a **distance, not a direction** — it is ≥6 by construction, so directional
 ink would print a permanent green (permanent red in ZH) that means nothing. Neutral ink,
@@ -998,6 +1032,26 @@ defects were found by looking that reading could not have found.
 3. **The `m0` group header inherits `.grp-hd`'s `--mc`-tinted border and rule** unless it is
    given the neutral hairline explicitly — an unread group would otherwise draw a muted-grey
    version of the ramp and read as a fifth wear stage.
+4. **`atr_x` is NOT ≥ the bar for the off-band arm — the dash is the ruled form.** §8 note 5
+   says the trend distance is ≥6 by construction. That holds for a name EXT *today*; it does
+   not hold for the recently-EXT arm, which is on the board precisely *because* it broke.
+   Measured on the real tape: **79 of 532 ATRZ rows sit below the bar and 14 are negative**.
+   The engine therefore emits `atr_x` only when the name is genuinely above its trend, and
+   the cell falls back to the honest dash of §4.5 otherwise — a negative or below-bar
+   multiple printed under a caption reading `ABOVE TREND` is a false sentence, not merely an
+   odd number, and those rows already carry their own receipt in the give-back leg (§4.10
+   row 13). **RULED 2026-08-11 (commissioning session): confirmed as shipped.** Recorded here
+   so a later lane does not "restore" the raw value and re-introduce the false reading.
+5. **The r63 figure caption wraps, and §14.1's own ≤13-character rule does not catch it.**
+   `IN THREE MONTHS` (15 chars, 108px) measured 31px tall against primary's 16px. Re-pinned
+   to `THREE MONTHS` by the §4.5 amendment of 2026-08-11 — which is 12 characters and
+   **still wraps**, because it renders 92px in a 92px column. Character count is the wrong
+   proxy: `IN SIX MONTHS` is *longer* (13 chars) and fits, at 90px, because `I` and `X` are
+   narrow. **Measure this cell, never count it.** The design-freeze test therefore FREEZES
+   the exact measured strings rather than asserting a character budget — a char-count guard
+   passes `THREE MONTHS` while the page wraps, which is false confidence about the very
+   defect it was written for. The caption itself is an OPEN design question; measured
+   candidates are tabled in the §4.5 amendment.
 
 Also re-confirmed from W1 §9 and still binding here: anything hosting `lens()` must be a
 `<div>`; interpolated attribute *fragments* ship escaped; `.lens-receipt .r-i` is `nowrap`, so
