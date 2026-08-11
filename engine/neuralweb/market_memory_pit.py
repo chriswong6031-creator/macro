@@ -46,6 +46,7 @@ from uuid import uuid4
 from engine.neuralweb import market_memory
 
 CAPTURE_RECEIPT_SCHEMA = "market_memory.capture_receipt.v1"
+STORE_PROFILE = "market_memory.w1a.missing_only.v1"
 _STORED_CONTEXT_SCHEMA = "market_memory.stored_context.v1"
 _STORE_MANIFEST_SCHEMA = "market_memory.store_manifest.v1"
 _STORE_HEAD_SCHEMA = "market_memory.store_head.v1"
@@ -67,6 +68,7 @@ _MAX_STORE_MANIFEST_BYTES = 64 * 1024
 _MAX_HEAD_BYTES = 16 * 1024
 _MAX_GENERATION_BYTES = 2 * 1024 * 1024
 _MAX_GENERATION_CAPTURES = 4_096
+_MAX_PIN_ANCESTRY_BYTES = 64 * 1024 * 1024
 _MAX_CAPTURE_LAG = timedelta(minutes=15)
 _MAX_CLOCK_SKEW = timedelta(seconds=5)
 _RECEIPT_FIELDS = frozenset(
@@ -139,6 +141,42 @@ class StoredMarketMemoryContext:
             "capture_receipt": copy.deepcopy(self.capture_receipt),
             "context": copy.deepcopy(self.packet),
         }
+
+
+@dataclass(frozen=True)
+class PinnedCaptureIndexEntry:
+    """One immutable capture identity from a published store generation."""
+
+    query_id: str
+    context_id: str
+    capture_id: str
+    packet_sha256: str
+
+    def as_dict(self) -> dict[str, str]:
+        """Return the canonical generation-entry representation."""
+
+        return {
+            "query_id": self.query_id,
+            "context_id": self.context_id,
+            "capture_id": self.capture_id,
+            "packet_sha256": self.packet_sha256,
+        }
+
+
+@dataclass(frozen=True)
+class PinnedGenerationSnapshot:
+    """A validated current or published-ancestor generation capability.
+
+    The snapshot intentionally contains only the bounded generation index.  It
+    contains no packet values or filesystem paths.  Concrete readers retain
+    ownership of receipt and packet validation.
+    """
+
+    profile: str
+    store_id: str
+    generation_id: str
+    generation_sha256: str
+    captures: tuple[PinnedCaptureIndexEntry, ...]
 
 
 @dataclass(frozen=True)
@@ -841,6 +879,135 @@ def _load_store_state(root: Path) -> _StoreState:
     )
 
 
+def _snapshot_from_generation(
+    generation: Mapping[str, Any],
+    *,
+    generation_sha256: str,
+    profile: str,
+) -> PinnedGenerationSnapshot:
+    """Detach one already-validated generation into an immutable read token."""
+
+    return PinnedGenerationSnapshot(
+        profile=profile,
+        store_id=str(generation["store_id"]),
+        generation_id=str(generation["generation_id"]),
+        generation_sha256=generation_sha256,
+        captures=tuple(
+            PinnedCaptureIndexEntry(
+                query_id=str(row["query_id"]),
+                context_id=str(row["context_id"]),
+                capture_id=str(row["capture_id"]),
+                packet_sha256=str(row["packet_sha256"]),
+            )
+            for row in generation["captures"]
+        ),
+    )
+
+
+def _validate_generation_link(
+    *, newer: Mapping[str, Any], older: Mapping[str, Any]
+) -> None:
+    """Require the exact append-one relationship emitted by the sole writer."""
+
+    if newer.get("previous_generation_id") != older.get("generation_id"):
+        raise MarketMemoryStoreError("store generation ancestry link mismatch")
+    newer_rows = [dict(row) for row in newer["captures"]]
+    older_rows = [dict(row) for row in older["captures"]]
+    if len(newer_rows) != len(older_rows) + 1:
+        raise MarketMemoryStoreError(
+            "store generation ancestry is not one append-only capture"
+        )
+    newer_by_query = {row["query_id"]: row for row in newer_rows}
+    for row in older_rows:
+        if newer_by_query.get(row["query_id"]) != row:
+            raise MarketMemoryStoreError(
+                "store generation ancestry rewrites a published capture"
+            )
+
+
+def _read_pinned_generation_from_state(
+    root: Path,
+    *,
+    state: _StoreState | Any,
+    profile: str,
+    generation_id: str | None,
+    generation_limit: int = _MAX_GENERATION_BYTES,
+) -> PinnedGenerationSnapshot:
+    """Resolve only current HEAD or an authenticated append-only ancestor.
+
+    Merely finding a content-valid generation object is insufficient: a writer
+    may have created it and crashed before publishing HEAD.  Walking backward
+    from the currently authenticated HEAD excludes those crash-orphans.
+    """
+
+    if generation_id is not None and (
+        not isinstance(generation_id, str)
+        or not _GENERATION_ID.fullmatch(generation_id)
+    ):
+        raise MarketMemoryQueryError("generation_id must be mmgeneration_<sha256>")
+    target = generation_id or str(state.head["generation_id"])
+    current = copy.deepcopy(dict(state.generation))
+    current_sha256 = str(state.head["generation_sha256"])
+    visited: set[str] = set()
+    expected_depth = len(current["captures"]) + 1
+    depth = 0
+    total_bytes = len(_canonical_bytes(current))
+    if total_bytes > _MAX_PIN_ANCESTRY_BYTES:
+        raise MarketMemoryStoreError(
+            "store generation ancestry exceeds its aggregate byte bound"
+        )
+    target_snapshot: PinnedGenerationSnapshot | None = None
+    while True:
+        current_id = str(current["generation_id"])
+        if current_id in visited:
+            raise MarketMemoryStoreError("store generation ancestry contains a cycle")
+        visited.add(current_id)
+        depth += 1
+        if current_id == target:
+            target_snapshot = _snapshot_from_generation(
+                current,
+                generation_sha256=current_sha256,
+                profile=profile,
+            )
+        previous_id = current.get("previous_generation_id")
+        if previous_id is None:
+            if current["captures"]:
+                raise MarketMemoryStoreError(
+                    "store generation ancestry does not end at empty genesis"
+                )
+            if depth != expected_depth:
+                raise MarketMemoryStoreError(
+                    "store generation ancestry depth differs from capture count"
+                )
+            if target_snapshot is None:
+                raise MarketMemoryContextNotFound(
+                    "generation is not published by the active HEAD ancestry"
+                )
+            return target_snapshot
+        if depth >= expected_depth or depth > _MAX_GENERATION_CAPTURES:
+            raise MarketMemoryStoreError(
+                "store generation ancestry exceeds its safe bound"
+            )
+        previous, previous_body = _read_canonical_object(
+            _generation_path(root, previous_id),
+            limit=generation_limit,
+            label="published ancestor store generation",
+        )
+        total_bytes += len(previous_body)
+        if total_bytes > _MAX_PIN_ANCESTRY_BYTES:
+            raise MarketMemoryStoreError(
+                "store generation ancestry exceeds its aggregate byte bound"
+            )
+        clean_previous = _validate_generation(
+            previous, store_id=str(state.manifest["store_id"])
+        )
+        if clean_previous["generation_id"] != previous_id:
+            raise MarketMemoryStoreError("store generation ancestry identity mismatch")
+        _validate_generation_link(newer=current, older=clean_previous)
+        current = clean_previous
+        current_sha256 = sha256(previous_body).hexdigest()
+
+
 def _capture_entry(receipt: Mapping[str, Any]) -> dict[str, str]:
     return {
         "query_id": str(receipt["query_id"]),
@@ -1163,6 +1330,102 @@ class FileAsKnownAtReader(market_memory.AsKnownAtReader):
                 "W1A reader supports operational_pit captures only"
             )
         self.mode = mode
+        self._pinned_snapshots: dict[tuple[str, str], PinnedGenerationSnapshot] = {}
+
+    def read_pinned_generation(
+        self, *, generation_id: str | None = None
+    ) -> PinnedGenerationSnapshot:
+        """Pin current HEAD or one immutable ancestor actually published before it."""
+
+        state = _load_store_state(self.root)
+        target = generation_id or str(state.head["generation_id"])
+        key = (str(state.head["generation_id"]), target)
+        snapshot = _read_pinned_generation_from_state(
+            self.root,
+            state=state,
+            profile=STORE_PROFILE,
+            generation_id=generation_id,
+        )
+        if len(self._pinned_snapshots) >= 8:
+            self._pinned_snapshots.pop(next(iter(self._pinned_snapshots)))
+        self._pinned_snapshots[key] = snapshot
+        return snapshot
+
+    def _authenticate_pinned_snapshot(
+        self, generation: PinnedGenerationSnapshot
+    ) -> PinnedGenerationSnapshot:
+        if not isinstance(generation, PinnedGenerationSnapshot):
+            raise MarketMemoryQueryError(
+                "generation must be a PinnedGenerationSnapshot"
+            )
+        if generation.profile != STORE_PROFILE:
+            raise MarketMemoryQueryError("generation profile does not belong to W1A")
+        if any(generation is cached for cached in self._pinned_snapshots.values()):
+            return generation
+        authenticated = self.read_pinned_generation(
+            generation_id=generation.generation_id
+        )
+        if authenticated != generation:
+            raise MarketMemoryStoreError(
+                "pinned W1A generation differs from its published bytes"
+            )
+        return authenticated
+
+    def read_pinned_capture_receipt(
+        self,
+        generation: PinnedGenerationSnapshot,
+        *,
+        query_id: str,
+    ) -> dict[str, Any]:
+        """Read one owner-validated receipt through a pinned generation index."""
+
+        authenticated = self._authenticate_pinned_snapshot(generation)
+        if not isinstance(query_id, str) or not _QUERY_ID.fullmatch(query_id):
+            raise MarketMemoryQueryError("query_id must be mmquery_<sha256>")
+        entries = [row for row in authenticated.captures if row.query_id == query_id]
+        if not entries:
+            raise MarketMemoryContextNotFound(
+                "query is absent from the pinned W1A generation"
+            )
+        if len(entries) != 1:  # pragma: no cover - generation validator proves this
+            raise MarketMemoryStoreError("pinned W1A query index is ambiguous")
+        entry = entries[0]
+        receipt, receipt_body = _read_canonical_object(
+            _query_path(self.root, query_id),
+            limit=_MAX_RECEIPT_BYTES,
+            label="pinned W1A query receipt",
+        )
+        clean_receipt = _validate_capture_receipt(receipt)
+        if clean_receipt["store_id"] != authenticated.store_id:
+            raise MarketMemoryStoreError("pinned W1A receipt belongs to another store")
+        if _capture_entry(clean_receipt) != entry.as_dict():
+            raise MarketMemoryStoreError(
+                "pinned W1A query receipt differs from generation"
+            )
+        context_receipt, context_body = _read_canonical_object(
+            _context_path(self.root, clean_receipt["context_id"]),
+            limit=_MAX_RECEIPT_BYTES,
+            label="pinned W1A context receipt",
+        )
+        if context_body != receipt_body or context_receipt != receipt:
+            raise MarketMemoryStoreError(
+                "pinned W1A query and context receipts disagree"
+            )
+        return clean_receipt
+
+    def read_stored_from_pinned_generation(
+        self,
+        generation: PinnedGenerationSnapshot,
+        *,
+        query_id: str,
+    ) -> StoredMarketMemoryContext:
+        """Read one exact packet without consulting a newer generation index."""
+
+        authenticated = self._authenticate_pinned_snapshot(generation)
+        receipt = self.read_pinned_capture_receipt(authenticated, query_id=query_id)
+        return _load_stored_from_receipt(
+            self.root, receipt, store_id=authenticated.store_id
+        )
 
     def read_stored_as_known_at(
         self,

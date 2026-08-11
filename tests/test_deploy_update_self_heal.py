@@ -189,6 +189,7 @@ MUST_RESTART = [
     "app/requirements.txt",
     "app/deploy/macro-api.service",
     "config/site_access.yml",
+    "engine/neuralweb/market_memory_playback.py",
     # Private Issue Desk router import-caches both its engine and strict schemas.
     "engine/options_issue_desk.py",
     "contracts/options/options.issue_desk.v1.schema.json",

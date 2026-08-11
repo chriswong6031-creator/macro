@@ -25,7 +25,12 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 
-from engine.neuralweb import market_memory, market_memory_pit, market_memory_trusted
+from engine.neuralweb import (
+    market_memory,
+    market_memory_pit,
+    market_memory_playback,
+    market_memory_trusted,
+)
 
 _DEFAULT_ROOT = Path(__file__).resolve().parent.parent
 _PRIVATE_HEADERS = {
@@ -52,6 +57,9 @@ _SYMBOL_FETCH_CALLER_GRACE_SECONDS = 0.25
 _SYMBOL_FETCH_MAX_INFLIGHT = 6
 _SYMBOL_FETCH_BUSY_RETRY_SECONDS = 2
 _SYMBOL_FETCH_USER_AGENT = "MastermindMarketMemory/1.0"
+_PLAYBACK_USER_LIMIT = 6
+_PLAYBACK_PEER_LIMIT = 30
+_PLAYBACK_MAX_INFLIGHT = 2
 _symbol_rate_lock = Lock()
 _symbol_rate_buckets: dict[str, deque[float]] = {}
 _symbol_base_lock = Lock()
@@ -63,6 +71,7 @@ _symbol_negative_cache: dict[tuple[str, str], tuple[float, bool]] = {}
 _symbol_fetch_inflight: dict[tuple[str, str], Future[dict[str, Any]]] = {}
 _symbol_base_cache: dict[tuple[str, str, int, int], str] = {}
 _symbol_fetch_slots = BoundedSemaphore(_SYMBOL_FETCH_MAX_INFLIGHT)
+_playback_slots = BoundedSemaphore(_PLAYBACK_MAX_INFLIGHT)
 _symbol_fetch_executor = ThreadPoolExecutor(
     max_workers=_SYMBOL_FETCH_MAX_INFLIGHT,
     thread_name_prefix="market-memory-stockdata",
@@ -165,6 +174,74 @@ def _exact_pit_query(request: Request) -> dict[str, str]:
             "exact PIT query requires subject_id, instrument_id, event_time, as_known_at, and mode once each"
         )
     return {key: value for key, value in items}
+
+
+def _canonical_query_integer(
+    value: str, *, field: str, minimum: int, maximum: int
+) -> int:
+    if (
+        not isinstance(value, str)
+        or not value
+        or not value.isascii()
+        or not value.isdigit()
+        or (len(value) > 1 and value.startswith("0"))
+        or len(value) > 8
+    ):
+        raise market_memory_playback.MarketMemoryPlaybackContractError(
+            f"{field} must be a canonical base-10 integer"
+        )
+    parsed = int(value)
+    if parsed < minimum or parsed > maximum:
+        raise market_memory_playback.MarketMemoryPlaybackContractError(
+            f"{field} must be from {minimum} through {maximum}"
+        )
+    return parsed
+
+
+def _exact_playback_catalog_query(request: Request) -> dict[str, Any]:
+    required = {"subject_id", "instrument_id", "mode", "offset", "limit"}
+    generation_keys = {"w1a_generation_id", "trusted_generation_id"}
+    items = list(request.query_params.multi_items())
+    keys = [key for key, _value in items]
+    if len(keys) != len(set(keys)) or not required.issubset(keys):
+        raise market_memory_playback.MarketMemoryPlaybackContractError(
+            "playback query requires each base field exactly once"
+        )
+    present = set(keys)
+    if not present.issubset(required | generation_keys):
+        raise market_memory_playback.MarketMemoryPlaybackContractError(
+            "playback query contains an unknown field"
+        )
+    supplied_generations = present & generation_keys
+    if supplied_generations not in (set(), generation_keys):
+        raise market_memory_playback.MarketMemoryPlaybackContractError(
+            "playback continuation requires both generation IDs"
+        )
+    raw = {key: value for key, value in items}
+    if raw["mode"] != market_memory_playback.ACTUAL_OUTPUT_MODE:
+        raise market_memory_playback.MarketMemoryPlaybackContractError(
+            "playback supports actual_output_operational_pit mode only"
+        )
+    offset = _canonical_query_integer(
+        raw["offset"], field="offset", minimum=0, maximum=8_192
+    )
+    limit = _canonical_query_integer(
+        raw["limit"], field="limit", minimum=1, maximum=100
+    )
+    if not supplied_generations and offset != 0:
+        raise market_memory_playback.MarketMemoryPlaybackContractError(
+            "an unpinned playback request must start at offset zero"
+        )
+    return {
+        "subject": {
+            "subject_id": raw["subject_id"],
+            "instrument_id": raw["instrument_id"],
+        },
+        "w1a_generation_id": raw.get("w1a_generation_id"),
+        "trusted_generation_id": raw.get("trusted_generation_id"),
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 class _SymbolDataError(RuntimeError):
@@ -529,6 +606,28 @@ def _allow_symbol_request(
     return peer_ok
 
 
+def _allow_playback_request(
+    request: Request, user: dict, *, now: float | None = None
+) -> bool:
+    """Consume a deliberately smaller budget for bounded store-wide scans."""
+
+    current = time.monotonic() if now is None else now
+    user_id = str(user.get("id") or user.get("sub") or "unknown")[:160]
+    peer = str(
+        request.headers.get(_SYMBOL_TRUSTED_PEER_HEADER)
+        or (request.client.host if request.client else "unknown")
+    )[:160]
+    with _symbol_rate_lock:
+        user_ok = _book_symbol_rate(
+            f"playback-user:{user_id}", limit=_PLAYBACK_USER_LIMIT, now=current
+        )
+        if not user_ok:
+            return False
+        return _book_symbol_rate(
+            f"playback-peer:{peer}", limit=_PLAYBACK_PEER_LIMIT, now=current
+        )
+
+
 def _reset_symbol_rate_limit_for_tests() -> None:
     with _symbol_rate_lock:
         _symbol_rate_buckets.clear()
@@ -617,6 +716,71 @@ def context_by_id(
             headers={"Retry-After": str(_SYMBOL_FETCH_BUSY_RETRY_SECONDS)},
         ) from exc
     return _stored_context_response(stored)
+
+
+@router.get("/playback/catalog")
+def operational_playback_catalog(
+    request: Request,
+    _user: dict = Depends(require_site_full_user),  # noqa: B008 - FastAPI injection
+) -> JSONResponse:
+    """Prepare a catalog of published captures from a pinned generation pair.
+
+    The catalog does not execute playback or provide playback evidence.  It is
+    not historical reconstruction and does not claim a complete opportunity
+    population.  W1A and trusted generations are pinned sequentially and the
+    response explicitly records that they are non-atomic.
+    """
+
+    if not _allow_playback_request(request, _user):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many Market Memory playback requests. Please retry shortly.",
+            headers={"Retry-After": str(int(_SYMBOL_RATE_WINDOW_SECONDS))},
+        )
+    try:
+        params = _exact_playback_catalog_query(request)
+    except market_memory_playback.MarketMemoryPlaybackContractError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    if not _playback_slots.acquire(blocking=False):
+        raise HTTPException(
+            status_code=503,
+            detail="Market Memory playback is busy. Please retry shortly.",
+            headers={"Retry-After": str(_SYMBOL_FETCH_BUSY_RETRY_SECONDS)},
+        )
+    try:
+        payload = market_memory_playback.read_operational_playback_catalog(
+            reader=_pit_reader(), **params
+        )
+    except (
+        market_memory_playback.MarketMemoryPlaybackContractError,
+        market_memory_pit.MarketMemoryQueryError,
+    ) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except market_memory_pit.MarketMemoryContextNotFound as exc:
+        raise HTTPException(
+            status_code=404,
+            detail="The exact pinned Market Memory generation is unavailable.",
+        ) from exc
+    except market_memory_pit.MarketMemoryPITError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Market Memory playback storage is temporarily unavailable.",
+            headers={"Retry-After": str(_SYMBOL_FETCH_BUSY_RETRY_SECONDS)},
+        ) from exc
+    finally:
+        _playback_slots.release()
+
+    generations = payload["generations"]
+    return _response(
+        payload,
+        headers={
+            "ETag": f'"{payload["catalog_id"]}"',
+            "X-Market-Memory-Catalog-Id": payload["catalog_id"],
+            "X-Market-Memory-W1A-Generation-Id": generations[0]["generation_id"],
+            "X-Market-Memory-Trusted-Generation-Id": generations[1]["generation_id"],
+        },
+    )
 
 
 @router.get("/macro")

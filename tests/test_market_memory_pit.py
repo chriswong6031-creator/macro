@@ -7,6 +7,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
 from urllib.parse import urlencode
 
 import pytest
@@ -101,6 +102,15 @@ def _different_packet_for_same_query() -> mm.AsKnownAtContext:
     return _rebuild(packet, feature_receipts=features)
 
 
+def _later_packet(seconds: int) -> mm.AsKnownAtContext:
+    packet = _packet()
+    sources = deepcopy(packet["source_receipts"])
+    for source in sources:
+        source["age_at_cutoff_seconds"] += seconds
+    cutoff = (CUTOFF + timedelta(seconds=seconds)).isoformat().replace("+00:00", "Z")
+    return _rebuild(packet, as_known_at=cutoff, source_receipts=sources)
+
+
 def _snapshot_packet() -> mm.AsKnownAtContext:
     packet = _packet()
     sources = deepcopy(packet["source_receipts"])
@@ -191,6 +201,244 @@ def test_capture_publishes_exact_bytes_and_both_exact_read_paths(
         )["authority"]["proposal_weight"]
         == 0
     )
+
+
+def test_pinned_generation_reads_current_ancestor_and_rejects_crash_orphan(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _fixed_clock(monkeypatch)
+    stored = pit.capture_context(tmp_path, _packet())
+    reader = pit.FileAsKnownAtReader(tmp_path)
+    current = reader.read_pinned_generation()
+    state = pit._load_store_state(tmp_path)
+    genesis_id = state.generation["previous_generation_id"]
+    assert genesis_id is not None
+
+    genesis = reader.read_pinned_generation(generation_id=genesis_id)
+    assert genesis.captures == ()
+    assert current.captures[0].as_dict() == pit._capture_entry(stored.capture_receipt)
+    assert (
+        reader.read_stored_from_pinned_generation(
+            current, query_id=stored.capture_receipt["query_id"]
+        )
+        == stored
+    )
+
+    orphan = pit._new_generation(
+        store_id=state.manifest["store_id"],
+        previous_generation_id=current.generation_id,
+        captures=[row.as_dict() for row in current.captures],
+    )
+    orphan_body = pit._canonical_bytes(orphan)
+    pit._write_create_once(
+        tmp_path,
+        pit._generation_path(tmp_path, orphan["generation_id"]),
+        orphan_body,
+        label="test crash-orphan generation",
+    )
+    with pytest.raises(pit.MarketMemoryContextNotFound, match="not published"):
+        reader.read_pinned_generation(generation_id=orphan["generation_id"])
+
+
+def test_repeated_pin_rewalks_and_rejects_ancestor_tamper_under_same_head(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _fixed_clock(monkeypatch)
+    pit.capture_context(tmp_path, _packet())
+    reader = pit.FileAsKnownAtReader(tmp_path)
+    pinned = reader.read_pinned_generation()
+    state = pit._load_store_state(tmp_path)
+    ancestor_id = state.generation["previous_generation_id"]
+    assert ancestor_id is not None
+    pit._generation_path(tmp_path, ancestor_id).unlink()
+
+    assert pinned.generation_id == state.head["generation_id"]
+    with pytest.raises(pit.MarketMemoryStoreError, match="unavailable"):
+        reader.read_pinned_generation()
+
+
+@pytest.mark.parametrize("broken", ["nonempty_genesis", "missing_ancestor"])
+def test_current_pin_requires_full_chain_through_empty_genesis(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, broken: str
+) -> None:
+    _fixed_clock(monkeypatch)
+    pit.capture_context(tmp_path, _packet())
+    state = pit._load_store_state(tmp_path)
+    previous = None if broken == "nonempty_genesis" else "mmgeneration_" + "f" * 64
+    forged = pit._new_generation(
+        store_id=state.manifest["store_id"],
+        previous_generation_id=previous,
+        captures=state.generation["captures"],
+    )
+    body = pit._canonical_bytes(forged)
+    pit._write_create_once(
+        tmp_path,
+        pit._generation_path(tmp_path, forged["generation_id"]),
+        body,
+        label="test broken current generation",
+    )
+    pit._replace_head(tmp_path, pit._new_head(forged, generation_body=body))
+
+    message = "empty genesis" if broken == "nonempty_genesis" else "unavailable"
+    with pytest.raises(pit.MarketMemoryStoreError, match=message):
+        pit.FileAsKnownAtReader(tmp_path).read_pinned_generation()
+
+
+def test_pinned_generation_rejects_rewritten_append_history(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _fixed_clock(monkeypatch)
+    pit.capture_context(tmp_path, _packet())
+    monkeypatch.setattr(pit, "_utc_now", lambda: CUTOFF + timedelta(seconds=90))
+    pit.capture_context(tmp_path, _later_packet(60))
+    state = pit._load_store_state(tmp_path)
+    first_generation_id = state.generation["previous_generation_id"]
+    assert first_generation_id is not None
+    first_generation, _body = pit._read_canonical_object(
+        pit._generation_path(tmp_path, first_generation_id),
+        limit=pit._MAX_GENERATION_BYTES,
+        label="test first generation",
+    )
+    genesis_id = first_generation["previous_generation_id"]
+    assert genesis_id is not None
+    rewritten_entry = {
+        "query_id": "mmquery_" + "1" * 64,
+        "context_id": "mmctx_" + "2" * 64,
+        "capture_id": "mmcapture_" + "3" * 64,
+        "packet_sha256": "4" * 64,
+    }
+    rewritten = pit._new_generation(
+        store_id=state.manifest["store_id"],
+        previous_generation_id=genesis_id,
+        captures=[rewritten_entry],
+    )
+    rewritten_body = pit._canonical_bytes(rewritten)
+    pit._write_create_once(
+        tmp_path,
+        pit._generation_path(tmp_path, rewritten["generation_id"]),
+        rewritten_body,
+        label="test rewritten ancestor",
+    )
+    forged_head_generation = pit._new_generation(
+        store_id=state.manifest["store_id"],
+        previous_generation_id=rewritten["generation_id"],
+        captures=state.generation["captures"],
+    )
+    forged_body = pit._canonical_bytes(forged_head_generation)
+    pit._write_create_once(
+        tmp_path,
+        pit._generation_path(tmp_path, forged_head_generation["generation_id"]),
+        forged_body,
+        label="test rewritten head",
+    )
+    pit._replace_head(
+        tmp_path,
+        pit._new_head(forged_head_generation, generation_body=forged_body),
+    )
+
+    with pytest.raises(pit.MarketMemoryStoreError, match="rewrites"):
+        pit.FileAsKnownAtReader(tmp_path).read_pinned_generation()
+
+
+def test_pinned_generation_ancestry_has_aggregate_byte_and_cycle_bounds(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _fixed_clock(monkeypatch)
+    pit.capture_context(tmp_path, _packet())
+    monkeypatch.setattr(pit, "_MAX_PIN_ANCESTRY_BYTES", 1)
+    with pytest.raises(pit.MarketMemoryStoreError, match="aggregate byte"):
+        pit.FileAsKnownAtReader(tmp_path).read_pinned_generation()
+
+    entry_a = {
+        "query_id": "mmquery_" + "1" * 64,
+        "context_id": "mmctx_" + "2" * 64,
+        "capture_id": "mmcapture_" + "3" * 64,
+        "packet_sha256": "4" * 64,
+    }
+    entry_b = {
+        "query_id": "mmquery_" + "5" * 64,
+        "context_id": "mmctx_" + "6" * 64,
+        "capture_id": "mmcapture_" + "7" * 64,
+        "packet_sha256": "8" * 64,
+    }
+    generation_a = {
+        "generation_id": "mmgeneration_" + "a" * 64,
+        "store_id": "mmstore_" + "9" * 64,
+        "previous_generation_id": "mmgeneration_" + "b" * 64,
+        "captures": [entry_a, entry_b],
+    }
+    generation_b = {
+        "generation_id": "mmgeneration_" + "b" * 64,
+        "store_id": generation_a["store_id"],
+        "previous_generation_id": generation_a["generation_id"],
+        "captures": [entry_a],
+    }
+    state = SimpleNamespace(
+        manifest={"store_id": generation_a["store_id"]},
+        head={
+            "generation_id": generation_a["generation_id"],
+            "generation_sha256": "c" * 64,
+        },
+        generation=generation_a,
+    )
+    monkeypatch.setattr(pit, "_MAX_PIN_ANCESTRY_BYTES", 1024 * 1024)
+    monkeypatch.setattr(pit, "_validate_generation_link", lambda **_kwargs: None)
+    monkeypatch.setattr(pit, "_validate_generation", lambda value, **_kwargs: value)
+    monkeypatch.setattr(
+        pit,
+        "_read_canonical_object",
+        lambda path, **_kwargs: (
+            generation_b if "b" * 64 in str(path) else generation_a,
+            b"{}",
+        ),
+    )
+    with pytest.raises(pit.MarketMemoryStoreError, match="cycle"):
+        pit._read_pinned_generation_from_state(
+            tmp_path,
+            state=state,
+            profile=pit.STORE_PROFILE,
+            generation_id="mmgeneration_" + "d" * 64,
+        )
+
+
+def test_pinned_receipt_rejects_cross_store_owner_even_when_index_matches(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _fixed_clock(monkeypatch)
+    first_root = tmp_path / "first"
+    second_root = tmp_path / "second"
+    pit.capture_context(first_root, _packet())
+    second = pit.capture_context(second_root, _packet())
+    first_state = pit._load_store_state(first_root)
+    genesis_id = first_state.generation["previous_generation_id"]
+    assert genesis_id is not None
+    forged = pit._new_generation(
+        store_id=first_state.manifest["store_id"],
+        previous_generation_id=genesis_id,
+        captures=[pit._capture_entry(second.capture_receipt)],
+    )
+    body = pit._canonical_bytes(forged)
+    pit._write_create_once(
+        first_root,
+        pit._generation_path(first_root, forged["generation_id"]),
+        body,
+        label="test cross-owner generation",
+    )
+    pit._replace_head(first_root, pit._new_head(forged, generation_body=body))
+    receipt_body = pit._canonical_bytes(second.capture_receipt)
+    pit._query_path(first_root, second.capture_receipt["query_id"]).write_bytes(
+        receipt_body
+    )
+    pit._context_path(first_root, second.capture_receipt["context_id"]).write_bytes(
+        receipt_body
+    )
+    reader = pit.FileAsKnownAtReader(first_root)
+    pinned = reader.read_pinned_generation()
+
+    with pytest.raises(pit.MarketMemoryStoreError, match="another store"):
+        reader.read_pinned_capture_receipt(
+            pinned, query_id=second.capture_receipt["query_id"]
+        )
 
 
 def test_identical_retry_is_idempotent_even_when_process_clock_advances(
@@ -692,6 +940,7 @@ def test_capture_context_has_one_production_writer_and_api_is_read_only() -> Non
         for route in api.router.routes
         if route.path.startswith("/api/market-memory/v1/as-known-at")
         or route.path.startswith("/api/market-memory/v1/context/")
+        or route.path.startswith("/api/market-memory/v1/playback/catalog")
     }
     assert pit_routes
     assert all(methods == {"GET"} for methods in pit_routes.values())
