@@ -1,0 +1,11 @@
+[
+  [null, "Table 1. Consumer Price Index for All Urban Consumers (CPI-U): U.S. city average, by expenditure category, June 2026"],
+  [null, "[1982-84=100, unless otherwise noted]"],
+  [],
+  ["Indent Level", "Expenditure category", "Relative importance May 2026", "Unadjusted indexes", "Unadjusted indexes", "Unadjusted indexes", "Unadjusted percent change", "Unadjusted percent change", "Seasonally adjusted percent change", "Seasonally adjusted percent change", "Seasonally adjusted percent change"],
+  [null, null, null, "Jun. 2025", "May 2026", "Jun. 2026", "Jun. 2025-Jun. 2026", "May 2026-Jun. 2026", "Mar. 2026-Apr. 2026", "Apr. 2026-May 2026", "May 2026-Jun. 2026"],
+  [],
+  [0, "All items", 100, 322.561, 335.123, 333.952, 3.5, -0.3, 0.6, 0.5, -0.4],
+  [1, "Food", 13.447, 339.498, 349.031, 349.73, 3.0, 0.2, 0.5, 0.2, 0.2],
+  [1, "All items less food and energy", 78.763, 328.364, 336.846, 336.882, 2.6, 0.0, 0.4, 0.2, 0.0]
+]
