@@ -18,11 +18,11 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
-from engine import options_market_memory_context as context_bridge
-from engine import options_market_memory_receipt_store as receipt_store
-from engine import options_signal_episode
-from engine.neuralweb import market_memory_pit
-from engine.neuralweb import market_memory_trusted
+from engine import options_market_memory_context as context_bridge  # noqa: E402
+from engine import options_market_memory_receipt_store as receipt_store  # noqa: E402
+from engine import options_signal_episode  # noqa: E402
+from engine.neuralweb import market_memory_pit  # noqa: E402
+from engine.neuralweb import market_memory_trusted  # noqa: E402
 
 _MAX_LEDGER_BYTES = 8 * 1024 * 1024
 _MAX_LEDGER_ROWS = 4_096
