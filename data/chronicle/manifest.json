@@ -13,19 +13,19 @@
       "retracted_by_authority": 0
     },
     "macro_release": {
-      "count": 10,
+      "count": 11,
       "dropped_from_source": 0,
-      "gap": "10/10 release event(s) joined to a scored actual print",
+      "gap": "11/11 release event(s) joined to a scored actual print",
       "retracted_by_authority": 0
     },
     "prophet_ledger": {
-      "count": 16,
+      "count": 17,
       "dropped_from_source": 0,
       "gap": null,
       "retracted_by_authority": 0
     },
     "regime_flip": {
-      "count": 2,
+      "count": 3,
       "dropped_from_source": 0,
       "gap": null,
       "retracted_by_authority": 0
@@ -43,18 +43,18 @@
       "retracted_by_authority": 0
     }
   },
-  "as_of": "2026-08-10",
+  "as_of": "2026-08-11",
   "coverage": {
-    "end": "2026-08-07",
-    "note": "4948 events across 374 distinct date(s)",
+    "end": "2026-08-10",
+    "note": "4951 events across 375 distinct date(s)",
     "start": "2013-05-21"
   },
-  "elapsed_s": 2.166,
+  "elapsed_s": 2.028,
   "gap_notes": [
     "earnings: coverage: 716/1977 tickers carried reported surprises",
-    "macro_release: 10/10 release event(s) joined to a scored actual print"
+    "macro_release: 11/11 release event(s) joined to a scored actual print"
   ],
-  "inputs_hash": "sha256:5647b854af8c6ac04caa9d9aeb58109cc0708045bce51ca9e9ea2634a669d6a0",
+  "inputs_hash": "sha256:5cdd240d31c247ba602a6da295fe8104d0c694302c343f4187c3abf0695403ee",
   "ledgers": {
     "earnings_calls": {
       "path": "data/chronicle/earnings_call_events.jsonl",
@@ -65,17 +65,17 @@
     "events": {
       "path": "data/chronicle/events.jsonl",
       "present": true,
-      "rows": 4948,
-      "sha256": "sha256:00ede29b1e890fb1d237877c6f140d19664277380b713e0314a01e8d39c2e417"
+      "rows": 4951,
+      "sha256": "sha256:c4fa6ac7c74d0a0c22532836b7a75beace0807bff5f1c287ffb5593568c51e40"
     },
     "state_log": {
       "path": "data/chronicle/state_log.jsonl",
       "present": true,
-      "rows": 10,
-      "sha256": "sha256:a6d91ed62691ff8285228e41d14c627a9d027858d2ce3dc943d1b40c4f1ee9e3"
+      "rows": 11,
+      "sha256": "sha256:c0f1a43c80cbb5ca4516662925e9add2e041f877778c81f2e3fd3d74ddd75e5e"
     }
   },
-  "produced_at": "2026-08-10T03:35:31Z",
+  "produced_at": "2026-08-11T03:55:30Z",
   "produced_by": "scripts/build_chronicle.py",
   "schema": "chronicle.manifest/v1",
   "schema_version": 1,
@@ -86,15 +86,15 @@
     },
     "data/chronicle/state_log.jsonl": {
       "present": true,
-      "sha256": "sha256:a6d91ed62691ff8285228e41d14c627a9d027858d2ce3dc943d1b40c4f1ee9e3"
+      "sha256": "sha256:c0f1a43c80cbb5ca4516662925e9add2e041f877778c81f2e3fd3d74ddd75e5e"
     },
     "data/earnings/earnings.parquet": {
       "present": true,
-      "sha256": "sha256:aa1a49d458de1bf52bdcb62ad1b091ca8a525370b6d608b5baed9cacd8ebd980"
+      "sha256": "sha256:c8c892b7fbe7fd87ed6da0b4043750690a426b7dd0ddb012c8dfec00582435fb"
     },
     "data/prophet/ledger.jsonl": {
       "present": true,
-      "sha256": "sha256:6f72d4b3c0694b7396d53e2f6eec1347b98a2f0ad1ca3a2a73b2a1ffc335ad28"
+      "sha256": "sha256:6b04c7413f74d45464b8dce6966e2184d9b240a2d05d22312adc184021cef718"
     },
     "data/prophet/ledger_corrections.jsonl": {
       "present": true,
@@ -106,15 +106,15 @@
     },
     "data/release_forecast/forward_ledger.jsonl": {
       "present": true,
-      "sha256": "sha256:58a6b726638c8fafae8cc2829a17339d24bc38e95adb77f62ef89bd024084325"
+      "sha256": "sha256:b5e357334d32aaae94149b7c96da9c18b80fec84c81e7669fa86d923da06bdf6"
     },
     "data/research_vault/catalog.json": {
       "present": true,
-      "sha256": "sha256:d391c1e298d9fa246354364ae3b8a7b8c50911e108c59aaca84f010f8e1819cb"
+      "sha256": "sha256:32dea709ff14a49027237bd6d1b17f4fb991d78c9fc3ef7e003f3fe5194e069f"
     },
     "data/risk_radar/forward_log.jsonl": {
       "present": true,
-      "sha256": "sha256:335950e2d7081bb3e2cbd1786a44ced06b267c842a35c9868408a00b469d8d45"
+      "sha256": "sha256:e99b7e032255f3f35756cc3a22f26a64504e2004292962165af9f7f3c2bd0689"
     }
   },
   "tier": "display"

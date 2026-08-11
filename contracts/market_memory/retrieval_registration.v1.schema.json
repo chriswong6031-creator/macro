@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/retrieval_registration.v1.schema.json",
+  "title": "Market Memory synthetic supplied-candidate retrieval registration v1",
+  "description": "Strict W4A registration for fixed-coordinate normalized Euclidean conformance and deterministic purge/embargo auditing. It does not authenticate a projection, fit normalization, claim population completeness, or enable emission.",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 15,
+  "maxProperties": 15,
+  "required": [
+    "schema", "retrieval_registration_id", "registration_key", "registered_at",
+    "trial_registration_id", "trial_plan_sha256", "coordinate_specs", "distance",
+    "temporal_policy", "maximum_results", "implementation", "input_profile",
+    "claims", "emission_enabled", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.retrieval_registration.v1"},
+    "retrieval_registration_id": {"type": "string", "pattern": "^mmretrievalregistration_[a-f0-9]{64}$"},
+    "registration_key": {"$ref": "#/$defs/opaque"},
+    "registered_at": {"$ref": "#/$defs/timestamp"},
+    "trial_registration_id": {"type": "string", "pattern": "^mmtrial_[a-f0-9]{64}$"},
+    "trial_plan_sha256": {"$ref": "#/$defs/sha256"},
+    "coordinate_specs": {
+      "type": "array", "minItems": 1, "maxItems": 32,
+      "items": {"$ref": "#/$defs/coordinateSpec"}
+    },
+    "distance": {"$ref": "#/$defs/distance"},
+    "temporal_policy": {"$ref": "#/$defs/temporalPolicy"},
+    "maximum_results": {"type": "integer", "minimum": 1, "maximum": 32},
+    "implementation": {"$ref": "#/$defs/implementation"},
+    "input_profile": {"const": "synthetic_fixture_only"},
+    "claims": {"$ref": "#/$defs/claims"},
+    "emission_enabled": {"const": false},
+    "authority": {"$ref": "state_snapshot.v1.schema.json#/$defs/authority"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[a-f0-9]{64}$"},
+    "timestamp": {"type": "string", "minLength": 27, "maxLength": 27, "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"},
+    "opaque": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"},
+    "q18": {"type": "string", "minLength": 20, "maxLength": 37, "pattern": "^(0|[1-9][0-9]{0,15})\\.[0-9]{18}$"},
+    "coordinateSpec": {
+      "type": "object", "additionalProperties": false, "minProperties": 4, "maxProperties": 4,
+      "required": ["coordinate_id", "unit", "transform_version", "scale_decimal"],
+      "properties": {
+        "coordinate_id": {"$ref": "#/$defs/opaque"},
+        "unit": {"$ref": "#/$defs/opaque"},
+        "transform_version": {"$ref": "#/$defs/opaque"},
+        "scale_decimal": {"$ref": "#/$defs/q18"}
+      }
+    },
+    "distance": {
+      "type": "object", "additionalProperties": false, "minProperties": 5, "maxProperties": 5,
+      "required": ["formula", "formula_version", "numeric_convention", "normalization", "missingness"],
+      "properties": {
+        "formula": {"const": "exact_normalized_euclidean"},
+        "formula_version": {"const": "exact_normalized_euclidean.v1"},
+        "numeric_convention": {"const": "decimal64_half_even_q18/v1"},
+        "normalization": {"const": "synthetic_fixed_positive_scales"},
+        "missingness": {"const": "complete_case_no_repair"}
+      }
+    },
+    "temporalPolicy": {
+      "type": "object", "additionalProperties": false, "minProperties": 10, "maxProperties": 10,
+      "required": [
+        "subject_scope", "self_exclusion", "candidate_time_rule", "purge_before_seconds",
+        "purge_after_seconds", "embargo_duration_seconds", "interval_convention",
+        "query_overlap_policy", "selection_overlap_policy", "tie_breaker"
+      ],
+      "properties": {
+        "subject_scope": {"const": "exact_subject_and_instrument"},
+        "self_exclusion": {"const": "forecast_id_or_context_id"},
+        "candidate_time_rule": {"const": "strictly_earlier_decision_cutoff"},
+        "purge_before_seconds": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "purge_after_seconds": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "embargo_duration_seconds": {"type": "integer", "minimum": 1, "maximum": 1000000000},
+        "interval_convention": {"const": "[decision_cutoff-purge.after_seconds,decision_cutoff+purge.before_seconds+embargo.duration_seconds)"},
+        "query_overlap_policy": {"const": "exclude"},
+        "selection_overlap_policy": {"const": "greedy_exclude"},
+        "tie_breaker": {"const": "distance_then_forecast_id"}
+      }
+    },
+    "implementation": {
+      "type": "object", "additionalProperties": false, "minProperties": 2, "maxProperties": 2,
+      "required": ["producer_code_sha256", "producer_config_sha256"],
+      "properties": {
+        "producer_code_sha256": {"$ref": "#/$defs/sha256"},
+        "producer_config_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "claims": {
+      "type": "object", "additionalProperties": false, "minProperties": 11, "maxProperties": 11,
+      "required": [
+        "operational_seal_authenticated", "coordinate_projection_authenticated",
+        "normalization_fit_authenticated", "opportunity_population_complete",
+        "candidate_population_complete", "statistical_effective_n_estimated",
+        "interval_coverage_measured", "retrieval_quality_evaluated",
+        "forecast_input_eligible", "aggregate_eligible", "skill_claim_eligible"
+      ],
+      "properties": {
+        "operational_seal_authenticated": {"const": false},
+        "coordinate_projection_authenticated": {"const": false},
+        "normalization_fit_authenticated": {"const": false},
+        "opportunity_population_complete": {"const": false},
+        "candidate_population_complete": {"const": false},
+        "statistical_effective_n_estimated": {"const": false},
+        "interval_coverage_measured": {"const": false},
+        "retrieval_quality_evaluated": {"const": false},
+        "forecast_input_eligible": {"const": false},
+        "aggregate_eligible": {"const": false},
+        "skill_claim_eligible": {"const": false}
+      }
+    }
+  }
+}
