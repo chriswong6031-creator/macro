@@ -259,16 +259,18 @@ this commit the replay has been dry-run only.
 | `asof_utc` | string | ISO-8601 UTC timestamp when the payload was assembled by the publisher |
 | `session_date` | string | ISO-8601 date of the current trading session (ET date at publish time) |
 | `marks` | object | Map from OCC option symbol string → mark object (see below); may be empty `{}` |
+| `coverage` | object | Accounting receipt for canonical plans, unique contracts, source calls, available marks, and explicit abstentions |
+| `evidence` | object | Content-addressed pointer to the immutable `prophet.option_mark_observation/v1` written before this discovery head |
 
 ## Mark object (values in `marks`)
 
 | Field | Type | Description |
 |---|---|---|
-| `bid` | float \| null | Best bid from ThetaData trade_quote, rounded to 4 decimal places |
-| `ask` | float \| null | Best ask from ThetaData trade_quote, rounded to 4 decimal places |
-| `mid` | float \| null | `(bid + ask) / 2`, rounded to 4 dp; `null` when either leg is absent (one-sided quote) |
+| `bid` | float | Vendor-snapshot bid from ThetaData trade_quote, rounded to 4 decimal places |
+| `ask` | float | Vendor-snapshot ask from ThetaData trade_quote, rounded to 4 decimal places |
+| `mid` | float | `(bid + ask) / 2`, rounded to 4 dp; crossed, missing, non-positive-ask, and over-age rows abstain instead of publishing a mark |
 | `last` | float \| null | Last trade price (`price` column), rounded to 4 dp |
-| `ts_utc` | string | ISO-8601 UTC timestamp of the **trade** that supplied the mark (from ThetaData `trade_timestamp`, which carries fractional seconds ET-naive, e.g. `'2026-07-02T06:30:16.218'`); falls back to publish-time with a WARNING log if parsing fails |
+| `ts_utc` | string | ISO-8601 UTC timestamp of the **trade** that supplied the vendor snapshot (from ThetaData `trade_timestamp`); an absent or unparsable source timestamp abstains and never substitutes publish time |
 
 ## OCC symbol key format
 
@@ -278,9 +280,26 @@ Example: `BA    260918C00220000` = BA 220.00-strike call expiring 2026-09-18.
 
 ## Consumer contract
 
-- `mid` may be `null` (one-sided quote) — consumers must handle gracefully.
+- Additive `coverage` and `evidence` fields must be ignored by legacy consumers.
 - `ts_utc` is always present and parseable as ISO-8601 UTC.
 - When the R2 file is absent, >30 min stale, or `asof_utc` is outside RTH, the
   Item C overlay must fall back to EOD marks and display a staleness indicator.
 - The `marks` dict may be empty `{}` (no active plans with option contracts).
 - Keys are OCC symbols, not plan IDs; consumers must maintain plan→OCC mapping.
+
+## Prospective exact-option evidence
+
+Every admitted RTH cycle publishes canonical JSON under
+`prophet/option_mark_observations/v1/<session>/<observation_id>.json` with
+`If-None-Match: *`, reads it back byte-for-byte, and only then conditionally advances
+the mutable head using the prior object's ETag. The artifact accounts for every open
+plan carrying `option_contract`, records invalid/source/freshness abstentions, and
+links to the verified predecessor. Its mark-change value compares the plan's entry
+premium only when explicitly labeled `freshness="EOD mark"` with the same OCC
+contract's bounded-age vendor-snapshot mid.
+
+This value is not trade P&L. No position, fill, NBBO, live, executable, rank, gate,
+sizing, issue, Prophet, Neural Web, training, or execution authority is claimed.
+The strict contract is
+`contracts/options/prophet.option_mark_observation.v1.schema.json`; the frozen claim
+boundary is `research/options_estate/PROPHET_OPTION_MARK_OBSERVATIONS.md`.

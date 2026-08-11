@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import math
 import os
 import plistlib
 import subprocess
 import sys
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -1222,10 +1224,16 @@ esac
 
 def test_prophet_marks_publish_uses_canonical_r2_and_tombstones_empty(monkeypatch):
     """A stale operations checkout cannot keep an obsolete contract alive."""
-    published: list[str] = []
+    published: list[tuple[dict, dict]] = []
+    index = {
+        "schema": "prophet.index/v1",
+        "asof": "2026-08-11",
+        "recorded_at": "2026-08-11",
+        "plans": [],
+    }
 
     monkeypatch.setattr(prophet_marks, "_is_rth_now", lambda: True)
-    monkeypatch.setattr(prophet_marks, "_load_index_r2", lambda: {"plans": []})
+    monkeypatch.setattr(prophet_marks, "_load_index_r2", lambda: index)
     monkeypatch.setattr(
         prophet_marks,
         "_load_index_local",
@@ -1239,15 +1247,18 @@ def test_prophet_marks_publish_uses_canonical_r2_and_tombstones_empty(monkeypatc
     monkeypatch.setattr(
         prophet_marks,
         "_publish_r2",
-        lambda body: published.append(body) is None,
+        lambda payload, **kwargs: published.append((payload, kwargs)) or payload,
     )
 
     payload = prophet_marks.build_marks(publish=True)
 
     assert payload is not None
     assert payload["marks"] == {}
+    assert payload["coverage"]["active_option_plan_count"] == 0
     assert len(published) == 1
-    assert json.loads(published[0])["marks"] == {}
+    assert published[0][0]["marks"] == {}
+    assert published[0][1]["index"] is index
+    assert published[0][1]["evidence_rows"] == []
 
 
 def test_prophet_marks_publish_refuses_local_fallback_when_r2_index_is_unavailable(
@@ -1273,7 +1284,435 @@ def test_prophet_marks_publish_refuses_local_fallback_when_r2_index_is_unavailab
 def test_prophet_marks_publish_failure_is_a_build_failure(monkeypatch):
     """A failed write cannot be reported as a successful fresh marks cycle."""
     monkeypatch.setattr(prophet_marks, "_is_rth_now", lambda: True)
-    monkeypatch.setattr(prophet_marks, "_load_index_r2", lambda: {"plans": []})
-    monkeypatch.setattr(prophet_marks, "_publish_r2", lambda _body: False)
+    monkeypatch.setattr(
+        prophet_marks,
+        "_load_index_r2",
+        lambda: {
+            "schema": "prophet.index/v1",
+            "asof": "2026-08-11",
+            "recorded_at": "2026-08-11",
+            "plans": [],
+        },
+    )
+    monkeypatch.setattr(prophet_marks, "_publish_r2", lambda *_args, **_kwargs: None)
 
     assert prophet_marks.build_marks(publish=True) is None
+
+
+def _option_mark_plan(
+    plan_id: str = "SOFI-BULL-20260803",
+    *,
+    phase: str = "pre_trigger",
+    entry_premium: float | None = 1.8,
+) -> dict:
+    return {
+        "id": plan_id,
+        "asset": "SOFI",
+        "phase": phase,
+        "closed": False,
+        "plan_asof": "2026-08-03",
+        "recorded_at": "2026-08-03",
+        "entry_date": "2026-08-03",
+        "option_contract": {
+            "right": "C",
+            "strike": 16.0,
+            "expiry": "2026-10-16",
+            "entry_premium": entry_premium,
+            "freshness": "EOD mark",
+        },
+    }
+
+
+def _option_mark_index(plans: list[dict] | None = None) -> dict:
+    return {
+        "schema": "prophet.index/v1",
+        "asof": "2026-08-11",
+        "recorded_at": "2026-08-11",
+        "plans": plans if plans is not None else [_option_mark_plan()],
+    }
+
+
+def _available_option_quote() -> dict:
+    return {
+        "bid": 2.91,
+        "ask": 3.05,
+        "mid": 2.98,
+        "last": 2.91,
+        "ts_utc": "2026-08-11T13:45:43+00:00",
+    }
+
+
+def test_prophet_option_mark_observation_is_schema_clean_and_not_pnl():
+    from jsonschema import Draft202012Validator, FormatChecker
+
+    repo = Path(__file__).resolve().parents[1]
+    schema = json.loads(
+        (
+            repo
+            / "contracts/options/prophet.option_mark_observation.v1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    Draft202012Validator.check_schema(schema)
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+
+    index = _option_mark_index()
+    plan = index["plans"][0]
+    contract, contract_reason = prophet_marks._plan_contract(
+        plan, session_date=date(2026, 8, 11)
+    )
+    quote, quote_reason = prophet_marks._validated_quote(
+        _available_option_quote(),
+        observed_at=datetime(2026, 8, 11, 14, 0, tzinfo=timezone.utc),
+        session_date=date(2026, 8, 11),
+    )
+    row = prophet_marks._plan_evidence_row(
+        plan,
+        contract=contract,
+        contract_reason=contract_reason,
+        quote=quote,
+        quote_reason=quote_reason,
+    )
+    coverage = prophet_marks._evidence_coverage(
+        index=index, rows=[row], source_call_count=1
+    )
+    observation = prophet_marks._build_observation(
+        index=index,
+        observed_at_utc="2026-08-11T14:00:00+00:00",
+        session_date="2026-08-11",
+        rows=[row],
+        coverage=coverage,
+        previous=None,
+    )
+
+    errors = sorted(validator.iter_errors(observation), key=lambda e: list(e.path))
+    assert errors == []
+    assert row["mark_change_from_plan_pct"] == 65.5556
+    assert row["lifecycle"] == {
+        "state": "watch_only_pre_trigger",
+        "position_assumed": False,
+        "trade_pnl_claim": False,
+    }
+    assert not any(observation["authority"].values())
+    assert observation["limitations"]["not_trade_pnl"] is True
+    assert observation["limitations"]["prospective_from_first_observation_only"] is True
+    pointer = prophet_marks._observation_pointer(observation)
+    assert pointer["key"].endswith(f"/{observation['observation_id']}.json")
+    assert pointer["sha256"] == hashlib.sha256(
+        prophet_marks._canonical_json_bytes(observation)
+    ).hexdigest()
+
+
+def test_prophet_option_mark_change_requires_an_explicit_eod_entry_basis():
+    plan = _option_mark_plan()
+    plan["option_contract"]["freshness"] = "unknown"
+    contract, contract_reason = prophet_marks._plan_contract(
+        plan, session_date=date(2026, 8, 11)
+    )
+    quote, quote_reason = prophet_marks._validated_quote(
+        _available_option_quote(),
+        observed_at=datetime(2026, 8, 11, 14, 0, tzinfo=timezone.utc),
+        session_date=date(2026, 8, 11),
+    )
+
+    row = prophet_marks._plan_evidence_row(
+        plan,
+        contract=contract,
+        contract_reason=contract_reason,
+        quote=quote,
+        quote_reason=quote_reason,
+    )
+
+    assert row["quote_status"] == "available"
+    assert row["plan_entry_mark"] is None
+    assert row["mark_change_status"] == "unavailable"
+    assert row["mark_change_reason"] == "ENTRY_MARK_BASIS_UNVERIFIED"
+    assert row["mark_change_from_plan_pct"] is None
+
+
+def test_prophet_marks_accounts_for_abstentions_and_deduplicates_contract_calls(
+    monkeypatch,
+):
+    fixed = datetime(2026, 8, 11, 14, 0, tzinfo=timezone.utc)
+
+    class FixedDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return fixed if tz is None else fixed.astimezone(tz)
+
+    plans = [
+        _option_mark_plan("SOFI-BULL-A", phase="pre_trigger"),
+        _option_mark_plan("SOFI-BULL-B", phase="triggered_pre_t1"),
+        {
+            **_option_mark_plan("SOFI-BULL-BAD"),
+            "option_contract": {
+                "right": "C",
+                "strike": 16.0005,
+                "expiry": "2026-10-16",
+                "entry_premium": 1.8,
+            },
+        },
+        {
+            **_option_mark_plan("SOFI-BULL-EMPTY"),
+            "option_contract": {},
+        },
+    ]
+    calls: list[tuple] = []
+    monkeypatch.setattr(prophet_marks, "datetime", FixedDateTime)
+    monkeypatch.setattr(prophet_marks, "_is_rth_now", lambda: True)
+    monkeypatch.setattr(
+        prophet_marks, "_load_index", lambda **_kwargs: _option_mark_index(plans)
+    )
+
+    def fetch(*args):
+        calls.append(args)
+        return _available_option_quote()
+
+    monkeypatch.setattr(prophet_marks, "_fetch_contract_quote", fetch)
+    payload = prophet_marks.build_marks(dry_run=True)
+
+    assert payload is not None
+    assert len(calls) == 1
+    assert list(payload["marks"]) == ["SOFI  261016C00016000"]
+    assert payload["coverage"] == {
+        "index_plan_count": 4,
+        "active_option_plan_count": 4,
+        "unique_contract_count": 1,
+        "source_call_count": 1,
+        "available_quote_plan_count": 2,
+        "abstained_quote_plan_count": 2,
+        "available_mark_change_plan_count": 2,
+        "all_active_option_plans_accounted": True,
+    }
+
+
+def test_prophet_marks_quote_guard_rejects_wrong_clock_and_bad_market_shape():
+    observed = datetime(2026, 8, 11, 14, 0, tzinfo=timezone.utc)
+    session = date(2026, 8, 11)
+    cases = [
+        (
+            {**_available_option_quote(), "ts_utc": "2026-08-11T14:00:01+00:00"},
+            "QUOTE_AFTER_OBSERVATION",
+        ),
+        (
+            {**_available_option_quote(), "ts_utc": "2026-08-10T19:59:00+00:00"},
+            "QUOTE_WRONG_SESSION",
+        ),
+        (
+            {**_available_option_quote(), "ts_utc": "2026-08-11T13:29:59+00:00"},
+            "QUOTE_TOO_OLD",
+        ),
+        ({**_available_option_quote(), "bid": 4.0, "ask": 3.0}, "QUOTE_SHAPE_INVALID"),
+        ({**_available_option_quote(), "bid": float("inf")}, "QUOTE_SHAPE_INVALID"),
+    ]
+    for raw, reason in cases:
+        quote, actual = prophet_marks._validated_quote(
+            raw, observed_at=observed, session_date=session
+        )
+        assert quote is None
+        assert actual == reason
+
+
+class _MarkR2Error(RuntimeError):
+    def __init__(self, code: str, status: int):
+        super().__init__(code)
+        self.response = {
+            "Error": {"Code": code},
+            "ResponseMetadata": {"HTTPStatusCode": status},
+        }
+
+
+class _FakeMarkR2:
+    def __init__(self):
+        self.objects: dict[str, bytes] = {}
+        self.puts: list[dict] = []
+
+    def get_object(self, *, Bucket, Key):
+        if Key not in self.objects:
+            raise _MarkR2Error("NoSuchKey", 404)
+        body = self.objects[Key]
+        return {
+            "Body": io.BytesIO(body),
+            "ContentLength": len(body),
+            "ETag": '"' + hashlib.sha256(body).hexdigest() + '"',
+        }
+
+    def put_object(self, **kwargs):
+        key = kwargs["Key"]
+        body = bytes(kwargs["Body"])
+        self.puts.append(dict(kwargs))
+        if kwargs.get("IfNoneMatch") == "*" and key in self.objects:
+            raise _MarkR2Error("PreconditionFailed", 412)
+        if "IfMatch" in kwargs:
+            if key not in self.objects:
+                raise _MarkR2Error("PreconditionFailed", 412)
+            actual = '"' + hashlib.sha256(self.objects[key]).hexdigest() + '"'
+            if kwargs["IfMatch"] != actual:
+                raise _MarkR2Error("PreconditionFailed", 412)
+        self.objects[key] = body
+        return {}
+
+
+def _published_mark_payload(at: str) -> dict:
+    return {
+        "schema": "prophet.live_marks/v1",
+        "asof_utc": at,
+        "session_date": "2026-08-11",
+        "marks": {
+            "SOFI  261016C00016000": {
+                "bid": 2.91,
+                "ask": 3.05,
+                "mid": 2.98,
+                "last": 2.91,
+                "ts_utc": "2026-08-11T13:45:43+00:00",
+            }
+        },
+        "coverage": {
+            "index_plan_count": 1,
+            "active_option_plan_count": 1,
+            "unique_contract_count": 1,
+            "source_call_count": 1,
+            "available_quote_plan_count": 1,
+            "abstained_quote_plan_count": 0,
+            "available_mark_change_plan_count": 1,
+            "all_active_option_plans_accounted": True,
+        },
+    }
+
+
+def _published_mark_row() -> dict:
+    index = _option_mark_index()
+    plan = index["plans"][0]
+    contract, contract_reason = prophet_marks._plan_contract(
+        plan, session_date=date(2026, 8, 11)
+    )
+    quote, quote_reason = prophet_marks._validated_quote(
+        _available_option_quote(),
+        observed_at=datetime(2026, 8, 11, 14, 0, tzinfo=timezone.utc),
+        session_date=date(2026, 8, 11),
+    )
+    return prophet_marks._plan_evidence_row(
+        plan,
+        contract=contract,
+        contract_reason=contract_reason,
+        quote=quote,
+        quote_reason=quote_reason,
+    )
+
+
+def test_prophet_marks_r2_publication_is_immutable_then_backwards_linked(monkeypatch):
+    client = _FakeMarkR2()
+    index = _option_mark_index()
+    rows = [_published_mark_row()]
+    monkeypatch.setattr(prophet_marks, "_r2_client", lambda: client)
+
+    first = prophet_marks._publish_r2(
+        _published_mark_payload("2026-08-11T14:00:00+00:00"),
+        index=index,
+        evidence_rows=rows,
+    )
+    assert first is not None
+    first_pointer = first["evidence"]
+    assert client.puts[0]["Key"] == first_pointer["key"]
+    assert client.puts[0]["IfNoneMatch"] == "*"
+    assert client.puts[1]["Key"] == prophet_marks.R2_KEY
+    assert client.puts[1]["IfNoneMatch"] == "*"
+    first_observation = json.loads(client.objects[first_pointer["key"]])
+    assert first_observation["previous"] is None
+
+    second = prophet_marks._publish_r2(
+        _published_mark_payload("2026-08-11T14:05:00+00:00"),
+        index=index,
+        evidence_rows=rows,
+    )
+    assert second is not None
+    second_pointer = second["evidence"]
+    assert second_pointer["observation_id"] != first_pointer["observation_id"]
+    assert client.puts[3]["IfMatch"] == (
+        '"' + hashlib.sha256(client.puts[1]["Body"]).hexdigest() + '"'
+    )
+    second_observation = json.loads(client.objects[second_pointer["key"]])
+    assert second_observation["previous"] == first_pointer
+    assert json.loads(client.objects[prophet_marks.R2_KEY])["evidence"] == second_pointer
+
+
+def test_prophet_marks_r2_refuses_a_corrupt_existing_chain_head(monkeypatch):
+    client = _FakeMarkR2()
+    client.objects[prophet_marks.R2_KEY] = json.dumps(
+        {
+            "schema": prophet_marks.SCHEMA,
+            "asof_utc": "2026-08-11T13:55:00+00:00",
+            "session_date": "2026-08-11",
+            "marks": {},
+            "evidence": {
+                "schema": prophet_marks.EVIDENCE_POINTER_SCHEMA,
+                "observation_id": "pom_obs_" + "a" * 64,
+                "key": (
+                    prophet_marks.EVIDENCE_PREFIX
+                    + "/2026-08-11/pom_obs_"
+                    + "a" * 64
+                    + ".json"
+                ),
+                "sha256": "b" * 64,
+                "bytes": 99,
+            },
+        }
+    ).encode("utf-8")
+    original = client.objects[prophet_marks.R2_KEY]
+    monkeypatch.setattr(prophet_marks, "_r2_client", lambda: client)
+
+    assert (
+        prophet_marks._publish_r2(
+            _published_mark_payload("2026-08-11T14:00:00+00:00"),
+            index=_option_mark_index(),
+            evidence_rows=[_published_mark_row()],
+        )
+        is None
+    )
+    assert client.objects[prophet_marks.R2_KEY] == original
+
+
+def test_prophet_marks_r2_refuses_a_forged_content_identity(monkeypatch):
+    client = _FakeMarkR2()
+    index = _option_mark_index()
+    row = _published_mark_row()
+    observation = prophet_marks._build_observation(
+        index=index,
+        observed_at_utc="2026-08-11T13:55:00+00:00",
+        session_date="2026-08-11",
+        rows=[row],
+        coverage=_published_mark_payload(
+            "2026-08-11T13:55:00+00:00"
+        )["coverage"],
+        previous=None,
+    )
+    observation["rows"][0]["mark_change_from_plan_pct"] = 999.0
+    body = prophet_marks._canonical_json_bytes(observation)
+    pointer = {
+        "schema": prophet_marks.EVIDENCE_POINTER_SCHEMA,
+        "observation_id": observation["observation_id"],
+        "key": (
+            f"{prophet_marks.EVIDENCE_PREFIX}/2026-08-11/"
+            f"{observation['observation_id']}.json"
+        ),
+        "sha256": hashlib.sha256(body).hexdigest(),
+        "bytes": len(body),
+    }
+    client.objects[pointer["key"]] = body
+    client.objects[prophet_marks.R2_KEY] = prophet_marks._canonical_json_bytes(
+        {
+            **_published_mark_payload("2026-08-11T13:55:00+00:00"),
+            "evidence": pointer,
+        }
+    )
+    original = client.objects[prophet_marks.R2_KEY]
+    monkeypatch.setattr(prophet_marks, "_r2_client", lambda: client)
+
+    assert (
+        prophet_marks._publish_r2(
+            _published_mark_payload("2026-08-11T14:00:00+00:00"),
+            index=index,
+            evidence_rows=[row],
+        )
+        is None
+    )
+    assert client.objects[prophet_marks.R2_KEY] == original
