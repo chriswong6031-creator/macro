@@ -72,6 +72,10 @@ ECONOMIC_SHARE_INGESTION = (
     "segment-axis XBRL ingestion atop engine/fundamental_forensics (US) / CN annual-report "
     "segment tables (CN) — prereg §2 ore ledger"
 )
+# Listing-trigger tokens on the 龙虎榜 tape: price-move deviation, turnover rate, amplitude.
+# A tape selected on these IS a price-selected universe (prereg §2 refusal family).
+LHB_PRICE_TOKENS = ("涨幅", "跌幅", "换手率", "振幅", "价格")
+
 US_ATTENTION_INGESTION = (
     "a full-universe US retail/news attention tape — the two present stores publish only the "
     "tickers they surface (WSB 307, narrative_flare 448), so a slot outside the meme/tech "
@@ -539,8 +543,23 @@ def compute_beta_cell(slot: str, meta: dict, lb: pd.DataFrame, symbols: dict,
         diags.append(dict(month=m, n_members=len(members), n_values=len(betas),
                           coverage=coverage_fraction(len(betas), len(members)),
                           no_events=False, era=era,
-                          stamp_session=str(pd.Timestamp(stamp).date())))
+                          stamp_session=str(pd.Timestamp(stamp).date()),
+                          # Integer position of the stamp in the panel index. Two monthly
+                          # estimates share max(0, WIN - (p1 - p0)) sessions, which is how the
+                          # lag-k companion's ACTUAL window overlap is measured rather than
+                          # assumed — month-label arithmetic does not make windows disjoint.
+                          stamp_pos=int(R.index.get_loc(stamp))))
     return rows, diags
+
+
+def window_overlap_sessions(pos_a: int, pos_b: int, win: int = BETA_WIN) -> int:
+    """Sessions shared by two rolling windows whose stamps sit at these index positions.
+
+    Each window covers [pos-win, pos-1] (the causal shift excludes the stamp day itself), so
+    the shared count falls linearly to zero only once the stamps are `win` sessions apart.
+    """
+    d = abs(int(pos_b) - int(pos_a))
+    return max(0, int(win) - d)
 
 
 def compute_attention_cell(slot: str, meta: dict, lb: pd.DataFrame, symbols: dict,
@@ -722,11 +741,37 @@ def run(out_dir: Path) -> int:
     lhb = pd.read_parquet(lhb_p)
     receipts["stores"]["china_lhb.events"] = _store_receipt(lhb_p, lhb, "date")
     receipts["stores"]["china_lhb.events"]["n_tickers"] = int(lhb["ticker"].nunique())
+    # The `reason` column states WHY each name was listed. The probe counts appearances and
+    # never read it; the review did. Every listing trigger carrying one of these tokens is a
+    # price-move / turnover / amplitude threshold, i.e. the tape is a PRICE-SELECTED universe
+    # — the prereg §2 refusal family ("price momentum wearing a narrative label is NOT
+    # attention"). Computed here so the verdict's basis cites a measured share.
+    lhb_reason = lhb["reason"].fillna("")
+    lhb_price_mask = lhb_reason.apply(lambda s: any(t in s for t in LHB_PRICE_TOKENS))
+    receipts["stores"]["china_lhb.events"]["price_trigger_share"] = round(
+        float(lhb_price_mask.mean()), 4)
+    receipts["stores"]["china_lhb.events"]["price_trigger_rows"] = int(lhb_price_mask.sum())
+    receipts["stores"]["china_lhb.events"]["non_price_reasons"] = {
+        str(k): int(v) for k, v in
+        lhb_reason[~lhb_price_mask].value_counts().head(12).items()}
+    receipts["stores"]["china_lhb.events"]["price_trigger_tokens"] = list(LHB_PRICE_TOKENS)
 
     wsb_p = DATA / "quiver" / "wallstreetbets.parquet"
     wsb = pd.read_parquet(wsb_p)
     receipts["stores"]["quiver.wallstreetbets"] = _store_receipt(wsb_p, wsb, "_collected")
     receipts["stores"]["quiver.wallstreetbets"]["n_tickers"] = int(wsb["Ticker"].nunique())
+    # Is `Count` a per-day mention count or a re-stamped snapshot? Measured, not assumed.
+    _wc = wsb.groupby("Ticker")["Count"].nunique()
+    _ws = wsb.groupby("Ticker")["Sentiment"].nunique()
+    _sets = wsb.groupby("_collected")["Ticker"].apply(frozenset)
+    receipts["stores"]["quiver.wallstreetbets"]["count_semantics"] = dict(
+        tickers_with_constant_count=int((_wc == 1).sum()),
+        tickers_with_varying_count=int((_wc > 1).sum()),
+        tickers_with_constant_sentiment=int((_ws == 1).sum()),
+        distinct_ticker_sets_across_collection_days=int(len(set(_sets))),
+        collection_days=int(wsb["_collected"].nunique()),
+        verdict=("STATIC SNAPSHOT re-stamped each collection day — no time variation"
+                 if int((_wc > 1).sum()) == 0 else "varies by collection day"))
 
     flare_p = DATA / "narrative_flare" / "witness_hist.parquet"
     flare = pd.read_parquet(flare_p)
@@ -967,7 +1012,7 @@ def run(out_dir: Path) -> int:
                                 abs_rhos=[round(float(v), 4) for v in vals])
 
     # ---- H3 ---------------------------------------------------------------------------
-    h3_pairs, h3_summary = [], {}
+    h3_pairs, h3_summary, lag3_rows = [], {}, []
     for cid, cmeta in CONSTRUCTIONS.items():
         per_slot_series, per_slot_meta, lag3 = [], [], []
         for slot, meta in SLOTS.items():
@@ -979,15 +1024,27 @@ def run(out_dir: Path) -> int:
                                           status="ABSTAIN (H1 coverage floor)"))
                 continue
             months = c["graded_months"]
-            # Companion (NOT preregistered): the same rank autocorrelation at a 3-month lag.
+            pos_by_month = {d["month"]: d.get("stamp_pos") for d in c["diags"]}
+            # Companion (NOT preregistered): the same rank autocorrelation at a ~3-month lag.
             # Adjacent-month betas share ~2/3 of one 63-session window, so the preregistered
-            # H3 statistic carries a mechanical floor; at 3 months the windows are disjoint.
+            # H3 statistic carries a mechanical floor. Pairing by MONTH LABEL does not make
+            # the windows disjoint — a 3-month gap is 60-65 sessions, so some pairs still
+            # share sessions. The overlap is measured per pair and receipted, never assumed.
             for m0, m1 in zip(months[:-3], months[3:]):
                 if (pd.Period(m1, freq="M") - pd.Period(m0, freq="M")).n != 3:
                     continue
                 a, b = xs(slot, cid, m0), xs(slot, cid, m1)
                 idx = sorted(set(a.index) & set(b.index))
                 rho = spearman_rho(a[idx].values, b[idx].values)
+                p0, p1 = pos_by_month.get(m0), pos_by_month.get(m1)
+                shared = (window_overlap_sessions(p0, p1)
+                          if p0 is not None and p1 is not None else None)
+                lag3_rows.append(dict(
+                    construction=cid, slot=slot, market=meta["market"],
+                    month_from=m0, month_to=m1, n=len(idx),
+                    rho=(round(rho, 4) if np.isfinite(rho) else None),
+                    sessions_shared=shared, window=BETA_WIN,
+                    era=era_for_month(m1)))
                 if np.isfinite(rho):
                     lag3.append(float(rho))
             rr = []
@@ -1015,6 +1072,34 @@ def run(out_dir: Path) -> int:
         lo, hi, n_used = block_bootstrap_median_ci(per_slot_series)
         degenerate = bool(per_slot_series) and all(
             len(a[np.isfinite(a)]) <= BOOTSTRAP_BLOCK for a in per_slot_series)
+        # Per-MARKET decomposition on the FROZEN adjacent-month metric. The verdict rule keys
+        # on this, never on the pooled median: a per-market verdict row read off a statistic
+        # pooled across both markets is answering a question nobody asked.
+        per_market: dict = {}
+        for mk in ("us", "cn"):
+            mk_slots = [s for s in SLOTS if SLOTS[s]["market"] == mk
+                        and (s, cid) in cells and not cells[(s, cid)]["abstain"]]
+            adj = [r["rho"] for r in h3_pairs
+                   if r["construction"] == cid and r["market"] == mk and r["adjacent"]
+                   and r["rho"] is not None]
+            l3 = [r for r in lag3_rows if r["construction"] == cid and r["market"] == mk
+                  and r["rho"] is not None]
+            l3v = [float(r["rho"]) for r in l3]
+            shared = [r["sessions_shared"] for r in l3 if r["sessions_shared"] is not None]
+            per_market[mk] = dict(
+                n_slots=len(mk_slots), n_pairs=len(adj),
+                median_rho=(round(float(np.median(adj)), 4) if adj else None),
+                reading=h3_reading(float(np.median(adj)) if adj else float("nan"), len(adj)),
+                lag3_pairs=len(l3v),
+                lag3_median=(round(float(np.median(l3v)), 4) if l3v else None),
+                lag3_overlap_sessions=(dict(
+                    min=int(min(shared)), max=int(max(shared)),
+                    median=float(np.median(shared)),
+                    n_pairs_with_overlap=int(sum(1 for s in shared if s > 0)),
+                    n_pairs=len(shared)) if shared else None),
+                per_slot_lag3={s: (round(float(np.median(
+                    [float(r["rho"]) for r in l3 if r["slot"] == s])), 4)
+                    if [r for r in l3 if r["slot"] == s] else None) for s in mk_slots})
         h3_summary[cid] = dict(
             n_pairs=int(len(pooled)),
             median_rho=(round(med, 4) if np.isfinite(med) else None),
@@ -1023,6 +1108,7 @@ def run(out_dir: Path) -> int:
             ci_degenerate=degenerate,
             companion_lag3_median=(round(float(np.median(lag3)), 4) if lag3 else None),
             companion_lag3_pairs=len(lag3),
+            per_market=per_market,
             bootstrap_n=n_used, reading=h3_reading(med, int(len(pooled))),
             per_slot=per_slot_meta,
             era="reconstruction" if all(era_for_month(m) == "reconstruction"
@@ -1030,6 +1116,7 @@ def run(out_dir: Path) -> int:
                                                       for s in SLOTS if (s, cid) in cells], []))
                  else "mixed")
     pd.DataFrame(h3_pairs).to_csv(out_dir / "h3_stability_pairs.csv", index=False)
+    pd.DataFrame(lag3_rows).to_csv(out_dir / "companion_lag3_pairs.csv", index=False)
 
     # ---- post-prereg corr companion ----------------------------------------------------
     companion = corr_companion(cells, comp_cells, xs, xs_c, h2_rows, h3_summary)
@@ -1077,7 +1164,9 @@ def run(out_dir: Path) -> int:
     (out_dir / "exemplar_gate.json").write_text(json.dumps(gate, indent=2, sort_keys=True) + "\n")
 
     # ---- DRAFT verdicts ----------------------------------------------------------------
-    verdicts = draft_verdicts(cells, h3_summary)
+    verdicts = draft_verdicts(
+        cells, h3_summary,
+        lhb_price_share=receipts["stores"]["china_lhb.events"].get("price_trigger_share"))
     pd.DataFrame(verdicts).to_csv(out_dir / "verdicts_draft.csv", index=False)
 
     receipts["h2"] = h2_readings
@@ -1280,7 +1369,9 @@ def corr_companion(cells, comp_cells, xs, xs_c, h2_rows, h3_summary) -> dict:
             reading=h2_reading(vals), n_slots=len(vals),
             abs_rhos=[round(float(v), 4) for v in vals])
 
-    # (b) H3 companion — adjacent AND lag-3 disjoint-window rank autocorrelation, all slots.
+    # (b) H3 companion — adjacent AND ~3-month-lagged rank autocorrelation, all slots.
+    # "~3-month-lagged", never "disjoint": pairing is by MONTH LABEL, and a 3-month gap is
+    # 60-65 sessions against a 63-session window, so many pairs still share sessions.
     per_slot_series, per_slot_meta, lag3 = [], [], []
     for slot in SLOTS:
         c = comp_cells.get((slot, COMPANION_CORR_ID))
@@ -1353,8 +1444,15 @@ def corr_companion(cells, comp_cells, xs, xs_c, h2_rows, h3_summary) -> dict:
     return out
 
 
-def draft_verdicts(cells, h3_summary) -> list:
-    """DRAFT per (axis-construction × market) verdict in the prereg §6 vocabulary."""
+def draft_verdicts(cells, h3_summary, lhb_price_share: float | None = None) -> list:
+    """DRAFT per (axis-construction × market) verdict in the prereg §6 vocabulary.
+
+    Two rules W4 inherits directly, so both are pinned in the suite:
+      * the H3 reading is read PER MARKET off the frozen adjacent-month metric, never off a
+        median pooled across both markets;
+      * both NOISE and WEAKLY-STABLE demote to COMPUTABLE-BUT-UNSTABLE. An unqualified
+        MEASURABLE-NOW must never be reachable from the 0.30-0.60 band.
+    """
     out = []
     for market in ("us", "cn"):
         out.append(dict(construction=ECONOMIC_ID, market=market,
@@ -1362,7 +1460,10 @@ def draft_verdicts(cells, h3_summary) -> list:
                         named_ingestion=ECONOMIC_SHARE_INGESTION,
                         n_slots=0, n_abstain=0, max_adjacent_pairs=0,
                         median_tie_mass=None,
-                        basis="honest null — no formula minted (prereg §2)"))
+                        basis=("honest null — no formula minted (prereg §2). No formula has "
+                               "ever been minted or tested: W4 must not read this as "
+                               "ready-pending-data — prereg §2 requires one of the named "
+                               "ingestions to be BUILT and separately adjudicated first")))
     for cid, cmeta in CONSTRUCTIONS.items():
         for market in cmeta["markets"]:
             slots = [s for s in SLOTS if SLOTS[s]["market"] == market and (s, cid) in cells]
@@ -1380,7 +1481,42 @@ def draft_verdicts(cells, h3_summary) -> list:
                 if v:
                     ties.append(float(np.median(v)))
             tie_mass = round(float(np.median(ties)), 4) if ties else None
-            h3_read = str(h3_summary.get(cid, {}).get("reading", ""))
+            # PER-MARKET frozen adjacent-month reading (M6): a per-market verdict row must
+            # not be decided by a statistic pooled across both markets.
+            pm = h3_summary.get(cid, {}).get("per_market", {}).get(market, {})
+            h3_read = str(pm.get("reading", ""))
+            # Pooled over graded member-months — the SAME statistic the §6 honest-N table
+            # prints. A verdict quoting a median-of-monthly rate while §6 quotes a pooled one
+            # puts two different numbers for one quantity in a single report.
+            pct_nz = []
+            for s in live:
+                c = cells[(s, cid)]
+                d = pd.DataFrame(c["rows"])
+                if not len(d):
+                    continue
+                g = d[d["month"].isin(c["graded_months"])]
+                v = g[g["value"].notna()]
+                if len(v):
+                    pct_nz.append(float((v["value"] > 0).mean()))
+            nz_lo = (f"{100.0 * min(pct_nz):.0f}" if pct_nz else "—")
+            nz_hi = (f"{100.0 * max(pct_nz):.0f}" if pct_nz else "—")
+            horizon = ""
+            if cid == BETA_ID and pm.get("lag3_median") is not None:
+                # Mandatory horizon caveat (M10): the frozen metric is adjacent-month, and a
+                # W4 annotation consumed at a quarterly cadence is NOT covered by it.
+                worst = min(((k, v) for k, v in (pm.get("per_slot_lag3") or {}).items()
+                             if v is not None), key=lambda kv: kv[1], default=None)
+                l3 = float(pm["lag3_median"])
+                if l3 < H3_STABLE:
+                    horizon = (f"; at the ~quarterly horizon the lag-3 companion reads {l3:.3f} "
+                               f"— below the {H3_STABLE} floor"
+                               + (f", {worst[0]} {worst[1]:.3f}" if worst else "")
+                               + f" — W4 must not treat {market.upper()} trading annotations "
+                                 f"as quarter-stable")
+                else:
+                    horizon = (f"; at the ~quarterly horizon the lag-3 companion reads {l3:.3f} "
+                               f"— holds above the {H3_STABLE} floor"
+                               + (f" (weakest slot {worst[0]} {worst[1]:.3f})" if worst else ""))
             if n_ab * 2 > len(slots):
                 verdict, unlock, ing = "BLOCKED-ON-INGESTION", None, (
                     US_ATTENTION_INGESTION if cid in (US_WSB_ID, US_FLARE_ID)
@@ -1398,20 +1534,43 @@ def draft_verdicts(cells, h3_summary) -> list:
                 verdict, unlock, ing = "UNDERPOWERED-BY-DEPTH", cmeta["unlock"], None
                 basis = (f"deepest computable slot carries {max_pairs} adjacent month pair(s) "
                          f"< {H3_MIN_PAIRS}")
-            elif h3_read.startswith("NOISE"):
-                # RULING 2 (main session, 2026-08-11): coverage and depth are not sufficient
-                # for MEASURABLE-NOW. A construction that clears both but whose H3 is NOISE is
-                # computable and NOT stable at this grain — a null for THIS construction under
-                # the ore law, which closes the grain tested and leaves the others open.
+            elif h3_read.startswith("NOISE") or h3_read.startswith("WEAKLY-STABLE"):
+                # RULING 2 (main session) + M10: coverage and depth are not sufficient for
+                # MEASURABLE-NOW. A construction clearing both whose per-market frozen H3
+                # reads NOISE *or* WEAKLY-STABLE is computable and NOT stable at this grain —
+                # a null for THIS construction under the ore law, which closes the grain
+                # tested and leaves the others open.
                 verdict, unlock, ing = "COMPUTABLE-BUT-UNSTABLE", None, None
-                basis = (f"clears coverage ({len(live)} of {len(slots)} slots) and depth "
-                         f"({max_pairs} adjacent pairs), but H3 is {h3_read} at "
-                         f"{100.0 * (tie_mass or 0):.0f}% tie mass — a null for the "
-                         f"monthly-share grain, not for the source")
+                if cid == CN_LHB_ID:
+                    # B2: lead with WHAT THE TAPE IS. A price/turnover-threshold-selected
+                    # universe is the prereg §2 refusal family, so this is refused as an
+                    # attention CLAIM regardless of how its stability reads.
+                    share = (f"{100.0 * float(lhb_price_share):.1f}%"
+                             if lhb_price_share is not None else "the large majority of")
+                    basis = (
+                        f"PRICE-SELECTED UNIVERSE: {share} of the source rows carry an "
+                        f"explicit price-move / turnover / amplitude listing trigger, so the "
+                        f"tape selects on price and falls under the prereg §2 refusal family "
+                        f"(price momentum wearing a narrative label is NOT attention) — "
+                        f"REFUSED as an attention claim on that ground alone. Independently: "
+                        f"{h3_read} at the monthly grain on reconstruction-era membership, "
+                        f"and only {nz_lo}-{nz_hi}% of member-"
+                        f"months are non-zero with {100.0 * (tie_mass or 0):.0f}% tie mass, so "
+                        f"its H2 |rho| is attenuated by ties and is NOT independent "
+                        f"distinctness evidence. A null for the monthly-share grain, not for "
+                        f"the source: event-grain and quarterly aggregations stay "
+                        f"unmapped-but-open{horizon}")
+                else:
+                    basis = (f"clears coverage ({len(live)} of {len(slots)} slots) and depth "
+                             f"({max_pairs} adjacent pairs), but the per-market frozen H3 is "
+                             f"{h3_read} on reconstruction-era membership at "
+                             f"{100.0 * (tie_mass or 0):.0f}% tie mass — a null "
+                             f"for the monthly-share grain, not for the source{horizon}")
             else:
                 verdict, unlock, ing = "MEASURABLE-NOW", None, None
                 basis = (f"{len(live)} of {len(slots)} slots clear the coverage floor; deepest "
-                         f"carries {max_pairs} adjacent month pairs")
+                         f"carries {max_pairs} adjacent month pairs; per-market frozen H3 "
+                         f"{h3_read} on reconstruction-era membership{horizon}")
             out.append(dict(construction=cid, market=market, verdict=verdict, unlock=unlock,
                             named_ingestion=ing, n_slots=len(slots), n_abstain=n_ab,
                             max_adjacent_pairs=max_pairs, median_tie_mass=tie_mass,
@@ -1557,6 +1716,19 @@ def write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h
             f"{t['symbol']} beta {t['beta']} (attention rank #{t['attention_rank_desc']})"
             for t in b.get("top3_beta", [])) + ".")
     A("")
+    rho_c = g2.get("comment", {}).get("rank_rho_beta_vs_attention")
+    A(f"**TRIPWIRE DID NOT FIRE (ρ={_fmt(rho_c)}, not ≈1.0) — non-firing is NOT contamination**")
+    A("**clearance.** This expectation was written as a one-way alarm: identical ranks would")
+    A("have PROVEN the attention source is price-derived. Distinct ranks prove only that the")
+    A("alarm did not trip, which is a far weaker statement than \"these sources are independent")
+    A("of price\". Two things in this run cut directly against reading it as clearance:")
+    A("(a) the 龙虎榜 tape is itself a price-threshold-selected universe — see the")
+    A("price-trigger finding in §7's LHB basis, where the listing rules that put a name on the")
+    A("tape at all are price-move / turnover / amplitude thresholds; and (b) a ρ well below 1")
+    A("is exactly what a price-selected tape with heavy tie mass produces even when it IS")
+    A("price-derived, because the ties destroy rank information rather than align it. The gate")
+    A("is answered as asked, and it clears nothing.")
+    A("")
 
     g3 = gate["3_defense_prime_vs_retail"]
     A("### 5.3 — a defense prime with high beta-to-basket but modest WSB attention")
@@ -1680,7 +1852,9 @@ def write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h
     A("  preregistered H3 statistic has a mechanical floor for `trading_beta.v0`: consecutive")
     A("  estimates are partly the same data. The lag-3 companion column (NOT preregistered —")
     A("  disclosed here because the preregistered number alone would overstate the case) repeats")
-    A("  the same rank autocorrelation three months apart, where the two windows are disjoint.")
+    A("  the same rank autocorrelation three months apart, where the windows are at most")
+    A("  partially overlapping — see the measured per-market overlap in §5a; the pairing is by")
+    A("  month label, which does NOT make the windows disjoint.")
     A("  Read the beta row's stability claim off the companion, not off the adjacent-month median.")
     A("")
     A("Per-slot depth:")
@@ -1692,6 +1866,55 @@ def write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h
             A(f"| `{cid}` | `{ps['slot']}` | {ps['n_pairs']} | {_fmt(ps['median'])} | "
               f"{ps['status']} |")
     A("")
+
+    # --- 5a per-market decomposition + measured lag-3 overlap
+    A("### 5a. Per-market decomposition and the MEASURED lag-3 window overlap")
+    A("")
+    A("The verdict rule (§7) reads H3 per market off the frozen adjacent-month metric, never")
+    A("off a median pooled across both markets — a per-market row decided by a pooled statistic")
+    A("is answering a question nobody asked. Per-pair rows are in `companion_lag3_pairs.csv`.")
+    A("")
+    A("**The lag-3 companion is NOT a disjoint-window statistic.** Pairing is by month LABEL,")
+    A(f"and a 3-month gap is 60-65 sessions against a {BETA_WIN}-session window, so many pairs")
+    A("still share sessions. The overlap is measured per pair, not assumed:")
+    A("")
+    A("| construction | market | slots | adjacent pairs | adjacent median | frozen reading | lag-3 pairs | lag-3 median | sessions shared (min/median/max) | pairs still overlapping |")
+    A("|---|---|---:|---:|---:|---|---:|---:|---|---|")
+    for cid, h in h3_summary.items():
+        for mk, pmv in (h.get("per_market") or {}).items():
+            if not pmv.get("n_pairs") and not pmv.get("lag3_pairs"):
+                continue
+            ov = pmv.get("lag3_overlap_sessions")
+            ovs = ("—" if not ov else
+                   f"{ov['min']} / {ov['median']:.0f} / {ov['max']} of {BETA_WIN}")
+            ovn = ("—" if not ov else
+                   f"{ov['n_pairs_with_overlap']} of {ov['n_pairs']}")
+            A(f"| `{cid}` | {mk.upper()} | {pmv['n_slots']} | {pmv['n_pairs']} | "
+              f"{_fmt(pmv['median_rho'])} | {pmv['reading']} | {pmv['lag3_pairs']} | "
+              f"{_fmt(pmv['lag3_median'])} | {ovs} | {ovn} |")
+    A("")
+    A("`sessions shared` is blank for the attention constructions because they have no rolling")
+    A("window — a monthly share is computed from that month's rows alone, so consecutive")
+    A("estimates share no input by construction. The overlap caveat is a `trading_beta.v0`")
+    A("problem only; for the attention rows the lag-3 column is simply a longer-horizon")
+    A("autocorrelation.")
+    A("")
+    bm = (h3_summary.get(BETA_ID, {}).get("per_market") or {})
+    if bm:
+        A("Per-slot lag-3 medians for `" + BETA_ID + "`:")
+        A("")
+        for mk, pmv in bm.items():
+            for s, v in (pmv.get("per_slot_lag3") or {}).items():
+                A(f"- `{s}` ({mk.upper()}): {_fmt(v)}")
+        A("")
+        us_l3 = bm.get("us", {}).get("lag3_median")
+        cn_l3 = bm.get("cn", {}).get("lag3_median")
+        A(f"**This split is load-bearing for W4.** US beta holds at the ~quarterly horizon")
+        A(f"({_fmt(us_l3)}), CN does not ({_fmt(cn_l3)} — below the {H3_STABLE} floor). The")
+        A("pooled 0.687 hides that. Both markets read MEASURABLE-NOW on the frozen")
+        A("adjacent-month metric, so the horizon caveat is carried in each verdict's basis")
+        A("string rather than in the verdict word itself.")
+        A("")
 
     # --- 6 honest N
     A("## 6. Honest-N")
@@ -1729,6 +1952,13 @@ def write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h
         A("present on the tape. Its near-1.0 H3 autocorrelation is that tie block reappearing in")
         A("the next month, not a stable attention ranking — the concrete reason the flare cell must")
         A("not be read as a stability result even where its coverage clears the floor.")
+    A("")
+    A("**Scope clause on survivorship.** The two closed edges are basket EXITS on live\n"
+      "tickers, both dated 2026-06-18, landing in the last 3 of 39 monthly cross-sections.\n"
+      "The panel therefore contains no delistings and no dead tickers: survivorship handling\n"
+      "is disclosed and mechanically exercised here, but it is NOT stress-tested. A slate\n"
+      "with a genuine delisting would exercise the price-tape half of the problem, which\n"
+      "this one never touches.")
     A("")
     A("Dead members by name, and the window they stay in the denominator for:")
     A("")
@@ -1829,6 +2059,21 @@ def write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h
     A("   and the whole backcast is era=reconstruction anyway (§4), so no PIT claim is made about")
     A("   the window's interior.")
     A("")
+    A("8. **Membership is evaluated at the month END.** A member is in month `m`'s")
+    A("   cross-section when its `[valid_from, valid_to)` window covers the last day of `m`, so")
+    A("   a member that exits mid-month is excluded from that ENTIRE month rather than")
+    A("   pro-rated. Concretely: FUTU's edge closes 2026-06-18, so FUTU is absent from all of")
+    A("   2026-06 despite being a member for 18 of its 30 days. The alternative (any-overlap")
+    A("   inclusion) would put a member in a denominator for a month it spent mostly outside")
+    A("   the basket; neither is free, and this one is stated rather than left implicit.")
+    A("9. **The Vasicek-shrunk beta is computed and shipped, but never analysed.** It lands in")
+    A("   every `cells/*__trading_beta.v0.csv` as `value_display_shrunk` (weight "
+      f"{VASICEK_W}, mirroring `engine/cn_global_beta._shrink`) and is deliberately absent from")
+    A("   H1, H2, H3, the exemplar gate and every verdict. Prereg §2 makes the raw beta the")
+    A("   probe quantity precisely because shrinkage compresses cross-sectional dispersion and")
+    A("   would inflate H3 stability by construction. It is present so a reader can see what the")
+    A("   display companion would have said, not so it can be quoted.")
+    A("")
     A("Two statistics are ADDITIONS rather than departures — the preregistered tests are computed")
     A("exactly as frozen, and these are printed beside them because the frozen numbers alone")
     A("would read stronger than the data supports:")
@@ -1836,7 +2081,8 @@ def write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h
     A(f"6. **Lag-3 rank autocorrelation companion (§5).** Adjacent-month betas share about two")
     A(f"   thirds of one {BETA_WIN}-session window, so the preregistered H3 statistic carries a")
     A("   mechanical floor for `trading_beta.v0`. The companion repeats it three months apart,")
-    A("   where the windows are disjoint. It does not replace the preregistered number and no")
+    A("   where the windows only partially overlap (measured, §5a). It does not replace the")
+    A("   preregistered number and no")
     A("   threshold is applied to it.")
     A("7. **Modal tie mass (§6, §7).** The fraction of covered members sitting on one identical")
     A("   magnitude. Without it a rank statistic computed over a mostly-tied vector reads as a")
@@ -1883,13 +2129,15 @@ def write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h
       f"{_fmt(h3c['frozen_beta_median'])} |")
     A(f"| adjacent-month 80% CI | [{_fmt(h3c['ci80_lo'])}, {_fmt(h3c['ci80_hi'])}] | "
       f"[{_fmt(h3_summary[BETA_ID]['ci80_lo'])}, {_fmt(h3_summary[BETA_ID]['ci80_hi'])}] |")
-    A(f"| lag-3 disjoint-window median rho | {_fmt(h3c['lag3_median'])} "
+    A(f"| lag-3 (~quarterly, partially overlapping) median rho | {_fmt(h3c['lag3_median'])} "
       f"({h3c['lag3_pairs']} pairs) | {_fmt(h3c['frozen_beta_lag3_median'])} "
       f"({h3_summary[BETA_ID]['companion_lag3_pairs']} pairs) |")
     A(f"| adjacent pairs | {h3c['n_pairs']} | {h3_summary[BETA_ID]['n_pairs']} |")
     A("")
     A(f"Reading (companion, no threshold authority): {h3c['reading']} on "
-      f"{h3c['era']}-era membership.")
+      f"{h3c['era']}-era membership — the same era caveat as every frozen H3 sentence: the\n"
+      f"graph knows no pre-{OBSERVED_ERA_FROM} basket composition, so this is a statement\n"
+      f"about reconstruction-era membership, not about an observed tape of membership changes.")
     A("")
     # Answer the two commissioned questions in sentences derived from the numbers above, so
     # the prose cannot drift from the table.
@@ -1916,7 +2164,7 @@ def write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h
     A("**Q2 — is co-movement itself as rank-stable as beta? No — it is the LESS persistent")
     A("half.** Adjacent-month medians are close "
       f"({_fmt(h3c['median_rho'])} vs {_fmt(h3c['frozen_beta_median'])}), but the gap opens at")
-    A("the disjoint-window horizon where the mechanical overlap is gone: "
+    A("the ~quarterly horizon where most of the mechanical overlap is gone: "
       f"{_fmt(h3c['lag3_median'])} vs {_fmt(h3c['frozen_beta_lag3_median'])}"
       + (f" (a {_fmt(lag_gap)} gap)" if lag_gap is not None else "") + ". Corr's lag-3 median")
     A(f"falls BELOW the {H3_STABLE} H3 stable floor while beta's clears it, so relative")
@@ -1955,9 +2203,36 @@ def write_report(out_dir, receipts, h1_rows, h2_rows, h2_readings, h3_summary, h
     A("- **`data/quiver/wallstreetbets.parquet` publishes only surfaced tickers** (307 across 44")
     A("  collection days). A member outside that set is absent from the universe, not a measured")
     A("  zero — which is exactly why the defense / nuclear / fintech WSB cells abstain.")
+    ws = receipts["stores"].get("quiver.wallstreetbets", {}).get("count_semantics", {})
+    if ws:
+        n_tot = (ws.get("tickers_with_constant_count", 0)
+                 + ws.get("tickers_with_varying_count", 0))
+        A("- **`Count` on that store carries NO time variation: it is a static snapshot")
+        A("  re-stamped each collection day.** Measured, not assumed — all "
+          f"{ws.get('tickers_with_constant_count')} of {n_tot} tickers hold an identical")
+        A(f"  `Count` across all {ws.get('collection_days')} collection days, `Sentiment`")
+        A("  likewise, and the daily ticker set is one single repeated set")
+        A(f"  ({ws.get('distinct_ticker_sets_across_collection_days')} distinct set across all")
+        A("  days). A monthly sum is therefore `Count × days-in-month`, and because every ticker")
+        A("  shares the same collection days the day factor cancels out of the share entirely —")
+        A("  so `attention_share.us.wsb.v0` is a CONSTANT snapshot share wearing a monthly")
+        A("  label, identical in every month. This does not change any verdict (all four WSB")
+        A("  cells already ABSTAIN on coverage), and it touches one printed number: exemplar")
+        A("  §5.1's WSB half is a snapshot ranking, not an August measurement. Filed to the")
+        A("  store's owner: either the collector is not refreshing, or `Count` is a cumulative")
+        A("  field that should not be summed over days.")
     A("- **The graph's `date_provenance` is `seed_constant` on 5,425 of 5,477 MEMBER_OF edges.**")
     A("  Every stability sentence here is therefore about reconstruction-era membership; the")
     A("  observed era is ~0 months deep and accrues nightly from 2026-08-11.")
+    A("- **ACCRUAL-INHERITANCE WARNING — the attention universes here are FULL-SAMPLE sets, and")
+    A("  the accrual re-probe must not inherit them.** \"In the universe\" is currently decided")
+    A("  by whether a ticker appears ANYWHERE in the store's history, which at a 2-3 month depth")
+    A("  is a harmless approximation. It is a look-ahead the moment the panel is long enough for")
+    A("  a ticker's coverage to begin mid-sample: a member scored 0 for January because the tape")
+    A("  covers it in June is being credited with a January measurement the tape could not have")
+    A("  made. At the §6 accrual checkpoints (2026-11 dense attention, 2027-02 observed-era")
+    A("  beta) the universe must become PIT — known-by month `m`, not known-by today — or the")
+    A("  zeros stop being values and start being imputation.")
     A("")
     A("---")
     A("")

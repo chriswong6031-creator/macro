@@ -21,16 +21,20 @@ from scipy import stats as sps
 
 from engine.cn_global_beta import _causal_beta as INCUMBENT_CAUSAL_BETA
 from scripts.probe_theme_exposure_axes import (
+    BETA_ID,
     BETA_MINP,
     BETA_WIN,
     BOOTSTRAP_BLOCK,
+    CN_LHB_ID,
     COVERAGE_FLOOR,
     OBSERVED_ERA_FROM,
+    active_members,
     block_bootstrap_median_ci,
     causal_beta_pair,
     cell_abstains,
     corr_cell_from_beta_rows,
     coverage_fraction,
+    draft_verdicts,
     era_for_month,
     ex_self_returns,
     h2_reading,
@@ -40,6 +44,7 @@ from scripts.probe_theme_exposure_axes import (
     spearman_exact,
     spearman_rho,
     vasicek_shrink,
+    window_overlap_sessions,
 )
 
 DATES = pd.date_range("2024-01-01", periods=200, freq="B")
@@ -412,6 +417,145 @@ class TestBlockBootstrap:
 # =====================================================================================
 # §3 — the frozen threshold readings
 # =====================================================================================
+class TestActiveMembers:
+    """The dead-member window is HALF-OPEN: [valid_from, valid_to)."""
+
+    COLS = ["edge_id", "type", "src", "dst", "valid_from", "valid_to", "belief_time"]
+
+    def _lb(self):
+        rows = [
+            ("e1", "MEMBER_OF", "co:us:LIVE", "basket:b", "2023-05-09", None, "2026-08-11"),
+            ("e2", "MEMBER_OF", "co:us:DEAD", "basket:b", "2023-05-09", "2026-06-18",
+             "2026-08-11"),
+            ("e3", "MEMBER_OF", "co:us:OTHER", "basket:zzz", "2023-05-09", None, "2026-08-11"),
+        ]
+        return pd.DataFrame(rows, columns=self.COLS)
+
+    def test_open_ended_member_is_always_active_after_its_start(self):
+        assert active_members(self._lb(), ["basket:b"], "2026-08-31") == ["co:us:LIVE"]
+
+    def test_closed_member_is_included_strictly_before_valid_to(self):
+        got = active_members(self._lb(), ["basket:b"], "2026-06-17")
+        assert got == ["co:us:DEAD", "co:us:LIVE"]
+
+    def test_the_window_is_half_open_so_valid_to_itself_is_excluded(self):
+        """The exit date is the first day OUT — not the last day in."""
+        assert active_members(self._lb(), ["basket:b"], "2026-06-18") == ["co:us:LIVE"]
+
+    def test_member_absent_before_its_valid_from(self):
+        assert active_members(self._lb(), ["basket:b"], "2023-05-08") == []
+
+    def test_other_baskets_are_not_pulled_in(self):
+        assert "co:us:OTHER" not in active_members(self._lb(), ["basket:b"], "2026-08-31")
+
+    def test_a_union_slot_takes_the_union_of_its_baskets(self):
+        got = active_members(self._lb(), ["basket:b", "basket:zzz"], "2026-08-31")
+        assert got == ["co:us:LIVE", "co:us:OTHER"]
+
+
+class TestDraftVerdictRules:
+    """The two rules W4 inherits directly — pinned so neither can drift silently."""
+
+    def _cells(self, cid=BETA_ID, cov=1.0, tie=0.2, pct_nonzero=0.9):
+        """One computable US slot and one computable CN slot for the given construction."""
+        out = {}
+        slots = (("us_mature_broad", "cn_mature") if cid == BETA_ID else ("cn_mature",))
+        for slot in slots:
+            rows, diags = [], []
+            for i in range(6):
+                m = f"2026-0{i + 1}"
+                rows.append(dict(month=m, node_id="co:x:A", symbol="A", value=1.0))
+                diags.append(dict(month=m, n_members=1, n_values=1, coverage=cov,
+                                  no_events=False, era="reconstruction",
+                                  modal_tie_mass=tie, pct_nonzero=pct_nonzero))
+            out[(slot, cid)] = dict(
+                rows=rows, diags=diags, coverage=cov, abstain=cell_abstains(cov),
+                graded_months=[d["month"] for d in diags], no_events_months=[])
+        return out
+
+    def _h3(self, us_reading, cn_reading, cid=BETA_ID, us_med=0.9, cn_med=0.9):
+        def mk(reading, med):
+            return dict(n_slots=1, n_pairs=5, median_rho=med, reading=reading,
+                        lag3_pairs=3, lag3_median=0.8, lag3_overlap_sessions=None,
+                        per_slot_lag3={})
+        return {cid: dict(reading="POOLED-VALUE-THAT-MUST-NOT-BE-USED", median_rho=0.99,
+                          per_slot=[dict(slot="cn_mature", n_pairs=5, median=cn_med),
+                                    dict(slot="us_mature_broad", n_pairs=5, median=us_med)],
+                          companion_lag3_median=0.8, companion_lag3_pairs=3,
+                          per_market={"us": mk(us_reading, us_med),
+                                      "cn": mk(cn_reading, cn_med)})}
+
+    def _row(self, verdicts, market, cid=BETA_ID):
+        return next(v for v in verdicts
+                    if v["construction"] == cid and v["market"] == market)
+
+    def test_noise_demotes_to_computable_but_unstable(self):
+        v = draft_verdicts(self._cells(), self._h3("STABLE (x)", "NOISE (median rho 0.2 < 0.3)"))
+        assert self._row(v, "cn")["verdict"] == "COMPUTABLE-BUT-UNSTABLE"
+
+    def test_weakly_stable_demotes_the_same_way_noise_does(self):
+        """The 0.30-0.60 band must never reach an unqualified MEASURABLE-NOW."""
+        v = draft_verdicts(self._cells(),
+                           self._h3("STABLE (x)", "WEAKLY-STABLE (median rho 0.450)"))
+        assert self._row(v, "cn")["verdict"] == "COMPUTABLE-BUT-UNSTABLE"
+
+    def test_stable_keeps_measurable_now(self):
+        v = draft_verdicts(self._cells(), self._h3("STABLE (x)", "STABLE (median rho 0.9)"))
+        assert self._row(v, "cn")["verdict"] == "MEASURABLE-NOW"
+
+    def test_the_h3_reading_is_taken_PER_MARKET_not_pooled(self):
+        """A CN NOISE must not drag the US row down, and vice versa."""
+        v = draft_verdicts(self._cells(),
+                           self._h3("STABLE (median rho 0.9)", "NOISE (median rho 0.2 < 0.3)"))
+        assert self._row(v, "us")["verdict"] == "MEASURABLE-NOW"
+        assert self._row(v, "cn")["verdict"] == "COMPUTABLE-BUT-UNSTABLE"
+        # and the pooled value must be ignored entirely
+        assert "POOLED-VALUE-THAT-MUST-NOT-BE-USED" not in self._row(v, "us")["basis"]
+
+    def test_coverage_floor_still_outranks_the_stability_rule(self):
+        v = draft_verdicts(self._cells(cov=0.1),
+                           self._h3("STABLE (x)", "STABLE (median rho 0.9)"))
+        assert self._row(v, "cn")["verdict"] == "BLOCKED-ON-INGESTION"
+
+    def test_beta_basis_carries_the_quarterly_horizon_caveat(self):
+        v = draft_verdicts(self._cells(), self._h3("STABLE (a)", "STABLE (b)"))
+        assert "~quarterly horizon" in self._row(v, "cn")["basis"]
+
+    def test_lhb_basis_leads_with_the_price_selected_universe(self):
+        v = draft_verdicts(self._cells(cid=CN_LHB_ID),
+                           self._h3("NOISE (a)", "NOISE (b)", cid=CN_LHB_ID),
+                           lhb_price_share=0.9838)
+        basis = self._row(v, "cn", cid=CN_LHB_ID)["basis"]
+        assert basis.startswith("PRICE-SELECTED UNIVERSE")
+        assert "98.4%" in basis
+        assert "refusal family" in basis
+
+    def test_economic_share_warns_against_ready_pending_data(self):
+        v = draft_verdicts(self._cells(), self._h3("STABLE (x)", "STABLE (y)"))
+        econ = next(x for x in v if x["construction"] == "economic_share")
+        assert econ["verdict"] == "BLOCKED-ON-INGESTION"
+        assert "ready-pending-data" in econ["basis"]
+
+
+class TestWindowOverlap:
+    """The lag-k companion's windows are measured, never assumed disjoint."""
+
+    def test_identical_stamps_share_the_whole_window(self):
+        assert window_overlap_sessions(100, 100) == BETA_WIN
+
+    def test_overlap_falls_linearly_with_the_stamp_gap(self):
+        assert window_overlap_sessions(100, 110) == BETA_WIN - 10
+        assert window_overlap_sessions(110, 100) == BETA_WIN - 10   # symmetric
+
+    def test_windows_are_disjoint_only_once_the_gap_reaches_the_window(self):
+        assert window_overlap_sessions(0, BETA_WIN) == 0
+        assert window_overlap_sessions(0, BETA_WIN + 50) == 0
+
+    def test_a_three_month_gap_can_still_overlap(self):
+        """~63 sessions a quarter, so a 3-month pair is NOT guaranteed disjoint."""
+        assert window_overlap_sessions(0, 55) > 0
+
+
 class TestFrozenReadings:
     def test_h2_redundant_above_the_ceiling(self):
         assert h2_reading([0.93, 0.95, 0.97]).startswith("REDUNDANT")
