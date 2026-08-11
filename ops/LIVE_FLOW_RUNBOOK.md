@@ -127,8 +127,9 @@ after the session digest. It is the sole advancer of these committed artifacts:
   canonical-record append-prefix SHA-256 (not the raw-byte publication digest).
 
 `data/options_signal_episode/campaigns.jsonl` is a frozen eight-row v1 threshold
-cohort. It has no active producer or consumer, is never included in the episode
-publisher, and is not canonical or prospective evidence.
+cohort. It has no active producer; its only consumer is the read-only context audit
+that authenticates the frozen bytes and source joins. It is never included in the
+episode publisher and is not canonical or prospective evidence.
 
 The builder discovers at most the newest **64** retained sessions, using a
 credentialed R2 listing when available and the public 64-session dates index as
