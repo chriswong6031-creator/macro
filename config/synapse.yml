@@ -11548,12 +11548,18 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_site.py
+      - engine/us_candidate_lanes.py
     external_consumers:
       - terminal:oracle-tab
     notes: >
       Prophet active plans index — all active plans + management state summaries inline.
       Also mirrored to R2 key prophet/index.json when --publish flag is passed.
       authority_tier=display. NOT wired into daily.yml in this PR.
+      engine/us_candidate_lanes.py reads the OPEN-PLAN TICKER SET ONLY
+      (load_open_plan_tickers), for the same reason build_site does and with the same
+      safety: the nightly reads LAST NIGHT'S index, and an open plan persists across
+      nights, so "already has a plan running" cannot go stale the way a refusal reason
+      would. Fail-soft to an empty set; nothing about admission depends on it.
 
   # --- prophet-ledger: Prophet forward outcome ledger ---
   prophet-ledger:
@@ -11598,7 +11604,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers: [engine/us_prophet_grades.py, scripts/grade_us_prophet_candidates.py,
-                engine/prophet_miss_audit.py]
+                engine/prophet_miss_audit.py, engine/us_candidate_lanes.py]
     external_consumers: []
     notes: >
       US Context Vector point-in-time candidate store (PROPHET US roadmap §2 keystone).
@@ -11641,6 +11647,19 @@ artifacts:
       measured for this name tonight", never "false" (#4485). Named debts
       (turnover_pctile_60d data-blocked; stoch_ob/stoch_bear/macd_bear not exposed by
       confluence_tiers) are documented in data/us_prophet_rank/README.md.
+      CANDIDATE-POOL LANES (operator commission 2026-08-11): nine additional pool_*
+      columns carry the DISPLAY-TIER lossless four-lane partition of tonight's
+      cascade-eligible pool (CN parity with china_board_rank._partition), produced by
+      engine/us_candidate_lanes.py and stamped by the same build_stock_library run.
+      That module is also the store's fourth CONSUMER, read-only: it projects
+      HISTORY_COLUMNS out of prior months through load_candidates() to derive the
+      display-only graduation annotations (days_in_pool / score_delta_5d /
+      lane_transitions). It inherits the same zero authority — nothing on the admission
+      path imports it, pinned by tests/test_us_candidate_lanes.py::TestNoAuthorityLeak.
+      pool_* is null for every name outside tonight's eligible set (~144 of ~1,540) and
+      for every scan-tier row, which are never admitted. `originated` is deliberately
+      NOT a column: build_stock_library stamps before build_prophet originates anything
+      and backfill is forbidden, so origination stays build_prophet's fact.
 
   # --- us-prophet-grades: full-population forward grades (§W7, operator 2026-08-05) ---
   us-prophet-grades:

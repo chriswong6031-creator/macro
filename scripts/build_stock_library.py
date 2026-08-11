@@ -4319,6 +4319,18 @@ def main() -> int:
             bonus_of=lambda x: ((coiled_by.get(x[0]) or {}).get("bonus") or 0.0),
         )
 
+        # ── Candidate-pool provenance (DISPLAY TIER — engine/us_candidate_lanes.py) ──
+        # THE PRE-CAP BLEND ORDER IS THE POOL. It carries every cascade-eligible name in
+        # the order the board itself ranked them, BEFORE any display cap has removed one
+        # — so it is the only membership-blind, already-computed key that covers all 144
+        # eligible names (measured 2026-08-07: eligible 144, buy 81, so 63 names had no
+        # published row at all). Captured HERE because the caps below rebind `buyable`,
+        # and `pool_rank` must be the board's own order, never a re-derivation.
+        # `_pool_off_board` accumulates, at each drop site, WHY an eligible name never
+        # reached buy[]. Nothing in this block changes membership, ordering or any gate.
+        _pool_blend_order: list[str] = [_t_bo for _t_bo, _, _ in buyable]
+        _pool_off_board: dict[str, list[str]] = {}
+
         # ── W8-C Lane R (cascade-gate supersedes) ────────────────────────────
         # Under the cascade inclusion gate, is_buyable (T1/T2/T3) is a strict
         # subset of eligible (T1/T2/T3/T4). Every name that would have qualified
@@ -4356,7 +4368,9 @@ def main() -> int:
             _r6 = row_by_t[_t6]
             _nm6 = _norm_co(_r6.get("name"))
             if _nm6 and _nm6 in _seen_name_w:
-                # dual-class dupe — drop silently
+                # dual-class dupe — dropped from the board, DISCLOSED in the pool block
+                # (it was "drop silently" until the candidate-pool lanes landed).
+                _pool_off_board[_t6] = ["dual_class_duplicate"]
                 continue
             if _nm6:
                 _seen_name_w.add(_nm6)
@@ -4366,6 +4380,7 @@ def main() -> int:
                 _buyable_capped.append(_item)
             else:
                 _buyable_overflow.append(_item)
+                _pool_off_board[_t6] = ["sector_cap_overflow"]
         # overflow goes to watch (they are aligned, just over the soft cap)
         buyable = _buyable_capped
 
@@ -4644,7 +4659,12 @@ def main() -> int:
 
         # Trend rows: P2.4 v2 — lane is derived by _lane_for(tier, weekly_phase)
         # (no explicit lane= override so the continuation branch fires).
-        _trend_rows_ordered = [_tag(t, tier) for t, _, tier in buyable_trend[:120]]
+        _BUY_SLICE = 120
+        _trend_rows_ordered = [_tag(t, tier) for t, _, tier in buyable_trend[:_BUY_SLICE]]
+        # Anything past the slice is eligible-but-unpublished: disclose it in the pool.
+        for _t_sl, _, _ in buyable_trend[_BUY_SLICE:]:
+            _pool_off_board.setdefault(_t_sl, ["buy_slice_cap"])
+        _pool_buy_slice_displaced = max(0, len(buyable_trend) - _BUY_SLICE)
 
         _all_buy_rows = _trend_rows_ordered + _recovery_rows_ordered
 
@@ -4686,6 +4706,11 @@ def main() -> int:
         for _lane_s, _rows_s in _spurious_sec.items():
             log.warning("sector-integrity guard: dropped %d %s row(s) with spurious "
                         "sector label: %s", len(_rows_s), _lane_s, _rows_s)
+        # An eligible name the integrity backstop removed from buy[] is still eligible —
+        # the pool accounts for it rather than letting it vanish between two counts.
+        for _t_sp, _ in (_spurious_sec.get("buy") or []):
+            if _t_sp:
+                _pool_off_board[_t_sp] = ["sector_label_unreadable"]
         eligible = len(elig)
         # leaders join the enrichment pass so the strip carries conviction + ext_z
         # (the strip's "extended" chase-risk chip reads ext_z).
@@ -5129,6 +5154,97 @@ def main() -> int:
         wide["lane_counts"]["featured"] = wide["ranking"]["featured_count"]
         wide["lane_counts"]["ran_lane"] = len(wide["ran"])
         log.info("P2.4 lane_counts: %s", wide["lane_counts"])
+
+        # ── Candidate pool: the LOSSLESS four-lane partition (CN parity) ─────
+        # Operator commission 2026-08-11. Until now this artifact published the
+        # ~81-row buy lane and disclosed the other ~63 cascade-eligible names as a
+        # single integer (`eligible`) plus `concentration.overflow_count`. CN has
+        # shipped the fix since china_board_rank._partition: EVERY eligible row
+        # gets a published row carrying its lane, its reasons and a display rank
+        # (2026-08-10 CN board: eligible 180 = 24+93+41+22).
+        #
+        # DISPLAY TIER, ADDITIVE, ZERO AUTHORITY. `wide["buy"]` is neither
+        # reordered nor re-membered here — engine.us_candidate_lanes is pure and
+        # copies what it reads, and tests/test_us_candidate_lanes.py mutation-pins
+        # that. Nothing on the admission path reads this block or its store
+        # columns. Graduation is visibility only: a name rejoins buy[] by clearing
+        # the EXISTING gates on a later night, never by a rule minted here
+        # (DNR:KILL-CHATTER-PROMOTION; the lower tier is display-only per
+        # DNR:KILL-PRIMED-DIRECTIONAL-GATE).
+        _pool_block = None
+        try:
+            from engine import us_candidate_lanes as _ucl
+
+            _pool_open = _ucl.load_open_plan_tickers(site)
+            # Read-only derivation from the DATED store this build already stamps
+            # (data/us_prophet_rank/candidates) — never a second store.
+            _pool_hist, _pool_hist_meta = _ucl.load_pool_history(wide.get("as_of"))
+            # Identity/sector for the off-board eligibles, which have no buy row.
+            _pool_meta_rows = dict(row_by_t)
+            _pool_caps = {
+                "sector_cap": {"value": _WIDE_PER_SECTOR,
+                               "displaced": len(_buyable_overflow),
+                               "lane": "buy",
+                               "note": "soft per-sector cap; overflow routes to watch"},
+                "buy_slice": {"value": _BUY_SLICE,
+                              "displaced": _pool_buy_slice_displaced,
+                              "lane": "buy"},
+                "watch_slice": {"value": 48,
+                                "considered": len(watch),
+                                "displaced": max(0, len(watch) - 48),
+                                "lane": "watch"},
+                "dual_class_dedup": {
+                    "value": None,
+                    "displaced": sum(1 for _r_dc in _pool_off_board.values()
+                                     if _r_dc and _r_dc[0] == "dual_class_duplicate"),
+                    "lane": "buy",
+                    "note": "engine.setups.norm_company kept the higher-ranked class"},
+                "refusal_names": {"value": 14, "lane": "why_not_shelf",
+                                  "note": "per-group ticker cap on the shelf; this "
+                                          "block is never truncated"},
+            }
+            # Lanes first, then the graduation annotations keyed by them — the
+            # annotations read tonight's lane, so they cannot be computed before the
+            # partition exists.
+            _pool_block = _ucl.build_candidate_pool(
+                as_of=wide.get("as_of"),
+                board_definition=us_board_rank.BOARD_DEFINITION,
+                selection_era=us_board_rank.SELECTION_ERA,
+                eligible_order=_pool_blend_order,
+                buy_rows=wide["buy"],
+                off_board_reasons=_pool_off_board,
+                meta_rows=_pool_meta_rows,
+                open_tickers=_pool_open,
+                display_caps=_pool_caps,
+                history_meta=_pool_hist_meta,
+            )
+            _pool_grad = _ucl.graduation_fields(
+                _pool_hist,
+                tonight_lane_by_ticker={r["ticker"]: r["lane"]
+                                        for r in _pool_block["rows"]},
+                tonight_score_by_ticker={
+                    r["ticker"]: (r.get("prophet") or {}).get("score")
+                    for r in _pool_block["rows"]},
+            )
+            if _pool_hist_meta.get("available"):
+                for _r_pg in _pool_block["rows"]:
+                    _g_pg = _pool_grad.get(_r_pg["ticker"])
+                    if _g_pg:
+                        _r_pg["graduation"] = _g_pg
+            wide["candidate_pool"] = _pool_block
+            log.info("candidate pool: %d eligible = %s (buy %d / off-board %d, "
+                     "history %s over %d night(s))",
+                     _pool_block["eligible"], _pool_block["lane_counts"],
+                     _pool_block["in_buy_lane"], _pool_block["off_buy_lane"],
+                     _pool_hist_meta.get("available"), _pool_hist_meta.get("nights") or 0)
+            if _pool_block["eligible"] != eligible:
+                # The partition claims to be lossless over `elig`; say so out loud if
+                # the two counts ever part company instead of shipping a quiet lie.
+                print(f"::warning title=candidate-pool-count::pool eligible "
+                      f"{_pool_block['eligible']} != board eligible {eligible}",
+                      flush=True)
+        except Exception as _pool_e:  # noqa: BLE001 — display tier is never fatal
+            log.warning("candidate pool skipped (%s)", _pool_e)
         _tmark("board_rank")
 
         # P2.1a Step H: anti-chase shadow ledger writer.
@@ -6025,6 +6141,23 @@ def main() -> int:
                             _ucv_lane[_ucv_t] = _ucv_lane_name
                 _ucv_meta = {t: {"name": nm, "sector": sec}
                              for (t, _c, _h, nm, sec) in uni}
+                # Candidate-pool lanes ride the SAME row this store already stamps —
+                # extended, not forked. The store's grain is already one row per
+                # analyzed name per night keyed (stamp_date, ticker, board_definition),
+                # its README charters schema-union append with forward-only self-healing
+                # for a new column, and the nightly already commits it. Names outside
+                # tonight's eligible pool get no entry, so their pool_* columns stay
+                # null — "not measured tonight", never "false" (#4485).
+                _ucv_pool = {}
+                try:
+                    from engine import us_candidate_lanes as _ucl_store
+
+                    _ucv_pool = _ucl_store.store_columns(
+                        wide.get("candidate_pool"),
+                        open_tickers=_ucl_store.load_open_plan_tickers(site),
+                    )
+                except Exception as _ucl_e:  # noqa: BLE001 — telemetry is never fatal
+                    log.warning("candidate-pool store columns skipped (%s)", _ucl_e)
                 _ucv_n = _ucv.append_candidates(
                     sig_verdict, _ucv_asof,
                     board_definition=us_board_rank.BOARD_DEFINITION,
@@ -6037,6 +6170,7 @@ def main() -> int:
                     blackout_map=_eb_blackout_map if "_eb_blackout_map" in dir() else None,
                     closes=_ext_closes if "_ext_closes" in dir() else None,
                     gate_go=wide.get("gate_go"),
+                    pool_columns=_ucv_pool,
                 )
                 if _ucv_n:
                     log.info("us_context_vector: store now %d rows (stamped %s, %.1fs)",

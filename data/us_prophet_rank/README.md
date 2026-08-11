@@ -235,6 +235,57 @@ assembled that night. The public API exposes no dimension-subset parameter, so a
 11 are always computed; if that ever changes, the store itself shows it rather than
 thinning silently.
 
+## `pool_*` — the display-tier candidate-pool lanes (operator commission 2026-08-11)
+
+Nine columns, producer `engine/us_candidate_lanes.py`, stamped from the same
+`build_stock_library` run that writes every other column here. They record the **lossless
+four-lane partition of tonight's cascade-eligible pool** — CN parity with
+`china_board_rank._partition`, in US vocabulary.
+
+Why they are here rather than in a new store: this store already stamps exactly that
+grain (one row per analyzed name per night, keyed `(stamp_date, ticker,
+board_definition)`, carrying `prophet_score`, `selection_era` and the artifact `lane`),
+its schema-union append gives a new column forward-only self-healing for free, and the
+nightly already commits it. A sibling store would have duplicated the key, the lane gate,
+keep-first and the monthly-parts layout for nine columns.
+
+| Column | What it is |
+|---|---|
+| `pool_definition` | the partition rule that produced the row (`us_candidate_pool_v1`) |
+| `pool_lane` | `featured` · `more_actionable` · `late_or_unfillable` · `forming` |
+| `pool_lane_reasons` | `\|`-joined, **order preserved** — headline first. Not `_ids`, which sorts |
+| `pool_headline_reason` | the first reason |
+| `pool_rank` | position in the board's own pre-cap blend order over the eligible set |
+| `pool_display_rank` | position within the row's lane |
+| `pool_in_buy_lane` | whether the name also reached the published `buy[]` |
+| `pool_admission_class` | `patience` / `confirmation` / null, read through `prophet_bridge` |
+| `pool_open_plan` | the name already holds an open plan (open plans persist across nights) |
+
+**Null off the pool, by construction.** Only tonight's cascade-eligible names are in the
+partition — 144 of a ~1,540-name curated universe on the 2026-08-07 board — so ~91% of
+rows carry nulls here. That is this store's disclosure idiom ("not measured for this name
+tonight"), not a gap. Scan-tier rows are never in the pool: a scan name is never admitted.
+
+**`prophet_score` stays null for the ~63 off-board eligibles**, and that is deliberate,
+not a debt. `us_board_rank.score_rows` builds its `edge` leg from `alpha_percentiles`
+over the pool it is handed, so scoring the off-board names as their own pool mints a
+SECOND RULER, and scoring them together with `buy[]` moves every published row's
+percentile and therefore the board ORDER. `pool_rank` is the comparable trajectory key
+instead: it is the board's own pre-cap order, defined for every eligible name.
+
+**`originated` is deliberately absent** (carried-columns law — never leave schema that
+lies). This store is stamped by `build_stock_library`, which runs BEFORE `build_prophet`
+in `daily.yml` and does not run at all under `render.yml`, so origination is unknowable
+at stamp time and retroactive backfill is forbidden here. Origination is build_prophet's
+fact and lives in its artifact and ledger; join on `(stamp_date, ticker)`. What IS
+knowable — an already-open plan — is stamped as `pool_open_plan`.
+
+**Zero authority, fenced by a file boundary.** `engine/us_candidate_lanes.py` imports
+from `us_board_rank` / `prophet_bridge`; nothing on the admission path imports it, and
+`tests/test_us_candidate_lanes.py::TestNoAuthorityLeak` pins that as a static token
+sweep, an import-closure walk and a behavioural invariance check on
+`prophet_bridge.select_candidates`.
+
 ## Named debts
 
 1. **`turnover_pctile_60d` — DATA-BLOCKED, stamped null.** The volume caches carry
