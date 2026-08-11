@@ -5494,6 +5494,8 @@ jobs:
             site/prophet \
             data/prophet/ledger.jsonl \
             data/prophet/ledger_quarantine.json \
+            data/prophet/origination_receipts \
+            data/prophet/legacy_shadow \
             data/prophet_arena \
             data/prophet_stage_shadow; then
             echo "::error title=Prophet safe restore failed::could not restore checkout-time Prophet publications; aborting the broad commit rather than publishing an uncheckpointed tree"

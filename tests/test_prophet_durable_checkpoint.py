@@ -642,7 +642,11 @@ def test_final_engine_cleanup_removes_first_publication_prophet_additions(
     _git(repo, "config", "user.name", "Prophet cleanup test")
     _git(repo, "config", "user.email", "prophet-cleanup@example.invalid")
     _write(repo, "baseline.txt", "safe\n")
-    _git(repo, "add", "baseline.txt")
+    tracked_legacy = "data/prophet/legacy_shadow/2026-08/existing.parquet"
+    tracked_receipt = "data/prophet/origination_receipts/existing.json"
+    _write(repo, tracked_legacy, "safe legacy bytes\n")
+    _write(repo, tracked_receipt, "safe receipt bytes\n")
+    _git(repo, "add", "baseline.txt", tracked_legacy, tracked_receipt)
     _git(repo, "commit", "-m", "baseline")
 
     new_paths = (
@@ -653,10 +657,21 @@ def test_final_engine_cleanup_removes_first_publication_prophet_additions(
     )
     for path in new_paths:
         _write(repo, path, "{}\n")
+    _write(repo, tracked_legacy, "mutated legacy bytes\n")
     _git(repo, "add", "site", "data")
     assert {line[0] for line in _git(repo, "status", "--short").stdout.splitlines()} == {
-        "A"
+        "A",
+        "M",
     }
+
+    _git(
+        repo,
+        "checkout",
+        "HEAD",
+        "--",
+        "data/prophet/origination_receipts",
+        "data/prophet/legacy_shadow",
+    )
 
     _git(
         repo,
@@ -681,6 +696,8 @@ def test_final_engine_cleanup_removes_first_publication_prophet_additions(
 
     assert _git(repo, "status", "--porcelain").stdout == ""
     assert all(not (repo / path).exists() for path in new_paths)
+    assert (repo / tracked_legacy).read_text() == "safe legacy bytes\n"
+    assert (repo / tracked_receipt).read_text() == "safe receipt bytes\n"
 
 
 def test_stage_checkpoint_is_hash_closed_and_rejects_authority_races() -> None:
