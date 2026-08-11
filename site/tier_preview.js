@@ -211,45 +211,6 @@
     });
     return true;
   }
-  // ── themes-in-favour strip ────────────────────────────────────────────────
-  // The strip lives inside #us-standouts and lists, per theme, which of today's board
-  // names sit in it — i.e. the very tickers the gated cards carry, printed in plain
-  // text above the blur. The theme NAME is context worth leaving visible; the ticker
-  // LIST is the product, so it collapses to a count for anon/free. Reversible through
-  // the same data-mx-old-* stash clearGroup uses for tabindex, because a visitor who
-  // upgrades in-page must get the names back without a reload.
-  function themeNameCount(list) {
-    var n = 0;
-    Array.prototype.slice.call(list.children || []).forEach(function (el) {
-      if (el.classList && el.classList.contains("pbt-more")) {
-        // the "+N" tail: names the strip already truncated, still real membership.
-        var extra = parseInt(String(el.textContent || "").replace(/[^0-9]/g, ""), 10);
-        if (extra > 0) n += extra;
-      } else if (el.tagName === "SPAN") {
-        n += 1;
-      }
-    });
-    return n;
-  }
-  function applyThemeTickers() {
-    var gated = isFinite(state.cap);
-    document.querySelectorAll("#us-standouts .pbt-tk").forEach(function (list) {
-      var stashed = list.getAttribute("data-mx-old-html");
-      if (!gated) {
-        if (stashed !== null) {
-          list.innerHTML = stashed;
-          list.removeAttribute("data-mx-old-html");
-        }
-        return;
-      }
-      if (stashed !== null) return;
-      var n = themeNameCount(list);
-      list.setAttribute("data-mx-old-html", list.innerHTML);
-      list.innerHTML =
-        '<span class="l-en">' + n + (n === 1 ? " name" : " names") + ' on the board</span>' +
-        '<span class="l-zh">榜上 ' + n + ' 只股票</span>';
-    });
-  }
   // ── theme tape member lists ───────────────────────────────────────────────
   // Same law as the themes-in-favour strip above, one panel higher up the page.
   // The tape's COUNTS are aggregate and stay free — they are the panel's whole
@@ -307,9 +268,7 @@
         if (surface) surfaces[surface] = true;
       });
       placeSurfaceGates(surfaces);
-      // Unconditional: these two leak even when the grid itself is short enough that
-      // no group tripped the cap — they are separate markup, not capped rows.
-      applyThemeTickers();
+      // Unconditional: tape member names sit outside the capped card grids.
       applyTapeMembers();
     } finally {
       applying = false;

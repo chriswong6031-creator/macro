@@ -874,6 +874,11 @@ jobs:
         run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow jsonschema fastapi httpx requests
       - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append, greek grids + walls + coverage + poller fence)
         run: python -m pytest tests/test_flow_surface.py -q
+      # PRISM's daily matrix shares this options data-plane lane.  Keep the
+      # exact-contract-side volume baseline suite distinct so PIT/no-zero-fill regressions
+      # cannot hide inside a broader surface invocation.
+      - name: PRISM per-side PIT UNUSUAL lens (observed-session median, sample floor, 3x boundary)
+        run: python -m pytest tests/test_options_matrix.py -q
       - name: options PIT episodes (causal clocks, durable stage, H+60 + declared-session-close proxies, R2/checkpoint integrity)
         run: python -m pytest tests/test_options_signal_episode.py -q
       - name: MSC R2.2-A Light U-CHAIN packets + monotonic R2 discovery publication
@@ -6688,6 +6693,7 @@ jobs:
           tests/test_market_memory_playback.py
           tests/test_market_memory_playback_api.py
           tests/test_market_memory_retrieval.py
+          tests/test_market_memory_operating_cortex.py
           tests/test_market_memory_projection.py
           tests/test_market_memory_trusted.py
           tests/test_market_memory_context_deploy.py

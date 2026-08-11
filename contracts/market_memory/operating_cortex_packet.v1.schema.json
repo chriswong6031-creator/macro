@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/operating_cortex_packet.v1.schema.json",
+  "title": "Market Memory synthetic Operating Cortex packet v1",
+  "description": "Frozen W5A content-addressed structural packet over one exact W4A retrieval record. Source and span bytes are closed; semantic entailment, truth, quality, action, and authority remain unavailable.",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 23,
+  "maxProperties": 23,
+  "required": [
+    "schema", "operating_cortex_packet_id", "operating_cortex_registration_id",
+    "retrieval_registration_id", "episodic_retrieval_record_id", "trial_registration_id",
+    "subject", "produced_at", "episode_scope", "evidence_manifest", "attention_queue",
+    "contradictions", "missingness", "falsifier_audit", "citation_projection",
+    "unsupported_claim_scorecard", "attention_quality_scorecard", "read_tools", "coverage",
+    "input_profile", "claims", "emission_enabled", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.operating_cortex_packet.v1"},
+    "operating_cortex_packet_id": {"type": "string", "pattern": "^mmcortexpacket_[a-f0-9]{64}$"},
+    "operating_cortex_registration_id": {"type": "string", "pattern": "^mmcortexregistration_[a-f0-9]{64}$"},
+    "retrieval_registration_id": {"type": "string", "pattern": "^mmretrievalregistration_[a-f0-9]{64}$"},
+    "episodic_retrieval_record_id": {"type": "string", "pattern": "^mmepisodicretrieval_[a-f0-9]{64}$"},
+    "trial_registration_id": {"type": "string", "pattern": "^mmtrial_[a-f0-9]{64}$"},
+    "subject": {"$ref": "#/$defs/subject"},
+    "produced_at": {"$ref": "#/$defs/timestamp"},
+    "episode_scope": {
+      "type": "array", "minItems": 1, "maxItems": 33,
+      "prefixItems": [{"$ref": "#/$defs/queryEpisode"}],
+      "items": {"$ref": "#/$defs/analogueEpisode"}
+    },
+    "evidence_manifest": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/evidenceCard"}},
+    "attention_queue": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/attentionItem"}},
+    "contradictions": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/contradiction"}},
+    "missingness": {"type": "array", "minItems": 1, "maxItems": 16, "items": {"$ref": "#/$defs/missingnessRow"}},
+    "falsifier_audit": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/falsifierRow"}},
+    "citation_projection": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/claimProjection"}},
+    "unsupported_claim_scorecard": {"$ref": "#/$defs/unsupportedClaimScorecard"},
+    "attention_quality_scorecard": {"$ref": "#/$defs/attentionQualityScorecard"},
+    "read_tools": {"$ref": "operating_cortex_registration.v1.schema.json#/$defs/readTools"},
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "input_profile": {"const": "synthetic_fixture_only"},
+    "claims": {"$ref": "operating_cortex_registration.v1.schema.json#/$defs/claims"},
+    "emission_enabled": {"const": false},
+    "authority": {"$ref": "state_snapshot.v1.schema.json#/$defs/authority"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[a-f0-9]{64}$"},
+    "timestamp": {"type": "string", "minLength": 27, "maxLength": 27, "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"},
+    "opaque": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"},
+    "q18": {"type": "string", "minLength": 20, "maxLength": 20, "pattern": "^(?:0\\.[0-9]{18}|1\\.0{18})$"},
+    "forecastId": {"type": "string", "pattern": "^mmforecast_[a-f0-9]{64}$"},
+    "citationId": {"type": "string", "pattern": "^mmcitation_[a-f0-9]{64}$"},
+    "evidenceCardId": {"type": "string", "pattern": "^mmevidencecard_[a-f0-9]{64}$"},
+    "claimId": {"type": "string", "pattern": "^mmclaim_[a-f0-9]{64}$"},
+    "subject": {
+      "type": "object", "additionalProperties": false, "minProperties": 2, "maxProperties": 2,
+      "required": ["subject_id", "instrument_id"],
+      "properties": {
+        "subject_id": {"$ref": "#/$defs/opaque"},
+        "instrument_id": {"$ref": "#/$defs/opaque"}
+      }
+    },
+    "queryEpisode": {
+      "type": "object", "additionalProperties": false, "minProperties": 3, "maxProperties": 3,
+      "required": ["episode_role", "episode_forecast_id", "subject"],
+      "properties": {
+        "episode_role": {"const": "query"},
+        "episode_forecast_id": {"$ref": "#/$defs/forecastId"},
+        "subject": {"$ref": "#/$defs/subject"}
+      }
+    },
+    "analogueEpisode": {
+      "type": "object", "additionalProperties": false, "minProperties": 3, "maxProperties": 3,
+      "required": ["episode_role", "episode_forecast_id", "subject"],
+      "properties": {
+        "episode_role": {"const": "analogue"},
+        "episode_forecast_id": {"$ref": "#/$defs/forecastId"},
+        "subject": {"$ref": "#/$defs/subject"}
+      }
+    },
+    "salienceComponents": {
+      "type": "object", "additionalProperties": false, "minProperties": 6, "maxProperties": 6,
+      "required": ["standardized_surprise", "change_hazard", "novelty", "disagreement", "materiality", "data_health_deficit"],
+      "properties": {
+        "standardized_surprise": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]},
+        "change_hazard": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]},
+        "novelty": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]},
+        "disagreement": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]},
+        "materiality": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]},
+        "data_health_deficit": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]}
+      }
+    },
+    "citation": {
+      "type": "object", "additionalProperties": false, "minProperties": 8, "maxProperties": 8,
+      "required": [
+        "citation_id", "source_record_ref", "source_sha256", "source_bytes",
+        "span_start_byte", "span_end_byte", "span_sha256", "known_at"
+      ],
+      "properties": {
+        "citation_id": {"$ref": "#/$defs/citationId"},
+        "source_record_ref": {"$ref": "#/$defs/opaque"},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "source_bytes": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "span_start_byte": {"type": "integer", "minimum": 0, "maximum": 65535},
+        "span_end_byte": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "span_sha256": {"$ref": "#/$defs/sha256"},
+        "known_at": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+    "evidenceCard": {
+      "type": "object", "additionalProperties": false, "minProperties": 10, "maxProperties": 10,
+      "required": [
+        "evidence_card_id", "episode_role", "episode_forecast_id", "subject",
+        "evidence_kind", "claim_key", "stance", "known_at", "salience_components", "citation"
+      ],
+      "properties": {
+        "evidence_card_id": {"$ref": "#/$defs/evidenceCardId"},
+        "episode_role": {"enum": ["query", "analogue"]},
+        "episode_forecast_id": {"$ref": "#/$defs/forecastId"},
+        "subject": {"$ref": "#/$defs/subject"},
+        "evidence_kind": {"$ref": "#/$defs/opaque"},
+        "claim_key": {"$ref": "#/$defs/opaque"},
+        "stance": {"enum": ["supports", "challenges", "neutral"]},
+        "known_at": {"$ref": "#/$defs/timestamp"},
+        "salience_components": {"$ref": "#/$defs/salienceComponents"},
+        "citation": {"$ref": "#/$defs/citation"}
+      }
+    },
+    "evidenceRefs": {
+      "type": "array", "maxItems": 8, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/evidenceCardId"}
+    },
+    "citationIds": {
+      "type": "array", "maxItems": 8, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/citationId"}
+    },
+    "attentionItem": {
+      "type": "object", "additionalProperties": false, "minProperties": 5, "maxProperties": 5,
+      "required": ["attention_item_id", "evidence_card_id", "status", "reason", "salience_score_q18"],
+      "properties": {
+        "attention_item_id": {"type": "string", "pattern": "^mmattentionitem_[a-f0-9]{64}$"},
+        "evidence_card_id": {"$ref": "#/$defs/evidenceCardId"},
+        "status": {"enum": ["scored", "abstained"]},
+        "reason": {"oneOf": [{"type": "null"}, {"const": "missing_salience_component"}]},
+        "salience_score_q18": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "scored"}}, "required": ["status"]},
+          "then": {"properties": {"reason": {"type": "null"}, "salience_score_q18": {"$ref": "#/$defs/q18"}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "abstained"}}, "required": ["status"]},
+          "then": {"properties": {"reason": {"const": "missing_salience_component"}, "salience_score_q18": {"type": "null"}}}
+        }
+      ]
+    },
+    "claimIds": {
+      "type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/claimId"}
+    },
+    "contradiction": {
+      "type": "object", "additionalProperties": false, "minProperties": 6, "maxProperties": 6,
+      "required": [
+        "contradiction_group_id", "subject", "claim_key", "supporting_claim_ids",
+        "challenging_claim_ids", "status"
+      ],
+      "properties": {
+        "contradiction_group_id": {"type": "string", "pattern": "^mmcontradictiongroup_[a-f0-9]{64}$"},
+        "subject": {"$ref": "#/$defs/subject"},
+        "claim_key": {"$ref": "#/$defs/opaque"},
+        "supporting_claim_ids": {"$ref": "#/$defs/claimIds"},
+        "challenging_claim_ids": {"$ref": "#/$defs/claimIds"},
+        "status": {"const": "structural_conflict"}
+      }
+    },
+    "missingnessRow": {
+      "type": "object", "additionalProperties": false, "minProperties": 3, "maxProperties": 3,
+      "required": ["evidence_kind", "status", "scope"],
+      "properties": {
+        "evidence_kind": {"$ref": "#/$defs/opaque"},
+        "status": {"enum": ["present", "missing"]},
+        "scope": {"const": "supplied_evidence_manifest_only"}
+      }
+    },
+    "falsifierRow": {
+      "type": "object", "additionalProperties": false, "minProperties": 4, "maxProperties": 4,
+      "required": ["claim_id", "falsifier_code", "status", "generation_performed"],
+      "properties": {
+        "claim_id": {"$ref": "#/$defs/claimId"},
+        "falsifier_code": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/opaque"}]},
+        "status": {"enum": ["not_registered", "registered"]},
+        "generation_performed": {"const": false}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "not_registered"}}, "required": ["status"]},
+          "then": {"properties": {"falsifier_code": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "registered"}}, "required": ["status"]},
+          "then": {"properties": {"falsifier_code": {"$ref": "#/$defs/opaque"}}}
+        }
+      ]
+    },
+    "withholdingReason": {
+      "enum": [
+        "evidence_reference_missing", "evidence_reference_mismatch",
+        "required_evidence_kind_missing",
+        "semantic_entailment_not_evaluated"
+      ]
+    },
+    "claimProjection": {
+      "type": "object", "additionalProperties": false, "minProperties": 10, "maxProperties": 10,
+      "required": [
+        "claim_id", "subject", "claim_key", "stance", "evidence_card_refs", "falsifier_code",
+        "status", "withholding_reason", "citation_ids", "semantic_entailment_evaluated"
+      ],
+      "properties": {
+        "claim_id": {"$ref": "#/$defs/claimId"},
+        "subject": {"$ref": "#/$defs/subject"},
+        "claim_key": {"$ref": "#/$defs/opaque"},
+        "stance": {"enum": ["supports", "challenges", "neutral"]},
+        "evidence_card_refs": {"$ref": "#/$defs/evidenceRefs"},
+        "falsifier_code": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/opaque"}]},
+        "status": {"enum": ["included_structural_only", "withheld"]},
+        "withholding_reason": {"$ref": "#/$defs/withholdingReason"},
+        "citation_ids": {"$ref": "#/$defs/citationIds"},
+        "semantic_entailment_evaluated": {"const": false}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "included_structural_only"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "withholding_reason": {"const": "semantic_entailment_not_evaluated"},
+              "evidence_card_refs": {"minItems": 1},
+              "citation_ids": {"minItems": 1}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"status": {"const": "withheld"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "withholding_reason": {
+                "enum": [
+                  "evidence_reference_missing", "evidence_reference_mismatch",
+                  "required_evidence_kind_missing"
+                ]
+              },
+              "citation_ids": {"maxItems": 0}
+            }
+          }
+        }
+      ]
+    },
+    "countsByReason": {
+      "type": "object", "additionalProperties": false, "minProperties": 3, "maxProperties": 3,
+      "required": [
+        "evidence_reference_missing", "evidence_reference_mismatch",
+        "required_evidence_kind_missing"
+      ],
+      "properties": {
+        "evidence_reference_missing": {"type": "integer", "minimum": 0, "maximum": 128},
+        "evidence_reference_mismatch": {"type": "integer", "minimum": 0, "maximum": 128},
+        "required_evidence_kind_missing": {"type": "integer", "minimum": 0, "maximum": 128}
+      }
+    },
+    "unsupportedClaimScorecard": {
+      "type": "object", "additionalProperties": false, "minProperties": 6, "maxProperties": 6,
+      "required": ["status", "total", "included", "withheld", "counts_by_reason", "structural_unsupported_rate_q18"],
+      "properties": {
+        "status": {"const": "structural_only"},
+        "total": {"type": "integer", "minimum": 0, "maximum": 128},
+        "included": {"type": "integer", "minimum": 0, "maximum": 128},
+        "withheld": {"type": "integer", "minimum": 0, "maximum": 128},
+        "counts_by_reason": {"$ref": "#/$defs/countsByReason"},
+        "structural_unsupported_rate_q18": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/q18"}]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"total": {"const": 0}}, "required": ["total"]},
+          "then": {
+            "properties": {
+              "included": {"const": 0},
+              "withheld": {"const": 0},
+              "structural_unsupported_rate_q18": {"type": "null"}
+            }
+          },
+          "else": {"properties": {"structural_unsupported_rate_q18": {"$ref": "#/$defs/q18"}}}
+        }
+      ]
+    },
+    "attentionQualityScorecard": {
+      "const": {
+        "status": "not_evaluated",
+        "reason": "no_preregistered_attention_outcomes",
+        "graded_items": 0,
+        "precision_q18": null,
+        "recall_q18": null,
+        "false_positive_rate_q18": null,
+        "ndcg_q18": null
+      }
+    },
+    "coverage": {
+      "description": "Unsigned packet coverage stays false; external W4 joins and exact source bytes are authenticated only by the invocation-local join validator.",
+      "const": {
+        "w4_exact_join_validated": false,
+        "citation_byte_closure_validated": false,
+        "evidence_population_complete": false,
+        "citation_semantic_entailment_evaluated": false,
+        "attention_quality_evaluated": false
+      }
+    }
+  }
+}
