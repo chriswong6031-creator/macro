@@ -13,6 +13,18 @@ This repository is operated by multiple Claude accounts and Codex sessions. Repo
 3. Treat `/Users/chriswong/Documents/Cluade/charting-app` as the connected Terminal
    repository. Authentication, subscriptions, data contracts, APIs, and deployment
    changes may require checking both repositories.
+4. **Company strategic state lives in the Mastermind repo**
+   (`/Users/chriswong/Documents/Cluade/Mastermind`), not here:
+   `config/strategic_state.yml` — current phase, north star, P0 objectives, resource
+   policy, standing constraints — read via
+   `control_plane.strategic_state.load_strategic_state()`. The worker contract
+   (hierarchy Chairman Chris → AI CEO GPT-5.6 Sol → COO Fable → workers; the
+   six-layer source-of-truth order; the completion rule) is Mastermind
+   `AGENTS.md` § "Executive contract". Macro fleet law below is unchanged and still
+   governs sessions here. **Never create a second strategic state, control plane, or
+   authority map in this repository** — `duplicate_control_planes` is a standing
+   prohibition. See `research/EXECUTIVE_OS_PHASE0_CENSUS.md` (PR #5356) and
+   `Mastermind/research/EXECUTIVE_OS_STRATEGIC_STATE_BOOTSTRAP.md`.
 
 ## Navigation source-of-truth
 
@@ -349,7 +361,7 @@ files, then refuses a normal stop while session-created work is uncommitted,
 unpushed, unmerged, awaiting a render, or absent from production.
 The dirty snapshot judges only this checkout's own work. Untracked entries under
 another fleet's worktree roots (`.claude/worktrees/`, `.claire/worktrees/`,
-`.codex-worktrees/`) are excluded — a blocked session can neither commit another
+`.codex/worktrees/`, `.codex-worktrees/`) are excluded — a blocked session can neither commit another
 session's checkout nor delete it without destroying live work — and a path that
 LEAVES `git status`, whether committed or newly ignored, stops counting as
 outstanding. Both stay fail-closed: tracked content under those roots gates
