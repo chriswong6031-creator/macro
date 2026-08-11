@@ -242,7 +242,7 @@ def test_fixed_cohort_contract_has_no_operational_wiring() -> None:
         assert _FIXED_COHORT_CONTRACT_ID not in path.read_text(encoding="utf-8")
 
 
-def test_launch_slo_manifest_covers_exact_critical_set_without_arming_it() -> None:
+def test_launch_slo_manifest_schedules_the_exact_critical_set_without_widening_authority() -> None:
     registry = _load_yaml(SOURCE_REGISTRY)
     manifest = _load_yaml(LAUNCH_SLO_MANIFEST)
     critical = {
@@ -253,10 +253,12 @@ def test_launch_slo_manifest_covers_exact_critical_set_without_arming_it() -> No
 
     assert critical == {"clinicaltrials_gov_v2"}
     assert {row["source_id"] for row in manifest["sources"]} == critical
-    assert manifest["state"] == "pre_soak_unarmed"
-    assert manifest["sources"][0]["activation_state"] == "dark_unarmed"
+    assert manifest["state"] == "soak_scheduled"
+    assert manifest["sources"][0]["activation_state"] == "armed"
     assert registry["b0a_canary"]["default_enabled"] is False
-    assert manifest["soak"]["window_start"] is None
+    assert manifest["soak"]["window_start"] == "2026-08-12T02:00:00Z"
+    assert manifest["soak"]["window_end"] == "2026-08-26T02:00:00Z"
+    assert manifest["soak"]["scheduling_blockers"] == []
     assert manifest["soak"]["source_results"] == []
     assert manifest["soak"]["aggregate_passed"] is False
     assert all(value is False for value in manifest["authority"].values())
