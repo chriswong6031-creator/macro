@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import copy
 import json
+import shutil
 import time as wall_time
 from collections.abc import Mapping
 from datetime import date, datetime, timedelta, timezone, tzinfo
@@ -598,6 +599,23 @@ def test_clock_normalization_failure_is_one_w2c_contract_error() -> None:
         match="writer clock sample cannot be normalized to UTC",
     ) as failure:
         accrual._sample_clock(lambda: broken)
+    assert isinstance(failure.value.__cause__, AttributeError)
+
+
+def test_expected_sessions_due_seals_its_public_clock_boundary() -> None:
+    hostile = HostileDateTime(2026, 8, 25, 5, tzinfo=timezone.utc)
+    with pytest.raises(
+        accrual.MarketMemoryExperienceStoreError,
+        match="expected sessions clock must be one exact timezone-aware datetime",
+    ):
+        accrual.expected_sessions_due(hostile)
+
+    broken = datetime(2026, 8, 25, 5, tzinfo=BrokenClockZone())
+    with pytest.raises(
+        accrual.MarketMemoryExperienceStoreError,
+        match="expected sessions clock cannot be normalized to UTC",
+    ) as failure:
+        accrual.expected_sessions_due(broken)
     assert isinstance(failure.value.__cause__, AttributeError)
 
 
@@ -1340,6 +1358,7 @@ def test_admission_artifacts_recover_every_publication_boundary(
     opportunity = _read(experience / "opportunities" / "2026-08-17.json")
     assert opportunity["disposition"] == "admitted"
     assert (experience / "population_HEAD.json").is_file()
+    assert len(list((experience / "population_receipts").glob("*.json"))) == 1
     assert not list(experience.rglob("*.pending"))
     frozen = {
         str(path.relative_to(experience)): path.read_bytes()
@@ -1358,6 +1377,194 @@ def test_admission_artifacts_recover_every_publication_boundary(
         for path in experience.rglob("*")
         if path.is_file()
     } == frozen
+
+
+def test_durable_unheaded_population_is_adopted_once_through_terminal_verifier(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    experience, trusted_root, technical_root = _initialize_sources(
+        tmp_path, monkeypatch
+    )
+    _install(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+    )
+    original_boundary = accrual._publish_boundary
+
+    def crash_after_population_receipt(stage: str, path: Path) -> None:
+        if (
+            stage == "temporary_unlinked"
+            and path.parent.name == "population_receipts"
+        ):
+            raise InjectedDurabilityCrash("population durable before HEAD")
+
+    monkeypatch.setattr(
+        accrual, "_publish_boundary", crash_after_population_receipt
+    )
+    with pytest.raises(InjectedDurabilityCrash, match="before HEAD"):
+        _run(
+            tmp_path,
+            experience=experience,
+            trusted_root=trusted_root,
+            technical_root=technical_root,
+            clock="2026-08-18T04:35:00Z",
+        )
+    orphan_paths = list((experience / "population_receipts").glob("*.json"))
+    assert len(orphan_paths) == 1
+    orphan_body = orphan_paths[0].read_bytes()
+    orphan = _read(orphan_paths[0])
+    assert orphan["observed_at"] == "2026-08-18T04:35:00Z"
+    assert not (experience / "population_HEAD.json").exists()
+
+    monkeypatch.setattr(accrual, "_publish_boundary", original_boundary)
+    recovered = _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-18T04:36:00Z",
+    )
+    assert recovered.population_receipt_id == orphan["population_receipt_id"]
+    assert orphan_paths[0].read_bytes() == orphan_body
+    head = _read(experience / "population_HEAD.json")
+    assert head["population_receipt_id"] == orphan["population_receipt_id"]
+    assert len(list((experience / "population_receipts").glob("*.json"))) == 1
+
+    terminal = _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2027-03-03T04:46:00Z",
+    )
+    assert terminal.population_receipt_id is not None
+    population_paths = list(
+        (experience / "population_receipts").glob("*.json")
+    )
+    assert len(population_paths) == 2
+    verified = accrual.verify_terminal_ledger(
+        ROOT, experience_root=experience
+    )
+    assert verified is not None
+
+    terminal_head_body = (experience / "population_HEAD.json").read_bytes()
+    initial_head = {
+        "schema": accrual.POPULATION_HEAD_SCHEMA,
+        "population_receipt_id": orphan["population_receipt_id"],
+        "population_receipt_sha256": accrual._digest(orphan_body),
+        "population_receipt_bytes": len(orphan_body),
+    }
+    (experience / "population_HEAD.json").write_bytes(
+        accrual._canonical_bytes(initial_head)
+    )
+    rolled_back = {
+        str(path.relative_to(experience)): (
+            path.read_bytes(), path.stat().st_mtime_ns
+        )
+        for path in experience.rglob("*")
+        if path.is_file()
+    }
+    with pytest.raises(
+        accrual.MarketMemoryExperienceStoreError,
+        match="locked writer",
+    ):
+        accrual.verify_terminal_ledger(ROOT, experience_root=experience)
+    assert {
+        str(path.relative_to(experience)): (
+            path.read_bytes(), path.stat().st_mtime_ns
+        )
+        for path in experience.rglob("*")
+        if path.is_file()
+    } == rolled_back
+    (experience / "population_HEAD.json").write_bytes(terminal_head_body)
+    assert accrual.verify_terminal_ledger(
+        ROOT, experience_root=experience
+    ) is not None
+
+
+def test_population_recovery_rejects_two_unheaded_children_without_head_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    experience, trusted_root, technical_root = _initialize_sources(
+        tmp_path, monkeypatch
+    )
+    _install(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+    )
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-18T04:35:00Z",
+    )
+    registration = accrual.load_registration(ROOT)
+    head_path = experience / "population_HEAD.json"
+    head_body = head_path.read_bytes()
+    head = _read(head_path)
+    current = _read(
+        experience
+        / "population_receipts"
+        / f"{head['population_receipt_id']}.json"
+    )
+    opportunity = _read(
+        experience / "opportunities" / "2026-08-17.json"
+    )
+    pins, pin_observed_at = accrual._owner_pins_from_population_receipt(
+        current
+    )
+    for index, observed_at in enumerate((
+        "2026-08-18T04:36:00Z",
+        "2026-08-18T04:37:00Z",
+    )):
+        child = accrual._new_population_receipt(
+            registration,
+            root=experience,
+            expected_sessions=[ACTIVATION],
+            opportunities=[opportunity],
+            owner_pins=pins,
+            owner_pin_observed_at=pin_observed_at,
+            terminal_receipt=None,
+            observed_at=observed_at,
+            writer_commit=COMMIT,
+            previous_population_receipt_id=current["population_receipt_id"],
+        )
+        child_path = (
+            experience
+            / "population_receipts"
+            / f"{child['population_receipt_id']}.json"
+        )
+        child_path.write_bytes(accrual._canonical_bytes(child))
+        if index == 0:
+            with pytest.raises(
+                accrual.MarketMemoryExperienceStoreError,
+                match="predecessor semantics drift",
+            ):
+                accrual._current_population_receipt(
+                    experience,
+                    registration=registration,
+                    expected_sessions=[ACTIVATION],
+                    opportunities=[opportunity],
+                    recover_unheaded=True,
+                )
+            assert head_path.read_bytes() == head_body
+    with pytest.raises(
+        accrual.MarketMemoryExperienceStoreError,
+        match="multiple or branched",
+    ):
+        accrual._current_population_receipt(
+            experience,
+            registration=registration,
+            expected_sessions=[ACTIVATION],
+            opportunities=[opportunity],
+            recover_unheaded=True,
+        )
+    assert head_path.read_bytes() == head_body
 
 
 @pytest.mark.parametrize("stage", _IMMUTABLE_PUBLICATION_STAGES)
@@ -2465,6 +2672,201 @@ def test_first_maturity_pin_consumes_full_candidate_suffix_after_each_crash(
         path.name: path.read_bytes()
         for path in outcome_directory.glob("*.json")
     } == frozen
+
+
+@pytest.mark.parametrize("crash_after_correction", [1, 2])
+def test_terminal_window_suffix_resumes_after_deadline_before_verified_seal(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    crash_after_correction: int,
+) -> None:
+    experience, trusted_root, technical_root = _initialize_sources(
+        tmp_path, monkeypatch
+    )
+    _install(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+    )
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-18T04:35:00Z",
+    )
+    target_session = date(2026, 8, 24)
+    _capture_technical(
+        tmp_path,
+        monkeypatch,
+        session=target_session,
+        observed_at=datetime(2026, 8, 25, 4, 31, tzinfo=timezone.utc),
+        end_close=150.0,
+    )
+    _run(
+        tmp_path,
+        experience=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        clock="2026-08-25T04:35:00Z",
+    )
+    for minute, close in ((31, 151.0), (32, 152.0)):
+        _capture_technical(
+            tmp_path,
+            monkeypatch,
+            session=target_session,
+            observed_at=datetime(
+                2026, 8, 26, 4, minute, tzinfo=timezone.utc
+            ),
+            end_close=close,
+        )
+
+    if crash_after_correction == 1:
+        omitted_before_first = (
+            tmp_path
+            / "terminal-suffix-omitted-before-first"
+            / "state"
+            / "experience-v1"
+        )
+        shutil.copytree(experience, omitted_before_first)
+        original_append = accrual._append_later_target_revisions
+        monkeypatch.setattr(
+            accrual,
+            "_append_later_target_revisions",
+            lambda *_args, **_kwargs: [],
+        )
+        with pytest.raises(
+            accrual.MarketMemoryExperienceStoreError,
+            match="terminal generation candidate census is incomplete",
+        ):
+            accrual.accrue_spy_experience(
+                ROOT,
+                experience_root=omitted_before_first,
+                trusted_root=trusted_root,
+                technical_root=technical_root,
+                writer_commit=COMMIT,
+                clock=_clock("2027-03-03T04:35:00Z"),
+            )
+        with pytest.raises(
+            accrual.MarketMemoryExperienceStoreError,
+            match="terminal generation candidate census is incomplete",
+        ):
+            accrual.verify_terminal_ledger(
+                ROOT, experience_root=omitted_before_first
+            )
+        monkeypatch.setattr(
+            accrual, "_append_later_target_revisions", original_append
+        )
+
+    original_write = accrual._write_outcome
+    correction_writes = 0
+
+    def crash_after_durable_correction(root: Path, row: dict) -> None:
+        nonlocal correction_writes
+        original_write(root, row)
+        if row["revision_number"] <= 1:
+            return
+        correction_writes += 1
+        if correction_writes == crash_after_correction:
+            raise InjectedDurabilityCrash("terminal correction durable")
+
+    monkeypatch.setattr(
+        accrual, "_write_outcome", crash_after_durable_correction
+    )
+    with pytest.raises(InjectedDurabilityCrash, match="correction durable"):
+        _run(
+            tmp_path,
+            experience=experience,
+            trusted_root=trusted_root,
+            technical_root=technical_root,
+            clock="2027-03-03T04:35:00Z",
+        )
+    monkeypatch.setattr(accrual, "_write_outcome", original_write)
+
+    def forbidden_owner(*_args, **_kwargs):  # pragma: no cover - guard
+        raise AssertionError("post-deadline suffix recovery consulted owners")
+
+    monkeypatch.setattr(accrual, "_pin_owners", forbidden_owner)
+    if crash_after_correction == 1:
+        truncated = (
+            tmp_path
+            / "truncated-terminal-ledger"
+            / "state"
+            / "experience-v1"
+        )
+        shutil.copytree(experience, truncated)
+        original_append = accrual._append_later_target_revisions
+        monkeypatch.setattr(
+            accrual, "_append_later_target_revisions", lambda *_args, **_kwargs: []
+        )
+        with pytest.raises(
+            accrual.MarketMemoryExperienceStoreError,
+            match="candidate census is incomplete",
+        ):
+            accrual.accrue_spy_experience(
+                ROOT,
+                experience_root=truncated,
+                trusted_root=trusted_root,
+                technical_root=technical_root,
+                writer_commit=COMMIT,
+                clock=_clock("2027-03-03T04:46:00Z"),
+                sleeper=forbidden_owner,
+            )
+        with pytest.raises(
+            accrual.MarketMemoryExperienceStoreError,
+            match="candidate census is incomplete",
+        ):
+            accrual.verify_terminal_ledger(ROOT, experience_root=truncated)
+        monkeypatch.setattr(
+            accrual, "_append_later_target_revisions", original_append
+        )
+    resumed = accrual.accrue_spy_experience(
+        ROOT,
+        experience_root=experience,
+        trusted_root=trusted_root,
+        technical_root=technical_root,
+        writer_commit=COMMIT,
+        clock=_clock("2027-03-03T04:46:00Z"),
+        sleeper=forbidden_owner,
+    )
+    assert resumed.population_receipt_id is not None
+    opportunity = _read(
+        experience / "opportunities" / "2026-08-17.json"
+    )
+    outcome_directory = (
+        experience / "outcomes" / opportunity["opportunity_id"]
+    )
+    rows = [
+        _read(path)
+        for path in sorted(outcome_directory.glob("*.json"))
+    ]
+    assert [
+        row["target_mark"]["end_close_binary64_hex"] for row in rows
+    ] == [value.hex() for value in (150.0, 151.0, 152.0)]
+    assert rows[-1]["target_generation_progress"][
+        "consumed_capture_ids"
+    ][-2:] == [
+        rows[-2]["target_capture"]["capture_id"],
+        rows[-1]["target_capture"]["capture_id"],
+    ]
+    marker = _read(experience / "TERMINAL.json")
+    population = _read(
+        experience
+        / "population_receipts"
+        / f"{marker['population_receipt_id']}.json"
+    )
+    assert population["terminal"]["receipt"]["disposition"] == (
+        "stable_terminal_generation_observed"
+    )
+    assert population["terminal"][
+        "final_source_revision_census_authenticated"
+    ] is True
+    verified = accrual.verify_terminal_ledger(
+        ROOT, experience_root=experience
+    )
+    assert verified is not None
+    assert verified["final_source_revision_census_authenticated"] is True
 
 
 def test_population_exposes_completeness_coverage_and_finite_auditability(

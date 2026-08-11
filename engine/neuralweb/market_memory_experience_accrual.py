@@ -860,7 +860,7 @@ def _target_session(session: date) -> date:
 
 
 def expected_sessions_due(now: datetime) -> list[date]:
-    observed = now.astimezone(timezone.utc)
+    observed = _exact_utc_datetime(now, field="expected sessions clock")
     return [
         session
         for session in nyse_calendar.sessions_between(
@@ -2505,6 +2505,142 @@ def _publish_technical_view(root: Path, view: Mapping[str, Any] | None) -> None:
         "technical_generation_id": view["technical_generation"]["generation_id"],
     }
     _replace_head(_technical_view_head_path(root), _canonical_bytes(head))
+
+
+def _recover_last_registered_run_view(
+    root: Path, *, registration: Registration
+) -> _RunOwnerView | None:
+    """Recover the last durable pre-terminal owner view under writer.lock.
+
+    A retry after the terminal window must finish an already-authenticated
+    correction suffix from the immutable local view, not replace that evidence
+    with a new post-deadline owner observation.  The view chain is authenticated
+    first; equal-clock or later out-of-window descendants are ambiguous and
+    fail closed.
+    """
+
+    tip = _recover_technical_view_chain_head(
+        root, registration=registration, pin=None
+    )
+    if tip is None:
+        return None
+    views: list[dict[str, Any]] = []
+    reached: set[str] = set()
+    cursor: dict[str, Any] | None = tip
+    while cursor is not None:
+        view_id = str(cursor["technical_view_id"])
+        if view_id in reached:
+            _fail("W2C persisted technical-view recovery is cyclic")
+        reached.add(view_id)
+        views.append(cursor)
+        predecessor_id = cursor["previous_technical_view_id"]
+        if predecessor_id is None:
+            cursor = None
+            continue
+        raw, _body = _read_json_path(
+            _safe_path(
+                root, "technical_views", f"{predecessor_id}.json"
+            ),
+            limit=_MAX_TECHNICAL_VIEW_BYTES,
+            label="W2C persisted technical-view predecessor",
+        )
+        cursor = _validate_technical_view(raw, registration=registration)
+        if cursor["technical_view_id"] != predecessor_id:
+            _fail("W2C persisted technical-view predecessor path drift")
+
+    _terminal_opened, terminal_deadline = _terminal_window()
+
+    def registered_daily_window(value: datetime) -> bool:
+        opened = datetime.combine(
+            value.date(), time(4, 30), tzinfo=timezone.utc
+        )
+        return opened <= value <= opened + timedelta(minutes=15)
+
+    eligible = [
+        (view, _parse_utc(
+            view["pair_observed_at"], field="persisted owner pair"
+        ))
+        for view in views
+        if registered_daily_window(
+            _parse_utc(
+                view["pair_observed_at"], field="persisted owner pair"
+            )
+        )
+        and _parse_utc(
+            view["pair_observed_at"], field="persisted owner pair"
+        ) <= terminal_deadline
+    ]
+    if not eligible:
+        return None
+    latest_clock = max(clock for _view, clock in eligible)
+    latest = [view for view, clock in eligible if clock == latest_clock]
+    if len(latest) != 1:
+        _fail("W2C persisted owner-pair clock is ambiguous")
+    selected = latest[0]
+    if any(
+        _parse_utc(view["pair_observed_at"], field="later persisted owner pair")
+        > latest_clock
+        for view in views
+    ):
+        _fail("W2C persisted owner-pair recovery has later out-of-window facts")
+
+    ancestry_generation_ids: list[str] = []
+    selected_seen = False
+    for view in views:
+        if view["technical_view_id"] == selected["technical_view_id"]:
+            selected_seen = True
+            continue
+        if not selected_seen:
+            continue
+        generation_id = str(view["technical_generation"]["generation_id"])
+        if generation_id not in ancestry_generation_ids:
+            ancestry_generation_ids.append(generation_id)
+
+    entries = tuple(
+        technical_store.PinnedTechnicalCaptureIndexEntry(
+            **dict(row["index"])
+        )
+        for row in selected["captures"]
+    )
+    technical_generation = selected["technical_generation"]
+    technical_pin = technical_store.PinnedTechnicalGenerationSnapshot(
+        profile=str(technical_generation["profile"]),
+        store_id=str(technical_generation["store_id"]),
+        generation_id=str(technical_generation["generation_id"]),
+        generation_sha256=str(technical_generation["generation_sha256"]),
+        captures=entries,
+        ancestry_generation_ids=tuple(ancestry_generation_ids),
+    )
+    trusted_generation = selected["trusted_generation"]
+    trusted_pin = _ReferenceGenerationPin(
+        profile=str(trusted_generation["profile"]),
+        store_id=str(trusted_generation["store_id"]),
+        generation_id=str(trusted_generation["generation_id"]),
+        generation_sha256=str(trusted_generation["generation_sha256"]),
+        captures=(None,) * int(trusted_generation["capture_count"]),
+    )
+    by_session: dict[str, list[_TechnicalCandidate]] = {}
+    for row in selected["captures"]:
+        reference = copy.deepcopy(dict(row["reference"]))
+        by_session.setdefault(str(row["index"]["session"]), []).append(
+            _TechnicalCandidate(
+                reference=reference,
+                end_close=float.fromhex(
+                    reference["end_close_binary64_hex"]
+                ),
+            )
+        )
+    return _RunOwnerView(
+        pin_observed_at=str(selected["pair_observed_at"]),
+        stable=True,
+        reader=None,
+        pins=OwnerPins(trusted=trusted_pin, technical=technical_pin),
+        trusted_candidates_by_session={},
+        technical_candidates_by_session={
+            session: tuple(candidates)
+            for session, candidates in by_session.items()
+        },
+    )
 
 
 def _owner_clock_tie(values: list[Any], *, clock_field: str) -> bool:
@@ -5889,6 +6025,7 @@ def _current_population_receipt(
     registration: Registration | None = None,
     expected_sessions: list[date] | None = None,
     opportunities: list[dict[str, Any]] | None = None,
+    recover_unheaded: bool = False,
 ) -> dict[str, Any] | None:
     if registration is not None and (
         expected_sessions is None or opportunities is None
@@ -5919,12 +6056,62 @@ def _current_population_receipt(
             for session in receipt_sessions
             if session.isoformat() in opportunity_by_session
         ]
-        return validate_population_receipt(
+        clean = validate_population_receipt(
             raw,
             registration=registration,
             expected_sessions=receipt_sessions,
             opportunities=receipt_opportunities,
         )
+        if clean.get("owner_generation_refs") is None:
+            receipt_pins = None
+            receipt_pin_observed_at = None
+        else:
+            receipt_pins, receipt_pin_observed_at = (
+                _owner_pins_from_population_receipt(clean)
+            )
+        recomputed = _new_population_receipt(
+            registration,
+            root=root,
+            expected_sessions=receipt_sessions,
+            opportunities=receipt_opportunities,
+            owner_pins=receipt_pins,
+            owner_pin_observed_at=receipt_pin_observed_at,
+            terminal_receipt=(
+                clean["terminal"]["receipt"]
+                if clean["terminal"]["status"] == "sealed"
+                else None
+            ),
+            observed_at=clean["observed_at"],
+            writer_commit=clean["writer_commit"],
+            previous_population_receipt_id=clean[
+                "previous_population_receipt_id"
+            ],
+        )
+        if _canonical_bytes(recomputed) != _canonical_bytes(clean):
+            _fail("W2C population recovery receipt differs from its as-of ledger")
+        return clean
+
+    def validate_predecessor(
+        descendant: Mapping[str, Any], predecessor: Mapping[str, Any]
+    ) -> None:
+        predecessor_sessions = predecessor["expected_sessions"]
+        descendant_sessions = descendant["expected_sessions"]
+        if (
+            _parse_utc(
+                descendant["observed_at"],
+                field="population recovery descendant observed_at",
+            )
+            <= _parse_utc(
+                predecessor["observed_at"],
+                field="population recovery predecessor observed_at",
+            )
+            or len(descendant_sessions) < len(predecessor_sessions)
+            or descendant_sessions[:len(predecessor_sessions)]
+            != predecessor_sessions
+            or predecessor["terminal"]["status"] == "sealed"
+            or _same_population_state(descendant, predecessor)
+        ):
+            _fail("W2C population recovery predecessor semantics drift")
     receipts_directory = _safe_path(root, "population_receipts")
     if registration is not None and receipts_directory.exists():
         for item in sorted(receipts_directory.iterdir()):
@@ -5934,6 +6121,8 @@ def _current_population_receipt(
             )
             if match is None:
                 continue
+            if not recover_unheaded:
+                _fail("W2C read-only population state contains a pending receipt")
             final_path = _safe_path(root, "population_receipts", match.group(1))
 
             def validate_pending_receipt(
@@ -5989,12 +6178,100 @@ def _current_population_receipt(
         receipt_holder[:] = [clean]
         return head
 
-    head = _recover_mutable_head(
-        _safe_path(root, "population_HEAD.json"),
-        label="W2C population HEAD",
-        validator=validate_head,
+    head_path = _safe_path(root, "population_HEAD.json")
+    if recover_unheaded:
+        head = _recover_mutable_head(
+            head_path,
+            label="W2C population HEAD",
+            validator=validate_head,
+        )
+    else:
+        if _pending_create_paths(head_path):
+            _fail("W2C read-only population state contains a pending HEAD")
+        if head_path.exists() or head_path.is_symlink():
+            raw_head, head_body = _read_json_path(
+                head_path,
+                limit=_MAX_HEAD_BYTES,
+                label="W2C population HEAD",
+            )
+            head = validate_head(raw_head, head_body)
+        else:
+            head = None
+    current = None if head is None else receipt_holder[0]
+    if registration is None or not receipts_directory.exists():
+        return current
+
+    receipts_by_id: dict[str, dict[str, Any]] = {}
+    receipt_bodies_by_id: dict[str, bytes] = {}
+    for item in sorted(receipts_directory.iterdir()):
+        if not re.fullmatch(r"mmspyexppop_[a-f0-9]{64}\.json", item.name):
+            _fail("W2C population recovery inventory is noncanonical")
+        raw, body = _read_json_path(
+            item,
+            limit=_MAX_POPULATION_BYTES,
+            label="W2C population recovery receipt",
+        )
+        clean = validate_with_receipt_denominator(raw)
+        receipt_id = str(clean["population_receipt_id"])
+        if item.name != f"{receipt_id}.json" or receipt_id in receipts_by_id:
+            _fail("W2C population recovery receipt path/ID is ambiguous")
+        receipts_by_id[receipt_id] = clean
+        receipt_bodies_by_id[receipt_id] = body
+
+    reached: set[str] = set()
+    cursor = (
+        str(current["population_receipt_id"])
+        if current is not None
+        else None
     )
-    return None if head is None else receipt_holder[0]
+    while cursor is not None:
+        if cursor in reached or cursor not in receipts_by_id:
+            _fail("W2C population recovery predecessor chain is cyclic or gapped")
+        reached.add(cursor)
+        row = receipts_by_id[cursor]
+        predecessor_id = row["previous_population_receipt_id"]
+        if predecessor_id is not None:
+            predecessor_key = str(predecessor_id)
+            if predecessor_key not in receipts_by_id:
+                _fail("W2C population recovery predecessor chain is cyclic or gapped")
+            validate_predecessor(row, receipts_by_id[predecessor_key])
+            cursor = predecessor_key
+        else:
+            cursor = None
+
+    unheaded_ids = set(receipts_by_id) - reached
+    if not unheaded_ids:
+        return current
+    if not recover_unheaded:
+        _fail("W2C population recovery requires the locked writer")
+    if len(unheaded_ids) != 1:
+        _fail("W2C population recovery found multiple or branched descendants")
+    candidate = receipts_by_id[unheaded_ids.pop()]
+    expected_predecessor_id = (
+        str(current["population_receipt_id"])
+        if current is not None
+        else None
+    )
+    if candidate["previous_population_receipt_id"] != expected_predecessor_id:
+        _fail("W2C population recovery found a noncontiguous descendant")
+    if current is not None:
+        validate_predecessor(candidate, current)
+        if _same_population_state(candidate, current):
+            _fail("W2C population recovery found a redundant descendant")
+    candidate_body = receipt_bodies_by_id[
+        str(candidate["population_receipt_id"])
+    ]
+    candidate_head = {
+        "schema": POPULATION_HEAD_SCHEMA,
+        "population_receipt_id": candidate["population_receipt_id"],
+        "population_receipt_sha256": _digest(candidate_body),
+        "population_receipt_bytes": len(candidate_body),
+    }
+    _replace_head(
+        _safe_path(root, "population_HEAD.json"),
+        _canonical_bytes(candidate_head),
+    )
+    return candidate
 
 
 def _owner_pins_from_population_receipt(
@@ -6257,10 +6534,21 @@ def _recover_terminal_marker_if_ready(
     """Finish final population -> marker publication under writer.lock."""
 
     population_head_path = _safe_path(root, "population_HEAD.json")
+    population_receipts_directory = _safe_path(root, "population_receipts")
+    try:
+        has_population_receipt = (
+            population_receipts_directory.exists()
+            and any(population_receipts_directory.iterdir())
+        )
+    except OSError as exc:
+        raise MarketMemoryExperienceStoreError(
+            "W2C terminal population recovery inventory cannot be read"
+        ) from exc
     if not (
         population_head_path.exists()
         or population_head_path.is_symlink()
         or _pending_create_paths(population_head_path)
+        or has_population_receipt
     ):
         return None
 
@@ -6280,6 +6568,7 @@ def _recover_terminal_marker_if_ready(
         registration=registration,
         expected_sessions=sessions,
         opportunities=opportunities,
+        recover_unheaded=True,
     )
     if current is None or current.get("terminal", {}).get("status") != "sealed":
         return None
@@ -6393,6 +6682,7 @@ def _authenticate_terminal_ledger(
     technical_generation_facts: dict[str, dict[str, Any]] = {}
     technical_generation_capture_facts: set[tuple[str, str]] = set()
     population_owner_ref_facts: list[dict[str, Any]] = []
+    outcome_chains_by_opportunity_id: dict[str, list[dict[str, Any]]] = {}
 
     def record_technical_generation(
         generation: Mapping[str, Any], *, label: str
@@ -6511,6 +6801,7 @@ def _authenticate_terminal_ledger(
         )
         if not chain:
             _fail("W2C terminal admitted episode lacks a maturity receipt")
+        outcome_chains_by_opportunity_id[str(row["opportunity_id"])] = chain
         for revision in chain:
             target_generation_pin = revision.get("target_generation_pin")
             target_generation_id = None
@@ -6915,6 +7206,157 @@ def _authenticate_terminal_ledger(
                 for view in generation_views
             ):
                 _fail("W2C terminal technical capture is absent from its pinned view")
+        for opportunity in opportunities:
+            if opportunity["disposition"] != "admitted":
+                continue
+            chain = outcome_chains_by_opportunity_id[
+                str(opportunity["opportunity_id"])
+            ]
+            checked_pins: set[tuple[str, str]] = set()
+            for revision in chain:
+                target_pin = revision.get("target_generation_pin")
+                if not isinstance(target_pin, Mapping):
+                    continue
+                pin_key = (
+                    str(target_pin["generation_id"]),
+                    str(target_pin["pin_observed_at"]),
+                )
+                if pin_key in checked_pins:
+                    continue
+                checked_pins.add(pin_key)
+                last_generation_revision = max(
+                    index
+                    for index, row in enumerate(chain)
+                    if isinstance(row.get("target_generation_pin"), Mapping)
+                    and row["target_generation_pin"]["generation_id"]
+                    == target_pin["generation_id"]
+                    and row["target_generation_pin"]["pin_observed_at"]
+                    == target_pin["pin_observed_at"]
+                )
+                generation = {
+                    key: target_pin[key]
+                    for key in (
+                        "profile", "store_id", "generation_id",
+                        "generation_sha256", "capture_count",
+                    )
+                }
+                exact_views = [
+                    view
+                    for view in technical_views_by_generation_id.get(
+                        str(target_pin["generation_id"]), []
+                    )
+                    if view["technical_generation"] == generation
+                    and _parse_utc(
+                        view["pair_observed_at"],
+                        field="outcome generation view owner pair",
+                    )
+                    <= _parse_utc(
+                        target_pin["pin_observed_at"],
+                        field="outcome generation pin owner pair",
+                    )
+                ]
+                if not exact_views:
+                    _fail(
+                        "W2C terminal outcome generation pin lacks its authenticated view"
+                    )
+                expected_candidate_orders = {
+                    tuple(
+                        str(view_row["index"]["capture_id"])
+                        for view_row in view["captures"]
+                        if view_row["index"]["session"]
+                        == opportunity["target_session"]
+                    )
+                    for view in exact_views
+                }
+                if len(expected_candidate_orders) != 1:
+                    _fail(
+                        "W2C terminal exact generation views disagree on candidates"
+                    )
+                expected_capture_ids = set(
+                    next(iter(expected_candidate_orders))
+                )
+                consumed_capture_ids = {
+                    str(capture_id)
+                    for prior in chain[:last_generation_revision + 1]
+                    if isinstance(
+                        prior.get("target_generation_progress"), Mapping
+                    )
+                    for capture_id in prior["target_generation_progress"][
+                        "consumed_capture_ids"
+                    ]
+                }
+                if consumed_capture_ids != expected_capture_ids:
+                    _fail(
+                        "W2C terminal outcome generation candidate census is incomplete"
+                    )
+        terminal_receipt = current["terminal"]["receipt"]
+        if (
+            terminal_receipt["disposition"]
+            == "stable_terminal_generation_observed"
+        ):
+            terminal_pin = terminal_receipt["technical_generation_pin"]
+            terminal_generation = {
+                key: terminal_pin[key]
+                for key in (
+                    "profile", "store_id", "generation_id",
+                    "generation_sha256", "capture_count",
+                )
+            }
+            terminal_views = [
+                view
+                for view in technical_views_by_generation_id.get(
+                    str(terminal_pin["generation_id"]), []
+                )
+                if view["technical_generation"] == terminal_generation
+                and _parse_utc(
+                    view["pair_observed_at"],
+                    field="terminal generation view owner pair",
+                )
+                <= _parse_utc(
+                    terminal_pin["pin_observed_at"],
+                    field="terminal generation pin owner pair",
+                )
+            ]
+            if not terminal_views:
+                _fail(
+                    "W2C stable terminal generation lacks its authenticated view"
+                )
+            for opportunity in opportunities:
+                if opportunity["disposition"] != "admitted":
+                    continue
+                expected_candidate_orders = {
+                    tuple(
+                        str(view_row["index"]["capture_id"])
+                        for view_row in view["captures"]
+                        if view_row["index"]["session"]
+                        == opportunity["target_session"]
+                    )
+                    for view in terminal_views
+                }
+                if len(expected_candidate_orders) != 1:
+                    _fail(
+                        "W2C terminal generation views disagree on candidates"
+                    )
+                expected_capture_ids = set(
+                    next(iter(expected_candidate_orders))
+                )
+                chain = outcome_chains_by_opportunity_id[
+                    str(opportunity["opportunity_id"])
+                ]
+                consumed_capture_ids = {
+                    str(capture_id)
+                    for revision in chain
+                    if isinstance(
+                        revision.get("target_generation_progress"), Mapping
+                    )
+                    for capture_id in revision["target_generation_progress"][
+                        "consumed_capture_ids"
+                    ]
+                }
+                if consumed_capture_ids != expected_capture_ids:
+                    _fail(
+                        "W2C terminal generation candidate census is incomplete"
+                    )
         for refs in population_owner_ref_facts:
             pin_observed_at = _parse_utc(
                 refs["pin_observed_at"],
@@ -7203,18 +7645,26 @@ def accrue_spy_experience(
                 root, registration=registration
             )
         )
-        run_view = _observe_run_owner_view(
-            root,
-            registration=registration,
-            reader=reader,
-            initial_pins=initial_pins,
-            trusted_root=trusted_root,
-            technical_root=technical_root,
-            clock=clock_fn,
-            retry_deadline=_active_retry_deadline(now),
-            sleeper=sleep_fn,
-            require_capacity_preflight=activation_preflight_required,
+        terminal_opened, terminal_deadline = _terminal_window()
+        recovered_run_view = (
+            _recover_last_registered_run_view(
+                root, registration=registration
+            )
+            if now > terminal_deadline
+            else None
         )
+        run_view = recovered_run_view or _observe_run_owner_view(
+                root,
+                registration=registration,
+                reader=reader,
+                initial_pins=initial_pins,
+                trusted_root=trusted_root,
+                technical_root=technical_root,
+                clock=clock_fn,
+                retry_deadline=_active_retry_deadline(now),
+                sleeper=sleep_fn,
+                require_capacity_preflight=activation_preflight_required,
+            )
         _cleanup_unsealed_prepared_staging(
             root, registration=registration
         )
@@ -7319,14 +7769,17 @@ def accrue_spy_experience(
                 opportunities.append(existing)
 
         outcome_now = max(decision_now, _sample_clock(clock_fn))
-        terminal_opened, terminal_deadline = _terminal_window()
         for opportunity in opportunities:
             target_session = date.fromisoformat(str(opportunity["target_session"]))
             observation = _target_observation_from_run(
                 run_view, target_session=target_session
             )
-            if outcome_now > terminal_deadline and _load_outcome_chain(
+            if (
+                recovered_run_view is None
+                and outcome_now > terminal_deadline
+                and _load_outcome_chain(
                 root, registration=registration, opportunity=opportunity
+                )
             ):
                 observation = _TargetObservation(
                     pin_observed_at=_format_utc(outcome_now),
@@ -7375,6 +7828,7 @@ def accrue_spy_experience(
                 registration=registration,
                 expected_sessions=due,
                 opportunities=opportunities,
+                recover_unheaded=True,
             )
             if previous_population is None:
                 opportunity_pair = _owner_pins_from_opportunities(
@@ -7428,13 +7882,16 @@ def accrue_spy_experience(
             and terminal_receipt.get("disposition")
             == "no_authenticated_owner_pair_ever"
         ):
-            observed_at = _format_utc(_sample_clock(clock_fn))
             current_population = _current_population_receipt(
                 root,
                 registration=registration,
                 expected_sessions=due,
                 opportunities=opportunities,
+                recover_unheaded=True,
             )
+            # Adopt any single durable receipt whose HEAD publication crashed
+            # before sampling bytes for a successor population observation.
+            observed_at = _format_utc(_sample_clock(clock_fn))
             if current_population is not None and _parse_utc(
                 observed_at, field="new population observed_at"
             ) < _parse_utc(
