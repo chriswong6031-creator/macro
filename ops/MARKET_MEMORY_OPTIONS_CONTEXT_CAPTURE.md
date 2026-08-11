@@ -14,9 +14,12 @@ or execution.
    but cannot manufacture a request from an old receipt.
 3. The request preserves the unequal clocks: owner `ts` is `event_time`, while
    the durable receipt clock is `as_known_at` and `knowledge_cutoff`.
-4. A bounded local outbox retries only inside the W1A contemporaneous window.
-   A late request becomes an `expired_before_transport` receipt; it is never
-   backdated.
+4. A bounded local outbox drains all currently eligible work in eight-request
+   batches, independent of the next slow live-data cycle. Before SSH starts it
+   fsyncs an attempt receipt. A lost acknowledgement becomes
+   `outcome_unknown_after_transport`, never the false claim
+   `expired_before_transport`; an unattempted late request is explicitly
+   expired and never backdated.
 5. A forced-command SSH key admits the exact request to the production W1A
    generation. The existing hourly context projector later binds that exact
    query when the nightly owner publishes the episode.
@@ -29,7 +32,8 @@ the live-flow and episode owners continue normally.
 ## Fixed limits
 
 - SPY canary only; every other ticker abstains before an outbox write.
-- 8 requests and 1 MiB per SSH batch.
+- 8 requests and 1 MiB per SSH batch; at most 8 batches drain the fixed
+  64-request outbox per owner boundary.
 - 64 pending requests, 4,096 lifetime receipts, and 64 session anchors.
 - 256 KiB per request; 30 seconds per transport attempt.
 - Transport starts only through 13 minutes after the owner cutoff, leaving
@@ -66,7 +70,9 @@ tree. Install/reload the reviewed plist after the swap.
 Before the next open, verify an anchor exists and is private. After the first
 new SPY decision, require all of the following:
 
-- the M1 outbox has an authenticated `status=captured` transport receipt;
+- the M1 outbox has an authenticated `status=captured` transport receipt (or,
+  after a lost acknowledgement, honestly reports `outcome_unknown_after_transport`
+  and relies on the independent W1A/projector proof);
 - the W1A HEAD authenticates the response `query_id`, `context_id`, and packet
   digest;
 - packet `event_time` equals the future episode's owner event clock and packet

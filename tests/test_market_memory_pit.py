@@ -253,6 +253,9 @@ def test_repeated_pin_rewalks_and_rejects_ancestor_tamper_under_same_head(
     pit._generation_path(tmp_path, ancestor_id).unlink()
 
     assert pinned.generation_id == state.head["generation_id"]
+    active = reader.read_active_generation()
+    assert active.generation_id == state.head["generation_id"]
+    assert len(active.captures) == 1
     with pytest.raises(pit.MarketMemoryStoreError, match="unavailable"):
         reader.read_pinned_generation()
 
@@ -282,6 +285,47 @@ def test_current_pin_requires_full_chain_through_empty_genesis(
     message = "empty genesis" if broken == "nonempty_genesis" else "unavailable"
     with pytest.raises(pit.MarketMemoryStoreError, match=message):
         pit.FileAsKnownAtReader(tmp_path).read_pinned_generation()
+
+
+def test_active_generation_ack_is_single_head_bounded_at_declared_cap(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    rows = []
+    for index in range(pit._MAX_GENERATION_CAPTURES):
+        digest = f"{index:064x}"
+        rows.append(
+            {
+                "query_id": "mmquery_" + digest,
+                "context_id": "mmctx_" + digest,
+                "capture_id": "mmcapture_" + digest,
+                "packet_sha256": digest,
+            }
+        )
+    generation = pit._new_generation(
+        store_id="mmstore_" + "a" * 64,
+        previous_generation_id="mmgeneration_" + "b" * 64,
+        captures=rows,
+    )
+    generation_body = pit._canonical_bytes(generation)
+    assert len(generation_body) <= pit._MAX_GENERATION_BYTES
+    state = SimpleNamespace(
+        head={"generation_sha256": sha256(generation_body).hexdigest()},
+        generation=generation,
+    )
+    monkeypatch.setattr(pit, "_load_store_state", lambda _root: state)
+    monkeypatch.setattr(
+        pit,
+        "_read_pinned_generation_from_state",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("active acknowledgement must not walk ancestry")
+        ),
+    )
+
+    active = pit.FileAsKnownAtReader(tmp_path).read_active_generation()
+
+    assert active.generation_id == generation["generation_id"]
+    assert active.generation_sha256 == state.head["generation_sha256"]
+    assert len(active.captures) == pit._MAX_GENERATION_CAPTURES
 
 
 def test_pinned_generation_rejects_rewritten_append_history(

@@ -3827,6 +3827,14 @@ class TestProspectiveOptionsMarketMemoryCapture:
         stage_root = tmp_path / "events"
         monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(stage_root))
         calls: list[tuple[str, bytes]] = []
+        parent_syncs: list[Path] = []
+        real_parent_sync = poller._fsync_directory
+
+        def tracked_parent_sync(path):
+            real_parent_sync(path)
+            parent_syncs.append(path)
+
+        monkeypatch.setattr(poller, "_fsync_directory", tracked_parent_sync)
 
         class Dispatcher:
             def prepare(self, *, owner_event, session_date):
@@ -3845,11 +3853,13 @@ class TestProspectiveOptionsMarketMemoryCapture:
                 raw = (stage_root / f"{self_outer.SESSION}.jsonl").read_bytes()
                 assert b'"kind":"availability"' in raw
                 assert raw.endswith(b"\n")
+                assert len(parent_syncs) >= 2
                 assert owner_event["available_at"] == self_outer.AVAILABLE_AT
                 calls.append(("commit", raw))
 
             def recover(self, *, owner_event, session_date):
                 assert owner_event["available_at"] == self_outer.AVAILABLE_AT
+                assert len(parent_syncs) >= 3
                 calls.append(("recover", b""))
 
         self_outer = self
@@ -3914,6 +3924,48 @@ class TestProspectiveOptionsMarketMemoryCapture:
         ) is None
         assert list(fresh.prepared.iterdir()) == []
         assert list(fresh.pending.iterdir()) == []
+
+    def test_parent_durability_failure_keeps_precommit_non_sendable(
+        self, tmp_path, monkeypatch,
+    ):
+        import scripts.live_flow_poller as poller
+
+        stage_root = tmp_path / "events"
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(stage_root))
+        calls: list[str] = []
+
+        class Dispatcher:
+            def prepare(self, *, owner_event, session_date):
+                return owner_event
+
+            def stage(self, owner_event):
+                calls.append("stage")
+
+            def commit(self, owner_event):
+                calls.append("commit")
+
+        monkeypatch.setattr(poller, "_OPTIONS_CONTEXT_DISPATCHER", Dispatcher())
+        real_parent_sync = poller._fsync_directory
+
+        def fail_final_parent_sync(path):
+            stage_path = stage_root / f"{self.SESSION}.jsonl"
+            if stage_path.exists() and b'"kind":"availability"' in stage_path.read_bytes():
+                raise OSError("injected parent fsync failure")
+            real_parent_sync(path)
+
+        monkeypatch.setattr(poller, "_fsync_directory", fail_final_parent_sync)
+        times = iter(
+            [
+                datetime(2026, 8, 12, 13, 41, tzinfo=timezone.utc),
+                datetime(2026, 8, 12, 13, 41, 1, tzinfo=timezone.utc),
+            ]
+        )
+
+        with pytest.raises(OSError, match="parent fsync"):
+            poller._stage_raw_events(
+                self.SESSION, [self._event()], now_fn=lambda: next(times),
+            )
+        assert calls == ["stage"]
 
     def test_forced_transport_acknowledges_only_exact_response(
         self, tmp_path, monkeypatch,
@@ -3984,7 +4036,7 @@ class TestProspectiveOptionsMarketMemoryCapture:
             lambda: datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
         )
         assert dispatcher.flush_pending() == {
-            "captured": 1, "expired": 0, "pending": 0,
+            "captured": 1, "expired": 0, "unknown": 0, "pending": 0,
         }
         assert seen["command"][-1] == "root@146.190.142.17"
         assert "ClearAllForwardings=yes" in seen["command"]
@@ -4003,7 +4055,7 @@ class TestProspectiveOptionsMarketMemoryCapture:
         pending.chmod(0o600)
         original_receipt = receipt_path.read_bytes()
         assert dispatcher.flush_pending() == {
-            "captured": 0, "expired": 0, "pending": 0,
+            "captured": 0, "expired": 0, "unknown": 0, "pending": 0,
         }
         assert receipt_path.read_bytes() == original_receipt
 
@@ -4032,7 +4084,7 @@ class TestProspectiveOptionsMarketMemoryCapture:
             lambda: datetime(2026, 8, 12, 13, 55, tzinfo=timezone.utc),
         )
         assert dispatcher.flush_pending() == {
-            "captured": 0, "expired": 1, "pending": 0,
+            "captured": 0, "expired": 1, "unknown": 0, "pending": 0,
         }
         receipt = json.loads(
             (dispatcher.receipts / f"{request_id}.json").read_text()
@@ -4041,6 +4093,158 @@ class TestProspectiveOptionsMarketMemoryCapture:
             receipt, request=request,
         )["status"] == "expired_before_owner_availability"
         assert list(dispatcher.prepared.iterdir()) == []
+
+    def test_lost_ack_is_durable_unknown_and_never_false_pretransport_expiry(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "capture-key"
+        key.write_text("test-only-key")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request_id = dispatcher.enqueue(
+            owner_event=self._enriched_event(), session_date=self.SESSION,
+        )
+        assert request_id is not None
+        request = capture.validate_capture_request(
+            json.loads((dispatcher.pending / f"{request_id}.json").read_text())
+        )
+        clocks = iter(
+            [
+                datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+                datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+                datetime(2026, 8, 12, 13, 41, 32, tzinfo=timezone.utc),
+            ]
+        )
+        monkeypatch.setattr(capture, "_utc_now", lambda: next(clocks))
+        transport_calls = 0
+
+        def lose_ack(*_args, **_kwargs):
+            nonlocal transport_calls
+            transport_calls += 1
+            raise capture.subprocess.TimeoutExpired("ssh", 30)
+
+        monkeypatch.setattr(capture.subprocess, "run", lose_ack)
+        assert dispatcher.flush_pending() == {
+            "captured": 0, "expired": 0, "unknown": 1, "pending": 0,
+        }
+        attempt = json.loads(
+            (dispatcher.attempts / f"{request_id}.json").read_text()
+        )
+        assert capture.validate_transport_attempt(
+            attempt, request=request,
+        )["status"] == "transport_started"
+        receipt_path = dispatcher.receipts / f"{request_id}.json"
+        receipt = json.loads(receipt_path.read_text())
+        assert capture.validate_transport_receipt(
+            receipt, request=request,
+        )["status"] == "outcome_unknown_after_transport"
+
+        original = receipt_path.read_bytes()
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 14, 5, tzinfo=timezone.utc),
+        )
+        assert dispatcher.flush_pending() == {
+            "captured": 0, "expired": 0, "unknown": 0, "pending": 0,
+        }
+        assert transport_calls == 1
+        assert receipt_path.read_bytes() == original
+
+    def test_drain_sends_fifteen_owner_requests_in_two_bounded_batches(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+        from engine.neuralweb import market_memory_pit
+
+        key = tmp_path / "capture-key"
+        key.write_text("test-only-key")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        for index in range(15):
+            event = self._enriched_event()
+            event["id"] = f"{index:016x}"
+            assert dispatcher.enqueue(
+                owner_event=event, session_date=self.SESSION,
+            ) is not None
+
+        batch_sizes: list[int] = []
+
+        class Result:
+            returncode = 0
+            stderr = b""
+
+            def __init__(self, stdout):
+                self.stdout = stdout
+
+        def run(_command, **kwargs):
+            requests = [
+                capture.validate_capture_request(json.loads(line))
+                for line in kwargs["input"].splitlines()
+            ]
+            batch_sizes.append(len(requests))
+            responses = []
+            for request in requests:
+                packet = request["packet"]
+                query, _event_dt, _cutoff_dt = market_memory_pit._normalize_query(
+                    subject=packet["subject"],
+                    event_time=packet["clocks"]["event_time"],
+                    as_known_at=packet["clocks"]["as_known_at"],
+                    mode="operational_pit",
+                    reject_future_cutoff=False,
+                )
+                responses.append(
+                    {
+                        "schema": capture.RESPONSE_SCHEMA,
+                        "status": "captured",
+                        "request_id": request["request_id"],
+                        "capture_id": "mmcapture_"
+                        + request["request_id"].removeprefix("mmoptrequest_"),
+                        "query_id": market_memory_pit._query_id(query),
+                        "context_id": packet["context_id"],
+                        "packet_sha256": hashlib.sha256(
+                            capture._canonical_bytes(packet)
+                        ).hexdigest(),
+                        "event_time": packet["clocks"]["event_time"],
+                        "as_known_at": packet["clocks"]["as_known_at"],
+                        "store_id": "mmstore_" + "c" * 64,
+                        "generation_id": "mmgeneration_" + "d" * 64,
+                        "generation_sha256": "e" * 64,
+                        "generation_capture_count": 15,
+                        "authority": packet["authority"],
+                    }
+                )
+            return Result(
+                b"".join(
+                    capture._canonical_bytes(response) + b"\n"
+                    for response in responses
+                )
+            )
+
+        monkeypatch.setattr(capture.subprocess, "run", run)
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+        )
+
+        assert dispatcher.drain_pending() == {
+            "captured": 15, "expired": 0, "unknown": 0, "pending": 0,
+        }
+        assert batch_sizes == [8, 7]
+        assert len(list(dispatcher.receipts.iterdir())) == 15
 
     def test_remote_writer_is_idempotent_and_exact(self, tmp_path, monkeypatch):
         from engine.neuralweb import market_memory_options_episode_capture as capture

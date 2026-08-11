@@ -1351,6 +1351,23 @@ class FileAsKnownAtReader(market_memory.AsKnownAtReader):
         self._pinned_snapshots[key] = snapshot
         return snapshot
 
+    def read_active_generation(self) -> PinnedGenerationSnapshot:
+        """Authenticate only the generation named by the current durable HEAD.
+
+        Current-capture acknowledgements do not need to prove an arbitrary
+        historical pin by replaying the full append-one ancestry.  HEAD already
+        binds the active generation ID and exact bytes; loading that one bounded
+        complete index keeps acknowledgement work O(n) and below the generation
+        byte cap even when the pilot reaches its declared capture limit.
+        """
+
+        state = _load_store_state(self.root)
+        return _snapshot_from_generation(
+            state.generation,
+            generation_sha256=str(state.head["generation_sha256"]),
+            profile=STORE_PROFILE,
+        )
+
     def _authenticate_pinned_snapshot(
         self, generation: PinnedGenerationSnapshot
     ) -> PinnedGenerationSnapshot:

@@ -366,12 +366,14 @@ def _flush_options_context_outbox() -> None:
     if _OPTIONS_CONTEXT_DISPATCHER is None:
         return
     try:
-        result = _OPTIONS_CONTEXT_DISPATCHER.flush_pending()
-        if result.get("captured") or result.get("expired"):
+        result = _OPTIONS_CONTEXT_DISPATCHER.drain_pending()
+        if result.get("captured") or result.get("expired") or result.get("unknown"):
             log.info(
-                "poller: option-context outbox captured=%d expired=%d pending=%d",
+                "poller: option-context outbox captured=%d expired=%d "
+                "unknown=%d pending=%d",
                 result.get("captured", 0),
                 result.get("expired", 0),
+                result.get("unknown", 0),
                 result.get("pending", 0),
             )
     except Exception as exc:  # noqa: BLE001 - evidence must not stop live flow
@@ -743,6 +745,7 @@ def _stage_raw_events(
                     )
 
             enriched: list[dict] = []
+            context_promotions: list[tuple[str, object, str]] = []
             for event_id, durable_event, needs_decision in resolved:
                 if needs_decision:
                     receipt = {
@@ -819,16 +822,9 @@ def _stage_raw_events(
                     os.fsync(fh.fileno())
                     available[event_id] = stamp
                     if prepared_context_request is not None:
-                        try:
-                            _OPTIONS_CONTEXT_DISPATCHER.commit(
-                                prepared_context_request
-                            )
-                        except Exception as exc:  # noqa: BLE001 - context abstains
-                            log.warning(
-                                "poller: option-context request abstained for %s (%s)",
-                                event_id,
-                                exc,
-                            )
+                        context_promotions.append(
+                            ("commit", prepared_context_request, event_id)
+                        )
                 else:
                     enriched_event = dict(durable_event)
                     enriched_event["available_at"] = stamp
@@ -836,18 +832,9 @@ def _stage_raw_events(
                     enriched_event["source_snapshot_asof"] = stamp
                     enriched_event["anchor_strategy"] = "durable_available_at"
                     if _OPTIONS_CONTEXT_DISPATCHER is not None:
-                        try:
-                            _OPTIONS_CONTEXT_DISPATCHER.recover(
-                                owner_event=enriched_event,
-                                session_date=session_date,
-                            )
-                        except Exception as exc:  # noqa: BLE001 - context abstains
-                            log.warning(
-                                "poller: option-context precommit recovery abstained "
-                                "for %s (%s)",
-                                event_id,
-                                exc,
-                            )
+                        context_promotions.append(
+                            ("recover", enriched_event, event_id)
+                        )
                 # An already-available replay cannot manufacture a request. Only
                 # exact bytes precommitted at the first cutoff may retry transport.
                 enriched.append(enriched_event)
@@ -860,6 +847,26 @@ def _stage_raw_events(
             fh.flush()
             os.fsync(fh.fileno())
             _fsync_directory(path.parent)
+            # Only this point proves both the complete availability-file bytes
+            # and their parent entry durable. A replay may promote an exact
+            # precommit after this proof, never merely because page-cache bytes
+            # parsed before the final fsync boundary.
+            for action, payload, event_id in context_promotions:
+                try:
+                    if action == "commit":
+                        _OPTIONS_CONTEXT_DISPATCHER.commit(payload)
+                    else:
+                        _OPTIONS_CONTEXT_DISPATCHER.recover(
+                            owner_event=payload,
+                            session_date=session_date,
+                        )
+                except Exception as exc:  # noqa: BLE001 - context abstains
+                    log.warning(
+                        "poller: option-context %s abstained for %s (%s)",
+                        action,
+                        event_id,
+                        exc,
+                    )
             return enriched
         finally:
             fcntl.flock(fh.fileno(), fcntl.LOCK_UN)

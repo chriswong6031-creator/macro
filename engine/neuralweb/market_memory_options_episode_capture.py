@@ -40,6 +40,7 @@ ANCHOR_SCHEMA = "market_memory.options_context_session_identity_anchor/v1"
 REQUEST_SCHEMA = "market_memory.options_context_capture_request/v1"
 RESPONSE_SCHEMA = "market_memory.options_context_capture_response/v1"
 TRANSPORT_RECEIPT_SCHEMA = "market_memory.options_context_transport_receipt/v1"
+TRANSPORT_ATTEMPT_SCHEMA = "market_memory.options_context_transport_attempt/v1"
 
 _REMOTE_TARGET = "root@146.190.142.17"
 _ANCHOR_ID = re.compile(r"mmoptanchor_[a-f0-9]{64}\Z")
@@ -59,6 +60,7 @@ MAX_BATCH_REQUESTS = 8
 MAX_PENDING_REQUESTS = 64
 MAX_LIFETIME_REQUESTS = 4_096
 MAX_ANCHORS = 64
+MAX_DRAIN_BATCHES = MAX_PENDING_REQUESTS // MAX_BATCH_REQUESTS
 MAX_ANCHOR_LEAD = timedelta(days=7)
 # Leave transport and remote validation margin inside W1A's frozen 15 minutes.
 MAX_SEND_AGE = timedelta(minutes=13)
@@ -829,7 +831,7 @@ def response_from_stored_capture(
 
     clean = validate_capture_request(request)
     receipt = stored.capture_receipt
-    generation = market_memory_pit.FileAsKnownAtReader(root).read_pinned_generation()
+    generation = market_memory_pit.FileAsKnownAtReader(root).read_active_generation()
     if not any(
         row.query_id == receipt["query_id"]
         and row.capture_id == receipt["capture_id"]
@@ -954,6 +956,7 @@ def validate_transport_receipt(
         "captured",
         "expired_before_transport",
         "expired_before_owner_availability",
+        "outcome_unknown_after_transport",
     }:
         raise OptionsEpisodeContextCaptureError("transport receipt status drift")
     completed_at, _ = _exact_utc(
@@ -984,11 +987,61 @@ def validate_transport_receipt(
                 "captured transport receipt has no response"
             )
         receipt["response"] = validate_capture_response(response, request=clean)
-    elif response is not None or completed_at - cutoff <= MAX_SEND_AGE:
+    elif response is not None:
+        raise OptionsEpisodeContextCaptureError(
+            "non-captured transport receipt cannot carry a response"
+        )
+    elif (
+        status_value.startswith("expired_")
+        and completed_at - cutoff <= MAX_SEND_AGE
+    ):
         raise OptionsEpisodeContextCaptureError(
             "expired transport receipt is not a proven late abstention"
         )
     return receipt
+
+
+def validate_transport_attempt(
+    value: Mapping[str, Any], *, request: Mapping[str, Any]
+) -> dict[str, Any]:
+    fields = {
+        "schema",
+        "request_id",
+        "request_sha256",
+        "status",
+        "attempted_at",
+        "ssh_target",
+        "evidence_policy",
+        "authority",
+    }
+    if not isinstance(value, Mapping) or set(value) != fields:
+        raise OptionsEpisodeContextCaptureError("transport attempt fields drift")
+    attempt = copy.deepcopy(dict(value))
+    clean = validate_capture_request(request)
+    attempted_at, _ = _exact_utc(
+        attempt.get("attempted_at"), field="transport_attempt.attempted_at"
+    )
+    cutoff, _ = _exact_utc(
+        clean["owner"]["available_at"], field="request.available_at"
+    )
+    if not cutoff - MAX_FUTURE_SKEW <= attempted_at <= cutoff + MAX_SEND_AGE:
+        raise OptionsEpisodeContextCaptureError(
+            "transport attempt falls outside the contemporaneous send window"
+        )
+    if (
+        attempt.get("schema") != TRANSPORT_ATTEMPT_SCHEMA
+        or attempt.get("request_id") != clean["request_id"]
+        or attempt.get("request_sha256")
+        != sha256(_canonical_bytes(clean)).hexdigest()
+        or attempt.get("status") != "transport_started"
+        or attempt.get("ssh_target") != _REMOTE_TARGET
+        or attempt.get("evidence_policy") != _EVIDENCE_POLICY
+        or attempt.get("authority") != dict(market_memory.AUTHORITY)
+    ):
+        raise OptionsEpisodeContextCaptureError(
+            "transport attempt does not bind the exact request"
+        )
+    return attempt
 
 
 class OptionsContextDispatcher:
@@ -1015,6 +1068,7 @@ class OptionsContextDispatcher:
         self.anchors = _private_child(self.root, "anchors")
         self.prepared = _private_child(self.root, "prepared")
         self.pending = _private_child(self.root, "pending")
+        self.attempts = _private_child(self.root, "attempts")
         self.receipts = _private_child(self.root, "receipts")
         self.anchor = validate_session_anchor(anchor)
         self.ssh_target = ssh_target
@@ -1261,6 +1315,47 @@ class OptionsContextDispatcher:
         }
         return receipt
 
+    def _start_attempt(
+        self, *, request: Mapping[str, Any], attempted_at: datetime
+    ) -> dict[str, Any]:
+        attempt = {
+            "schema": TRANSPORT_ATTEMPT_SCHEMA,
+            "request_id": request["request_id"],
+            "request_sha256": sha256(_canonical_bytes(request)).hexdigest(),
+            "status": "transport_started",
+            "attempted_at": _format_utc(attempted_at.astimezone(timezone.utc)),
+            "ssh_target": self.ssh_target,
+            "evidence_policy": copy.deepcopy(_EVIDENCE_POLICY),
+            "authority": dict(market_memory.AUTHORITY),
+        }
+        attempt = validate_transport_attempt(attempt, request=request)
+        path = self.attempts / f"{request['request_id']}.json"
+        _write_create_once(
+            path,
+            _canonical_bytes(attempt),
+            label="capture transport attempt",
+        )
+        return attempt
+
+    def _read_attempt(
+        self, *, request: Mapping[str, Any]
+    ) -> dict[str, Any] | None:
+        path = self.attempts / f"{request['request_id']}.json"
+        if not path.exists():
+            return None
+        return validate_transport_attempt(
+            _strict_object(
+                _read_file(
+                    path,
+                    maximum=MAX_REQUEST_BYTES,
+                    label="capture transport attempt",
+                ),
+                label="capture transport attempt",
+                maximum=MAX_REQUEST_BYTES,
+            ),
+            request=request,
+        )
+
     def _reconcile_terminal(
         self, *, path: Path, request: Mapping[str, Any]
     ) -> bool:
@@ -1339,6 +1434,7 @@ class OptionsContextDispatcher:
             now = _utc_now().astimezone(timezone.utc)
             selected: list[tuple[Path, dict[str, Any]]] = []
             expired = 0
+            unknown = 0
             # A precommit is never sent.  If its owner availability receipt was
             # not durably observed and promoted within W1A, retain a terminal
             # private abstention instead of allowing unbounded orphan growth.
@@ -1354,6 +1450,16 @@ class OptionsContextDispatcher:
                     )
                 )
                 if self._reconcile_terminal(path=path, request=request):
+                    continue
+                if self._read_attempt(request=request) is not None:
+                    self._complete(
+                        path=path,
+                        request=request,
+                        status="outcome_unknown_after_transport",
+                        response=None,
+                        completed_at=now,
+                    )
+                    unknown += 1
                     continue
                 cutoff, _ = _exact_utc(
                     request["owner"]["available_at"], field="request.available_at"
@@ -1380,6 +1486,16 @@ class OptionsContextDispatcher:
                 )
                 if self._reconcile_terminal(path=path, request=request):
                     continue
+                if self._read_attempt(request=request) is not None:
+                    self._complete(
+                        path=path,
+                        request=request,
+                        status="outcome_unknown_after_transport",
+                        response=None,
+                        completed_at=now,
+                    )
+                    unknown += 1
+                    continue
                 cutoff, _ = _exact_utc(
                     request["owner"]["available_at"], field="request.available_at"
                 )
@@ -1399,7 +1515,12 @@ class OptionsContextDispatcher:
                 if len(selected) >= MAX_BATCH_REQUESTS:
                     break
             if not selected:
-                return {"captured": 0, "expired": expired, "pending": len(self._files(self.pending))}
+                return {
+                    "captured": 0,
+                    "expired": expired,
+                    "unknown": unknown,
+                    "pending": len(self._files(self.pending)),
+                }
             self._transport_key_ready()
             batch = b"".join(_canonical_bytes(request) + b"\n" for _path, request in selected)
             if len(batch) > MAX_BATCH_BYTES:
@@ -1425,6 +1546,9 @@ class OptionsContextDispatcher:
                 "ConnectionAttempts=1",
                 self.ssh_target,
             ]
+            attempted_at = _utc_now().astimezone(timezone.utc)
+            for _path, request in selected:
+                self._start_attempt(request=request, attempted_at=attempted_at)
             try:
                 result = subprocess.run(
                     command,
@@ -1433,30 +1557,50 @@ class OptionsContextDispatcher:
                     timeout=30,
                     check=False,
                 )
-            except (OSError, subprocess.SubprocessError) as exc:
-                raise OptionsEpisodeContextCaptureError(
-                    "capture transport did not complete"
-                ) from exc
-            if len(result.stdout) > 64 * 1024 or len(result.stderr) > 64 * 1024:
-                raise OptionsEpisodeContextCaptureError(
-                    "capture transport response exceeds its byte bound"
-                )
+            except (OSError, subprocess.SubprocessError):
+                completed = _utc_now().astimezone(timezone.utc)
+                for path, request in selected:
+                    self._complete(
+                        path=path,
+                        request=request,
+                        status="outcome_unknown_after_transport",
+                        response=None,
+                        completed_at=completed,
+                    )
+                return {
+                    "captured": 0,
+                    "expired": expired,
+                    "unknown": unknown + len(selected),
+                    "pending": len(self._files(self.pending)),
+                }
             requests_by_id = {
                 request["request_id"]: (path, request) for path, request in selected
             }
             responses: dict[str, dict[str, Any]] = {}
-            for line in result.stdout.splitlines():
-                response = _strict_object(
-                    line, label="capture transport response", maximum=16 * 1024
-                )
-                request_id = response.get("request_id")
-                if request_id not in requests_by_id or request_id in responses:
-                    raise OptionsEpisodeContextCaptureError(
-                        "capture transport returned an unrequested response"
-                    )
-                responses[request_id] = validate_capture_response(
-                    response, request=requests_by_id[request_id][1]
-                )
+            response_invalid = (
+                len(result.stdout) > 64 * 1024 or len(result.stderr) > 64 * 1024
+            )
+            if not response_invalid:
+                try:
+                    for line in result.stdout.splitlines():
+                        response = _strict_object(
+                            line,
+                            label="capture transport response",
+                            maximum=16 * 1024,
+                        )
+                        request_id = response.get("request_id")
+                        if (
+                            request_id not in requests_by_id
+                            or request_id in responses
+                        ):
+                            raise OptionsEpisodeContextCaptureError(
+                                "capture transport returned an unrequested response"
+                            )
+                        responses[request_id] = validate_capture_response(
+                            response, request=requests_by_id[request_id][1]
+                        )
+                except OptionsEpisodeContextCaptureError:
+                    response_invalid = True
             completed = _utc_now().astimezone(timezone.utc)
             for request_id, response in responses.items():
                 path, request = requests_by_id[request_id]
@@ -1467,21 +1611,43 @@ class OptionsContextDispatcher:
                     response=response,
                     completed_at=completed,
                 )
-            if result.returncode != 0:
-                raise OptionsEpisodeContextCaptureError(
-                    "capture transport rejected one or more requests"
-                )
-            if len(responses) != len(selected):
-                raise OptionsEpisodeContextCaptureError(
-                    "capture transport omitted a request response"
-                )
+            unresolved = [
+                (path, request)
+                for path, request in selected
+                if request["request_id"] not in responses
+            ]
+            if response_invalid or result.returncode != 0 or unresolved:
+                for path, request in unresolved:
+                    self._complete(
+                        path=path,
+                        request=request,
+                        status="outcome_unknown_after_transport",
+                        response=None,
+                        completed_at=completed,
+                    )
+                unknown += len(unresolved)
             return {
                 "captured": len(responses),
                 "expired": expired,
+                "unknown": unknown,
                 "pending": len(self._files(self.pending)),
             }
         finally:
             self._unlock(descriptor)
+
+    def drain_pending(self) -> dict[str, int]:
+        """Drain the bounded outbox without depending on the next live cycle."""
+
+        totals = {"captured": 0, "expired": 0, "unknown": 0, "pending": 0}
+        for _batch in range(MAX_DRAIN_BATCHES):
+            result = self.flush_pending()
+            for field in ("captured", "expired", "unknown"):
+                totals[field] += result[field]
+            totals["pending"] = result["pending"]
+            progress = sum(result[field] for field in ("captured", "expired", "unknown"))
+            if totals["pending"] == 0 or progress == 0:
+                break
+        return totals
 
 
 def initialize_dispatcher(
@@ -1504,9 +1670,11 @@ __all__ = [
     "ANCHOR_SCHEMA",
     "MAX_BATCH_BYTES",
     "MAX_BATCH_REQUESTS",
+    "MAX_DRAIN_BATCHES",
     "MAX_REQUEST_BYTES",
     "REQUEST_SCHEMA",
     "RESPONSE_SCHEMA",
+    "TRANSPORT_ATTEMPT_SCHEMA",
     "TRANSPORT_RECEIPT_SCHEMA",
     "OptionsContextDispatcher",
     "OptionsEpisodeContextCaptureError",
@@ -1517,5 +1685,6 @@ __all__ = [
     "validate_capture_request",
     "validate_capture_response",
     "validate_session_anchor",
+    "validate_transport_attempt",
     "validate_transport_receipt",
 ]
