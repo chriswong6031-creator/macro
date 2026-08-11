@@ -517,6 +517,88 @@ def test_a_stale_artifact_under_the_floor_still_refuses_on_the_state():
     assert not re.search(r"\d", zh), zh
 
 
+def _headline(tile: str) -> tuple[str, str]:
+    """The tile's largest type — the `v` div."""
+    m = re.search(r'<div class="v">(.*?)</div>', tile, re.S)
+    assert m, f"tile has no headline: {tile[:200]!r}"
+    return _langs(m.group(1))
+
+
+@needs_node
+def test_a_refused_agreement_never_renders_a_dash_placeholder_as_the_headline():
+    """The two floors do not coincide: at exactly three movers the tile is ABOVE its own
+    movers floor (so it prints a direction word) and BELOW the engine's agreement floor
+    (so there is no band to append). The band's null form is an em-dash, and it was
+    landing in the tile's largest type as "Up — —" on six live baskets.
+
+    The sign word now stands alone; the refusal is spoken in the small print below."""
+    p = _pulse(participation={"activity_n": 3},
+               direction={"agreement_pct": None, "n_active": 3, "sign": "up"})
+    en, zh = _headline(_tiles(p)[1])
+    assert en == "Up", f"headline is not the bare sign word: {en!r}"
+    assert zh == "上行", f"ZH headline is not the bare sign word: {zh!r}"
+    for blob in (en, zh):
+        assert "—" not in blob and "-" not in blob, f"placeholder in the headline: {blob!r}"
+    # ...and the band still renders when there IS an agreement figure to band
+    en2, zh2 = _headline(_tiles(_pulse(participation={"activity_n": 3}))[1])
+    assert "—" in en2 and "—" in zh2, "the band clause vanished for a real read"
+    assert "mostly the same way" in en2 and "多数同向" in zh2
+
+
+@needs_node
+def test_the_direction_hover_names_both_floors_in_plain_words():
+    """The floor's Tier-2 receipt has to live where the floor fires. The board caption
+    says four; the tile's own visible refusal line says three — a reader who sees the
+    percentage withheld needs both numbers in one place, or the page contradicts
+    itself."""
+    from engine import group_pulse as GP
+    tile = _tiles(_pulse(direction={"agreement_pct": None, "n_active": 3}))[1]
+    en = re.search(r'data-tip-en="([^"]*)"', tile).group(1)
+    zh = re.search(r'data-tip-zh="([^"]*)"', tile).group(1)
+    assert "at least 3 members moving" in en, en
+    assert f"needs at least {GP.AGREEMENT_MIN_N}" in en, en
+    assert "至少需要 3 只在动" in zh, zh
+    assert f"至少需要 {GP.AGREEMENT_MIN_N} 只" in zh, zh
+    assert not re.search(r"[一-鿿]", en), "ZH leaked into the EN tip"
+    for blob in (en, zh):
+        assert "AGREEMENT_MIN_N" not in blob and "GR_MIN_MOVERS" not in blob
+
+
+def test_the_template_agreement_floor_tracks_the_engine_constant():
+    """The tile hardcodes the engine's floor to speak it in plain words. Bumping
+    AGREEMENT_MIN_N without the template would silently start lying to the reader."""
+    from engine import group_pulse as GP
+    m = re.search(r"var GR_MIN_AGREEMENT_N=(\d+);", DETAIL.read_text(encoding="utf-8"))
+    assert m, "the template no longer declares its agreement floor"
+    assert int(m.group(1)) == GP.AGREEMENT_MIN_N
+
+
+@needs_node
+def test_the_watch_list_does_not_watch_a_figure_that_was_refused():
+    """"agreement fading below a third of the movers" was firing on every basket whose
+    agreement is null — 43 of 49 live — watching a number the engine declined to
+    compute. With nothing to fade, the condition is the movers never converging."""
+    rows = _run("""
+        var out = {};
+        [null, 0.42].forEach(function (ag, i) {
+          out[i] = grWatchList({participation: {activity_share: 0.5, activity_n: 3},
+                                direction: {sign: 'up', agreement_pct: ag},
+                                arc: {state: 'quiet'}, episode: {active_now: true}});
+        });
+        process.stdout.write(JSON.stringify(out));
+    """)
+    refused, real = rows["0"], rows["1"]
+    flat = " ".join(x for pair in refused["down"] for x in pair)
+    assert "fading" not in flat, f"a refused figure is still being watched: {flat}"
+    assert "never settling into one direction" in flat, flat
+    assert "始终无法收敛" in flat, flat
+    # the real read keeps the original condition
+    assert "fading" in " ".join(x for pair in real["down"] for x in pair)
+    # and the same words never appear in both columns
+    for row in (refused, real):
+        assert not ({tuple(x) for x in row["up"]} & {tuple(x) for x in row["down"]})
+
+
 @needs_node
 def test_a_refused_agreement_reads_as_plain_words_in_both_languages():
     """`agreement_pct` is null below the engine's movers floor. "Agreement pending"
@@ -546,6 +628,13 @@ def test_the_tiles_render_clean_against_last_nights_artifact():
     arc_en, _ = _detail(tiles[2])
     assert "9" in arc_en, "the washout count itself is still printed"
     assert " of " not in arc_en, f"a denominator was invented for a legacy object: {arc_en!r}"
+    # The trend line drops rather than borrowing n_covered: substituting it invents the
+    # NUMERATOR too — 0.6 x 14 renders "8 of 14" where the truth is 7 of 11.
+    trend_en, trend_zh = _detail(tiles[0])
+    assert "Trend coverage pending" in trend_en, trend_en
+    assert "趋势读数待补" in trend_zh, trend_zh
+    for blob in (trend_en, trend_zh):
+        assert not re.search(r"\d", blob), f"a count was fabricated: {blob!r}"
 
 
 @needs_node
@@ -623,9 +712,24 @@ def test_board_orders_by_a_disclosed_rule_and_prints_it():
     # G0-10 — a leg that REFUSES below a floor is part of the rule. A caption that
     # names agreement as a tiebreak without saying when agreement exists describes an
     # ordering the reader cannot reproduce on the baskets where it is null.
-    assert "Agreement counts only where at least four members are moving" in src
     assert "sorts below a basket that has one" in src
-    assert "方向一致度仅在至少四只成分股在动时才计入" in src
+
+
+#: The caption says the floor in WORDS (glance tier prints no bare constants), so the
+#: link back to the engine is this map. Bumping AGREEMENT_MIN_N reds the test below by
+#: name until the caption and this row are updated together.
+_FLOOR_WORDS = {4: ("four", "四")}
+
+
+def test_the_board_caption_names_the_floor_the_engine_actually_uses():
+    from engine import group_pulse as GP
+    assert GP.AGREEMENT_MIN_N in _FLOOR_WORDS, (
+        f"AGREEMENT_MIN_N moved to {GP.AGREEMENT_MIN_N} — update the board caption in "
+        "templates/sector_central.html.j2 (EN + ZH) and add the word to _FLOOR_WORDS")
+    en_word, zh_word = _FLOOR_WORDS[GP.AGREEMENT_MIN_N]
+    src = BOARD.read_text(encoding="utf-8")
+    assert f"Agreement counts only where at least {en_word} members are moving" in src
+    assert f"方向一致度仅在至少{zh_word}只成分股在动时才计入" in src
     # the default sort is untouched: the reader opts in by clicking the column
     assert """btblSort = JSON.parse(localStorage.getItem('fw-btbl-sort')||'{"col":"20d","dir":-1}')""" in src
     # and the rule's legs are the artifact's own named fields, in that order

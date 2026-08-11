@@ -590,6 +590,11 @@ var GRP=null, GRE=null, GRH=null;      // pulse · earnings pulse · closed-epis
 // Below it a share is arithmetic, not a group: two names out of four is 50% and still
 // nothing to read, so the movers floor is folded into the band rather than bolted on.
 var GR_MIN_MOVERS=3;
+// The engine's own floor under `agreement_pct` (group_pulse.AGREEMENT_MIN_N). It is
+// HIGHER than the movers floor above, so a basket can carry a direction word and no
+// agreement percentage — the tile must be able to say so rather than print a dash.
+// Pinned against the engine constant by tests/test_group_read_surface.py.
+var GR_MIN_AGREEMENT_N=4;
 function grPBand(p){
   var pa=(p||{}).participation||{}, a=pa.activity_share, n=pa.activity_n;
   if(a==null) return 'unknown';
@@ -706,7 +711,12 @@ function grWatchList(p){
   else s.push(['the group staying active into another session','该组在下一交易日继续活跃']);
   if(a!=null&&a>=0.25) w.push(['activity narrowing to one or two names','活跃收窄到一两只个股']);
   else w.push(['the moving names going quiet again','在动的个股重新转静']);
-  if(ag==null||ag>=0.33) w.push(['agreement fading below a third of the movers','一致度跌到在动个股的三分之一以下']);
+  // With no agreement figure there is nothing to fade, so the watch condition is the
+  // one that would actually read as weakness on a group we cannot yet call: the movers
+  // never converging. Phrased for THIS column — the strengthen list carries the
+  // positive form, and the same words in both columns would read as a contradiction.
+  if(ag==null) w.push(['the moving names never settling into one direction','在动的个股始终无法收敛到同一方向']);
+  else if(ag>=0.33) w.push(['agreement fading below a third of the movers','一致度跌到在动个股的三分之一以下']);
   if(fam==='distributing'||fam==='advancing') w.push(['more members losing their 50-day line','更多成分股跌破50日线']);
   else if(ep.active_now) w.push(['three quiet sessions in a row','连续三个交易日转静']);
   return {up:s.slice(0,3), down:w.slice(0,3)};
@@ -756,9 +766,10 @@ function grTiles(p,e){
   // is not n_covered whenever the basket holds a name too young for the line. Counting
   // the share back against n_covered prints a number nothing computed, so the divide
   // is reconstructed from the denominator the artifact publishes for each leg.
+  // A legacy artifact carries no trend denominator, and n_covered is NOT a stand-in:
+  // substituting it invents the numerator too (8 of 14 where the truth is 7 of 11).
+  // grCount returns null on a null n, so the clause drops instead — for one nightly.
   var n50=pa.trend_n_50d, n200=pa.trend_n_200d;
-  if(n50==null) n50=nc;            // legacy artifact (pre-denominator): the old read
-  if(n200==null) n200=nc;
   var t50=grCount(pa.trend_share_50d,n50), t200=grCount(pa.trend_share_200d,n200);
   var trendD;
   if(t50==null) trendD=L('Trend coverage pending.','趋势读数待补。');
@@ -781,11 +792,11 @@ function grTiles(p,e){
   var aw=grAgreeWord(dir.agreement_pct);
   var signW=dir.sign==='up'?['Up','上行']:dir.sign==='down'?['Down','下行']:['Mixed','方向混杂'];
   var mv=dir.median_move_spy_adj, fewMovers=(an!=null&&an<GR_MIN_MOVERS);
-  // The tooltip no longer names a mover count. Two floors govern this tile — the label's
-  // own movers floor here, and the engine's floor under the agreement figure — so quoting
-  // either one as "the" threshold contradicts the other on the baskets between them.
-  var agEn=`Agreement is the net lean among the members with unusual activity today: ups minus downs, over that same count — not a head count of who agrees. It needs several members moving before it means anything, and below about a third of them the group has no single direction.`;
-  var agZh=`一致度指今日异动个股中的净偏向：上涨数减下跌数，除以同一基数，而非“几只同向”的计数。需要有若干只个股在动才有意义；低于其中约三分之一时，该组没有统一方向。`;
+  // TWO floors govern this tile and the hover names both, because a reader who sees the
+  // percentage withheld on a basket the direction word still describes has no other way
+  // to find out why. Quoting only one of them contradicts the other in between.
+  var agEn=`Agreement is the net lean among the members with unusual activity today: ups minus downs, over that same count — not a head count of who agrees. A direction word needs at least ${GR_MIN_MOVERS} members moving; the agreement percentage needs at least ${GR_MIN_AGREEMENT_N}, because a net lean over two or three names lands on 0% or 100% whatever the group is doing. Below about a third of the movers the group has no single direction.`;
+  var agZh=`一致度指今日异动个股中的净偏向：上涨数减下跌数，除以同一基数，而非“几只同向”的计数。给出方向词至少需要 ${GR_MIN_MOVERS} 只在动；给出一致度百分比至少需要 ${GR_MIN_AGREEMENT_N} 只，因为两三只个股的净偏向无论如何都会落在0%或100%。低于在动个股约三分之一时，该组没有统一方向。`;
   var chips=[];
   function mchip(m,en,zh,tipEn,tipZh,withRet){
     if(!m||!m.ticker) return;
@@ -795,8 +806,13 @@ function grTiles(p,e){
   mchip(dir.leader,'Most active','最活跃','The member with the largest unusual move against SPY today.','今日对冲SPY后异动幅度最大的成分股。',false);
   mchip(dir.strongest,'Strongest','最强','Best member move today, after taking SPY out.','剔除SPY后今日表现最好的成分股。',true);
   mchip(dir.weakest,'Weakest','最弱','Worst member move today, after taking SPY out.','剔除SPY后今日表现最差的成分股。',true);
+  // With the agreement share refused there is no band to append, and the em-dash clause
+  // rendered its placeholder: six live baskets sat at exactly the movers floor and put
+  // "Up — —" in the tile's largest type. The sign word stands alone; the small print
+  // below already says in words why no percentage follows it.
   var dirV=fewMovers?L('Too few moving to read','在动个股太少')
-    :L(`${esc(signW[0])} <span style="font-weight:520;color:var(--muted)">— ${esc(aw[0])}</span>`,`${esc(signW[1])} <span style="font-weight:520;color:var(--muted)">— ${esc(aw[1])}</span>`);
+    :(dir.agreement_pct==null?L(esc(signW[0]),esc(signW[1]))
+    :L(`${esc(signW[0])} <span style="font-weight:520;color:var(--muted)">— ${esc(aw[0])}</span>`,`${esc(signW[1])} <span style="font-weight:520;color:var(--muted)">— ${esc(aw[1])}</span>`));
   // The median move is a leg over the COVERED members, so it survives an agreement the
   // engine declined to compute — the refusal is stated in plain words and carries no
   // count of its own, since the count it was decided on is not the one printed here.

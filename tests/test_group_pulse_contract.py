@@ -612,11 +612,14 @@ def test_the_refusing_fixture_really_does_carry_data(refused):
     """Guards the guard: without this the nulls below would pass for the wrong reason."""
     assert refused["arc"]["washout_readable_n"] == 4, "no washout read to refuse"
     assert refused["arc"]["staged_n"] == 4, "no stage read to refuse"
+    assert refused["arc"]["washed_out_n"] >= 1, \
+        "no washed-out member, so there is no capitulation age to refuse either"
 
 
 @pytest.mark.parametrize("leg", ["washed_out_share", "reclaimed_20d_share",
                                  "stage2_share", "stage4_share",
-                                 "drawdown_pctile_own_history"])
+                                 "drawdown_pctile_own_history",
+                                 "capitulation_median_age_d"])
 def test_below_the_arc_floor_every_numeric_value_leg_is_null(refused, leg):
     """G0-10 — the state said "not enough members covered" while the block printed a
     100% stage share and a 98th-percentile drawdown beside it. A reader takes the
@@ -647,6 +650,23 @@ def test_a_covered_basket_still_publishes_the_value_legs(golden):
     """The other half of the refusal test — proves it is the FLOOR doing the nulling."""
     assert golden["arc"]["washed_out_share"] is not None
     assert golden["arc"]["drawdown_pctile_own_history"] is not None
+    assert golden["arc"]["capitulation_median_age_d"] is not None
+
+
+def test_the_capitulation_age_is_refused_with_the_other_values():
+    """A MEDIAN over the refused cross-section is a value, not a receipt. It was the one
+    figure escaping the floor: the arc rail printed "the typical member's low was about
+    90 trading sessions ago" on a basket whose tile had just declined to read it.
+
+    Pinned BY CONSTRUCTION — the same age (12) is present above the floor and gone
+    below it, so this cannot pass because the fixture happens to have no washout."""
+    above = _arc_over(washed=5, have20=3, reclaimed=2, n_covered=10)
+    below = _arc_over(washed=3, have20=2, reclaimed=1, n_covered=4)
+    assert above["state"] != "insufficient_coverage"
+    assert above["capitulation_median_age_d"] == 12
+    assert below["state"] == "insufficient_coverage"
+    assert below["capitulation_median_age_d"] is None
+    assert below["washed_out_n"] == 3 and below["washout_readable_n"] == 4
 
 
 def test_the_floor_predicate_is_the_one_the_ladder_uses():
@@ -683,6 +703,44 @@ def test_a_legacy_object_without_the_new_denominators_still_validates(golden):
     legacy = _legacy(golden)
     assert set(legacy["arc"]) & GP._TRANSITIONAL_DENOM_KEYS == set()
     assert GP.validate_pulse(legacy) == []
+
+
+def test_an_object_carrying_the_denominators_must_carry_ALL_of_them(golden):
+    """SELF-UPGRADING leniency. The exemption is decided per object, not by a date: an
+    object with NONE of the six is the pre-pass artifact and is forgiven; an object with
+    ANY of them came from code that writes all six together, so a partial set is a
+    regression and is caught — forever, with no dated canary to unwind and no scheduled
+    fleet red on whoever happens to be on shift the day it expires."""
+    assert GP.validate_pulse(golden) == []                    # all six present
+    partial = _legacy(golden)
+    partial["arc"] = {**partial["arc"], "staged_n": golden["arc"]["staged_n"]}
+    errs = GP.validate_pulse(partial)
+    assert errs, "one denominator present must upgrade the whole object to enforced"
+    joined = " ".join(errs)
+    for missing in ("trend_n_50d", "trend_n_200d", "n_active",
+                    "washout_readable_n", "reclaimed_readable_n"):
+        assert missing in joined, f"{missing} was not demanded: {errs}"
+
+
+@pytest.mark.parametrize("block,key", [("participation", "trend_n_50d"),
+                                       ("direction", "n_active"),
+                                       ("arc", "washout_readable_n"),
+                                       ("arc", "staged_n")])
+def test_dropping_any_single_denominator_from_a_full_object_is_a_violation(golden,
+                                                                           block, key):
+    mutant = {**golden, block: {k: v for k, v in golden[block].items() if k != key}}
+    errs = GP.validate_pulse(mutant)
+    assert any(key in e for e in errs), (key, errs)
+
+
+def test_the_exemption_is_computed_per_object_not_globally(golden):
+    """Both shapes are legal in the SAME payload for one nightly — the artifact is
+    rewritten whole, but nothing in the contract depends on that."""
+    payload = {"fresh": {**golden, "basket_id": "fresh"},
+               "stale": {**_legacy(golden), "basket_id": "stale"}}
+    assert GP.validate_payload(payload) == []
+    assert GP._denom_exemption(payload["fresh"]) == frozenset()
+    assert GP._denom_exemption(payload["stale"]) == GP._TRANSITIONAL_DENOM_KEYS
 
 
 def test_a_legacy_object_keeps_its_pre_refusal_arc_legs(refused):

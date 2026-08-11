@@ -123,13 +123,16 @@ ARC LADDER (first match wins; the coverage floors are checked FIRST):
              else state = "insufficient_coverage"
 
     Below the floors the arc REFUSES rather than half-refuses: the state string says
-    so AND every numeric VALUE leg (`washed_out_share`, `reclaimed_20d_share`,
-    `stage2_share`, `stage4_share`, `drawdown_pctile_own_history`) goes null, while
-    the COUNTS (`washed_out_n`, `washout_readable_n`, `reclaimed_readable_n`,
-    `staged_n`, `capitulation_median_age_d`) stay real so the refusal still shows its
-    receipts — the same shape engine/group_earnings.py refuses in below MIN_REPORTED.
-    A basket printing "not enough covered" beside a confident 100% share was inviting
-    the reader to use the number the state had just declined to stand behind.
+    so AND every numeric VALUE leg goes null — `washed_out_share`,
+    `reclaimed_20d_share`, `stage2_share`, `stage4_share`,
+    `drawdown_pctile_own_history`, and `capitulation_median_age_d`, which is a MEDIAN
+    over the refused cross-section and therefore a value, not a receipt.  Only the
+    COUNTS (`washed_out_n`, `washout_readable_n`, `reclaimed_readable_n`, `staged_n`)
+    stay real, so the refusal still shows how thin it was — the same shape
+    engine/group_earnings.py refuses in below MIN_REPORTED.  A basket printing "not
+    enough covered" beside a confident 100% share, or beside "the typical member's low
+    was 90 sessions ago", was inviting the reader to use the number the state had just
+    declined to stand behind.
     1 washout_in_progress               washed_out_share >= 0.5 AND
                                         capitulation_median_age_d <= 5
     2 washout_complete_awaiting_reclaim washed_out_share >= 0.5 AND age > 5 AND
@@ -826,6 +829,11 @@ def _arc(sets: dict, panel: dict, as_of: pd.Timestamp, washouts: dict,
     # below-MIN_REPORTED shape — values None, n's real, the hole printed not filled).
     if not arc_floor_met(n_covered, n_members):
         washed_share = reclaimed = stage2 = stage4 = dd_pctile = None
+        # The capitulation age goes with them: it is the MEDIAN of the refused
+        # cross-section, not a count of it, and it was escaping onto the arc rail as
+        # "the typical member's low was about 90 trading sessions ago" beside a tile
+        # that had just declined to read the group at all.
+        median_age = None
     return {
         "state": state,
         "washed_out_share": _r(washed_share, 4),
@@ -1042,19 +1050,41 @@ _SHARE_DENOM_PAIRS = (
 #: The denominator keys this pass ADDED.  Every object built by the code above carries
 #: them; an artifact emitted before this pass does not, and the committed
 #: site/basketdata/pulse.json is exactly that artifact until the next nightly re-emits.
-#: So they are ALLOWED-but-not-REQUIRED here: a validator that demanded them would go
-#: red on the shipped bytes the moment this merged, days before the bytes could heal.
-#: Presence is enforced where it is enforceable — on freshly BUILT objects, in
-#: tests/test_group_pulse_contract.py.  For the same reason validate_pulse does not
-#: require the arc's value legs to be null under `insufficient_coverage`: the
-#: committed artifact still carries the old numeric legs.  Delete this set (folding
-#: the keys into the required sets) once an artifact carrying them is committed.
+#: A validator that demanded them outright would go red on the shipped bytes the moment
+#: this merged, days before the bytes could heal — and one that exempted them forever
+#: would leave the "every share carries its n" clause permanently unenforced.
 _TRANSITIONAL_DENOM_KEYS = frozenset({
     "trend_n_50d", "trend_n_200d", "n_active",
     "washout_readable_n", "reclaimed_readable_n", "staged_n"})
 
+_DENOM_BLOCKS = ("participation", "direction", "arc")
 
-def _block(errs: list[str], obj: dict, name: str, allowed: set) -> dict:
+
+def _denom_exemption(obj: dict) -> frozenset[str]:
+    """Which denominator keys THIS object is allowed to omit — the leniency is
+    SELF-UPGRADING, decided per object rather than by a date or a flag.
+
+    An object carrying NONE of the six is the pre-pass artifact: it may omit all six.
+    An object carrying ANY of them was written by the code above, which writes all six
+    together, so it must carry ALL of them — a partial set is a regression, not a
+    legacy shape.  Nothing has to be remembered and unwound later: the day the nightly
+    re-emits pulse.json the artifact enforces itself, and it keeps enforcing forever.
+    (A dated expiry would instead schedule a fleet-wide red for whoever is on shift.)
+
+    The same reasoning is why validate_pulse does not require the arc's value legs to
+    be null under `insufficient_coverage`: today's committed artifact still carries the
+    old numeric legs.  That nulling is pinned on freshly BUILT objects, in
+    tests/test_group_pulse_contract.py.
+    """
+    for name in _DENOM_BLOCKS:
+        b = obj.get(name)
+        if isinstance(b, dict) and (_TRANSITIONAL_DENOM_KEYS & set(b)):
+            return frozenset()
+    return _TRANSITIONAL_DENOM_KEYS
+
+
+def _block(errs: list[str], obj: dict, name: str, allowed: set,
+           exempt: frozenset[str] = frozenset()) -> dict:
     b = obj.get(name)
     if not isinstance(b, dict):
         errs.append(f"{name}: missing or not an object")
@@ -1062,7 +1092,7 @@ def _block(errs: list[str], obj: dict, name: str, allowed: set) -> dict:
     unknown = set(b) - allowed
     if unknown:
         errs.append(f"{name}: unknown key(s) {sorted(unknown)}")
-    missing = allowed - set(b) - _TRANSITIONAL_DENOM_KEYS
+    missing = allowed - set(b) - exempt
     if missing:
         errs.append(f"{name}: missing key(s) {sorted(missing)}")
     return b
@@ -1092,7 +1122,8 @@ def validate_pulse(obj: Any) -> list[str]:
     if obj.get("authority") != "context_only":
         errs.append("authority must be 'context_only'")
 
-    part = _block(errs, obj, "participation", _PART_KEYS)
+    exempt = _denom_exemption(obj)
+    part = _block(errs, obj, "participation", _PART_KEYS, exempt)
     basis = part.get("activity_basis")
     if isinstance(basis, dict):
         if set(basis) != _BASIS_KEYS:
@@ -1103,7 +1134,7 @@ def validate_pulse(obj: Any) -> list[str]:
     elif "activity_basis" in part:
         errs.append("participation.activity_basis: not an object")
 
-    direction = _block(errs, obj, "direction", _DIR_KEYS)
+    direction = _block(errs, obj, "direction", _DIR_KEYS, exempt)
     if direction.get("sign") not in _SIGN_STATES:
         errs.append(f"direction.sign must be one of {sorted(_SIGN_STATES)}")
     for k in ("leader", "strongest", "weakest"):
@@ -1111,7 +1142,7 @@ def validate_pulse(obj: Any) -> list[str]:
         if v is not None and not (isinstance(v, dict) and v.get("ticker")):
             errs.append(f"direction.{k} must be null or carry a ticker")
 
-    arc = _block(errs, obj, "arc", _ARC_KEYS)
+    arc = _block(errs, obj, "arc", _ARC_KEYS, exempt)
     if arc.get("state") not in _ARC_STATES:
         errs.append(f"arc.state must be one of {sorted(_ARC_STATES)}")
     if arc.get("null_disclosure") != ARC_NULL_DISCLOSURE:
@@ -1129,10 +1160,10 @@ def validate_pulse(obj: Any) -> list[str]:
                 b.get(n_key), int):
             errs.append(f"{block_name}.{share_key} present without {n_key}")
 
-    # A denominator that is THERE must be a real count.  An ABSENT one is legal only
-    # because the committed artifact predates them (see _TRANSITIONAL_DENOM_KEYS);
-    # "share implies its denominator" is enforced on built objects by the contract
-    # suite, which is the only place it can be enforced without a scheduled red.
+    # A denominator that is THERE must be a real count.  PRESENCE is enforced by the
+    # block check above, through the self-upgrading exemption: an object carrying any
+    # of the six must carry all of them, so "every share carries its n" goes from
+    # unenforceable to enforced the moment the artifact can satisfy it.
     for block_name, _share_key, den_block, den_key in _SHARE_DENOM_PAIRS:
         src = obj if den_block == "" else obj.get(den_block)
         if not isinstance(src, dict) or den_key not in src:
