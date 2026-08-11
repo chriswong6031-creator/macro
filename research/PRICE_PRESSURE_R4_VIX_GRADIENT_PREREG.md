@@ -142,7 +142,7 @@ residual log-return. For down-side events, continuation is negative;
   forward-fill) — only by the first subsequent nightly producer run on which
   t0 appears and only before that row's `fwd5` endpoint matures. That producer
   appends an immutable completion receipt binding the row identity, completed
-  percentile, `observed_at`, and exact VIXCLS source-blob hash. Grading may
+  percentile, `observed_at`, and exact VIXCLS source-artifact SHA-256. Grading may
   consume that frozen receipt but may never fill or recompute a null stamp at
   grading time. If no receipt exists before `fwd5` maturity, the row is
   excluded forever from both arms and printed as missing. Completed counts are
@@ -302,7 +302,7 @@ repairs, folded into §§0–7 above:
    percentile, an exact late-arriving value, never a forward-fill, never a
    revision of a non-null) by the first subsequent nightly on which t0 is
    available and before `fwd5` maturity. The producer appends an immutable
-   row/value/`observed_at`/source-blob-hash receipt; grading consumes that
+   row/value/`observed_at`/source-artifact-SHA-256 receipt; grading consumes that
    receipt and is forbidden to complete stamps itself. A row without a timely
    receipt is missing forever. The recompute doubles as §3's 1% consistency
    tripwire on non-null stamps.

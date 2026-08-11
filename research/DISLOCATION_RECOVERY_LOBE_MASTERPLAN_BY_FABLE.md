@@ -571,7 +571,7 @@ than argued) landed as the §10 amendment (#5286). Four blockers converged
 independently across the two passes. Three defects survived §9 and §10
 repaired them: (1) the stamped-only PIT rule + the measured one-session
 VIXCLS harvest lag would have starved both evidence arms to zero forever
-(lag-completion: the first subsequent nightly may append a source-hash-bound
+(lag-completion: the first subsequent nightly may append a source-SHA-256-bound
 receipt before `fwd5` maturity; grading never fills a stamp; non-null stamps
 are immutable); (2)
 5-date blocks on a stressed arm whose 268 sessions form 36 regime runs are
