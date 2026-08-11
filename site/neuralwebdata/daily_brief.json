@@ -1,17 +1,25 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-08-10T20:13:50.403956+00:00",
+  "produced_at": "2026-08-11T04:21:35.678545+00:00",
   "as_of": "2026-08-07",
   "status": "warn",
   "phase": "final",
   "did_the_brain_run": {
-    "cortex_status": "degraded",
-    "tool_call_batches": 0,
-    "individual_tool_calls": 0,
-    "context_stale": false,
-    "summary": "cortex degraded — model_unavailable"
+    "cortex_status": "warn",
+    "tool_call_batches": 2,
+    "individual_tool_calls": 7,
+    "context_stale": true,
+    "summary": "cortex ran (7 tool calls) with warning — partial; memo as_of 2026-08-11T04:16:20+00:00"
   },
-  "what_changed": [],
+  "what_changed": [
+    {
+      "kind": "cortex_status_changed",
+      "id": "cortex",
+      "summary": "cortex status changed: degraded → warn",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    }
+  ],
   "what_contradicted": [
     {
       "id": "",
@@ -168,8 +176,8 @@
     {
       "priority": 1,
       "area": "cortex",
-      "summary": "cortex degraded — inspect data/neuralweb/cortex/memo.json and run_status",
-      "action_type": "ops_fix"
+      "summary": "cortex context was stale at run time — check world_state freshness",
+      "action_type": "inspect"
     },
     {
       "priority": 2,
