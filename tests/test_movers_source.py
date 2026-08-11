@@ -17,7 +17,8 @@ Tests:
 14. theme_facts: no indicator vocab in fact texts
 15. theme_facts shape: {facts, numbers_whitelist} always returned
 16. mover_facts shape: {facts, numbers_whitelist} always returned
-17. full build: produces ≥1 theme_list post with ≥4 cashtags ending in '?'
+17. full build: produces ≥1 theme_list post with ≥4 cashtags, and NO
+    generated theme_list body ends on '?' (voice doctrine v5)
 18. full build: every number in a theme_list post body is in the whitelist (no invented numbers)
 19. full build: multi-cashtag validate passes for a real member list
 20. full build: validate FAILS for an unrelated cashtag in theme_list
@@ -458,8 +459,26 @@ def _make_test_cfg():
     return cfg, plans
 
 
-def test_full_build_produces_theme_list_posts_with_cashtags_and_question():
-    """Full build must produce ≥1 theme_list post with ≥4 cashtags ending in '?'"""
+def test_full_build_produces_theme_list_posts_with_cashtags_and_no_question():
+    """≥1 theme_list post carries ≥4 cashtags, and NO body ends on '?'.
+
+    INVERTED FOR VOICE DOCTRINE v5 (2026-08-11), and both halves are load
+    bearing for different reasons.
+
+    THE CASHTAG HALF IS UNCHANGED and it is the half that matters most: a
+    theme_list post IS the multi-name leaders list, so a build that emits one
+    carrying fewer than four member cashtags has produced a group post with no
+    group in it. `copywriter.validate_copy` enforces ≥4 per post; this asserts
+    the BUILD actually reaches that shape end to end.
+
+    THE QUESTION HALF IS REVERSED. It used to require a body ending on '?',
+    mirroring the v4 rule in `copywriter.validate_copy` that a theme_list body
+    must end on a question mark because the group post was designed as
+    reply-bait. That single upstream requirement is why every theme post the
+    desk ever shipped ended on "Am I getting a second session out of this?" —
+    no better tail could be written while it stood. v5 inverts the rule to a
+    ban, so the assertion inverts with it: no generated body may end on '?'.
+    """
     sp500_path = ROOT / "site" / "marketdata" / "sp500_heatmap.json"
     themes_path = ROOT / "site" / "marketdata" / "themes_heatmap.json"
     if not sp500_path.exists() or not themes_path.exists():
@@ -472,16 +491,25 @@ def test_full_build_produces_theme_list_posts_with_cashtags_and_question():
     theme_items = _get_all_queue_items(plan, "theme_list")
     assert theme_items, "No theme_list posts in content plan"
 
-    # At least one must have ≥4 cashtags and end in '?'
+    # Half 1 (unchanged): the build reaches the multi-cashtag leaders shape.
     good = []
     for item in theme_items:
         body = item.get("body", "")
         cashtags_in_body = re.findall(r"\$[A-Z]{1,5}", body)
-        if len(cashtags_in_body) >= 4 and body.strip().endswith("?"):
+        if len(cashtags_in_body) >= 4:
             good.append(item)
     assert good, (
-        f"No theme_list post with ≥4 cashtags ending in '?'. "
+        f"No theme_list post carries ≥4 cashtags, so the build never reached "
+        f"the leaders-list shape. "
         f"Sample bodies: {[i['body'][:120] for i in theme_items[:2]]}"
+    )
+
+    # Half 2 (inverted for v5): none of them may end on reply-bait.
+    baited = [i["body"][:120] for i in theme_items
+              if i.get("body", "").strip().endswith("?")]
+    assert not baited, (
+        f"theme_list bodies ending on '?': v5 ends the group post on the "
+        f"breadth fact, never on a question. {baited}"
     )
 
 

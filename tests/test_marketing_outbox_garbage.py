@@ -228,10 +228,21 @@ ABSTENTION_LIVE = [
     "passed. 🔍",
 ]
 
-#: FIRST PERSON IS 26% OF THE CORPUS AND THE VOICE LAW REQUIRES IT. Every line
-#: here is a real stance in the first person and MUST survive — this is the check
-#: that matters most, because the way this fix fails is by taking the voice with
-#: the defect.
+#: THE ANTI-OVERREACH HALF: `abstention_violations` must refuse the did-nothing
+#: PAYLOAD without swallowing a real stance that happens to be phrased in the
+#: first person. Every line here is such a stance and MUST survive this
+#: detector, because the way that fix fails is by taking the voice with the
+#: defect.
+#:
+#: NOTE ON REGISTER (voice doctrine v5, 2026-08-11). This block used to be
+#: headed "FIRST PERSON IS 26% OF THE CORPUS AND THE VOICE LAW REQUIRES IT",
+#: and that justification is dead: v5 bans first person in every post lane, and
+#: `copywriter.voice_v5_violations` rejects all eleven lines below. They stay
+#: HERE, verbatim, because this suite asserts them against
+#: `abstention_violations` ONLY — a scoped detector that must stay narrow, and
+#: whose over-reach is invisible unless it is probed with the register it is
+#: most likely to over-reach on. A fixture for a scoped detector is not a
+#: statement about what the house ships.
 STANCE_SURVIVORS = [
     "$VST up 9% and every target on the street just got lapped. I'm not paying "
     "this price.",
