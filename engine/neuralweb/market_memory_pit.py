@@ -58,6 +58,7 @@ _QUERY_ID = re.compile(r"mmquery_[a-f0-9]{64}\Z")
 _STORE_ID = re.compile(r"mmstore_[a-f0-9]{64}\Z")
 _GENERATION_ID = re.compile(r"mmgeneration_[a-f0-9]{64}\Z")
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
+_SHARD = re.compile(r"[a-f0-9]{2}\Z")
 _VERSION_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,159}\Z")
 _RFC3339_UTC = re.compile(
     r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|\+00:00)\Z"
@@ -407,7 +408,13 @@ def validate_store_root(
 ) -> Path:
     """Resolve one private store root and reject public or dangerously broad paths."""
 
-    candidate = Path(root).expanduser().resolve()
+    expanded = Path(root).expanduser()
+    absolute = Path(os.path.abspath(expanded))
+    if absolute.is_symlink():
+        raise MarketMemoryStoreError(
+            "Market Memory PIT store root is a symlink"
+        )
+    candidate = absolute.resolve(strict=False)
     if candidate == Path(candidate.anchor) or candidate == Path.home().resolve():
         raise MarketMemoryStoreError("Market Memory PIT store root is too broad")
     if {"site", "site.served"}.intersection(candidate.parts):
@@ -667,6 +674,22 @@ def _directory_fsync(path: Path) -> None:
         os.close(descriptor)
 
 
+def _validate_store_directory(path: Path, *, label: str) -> None:
+    try:
+        metadata = path.lstat()
+    except OSError as exc:
+        raise MarketMemoryStoreError(f"cannot inspect {label} safely") from exc
+    if (
+        path.is_symlink()
+        or not stat.S_ISDIR(metadata.st_mode)
+        or stat.S_IMODE(metadata.st_mode) != 0o700
+        or metadata.st_uid != os.getuid()
+    ):
+        raise MarketMemoryStoreError(
+            f"{label} must be an owned 0700 directory"
+        )
+
+
 def _mkdir_durable(path: Path) -> None:
     """Create a directory chain and fsync every newly linked parent entry."""
 
@@ -689,7 +712,66 @@ def _mkdir_durable(path: Path) -> None:
                 raise MarketMemoryStoreError(
                     "Market Memory store directory race was unsafe"
                 ) from None
+        _validate_store_directory(
+            directory, label="new Market Memory store directory"
+        )
         _directory_fsync(directory.parent)
+    _validate_store_directory(path, label="Market Memory store directory")
+
+
+def _ensure_store_directory_chain(root: Path, leaf: Path) -> None:
+    """Validate and re-persist every store-owned directory link to ``leaf``."""
+
+    try:
+        relative = leaf.relative_to(root)
+    except ValueError as exc:
+        raise MarketMemoryStoreError(
+            "Market Memory store directory escaped its root"
+        ) from exc
+    _mkdir_durable(root)
+    _validate_store_directory(root, label="Market Memory store root")
+    _directory_fsync(root.parent)
+    cursor = root
+    for part in relative.parts:
+        cursor = cursor / part
+        if cursor.is_symlink():
+            raise MarketMemoryStoreError("Market Memory store contains a symlink")
+        if not cursor.exists():
+            try:
+                os.mkdir(cursor, 0o700)
+            except FileExistsError:
+                pass
+        _validate_store_directory(cursor, label="Market Memory store shard")
+        _directory_fsync(cursor.parent)
+
+
+def _validate_store_directory_tree(root: Path) -> None:
+    """Bound and authenticate every existing contract-owned shard directory."""
+
+    _ensure_store_directory_chain(root, root)
+    for namespace in ("objects", "contexts", "queries", "generations"):
+        top = _safe_store_path(root, namespace)
+        if not top.exists() and not top.is_symlink():
+            continue
+        _ensure_store_directory_chain(root, top)
+        try:
+            children = list(top.iterdir())
+        except OSError as exc:
+            raise MarketMemoryStoreError(
+                "Market Memory shard namespace cannot be inspected"
+            ) from exc
+        if len(children) > 256:
+            raise MarketMemoryStoreError(
+                "Market Memory shard namespace exceeds its fixed bound"
+            )
+        for child in children:
+            if child.is_symlink() or not child.is_dir() or not _SHARD.fullmatch(
+                child.name
+            ):
+                raise MarketMemoryStoreError(
+                    "Market Memory shard namespace contains an unowned path"
+                )
+            _ensure_store_directory_chain(root, child)
 
 
 def _write_create_once(root: Path, path: Path, body: bytes, *, label: str) -> bool:
@@ -699,7 +781,7 @@ def _write_create_once(root: Path, path: Path, body: bytes, *, label: str) -> bo
         path.parent.relative_to(root)
     except ValueError as exc:
         raise MarketMemoryStoreError("immutable write escaped the store root") from exc
-    _mkdir_durable(path.parent)
+    _ensure_store_directory_chain(root, path.parent)
     if path.exists() or path.is_symlink():
         _payload, existing = _read_canonical_object(
             path,
@@ -708,6 +790,9 @@ def _write_create_once(root: Path, path: Path, body: bytes, *, label: str) -> bo
         )
         if existing != body:
             raise MarketMemoryCaptureError(f"immutable {label} collision")
+        # A prior link may have been visible when its parent fsync failed.
+        # Re-establish that exact parent durability before any HEAD can refer to it.
+        _directory_fsync(path.parent)
         return False
     temporary = path.parent / f".{path.name}.tmp.{os.getpid()}.{uuid4().hex}"
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
@@ -735,6 +820,7 @@ def _write_create_once(root: Path, path: Path, body: bytes, *, label: str) -> bo
             )
             if existing != body:
                 raise MarketMemoryCaptureError(f"immutable {label} collision")
+            _directory_fsync(path.parent)
             return False
     except (MarketMemoryCaptureError, MarketMemoryStoreError):
         raise
@@ -743,12 +829,20 @@ def _write_create_once(root: Path, path: Path, body: bytes, *, label: str) -> bo
     finally:
         if descriptor is not None:
             os.close(descriptor)
-        temporary.unlink(missing_ok=True)
+        if temporary.exists():
+            try:
+                temporary.unlink()
+                _directory_fsync(path.parent)
+            except OSError as exc:
+                raise MarketMemoryStoreError(
+                    f"cannot durably clean temporary {label}"
+                ) from exc
 
 
 def _replace_head(root: Path, head: Mapping[str, Any]) -> None:
     """Atomically advance the only mutable pointer after all immutable bytes exist."""
 
+    _validate_store_directory_tree(root)
     body = _canonical_bytes(head)
     if len(body) > _MAX_HEAD_BYTES:
         raise MarketMemoryStoreError("store HEAD exceeds its safe size bound")
@@ -776,10 +870,18 @@ def _replace_head(root: Path, head: Mapping[str, Any]) -> None:
     finally:
         if descriptor is not None:
             os.close(descriptor)
-        temporary.unlink(missing_ok=True)
+        if temporary.exists():
+            try:
+                temporary.unlink()
+                _directory_fsync(root)
+            except OSError as exc:
+                raise MarketMemoryStoreError(
+                    "cannot durably clean temporary store HEAD"
+                ) from exc
 
 
 def _initialize_store(root: Path) -> _StoreState:
+    _validate_store_directory_tree(root)
     manifest_path = _store_manifest_path(root)
     head_path = _head_path(root)
     generation_root = _safe_store_path(root, "generations")
@@ -807,6 +909,8 @@ def _initialize_store(root: Path) -> _StoreState:
 
 def _initialize_or_load_store(root: Path) -> _StoreState:
     """Load a complete store or repair only the deterministic empty-init prefix."""
+
+    _validate_store_directory_tree(root)
 
     manifest_path = _store_manifest_path(root)
     head_path = _head_path(root)
@@ -850,6 +954,8 @@ def _initialize_or_load_store(root: Path) -> _StoreState:
 
 
 def _load_store_state(root: Path) -> _StoreState:
+    _validate_store_directory_tree(root)
+    _directory_fsync(root)
     manifest, _manifest_body = _read_canonical_object(
         _store_manifest_path(root),
         limit=_MAX_STORE_MANIFEST_BYTES,
@@ -860,8 +966,10 @@ def _load_store_state(root: Path) -> _StoreState:
         _head_path(root), limit=_MAX_HEAD_BYTES, label="Market Memory store HEAD"
     )
     clean_head = _validate_head(head, store_id=clean_manifest["store_id"])
+    generation_path = _generation_path(root, clean_head["generation_id"])
+    _ensure_store_directory_chain(root, generation_path.parent)
     generation, generation_body = _read_canonical_object(
-        _generation_path(root, clean_head["generation_id"]),
+        generation_path,
         limit=_MAX_GENERATION_BYTES,
         label="Market Memory store generation",
     )
@@ -877,6 +985,31 @@ def _load_store_state(root: Path) -> _StoreState:
         head=clean_head,
         generation=clean_generation,
     )
+
+
+def _reprove_active_publication(root: Path, state: _StoreState) -> None:
+    """Re-establish generation and HEAD parent durability before writer ACK."""
+
+    generation_parent = _generation_path(
+        root, state.head["generation_id"]
+    ).parent
+    _ensure_store_directory_chain(root, generation_parent)
+    _directory_fsync(generation_parent)
+    _directory_fsync(root)
+
+
+def _reprove_stored_publication(
+    root: Path, stored: StoredMarketMemoryContext, *, state: _StoreState
+) -> None:
+    receipt = stored.capture_receipt
+    for path in (
+        _object_path(root, receipt["packet_sha256"]),
+        _context_path(root, receipt["context_id"]),
+        _query_path(root, receipt["query_id"]),
+    ):
+        _ensure_store_directory_chain(root, path.parent)
+        _directory_fsync(path.parent)
+    _reprove_active_publication(root, state)
 
 
 def _snapshot_from_generation(
@@ -988,8 +1121,10 @@ def _read_pinned_generation_from_state(
             raise MarketMemoryStoreError(
                 "store generation ancestry exceeds its safe bound"
             )
+        previous_path = _generation_path(root, previous_id)
+        _ensure_store_directory_chain(root, previous_path.parent)
         previous, previous_body = _read_canonical_object(
-            _generation_path(root, previous_id),
+            previous_path,
             limit=generation_limit,
             label="published ancestor store generation",
         )
@@ -1331,6 +1466,9 @@ class FileAsKnownAtReader(market_memory.AsKnownAtReader):
             )
         self.mode = mode
         self._pinned_snapshots: dict[tuple[str, str], PinnedGenerationSnapshot] = {}
+        self._head_snapshots: dict[tuple[str, str], PinnedGenerationSnapshot] = {}
+        self._active_snapshot_key: tuple[str, str] | None = None
+        self._active_snapshot: PinnedGenerationSnapshot | None = None
 
     def read_pinned_generation(
         self, *, generation_id: str | None = None
@@ -1351,6 +1489,51 @@ class FileAsKnownAtReader(market_memory.AsKnownAtReader):
         self._pinned_snapshots[key] = snapshot
         return snapshot
 
+    def read_active_generation(self) -> PinnedGenerationSnapshot:
+        """Authenticate only the generation named by the current durable HEAD.
+
+        Current-capture acknowledgements do not need to prove an arbitrary
+        historical pin by replaying the full append-one ancestry.  HEAD already
+        binds the active generation ID and exact bytes; loading that one bounded
+        complete index keeps acknowledgement work O(n) and below the generation
+        byte cap even when the pilot reaches its declared capture limit.
+        """
+
+        if self._active_snapshot is not None:
+            _validate_store_directory_tree(self.root)
+            head, _head_body = _read_canonical_object(
+                _head_path(self.root),
+                limit=_MAX_HEAD_BYTES,
+                label="Market Memory store HEAD",
+            )
+            clean_head = _validate_head(
+                head, store_id=self._active_snapshot.store_id
+            )
+            current_key = (
+                str(clean_head["generation_id"]),
+                str(clean_head["generation_sha256"]),
+            )
+            if current_key == self._active_snapshot_key:
+                return self._active_snapshot
+        state = _load_store_state(self.root)
+        key = (
+            str(state.generation["generation_id"]),
+            str(state.head["generation_sha256"]),
+        )
+        snapshot = self._head_snapshots.get(key)
+        if snapshot is None:
+            snapshot = _snapshot_from_generation(
+                state.generation,
+                generation_sha256=str(state.head["generation_sha256"]),
+                profile=STORE_PROFILE,
+            )
+            if len(self._head_snapshots) >= 8:
+                self._head_snapshots.pop(next(iter(self._head_snapshots)))
+            self._head_snapshots[key] = snapshot
+        self._active_snapshot_key = key
+        self._active_snapshot = snapshot
+        return snapshot
+
     def _authenticate_pinned_snapshot(
         self, generation: PinnedGenerationSnapshot
     ) -> PinnedGenerationSnapshot:
@@ -1361,6 +1544,8 @@ class FileAsKnownAtReader(market_memory.AsKnownAtReader):
         if generation.profile != STORE_PROFILE:
             raise MarketMemoryQueryError("generation profile does not belong to W1A")
         if any(generation is cached for cached in self._pinned_snapshots.values()):
+            return generation
+        if any(generation is cached for cached in self._head_snapshots.values()):
             return generation
         authenticated = self.read_pinned_generation(
             generation_id=generation.generation_id
@@ -1541,12 +1726,14 @@ def capture_context(
     )
     if uninitialized:
         _require_contemporaneous_capture(validated, captured_at=captured_at)
-    _mkdir_durable(store)
+    _ensure_store_directory_chain(store, store)
+    _validate_store_directory_tree(store)
     directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
     lock_descriptor = os.open(store, directory_flags)
     try:
         fcntl.flock(lock_descriptor, fcntl.LOCK_EX)
         state = _initialize_or_load_store(store)
+        _reprove_active_publication(store, state)
         receipt = _build_capture_receipt(
             validated,
             store_id=state.manifest["store_id"],
@@ -1569,11 +1756,13 @@ def capture_context(
                 raise MarketMemoryCaptureError(
                     "operational query already has a different immutable capture"
                 )
-            return FileAsKnownAtReader(store).read_stored_as_known_at(
+            stored = FileAsKnownAtReader(store).read_stored_as_known_at(
                 subject=validated["subject"],
                 event_time=validated["clocks"]["event_time"],
                 as_known_at=validated["clocks"]["as_known_at"],
             )
+            _reprove_stored_publication(store, stored, state=state)
+            return stored
 
         query_path = _query_path(store, receipt["query_id"])
         if query_path.exists() or query_path.is_symlink():
@@ -1657,15 +1846,18 @@ def capture_context(
             receipt_body,
             label="exact-query receipt",
         )
-        _publish_generation(store, state=state, receipt=receipt)
+        state = _publish_generation(store, state=state, receipt=receipt)
+        _reprove_active_publication(store, state)
     finally:
         fcntl.flock(lock_descriptor, fcntl.LOCK_UN)
         os.close(lock_descriptor)
-    return FileAsKnownAtReader(store).read_stored_as_known_at(
+    stored = FileAsKnownAtReader(store).read_stored_as_known_at(
         subject=validated["subject"],
         event_time=validated["clocks"]["event_time"],
         as_known_at=validated["clocks"]["as_known_at"],
     )
+    _reprove_stored_publication(store, stored, state=state)
+    return stored
 
 
 def default_store_root(repository_root: str | Path) -> Path:

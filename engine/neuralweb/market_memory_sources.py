@@ -740,8 +740,17 @@ def _collector_evidence(
     ):
         raise SourceIntakeError("collector manifest has no CPIAUCSL receipt")
     row = dict(series[_SERIES_ID])
-    if row.get("status") != "written":
-        raise SourceIntakeError("collector did not write CPIAUCSL")
+    row_status = row.get("status")
+    if row_status not in {"written", "sealed"}:
+        raise SourceIntakeError("collector did not durably publish CPIAUCSL")
+    seal_mode = manifest.get("mode") == "seal_existing"
+    if row_status == "sealed":
+        if not seal_mode:
+            raise SourceIntakeError("sealed collector receipt has no canonical mode")
+        if manifest.get("status") != "ok":
+            raise SourceIntakeError("sealed collector manifest is not complete")
+    elif seal_mode or "sealed_at" in manifest:
+        raise SourceIntakeError("written collector receipt claims sealed provenance")
     for field in ("rows", "periods", "release_dates"):
         count = row.get(field)
         if not isinstance(count, int) or isinstance(count, bool) or count <= 0:
@@ -771,6 +780,10 @@ def _collector_evidence(
     # therefore satisfy the complete integrity contract instead of silently
     # downgrading to reconstruction evidence.
     hardened = any(hardening_fields_present)
+    if row_status == "sealed" and not all(hardening_fields_present):
+        raise SourceIntakeError(
+            "sealed collector receipt lacks the complete hardened profile"
+        )
     completed: str | None = None
     if hardened:
         if manifest.get("integrity_profile") != COLLECTOR_INTEGRITY_PROFILE:
@@ -782,6 +795,14 @@ def _collector_evidence(
             raise SourceIntakeError(
                 "collector completion/observation clocks are impossible"
             )
+        if row_status == "sealed":
+            sealed_dt, _sealed = _parse_utc(
+                manifest.get("sealed_at"), field="sealed_at"
+            )
+            if sealed_dt < completed_dt or observed_at < sealed_dt:
+                raise SourceIntakeError(
+                    "collector seal/completion/observation clocks are impossible"
+                )
         expected_hash = row.get("artifact_sha256")
         expected_bytes = row.get("artifact_bytes")
         if not isinstance(expected_hash, str) or not _SHA256.fullmatch(expected_hash):
@@ -808,6 +829,7 @@ def _collector_evidence(
 
     return {
         "row": row,
+        "collector_entry_status": row_status,
         "collector_started_at": started,
         "collector_completed_at": completed,
         "integrity_profile": (
@@ -1307,23 +1329,88 @@ def intake_alfred_cpiaucsl(
         "integrity_profile": evidence["integrity_profile"],
     }
     capture_id = "mmscapture_" + sha256(_canonical_bytes(capture_core)).hexdigest()
-
-    root = validate_source_store_root(store_root)
-    _mkdir_durable(root)
-    lock_path = _safe_path(root, ".writer.lock")
-    lock_descriptor = os.open(
-        lock_path,
-        os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0),
-        0o600,
+    vintage_id = (
+        "mmsvintage_"
+        + sha256(
+            _canonical_bytes(
+                {"source_id": SOURCE_ID, "vintage_date": vintage_date.isoformat()}
+            )
+        ).hexdigest()
     )
+    revision_id = (
+        "mmsrevision_"
+        + sha256(
+            _canonical_bytes(
+                {
+                    "vintage_id": vintage_id,
+                    "artifact_sha256": object_sha,
+                    "upstream_artifact_sha256": upstream_sha,
+                }
+            )
+        ).hexdigest()
+    )
+
+    sealed_replay = evidence["collector_entry_status"] == "sealed"
+    root = validate_source_store_root(store_root)
+    lock_path = _safe_path(root, ".writer.lock")
+    if sealed_replay:
+        if not lock_path.is_file():
+            raise SourceIntakeError(
+                "sealed collector receipt has no unique published matching revision"
+            )
+        lock_descriptor = os.open(
+            lock_path,
+            os.O_RDWR | getattr(os, "O_NOFOLLOW", 0),
+        )
+    else:
+        _mkdir_durable(root)
+        lock_descriptor = os.open(
+            lock_path,
+            os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0),
+            0o600,
+        )
     try:
         fcntl.flock(lock_descriptor, fcntl.LOCK_EX)
-        state = _ensure_store(root)
+        state = _load_store_state(root) if sealed_replay else _ensure_store(root)
         existing_entry = _find_entry(state.generation, capture_id=capture_id)
         if existing_entry is not None:
             receipt, _body = _read_receipt_copies(
                 root, existing_entry, store_id=state.manifest["store_id"]
             )
+            stored_artifact = _read_artifact_for_receipt(root, receipt)
+            return StoredSourceArtifact(
+                stored_artifact, receipt, state.generation["generation_id"], False
+            )
+        if evidence["collector_entry_status"] == "sealed":
+            # ``seal_existing`` authenticates already persisted collector bytes,
+            # but it is explicitly not a fresh upstream capture.  A prior
+            # legacy receipt can bind the same immutable source revision under
+            # its honest reconstruction provenance, so replay that receipt
+            # without rewriting or upgrading it.  A sealed receipt must never
+            # mint the first live-evidence receipt.
+            revision_entries = [
+                dict(entry)
+                for entry in state.generation["receipts"]
+                if entry["revision_id"] == revision_id
+                and entry["artifact_sha256"] == object_sha
+            ]
+            if len(revision_entries) != 1:
+                raise SourceIntakeError(
+                    "sealed collector receipt has no unique published matching revision"
+                )
+            receipt, _body = _read_receipt_copies(
+                root,
+                revision_entries[0],
+                store_id=state.manifest["store_id"],
+            )
+            if receipt["provenance"]["upstream_artifact_sha256"] != upstream_sha:
+                raise SourceIntakeError(
+                    "sealed collector receipt does not match published source bytes"
+                )
+            if receipt["vintage_id"] != vintage_id:
+                raise SourceIntakeError(
+                    "sealed collector receipt does not match published source vintage"
+                )
             stored_artifact = _read_artifact_for_receipt(root, receipt)
             return StoredSourceArtifact(
                 stored_artifact, receipt, state.generation["generation_id"], False
