@@ -2791,10 +2791,16 @@ def test_options_pit_engine_and_adversarial_suites_are_ci_wired() -> None:
     manifest = (repo / ".github/ci/legacy-jobs.yml").read_text()
     for required in (
         '"engine/options_signal_episode.py"',
+        '"engine/options_signal_campaign.py"',
         '"contracts/options/options.signal_episode_session_outcome.v1.schema.json"',
         '"contracts/options/options.signal_campaign.v1.schema.json"',
+        '"contracts/options/options.signal_campaign.v2.schema.json"',
+        '"contracts/options/options.signal_campaign_outcome.v1.schema.json"',
+        '"contracts/options/options.signal_campaign_checkpoint.v1.schema.json"',
         '"data/options_signal_episode/campaigns.jsonl"',
+        '"data/options_signal_campaign/**"',
         '"research/options_estate/OPTIONS_SIGNAL_CAMPAIGNS_PREREG.md"',
+        '"research/options_estate/OPTIONS_SIGNAL_CAMPAIGN_V2_PREREG.md"',
         '"ops/LIVE_FLOW_RUNBOOK.md"',
         '"engine/live_flow.py"',
         '"tests/test_options_signal_episode.py"',
@@ -2802,6 +2808,7 @@ def test_options_pit_engine_and_adversarial_suites_are_ci_wired() -> None:
     ):
         assert required in workflow
     assert "python -m pytest tests/test_options_signal_episode.py -q" in manifest
+    assert "python -m pytest tests/test_options_signal_campaign.py -q" in manifest
     assert "python -m pytest tests/test_live_flow.py -q" in manifest
 
 
@@ -2850,23 +2857,46 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
         "      - name: OIP PIT — durable episodes + H+60 and "
         "declared-session-close proxy accrual"
     )
+    campaign_builder_name = (
+        "      - name: OIP campaign v2 — exact-contract revision and "
+        "anchored-outcome accrual"
+    )
     checkpoint_name = (
-        "      - name: OIP PIT — checkpoint the five durable episode ledgers"
+        "      - name: OIP PIT — checkpoint the four durable episode ledgers"
+    )
+    campaign_checkpoint_name = (
+        "      - name: OIP campaign v2 — checkpoint the exact three canonical ledgers"
     )
     following_name = (
         "      - name: XSR W1 — US fast-sector rotation lens "
         "(build_us_sector_rotation)"
     )
     builder_start = workflow.index(builder_name)
+    campaign_builder_start = workflow.index(campaign_builder_name)
     checkpoint_start = workflow.index(checkpoint_name)
+    campaign_checkpoint_start = workflow.index(campaign_checkpoint_name)
     following_start = workflow.index(following_name)
-    builder_block = workflow[builder_start:checkpoint_start]
-    checkpoint_block = workflow[checkpoint_start:following_start]
+    builder_block = workflow[builder_start:campaign_builder_start]
+    campaign_builder_block = workflow[campaign_builder_start:checkpoint_start]
+    checkpoint_block = workflow[checkpoint_start:campaign_checkpoint_start]
+    campaign_checkpoint_block = workflow[campaign_checkpoint_start:following_start]
 
-    assert builder_start < checkpoint_start < following_start
+    assert (
+        builder_start
+        < campaign_builder_start
+        < checkpoint_start
+        < campaign_checkpoint_start
+        < following_start
+    )
     assert "id: options_signal_episode" in builder_block
     assert "continue-on-error: true" in builder_block
     assert "run: python -m scripts.build_options_signal_episode" in builder_block
+    assert "id: options_signal_campaign" in campaign_builder_block
+    assert "run: python -m scripts.build_options_signal_campaign" in campaign_builder_block
+    assert (
+        "if: always() && steps.options_signal_episode.outcome == 'success'"
+        in campaign_builder_block
+    )
     assert (
         "if: always() && steps.options_signal_episode.outcome == 'success'"
         in checkpoint_block
@@ -2881,7 +2911,6 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
         "data/options_signal_episode/episodes.jsonl",
         "data/options_signal_episode/outcomes_h60.jsonl",
         "data/options_signal_episode/outcomes_session.jsonl",
-        "data/options_signal_episode/campaigns.jsonl",
     }
     declared = checkpoint_block.split("OIP_LEDGER_PATHS=(", 1)[1].split(")", 1)[0]
     assert {line.strip() for line in declared.splitlines() if line.strip()} == expected_paths
@@ -2894,6 +2923,36 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
         "git add data/options_signal_episode",
     ):
         assert forbidden not in checkpoint_block
+
+    assert "id: options_signal_campaign_publish" in campaign_checkpoint_block
+    assert "steps.options_signal_episode_publish.outcome == 'success'" in (
+        campaign_checkpoint_block
+    )
+    assert "steps.options_signal_campaign.outcome == 'success'" in (
+        campaign_checkpoint_block
+    )
+    assert "push_metadata_replay_commit" in campaign_checkpoint_block
+    assert 'git add -- "${OIP_CAMPAIGN_PATHS[@]}"' in campaign_checkpoint_block
+    expected_campaign_paths = {
+        "data/options_signal_campaign/campaigns.jsonl",
+        "data/options_signal_campaign/outcomes.jsonl",
+        "data/options_signal_campaign/checkpoint.json",
+    }
+    declared_campaign = campaign_checkpoint_block.split(
+        "OIP_CAMPAIGN_PATHS=(", 1
+    )[1].split(")", 1)[0]
+    assert {
+        line.strip() for line in declared_campaign.splitlines() if line.strip()
+    } == expected_campaign_paths
+    assert "data/options_signal_episode/campaigns.jsonl" not in campaign_checkpoint_block
+
+    final_gate = workflow.index(
+        "      - name: OIP PIT — fail closed after unrelated rendering completes"
+    )
+    assert final_gate > following_start
+    assert "steps.options_signal_campaign_publish.outcome != 'success'" in workflow[
+        final_gate:
+    ]
 
 
 def test_session_outcome_registry_has_one_writer_no_authority_consumers() -> None:
@@ -4379,13 +4438,26 @@ def test_campaign_registry_has_one_writer_and_no_authority_consumers() -> None:
 
     repo = Path(__file__).resolve().parent.parent
     registry = yaml.safe_load((repo / "config/synapse.yml").read_text())
-    artifact = registry["artifacts"]["options-signal-campaigns"]
-    assert artifact["producer"] == "scripts/build_options_signal_episode.py"
-    assert artifact["known_extra_writers"] == []
-    assert artifact["consumers"] == ["scripts/build_options_signal_episode.py"]
-    assert artifact["external_consumers"] == []
-    assert artifact["weights"] == "none"
-    assert artifact["scored_path_surfaces"] == []
+    legacy = registry["artifacts"]["options-signal-campaigns"]
+    assert legacy["producer"] == ""
+    assert legacy["known_extra_writers"] == []
+    assert legacy["consumers"] == []
+    assert legacy["external_consumers"] == []
+    assert legacy["weights"] == "none"
+    assert legacy["scored_path_surfaces"] == []
+
+    for artifact_id in (
+        "options-signal-campaign-revisions",
+        "options-signal-campaign-outcomes",
+        "options-signal-campaign-checkpoint",
+    ):
+        artifact = registry["artifacts"][artifact_id]
+        assert artifact["producer"] == "engine/options_signal_campaign.py"
+        assert artifact["known_extra_writers"] == []
+        assert artifact["consumers"] == ["engine/options_signal_campaign.py"]
+        assert artifact["external_consumers"] == []
+        assert artifact["weights"] == "none"
+        assert artifact["scored_path_surfaces"] == []
 
 
 def test_campaign_contract_carries_no_chain_heat_or_directional_projection_fields() -> None:
@@ -4402,7 +4474,7 @@ def test_campaign_contract_carries_no_chain_heat_or_directional_projection_field
         assert forbidden not in ledger
 
 
-def test_campaign_append_failure_blocks_checkpoint_advance(
+def test_episode_builder_preserves_legacy_campaign_bytes_and_has_no_campaign_summary(
     tmp_path: Path, monkeypatch,
 ) -> None:
     from scripts import build_options_signal_episode as builder
@@ -4419,42 +4491,19 @@ def test_campaign_append_failure_blocks_checkpoint_advance(
         avg_price=1.5,
         premium=1_500_000,
     )
-    second = _event(
-        id="campaign-builder-two",
-        ts="2026-07-02T19:29:00Z",
-        observed_at="2026-07-02T19:30:00Z",
-        decision_at="2026-07-02T19:30:00Z",
-        available_at="2026-07-02T19:30:00Z",
-        source_snapshot_asof="2026-07-02T19:30:00Z",
-        size=10_000,
-        avg_price=1.5,
-        premium=1_500_000,
-    )
-    stage = [*_stage_records(first), *_stage_records(second)]
-    real_append = builder.append_campaigns
-
-    def fail_campaign_append(*_args, **_kwargs):
-        raise ContractError("synthetic campaign append failure")
-
-    monkeypatch.setattr(builder, "append_campaigns", fail_campaign_append)
-    with pytest.raises(ContractError, match="campaign append failure"):
-        builder.run(
-            root_dir=tmp_path,
-            stages_by_session={"2026-07-02": stage},
-            computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
-        )
     ledger_root = tmp_path / "data/options_signal_episode"
-    assert len(load_jsonl(ledger_root / "episodes.jsonl")) == 2
-    assert len(load_jsonl(ledger_root / "outcomes_h60.jsonl")) == 2
-    assert not (ledger_root / "campaigns.jsonl").exists()
-    assert not (ledger_root / "checkpoint.json").exists()
-
-    monkeypatch.setattr(builder, "append_campaigns", real_append)
-    replay = builder.run(
+    ledger_root.mkdir(parents=True)
+    legacy_bytes = (
+        Path(__file__).resolve().parent.parent
+        / "data/options_signal_episode/campaigns.jsonl"
+    ).read_bytes()
+    (ledger_root / "campaigns.jsonl").write_bytes(legacy_bytes)
+    summary = builder.run(
         root_dir=tmp_path,
-        stages_by_session={"2026-07-02": stage},
+        stages_by_session={"2026-07-02": _stage_records(first)},
         computed_at=datetime(2026, 7, 2, 21, 0, tzinfo=timezone.utc),
     )
-    assert replay["campaigns_appended"] == 1
-    assert len(load_jsonl(ledger_root / "campaigns.jsonl")) == 1
+    assert len(load_jsonl(ledger_root / "episodes.jsonl")) == 1
+    assert (ledger_root / "campaigns.jsonl").read_bytes() == legacy_bytes
+    assert not any(key.startswith("campaign") for key in summary)
     assert (ledger_root / "checkpoint.json").exists()

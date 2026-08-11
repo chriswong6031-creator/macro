@@ -105,18 +105,12 @@ after the session digest. It is the sole advancer of these committed artifacts:
   session offset from the episode session; the exit is the declared target-session
   close under `nyse_session_window_recurring_schedule/v1` (including modeled
   recurring early closes), not a fabricated bar open;
-- `data/options_signal_episode/campaigns.jsonl` — immutable, abstaining research
-  cohorts for the first two-or-more-event, $3,000,000 exact rounded-premium prefix
-  of each exact session/ticker/expiration/strike/right group. Membership is
-  outcome-blind; persistence requires one valid reference-only H+60 anchor; and
 - `data/options_signal_episode/checkpoint.json` — per-session record count and
   canonical-record append-prefix SHA-256 (not the raw-byte publication digest).
 
-The campaign rule froze at `2026-08-11T08:22:28Z`, after the initial 2026-08-10
-corpus was inspected. Those initial rows are in-sample retrospective discovery,
-not forward evidence. Only rows formed at or after the freeze carry the
-prospective phase; any future evaluation must stratify phases and exclude the
-retrospective rows from prospective claims.
+`data/options_signal_episode/campaigns.jsonl` is a frozen eight-row v1 threshold
+cohort. It has no active producer or consumer, is never included in the episode
+publisher, and is not canonical or prospective evidence.
 
 The builder discovers at most the newest **64** retained sessions, using a
 credentialed R2 listing when available and the public 64-session dates index as
@@ -124,18 +118,41 @@ fallback. It processes sessions oldest-first, so a missed nightly catches up
 without skipping earlier retained stages. Before advancing a checkpoint it
 verifies that the stage did not shrink and that the previously consumed prefix
 is canonically unchanged. Append order is episodes, H+60 outcomes, session
-outcomes, campaigns after a persisted-H+60 reload, then checkpoint last. Any
-campaign failure leaves the source prefix replayable. `COLLECT_LANE=nightly`
-owns committed ledger advancement; dry runs and other lanes may derive a report
-but cannot append.
+outcomes, then checkpoint last. `COLLECT_LANE=nightly` owns committed ledger
+advancement; dry runs and other lanes may derive a report but cannot append.
+
+The immediately following `OIP campaign v2` step runs
+`scripts/build_options_signal_campaign.py` only after the episode step succeeds.
+It is the sole advancer of a separate canonical namespace:
+
+- `data/options_signal_campaign/campaigns.jsonl` — append-only exact-contract,
+  exact-session census revisions, including singleton groups;
+- `data/options_signal_campaign/outcomes.jsonl` — one research-only row per
+  revision/horizon, causally anchored to the final member's exact episode
+  outcome; other members are reference-only coverage and are never averaged;
+- `data/options_signal_campaign/checkpoint.json` — deterministic exact-prefix
+  receipts over all three episode sources and both canonical outputs.
+
+The v2 rule froze at `2026-08-11T13:24:00Z`, after the 2026-08-10 corpus was
+available. Revisions whose final-member availability precedes that clock are
+`retrospective_context`; only later revisions are
+`prospective_after_rule_freeze`. The campaign writer validates source and output
+prefixes, atomically writes revisions, atomically writes outcomes, then writes
+the checkpoint last. A crash before checkpoint is byte-idempotently replayable;
+shrink, drift, backdated membership, or forged receipts fail closed.
+
+The episode publisher owns exactly its four files; the campaign publisher owns
+exactly its three files. Both use narrow metadata replay. Their steps may let
+unrelated render work continue, but a late `OIP PIT integrity` gate makes the
+engine job visibly fail if either build or publication did not succeed.
 
 Replay older than the 64-session live catch-up window belongs to an explicit
 offline/research restore job. It must consume preserved date-keyed raw stages,
 write separate replay outputs, and never mutate the live R2 keys, the live
 checkpoint, or `feed_current`. Coarse/delayed H+60 proxies and every session
-outcome and every campaign stay training-ineligible. Every episode, outcome, and
-campaign retains zero trade, pick, ranking, sizing, gating, escalation, and
-Prophet-training authority.
+outcome and every canonical campaign revision/outcome stay training-ineligible.
+Every episode, outcome, and campaign retains zero trade, pick, ranking, sizing,
+gating, escalation, Neural Web, and Prophet-training authority.
 
 #### Receipt-bound Polygon price evidence
 
@@ -185,9 +202,10 @@ Overnight, weekend, and holiday gaps are expected; an interior RTH gap or an
 unmodeled schedule/source close mismatch stays pending. Hourly/coarse MFE/MAE
 are observed-path proxies, not full-RTH extrema. The calendar basis includes the
 repository's recurring early-close model but is not an authoritative one-off
-exchange schedule. The source checkpoint advances only after episodes, H+60
-rows, session rows, and campaigns have all appended successfully; replay is
-byte-idempotent if a later step fails.
+exchange schedule. The episode source checkpoint advances only after episodes,
+H+60 rows, and session rows append successfully. Canonical campaigns catch up
+independently from those immutable committed prefixes and advance their own
+checkpoint last; both paths are byte-idempotent after a later-step failure.
 
 Offline diagnosis reads files only; it must not invoke the live poller:
 

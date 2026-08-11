@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "options.signal_campaign/v2",
+  "title": "Append-only exact-contract options signal campaign revision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "campaign_id",
+    "campaign_revision_id",
+    "revision_number",
+    "supersedes_revision_id",
+    "formed_at",
+    "policies",
+    "group",
+    "members",
+    "descriptive",
+    "intent",
+    "source_episode_prefix",
+    "disposition",
+    "role",
+    "evidence_phase",
+    "training_eligible",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "options.signal_campaign/v2"},
+    "campaign_id": {"type": "string", "pattern": "^ocam_[a-f0-9]{24}$"},
+    "campaign_revision_id": {"type": "string", "pattern": "^ocrev_[a-f0-9]{24}$"},
+    "revision_number": {"type": "integer", "minimum": 1},
+    "supersedes_revision_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^ocrev_[a-f0-9]{24}$"}
+      ]
+    },
+    "formed_at": {"type": "string", "format": "date-time"},
+    "policies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grouping", "eligibility", "member_order", "revision", "outcome_anchor", "frozen_at"],
+      "properties": {
+        "grouping": {"const": "exact-contract-session-census/v2"},
+        "eligibility": {"const": "all-valid-options-signal-episodes/v2"},
+        "member_order": {"const": "available-at-then-episode-id/v1"},
+        "revision": {"const": "strict-source-prefix-extension/v1"},
+        "outcome_anchor": {"const": "final-member-availability/v1"},
+        "frozen_at": {"const": "2026-08-11T13:24:00Z"}
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["session_date", "ticker", "right", "expiration", "strike", "strike_key"],
+      "properties": {
+        "session_date": {"type": "string", "format": "date"},
+        "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]+$"},
+        "right": {"enum": ["C", "P"]},
+        "expiration": {"type": "string", "format": "date"},
+        "strike": {"type": "number", "exclusiveMinimum": 0},
+        "strike_key": {"type": "string", "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$"}
+      }
+    },
+    "members": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "episode_id",
+          "available_at",
+          "source_event_id",
+          "source_row",
+          "source_row_sha256",
+          "descriptive_evidence"
+        ],
+        "properties": {
+          "episode_id": {"type": "string", "pattern": "^osep_[a-f0-9]{24}$"},
+          "available_at": {"type": "string", "format": "date-time"},
+          "source_event_id": {"type": "string", "minLength": 1},
+          "source_row": {"type": "integer", "minimum": 1},
+          "source_row_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "descriptive_evidence": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["flow_side", "repeated", "swept", "vol_gt_prior_oi", "premium_usd", "contracts"],
+            "properties": {
+              "flow_side": {"enum": ["~buy", "~sell", "mixed"]},
+              "repeated": {"type": "boolean"},
+              "swept": {"type": "boolean"},
+              "vol_gt_prior_oi": {"type": ["boolean", "null"]},
+              "premium_usd": {"type": "number", "exclusiveMinimum": 0},
+              "contracts": {"type": "integer", "minimum": 1}
+            }
+          }
+        }
+      }
+    },
+    "descriptive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "member_count",
+        "premium_usd_total",
+        "contracts_total",
+        "first_available_at",
+        "last_available_at",
+        "availability_span_seconds",
+        "flow_side_counts",
+        "repeated_count",
+        "swept_count",
+        "vol_gt_prior_oi_count"
+      ],
+      "properties": {
+        "member_count": {"type": "integer", "minimum": 1},
+        "premium_usd_total": {"type": "number", "exclusiveMinimum": 0},
+        "contracts_total": {"type": "integer", "minimum": 1},
+        "first_available_at": {"type": "string", "format": "date-time"},
+        "last_available_at": {"type": "string", "format": "date-time"},
+        "availability_span_seconds": {"type": "number", "minimum": 0},
+        "flow_side_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["~buy", "~sell", "mixed"],
+          "properties": {
+            "~buy": {"type": "integer", "minimum": 0},
+            "~sell": {"type": "integer", "minimum": 0},
+            "mixed": {"type": "integer", "minimum": 0}
+          }
+        },
+        "repeated_count": {"type": "integer", "minimum": 0},
+        "swept_count": {"type": "integer", "minimum": 0},
+        "vol_gt_prior_oi_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["opening_closing", "direction_reliability", "accumulation_distribution"],
+      "properties": {
+        "opening_closing": {"const": "unavailable"},
+        "direction_reliability": {"const": "soft"},
+        "accumulation_distribution": {"const": "unavailable"}
+      }
+    },
+    "source_episode_prefix": {"$ref": "#/$defs/prefixReceipt"},
+    "disposition": {"const": "abstain"},
+    "role": {"const": "research_census_only"},
+    "evidence_phase": {"enum": ["retrospective_context", "prospective_after_rule_freeze"]},
+    "training_eligible": {"const": false},
+    "authority": {"$ref": "#/$defs/falseAuthority"}
+  },
+  "$defs": {
+    "prefixReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "records", "prefix_sha256"],
+      "properties": {
+        "path": {"const": "data/options_signal_episode/episodes.jsonl"},
+        "records": {"type": "integer", "minimum": 1},
+        "prefix_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "falseAuthority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "may_originate",
+        "may_rank",
+        "may_score",
+        "may_gate",
+        "may_size",
+        "may_issue",
+        "may_trade",
+        "may_publish_pick",
+        "may_train_prophet",
+        "may_feed_neural_web",
+        "may_select",
+        "may_escalate",
+        "may_compute_option_pnl"
+      ],
+      "properties": {
+        "may_originate": {"const": false},
+        "may_rank": {"const": false},
+        "may_score": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_issue": {"const": false},
+        "may_trade": {"const": false},
+        "may_publish_pick": {"const": false},
+        "may_train_prophet": {"const": false},
+        "may_feed_neural_web": {"const": false},
+        "may_select": {"const": false},
+        "may_escalate": {"const": false},
+        "may_compute_option_pnl": {"const": false}
+      }
+    }
+  }
+}

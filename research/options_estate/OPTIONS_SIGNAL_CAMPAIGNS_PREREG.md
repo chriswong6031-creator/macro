@@ -10,6 +10,12 @@ evidence and not validation. Every initial row is labeled
 rule-freeze clock are labeled `prospective_after_rule_freeze`; future evaluation
 must stratify the phases and exclude retrospective rows from prospective claims.
 
+Retirement amendment (2026-08-11): publication stopped after the preserved
+eight-row retrospective cohort. The writer and publisher described below are
+historical initial-publication mechanics, not current authority. No active job
+may append this v1 ledger; canonical revisions use the separately preregistered
+v2 namespace.
+
 ## Purpose and authority
 
 `options.signal_campaign/v1` is an immutable research-cohort ledger over the

@@ -15305,34 +15305,102 @@ artifacts:
   options-signal-campaigns:
     path: data/options_signal_episode/campaigns.jsonl
     format: jsonl
-    producer: scripts/build_options_signal_episode.py
+    producer: ""
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: on-demand
+    storage: git
+    asof_field: formed_at
+    freshness_sla_hours: 99999
+    schema: options.signal_campaign/v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Frozen eight-row retrospective threshold cohort preserved byte-for-byte for
+      audit history. No active producer or consumer may advance it. It is not the
+      canonical campaign contract, is not prospective evidence, and cannot support
+      selector or promotion claims. Training eligibility and every selection,
+      score, rank, gate, size, trade, publication, option-return, origination,
+      escalation, Neural Web, Prophet, and model-training authority remain false.
+
+  options-signal-campaign-revisions:
+    path: data/options_signal_campaign/campaigns.jsonl
+    format: jsonl
+    producer: engine/options_signal_campaign.py
     known_extra_writers: []
     owner_program: options-intelligence-program
     cadence: daily-engine
     storage: git
     asof_field: formed_at
     freshness_sla_hours: 30
-    schema: options.signal_campaign/v1
+    schema: options.signal_campaign/v2
     tier: shadow
     horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
-      - scripts/build_options_signal_episode.py
+      - engine/options_signal_campaign.py
     external_consumers: []
     notes: >
-      Immutable zero-authority research cohorts over exact session, ticker,
-      expiration, strike, and right groups. Each row freezes the first ordered
-      episode prefix with at least two events and at least three million exact
-      rounded premium dollars, plus a digest of the complete source rows. A
-      reference-only H+60 anchor must already exist, but outcome status and values
-      cannot affect membership or campaign bytes. The rule froze at
-      2026-08-11T08:22:28Z after inspecting the initial 2026-08-10 corpus, so all
-      initial rows are explicitly retrospective discovery, not forward evidence;
-      later evaluation must stratify evidence_phase. Disposition is always abstain,
-      training eligibility and every selection, score, rank, gate, size, trade,
-      publication, option-return, origination, escalation, and model-training
-      authority remain false. The existing nightly builder is the sole writer.
+      Append-only exact-contract/session campaign census. Every valid source group,
+      including singletons, receives a stable campaign identity; later source-prefix
+      extension creates a new immutable revision and preserves lineage. The nightly
+      campaign engine is the sole writer and consumer. All selection, ranking,
+      scoring, gating, sizing, trading, publication, training, Neural Web, and
+      Prophet authority remains false.
+
+  options-signal-campaign-outcomes:
+    path: data/options_signal_campaign/outcomes.jsonl
+    format: jsonl
+    producer: engine/options_signal_campaign.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: computed_at
+    freshness_sla_hours: 30
+    schema: options.signal_campaign_outcome/v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_signal_campaign.py
+    external_consumers: []
+    notes: >
+      One immutable row per campaign revision and horizon, anchored causally to the
+      final member's availability clock and one exact receipt-bound source outcome.
+      Other member outcomes are reference-only coverage; option PnL remains null.
+      The nightly campaign engine is the sole writer and consumer. No row grants
+      selection, promotion, rank, gate, size, trade, training, or Prophet authority.
+
+  options-signal-campaign-checkpoint:
+    path: data/options_signal_campaign/checkpoint.json
+    format: json
+    producer: engine/options_signal_campaign.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: options.signal_campaign_checkpoint/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_signal_campaign.py
+    external_consumers: []
+    notes: >
+      Deterministic checkpoint written only after canonical campaign revisions and
+      outcomes are durably replaced. It binds exact immutable source and output
+      prefixes and fails closed on shrink or drift. The nightly campaign engine is
+      the sole writer and consumer and the checkpoint grants no downstream authority.
 
   options-signal-episode-checkpoint:
     path: data/options_signal_episode/checkpoint.json

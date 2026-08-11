@@ -73,7 +73,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 8 |
 | options-dislocation | 1 |
 | options-flow | 1 |
-| options-intelligence-program | 16 |
+| options-intelligence-program | 19 |
 | options-nw-entry-intelligence | 3 |
 | options-prophet-shadow | 1 |
 | oracle | 29 |
@@ -114,15 +114,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 371 |
-| infrastructure | 161 |
+| infrastructure | 162 |
 | scored | 5 |
-| shadow | 99 |
+| shadow | 101 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 597 |
+| git | 600 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 17 |
@@ -899,7 +899,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-issue-desk-private-proposals | `runtime-private/options_issue_desk/proposals.jsonl` | jsonl | on-demand | infrastructure | 1 | 1 |
 | live-flow-event-stage-dated | `live_flow/events/<DATE>.jsonl` | jsonl | intraday | infrastructure | 1 | 0 |
 | options-session-ledger | `data/options_session/ledger.parquet` | parquet | daily-engine | display | 1 | 0 |
-| options-signal-campaigns | `data/options_signal_episode/campaigns.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| options-signal-campaign-checkpoint | `data/options_signal_campaign/checkpoint.json` | json | daily-engine | infrastructure | 1 | 0 |
+| options-signal-campaign-outcomes | `data/options_signal_campaign/outcomes.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| options-signal-campaign-revisions | `data/options_signal_campaign/campaigns.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | options-signal-episode-checkpoint | `data/options_signal_episode/checkpoint.json` | json | daily-engine | infrastructure | 1 | 0 |
 | options-signal-episode-h60-outcomes | `data/options_signal_episode/outcomes_h60.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | options-signal-episode-session-outcomes | `data/options_signal_episode/outcomes_session.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
@@ -908,6 +910,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | polygon-intraday-price-receipt | `data/intraday/<TICKER>.parquet.receipt.json` | json | daily-engine | infrastructure | 1 | 0 |
 | options-session-latest | `site/session/` | json | daily-engine | display | 0 | 0 |
 | options-session-records | `data/options_session/` | json | daily-engine | display | 0 | 0 |
+| options-signal-campaigns | `data/options_signal_episode/campaigns.jsonl` | jsonl | on-demand | shadow | 0 | 0 |
 
 ### options-nw-entry-intelligence
 

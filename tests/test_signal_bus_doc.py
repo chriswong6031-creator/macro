@@ -73,9 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 636, (
-        f"Expected 636 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 639, (
+        f"Expected 639 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Options signal campaign v2 registered canonical revision, anchored"
+        " outcome, and exact-prefix checkpoint artifacts = 636->639);"
         " (Options signal campaigns registered the immutable zero-authority"
         " exact-contract research-cohort ledger = 635->636);"
         " (Release Radar CPI truth registered the preregistered sample, official"

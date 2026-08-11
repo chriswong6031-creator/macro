@@ -968,13 +968,24 @@ lanes:
           live_flow event stage (never capped feed_current), validates the monotonic
           checkpoint, freezes exact decision episodes, and accrues explicitly labeled
           aligned-bar H+60 proxies plus separate EOD/1d/3d/5d/10d declared-session-close
-          outcomes from the same receipt-bound intraday cache. It then derives the
-          zero-authority exact-contract first-prefix campaign ledger from persisted
-          episodes and reloaded H+60 rows before advancing the checkpoint. The H+60
-          v1 ledger remains unchanged. All decision and training authority is false;
+          outcomes from the same receipt-bound intraday cache before advancing the
+          checkpoint. The H+60 v1 ledger and preserved legacy campaign bytes remain
+          unchanged. All decision and training authority is false;
           coarse/delayed measurements are training_eligible=false. Runs serially
           after build_session_digest and advances all committed ledgers before the
           source checkpoint, only in COLLECT_LANE=nightly. Non-fatal.
+      - id: build_options_signal_campaign
+        module: scripts.build_options_signal_campaign
+        note: >
+          OIP canonical campaign v2 learning seam. Runs only after the episode writer
+          succeeds and consumes exact immutable prefixes of episodes plus H+60 and
+          declared-session outcomes. Appends versioned exact-contract campaign
+          revisions and final-member-anchored causal outcome rows, then advances an
+          independent deterministic checkpoint last. The frozen v1 threshold cohort
+          is neither read nor written. All selection, score, rank, gate, sizing,
+          trading, publication, training, Neural Web, and Prophet authority remains
+          false. The normal nightly lane is the sole advancer; non-nightly invocation
+          fails closed.
       - id: build_us_sector_rotation
         module: scripts.build_us_sector_rotation
         note: >
