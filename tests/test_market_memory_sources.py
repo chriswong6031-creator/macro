@@ -200,6 +200,240 @@ def test_hardened_intake_binds_exact_bytes_and_reader_returns_stable_projection(
     assert reader.read_object(receipt["receipt_id"]) == stored.artifact
 
 
+def test_canonical_sealed_manifest_replays_existing_capture_without_rewriting(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    manifest_path, artifact_path, manifest = _publish_upstream(
+        tmp_path, hardened=False
+    )
+    store = tmp_path / "private-source-store"
+    first = sources.intake_alfred_cpiaucsl(
+        store,
+        manifest_path=manifest_path,
+        artifact_path=artifact_path,
+    )
+    first_manifest_sha = first.receipt["provenance"]["manifest_sha256"]
+    assert first.receipt["provenance"]["evidence_basis"] == "public_reconstruction"
+    assert first.receipt["quality"]["source_evidence_eligible"] is False
+    inventory_before = {
+        path.relative_to(store).as_posix(): (
+            path.stat().st_size,
+            path.stat().st_mtime_ns,
+        )
+        for path in store.rglob("*")
+        if path.is_file()
+    }
+
+    artifact_body = artifact_path.read_bytes()
+    manifest["integrity_profile"] = sources.COLLECTOR_INTEGRITY_PROFILE
+    manifest["completed_at"] = "2025-02-13T00:02:00Z"
+    manifest["mode"] = "seal_existing"
+    manifest["sealed_at"] = "2025-02-13T00:02:30Z"
+    manifest["series"]["CPIAUCSL"].update(
+        {
+            "status": "sealed",
+            "artifact_sha256": hashlib.sha256(artifact_body).hexdigest(),
+            "artifact_bytes": len(artifact_body),
+        }
+    )
+    _write_manifest(manifest_path, manifest)
+    assert hashlib.sha256(manifest_path.read_bytes()).hexdigest() != first_manifest_sha
+
+    _set_source_clock(monkeypatch, "2025-02-13T00:05:00Z")
+    replay = sources.intake_alfred_cpiaucsl(
+        store,
+        manifest_path=manifest_path,
+        artifact_path=artifact_path,
+    )
+
+    assert replay.created is False
+    assert replay.generation_id == first.generation_id
+    assert replay.receipt == first.receipt
+    assert replay.receipt["provenance"]["evidence_basis"] == "public_reconstruction"
+    assert replay.receipt["quality"]["source_evidence_eligible"] is False
+    assert sources.SourceArtifactReader(store).receipts() == [first.receipt]
+    assert {
+        path.relative_to(store).as_posix(): (
+            path.stat().st_size,
+            path.stat().st_mtime_ns,
+        )
+        for path in store.rglob("*")
+        if path.is_file()
+    } == inventory_before
+
+
+def test_sealed_manifest_cannot_mint_first_live_evidence_receipt(
+    tmp_path: Path,
+) -> None:
+    manifest_path, artifact_path, manifest = _publish_upstream(tmp_path)
+    manifest["mode"] = "seal_existing"
+    manifest["sealed_at"] = "2025-02-13T00:02:30Z"
+    manifest["series"]["CPIAUCSL"]["status"] = "sealed"
+    _write_manifest(manifest_path, manifest)
+    store = tmp_path / "private-source-store"
+
+    with pytest.raises(
+        sources.SourceIntakeError, match="no unique published matching revision"
+    ):
+        sources.intake_alfred_cpiaucsl(
+            store,
+            manifest_path=manifest_path,
+            artifact_path=artifact_path,
+        )
+
+    assert not store.exists()
+
+
+def test_sealed_manifest_cannot_adopt_a_different_unpublished_revision(
+    tmp_path: Path,
+) -> None:
+    manifest_path, artifact_path, _manifest = _publish_upstream(
+        tmp_path, hardened=False
+    )
+    store = tmp_path / "private-source-store"
+    sources.intake_alfred_cpiaucsl(
+        store,
+        manifest_path=manifest_path,
+        artifact_path=artifact_path,
+    )
+    inventory_before = {
+        path.relative_to(store).as_posix(): (
+            path.stat().st_size,
+            path.stat().st_mtime_ns,
+        )
+        for path in store.rglob("*")
+        if path.is_file()
+    }
+
+    manifest_path, artifact_path, manifest = _publish_upstream(
+        tmp_path, frame=_matrix(latest_value=112.2)
+    )
+    manifest["mode"] = "seal_existing"
+    manifest["sealed_at"] = "2025-02-13T00:02:30Z"
+    manifest["series"]["CPIAUCSL"]["status"] = "sealed"
+    _write_manifest(manifest_path, manifest)
+
+    with pytest.raises(
+        sources.SourceIntakeError, match="no unique published matching revision"
+    ):
+        sources.intake_alfred_cpiaucsl(
+            store,
+            manifest_path=manifest_path,
+            artifact_path=artifact_path,
+        )
+
+    assert {
+        path.relative_to(store).as_posix(): (
+            path.stat().st_size,
+            path.stat().st_mtime_ns,
+        )
+        for path in store.rglob("*")
+        if path.is_file()
+    } == inventory_before
+
+
+def test_sealed_manifest_cannot_downgrade_when_all_hardening_fields_are_absent(
+    tmp_path: Path,
+) -> None:
+    manifest_path, artifact_path, manifest = _publish_upstream(tmp_path)
+    manifest["mode"] = "seal_existing"
+    manifest["sealed_at"] = "2025-02-13T00:02:30Z"
+    manifest["series"]["CPIAUCSL"]["status"] = "sealed"
+    del manifest["integrity_profile"]
+    del manifest["completed_at"]
+    del manifest["series"]["CPIAUCSL"]["artifact_sha256"]
+    del manifest["series"]["CPIAUCSL"]["artifact_bytes"]
+    _write_manifest(manifest_path, manifest)
+
+    with pytest.raises(sources.SourceIntakeError, match="complete hardened profile"):
+        sources.intake_alfred_cpiaucsl(
+            tmp_path / "private-source-store",
+            manifest_path=manifest_path,
+            artifact_path=artifact_path,
+        )
+
+
+@pytest.mark.parametrize(
+    ("mode", "sealed_at", "message"),
+    [
+        (None, "2025-02-13T00:02:30Z", "canonical mode"),
+        ("seal_existing", None, "sealed_at"),
+        ("seal_existing", "2025-02-13T00:01:30Z", "clocks are impossible"),
+        ("seal_existing", "2025-02-13T00:04:00Z", "clocks are impossible"),
+    ],
+)
+def test_sealed_manifest_requires_canonical_mode_and_clock_envelope(
+    tmp_path: Path,
+    mode: str | None,
+    sealed_at: str | None,
+    message: str,
+) -> None:
+    manifest_path, artifact_path, manifest = _publish_upstream(tmp_path)
+    manifest["series"]["CPIAUCSL"]["status"] = "sealed"
+    if mode is not None:
+        manifest["mode"] = mode
+    if sealed_at is not None:
+        manifest["sealed_at"] = sealed_at
+    _write_manifest(manifest_path, manifest)
+
+    with pytest.raises(sources.SourceIntakeError, match=message):
+        sources.intake_alfred_cpiaucsl(
+            tmp_path / "private-source-store",
+            manifest_path=manifest_path,
+            artifact_path=artifact_path,
+        )
+
+
+@pytest.mark.parametrize(
+    ("manifest_status", "row_status", "mode", "sealed_at", "message"),
+    [
+        (
+            "partial",
+            "sealed",
+            "seal_existing",
+            "2025-02-13T00:02:30Z",
+            "not complete",
+        ),
+        (
+            "ok",
+            "written",
+            "seal_existing",
+            "2025-02-13T00:02:30Z",
+            "claims sealed provenance",
+        ),
+        (
+            "ok",
+            "written",
+            None,
+            "2025-02-13T00:02:30Z",
+            "claims sealed provenance",
+        ),
+    ],
+)
+def test_collector_seal_markers_cannot_be_downgraded_or_partially_published(
+    tmp_path: Path,
+    manifest_status: str,
+    row_status: str,
+    mode: str | None,
+    sealed_at: str,
+    message: str,
+) -> None:
+    manifest_path, artifact_path, manifest = _publish_upstream(tmp_path)
+    manifest["status"] = manifest_status
+    manifest["series"]["CPIAUCSL"]["status"] = row_status
+    if mode is not None:
+        manifest["mode"] = mode
+    manifest["sealed_at"] = sealed_at
+    _write_manifest(manifest_path, manifest)
+
+    with pytest.raises(sources.SourceIntakeError, match=message):
+        sources.intake_alfred_cpiaucsl(
+            tmp_path / "private-source-store",
+            manifest_path=manifest_path,
+            artifact_path=artifact_path,
+        )
+
+
 def test_source_receipt_json_schema_accepts_both_evidence_classes_and_rejects_drift(
     tmp_path: Path,
 ) -> None:
