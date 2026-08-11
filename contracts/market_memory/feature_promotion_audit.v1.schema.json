@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_memory/feature_promotion_audit.v1.schema.json",
+  "title": "Market Memory inert feature-promotion audit v1",
+  "description": "Strict negative W7 audit. Every canonical feature is blocked, gates can only be failed or not_run, and v1 has no pass, eligibility, promotion, training, emission, or action authority state.",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 12,
+  "maxProperties": 12,
+  "required": [
+    "schema", "audit_id", "audited_at", "feature_registry_version", "features", "counts",
+    "private_limitations", "wave_evidence", "absent_evidence", "excluded_constructs",
+    "authority_granted", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "market_memory.feature_promotion_audit.v1"},
+    "audit_id": {"type": "string", "pattern": "^mmpromotionaudit_[a-f0-9]{64}$"},
+    "audited_at": {"$ref": "#/$defs/timestamp"},
+    "feature_registry_version": {"const": "market_memory.feature_registry.2026-08-09.v1"},
+    "features": {
+      "type": "array",
+      "minItems": 18,
+      "maxItems": 18,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "alt_data.point_in_time_state"}, "domain": {"const": "alt_data"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "breadth_factors.market_state"}, "domain": {"const": "breadth_factors"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "dark_pool.aggregate_state"}, "domain": {"const": "dark_pool"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "earnings.point_in_time_state"}, "domain": {"const": "earnings"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "fundamentals.point_in_time_state"}, "domain": {"const": "fundamentals"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "intraday_microstructure.aggregate_state"}, "domain": {"const": "intraday_microstructure"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "macro.regime_state"}, "domain": {"const": "macro"}, "registry_state": {"const": "current_degraded"}, "blocking_reason": {"const": "component_receipts_unauthenticated"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "news_narrative.publication_state"}, "domain": {"const": "news_narrative"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "options.chain_surface_state"}, "domain": {"const": "options"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "options.flow_campaign_state"}, "domain": {"const": "options"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "options.gex_volatility_state"}, "domain": {"const": "options"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "options.open_interest_eod_state"}, "domain": {"const": "options"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "positioning_flows.aggregate_state"}, "domain": {"const": "positioning_flows"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "price.ret_20d"}, "domain": {"const": "technicals"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "prophet_context.signal_state"}, "domain": {"const": "prophet_context"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "rates_credit.curve_state"}, "domain": {"const": "rates_credit"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "system_health.capture_state"}, "domain": {"const": "system_health"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]},
+        {"allOf": [{"$ref": "#/$defs/feature"}, {"properties": {"feature_id": {"const": "technicals.point_in_time_state"}, "domain": {"const": "technicals"}, "registry_state": {"const": "missing"}, "blocking_reason": {"const": "feature_missing"}}}]}
+      ],
+      "items": false
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 7,
+      "maxProperties": 7,
+      "required": ["feature_count", "missing_count", "current_degraded_count", "failed_gate_count", "not_run_gate_count", "eligible_count", "promoted_count"],
+      "properties": {
+        "feature_count": {"const": 18},
+        "missing_count": {"const": 17},
+        "current_degraded_count": {"const": 1},
+        "failed_gate_count": {"const": 18},
+        "not_run_gate_count": {"const": 126},
+        "eligible_count": {"const": 0},
+        "promoted_count": {"const": 0}
+      }
+    },
+    "private_limitations": {
+      "const": [
+        {"lane": "private_technical_ratio", "status": "insufficient", "finding": "price.raw_close_ratio_20_sessions is an unadjusted current-tip ratio, not canonical price.ret_20d or historical operational evidence"},
+        {"lane": "private_breadth", "status": "insufficient", "finding": "current-tip breadth is degraded partial coverage with current-membership survivor bias and no repaired operational history"},
+        {"lane": "private_option_oi", "status": "insufficient", "finding": "one bounded first page proves source availability only, not a complete dated or atomic options open-interest state"}
+      ]
+    },
+    "wave_evidence": {
+      "const": [
+        {"wave": "W2", "status": "synthetic_only"},
+        {"wave": "W4", "status": "synthetic_only"},
+        {"wave": "W5", "status": "not_operational_promotion_evidence"},
+        {"wave": "W6", "status": "not_operational_promotion_evidence"}
+      ]
+    },
+    "absent_evidence": {"const": ["operational_forward_n", "calibration_evidence", "clustered_dependence_intervals", "incremental_value_after_prophet", "shadow_forward_evidence"]},
+    "excluded_constructs": {"const": ["action_authority", "feature_pass_state", "promotion_eligibility", "promotion_decision", "runtime_integration", "synapse_registration", "training_consumption"]},
+    "authority_granted": {"const": false},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "timestamp": {"type": "string", "minLength": 27, "maxLength": 27, "format": "date-time", "pattern": "^2026-08-11T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"},
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 8,
+      "maxProperties": 8,
+      "required": ["feature_id", "domain", "registry_state", "blocking_reason", "gates", "eligible", "promoted", "authority_granted"],
+      "properties": {
+        "feature_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "domain": {"type": "string", "minLength": 1, "maxLength": 64},
+        "registry_state": {"enum": ["missing", "current_degraded"]},
+        "blocking_reason": {"enum": ["feature_missing", "component_receipts_unauthenticated"]},
+        "gates": {"$ref": "#/$defs/gates"},
+        "eligible": {"const": false},
+        "promoted": {"const": false},
+        "authority_granted": {"const": false}
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 2,
+      "maxProperties": 2,
+      "required": ["gate_id", "status"],
+      "properties": {
+        "gate_id": {"enum": ["g0_temporal_data_integrity", "g1_reproducibility", "g2_conceptual_soundness", "g3_predictive_validity", "g4_leakage_selection_control", "g5_robustness_incremental_value", "g6_shadow_forward", "g7_bounded_feature_promotion"]},
+        "status": {"enum": ["failed", "not_run"]}
+      }
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/gate"}, {"properties": {"gate_id": {"const": "g0_temporal_data_integrity"}, "status": {"const": "failed"}}}]},
+        {"allOf": [{"$ref": "#/$defs/gate"}, {"properties": {"gate_id": {"const": "g1_reproducibility"}, "status": {"const": "not_run"}}}]},
+        {"allOf": [{"$ref": "#/$defs/gate"}, {"properties": {"gate_id": {"const": "g2_conceptual_soundness"}, "status": {"const": "not_run"}}}]},
+        {"allOf": [{"$ref": "#/$defs/gate"}, {"properties": {"gate_id": {"const": "g3_predictive_validity"}, "status": {"const": "not_run"}}}]},
+        {"allOf": [{"$ref": "#/$defs/gate"}, {"properties": {"gate_id": {"const": "g4_leakage_selection_control"}, "status": {"const": "not_run"}}}]},
+        {"allOf": [{"$ref": "#/$defs/gate"}, {"properties": {"gate_id": {"const": "g5_robustness_incremental_value"}, "status": {"const": "not_run"}}}]},
+        {"allOf": [{"$ref": "#/$defs/gate"}, {"properties": {"gate_id": {"const": "g6_shadow_forward"}, "status": {"const": "not_run"}}}]},
+        {"allOf": [{"$ref": "#/$defs/gate"}, {"properties": {"gate_id": {"const": "g7_bounded_feature_promotion"}, "status": {"const": "not_run"}}}]}
+      ],
+      "items": false
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 18,
+      "maxProperties": 18,
+      "required": ["tier", "visibility", "context_only", "emission_enabled", "training_eligible", "promotion_eligible", "proposal_weight", "may_rank", "may_gate", "may_size", "may_escalate", "may_trade", "may_originate", "may_select_options_candidate", "may_execute", "may_write_options_episode", "may_append_outcome", "may_train_prophet"],
+      "properties": {
+        "tier": {"const": "research"},
+        "visibility": {"const": "private"},
+        "context_only": {"const": true},
+        "emission_enabled": {"const": false},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    }
+  }
+}
