@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-08-09"
+updated: "2026-08-11"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -1575,6 +1575,80 @@ checks:
       this run's stores rather than the previous night's — that ordering is
       pinned by tests/test_tushare_freshness_tripwire.py, as is the line-start
       flushed annotation shape.
+
+  - law_id: ops.membership_snapshot_cadence
+    summary: >
+      The basket-membership point-in-time planes (同花顺 concept baskets, US
+      thematic baskets) must not be able to go cold without anyone being told.
+      Both snapshot writers are CONTENT-deduped — a dated side-car is written
+      only when membership differs from the newest one stored — which is right
+      (membership moves on the vendor's schedule, not the trading calendar) and
+      means a writer that is deduping and a writer that has been UNWIRED leave
+      the identical trace on disk: nothing. That is not hypothetical. The THS
+      PIT store held exactly two snapshots, 2026-06-30 and 2026-07-08, while
+      `scripts/build_baskets_china_ths.py --snapshot` ran green ~35 nights in a
+      row: the step was healthy, its INPUT was frozen, because the scraper
+      (collectors/china_ths_concepts.py) and the seeder
+      (scripts/seed_china_ths_baskets.py) appeared in NO workflow at all and the
+      2026-07-08 file was a hand-run bundled with a feature commit. The tripwire
+      therefore grades three independent axes: cadence (the writer's own
+      `_cadence.json` liveness stamp, rewritten on every run INCLUDING the dedup
+      skip), source (a THS scrape receipt with complete:true inside the weekly
+      budget — the axis that sees a live writer on a frozen input), and
+      coherence (the PIT parquet's newest snapshot_date must not lag the newest
+      dated side-car, catching a backfill that stopped running).
+    source_ref:
+      - scripts/check_membership_snapshot_freshness.py
+      - scripts/scrape_ths_weekly.py
+      - engine/basket_membership_pit.py
+      - contracts/baskets_china_ths/scrape_receipt.v1.schema.json
+      - tests/test_membership_snapshot_freshness.py
+      - "GMI masterplan §7 W1a (research/GLOBAL_MARKET_INTELLIGENCE_MASTERPLAN_BY_FABLE.md)"
+      - "2026-06-30→08-11 THS membership freeze (2 snapshots in 6 weeks, ~35 green nights)"
+    severity: warn
+    check_script: scripts/check_membership_snapshot_freshness.py
+    ci_wiring:
+      - workflow: .github/workflows/asia-close.yml
+        job: asia
+        lane: scheduled
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: scheduled
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        The source axis is audited for the THS suite only. The US suite's
+        membership.json is hand-curated, so "the source has not moved this
+        month" is its normal state, not a fault — only the writer's cadence and
+        the side-car→parquet coherence are graded there.
+      - >-
+        Budgets are calendar-day, not session-anchored: 4 days for the writer's
+        cadence stamp and 10 days for a complete THS scrape (weekly cadence plus
+        one missed week of slack). A fresh freeze is therefore silent for its
+        first few days by design, and a run of holidays widens that window.
+      - >-
+        A MISSING store, receipt directory or parquet is INDETERMINATE (one
+        ::notice), never a breach — sparse agent checkouts carry no data/ and a
+        suite's first run has no stamp by construction. So this guard cannot
+        distinguish "never wired" from "not checked out"; it only catches a
+        plane that once ran and stopped.
+      - >-
+        The curated CN suite (baskets_china) is not audited: it shares the THS
+        suite's writer and lane, so a cadence breach there would be reported
+        twice for one cause.
+    owner_program: global-market-intelligence
+    notes: >
+      Permanently advisory (the script always exits 0), like its ops.tushare
+      sibling: one cold membership plane must not red a collection lane that
+      landed every other store. The teeth are the
+      "::warning title=membership snapshot cadence stalled" annotation, which
+      names the suite AND the axis, plus a fail-open alert_triage push. Wired in
+      BOTH nightlies because the two suites are advanced by different lanes —
+      asia-close (CN_LANE=asia) owns the CN suites, daily.yml (COLLECT_LANE=nightly)
+      owns the US one — and in each it is ordered AFTER that lane's snapshot
+      writer so it grades this run's stamp rather than the previous night's.
 
   - law_id: ops.workflow_yaml_parses
     summary: >
