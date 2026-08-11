@@ -1,0 +1,1284 @@
+{
+ "study": "footprint_picker",
+ "charter": "research/prophet_us_audit/FOOTPRINT_PICKER_PREREG_2026-08-11.md",
+ "tier": "measurement/display \u2014 no gate, rank, veto or engine change ships from this",
+ "run_metadata": {
+  "run_utc": "2026-08-11T18:01:56+00:00",
+  "runtime_seconds": 35.2,
+  "argv": []
+ },
+ "provenance": {
+  "repo_sha": "11236e7c84e709f6dfcab55ea52e5906a6eedb4b",
+  "episodes_sha": "305990306ef",
+  "episodes_path": "/private/tmp/claude-501/-Users-chriswong-Documents-Cluade-Macro-Dashboard--claude-worktrees-stoch-rsi-macd-confluence-2959db/de6f64ca-9a78-4c79-aa23-591e0d75d36c/scratchpad/episodes_305990306ef.parquet",
+  "episodes_rows": 39877,
+  "price_root": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/baskets/ohlcv",
+  "price_last_date_max": "2026-08-10",
+  "price_last_date_exemplars": {
+   "STLD": "2026-08-10",
+   "NEM": "2026-08-10"
+  },
+  "price_names_probed": 240,
+  "darkpool": {
+   "panel_deep": {
+    "rows": 258198,
+    "tickers": 374,
+    "first": "2023-08-01",
+    "last": "2026-08-04"
+   },
+   "panel": {
+    "rows": 73229,
+    "tickers": 1536,
+    "first": "2026-05-26",
+    "last": "2026-08-10"
+   }
+  },
+  "darkpool_paths": [
+   "/Users/chriswong/actions-runner-2/_work/macro/macro/data/finra_short_volume/panel_deep.parquet",
+   "/Users/chriswong/actions-runner-2/_work/macro/macro/data/finra_short_volume/panel.parquet"
+  ],
+  "options_root": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/options_flow",
+  "options_files": 387,
+  "engine_functions": [
+   "indicators_m2.anchored_vwap",
+   "indicators_m2.rolling_poc",
+   "indicators_m2.poc_retest_hold",
+   "indicators_m2.volume_profile (imported, geometry ref)",
+   "darkpool_signals.trailing_z",
+   "darkpool_signals.usable_history",
+   "darkpool_signals.streak_above_norm",
+   "stock_technicals.atr"
+  ]
+ },
+ "constants": {
+  "ABSORB_BACK": 20,
+  "ABSORB_BAND": 1.02,
+  "AVWAP_LOOKBACK": 126,
+  "BOOT_B": 500,
+  "BOOT_SEED": 20260811,
+  "EPISODES_SHA": "305990306ef",
+  "EXEMPLARS": [
+   "STLD",
+   "NEM"
+  ],
+  "EXEMPLAR_FROM": "2026-01-01",
+  "FWD_MAX": 42,
+  "LIVE_PP": 0.1,
+  "LOOKBACK_LOW": 45,
+  "MIN_CELL_N": 20,
+  "MIN_CELL_NAMES": 20,
+  "MIN_FWD": 30,
+  "P1_CHASE_CAP": 1.05,
+  "P1_SEARCH_MAX": 42,
+  "P1_WAIT": 5,
+  "P2_HOLD": 0.98,
+  "P2_WINDOW": 15,
+  "PIVOT_R": 3,
+  "POC_BINS": 24,
+  "POC_TOL": 0.01,
+  "POC_WINDOW": 126,
+  "QUIET_BACK": 15,
+  "QUINTILES": 5,
+  "SESSIONS_PER_YEAR": 252.0,
+  "STOP_A_K": 0.99,
+  "STOP_F_PCT": 0.08,
+  "STOP_X_ATR": 2.0,
+  "STREAK_WINDOW": 60,
+  "SUGGESTIVE_PP": 0.05,
+  "UNION_GAP": 3,
+  "Z_MIN_OBS": 40,
+  "Z_WINDOW": 252
+ },
+ "union": {
+  "c1": 7973,
+  "c2r_total": 3630,
+  "c2r_dot_only": 1832,
+  "union_episodes": 9805,
+  "union_names": 240,
+  "panel_name_years": 2880.48,
+  "addon_rows_excluded": 210
+ },
+ "deviations": [
+  "Pooled tables use the PANEL only (addon=False). The prereg does not mention the bake-off's add-on exemplars (HL, UEC; 210 episode rows across all lanes), but the bake-off substrate law makes them traces that are never pooled, and they carry no store lane. Both exemplar names (STLD, NEM) are panel names, so the \u00a75 exemplar gate is unaffected.",
+  "T3 (options signed net-premium z) is UNCOMPUTABLE on this substrate and reports n=0. The charter dates options_flow at 2026-01+, which holds for the summary files (143 rows each) but NOT for `net_premium_mn`: the signed column carries only ~19 non-null rows per name beginning 2026-07-02, so no 252-session z with a 40-observation floor can exist for any episode. Reported as an empty lane rather than silently re-specified with a different (shorter, non-charter) z convention."
+ ],
+ "notes": [
+  "policy per-name-year R is normalised by 2880.5 name-years of measurable panel exposure (the union names' full priced history)."
+ ],
+ "tables": {
+  "R0": {
+   "title": "Substrate, provenance and acceptance gates",
+   "columns": [
+    "item",
+    "value"
+   ],
+   "rows": [
+    [
+     "repo SHA",
+     "11236e7c84e709f6dfcab55ea52e5906a6eedb4b"
+    ],
+    [
+     "branch",
+     "claude/prophet-us-footprint-picker"
+    ],
+    [
+     "episode plane SHA (provenance)",
+     "305990306ef"
+    ],
+    [
+     "episode plane path",
+     "/private/tmp/claude-501/-Users-chriswong-Documents-Cluade-Macro-Dashboard--claude-worktrees-stoch-rsi-macd-confluence-2959db/de6f64ca-9a78-4c79-aa23-591e0d75d36c/scratchpad/episodes_305990306ef.parquet"
+    ],
+    [
+     "episode plane rows",
+     39877
+    ],
+    [
+     "union rule",
+     "C1 UNION C2r with no C1 fire within +/-3 sessions"
+    ],
+    [
+     "union episodes / names",
+     "9805 / 240"
+    ],
+    [
+     "price root",
+     "/Users/chriswong/actions-runner-2/_work/macro/macro/data/baskets/ohlcv"
+    ],
+    [
+     "price last date (STLD)",
+     "2026-08-10"
+    ],
+    [
+     "darkpool deep panel",
+     "/Users/chriswong/actions-runner-2/_work/macro/macro/data/finra_short_volume/panel_deep.parquet :: {'rows': 258198, 'tickers': 374, 'first': '2023-08-01', 'last': '2026-08-04'}"
+    ],
+    [
+     "darkpool wide panel",
+     "/Users/chriswong/actions-runner-2/_work/macro/macro/data/finra_short_volume/panel.parquet :: {'rows': 73229, 'tickers': 1536, 'first': '2026-05-26', 'last': '2026-08-10'}"
+    ],
+    [
+     "options_flow root",
+     "/Users/chriswong/actions-runner-2/_work/macro/macro/data/options_flow :: 387 summary files"
+    ],
+    [
+     "engine functions used (as-is)",
+     "indicators_m2.anchored_vwap / rolling_poc / poc_retest_hold; darkpool_signals.trailing_z / usable_history / streak_above_norm; stock_technicals.atr"
+    ],
+    [
+     "primary label basis",
+     "X = entry - 2.0 x ATR14 (fully entry-anchored)"
+    ],
+    [
+     "robustness bases",
+     "A = P_low x 0.99, F = entry - 8%"
+    ],
+    [
+     "false-bounce leg in labels",
+     "NONE (charter \u00a71)"
+    ]
+   ],
+   "notes": ""
+  },
+  "R1": {
+   "title": "STLD and NEM 2026 union fires \u2014 every feature at the fire instant",
+   "columns": [
+    "ticker",
+    "date",
+    "lane",
+    "close",
+    "P_low",
+    "entry_vs_low",
+    "ATR14",
+    "stop X",
+    "stopped X",
+    "r_mult X",
+    "stopped A",
+    "stopped F",
+    "D1a avwap_above",
+    "D1b avwap_dist",
+    "D1 anchor",
+    "D2 poc_dist",
+    "D2 poc",
+    "D3 poc_hold",
+    "D4 absorption",
+    "D5 quiet",
+    "T1 part_z",
+    "T2 streak",
+    "T3 prem_z",
+    "P1 entered",
+    "P2 entered"
+   ],
+   "rows": [
+    [
+     "NEM",
+     "2026-03-27",
+     "C1",
+     101.86215209960938,
+     94.12023002409701,
+     0.08225566462736267,
+     5.244020808794163,
+     91.37411048202105,
+     false,
+     0.6071535077287846,
+     false,
+     false,
+     false,
+     -0.10329167720549282,
+     "2026-01-28",
+     0.11948895065162879,
+     84.07428226005428,
+     false,
+     0.3368969566587701,
+     0.5705882352941177,
+     -0.71,
+     0.0,
+     null,
+     true,
+     false
+    ],
+    [
+     "NEM",
+     "2026-06-16",
+     "C1",
+     108.44000244140625,
+     92.0199966430664,
+     0.17843953920179878,
+     4.789569979239092,
+     98.86086248292807,
+     true,
+     -1.0,
+     true,
+     true,
+     false,
+     -0.030527295843707725,
+     "2026-01-28",
+     0.16735199237441867,
+     110.5148823996769,
+     false,
+     0.11801321547455808,
+     0.18823529411764706,
+     -0.09,
+     6.0,
+     null,
+     false,
+     true
+    ],
+    [
+     "NEM",
+     "2026-07-09",
+     "C1",
+     94.80999755859375,
+     91.18000030517578,
+     0.03981133188493646,
+     4.0453638997181205,
+     86.71926975915751,
+     null,
+     null,
+     null,
+     null,
+     false,
+     -0.1382340145750236,
+     "2026-01-28",
+     0.17141017297167271,
+     110.04238445961343,
+     false,
+     0.288104535477905,
+     -0.0029411764705882353,
+     0.08,
+     1.0,
+     null,
+     true,
+     false
+    ],
+    [
+     "STLD",
+     "2026-03-25",
+     "C1",
+     172.54347229003906,
+     161.2938724286177,
+     0.06974598409744304,
+     6.4886530468291355,
+     159.56616619638078,
+     false,
+     5.962694754008616,
+     false,
+     false,
+     false,
+     -0.05675650751471928,
+     "2026-02-11",
+     0.061478561255414066,
+     171.859550320313,
+     false,
+     0.18974574169798006,
+     -0.02058823529411765,
+     null,
+     null,
+     null,
+     true,
+     false
+    ],
+    [
+     "STLD",
+     "2026-07-14",
+     "C1",
+     233.35000610351562,
+     216.36000061035156,
+     0.07852655502512129,
+     8.784842714904364,
+     215.7803206737069,
+     null,
+     null,
+     null,
+     null,
+     false,
+     -0.04314765823415545,
+     "2026-06-12",
+     0.2398750740136386,
+     174.50145191641428,
+     false,
+     0.13641201997871122,
+     0.0823529411764706,
+     null,
+     null,
+     null,
+     true,
+     true
+    ]
+   ],
+   "notes": "the charter's coverage gate: a construction that cannot show its work on the motivating exemplars does not get presented on pooled means"
+  },
+  "R2": {
+   "title": "\u00a71 label accounting \u2014 three stop bases, no false-bounce leg",
+   "columns": [
+    "basis",
+    "definition",
+    "episodes",
+    "names",
+    "graded",
+    "truncated (<30 fwd)",
+    "stop-out%",
+    "mean R",
+    "median R",
+    "p25 R",
+    "p75 R",
+    "median risk (% entry)"
+   ],
+   "rows": [
+    [
+     "X",
+     "entry - 2.0xATR14  (PRIMARY)",
+     9805,
+     240,
+     9698,
+     107,
+     56.5,
+     0.3590194161008913,
+     -1.0,
+     -1.0,
+     1.5429474469784474,
+     0.04608739182927934
+    ],
+    [
+     "A",
+     "P_low x 0.99  (bake-off continuity)",
+     9805,
+     240,
+     9698,
+     107,
+     46.18,
+     0.3326867632525763,
+     -0.3130813507598489,
+     -1.0,
+     1.2386711229347043,
+     0.05961953525361763
+    ],
+    [
+     "F",
+     "entry - 8%",
+     9805,
+     240,
+     9698,
+     107,
+     37.06,
+     0.27761860233996066,
+     0.03811341604954692,
+     -1.0,
+     1.0757799922267077,
+     0.07999999999999996
+    ]
+   ],
+   "notes": "STOPPED = a low touches the stop before T+42; SURVIVED otherwise. r_mult is recomputed per basis: -1R on a stop, else the horizon close-to-close move in units of that basis' own initial risk."
+  },
+  "R3": {
+   "title": "\u00a74 POST-TROUGH EVIDENCE AS POLICIES (basis X, entries at real closes)",
+   "columns": [
+    "policy",
+    "definition",
+    "fires",
+    "names",
+    "entered",
+    "entry rate%",
+    "never entered",
+    "graded",
+    "stop-out%",
+    "mean R",
+    "median R",
+    "p25 R",
+    "p75 R",
+    "total R per name-year",
+    "median entry give-up vs P0"
+   ],
+   "rows": [
+    [
+     "P0",
+     "enter at the fire close",
+     9805,
+     240,
+     9805,
+     100.0,
+     0,
+     9698,
+     56.5,
+     0.3590194161008913,
+     -1.0,
+     -1.0,
+     1.5429474469784474,
+     1.2087,
+     null
+    ],
+    [
+     "P1",
+     "first session >= T+5 with no stop touch printed and close <= fire close x 1.05",
+     9805,
+     240,
+     7903,
+     80.6,
+     1902,
+     7835,
+     57.41,
+     0.3509311084832065,
+     -1.0,
+     -1.0,
+     1.5091129139443686,
+     0.9545,
+     0.007490569816220649
+    ],
+    [
+     "P2",
+     "knowability close of the first confirmed r3 swing low in [T, T+15] holding above P_low x 0.98",
+     9805,
+     240,
+     7563,
+     77.13,
+     2242,
+     7487,
+     56.08,
+     0.3739836142903728,
+     -1.0,
+     -1.0,
+     1.5845536945747412,
+     0.9721,
+     0.0107340513654548
+    ]
+   ],
+   "notes": "conditioning on 'the low held k sessions' deletes early stop-outs and manufactures edge (bake-off \u00a7RT), so the structural tier is measured as decision policies over the SAME fire set \u2014 fires never entered are counted, never dropped. No scalar winner is pre-declared."
+  },
+  "R4": {
+   "title": "\u00a75 FEATURE LEDGER \u2014 deep battery, stop-out rate by cell (primary basis X = entry - 2xATR14)",
+   "columns": [
+    "feature",
+    "cells (low -> high)",
+    "n per cell",
+    "names per cell",
+    "stop-out% per cell",
+    "spread pp (X)",
+    "95% CI pp",
+    "per-name-first pp",
+    "early-half pp",
+    "late-half pp",
+    "median entry_vs_low lo -> hi",
+    "within-quintile pp",
+    "spread pp (A)",
+    "spread pp (F)",
+    "READ"
+   ],
+   "rows": [
+    [
+     "D1a AVWAP reclaim \u2014 close(T) above the 126d-high-anchored VWAP",
+     "False | True",
+     "7730 | 1968",
+     "239 | 239",
+     "55.2 | 61.5",
+     6.26,
+     "3.1 .. 9.7",
+     7.83,
+     3.25,
+     10.16,
+     "0.047 -> 0.080",
+     5.87,
+     -17.91,
+     -1.23,
+     "null"
+    ],
+    [
+     "D1b AVWAP distance \u2014 close(T)/AVWAP - 1",
+     "bottom (<= -0.0486) | middle | top (> -0.01163)",
+     "3216 | 3237 | 3245",
+     "239 | 239 | 240",
+     "51.8 | 57.7 | 59.9",
+     8.04,
+     "3.3 .. 12.8",
+     11.03,
+     6.12,
+     10.62,
+     "0.050 -> 0.069",
+     7.92,
+     -17.33,
+     -9.79,
+     "null"
+    ],
+    [
+     "D2  flush-on-shelf \u2014 |P_low / rolling_poc(126,24) - 1|",
+     "bottom (<= 0.05002) | middle | top (> 0.1073)",
+     "3249 | 3233 | 3216",
+     "236 | 239 | 240",
+     "60.4 | 58.3 | 50.7",
+     -9.61,
+     "-15.4 .. -3.5",
+     -12.62,
+     -10.72,
+     -8.91,
+     "0.045 -> 0.069",
+     -7.57,
+     -4.55,
+     12.36,
+     "null"
+    ],
+    [
+     "D3  POC retest-hold bullish flag at T",
+     "False | True",
+     "9267 | 431",
+     "240 | 196",
+     "56.4 | 59.2",
+     2.79,
+     "-2.2 .. 7.8",
+     4.0,
+     7.26,
+     -2.49,
+     "0.053 -> 0.053",
+     2.52,
+     -0.98,
+     -1.39,
+     "null"
+    ],
+    [
+     "D4  absorption share \u2014 [T-20,T] volume on sessions at/near P_low",
+     "bottom (<= 0.1345) | middle | top (> 0.2917)",
+     "3213 | 3229 | 3256",
+     "239 | 239 | 235",
+     "53.8 | 57.6 | 58.1",
+     4.26,
+     "-1.6 .. 10.3",
+     4.25,
+     7.66,
+     0.77,
+     "0.085 -> 0.032",
+     0.42,
+     20.4,
+     -11.88,
+     "null"
+    ],
+    [
+     "D5  quiet accumulation \u2014 rank-corr(volume, |ret|) over [T-15,T]",
+     "bottom (<= 0.2382) | middle | top (> 0.4588)",
+     "3265 | 3211 | 3219",
+     "239 | 239 | 239",
+     "57.5 | 56.5 | 55.5",
+     -1.94,
+     "-5.8 .. 1.7",
+     -3.66,
+     0.82,
+     -4.49,
+     "0.048 -> 0.059",
+     -1.18,
+     -2.83,
+     3.15,
+     "null"
+    ]
+   ],
+   "notes": "LIVE = |spread| >= 10pp on X, same sign in BOTH halves AND on bases A and F; SUGGESTIVE = >= 5pp with the same stability; else null. The thin battery is capped at PROBE by charter \u00a73 \u2014 a window this short can never mint LIVE. The entry_vs_low columns are the stop-width tell: basis X is entry-anchored, so a feature that moves only with entry_vs_low is not being paid for by the stop here, but the reader should still see it."
+  },
+  "R5": {
+   "title": "\u00a75 FEATURE LEDGER \u2014 thin battery, stop-out rate by cell (primary basis X = entry - 2xATR14)",
+   "columns": [
+    "feature",
+    "cells (low -> high)",
+    "n per cell",
+    "names per cell",
+    "stop-out% per cell",
+    "spread pp (X)",
+    "95% CI pp",
+    "per-name-first pp",
+    "early-half pp",
+    "late-half pp",
+    "median entry_vs_low lo -> hi",
+    "within-quintile pp",
+    "spread pp (A)",
+    "spread pp (F)",
+    "READ"
+   ],
+   "rows": [
+    [
+     "T1  dark pool \u2014 off-exchange participation_z (<= T-1)",
+     "bottom (<= -0.32) | middle | top (> 0.62)",
+     "384 | 388 | 397",
+     "113 | 116 | 113",
+     "58.3 | 52.8 | 60.7",
+     2.37,
+     "-3.4 .. 7.7",
+     2.74,
+     4.34,
+     -0.35,
+     "0.058 -> 0.056",
+     3.41,
+     0.21,
+     3.5,
+     "PROBE (charter cap)"
+    ],
+    [
+     "T2  dark pool \u2014 sessions above own norm, streak (<= T-1)",
+     "bottom (<= 0) | middle | top (> 2)",
+     "547 | 354 | 273",
+     "116 | 114 | 113",
+     "55.9 | 60.2 | 55.7",
+     -0.26,
+     "-5.2 .. 6.1",
+     -0.52,
+     1.81,
+     -3.67,
+     "0.061 -> 0.056",
+     1.02,
+     -3.22,
+     -1.58,
+     "PROBE (charter cap)"
+    ],
+    [
+     "T3  options \u2014 signed net-premium z over the charter window (<= T-1)",
+     "(degenerate / too few rows: n=0)",
+     "-",
+     "-",
+     "-",
+     null,
+     "-",
+     null,
+     null,
+     null,
+     "-",
+     null,
+     null,
+     null,
+     "no data"
+    ]
+   ],
+   "notes": "LIVE = |spread| >= 10pp on X, same sign in BOTH halves AND on bases A and F; SUGGESTIVE = >= 5pp with the same stability; else null. The thin battery is capped at PROBE by charter \u00a73 \u2014 a window this short can never mint LIVE. The entry_vs_low columns are the stop-width tell: basis X is entry-anchored, so a feature that moves only with entry_vs_low is not being paid for by the stop here, but the reader should still see it."
+  },
+  "R5ref": {
+   "title": "\u00a75 FEATURE LEDGER \u2014 ref battery, stop-out rate by cell (primary basis X = entry - 2xATR14)",
+   "columns": [
+    "feature",
+    "cells (low -> high)",
+    "n per cell",
+    "names per cell",
+    "stop-out% per cell",
+    "spread pp (X)",
+    "95% CI pp",
+    "per-name-first pp",
+    "early-half pp",
+    "late-half pp",
+    "median entry_vs_low lo -> hi",
+    "within-quintile pp",
+    "spread pp (A)",
+    "spread pp (F)",
+    "READ"
+   ],
+   "rows": [
+    [
+     "REF entry_vs_low (the stop-width tell; NOT a footprint feature)",
+     "bottom (<= 0.04037) | middle | top (> 0.06996)",
+     "3252 | 3236 | 3210",
+     "235 | 237 | 240",
+     "58.4 | 56.4 | 54.7",
+     -3.66,
+     "-10.3 .. 2.7",
+     -5.67,
+     -7.42,
+     -0.26,
+     "0.029 -> 0.101",
+     -3.21,
+     -27.35,
+     17.77,
+     "null"
+    ]
+   ],
+   "notes": "LIVE = |spread| >= 10pp on X, same sign in BOTH halves AND on bases A and F; SUGGESTIVE = >= 5pp with the same stability; else null. The thin battery is capped at PROBE by charter \u00a73 \u2014 a window this short can never mint LIVE. The entry_vs_low columns are the stop-width tell: basis X is entry-anchored, so a feature that moves only with entry_vs_low is not being paid for by the stop here, but the reader should still see it."
+  },
+  "R6": {
+   "title": "Thin-battery COVERAGE \u2014 how many union episodes can the thin feeds actually see?",
+   "columns": [
+    "feature",
+    "episodes with a value",
+    "share of union%",
+    "names",
+    "first date",
+    "last date"
+   ],
+   "rows": [
+    [
+     "T1  dark pool \u2014 off-exchange participation_z (<= T-1)",
+     1248,
+     12.73,
+     129,
+     "2023-09-28",
+     "2026-08-10"
+    ],
+    [
+     "T2  dark pool \u2014 sessions above own norm, streak (<= T-1)",
+     1254,
+     12.79,
+     129,
+     "2023-09-28",
+     "2026-08-10"
+    ],
+    [
+     "T3  options \u2014 signed net-premium z over the charter window (<= T-1)",
+     0,
+     0.0,
+     0,
+     null,
+     null
+    ],
+    [
+     "union episodes with ANY dark-pool participation row",
+     1257,
+     12.82,
+     129,
+     null,
+     null
+    ]
+   ],
+   "notes": "load-bearing honesty: the dark-pool deep panel starts 2023-08 and the options-flow store 2026-01, and both need >= 40 trailing observations before a z exists at all, so the thin battery speaks for a small and RECENT slice of a 12-year plane. Every thin verdict is capped at PROBE for this reason."
+  },
+  "R6b": {
+   "title": "Thin-feed substrate diagnosis \u2014 what the feeds actually contain",
+   "columns": [
+    "feed",
+    "files/rows",
+    "column read",
+    "non-null rows per name (median)",
+    "first usable date",
+    "observations needed for a z",
+    "verdict"
+   ],
+   "rows": [
+    [
+     "options_flow (T3)",
+     "387 files / 143 rows (median)",
+     "net_premium_mn",
+     19,
+     "2026-07-02",
+     ">= 41 rolling-window observations",
+     "UNCOMPUTABLE \u2014 the signed column is far shorter than the file"
+    ],
+    [
+     "finra panel_deep (T1/T2)",
+     "258198 rows / 374 tickers",
+     "total_vol",
+     null,
+     "2023-08-01",
+     ">= 41 participation observations",
+     "usable on the recent slice only"
+    ],
+    [
+     "finra panel wide (T1/T2)",
+     "73229 rows / 1536 tickers",
+     "total_vol",
+     null,
+     "2026-05-26",
+     ">= 41 participation observations",
+     "usable on the recent slice only"
+    ]
+   ],
+   "notes": "the charter dated options_flow at 2026-01+, which is true of the FILE but not of the SIGNED column this feature needs"
+  },
+  "R7": {
+   "title": "The ONE pre-permitted cross-tab \u2014 strongest non-coupled deep feature x D4 absorption share",
+   "columns": [
+    "strongest feature",
+    "feature cell",
+    "D4 absorption",
+    "episodes",
+    "names",
+    "stop-out% (X)"
+   ],
+   "rows": [
+    [
+     "D2  flush-on-shelf \u2014 |P_low / rolling_poc(126,24) - 1|",
+     "bottom (<= 0.04988)",
+     "low (<= 0.208)",
+     1255,
+     232,
+     61.67
+    ],
+    [
+     "D2  flush-on-shelf \u2014 |P_low / rolling_poc(126,24) - 1|",
+     "bottom (<= 0.04988)",
+     "high (> 0.208)",
+     1978,
+     229,
+     59.45
+    ],
+    [
+     "D2  flush-on-shelf \u2014 |P_low / rolling_poc(126,24) - 1|",
+     "top (> 0.1069)",
+     "low (<= 0.208)",
+     2063,
+     239,
+     47.84
+    ],
+    [
+     "D2  flush-on-shelf \u2014 |P_low / rolling_poc(126,24) - 1|",
+     "top (> 0.1069)",
+     "high (> 0.208)",
+     1170,
+     236,
+     55.98
+    ]
+   ],
+   "notes": "no other combination was searched (charter \u00a75)"
+  }
+ },
+ "ledger": {
+  "deep": [
+   {
+    "feature": "d1_avwap_above",
+    "label": "D1a AVWAP reclaim \u2014 close(T) above the 126d-high-anchored VWAP",
+    "kind": "b",
+    "tier": "deep",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     7730,
+     1968
+    ],
+    "names": [
+     239,
+     239
+    ],
+    "stop_out_rate": [
+     0.5522639068564036,
+     0.6148373983739838
+    ],
+    "spread_X": 0.06257349151758018,
+    "ci95": [
+     0.031385395183273074,
+     0.09697001888268432
+    ],
+    "per_name_spread": 0.07828642144007181,
+    "early": 0.03248732322631476,
+    "late": 0.10155080961341045,
+    "spread_A": -0.17908318345796653,
+    "spread_F": -0.012319492211739724,
+    "within_quintile": 0.058679273395976186,
+    "entry_vs_low_lo": 0.04713338534498579,
+    "entry_vs_low_hi": 0.08036891264303736,
+    "read": "null"
+   },
+   {
+    "feature": "d1_avwap_dist",
+    "label": "D1b AVWAP distance \u2014 close(T)/AVWAP - 1",
+    "kind": "t",
+    "tier": "deep",
+    "cells": [
+     "bottom (<= -0.0486)",
+     "middle",
+     "top (> -0.01163)"
+    ],
+    "n": [
+     3216,
+     3237,
+     3245
+    ],
+    "names": [
+     239,
+     239,
+     240
+    ],
+    "stop_out_rate": [
+     0.5183457711442786,
+     0.577386468952734,
+     0.5987673343605547
+    ],
+    "spread_X": 0.08042156321627614,
+    "ci95": [
+     0.03266425526827238,
+     0.12814091180002457
+    ],
+    "per_name_spread": 0.1103294387326017,
+    "early": 0.06116965226554261,
+    "late": 0.10616552771450272,
+    "spread_A": -0.17326330596631634,
+    "spread_F": -0.09788394315019666,
+    "within_quintile": 0.07919571635698938,
+    "entry_vs_low_lo": 0.05014667147067953,
+    "entry_vs_low_hi": 0.0686223370870459,
+    "read": "null"
+   },
+   {
+    "feature": "d2_poc_dist",
+    "label": "D2  flush-on-shelf \u2014 |P_low / rolling_poc(126,24) - 1|",
+    "kind": "t",
+    "tier": "deep",
+    "cells": [
+     "bottom (<= 0.05002)",
+     "middle",
+     "top (> 0.1073)"
+    ],
+    "n": [
+     3249,
+     3233,
+     3216
+    ],
+    "names": [
+     236,
+     239,
+     240
+    ],
+    "stop_out_rate": [
+     0.6035703293321022,
+     0.5833591091865141,
+     0.5074626865671642
+    ],
+    "spread_X": -0.096107642764938,
+    "ci95": [
+     -0.15374731522586713,
+     -0.03543442076442985
+    ],
+    "per_name_spread": -0.1261752212485147,
+    "early": -0.10724895929816242,
+    "late": -0.08905523801989601,
+    "spread_A": -0.04547151132610261,
+    "spread_F": 0.12358883100655538,
+    "within_quintile": -0.07571693120427214,
+    "entry_vs_low_lo": 0.04456397072926532,
+    "entry_vs_low_hi": 0.06880268745522844,
+    "read": "null"
+   },
+   {
+    "feature": "d3_poc_hold",
+    "label": "D3  POC retest-hold bullish flag at T",
+    "kind": "b",
+    "tier": "deep",
+    "cells": [
+     "False",
+     "True"
+    ],
+    "n": [
+     9267,
+     431
+    ],
+    "names": [
+     240,
+     196
+    ],
+    "stop_out_rate": [
+     0.5637207294701629,
+     0.5916473317865429
+    ],
+    "spread_X": 0.02792660231638,
+    "ci95": [
+     -0.02203841022787272,
+     0.07825880123291627
+    ],
+    "per_name_spread": 0.039954121672074794,
+    "early": 0.0725670332441658,
+    "late": -0.024875420238553714,
+    "spread_A": -0.0098493344019156,
+    "spread_F": -0.013901084030177646,
+    "within_quintile": 0.025153760154865635,
+    "entry_vs_low_lo": 0.05301211625950264,
+    "entry_vs_low_hi": 0.05283813304155016,
+    "read": "null"
+   },
+   {
+    "feature": "d4_absorption",
+    "label": "D4  absorption share \u2014 [T-20,T] volume on sessions at/near P_low",
+    "kind": "t",
+    "tier": "deep",
+    "cells": [
+     "bottom (<= 0.1345)",
+     "middle",
+     "top (> 0.2917)"
+    ],
+    "n": [
+     3213,
+     3229,
+     3256
+    ],
+    "names": [
+     239,
+     239,
+     235
+    ],
+    "stop_out_rate": [
+     0.5381263616557734,
+     0.5757200371632084,
+     0.5807739557739557
+    ],
+    "spread_X": 0.04264759411818231,
+    "ci95": [
+     -0.015547837704362572,
+     0.10250580047471954
+    ],
+    "per_name_spread": 0.0424746387448548,
+    "early": 0.07663779935819293,
+    "late": 0.0076501864331147695,
+    "spread_A": 0.20404963787316732,
+    "spread_F": -0.11877949377949376,
+    "within_quintile": 0.00417853993686248,
+    "entry_vs_low_lo": 0.08542959555791785,
+    "entry_vs_low_hi": 0.032070032751423394,
+    "read": "null"
+   },
+   {
+    "feature": "d5_quiet",
+    "label": "D5  quiet accumulation \u2014 rank-corr(volume, |ret|) over [T-15,T]",
+    "kind": "t",
+    "tier": "deep",
+    "cells": [
+     "bottom (<= 0.2382)",
+     "middle",
+     "top (> 0.4588)"
+    ],
+    "n": [
+     3265,
+     3211,
+     3219
+    ],
+    "names": [
+     239,
+     239,
+     239
+    ],
+    "stop_out_rate": [
+     0.5745788667687596,
+     0.5649330426658362,
+     0.5551413482447966
+    ],
+    "spread_X": -0.019437518523963027,
+    "ci95": [
+     -0.057535699060053076,
+     0.016585144006038943
+    ],
+    "per_name_spread": -0.036631309696199654,
+    "early": 0.00815500965586724,
+    "late": -0.04492463083779219,
+    "spread_A": -0.02833320726334404,
+    "spread_F": 0.03145213122506252,
+    "within_quintile": -0.011816708370326112,
+    "entry_vs_low_lo": 0.047874867401917154,
+    "entry_vs_low_hi": 0.05865051707563762,
+    "read": "null"
+   }
+  ],
+  "thin": [
+   {
+    "feature": "t1_part_z",
+    "label": "T1  dark pool \u2014 off-exchange participation_z (<= T-1)",
+    "kind": "t",
+    "tier": "thin",
+    "cells": [
+     "bottom (<= -0.32)",
+     "middle",
+     "top (> 0.62)"
+    ],
+    "n": [
+     384,
+     388,
+     397
+    ],
+    "names": [
+     113,
+     116,
+     113
+    ],
+    "stop_out_rate": [
+     0.5833333333333334,
+     0.5283505154639175,
+     0.6070528967254408
+    ],
+    "spread_X": 0.023719563392107457,
+    "ci95": [
+     -0.03368020647245901,
+     0.07701933074273495
+    ],
+    "per_name_spread": 0.027444163506110453,
+    "early": 0.04339417644502386,
+    "late": -0.0034506556245686992,
+    "spread_A": 0.0021121956339210657,
+    "spread_F": 0.03498242023509651,
+    "within_quintile": 0.034120310069677154,
+    "entry_vs_low_lo": 0.05821160314400298,
+    "entry_vs_low_hi": 0.05639091368121496,
+    "read": "PROBE (charter cap)"
+   },
+   {
+    "feature": "t2_streak",
+    "label": "T2  dark pool \u2014 sessions above own norm, streak (<= T-1)",
+    "kind": "t",
+    "tier": "thin",
+    "cells": [
+     "bottom (<= 0)",
+     "middle",
+     "top (> 2)"
+    ],
+    "n": [
+     547,
+     354,
+     273
+    ],
+    "names": [
+     116,
+     114,
+     113
+    ],
+    "stop_out_rate": [
+     0.5594149908592322,
+     0.6016949152542372,
+     0.5567765567765568
+    ],
+    "spread_X": -0.0026384340826753894,
+    "ci95": [
+     -0.05190785608939106,
+     0.06064203402231564
+    ],
+    "per_name_spread": -0.005220400086131005,
+    "early": 0.01807442934541259,
+    "late": -0.036672360092434464,
+    "spread_A": -0.0321500559160523,
+    "spread_F": -0.015770335697209537,
+    "within_quintile": 0.01022121965222721,
+    "entry_vs_low_lo": 0.06050574906353412,
+    "entry_vs_low_hi": 0.056162679871119,
+    "read": "PROBE (charter cap)"
+   },
+   {
+    "feature": "t3_prem_z",
+    "read": "degenerate",
+    "n": 0
+   }
+  ],
+  "reference": [
+   {
+    "feature": "entry_vs_low",
+    "label": "REF entry_vs_low (the stop-width tell; NOT a footprint feature)",
+    "kind": "t",
+    "tier": "ref",
+    "cells": [
+     "bottom (<= 0.04037)",
+     "middle",
+     "top (> 0.06996)"
+    ],
+    "n": [
+     3252,
+     3236,
+     3210
+    ],
+    "names": [
+     235,
+     237,
+     240
+    ],
+    "stop_out_rate": [
+     0.5836408364083641,
+     0.5639678615574784,
+     0.5470404984423676
+    ],
+    "spread_X": -0.03660033796599649,
+    "ci95": [
+     -0.10296363674035228,
+     0.02734992081415123
+    ],
+    "per_name_spread": -0.056655123433904,
+    "early": -0.07421279600420494,
+    "late": -0.002572377178449825,
+    "spread_A": -0.2734989826533779,
+    "spread_F": 0.1776741272085618,
+    "within_quintile": -0.032101961422330294,
+    "entry_vs_low_lo": 0.028503247994874803,
+    "entry_vs_low_hi": 0.10055909945303254,
+    "read": "null"
+   }
+  ]
+ },
+ "features_parquet": "footprint_picker_features.parquet",
+ "features_rows": 9805,
+ "features_columns": [
+  "ticker",
+  "date",
+  "pos",
+  "lane",
+  "close",
+  "p_low",
+  "entry_vs_low",
+  "atr14",
+  "stop_A",
+  "stopped_A",
+  "r_mult_A",
+  "trunc_A",
+  "stop_F",
+  "stopped_F",
+  "r_mult_F",
+  "trunc_F",
+  "stop_X",
+  "stopped_X",
+  "r_mult_X",
+  "trunc_X",
+  "risk_pct_X",
+  "d1_avwap_above",
+  "d1_avwap_dist",
+  "d1_anchor_date",
+  "d2_poc_dist",
+  "d2_poc",
+  "d3_poc_hold",
+  "d4_absorption",
+  "d5_quiet",
+  "t1_part_z",
+  "t2_streak",
+  "t3_prem_z",
+  "t1_obs",
+  "P0_entered",
+  "P0_entry_pos",
+  "P0_entry_close",
+  "P0_stopped",
+  "P0_r_mult",
+  "P0_truncated",
+  "P0_entry_vs_low",
+  "P1_entered",
+  "P1_entry_pos",
+  "P1_entry_close",
+  "P1_stopped",
+  "P1_r_mult",
+  "P1_truncated",
+  "P1_entry_vs_low",
+  "P2_entered",
+  "P2_entry_pos",
+  "P2_entry_close",
+  "P2_stopped",
+  "P2_r_mult",
+  "P2_truncated",
+  "P2_entry_vs_low"
+ ]
+}

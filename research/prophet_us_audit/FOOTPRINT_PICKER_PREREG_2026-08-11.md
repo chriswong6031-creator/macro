@@ -79,6 +79,68 @@ NEM 2026 union fires printed with all feature values before any pooled table. Su
 tint binds (bake-off §6). Display/measurement tier throughout — no gate, rank, or engine
 change; promotion only via the program's sequencing.
 
-## §R Results
+## §R Results (run 2026-08-11; frozen in `footprint_picker_results.json`, per-episode features in `footprint_picker_features.parquet`; episodes SHA 305990306ef)
 
-*(appended by `footprint_picker.py`; frozen numbers in `footprint_picker_results.json`)*
+**Headline: a clean pre-registered NULL, on every lane.** Union set 9,805 episodes / 240
+names / 2,880.5 name-years. All gates passed; deviations: HL/UEC add-ons excluded from
+pooling (bake-off law), T3 options net-premium **uncomputable** (the signed column begins
+2026-07-02 — ~19 rows/name; no 252d z can exist; printed as an empty lane rather than
+re-specified), P1's search bounded at T+42, thin-lane windows truncated at T−1 per the
+knowability rule.
+
+**R2 — labels.** Primary basis X (entry − 2×ATR14, median risk 4.6% of entry): stop-out
+56.5%, mean R +0.36, median R −1.0 — tighter than the bake-off's P_low anchor (46.2%) and
+harsher; the union book's central outcome is a stop-out, with the mean carried by the right
+tail. Bases A/F: 46.2% / 37.1% stop-outs.
+
+**R3 — the policies FAIL their pre-stated win condition.** P1 (wait 5 sessions, still
+alive, ≤+5%) enters 80.6% of fires; P2 (confirmed r3 pivot holding above the reference low
+within 15 sessions) enters 77.1%. Neither lowers the stop-out share (57.4% / 56.1% vs P0's
+56.5%) and both LOSE per-name-year R (0.95 / 0.97 vs 1.21) by forgoing 19–23% of fires.
+**Simple patience does not harvest the ex-post pre/post-trough split** (bake-off R9i): a
+confirmed pivot frequently prints inside a still-falling decline (the same reason C4
+carried a 42% pre-trough share), so the PIT proxies tested here do not select survivors.
+The 67%-win post-trough ceiling remains ex-post only — no construction measured to date
+reaches it at actionable prices.
+
+**R4 — deep battery: every feature null under the charter's stability bar.** The two
+largest spreads both run OPPOSITE to their motivating stories and fail cross-basis sign
+stability: D2 flush-on-shelf — a washout low landing FAR from the volume POC stops out
+LESS (50.7% vs 60.4%; −9.6pp on X, CI [−15.4,−3.5]) but flips to +12.4pp on basis F → null;
+D1 AVWAP-reclaimed names stop out MORE (+6.3pp; the reclaimed cell enters at 0.080 vs
+0.047 entry-vs-low — it is the already-ran cohort). D3/D4/D5 flat. The cross-tab: within
+D2's better cell, MORE absorption at the low WORSENS outcomes (47.8% → 56.0%) — the
+"someone absorbed the flush" daily-bar story does not measure what it hopes to.
+
+**R5/R6 — thin lanes: PROBE nulls on 12.7% coverage** (129/240 names, darkpool z spreads
++2.4/−0.3pp, CIs straddling 0); options lane empty. **R5ref — the methodology receipt:**
+`entry_vs_low`'s spread is −27.4pp on the bake-off's P_low basis and **−3.7pp on the
+entry-anchored primary** (+17.8pp on F) — the v3 labels designed out the stop-width
+channel that manufactured the bake-off's §8 false positives. The nulls here are nulls of
+the FEATURES, not artifacts of the ruler.
+
+## §A Adjudication
+
+1. **The CN chip-distribution concept does not transfer to US daily bars with these
+   constructions.** Five volume-profile/absorption features at full 12-year depth, two
+   dark-pool features at 3-year depth, two patience policies: nothing clears the
+   pre-stated bars, and the two biggest effects point away from the accumulation story.
+   Per the ORE law these are construction-scoped nulls — the ledger records them; the
+   space stays open where the data does not yet exist to search it.
+2. **Where the picker could still live (named waits-for-data, not kills):** the PIT
+   short-interest vintage panel (built 2018+, undeployed — deploying it is the single
+   cheapest unlock and is now the program's flagged infrastructure debt); GEX/dealer
+   positioning once it has quarters of history (currently <2 months); minute-grain
+   accumulation signatures once Massive TP-1 mints the plane; 13F broadening at quarterly
+   grain as slow context. The CN edge may also be genuinely mechanism-local (bands, T+1,
+   retail attention — their own doc's claim), in which case the US analog is weaker by
+   nature and the honest posture is what the bake-off already ships: geometry + operator
+   selection, without a mechanical picker.
+3. **Program consequence:** the TURN WATCH deck wiring (bake-off §A2) proceeds unchanged —
+   union admission at starter grade with honest texture copy; no durability tier is
+   licensed from any measured feature; the deck's context columns may DISPLAY D-features
+   as texture but must not rank or imply reliability. The bake-off §A6's
+   post-trough-evidence charter is now EXECUTED with a null verdict for its two simplest
+   policies; richer evidence constructions (e.g. pivot-confirm + reclaim-hold sequencing)
+   would need a new prereg, and this file's R3 is the baseline they must beat.
+4. Display/measurement tier throughout; nothing promotes from this file.
