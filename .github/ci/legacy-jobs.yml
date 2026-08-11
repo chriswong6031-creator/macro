@@ -5742,6 +5742,15 @@ jobs:
         # state enum ("leader pullback (RESET_TURN) — …"); it was unreachable only
         # because nothing published the organ's coverage.
         run: python -m pytest tests/test_prophet_zone_basis_copy.py -q
+      # The user-facing half of the same feature (#5301): the plain-word EN/ZH chip,
+      # receipt and footnote a reconstructed plan carries, plus the record split.
+      # Wired HERE, with the lane that mints those plans, and wired at all because it
+      # arrived registered by NO run: step — `scripts/audit_unrun_tests.py` reported
+      # it as a dark suite on the merge. The two halves share one subject and one
+      # copy source of truth (prophet_bridge's RECONSTRUCTED_* constants), so a change
+      # that greens one while reddening the other should fail in a single job.
+      - name: reconstructed-origination disclosure (chip + receipt + footnote + record split, EN/ZH)
+        run: python -m pytest tests/test_prophet_origination_disclosure.py -q
 
   coiled-mtf-anchor-era:
     # COILED bonus/fire + mtf trend.d3 absolute session anchor (era
