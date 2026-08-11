@@ -1126,6 +1126,11 @@ def test_prophet_marks_runner_uses_the_checkout_that_owns_it():
     assert 'REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)' in runner
     assert 'cd "$REPO_ROOT" && "$PYTHON" -m "$MODULE" --publish' in runner
 
+    plist_path = repo / "ops/launchd/com.mastermind.prophetmarks.plist"
+    plist_text = plist_path.read_text(encoding="utf-8")
+    assert "/Users/chriswong/Documents/Cluade/Macro Dashboard" not in plist_text
+    assert plist_text.count("<string>/Users/chriswong/flow-ops-wt</string>") == 2
+
 
 def test_prophet_marks_publish_uses_canonical_r2_and_tombstones_empty(monkeypatch):
     """A stale operations checkout cannot keep an obsolete contract alive."""
