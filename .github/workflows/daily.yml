@@ -4003,6 +4003,7 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.build_session_digest || echo "::warning::build_session_digest non-fatal failure"
       - name: OIP PIT — durable episodes + H+60 and declared-session-close proxy accrual
+        id: options_signal_episode
         # Consumes only the date-keyed live_flow/events/{DATE}.jsonl raw stage,
         # never capped/overwritten feed_current. The monotonic checkpoint and all three
         # committed JSONL ledgers advance only in COLLECT_LANE=nightly. H+60 v1 stays
@@ -4021,6 +4022,99 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.build_options_signal_episode
+      - name: OIP PIT — checkpoint the four durable episode ledgers
+        if: always() && steps.options_signal_episode.outcome == 'success'
+        timeout-minutes: 10
+        continue-on-error: true
+        # This checkpoint is deliberately immediate and success-only. The broad
+        # engine commit is hours later and may lose its push race or hit the job
+        # cap; these append-only PIT rows cannot be reconstructed after the raw
+        # dated event stage ages out. Publish only the four builder-owned files.
+        # The metadata replay overlays their object IDs on current origin/main in
+        # a temporary index, so it never rebases, checks out, stashes, cleans, or
+        # otherwise touches the thousands of unrelated dirty render outputs.
+        run: |
+          set -euo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          OIP_LEDGER_PATHS=(
+            data/options_signal_episode/checkpoint.json
+            data/options_signal_episode/episodes.jsonl
+            data/options_signal_episode/outcomes_h60.jsonl
+            data/options_signal_episode/outcomes_session.jsonl
+          )
+          PUSH_ALARM=120
+          PUSH_BUDGET_SECS=420
+          PUSH_MAX_ATTEMPTS=12
+          push_retry_init "options PIT episode ledgers"
+          push_on_main_ok || exit 0
+
+          # A foreign staged path would ride `git commit` even though this step's
+          # own add is narrow. Refuse that state instead of widening ownership.
+          if ! git diff --cached --quiet; then
+            echo "::error title=options PIT checkpoint index dirty::foreign staged paths predate the narrow checkpoint; refusing to publish"
+            exit 1
+          fi
+          for OIP_PATH in "${OIP_LEDGER_PATHS[@]}"; do
+            if [ ! -f "$OIP_PATH" ] || [ -L "$OIP_PATH" ]; then
+              echo "::error title=options PIT checkpoint path rejected::$OIP_PATH is missing or a symlink"
+              exit 1
+            fi
+          done
+          git add -- "${OIP_LEDGER_PATHS[@]}"
+          if git diff --cached --quiet; then
+            echo "options PIT episode ledgers unchanged"
+            exit 0
+          fi
+          while IFS= read -r OIP_PATH; do
+            case "$OIP_PATH" in
+              data/options_signal_episode/checkpoint.json|\
+              data/options_signal_episode/episodes.jsonl|\
+              data/options_signal_episode/outcomes_h60.jsonl|\
+              data/options_signal_episode/outcomes_session.jsonl) ;;
+              *)
+                echo "::error title=options PIT checkpoint scope violation::staged path $OIP_PATH is outside the four-file allowlist"
+                exit 1
+                ;;
+            esac
+          done < <(git diff --cached --name-only)
+          push_staged_clean "${OIP_LEDGER_PATHS[@]}" || exit 1
+
+          OIP_PARENT=$(git rev-parse HEAD)
+          git commit -m "options-pit: durable episode checkpoint $(date -u +%F)"
+          OIP_COMMIT=$(git rev-parse HEAD)
+          OIP_MESSAGE=$(git log -1 --format=%B "$OIP_COMMIT")
+          OIP_REPLAY_INDEX="${RUNNER_TEMP:-/tmp}/options-pit-replay-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}.idx"
+
+          while push_attempt; do
+            if ! perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin \
+              +refs/heads/main:refs/remotes/origin/main; then
+              PUSH_FAIL_CLASS="sync"
+              push_backoff
+              continue
+            fi
+            if OIP_PUBLISH=$(push_metadata_replay_commit "$OIP_PARENT" origin/main \
+                "$OIP_COMMIT" "$OIP_MESSAGE" "$OIP_REPLAY_INDEX"); then
+              if [ "$(git rev-parse "$OIP_PUBLISH^{tree}")" = "$(git rev-parse origin/main^{tree})" ]; then
+                echo "options PIT episode content already on origin/main — nothing to push"
+                push_won
+                exit 0
+              fi
+              if push_do origin "$OIP_PUBLISH:refs/heads/main"; then
+                echo "pushed options PIT episode ledgers on attempt $PUSH_ATTEMPT (metadata replay — dirty render tree untouched)"
+                push_won
+                exit 0
+              fi
+            else
+              PUSH_FAIL_CLASS="rebase-conflict"
+            fi
+            push_backoff
+          done
+          push_lost
+          echo "::error title=options PIT checkpoint NOT pushed::$PUSH_ATTEMPT attempts failed ($PUSH_STOP); the four ledgers remain only in the local engine commit fallback"
+          exit 1
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
         # named US thematic baskets. Ported from China #2634. Reads sector_cycles
