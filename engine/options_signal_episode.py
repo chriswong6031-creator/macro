@@ -22,6 +22,11 @@ decision-time rows from later outcome rows:
     summary of their receipt-bound RTH evidence and never alter the frozen H+60
     v1 contract.
 
+``data/options_signal_episode/campaigns.jsonl``
+    Immutable, exact-contract first-threshold cohorts. Membership is formed only
+    from point-in-time episode prefixes and binds one reference-only H+60 anchor;
+    outcome status and values never participate in membership or payload bytes.
+
 Authority is intentionally zero.  A notable live-flow event is a ``watch``
 episode, not a stock pick.  Nothing here ranks, gates, sizes, escalates, or
 originates a trade.  The live poller may add raw observation provenance to R2,
@@ -35,6 +40,7 @@ import json
 import math
 import os
 import re
+from decimal import Decimal
 from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
 from itertools import pairwise
@@ -51,6 +57,7 @@ from lib import nyse_calendar
 EPISODE_SCHEMA = "options.signal_episode/v1"
 OUTCOME_SCHEMA = "options.signal_episode_outcome/v1"
 SESSION_OUTCOME_SCHEMA = "options.signal_episode_session_outcome/v1"
+CAMPAIGN_SCHEMA = "options.signal_campaign/v1"
 HORIZON_MINUTES = 60
 MEASUREMENT_VERSION = "h60-aligned-bars/v1"
 SESSION_MEASUREMENT_VERSION = "session-close-aligned-bars/v1"
@@ -66,6 +73,12 @@ TIMESTAMP_BASIS = "aggregate_window_start_utc"
 EPISODE_REL = Path("options_signal_episode") / "episodes.jsonl"
 OUTCOME_REL = Path("options_signal_episode") / "outcomes_h60.jsonl"
 SESSION_OUTCOME_REL = Path("options_signal_episode") / "outcomes_session.jsonl"
+CAMPAIGN_REL = Path("options_signal_episode") / "campaigns.jsonl"
+
+CAMPAIGN_RULE_ID = "exact_contract_first_threshold_prefix/v1"
+CAMPAIGN_RULE_FROZEN_AT = "2026-08-11T08:22:28Z"
+CAMPAIGN_MIN_EVENT_COUNT = 2
+CAMPAIGN_MIN_PREMIUM_USD = 3_000_000
 
 SESSION_HORIZONS = {
     "eod": 0,
@@ -92,13 +105,19 @@ FALSE_AUTHORITY = {
     "may_publish_pick": False,
     "may_train_prophet": False,
 }
+CAMPAIGN_FALSE_AUTHORITY = {
+    **FALSE_AUTHORITY,
+    "may_select": False,
+    "may_score": False,
+    "may_compute_option_pnl": False,
+}
 
 
 class ContractError(ValueError):
     """A row violates the point-in-time contract."""
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=4)
 def _schema_validator(filename: str) -> Draft202012Validator:
     path = Path(__file__).resolve().parent.parent / "contracts" / "options" / filename
     try:
@@ -141,7 +160,7 @@ def _session_outcome_id(episode_id: str, horizon: str) -> str:
     )
 
 
-def _canonical_bytes(row: dict[str, Any]) -> bytes:
+def _canonical_bytes(row: object) -> bytes:
     return json.dumps(
         row, ensure_ascii=False, separators=(",", ":"), sort_keys=True,
         allow_nan=False,
@@ -963,6 +982,286 @@ def validate_outcome_against_episode(
         )
     if reason != expected_reason:
         raise ContractError("terminal outcome reason disagrees with episode session clocks")
+
+
+def _campaign_rule() -> dict[str, Any]:
+    return {
+        "id": CAMPAIGN_RULE_ID,
+        "group_by": ["session_date", "ticker", "expiration", "strike", "right"],
+        "order_by": ["available_at", "episode_id"],
+        "minimum_event_count": CAMPAIGN_MIN_EVENT_COUNT,
+        "minimum_cumulative_premium_usd": CAMPAIGN_MIN_PREMIUM_USD,
+        "crossing_policy": "first_qualifying_prefix",
+        "frozen_at": CAMPAIGN_RULE_FROZEN_AT,
+    }
+
+
+def _normalized_number_key(value: object, field: str) -> str:
+    if type(value) is int:
+        if value <= 0:
+            raise ContractError(f"{field} must be positive and finite")
+    elif type(value) is float:
+        if not math.isfinite(value) or value <= 0:
+            raise ContractError(f"{field} must be positive and finite")
+    else:
+        raise ContractError(f"{field} must be an exact JSON number")
+    return format(Decimal(str(value)).normalize(), "f")
+
+
+def _campaign_group_key(group: dict[str, Any]) -> tuple[str, str, str, str, str]:
+    if not isinstance(group, dict):
+        raise ContractError("campaign group must be an object")
+    session_date = _exact_iso_date(group.get("session_date"), "group.session_date")
+    ticker = group.get("ticker")
+    if type(ticker) is not str or not ticker or ticker != ticker.strip().upper():
+        raise ContractError("campaign group ticker must be normalized uppercase")
+    expiration = _exact_iso_date(group.get("expiration"), "group.expiration")
+    strike = _normalized_number_key(group.get("strike"), "group.strike")
+    right = group.get("right")
+    if right not in ("C", "P"):
+        raise ContractError("campaign group right must be C or P")
+    return session_date, ticker, expiration, strike, right
+
+
+def _campaign_group(episode: dict[str, Any]) -> dict[str, Any]:
+    contract = episode["contract"]
+    strike = contract["strike"]
+    _normalized_number_key(strike, "episode.contract.strike")
+    return {
+        "session_date": episode["session_date"],
+        "ticker": episode["ticker"],
+        "expiration": contract["expiration"],
+        "strike": strike,
+        "right": contract["right"],
+    }
+
+
+def _campaign_id(group: dict[str, Any]) -> str:
+    normalized_group = _campaign_group_key(group)
+    identity = {
+        "schema": CAMPAIGN_SCHEMA,
+        "rule": _campaign_rule(),
+        "group": list(normalized_group),
+    }
+    digest = hashlib.sha256(_canonical_bytes(identity)).hexdigest()
+    return f"ocam_{digest[:24]}"
+
+
+def _campaign_evidence_phase(formed_at: object) -> str:
+    formed = _as_utc(formed_at, "campaign formed_at")
+    frozen = _as_utc(CAMPAIGN_RULE_FROZEN_AT, "campaign rule frozen_at")
+    return (
+        "retrospective_discovery"
+        if formed < frozen
+        else "prospective_after_rule_freeze"
+    )
+
+
+def _rounded_dollar_premium(episode: dict[str, Any]) -> int:
+    value = episode["feature_snapshot"].get("premium_usd")
+    if type(value) is int:
+        exact = value
+    elif type(value) is float and math.isfinite(value) and value.is_integer():
+        exact = int(value)
+    else:
+        raise ContractError("campaign premium must be an exact rounded-dollar amount")
+    if exact <= 0 or exact > 9_007_199_254_740_991:
+        raise ContractError("campaign premium must be an exact rounded-dollar amount")
+    return exact
+
+
+def _qualifying_campaign_prefixes(
+    episodes: Iterable[dict[str, Any]],
+) -> tuple[
+    dict[str, dict[str, Any]],
+    list[tuple[dict[str, Any], list[dict[str, Any]], int]],
+]:
+    episode_by_id: dict[str, dict[str, Any]] = {}
+    grouped: dict[tuple[str, str, str, str, str], list[dict[str, Any]]] = {}
+    for episode in episodes:
+        validate_episode(episode)
+        episode_id = episode["episode_id"]
+        if episode_id in episode_by_id:
+            raise ContractError(f"duplicate campaign source episode: {episode_id}")
+        episode_by_id[episode_id] = episode
+        _rounded_dollar_premium(episode)
+        group = _campaign_group(episode)
+        grouped.setdefault(_campaign_group_key(group), []).append(episode)
+
+    qualifying: list[tuple[dict[str, Any], list[dict[str, Any]], int]] = []
+    ordered_group_keys = sorted(
+        grouped,
+        key=lambda key: (key[0], key[1], key[2], Decimal(key[3]), key[4]),
+    )
+    for group_key in ordered_group_keys:
+        ordered = sorted(
+            grouped[group_key],
+            key=lambda row: (
+                _as_utc(row["available_at"], "episode.available_at"),
+                row["episode_id"],
+            ),
+        )
+        cumulative_premium = 0
+        prefix: list[dict[str, Any]] = []
+        for episode in ordered:
+            prefix.append(episode)
+            cumulative_premium += _rounded_dollar_premium(episode)
+            if (
+                len(prefix) >= CAMPAIGN_MIN_EVENT_COUNT
+                and cumulative_premium >= CAMPAIGN_MIN_PREMIUM_USD
+            ):
+                qualifying.append((_campaign_group(episode), list(prefix), cumulative_premium))
+                break
+    return episode_by_id, qualifying
+
+
+def validate_campaign(row: dict[str, Any]) -> None:
+    """Validate one immutable, zero-authority exact-contract campaign row."""
+    _validate_json_schema(row, "options.signal_campaign.v1.schema.json")
+    required = {
+        "schema", "campaign_id", "rule", "group", "formed_at", "crossing",
+        "anchor", "disposition", "role", "evidence_phase", "training_eligible",
+        "authority",
+    }
+    if set(row) != required:
+        raise ContractError("campaign root shape differs from the frozen v1 contract")
+    if row["schema"] != CAMPAIGN_SCHEMA:
+        raise ContractError(f"campaign schema must be {CAMPAIGN_SCHEMA!r}")
+    if row["rule"] != _campaign_rule():
+        raise ContractError("campaign rule differs from the preregistered first-prefix rule")
+    group = row["group"]
+    group_key = _campaign_group_key(group)
+    if row["campaign_id"] != _campaign_id(group):
+        raise ContractError("campaign_id must bind only schema, rule, and normalized group")
+    formed_at = row["formed_at"]
+    if type(formed_at) is not str or _iso_utc(
+        _as_utc(formed_at, "formed_at")
+    ) != formed_at:
+        raise ContractError("campaign formed_at must be canonical UTC")
+    if _as_utc(formed_at, "formed_at").astimezone(ET).date().isoformat() != group_key[0]:
+        raise ContractError("campaign formed_at must belong to its group session")
+
+    crossing = row["crossing"]
+    if not isinstance(crossing, dict) or set(crossing) != {
+        "episode_ids", "event_count", "cumulative_premium_usd",
+        "episode_prefix_sha256",
+    }:
+        raise ContractError("campaign crossing shape differs from v1")
+    episode_ids = crossing["episode_ids"]
+    if (
+        not isinstance(episode_ids, list)
+        or any(type(value) is not str for value in episode_ids)
+        or len(episode_ids) != len(set(episode_ids))
+    ):
+        raise ContractError("campaign crossing episode_ids must be an ordered unique list")
+    if type(crossing["event_count"]) is not int or crossing["event_count"] != len(episode_ids):
+        raise ContractError("campaign crossing event_count must equal its ordered prefix")
+    premium = crossing["cumulative_premium_usd"]
+    if type(premium) is not int or premium < CAMPAIGN_MIN_PREMIUM_USD:
+        raise ContractError("campaign crossing premium must be an exact qualifying dollar total")
+
+    anchor = row["anchor"]
+    if not isinstance(anchor, dict) or set(anchor) != {
+        "schema", "outcome_id", "episode_id", "horizon_minutes",
+    }:
+        raise ContractError("campaign anchor must be reference-only")
+    if anchor["schema"] != OUTCOME_SCHEMA or anchor["horizon_minutes"] != HORIZON_MINUTES:
+        raise ContractError("campaign anchor must reference the frozen H+60 schema")
+    if not episode_ids or anchor["episode_id"] != episode_ids[-1]:
+        raise ContractError("campaign anchor must be the first crossing episode")
+    if anchor["outcome_id"] != _outcome_id(anchor["episode_id"]):
+        raise ContractError("campaign anchor outcome_id is not stable for H+60")
+    if row["disposition"] != "abstain" or row["role"] != "research_cohort_only":
+        raise ContractError("campaign disposition must remain an abstaining research cohort")
+    if row["evidence_phase"] != _campaign_evidence_phase(formed_at):
+        raise ContractError("campaign evidence_phase disagrees with the frozen rule boundary")
+    if row["training_eligible"] is not False:
+        raise ContractError("campaigns are never training eligible in v1")
+    if row["authority"] != CAMPAIGN_FALSE_AUTHORITY:
+        raise ContractError("campaign authority must remain identically false")
+    if group_key[0] > group_key[2]:
+        raise ContractError("campaign contract expiration precedes its session")
+
+
+def derive_campaigns(
+    episodes: Iterable[dict[str, Any]],
+    h60_outcomes: Iterable[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Derive every qualifying first prefix and return missing H+60 anchors as pending.
+
+    Membership is fully determined before H+60 rows are inspected. Outcome rows
+    are validated only to authorize a reference-only anchor; neither their status
+    nor any measured value can alter membership or campaign bytes.
+    """
+    episode_by_id, qualifying = _qualifying_campaign_prefixes(episodes)
+    outcome_by_episode: dict[str, dict[str, Any]] = {}
+    for outcome in h60_outcomes:
+        validate_outcome(outcome)
+        episode = episode_by_id.get(outcome["episode_id"])
+        if episode is None:
+            raise ContractError(
+                f"campaign H+60 outcome references missing episode: {outcome['episode_id']}"
+            )
+        validate_outcome_against_episode(outcome, episode)
+        episode_id = outcome["episode_id"]
+        if episode_id in outcome_by_episode:
+            raise ContractError(f"duplicate campaign H+60 outcome: {episode_id}")
+        outcome_by_episode[episode_id] = outcome
+
+    campaigns: list[dict[str, Any]] = []
+    pending_anchor_episode_ids: list[str] = []
+    for group, prefix, cumulative_premium in qualifying:
+        anchor_episode = prefix[-1]
+        anchor_episode_id = anchor_episode["episode_id"]
+        anchor_outcome = outcome_by_episode.get(anchor_episode_id)
+        if anchor_outcome is None:
+            pending_anchor_episode_ids.append(anchor_episode_id)
+            continue
+        formed_at = _iso_utc(_as_utc(
+            anchor_episode["available_at"], "anchor episode available_at",
+        ))
+        row = {
+            "schema": CAMPAIGN_SCHEMA,
+            "campaign_id": _campaign_id(group),
+            "rule": _campaign_rule(),
+            "group": group,
+            "formed_at": formed_at,
+            "crossing": {
+                "episode_ids": [episode["episode_id"] for episode in prefix],
+                "event_count": len(prefix),
+                "cumulative_premium_usd": cumulative_premium,
+                "episode_prefix_sha256": hashlib.sha256(
+                    _canonical_bytes(prefix)
+                ).hexdigest(),
+            },
+            "anchor": {
+                "schema": OUTCOME_SCHEMA,
+                "outcome_id": anchor_outcome["outcome_id"],
+                "episode_id": anchor_episode_id,
+                "horizon_minutes": HORIZON_MINUTES,
+            },
+            "disposition": "abstain",
+            "role": "research_cohort_only",
+            "evidence_phase": _campaign_evidence_phase(formed_at),
+            "training_eligible": False,
+            "authority": dict(CAMPAIGN_FALSE_AUTHORITY),
+        }
+        validate_campaign(row)
+        campaigns.append(row)
+    return campaigns, pending_anchor_episode_ids
+
+
+def validate_campaign_against_sources(
+    campaign: dict[str, Any],
+    episodes: Iterable[dict[str, Any]],
+    h60_outcomes: Iterable[dict[str, Any]],
+) -> None:
+    """Replay one campaign from current immutable sources and reject any drift."""
+    validate_campaign(campaign)
+    expected, _pending = derive_campaigns(episodes, h60_outcomes)
+    expected_by_id = {row["campaign_id"]: row for row in expected}
+    if expected_by_id.get(campaign["campaign_id"]) != campaign:
+        raise ContractError("campaign payload differs from its first qualifying source prefix")
 
 
 def _session_target(session: date, horizon: str) -> tuple[int, date, datetime]:
@@ -2520,4 +2819,17 @@ def append_session_outcomes(path: Path, rows: Iterable[dict[str, Any]]) -> int:
         id_field="outcome_id",
         semantic_key=lambda row: (row.get("episode_id"), row.get("horizon")),
         validator=validate_session_outcome,
+    )
+
+
+def append_campaigns(path: Path, rows: Iterable[dict[str, Any]]) -> int:
+    return _append_validated(
+        path,
+        rows,
+        id_field="campaign_id",
+        semantic_key=lambda row: (
+            row.get("schema"),
+            _campaign_group_key(row.get("group")),
+        ),
+        validator=validate_campaign,
     )

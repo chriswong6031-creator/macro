@@ -15302,6 +15302,38 @@ artifacts:
       publication, Neural Web, or Prophet consumer is registered. The existing
       builder is the sole writer and only the nightly lane may append rows.
 
+  options-signal-campaigns:
+    path: data/options_signal_episode/campaigns.jsonl
+    format: jsonl
+    producer: scripts/build_options_signal_episode.py
+    known_extra_writers: []
+    owner_program: options-intelligence-program
+    cadence: daily-engine
+    storage: git
+    asof_field: formed_at
+    freshness_sla_hours: 30
+    schema: options.signal_campaign/v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_options_signal_episode.py
+    external_consumers: []
+    notes: >
+      Immutable zero-authority research cohorts over exact session, ticker,
+      expiration, strike, and right groups. Each row freezes the first ordered
+      episode prefix with at least two events and at least three million exact
+      rounded premium dollars, plus a digest of the complete source rows. A
+      reference-only H+60 anchor must already exist, but outcome status and values
+      cannot affect membership or campaign bytes. The rule froze at
+      2026-08-11T08:22:28Z after inspecting the initial 2026-08-10 corpus, so all
+      initial rows are explicitly retrospective discovery, not forward evidence;
+      later evaluation must stratify evidence_phase. Disposition is always abstain,
+      training eligibility and every selection, score, rank, gate, size, trade,
+      publication, option-return, origination, escalation, and model-training
+      authority remain false. The existing nightly builder is the sole writer.
+
   options-signal-episode-checkpoint:
     path: data/options_signal_episode/checkpoint.json
     format: json
