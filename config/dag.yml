@@ -1200,10 +1200,38 @@ lanes:
           non-fatal; canonical Release Radar truth substrate. Collects ALFRED
           output_type=2 full-vintage matrices for CPI, PCE, PPI, and PAYEMS so
           each target can be reconstructed from current and prior levels active
-          in the SAME release-date vintage. Missing credentials or a failed
-          series leave the last-good stores untouched.
+          in the SAME release-date vintage. The requested cohort is staged before
+          publication; validation failures leave the last-good stores untouched,
+          while any interrupted source mutation has both completion markers
+          durably absent.
           inputs: [FRED_API_KEY]
           outputs: [data/fred_vintage/release_targets/manifest.json]
+      - id: collect_release_cpi_official_truth
+        module: scripts.collect_release_cpi_official_truth
+        note: >
+          non-fatal; validates the frozen preregistered BLS CPI panel, retains
+          exact content-addressed XLS/XLSX/HTML source documents, and publishes
+          deterministic display-only archived-release-edition receipts. Retained
+          bytes are reconstructed before reuse; retrospective downloads do not
+          establish first-publication truth.
+          inputs: [data/release_forecast/cpi_truth/preregistered_sample.json]
+          outputs: [data/release_forecast/cpi_truth/official_table1_receipts.jsonl,
+                    data/release_forecast/cpi_truth/official_table1_collection.json,
+                    data/release_forecast/cpi_truth/official_table1_archive/]
+      - id: build_release_cpi_truth_parity
+        module: scripts.build_release_cpi_truth_parity
+        note: >
+          non-fatal shadow truth gate. Builds the same-release-vintage CPI target
+          history and requires exact parity against all preregistered archived
+          release editions before writing the completion receipt last. It never
+          changes champion coefficients, ensemble weights, or authority.
+          inputs: [data/fred_vintage/release_targets/manifest.json,
+                   data/release_forecast/cpi_truth/preregistered_sample.json,
+                   data/release_forecast/cpi_truth/official_table1_receipts.jsonl,
+                   data/release_forecast/cpi_truth/official_table1_collection.json]
+          outputs: [data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json,
+                    data/release_forecast/cpi_truth/parity_report.json,
+                    data/release_forecast/cpi_truth/build_completion.json]
       - id: reconcile_release_actuals
         module: scripts.reconcile_release_actuals
         note: >
