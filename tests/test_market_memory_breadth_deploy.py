@@ -54,7 +54,13 @@ def _setting_values(unit: str, setting: str) -> list[str]:
 def _breadth_update_block() -> str:
     update = _text(UPDATE)
     start = update.index("MARKET_MEMORY_BREADTH_UNIT_UPDATED=0")
-    end = update.index("# W2C private prospective experience accrual", start)
+    end = min(
+        update.index(marker, start)
+        for marker in (
+            "# W2C private prospective experience accrual",
+            "# First admitted production-record writer",
+        )
+    )
     return update[start:end]
 
 

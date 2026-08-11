@@ -30,8 +30,8 @@ fi
 OPTIONS_TIMER_DISARMED=0
 OPTIONS_API_FENCE_MARKER=/run/macro-api-market-memory-options-deny.ready
 OPTIONS_RECIPROCAL_FENCE_MARKER=/run/macro-market-memory-options-reciprocal-deny.ready
-OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|context|identity|breadth|technicals|experience)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
-OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|context|identity|breadth|technicals|experience)\.(service|timer)|scripts/(__init__|accrue_market_memory_spy_experience)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual)?)\.py)|contracts/market_memory/spy_experience_(registration|opportunity|outcome_revision|population_receipt)\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|lib/(__init__|nyse_calendar)\.py|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|context|identity|breadth|technicals|experience|production-records)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|context|identity|breadth|technicals|experience|production-records)\.(service|timer)|scripts/(__init__|accrue_market_memory_spy_experience|capture_market_memory_options_episodes)\.py|engine/(__init__|options_signal_episode)\.py|engine/neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual|_production_records)?)\.py|contracts/market_memory/(spy_experience_(registration|opportunity|outcome_revision|population_receipt)|options_signal_episode_production_record)\.v1\.schema\.json|contracts/options/options\.signal_episode\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|lib/(__init__|nyse_calendar)\.py|data/options_signal_episode/episodes\.jsonl|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 MARKET_MEMORY_EXPERIENCE_RUNTIME_REGEX='^(app/requirements\.txt|scripts/(__init__|accrue_market_memory_spy_experience)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual)?)\.py)|contracts/market_memory/spy_experience_(registration|opportunity|outcome_revision|population_receipt)\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|lib/(__init__|nyse_calendar)\.py|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 MARKET_MEMORY_EXPERIENCE_ROOT=/var/lib/macro-market-memory/state/experience-v1
 MARKET_MEMORY_EXPERIENCE_INSTALLATION="$MARKET_MEMORY_EXPERIENCE_ROOT/registration_installation.json"
@@ -80,7 +80,7 @@ stop_unit_and_verify_inactive() {
 stop_reciprocal_market_memory_writers() {
 	local profile service timer
 	rm -f "$OPTIONS_RECIPROCAL_FENCE_MARKER"
-	for profile in source context identity breadth technicals experience; do
+	for profile in source context identity breadth technicals experience production-records; do
 		service="macro-market-memory-$profile.service"
 		timer="macro-market-memory-$profile.timer"
 		if ! stop_unit_and_verify_inactive \
@@ -100,7 +100,7 @@ stop_reciprocal_market_memory_writers() {
 
 reciprocal_market_memory_units_ready() {
 	local profile
-	for profile in source context identity breadth technicals experience; do
+	for profile in source context identity breadth technicals experience production-records; do
 		mm_loaded_unit_ready \
 			"$APP_DIR/app/deploy/macro-market-memory-$profile.service" \
 			"/etc/systemd/system/macro-market-memory-$profile.service" \
@@ -403,6 +403,7 @@ install -d -m 0700 /var/lib/macro-market-memory/state/identity-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/breadth-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/technicals-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/experience-v1
+install -d -m 0700 /var/lib/macro-market-memory/state/production-record-options-episode-v1
 # Unit verification needs the static account and empty deny anchors.  The
 # service-writable profile and credential file are provisioned only after
 # macro-api proves a new deny namespace.
@@ -956,6 +957,65 @@ if [ "$MARKET_MEMORY_EXPERIENCE_TERMINAL_STATE" -eq 3 ]; then
 fi
 # END W2C_RUNTIME_ATTESTATION
 
+# First admitted production-record writer: network-dark, credential-free, and
+# confined to one private store. It can read only the committed owner ledger;
+# it cannot see other Market Memory state, the API, Prophet, or credential
+# paths. Historical owner rows remain explicitly pre-activation in the record
+# contract, while the same immutable lane captures future rows on arrival.
+MARKET_MEMORY_PRODUCTION_RECORDS_UNIT_UPDATED=0
+MARKET_MEMORY_PRODUCTION_RECORDS_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-production-records.service"
+	"$APP_DIR/app/deploy/macro-market-memory-production-records.timer"
+)
+if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_PRODUCTION_RECORDS_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-production-records.service || \
+   ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_PRODUCTION_RECORDS_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-production-records.timer; then
+	unit_repair_inputs_safe "${MARKET_MEMORY_PRODUCTION_RECORDS_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe production-record unit repair input" >&2
+		exit 1
+	}
+	if systemd-analyze verify "${MARKET_MEMORY_PRODUCTION_RECORDS_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_PRODUCTION_RECORDS_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				[ ! -L "/etc/systemd/system/$UNIT" ] || {
+					echo "macro-update: refusing symlinked unit $UNIT" >&2
+					exit 1
+				}
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_PRODUCTION_RECORDS_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_PRODUCTION_RECORDS_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+				systemctl restart macro-market-memory-production-records.timer 2>/dev/null || true
+			fi
+			RECONCILED=1
+			echo "macro-update: Market Memory production-record units updated"
+		fi
+	else
+		echo "macro-update: refusing Market Memory production-record unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+	systemctl enable --now macro-market-memory-production-records.timer >/dev/null 2>&1 || \
+		echo "macro-update: macro-market-memory-production-records.timer could not be enabled" >&2
+fi
+
+MARKET_MEMORY_PRODUCTION_RECORDS_RUN_NEEDED=0
+if [ "$MARKET_MEMORY_PRODUCTION_RECORDS_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(scripts/capture_market_memory_options_episodes\.py|engine/options_signal_episode\.py|engine/neuralweb/market_memory_production_records\.py|contracts/market_memory/options_signal_episode_production_record\.v1\.schema\.json|contracts/options/options\.signal_episode\.v1\.schema\.json|lib/nyse_calendar\.py|data/options_signal_episode/episodes\.jsonl)$'; then
+	MARKET_MEMORY_PRODUCTION_RECORDS_RUN_NEEDED=1
+fi
+if [ "$MARKET_MEMORY_PRODUCTION_RECORDS_RUN_NEEDED" -eq 1 ]; then
+	if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ]; then
+		echo "macro-update: deferring Market Memory production-record capture until reciprocal boundary attestation" >&2
+	elif [ "$API_DEPS_OK" -ne 1 ]; then
+		echo "macro-update: deferring Market Memory production-record capture — shared runtime dependencies are not current" >&2
+	elif ! systemctl start macro-market-memory-production-records.service; then
+		echo "macro-update: Market Memory production-record capture failed closed; nightly timer will retry" >&2
+	fi
+fi
+
 # W1B.5 private, future-only option-OI endpoint availability canary. It makes
 # exactly one bounded first-page request with a systemd credential, follows no
 # pagination, and never constructs a chain, identity, OI state, GEX, replay
@@ -1332,14 +1392,28 @@ if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ] && \
 		exit 1
 	fi
 	# END W2C_DEFERRED_REPLAY
-	for RECIPROCAL_PROFILE in source context identity breadth technicals; do
-		systemctl start "macro-market-memory-$RECIPROCAL_PROFILE.timer"
+	for RECIPROCAL_PROFILE in source context identity breadth technicals production-records; do
+		if [ "$RECIPROCAL_PROFILE" = production-records ]; then
+			systemctl enable --now "macro-market-memory-$RECIPROCAL_PROFILE.timer"
+		else
+			systemctl start "macro-market-memory-$RECIPROCAL_PROFILE.timer"
+		fi
 	done
 	if ! w2c_reconcile_timer; then
 		echo "macro-update: W2C timer reconciliation failed" >&2
 		exit 1
 	fi
 	MARKET_MEMORY_EXPERIENCE_ATTESTED=1
+	# The production-record first run was intentionally deferred while the
+	# reciprocal namespace was stopped. Capture immediately after the reviewed
+	# units are re-armed; do not wait for the next nightly calendar edge.
+	if [ "$MARKET_MEMORY_PRODUCTION_RECORDS_RUN_NEEDED" -eq 1 ]; then
+		if [ "$API_DEPS_OK" -ne 1 ]; then
+			echo "macro-update: deferring Market Memory production-record capture — shared runtime dependencies are not current" >&2
+		elif ! systemctl start macro-market-memory-production-records.service; then
+			echo "macro-update: Market Memory production-record capture failed closed; nightly timer will retry" >&2
+		fi
+	fi
 fi
 if [ "${MARKET_MEMORY_EXPERIENCE_ATTESTED:-1}" -ne 1 ]; then
 	echo "macro-update: W2C installation and terminal state were not authenticated" >&2

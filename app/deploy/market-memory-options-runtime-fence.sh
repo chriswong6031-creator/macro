@@ -7,7 +7,7 @@ set -euo pipefail
 APP_DIR=${APP_DIR:-/opt/macro}
 OPTIONS_API_FENCE_MARKER=/run/macro-api-market-memory-options-deny.ready
 OPTIONS_RECIPROCAL_FENCE_MARKER=/run/macro-market-memory-options-reciprocal-deny.ready
-RECIPROCAL_MARKER_BODY=market-memory-options-reciprocal-deny.v1
+RECIPROCAL_MARKER_BODY=market-memory-options-reciprocal-deny.v2
 
 mm_runtime_marker_file_ready() {
 	local marker=$1 metadata
@@ -88,7 +88,7 @@ mm_options_runtime_boundary_ready() {
 	mm_loaded_unit_ready \
 		"$APP_DIR/app/deploy/macro-api.service" \
 		/etc/systemd/system/macro-api.service macro-api.service || return 1
-	for profile in source context identity breadth technicals experience; do
+	for profile in source context identity breadth technicals experience production-records; do
 		mm_loaded_unit_ready \
 			"$APP_DIR/app/deploy/macro-market-memory-$profile.service" \
 			"/etc/systemd/system/macro-market-memory-$profile.service" \

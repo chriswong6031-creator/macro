@@ -1,21 +1,21 @@
-# W1B.2 private SPY identity-observation publisher.  It has no network or
-# credentials and never writes the API-readable Market Memory tree.  Legacy
-# symbol-directory snapshots remain reconstruction-only; only prospectively
-# receipt-bound collections can become operational observations.
+# First admitted Market Memory production-record writer. It reads only the
+# committed options signal-episode owner ledger and writes the immutable,
+# API-inaccessible options-episode record store. No network, credential,
+# public-store, ranking, gating, sizing, or execution surface is available.
 [Unit]
-Description=Accrue private SPY Market Memory identity observations
+Description=Capture admitted options signal episodes into private Market Memory records
 After=local-fs.target
 
 [Service]
 Type=oneshot
 WorkingDirectory=/opt/macro
-ExecStart=/opt/macro-api/.venv/bin/python -m scripts.ingest_market_memory_identity --repository-root /opt/macro --store-root /var/lib/macro-market-memory/state/identity-v1
-TimeoutStartSec=180
+ExecStart=/opt/macro-api/.venv/bin/python -m scripts.capture_market_memory_options_episodes --repository-root /opt/macro --store-root /var/lib/macro-market-memory/state/production-record-options-episode-v1
+TimeoutStartSec=300
 Nice=10
 CPUWeight=20
-CPUQuota=50%
-MemoryHigh=256M
-MemoryMax=512M
+CPUQuota=60%
+MemoryHigh=1G
+MemoryMax=2G
 IOWeight=20
 UMask=0077
 NoNewPrivileges=true
@@ -41,14 +41,17 @@ LockPersonality=true
 SystemCallArchitectures=native
 RestrictAddressFamilies=AF_UNIX
 ReadOnlyPaths=/opt/macro
-ReadWritePaths=/var/lib/macro-market-memory/state/identity-v1
+ReadWritePaths=/var/lib/macro-market-memory/state/production-record-options-episode-v1
 InaccessiblePaths=/var/lib/macro-market-memory-options
 InaccessiblePaths=/etc/macro-market-memory-options
 InaccessiblePaths=/var/lib/macro-market-memory/public
 InaccessiblePaths=/var/lib/macro-market-memory/state/sources
 InaccessiblePaths=/var/lib/macro-market-memory/state/context-projection
+InaccessiblePaths=/var/lib/macro-market-memory/state/identity-v1
+InaccessiblePaths=/var/lib/macro-market-memory/state/breadth-v1
+InaccessiblePaths=/var/lib/macro-market-memory/state/technicals-v1
 InaccessiblePaths=/var/lib/macro-market-memory/state/experience-v1
-InaccessiblePaths=/var/lib/macro-market-memory/state/production-record-options-episode-v1
+InaccessiblePaths=-/opt/macro/.env
 InaccessiblePaths=-/var/lib/macro-api
 InaccessiblePaths=-/var/lib/macro-biocatalyst
 InaccessiblePaths=-/var/lib/macro-codex
@@ -59,10 +62,13 @@ InaccessiblePaths=-/etc/macro-admin.env
 InaccessiblePaths=-/etc/macro-api.env
 InaccessiblePaths=-/etc/macro-biocatalyst.env
 InaccessiblePaths=-/etc/macro-biocatalyst-control.env
+InaccessiblePaths=-/etc/macro-biocatalyst-fixed-cohort.env
+InaccessiblePaths=-/etc/macro-biocatalyst-fixed-cohort
 InaccessiblePaths=-/etc/macro-live.env
 InaccessiblePaths=-/etc/macro-market-memory.env
 InaccessiblePaths=-/etc/macro-ollama.env
 InaccessiblePaths=-/etc/macro-sentinel.env
+InaccessiblePaths=-/etc/ssl/cf-origin.key
 
 [Install]
 WantedBy=multi-user.target

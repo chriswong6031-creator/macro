@@ -1609,7 +1609,133 @@ least 50 independently graded packets whose NDCG@5 and top-k recall beat fixed
 recency/materiality baselines with paired 95% lower confidence bounds above
 zero. No live `cortex.py`, Brain, Prophet, Research Factory, API, UI, action, or
 authority edge exists before a separate owner-signed evaluation.
+### 11.0.15 First production-record admission: options decision episodes
 
+**Boundary reconstruction.** This admission does not reinterpret W1-W7 as a
+finished cognitive pipeline. W1 owns the operational temporal/source capture
+spine. W2's Forecast/Outcome grammar and store remain caller-supplied synthetic
+research. W3 is a generation-pinned playback catalog, not playback execution.
+W4 retrieval and W5 Operating Cortex remain `synthetic_fixture_only`; W6 is a
+proposed-only adapter over W2 bytes with null W4/W5 joins; W7 is a frozen
+negative audit that cannot express `pass`. There is still no operational
+W4-to-W7 path, no Cortex or Research Factory consumer, and no promotion claim.
+
+**Admission rubric and decision.** Candidates were scored 0-5 on temporal
+integrity, stable identity, production authenticity, future outcomes,
+authority safety, deterministic replay readiness, and implementation cost.
+Hard-gate failures override totals.
+
+| Candidate | Temporal | Identity | Authentic | Outcomes | Authority | Replay | Cost | Total | Decision |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| options decision episodes | 5 | 5 | 5 | 5 | 5 | 4 | 4 | **33** | admit exactly this class |
+| macro/regime current canary | 5 | 5 | 4 | 2 | 5 | 5 | 5 | 31 | reject: already a current-context canary; no canonical forward grader |
+| options campaigns | 5 | 5 | 1 | 4 | 5 | 4 | 4 | 28 | reject: initial rules/corpus are explicitly retrospective discovery |
+| Government Revenue projections | 5 | 5 | 1 | 5 | 5 | 4 | 2 | 27 | reject: zero active authentic rows; eight historical rows quarantined |
+| Release Radar official actuals | 4 | 5 | 3 | 1 | 3 | 3 | 5 | 24 | reject: realized facts, known binding defects, no pre-outcome record |
+| Prophet opportunity receipts | 2 | 3 | 4 | 4 | 2 | 2 | 3 | 20 | reject: mutable/date-grain projection and mixed regions |
+| Theme/GMI | 2 | 2 | 2 | 1 | 5 | 1 | 3 | 16 | reject: edge identity, ThemeState history, and grading are not built |
+
+The sole admitted owner class is `options.signal_episode/v1` from
+`data/options_signal_episode/episodes.jsonl`. Its owner already supplies exact
+event/observation/decision/availability clocks, a stable source-event identity,
+canonical append-only bytes, frozen decision-time facts and provenance, and
+all-false authority. The nightly options builder remains the only writer.
+Market Memory reads the exact committed Git object; it never mutates, repairs,
+or appends the owner ledger. Outcomes, campaigns, raw stages, and every other
+record family are rejected by construction rather than handled by a generic
+adapter.
+
+**Narrow record contract.** One
+`market_memory.options_signal_episode_production_record/v1` envelope binds:
+
+- stable content identity from record class plus canonical owner-row SHA-256;
+- owner `episode_id`, `source`, and `source_event_id` as source identity;
+- `event_time` as effective time; exact owner `observed_at`, `decision_at`, and
+  `available_at`; and Market Memory's first durable capture as both `known_at`
+  and `captured_at`;
+- the observed ticker/expiration/strike/right tuple with
+  `permanent_contract_identity=false`; it is not laundered into OCC/deliverable
+  identity;
+- exact decision and feature facts, exact embedded owner row, committed source
+  snapshot hash/size/commit/row index, and the owner's source receipt;
+- explicit nulls plus reason-coded missingness. Missing publication time, DTE,
+  prior OI, outcomes, or option P&L never becomes zero;
+- context/display-only evidence and every origination, candidate-addition,
+  ranking, gating, sizing, escalation, trading, publication, training, and
+  promotion capability fixed false.
+
+The record ID excludes capture time. Capture time belongs to the immutable
+observation receipt, complying with the content-identity law. A same-row retry
+is idempotent. The same `episode_id` or semantic source identity with different
+canonical bytes is a hard refusal; the adapter cannot write a correction over
+an existing record.
+
+**Activation and reconstruction honesty.** Contract rules froze at
+`2026-08-11T12:02:48Z` against an exact 384-row source prefix whose SHA-256 is
+`f2177c9ace2ecb2965a6356caa2a81c67495754ed06a63d84c0f34939521bc95`
+and whose last identity is `osep_64fa418f78d7818a33005a47`. The production
+store seals a separate create-once `activated_at` on its first valid run. A row
+is `production_forward` only if it is appended after that exact prefix and its
+owner `available_at` is not earlier than store activation. The inspected 384
+rows are real owner outputs, not reconstructions, but they are permanently
+`pre_activation_actual_output`, `forward_grading_eligible=false`, and cannot be
+counted as prospective evidence. The adapter exposes no historical seed or
+backfill mode.
+
+**Capture and replay.** A network-dark, credential-free systemd writer reads
+the immutable Git blob at deployed `HEAD`, validates the complete owner ledger,
+frozen prefix, append ordering, identity uniqueness, exact canonical bytes,
+future clocks, and completed-XNYS-session freshness for every new snapshot,
+then copies only the exact newly appended bytes into a linear-growth private
+CAS. An unchanged later ledger is idempotent and makes no unsupported
+stale-versus-zero-event freshness claim. Normal admission binds the supplied
+full snapshot hash to the sealed delta; crash recovery reconstructs the full
+committed snapshot from prior owner rows plus that delta and revalidates its
+exact hash and size. A create-once prepared receipt seals the first knowledge
+clock before record objects are written. Every capture advance and replay
+reauthenticates the receipt chain, append-delta bytes, prepared receipts, record
+objects, and cumulative generation. Immutable generations are fsynced before
+`HEAD.json` advances last; crash-prepared append deltas resume before a later
+snapshot. The API, public Market Memory tree, other writers, options credential,
+Prophet, and serving surfaces cannot access the profile root.
+
+V1 is deliberately finite: 25,000 rows, a 48 MiB full source, and a 16 MiB
+post-bootstrap append are the executable ceilings. A hostile cold-store test at
+10,384 rows/15.8 MiB used 340.5 MiB peak RSS and 79.3 seconds, leaving measured
+headroom beneath the service's 2 GiB/300-second limits. The capture result reports
+a 20,000-row migration warning. Reaching that mark requires a separately
+reviewed chunked-store v2; operators must not silently raise v1 bounds.
+
+The same admin CLI supports exact `episode_id` plus exact `as_known_at` replay.
+It returns only `available` or explicit `not_yet_known`, never nearest/current
+fallback. The replay ID binds the query and result but not the active mutable
+HEAD, so the same captured source identity and cutoff return byte-equivalent
+state across later cumulative generations. Retrieval, Cortex, Research Factory,
+and promotion integration are deliberately deferred.
+
+**Forward grading ruler.** Records join only on `episode_id` to the existing
+owner `options.signal_episode_outcome/v1` H+60 ledger and
+`options.signal_episode_session_outcome/v1` EOD/1d/3d/5d/10d ledger. Grading
+first requires `era=production_forward` and
+`forward_grading_eligible=true`; numeric measures additionally require complete
+owner and `underlying` status. It reads only owner
+`underlying.ret`/`underlying.mfe`/`underlying.mae` at each owner's `matured_at`;
+pending is missing and terminal incomplete/censored remains explicit. Owner v1
+outcomes are immutable and reject semantic conflicts, so a correction is
+unavailable until the owner ships a separately versioned contract; Market
+Memory never rewrites either owner outcomes or production records.
+Option P&L is unavailable until executable NBBO evidence exists. Evaluation
+readiness requires at least 30 matured production-forward records spanning 20
+distinct session dates and 20 tickers, clustered by session date plus ticker.
+This is a readiness floor, not an edge, performance, promotion, or training
+threshold; no such threshold is frozen by this admission.
+
+**GMI prerequisite.** The generic narrow mechanism is now proven, but GMI is
+not admitted. Theme records still require W1b permanent edge identity and
+bitemporal evidence, W3 ThemeState/expectation owner artifacts and outcome
+semantics, and a separately reviewed theme-record contract. W2/W4 retrieval
+also remains synthetic-only. GMI continues its standalone expectation ledger
+and cannot claim Market Memory analogs until those prerequisites land.
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1853,7 +1979,36 @@ W7 inert promotion-audit additions:
   evidence honesty, mutation, canonical-byte, bounds, no-I/O, no-callsite, and
   CI-ownership guards.
 
-Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
+First production-record admission additions:
+
+- `contracts/market_memory/options_signal_episode_production_record.v1.schema.json`
+  — the only admitted envelope, with exact clocks, owner-row provenance,
+  activation era, missingness, grading ruler, and all-false authority;
+- `engine/neuralweb/market_memory_production_records.py` — narrow source-prefix
+  intake, private append-delta CAS/preparation/receipt/generation store, conflict
+  refusal, and deterministic exact as-known-at replay; no generic ingest;
+- `scripts/capture_market_memory_options_episodes.py` and
+  `app/deploy/macro-market-memory-production-records.{service,timer}` — the sole
+  committed-Git, credential-free, network-dark production caller and bounded
+  retry lane;
+- `tests/test_market_memory_production_records.py` and
+  `tests/test_market_memory_production_records_deploy.py` — temporal correction,
+  duplicate/conflicting identity, authority smuggling, missingness,
+  pre-activation, future-clock, retained receipt/delta tamper, published-prepared
+  backlog, source immutability, replay determinism, mutation, private deployment,
+  and CI-closure guards.
+
+Options integration preserves the existing one-writer paths. The options
+program's `options.signal_episode/v1` still owns append-only decision episodes,
+its durable date-keyed raw stage, H+60 and session outcomes, campaigns, sparse
+selection, and lifecycle; those owner rows do not acquire Market Memory fields
+or authority. Market Memory stores a derived external reference envelope over
+exact owner bytes and never mutates the episode or outcome ledgers. The initial
+384 owner rows stay pre-activation and ineligible for forward proof. Future
+grading joins the existing outcome owners on `episode_id`; it does not create
+another outcome or board ledger. The adapter must not create
+`options_world_state`, `options_history_context`, another macro/news snapshot
+store, another options episode ledger, or another board ledger.
 
 ### 11.2 Wave 1 acceptance tests
 

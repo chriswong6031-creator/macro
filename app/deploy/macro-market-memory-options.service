@@ -6,8 +6,8 @@
 [Unit]
 Description=Capture private Market Memory option-OI availability evidence
 Wants=network-online.target
-After=local-fs.target network-online.target macro-market-memory-source.service macro-market-memory-context.service macro-market-memory-identity.service macro-market-memory-breadth.service macro-market-memory-technicals.service macro-market-memory-experience.service
-Conflicts=macro-market-memory-source.service macro-market-memory-context.service macro-market-memory-identity.service macro-market-memory-breadth.service macro-market-memory-technicals.service macro-market-memory-experience.service
+After=local-fs.target network-online.target macro-market-memory-source.service macro-market-memory-context.service macro-market-memory-identity.service macro-market-memory-breadth.service macro-market-memory-technicals.service macro-market-memory-experience.service macro-market-memory-production-records.service
+Conflicts=macro-market-memory-source.service macro-market-memory-context.service macro-market-memory-identity.service macro-market-memory-breadth.service macro-market-memory-technicals.service macro-market-memory-experience.service macro-market-memory-production-records.service
 ConditionPathExists=/run/macro-api-market-memory-options-deny.ready
 ConditionPathExists=/run/macro-market-memory-options-reciprocal-deny.ready
 

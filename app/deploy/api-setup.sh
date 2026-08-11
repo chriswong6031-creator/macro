@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Slice 2 — deploy the FastAPI serving tier (macro-api) on the droplet.
 # Builds a minimal venv (NOT the heavy engine stack), installs the serving and
-# private Market Memory source/context/identity/breadth/technical/experience/option-probe units, and starts their
+# private Market Memory source/context/identity/breadth/technical/experience/
+# production-record/option-probe units, and starts their
 # public-safe or API-inaccessible lanes.
 # Idempotent. Run AFTER setup.sh (which installs the Caddyfile that proxies /api/* here).
 #   bash /opt/macro/app/deploy/api-setup.sh
@@ -96,7 +97,7 @@ disarm_option_lane() {
   }
 }
 disarm_option_lane
-for reciprocal_profile in source context identity breadth technicals experience; do
+for reciprocal_profile in source context identity breadth technicals experience production-records; do
   reciprocal_timer="macro-market-memory-$reciprocal_profile.timer"
   reciprocal_service="macro-market-memory-$reciprocal_profile.service"
   if ! stop_unit_and_verify_inactive \
@@ -137,6 +138,7 @@ install -d -m 0700 /var/lib/macro-market-memory/state/identity-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/breadth-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/technicals-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/experience-v1
+install -d -m 0700 /var/lib/macro-market-memory/state/production-record-options-episode-v1
 # W1A has no scheduled context writer. Establish and fully authenticate its
 # empty generation spine explicitly before the first API process can become
 # ready. This publishes metadata only; strict captures remain operator-owned.
@@ -158,6 +160,7 @@ REVIEWED_UNIT_NAMES=(
   macro-market-memory-breadth.service macro-market-memory-breadth.timer
   macro-market-memory-technicals.service macro-market-memory-technicals.timer
   macro-market-memory-experience.service macro-market-memory-experience.timer
+  macro-market-memory-production-records.service macro-market-memory-production-records.timer
   macro-market-memory-options.service macro-market-memory-options.timer
 )
 for reviewed_unit in "${REVIEWED_UNIT_NAMES[@]}"; do
@@ -182,6 +185,8 @@ systemd-analyze verify \
   "$APP_DIR/app/deploy/macro-market-memory-technicals.timer" \
   "$APP_DIR/app/deploy/macro-market-memory-experience.service" \
   "$APP_DIR/app/deploy/macro-market-memory-experience.timer" \
+  "$APP_DIR/app/deploy/macro-market-memory-production-records.service" \
+  "$APP_DIR/app/deploy/macro-market-memory-production-records.timer" \
   "$APP_DIR/app/deploy/macro-market-memory-options.service" \
   "$APP_DIR/app/deploy/macro-market-memory-options.timer"
 install -m 0644 "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service
@@ -197,6 +202,8 @@ install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-technicals.service" /et
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-technicals.timer" /etc/systemd/system/macro-market-memory-technicals.timer
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-experience.service" /etc/systemd/system/macro-market-memory-experience.service
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-experience.timer" /etc/systemd/system/macro-market-memory-experience.timer
+install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-production-records.service" /etc/systemd/system/macro-market-memory-production-records.service
+install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-production-records.timer" /etc/systemd/system/macro-market-memory-production-records.timer
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-options.service" /etc/systemd/system/macro-market-memory-options.service
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-options.timer" /etc/systemd/system/macro-market-memory-options.timer
 # Migrate only after the exact canonical API fragment is installed. Unknown
@@ -225,7 +232,7 @@ if ! mm_loaded_unit_ready \
   log "macro-api effective unit boundary is not reviewed/current"
   exit 1
 fi
-for boundary_profile in source context identity breadth technicals experience; do
+for boundary_profile in source context identity breadth technicals experience production-records; do
   if ! mm_loaded_unit_ready \
     "$APP_DIR/app/deploy/macro-market-memory-$boundary_profile.service" \
     "/etc/systemd/system/macro-market-memory-$boundary_profile.service" \
@@ -382,6 +389,10 @@ systemctl start macro-market-memory-identity.service || \
   log "private identity observation accrual failed closed; timer will retry"
 systemctl start macro-market-memory-breadth.service || \
   log "private breadth actual-output capture failed closed; timer will retry"
+systemctl start macro-market-memory-technicals.service || \
+  log "private technical actual-output capture failed closed; timer will retry"
+systemctl start macro-market-memory-production-records.service || \
+  log "private production-record capture failed closed; timer will retry"
 PRE_API_PID=$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')
 systemctl restart macro-api
 POST_API_PID=$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')
@@ -417,6 +428,7 @@ if ! w2c_reconcile_timer; then
   log "W2C timer reconciliation failed"
   exit 1
 fi
+systemctl enable --now macro-market-memory-production-records.timer
 if [ "$OPTIONS_CREDENTIAL_READY" -eq 1 ]; then
   if ! systemctl enable --now macro-market-memory-options.timer || \
      ! systemctl is-enabled macro-market-memory-options.timer >/dev/null 2>&1 || \

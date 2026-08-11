@@ -69,6 +69,8 @@ OPTION_CLOSURE_PATHS = (
     "app/deploy/macro-market-memory-technicals.timer",
     "app/deploy/macro-market-memory-experience.service",
     "app/deploy/macro-market-memory-experience.timer",
+    "app/deploy/macro-market-memory-production-records.service",
+    "app/deploy/macro-market-memory-production-records.timer",
     "app/deploy/README.md",
     "docs/ops/market-memory-option-oi-canary.md",
     "tests/test_market_memory_option_oi_observation.py",
@@ -199,6 +201,7 @@ def test_option_service_uses_static_identity_and_only_a_systemd_credential() -> 
         "macro-market-memory-breadth.service",
         "macro-market-memory-technicals.service",
         "macro-market-memory-experience.service",
+        "macro-market-memory-production-records.service",
     }
     assert set(_setting_values(service, "Conflicts")[0].split()) == reciprocal_services
     assert reciprocal_services <= set(_setting_values(service, "After")[0].split())
@@ -291,7 +294,7 @@ CURRENT_INVOCATION=fedcba9876543210fedcba9876543210
         "41 0123456789abcdef0123456789abcdef\n"
     )
     assert reciprocal_marker.read_text(encoding="utf-8") == (
-        "market-memory-options-reciprocal-deny.v1\n"
+        "market-memory-options-reciprocal-deny.v2\n"
     )
 
 
