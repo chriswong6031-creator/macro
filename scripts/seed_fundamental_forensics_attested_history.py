@@ -50,6 +50,7 @@ from collectors.sec_document_spine import (
 from engine.fundamental_forensics.attested_history_credentials import (
     R2TemporaryCredentialError,
     mint_r2_temporary_credentials,
+    value_free_credential_error,
 )  # noqa: E402
 from engine.fundamental_forensics.attested_history_pilot import (
     prepare_attested_history_base_candidate,
@@ -136,9 +137,10 @@ class AttestedHistorySeedError(RuntimeError):
     """The bounded AAPL bootstrap cannot establish its explicit evidence graph.
 
     Every message raised as this type is authored to be value-free: a static
-    sentence, or one interpolating a ``{field}`` NAME.  That is what makes it
+    sentence, one interpolating a ``{field}`` NAME, or a credential-minter
+    reason admitted by ``value_free_credential_error``. That is what makes it
     safe to print verbatim in the operator annotation, so a new raise site must
-    keep the invariant — name the field, never the value.  Any *other* exception
+    keep the invariant — name the field, never the value. Any *other* exception
     can carry an endpoint, bucket, object key, or local source path in its
     message, and only its class name is ever surfaced.
     """
@@ -534,7 +536,7 @@ def build_seed_store(*, local_dir: str | Path | None = None) -> StrictConditiona
         )
     except R2TemporaryCredentialError as exc:
         raise AttestedHistorySeedError(
-            "dedicated seed parent credential cannot mint a scoped child"
+            "dedicated seed parent rejected: " + value_free_credential_error(exc)
         ) from exc
     finally:
         os.environ.pop("FF_ATTESTED_R2_SEED_ACCESS_KEY_ID", None)

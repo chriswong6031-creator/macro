@@ -8,11 +8,14 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from jsonschema import Draft202012Validator, ValidationError
+from referencing import Registry, Resource
 
 from engine import options_market_memory_context as options_context
+from engine import options_market_memory_receipt_store as options_receipt_store
 from engine import options_signal_episode
 from engine.neuralweb import market_memory as mm
 from engine.neuralweb import market_memory_identity as identity
@@ -781,6 +784,138 @@ def test_trusted_pinned_generation_reads_published_empty_ancestor_and_rejects_or
         reader.read_pinned_generation(generation_id=orphan["generation_id"])
 
 
+def test_public_pinned_macro_feature_reader_authenticates_exact_owner_object(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _candidate(monkeypatch, tmp_path)
+    stored = _capture(candidate)
+    reader = trusted.TrustedFileAsKnownAtReader(candidate.public)
+    generation = reader.read_pinned_generation(maximum_capture_count=256)
+    query_id = stored.capture_receipt["query_id"]
+    feature = reader.read_macro_feature_from_pinned_generation(
+        generation, query_id=query_id
+    )
+
+    assert feature["source_artifact"]["source_asof"] == "2026-08-10"
+    assert feature["state"]["growth_score"] == pytest.approx(0.133)
+    feature["state"]["growth_score"] = 9.0
+    assert reader.read_macro_feature_from_pinned_generation(
+        generation, query_id=query_id
+    )["state"]["growth_score"] == pytest.approx(0.133)
+
+    digest = stored.capture_receipt["feature_snapshot"]["content_sha256"]
+    trusted._feature_path(candidate.public, digest).write_bytes(b"{}")
+    with pytest.raises(pit.MarketMemoryStoreError, match="digest|contract"):
+        reader.read_macro_feature_from_pinned_generation(
+            generation, query_id=query_id
+        )
+
+
+@pytest.mark.parametrize("mutation", ["delete", "tamper"])
+def test_pinned_projection_batch_requires_exact_context_receipt_alias(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, mutation: str
+) -> None:
+    candidate = _candidate(monkeypatch, tmp_path)
+    stored = _capture(candidate)
+    reader = trusted.TrustedFileAsKnownAtReader(candidate.public)
+    generation = reader.read_pinned_generation(maximum_capture_count=256)
+    context_path = pit._context_path(
+        candidate.public, stored.capture_receipt["context_id"]
+    )
+    if mutation == "delete":
+        context_path.unlink()
+    else:
+        context_path.write_bytes(b"{}")
+
+    with pytest.raises(pit.MarketMemoryStoreError):
+        reader.read_pinned_capture_projections(generation)
+
+
+def test_pinned_projection_batch_scans_index_once_and_reads_each_owner_object_once(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    candidate = _candidate(monkeypatch, tmp_path)
+    _capture(candidate)
+    reader = trusted.TrustedFileAsKnownAtReader(candidate.public)
+    real_generation = reader.read_pinned_generation(maximum_capture_count=256)
+    entries = tuple(
+        pit.PinnedCaptureIndexEntry(
+            query_id="mmquery_" + f"{index:064x}",
+            context_id="mmctx_" + f"{index:064x}",
+            capture_id="mmcapture_" + f"{index:064x}",
+            packet_sha256=f"{index:064x}",
+        )
+        for index in range(1, 257)
+    )
+
+    class CountingCaptures:
+        def __init__(self, values) -> None:
+            self.values = values
+            self.scans = 0
+
+        def __iter__(self):
+            self.scans += 1
+            return iter(self.values)
+
+        def __len__(self) -> int:
+            return len(self.values)
+
+    captures = CountingCaptures(entries)
+    authenticated = SimpleNamespace(
+        profile=real_generation.profile,
+        store_id=real_generation.store_id,
+        generation_id=real_generation.generation_id,
+        generation_sha256=real_generation.generation_sha256,
+        captures=captures,
+    )
+    calls = {
+        "authenticate": 0,
+        "query_receipt": 0,
+        "context_receipt": 0,
+        "packet_feature": 0,
+    }
+    observed_queries: list[str] = []
+
+    def authenticate(_generation):
+        calls["authenticate"] += 1
+        return authenticated
+
+    def read_receipt(
+        _authenticated, *, query_id, entry, verify_context_alias
+    ):
+        calls["query_receipt"] += 1
+        observed_queries.append(query_id)
+        assert entry.query_id == query_id
+        assert verify_context_alias is True
+        calls["context_receipt"] += 1
+        return {"query_id": query_id}
+
+    def load_packet_feature(_root, receipt, *, store_id):
+        calls["packet_feature"] += 1
+        assert store_id == authenticated.store_id
+        return (
+            SimpleNamespace(query_id=receipt["query_id"]),
+            {"query_id": receipt["query_id"]},
+        )
+
+    monkeypatch.setattr(reader, "_authenticate_pinned_snapshot", authenticate)
+    monkeypatch.setattr(
+        reader, "_read_pinned_capture_receipt_authenticated", read_receipt
+    )
+    monkeypatch.setattr(trusted, "_load_stored_with_feature", load_packet_feature)
+    rows = reader.read_pinned_capture_projections(real_generation)
+
+    assert len(rows) == 256
+    assert captures.scans == 1
+    assert calls == {
+        "authenticate": 1,
+        "query_receipt": 256,
+        "context_receipt": 256,
+        "packet_feature": 256,
+    }
+    assert observed_queries == [entry.query_id for entry in entries]
+
+
 def test_trusted_repeated_pin_rewalks_ancestor_under_unchanged_head(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -1129,6 +1264,45 @@ def test_options_context_binds_a_prospective_campaign_at_its_crossing_clock(
     assert reference["context"]["context_id"] == stored.packet["context_id"]
 
 
+def test_options_context_campaign_batch_replays_the_owner_corpus_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first = _campaign_episode("batch-first", 1_500_000.0)
+    second = _campaign_episode(
+        "batch-second", 1_500_000.0, available_at="2026-07-02T14:32:00Z"
+    )
+    episodes = [first, second]
+    outcomes = [_campaign_h60_outcome(row) for row in episodes]
+    campaigns, pending = options_signal_episode.derive_campaigns(episodes, outcomes)
+    assert pending == []
+
+    calls = 0
+    original = options_signal_episode.derive_campaigns
+
+    def counted(episode_rows: list[dict], outcome_rows: list[dict]):
+        nonlocal calls
+        calls += 1
+        return original(episode_rows, outcome_rows)
+
+    class ForbiddenReader:
+        def read_stored_as_known_at(self, **_query: object):
+            pytest.fail("retrospective campaigns must abstain before a store read")
+
+    monkeypatch.setattr(options_signal_episode, "derive_campaigns", counted)
+    references = options_context.resolve_campaign_context_references(
+        campaigns,
+        episodes=episodes,
+        h60_outcomes=outcomes,
+        reader=ForbiddenReader(),
+    )
+
+    assert calls == 1
+    assert len(references) == len(campaigns)
+    assert {row["reason"] for row in references} == {
+        "campaign_retrospective_discovery"
+    }
+
+
 def test_options_context_rejects_a_reader_that_returns_a_nearby_capture(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -1302,9 +1476,15 @@ def test_options_context_audit_seals_sorted_owners_generations_and_closed_counts
     tampered["counts"]["bound"] = 2
     with pytest.raises(options_context.OptionsMarketMemoryContextError):
         options_context.validate_audit_receipt(tampered, references=references)
+    monkeypatch.setattr(options_context, "_MAX_REFERENCE_SET_BYTES", 1)
+    with pytest.raises(
+        options_context.OptionsMarketMemoryContextError, match="aggregate byte"
+    ):
+        options_context.canonical_reference_set_bytes(references)
 
 
 def test_options_context_live_audit_replays_the_frozen_repository_corpus(
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     source_root = Path(__file__).resolve().parents[1]
@@ -1324,12 +1504,13 @@ def test_options_context_live_audit_replays_the_frozen_repository_corpus(
     trusted_root = tmp_path / "live-audit-trusted"
     trusted.initialize_trusted_store(trusted_root)
 
-    audit = options_context_audit.build_live_audit(
+    bundle = options_context_audit.build_live_audit_bundle(
         repository_root=repository_root,
         w1a_store_root=w1a_root,
         trusted_store_root=trusted_root,
         config_path=config_path,
     )
+    audit = bundle.audit
 
     episode_count = len(
         options_signal_episode._decode_jsonl(
@@ -1354,3 +1535,174 @@ def test_options_context_live_audit_replays_the_frozen_repository_corpus(
         "data/options_signal_episode/episodes.jsonl",
         "data/options_signal_episode/outcomes_h60.jsonl",
     ]
+    monkeypatch.setattr(
+        options_context_audit, "_repository_commit", lambda _root: DEPLOYED_COMMIT
+    )
+    monkeypatch.setattr(
+        options_context_audit,
+        "_tracked_bytes",
+        lambda _root, _commit, _path: b"not the owner bytes",
+    )
+    with pytest.raises(options_context_audit.AuditInputError, match="not owned"):
+        options_context_audit.build_live_audit_bundle(
+            repository_root=repository_root,
+            w1a_store_root=w1a_root,
+            trusted_store_root=trusted_root,
+            config_path=config_path,
+            expected_deployed_commit=DEPLOYED_COMMIT,
+        )
+
+    receipt_root = tmp_path / "private-options-context-receipts"
+    head = options_receipt_store.publish_receipt_set(
+        receipt_root,
+        deployed_commit=DEPLOYED_COMMIT,
+        references=bundle.references,
+        audit=audit,
+        repository_root=repository_root,
+    )
+    receipt_schemas = {}
+    for name in (
+        "options.market_memory_context_reference.v1.schema.json",
+        "options.market_memory_context_reference_set.v1.schema.json",
+        "options.market_memory_context_receipt_head.v1.schema.json",
+    ):
+        receipt_schema = json.loads(
+            (source_root / "contracts/options" / name).read_text(encoding="utf-8")
+        )
+        Draft202012Validator.check_schema(receipt_schema)
+        receipt_schemas[name] = receipt_schema
+    registry = Registry().with_resources(
+        (
+            schema["$id"],
+            Resource.from_contents(schema),
+        )
+        for schema in receipt_schemas.values()
+    )
+    reference_set_payload = json.loads(
+        (receipt_root / head["reference_set_object_key"]).read_text(encoding="utf-8")
+    )
+    reference_set_validator = Draft202012Validator(
+        receipt_schemas[
+            "options.market_memory_context_reference_set.v1.schema.json"
+        ],
+        registry=registry,
+    )
+    head_validator = Draft202012Validator(
+        receipt_schemas[
+            "options.market_memory_context_receipt_head.v1.schema.json"
+        ],
+        registry=registry,
+    )
+    reference_set_validator.validate(reference_set_payload)
+    head_validator.validate(head)
+    reference_mutant = copy.deepcopy(reference_set_payload)
+    reference_mutant["references"][0]["evidence_policy"]["proposal_weight"] = 1
+    with pytest.raises(ValidationError):
+        reference_set_validator.validate(reference_mutant)
+    head_mutant = copy.deepcopy(head)
+    head_mutant["authority"]["may_rank"] = True
+    with pytest.raises(ValidationError):
+        head_validator.validate(head_mutant)
+    stored = options_receipt_store.read_current_publication(
+        receipt_root, repository_root=repository_root
+    )
+    assert stored["head"] == head
+    assert stored["audit"] == audit
+    assert stored["references"] == list(bundle.references)
+    assert head["deployed_commit"] == DEPLOYED_COMMIT
+    assert head["reference_count"] == episode_count + campaign_count
+    assert head["reference_set_sha256"] == audit["reference_set_sha256"]
+    for digest_field, key_field in (
+        ("audit_sha256", "audit_object_key"),
+        ("reference_set_object_sha256", "reference_set_object_key"),
+    ):
+        body = (receipt_root / head[key_field]).read_bytes()
+        assert sha256(body).hexdigest() == head[digest_field]
+    assert all(
+        path.stat().st_mode & 0o777 == (0o700 if path.is_dir() else 0o600)
+        for path in (receipt_root, *receipt_root.rglob("*"))
+    )
+
+    before = {
+        path.relative_to(receipt_root): path.read_bytes()
+        for path in receipt_root.rglob("*")
+        if path.is_file()
+    }
+    assert (
+        options_receipt_store.publish_receipt_set(
+            receipt_root,
+            deployed_commit=DEPLOYED_COMMIT,
+            references=bundle.references,
+            audit=audit,
+            repository_root=repository_root,
+        )
+        == head
+    )
+    assert before == {
+        path.relative_to(receipt_root): path.read_bytes()
+        for path in receipt_root.rglob("*")
+        if path.is_file()
+    }
+    later_audit = options_context.build_audit_receipt(
+        references=bundle.references,
+        source_artifacts=audit["source_artifacts"],
+        context_generations=audit["context_generations"],
+        audited_at="2026-08-11T23:59:59Z",
+    )
+    assert later_audit["audit_id"] != audit["audit_id"]
+    assert (
+        options_receipt_store.publish_receipt_set(
+            receipt_root,
+            deployed_commit=DEPLOYED_COMMIT,
+            references=bundle.references,
+            audit=later_audit,
+            repository_root=repository_root,
+        )
+        == head
+    )
+    assert before == {
+        path.relative_to(receipt_root): path.read_bytes()
+        for path in receipt_root.rglob("*")
+        if path.is_file()
+    }
+
+    interrupted_root = tmp_path / "interrupted-options-context-receipts"
+    original_replace_head = pit._replace_head
+
+    def interrupt_before_visibility(_root: Path, _head: dict) -> None:
+        raise pit.MarketMemoryStoreError(
+            "injected failure before atomic HEAD"
+        )
+
+    monkeypatch.setattr(pit, "_replace_head", interrupt_before_visibility)
+    with pytest.raises(
+        pit.MarketMemoryStoreError, match="before atomic HEAD"
+    ):
+        options_receipt_store.publish_receipt_set(
+            interrupted_root,
+            deployed_commit=DEPLOYED_COMMIT,
+            references=bundle.references,
+            audit=audit,
+            repository_root=repository_root,
+        )
+    assert not (interrupted_root / "HEAD.json").exists()
+    assert len(list((interrupted_root / "audits").rglob("*.json"))) == 1
+    assert len(list((interrupted_root / "reference_sets").rglob("*.json"))) == 1
+    monkeypatch.setattr(pit, "_replace_head", original_replace_head)
+    recovered = options_receipt_store.publish_receipt_set(
+        interrupted_root,
+        deployed_commit=DEPLOYED_COMMIT,
+        references=bundle.references,
+        audit=audit,
+        repository_root=repository_root,
+    )
+    assert recovered == head
+
+    reference_path = receipt_root / head["reference_set_object_key"]
+    reference_path.write_bytes(b"{}")
+    with pytest.raises(
+        options_receipt_store.OptionsMarketMemoryReceiptStoreError
+    ):
+        options_receipt_store.read_current_publication(
+            receipt_root, repository_root=repository_root
+        )

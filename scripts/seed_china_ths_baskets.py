@@ -20,6 +20,12 @@ a theme with <3 covered members is skipped. Benchmark = CSI 300 (沪深300, the 
 Re-runnable: `python -m scripts.seed_china_ths_baskets [--refresh]`  (--refresh re-fetches a
 today snapshot before building; otherwise the latest existing snapshot is used, or one is fetched
 if none exists).
+
+SNAPSHOT DIRECTORY IS MIXED-SHAPE (GMI W1b): data/baskets_china_ths/snapshots/ carries both raw
+vendor dumps and byte-copies of membership.json under the same dated filenames. Every read here
+classifies by parsed CONTENT (classify_snapshot_shape) and uses raw dumps only, and the write is
+additionally interlocked against a mass deletion of the auto-imported `thsc*` taxonomy — see
+SHAPE_RAW_DUMP / MAX_AUTO_SHRINK below.
 """
 from __future__ import annotations
 
@@ -46,6 +52,27 @@ SEED = "2021-06-15"  # china_search cache start; first-run members seeded here (
 # resolve the stamp as the NEWEST snapshot — which is the one this file treats as the
 # authoritative current board list (see _pit_members and the auto-import loop below).
 SNAPSHOT_GLOB = "????-??-??.json"
+# The snapshots dir deliberately holds TWO document shapes under the same dated glob:
+#   RAW DUMP        {concept_zh_name: [{"ticker", "name"}, …]}  — the vendor scrape,
+#                   promoted by scripts/scrape_ths_weekly.py (and by the collector on a
+#                   first run). This is the ONLY shape that is a board list.
+#   MEMBERSHIP DOC  a byte-copy of membership.json, keyed by basket_id under a top-level
+#                   `baskets` key, written every changed night by
+#                   scripts/build_baskets_china_ths.py --snapshot as the PIT side-car.
+# Reading the second as the first is what deletes the taxonomy: the auto-import loop below
+# enumerates the NEWEST snapshot's keys, and a membership doc's keys are
+# `version`/`seed_date`/`baskets` — no concept among them — so every auto-imported `thsc*`
+# basket vanishes in one run. Shapes are therefore discriminated by PARSED CONTENT with
+# POSITIVE signatures both ways (classify_snapshot_shape); a document matching neither, or
+# both, is refused loudly rather than guessed at. A file's NAME never decides its shape.
+SHAPE_RAW_DUMP = "raw_dump"
+SHAPE_MEMBERSHIP_DOC = "membership_doc"
+# Independent WRITE-LEVEL interlock (below, in main): the reseed refuses to publish a
+# membership.json that drops more than this fraction of the auto `thsc*` baskets the
+# existing document carries. Deliberately NOT derived from the shape logic — the hostile
+# guarantee "a mixed snapshot directory cannot cause all thsc* baskets to disappear" must
+# hold EVEN IF the classification above were wrong.
+MAX_AUTO_SHRINK = 0.5
 # A latest snapshot whose board for a theme is smaller than this fraction of that theme's historical
 # max is treated as a (possibly truncated) scrape: we trust NO removals from it and carry every
 # ever-seen member forward as active. Guards against the collector handing us a partial member list
@@ -234,28 +261,117 @@ NOTE = ("A-share baskets mirroring 同花顺 concept-board themes & members — 
         "not an out-of-sample backtest and not a buy list.")
 
 
-def _latest_snapshot(refresh: bool) -> dict[str, list[dict]]:
-    """Return the THS member snapshot to build from (optionally re-fetching a today snapshot)."""
-    from collectors import china_ths_concepts as ths
+def classify_snapshot_shape(doc: object) -> str:
+    """Which of the two side-car shapes ``doc`` is — by SCHEMA, never by heuristic.
+
+    Both verdicts require a POSITIVE signature, so an unfamiliar document cannot fall
+    through into either one:
+
+    ``membership_doc``
+        carries BOTH the top-level ``version`` and ``baskets`` keys the seeder writes.
+
+    ``raw_dump``
+        carries NEITHER of those keys, is non-empty, every value is a list, and every
+        dict item inside a non-empty list carries at least ``ticker`` and ``name``.
+
+    A document matching neither (an empty object, a list, a half-written file, a future
+    third shape) or both raises ``ValueError`` naming the file, because this classification
+    decides which baskets exist: guessing wrong in the membership_doc→raw_dump direction
+    empties the auto-imported taxonomy, and guessing wrong the other way fabricates
+    concepts out of a document's structural keys. Refusing is the only safe third answer.
+    """
+    if not isinstance(doc, dict):
+        raise ValueError(f"snapshot is a {type(doc).__name__}, not an object — "
+                         f"neither a THS raw dump nor a membership document")
+    is_membership = "version" in doc and "baskets" in doc
+    is_raw = bool(doc) and "version" not in doc and "baskets" not in doc
+    if is_raw:
+        for value in doc.values():
+            if not isinstance(value, list):
+                is_raw = False
+                break
+            for item in value:
+                if isinstance(item, dict) and not {"ticker", "name"} <= set(item):
+                    is_raw = False
+                    break
+            if not is_raw:
+                break
+    if is_membership and not is_raw:
+        return SHAPE_MEMBERSHIP_DOC
+    if is_raw and not is_membership:
+        return SHAPE_RAW_DUMP
+    both = "matches BOTH shapes" if is_membership else "matches NEITHER shape"
+    raise ValueError(
+        f"snapshot {both} (top-level keys: {sorted(doc)[:8]}) — a THS raw dump is "
+        f"{{concept: [{{ticker, name}}, …]}} and a membership document has both `version` "
+        f"and `baskets`. Refusing to guess: this call decides which baskets exist.")
+
+
+def _classified_snapshots() -> list[tuple[str, str, dict]]:
+    """Every dated side-car, oldest→newest, as ``[(date, shape, doc)]``.
+
+    Unreadable JSON is warned past (a half-written file is not a shape question); an
+    AMBIGUOUS document propagates its ``ValueError`` — never guessed past.
+    """
     snap_dir = config.data_dir() / "baskets_china_ths" / "snapshots"
+    out: list[tuple[str, str, dict]] = []
+    for p in sorted(snap_dir.glob(SNAPSHOT_GLOB), key=lambda x: x.stem):
+        try:
+            doc = json.loads(p.read_text())
+        except Exception as e:  # noqa: BLE001
+            log.warning("snapshot %s unreadable: %s", p.name, e)
+            continue
+        try:
+            shape = classify_snapshot_shape(doc)
+        except ValueError as e:
+            raise ValueError(f"{p.name}: {e}") from e
+        out.append((p.stem, shape, doc))
+    return out
+
+
+def raw_snapshots() -> list[tuple[str, dict]]:
+    """Public alias of the raw-dump enumeration, for consumers outside this seeder.
+
+    ``scripts/build_theme_graph.py`` (GMI W1b) needs the newest RAW vendor dump to
+    corroborate THS memberships, and it must use THIS classifier rather than its own
+    copy — one rule, one place, or the two drift and the graph starts corroborating
+    memberships against a membership document.
+    """
+    return _all_snapshots()
+
+
+def _latest_snapshot(refresh: bool) -> dict[str, list[dict]]:
+    """Return the THS member snapshot to build from (optionally re-fetching a today snapshot).
+
+    Only a ``raw_dump`` side-car counts as an existing snapshot: a directory holding
+    nothing but membership-doc copies has no board list in it, so this must FETCH rather
+    than hand the seeder a document whose keys are `version`/`seed_date`/`baskets`.
+    """
+    from collectors import china_ths_concepts as ths
     names = [row[1] for row in CURATED]
-    if refresh or not snap_dir.exists() or not list(snap_dir.glob(SNAPSHOT_GLOB)):
+    raws = [] if refresh else [(d, doc) for d, shape, doc in _classified_snapshots()
+                               if shape == SHAPE_RAW_DUMP]
+    if refresh or not raws:
         log.info("fetching fresh THS snapshot (%d themes)…", len(names))
         return ths.snapshot(names)
-    latest = max(snap_dir.glob(SNAPSHOT_GLOB), key=lambda p: p.stem)
-    log.info("building from existing snapshot %s", latest.name)
-    return json.loads(latest.read_text())
+    log.info("building from existing snapshot %s.json", raws[-1][0])
+    return raws[-1][1]
 
 
 def _all_snapshots() -> list[tuple[str, dict]]:
-    """All dated snapshots, oldest→newest, as [(date, {theme:[{ticker,name}]})]."""
-    snap_dir = config.data_dir() / "baskets_china_ths" / "snapshots"
+    """The RAW dated snapshots, oldest→newest, as [(date, {theme:[{ticker,name}]})].
+
+    Membership-doc side-cars written by ``build_baskets_china_ths --snapshot`` share this
+    directory and are skipped by CONTENT with a log line each — never by filename, which
+    carries no shape information at all (both writers use the same ``YYYY-MM-DD.json``).
+    """
     out = []
-    for p in sorted(snap_dir.glob(SNAPSHOT_GLOB), key=lambda x: x.stem):
-        try:
-            out.append((p.stem, json.loads(p.read_text())))
-        except Exception as e:  # noqa: BLE001
-            log.warning("snapshot %s unreadable: %s", p.name, e)
+    for date, shape, doc in _classified_snapshots():
+        if shape != SHAPE_RAW_DUMP:
+            log.info("snapshot %s.json is a %s (membership.json byte-copy, not a THS board "
+                     "list) — skipped for enumeration", date, shape)
+            continue
+        out.append((date, doc))
     return out
 
 
@@ -309,12 +425,16 @@ def _pit_members(theme: str, snaps: list[tuple[str, dict]], universe: set[str],
     return members, missing
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--refresh", action="store_true", help="re-fetch a today snapshot before building")
     ap.add_argument("--curated-only", action="store_true",
                     help="build ONLY the 50 hand-curated baskets (skip auto-adding the rest of the THS taxonomy)")
-    args = ap.parse_args()
+    ap.add_argument("--allow-shrink", action="store_true",
+                    help="publish even when the reseed drops >50%% of the existing auto "
+                         "thsc* baskets (the mass-deletion interlock); use only when the "
+                         "shrink is intended and understood")
+    args = ap.parse_args(argv)
 
     members_p = config.data_dir() / "china_search" / "members.parquet"
     closes_p = config.data_dir() / "china_search" / "closes.parquet"
@@ -451,6 +571,35 @@ def main() -> int:
     out_dir = config.data_dir() / "baskets_china_ths"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_p = out_dir / "membership.json"
+
+    # ── WRITE-LEVEL mass-deletion interlock (GMI W1b prerequisite) ────────────────
+    # The LAST line of defence, and deliberately independent of every shape decision
+    # above: whatever the enumeration believed, a reseed that would delete most of the
+    # auto-imported taxonomy does not get published. So the hostile guarantee — "a mixed
+    # snapshot directory cannot cause all thsc* baskets to disappear" — survives even a
+    # wrong classification, a truncated scrape, or a future third document shape.
+    new_auto = sum(1 for b in out_baskets if b.startswith("thsc"))
+    prior_auto = 0
+    if out_p.exists():
+        try:
+            prior_auto = sum(1 for b in (json.loads(out_p.read_text()).get("baskets") or {})
+                             if b.startswith("thsc"))
+        except Exception as e:  # noqa: BLE001 — an unreadable prior cannot veto a write
+            log.warning("existing membership.json unreadable (%s) — interlock has no baseline", e)
+    wipes_out = prior_auto >= 1 and new_auto == 0
+    shrinks = prior_auto >= 1 and new_auto < MAX_AUTO_SHRINK * prior_auto
+    if wipes_out or shrinks:
+        msg = (f"auto thsc* baskets would go {prior_auto} → {new_auto} "
+               f"(>{int((1 - MAX_AUTO_SHRINK) * 100)}% of the existing auto taxonomy deleted)")
+        if not args.allow_shrink:
+            log.error("ABORT before writing %s: %s. Nothing was written. A drop this large is "
+                      "almost always a bad snapshot read (a truncated scrape, or a side-car "
+                      "that is not a THS board list), not 200 concepts retiring at once. "
+                      "Re-run with --refresh, or with --allow-shrink if the shrink is real.",
+                      out_p, msg)
+            return 1
+        log.warning("--allow-shrink: publishing anyway — %s", msg)
+
     out_p.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
     n_members = sum(len(v["members"]) for v in out_baskets.values())
     log.info("wrote %s — %d THS baskets, %d members (from %d snapshot(s))",

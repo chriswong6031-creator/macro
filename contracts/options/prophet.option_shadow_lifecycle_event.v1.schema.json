@@ -1,0 +1,438 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/options/prophet.option_shadow_lifecycle_event.v1.schema.json",
+  "title": "Prospective Prophet exact-option shadow lifecycle event",
+  "description": "A host-private immutable activation, enrollment, or terminal event. Enrollment uses the first fresh post-trigger trade-paired mid after activation. Terminal return is same-session shadow mid-to-mid research only, never a fill, NBBO, executable quote, trade P&L, or prophet.ledger option_result_pct.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "event_id",
+    "event_kind",
+    "event_session_date",
+    "storage",
+    "previous",
+    "payload",
+    "limitations",
+    "authority"
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "markPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "observation_id", "key", "sha256", "bytes"],
+      "properties": {
+        "schema": {"const": "prophet.option_mark_pointer/v1"},
+        "observation_id": {"type": "string", "pattern": "^pom_obs_[a-f0-9]{64}$"},
+        "key": {
+          "type": "string",
+          "pattern": "^observations/[0-9]{4}-[0-9]{2}-[0-9]{2}/pom_obs_[a-f0-9]{64}\\.json$"
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "eventPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "event_id", "key", "sha256", "bytes"],
+      "properties": {
+        "schema": {"const": "prophet.option_shadow_lifecycle_pointer/v1"},
+        "event_id": {"type": "string", "pattern": "^posle_[a-f0-9]{64}$"},
+        "key": {
+          "type": "string",
+          "pattern": "^events/[0-9]{4}-[0-9]{2}-[0-9]{2}/posle_[a-f0-9]{64}\\.json$"
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "ledgerReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "source_repository",
+        "source_ref",
+        "source_commit",
+        "source_path",
+        "bytes",
+        "sha256",
+        "row_count"
+      ],
+      "properties": {
+        "schema": {"const": "prophet.canonical_ledger_snapshot_receipt/v1"},
+        "source_repository": {
+          "const": "https://github.com/mastermindx-market-intelligence/macro"
+        },
+        "source_ref": {"const": "refs/heads/main"},
+        "source_commit": {"type": "string", "pattern": "^[a-f0-9]{40,64}$"},
+        "source_path": {"const": "data/prophet/ledger.jsonl"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "row_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visibility", "public_discovery", "public_redistribution"],
+      "properties": {
+        "visibility": {"const": "host_private"},
+        "public_discovery": {"const": false},
+        "public_redistribution": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rank_authority",
+        "gate_authority",
+        "sizing_authority",
+        "issue_authority",
+        "trade_authority",
+        "prophet_authority",
+        "neural_web_authority",
+        "training_authority",
+        "execution_authority"
+      ],
+      "properties": {
+        "rank_authority": {"const": false},
+        "gate_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "issue_authority": {"const": false},
+        "trade_authority": {"const": false},
+        "prophet_authority": {"const": false},
+        "neural_web_authority": {"const": false},
+        "training_authority": {"const": false},
+        "execution_authority": {"const": false}
+      }
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "right", "expiry", "strike", "strike_millis", "occ_symbol"],
+      "properties": {
+        "root": {"type": "string", "pattern": "^[A-Z0-9]{1,6}$"},
+        "right": {"enum": ["C", "P"]},
+        "expiry": {"type": "string", "format": "date"},
+        "strike": {"type": "number", "exclusiveMinimum": 0},
+        "strike_millis": {"type": "integer", "minimum": 1, "maximum": 99999999},
+        "occ_symbol": {"type": "string", "minLength": 21, "maxLength": 21}
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "asset", "phase", "plan_asof", "recorded_at", "entry_date"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "asset": {"type": "string", "minLength": 1},
+        "phase": {
+          "enum": [
+            "triggered_pre_t1",
+            "at_t1",
+            "between_t1_t2",
+            "post_t1_failed_hold",
+            "at_t2",
+            "post_t2",
+            "overtime"
+          ]
+        },
+        "plan_asof": {"type": ["string", "null"]},
+        "recorded_at": {"type": ["string", "null"]},
+        "entry_date": {"type": ["string", "null"]}
+      }
+    },
+    "shadowMark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bid",
+        "ask",
+        "mid",
+        "basis",
+        "quote_label",
+        "quote_ts_utc",
+        "trade_ts_utc",
+        "source_sequence",
+        "mark_observation",
+        "nbbo",
+        "executable",
+        "fill"
+      ],
+      "properties": {
+        "bid": {"type": "number", "minimum": 0},
+        "ask": {"type": "number", "exclusiveMinimum": 0},
+        "mid": {"type": "number", "exclusiveMinimum": 0},
+        "basis": {
+          "enum": [
+            "first_fresh_post_trigger_trade_paired_mid",
+            "latest_admitted_same_session_trade_paired_mid"
+          ]
+        },
+        "quote_label": {"const": "trade_paired_bid_ask"},
+        "quote_ts_utc": {"type": "string", "format": "date-time"},
+        "trade_ts_utc": {"type": "string", "format": "date-time"},
+        "source_sequence": {"type": ["integer", "null"]},
+        "mark_observation": {"$ref": "#/$defs/markPointer"},
+        "nbbo": {"const": false},
+        "executable": {"const": false},
+        "fill": {"const": false}
+      }
+    },
+    "activationPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "mark_boundary",
+        "mark_boundary_observed_at_utc",
+        "ledger_boundary",
+        "prospective_after_boundary"
+      ],
+      "properties": {
+        "kind": {"const": "activation_boundary"},
+        "mark_boundary": {"$ref": "#/$defs/markPointer"},
+        "mark_boundary_observed_at_utc": {"type": "string", "format": "date-time"},
+        "ledger_boundary": {"$ref": "#/$defs/ledgerReceipt"},
+        "prospective_after_boundary": {"const": true}
+      }
+    },
+    "enrollmentPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "plan",
+        "contract",
+        "mark_observation",
+        "shadow_entry_mark",
+        "position_assumed",
+        "provider_observed_entry"
+      ],
+      "properties": {
+        "kind": {"const": "enrollment"},
+        "plan": {"$ref": "#/$defs/plan"},
+        "contract": {"$ref": "#/$defs/contract"},
+        "mark_observation": {"$ref": "#/$defs/markPointer"},
+        "shadow_entry_mark": {
+          "allOf": [
+            {"$ref": "#/$defs/shadowMark"},
+            {"properties": {"basis": {"const": "first_fresh_post_trigger_trade_paired_mid"}}}
+          ]
+        },
+        "position_assumed": {"const": false},
+        "provider_observed_entry": {"const": false}
+      }
+    },
+    "canonicalClose": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "plan_id",
+        "close_date",
+        "outcome",
+        "asof",
+        "row_ordinal",
+        "row_semantic_sha256",
+        "ledger_receipt",
+        "source_option_result_pct_was_null"
+      ],
+      "properties": {
+        "schema": {"const": "prophet.ledger/v1"},
+        "plan_id": {"type": "string", "minLength": 1},
+        "close_date": {"type": "string", "format": "date"},
+        "outcome": {
+          "enum": ["T1_HIT", "T2_HIT", "INVALIDATED", "EXPIRED", "CLOSED_EARLY", "NO_ENTRY"]
+        },
+        "asof": {"type": "string", "format": "date"},
+        "row_ordinal": {"type": "integer", "minimum": 1},
+        "row_semantic_sha256": {"$ref": "#/$defs/sha256"},
+        "ledger_receipt": {"$ref": "#/$defs/ledgerReceipt"},
+        "source_option_result_pct_was_null": {"const": true}
+      }
+    },
+    "terminalMark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "mark"],
+      "properties": {
+        "status": {"enum": ["available", "unavailable"]},
+        "reason": {
+          "type": ["string", "null"],
+          "enum": [
+            null,
+            "NO_SAME_SESSION_ADMITTED_MARK",
+            "PLAN_IDENTITY_DRIFT",
+            "CONTRACT_DRIFT",
+            "CANONICAL_NO_ENTRY",
+            "CANONICAL_CLOSE_PREDATES_ENROLLMENT"
+          ]
+        },
+        "mark": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "allOf": [
+                {"$ref": "#/$defs/shadowMark"},
+                {"properties": {"basis": {"const": "latest_admitted_same_session_trade_paired_mid"}}}
+              ]
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "available"}}, "required": ["status"]},
+          "then": {"properties": {"reason": {"type": "null"}, "mark": {"type": "object"}}},
+          "else": {"properties": {"reason": {"type": "string"}, "mark": {"type": "null"}}}
+        }
+      ]
+    },
+    "shadowReturn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "basis",
+        "shadow_mark_to_mark_return_pct",
+        "unavailable_reason",
+        "trade_pnl"
+      ],
+      "properties": {
+        "status": {"enum": ["available", "unavailable"]},
+        "basis": {"const": "shadow_mid_to_mid_research_only"},
+        "shadow_mark_to_mark_return_pct": {"type": ["number", "null"], "exclusiveMinimum": -100},
+        "unavailable_reason": {
+          "type": ["string", "null"],
+          "enum": [
+            null,
+            "NO_SAME_SESSION_ADMITTED_MARK",
+            "PLAN_IDENTITY_DRIFT",
+            "CONTRACT_DRIFT",
+            "CANONICAL_NO_ENTRY",
+            "CANONICAL_CLOSE_PREDATES_ENROLLMENT"
+          ]
+        },
+        "trade_pnl": {"const": false}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "available"}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "shadow_mark_to_mark_return_pct": {"type": "number", "exclusiveMinimum": -100},
+              "unavailable_reason": {"type": "null"}
+            }
+          },
+          "else": {
+            "properties": {
+              "shadow_mark_to_mark_return_pct": {"type": "null"},
+              "unavailable_reason": {"type": "string"}
+            }
+          }
+        }
+      ]
+    },
+    "terminalPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "plan_id",
+        "contract",
+        "enrollment_event",
+        "mark_chain_head",
+        "shadow_entry_mark",
+        "canonical_close",
+        "terminal_mark",
+        "shadow_return",
+        "position_assumed",
+        "provider_observed_exit"
+      ],
+      "properties": {
+        "kind": {"const": "terminal"},
+        "plan_id": {"type": "string", "minLength": 1},
+        "contract": {"$ref": "#/$defs/contract"},
+        "enrollment_event": {"$ref": "#/$defs/eventPointer"},
+        "mark_chain_head": {"$ref": "#/$defs/markPointer"},
+        "shadow_entry_mark": {
+          "allOf": [
+            {"$ref": "#/$defs/shadowMark"},
+            {"properties": {"basis": {"const": "first_fresh_post_trigger_trade_paired_mid"}}}
+          ]
+        },
+        "canonical_close": {"$ref": "#/$defs/canonicalClose"},
+        "terminal_mark": {"$ref": "#/$defs/terminalMark"},
+        "shadow_return": {"$ref": "#/$defs/shadowReturn"},
+        "position_assumed": {"const": false},
+        "provider_observed_exit": {"const": false}
+      }
+    }
+  },
+  "properties": {
+    "schema": {"const": "prophet.option_shadow_lifecycle_event/v1"},
+    "event_id": {"type": "string", "pattern": "^posle_[a-f0-9]{64}$"},
+    "event_kind": {"enum": ["activation_boundary", "enrollment", "terminal"]},
+    "event_session_date": {"type": "string", "format": "date"},
+    "storage": {"$ref": "#/$defs/storage"},
+    "previous": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/eventPointer"}
+      ]
+    },
+    "payload": {
+      "oneOf": [
+        {"$ref": "#/$defs/activationPayload"},
+        {"$ref": "#/$defs/enrollmentPayload"},
+        {"$ref": "#/$defs/terminalPayload"}
+      ]
+    },
+    "limitations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shadow_research_only",
+        "not_trade_pnl",
+        "no_provider_observed_entry_or_exit",
+        "not_fill",
+        "not_nbbo",
+        "not_executable",
+        "public_redistribution",
+        "never_populates_option_result_pct",
+        "prospective_after_activation_only"
+      ],
+      "properties": {
+        "shadow_research_only": {"const": true},
+        "not_trade_pnl": {"const": true},
+        "no_provider_observed_entry_or_exit": {"const": true},
+        "not_fill": {"const": true},
+        "not_nbbo": {"const": true},
+        "not_executable": {"const": true},
+        "public_redistribution": {"const": false},
+        "never_populates_option_result_pct": {"const": true},
+        "prospective_after_activation_only": {"const": true}
+      }
+    },
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"event_kind": {"const": "activation_boundary"}}, "required": ["event_kind"]},
+      "then": {"properties": {"payload": {"$ref": "#/$defs/activationPayload"}, "previous": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"event_kind": {"const": "enrollment"}}, "required": ["event_kind"]},
+      "then": {"properties": {"payload": {"$ref": "#/$defs/enrollmentPayload"}, "previous": {"type": "object"}}}
+    },
+    {
+      "if": {"properties": {"event_kind": {"const": "terminal"}}, "required": ["event_kind"]},
+      "then": {"properties": {"payload": {"$ref": "#/$defs/terminalPayload"}, "previous": {"type": "object"}}}
+    }
+  ]
+}
