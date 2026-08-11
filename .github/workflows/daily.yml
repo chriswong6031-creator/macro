@@ -4466,6 +4466,15 @@ jobs:
           python -m scripts.grade_us_board --nightly; rc=$?
           if [ "$rc" -ne 0 ]; then echo "::warning title=grade_us_board::rc=$rc (non-fatal)"; fi
           exit 0
+      - name: Opportunity timeline (durable Prophet candidate receipts for Terminal)
+        # Pure projection over the four committed track_ledger/v1 artifacts.  It runs
+        # after grade_us_board so tonight's US episode marks are present; CN/HK are
+        # refreshed by asia-close.yml before this nightly checkout.  The builder
+        # flattens every historical definition but never promotes a board candidate
+        # into a Prophet plan or Oracle signal.  Its atomic/fail-closed write keeps the
+        # last complete timeline if any required source is missing or malformed, and
+        # the broad site/ commit below publishes the resulting artifact.
+        run: python -m scripts.build_opportunity_timeline || echo "::warning::opportunity timeline kept its last complete artifact (non-fatal)"
       # NOTE (2026-08-06): the Prophet US program's four post-board modules used to sit
       # HERE — emit_prophet_doors, grade_prophet_doors, grade_us_prophet_candidates and
       # run_prophet_miss_audit. They now run in the `us_prophet_ledgers` job (below,

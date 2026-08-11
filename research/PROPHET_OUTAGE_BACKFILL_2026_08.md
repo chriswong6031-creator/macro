@@ -17,20 +17,40 @@ This document is the design of record for the backfill PR. §0 gates are the
    `panel.mixed_vintage` flag). No other date is minted. 2026-08-03→08-06 are
    NOT reconstructed (see §2 refusal). 2026-08-10 forward belongs to the live
    nightly.
-2. **Vintage-pinned inputs, receipted.** The replay reads the genuine
-   `as_of=2026-08-07` board (post-heal staleness block), plus the event-time
-   plans baseline, each pinned by commit SHA. A separately pinned current
-   plans baseline supplies collision authority. All three SHAs are recorded in
-   the backfill receipt; no input is "whatever is on disk".
+2. **Vintage-pinned inputs, receipted.** The replay reads the BAKE-TIME
+   board — the exact `us_standouts.json` the refused 2026-08-09 bake read
+   (blob `f9ce1f3044` @ commit `b3d3c38bdce5`, `as_of=2026-08-07`,
+   `rank_by=us_prophet_v1`) — with exactly ONE field changed:
+   `staleness.inputs.panel.mixed_vintage` healed `true→false`, and that heal
+   VERIFIED by recomputation (run the #5241-fixed `_panel_price_reach`
+   against the board's members with price reads date-clamped ≤2026-08-09;
+   assert it yields `false`; refuse to mint if it does not). Post-heal
+   re-renders of the board are FORBIDDEN as input: the 2026-08-10 evening
+   re-render was adjudicated contaminated in review — it swapped the ranker
+   (`us_prophet_v1→v2`), refreshed options snapshots, and admitted three
+   tickers (ASTS, CRC, SVM) via a wall-clock earnings-blackout hole (a
+   +08:00 render host past local midnight saw their 2026-08-10 earnings as
+   past — one-sided lookahead). The script hard-refuses: board
+   `as_of != 2026-08-07`, board sha256 != the pinned constant, ranker
+   != us_prophet_v1, or either input commit not an ancestor of origin/main.
+   PIT geometry inputs (regime/leash state, stage-tilt, option store) are
+   pinned to their bake-time-commit vintage via git; any input that cannot
+   be vintage-pinned is disclosed PER FIELD in the disclosure artifact with
+   the vintage actually used. No input is "whatever is on disk".
 3. **Provenance on every minted row.** Each backfilled plan carries
    `origination_mode: "outage_backfill_2026_08_09"` plus
    `backfill_executed_at` (real wall date) alongside the normal era stamps
    (`selection_era` unchanged — same engine). A plan without the stamp minted
    by this lane = defect.
-4. **Collision rule: live wins.** Any ticker originated by the 2026-08-10
-   nightly (or any later live bake landing before the backfill executes) is NOT
-   double-minted. Its weekend counterfactual is recorded display-only in the
-   disclosure artifact instead. One active plan per candidate episode.
+4. **Collision rule: live wins — window closes at MERGE, not execution.**
+   Any ticker originated by the 2026-08-10 nightly or any later live bake
+   landing before the backfill MERGES is NOT double-minted. Its weekend
+   counterfactual is recorded display-only in the disclosure artifact
+   instead. One active plan per candidate episode, guarded by a test
+   asserting at-most-one-open-plan per ticker+direction; the collision set
+   is re-verified against fresh origin/main immediately before merge
+   (script `--verify-collisions` mode) and the merge aborts on any new
+   collision until re-reconciled.
 5. **Disclosure artifact + schema amendment ride the same PR.**
    `data/prophet/backfill_disclosures.json` (modeled on
    `data/us_board_ledger/disclosed_gaps.json`): window, authority
@@ -39,14 +59,22 @@ This document is the design of record for the backfill PR. §0 gates are the
    `research/PROPHET_LEDGER_SCHEMA.md` gains a dated force-majeure addendum
    scoping the exception to this one event; the standing no-backfill law stays
    in force for all other dates.
-6. **Segregation is test-pinned.** New test (pattern:
-   `tests/test_grade_us_board.py::test_no_graded_rows_were_backfilled_into_a_disclosed_null_era`)
-   asserting: (a) every plan with `origination_mode` startswith
-   `outage_backfill` appears in the disclosure artifact and vice versa; (b) no
-   backfilled plan has `recorded_at` outside the disclosed window; (c) any
-   track-record/calibration aggregate that reads the ledger splits or excludes
-   `origination_mode != live` rows (at minimum: pins that the field survives
-   the index render so readers CAN split).
+6. **Segregation is test-pinned — through the LEDGER and every live
+   aggregate, not just the index render.** (a) every plan with
+   `origination_mode` startswith `outage_backfill` appears in the disclosure
+   artifact and vice versa; (b) no backfilled plan has `recorded_at` outside
+   the disclosed window; (c) `origination_mode` is CARRIED INTO the ledger
+   row at close (`build_prophet` ledger-row constructor) and
+   `record_summary` — the published `index["record"]` win-rate — splits or
+   excludes backfilled rows, pinned by a test that closes a backfilled plan
+   and asserts the published record excludes/splits it; (d) marketing
+   surfaces (`engine/marketing/receipt_source`, `allies`, `content_studio`)
+   HARD-EXCLUDE `origination_mode != live` plans — a reconstructed pick may
+   never be presented as a live historical call, under any framing; (e)
+   `prophet_stage_shadow` cohort stats that feed live plan geometry
+   (`plan_horizon_days`) exclude backfilled rows; (f) the brain gateway plan
+   projection whitelist includes `origination_mode` so the chat layer can
+   see and caveat it.
 7. **Nightly passthrough proven.** A test loads a backfilled plan fixture
    through `_load_existing_plans` + the management path and shows the nightly
    neither drops, rewrites, nor chokes on the extra fields, and renders its
@@ -70,23 +98,23 @@ This document is the design of record for the backfill PR. §0 gates are the
 
 ## §1 Why recorded_at=2026-08-09 is the honest reconstruction
 
-- The 2026-08-09 22:59Z scheduled bake (run `31340764145`, engine job
-  `93332847126`) ACTUALLY RAN the current intake end-to-end: 79 buys → 54
-  admitted → 30 eligible → 30 refused, all at `clock_provenance` on
-  `panel.mixed_vintage=true`. The durable checkpoint
-  `8421e4783f141248656c850bfd61d1e15a6aeb97` receipts the exact 30 identities
-  and errors in `site/prophet/index.json:intake.validation_failures`, with
-  `intake.legacy_shadow.rows_in_part=30`. (The similarly dated
-  `data/prophet/origination_receipts/31292839484-*.json` belongs to an earlier
-  workflow-dispatch run that originated two plans; it is NOT this refusal
-  receipt.) The counterfactual "fix present" flips exactly one poisoned input;
-  everything else is the receipted live path.
-- The board it read is still on main (`site/factordata/us_standouts.json`,
-  `as_of=2026-08-07`), and the 2026-08-10 closing-bell render re-derived its
-  staleness block through the healed `_panel_price_reach`:
-  `mixed_vintage: false`, `off_majority_tickers: [CTRA, CWEN-A, TPH]` (real
-  strays, not weekend riders). The replay input already exists at the right
-  vintage on main — pin its SHA.
+- The 2026-08-09 22:59Z bake ACTUALLY RAN the current intake end-to-end:
+  79 buys → 54 admitted → 30 eligible → 30 refused, all at
+  `clock_provenance` on `panel.mixed_vintage=true` — receipted
+  (`data/prophet/origination_receipts/31292839484-*.json`, intake receipt
+  rows_in_part=30). The counterfactual "fix present" flips exactly one
+  poisoned input; everything else is the receipted live path.
+- The board it read survives in git history (blob `f9ce1f3044` @ commit
+  `b3d3c38bdce5`, `as_of=2026-08-07`, `mixed_vintage=true` baked in). THAT
+  board — not any later re-render — is the replay input, with the one
+  poisoned flag healed by verified recomputation (§0.2). Review adjudication
+  2026-08-11: the 2026-08-10 evening re-render of the same `as_of` board is
+  CONTAMINATED as a replay input (v1→v2 ranker swap, refreshed options
+  snapshot, and a wall-clock earnings-blackout hole that admitted ASTS/CRC/
+  SVM on lookahead — board membership measurably flapped 78↔81 rows by
+  render-host timezone on identical `as_of`). The wall-clock defect in
+  `build_stock_library`'s blackout gate is tracked as its own fix lane,
+  separate from this backfill.
 - All origination clock gates are relative to the `asof` parameter
   (`engine/prophet_bridge.py:585-671`; `scripts/build_prophet.py --date`,
   `:1384-1391`): `price_basis_date(2026-08-07) ==
@@ -131,22 +159,15 @@ to run twice — idempotence via the disclosure artifact):
 1. Inputs (all pinned, passed as SHAs on the CLI, recorded in the receipt):
    - `--board-commit <sha>`: commit on main whose
      `site/factordata/us_standouts.json` is the healed 08-07 board.
-   - `--event-baseline-commit <sha>`: the plan set at the scheduled event's
-     checkout (`5d06ee689...`), used for duplicate/open-plan suppression so the
-     replay can reproduce the receipted 30-row refusal population.
-   - `--collision-baseline-commit <sha>`: main AFTER the 2026-08-10 nightly
-     checkpoint (the plans originated live since the event).
+   - `--plans-baseline <sha>`: commit on main AFTER the 2026-08-10 nightly
+     checkpoint (for the collision set = plans originated live since 08-09).
 2. Extract the pinned board to a temp path; run the intake through
    `originate_plans(asof="2026-08-09", standouts_path=<pinned board>, ...)`
-   — via a thin wrapper, NOT by editing build_prophet's constants. Its
-   `existing_ids` and `active_keys` MUST come from the pinned event baseline,
-   not the executing checkout or collision baseline: `originate_plans`
-   suppresses those rows before returning them, which would erase the full
-   weekend counterfactual set from disclosure.
-3. Compare the replay output with the separately loaded collision baseline;
-   inject `origination_mode` and `backfill_executed_at` into survivors, and
-   put collisions per §0.4 into the disclosure's `collided` list. Write
-   surviving plans to `site/prophet/plans/` +
+   — via a thin wrapper, NOT by editing build_prophet's constants; plans
+   baseline = `_load_existing_plans` on the checkout (post-bake main).
+3. Post-process originated plans: inject `origination_mode`,
+   `backfill_executed_at`; drop collisions per §0.4 into the disclosure's
+   `collided` list; write surviving plans to `site/prophet/plans/` +
    origination receipt to `data/prophet/origination_receipts/` (same format
    as the nightly's) + `data/prophet/backfill_disclosures.json`.
 4. NEVER write: `data/prophet/ledger.jsonl` (nightly advances it),
