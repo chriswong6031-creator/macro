@@ -1,0 +1,284 @@
+{
+  "1_nvda_attention_and_beta": {
+    "expectation": "NVDA must not rank bottom-quartile on attention share within its baskets; its beta should be near or above 1",
+    "flare": {
+      "NVDA": {
+        "attention_quartile": 1,
+        "attention_rank": 1,
+        "attention_share": 0.07969,
+        "beta": 0.3432,
+        "beta_factors": {
+          "corr_to_ex_self": 0.5839,
+          "identity_check": 0.3432,
+          "own_vol_rank_desc": 26,
+          "sd_ex_self_daily_pct": 4.4035,
+          "sd_own_daily_pct": 2.588,
+          "sd_ratio": 0.5877
+        },
+        "beta_rank_desc": 26,
+        "in_attention_universe": true,
+        "n_with_beta": 26
+      },
+      "beta_cross_section": {
+        "max": 1.4663,
+        "mean": 0.9691,
+        "median": 1.0319,
+        "min": 0.3432,
+        "n": 26
+      },
+      "cell_coverage": 0.7692,
+      "cell_status": "COMPUTABLE",
+      "era": "reconstruction",
+      "month": "2026-08",
+      "n_with_attention": 20,
+      "top5": [
+        {
+          "share": 0.07969,
+          "symbol": "NVDA"
+        },
+        {
+          "share": 0.07969,
+          "symbol": "ARM"
+        },
+        {
+          "share": 0.07455,
+          "symbol": "AMD"
+        },
+        {
+          "share": 0.07198,
+          "symbol": "QCOM"
+        },
+        {
+          "share": 0.06684,
+          "symbol": "SMCI"
+        }
+      ]
+    },
+    "wsb": {
+      "NVDA": {
+        "attention_quartile": 1,
+        "attention_rank": 2,
+        "attention_share": 0.29741,
+        "beta": 0.3432,
+        "beta_factors": {
+          "corr_to_ex_self": 0.5839,
+          "identity_check": 0.3432,
+          "own_vol_rank_desc": 26,
+          "sd_ex_self_daily_pct": 4.4035,
+          "sd_own_daily_pct": 2.588,
+          "sd_ratio": 0.5877
+        },
+        "beta_rank_desc": 26,
+        "in_attention_universe": true,
+        "n_with_beta": 26
+      },
+      "beta_cross_section": {
+        "max": 1.4663,
+        "mean": 0.9691,
+        "median": 1.0319,
+        "min": 0.3432,
+        "n": 26
+      },
+      "cell_coverage": 0.5,
+      "cell_status": "ABSTAIN",
+      "era": "reconstruction",
+      "month": "2026-08",
+      "n_with_attention": 13,
+      "top5": [
+        {
+          "share": 0.53592,
+          "symbol": "SMCI"
+        },
+        {
+          "share": 0.29741,
+          "symbol": "NVDA"
+        },
+        {
+          "share": 0.07328,
+          "symbol": "AMD"
+        },
+        {
+          "share": 0.05316,
+          "symbol": "NBIS"
+        },
+        {
+          "share": 0.02155,
+          "symbol": "ANET"
+        }
+      ]
+    }
+  },
+  "2_cn_robotics_attention_vs_beta": {
+    "comment": {
+      "cell_status": "COMPUTABLE",
+      "era": "reconstruction",
+      "identical_ranks": false,
+      "month": "2026-08",
+      "n": 11,
+      "p": 0.11455,
+      "p_method": "mc-permutation(n=11,draws=100000,seed=20260811)",
+      "rank_rho_beta_vs_attention": 0.5091,
+      "top3_attention": [
+        {
+          "beta": 1.8162,
+          "beta_rank_desc": 1,
+          "share": 0.09672,
+          "symbol": "688017.SS"
+        },
+        {
+          "beta": 1.1168,
+          "beta_rank_desc": 3,
+          "share": 0.09556,
+          "symbol": "002747.SZ"
+        },
+        {
+          "beta": 0.4366,
+          "beta_rank_desc": 11,
+          "share": 0.09294,
+          "symbol": "300124.SZ"
+        }
+      ],
+      "top3_beta": [
+        {
+          "attention_rank_desc": 1,
+          "attention_share": 0.09672,
+          "beta": 1.8162,
+          "symbol": "688017.SS"
+        },
+        {
+          "attention_rank_desc": 7,
+          "attention_share": 0.09111,
+          "beta": 1.5765,
+          "symbol": "688322.SS"
+        },
+        {
+          "attention_rank_desc": 2,
+          "attention_share": 0.09556,
+          "beta": 1.1168,
+          "symbol": "002747.SZ"
+        }
+      ]
+    },
+    "expectation": "\u6da8\u505c-prone small caps should carry attention shares well above the index-heavy members relative to their beta ranks; IDENTICAL attention and beta ranks would indicate price-derived contamination",
+    "lhb": {
+      "cell_status": "COMPUTABLE",
+      "era": "reconstruction",
+      "identical_ranks": false,
+      "month": "2026-08",
+      "n": 11,
+      "p": 0.43613,
+      "p_method": "mc-permutation(n=11,draws=100000,seed=20260811)",
+      "rank_rho_beta_vs_attention": 0.2981,
+      "top3_attention": [
+        {
+          "beta": 0.8656,
+          "beta_rank_desc": 6,
+          "share": 0.5,
+          "symbol": "002851.SZ"
+        },
+        {
+          "beta": 1.5765,
+          "beta_rank_desc": 2,
+          "share": 0.5,
+          "symbol": "688322.SS"
+        },
+        {
+          "beta": 0.7392,
+          "beta_rank_desc": 8,
+          "share": 0.0,
+          "symbol": "002046.SZ"
+        }
+      ],
+      "top3_beta": [
+        {
+          "attention_rank_desc": 7,
+          "attention_share": 0.0,
+          "beta": 1.8162,
+          "symbol": "688017.SS"
+        },
+        {
+          "attention_rank_desc": 1,
+          "attention_share": 0.5,
+          "beta": 1.5765,
+          "symbol": "688322.SS"
+        },
+        {
+          "attention_rank_desc": 7,
+          "attention_share": 0.0,
+          "beta": 1.1168,
+          "symbol": "002747.SZ"
+        }
+      ]
+    }
+  },
+  "3_defense_prime_vs_retail": {
+    "beta_cross_section": {
+      "mean": 0.9255,
+      "median": 0.5529,
+      "n": 21
+    },
+    "cell_coverage": 0.1429,
+    "cell_status": "ABSTAIN",
+    "era": "reconstruction",
+    "expectation": "at least one prime (LMT/NOC/GD class) shows high beta-to-basket but modest WSB attention share vs a retail-favoured name in the slot",
+    "month": "2026-08",
+    "n_in_wsb_universe": 3,
+    "n_with_beta": 21,
+    "n_with_nonzero_wsb": 3,
+    "primes": [
+      {
+        "beta": 0.5522,
+        "beta_rank_desc": 12,
+        "corr_to_ex_self": 0.5346,
+        "in_wsb_universe": false,
+        "own_vol_rank_desc": 13,
+        "sd_ratio": 1.033,
+        "symbol": "LMT",
+        "wsb_rank_desc": null,
+        "wsb_share": null
+      },
+      {
+        "beta": 0.4827,
+        "beta_rank_desc": 17,
+        "corr_to_ex_self": 0.5492,
+        "in_wsb_universe": false,
+        "own_vol_rank_desc": 19,
+        "sd_ratio": 0.8788,
+        "symbol": "NOC",
+        "wsb_rank_desc": null,
+        "wsb_share": null
+      },
+      {
+        "beta": 0.468,
+        "beta_rank_desc": 20,
+        "corr_to_ex_self": 0.6398,
+        "in_wsb_universe": false,
+        "own_vol_rank_desc": 21,
+        "sd_ratio": 0.7315,
+        "symbol": "GD",
+        "wsb_rank_desc": null,
+        "wsb_share": null
+      }
+    ],
+    "retail_favoured": [
+      {
+        "beta": 2.3624,
+        "beta_rank_desc": 1,
+        "symbol": "RKLB",
+        "wsb_share": 0.44737
+      },
+      {
+        "beta": 2.226,
+        "beta_rank_desc": 2,
+        "symbol": "ASTS",
+        "wsb_share": 0.42105
+      },
+      {
+        "beta": 0.6786,
+        "beta_rank_desc": 10,
+        "symbol": "BA",
+        "wsb_share": 0.13158
+      }
+    ]
+  }
+}

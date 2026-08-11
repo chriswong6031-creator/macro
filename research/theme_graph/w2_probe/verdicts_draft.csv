@@ -1,0 +1,9 @@
+construction,market,verdict,unlock,named_ingestion,n_slots,n_abstain,max_adjacent_pairs,median_tie_mass,basis
+economic_share,us,BLOCKED-ON-INGESTION,,segment-axis XBRL ingestion atop engine/fundamental_forensics (US) / CN annual-report segment tables (CN) — prereg §2 ore ledger,0,0,0,,honest null — no formula minted (prereg §2)
+economic_share,cn,BLOCKED-ON-INGESTION,,segment-axis XBRL ingestion atop engine/fundamental_forensics (US) / CN annual-report segment tables (CN) — prereg §2 ore ledger,0,0,0,,honest null — no formula minted (prereg §2)
+trading_beta.v0,us,MEASURABLE-NOW,,,4,0,38,,4 of 4 slots clear the coverage floor; deepest carries 38 adjacent month pairs
+trading_beta.v0,cn,MEASURABLE-NOW,,,3,0,31,,3 of 3 slots clear the coverage floor; deepest carries 31 adjacent month pairs
+attention_share.cn.comment.v0,cn,UNDERPOWERED-BY-DEPTH,2026-11,,3,0,2,0.0667,deepest computable slot carries 2 adjacent month pair(s) < 3
+attention_share.cn.lhb.v0,cn,MEASURABLE-NOW,,,3,0,14,0.8667,3 of 3 slots clear the coverage floor; deepest carries 14 adjacent month pairs
+attention_share.us.wsb.v0,us,BLOCKED-ON-INGESTION,,"a full-universe US retail/news attention tape — the two present stores publish only the tickers they surface (WSB 307, narrative_flare 448), so a slot outside the meme/tech complex is absent from the universe rather than measured at zero",4,4,0,,"4 of 4 slots below the 0.7 coverage floor — the members are absent from the source universe, not measured"
+attention_share.us.flare.v0,us,BLOCKED-ON-INGESTION,,"a full-universe US retail/news attention tape — the two present stores publish only the tickers they surface (WSB 307, narrative_flare 448), so a slot outside the meme/tech complex is absent from the universe rather than measured at zero",4,3,1,0.5,"3 of 4 slots below the 0.7 coverage floor — the members are absent from the source universe, not measured"

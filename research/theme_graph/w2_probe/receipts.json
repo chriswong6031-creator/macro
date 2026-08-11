@@ -1,0 +1,713 @@
+{
+  "frozen_constants": {
+    "beta_min_overlap": 40,
+    "beta_window": 63,
+    "bootstrap": {
+      "block": 3,
+      "ci": "80% (p10/p90)",
+      "draws": 2000,
+      "seed": 20260811
+    },
+    "cn_history_start": "2024-01",
+    "coverage_floor": 0.7,
+    "h2_distinct_median": 0.7,
+    "h2_distinct_one_slot": 0.5,
+    "h2_redundant_median": 0.9,
+    "h3_min_pairs": 3,
+    "h3_noise": 0.3,
+    "h3_stable": 0.6,
+    "observed_era_from": "2026-08-11",
+    "permutation": {
+      "exact_max_n": 9,
+      "mc_draws": 100000,
+      "seed": 20260811
+    },
+    "us_history_start": "2023-06",
+    "vasicek_w_display_only": 0.66
+  },
+  "git_branch": "claude/gmi-w2-exposure-axes-probe",
+  "git_head": "581931b313a49fb5b01e42339e48f3e96e794fb1",
+  "git_head_committed_at": "2026-08-11T14:42:07-07:00",
+  "graph_meta": {
+    "belief_time": "2026-08-11",
+    "computed_at": "2026-08-11T12:12:07Z",
+    "counts": {
+      "edges": 5628,
+      "edges_latest_belief": 5628,
+      "evidence": 9,
+      "nodes": 2707
+    },
+    "engine_version": "theme_graph.v1",
+    "era": "reconstruction",
+    "lane": "nightly",
+    "mode": "backfill"
+  },
+  "h2": {
+    "attention_share.cn.comment.v0": {
+      "abs_rhos": [
+        0.1609,
+        0.5091,
+        0.181
+      ],
+      "n_slots": 3,
+      "reading": "MEASURABLY-DISAGREE (median |rho| 0.181 <= 0.7 and min |rho| 0.161 <= 0.5)"
+    },
+    "attention_share.cn.lhb.v0": {
+      "abs_rhos": [
+        0.4085,
+        0.2981,
+        0.3873
+      ],
+      "n_slots": 3,
+      "reading": "MEASURABLY-DISAGREE (median |rho| 0.387 <= 0.7 and min |rho| 0.298 <= 0.5)"
+    },
+    "attention_share.us.flare.v0": {
+      "abs_rhos": [
+        0.5166
+      ],
+      "n_slots": 1,
+      "reading": "PARTIALLY-DISTINCT (median |rho| 0.517; no promotion claim)"
+    },
+    "attention_share.us.wsb.v0": {
+      "abs_rhos": [],
+      "n_slots": 0,
+      "reading": "VACUOUS (no computable slot)"
+    }
+  },
+  "h3": {
+    "attention_share.cn.comment.v0": {
+      "bootstrap_n": 6,
+      "ci80_hi": 0.8459,
+      "ci80_lo": 0.8459,
+      "ci_degenerate": true,
+      "companion_lag3_median": null,
+      "companion_lag3_pairs": 0,
+      "era": "reconstruction",
+      "median_rho": 0.8459,
+      "n_pairs": 6,
+      "per_slot": [
+        {
+          "median": 0.7842,
+          "n_pairs": 2,
+          "slot": "cn_mature",
+          "status": "UNDERPOWERED-BY-DEPTH"
+        },
+        {
+          "median": 0.6591,
+          "n_pairs": 2,
+          "slot": "cn_young_speculative",
+          "status": "UNDERPOWERED-BY-DEPTH"
+        },
+        {
+          "median": 0.846,
+          "n_pairs": 2,
+          "slot": "cross_market_pair.cn",
+          "status": "UNDERPOWERED-BY-DEPTH"
+        }
+      ],
+      "reading": "STABLE (median rho 0.846 >= 0.6)"
+    },
+    "attention_share.cn.lhb.v0": {
+      "bootstrap_n": 34,
+      "ci80_hi": 0.2794,
+      "ci80_lo": 0.1437,
+      "ci_degenerate": false,
+      "companion_lag3_median": 0.3413,
+      "companion_lag3_pairs": 14,
+      "era": "reconstruction",
+      "median_rho": 0.2257,
+      "n_pairs": 34,
+      "per_slot": [
+        {
+          "median": 0.2961,
+          "n_pairs": 7,
+          "slot": "cn_mature",
+          "status": "COMPUTED"
+        },
+        {
+          "median": 0.2324,
+          "n_pairs": 13,
+          "slot": "cn_young_speculative",
+          "status": "COMPUTED"
+        },
+        {
+          "median": 0.2173,
+          "n_pairs": 14,
+          "slot": "cross_market_pair.cn",
+          "status": "COMPUTED"
+        }
+      ],
+      "reading": "NOISE (median rho 0.226 < 0.3)"
+    },
+    "attention_share.us.flare.v0": {
+      "bootstrap_n": 1,
+      "ci80_hi": 0.9987,
+      "ci80_lo": 0.9987,
+      "ci_degenerate": true,
+      "companion_lag3_median": null,
+      "companion_lag3_pairs": 0,
+      "era": "reconstruction",
+      "median_rho": 0.9987,
+      "n_pairs": 1,
+      "per_slot": [
+        {
+          "median": null,
+          "n_pairs": 0,
+          "slot": "us_mature_broad",
+          "status": "ABSTAIN (H1 coverage floor)"
+        },
+        {
+          "median": null,
+          "n_pairs": 0,
+          "slot": "us_young_narrow",
+          "status": "ABSTAIN (H1 coverage floor)"
+        },
+        {
+          "median": null,
+          "n_pairs": 0,
+          "slot": "us_institutional",
+          "status": "ABSTAIN (H1 coverage floor)"
+        },
+        {
+          "median": 0.9987,
+          "n_pairs": 1,
+          "slot": "cross_market_pair.us",
+          "status": "UNDERPOWERED-BY-DEPTH"
+        }
+      ],
+      "reading": "UNDERPOWERED-BY-DEPTH (1 adjacent pair(s) < 3)"
+    },
+    "attention_share.us.wsb.v0": {
+      "bootstrap_n": 0,
+      "ci80_hi": null,
+      "ci80_lo": null,
+      "ci_degenerate": false,
+      "companion_lag3_median": null,
+      "companion_lag3_pairs": 0,
+      "era": "reconstruction",
+      "median_rho": null,
+      "n_pairs": 0,
+      "per_slot": [
+        {
+          "median": null,
+          "n_pairs": 0,
+          "slot": "us_mature_broad",
+          "status": "ABSTAIN (H1 coverage floor)"
+        },
+        {
+          "median": null,
+          "n_pairs": 0,
+          "slot": "us_young_narrow",
+          "status": "ABSTAIN (H1 coverage floor)"
+        },
+        {
+          "median": null,
+          "n_pairs": 0,
+          "slot": "us_institutional",
+          "status": "ABSTAIN (H1 coverage floor)"
+        },
+        {
+          "median": null,
+          "n_pairs": 0,
+          "slot": "cross_market_pair.us",
+          "status": "ABSTAIN (H1 coverage floor)"
+        }
+      ],
+      "reading": "UNDERPOWERED-BY-DEPTH (0 adjacent pair(s) < 3)"
+    },
+    "trading_beta.v0": {
+      "bootstrap_n": 245,
+      "ci80_hi": 0.9167,
+      "ci80_lo": 0.8909,
+      "ci_degenerate": false,
+      "companion_lag3_median": 0.6872,
+      "companion_lag3_pairs": 231,
+      "era": "reconstruction",
+      "median_rho": 0.9091,
+      "n_pairs": 245,
+      "per_slot": [
+        {
+          "median": 0.9448,
+          "n_pairs": 38,
+          "slot": "us_mature_broad",
+          "status": "COMPUTED"
+        },
+        {
+          "median": 0.9226,
+          "n_pairs": 38,
+          "slot": "us_young_narrow",
+          "status": "COMPUTED"
+        },
+        {
+          "median": 0.8978,
+          "n_pairs": 38,
+          "slot": "us_institutional",
+          "status": "COMPUTED"
+        },
+        {
+          "median": 0.8679,
+          "n_pairs": 31,
+          "slot": "cn_mature",
+          "status": "COMPUTED"
+        },
+        {
+          "median": 0.9,
+          "n_pairs": 31,
+          "slot": "cn_young_speculative",
+          "status": "COMPUTED"
+        },
+        {
+          "median": 0.8719,
+          "n_pairs": 38,
+          "slot": "cross_market_pair.us",
+          "status": "COMPUTED"
+        },
+        {
+          "median": 0.8812,
+          "n_pairs": 31,
+          "slot": "cross_market_pair.cn",
+          "status": "COMPUTED"
+        }
+      ],
+      "reading": "STABLE (median rho 0.909 >= 0.6)"
+    }
+  },
+  "prereg": "research/theme_graph/W2_EXPOSURE_AXES_PREREG.md",
+  "probe": "GMI W2 exposure-decomposition probe (R1)",
+  "slots": {
+    "cn_mature": {
+      "baskets": [
+        "basket:baskets_china:cn_solar"
+      ],
+      "dead_members": [],
+      "label": "CN-mature",
+      "market": "cn",
+      "n_live": 15,
+      "n_members_total": 15,
+      "phase": {
+        "as_of": "2026-08-09",
+        "divergence_quadrant": null,
+        "foresight_stage": "WATCH"
+      },
+      "theme": "solar"
+    },
+    "cn_young_speculative": {
+      "baskets": [
+        "basket:baskets_china:cn_robotics"
+      ],
+      "dead_members": [],
+      "label": "CN-young-speculative",
+      "market": "cn",
+      "n_live": 11,
+      "n_members_total": 11,
+      "phase": {
+        "as_of": "2026-08-05",
+        "divergence_quadrant": "hidden-opportunity",
+        "foresight_stage": "WATCH"
+      },
+      "theme": "robotics_automation"
+    },
+    "cross_market_pair.cn": {
+      "baskets": [
+        "basket:baskets_china:cn_semis",
+        "basket:baskets_china:cn_ai_compute"
+      ],
+      "dead_members": [],
+      "label": "Cross-market pair \u2014 CN side",
+      "market": "cn",
+      "n_live": 37,
+      "n_members_total": 37,
+      "phase": {
+        "as_of": "2026-08-10",
+        "divergence_quadrant": "hidden-opportunity",
+        "foresight_stage": "WATCH"
+      },
+      "theme": "ai_semiconductors"
+    },
+    "cross_market_pair.us": {
+      "baskets": [
+        "basket:baskets:ai_semiconductors",
+        "basket:baskets:ai_infra"
+      ],
+      "dead_members": [],
+      "label": "Cross-market pair \u2014 US side",
+      "market": "us",
+      "n_live": 26,
+      "n_members_total": 26,
+      "phase": {
+        "as_of": "2026-08-10",
+        "divergence_quadrant": "hidden-opportunity",
+        "foresight_stage": "WATCH"
+      },
+      "theme": "ai_semiconductors"
+    },
+    "us_institutional": {
+      "baskets": [
+        "basket:baskets:defense"
+      ],
+      "dead_members": [
+        {
+          "node_id": "co:us:AXON",
+          "symbol": "AXON",
+          "valid_from": "2023-05-09",
+          "valid_to": "2026-06-18"
+        }
+      ],
+      "label": "US-institutional (GovRev-adjacent)",
+      "market": "us",
+      "n_live": 21,
+      "n_members_total": 22,
+      "phase": {
+        "as_of": "2026-08-08",
+        "divergence_quadrant": "hidden-opportunity",
+        "foresight_stage": "WATCH"
+      },
+      "theme": "defense_aerospace"
+    },
+    "us_mature_broad": {
+      "baskets": [
+        "basket:baskets:payments_fintech"
+      ],
+      "dead_members": [
+        {
+          "node_id": "co:us:FUTU",
+          "symbol": "FUTU",
+          "valid_from": "2023-05-09",
+          "valid_to": "2026-06-18"
+        }
+      ],
+      "label": "US-mature-broad",
+      "market": "us",
+      "n_live": 21,
+      "n_members_total": 22,
+      "phase": {
+        "as_of": "2026-08-09",
+        "divergence_quadrant": "hidden-opportunity",
+        "foresight_stage": "WATCH"
+      },
+      "theme": "fintech_payments"
+    },
+    "us_young_narrow": {
+      "baskets": [
+        "basket:baskets:nuclear_power"
+      ],
+      "dead_members": [],
+      "label": "US-young-narrow",
+      "market": "us",
+      "n_live": 9,
+      "n_members_total": 9,
+      "phase": {
+        "as_of": "2026-08-08",
+        "divergence_quadrant": null,
+        "foresight_stage": "BROADENING (text)"
+      },
+      "theme": "nuclear_power"
+    }
+  },
+  "stores": {
+    "china_comment.attention_hist": {
+      "bytes": 446462,
+      "date_max": "2026-08-11",
+      "date_min": "2026-06-18",
+      "distinct_dates": 34,
+      "exists": true,
+      "gitignored_local_only": false,
+      "n_tickers": 5203,
+      "path": "data/china_comment/attention_hist.parquet",
+      "rows": 176346,
+      "sha256": "34eae4873f0953d205eec7eb970af61ee587b56517a45b9766504b9527544d87"
+    },
+    "china_lhb.events": {
+      "bytes": 357802,
+      "date_max": "2026-08-11",
+      "date_min": "2024-07-01",
+      "distinct_dates": 436,
+      "exists": true,
+      "gitignored_local_only": false,
+      "n_tickers": 4431,
+      "path": "data/china_lhb/events.parquet",
+      "rows": 30628,
+      "sha256": "2c9c0cebe117aed15f72d17a1bf70df882e2b311a34f848ad38bc2632a8d97b2"
+    },
+    "china_search.closes": {
+      "bytes": 13028249,
+      "date_max": "2026-08-11",
+      "date_min": "2021-06-15",
+      "distinct_dates": 1252,
+      "exists": true,
+      "gitignored_local_only": false,
+      "n_tickers": 1800,
+      "path": "data/china_search/closes.parquet",
+      "read_because": "the store scripts/c1_cn_global_beta.py:_panel() reads \u2014 prereg \u00a72 follows the incumbent CN beta plane's input choice rather than re-deciding it",
+      "rows": 1252,
+      "sha256": "cb5e4baf23383de418e286faff05e0116b4d1706e68c985d943a7570ca4a717a"
+    },
+    "narrative_flare.witness_hist": {
+      "bytes": 46246,
+      "date_max": "2026-08-09",
+      "date_min": "2026-07-11",
+      "distinct_dates": 25,
+      "exists": true,
+      "field_density": {
+        "burst_weight_polygon": 0.6924939467312349,
+        "channels_lit": 1.0,
+        "hazard_pctile": 1.0,
+        "news_count_z": 0.4529782082324455
+      },
+      "field_used": "channels_lit",
+      "gitignored_local_only": true,
+      "n_tickers": 448,
+      "path": "data/narrative_flare/witness_hist.parquet",
+      "rows": 10325,
+      "sha256": "423eb7749b1d4188073983f0c3e8d4b8fbc6511e67b2500af9497b99f3a652e5"
+    },
+    "neuralweb.theme_phase_history": {
+      "bytes": 63707,
+      "exists": true,
+      "gitignored_local_only": false,
+      "path": "data/neuralweb/theme_phase_history.jsonl",
+      "rows": null,
+      "sha256": "ad6df88d699e01d3b789b6db843551a9490bd469d9df444f48fee7686814e715"
+    },
+    "quiver.wallstreetbets": {
+      "bytes": 14893,
+      "date_max": "2026-08-11",
+      "date_min": "2026-06-20",
+      "distinct_dates": 44,
+      "exists": true,
+      "gitignored_local_only": false,
+      "n_tickers": 307,
+      "path": "data/quiver/wallstreetbets.parquet",
+      "rows": 13508,
+      "sha256": "d85c8ab410b1f4b8212e49c6e86b8ada94117b29b8a196c18a9ed7a083060a81"
+    },
+    "theme_graph.edges": {
+      "bytes": 115007,
+      "date_max": "2026-08-11",
+      "date_min": "2026-08-11",
+      "distinct_dates": 1,
+      "exists": true,
+      "gitignored_local_only": false,
+      "path": "data/theme_graph/edges.parquet",
+      "rows": 5628,
+      "sha256": "280ee40fca5a5f8a36df58b82e6bddd69c9f4098dc465dea75ddcb93bc047625"
+    },
+    "theme_graph.nodes": {
+      "bytes": 82921,
+      "exists": true,
+      "gitignored_local_only": false,
+      "path": "data/theme_graph/nodes.parquet",
+      "rows": 2707,
+      "sha256": "583f24358b3c902bc3c36c020055b157b600718f1ece58f030c21a98b51efdbd"
+    }
+  },
+  "unjoined": {
+    "cn_mature": {
+      "cn_comment": [],
+      "cn_lhb": [],
+      "price_store": []
+    },
+    "cn_young_speculative": {
+      "cn_comment": [],
+      "cn_lhb": [],
+      "price_store": []
+    },
+    "cross_market_pair.cn": {
+      "cn_comment": [],
+      "cn_lhb": [],
+      "price_store": []
+    },
+    "cross_market_pair.us": {
+      "price_store": [],
+      "us_flare": [
+        "MPWR",
+        "MRVL",
+        "MU",
+        "NBIS",
+        "TER",
+        "VRT"
+      ],
+      "us_wsb": [
+        "ALAB",
+        "AVGO",
+        "CBRS",
+        "CIEN",
+        "COHR",
+        "CRDO",
+        "CRWV",
+        "GLW",
+        "KLAC",
+        "LRCX",
+        "MPWR",
+        "MU",
+        "TER"
+      ]
+    },
+    "us_institutional": {
+      "price_store": [],
+      "us_flare": [
+        "MRCY",
+        "NOC",
+        "RKLB",
+        "RTX",
+        "TDG",
+        "TDY",
+        "TXT"
+      ],
+      "us_wsb": [
+        "AVAV",
+        "CW",
+        "DRS",
+        "GD",
+        "GE",
+        "HEI",
+        "HII",
+        "HWM",
+        "KTOS",
+        "LDOS",
+        "LHX",
+        "LMT",
+        "MRCY",
+        "NOC",
+        "RTX",
+        "TDG",
+        "TDY",
+        "TXT"
+      ]
+    },
+    "us_mature_broad": {
+      "price_store": [],
+      "us_flare": [
+        "FUTU",
+        "MA",
+        "MQ",
+        "PYPL",
+        "SOFI",
+        "SYF",
+        "TOST",
+        "UPST",
+        "V",
+        "WU",
+        "XYZ"
+      ],
+      "us_wsb": [
+        "AXP",
+        "COF",
+        "CRCL",
+        "FI",
+        "FIS",
+        "FLYW",
+        "FUTU",
+        "GPN",
+        "JKHY",
+        "MA",
+        "MQ",
+        "PYPL",
+        "SYF",
+        "UPST",
+        "WU",
+        "XYZ"
+      ]
+    },
+    "us_young_narrow": {
+      "price_store": [],
+      "us_flare": [
+        "NNE",
+        "NRG",
+        "OKLO",
+        "SMR",
+        "TLN",
+        "VST"
+      ],
+      "us_wsb": [
+        "BWXT",
+        "CEG",
+        "GEV",
+        "NNE",
+        "NRG",
+        "VST"
+      ]
+    }
+  },
+  "us_price_files_used": [
+    "data/baskets/ohlcv/AFRM.parquet",
+    "data/baskets/ohlcv/AXP.parquet",
+    "data/baskets/ohlcv/COF.parquet",
+    "data/baskets/ohlcv/CRCL.parquet",
+    "data/baskets/ohlcv/FI.parquet",
+    "data/baskets/ohlcv/FIS.parquet",
+    "data/baskets/ohlcv/FLYW.parquet",
+    "data/baskets/ohlcv/FOUR.parquet",
+    "data/baskets/ohlcv/FUTU.parquet",
+    "data/baskets/ohlcv/GPN.parquet",
+    "data/baskets/ohlcv/HOOD.parquet",
+    "data/baskets/ohlcv/JKHY.parquet",
+    "data/baskets/ohlcv/MA.parquet",
+    "data/baskets/ohlcv/MQ.parquet",
+    "data/baskets/ohlcv/PYPL.parquet",
+    "data/baskets/ohlcv/SOFI.parquet",
+    "data/baskets/ohlcv/SYF.parquet",
+    "data/baskets/ohlcv/TOST.parquet",
+    "data/baskets/ohlcv/UPST.parquet",
+    "data/baskets/ohlcv/V.parquet",
+    "data/baskets/ohlcv/WU.parquet",
+    "data/baskets/ohlcv/XYZ.parquet",
+    "data/baskets/ohlcv/BWXT.parquet",
+    "data/baskets/ohlcv/CEG.parquet",
+    "data/baskets/ohlcv/GEV.parquet",
+    "data/baskets/ohlcv/NNE.parquet",
+    "data/baskets/ohlcv/NRG.parquet",
+    "data/baskets/ohlcv/OKLO.parquet",
+    "data/baskets/ohlcv/SMR.parquet",
+    "data/baskets/ohlcv/TLN.parquet",
+    "data/baskets/ohlcv/VST.parquet",
+    "data/baskets/ohlcv/ASTS.parquet",
+    "data/baskets/ohlcv/AVAV.parquet",
+    "data/baskets/ohlcv/AXON.parquet",
+    "data/baskets/ohlcv/BA.parquet",
+    "data/baskets/ohlcv/CW.parquet",
+    "data/baskets/ohlcv/DRS.parquet",
+    "data/baskets/ohlcv/GD.parquet",
+    "data/baskets/ohlcv/GE.parquet",
+    "data/baskets/ohlcv/HEI.parquet",
+    "data/baskets/ohlcv/HII.parquet",
+    "data/baskets/ohlcv/HWM.parquet",
+    "data/baskets/ohlcv/KTOS.parquet",
+    "data/baskets/ohlcv/LDOS.parquet",
+    "data/baskets/ohlcv/LHX.parquet",
+    "data/baskets/ohlcv/LMT.parquet",
+    "data/baskets/ohlcv/MRCY.parquet",
+    "data/baskets/ohlcv/NOC.parquet",
+    "data/baskets/ohlcv/RKLB.parquet",
+    "data/baskets/ohlcv/RTX.parquet",
+    "data/baskets/ohlcv/TDG.parquet",
+    "data/baskets/ohlcv/TDY.parquet",
+    "data/baskets/ohlcv/TXT.parquet",
+    "data/baskets/ohlcv/ALAB.parquet",
+    "data/baskets/ohlcv/AMAT.parquet",
+    "data/baskets/ohlcv/AMD.parquet",
+    "data/baskets/ohlcv/ANET.parquet",
+    "data/baskets/ohlcv/APH.parquet",
+    "data/baskets/ohlcv/ARM.parquet",
+    "data/baskets/ohlcv/AVGO.parquet",
+    "data/baskets/ohlcv/CBRS.parquet",
+    "data/baskets/ohlcv/CIEN.parquet",
+    "data/baskets/ohlcv/COHR.parquet",
+    "data/baskets/ohlcv/CRDO.parquet",
+    "data/baskets/ohlcv/CRWV.parquet",
+    "data/baskets/ohlcv/DELL.parquet",
+    "data/baskets/ohlcv/GLW.parquet",
+    "data/baskets/ohlcv/KLAC.parquet",
+    "data/baskets/ohlcv/LITE.parquet",
+    "data/baskets/ohlcv/LRCX.parquet",
+    "data/baskets/ohlcv/MPWR.parquet",
+    "data/baskets/ohlcv/MRVL.parquet",
+    "data/baskets/ohlcv/MU.parquet",
+    "data/baskets/ohlcv/NBIS.parquet",
+    "data/baskets/ohlcv/NVDA.parquet",
+    "data/baskets/ohlcv/QCOM.parquet",
+    "data/baskets/ohlcv/SMCI.parquet",
+    "data/baskets/ohlcv/TER.parquet",
+    "data/baskets/ohlcv/VRT.parquet"
+  ]
+}
