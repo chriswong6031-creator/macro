@@ -15,7 +15,20 @@
       "call_vol": 4200,
       "put_vol": 300,
       "delta_oi": {"call": 1200, "put": 0},
-      "unusual": {"ratio": 3.4, "samples": 22, "side": "unusual"}
+      "unusual": {
+        "call": {
+          "ratio": 3.4,
+          "median_vol_30d": 1235.0,
+          "samples": 22,
+          "status": "unusual"
+        },
+        "put": {
+          "ratio": 2.0,
+          "median_vol_30d": 150.0,
+          "samples": 22,
+          "status": "normal"
+        }
+      }
     }
   ],
   "levels": {
@@ -38,6 +51,7 @@
     "gex": "assumption-signed — display-only until GEX→vol gate",
     "delta_oi": "reliable — signing-free OI change",
     "vol": "reliable magnitude",
+    "unusual": "reliable per-side magnitude — strict prior-session baseline",
     "note": "Sign is an assumption, not a fact. Magnitude is the reliable read."
   }
 }
