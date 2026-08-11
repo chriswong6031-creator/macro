@@ -80,12 +80,15 @@ def _audit_namespace(
     expected_files: set[Path],
     expected_directories: set[Path],
     require_complete: bool,
+    expected_generation_files: int | None = None,
 ) -> None:
     """Reject every W1A-owned entry not proved by the active/prefix state."""
 
     pending = [store]
     entries = 0
     observed_files: set[Path] = set()
+    generation_files: set[Path] = set()
+    generation_shards: set[Path] = set()
     while pending:
         directory = pending.pop()
         try:
@@ -123,14 +126,55 @@ def _audit_namespace(
                         # inventory or edit the sibling profile.
                         continue
                     if stat.S_ISDIR(metadata.st_mode):
-                        if relative not in expected_directories:
+                        generation_directory = (
+                            expected_generation_files is not None
+                            and (
+                                relative == Path("generations")
+                                or (
+                                    len(relative.parts) == 2
+                                    and relative.parts[0] == "generations"
+                                    and pit._SHARD.fullmatch(relative.parts[1])
+                                    is not None
+                                )
+                            )
+                        )
+                        if (
+                            relative not in expected_directories
+                            and not generation_directory
+                        ):
                             raise pit.MarketMemoryStoreError(
                                 "W1A namespace contains an unowned directory"
                             )
                         _require_directory_metadata(
                             metadata, owner=owner, label=f"W1A directory {relative}"
                         )
+                        if len(relative.parts) == 2 and generation_directory:
+                            generation_shards.add(relative)
                         pending.append(path)
+                        continue
+                    generation_file = False
+                    if (
+                        expected_generation_files is not None
+                        and len(relative.parts) == 3
+                        and relative.parts[0] == "generations"
+                        and pit._SHARD.fullmatch(relative.parts[1]) is not None
+                        and relative.suffix == ".json"
+                    ):
+                        generation_id = relative.stem
+                        generation_file = (
+                            pit._GENERATION_ID.fullmatch(generation_id) is not None
+                            and relative.parts[1]
+                            == generation_id.removeprefix("mmgeneration_")[:2]
+                        )
+                    if generation_file:
+                        _require_file_metadata(
+                            metadata,
+                            owner=owner,
+                            label=f"W1A generation archive {relative}",
+                        )
+                        generation_files.add(relative)
+                        if relative in expected_files:
+                            observed_files.add(relative)
                         continue
                     if relative not in expected_files:
                         raise pit.MarketMemoryStoreError(
@@ -151,6 +195,16 @@ def _audit_namespace(
         if observed_files - expected_files:  # pragma: no cover - loop rejects first
             raise pit.MarketMemoryStoreError(
                 "W1A active namespace contains an unowned file"
+            )
+    if expected_generation_files is not None:
+        if len(generation_files) != expected_generation_files:
+            raise pit.MarketMemoryStoreError(
+                "W1A generation archive count differs from active HEAD"
+            )
+        populated_shards = {path.parent for path in generation_files}
+        if generation_shards != populated_shards:
+            raise pit.MarketMemoryStoreError(
+                "W1A generation archive contains an empty shard"
             )
 
 
@@ -191,33 +245,14 @@ def _partial_empty_prefix_files(store: Path) -> set[Path]:
 
 def _complete_store_files(
     store: Path,
-) -> tuple[pit.PinnedGenerationSnapshot, set[Path]]:
+) -> tuple[pit.PinnedGenerationSnapshot, set[Path], int]:
     reader = pit.FileAsKnownAtReader(store)
-    snapshot = reader.read_pinned_generation()
-    state = pit._load_store_state(store)
+    snapshot = reader.read_active_generation()
     expected = {
         pit._store_manifest_path(store).relative_to(store),
         pit._head_path(store).relative_to(store),
+        pit._generation_path(store, snapshot.generation_id).relative_to(store),
     }
-    current = state.generation
-    seen: set[str] = set()
-    while True:
-        current_id = current["generation_id"]
-        if current_id in seen:
-            raise pit.MarketMemoryStoreError(
-                "store generation ancestry contains a cycle"
-            )
-        seen.add(current_id)
-        expected.add(pit._generation_path(store, current_id).relative_to(store))
-        previous_id = current["previous_generation_id"]
-        if previous_id is None:
-            break
-        previous, _body = pit._read_canonical_object(
-            pit._generation_path(store, previous_id),
-            limit=pit._MAX_GENERATION_BYTES,
-            label="published ancestor store generation",
-        )
-        current = pit._validate_generation(previous, store_id=snapshot.store_id)
 
     for entry in snapshot.captures:
         # The content-bound active generation proves these exact immutable keys.
@@ -230,7 +265,10 @@ def _complete_store_files(
                 pit._object_path(store, entry.packet_sha256).relative_to(store),
             }
         )
-    return snapshot, expected
+    # Genesis plus exactly one immutable generation per captured query.  The
+    # active generation is fully authenticated above; older generations are a
+    # bounded metadata-only archive for readiness, not replayed cumulatively.
+    return snapshot, expected, len(snapshot.captures) + 1
 
 
 def _audit_existing_store(
@@ -238,8 +276,11 @@ def _audit_existing_store(
 ) -> pit.PinnedGenerationSnapshot | None:
     head_path = pit._head_path(store)
     manifest_path = pit._store_manifest_path(store)
+    expected_generation_files: int | None = None
     if head_path.exists() or head_path.is_symlink():
-        snapshot, expected_files = _complete_store_files(store)
+        snapshot, expected_files, expected_generation_files = _complete_store_files(
+            store
+        )
     elif manifest_path.exists() or manifest_path.is_symlink():
         snapshot = None
         expected_files = _partial_empty_prefix_files(store)
@@ -252,6 +293,7 @@ def _audit_existing_store(
         expected_files=expected_files,
         expected_directories=_expected_directories(expected_files),
         require_complete=snapshot is not None,
+        expected_generation_files=expected_generation_files,
     )
     return snapshot
 
