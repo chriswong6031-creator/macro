@@ -7,7 +7,7 @@ final verdict language belongs to the main session after the reviewer pass.
 
 ## 1. Run receipts
 
-- git HEAD `581931b313a` (2026-08-11T14:42:07-07:00), branch `claude/gmi-w2-exposure-axes-probe`
+- git HEAD `b6fd1523281` (2026-08-11T14:52:47-07:00), branch `claude/gmi-w2-exposure-axes-probe`
 - theme graph `_meta`: belief_time **2026-08-11**, era `reconstruction`, mode `backfill`, engine `theme_graph.v1`, counts {'edges': 5628, 'edges_latest_belief': 5628, 'evidence': 9, 'nodes': 2707}
 
 | store | rows | date range | sha256 (first 16) |
@@ -286,17 +286,9 @@ after the reviewer pass. W4 may charter edge annotations only from MEASURABLE-NO
 | `trading_beta.v0` | US | **MEASURABLE-NOW** | — | — | 4 of 4 slots clear the coverage floor; deepest carries 38 adjacent month pairs |
 | `trading_beta.v0` | CN | **MEASURABLE-NOW** | — | — | 3 of 3 slots clear the coverage floor; deepest carries 31 adjacent month pairs |
 | `attention_share.cn.comment.v0` | CN | **UNDERPOWERED-BY-DEPTH** | 7% | 2026-11 | deepest computable slot carries 2 adjacent month pair(s) < 3 |
-| `attention_share.cn.lhb.v0` | CN | **MEASURABLE-NOW** | 87% | — | 3 of 3 slots clear the coverage floor; deepest carries 14 adjacent month pairs |
+| `attention_share.cn.lhb.v0` | CN | **COMPUTABLE-BUT-UNSTABLE** | 87% | — | clears coverage (3 of 3 slots) and depth (14 adjacent pairs), but H3 is NOISE (median rho 0.226 < 0.3) at 87% tie mass — a null for the monthly-share grain, not for the source |
 | `attention_share.us.wsb.v0` | US | **BLOCKED-ON-INGESTION** | — | ingestion: a full-universe US retail/news attention tape — the two present stores publish only the tickers they surface (WSB 307, narrative_flare 448), so a slot outside the meme/tech complex is absent from the universe rather than measured at zero | 4 of 4 slots below the 0.7 coverage floor — the members are absent from the source universe, not measured |
-| `attention_share.us.flare.v0` | US | **BLOCKED-ON-INGESTION** | 50% | ingestion: a full-universe US retail/news attention tape — the two present stores publish only the tickers they surface (WSB 307, narrative_flare 448), so a slot outside the meme/tech complex is absent from the universe rather than measured at zero | 3 of 4 slots below the 0.7 coverage floor — the members are absent from the source universe, not measured |
-
-**Tie-mass caveat on `attention_share.cn.lhb.v0` (CN).** The verdict rule
-keys on coverage and depth, both of which this cell clears — but its median tie mass is
-**87%**: in a typical month that fraction of the
-covered members sits on one identical magnitude (for a tail-event tape, zero). The cell
-is measurable in the sense the prereg froze, and it is ordering only the handful of
-members that cleared the tail in that month. W4 should not read MEASURABLE-NOW here as
-"a full member ranking exists" — flagged for the main session, not resolved here.
+| `attention_share.us.flare.v0` | US | **BLOCKED-ON-INGESTION** | 50% | ingestion: a full-universe US retail/news attention tape — the two present stores publish only the tickers they surface (WSB 307, narrative_flare 448), so a slot outside the meme/tech complex is absent from the universe rather than measured at zero | 3 of 4 slots below the 0.7 coverage floor — the members are absent from the source universe, not measured; and the one cell that does clear it ranks a degenerate magnitude — summed channels_lit is approximately a days-present count, tie mass 50% |
 
 Verdict rule as coded (deterministic, no judgement in the script): a construction×market
 cell is BLOCKED-ON-INGESTION when a majority of its slots fall below the coverage floor
@@ -304,6 +296,26 @@ cell is BLOCKED-ON-INGESTION when a majority of its slots fall below the coverag
 measurement); otherwise UNDERPOWERED-BY-DEPTH when the deepest computable slot carries
 fewer than 3 adjacent month pairs, with the prereg §6 accrual checkpoint as
 the unlock date; otherwise MEASURABLE-NOW.
+
+## 7a. Adjudication rulings applied (main session, 2026-08-11)
+
+The probe escalated the exemplar-gate failures rather than resolving them. The main
+session's rulings are recorded here and are already applied to the §7 table above — the
+probe reports them, it did not decide them.
+
+**Ruling 1 — `trading_beta.v0`.** The frozen trading_beta.v0 construction is NOT reopened — its H2/H3 readings stand as computed. The exemplar-gate failures are recorded as a SEMANTIC FINDING, not a defect: v0 measures relative-vol-weighted co-movement (beta = corr x sd_own/sd_ex-self), and the prereg's expectations carried a cap-weighted intuition v0 never implemented. The gate did its job.
+
+**Ruling 2 — `attention_share.cn.lhb.v0`.** The LHB verdict cell must not read MEASURABLE-NOW: a construction whose H3 is NOISE with high tie mass is COMPUTABLE-BUT-UNSTABLE at the monthly-share grain — a null for THIS construction. Ore law: it closes monthly-share-of-appearances, and leaves event-grain and quarterly aggregations unmapped-but-open.
+
+**Ruling 3 — `attention_share.us.flare.v0`.** US flare's near-1.0 H3 on a 50% tie block is the stability of a degenerate magnitude. US attention stays BLOCKED-ON-INGESTION, and the degeneracy (channels_lit is approximately a days-present count) is named as part of the blocking reason.
+
+Ruling 2 introduces **COMPUTABLE-BUT-UNSTABLE**, a fourth term beyond the three the
+prereg §6 froze (MEASURABLE-NOW / UNDERPOWERED-BY-DEPTH / BLOCKED-ON-INGESTION). That is
+an adjudicated extension of the verdict vocabulary, not a probe decision, and it is
+disclosed as such: the frozen three could not express "we can compute every month and
+the months do not agree with each other" — depth is present, coverage is present, and
+the measurement is still not stable. It is coded as a rule, not as a named exception:
+any construction that clears coverage and depth but whose H3 reads NOISE takes it.
 
 ## 8. Disclosed deviations from the preregistration
 
@@ -354,6 +366,72 @@ would read stronger than the data supports:
    measurement; the column is what shows that the LHB cell's MEASURABLE-NOW and the flare
    cell's near-1.0 autocorrelation are ordering far fewer members than their headline
    numbers suggest.
+
+## 8a. Post-prereg companion: `trading_corr` (no verdict authority)
+
+Commissioned by the main session AFTER the preregistered results were computed, and
+bounded accordingly: it informs interpretation sentences and the W4 narrowing, and it
+enters no H1 cell, no frozen H2/H3 table and no verdict. It is the `corr` term already
+inside `beta = corr x sd_own / sd_ex-self`, promoted to its own cross-section — same 63-
+session window, same one-day causal shift, same months, same membership. Nothing is
+re-estimated, so it cannot disagree with the frozen cell about which member-months exist,
+only about how they rank once the volatility ratio is removed.
+
+**The question it answers: is the H2 disagreement about co-movement, or only about
+relative volatility?**
+
+| slot | attention construction | month | n | corr rho | frozen beta rho | \|Δ\| |
+|---|---|---|---:|---:|---:|---:|
+| `cn_mature` | `attention_share.cn.comment.v0` | 2026-08 | 15 | 0.020 | -0.161 | 0.141 |
+| `cn_young_speculative` | `attention_share.cn.comment.v0` | 2026-08 | 11 | 0.364 | 0.509 | 0.146 |
+| `cross_market_pair.cn` | `attention_share.cn.comment.v0` | 2026-08 | 37 | 0.218 | 0.181 | 0.037 |
+| `cn_mature` | `attention_share.cn.lhb.v0` | 2026-07 | 15 | 0.045 | 0.408 | 0.363 |
+| `cn_young_speculative` | `attention_share.cn.lhb.v0` | 2026-08 | 11 | -0.224 | 0.298 | 0.074 |
+| `cross_market_pair.cn` | `attention_share.cn.lhb.v0` | 2026-08 | 37 | -0.020 | 0.387 | 0.367 |
+| `cross_market_pair.us` | `attention_share.us.flare.v0` | 2026-08 | 20 | -0.314 | -0.517 | 0.203 |
+
+- `trading_corr.companion` ~ `attention_share.cn.comment.v0` — **MEASURABLY-DISAGREE (median |rho| 0.218 <= 0.7 and min |rho| 0.020 <= 0.5)** over 3 slot(s) [0.0197, 0.3636, 0.218] (frozen beta pair read: MEASURABLY-DISAGREE (median |rho| 0.181 <= 0.7 and min |rho| 0.161 <= 0.5))
+- `trading_corr.companion` ~ `attention_share.cn.lhb.v0` — **MEASURABLY-DISAGREE (median |rho| 0.045 <= 0.7 and min |rho| 0.020 <= 0.5)** over 3 slot(s) [0.0454, 0.2236, 0.0202] (frozen beta pair read: MEASURABLY-DISAGREE (median |rho| 0.387 <= 0.7 and min |rho| 0.298 <= 0.5))
+- `trading_corr.companion` ~ `attention_share.us.flare.v0` — **MEASURABLY-DISAGREE (median |rho| 0.314 <= 0.7 and min |rho| 0.314 <= 0.5)** over 1 slot(s) [0.3139] (frozen beta pair read: PARTIALLY-DISTINCT (median |rho| 0.517; no promotion claim))
+
+**And: is co-movement itself as rank-stable as beta?**
+
+| statistic | corr companion | frozen beta |
+|---|---:|---:|
+| adjacent-month median rho | 0.833 | 0.909 |
+| adjacent-month 80% CI | [0.818, 0.846] | [0.891, 0.917] |
+| lag-3 disjoint-window median rho | 0.475 (231 pairs) | 0.687 (231 pairs) |
+| adjacent pairs | 245 | 245 |
+
+Reading (companion, no threshold authority): STABLE (median rho 0.833 >= 0.6) on reconstruction-era membership.
+
+**Q1 — does the H2 result survive with the volatility ratio removed? Yes, and it
+strengthens.** All 3 computable companion pairs read MEASURABLY-DISAGREE
+— including `attention_share.us.flare.v0`, which was only PARTIALLY-DISTINCT on the frozen beta
+pair. 
+The LHB pair moves furthest: median |rho| 0.045 on co-movement against 0.387 on beta — near-orthogonal once the vol term is gone. So the residual agreement between
+beta and attention was carried substantially BY the volatility ratio (volatile names
+score high on both), not by co-movement. The frozen H2 finding is not an artifact of the
+vol term; if anything the vol term was working against it.
+
+**Q2 — is co-movement itself as rank-stable as beta? No — it is the LESS persistent
+half.** Adjacent-month medians are close (0.833 vs 0.909), but the gap opens at
+the disjoint-window horizon where the mechanical overlap is gone: 0.475 vs 0.687 (a 0.212 gap). Corr's lag-3 median
+falls BELOW the 0.6 H3 stable floor while beta's clears it, so relative
+volatility — not co-movement — is the more persistent component of what
+`trading_beta.v0` ranks. For W4 this narrows rather than widens: an edge annotation built on
+co-movement alone would be weakly stable at a quarter's horizon on this data.
+
+Exemplar re-read — the same names, ranked on co-movement instead of on beta:
+
+- **NVDA** (`2026-08`, n=26): corr 0.584 → rank **#21 of 26** on
+  co-movement, versus rank #26 on beta (slot median corr 0.741).
+- **LMT** (`2026-08`, n=21): corr 0.535 → rank **#15 of 21** on
+  co-movement, versus rank #12 on beta (slot median corr 0.573).
+- **NOC** (`2026-08`, n=21): corr 0.549 → rank **#13 of 21** on
+  co-movement, versus rank #17 on beta (slot median corr 0.573).
+- **GD** (`2026-08`, n=21): corr 0.640 → rank **#5 of 21** on
+  co-movement, versus rank #20 on beta (slot median corr 0.573).
 
 ## 9. Filed, not fixed
 

@@ -1,0 +1,8 @@
+slot,n_pairs,median,n_lag3,median_lag3
+us_mature_broad,38,0.8325,36,0.3856
+us_young_narrow,38,0.8333,36,0.325
+us_institutional,38,0.8091,36,0.4308
+cn_mature,31,0.8643,29,0.4893
+cn_young_speculative,31,0.9,29,0.7273
+cross_market_pair.us,38,0.8365,36,0.5073
+cross_market_pair.cn,31,0.7661,29,0.2622
