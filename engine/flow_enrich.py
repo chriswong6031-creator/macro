@@ -44,9 +44,33 @@ from __future__ import annotations
 
 import math
 import logging
+from datetime import datetime, timezone
 from typing import Any
 
 log = logging.getLogger(__name__)
+
+
+def _canonical_utc_timestamp(value: object, *, field: str) -> str:
+    """Validate an aware UTC source/build clock without discarding precision.
+
+    Derivative publication fails closed on missing, naive, non-UTC, or malformed
+    source time instead of silently substituting its own build clock.
+    """
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field} must be a non-empty UTC timestamp")
+    raw = value.strip()
+    try:
+        parsed = datetime.fromisoformat(raw[:-1] + "+00:00" if raw.endswith("Z") else raw)
+    except ValueError as exc:
+        raise ValueError(f"{field} must be a valid UTC timestamp") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
+        raise ValueError(f"{field} must carry an explicit UTC offset")
+    return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _utc_instant(value: str) -> datetime:
+    """Parse a timestamp already canonicalized by `_canonical_utc_timestamp`."""
+    return datetime.fromisoformat(value[:-1] + "+00:00")
 
 # ── Q-score weights (must match flowScore.ts exactly) ────────────────────────
 _W_PREM    = 0.30
@@ -543,6 +567,7 @@ def build_enrich_envelope(
     oi_confirmed: dict | None = None,
     *,
     bootstrap: bool = False,
+    built_at: str | None = None,
 ) -> dict:
     """Build the flow.enrich/v1 envelope.
 
@@ -553,7 +578,7 @@ def build_enrich_envelope(
     ----------
     feed_events    : events from live_flow.feed/v1 (list of dicts).
     session_date   : "YYYY-MM-DD" — trading session for which this enrichment applies.
-    asof           : ISO-8601 timestamp for this enrichment run.
+    asof           : ISO-8601 source snapshot timestamp (legacy output name).
     thresholds     : output of compute_thresholds() (trailing-session percentiles).
     oi_confirmed   : the options_hub/oi_confirmed.json dict; None = skip join.
     bootstrap      : whether thresholds were computed from a single-session pool.
@@ -562,6 +587,14 @@ def build_enrich_envelope(
     -------
     dict matching schema flow.enrich/v1
     """
+    source_asof = _canonical_utc_timestamp(asof, field="source_asof")
+    built_at = _canonical_utc_timestamp(
+        built_at if built_at is not None else source_asof,
+        field="built_at",
+    )
+    if _utc_instant(built_at) < _utc_instant(source_asof):
+        raise ValueError("built_at cannot precede source_asof")
+
     enriched: list[dict] = []
 
     for ev in feed_events:
@@ -648,7 +681,10 @@ def build_enrich_envelope(
 
     return {
         "schema":              "flow.enrich/v1",
-        "asof":                asof,
+        # Legacy asof is source age, not the time this derivative was rebuilt.
+        "asof":                source_asof,
+        "source_asof":         source_asof,
+        "built_at":            built_at,
         "session_date":        session_date,
         "thresholds":          thresholds,
         "bootstrap":           bootstrap,
@@ -665,7 +701,7 @@ def build_enrich_envelope(
 
 def enrich_feed(
     feed_payload: dict,
-    asof: str,
+    built_at: str,
     pool_events: list[dict] | None = None,
     oi_confirmed: dict | None = None,
 ) -> dict:
@@ -674,7 +710,7 @@ def enrich_feed(
     Parameters
     ----------
     feed_payload  : the feed JSON dict (schema live_flow.feed/v1).
-    asof          : ISO timestamp for this enrichment run.
+    built_at      : ISO timestamp for this enrichment build.
     pool_events   : events from trailing sessions for threshold computation.
                     If None or empty, uses feed_payload events only (bootstrap=True).
     oi_confirmed  : options_hub/oi_confirmed.json dict; None = skip.
@@ -683,6 +719,15 @@ def enrich_feed(
     -------
     flow.enrich/v1 envelope dict.
     """
+    source_raw = (
+        feed_payload.get("source_asof")
+        if "source_asof" in feed_payload else feed_payload.get("asof")
+    )
+    source_asof = _canonical_utc_timestamp(source_raw, field="feed.source_asof")
+    built_at = _canonical_utc_timestamp(built_at, field="built_at")
+    if _utc_instant(built_at) < _utc_instant(source_asof):
+        raise ValueError("built_at cannot precede feed.source_asof")
+
     events       = feed_payload.get("events", [])
     session_date = feed_payload.get("session_date", "")
 
@@ -705,8 +750,9 @@ def enrich_feed(
     return build_enrich_envelope(
         feed_events=events,
         session_date=session_date,
-        asof=asof,
+        asof=source_asof,
         thresholds=thresholds,
         oi_confirmed=oi_confirmed,
         bootstrap=bootstrap,
+        built_at=built_at,
     )

@@ -18,10 +18,11 @@
 
 PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
 MODULE="scripts.build_prophet_marks"
-# Repo root — build_prophet_marks.py resolves lib/nyse_calendar via
-# Path(__file__).parent.parent; cd here before invoking so _REPO is correct
-# when the deployed script lives in flow-ops-wt (which lacks lib/nyse_calendar).
-REPO_ROOT="/Users/chriswong/Documents/Cluade/Macro Dashboard"
+# Run the module from the same checkout that owns this launcher.  M1 installs
+# this file from flow-ops-wt; a workstation-only absolute path makes every
+# five-minute cycle fail before Python starts.
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 INTERVAL=300   # 5 minutes in seconds
 # Cutoff hour:minute in ET (24h); we compare against 'date' output
 CUTOFF_HOUR=16
