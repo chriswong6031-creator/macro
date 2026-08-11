@@ -2351,11 +2351,10 @@ def run_cycle(
         ),
         "roots_requested":       len(roots),
         "roots_with_source_payload": len(source_response_times),
-        # Compatibility aliases.  They no longer define cadence truth.
+        # Compatibility count aliases.  They do not define cadence truth.
         "universe_n":            len(roots),
         "roots_polled":          len(source_response_times),
         "requests_last_cycle":   requests_count,
-        "cycle_sec":             round(fetch_compute_sec, 1),
         "delta_mode":            delta_mode,
         "max_concurrent":        max_w,
         "two_tier":              _two_tier_enabled(),
@@ -2974,7 +2973,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                  len(tide_payload.get("minutes", [])),
                  len(tide_payload.get("sectors", [])),
                  ticker_count,
-                 meta.get("fetch_compute_sec", meta.get("cycle_sec", 0)))
+                 meta.get("fetch_compute_sec", 0))
 
         # Item 6 — register live_flow_poller in the run_status/circuit-breaker pattern.
         # Mirrors the established pattern in scripts/collect.py + lib/store.write_status.

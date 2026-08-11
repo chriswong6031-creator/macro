@@ -880,7 +880,7 @@ class TestAPIRoutes:
                    "source_response_at_last": BATCH_TS,
                    "roots_requested": 22, "roots_with_source_payload": 22,
                    "universe_n": 22, "roots_polled": 22,
-                   "requests_last_cycle": 44, "cycle_sec": 95.0,
+                   "requests_last_cycle": 44,
                    "delta_mode": "full_day", "notes": []}
         monkeypatch.setattr("app.main._flow_fetch", lambda name: payload)
         resp = client.get("/api/flow/meta")
@@ -2421,8 +2421,12 @@ class TestRunCycleEndToEnd:
         assert feed["source_asof"] == meta["asof"]
         assert heat["source_asof"] == meta["asof"]
         assert state["source_asof"] == meta["asof"]
-        assert "cadence_sec_target" not in meta
-        assert "cadence_sec_measured" not in meta
+        assert {
+            "cycle_sec",
+            "cadence_sec_target",
+            "cadence_sec_measured",
+            "observed_cadence_sec",
+        }.isdisjoint(meta)
 
     @pytest.mark.parametrize("invalid", [0, -1, True, "120", 120.0])
     def test_run_cycle_rejects_coercible_invalid_poll_floor(self, monkeypatch, invalid):
