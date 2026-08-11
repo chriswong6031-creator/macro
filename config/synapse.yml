@@ -18676,6 +18676,118 @@ artifacts:
       members_asof applies them WITHIN the resolved snapshot so a read between two
       snapshots is correct rather than merely nearest-neighbour.
 
+  # --- GMI theme graph (W1b) — the display-tier semantic spine ------------------
+  # A PRODUCT DATA PLANE, not a lobe (masterplan §4.5): it assembles what owners already
+  # emit and computes no score, rank or weight of its own. All three entries carry the
+  # full six-boolean authority block at literal false — can_add_candidates: false is the
+  # machine-checkable form of §5.2's "GMI can neither source nor veto a pick".
+
+  theme-graph-nodes:
+    path: data/theme_graph/nodes.parquet
+    format: parquet
+    producer: scripts/build_theme_graph.py
+    known_extra_writers: []
+    owner_program: gmi-theme-graph
+    cadence: daily-engine
+    storage: git
+    asof_field: computed_at
+    freshness_sla_hours: 36
+    schema: theme_graph.nodes.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Canonical nodes of the theme graph: themes, companies, baskets and ETF proxies,
+      keyed by a PERMANENT id. A company node id never re-points at a different company —
+      a reused ticker retires the old node and mints the new holder at identity_epoch+1,
+      and epochs come only from ratified rows in config/theme_graph_identity_breaks.yml
+      (reused-ticker zombie law). Row contract: contracts/theme_graph/nodes.v1.schema.json,
+      enforced by scripts/check_theme_graph_contracts.py (law theme_graph.edge_contract).
+      Display tier, zero authority, no fused composite anywhere in GMI. Surfaces order by
+      recency or canonical id ONLY (G0.11) — a query returning members sorted by any
+      magnitude is a ranker and is forbidden. asof_field is the per-row computed_at; the
+      _meta.json sibling beside these parquets carries the same stamp for the whole run
+      alongside the row counts and the living THS coverage numbers.
+
+  theme-graph-edges:
+    path: data/theme_graph/edges.parquet
+    format: parquet
+    producer: scripts/build_theme_graph.py
+    known_extra_writers: []
+    owner_program: gmi-theme-graph
+    cadence: daily-engine
+    storage: git
+    asof_field: computed_at
+    freshness_sla_hours: 36
+    schema: theme_graph.edges.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Append-only BITEMPORAL edges (MEMBER_OF, EXPRESSES, TRACKS in W1b). One edge_id may
+      hold many rows; the current view is the max belief_time per edge_id
+      (engine.theme_graph.store.read_edges) and a closed interval APPENDS a row carrying
+      valid_to rather than editing the row that opened it — dead members never leave a
+      denominator. era separates reconstruction (assembled after the fact, never
+      promotion evidence, G0.2) from observed, and date_provenance flags the seed
+      CONSTANT every membership document uses for its first-run members: that date is
+      where a series begins, not when a company joined a theme. The three exposure axes
+      and their display enums are RESERVED-NULL until W2 measures them. Contradictory
+      evidence coexists as rows; nothing nets. Ordering is recency/id only (G0.11).
+
+  theme-graph-evidence:
+    path: data/theme_graph/evidence.parquet
+    format: parquet
+    producer: scripts/build_theme_graph.py
+    known_extra_writers: []
+    owner_program: gmi-theme-graph
+    cadence: daily-engine
+    storage: git
+    asof_field: computed_at
+    freshness_sla_hours: 36
+    schema: theme_graph.evidence.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Dated receipts every edge's evidence_refs resolve into. Being DATED is what makes
+      the semantic-leakage law checkable (§4.4): an edge whose evidence cannot be dated is
+      knowledge from nowhere, and the guard refuses it — structurally for
+      source_class=llm_proposed_ratified, of which zero exist, so the first one cannot
+      land quietly. Licensing tags travel with the receipt: house-authored curation is
+      internal/display/redistribution true, vendor-derived (同花顺) rows keep
+      redistribution false. Corroborating and contradictory receipts are separate rows.
+
   # --- Price Pressure lobe (DRL W1) — display-tier single-name residual shocks ---
 
   price-pressure-latest:
