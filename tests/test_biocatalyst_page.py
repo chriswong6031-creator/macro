@@ -342,18 +342,22 @@ def test_biocatalyst_change_tape_client_contract_is_mode_bound_and_fail_closed()
     """Change Tape reads the replay-verified tape, and only what it actually carries.
 
     The tape route serves a field-class ledger: which registry field changed,
-    between which submitted versions, and when the replay verified it. It does
-    NOT carry the field's before/after values, so the browser must render the
-    recorded state transition and route to the dossier for values instead of
-    inventing them. It must also keep an endpoint-alignment candidate at
-    needs_review rather than calling it a protocol change or a material event.
+    between which submitted versions, and when the replay verified it. Newer
+    rows also carry bounded exact JSON values, an RFC 6901 source pointer, and
+    explicit predecessor lineage. The browser must validate that optional
+    extension as one unit, preserve older rows, and never turn lineage into a
+    correction assessment. Endpoint-alignment candidates remain needs_review.
     """
 
     js = (TEMPLATES / "biocatalyst.js").read_text(encoding="utf-8")
+    css = (TEMPLATES / "biocatalyst.css").read_text(encoding="utf-8")
     html = _render()
 
     for token in (
         "var CHANGE_API = '/api/biocatalyst/v1/trials/change-tape'",
+        "function utf8Length(value)",
+        "function validTapeValueEntry(entry)",
+        "function validTapeExtension(change, versions)",
         "function validTapeChange(change)",
         "function validTapeItem(item)",
         "function validateChangeEnvelope(payload)",
@@ -384,6 +388,17 @@ def test_biocatalyst_change_tape_client_contract_is_mode_bound_and_fail_closed()
         "protocol_change_asserted') === false",
         "materiality_assessed') === false",
         "correction_assessed') === false",
+        "validTapeExtension(change, versions)",
+        "typeof exact === 'undefined' && typeof lineage === 'undefined'",
+        "tape_value_budget_exhausted",
+        "value_bytes_not_representable",
+        "predecessor_source_version",
+        "predecessor_exact_operation_index",
+        "prior_tape_row",
+        "predecessorVersion > beforeVersion",
+        "clean(valueAt(beforeValue, 'state')) !== beforeState",
+        "operation === 'remove' ? 'clears_prior_recorded_value'",
+        "truncated ? byteLength > 4096",
         "isChangeMode()) { rows = validateChangePage(payload.change_tape, existingRows);",
     ):
         assert token in js
@@ -402,11 +417,36 @@ def test_biocatalyst_change_tape_client_contract_is_mode_bound_and_fail_closed()
     assert "尚未核对" in js
     assert "fieldClass === 'endpoint_record_delta' ? (reviewState === 'needs_review' && resolution === 'unresolved')" in js
 
-    # The tape carries no field values, so the row states the recorded transition
-    # and sends the reader to the dossier rather than printing an invented value.
-    assert "Open a row to read the recorded values." in js
+    # Exact values are tier one when present; technical provenance stays in a
+    # dossier disclosure. Older pre-extension rows retain the state fallback.
+    for token in (
+        "function tapeValueLabel(entry)",
+        "function tapeValueSide(label, entry)",
+        "function tapeExactDelta(exact, detail)",
+        "function tapeLineageLabel(lineage)",
+        "valueAt(change, 'exact_values')",
+        "Source & lineage",
+        "Source position",
+        "Recorded lineage",
+        "Correction status",
+        "Not assessed",
+        "Prefix shown · original ",
+        "exact recorded JSON values",
+        "does not carry exact value disclosure",
+    ):
+        assert token in js
+    assert "Open a row for the source position and recorded lineage." in js
     assert "function recordStateLabel(name)" in js
     assert "not on the record" in js
+    for token in (
+        ".bci-tape-exact {",
+        ".bci-tape-value code {",
+        ".bci-tape-exact.is-detail",
+        ".bci-tape-disclosure {",
+        "white-space: pre-wrap",
+        "overflow-wrap: anywhere",
+    ):
+        assert token in css
 
     assert "localStorage" not in js
     assert "sessionStorage" not in js
