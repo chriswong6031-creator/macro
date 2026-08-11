@@ -707,6 +707,11 @@ def _money_finite(value: object) -> float | None:
     Kept import-free on purpose: `math.isfinite` would be a second stdlib
     import into a module whose docstring pins the closure at `re`.
     """
+    if isinstance(value, bool):
+        # JSON booleans are integers in Python, but they are never dollar
+        # observations. Rendering a schema mistake as "$1" is a false fact,
+        # not a useful fail-soft conversion.
+        return None
     try:
         f = float(value)  # type: ignore[arg-type]
     except (TypeError, ValueError, OverflowError):

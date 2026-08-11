@@ -4241,13 +4241,13 @@ def register_v4_violations(text: str, ctx: dict | None) -> list[str]:
 #: First person, uppercase branch. Written case-sensitively on purpose: the
 #: pronoun "I" is uppercase in English, and a case-insensitive "\bi\b" fires on
 #: "i.e." and on a stray list marker.
-_V5_FIRST_PERSON_UPPER_RE = re.compile(r"\bI(?:'m|'d|'ll|'ve)?\b")
+_V5_FIRST_PERSON_UPPER_RE = re.compile(r"(?<!\$)\bI(?:'m|'d|'ll|'ve)?\b")
 
 #: The rest of the first-person family. "us" and "mine" are DELIBERATELY absent:
 #: "US" is the country in every macro post this house writes, and "mine" is a
 #: noun on any commodities desk. "we" is caught here and exempted by value below.
 _V5_FIRST_PERSON_LOWER_RE = re.compile(
-    r"\b(?:my|me|we|our|ours)\b", re.IGNORECASE)
+    r"(?<!\$)\b(?:my|me|we|our|ours)\b", re.IGNORECASE)
 
 #: The one first-person phrase the house keeps: it states what the business
 #: DOES (publishes graded calls), which is a fact about the product rather than
@@ -4396,7 +4396,7 @@ def voice_v5_violations(text: str, ctx: dict | None = None) -> list[str]:
         out.append("'so far today': say 'today', or say nothing. The timestamp "
                    "already carries it")
 
-    if "!" in raw and not is_wire:
+    if "!" in raw:
         out.append("exclamation mark: zero of 679 shipped items and zero of 205 "
                    "real reference posts carry one")
 
@@ -4404,8 +4404,23 @@ def voice_v5_violations(text: str, ctx: dict | None = None) -> list[str]:
         out.append("hashtag: a cashtag is the only tag this register uses")
 
     for m in _V5_RAW_MONEY_RE.finditer(raw):
-        if m.group(3) or m.group(4):
-            continue  # already humanized ($7.6B, $200 billion)
+        suffix = str(m.group(3) or "").upper()
+        if suffix:
+            # A suffix alone is not enough: the defect that motivated this
+            # gate was literally "$1000K". K/M/B all have a reviewed next
+            # band, so a four-digit mantissa means the producer failed to
+            # promote it. T is the documented ceiling ("$1000T" stays
+            # readable rather than inventing a Q suffix).
+            mantissa = float(m.group(1).replace(",", "") + (m.group(2) or ""))
+            if suffix in {"K", "M", "B"} and mantissa >= 1000.0:
+                out.append(
+                    f"four-digit dollar mantissa '{m.group(0).strip()}': "
+                    f"promote it to the next K/M/B/T band"
+                )
+                break
+            continue  # already humanized ($7.6B)
+        if m.group(4):
+            continue  # already humanized ($200 billion)
         digits = m.group(1).replace(",", "")
         if len(digits) > _V5_RAW_MONEY_MAX_DIGITS:
             out.append(

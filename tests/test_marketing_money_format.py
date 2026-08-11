@@ -198,7 +198,7 @@ def test_signed_prefixes_positives_only_and_never_signs_zero():
 
 @pytest.mark.parametrize("bad", [
     None, float("nan"), float("inf"), float("-inf"),
-    "", "  ", "abc", "$1,000", [], {}, (), object(), b"nope",
+    "", "  ", "abc", "$1,000", True, False, [], {}, (), object(), b"nope",
 ])
 def test_unusable_input_returns_empty_string_so_a_caller_can_fall_back(bad):
     """A money formatter that raises takes the whole post down with it.
@@ -209,11 +209,10 @@ def test_unusable_input_returns_empty_string_so_a_caller_can_fall_back(bad):
     assert humanize_money(bad) == ""
 
 
-def test_it_accepts_anything_float_accepts():
+def test_it_accepts_finite_numeric_text_and_bytes_but_not_schema_booleans():
     assert humanize_money("7639791784") == "$7.64B"
     assert humanize_money(" 1000000 ") == "$1.0M"
     assert humanize_money(b"7639791784") == "$7.64B"   # float() takes bytes too
-    assert humanize_money(True) == "$1"          # bool is an int is a float
     assert humanize_money(math.pi * 1e9) == "$3.14B"
 
 

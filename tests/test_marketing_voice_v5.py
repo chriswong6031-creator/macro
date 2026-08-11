@@ -408,6 +408,15 @@ def test_the_wire_exemption_is_scoped_and_does_not_leak():
     assert cw.voice_v5_violations("Nasdaq is up. Watching, no position.",
                                   wire_ctx) != []
     assert cw.voice_v5_violations("Nasdaq is up 2% so far today.", wire_ctx) != []
+    assert cw.voice_v5_violations("Nasdaq is up 2%!", wire_ctx) != []
+
+
+def test_first_person_screen_does_not_mistake_cashtags_for_pronouns():
+    for ticker in ("I", "ME", "MY", "WE", "OUR"):
+        violations = cw.voice_v5_violations(
+            f"${ticker} held 12 into the close.", {"type": "chart"}
+        )
+        assert not any("first person" in row for row in violations), ticker
 
 
 def test_the_screen_rejects_an_unhumanized_dollar_figure():
@@ -416,6 +425,11 @@ def test_the_screen_rejects_an_unhumanized_dollar_figure():
                for h in cw.voice_v5_violations(raw, {"type": "breaking"})), raw
     ok = "The move erased $7.64B in market cap."
     assert cw.voice_v5_violations(ok, {"type": "breaking"}) == []
+    for raw_mantissa in ("$1000K", "$1000M", "$1500B"):
+        violations = cw.voice_v5_violations(
+            f"The move erased {raw_mantissa} in market cap.", {"type": "breaking"}
+        )
+        assert any("four-digit dollar mantissa" in row for row in violations)
 
 
 def test_the_prompt_and_the_gate_state_the_same_law():
