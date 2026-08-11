@@ -5116,6 +5116,30 @@ jobs:
         run: TZ=UTC python -m pytest tests/test_us_basket_membership_pit.py -q
       - name: membership snapshot freshness tripwire — cadence, source, coherence
         run: TZ=UTC python -m pytest tests/test_membership_snapshot_freshness.py -q
+      # GMI W1b — the theme-graph semantic spine built ON TOP of those membership
+      # documents. Split into four steps so a red names which contract broke: node
+      # identity (permanent company ids, ratified epochs), the materialization
+      # (bitemporal intervals, era/date_provenance honesty, the THS join), the guard
+      # itself, and the CN limit-rule registry's parity against the canonical engine.
+      # TZ=UTC because these writers stamp UTC dates the tests read back.
+      - name: theme graph — permanent node identity and ratified epochs
+        run: TZ=UTC python -m pytest tests/test_theme_graph_identity.py -q
+      - name: theme graph — bitemporal materialization from the membership documents
+        run: TZ=UTC python -m pytest tests/test_theme_graph_materialize.py -q
+      - name: theme graph — contract guard (incident fixtures + annotation shape)
+        run: TZ=UTC python -m pytest tests/test_theme_graph_contracts.py -q
+      - name: theme graph — crosswalk v3 additive integrity
+        run: TZ=UTC python -m pytest tests/test_theme_graph_crosswalk.py -q
+      - name: CN limit-rule registry — schema, continuity, parity vs china_microstructure
+        run: TZ=UTC python -m pytest tests/test_cn_limit_rules.py -q
+      # The guard on the COMMITTED store, not only on its fixtures: --selftest proves it
+      # can still see each incident, --strict proves the store shipped in this repo
+      # satisfies the contract. A guard that only ever runs against its own fixtures is
+      # a guard the guarded artifact cannot trigger.
+      - name: theme graph contract guard against the committed store
+        run: |
+          python -m scripts.check_theme_graph_contracts --selftest
+          python -m scripts.check_theme_graph_contracts --strict
 
   unrun-data-plane:
     # R2 transport, accrual audits and the ledger-advance guards.
