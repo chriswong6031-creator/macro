@@ -919,8 +919,10 @@ lanes:
           live_flow event stage (never capped feed_current), validates the monotonic
           checkpoint, freezes exact decision episodes, and accrues explicitly labeled
           aligned-bar H+60 proxies plus separate EOD/1d/3d/5d/10d declared-session-close
-          outcomes from the same receipt-bound intraday cache. The H+60 v1 ledger
-          remains unchanged. All decision and training authority is false;
+          outcomes from the same receipt-bound intraday cache. It then derives the
+          zero-authority exact-contract first-prefix campaign ledger from persisted
+          episodes and reloaded H+60 rows before advancing the checkpoint. The H+60
+          v1 ledger remains unchanged. All decision and training authority is false;
           coarse/delayed measurements are training_eligible=false. Runs serially
           after build_session_digest and advances all committed ledgers before the
           source checkpoint, only in COLLECT_LANE=nightly. Non-fatal.
