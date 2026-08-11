@@ -142,209 +142,255 @@ _DEFAULT_TILT: dict[str, float] = {
     "theme_list": 0.06,
 }
 
-# Per-account voice copy templates — (type_id, voice) -> (headline_template, body_template)
+# Per-account voice copy templates: (type_id, voice) -> (headline_template, body_template)
 # Placeholder tokens: {ticker}, {cashtag}, {direction}, {entry}, {target1}, {stance}
+#
+# VOICE DOCTRINE v5 (docs/marketing_voice_doctrine_v5.md, adjudicated 2026-08-11).
+# THE READ IS IN THE SELECTION, NOT IN A PERFORMED REACTION: the subject of every
+# sentence is the MARKET, never the author. This bank is the deterministic floor
+# and the LLM copywriter overwrites it on any normal night, which is exactly why
+# it has to carry the v5 register too. A scaffold left in the v4 voice is a
+# REINFECTION SOURCE: it ships whenever the model lane drops, and it is the
+# nearest in-repo example for whoever writes the next bank.
+#
+# Banned in this bank, permanently: first person (I, I'm, my, me, we, our, us),
+# question marks, exclamation marks, advice imperatives (watch, keep an eye on,
+# don't chase), compliance caveats ("Historical, not a promise", "Size it
+# sensibly"), engagement bait, closer cheese ("Watching, no position", "Levels,
+# not advice"), meta-language about the post or the number, and em/en dashes.
+# Invalidation is stated as a fact about the LEVEL ("Below 209 the trigger is
+# gone"), never as a fact about the author's trust ("I trust it only above 209").
+# Plan copy also stays FACT-NEUTRAL: only the fact layer may describe the tape.
+# tests/test_marketing_voice_v5.py is the census-by-content ratchet over this
+# bank, so a v4 line reintroduced here fails CI instead of shipping.
 _COPY_TEMPLATES: dict[tuple[str, str], tuple[str, str]] = {
     # signal — authoritative desk
     ("signal", "authoritative desk"): (
         "Flagged {cashtag} at {entry}",
-        "We're in {ticker} at {entry}, first target {target1}. "
-        "If it closes back under {entry} I'm wrong and I'm out. Size it sensibly.",
+        "{ticker} triggered at {entry}. First target {target1}. "
+        "Below {entry} the trigger is gone, so the entry and the invalidation "
+        "sit on the same number.",
     ),
     # signal — dry, receipts-forward
     ("signal", "dry, receipts-forward"): (
-        "{cashtag}, in at {entry}",
-        "{ticker} flagged. T1 {target1}. Out on a close below {entry}. "
-        "Historical, not a promise. Win or lose it goes on the page.",
+        "{cashtag} at {entry}",
+        "{ticker} triggered. Target {target1}. A close under {entry} ends it. "
+        "The result posts either way.",
     ),
     # signal — specialist
     ("signal", "specialist"): (
-        "{cashtag} at {entry}, and the group's confirming",
-        "{ticker} is doing the thing I wait for in these names. "
-        "In around {entry}, first level {target1}. The rest of the group's moving with it. "
-        "Close back below {entry} and I'm out. Sizing matters more than being right.",
+        "{cashtag} triggers inside the group at {entry}",
+        "{ticker} triggered at {entry}. First target {target1}. "
+        "Below {entry} the trigger is gone and the name drops back to the "
+        "group list.",
     ),
     # signal — educational
     ("signal", "educational"): (
         "A live one: {cashtag}",
-        "We talk about setups in the abstract, so here's a real one. {ticker} at {entry}, "
-        "first target {target1}. What proves me wrong: a close under {entry}. "
-        "Win or lose it goes on the page so you can watch it play out.",
+        "{ticker} triggered at {entry}, first target {target1}. "
+        "The trigger and the invalidation are the same number: below {entry} "
+        "the level is gone.",
     ),
     # signal — fast, reactive
     ("signal", "fast, reactive"): (
-        "{cashtag} moving. In at {entry}",
-        "{ticker} moving. In at {entry}, target {target1}. "
-        "Out under {entry}. On the board. Historical, not a promise.",
+        "{cashtag} through {entry}",
+        "{ticker} through {entry}. Target {target1}. Under {entry} it is over.",
     ),
     # signal — pattern/history
     ("signal", "pattern/history"): (
-        "{cashtag} is tracing something I've seen before",
-        "{ticker} is doing the same shape it did last time it ran. "
-        "In at {entry}, target {target1}. Close under {entry} and the rhyme breaks. "
-        "Rhyme, not repeat. Win or lose it goes on the page.",
+        "{cashtag} tests {entry}",
+        "{ticker} tests {entry}. First target {target1}. "
+        "A close under {entry} breaks the shape. Rhyme, not repeat.",
     ),
-    # chart — all voices share a template per voice; use fallbacks
+    # chart — all voices share a template per voice; use fallbacks.
+    # A chart caption ORIENTS the eye and stops; the image pays it off.
     ("chart", "authoritative desk"): (
         "{ticker}, one chart",
-        "The chart on {ticker} this week. {entry} is the level I keep watching. "
-        "No hot take beyond what you can see.",
+        "{ticker} this week. {entry} is the level marked on the chart. "
+        "Price and volume, nothing added.",
     ),
     ("chart", "dry, receipts-forward"): (
         "{ticker} chart",
-        "{ticker} at {entry}. That's the whole post.",
+        "{ticker} at {entry}. One line, one chart.",
     ),
     ("chart", "specialist"): (
-        "{ticker} chart, and it matters for the group",
-        "This week's chart for my corner of the market. {ticker} at {entry}.",
+        "{ticker} chart, group context",
+        "This week's chart inside the group: {ticker} at {entry}.",
     ),
     ("chart", "educational"): (
-        "{ticker}, let me walk you through this",
-        "Walking through what this chart's showing on {ticker} at {entry}. "
-        "Notice the trend, the level, and the volume.",
+        "{ticker}, what the chart shows",
+        "{ticker} at {entry}. The frame draws the trend, the {entry} line, "
+        "and where the volume traded.",
     ),
     ("chart", "fast, reactive"): (
         "{ticker} chart, quick",
-        "Fast chart on {ticker}. Level {entry}. Your call.",
+        "Fast chart on {ticker}. The level is {entry}.",
     ),
     ("chart", "pattern/history"): (
-        "{ticker}, this chart looks familiar",
-        "This chart on {ticker} matches something I've watched before. Level {entry}. Context below.",
+        "{ticker}, against its own history",
+        "{ticker} at {entry}, plotted back far enough to show how that line has behaved before.",
     ),
-    # education — unique per voice
+    # education — unique per voice. v5 keeps this family as MARKET-MECHANICS
+    # explainers only; the method essay ("How I keep myself honest") is the
+    # register the operator killed, and it is also the whole first-person load.
     ("education", "authoritative desk"): (
-        "What flagging something actually means",
-        "When we put a name on the board it means the setup lined up, not that it's a sure thing. "
-        "The number that goes with it is where I'm wrong.",
+        "What a flagged name actually means",
+        "A flagged name means the conditions lined up, not that the outcome is "
+        "known. The number attached to it is the price where those conditions "
+        "stop being true.",
     ),
     ("education", "dry, receipts-forward"): (
-        "How I keep myself honest",
-        "Every call gets a result posted, win or lose, same flat tone either way. "
-        "No quietly forgetting the ones that didn't work.",
+        "Stops, plainly",
+        "A stop is the price at which the reason for owning something stopped "
+        "being true. It is not a forecast and it is not a target.",
     ),
     ("education", "specialist"): (
-        "The thing most people get wrong about this group",
-        "Most folks read these names through the wrong lens. Here's how I actually think about them.",
+        "How a group move reads",
+        "A group that moves together is usually pricing one input: rates, a "
+        "commodity, or a single customer. The name that breaks ranks is the "
+        "one with its own story.",
     ),
     ("education", "educational"): (
-        "Plain English: what's a 'setup'?",
-        "It's a price picture that's usually been worth paying attention to. "
-        "Not a buy button, just a reason to look closer.",
+        "Plain English: why a level matters",
+        "A price level matters because size traded there. The buyers from that "
+        "price are ahead while it holds and underwater when it does not.",
     ),
     ("education", "fast, reactive"): (
-        "Quick: reading momentum",
-        "Fast version of what momentum actually tells you, and what it doesn't.",
+        "Quick: what momentum measures",
+        "Momentum measures how far and how fast price has already moved. "
+        "It says nothing about why, and nothing about what comes next.",
     ),
     ("education", "pattern/history"): (
-        "When history rhymes, read it carefully",
-        "Old analogues are useful and dangerous at once. Here's how I use them without kidding myself.",
+        "What an analog is worth",
+        "An analog is a base rate, not a forecast. Ten prior cases with seven "
+        "green closes is a tilt, and the three that failed are part of the "
+        "same number.",
     ),
-    # macro — per voice ({stance} = 'constructive' | 'cautious')
+    # macro — per voice ({stance} = 'constructive' | 'cautious'). The stance is
+    # COMPUTED from the plan's direction, so it may be stated as a read on the
+    # data; it may never be narrated as the author's feeling about the data.
     ("macro", "authoritative desk"): (
-        "What the data's saying this week",
-        "I'm {stance} here. I'd rather own quality and stay patient than chase. "
-        "Watching the next print closely.",
+        "What the data says this week",
+        "The week's data leaves the read {stance}. The next print is what "
+        "changes it, not the commentary in between.",
     ),
     ("macro", "dry, receipts-forward"): (
         "Macro, plainly",
-        "I'm {stance} on risk right now. I'll update when the picture actually shifts.",
+        "Risk reads {stance} right now. The read updates when the data shifts, not before.",
     ),
     ("macro", "specialist"): (
-        "Why the macro matters for these names",
-        "The big picture matters more for my group right now. "
-        "I'm {stance}, and adjusting the names accordingly.",
+        "What the macro does to this group",
+        "For this group the macro is the larger input. The read is {stance}, "
+        "and the names sit downstream of it.",
     ),
     ("macro", "educational"): (
         "The macro in plain words",
-        "Reading it plainly: I'm {stance} here. "
-        "Watching which side blinks first.",
+        "In plain words the read is {stance}. The mechanism does not change "
+        "either way: rates set what future growth is worth today.",
     ),
     ("macro", "fast, reactive"): (
         "Macro, quick: {stance}",
-        "Quick note. I'm {stance}. Adjusting for it.",
+        "Quick note. The read is {stance}. The next print is the test.",
     ),
     ("macro", "pattern/history"): (
-        "This macro setup rhymes with something",
-        "Being {stance} here reminds me of a past setup. Here's what the chart did then.",
+        "This macro mix has precedent",
+        "The read is {stance}, and this mix of prints has shown up before. "
+        "The base rate is what argues either side, not the story around it.",
     ),
     # receipt — per voice
     ("receipt", "authoritative desk"): (
-        "How that call played out",
-        "We called it. Here's the result with the numbers, whichever way it went. "
-        "Something to learn from either way.",
+        "How that call resolved",
+        "Entry, outcome, and the number, whichever way it went. "
+        "The result stands as printed.",
     ),
     ("receipt", "dry, receipts-forward"): (
         "Call result",
-        "We made a call. Here's what happened, straight to the number.",
+        "One call, one outcome, one number. Win or lose, the same fields print.",
     ),
     ("receipt", "specialist"): (
-        "How the group read played out",
-        "Following up on that call off the group's move. Here's the result.",
+        "How the group read resolved",
+        "The call came off the group's move. The outcome and the number "
+        "follow, in the same format as every other one.",
     ),
     ("receipt", "educational"): (
         "One result, posted flat",
-        "We said it. Here's what happened. This is what showing your work looks like.",
+        "A result post is three fields: entry, outcome, number. "
+        "Everything past those three is decoration.",
     ),
     ("receipt", "fast, reactive"): (
-        "Called it, here's the result",
-        "Called it. Here's what happened, straight to the numbers.",
+        "Called, and here is the result",
+        "The call, the outcome, the number. No adjectives on either side of it.",
     ),
     ("receipt", "pattern/history"): (
-        "Did the rhyme hold?",
-        "We flagged the shape. Here's whether it followed through this time.",
+        "Whether the rhyme held",
+        "The shape was flagged, and this is how it resolved. "
+        "One case is a case, not a rule.",
     ),
-    # watchlist — per voice
+    # watchlist — per voice. "Watching, no position." and "Levels, not advice."
+    # were the two dominant closers in the 679-item census and are banned
+    # families now: both are confession/disclaimer register, and the advice verb
+    # is a house-epistemics violation on top of a voice one.
     ("watchlist", "authoritative desk"): (
-        "On my radar this week",
-        "Names I'm watching but haven't touched. Keeping the list honest.",
+        "On the list this week",
+        "Names on the list, none of them triggered yet. A name earns the list "
+        "on structure and leaves it the same way.",
     ),
     ("watchlist", "dry, receipts-forward"): (
-        "Watching, no position",
-        "Watching these. Not in yet. I'll update if something triggers.",
+        "On the list, nothing triggered",
+        "These are on the list. Nothing has triggered. Anything that does gets "
+        "its own post with the number.",
     ),
     ("watchlist", "specialist"): (
-        "Names in my group I'm watching",
-        "These are setting up in my corner of the market. Watching, not acting yet.",
+        "Group names on the list",
+        "These names sit inside the group. None has triggered, and the group's "
+        "own move is the reason each one is here.",
     ),
     ("watchlist", "educational"): (
-        "What earns a spot on a watch list",
-        "These are the names I'm monitoring and why each one's on the list.",
+        "What earns a spot on a list",
+        "A name earns a slot for a structural reason: a level tested more than "
+        "once, the tightest range in months, a shelf of volume. Without one of "
+        "those it is noise.",
     ),
     ("watchlist", "fast, reactive"): (
-        "Watching these right now",
-        "Fast list of names worth attention. No position yet.",
+        "On the list right now",
+        "Fast list. None of these has triggered. The trigger post carries the number.",
     ),
     ("watchlist", "pattern/history"): (
-        "Patterns I'm watching",
-        "Names tracing shapes worth monitoring. Context below.",
+        "Shapes on the list",
+        "These names are tracing shapes with prior cases behind them. "
+        "None has triggered. A prior case is a base rate, not a forecast.",
     ),
     # event — per voice. Plan copy must stay FACT-NEUTRAL: "the data says one
     # thing, the price says another" asserts a divergence the template cannot
     # know. Only the fact layer may describe the tape.
     ("event", "authoritative desk"): (
-        "My read on today's move",
-        "Here's how I'm reading today's move, and what would change my mind. "
-        "Watching the close.",
+        "Today's move, and the numbers behind it",
+        "Today's move, with the numbers behind it and the level that would "
+        "change the read. The close is the print that counts.",
     ),
     ("event", "dry, receipts-forward"): (
         "Today's event, numbers first",
-        "Event happened. Here are the numbers and what they change.",
+        "The event happened. The numbers, and what they change, follow.",
     ),
     ("event", "specialist"): (
-        "What today's event does to my group",
-        "Today's event flows straight into the names I watch. Here's the read.",
+        "What today's event does to the group",
+        "Today's event runs straight into the group. The numbers, and the "
+        "level that matters for the group, follow.",
     ),
     ("event", "educational"): (
         "What today's event actually means",
-        "Big event today. Cutting through the noise and watching how markets price it in.",
+        "A print like today's reaches the market through one channel: what it "
+        "does to expected rates and expected growth.",
     ),
     ("event", "fast, reactive"): (
         "Reaction: {event_name}",
-        "Fast take on today's event. Key number: {entry}. What I'm watching next.",
+        "Fast read on today's event. The number is {entry}. "
+        "The next print is the test.",
     ),
     ("event", "pattern/history"): (
-        "How events like this have played out",
-        "We've seen this kind of day before. Watching if it rhymes.",
+        "How days like this have resolved",
+        "Days shaped like this one have a record behind them. "
+        "That base rate is a tilt, not a forecast.",
     ),
 }
 

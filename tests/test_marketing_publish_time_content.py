@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from engine.marketing import outbox, publish_time_content as pt
+from engine.marketing import movers_source, outbox, publish_time_content as pt
 
 
 # Thursday 2026-07-23, 14:05 UTC == 10:05 ET → the AM slot, mid-session.
@@ -239,14 +239,20 @@ def test_mover_copy_has_cashtag_and_live_pct(tmp_path):
     assert "-14.0%" in mv["text"]          # the LIVE overlaid pct, not the stale 0.1
 
 
-def test_theme_copy_names_at_most_the_cap_and_ends_with_question(tmp_path):
-    """A generated theme item names AT MOST the cap, and its body ends with '?'.
+def test_theme_copy_names_at_most_the_cap_and_ends_on_the_breadth_fact(tmp_path):
+    """A generated theme item names AT MOST the cap, and its body ends on a
+    STATEMENT, never a question.
 
     REWRITTEN FOR DEFECT 1 (operator, live 2026-08-03). This test used to assert
     ``len(cashtags) >= 4`` — it encoded copywriter's floor as this lane's law, so
     the eight-cashtag spam fingerprint the operator caught was a PASSING state
     here. The floor belongs to a bank that predates the card; the account-safety
     ceiling is what this lane owes X. The assertion is inverted accordingly.
+
+    INVERTED AGAIN FOR VOICE DOCTRINE v5 (2026-08-11): the second half asserted
+    ``endswith("?")``, mirroring copywriter.validate_copy's theme_list "?"
+    REQUIREMENT. That requirement is now a "?" BAN, and the group post ends on
+    the breadth fact from movers_source's tail banks.
     """
     _write_themes(tmp_path, [_theme_tile("Artificial Intelligence", {
         "NVDA": 0.0, "AMD": 0.0, "SMCI": 0.0, "MU": 0.0, "AVGO": 0.0})])
@@ -260,7 +266,9 @@ def test_theme_copy_names_at_most_the_cap_and_ends_with_question(tmp_path):
     import re
     cashtags = set(re.findall(r"\$[A-Z]{1,5}", tl["text"]))
     assert 0 < len(cashtags) <= pt._DEFAULTS["max_theme_cashtags_in_text"], tl["text"]
-    assert tl["text"].rstrip().endswith("?")
+    assert not tl["text"].rstrip().endswith("?"), tl["text"]
+    assert tl["text"].rstrip().endswith(
+        tuple(movers_source._TAIL_UP) + tuple(movers_source._TAIL_DOWN)), tl["text"]
 
 
 def test_copy_differs_across_accounts_same_slot(tmp_path):
@@ -630,11 +638,15 @@ def _theme_candidate(direction: str) -> dict:
     sign = 1.0 if direction == "up" else -1.0
     members = [{"ticker": t, "pct": sign * p}
                for t, p in (("NVDA", 4.1), ("AMD", 3.2), ("SMCI", 2.8), ("AVGO", 2.2))]
+    # The tail comes from the LIVE pools rather than a hard-coded literal: the
+    # v4 fixture pinned "Which one breaks out first?" and went stale the day the
+    # bank was rewritten for Voice Doctrine v5 (2026-08-11), which is exactly the
+    # failure a fixture copied out of a bank always has.
+    tail = movers_source._TAIL_UP[0] if direction == "up" else movers_source._TAIL_DOWN[0]
     tl = {"theme": "Artificial Intelligence", "direction": direction,
           "tone": "ripping" if direction == "up" else "selling off",
           "members": members, "agg_pct": round(sign * 3.1, 2),
-          "question": ("Which one breaks out first?" if direction == "up"
-                       else "Which one comes back first?")}
+          "question": tail}
     return {"type": "theme_list", "ticker": "", "cashtags": [f"${m['ticker']}" for m in members],
             "_theme_data": tl, "_theme_facts": movers_source.theme_facts(tl),
             "_lead_ticker": members[0]["ticker"], "_lead_pct": members[0]["pct"],
@@ -1244,18 +1256,31 @@ def test_a_theme_whose_members_span_two_sessions_is_refused(tmp_path):
 
 def test_the_four_historical_bait_tails_are_all_caught(tmp_path):
     """The exact strings from the four live publisher_live_movers posts, plus a
-    stance tail that must NOT be caught. A blocklist of these four would be a
-    regression pin; _tail_is_bait is a positive test (is the final question about
-    the AUTHOR?), so the fifth bait line nobody has written yet is caught too."""
+    statement tail that must NOT be caught.
+
+    WIDENED FOR VOICE DOCTRINE v5 (2026-08-11). The v4 rule was a positive test
+    about WHO the final question was about: a first-person question was spared,
+    because the house register was a persona reacting to a trade. The bottom
+    three strings below used to live in the "not bait" list for exactly that
+    reason. v5 bans first person AND question marks in generated post copy, so
+    the exemption those three relied on is now itself a violation and they move
+    up into the caught set. The rule is one line now: any interrogative tail is
+    bait, whoever it is about — which also means the fifth bait line nobody has
+    written yet is still caught.
+    """
     for bait in ("Dead-cat bounce or the real dip?",
                  "Which one breaks out first?",
                  "$LII -19.6%\n\nLII crashed today. Watching, not chasing. What's your read?",
                  "Who leads this group higher?",
-                 "So which is it, a top or a pause?"):
+                 "So which is it, a top or a pause?",
+                 # ── retired v4 carve-out: first person no longer buys a pass ──
+                 "I want one quiet close before I touch this group. Am I too slow here?",
+                 "Passing on the whole group here. Does that cost me the snapback?",
+                 "Am I getting a second session out of this?"):
         assert pt._tail_is_bait(bait), bait
     for ok in ("Tape check. Not touching it yet.",
-               "I want one quiet close before I touch this group. Am I too slow here?",
-               "Passing on the whole group here. Does that cost me the snapback?"):
+               "Breadth inside the group, not one leader.",
+               "$NVDA closed above 209 for the first time in three weeks."):
         assert not pt._tail_is_bait(ok), ok
 
 
@@ -1271,8 +1296,12 @@ def test_a_bait_tail_is_re_rolled_onto_another_variant(tmp_path, monkeypatch):
             baity = "-r" not in str(ctx.get("slot") or "")
             out.append({
                 "headline": "$ISRG -14.0%",
+                # The escape body is a v5 STATEMENT (2026-08-11). It used to be
+                # "I'm not touching it. Am I too slow?", which the widened rule
+                # now classifies as bait too, so the loop would exhaust and this
+                # test would prove the opposite of what it says.
                 "body": ("ISRG fell today. What's your read?" if baity
-                         else "ISRG fell today. I'm not touching it. Am I too slow?"),
+                         else "ISRG fell today. The 50-day is now overhead."),
                 "violations": [], "mode": "deterministic"})
         return out
 
@@ -1284,7 +1313,7 @@ def test_a_bait_tail_is_re_rolled_onto_another_variant(tmp_path, monkeypatch):
     assert rep["generated"], rep["dropped"]
     mv = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "mover")
     assert "What's your read?" not in mv["text"]
-    assert mv["text"].rstrip().endswith("Am I too slow?")
+    assert mv["text"].rstrip().endswith("The 50-day is now overhead.")
     # The ITEM's slot label is untouched by the re-roll — only the copy hash moved.
     assert mv["slot"] == "LIVE-AM"
 
@@ -1308,14 +1337,23 @@ def test_copy_that_is_bait_on_every_variant_is_dropped(tmp_path, monkeypatch):
 def test_generated_theme_copy_never_ends_on_reader_bait(tmp_path, monkeypatch,
                                                         real_card):
     """End to end, through the real v3 banks: the shipped theme post ends on a
-    tail whose final question is about the author. Pre-fix the bank's tail was
-    "Which one breaks out first?" and this fails."""
+    STATEMENT. Pre-fix the bank's tail was "Which one breaks out first?".
+
+    Voice Doctrine v5 (2026-08-11) replaced the middle assertion. It read
+    ``endswith("?")`` with the comment "copywriter's theme_list law", because
+    validate_copy required a theme_list body to end on a question — the single
+    upstream line that made every group post reply-bait no matter what the tail
+    bank said. The requirement is now a ban, so the post must end on the tail
+    bank's breadth fact instead.
+    """
     monkeypatch.setattr(real_card, "publish_card", _hosted())
     _theme_fixture(tmp_path)
     rep = _gen(tmp_path, _cfg())
     assert rep["generated"], rep["dropped"]
     tl = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "theme_list")
-    assert tl["text"].rstrip().endswith("?")        # copywriter's theme_list law
+    assert not tl["text"].rstrip().endswith("?"), tl["text"]
+    assert tl["text"].rstrip().endswith(
+        tuple(movers_source._TAIL_UP) + tuple(movers_source._TAIL_DOWN)), tl["text"]
     assert not pt._tail_is_bait(tl["text"]), tl["text"]
 
 
@@ -1465,14 +1503,18 @@ def test_a_too_long_render_is_re_rolled_onto_a_shorter_variant(tmp_path, monkeyp
     from engine.marketing import copywriter
 
     long_body = ("ISRG fell today. " + "The tape kept selling into the close. " * 6
-                 + "I'm not touching it. Am I too slow?")
+                 + "The 50-day average is now overhead.")
     assert len(long_body) > 275, len(long_body)
 
     def _rolled(contexts):
         out = []
         for ctx in contexts:
             first = "-r" not in str(ctx.get("slot") or "")
-            body = long_body if first else "ISRG fell today. I'm out. Am I too slow?"
+            # v5 statement tails on both rolls (2026-08-11): the shorter body was
+            # "I'm out. Am I too slow?", which the widened bait rule now rejects,
+            # so the re-roll would exhaust and this test would stop proving that
+            # a LENGTH violation is what got escaped.
+            body = long_body if first else "ISRG fell today. The 50-day is now overhead."
             out.append({
                 "headline": "$ISRG -14.0%", "body": body, "mode": "deterministic",
                 "violations": ([f"too long: {len(body) + 13} chars (max 275)"]
@@ -1487,7 +1529,7 @@ def test_a_too_long_render_is_re_rolled_onto_a_shorter_variant(tmp_path, monkeyp
     rep = _gen(tmp_path, _cfg())
     assert rep["generated"], rep["dropped"]
     mv = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "mover")
-    assert mv["text"].rstrip().endswith("I'm out. Am I too slow?"), mv["text"]
+    assert mv["text"].rstrip().endswith("The 50-day is now overhead."), mv["text"]
 
 
 def test_a_non_length_violation_is_still_terminal_on_the_first_attempt(tmp_path,
@@ -1555,22 +1597,47 @@ def test_only_length_violations_predicate():
 # _FIRST_PERSON_RE was one case-sensitive alternation, so its lower-case arm
 # only ever matched lower-case pronouns — and a pronoun is capitalised exactly
 # when it opens the sentence, which is the commonest place for it.
+#
+# WHERE THAT DEFECT NOW BITES (Voice Doctrine v5, 2026-08-11). Under v4 the
+# case-blindness cost a re-roll: `_tail_is_bait` used a first-person marker to
+# EXEMPT a trailing question, so a missed pronoun dropped compliant copy. v5
+# retires the exemption — every interrogative tail is bait — and the same
+# patterns now carry the OPPOSITE duty on `llm_phrase_violations`, where a
+# missed pronoun waves the banned first-person register straight through. Same
+# regex, same defect, inverted cost. Both directions are pinned below.
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_a_capitalised_pronoun_opening_the_tail_is_not_bait():
-    """The two repro strings from the review, plus the bare-I control."""
-    for ok in ("My read is nothing here?",
-               "ISRG fell today. Our patience is the cost?",
-               "Mine to miss if it runs?",
-               "Am I too slow here?"):
-        assert not pt._tail_is_bait(ok), ok
+def test_a_capitalised_pronoun_opening_the_tail_is_still_bait():
+    """INVERTED FOR v5. These four used to be the "not bait" list — a
+    first-person question was the shape the rule deliberately spared. It is now
+    doubly banned (first person AND "?"), so sparing it would make this gate the
+    one hole the doctrine leaks through."""
+    for bait in ("My read is nothing here?",
+                 "ISRG fell today. Our patience is the cost?",
+                 "Mine to miss if it runs?",
+                 "Am I too slow here?"):
+        assert pt._tail_is_bait(bait), bait
+
+
+def test_a_capitalised_pronoun_is_still_seen_by_the_first_person_screen():
+    """THE ORIGINAL DEFECT, on the caller that still consults these patterns.
+
+    `_has_first_person` feeds `llm_phrase_violations`' "first_person_banned"
+    law. A capitalised pronoun opening the phrase is the commonest place for
+    one, and the pre-fix single case-sensitive alternation could not see it.
+    """
+    for phrase in ("My read is nothing here",
+                   "Our patience is the cost",
+                   "Mine to miss if it runs",
+                   "Am I too slow here"):
+        assert pt._has_first_person(phrase), phrase
 
 
 def test_lower_case_i_is_still_not_a_pronoun():
     """The bare-I arm stays case-sensitive on purpose: `\\bi\\b` under IGNORECASE
-    matches the stray single letter in any enumeration, which would silently
-    disarm the bait gate."""
-    assert pt._tail_is_bait("Option i or option ii?")
+    matches the stray single letter in any enumeration, which would make
+    `llm_phrase_violations` reject an enumerated wire phrase as first person."""
+    assert pt._tail_is_bait("Option i or option ii?")   # the "?" is what caught it
     assert not pt._has_first_person("Option i or option ii")
     assert pt._has_first_person("Option I take")
 
