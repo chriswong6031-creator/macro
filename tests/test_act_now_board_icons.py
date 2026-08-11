@@ -131,7 +131,7 @@ def test_the_shock_chip_alert_is_an_icon_not_an_emoji():
           "hold": [], "avoid": [], "more": {}, "notable": []}
     html = env.get_template(ACT_BOARD.name).render(
         action_board=vm, shock_state={"active": True, "expires": "2026-08-11"})
-    assert "SHOCK active" in html, "the shock chip did not render — this fence scanned nothing"
+    assert "Market shock active" in html, "the shock chip did not render — this fence scanned nothing"
     assert "⚠" not in html
     assert 'class="ab-shock-ic"' in html and "ic-svg" in html
 
@@ -199,10 +199,10 @@ def test_the_legend_icons_are_markup_not_escaped_text():
             f"the {lang} legend must show the same two marks the rows show "
             f"(sector + theme), found {part.count('<svg class=\'ic-svg\'')}"
         )
-    for term in ("板块基金", "主题篮子"):
-        assert term in zh, f"the ZH legend lost {term!r} — EN/ZH parity is law"
-    for term in ("sector fund", "theme group"):
-        assert term in en, f"the EN legend lost {term!r}"
+    for label in ("板块基金", "主题"):
+        assert f"</svg> {label}" in zh, f"the ZH legend lost {label!r} — EN/ZH parity is law"
+    for label in ("sector fund", "theme"):
+        assert f"</svg> {label}" in en, f"the EN legend lost {label!r}"
 
 
 def test_the_board_never_emits_a_bare_ic_svg_rule():

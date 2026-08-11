@@ -380,7 +380,7 @@ def test_new_schema_rows_take_the_priority_path():
     assert '<div class="nb-stage-hd sg-blocked"' in html
     assert '<div class="pbf-bar" id="us-stage-filter"' in html
     assert '<div class="pbr" data-stage="ran">' in html
-    assert '<div class="pbt">' in html                       # themes-in-favour strip
+    assert '<div class="pbt">' not in html                   # no duplicate theme strip
     assert '<a class="pvcard pv-buy pv-featured"' in html     # the glow cohort
     assert '<div class="nb-lane-hd">' not in html             # legacy headings stood down
     assert html.find('data-ticker="ACME"') < html.find('data-ticker="NXE"')
@@ -591,7 +591,7 @@ def test_subboard_lists_only_residual_names():
     html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
     assert _ts_row("ZORB") in html      # residual row shown
     assert _ts_row("ACME") not in html  # carded name filtered
-    assert "1 of today" in html  # bridge line: "1 of today's 2 triggers already appear…"
+    assert "Signals already shown on cards carry a ⚡." in html
 
 
 def test_subboard_unfiltered_when_standouts_absent():
@@ -862,10 +862,10 @@ def test_leaders_strip_extended_chip_over_threshold():
     env = _env()
     hot = env.get_template("dashboard.html.j2").render(
         **_vm_with_leaders([_leader_row(ext_z=2.6)]), mode="stocks")
-    assert "2.6 standard deviations above trend" in hot
+    assert "Price is unusually far above its trend — chasing here is risky." in hot
     cool = env.get_template("dashboard.html.j2").render(
         **_vm_with_leaders([_leader_row(ext_z=1.1)]), mode="stocks")
-    assert "standard deviations above trend" not in cool
+    assert "Price is unusually far above its trend" not in cool
 
 
 def test_leaders_strip_display_cap_is_fifteen():
@@ -897,7 +897,7 @@ def test_leaders_strip_renders_without_top_setups():
 # the engine does not perform.  The column stays — it is a real read — but neither
 # the headline nor the header may claim it sorts the table.
 #
-# Every assertion below is SCOPED TO THE STRIP: "edge (α)" also heads the unrelated
+# Every assertion below is SCOPED TO THE STRIP: "strength" heads the unrelated
 # top-setups table on the same page, so a document-wide assertion would be vacuous
 # in one direction and wrong in the other.
 # --------------------------------------------------------------------------- #
@@ -911,15 +911,12 @@ def _leaders_strip(html: str) -> str:
 
 
 def test_leaders_strip_slicer_excludes_the_top_setups_table():
-    """Guard the guard: `edge (α)` heads BOTH this strip and the top-setups table
-    above it, so the header assertions below are only meaningful if the slice really
-    is the leaders strip.  Render both tables at once and prove the slice holds one
-    and not the other — otherwise "edge (α) not in strip" could never fail."""
+    """Render both tables at once and prove the slice holds one and not the other."""
     vm = _vm_with_leaders([_leader_row()])
     vm["top_setups"] = {"buy": [_setup_row()], "eligible": 1}
     html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
     strip = _leaders_strip(html)
-    assert "edge (α)" in html, "the top-setups table must still head its own α column"
+    assert '<span class="l-en">strength</span>' in html
     assert "ZORB" in html and "ZORB" not in strip     # its rows are outside the slice
     assert "RUNR" in strip
     assert len(strip) < len(html) / 4
@@ -929,9 +926,9 @@ def test_leaders_headline_names_momentum_not_edge():
     vm = _vm_with_leaders([_leader_row()])
     html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
     strip = _leaders_strip(html)
-    assert ('<span class="l-en">Strongest runners by 3-month momentum, theme-boosted — '
-            'no fresh entry signal; watch, don’t chase.</span>') in strip
-    assert ("按3个月动量排名（顺风主题另有加成）的最强领跑股 — 暂无新入场信号；观察，勿追高。") in strip
+    assert ('<span class="l-en">The strongest runners over the past three months. '
+            'No fresh entry yet — watch, don’t chase.</span>') in strip
+    assert ("过去三个月最强的领跑股。暂无新入场信号——观察，勿追高。") in strip
     # the retired overclaim, in both languages
     assert "Strongest runners by edge" not in html
     assert "按优势排名的最强领跑股" not in html
@@ -939,34 +936,26 @@ def test_leaders_headline_names_momentum_not_edge():
     assert "watch, don’t chase" in strip and "观察，勿追高" in strip
 
 
-def test_leaders_headline_tip_names_the_intact_trend_and_near_high_gates():
-    """Admission is `above200 AND weekly_bull` plus `off_high >= -20%` — the two gates
-    that decide who can appear at all.  A coverage strip that lists neither reads as
-    an unfiltered top-N."""
+def test_leaders_headline_tip_explains_the_user_decision_without_engine_prose():
     vm = _vm_with_leaders([_leader_row()])
     html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
     strip = _leaders_strip(html)
-    assert "intact uptrend (above the 200-day line, weekly structure bullish)" in strip
-    assert "within 20% of its 52-week high" in strip
-    assert "站上200日线、周线结构看多" in strip
-    assert "距52周高点不超过20%" in strip
-    # …and the tip names the real rank key, not the retired one
-    assert "Order here is trailing 3-month total return" in strip
-    assert "本表按3个月总回报排序" in strip
-    assert "the one leg our measurements ranked positively" not in strip
+    assert "have led the market over the past three months and remain near their highs" in strip
+    assert "They are not buy calls" in strip
+    assert "Wait for a pullback toward the shown zone" in strip
+    assert "过去三个月领跑市场，且仍接近高位" in strip
+    assert "它们不是买入建议" in strip
+    assert "entry-gated" not in strip and "rank key" not in strip
 
 
 def test_leaders_alpha_header_stops_claiming_it_orders_the_table():
-    """α is a TIEBREAK.  The header says so, and the old label goes — but the column
-    itself stays, values and all."""
+    """The tiebreak stays, but the reader sees plain language rather than engine notation."""
     vm = _vm_with_leaders([_leader_row()])
     html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
     strip = _leaders_strip(html)
-    assert '<span class="l-en">α (tiebreak)</span><span class="l-zh">α（并列时排序）</span>' in strip
-    assert "It does NOT order this table" in strip
-    assert "α only separates names that rank level" in strip
-    assert "它并不决定本表排序" in strip
-    assert "α 仅用于分开名次并列的标的" in strip
+    assert '<span class="l-en">relative strength</span><span class="l-zh">相对强度</span>' in strip
+    assert "Used only to break ties here" in strip
+    assert "这里只用于打破并列" in strip
     # the retired header, scoped to the strip (the top-setups table still uses it)
     assert "edge (α)" not in strip and "优势 (α)" not in strip
     # the column is KEPT: the value still renders under the new header
