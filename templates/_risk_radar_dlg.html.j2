@@ -1,0 +1,401 @@
+{# ============================================================================
+   SHARED country Risk Radar dialog — the full US-style modal for the China /
+   Hong Kong / Canada boards, cloned from the US `#dlg-risk`
+   (templates/dashboard.html.j2 §1–§8, the design source of truth). Import it:
+
+       {% import "_risk_radar_dlg.html.j2" as rrd %}
+       {{ rrd.risk_radar_dlg('cn', _rr, _rr.scares, radar_dlg) }}
+
+   CSS: _risk_radar_dlg.css.j2 (included from _market_state.css.j2 — the single
+   style include already shared by all four country pages). Class prefix `rrd-`.
+
+   Self-contained: it defines its own t()/help() and imports the .rrx card, so an
+   imported macro resolves everything it needs without the caller's context.
+
+   ── CONTRACT ────────────────────────────────────────────────────────────────
+   risk_radar_dlg(mkt, rd, scares, ctx)
+
+     mkt    'cn' | 'hk' | 'ca' — picks the page dialog prefix (cnx / hkx / cax)
+     rd     the display radar dict from engine/market_state.py `_radar_to_rd`
+            (state, top_score, label_en/zh, do_en/zh, dd5/dd10/dd21, gross, …)
+     scares list of scare dicts (label_en/zh, score, band, firing_legs) or none
+     ctx    dict of OPTIONAL per-market payloads — EVERY section is conditional on
+            its own payload, so a missing store renders nothing (or the plain-word
+            absence the payload asks for) and NEVER raises. Schema:
+
+     ctx.dlg          {'id','cls','close_js'}  page dialog shell; defaults derived
+                                               from mkt (cnx-dlg-risk / cnx-dlg / …)
+     ctx.title_en/zh  dialog title override
+     ctx.asof         'YYYY-MM-DD' — the ONE as-of stamp for the whole dialog
+     ctx.caveat_en/zh profile caveat, rendered in the ONE merged footnote
+
+     ctx.leading      {bench_en, bench_zh, stretch_pct, leg, leg_en, leg_zh,
+                       tone, tip_en, tip_zh}
+                      `leg` = the RAW firing-leg code (rendered through the card's
+                      rr_leg map); leg_en/leg_zh is the per-market override
+     ctx.overseas     {level:'low'|'moderate'|'high', line_en, line_zh,
+                       tip_en, tip_zh}
+     ctx.track        {n, tp, hit_rate}          past-year alert window
+     ctx.calendar     [{date, name_en, name_zh, importance}]   display-only
+
+     ctx.policy_chips [{label_en, label_zh, value_en, value_zh, tone,
+                        tip_en, tip_zh}]
+
+     ctx.factors      [{label_en, label_zh, value, read_en, read_zh,
+                        tone, pct, tip_en, tip_zh}]
+     ctx.factors_note_en/zh    plain-word caveat or honest absence
+     ctx.gauges       [{label_en, label_zh, score, read_en, read_zh, tone,
+                        chart_html}]             chart_html is passed through |safe
+
+     ctx.leaders      {line_en, line_zh, absent_en, absent_zh,
+                       rows:[{ticker, name_en, name_zh, value, pct, tone}]}
+
+     ctx.fx           the fx_context dict lib/forex_link.attach_fx_context writes
+                       (cnh_basis_state, cnh_basis_bps, usd_dir, stale, built_date)
+
+   tone ∈ 'down' | 'warn' | 'up' | 'muted' — maps to the zh-flipping
+   --down / --warn / --up family only; never a literal hex (theme.css swaps
+   --up/--down under html[data-lang="zh"], Asia convention).
+   ============================================================================ #}
+{% import "_risk_radar_card.html.j2" as rrc %}
+
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+
+{# tile / headline glyphs — same set + same stroke idiom as the US modal's rkc_sig_glyph #}
+{% macro rrd_glyph(kind) -%}
+{%- set _g = {
+  'alert':    '<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  'leading':  '<path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+  'overseas': '<circle cx="12" cy="10" r="7"/><path d="M5 10h14M12 3a12 12 0 010 14"/><path d="M12 17v4"/>',
+  'audit':    '<path d="M6 2h9l3 3v15l-2.5-1.5L13 20l-2.5-1.5L8 20l-2-1.5V2z"/><path d="M9 7h6M9 11h6M9 15h3"/>',
+  'window':   '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M8 14l2.5 2.5L15 12"/>',
+} -%}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ _g.get(kind, '<circle cx="12" cy="12" r="8"/>') | safe }}</svg>
+{%- endmacro %}
+
+{% macro risk_radar_dlg(mkt, rd, scares=none, ctx=none) -%}
+{#- absent-safe roots: a missing ctx / rd must render, never raise -#}
+{%- set c  = ctx if ctx else {} -%}
+{%- set r  = rd if rd else {} -%}
+{%- set sc = scares if scares else [] -%}
+{#- page dialog shell: each country page keeps its OWN open/close JS, backdrop and
+   entrance transition (cnxOpenDlg / hkxOpenDlg / caxOpenDlg), so Esc + click-away
+   already work and the backdrop stays the one the rest of that page uses. -#}
+{%- set _px  = {'cn':'cnx','hk':'hkx','ca':'cax'}.get(mkt, 'cnx') -%}
+{%- set _dlg = c.dlg if c.dlg else {} -%}
+{%- set _did = _dlg.id if _dlg.id else (_px ~ '-dlg-risk') -%}
+{%- set _dcl = _dlg.cls if _dlg.cls else (_px ~ '-dlg') -%}
+{%- set _dcx = _dlg.close_js if _dlg.close_js else (_px ~ 'CloseDlg()') -%}
+{#- severity tone from the radar state — the ONE colour decision in the dialog -#}
+{%- set _st = r.state if r.state else 'calm' -%}
+{%- set _tone = 'down' if _st in ('risk-off','elevated') else ('warn' if _st == 'caution' else ('muted' if _st == 'watch' else 'up')) -%}
+<div class="{{ _dcl }}" id="{{ _did }}" role="dialog" aria-modal="true" aria-labelledby="{{ _did }}-ttl">
+  <div class="{{ _dcl }}-backdrop" onclick="{{ _dcx }}"></div>
+  <div class="{{ _dcl }}-panel">
+    <div class="{{ _dcl }}-head">
+      <span class="{{ _dcl }}-title" id="{{ _did }}-ttl">{{ t(c.title_en if c.title_en else 'Pullback Risk — Radar & Gauges', c.title_zh if c.title_zh else '回撤风险 — 雷达与仪表') }}</span>
+      <button class="{{ _dcl }}-close" type="button" onclick="{{ _dcx }}" aria-label="Close">&#xd7;</button>
+    </div>
+    <div class="{{ _dcl }}-body rrd">
+
+      {# ── 1. Headline: what is loudest, how loud, what to do about it ─────── #}
+      <div class="rrd-hd tone-{{ _tone }}">
+        <div class="rrd-hd-ico">{{ rrd_glyph('alert') }}</div>
+        <div class="rrd-hd-txt">
+          <div class="rrd-hd-label">
+            {%- if r.label_en -%}{{ t(r.label_en, r.label_zh if r.label_zh else r.label_en) }}
+            {%- else -%}{{ t('No active risk readings','暂无活跃风险读数') }}{%- endif -%}
+          </div>
+          {% if r.do_en %}
+          <div class="rrd-hd-sub">{{ t(r.do_en, r.do_zh if r.do_zh else r.do_en) }}</div>
+          {% else %}
+          <div class="rrd-hd-sub">{{ t('Nothing to chase right now — watch.','当前无需追高 — 观望。') }}</div>
+          {% endif %}
+          {% if r.top_score is defined and r.top_score is not none %}
+          <div class="rrd-hd-sub">{{ t('Intensity','强度') }} <b>{{ r.top_score }}</b>/100</div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── 2. The shared .rrx radar card (state pill, odds ramp, de-escalation).
+             show_threats=false — the scare chips are rebuilt as the Risk Ladder
+             below, exactly as the US modal dedupes them. ───────────────────── #}
+      {#- `dd21 is defined` discriminates a real _radar_to_rd payload (which always emits
+          every key, possibly None) from a stub: the card computes its odds scale from
+          rd.dd21 BEFORE its own `is not none` guard, so a stub would raise there and take
+          the whole page render with it. A stub renders the headline and nothing else. -#}
+      {% if r.state and r.dd21 is defined %}{{ rrc.risk_radar_card(r, sc, show_threats=false) }}{% endif %}
+
+      {# ── 3. Signal tiles: Leading · Overseas · Track record · Calendar ───── #}
+      {%- set _tl_lead = c.leading if c.leading else none -%}
+      {%- set _tl_ovs  = c.overseas if c.overseas else none -%}
+      {%- set _tl_trk  = c.track if c.track else none -%}
+      {%- set _tl_cal  = c.calendar if c.calendar else none -%}
+      {% if _tl_lead or _tl_ovs or _tl_trk or _tl_cal %}
+      <div class="rrd-tiles">
+
+        {# Leading — how far the benchmark sits from its own 200-day average, plus the
+           loudest leg behind the reading. Plain words; the figure carries a meaning. #}
+        {% if _tl_lead %}
+        {%- set _ld_sp = _tl_lead.stretch_pct if (_tl_lead.stretch_pct is defined and _tl_lead.stretch_pct is not none) else none -%}
+        {%- set _ld_tone = _tl_lead.tone if _tl_lead.tone else ('down' if (_ld_sp is not none and _ld_sp >= 8) else ('warn' if (_ld_sp is not none and _ld_sp >= 3) else 'muted')) -%}
+        <div class="rrd-tile tone-{{ _ld_tone }}"{% if _tl_lead.tip_en %} data-tip-en="{{ _tl_lead.tip_en }}" data-tip-zh="{{ _tl_lead.tip_zh if _tl_lead.tip_zh else _tl_lead.tip_en }}"{% endif %}>
+          <span class="rrd-tile-ico">{{ rrd_glyph('leading') }}</span>
+          <div class="rrd-tile-body">
+            <div class="rrd-tile-lbl">{{ t('Leading','领先信号') }}</div>
+            <div class="rrd-tile-state">
+              {%- if _ld_sp is not none -%}
+              <span class="l-en">{{ _tl_lead.bench_en }} <b>{{ '%.0f'|format(_ld_sp|abs) }}%</b> {{ 'above' if _ld_sp >= 0 else 'below' }} its 200-day average</span>
+              <span class="l-zh">{{ _tl_lead.bench_zh if _tl_lead.bench_zh else _tl_lead.bench_en }}{{ '高于' if _ld_sp >= 0 else '低于' }}200日均线 <b>{{ '%.0f'|format(_ld_sp|abs) }}%</b></span>
+              {%- else -%}
+              {{ t(_tl_lead.bench_en, _tl_lead.bench_zh if _tl_lead.bench_zh else _tl_lead.bench_en) }}
+              {%- endif -%}
+              {#- `leg` is the RAW firing-leg code, rendered through the card's own leg-name
+                  map so there is exactly one place that turns `usd_cnh` into plain words.
+                  `leg_en/leg_zh` is the override for a market that wants its own phrase. -#}
+              {% if _tl_lead.leg %}<span class="rrd-tile-chip">{{ rrc.rr_leg(_tl_lead.leg) }}</span>
+              {%- elif _tl_lead.leg_en %}<span class="rrd-tile-chip">{{ t(_tl_lead.leg_en, _tl_lead.leg_zh if _tl_lead.leg_zh else _tl_lead.leg_en) }}</span>{% endif %}
+            </div>
+          </div>
+          {% if _tl_lead.tip_en %}<span class="rrd-tile-tip">?</span>{% endif %}
+        </div>
+        {% endif %}
+
+        {# Overseas — imported pressure (contagion links). Plain level word; the
+           exporter receipts ride the hover. #}
+        {% if _tl_ovs %}
+        {%- set _ov_lv = _tl_ovs.level if _tl_ovs.level else 'low' -%}
+        {%- set _ov_en = 'High' if _ov_lv == 'high' else ('Building' if _ov_lv == 'moderate' else 'Low') -%}
+        {%- set _ov_zh = '高' if _ov_lv == 'high' else ('升温' if _ov_lv == 'moderate' else '低') -%}
+        {%- set _ov_tone = 'down' if _ov_lv == 'high' else ('warn' if _ov_lv == 'moderate' else 'up') -%}
+        <div class="rrd-tile tone-{{ _ov_tone }}"{% if _tl_ovs.tip_en %} data-tip-en="{{ _tl_ovs.tip_en }}" data-tip-zh="{{ _tl_ovs.tip_zh if _tl_ovs.tip_zh else _tl_ovs.tip_en }}"{% endif %}>
+          <span class="rrd-tile-ico">{{ rrd_glyph('overseas') }}</span>
+          <div class="rrd-tile-body">
+            <div class="rrd-tile-lbl">{{ t('Overseas','境外') }}</div>
+            <div class="rrd-tile-state">
+              {{ t('Pressure from abroad','海外传导压力') }}
+              <span class="rrd-tile-chip">{{ t(_ov_en, _ov_zh) }}</span>
+            </div>
+          </div>
+          {% if _tl_ovs.tip_en %}<span class="rrd-tile-tip">?</span>{% endif %}
+        </div>
+        {% endif %}
+
+        {# Track record — our own honesty check. Plain-word accrual state until the
+           graded window has enough calls to say anything. #}
+        {% if _tl_trk %}
+        {%- set _tk_n  = _tl_trk.n if _tl_trk.n else 0 -%}
+        {%- set _tk_tp = _tl_trk.tp if _tl_trk.tp else 0 -%}
+        {%- set _tk_hr = _tl_trk.hit_rate if (_tl_trk.hit_rate is defined and _tl_trk.hit_rate is not none) else none -%}
+        <div class="rrd-tile tone-muted"{% if _tk_hr is not none %} data-tip-en="Over the past year, {{ _tk_tp }} of {{ _tk_n }} elevated-alert days were followed by a ≥5% drop within a month. Daily readings overlap." data-tip-zh="过去一年，{{ _tk_n }} 个警报日中有 {{ _tk_tp }} 天在一个月内出现 ≥5% 下跌。按日读数相互重叠。"{% endif %}>
+          <span class="rrd-tile-ico">{{ rrd_glyph('audit') }}</span>
+          <div class="rrd-tile-body">
+            <div class="rrd-tile-lbl">{{ t('Track record','往绩') }}</div>
+            <div class="rrd-tile-state">
+              {% if _tk_hr is not none %}
+              <span class="l-en"><b>{{ _tk_tp }}</b> of <b>{{ _tk_n }}</b> alerts led to a drop</span>
+              <span class="l-zh"><b>{{ _tk_n }}</b> 次警报中 <b>{{ _tk_tp }}</b> 次先于下跌</span>
+              {% else %}
+              {{ t('Grading calls as they mature','评分随信号成熟展开') }}
+              {% endif %}
+            </div>
+          </div>
+          {% if _tk_hr is not none %}<span class="rrd-tile-tip">?</span>{% endif %}
+        </div>
+        {% endif %}
+
+        {# Calendar — display-only listing of what is scheduled. Nothing here fires,
+           gates or scores anything; it is a diary, not a signal. #}
+        {% if _tl_cal %}
+        <div class="rrd-tile tone-muted" data-tip-en="Scheduled releases only — dates on the diary. Nothing on this list moves the risk reading." data-tip-zh="仅为已排期的数据发布——日历上的日期。此列表不影响风险读数。">
+          <span class="rrd-tile-ico">{{ rrd_glyph('window') }}</span>
+          <div class="rrd-tile-body">
+            <div class="rrd-tile-lbl">{{ t('Calendar','日历') }}</div>
+            <div class="rrd-cal">
+              {% for ev in _tl_cal[:3] %}
+              <div class="rrd-cal-row">
+                <span class="rrd-cal-d">{{ ev.date if ev.date else '' }}</span>
+                <span class="rrd-cal-n">{{ t(ev.name_en if ev.name_en else '', ev.name_zh if ev.name_zh else (ev.name_en if ev.name_en else '')) }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <span class="rrd-tile-tip">?</span>
+        </div>
+        {% endif %}
+
+      </div>
+      {% endif %}
+
+      {# ── 3b. Risk ladder — the canonical scare list (US modal §6). Kept adjacent
+             to the tiles: the tiles summarise, this is the same object in detail,
+             and it is where the old country dialog put its scare bars. ───────── #}
+      {% if sc %}
+      <div class="rrd-sep"></div>
+      <div class="rrd-eyebrow">{{ t('Risk ladder — what to watch','风险梯度 — 需关注的因素') }}</div>
+      <div class="rrd-ladder">
+        {% for s in sc %}{% if s.score is defined and s.score is not none %}
+        {%- set _s2 = s.score|round|int -%}
+        {%- set _sb = s.band if s.band else ('risk-off' if _s2 >= 70 else ('caution' if _s2 >= 50 else ('watch' if _s2 >= 35 else 'calm'))) -%}
+        {#- Bar/score colour comes from the SCORE, not the band — the same ladder rule the
+            US modal uses (dashboard.html.j2 §6: down ≥70, warn ≥35, else muted). Banding
+            it instead paints a 54 bright green next to an 89 red, which reads as "all
+            clear" at exactly the score where the ladder is asking for attention. The band
+            WORD still comes from the engine, unchanged. -#}
+        {%- set _stone = 'down' if _s2 >= 70 else ('warn' if _s2 >= 35 else 'muted') -%}
+        {%- set _sb_en = {'risk-off':'Risk-off','elevated':'Elevated','caution':'Caution','watch':'Watch','calm':'Calm'}.get(_sb, _sb) -%}
+        {%- set _sb_zh = {'risk-off':'避险','elevated':'偏高','caution':'谨慎','watch':'留意','calm':'平静'}.get(_sb, _sb) -%}
+        <div class="rrd-lrow tone-{{ _stone }}">
+          <span class="rrd-lname">{{ t(s.label_en if s.label_en else '', s.label_zh if s.label_zh else (s.label_en if s.label_en else '')) }}</span>
+          <span class="rrd-fbar"><i style="width:{{ [_s2,100]|min }}%"></i></span>
+          <span class="rrd-lscore">{{ _s2 }}</span>
+          <span class="rrd-lband">{{ t(_sb_en, _sb_zh) }}</span>
+        </div>
+        {% endif %}{% endfor %}
+      </div>
+      {% endif %}
+
+      {# ── 4. Context chips — the policy backdrop the reading sits in ───────── #}
+      {% if c.policy_chips %}
+      <div class="rrd-sep"></div>
+      <div class="rrd-chips">
+        <span class="rrd-chips-k">{{ t('Context','背景') }}</span>
+        {% for ch in c.policy_chips %}
+        <span class="rrd-chip tone-{{ ch.tone if ch.tone else 'muted' }}"{% if ch.tip_en %} data-tip-en="{{ ch.tip_en }}" data-tip-zh="{{ ch.tip_zh if ch.tip_zh else ch.tip_en }}"{% endif %}>
+          {{ t(ch.label_en, ch.label_zh if ch.label_zh else ch.label_en) }}
+          <b>{{ t(ch.value_en, ch.value_zh if ch.value_zh else ch.value_en) }}</b>
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {# ── 5. Country factor block + optional gauges ────────────────────────── #}
+      {% if c.factors or c.gauges or c.factors_note_en %}
+      <div class="rrd-sep"></div>
+      <div class="rrd-eyebrow">{{ t('Behind the reading','读数背后') }}</div>
+      {% if c.factors %}
+      <div class="rrd-frows">
+        {% for f in c.factors %}
+        <div class="rrd-frow tone-{{ f.tone if f.tone else 'muted' }}"{% if f.tip_en %} data-tip-en="{{ f.tip_en }}" data-tip-zh="{{ f.tip_zh if f.tip_zh else f.tip_en }}"{% endif %}>
+          <span class="rrd-fname">{{ t(f.label_en, f.label_zh if f.label_zh else f.label_en) }}</span>
+          {#- The empty TRACK is only emitted for a row that has a position to draw. A row
+              with no honest 0-100 scale (a raw count) leaves the cell blank rather than
+              printing a dead grey rail that reads as a broken bar. -#}
+          {% if f.pct is defined and f.pct is not none %}<span class="rrd-fbar"><i style="width:{{ [[f.pct,0]|max,100]|min }}%"></i></span>{% else %}<span></span>{% endif %}
+          <span class="rrd-fval">{{ f.value if f.value else '—' }}</span>
+          <span class="rrd-fread">{{ t(f.read_en if f.read_en else '', f.read_zh if f.read_zh else (f.read_en if f.read_en else '')) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if c.gauges %}
+      <div class="rrd-gauges"{% if c.factors %} style="margin-top:16px"{% endif %}>
+        {% for g in c.gauges %}
+        <div class="tone-{{ g.tone if g.tone else 'muted' }}">
+          <div class="rrd-gauge-hd">
+            <span class="rrd-gauge-name">{{ t(g.label_en, g.label_zh if g.label_zh else g.label_en) }}</span>
+            {% if g.score is defined and g.score is not none %}<span class="rrd-gauge-score">{{ g.score }}</span>{% endif %}
+            {% if g.read_en %}<span class="rrd-gauge-read">{{ t(g.read_en, g.read_zh if g.read_zh else g.read_en) }}</span>{% endif %}
+          </div>
+          {% if g.chart_html %}<div class="rrd-gauge-chart">{{ g.chart_html | safe }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if c.factors_note_en %}
+      <div class="rrd-fnote">{{ t(c.factors_note_en, c.factors_note_zh if c.factors_note_zh else c.factors_note_en) }}</div>
+      {% endif %}
+      {% endif %}
+
+      {# ── 6. Leaders ──────────────────────────────────────────────────────── #}
+      {% if c.leaders %}
+      {%- set _ld = c.leaders -%}
+      <div class="rrd-sep"></div>
+      <div class="rrd-eyebrow">{{ t('Leaders','龙头') }}</div>
+      {% if _ld.line_en %}
+      <div class="rrd-ldr-line">{{ t(_ld.line_en, _ld.line_zh if _ld.line_zh else _ld.line_en) }}</div>
+      {% endif %}
+      {% if _ld.rows %}
+      {#- A row set with no magnitude to draw drops the bar column entirely rather than
+          printing an empty rail on every line (and rather than inventing a scale — the
+          fake-magnitude-bar idiom is vetoed, DESIGN_DOCTRINE §3). Inferred from row 1. -#}
+      {%- set _ld_bars = (_ld.rows[0].pct is defined and _ld.rows[0].pct is not none) -%}
+      <div class="rrd-ldr-rows">
+        {% for row in _ld.rows[:6] %}
+        <div class="rrd-ldr-row{{ '' if _ld_bars else ' is-plain' }} tone-{{ row.tone if row.tone else 'muted' }}">
+          <span class="rrd-ldr-tkr">{{ row.ticker if row.ticker else '' }}</span>
+          <span class="rrd-ldr-name">{{ t(row.name_en if row.name_en else '', row.name_zh if row.name_zh else (row.name_en if row.name_en else '')) }}</span>
+          {% if _ld_bars %}<span class="rrd-ldr-track">{% if row.pct is defined and row.pct is not none %}<span class="rrd-ldr-fill" style="width:{{ [[row.pct,2]|max,100]|min }}%"></span>{% endif %}</span>{% endif %}
+          <span class="rrd-ldr-val">{{ row.value if row.value else '' }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% elif _ld.absent_en %}
+      <div class="rrd-absent">{{ t(_ld.absent_en, _ld.absent_zh if _ld.absent_zh else _ld.absent_en) }}</div>
+      {% endif %}
+      {% endif %}
+
+      {# ── 7. FX context — same fx_context payload the country boards already read ─ #}
+      {% if c.fx %}
+      {%- set _fx = c.fx -%}
+      {%- set _cnh_st = _fx.cnh_basis_state if _fx.cnh_basis_state is defined else none -%}
+      {%- set _usd = _fx.usd_dir if _fx.usd_dir is defined else none -%}
+      {% if _cnh_st or _usd %}
+      <div class="rrd-sep"></div>
+      <div class="rrd-eyebrow">{{ t('Currency backdrop','汇率背景') }}</div>
+      <div class="rrd-fx">
+        {% if _cnh_st %}
+        {%- set _cnh_tone = 'down' if _cnh_st == 'outflow_stress' else ('warn' if _cnh_st == 'inflow' else 'up') -%}
+        <div class="rrd-fxrow tone-{{ _cnh_tone }}">
+          <span class="rrd-fxk">{{ t('Yuan pressure','人民币压力') }}</span>
+          <span class="rrd-fxv">
+            <span class="rrd-tile-chip">
+              {%- if _cnh_st == 'outflow_stress' %}{{ t('Money leaving','资金外流') }}
+              {%- elif _cnh_st == 'inflow' %}{{ t('Money coming in','资金流入') }}
+              {%- else %}{{ t('No unusual pressure','无异常压力') }}{% endif -%}
+            </span>
+            {{ t('Offshore yuan against the mainland rate','离岸人民币对在岸价差') }}
+            {%- if _fx.cnh_basis_bps is defined and _fx.cnh_basis_bps is not none %}
+            <span class="rrd-fxnum">{{ '%.0f'|format(_fx.cnh_basis_bps) }}bp</span>
+            {%- endif %}
+          </span>
+        </div>
+        {% endif %}
+        {% if _usd %}
+        {%- set _usd_tone = 'down' if _usd == 'strengthening' else ('up' if _usd == 'weakening' else 'muted') -%}
+        <div class="rrd-fxrow tone-{{ _usd_tone }}">
+          <span class="rrd-fxk">{{ t('Dollar','美元') }}</span>
+          <span class="rrd-fxv">
+            <span class="rrd-tile-chip">
+              {%- if _usd == 'strengthening' %}{{ t('Rising','走强') }}
+              {%- elif _usd == 'weakening' %}{{ t('Falling','走弱') }}
+              {%- else %}{{ t('Mixed','方向混杂') }}{% endif -%}
+            </span>
+            {%- if _usd == 'strengthening' %}{{ t('A headwind for this market','对本市场构成逆风') }}
+            {%- elif _usd == 'weakening' %}{{ t('A tailwind for this market','对本市场构成顺风') }}
+            {%- else %}{{ t('No clear direction to lean on','方向不明，暂不作依据') }}{% endif -%}
+          </span>
+        </div>
+        {% endif %}
+      </div>
+      {% if _fx.stale is defined and _fx.stale and _fx.built_date %}
+      <div class="rrd-fnote">{{ t('Currency data as of ' ~ _fx.built_date ~ '.', '汇率数据截至 ' ~ _fx.built_date ~ '。') }}</div>
+      {% endif %}
+      {% endif %}
+      {% endif %}
+
+      {# ── 8. ONE merged footer: one as-of + one footnote for the whole dialog ─ #}
+      <div class="rrd-sep"></div>
+      <div class="rrd-foot">
+        {%- if c.asof %}<span class="l-en">As of {{ c.asof }}. </span><span class="l-zh">数据截至 {{ c.asof }}。</span>{% endif -%}
+        {%- if c.caveat_en %}<span class="l-en">{{ c.caveat_en }} </span><span class="l-zh">{{ c.caveat_zh if c.caveat_zh else c.caveat_en }}</span>{% endif -%}
+        <span class="l-en">These are windows, not certainties — re-drawn nightly. The response is sizing, not stock picking; forward records are still accruing.</span>
+        <span class="l-zh">这些是概率窗口而非定论——每晚重算。应对是仓位控制而非选股；前瞻记录仍在积累中。</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+{%- endmacro %}

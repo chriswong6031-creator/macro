@@ -4488,10 +4488,15 @@ body.page-macro.mx4-grid .mx5-path-tip-verdict{font-size:12px;font-weight:600;}
 }
 
 /* ── Popover system ─────────────────────────────────────────────── */
-/* Fixed dim backdrop (z-90) */
+/* Invisible click-away layer (z-90). It carries NO dim (2026-08-11): the factor
+   popover is a peek at the numbers behind the chip you just pressed — dimming the
+   whole board hid the very readings the popover explains, and read as a modal when
+   nothing is being decided. The layer stays (click-away close target, Esc unchanged);
+   separation now comes from the popover's own elevation + border below. The eleven
+   .mx5-dlg modals keep their own .mx5-dlg-backdrop dim — those ARE modal. */
 .mx5-popover-backdrop{
   display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,.32);z-index:90;
+  background:transparent;z-index:90;
 }
 .mx5-popover-backdrop.open{display:block;}
 
@@ -4502,7 +4507,13 @@ body.page-macro.mx4-grid .mx5-path-tip-verdict{font-size:12px;font-weight:600;}
   border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));
   border-radius:var(--mx5-radius-card,18px);
   backdrop-filter:blur(32px);
-  box-shadow:0 24px 64px rgba(0,0,0,.72),0 1.5px 0 rgba(255,255,255,.09) inset;
+  /* House elevation, not a modal drop shadow. --mx5-glass-hover is the mx5 family's
+     own LIFTED-card token, tuned per theme (dark: 0 12px 40px/.65 + the same 1.5px
+     inset sheen this popover already carried; light: the estate's two-stop contact +
+     ambient pair). With the backdrop dim gone this shadow is what separates the
+     popover from the board, which is why it is the lifted token and not the resting
+     --mx5-glass-shadow the cards below it use. */
+  box-shadow:var(--mx5-glass-hover,0 12px 40px rgba(0,0,0,.55),0 1.5px 0 rgba(255,255,255,.09) inset);
   padding:24px;min-width:320px;max-width:440px;
   top:calc(100% + 8px);left:0;
   transform-origin:top left;
@@ -4517,6 +4528,11 @@ body.page-macro.mx4-grid .mx5-path-tip-verdict{font-size:12px;font-weight:600;}
 }
 /* Right-anchored popover */
 .mx5-popover.mx5-pop-right{left:auto;right:0;transform-origin:top right;}
+/* Light mode: the popover plate and the card it opens over are BOTH #ffffff, so with
+   the dim gone the edge is the only value step at the seam. --mx5-glass-border
+   (#dde2ea) is tuned for a card on the #e8ebf1 canvas and disappears white-on-white;
+   one step darker here restores the seam without turning the panel into a box. */
+[data-theme="light"] .mx5-popover{border-color:#c6cfdc;}
 
 /* Lift the parent card above the backdrop when popover open (stacking context fix) */
 body.page-macro.mx4-grid #regime-radar.mx5-pop-open{

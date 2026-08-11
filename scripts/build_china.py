@@ -784,6 +784,11 @@ def _china_index_health() -> list[dict]:
             "dd": round(100 * (px / hi52 - 1), 1),
             "above50": bool(px >= ma50),
             "above200": (bool(px >= ma200) if ma200 == ma200 else None),
+            # signed DISTANCE from the 200-day average, not just the side of it. The
+            # shared Risk Radar dialog's Leading tile reads "N% above/below its 200-day
+            # average"; `above200` alone cannot say how stretched. Same px/ma200 already
+            # computed above — no extra series read.
+            "dist200": (round(100 * (px / ma200 - 1), 1) if ma200 == ma200 and ma200 else None),
             "rsi": round(r) if r == r else None,
         })
     return out
@@ -805,6 +810,366 @@ def _benchmark_card() -> dict | None:
             "ic_week": a["cycle"].get("ic_week"), "ic_band": a["cycle"].get("ic_band"),
             "price": round(float(close.iloc[-1]), 2),
             "chg": round(100 * (close.iloc[-1] / close.iloc[-2] - 1), 2)}
+
+
+# ── Risk Radar dialog view-model (templates/_risk_radar_dlg.html.j2) ─────────────────
+# DISPLAY ASSEMBLY ONLY. Every value below is READ from a store some other engine step
+# already computed — nothing here derives a statistic, scores anything, or gates
+# anything. Each payload sits in its own try/except so a store that is missing, stale
+# or malformed drops ONE section instead of the page (the macro renders every section
+# conditionally, so an omitted key is an honest absence, never an error).
+# The ctx schema is the shared CN/HK/CA contract — see the header of
+# templates/_risk_radar_dlg.html.j2 before changing a key name.
+
+_CN_PBOC_ZH = {"easing": "宽松", "neutral": "中性", "tightening": "收紧"}
+_CN_PBOC_EN = {"easing": "Easing", "neutral": "Neutral", "tightening": "Tightening"}
+
+
+def _rd_word(value, bands):
+    """Pick the (en, zh, tone) triple whose threshold `value` clears. `bands` is an
+    ordered [(threshold, en, zh, tone), ...] high-to-low; the last entry is the floor."""
+    if value is None:
+        return None
+    for thr, en, zh, tone in bands:
+        if value >= thr:
+            return (en, zh, tone)
+    return None
+
+
+def _radar_dlg_vm(vm: dict, latest: dict) -> dict:
+    """Assemble the `radar_dlg` ctx the shared Risk Radar dialog consumes on china.html.
+
+    Reads ONLY values already on the view-model / in already-built stores:
+      leading   index_health SHCOMP row (dist200) + the radar's own dominant firing leg
+      overseas  market_state.radar.contagion   (data/contagion_links/latest.json)
+      track     market_state.radar.track       (data/risk_radar/scorecard.json markets.cn)
+      calendar  vm['event_strip'] / vm['calendar']  (engine/china_event_calendar.py)
+      chips     internals.pboc + cn_market_state_json.external.usdcnh
+      factors   cn_participation_json (margin_to_mcap, qvix) + internals.southbound
+                + cn_microstructure_json.latest_aggregate (limit-up counts)
+      gauges    latest.conditions recession score + the two rendered ilx charts
+      leaders   vm['top_setups'] (the standout board's own display rows) + the
+                limit-up heat line
+      fx        market_state.radar.fx_context  (lib/forex_link)
+    """
+    ctx: dict = {}
+    rd = ((vm.get("market_state") or {}).get("radar")) or {}
+
+    # ── one as-of for the whole dialog ────────────────────────────────────────────
+    try:
+        ctx["asof"] = str(latest.get("date") or "")[:10] or None
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Plain-word profile caveat. NOT the engine's RadarProfile.caveat_en: that string
+    # opens with the word "validated", which is CI-forbidden in emitted copy
+    # (scripts/check_validated_claims.py) — and its jargon ("US–China yield differential")
+    # is Tier-1 banned besides. This says the same thing in the doctrine's language.
+    ctx["caveat_en"] = ("A-share pullbacks are mostly led from outside — US rates, the yuan, "
+                        "and how broadly the market is falling.")
+    ctx["caveat_zh"] = "A股回撤多由外部因素引导——美债利率、人民币汇率，以及下跌的广度。"
+
+    # ── Leading tile: benchmark stretch vs its 200-day average + the loudest leg ──
+    try:
+        row = next((r for r in (vm.get("index_health") or [])
+                    if r.get("ticker") == "000001.SS"), None)
+        dist = row.get("dist200") if row else None
+        leg = None
+        for s in (rd.get("scares") or []):
+            if s.get("label_en") == rd.get("label_en") and s.get("firing_legs"):
+                leg = (s["firing_legs"][0] or {}).get("leg")
+                break
+        if dist is not None or leg:
+            ctx["leading"] = {
+                "bench_en": "Shanghai Composite", "bench_zh": "上证综指",
+                "stretch_pct": dist, "leg": leg,
+                "tip_en": ("Where the index sits against its own 200-day average. "
+                           "The further above, the more there is to give back."),
+                "tip_zh": "指数当前点位相对自身200日均线的位置。高出越多，可回吐的空间越大。",
+            }
+    except Exception as e:  # noqa: BLE001 — one tile, never the page
+        log.warning("radar_dlg leading tile skipped (%s)", e)
+
+    # ── Overseas tile: imported pressure (contagion links) ────────────────────────
+    try:
+        cg = rd.get("contagion") or {}
+        if cg.get("level"):
+            exp = []
+            for e in (cg.get("top_exporters") or [])[:3]:
+                dd = e.get("dd21")
+                if e.get("name_en") and dd is not None:
+                    exp.append((e["name_en"], e.get("name_zh") or e["name_en"], round(dd * 100)))
+            ctx["overseas"] = {
+                "level": cg.get("level"),
+                "line_en": cg.get("line_en"), "line_zh": cg.get("line_zh"),
+                "tip_en": ("How far the markets that trade with China have fallen from their "
+                           "own recent highs: "
+                           + " · ".join(f"{n} {d}% off" for n, _z, d in exp)) if exp else None,
+                "tip_zh": ("与中国关联最深的市场距各自近期高点的回撤："
+                           + "；".join(f"{z} {d}%" for _n, z, d in exp)) if exp else None,
+            }
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg overseas tile skipped (%s)", e)
+
+    # ── Track-record tile: this market's own graded ledger, past year ─────────────
+    try:
+        al = (((rd.get("track") or {}).get("windows") or {}).get("y1") or {}).get("alerts") or {}
+        if al:
+            ctx["track"] = {"n": al.get("n") or 0, "tp": al.get("tp") or 0,
+                            "hit_rate": al.get("hit_rate")}
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg track tile skipped (%s)", e)
+
+    # ── Calendar tile: next high-impact releases. Display-only listing. ───────────
+    try:
+        rows = list(vm.get("event_strip") or []) or list(vm.get("calendar") or [])
+        cal = [{"date": r.get("date"), "name_en": r.get("name_en"),
+                "name_zh": r.get("name_zh"), "importance": r.get("importance")}
+               for r in rows[:3] if r.get("date") and r.get("name_en")]
+        if cal:
+            ctx["calendar"] = cal
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg calendar tile skipped (%s)", e)
+
+    # ── Context chips: policy stance + the offshore yuan ──────────────────────────
+    chips = []
+    try:
+        pb = (vm.get("internals") or {}).get("pboc") or {}
+        bias = pb.get("bias")
+        if bias in _CN_PBOC_EN:
+            rrr = pb.get("rrr_big")
+            chips.append({
+                "label_en": "Policy stance", "label_zh": "政策取向",
+                "value_en": _CN_PBOC_EN[bias], "value_zh": _CN_PBOC_ZH[bias],
+                "tone": {"easing": "up", "tightening": "down"}.get(bias, "muted"),
+                "tip_en": (f"Reserve requirement for the big banks is {rrr}% — the lower it "
+                           "goes, the more the banks can lend.") if rrr is not None else None,
+                "tip_zh": (f"大型银行存款准备金率为 {rrr}%——比率越低，银行可放贷的资金越多。")
+                          if rrr is not None else None,
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg policy chip skipped (%s)", e)
+    try:
+        ext = ((vm.get("cn_market_state_json") or {}).get("external") or {}).get("usdcnh") or {}
+        q, ch = ext.get("quote"), ext.get("chg_pct")
+        if q is not None:
+            # USD/CNH UP = more yuan per dollar = a weaker yuan = a headwind for A-shares.
+            if ch is None or abs(ch) < 0.05:
+                d_en, d_zh, tone = "steady", "持平", "muted"
+            elif ch > 0:
+                d_en, d_zh, tone = "weaker", "走弱", "down"
+            else:
+                d_en, d_zh, tone = "firmer", "走强", "up"
+            chips.append({
+                "label_en": "Offshore yuan", "label_zh": "离岸人民币",
+                "value_en": f"{q:.2f}, {d_en}", "value_zh": f"{q:.2f}，{d_zh}",
+                "tone": tone,
+                "tip_en": ("Yuan per dollar offshore"
+                           + (f", {ch:+.1f}% on the day" if ch is not None else "")
+                           + ". A weaker yuan is a headwind for A-shares."),
+                "tip_zh": ("离岸市场每美元兑人民币"
+                           + (f"，当日 {ch:+.1f}%" if ch is not None else "")
+                           + "。人民币走弱对A股构成逆风。"),
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg yuan chip skipped (%s)", e)
+    if chips:
+        ctx["policy_chips"] = chips
+
+    # ── Country factor rows: who is crowded, how fearful, how hot the tape is ─────
+    factors = []
+    part = vm.get("cn_participation_json") or {}
+    try:
+        m2m = part.get("margin_to_mcap")
+        pctile = ((vm.get("internals") or {}).get("margin") or {}).get("pctile")
+        if m2m is not None:
+            w = _rd_word(pctile, [(80, "crowded", "拥挤", "down"),
+                                  (55, "building", "升温", "warn"),
+                                  (0, "calm", "平静", "up")]) or ("—", "—", "muted")
+            factors.append({
+                "label_en": "Margin balance", "label_zh": "两融余额",
+                "value": f"{m2m:.2f}%", "read_en": w[0], "read_zh": w[1], "tone": w[2],
+                "pct": int(pctile) if isinstance(pctile, (int, float)) else None,
+                "tip_en": ("Borrowed money invested in A-shares, as a share of tradable market "
+                           "value. Crowded borrowing makes a fall run further."),
+                "tip_zh": "两融余额占流通市值的比重。杠杆越拥挤，下跌时的连锁反应越大。",
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg margin row skipped (%s)", e)
+    try:
+        qv, qz = part.get("qvix"), part.get("qvix_z")
+        if qv is not None:
+            w = _rd_word(qz, [(1.0, "fearful", "恐慌", "down"),
+                              (0.0, "building", "升温", "warn"),
+                              (-99, "calm", "平静", "up")]) or ("—", "—", "muted")
+            factors.append({
+                "label_en": "Options fear", "label_zh": "期权恐慌",
+                "value": f"{qv:.1f}", "read_en": w[0], "read_zh": w[1], "tone": w[2],
+                "tip_en": ("What options traders are paying for protection on the CSI 300. "
+                           "Higher means more demand for downside cover."),
+                "tip_zh": "沪深300期权隐含波动率——数值越高，说明市场为下跌保护付出的代价越大。",
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg qvix row skipped (%s)", e)
+    try:
+        agg = (vm.get("cn_microstructure_json") or {}).get("latest_aggregate") or {}
+        lu = agg.get("limit_up_count")
+        if lu is not None:
+            lu = int(lu)
+            w = _rd_word(lu, [(60, "hot", "火热", "down"),
+                              (25, "building", "升温", "warn"),
+                              (0, "quiet", "清淡", "muted")]) or ("—", "—", "muted")
+            factors.append({
+                "label_en": "Limit-up breadth", "label_zh": "涨停梯队",
+                # no bar: a raw count has no honest 0-100 scale to draw against, and a
+                # made-up ceiling is the vetoed "fake magnitude bar" idiom (DESIGN_DOCTRINE §3).
+                "value": f"{lu}", "read_en": w[0], "read_zh": w[1], "tone": w[2], "pct": None,
+                "tip_en": "How many A-shares hit their daily price limit today.",
+                "tip_zh": "今日触及涨停板的A股数量。",
+            })
+            sealed = agg.get("sealed_up_close")
+            if sealed is not None and lu > 0:
+                sealed = int(sealed)
+                ratio = sealed / lu
+                w2 = _rd_word(ratio, [(0.7, "firm", "牢固", "muted"),
+                                      (0.4, "mixed", "参半", "muted"),
+                                      (0, "loose", "松动", "muted")]) or ("—", "—", "muted")
+                factors.append({
+                    "label_en": "Held to the close", "label_zh": "收盘封住",
+                    "value": f"{sealed}", "read_en": w2[0], "read_zh": w2[1], "tone": "muted",
+                    "tip_en": (f"{sealed} of the {lu} names that hit their limit were still "
+                               "limit-up at the close — the rest were sold back down."),
+                    "tip_zh": f"今日 {lu} 只涨停股中，{sealed} 只收盘仍封住涨停，其余盘中被打开。",
+                })
+            lb = agg.get("lianban_2plus")
+            if lb is not None:
+                lb = int(lb)
+                w3 = _rd_word(lb, [(15, "hot", "火热", "down"),
+                                   (5, "building", "升温", "warn"),
+                                   (1, "thin", "稀少", "muted"),
+                                   (0, "none", "无", "muted")]) or ("—", "—", "muted")
+                factors.append({
+                    "label_en": "Second-day runners", "label_zh": "连板家数",
+                    "value": f"{lb}", "read_en": w3[0], "read_zh": w3[1], "tone": w3[2],
+                    "tip_en": ("Names that hit the limit again after doing it the day before — "
+                               "the clearest sign speculative money is chasing."),
+                    "tip_zh": "连续两日以上涨停的个股数量——投机资金追逐程度最直接的体现。",
+                })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg microstructure rows skipped (%s)", e)
+    try:
+        sb = (vm.get("internals") or {}).get("southbound") or {}
+        cum, days = sb.get("cum_20d"), sb.get("pos_days_20")
+        if cum is not None:
+            # /100 → 亿, the page's own established southbound display unit
+            # (templates/china.html.j2 southbound card + flows dialog use the same divisor).
+            yi = cum / 100.0
+            if days is not None and days >= 12:
+                w = ("buying", "净买入", "up")
+            elif days is not None and days <= 7:
+                w = ("selling", "净卖出", "down")
+            else:
+                w = ("mixed", "进出参半", "muted")
+            factors.append({
+                "label_en": "Southbound, 20 sessions", "label_zh": "南向资金 · 近20日",
+                "value": f"{'+' if yi >= 0 else '−'}¥{abs(yi):,.0f}亿",
+                "read_en": w[0], "read_zh": w[1], "tone": w[2],
+                "tip_en": (f"Mainland money into Hong Kong over the last 20 sessions"
+                           + (f", net buyers on {days} of them" if days is not None else "")
+                           + ". Read it as risk appetite, not as an A-share flow."),
+                "tip_zh": ("近20个交易日内地资金流入港股的净额"
+                           + (f"，其中 {days} 日为净买入" if days is not None else "")
+                           + "。反映风险偏好，并非A股本身的资金流。"),
+            })
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg southbound row skipped (%s)", e)
+    if factors:
+        ctx["factors"] = factors
+    # Honest staleness note: the participation store is a separate nightly step and can
+    # lag the page by days. Say so in plain words rather than passing off an old figure.
+    try:
+        p_date = str(part.get("date") or "")[:10]
+        page_date = str(latest.get("date") or "")[:10]
+        if p_date and page_date and p_date < page_date:
+            ctx["factors_note_en"] = (f"Margin and options readings are as of {p_date}, "
+                                      "a little behind the rest of this page.")
+            ctx["factors_note_zh"] = f"两融与期权读数截至 {p_date}，略滞后于本页其余数据。"
+    except Exception:  # noqa: BLE001
+        pass
+
+    # ── Gauges: the two CN charts the old bespoke dialog carried (nothing lost) ───
+    try:
+        cond = latest.get("conditions") or {}
+        gauges = []
+        rec = cond.get("recession") or {}
+        rec_sc = rec.get("score")
+        if rec_sc is not None or cond.get("recession_html"):
+            w = _rd_word(rec_sc, [(60, "high", "高危", "down"),
+                                  (40, "elevated", "偏高", "warn"),
+                                  (0, "calm", "平静", "up")]) or (None, None, "muted")
+            gauges.append({
+                "label_en": "Deep-drawdown gauge", "label_zh": "深跌仪表",
+                "score": round(rec_sc) if rec_sc is not None else None,
+                "read_en": w[0], "read_zh": w[1], "tone": w[2],
+                "chart_html": cond.get("recession_html"),
+            })
+        if cond.get("drawdown_html"):
+            gauges.append({
+                "label_en": "Slowdown gauge", "label_zh": "放缓仪表",
+                "score": None, "read_en": None, "read_zh": None, "tone": "muted",
+                "chart_html": cond.get("drawdown_html"),
+            })
+        if gauges:
+            ctx["gauges"] = gauges
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg gauges skipped (%s)", e)
+
+    # ── Leaders: the standout board's own top rows + the limit-up heat line ───────
+    try:
+        rows = []
+        for i, s in enumerate(list(vm.get("top_setups") or [])[:5]):
+            if not isinstance(s, dict) or not s.get("ticker"):
+                continue
+            nm = str(s.get("name") or "")
+            nm_en = nm.split(" / ", 1)[0].strip() or s["ticker"]
+            # Name only — no industry. `industry`/`sector` are English-only strings on
+            # these rows, so appending one gives the ZH view "中国卫星 · Industrials":
+            # untranslated English inside Chinese copy, a bilingual-parity defect
+            # (DESIGN_DOCTRINE §5.5). Ticker + name + board rank is complete on its own.
+            rows.append({
+                "ticker": s["ticker"],
+                "name_en": nm_en,
+                "name_zh": s.get("name_zh") or nm_en,
+                "value": f"#{i + 1}", "pct": None, "tone": "muted",
+            })
+        agg = (vm.get("cn_microstructure_json") or {}).get("latest_aggregate") or {}
+        lu, lb = agg.get("limit_up_count"), agg.get("lianban_2plus")
+        line_en = line_zh = None
+        if lu is not None and lb is not None:
+            lu, lb = int(lu), int(lb)
+            if lb > 0:
+                line_en = f"Today {lu} names hit their daily limit, {lb} for a second day running."
+                line_zh = f"今日 {lu} 只个股涨停，其中 {lb} 只连板。"
+            else:
+                line_en = f"Today {lu} names hit their daily limit, none for a second day."
+                line_zh = f"今日 {lu} 只个股涨停，无连板。"
+        if rows or line_en:
+            ctx["leaders"] = {
+                "line_en": line_en, "line_zh": line_zh, "rows": rows,
+                "absent_en": "Coverage building — no names on the standout board today.",
+                "absent_zh": "数据积累中 — 今日标的板暂无名单。",
+            }
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_dlg leaders skipped (%s)", e)
+
+    # ── FX context (already attached to the radar by lib/forex_link) ──────────────
+    try:
+        if rd.get("fx_context"):
+            ctx["fx"] = rd["fx_context"]
+    except Exception:  # noqa: BLE001
+        pass
+
+    return ctx
 
 
 def main() -> int:
@@ -1522,6 +1887,16 @@ def main() -> int:
                 "rendering the delayed-board disclosure",
                 _stale.get("price_through"), _stale.get("age_days"),
             )
+
+        # ── Risk Radar dialog ctx (templates/_risk_radar_dlg.html.j2) ────────
+        # Assembled LAST: it reads market_state, internals, index_health, the
+        # chinastatedata JSONs, the calendar and top_setups, so every one of them
+        # must already be on the vm. Display-only; absent-safe section by section.
+        try:
+            vm["radar_dlg"] = _radar_dlg_vm(vm, latest)
+        except Exception as _rdlg_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("china radar_dlg ctx failed (%s); dialog renders core only", _rdlg_e)
+            vm["radar_dlg"] = {}
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)

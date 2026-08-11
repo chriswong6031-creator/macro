@@ -1,0 +1,200 @@
+  /* ==================== SHARED country Risk Radar dialog (.rrd-) ====================
+     Design cloned from the US modal #dlg-risk (templates/dashboard.html.j2 §1-§8):
+     driver headline ladder -> embedded .rrx card -> 2-col signal-tile grid -> context
+     chips -> country factor rows -> leaders -> FX -> one merged footer. Same rhythm,
+     same type ladder, PAGE-NEUTRAL classes so china / hk / canada share one source.
+
+     Tokens only. The US dialog leans on the mx5 --ink-1/2/3 ladder, which does NOT
+     exist on the country pages — this file uses the global --text / --muted / --line /
+     --panel2 set instead, so the same markup renders correctly in both scopes.
+
+     RISK COLOUR LAW: severity is painted ONLY from the zh-flipping --down / --warn /
+     --up family (theme.css `html[data-lang="zh"]` swaps --up/--down globally, Asia
+     convention), never a literal green/red hex. Tone is carried on --rrd-c by the
+     .tone-* helper classes so one variable drives icon, chip, bar and value together.
+
+     Included from _market_state.css.j2 (the single style include already shared by
+     china / hk / canada). Markup: _risk_radar_dlg.html.j2. ============================ */
+
+  .rrd { font-family: var(--font-ui, inherit); --rrd-c: var(--muted); }
+  .rrd, .rrd * { min-width: 0; }
+  .rrd .tone-down { --rrd-c: var(--down); }
+  .rrd .tone-warn { --rrd-c: var(--warn); }
+  .rrd .tone-up   { --rrd-c: var(--up); }
+  .rrd .tone-muted{ --rrd-c: var(--muted); }
+
+  /* ── headline ladder (clone of .mx5-dlg-driver-hd) ───────────────────────── */
+  .rrd-hd { display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+    padding: 16px 18px; border-radius: 12px;
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text) 9%, transparent); }
+  .rrd-hd-ico { width: 40px; height: 40px; border-radius: 10px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--rrd-c); background: color-mix(in srgb, var(--rrd-c) 13%, transparent); }
+  .rrd-hd-ico svg { width: 20px; height: 20px; display: block; }
+  .rrd-hd-txt { min-width: 0; }
+  .rrd-hd-label { font-size: 13px; font-weight: 700; margin-bottom: 3px; color: var(--rrd-c); }
+  .rrd-hd-sub { font-size: 11px; line-height: 1.5; color: var(--muted); }
+  .rrd-hd-sub + .rrd-hd-sub { margin-top: 3px; }
+  .rrd-hd-sub b { font-family: var(--num); font-variant-numeric: tabular-nums;
+    font-weight: 700; color: var(--text); }
+
+  /* ── section furniture (clone of .mx5-dlg-eyebrow / .mx5-dlg-sep) ─────────── */
+  .rrd-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+  html[data-lang="zh"] .rrd-eyebrow { letter-spacing: 0; }
+  .rrd-sep { height: 1px; margin: 22px 0;
+    background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .rrd-absent { font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+
+  /* ── signal tiles (clone of .rkc-sig-grid / .rkc-sig) ─────────────────────── */
+  .rrd-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 2px 0 4px; }
+  @media (max-width: 700px) { .rrd-tiles { grid-template-columns: 1fr; } }
+  .rrd-tile { display: flex; align-items: flex-start; gap: 9px; padding: 10px 12px;
+    border-radius: 11px; background: color-mix(in srgb, var(--text) 3%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text) 7%, transparent);
+    transition: border-color .2s ease, transform .16s ease, background .2s ease; }
+  .rrd-tile[data-tip-en] { cursor: help; }
+  .rrd-tile:hover { transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--rrd-c) 34%, var(--line));
+    background: color-mix(in srgb, var(--text) 5%, transparent); }
+  @media (prefers-reduced-motion: reduce) { .rrd-tile:hover { transform: none; } }
+  .rrd-tile-ico { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--rrd-c); background: color-mix(in srgb, var(--rrd-c) 12%, transparent); }
+  .rrd-tile-ico svg { width: 15px; height: 15px; display: block; }
+  .rrd-tile-body { flex: 1; min-width: 0; }
+  .rrd-tile-lbl { font: 700 12px/1.25 var(--font-ui, inherit); color: var(--text); }
+  .rrd-tile-state { font-size: 11px; line-height: 1.45; color: var(--muted); margin-top: 2px;
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px; }
+  .rrd-tile-state b { font-family: var(--num); font-variant-numeric: tabular-nums;
+    font-weight: 700; color: var(--text); }
+  .rrd-tile-chip { display: inline-flex; align-items: center; white-space: nowrap;
+    font: 700 10px/1 var(--font-ui, inherit); letter-spacing: .03em;
+    padding: 2px 6px; border-radius: 5px; color: var(--rrd-c);
+    background: color-mix(in srgb, var(--rrd-c) 13%, transparent);
+    border: 1px solid color-mix(in srgb, var(--rrd-c) 32%, transparent); }
+  html[data-lang="zh"] .rrd-tile-chip { letter-spacing: 0; }
+  .rrd-tile-tip { display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; height: 14px; flex: 0 0 auto; margin-left: auto; border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--text) 22%, transparent);
+    color: var(--muted); font: 700 10px/1 var(--font-ui, inherit);
+    cursor: help; user-select: none; transition: border-color .2s, color .2s; }
+  .rrd-tile-tip:hover { border-color: var(--rrd-c); color: var(--rrd-c); }
+  /* calendar tile stacks its dated rows under the label */
+  .rrd-cal { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+  .rrd-cal-row { display: flex; align-items: baseline; gap: 7px; font-size: 11px;
+    color: var(--muted); line-height: 1.35; }
+  .rrd-cal-d { flex: 0 0 auto; font-family: var(--num); font-variant-numeric: tabular-nums;
+    font-weight: 700; color: var(--text); letter-spacing: .01em; }
+  .rrd-cal-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── context chips (clone of .mx5-dlg-chips-row / .mx5-dlg-chip) ──────────── */
+  .rrd-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .rrd-chips-k { font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); }
+  html[data-lang="zh"] .rrd-chips-k { letter-spacing: 0; }
+  .rrd-chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 12px;
+    border-radius: 20px; font-size: 11px; font-weight: 600; color: var(--muted);
+    background: color-mix(in srgb, var(--rrd-c) 9%, transparent);
+    border: 1px solid color-mix(in srgb, var(--rrd-c) 30%, transparent); }
+  .rrd-chip[data-tip-en] { cursor: help; }
+  .rrd-chip b { font-weight: 700; color: var(--rrd-c); }
+
+  /* ── country factor rows (label · bar · figure · one-word read) ───────────── */
+  .rrd-frows { display: flex; flex-direction: column; gap: 2px; }
+  .rrd-frow { display: grid; grid-template-columns: minmax(110px, 1.25fr) minmax(0, 1fr) 62px 62px;
+    align-items: center; gap: 12px; padding: 8px 0; font-size: 12px;
+    border-top: 1px solid color-mix(in srgb, var(--text) 6%, transparent); }
+  .rrd-frow:first-child { border-top: 0; }
+  .rrd-frow[data-tip-en] { cursor: help; }
+  .rrd-fname { color: var(--text); font-weight: 600; }
+  .rrd-fbar { height: 7px; border-radius: 4px; overflow: hidden;
+    background: color-mix(in srgb, var(--text) 7%, transparent); }
+  .rrd-fbar i { display: block; height: 100%; border-radius: 4px; transform-origin: 0 50%;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--rrd-c) 50%, transparent), var(--rrd-c)); }
+  .rrd-fval { text-align: right; font-family: var(--num); font-variant-numeric: tabular-nums;
+    font-weight: 700; color: var(--text); }
+  .rrd-fread { text-align: right; font-size: 11px; font-weight: 700; color: var(--rrd-c); }
+  @media (max-width: 640px) {
+    .rrd-frow { grid-template-columns: minmax(0, 1fr) 56px 56px; }
+    .rrd-frow .rrd-fbar { display: none; }
+  }
+  .rrd-fnote { margin-top: 10px; font-size: 11px; line-height: 1.5; color: var(--muted); }
+
+  /* ── gauges slot (CN deep-drawdown / slowdown charts ported from the old dialog) ─ */
+  .rrd-gauges { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+  @media (max-width: 820px) { .rrd-gauges { grid-template-columns: minmax(0, 1fr); } }
+  .rrd-gauge-hd { display: flex; align-items: baseline; gap: 9px; margin-bottom: 4px; }
+  .rrd-gauge-name { font: 700 12px/1.25 var(--font-ui, inherit); color: var(--text); }
+  .rrd-gauge-score { font-family: var(--num); font-variant-numeric: tabular-nums;
+    font-size: 22px; font-weight: 800; color: var(--rrd-c); line-height: 1; }
+  .rrd-gauge-read { font-size: 11px; font-weight: 700; color: var(--rrd-c); }
+  .rrd-gauge-chart { max-width: 100%; overflow-x: auto; }
+  .rrd-gauge-chart img, .rrd-gauge-chart svg, .rrd-gauge-chart .chart-ph { max-width: 100%; }
+
+  /* ── leaders (clone of .rkc-ldr-*) ────────────────────────────────────────── */
+  .rrd-ldr-line { font: 600 12.5px/1.45 var(--font-ui, inherit); color: var(--text); margin-bottom: 10px; }
+  .rrd-ldr-rows { display: flex; flex-direction: column; gap: 6px; }
+  .rrd-ldr-row { display: grid; grid-template-columns: 58px minmax(0, 1fr) 1fr 54px;
+    align-items: center; gap: 9px; }
+  /* no magnitude to draw -> the bar column is not emitted at all */
+  .rrd-ldr-row.is-plain { grid-template-columns: 58px minmax(0, 1fr) 54px; }
+  .rrd-ldr-tkr { font: 700 11px/1 var(--font-mono, ui-monospace, 'SF Mono', monospace);
+    color: var(--text); letter-spacing: .02em; }
+  .rrd-ldr-name { font-size: 11px; color: var(--muted); overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .rrd-ldr-track { height: 9px; border-radius: 5px;
+    background: color-mix(in srgb, var(--text) 6%, transparent); overflow: hidden; }
+  .rrd-ldr-fill { height: 100%; border-radius: 5px; transform-origin: 0 50%;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--rrd-c) 55%, transparent), var(--rrd-c)); }
+  .rrd-ldr-val { text-align: right; font: 800 11px/1 var(--font-ui, inherit);
+    font-family: var(--num); font-variant-numeric: tabular-nums; color: var(--rrd-c); }
+  @media (max-width: 640px) { .rrd-ldr-row { grid-template-columns: 58px minmax(0, 1fr) 54px; }
+    .rrd-ldr-row .rrd-ldr-track { display: none; } }
+
+  /* ── risk ladder (clone of #dlg-risk .scare-ladder, §6 of the US modal) ───── */
+  .rrd-ladder { display: flex; flex-direction: column; gap: 2px; }
+  .rrd-lrow { display: grid; grid-template-columns: minmax(120px, 1.2fr) minmax(0, 1fr) 38px 66px;
+    align-items: center; gap: 10px; padding: 7px 0; font-size: 12px;
+    border-top: 1px solid color-mix(in srgb, var(--text) 6%, transparent); }
+  .rrd-lrow:first-child { border-top: 0; }
+  .rrd-lname { color: var(--text); font-weight: 600; }
+  .rrd-lscore { text-align: right; font-family: var(--num); font-variant-numeric: tabular-nums;
+    font-weight: 800; color: var(--rrd-c); }
+  .rrd-lband { justify-self: end; font: 700 9.5px/1 var(--font-ui, inherit); letter-spacing: .05em;
+    text-transform: uppercase; padding: 3px 7px; border-radius: 999px; white-space: nowrap;
+    color: var(--rrd-c); background: color-mix(in srgb, var(--rrd-c) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--rrd-c) 30%, transparent); }
+  html[data-lang="zh"] .rrd-lband { letter-spacing: 0; }
+  @media (max-width: 640px) {
+    .rrd-lrow { grid-template-columns: minmax(0, 1fr) 38px 62px; }
+    .rrd-lrow .rrd-fbar { display: none; }
+  }
+
+  /* ── FX rows ──────────────────────────────────────────────────────────────── */
+  .rrd-fx { display: flex; flex-direction: column; gap: 2px; }
+  .rrd-fxrow { display: grid; grid-template-columns: minmax(110px, 160px) minmax(0, 1fr);
+    align-items: center; gap: 12px; padding: 8px 0; font-size: 12px;
+    border-top: 1px solid color-mix(in srgb, var(--text) 6%, transparent); }
+  .rrd-fxrow:first-child { border-top: 0; }
+  .rrd-fxk { color: var(--text); font-weight: 600; }
+  .rrd-fxv { display: flex; align-items: baseline; flex-wrap: wrap; gap: 7px; color: var(--muted); }
+  .rrd-fxnum { font-family: var(--num); font-variant-numeric: tabular-nums; font-weight: 700;
+    color: var(--text); }
+
+  /* ── merged footer (clone of .rsx-dlg-footer) ─────────────────────────────── */
+  .rrd-foot { font-size: 10.5px; line-height: 1.55; color: var(--muted); margin-top: 4px; }
+
+  /* ── the embedded .rrx card, dialog-scoped (mirrors the #dlg-risk overrides) ─
+     The card's own stacked prose rows are REBUILT above as tiles / rows, so the
+     duplicates are suppressed here ONLY — the shared board default (the .rrx card
+     on the china / hk / canada home boards) is untouched. The de-escalation panel
+     (.rrx-rec) has no tile twin, so it STAYS. */
+  .rrd .rrx { box-shadow: none; border-left-width: 3px;
+    background: color-mix(in srgb, var(--rc) 5%, var(--panel));
+    border-color: color-mix(in srgb, var(--rc) 22%, var(--line)); }
+  .rrd .rrx .rrx-ev, .rrd .rrx .rrx-do, .rrd .rrx .rrx-cgl,
+  .rrd .rrx .rrx-fxc, .rrd .rrx .rrx-trk, .rrd .rrx .rrx-audit { display: none; }
+  .rrd .rrx .rrx-ramp { padding-top: 22px; }
+  .rrd .rrx .rrx-tk { height: 66px; }
