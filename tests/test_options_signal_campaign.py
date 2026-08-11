@@ -7,9 +7,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import pandas as pd
 import pytest
 
 import engine.options_signal_campaign as campaign_engine
+from engine.options_signal_episode import derive_h60_outcome
 from lib import nyse_calendar
 
 from engine.options_signal_campaign import (
@@ -685,7 +687,7 @@ def test_source_episode_preserves_the_full_canonical_decision_vocabulary(
     episode["decision"].update(
         {
             "disposition": "fire",
-            "reason": "valid owner-defined reason",
+            "reason": " valid owner-defined reason ",
             "underlying_direction": "long",
             "option_action": "buy",
         }
@@ -701,3 +703,46 @@ def test_source_episode_preserves_the_full_canonical_decision_vocabulary(
     assert campaign.get("reason") != episode["decision"]["reason"]
     for forbidden in ("underlying_direction", "option_action"):
         assert forbidden not in campaign
+
+
+def test_campaign_refuses_an_owner_valid_training_eligible_h60_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("COLLECT_LANE", raising=False)
+    episode = _episode("trainable-source", "2026-08-10T14:02:00Z")
+    stamps = pd.date_range(
+        episode["available_at"], "2026-08-10T15:02:00Z", freq="1min"
+    )
+    bars = pd.DataFrame(
+        {"open": 100.0, "high": 101.0, "low": 99.0, "close": 100.0},
+        index=stamps,
+    )
+    price_receipt = {
+        "schema": "polygon.intraday_price_receipt/v1",
+        "ticker": "NVDA",
+        "source_file": "NVDA.parquet",
+        "source_file_sha256": hashlib.sha256(b"trainable-source").hexdigest(),
+        "source_available_at": "2026-08-10T15:02:00Z",
+        "bar_seconds": 60,
+        "vendor_delay_minutes": 0,
+        "adjusted": True,
+        "price_basis": "split_adjusted_polygon_aggregate_ohlc",
+        "timestamp_basis": "aggregate_window_start_utc",
+        "row_count": len(bars),
+        "first_time": "2026-08-10T14:02:00Z",
+        "last_time": "2026-08-10T15:02:00Z",
+    }
+    outcome = derive_h60_outcome(
+        episode,
+        bars,
+        computed_at=datetime(2026, 8, 10, 15, 3, tzinfo=timezone.utc),
+        price_source="data/intraday/NVDA.parquet",
+        bar_seconds=60,
+        price_delay_minutes=0,
+        price_receipt=price_receipt,
+    )
+    assert outcome["measurement"]["training_eligible"] is True
+    root = _root(tmp_path, [episode], h60=[outcome])
+
+    with pytest.raises(CampaignContractError, match="unexpectedly permits training"):
+        run(root_dir=root)

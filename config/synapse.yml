@@ -15232,6 +15232,8 @@ artifacts:
     consumers:
       - scripts/build_options_signal_episode.py
       - scripts/capture_market_memory_options_episodes.py
+      - scripts/audit_options_market_memory_context.py
+      - engine/options_signal_campaign.py
     external_consumers: []
     notes: >
       Immutable point-in-time option-flow decision episodes. Event, observation,
@@ -15241,10 +15243,11 @@ artifacts:
       reconstructed from a later cumulative feed. Current notable events are
       watch observations, not picks; authority to originate, rank, gate, size or
       escalate is false. Only the nightly lane may append committed rows. The
-      network-dark Market Memory production-record adapter is a read-only second
-      consumer: it binds exact committed bytes in a private zero-authority store,
-      never writes this owner ledger, and excludes the frozen initial prefix from
-      forward proof.
+      network-dark Market Memory production-record adapter is a read-only consumer:
+      it binds exact committed bytes in a private zero-authority store, never writes
+      this owner ledger, and excludes the frozen initial prefix from forward proof.
+      The context audit and canonical campaign engine also read the exact ledger but
+      receive no writer or decision authority.
 
   options-signal-episode-h60-outcomes:
     path: data/options_signal_episode/outcomes_h60.jsonl
@@ -15263,6 +15266,8 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_options_signal_episode.py
+      - scripts/audit_options_market_memory_context.py
+      - engine/options_signal_campaign.py
     external_consumers: []
     notes: >
       Append-only H+60 research outcomes keyed to immutable option-flow episodes.
@@ -15294,6 +15299,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_options_signal_episode.py
+      - engine/options_signal_campaign.py
     external_consumers: []
     notes: >
       Separate immutable EOD/1d/3d/5d/10d underlying outcomes keyed to the
@@ -15326,15 +15332,18 @@ artifacts:
     horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/audit_options_market_memory_context.py
     external_consumers: []
     notes: >
       Frozen eight-row retrospective threshold cohort preserved byte-for-byte for
-      audit history. No active producer or consumer may advance it. It is not the
-      canonical campaign contract, is not prospective evidence, and cannot support
-      selector or promotion claims. Training eligibility and every selection,
-      score, rank, gate, size, trade, publication, option-return, origination,
-      escalation, Neural Web, Prophet, and model-training authority remain false.
+      audit history. No active producer may advance it; its only consumer is the
+      read-only context audit that authenticates the exact frozen bytes and source
+      joins. It is not the canonical campaign contract, is not prospective evidence,
+      and cannot support selector or promotion claims. Training eligibility and
+      every selection, score, rank, gate, size, trade, publication, option-return,
+      origination, escalation, Neural Web, Prophet, and model-training authority
+      remain false.
 
   options-signal-campaign-revisions:
     path: data/options_signal_campaign/campaigns.jsonl

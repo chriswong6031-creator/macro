@@ -174,8 +174,8 @@ def validate_episode_pit(row: dict[str, Any]) -> None:
     if decision.get("disposition") not in SOURCE_DISPOSITIONS:
         raise EpisodeSourceContractError("episode decision disposition is invalid")
     reason = decision.get("reason")
-    if type(reason) is not str or not reason or reason != reason.strip():
-        raise EpisodeSourceContractError("episode decision reason must be normalized")
+    if type(reason) is not str or not reason:
+        raise EpisodeSourceContractError("episode decision reason must be nonempty")
     if decision.get("underlying_direction") not in SOURCE_UNDERLYING_DIRECTIONS:
         raise EpisodeSourceContractError("episode underlying direction is invalid")
     if decision.get("option_action") not in SOURCE_OPTION_ACTIONS:
@@ -283,8 +283,6 @@ def validate_h60_outcome_join(row: dict[str, Any], episode: dict[str, Any]) -> N
         )
     if row.get("label_authority") != "research_only":
         raise EpisodeSourceContractError("source outcome must remain research_only")
-    if row.get("measurement", {}).get("training_eligible") is not False:
-        raise EpisodeSourceContractError("source outcome must remain training-ineligible")
 
     session = _canonical_date(episode["session_date"], "episode.session_date")
     open_et, close_et = session_window_et(session)

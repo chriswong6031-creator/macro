@@ -562,10 +562,12 @@ def test_h60_requires_a_complete_declared_cadence_grid() -> None:
         episode,
         complete,
         computed_at=datetime(2026, 7, 2, 15, 32, tzinfo=timezone.utc),
-        price_source="fixture",
+        price_source="data/intraday/TEST.parquet",
         bar_seconds=60,
         price_delay_minutes=0,
     )
+    validate_outcome(row)
+    validate_outcome_against_episode(row, episode)
     assert row["status"] == "complete"
     assert row["measurement"]["target_aligned"] is True
     assert row["measurement"]["training_eligible"] is True
@@ -3043,7 +3045,10 @@ def test_session_outcome_registry_has_one_writer_no_authority_consumers() -> Non
     artifact = registry["artifacts"]["options-signal-episode-session-outcomes"]
     assert artifact["producer"] == "scripts/build_options_signal_episode.py"
     assert artifact["known_extra_writers"] == []
-    assert artifact["consumers"] == ["scripts/build_options_signal_episode.py"]
+    assert artifact["consumers"] == [
+        "scripts/build_options_signal_episode.py",
+        "engine/options_signal_campaign.py",
+    ]
     assert artifact["external_consumers"] == []
     assert artifact["tier"] == "shadow"
     notes = artifact["notes"].lower()
@@ -4572,10 +4577,26 @@ def test_campaign_registry_has_one_writer_and_no_authority_consumers() -> None:
     legacy = registry["artifacts"]["options-signal-campaigns"]
     assert legacy["producer"] == ""
     assert legacy["known_extra_writers"] == []
-    assert legacy["consumers"] == []
+    assert legacy["consumers"] == [
+        "scripts/audit_options_market_memory_context.py"
+    ]
     assert legacy["external_consumers"] == []
     assert legacy["weights"] == "none"
     assert legacy["scored_path_surfaces"] == []
+
+    assert registry["artifacts"]["options-signal-episodes"]["consumers"] == [
+        "scripts/build_options_signal_episode.py",
+        "scripts/capture_market_memory_options_episodes.py",
+        "scripts/audit_options_market_memory_context.py",
+        "engine/options_signal_campaign.py",
+    ]
+    assert registry["artifacts"]["options-signal-episode-h60-outcomes"][
+        "consumers"
+    ] == [
+        "scripts/build_options_signal_episode.py",
+        "scripts/audit_options_market_memory_context.py",
+        "engine/options_signal_campaign.py",
+    ]
 
     for artifact_id in (
         "options-signal-campaign-revisions",
