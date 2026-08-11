@@ -26,5 +26,21 @@
   ],
   "quantum_computing": [
     "541715"
+  ],
+  "power_grid": [
+    "333611"
+  ],
+  "data_center_power": [
+    "518210"
+  ],
+  "ai_infra": [
+    "518210"
+  ],
+  "ai_software": [
+    "541512"
+  ],
+  "cybersecurity": [
+    "541512",
+    "561621"
   ]
 }
