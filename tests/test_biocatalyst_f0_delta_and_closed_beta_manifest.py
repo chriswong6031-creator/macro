@@ -317,6 +317,7 @@ def test_every_unavailable_family_states_a_blocker_and_unlocks_nothing() -> None
     }
     assert unavailable == _EXPECTED_FAMILIES - {
         "clinicaltrials_current_record",
+        "clinicaltrials_record_history",
         "earnings_transcript_context",
     }
 

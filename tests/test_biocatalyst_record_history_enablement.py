@@ -125,6 +125,27 @@ def test_the_closed_beta_denominator_mirrors_the_registry_rights_state() -> None
     source = _source()
     assert binding["rights_state"] == source["rights_state"]
     assert binding["production_ingest_allowed"] == source["production_ingest_allowed"]
+    family = next(
+        family
+        for family in manifest["families"]
+        if family["family_id"] == "clinicaltrials_record_history"
+    )
+    assert family["obligation"] == "deferred"
+    assert family["availability"] == "available"
+    assert family["activation_state"] == (
+        "armed_bounded_record_history_source_facts_only"
+    )
+    assert family["blocker"] is None
+    assert set(family["features_unlocked"]) == {
+        "complete_version_timeline",
+        "exact_historical_field_diff",
+        "registry_change_tape_lineage",
+    }
+    assert {
+        "halt_onset_date",
+        "protocol_change_interpretation",
+        "endpoint_readout_interpretation",
+    } <= set(family["features_unavailable"])
     # This artifact remains a denominator, not the activation receipt.
     assert manifest["state"] == "draft_denominator_unarmed"
 
