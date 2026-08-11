@@ -20,7 +20,7 @@
 # the nightly goes THERE, and reaches this box through terminal-build.sh.
 #
 # Deploy model: the charting-app lives on GitHub
-# (https://github.com/chriswong6031-creator/mastermind-terminal.git) and deploys are
+# (https://github.com/mastermindx-market-intelligence/mastermind-terminal.git) and deploys are
 # git-gated — merge to master, then /opt/terminal/terminal-build.sh on the VPS runs
 # `git fetch && git reset --hard origin/master` in /opt/terminal/.gitsrc and
 # overlay-syncs the runtime code (ingest/signal_layer/contracts/ops) from that checkout.

@@ -119,6 +119,16 @@
     ui.companyIdentity = byId('ff-company-identity');
     ui.companyAction = byId('ff-company-action');
     ui.notice = byId('ff-data-notice');
+    ui.overview = byId('ff-overview');
+    ui.overviewStatus = byId('ff-overview-status');
+    ui.quickSignal = byId('ff-quick-signal');
+    ui.quickSignalLabel = byId('ff-quick-signal-label');
+    ui.quickSignalTitle = byId('ff-quick-signal-title');
+    ui.quickSignalSummary = byId('ff-quick-signal-summary');
+    ui.statAttention = byId('ff-stat-attention');
+    ui.statWatch = byId('ff-stat-watch');
+    ui.statCoverage = byId('ff-stat-coverage');
+    ui.statSources = byId('ff-stat-sources');
     ui.tabs = Array.prototype.slice.call(document.querySelectorAll('.ff-tab'));
     ui.viewStatus = byId('ff-view-status');
     ui.priorityFilters = byId('ff-priority-filters');
@@ -312,8 +322,8 @@
   }
 
   function priorityInfo(priority) {
-    if (priority === 'high') return { icon: '!', en: 'Review now', zh: '立即审阅' };
-    return { icon: '○', en: 'Watch', zh: '持续关注' };
+    if (priority === 'high') return { icon: '!', en: 'Needs attention', zh: '需要关注' };
+    return { icon: '○', en: 'Keep an eye on', zh: '持续观察' };
   }
 
   function safeUrl(value) {
@@ -886,14 +896,23 @@
     var watchCount = findings.filter(function (item) { return item.priority === 'watch'; }).length;
     var action = target.action || {};
     var actionKey = action.key || (highCount ? 'high' : watchCount ? 'watch' : 'covered');
-    var actionEn = action.en || (highCount ? 'Review now' : watchCount ? 'Worth a look' : 'No review needed in covered checks');
-    var actionZh = action.zh || (highCount ? '立即审阅' : watchCount ? '值得查看' : '已覆盖检查暂不需审阅');
+    var actionEn = actionKey === 'high'
+      ? highCount + (highCount === 1 ? ' needs attention' : ' need attention')
+      : actionKey === 'watch'
+        ? watchCount + ' to watch'
+        : actionKey === 'limited' ? 'Some checks could not run' : 'No unusual change in covered checks';
+    var actionZh = actionKey === 'high'
+      ? highCount + ' 项变化需要关注'
+      : actionKey === 'watch'
+        ? watchCount + ' 项变化值得持续观察'
+        : actionKey === 'limited' ? '部分检查无法运行' : '已覆盖检查暂无异常变化';
     var actionIcon = actionKey === 'high' ? '!' : actionKey === 'watch' ? '○' : actionKey === 'limited' ? '?' : '✓';
     ui.companyAction.setAttribute('data-action', actionKey);
     ui.companyAction.innerHTML = '<span class="ff-action-glyph" aria-hidden="true">' + actionIcon + '</span>' +
       '<span class="ff-action-copy">' + pair(actionEn, actionZh) + '</span>';
 
     renderNotice(target);
+    renderOverview(target, findings);
     renderTopicOptions(findings);
     renderFindings();
     renderStatements(target);
@@ -906,6 +925,61 @@
     renderTrace(target);
     renderCurrentEvidence();
     updateViewStatus();
+  }
+
+  function renderOverview(target, findings) {
+    findings = Array.isArray(findings) ? findings : [];
+    var high = findings.filter(function (item) { return item.priority === 'high'; });
+    var watch = findings.filter(function (item) { return item.priority === 'watch'; });
+    var coverage = target.coverage || {};
+    var coverageValue = numberValue(coverage.metrics_pct);
+    var evidenceCount = findings.reduce(function (total, finding) {
+      return total + (Array.isArray(finding.evidence) ? finding.evidence.length : 0);
+    }, 0);
+    var first = high[0] || watch[0] || findings[0] || null;
+
+    ui.statAttention.textContent = String(high.length);
+    ui.statWatch.textContent = String(watch.length);
+    ui.statCoverage.textContent = coverageValue == null ? '—' : formatPercent(coverageValue);
+    ui.statSources.textContent = String(evidenceCount);
+
+    var statusKey = high.length ? 'attention' : watch.length ? 'watch' : first ? 'watch' : 'clear';
+    ui.overviewStatus.setAttribute('data-state', statusKey);
+    ui.overviewStatus.innerHTML = high.length
+      ? pair(high.length + ' change' + (high.length === 1 ? '' : 's') + ' need attention', high.length + ' 项变化需要关注')
+      : watch.length
+        ? pair(watch.length + ' change' + (watch.length === 1 ? '' : 's') + ' to watch', watch.length + ' 项变化值得观察')
+        : pair('No unusual change in covered checks', '已覆盖检查暂无异常变化');
+
+    if (!first) {
+      ui.quickSignal.setAttribute('data-priority', 'clear');
+      ui.quickSignalLabel.innerHTML = pair('Latest covered comparison', '最新已覆盖对比');
+      ui.quickSignalTitle.innerHTML = pair('No unusual change surfaced', '暂无异常变化');
+      ui.quickSignalSummary.innerHTML = pair(
+        'That is not a clean-company verdict. Check the coverage and source limitations before drawing a conclusion.',
+        '这并不代表公司没有问题。得出结论前，请先查看覆盖范围和来源局限。'
+      );
+      var emptyTrigger = ui.quickSignal.querySelector('[data-open-primary-finding]');
+      if (emptyTrigger) {
+        emptyTrigger.setAttribute('data-go-tab', 'trace');
+        emptyTrigger.removeAttribute('data-open-primary-finding');
+        emptyTrigger.innerHTML = pair('Check coverage and sources', '查看覆盖范围和来源') + ' <span aria-hidden="true">→</span>';
+      }
+      return;
+    }
+
+    ui.quickSignal.setAttribute('data-priority', first.priority || 'watch');
+    ui.quickSignalLabel.innerHTML = first.priority === 'high'
+      ? pair('First thing to understand', '首先需要了解')
+      : pair('Worth keeping an eye on', '值得持续观察');
+    ui.quickSignalTitle.innerHTML = fieldPair(first, 'title', 'Filing change');
+    ui.quickSignalSummary.innerHTML = fieldPair(first, 'summary', 'Open this signal to see the numbers and source.');
+    var trigger = ui.quickSignal.querySelector('.ff-quick-signal-open');
+    if (trigger) {
+      trigger.setAttribute('data-open-primary-finding', '');
+      trigger.removeAttribute('data-go-tab');
+      trigger.innerHTML = pair('See why it matters', '查看为什么重要') + ' <span aria-hidden="true">→</span>';
+    }
   }
 
   // Coverage-less runs are one product state, so they get one home. This used to
@@ -923,27 +997,31 @@
     var pct = numberValue(coverage.metrics_pct);
     var limitationsEn = Array.isArray(source.limitations_en) ? source.limitations_en : [];
     var limitationsZh = Array.isArray(source.limitations_zh) ? source.limitations_zh : [];
-    var notices = [];
+    var headline = '';
+    var details = '';
 
     if (state.unknownRequestedSymbol) {
-      notices.push(pair(state.unknownRequestedSymbol + ' is not covered; showing ' + state.symbol + '.',
-        '尚未覆盖 ' + state.unknownRequestedSymbol + '；现显示 ' + state.symbol + '。'));
-    }
-    if (pct != null && (pct <= 1 ? pct < 0.999 : pct < 99.9)) {
-      notices.push(pair('Metric coverage is ' + formatPercent(pct) + '; missing facts remain missing and are not imputed.',
-        '指标覆盖率为 ' + formatPercent(pct) + '；缺失事实保持缺失，不进行填补。'));
+      headline = pair(state.unknownRequestedSymbol + ' is not covered yet, so we are showing ' + state.symbol + '.',
+        '尚未覆盖 ' + state.unknownRequestedSymbol + '，现显示 ' + state.symbol + '。');
+    } else if (pct != null && (pct <= 1 ? pct < 0.999 : pct < 99.9)) {
+      headline = pair(
+        'We could compare ' + formatPercent(pct) + ' of the expected metrics. Missing values were left blank.',
+        '本次可对比 ' + formatPercent(pct) + ' 的预期指标；缺失值保持空白。'
+      );
     }
     if (limitationsEn.length || limitationsZh.length) {
-      notices.push(pair(limitationsEn[0] || limitationsZh[0], limitationsZh[0] || limitationsEn[0]));
+      details = '<details class="ff-coverage-details"><summary>' + pair('About this coverage', '关于本次覆盖') +
+        '</summary><p>' + pair(limitationsEn[0] || limitationsZh[0], limitationsZh[0] || limitationsEn[0]) + '</p></details>';
     }
-    if (!notices.length) {
+    if (!headline && !details) {
       ui.notice.hidden = true;
       ui.notice.innerHTML = '';
       return;
     }
     ui.notice.className = 'ff-data-notice';
     ui.notice.hidden = false;
-    ui.notice.innerHTML = notices.join('<span aria-hidden="true"> · </span>');
+    ui.notice.innerHTML = '<span class="ff-notice-icon" aria-hidden="true">i</span><div>' +
+      (headline || pair('Coverage details are available.', '可查看覆盖范围详情。')) + details + '</div>';
   }
 
   function renderTopicOptions(findings) {
@@ -988,8 +1066,8 @@
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
 
-    ui.filterSummary.innerHTML = pair(visible.length + ' of ' + all.length + ' findings',
-      '显示 ' + visible.length + ' / ' + all.length + ' 项发现');
+    ui.filterSummary.innerHTML = pair(visible.length + ' of ' + all.length + ' signals',
+      '显示 ' + visible.length + ' / ' + all.length + ' 个信号');
 
     if (!visible.length) {
       var hasAny = all.length > 0;
@@ -1037,7 +1115,7 @@
         '<h3>' + fieldPair(finding, 'title', 'Untitled finding') + '</h3>' +
         '<span class="ff-finding-summary">' + fieldPair(finding, 'summary', 'No summary supplied.') + '</span></span>' +
         '<span class="ff-finding-periods"><strong>' + esc(periodText) + '</strong>' +
-        pair('Open evidence', '查看证据') + '</span></button></div>';
+        pair('Why this matters', '为什么重要') + ' <span aria-hidden="true">→</span></span></button></div>';
     }).join('');
     if (state.evidenceKind === 'finding') renderEvidence(selectedFinding());
   }
@@ -1477,7 +1555,7 @@
       return '<article class="ff-trace-finding"><div class="ff-trace-finding-head"><div><p class="ff-kicker">' +
         topicPair(finding.topic) + ' · ' + esc(finding.detector || '—') + '</p><h3>' + fieldPair(finding, 'title', 'Untitled finding') +
         '</h3></div><button class="ff-trace-open" type="button" data-open-finding="' + esc(finding.id) + '">' +
-        pair('Inspect', '检查') + '</button></div><code class="ff-proof-code">' +
+        pair('See details', '查看详情') + '</button></div><code class="ff-proof-code">' +
         fieldPair(finding, 'formula', 'Formula not supplied') + '</code><div class="ff-trace-receipts">' + receiptLinks + '</div></article>';
     }).join('') : emptyState('No source-map findings', '暂无来源映射发现',
       'There are no findings to map for this company.', '该公司暂无可映射来源的发现。', '—');
@@ -1493,28 +1571,27 @@
         '<span class="ff-trace-receipt">' + esc(label) + '</span>';
     }).join('');
     var disclosureTrace = disclosureTrack ? '<section class="ff-trace-card"><p class="ff-kicker">' +
-      pair('Disclosure comparison', '披露对比') + '</p><h3>' + pair('Accession-aware source pair', '基于文件编号的来源组合') + '</h3><p>' + pair(
-        disclosureFindingItems.length + ' comparison outcomes · ' + disclosureRedlineItems.length + ' observable text changes',
-        disclosureFindingItems.length + ' 个对比结果 · ' + disclosureRedlineItems.length + ' 条可观察文本变化'
+      pair('Wording comparison', '措辞对比') + '</p><h3>' + pair('The two filings used here', '本次使用的两份财报') + '</h3><p>' + pair(
+        disclosureFindingItems.length + ' results · ' + disclosureRedlineItems.length + ' wording changes',
+        disclosureFindingItems.length + ' 项结果 · ' + disclosureRedlineItems.length + ' 条措辞变化'
       ) + '</p><div class="ff-trace-receipts">' + (disclosureLinks || '<span class="ff-trace-receipt">' + pair('No filing link supplied', '未提供财报链接') + '</span>') + '</div></section>' :
-      '<section class="ff-trace-card"><p class="ff-kicker">' + pair('Disclosure comparison', '披露对比') + '</p><h3>' + pair('Not available yet', '暂不可用') + '</h3><p>' + pair(
-        'A filing pair is required before disclosure redlines can be shown.',
-        '在显示披露逐字对照前，需要一组财报文件。'
+      '<section class="ff-trace-card"><p class="ff-kicker">' + pair('Wording comparison', '措辞对比') + '</p><h3>' + pair('Not available yet', '暂不可用') + '</h3><p>' + pair(
+        'Wording changes appear when two matching SEC filings are available.',
+        '当有两份匹配的 SEC 财报时，这里会显示措辞变化。'
       ) + '</p></section>';
 
     ui.trace.innerHTML = '<div class="ff-trace-grid"><div><section class="ff-trace-card"><p class="ff-kicker">' +
-      pair('Dataset', '数据集') + '</p><h3>' + pair(sourceEn, sourceZh) + '</h3><p>' + pair(basisEn, basisZh) + '</p>' +
+      pair('Data source', '数据来源') + '</p><h3>' + pair(sourceEn, sourceZh) + '</h3><p>' + pair(basisEn, basisZh) + '</p>' +
       '<div class="ff-coverage-grid"><div class="ff-coverage-stat"><small>' + pair('Periods', '期间数') + '</small><strong>' +
       esc(coverage.periods == null ? (Array.isArray(target.periods) ? target.periods.length : 0) : coverage.periods) + '</strong></div>' +
       '<div class="ff-coverage-stat"><small>' + pair('Metric coverage', '指标覆盖率') + '</small><strong>' +
       esc(coverage.metrics_pct == null ? '—' : formatPercent(coverage.metrics_pct)) + '</strong></div>' +
-      '<div class="ff-coverage-stat"><small>' + pair('Findings', '发现数') + '</small><strong>' + findings.length + '</strong></div>' +
+      '<div class="ff-coverage-stat"><small>' + pair('Signals', '信号数') + '</small><strong>' + findings.length + '</strong></div>' +
       '<div class="ff-coverage-stat"><small>' + pair('Source links', '来源链接') + '</small><strong>' + evidenceCount + '</strong></div></div>' +
       (sourceUrl ? '<a class="ff-source-link" href="' + esc(sourceUrl) + '" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span>' +
-        pair('Open company facts source', '打开公司事实来源') + '</a>' : '') +
-      '<div class="ff-proof-section"><h3>' + pair('Known limitations', '已知局限') + '</h3><ul class="ff-source-limitations">' + limitations + '</ul></div></section>' +
-      '<section class="ff-trace-card"><p class="ff-kicker">' + pair('Detector registry', '检测器清单') + '</p><h3>' +
-      pair('Rules in this build', '当前版本规则') + '</h3><ul class="ff-detector-list">' + detectorHtml + '</ul></section>' + disclosureTrace + '</div>' +
+        pair('Open Company Facts at the SEC', '在 SEC 打开公司事实数据') + '</a>' : '') +
+      '<details class="ff-trace-details"><summary>' + pair('What to know about this data', '关于这些数据需要了解') + '</summary><div class="ff-proof-section"><ul class="ff-source-limitations">' + limitations + '</ul></div></details></section>' +
+      '<section class="ff-trace-card"><details class="ff-trace-details"><summary>' + pair('How signals are detected', '信号如何识别') + '</summary><div><ul class="ff-detector-list">' + detectorHtml + '</ul></div></details></section>' + disclosureTrace + '</div>' +
       '<div class="ff-trace-findings">' + traceFindings + '</div></div>';
   }
 
@@ -2161,28 +2238,28 @@
     var receipt = state.receipt;
     if (receipt.phase === 'idle') {
       ui.receipt.innerHTML = receiptEmpty(
-        'Receipt on demand', '按需读取凭据',
-        'Open the sealed receipt to inspect the published correspondence record for this issuer.',
-        '打开密封凭据，以检查该发行人已发布的对应记录。'
+        'Run record', '运行记录',
+        'Open this view to see the saved publication details for the selected company.',
+        '打开此视图，查看所选公司的已保存发布详情。'
       );
       renderReceiptInspector();
       return;
     }
     if (receipt.phase === 'loading') {
       ui.receipt.innerHTML = '<div class="ff-loading" role="status"><span class="ff-loading-dot" aria-hidden="true"></span>' +
-        pair('Loading sealed receipt…', '正在载入密封凭据…') + '</div>';
+        pair('Loading run record…', '正在载入运行记录…') + '</div>';
       renderReceiptInspector();
       return;
     }
     if (receipt.phase === 'mismatch') {
       var mismatchEn = receipt.ownerCik ?
-        'The available receipt belongs to a different issuer, so no coverage rows were requested.' :
-        'The selected company has no CIK available for an issuer match, so no coverage rows were requested.';
+        'The available record belongs to a different company, so nothing was loaded.' :
+        'This company has no SEC identifier in the dataset, so the record cannot be matched.';
       var mismatchZh = receipt.ownerCik ?
-        '可用凭据属于另一发行人，因此未请求任何覆盖行。' :
-        '选定公司没有可用于发行人匹配的 CIK，因此未请求任何覆盖行。';
+        '可用记录属于另一家公司，因此未载入内容。' :
+        '数据集中没有该公司的 SEC 标识，因此无法匹配记录。';
       ui.receipt.innerHTML = receiptEmpty(
-        'No published receipt for this selected issuer', '该选定发行人暂无已发布凭据',
+        'No run record for this company', '该公司暂无运行记录',
         mismatchEn, mismatchZh
       );
       renderReceiptInspector();
@@ -2190,9 +2267,9 @@
     }
     if (receipt.phase === 'access') {
       ui.receipt.innerHTML = receiptEmpty(
-        'Receipt access is unavailable for this session', '当前会话无法访问凭据',
-        'The evidence map remains available. Sign in again, then retry this private read.',
-        '证据映射仍可使用。请重新登录后重试此私有读取。',
+        'Run record unavailable in this session', '当前会话无法访问运行记录',
+        'The source map still works. Sign in again, then retry.',
+        '来源地图仍可使用。请重新登录后再试。',
         '<button class="ff-receipt-retry" type="button" data-receipt-action="retry">' + pair('Retry', '重试') + '</button>'
       );
       renderReceiptInspector();
@@ -2200,9 +2277,9 @@
     }
     if (receipt.phase !== 'ready' || !receipt.latest || !receipt.page) {
       ui.receipt.innerHTML = receiptEmpty(
-        'Receipt temporarily unavailable', '凭据暂时不可用',
-        'The evidence map remains available. This view does not infer coverage without a sealed response.',
-        '证据映射仍可使用。缺少密封响应时，此视图不会推断覆盖范围。',
+        'Run record temporarily unavailable', '运行记录暂时不可用',
+        'The source map still works. Try this view again in a moment.',
+        '来源地图仍可使用。请稍后再试。',
         '<button class="ff-receipt-retry" type="button" data-receipt-action="retry">' + pair('Retry', '重试') + '</button>'
       );
       renderReceiptInspector();
@@ -2295,10 +2372,10 @@
     if (!ui.receiptInspectorBody) return;
     var receipt = state.receipt;
     if (!receipt.rootCellId) {
-      ui.receiptInspectorTitle.innerHTML = pair('Select a receipt cell', '选择一个凭据单元');
+      ui.receiptInspectorTitle.innerHTML = pair('Choose a value', '选择一个数值');
       ui.receiptInspectorBody.innerHTML = '<div class="ff-evidence-empty"><span class="ff-empty-mark" aria-hidden="true">◇</span><p>' + pair(
-        'Choose a receipt cell to inspect its recorded selected-leaf trail.',
-        '选择一个凭据单元，以检查其已记录的选定叶节点轨迹。'
+        'Choose a value to see its recorded source path.',
+        '选择一个数值，查看其记录的来源路径。'
       ) + '</p></div>';
       return;
     }
@@ -2309,9 +2386,9 @@
     }
     if (receipt.detailPhase !== 'ready' || !receipt.detail) {
       ui.receiptInspectorBody.innerHTML = receiptEmpty(
-        'Receipt cell temporarily unavailable', '凭据单元暂时不可用',
-        'No waterfall is inferred when its sealed detail cannot be read.',
-        '无法读取其密封详情时，不会推断瀑布内容。',
+        'Value details temporarily unavailable', '数值详情暂时不可用',
+        'The source path is shown only when its recorded details can be read.',
+        '仅在能够读取已记录详情时，才会显示来源路径。',
         '<button class="ff-receipt-retry" type="button" data-receipt-detail-retry="true">' + pair('Retry', '重试') + '</button>'
       );
       return;
@@ -2488,16 +2565,44 @@
   }
 
   function renderTabEvidenceEmpty(tab) {
-    var redline = tab === 'redlines';
-    ui.evidenceTitle.innerHTML = redline ? pair('Select a source redline', '选择来源逐字对照') : pair('Select a filing change', '选择披露变化');
-    ui.evidenceBody.innerHTML = '<div class="ff-evidence-empty"><span class="ff-empty-mark" aria-hidden="true">◇</span><p>' +
-      (redline ? pair(
-        'Choose a matched text change to read the prior and current SEC excerpts.',
-        '选择一条匹配的文本变化，以阅读前后两段 SEC 摘录。'
-      ) : pair(
-        'Choose an observed filing change to see the source excerpts and its reading boundaries.',
-        '选择一项观察到的财报变化，以查看来源摘录和阅读边界。'
-      )) + '</p></div>';
+    var guides = {
+      statements: {
+        icon: '▥', title: ['How to read these financials', '如何阅读这些财务数据'],
+        body: ['Start with the newest column, then scan left to see whether the move is new or part of a trend.', '先看最新一列，再向左回看，判断这次变化是新出现还是延续趋势。'],
+        steps: [['Compare key periods', '对比关键期间', 'compare'], ['Return to key signals', '返回关键信号', 'radar'], ['Verify the source', '核对原始来源', 'trace']]
+      },
+      disclosures: {
+        icon: '◫', title: ['Choose a filing change', '选择一项披露变化'],
+        body: ['Open a change to read the current and prior SEC excerpts side by side. The comparison describes wording, not motive.', '打开一项变化，并列阅读本期与上期的 SEC 摘录。这里描述的是措辞变化，而非动机。'],
+        steps: [['See exact redlines', '查看逐字差异', 'redlines'], ['View filing history', '查看披露历史', 'timeline'], ['Verify the source', '核对原始来源', 'trace']]
+      },
+      redlines: {
+        icon: '≠', title: ['Choose an exact wording change', '选择一处逐字变化'],
+        body: ['Open a matched change to see what was removed, added, or replaced in the source text.', '打开一处匹配变化，查看原文中删除、新增或替换的内容。'],
+        steps: [['Read summarized changes', '阅读变化摘要', 'disclosures'], ['View filing history', '查看披露历史', 'timeline'], ['Verify the source', '核对原始来源', 'trace']]
+      },
+      timeline: {
+        icon: '◷', title: ['Use the filing history as context', '用披露历史补充背景'],
+        body: ['Confirm which forms and dates are being compared before interpreting any signal or wording change.', '解读任何信号或措辞变化前，请先确认对比的是哪些表格和日期。'],
+        steps: [['Read wording changes', '阅读措辞变化', 'disclosures'], ['Compare key periods', '对比关键期间', 'compare'], ['Verify the source', '核对原始来源', 'trace']]
+      },
+      compare: {
+        icon: '↔', title: ['Choose two periods to compare', '选择两个期间进行对比'],
+        body: ['Use the selectors to compare reported values. Direction alone is not a verdict; open a signal for the rule and context.', '使用选择器对比披露数值。方向本身不是结论；请打开信号查看规则和背景。'],
+        steps: [['Open key signals', '打开关键信号', 'radar'], ['Read wording changes', '阅读措辞变化', 'disclosures'], ['Verify the source', '核对原始来源', 'trace']]
+      },
+      trace: {
+        icon: '✓', title: ['Your source and coverage guide', '来源与覆盖指南'],
+        body: ['Use the source map for SEC links. Open the run record when you need the saved publication details.', '使用来源地图查看 SEC 链接。需要已保存的发布详情时，可打开运行记录。'],
+        steps: [['Return to key signals', '返回关键信号', 'radar'], ['Compare key periods', '对比关键期间', 'compare'], ['Read filing history', '阅读披露历史', 'timeline']]
+      }
+    };
+    var guide = guides[tab] || guides.trace;
+    ui.evidenceTitle.innerHTML = pair(guide.title[0], guide.title[1]);
+    ui.evidenceBody.innerHTML = '<div class="ff-view-guide"><span class="ff-view-guide-icon" aria-hidden="true">' + guide.icon + '</span><p>' +
+      pair(guide.body[0], guide.body[1]) + '</p><div class="ff-view-guide-actions">' + guide.steps.map(function (step) {
+        return '<button type="button" data-go-tab="' + esc(step[2]) + '">' + pair(step[0], step[1]) + '<span aria-hidden="true">→</span></button>';
+      }).join('') + '</div></div>';
   }
 
   function renderCurrentEvidence() {
@@ -2518,9 +2623,9 @@
 
   function renderEvidence(finding) {
     if (!finding) {
-      ui.evidenceTitle.innerHTML = pair('Select a finding', '选择一项发现');
+      ui.evidenceTitle.innerHTML = pair('Choose a signal', '选择一个信号');
       ui.evidenceBody.innerHTML = '<div class="ff-evidence-empty"><span class="ff-empty-mark" aria-hidden="true">↳</span><p>' +
-      pair('Choose a result to inspect its values, formula, threshold, and SEC source links.', '选择一项结果，查看数值、公式、阈值和 SEC 来源链接。') + '</p></div>';
+      pair('Choose a signal to understand what it means, compare the numbers, and verify the SEC source.', '选择一个信号，了解它的含义、对比关键数字并核对 SEC 来源。') + '</p></div>';
       return;
     }
     var priority = priorityInfo(finding.priority);
@@ -2555,17 +2660,23 @@
     if (!limitationHtml) limitationHtml = '<li>' + pair('No finding-specific limitation was supplied.', '未提供该发现的特定局限。') + '</li>';
 
     ui.evidenceBody.innerHTML = '<div class="ff-proof-badge" data-priority="' + esc(finding.priority || 'watch') + '"><span aria-hidden="true">' +
-      priority.icon + '</span>' + pair(priority.en, priority.zh) + '</div><p class="ff-proof-summary">' +
-      fieldPair(finding, 'summary', 'No summary supplied.') + '</p><div class="ff-proof-basis">' +
+      priority.icon + '</span>' + pair(priority.en, priority.zh) + '</div>' +
+      '<section class="ff-signal-meaning"><span>' + pair('Why this matters', '为什么重要') + '</span><p>' +
+      fieldPair(finding, 'summary', 'No summary supplied.') + '</p></section><div class="ff-proof-basis">' +
       '<span><b>' + pair('Normalized inputs', '标准化输入') + '</b>' + esc([finding.period_current, finding.period_prior].filter(Boolean).join(' / ') || '—') + '</span>' +
       '<span><b>' + pair('Calculated', '规则计算') + '</b>' + pair('Deterministic rule', '确定性规则') + '</span>' +
       '<span><b>' + pair('Limits', '局限') + '</b>' + limitationCount + '</span></div>' +
-      '<section class="ff-proof-section"><h3>' + pair('What changed', '发生了什么变化') + '</h3><div class="ff-value-grid">' + valueRows + '</div></section>' +
-      '<section class="ff-proof-section"><h3>' + pair('Formula and test', '公式与检验') + '</h3><code class="ff-proof-code">' +
-      fieldPair(finding, 'formula', 'Formula not supplied') + '</code><p class="ff-threshold"><strong>' + pair('Threshold: ', '阈值：') + '</strong>' +
-      fieldPair(finding, 'threshold', 'Threshold not supplied') + '</p></section>' +
-      '<section class="ff-proof-section"><h3>' + pair('SEC source links', 'SEC 来源链接') + '</h3><ol class="ff-receipts">' + receiptHtml + '</ol></section>' +
-      '<section class="ff-proof-section"><h3>' + pair('Limitations', '局限') + '</h3><ul class="ff-limitations">' + limitationHtml + '</ul></section>';
+      '<section class="ff-proof-section"><h3>' + pair('Numbers behind the signal', '信号背后的数字') + '</h3><div class="ff-value-grid">' + valueRows + '</div></section>' +
+      '<section class="ff-proof-section ff-proof-actions"><h3>' + pair('Explore the full picture', '继续查看完整情况') + '</h3><div class="ff-proof-action-grid">' +
+      '<button type="button" data-go-tab="compare">' + pair('Compare periods', '对比期间') + '<span aria-hidden="true">→</span></button>' +
+      '<button type="button" data-go-tab="disclosures">' + pair('Read filing changes', '阅读披露变化') + '<span aria-hidden="true">→</span></button>' +
+      '<button type="button" data-go-tab="trace">' + pair('Verify SEC sources', '核对 SEC 来源') + '<span aria-hidden="true">→</span></button>' +
+      '</div></section>' +
+      '<section class="ff-proof-section"><h3>' + pair('Verify with the SEC', '通过 SEC 核对') + '</h3><ol class="ff-receipts">' + receiptHtml + '</ol></section>' +
+      '<details class="ff-proof-details"><summary>' + pair('How this signal was detected', '这个信号如何识别') + '</summary><div><code class="ff-proof-code">' +
+      fieldPair(finding, 'formula', 'Formula not supplied') + '</code><p class="ff-threshold"><strong>' + pair('Signal appears when: ', '信号触发条件：') + '</strong>' +
+      fieldPair(finding, 'threshold', 'Threshold not supplied') + '</p></div></details>' +
+      '<details class="ff-proof-details"><summary>' + pair('What this signal cannot tell you', '这个信号无法说明什么') + '</summary><div><ul class="ff-limitations">' + limitationHtml + '</ul></div></details>';
   }
 
   function setTab(tab, focusPanel) {
@@ -2601,7 +2712,12 @@
         renderTabEvidenceEmpty(tab);
       }
     } else if (tab === 'trace') {
+      state.evidenceKind = 'view';
+      renderTabEvidenceEmpty(tab);
       setSourceMode(state.sourceMode, false);
+    } else {
+      state.evidenceKind = 'view';
+      renderTabEvidenceEmpty(tab);
     }
     updateViewStatus();
     if (focusPanel) {
@@ -2620,8 +2736,8 @@
       return total + (Array.isArray(finding.evidence) ? finding.evidence.length : 0);
     }, 0);
     if (state.tab === 'radar') {
-      ui.viewStatus.innerHTML = pair(findings.length + ' findings · filed ' + formatDate(target.latest_filed),
-        findings.length + ' 项发现 · 披露于 ' + formatDate(target.latest_filed));
+      ui.viewStatus.innerHTML = pair(findings.length + ' signals · filed ' + formatDate(target.latest_filed),
+        findings.length + ' 个信号 · 披露于 ' + formatDate(target.latest_filed));
     } else if (state.tab === 'statements') {
       ui.viewStatus.innerHTML = pair(periods.length + ' normalized periods', periods.length + ' 个标准化期间');
     } else if (state.tab === 'compare') {
@@ -2629,8 +2745,8 @@
     } else if (state.tab === 'disclosures') {
       var disclosureCount = disclosureFindingsForView(target).length;
       ui.viewStatus.innerHTML = pair(
-        disclosureCount + ' observed review prompt' + (disclosureCount === 1 ? '' : 's'),
-        disclosureCount + ' 项观察到的复核提示'
+        disclosureCount + ' observed wording change' + (disclosureCount === 1 ? '' : 's'),
+        disclosureCount + ' 项观察到的措辞变化'
       );
     } else if (state.tab === 'redlines') {
       var redlineCount = activeRedlines(target).length;
@@ -2886,6 +3002,37 @@
       if (action === 'plans') openPlans();
       else if (action === 'signin') openSignin();
       else if (action === 'retry') loadData();
+    });
+
+    ui.workspace.addEventListener('click', function (event) {
+      var destination = event.target.closest('[data-go-tab]');
+      if (destination) {
+        setTab(destination.getAttribute('data-go-tab'), false);
+        var activeTab = document.querySelector('.ff-tab.is-active');
+        if (activeTab) activeTab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        return;
+      }
+      var primary = event.target.closest('[data-open-primary-finding]');
+      if (!primary || !state.payload) return;
+      var findings = orderedFindings(company());
+      if (!findings.length) {
+        setTab('trace', false);
+        return;
+      }
+      state.findingId = String(findings[0].id);
+      state.priority = 'all';
+      state.topic = 'all';
+      state.evidenceKind = 'finding';
+      setTab('radar', false);
+      renderTopicOptions(findings);
+      renderFindings();
+      renderCurrentEvidence();
+      if (desktopMedia.matches) {
+        var selected = selectedFindingButton();
+        if (selected) selected.focus({ preventScroll: true });
+      } else {
+        openEvidence();
+      }
     });
 
     ui.tabs.forEach(function (button, index) {
