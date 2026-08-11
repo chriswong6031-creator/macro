@@ -49,7 +49,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | leader-radar | 5 |
 | long-hold | 36 |
 | macro-context-rail | 17 |
-| macro-release-intel | 9 |
+| macro-release-intel | 17 |
 | mag7-regime | 3 |
 | mag7-washout | 5 |
 | market-structure | 3 |
@@ -113,15 +113,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 370 |
-| infrastructure | 159 |
+| infrastructure | 161 |
 | scored | 5 |
-| shadow | 92 |
+| shadow | 98 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 587 |
+| git | 595 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 17 |
@@ -611,12 +611,20 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | inflation-intelligence | `data/release_forecast/inflation_intelligence.json` | json | daily-engine | display | 4 | 1 |
 | release-forecast-latest | `data/release_forecast/latest.json` | json | daily-engine | display | 3 | 1 |
+| release-cpi-truth-preregistered-sample | `data/release_forecast/cpi_truth/preregistered_sample.json` | json | on-demand | shadow | 3 | 0 |
 | release-forecast-ledger | `data/release_forecast/forward_ledger.jsonl` | jsonl | daily-engine | shadow | 3 | 0 |
-| release-target-vintage-manifest | `data/fred_vintage/release_targets/manifest.json` | json | daily-engine | shadow | 2 | 0 |
+| release-target-vintage-manifest | `data/fred_vintage/release_targets/manifest.json` | json | daily-engine | shadow | 3 | 0 |
+| release-cpi-official-table1-archive | `data/release_forecast/cpi_truth/official_table1_archive/` | other | daily-engine | infrastructure | 2 | 0 |
+| release-cpi-official-table1-collection | `data/release_forecast/cpi_truth/official_table1_collection.json` | json | daily-engine | shadow | 2 | 0 |
+| release-cpi-official-table1-receipts | `data/release_forecast/cpi_truth/official_table1_receipts.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| release-official-actual-defects | `data/release_forecast/official_actual_defects.json` | json | on-demand | infrastructure | 2 | 0 |
 | cleveland-nowcast-store | `data/cleveland_nowcast/nowcast.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | kalshi-releases-store | `data/prediction_markets/kalshi_releases.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | release-official-actuals | `data/release_forecast/official_actuals.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-release-forecast | `site/macrodata/release_forecast.json` | json | daily-engine | display | 0 | 1 |
+| release-cpi-coherent-target-history | `data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json` | json | daily-engine | shadow | 0 | 0 |
+| release-cpi-truth-build-completion | `data/release_forecast/cpi_truth/build_completion.json` | json | daily-engine | shadow | 0 | 0 |
+| release-cpi-truth-parity | `data/release_forecast/cpi_truth/parity_report.json` | json | daily-engine | shadow | 0 | 0 |
 | release-forecast-scoreboard | `data/release_forecast/scoreboard.json` | json | daily-engine | display | 0 | 0 |
 
 ### mag7-regime

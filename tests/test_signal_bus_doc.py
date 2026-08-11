@@ -73,9 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 626, (
-        f"Expected 626 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 634, (
+        f"Expected 634 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Release Radar CPI truth registered the preregistered sample, official"
+        " archive, receipts, collection manifest, coherent target history, parity"
+        " report, completion boundary, and official-actual defect sidecar = 626->634);"
         " (Price Pressure registered immutable VIXCLS stamp-completion receipts"
         " = 625->626);"
         " (Price Pressure registered its current display projection and immutable"
