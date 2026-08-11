@@ -6679,6 +6679,7 @@ jobs:
           tests/test_market_memory_scoring.py
           tests/test_market_memory_playback.py
           tests/test_market_memory_playback_api.py
+          tests/test_market_memory_promotion_audit.py
           tests/test_market_memory_projection.py
           tests/test_market_memory_trusted.py
           tests/test_market_memory_context_deploy.py
