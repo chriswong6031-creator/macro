@@ -17,13 +17,15 @@ User=macro-biocatalyst
 Group=macro-biocatalyst
 WorkingDirectory=/opt/macro
 EnvironmentFile=/etc/macro-biocatalyst.env
-Environment=BIOCATALYST_HISTORY_ENABLED=1
 Environment=BIOCATALYST_STATE_ROOT=/var/lib/macro-biocatalyst/state
 Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public
 Environment=BIOCATALYST_ACTIVATION_ROOT=/var/lib/macro-biocatalyst/activation
 Environment=BIOCATALYST_R2_ACTIVATION_GATE_PATH=/var/lib/macro-biocatalyst/activation/gate.json
 Environment=BIOCATALYST_R2_ACTIVATION_HEARTBEAT_PATH=/var/lib/macro-biocatalyst/activation/heartbeat.json
-ExecStart=/opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_worker --mode canary_poll
+# EnvironmentFile values override Environment= values regardless of textual
+# order. Prefix the process so this lane remains the sole scheduled history
+# refresh owner even if the shared env file is later set to history=0.
+ExecStart=/usr/bin/env BIOCATALYST_HISTORY_ENABLED=1 /opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_worker --mode canary_poll
 # History collection and immutable R2 verification are intentionally outside
 # the 900-second current-record window, but remain bounded below one hour.
 TimeoutStartSec=2700
