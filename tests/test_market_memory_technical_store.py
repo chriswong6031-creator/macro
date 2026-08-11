@@ -780,6 +780,19 @@ def test_same_session_changed_spy_bytes_append_revision_and_pin_generation(
     assert second.capture_receipt["revision_id"] != first.capture_receipt["revision_id"]
     assert second.capture_receipt["capture_id"] != first.capture_receipt["capture_id"]
     assert len(store.load_technical_actual_output_generation(root)["captures"]) == 2
+    current_pin = store.pin_technical_actual_output_generation(root)
+    first_pin = store.pin_technical_actual_output_generation(
+        root, generation_id=first.generation_id
+    )
+    assert current_pin.ancestry_generation_ids[:2] == (
+        second.generation_id,
+        first.generation_id,
+    )
+    assert first_pin.ancestry_generation_ids == (
+        first.generation_id,
+        *current_pin.ancestry_generation_ids[2:],
+    )
+    assert second.generation_id not in first_pin.ancestry_generation_ids
     pinned = store.load_technical_actual_output_generation(
         root, generation_id=first.generation_id
     )
