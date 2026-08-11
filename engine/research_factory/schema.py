@@ -287,11 +287,11 @@ _MARKET_MEMORY_CREATED_AT_RE = re.compile(
 _MARKET_MEMORY_HYPOTHESIS_RE = re.compile(
     r"Conformance candidate for frozen Market Memory trial "
     r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}"
-    r"; no retrieval or evaluation result is claimed\.\Z"
+    r"; no episodic retrieval or Operating Cortex packet is claimed\.\Z"
 )
 _MARKET_MEMORY_MECHANISM = (
-    "Read-only pointer to an exact W2A preregistration; W4 retrieval and "
-    "W5 evaluation evidence are deferred."
+    "Read-only pointer to an exact W2A preregistration; W4 episodic retrieval "
+    "and W5 Operating Cortex packet joins are deferred."
 )
 _MARKET_MEMORY_HYPOTHESIS_MAX_BYTES = 512
 _MARKET_MEMORY_MECHANISM_MAX_BYTES = 256
@@ -312,6 +312,10 @@ _MARKET_MEMORY_RESERVED_STRING_VALUES = frozenset(
         _MARKET_MEMORY_SPEC_SCHEMA,
         "market_memory_w2a_preregistration",
         "market_memory_context_only",
+        "w4_episodic_retrieval_join_deferred",
+        "w5_operating_cortex_join_deferred",
+        "w4_episodic_retrieval_not_bound",
+        "w5_operating_cortex_not_bound",
         "w4_join_deferred",
         "w5_join_deferred",
         "w4_retrieval_not_available",
@@ -323,7 +327,12 @@ _MARKET_MEMORY_RESERVED_KEYS = frozenset(
         "market_memory_conformance",
         "trial_read_back",
         "w4_retrieval_join",
+        "w5_operating_cortex_join",
         "w5_evaluation_join",
+        "episodic_retrieval_record_id",
+        "operating_cortex_packet_id",
+        "episode_set_id",
+        "evaluation_id",
         "trial_registration_id",
         "trial_registration_sha256",
         "trial_registration_bytes",
@@ -331,8 +340,8 @@ _MARKET_MEMORY_RESERVED_KEYS = frozenset(
 )
 _MARKET_MEMORY_RESERVED_TOP_LEVEL = {
     "expected_failure_modes": [
-        "w4_retrieval_not_available",
-        "w5_evaluation_not_run",
+        "w4_episodic_retrieval_not_bound",
+        "w5_operating_cortex_not_bound",
     ],
     "evaluation_plan": {
         "status": "not_run",
@@ -346,8 +355,8 @@ _MARKET_MEMORY_RESERVED_TOP_LEVEL = {
     },
     "flags": [
         "market_memory_context_only",
-        "w4_join_deferred",
-        "w5_join_deferred",
+        "w4_episodic_retrieval_join_deferred",
+        "w5_operating_cortex_join_deferred",
     ],
 }
 
@@ -645,7 +654,7 @@ def _validate_market_memory_candidate_structure(
                 "trial_registration_bytes",
                 "trial_read_back",
                 "w4_retrieval_join",
-                "w5_evaluation_join",
+                "w5_operating_cortex_join",
             }
         ),
         errs=errs,
@@ -669,14 +678,24 @@ def _validate_market_memory_candidate_structure(
         errs.append(f"{mm_label}: trial_registration_bytes is out of bounds")
     if not _market_memory_exact_json(
         spec.get("w4_retrieval_join"),
-        {"status": "deferred", "episode_set_id": None, "evidence_ref": None},
+        {
+            "status": "deferred",
+            "episodic_retrieval_record_id": None,
+            "evidence_ref": None,
+        },
     ):
         errs.append(f"{mm_label}: W4 retrieval join must remain deferred and null")
     if not _market_memory_exact_json(
-        spec.get("w5_evaluation_join"),
-        {"status": "not_run", "evaluation_id": None, "evidence_ref": None},
+        spec.get("w5_operating_cortex_join"),
+        {
+            "status": "deferred",
+            "operating_cortex_packet_id": None,
+            "evidence_ref": None,
+        },
     ):
-        errs.append(f"{mm_label}: W5 evaluation join must remain not_run and null")
+        errs.append(
+            f"{mm_label}: W5 Operating Cortex join must remain deferred and null"
+        )
 
     read_back = _market_memory_object(
         spec.get("trial_read_back"),

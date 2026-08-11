@@ -3,9 +3,9 @@
 W6A converts one exact, owner-valid W2A trial-registration byte string into a
 canonical ``research_factory.candidate.v1`` proposal. It does not read or write
 files, register a trial family, execute retrieval, evaluate an experiment,
-challenge a candidate, or advance any lifecycle. W4 retrieval and W5 evaluation
-remain explicit deferred/null joins. Every authority, emission, training,
-promotion, and action bit remains false.
+challenge a candidate, or advance any lifecycle. W4 episodic retrieval and W5
+Operating Cortex packets remain explicit deferred/null joins. Every authority,
+emission, training, promotion, and action bit remains false.
 
 The canonical Research Factory validator seals the subtype's inert structure
 for generic ledger admission. It cannot authenticate source bytes; only this
@@ -173,12 +173,12 @@ def _candidate_payload(
         "trial_read_back": read_back,
         "w4_retrieval_join": {
             "status": "deferred",
-            "episode_set_id": None,
+            "episodic_retrieval_record_id": None,
             "evidence_ref": None,
         },
-        "w5_evaluation_join": {
-            "status": "not_run",
-            "evaluation_id": None,
+        "w5_operating_cortex_join": {
+            "status": "deferred",
+            "operating_cortex_packet_id": None,
             "evidence_ref": None,
         },
     }
@@ -206,17 +206,17 @@ def _candidate_payload(
         "status": "proposed",
         "hypothesis": (
             f"Conformance candidate for frozen Market Memory trial {trial_key}; "
-            "no retrieval or evaluation result is claimed."
+            "no episodic retrieval or Operating Cortex packet is claimed."
         ),
         "mechanism": (
-            "Read-only pointer to an exact W2A preregistration; W4 retrieval and "
-            "W5 evaluation evidence are deferred."
+            "Read-only pointer to an exact W2A preregistration; W4 episodic "
+            "retrieval and W5 Operating Cortex packet joins are deferred."
         ),
         "claim_shape": None,
         "spec_ref": spec_ref,
         "expected_failure_modes": [
-            "w4_retrieval_not_available",
-            "w5_evaluation_not_run",
+            "w4_episodic_retrieval_not_bound",
+            "w5_operating_cortex_not_bound",
         ],
         "decay_conditions": [],
         "falsifiers": [],
@@ -242,8 +242,8 @@ def _candidate_payload(
         },
         "flags": [
             "market_memory_context_only",
-            "w4_join_deferred",
-            "w5_join_deferred",
+            "w4_episodic_retrieval_join_deferred",
+            "w5_operating_cortex_join_deferred",
         ],
         "artifacts": {"market_memory_conformance": conformance},
         "transition_log": [],

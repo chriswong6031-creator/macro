@@ -1312,10 +1312,11 @@ registration ID before projection. The candidate spec binds the exact byte
 digest and length plus verbatim read-back of purge, embargo, trial budgets, and
 model/code/config implementation hashes. Semantic spec and candidate IDs do
 not include the adapter's `created_at`, so repeated projections cannot create
-new candidate identities by clock churn. W4 retrieval is an explicit deferred
-null join and W5 evaluation is explicitly `not_run` with a null evidence join;
-neither missing slice is fabricated. Challenge completion, emission, training,
-promotion, and every action-authority bit remain false.
+new candidate identities by clock churn. W4 is represented only by a deferred
+null `episodic_retrieval_record_id`, and W5 only by a deferred null
+`operating_cortex_packet_id`; neither missing owner artifact is fabricated.
+Challenge completion, emission, training, promotion, and every
+action-authority bit remain false.
 
 Canonical Research Factory admission treats any reserved Market Memory marker
 anywhere in the whole row as a request for the whole sealed subtype. That
@@ -1336,7 +1337,7 @@ input, CLI, service, scheduler, API route, real candidate emission, or real
 experiment. It establishes schema conformance only. W6A identities are
 strictly proposed-only: generic state transitions, challenge admission, and
 paper-monitor admission all fail closed. Later work must supply owner-valid W4
-retrieval evidence and W5 evaluation evidence in a new evidence-bearing
+episodic retrieval and W5 Operating Cortex evidence in a new evidence-bearing
 version before that version can enter the existing human-gated Research
 Factory lifecycle without weakening either program's authority rails.
 

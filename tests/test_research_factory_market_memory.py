@@ -510,6 +510,7 @@ def test_generic_candidate_without_reserved_market_memory_marker_is_unchanged() 
         "market_memory_w2a_preregistration",
         {"trial_read_back": {}},
         {"w4_retrieval_join": {}},
+        {"w5_operating_cortex_join": {}},
         {"w5_evaluation_join": {}},
         {"trial_registration_id": "renamed"},
         {"trial_registration_sha256": "renamed"},
@@ -527,6 +528,7 @@ def test_generic_candidate_without_reserved_market_memory_marker_is_unchanged() 
         "read-back-key",
         "w4-join-key",
         "w5-join-key",
+        "legacy-w5-join-key",
         "trial-id-key",
         "trial-sha-key",
         "trial-bytes-key",
@@ -624,21 +626,25 @@ def test_recursive_market_memory_rejection_persists_only_generic_audit_envelope(
             "hypothesis",
             (
                 "Conformance candidate for frozen Market Memory trial "
-                "synthetic.spy.close.v1; no retrieval or evaluation result is claimed."
+                "synthetic.spy.close.v1; no episodic retrieval or Operating "
+                "Cortex packet is claimed."
             ),
         ),
         (
             "mechanism",
             "mechanism",
             (
-                "Read-only pointer to an exact W2A preregistration; W4 retrieval "
-                "and W5 evaluation evidence are deferred."
+                "Read-only pointer to an exact W2A preregistration; W4 episodic "
+                "retrieval and W5 Operating Cortex packet joins are deferred."
             ),
         ),
         (
             "failure_modes",
             "expected_failure_modes",
-            ["w4_retrieval_not_available", "w5_evaluation_not_run"],
+            [
+                "w4_episodic_retrieval_not_bound",
+                "w5_operating_cortex_not_bound",
+            ],
         ),
         (
             "evaluation_plan",
@@ -657,7 +663,11 @@ def test_recursive_market_memory_rejection_persists_only_generic_audit_envelope(
         (
             "flags",
             "flags",
-            ["market_memory_context_only", "w4_join_deferred", "w5_join_deferred"],
+            [
+                "market_memory_context_only",
+                "w4_episodic_retrieval_join_deferred",
+                "w5_operating_cortex_join_deferred",
+            ],
         ),
         (
             "conformance_key",
@@ -835,12 +845,12 @@ def test_candidate_is_proposed_read_only_and_exactly_zero_authority() -> None:
     assert not any(conformance["action_authority"].values())
     assert spec["w4_retrieval_join"] == {
         "status": "deferred",
-        "episode_set_id": None,
+        "episodic_retrieval_record_id": None,
         "evidence_ref": None,
     }
-    assert spec["w5_evaluation_join"] == {
-        "status": "not_run",
-        "evaluation_id": None,
+    assert spec["w5_operating_cortex_join"] == {
+        "status": "deferred",
+        "operating_cortex_packet_id": None,
         "evidence_ref": None,
     }
     assert spec["trial_registration_id"] == trial["trial_registration_id"]
@@ -1135,7 +1145,7 @@ def test_owner_rejects_hostile_leakage_budget_implementation_and_authority(
                 "market_memory_conformance",
                 "spec",
                 "w4_retrieval_join",
-                "episode_set_id",
+                "episodic_retrieval_record_id",
             ),
             "fabricated",
         ),
@@ -1144,7 +1154,7 @@ def test_owner_rejects_hostile_leakage_budget_implementation_and_authority(
                 "artifacts",
                 "market_memory_conformance",
                 "spec",
-                "w5_evaluation_join",
+                "w5_operating_cortex_join",
                 "status",
             ),
             "complete",
