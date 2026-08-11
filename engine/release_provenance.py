@@ -333,11 +333,15 @@ def compute_coverage_flags(
 
 
 def _count_scored_rows(projection: dict, ledger_path: str | Path | None) -> int:
-    """Count forward-scored ledger rows for this projection's release.
+    """Count forward-scored rows for this exact release/model lane.
 
     Reads ledger_path (JSONL), counts rows where row_type=='scored' AND
-    release matches projection['release']. Returns 0 on any error or missing file.
-    Today (2026-07-08) the forward-scored count is 0 for all releases.
+    release and model match the projection.  When the projection declares a
+    model or target epoch, those must also match exactly.  Pre-epoch callers
+    remain compatible because absent projection epochs do not add a filter.  A
+    missing/``None`` model is the champion lane; shadow evidence can therefore
+    never inflate champion maturity (or another shadow's maturity).  Returns 0
+    on any error or missing file.
     """
     if not ledger_path:
         return 0
@@ -345,6 +349,9 @@ def _count_scored_rows(projection: dict, ledger_path: str | Path | None) -> int:
     release = projection.get("release") or projection.get("release_id") or ""
     if not release:
         return 0
+    model = projection.get("model") or None
+    model_epoch = projection.get("model_epoch") or None
+    target_epoch = projection.get("target_epoch") or None
 
     try:
         p = Path(ledger_path)
@@ -384,6 +391,9 @@ def _count_scored_rows(projection: dict, ledger_path: str | Path | None) -> int:
         return sum(
             1 for row in canonical_scored_rows(scored_rows)
             if row.get("release") == release
+            and (row.get("model") or None) == model
+            and (model_epoch is None or row.get("model_epoch") == model_epoch)
+            and (target_epoch is None or row.get("target_epoch") == target_epoch)
             and is_evaluation_eligible(row, notices)
         )
     except Exception as exc:  # noqa: BLE001

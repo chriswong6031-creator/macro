@@ -253,6 +253,9 @@ def test_repeated_pin_rewalks_and_rejects_ancestor_tamper_under_same_head(
     pit._generation_path(tmp_path, ancestor_id).unlink()
 
     assert pinned.generation_id == state.head["generation_id"]
+    active = reader.read_active_generation()
+    assert active.generation_id == state.head["generation_id"]
+    assert len(active.captures) == 1
     with pytest.raises(pit.MarketMemoryStoreError, match="unavailable"):
         reader.read_pinned_generation()
 
@@ -282,6 +285,164 @@ def test_current_pin_requires_full_chain_through_empty_genesis(
     message = "empty genesis" if broken == "nonempty_genesis" else "unavailable"
     with pytest.raises(pit.MarketMemoryStoreError, match=message):
         pit.FileAsKnownAtReader(tmp_path).read_pinned_generation()
+
+
+def test_active_generation_ack_is_single_head_bounded_at_declared_cap(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    rows = []
+    for index in range(pit._MAX_GENERATION_CAPTURES):
+        digest = f"{index:064x}"
+        rows.append(
+            {
+                "query_id": "mmquery_" + digest,
+                "context_id": "mmctx_" + digest,
+                "capture_id": "mmcapture_" + digest,
+                "packet_sha256": digest,
+            }
+        )
+    manifest = pit._new_store_manifest()
+    generation = pit._new_generation(
+        store_id=manifest["store_id"],
+        previous_generation_id="mmgeneration_" + "b" * 64,
+        captures=rows,
+    )
+    generation_body = pit._canonical_bytes(generation)
+    assert len(generation_body) <= pit._MAX_GENERATION_BYTES
+    pit._mkdir_durable(tmp_path)
+    pit._write_create_once(
+        tmp_path,
+        pit._store_manifest_path(tmp_path),
+        pit._canonical_bytes(manifest),
+        label="cap store manifest",
+    )
+    pit._write_create_once(
+        tmp_path,
+        pit._generation_path(tmp_path, generation["generation_id"]),
+        generation_body,
+        label="cap store generation",
+    )
+    head = pit._new_head(generation, generation_body=generation_body)
+    pit._replace_head(tmp_path, head)
+    monkeypatch.setattr(
+        pit,
+        "_read_pinned_generation_from_state",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("active acknowledgement must not walk ancestry")
+        ),
+    )
+    real_read = pit._read_canonical_object
+    read_labels: list[str] = []
+
+    def tracked_read(path, *, limit, label):
+        read_labels.append(label)
+        return real_read(path, limit=limit, label=label)
+
+    monkeypatch.setattr(pit, "_read_canonical_object", tracked_read)
+
+    reader = pit.FileAsKnownAtReader(tmp_path)
+    active = reader.read_active_generation()
+    assert reader.read_active_generation() is active
+
+    assert active.generation_id == generation["generation_id"]
+    assert active.generation_sha256 == head["generation_sha256"]
+    assert len(active.captures) == pit._MAX_GENERATION_CAPTURES
+    assert read_labels == [
+        "Market Memory store manifest",
+        "Market Memory store HEAD",
+        "Market Memory store generation",
+        "Market Memory store HEAD",
+    ]
+
+
+def test_active_generation_refreshes_when_head_advances_without_mutating_old_pin(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _fixed_clock(monkeypatch)
+    first_stored = pit.capture_context(tmp_path, _packet())
+    reader = pit.FileAsKnownAtReader(tmp_path)
+    first = reader.read_active_generation()
+    assert len(first.captures) == 1
+
+    monkeypatch.setattr(pit, "_utc_now", lambda: CAPTURED_AT + timedelta(seconds=1))
+    pit.capture_context(tmp_path, _later_packet(1))
+    second = reader.read_active_generation()
+
+    assert second is not first
+    assert len(second.captures) == 2
+    assert len(first.captures) == 1
+    assert reader.read_active_generation() is second
+    assert reader.read_pinned_capture_receipt(
+        first, query_id=first_stored.capture_receipt["query_id"]
+    ) == first_stored.capture_receipt
+
+
+@pytest.mark.parametrize(
+    "target",
+    [
+        "root",
+        "objects",
+        "objects_shard",
+        "contexts",
+        "contexts_shard",
+        "queries",
+        "queries_shard",
+        "generations",
+        "generations_shard",
+    ],
+)
+def test_w1a_rejects_nonprivate_store_owned_directory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, target: str
+) -> None:
+    _fixed_clock(monkeypatch)
+    pit.capture_context(tmp_path, _packet())
+    if target == "root":
+        path = tmp_path
+    elif target.endswith("_shard"):
+        namespace = target.removesuffix("_shard")
+        path = next(
+            child
+            for child in (tmp_path / namespace).iterdir()
+            if child.is_dir()
+        )
+    else:
+        path = tmp_path / target
+    path.chmod(0o755)
+
+    with pytest.raises(pit.MarketMemoryStoreError, match="owned 0700"):
+        pit.FileAsKnownAtReader(tmp_path).read_active_generation()
+
+
+def test_existing_create_once_retry_reproves_every_directory_link(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    root = tmp_path / "store"
+    path = root / "objects" / "aa" / "artifact.json"
+    body = b'{"value":1}'
+    assert pit._write_create_once(root, path, body, label="chain artifact")
+    real_sync = pit._directory_fsync
+    failed = False
+
+    def fail_root_link_once(directory: Path) -> None:
+        nonlocal failed
+        if directory == root.parent and not failed:
+            failed = True
+            raise OSError("injected store-root parent fsync")
+        real_sync(directory)
+
+    monkeypatch.setattr(pit, "_directory_fsync", fail_root_link_once)
+    with pytest.raises(OSError, match="store-root parent fsync"):
+        pit._write_create_once(root, path, body, label="chain artifact")
+
+    synced: list[Path] = []
+
+    def track(directory: Path) -> None:
+        real_sync(directory)
+        synced.append(directory)
+
+    monkeypatch.setattr(pit, "_directory_fsync", track)
+    assert not pit._write_create_once(root, path, body, label="chain artifact")
+    assert {root.parent, root, root / "objects", path.parent}.issubset(synced)
 
 
 def test_pinned_generation_rejects_rewritten_append_history(
@@ -455,6 +616,97 @@ def test_identical_retry_is_idempotent_even_when_process_clock_advances(
     assert len(list(tmp_path.glob("objects/*/*.json"))) == 1
     assert len(list(tmp_path.glob("contexts/*/*.json"))) == 1
     assert len(list(tmp_path.glob("queries/*/*.json"))) == 1
+
+
+def test_create_once_retry_reproves_parent_and_temp_unlink_is_durable(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    root = tmp_path / "store"
+    parent = root / "objects" / "aa"
+    pit._mkdir_durable(parent)
+    path = parent / "artifact.json"
+    body = b'{"value":1}'
+    real_sync = pit._directory_fsync
+    synced: list[Path] = []
+
+    def track(directory: Path) -> None:
+        real_sync(directory)
+        synced.append(directory)
+
+    monkeypatch.setattr(pit, "_directory_fsync", track)
+    assert pit._write_create_once(root, path, body, label="fault artifact") is True
+    assert synced.count(parent) >= 2
+    assert not list(parent.glob(".*.tmp.*"))
+    synced.clear()
+    assert pit._write_create_once(root, path, body, label="fault artifact") is False
+    assert parent in synced
+
+
+def test_failed_head_root_fsync_retry_reproves_generation_and_root_before_ack(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _fixed_clock(monkeypatch)
+    pit.capture_context(tmp_path, _packet())
+    second = _later_packet(1)
+    real_sync = pit._directory_fsync
+    before_head = pit._head_path(tmp_path).read_bytes()
+    failed = False
+
+    def fail_published_head_once(path: Path) -> None:
+        nonlocal failed
+        if (
+            path == tmp_path
+            and pit._head_path(tmp_path).read_bytes() != before_head
+            and not failed
+        ):
+            failed = True
+            raise OSError("injected HEAD root fsync")
+        real_sync(path)
+
+    monkeypatch.setattr(pit, "_directory_fsync", fail_published_head_once)
+    with pytest.raises(pit.MarketMemoryStoreError, match="advance.*HEAD"):
+        pit.capture_context(tmp_path, second)
+
+    synced: list[Path] = []
+
+    def track(path: Path) -> None:
+        real_sync(path)
+        synced.append(path)
+
+    monkeypatch.setattr(pit, "_directory_fsync", track)
+    stored = pit.capture_context(tmp_path, second)
+    state = pit._load_store_state(tmp_path)
+    generation_parent = pit._generation_path(
+        tmp_path, state.head["generation_id"]
+    ).parent
+    assert stored.packet["context_id"] == second["context_id"]
+    assert generation_parent in synced
+    assert tmp_path in synced
+    assert len(state.generation["captures"]) == 2
+
+
+def test_failed_head_replace_keeps_old_head_and_durably_cleans_temp(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _fixed_clock(monkeypatch)
+    pit.capture_context(tmp_path, _packet())
+    state = pit._load_store_state(tmp_path)
+    original_head = (tmp_path / "HEAD.json").read_bytes()
+    replacement = pit._new_head(
+        state.generation,
+        generation_body=pit._canonical_bytes(state.generation),
+    )
+    monkeypatch.setattr(
+        pit.os,
+        "replace",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            OSError("injected HEAD replace")
+        ),
+    )
+    with pytest.raises(pit.MarketMemoryStoreError, match="advance.*HEAD"):
+        pit._replace_head(tmp_path, replacement)
+    assert (tmp_path / "HEAD.json").read_bytes() == original_head
+    assert not list(tmp_path.glob(".HEAD.json.tmp.*"))
 
 
 def test_capture_is_missing_only_and_explicitly_not_training_authoritative(
