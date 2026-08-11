@@ -732,29 +732,34 @@ function fetchPulse() {
   }).catch(function(){ pulseInflight = false; });
 }
 
-// ── Fetch: live options flow (R2, 2-3min RTH) — FIXED per real schema ──────
+// ── Fetch: source-stamped options flow (R2; poll floor is not freshness) ────
+// meta.json v2 owns source age. Its poll floor is an expected-opportunity
+// denominator, never a latency or fixed-cadence promise.
 // tide_current.json → top_net_impact[] gives a per-root ~net TOTAL premium
 //   (net_c+net_p). It carries no call/put lean and never feeds flow.ncp.
 // enrich_current.json → per-event list; aggregate per root for badges + tier.
 // tickers/<ROOT>.json → per-root cumulative minute series; the ONLY source of the
 //   call-only figures — ~net call premium and flow durability.
-var flowInflight = false;
+var flowMeta = null, flowInflight = false;
 function fetchFlow() {
   if (flowInflight) return;
   var tideUrl = r2Url('live_flow/tide_current.json');
   var enrichUrl = r2Url('live_flow/enrich_current.json');
+  var metaUrl = r2Url('live_flow/meta.json');
   if (!tideUrl) { updateFlowStamp(null); return; }
   flowInflight = true;
   Promise.all([
     fetch(tideUrl, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
-    fetch(enrichUrl, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })
+    fetch(enrichUrl, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
+    fetch(metaUrl, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })
   ]).then(function(res){
     flowInflight = false;
-    var tide = res[0], enrich = res[1];
-    var asof = null;
+    var tide = res[0], enrich = res[1], meta = res[2];
+    var metaIsV2 = !!(meta && meta.schema === 'live_flow.meta/v2');
+    var asof = metaIsV2 ? (meta.asof || null) : null;
     // Per-root ~net TOTAL premium from top_net_impact (confirmed schema).
     if (tide) {
-      asof = (tide.meta && tide.meta.asof) || tide.asof || asof;
+      if (!metaIsV2) asof = tide.source_asof || (tide.meta && tide.meta.asof) || tide.asof || asof;
       (tide.top_net_impact || []).forEach(function(it){
         if (!it || !it.root) return;
         var ex = flowState[it.root] || {};
@@ -769,7 +774,7 @@ function fetchFlow() {
     if (enrich) {
       // flow.enrich/v1 stamps asof TOP-LEVEL; the legacy meta probe alone read undefined,
       // so the stamp silently fell through to the tide's. Symmetric with the tide line above.
-      asof = (enrich.meta && enrich.meta.asof) || enrich.asof || asof;
+      if (!metaIsV2) asof = enrich.source_asof || (enrich.meta && enrich.meta.asof) || enrich.asof || asof;
       var events = enrich.events || enrich.feed || enrich.enriched || [];
       if (!events.length && enrich.tickers) {   // legacy rollup shape, if present
         Object.keys(enrich.tickers).forEach(function(root){
@@ -794,8 +799,8 @@ function fetchFlow() {
         });
       }
     }
-    flowAsof = asof; flowRTH = isMarketHours();
-    updateFlowStamp(asof);
+    flowMeta = meta; flowAsof = asof; flowRTH = isMarketHours();
+    updateFlowStamp(asof, meta);
     // Deepen the board's own names — the per-root payload is the only source of the
     // call-only series the lean and L5 need, and flowState is read for leaders only.
     // top_net_impact is ranked market-wide, so its head is index roots this board never
@@ -843,13 +848,17 @@ function fetchRootFlow(root) {
     scheduleRender();
   }).catch(function(){});
 }
-function updateFlowStamp(asof) {
+function updateFlowStamp(asof, meta) {
   var stamp = document.getElementById('ift-stamp');
   if (!stamp) return;
   var base = '{{ ift.as_of if ift.as_of else "—" }}';
   var rth = isMarketHours();
-  var tapeEn = rth ? ('tape ' + (asof ? 'as of '+asof : 'live')) : ('tape off-hours' + (asof ? ' · last '+asof : ''));
-  var tapeZh = rth ? ('资金带 ' + (asof ? '截至 '+asof : '实时')) : ('资金带 非交易时段' + (asof ? ' · 最后 '+asof : ''));
+  var tapeEn = rth
+    ? (asof ? 'tape source as of '+asof : 'tape source time unavailable')
+    : (asof ? 'tape off-hours · last-session source as of '+asof : 'tape off-hours · source time unavailable');
+  var tapeZh = rth
+    ? (asof ? '资金带 来源截至 '+asof : '资金带 来源时间不可用')
+    : (asof ? '资金带 非交易时段 · 上一交易时段来源截至 '+asof : '资金带 非交易时段 · 来源时间不可用');
   stamp.innerHTML = lz('Base: '+base+' · '+tapeEn, '基础：'+base+' · '+tapeZh);
 }
 

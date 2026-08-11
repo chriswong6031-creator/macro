@@ -4,9 +4,8 @@
 <!--
   com.mastermind.flowenrich.plist — launchd agent for the flow enrichment publisher.
 
-  Runs build_flow_enrich every 5 minutes during RTH weekdays (StartInterval=300).
-  Offset from the poller's 2-minute cadence: ~90s gap from poller fires means
-  the enricher sees the freshest feed each cycle.
+  Runs build_flow_enrich every 5 minutes (StartInterval=300). This is a builder
+  schedule, not a freshness or source-latency claim; poller starts can drift.
 
   The job is NOT RTH-gated by the script itself (it simply re-publishes from the
   last complete session when fired off-hours). ThrottleInterval=60 prevents
@@ -40,10 +39,9 @@
     python -m scripts.build_flow_enrich --no-publish --verbose
 
   OFF-HOURS BEHAVIOUR:
-    Off-hours runs re-read the last available feed_current.json from R2 and
-    republish enrich_current.json with the asof timestamp updated. The envelope's
-    asof will differ from the feed's asof, which is honest: the enrichment was
-    recomputed at the new time but the source data is unchanged.
+    Off-hours runs re-read the last available feed_current.json from R2. Legacy
+    asof and explicit source_asof remain bound to the represented source clock;
+    only built_at advances. The artifact therefore stays plainly last-session.
 -->
 <plist version="1.0">
 <dict>
@@ -69,9 +67,8 @@
   <string>/Users/chriswong/flow-ops-wt</string>
 
   <!--
-    StartInterval=300: fire every 5 minutes.
-    Combined with the poller's 120s cadence and the ~90s launchd scheduling
-    jitter, the enricher reliably sees a fresh feed each cycle during RTH.
+    StartInterval=300: fire every 5 minutes. This controls recomputation only;
+    source_asof discloses the feed time and built_at discloses this job's time.
     Off-hours runs are cheap (just an R2 GET + enrichment recompute).
   -->
   <key>StartInterval</key>
