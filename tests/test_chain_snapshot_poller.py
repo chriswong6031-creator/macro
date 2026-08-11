@@ -2460,6 +2460,11 @@ def test_runbook_pins_exact_clock_join_recovery_and_installed_reload_order():
     assert 'merge-base --is-ancestor "$EXPECTED_MERGE" origin/main' in runbook
     assert 'test ! -L "$STATE"' in runbook
     assert 'for _ in $(seq 1 13)' in runbook
+    assert "assert_rollout_window()" in runbook
+    assert runbook.count("assert_rollout_window") == 4
+    assert 'if [ "$DOW" -le 5 ] && [ "$HHMM" -lt 1325 ]' in runbook
+    assert '"$HHMM" -ge 0600' not in runbook
+    assert rollout.count("assert_rollout_window") == 2
 
     live_runbook = (
         Path(__file__).parents[1] / "ops/LIVE_FLOW_RUNBOOK.md"

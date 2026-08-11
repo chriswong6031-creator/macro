@@ -249,13 +249,17 @@ STATE="$HOME/flow-ops-wt/data/chain_snapshots"
 PY="$HOME/miniconda3/envs/plane/bin/python"
 EXPECTED_MERGE="${EXPECTED_MERGE:?set the reviewed merged SHA}"
 
-# STOP during RTH and close recovery. Never kill a live producer to deploy.
-HHMM=$(date +%H%M)
-DOW=$(date +%u)
-if [ "$DOW" -le 5 ] && [ "$HHMM" -ge 0600 ] && [ "$HHMM" -lt 1325 ]; then
-  echo "STOP: RTH/close-recovery window" >&2
-  exit 1
-fi
+# Weekday rollout is after-close only. Hashing the physical state plus cloning
+# can take tens of minutes, so a pre-open start is not a safe exception.
+assert_rollout_window() {
+  HHMM=$(date +%H%M)
+  DOW=$(date +%u)
+  if [ "$DOW" -le 5 ] && [ "$HHMM" -lt 1325 ]; then
+    echo "STOP: weekday rollout is after-close-only (13:25 or later)" >&2
+    exit 1
+  fi
+}
+assert_rollout_window
 ! pgrep -f 'scripts[.]chain_snapshot_poller' >/dev/null
 test -d "$STATE"
 test ! -L "$STATE"                  # physical authority, never a redirect
@@ -430,6 +434,11 @@ PYTHONPATH="$NEW" "$PY" -m scripts.chain_snapshot_poller --help >/dev/null
 )
 plutil -lint "$NEW/ops/launchd/$LABEL.plist"
 
+# The manifest/clone/tests above are intentionally slow. Re-prove the clock and
+# producer stop immediately before touching the installed deploy path.
+assert_rollout_window
+! launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1
+! pgrep -f 'scripts[.]chain_snapshot_poller' >/dev/null
 if [ "$HAD_DEPLOY" -eq 1 ]; then
   mv "$DEPLOY" "$ROLLBACK"
 fi
@@ -437,6 +446,8 @@ mv "$NEW" "$DEPLOY"
 install -m 644 "$DEPLOY/ops/launchd/$LABEL.plist" "$PLIST"
 cmp "$DEPLOY/ops/launchd/$LABEL.plist" "$PLIST"
 plutil -lint "$PLIST"
+assert_rollout_window
+! pgrep -f 'scripts[.]chain_snapshot_poller' >/dev/null
 launchctl bootstrap "$DOMAIN" "$PLIST"
 launchctl print "$DOMAIN/$LABEL" | grep -F "$DEPLOY"
 
