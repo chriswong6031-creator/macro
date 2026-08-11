@@ -24,6 +24,7 @@ from tests.government_revenue_candidate_fixture import (
     ROOT,
     canonical_fixture_root,
     canonical_frozen_at,
+    rewound,
     shifted,
     utc_date,
 )
@@ -38,7 +39,10 @@ NEXT_RUN_AT = shifted(FROZEN_AT, hours=1)
 #: An observation known between the two runs above -- appendable, not a backfill.
 BETWEEN_RUNS_KNOWN_AT = shifted(FROZEN_AT, minutes=30)
 #: One second behind the first run: the writer's clock must refuse to regress.
-BEFORE_FROZEN_AT = shifted(FROZEN_AT, seconds=-1)
+#: Nominal on a healthy vintage; on a tight one it is pulled to the midpoint of
+#: (newest source instant, run clock) so the canonical clock guard can never
+#: preempt the regression refusal under test.
+BEFORE_FROZEN_AT = rewound(FROZEN_AT, seconds=1)
 #: A source known after the run that reads it -- the monotonicity guard's target.
 FUTURE_KNOWN_AT = shifted(FROZEN_AT, hours=9)
 # The first successful post-heal materialization issued this reviewed cohort at
@@ -66,7 +70,11 @@ _ISSUED_RECOVERY_COHORT_SHA256 = (
 # source clock so a later collection cannot fail before the incident assertions.
 CORRECTION_ACTIVATED_AT = FROZEN_AT
 CORRECTION_REPEAT_AT = shifted(CORRECTION_ACTIVATED_AT, minutes=1)
-FORWARD_DURING_ACTIVATION_AT = shifted(CORRECTION_ACTIVATED_AT, minutes=-3)
+#: A hostile row known just before the activation run.  Nominal on a healthy
+#: vintage; on a tight one it is pulled to the midpoint of (newest source
+#: instant, run clock) so the canonical clock guard can never preempt the
+#: forward-append refusal under test.
+FORWARD_DURING_ACTIVATION_AT = rewound(CORRECTION_ACTIVATED_AT, minutes=3)
 _INCIDENT_FIXTURE_DIRECTORY = (
     ROOT
     / "tests/fixtures/government_revenue/issuance_incident_5fc18d5"
