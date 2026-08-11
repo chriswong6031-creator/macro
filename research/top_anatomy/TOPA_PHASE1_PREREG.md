@@ -271,3 +271,17 @@ gauntlet.
   rate = matched/eligible EPISODES (2,097/3,407 etc.); r63 day-weighted arm = 240 episodes (2.7×),
   not 399 case-sets; r63 case census 338/814, not "323-episode panel". Report rewritten in full;
   reviewer verification pass commissioned.
+- **2026-08-11 — CORRECTION (append-only) to the G0.5 pass-1 entry above + pass-2 record.** The
+  pass-1 entry's ground-(iii) clause "while A3/A4 go positive" is WRONG for the primary panel:
+  primary AM `A4_r252` is −0.0283 [−0.0823, +0.0148], q=0.223 (negative, insignificant); the
+  +0.038 belongs to atrz_disjoint AM. The corrected, verifiable pattern (now in report §3.2):
+  short-horizon momentum reverses down on both large AM panels while the longest-horizon returns
+  that clear q go the other way (A3 +0.002 primary / +0.001 atrz; A4 +0.038 atrz only), with
+  `B6_max_up_streak21` −0.500 the strongest single non-heat receipt. Pass 2 also corrected five
+  derived census pairs to artifact values (241/814, 1,369/2,201, 1,945/3,407, 177/814,
+  1,230/2,201; ATRZ eligible = 2,201) and added four hedges: outcome-independence of the
+  instrument vs post-results timing of the noticing; the mechanical rule credited as a plain
+  pre-results reading; B3-primary attribution scoped to a non-binding arm with the
+  not-a-single-variable-dial caution; the wrong-sign superlative scoped to this wave; §7.3
+  phase-0-cohort-as-supporting. No grade, verdict, or ruling changed. Verification pass 3
+  commissioned.

@@ -20,10 +20,10 @@ diagnostic said otherwise.
    floor; §4.1); `F3_days_since_63d_high` stays supported on both — with the caveat attached at
    first mention that F3 *is* anchor distance, so its DM support cannot separate "genuinely
    fresher highs" from the anchor geometry in (2). The R63 disjoint panel misses the matched-
-   episode floor and carries no directional claim (§4.4). `B3_rsi14_chg10` on the discovery
-   cohort is explained by the length-biased-SAMPLING half of mechanism (2), not by age: switching
-   control sampling back to day-weighted — age stratum still applied — restores B3 to +1.371
-   (q=0.0045) on primary (§4.2).
+   episode floor and carries no directional claim (§4.4). `B3_rsi14_chg10` dies on the discovery
+   cohort under DM, and the non-binding day-weighted arm — age stratum still applied, B3 restored
+   to +1.371 (q=0.0045) — locates the kill in mechanism (2)'s SAMPLING half rather than in age
+   (§4.2, with the arm's own limits stated there).
 2. **The anchor-geometry counter-explanation was NOT discharged, and the wave's own artifacts
    strengthen it.** The AM arm placed controls at exactly zero days-since-high against cases whose
    frozen snapshots sit at median 1–2 — reversing the asymmetry it existed to remove (§3). Its
@@ -31,8 +31,8 @@ diagnostic said otherwise.
    that said "no failure" — the override, its grounds, and the registered kill it displaces are
    printed in §3.2, not footnoted. Meanwhile the DM arm's own full exploratory tables put two
    anchor-family features (`E3f_rs_peak_lag`, `F2_drawdown_in_episode`) among the most consistent
-   wrong-sign replications in the program (3/3 panels each; §5.1) — the anchor rival is alive
-   inside the "clean" construction too.
+   wrong-sign replications in this wave's exploratory tables (3/3 panels each; §5.1) — the anchor
+   rival is alive inside the "clean" construction too.
 3. **No leg reaches P1-ROBUST** under the frozen synthesis rule (AM void; R63 disjoint
    underpowered under DM). The decisive successor construction is specified by the failure:
    **AM-v2 — controls matched to the case anchor-distance DISTRIBUTION, not pinned at zero** —
@@ -62,11 +62,11 @@ topped-E1-eligible **episodes** (`e1.n_episodes` / `episodes.n_topped_e1_eligibl
 | cell | continued EXT days → restricted → candidates | matched / case-sets | matched / eligible episodes | cell n | peak-months | match rate |
 |---|---|---|---|---|---|---|
 | AM × primary | 84,654 → 23,261 → 3,114 | 3,956 / 4,233 | 2,097 / 3,407 | 1,939 | 47 | 0.62 |
-| AM × r63_disjoint | 9,275 → 2,745 → 880 | 337 / 498 | 246 / 814 | 144 | 28 | 0.30 · MATCH-STARVED |
-| AM × atrz_disjoint | 133,775 → 34,567 → 3,651 | 2,606 / 2,741 | 1,433 / 2,306 | 1,271 | 46 | 0.62 |
-| DM × primary | → 4,055 | 3,485 / 4,233 | 1,946 / 3,407 | 1,603 | 47 | 0.57 |
-| DM × r63_disjoint | → 1,280 | 221 / 498 | 180 / 814 | 90 | 18 | 0.22 · MATCH-STARVED |
-| DM × atrz_disjoint | → 4,261 | 2,130 / 2,741 | 1,299 / 2,306 | 980 | 43 | 0.56 |
+| AM × r63_disjoint | 9,275 → 2,745 → 880 | 337 / 498 | 241 / 814 | 144 | 28 | 0.30 · MATCH-STARVED |
+| AM × atrz_disjoint | 133,775 → 34,567 → 3,651 | 2,606 / 2,741 | 1,369 / 2,201 | 1,271 | 46 | 0.62 |
+| DM × primary | → 4,055 | 3,485 / 4,233 | 1,945 / 3,407 | 1,603 | 47 | 0.57 |
+| DM × r63_disjoint | → 1,280 | 221 / 498 | 177 / 814 | 90 | 18 | 0.22 · MATCH-STARVED |
+| DM × atrz_disjoint | → 4,261 | 2,130 / 2,741 | 1,230 / 2,201 | 980 | 43 | 0.56 |
 
 Walls, construction-major to match the table: AM 173 / 112 / 190 s, DM 167 / 104 / 192 s
 (primary / r63 / atrz) — 938 s total against the 12 h budget; no deferral.
@@ -104,14 +104,20 @@ the frozen prose to "collapse toward zero," instead passed THROUGH zero and out 
 **The ruling (post-results, disclosed as such):** the adjudicator voided all nine AM cells as
 UNDERPOWERED-BY-CONSTRUCTION-FAILURE, overriding the mechanical reading. The override's grounds,
 in order of weight: (i) the FROZEN prereg text — "collapse toward zero" — outranks the plumbing's
-operationalization, and a sign flip to 44–89% of anchor magnitude is not a collapse toward zero on
-any plain reading; (ii) the failure verdict is outcome-independent — §3.1's asymmetries are design
-facts, so the instrument was measuring the wrong contrast before any estimate existed; (iii) the
-reversal is not heat-specific: on primary AM, `B1_accel_r21` −0.110, `B4_newhigh63_rate21` −0.048,
-`B5_upday_rate21` −0.030, `B6_max_up_streak21` −0.500, `A1_r21` −0.092, `A2_r63` −0.055 (all
-q≈0.0005) while `A3_r126` +0.002 and `A4_r252` +0.038 — short-horizon down, long-horizon up is the
-signature of comparing different lifecycle positions, not of "cooling before a top" (real cooling
-would not move a max-up-streak count).
+operationalization, and on the adjudicator's reading of the frozen prose a sign flip to 44–89% of
+anchor magnitude is not a collapse toward zero (the mechanical rule was itself a plain pre-results
+reading that concluded otherwise — that disagreement is exactly what this disclosure exists to put
+on the record); (ii) the failure verdict is outcome-independent of the estimates — §3.1's
+asymmetries are design facts computable before any result — though the NOTICING was not: they were
+first computed at the results read, after the reversals surfaced them (prereg §7's first
+adjudication entry dates this); (iii) the reversal is not heat-specific: on primary AM,
+`B1_accel_r21` −0.110, `B4_newhigh63_rate21` −0.048, `B5_upday_rate21` −0.030,
+`B6_max_up_streak21` −0.500, `A1_r21` −0.092, `A2_r63` −0.055 (all q≈0.0005) — short-horizon
+momentum reverses down on both large AM panels (`A1_r21` −0.092 primary / −0.021 atrz) while the
+longest-horizon returns that clear q go the other way (`A3_r126` +0.002 primary / +0.001 atrz;
+`A4_r252` +0.038 on atrz, null on primary at −0.028 q=0.223) — a lifecycle-position-mismatch
+signature rather than "cooling before a top" (real cooling would not move a max-up-streak count,
+and `B6` −0.500 is the strongest single non-heat receipt).
 
 **What the ruling displaces — printed, because the flexibility ran toward preserving the ore
 body:** under the mechanical reading, the artifacts' own grades stand (`P1-NOT-SUPPORTED` × 9,
@@ -182,14 +188,16 @@ Readings, stated plainly:
    artifacts do not explain W2's confirmation" — is met on the floor-clearing panels. What this
    does NOT say: that B2 is anatomy — the §3 anchor mechanism operates at feature scale and
    remains open, and §5.2's extension-shift rival applies to the same ATRZ cells.
-2. **B3's discovery-cohort effect is explained by length-biased sampling, not by age.** On
-   primary, B3 collapses to +0.429 (q=0.284) under DM — but the day-weighted sensitivity, with
-   the AGE STRATUM STILL APPLIED and only the sampling switched back, restores it to +1.371
-   [+0.393, +2.328] (q=0.0045, 2,148 episodes, 47 peak-months, floors met). The kill mechanism on
-   the discovery cohort is therefore mechanism (2)'s sampling half: B3's phase-0 separation needed
-   controls drawn day-weighted from long episodes. It remains supported on the wide-tier disjoint
-   cohort (+3.268) under episode-first sampling — tier heterogeneity, with the responsible
-   mechanism now isolated per tier.
+2. **B3 dies on the discovery cohort under DM, and the sampling half of mechanism (2) is the
+   located suspect — on a non-binding arm.** On primary, B3 collapses to +0.429 (q=0.284) under
+   DM; the day-weighted sensitivity, with the AGE STRATUM STILL APPLIED and the sampling switched
+   back, restores it to +1.371 [+0.393, +2.328] (q=0.0045, 2,148 episodes, 47 peak-months, floors
+   met). The same caution §3.3 applies to the tolerance arm applies here: the switch also moves n
+   (1,603 → 2,148) and control composition, so this locates the kill in the sampling half rather
+   than proving it — B3's phase-0 separation appears to have needed controls drawn day-weighted
+   from long episodes. It remains supported on the wide-tier disjoint cohort (+3.268) under
+   episode-first sampling — tier heterogeneity, with a per-tier suspect rather than a per-tier
+   proof.
 3. **F3 survives duration matching on both readable panels**, carrying the §1 caveat: F3 is
    anchor distance, so under DM (controls at arbitrary anchors) these cells discharge duration
    only; on present evidence the leading rival for F3's separation is the anchor geometry itself.
@@ -277,7 +285,8 @@ selects controls; it never enters a feature value).
    mandatory. If AM-v2 lands on the kill side, that correction obligation REVIVES and binds the
    then-live surface.
 3. **Gauntlet file, for whenever a promotion prereg exists:** B2 now carries duration-robustness
-   on two floor-clearing cohorts (this wave) plus cross-tier confirmation (W2); it still lacks an
+   on the ATRZ disjoint cohort — with the phase-0 cohort as supporting evidence, never the decider
+   (prereg §3) — plus cross-tier confirmation (W2); it still lacks an
    anchor-clean estimate (AM-v2), a single-stratum era separation on the phase-0 cohort (§5.3),
    an answer to the ATRZ extension-shift rival (§5.2), and any out-of-time evidence. Nothing
    promotes.
@@ -303,3 +312,17 @@ selects controls; it never enters a feature value).
   same summary's day-weighted arm proves it is the sampling half (corrected in §1.1/§4.2). All 14
   must-fix and 7 nits applied. Corrections binding on the earlier §8 entry and logged append-only
   in prereg §7.
+- 2026-08-11 — G0.5 verification pass 2: NOT PRESENTABLE — 2 fresh blockers, both introduced by
+  the rewrite, plus 4 must-fix hedges. (A) Five of the six new "matched / eligible episodes"
+  census pairs were derived rather than read from the artifacts and were wrong (correct:
+  241/814, 1,369/2,201, 1,945/3,407, 177/814, 1,230/2,201 — with which the printed match rates
+  derive exactly; the ATRZ eligible census is 2,201, not 2,306). (B) ground (iii) quoted primary
+  A4 as +0.038 — that value is atrz's; primary A4 is −0.028 (q=0.223), a value the reviewer
+  itself had introduced in pass 1 and flagged in pass 2 — the ground is restated over the
+  verifiable horizon pattern. Hedges: the outcome-independence ground now separates the
+  instrument's independence from the noticing's timing; the mechanical rule is credited as a
+  plain pre-results reading; the B3-primary attribution is scoped to a non-binding arm with the
+  same not-a-single-variable-dial caution as §3.3; the wrong-sign superlative is scoped to this
+  wave; §7.3 counts the phase-0 cohort as supporting evidence, never the decider. Everything else
+  in the rewrite verified exactly (all pass-1 findings genuinely applied; zero other numeric
+  defects). Verification pass 3 commissioned.
