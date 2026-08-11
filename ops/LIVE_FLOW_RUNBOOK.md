@@ -14,7 +14,7 @@ the Terminal UI with a 30s TTL cache.
 |---|---|---|
 | `live_flow/feed_current.json` | `live_flow.feed/v1` | Events + unusual names |
 | `live_flow/heat_current.json` | `live_flow.heat/v1` | Sector heat rows |
-| `live_flow/meta.json` | `live_flow.meta/v1` | Poller cadence / universe |
+| `live_flow/meta.json` | `live_flow.meta/v2` | Source age, poll floor, observed cycle spacing, fetch/build clocks, root coverage |
 | `live_flow/tide_current.json` | `live_flow.tide/v1` | Market tide (NCP/NPP minutes + sectors) |
 | `live_flow/dte_tide_current.json` | `live_flow.dte_tide/v1` | DTE-bucket tide |
 | `live_flow/tickers/{ROOT}.json` | `live_flow.ticker/v1` | Per-root drill (top ~40 roots) |
@@ -27,6 +27,24 @@ the Terminal UI with a 30s TTL cache.
 
 Local copies land in `data/live_flow_out/` (gitignored).
 Day state is persisted at `data/live_flow_state/day_state_{date}.json`.
+
+### Clock and cadence truth
+
+`meta.asof` is the newest successful source response represented by the
+cumulative snapshot. A cycle with no successful source payload retains the prior
+`asof`; it does not make unchanged data look fresh. `meta.built_at` is the later
+artifact-build/publication clock. Outside RTH, consumers therefore show the last
+session's source time rather than claiming that the tape is live.
+
+`poll_floor_sec` is the configured minimum interval between cycle starts and the
+expected-frame denominator for session completeness. It is not a latency,
+freshness, or fixed-cadence guarantee. `observed_start_to_start_sec` reports the
+actual previous-to-current cycle-start spacing; `fetch_compute_sec` reports the
+current cycle's work time. `source_response_at_first` / `_last` bracket successful
+source responses, while `roots_requested` / `roots_with_source_payload` disclose
+coverage. The feed and heat carry `source_asof`; downstream enrich and chain-heat
+artifacts preserve that value in both legacy `asof` and explicit `source_asof`,
+with their own `built_at` clock.
 
 ### Point-in-time raw event stage (OIP PIT)
 

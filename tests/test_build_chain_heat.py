@@ -96,7 +96,7 @@ class TestBuildEnvelope:
 
     def test_required_top_level_keys(self):
         env = build_envelope([], "2026-07-08", "2026-07-08T20:00:00Z")
-        for key in ("schema", "asof", "session_date", "threshold_mn",
+        for key in ("schema", "asof", "source_asof", "built_at", "session_date", "threshold_mn",
                     "note_en", "note_zh", "campaigns"):
             assert key in env, f"missing top-level key: {key!r}"
 
@@ -104,6 +104,54 @@ class TestBuildEnvelope:
         env = build_envelope([], "2026-07-08", "2026-07-08T20:00:00Z")
         assert env["session_date"] == "2026-07-08"
         assert env["asof"] == "2026-07-08T20:00:00Z"
+
+    def test_legacy_asof_is_source_clock_not_rebuild_clock(self):
+        env = build_envelope(
+            [],
+            "2026-07-08",
+            "2026-07-08T19:55:00Z",
+            built_at="2026-07-08T20:05:00Z",
+        )
+        assert env["asof"] == "2026-07-08T19:55:00Z"
+        assert env["source_asof"] == "2026-07-08T19:55:00Z"
+        assert env["built_at"] == "2026-07-08T20:05:00Z"
+
+    def test_subsecond_source_identity_is_preserved(self):
+        source_asof = "2026-07-08T19:55:00.987654Z"
+        env = build_envelope(
+            [],
+            "2026-07-08",
+            source_asof,
+            built_at="2026-07-08T19:55:01.000001Z",
+        )
+        assert env["asof"] == source_asof
+        assert env["source_asof"] == source_asof
+
+    @pytest.mark.parametrize(
+        "invalid",
+        [None, "", "not-a-time", "2026-07-08T20:00:00", "2026-07-08T21:00:00+01:00"],
+    )
+    def test_invalid_source_time_fails_closed(self, invalid):
+        with pytest.raises(ValueError, match="source_asof"):
+            build_envelope([], "2026-07-08", invalid)
+
+    def test_build_clock_cannot_precede_source_clock(self):
+        with pytest.raises(ValueError, match="cannot precede"):
+            build_envelope(
+                [],
+                "2026-07-08",
+                "2026-07-08T20:05:00Z",
+                built_at="2026-07-08T20:04:59Z",
+            )
+
+    def test_subsecond_clock_order_is_temporal_not_lexical(self):
+        with pytest.raises(ValueError, match="cannot precede"):
+            build_envelope(
+                [],
+                "2026-07-08",
+                "2026-07-08T20:05:00.9Z",
+                built_at="2026-07-08T20:05:00.10Z",
+            )
 
     def test_threshold_mn_default(self):
         env = build_envelope([], "2026-07-08", "2026-07-08T20:00:00Z")
@@ -241,3 +289,22 @@ class TestEndToEnd:
         for i, c in enumerate(env["campaigns"]):
             missing = ui_keys - set(c.keys())
             assert not missing, f"campaign[{i}] missing keys: {missing}"
+
+
+def test_publisher_does_not_write_when_source_time_is_invalid(tmp_path, monkeypatch):
+    import scripts.build_chain_heat as builder
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        builder,
+        "fetch_feed",
+        lambda: {
+            "schema": "live_flow.feed/v1",
+            "asof": "2026-07-08T20:00:00Z",
+            "source_asof": "not-a-time",
+            "session_date": "2026-07-08",
+            "events": [],
+        },
+    )
+    assert builder.main(["--no-publish"]) == 0
+    assert not (tmp_path / "chain_heat_current.json").exists()
