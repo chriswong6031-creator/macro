@@ -108,6 +108,7 @@ RECEIPT_SCHEMA = "prophet.origination_receipt/v1"
 # population written by run 31340764145 / engine job 93332847126.
 REFUSAL_RUN_ID = "31340764145"
 REFUSAL_ENGINE_JOB_ID = "93332847126"
+EVENT_CHECKOUT_SHA = "5d06ee689bec47e0ec8c1079c5545c5091c79411"
 REFUSAL_CHECKPOINT_SHA = "8421e4783f141248656c850bfd61d1e15a6aeb97"
 REFUSAL_CHECKPOINT_PATH = "site/prophet/index.json"
 
@@ -410,10 +411,9 @@ def _source_manifest(
 def require_ancestor(repo: Path, older: str, newer: str, *, relation: str) -> None:
     """Fail unless ``older`` is on ``newer``'s ancestry.
 
-    Used only where the evidence really shares history: event → refusal checkpoint
-    and healed board → collision baseline.  The refusal/event evidence line may be
-    a scoped-push side history rather than an ancestor of today's rebased main, so
-    no event → collision relationship is asserted.
+    Used only where the evidence really shares history. The event/board/refusal line
+    is scoped-push side history, while the collision snapshot belongs to today's
+    rebased main; no false ancestry relationship is asserted between those lines.
     """
     result = subprocess.run(
         ["git", "merge-base", "--is-ancestor", older, newer],
@@ -869,13 +869,22 @@ def run_backfill(
         candidate_tickers=candidate_tickers,
     )
     checkpoint_sha = str(refusal_checkpoint["checkpoint_commit"])
+    if checkpoint_sha == REFUSAL_CHECKPOINT_SHA and (
+        board_sha != EVENT_CHECKOUT_SHA or event_baseline_sha != EVENT_CHECKOUT_SHA
+    ):
+        raise BackfillRefused(
+            "authorized replay requires the exact run-31340764145 event checkout "
+            f"for both board and event baseline ({EVENT_CHECKOUT_SHA}); observed "
+            f"board={board_sha}, event={event_baseline_sha}"
+        )
     require_ancestor(
         repo, event_baseline_sha, checkpoint_sha,
         relation="event baseline must precede the durable refusal checkpoint",
     )
+    main_sha = resolve_commit(repo, "refs/remotes/origin/main")
     require_ancestor(
-        repo, board_sha, collision_baseline_sha,
-        relation="healed board must be on collision-baseline ancestry",
+        repo, collision_baseline_sha, main_sha,
+        relation="collision baseline must be a fetched origin/main snapshot",
     )
 
     staleness = board.get("staleness") or {}

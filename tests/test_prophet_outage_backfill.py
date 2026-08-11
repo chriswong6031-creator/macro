@@ -229,6 +229,7 @@ def _pinned_repo(tmp_path: Path, *, buys: list[dict],
     sha = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=repo, check=True, capture_output=True,
     ).stdout.decode().strip()
+    _git(repo, "update-ref", "refs/remotes/origin/main", sha)
     return repo, sha
 
 
@@ -251,9 +252,11 @@ def _commit_collision_snapshot(
                 }) + "\n")
     _git(repo, "add", "-A")
     _git(repo, "commit", "-qm", "later collision snapshot")
-    return subprocess.run(
+    sha = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=repo, check=True, capture_output=True,
     ).stdout.decode().strip()
+    _git(repo, "update-ref", "refs/remotes/origin/main", sha)
+    return sha
 
 
 def _synthetic_refusal_checkpoint(commit: str) -> dict:
@@ -713,6 +716,22 @@ class TestDeterminismAndIdempotence:
 
         with pytest.raises(bf.BackfillRefused, match="tracked working tree is not clean"):
             _replay(repo, sha)
+
+    def test_collision_baseline_must_be_on_fetched_origin_main(self, tmp_path):
+        repo, event_sha = _pinned_repo(tmp_path, buys=[_buy_row("AAA")])
+        marker = repo / "later-side-branch.txt"
+        marker.write_text("not main\n", encoding="utf-8")
+        _git(repo, "add", str(marker.name))
+        _git(repo, "commit", "-qm", "side collision snapshot")
+        side_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=repo, check=True,
+            capture_output=True,
+        ).stdout.decode().strip()
+
+        with pytest.raises(bf.BackfillRefused, match="fetched origin/main snapshot"):
+            _replay(
+                repo, event_sha, event_sha=event_sha, collision_sha=side_sha,
+            )
 
     def test_missing_thetadata_store_refuses_instead_of_warning_only(self, tmp_path):
         repo, _sha = _pinned_repo(tmp_path, buys=[_buy_row("AAA")])
