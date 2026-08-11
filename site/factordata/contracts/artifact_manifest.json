@@ -92,7 +92,7 @@
   {
    "artifact": "site/factordata/us_standouts.json",
    "kind": "board",
-   "schema_version": "1.8.0",
+   "schema_version": "1.9.0",
    "schema_fields": [
     "as_of",
     "board_definition",
@@ -118,6 +118,7 @@
    ],
    "optional_fields": [
     "anchor",
+    "candidate_pool",
     "earnings_soon",
     "post_earnings_move",
     "universe_sources"
