@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "options.signal_campaign_checkpoint/v1",
+  "title": "Exact append-only source and output prefix checkpoint for campaign accrual",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "checkpoint_id",
+    "policy",
+    "sources",
+    "outputs",
+    "training_eligible",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "options.signal_campaign_checkpoint/v1"},
+    "checkpoint_id": {"type": "string", "pattern": "^ocp_[a-f0-9]{24}$"},
+    "policy": {"const": "checkpoint-last-exact-prefix/v1"},
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["episodes", "h60_outcomes", "session_outcomes"],
+      "properties": {
+        "episodes": {"$ref": "#/$defs/prefixReceipt"},
+        "h60_outcomes": {"$ref": "#/$defs/prefixReceipt"},
+        "session_outcomes": {"$ref": "#/$defs/prefixReceipt"}
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["campaigns", "outcomes"],
+      "properties": {
+        "campaigns": {"$ref": "#/$defs/prefixReceipt"},
+        "outcomes": {"$ref": "#/$defs/prefixReceipt"}
+      }
+    },
+    "training_eligible": {"const": false},
+    "authority": {"$ref": "#/$defs/falseAuthority"}
+  },
+  "$defs": {
+    "prefixReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "records", "prefix_sha256"],
+      "properties": {
+        "path": {
+          "enum": [
+            "data/options_signal_episode/episodes.jsonl",
+            "data/options_signal_episode/outcomes_h60.jsonl",
+            "data/options_signal_episode/outcomes_session.jsonl",
+            "data/options_signal_campaign/campaigns.jsonl",
+            "data/options_signal_campaign/outcomes.jsonl"
+          ]
+        },
+        "records": {"type": "integer", "minimum": 0},
+        "prefix_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "falseAuthority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "may_originate",
+        "may_rank",
+        "may_score",
+        "may_gate",
+        "may_size",
+        "may_issue",
+        "may_trade",
+        "may_publish_pick",
+        "may_train_prophet",
+        "may_feed_neural_web",
+        "may_select",
+        "may_escalate",
+        "may_compute_option_pnl"
+      ],
+      "properties": {
+        "may_originate": {"const": false},
+        "may_rank": {"const": false},
+        "may_score": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_issue": {"const": false},
+        "may_trade": {"const": false},
+        "may_publish_pick": {"const": false},
+        "may_train_prophet": {"const": false},
+        "may_feed_neural_web": {"const": false},
+        "may_select": {"const": false},
+        "may_escalate": {"const": false},
+        "may_compute_option_pnl": {"const": false}
+      }
+    }
+  }
+}

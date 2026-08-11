@@ -60,41 +60,17 @@ permissions:
                          # main into a clean-but-stale head (update-branch)
   pull-requests: write   # add/remove merge-blocked, post the explanatory comment
 
-# NO `concurrency:` BLOCK — DELIBERATELY. Do not reintroduce one (2026-08-06).
-#
-# This lane used to carry `group: merge-on-green` + `cancel-in-progress: false`,
-# reasoning that "a sweep that is mid-merge must finish — cancelling it could
-# leave a PR labeled but unmerged". The property is right; the mechanism did the
-# opposite of protecting it. Measured on the 100 runs before this commit:
-#
-#   conclusions        cancelled: 98, (in flight): 2, success: 0   <- in ~2 hours
-#   94 of 98 cancelled runs died within 3 SECONDS of the NEXT run being created
-#   the longest-lived cancelled run (482 s) had ZERO jobs materialised
-#
-# `cancel-in-progress: false` protects only an IN-PROGRESS run. GitHub keeps
-# exactly ONE *pending* run per group and cancels the previous one on every new
-# arrival, and the pending state includes the wait for a runner. Triggers arrive
-# here every 50 s (median; 0.86/min), so the pending slot was overwritten long
-# before it could ever be promoted.
-#
-# What held the group was not a sweep doing work. `ci` (48 queued / 8 running)
-# and `fences` (34 queued / 1 running) are ALSO `ubuntu-latest`, so the sweeper
-# queues behind its own triggers on a capacity-capped pool: run 31055861804 sat
-# `queued` for 107 minutes, and the last run that ever succeeded (31054326485)
-# waited 25m38s for a runner and then did the entire sweep in 46 SECONDS. The
-# group therefore serialised a multi-hour queue wait, and every wake-up that
-# arrived during it was destroyed. A livelock, not a backlog.
-#
-# Removing the group cannot reintroduce the labeled-but-unmerged hazard: with no
-# group, NOTHING here is ever cancelled by concurrency at all — which protects a
-# mid-merge sweep strictly more than `cancel-in-progress: false` did, since that
-# setting never protected the pending runs that were the ones actually dying. The
-# sweep is a level-triggered reconciler (it re-lists every labeled PR and re-derives
-# every verdict from GitHub's live state on each run, carrying nothing across runs),
-# so overlapping sweeps are safe; the one genuine race — a second sweep mistaking
-# "another sweep already merged this" for a conflict and labelling a MERGED PR
-# `merge-blocked` — is guarded in scripts/merge_on_green.py (`already_settled`)
-# and pinned by tests/test_merge_on_green.py.
+# Concurrency belongs on the JOB, after its event gate, and only now that the job
+# has a runner no workload can saturate. A former workflow-wide constant group
+# livelocked this lane to 0 successes in 100 runs: the shared hosted queue held the
+# one pending slot for 25-107 minutes while a new trigger replaced it every ~50 s.
+# The job-level group below instead coalesces only redundant FULL reconciliations.
+# Failure wake-ups are keyed by head SHA because each one runs a bounded marker pass
+# for exactly that head; coalescing different failed heads would recreate #5291's
+# invisible-red window. `cancel-in-progress: false` protects a sweep already doing
+# work, while the dedicated runner keeps the pending interval to seconds rather
+# than hours. The live-state race guards in scripts/merge_on_green.py remain as
+# defense in depth for pre-deploy runs and out-of-band callers.
 
 jobs:
   sweep:
@@ -143,22 +119,25 @@ jobs:
       || github.event.workflow_run.conclusion == 'success'
       || github.event.workflow_run.conclusion == 'failure'
 
-    # CONTROL PLANE, NOT RENDER WORKLOAD. Never route this job to macstudio or
-    # render-linux: a sweep queued behind a long render cannot drain the merge queue.
+    concurrency:
+      group: >-
+        merge-on-green-${{ github.event_name == 'workflow_run'
+        && github.event.workflow_run.conclusion == 'failure'
+        && format('mark-{0}', github.event.workflow_run.head_sha)
+        || 'sweep' }}
+      cancel-in-progress: false
+
+    # CONTROL PLANE, NOT WORKLOAD. On 2026-08-11 the hosted pool was hard-saturated
+    # at 180 running jobs with 91 queued; sweeps waited 4-16 minutes and then finished
+    # in 6-39 seconds while mac-builder-4 sat online and idle. The unique
+    # `merge-control` label reserves that tiny runner for this arbiter. It carries no
+    # render-linux, render-heavy, macstudio, or macstudio-light label, so render,
+    # nightly, and light workloads cannot land here. Never replace the unique label
+    # with `parked`: mac-builder-5 also carries `parked` and is nightly failover.
     #
-    # The 2026-08-08 move away from hosted runners was correct under the old account
-    # cap: with ~100 open PRs, sweeps waited about two hours behind ci/fences. The
-    # constraint reversed after the Enterprise transfer (2026-08-09). Live capacity
-    # was 34/180 hosted jobs while all four render-linux runners were occupied and
-    # sweep runs remained queued. Keeping the control plane on render-linux therefore
-    # recreated the same priority inversion on the smaller pool.
-    #
-    # `ubuntu-latest` is now the isolated, elastic route for this lightweight job. It
-    # needs only Python, network, a sparse checkout, and PyYAML; no setup-python step
-    # or persistent workspace is load-bearing. tests/test_merge_on_green.py pins the
-    # hosted route, absence of self-hosted labels, sparse checkout, and event triggers.
-    # integration-baseline.yml has a separate routing contract and is unchanged here.
-    runs-on: ubuntu-latest
+    # The job needs only Python, network, a sparse checkout, and PyYAML; no
+    # setup-python step or persistent workspace is load-bearing.
+    runs-on: [self-hosted, macOS, ARM64, merge-control]
     timeout-minutes: 15
 
     steps:
@@ -226,14 +205,12 @@ jobs:
           # human dispatch, which is exactly the status quo this repairs — never worse.
           MERGE_TOKEN: ${{ secrets.ADMIN_GH_TOKEN || secrets.GITHUB_TOKEN }}
           # The head the workflow_run that woke this sweep concluded on. The sweeper
-          # now evaluates at most MAX_PULLS_PER_SWEEP pull requests per run (the
-          # READ_TOKEN quota is 1,000/hr PER REPOSITORY and an uncapped pass of this
-          # backlog costs ~121 of them — 28 sweeps/hr emptied the bucket and every
-          # later sweep 403'd on its first call, 03:34Z-04:38Z on 2026-08-07). This
-          # puts the pull request the trigger is ABOUT first inside that cap, so the
-          # cap costs no latency in the case the workflow_run trigger exists to
-          # serve. Empty for schedule/workflow_dispatch, which is harmless — it only
-          # reorders within the cap and never passes a gate.
+          # sizes its pull-request window from READ_TOKEN's live core limit (25 at the
+          # historical 1,000/hr, up to 100 after the Enterprise transfer). This puts
+          # the pull request the trigger is ABOUT first inside that cap, so the cap
+          # costs no latency in the case the workflow_run trigger exists to serve.
+          # Empty for schedule/workflow_dispatch, which is harmless — it only reorders
+          # within the cap and never passes a gate.
           TRIGGER_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           # HOW that run concluded. `failure` selects the bounded mark-only pass (see
           # the `if:` essay above and `mark_only_pass` in the script); anything else,

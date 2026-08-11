@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-11T21:27:10.315476+00:00",
-  "count": 947,
+  "generated_at": "2026-08-11T22:36:33.656144+00:00",
+  "count": 951,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -77,6 +77,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qnyqnuroxjh-253cda",
+      "title": "JPM Delta One Flows",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-11T11:57:57Z",
+      "summary_points": [
+        "**Fixed Income Short Dominance**: >80% of global fixed income instruments show \"Short\" CTA signals (red), with Americas/EMEA showing strong net inflows but negative OI changes signaling elevated volatility risk.",
+        "**Commodity Hedge Surge**: Precious Metals ($1.8T weekly inflows) and Broad Commodities ($560B weekly) show explosive capital allocation as inflation/hedge demand intensifies.",
+        "**Tech Rotation Divergence**: Semiconductors face $9.1B outflows (-2.2x) while QQQ gains $9.1B inflows (+2.2x), indicating sector-specific risk aversion amid strong Nasdaq demand.",
+        "**EM Asia Rotation**: EM Asia ETFs show robust 4w flows (+3.1z), driven by geopolitical shifts/policy changes, contrasting with US equity concentration risk.",
+        "**Oil-S&P 500 Sensitivity**: S&P 500 exhibits negative oil correlation (-8%) and positive oil change (2.7%), amplifying volatility during energy-driven shocks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-vko7e4zekvn-09bb9d",
       "title": "JPM US Market Intelligence Morning Briefing Aug 11",
       "institution": "J.P. Morgan",
@@ -140,6 +161,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bco5esaj1dl-bd2ff1",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T22:19:08Z",
+      "summary_points": [
+        "**Strong US earnings momentum**: 87% of S&P 500 companies beat Q2 earnings, median Russell 3000 growth at 15% (strongest since 2021), sustaining risk-on trade amid Fed rate moderation.",
+        "**Fed Policy Outlook**: July CPI key data; base case holds rates unchanged this year as labor market easing (payroll miss, revisions) outweighs tightening fears, supporting short/medium bonds.",
+        "**Geopolitical & Gold Dynamics**: Iran negotiations temper flare-up risk, but Strait of Hormuz delays threaten oil volatility; gold rallies 7.4% weekly (strongest since Jan) on easing rate expectations, targeting $5,000/oz by 2027.",
+        "**US Treasury yields falling**: 10Y/2Y yields down 1/5 basis points (1D/5D), signaling rate cut expectations, pressuring bonds and equities."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-diubsw9r87b-7ea4c2",
       "title": "Transformational Innovation Opportunities (TRIO)",
       "institution": "UBS",
@@ -180,6 +221,24 @@
       "tickers": [],
       "top_pick": true,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-knyv6slrn7p-a37db9",
+      "title": "RBC UK & EUROPEAN RESEARCH AT A GLANCE",
+      "institution": "RBC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-10T15:01:34Z",
+      "summary_points": [
+        "**Amrize Margins Deterioration**: Downgrade to Underperform; margins disappoint despite volume beats, EPS/EBITDA estimates cut 12-15% (FY26E-FY28E), missed Q2 guidance vs peers (CRH, MLM, VMC beat) - **Siemens Healthineers Earnings Pressure**: Guidance downgrades driving model cuts, signaling critical earnings risk despite prior belief; US business sale risk ($280m erosion) impacts valuation - **Chemring Structural Catalyst**: Upgrade to Outperform; NATO-qualified military explosives supplier with Energistics growth, depleted missile stockpiles, pricing tailwinds, structural scarcity value (PT $580) - **Kingspan Undervaluation**: EBITDA estimates up 6-8% (FY26-FY27), valuation 15% below 10yr avg (14.2x), 2% below subsector (12.3x); organic growth + EPS outperformance, November CMD/M&A catalyst (PT EUR122) - **WuXi AppTec Geopolitical Relief**: D.C.",
+        "court suspends 1260H designation (DoD factual error), H1 2026 revenue +57% YoY, FY guidance raised 35-39%; anti-China legislative direction unchanged but BIOSECURE delays structural supply chain risk"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
@@ -263,6 +322,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 22,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vjpyxgkrnt6-48951f",
+      "title": "Market Update US, Europe & Asia",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-09T22:13:35Z",
+      "summary_points": [
+        "**Geopolitical risks & Fed policy**: Iran-Israel tensions (Iran-Oman deal, shipping route disputes) drive oil +2.75% and threaten trade flows; Fed’s CPI data (next Wed) and potential September rate hike on inflation are critical policy risks.",
+        "**Sector fundamentals & guidance shifts**: Honeywell (HONA) cuts FY organic growth/EBIT guidance due to supply chain issues; LegalZoom (LZ) lowers FY26 outlook as Google’s AI shift pressures traffic trends.",
+        "**Key macro data & flows**: Initial jobless claims (199K vs 202K consensus) and Q2 productivity (+1.4% vs 0.6% consensus) signal labor market strength; AI infrastructure movers (INSM +33.9%, STIM +26.6%) drive flows amid strong margins.",
+        "**Geopolitical trade disruption**: Strait of Hormuz negotiations (Iran-Oman deal unresolved) threaten energy/transport trade flows with tolls and route details pending, escalating tensions.",
+        "**Macro outlook & sector risks**: Jul PMI signals early Q3 activity but conversion risks (energy costs, supply bottlenecks, geopolitics) keep expectations subdued; Wizz Air’s Q1 loss driven by Iran war and fuel costs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
