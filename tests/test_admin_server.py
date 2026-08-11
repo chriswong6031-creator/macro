@@ -105,6 +105,52 @@ def test_read_only_api_response_is_reused_briefly(monkeypatch):
         httpd.shutdown(); httpd.server_close()
 
 
+def test_runtime_state_is_on_demand_no_store_and_below_auth_gate(monkeypatch):
+    from admin import server
+
+    calls = 0
+
+    def fake_snapshot():
+        nonlocal calls
+        calls += 1
+        return ({"schema": "mastermind.runtime_state.v1", "call": calls}, 200)
+
+    monkeypatch.setattr(server.runtime_state, "snapshot", fake_snapshot)
+    _clear_response_cache()
+    httpd, port = _server()
+    try:
+        _, first, first_headers = _get_with_headers(port, "/api/runtime-state")
+        _, second, second_headers = _get_with_headers(port, "/api/runtime-state")
+        assert json.loads(first)["call"] == 1
+        assert json.loads(second)["call"] == 2
+        assert calls == 2
+        assert first_headers["Cache-Control"] == "no-store"
+        assert second_headers["Cache-Control"] == "no-store"
+        assert "X-Admin-Cache" not in second_headers
+    finally:
+        _clear_response_cache()
+        httpd.shutdown(); httpd.server_close()
+
+    source = (Path(__file__).resolve().parent.parent / "admin" / "server.py").read_text()
+    body = source.split("def do_GET", 1)[1]
+    assert body.index('"authentication required"') < body.index('"/api/runtime-state"')
+    assert "/api/runtime-state" not in Handler._PUBLIC_GET
+
+
+def test_runtime_state_refuses_an_unauthenticated_read(monkeypatch):
+    monkeypatch.setenv("ADMIN_PASSWORD", "test-password")
+    httpd, port = _server()
+    try:
+        try:
+            _get(port, "/api/runtime-state")
+            raise AssertionError("expected 401")
+        except urllib.error.HTTPError as exc:
+            assert exc.code == 401
+            assert json.loads(exc.read())["error"] == "authentication required"
+    finally:
+        httpd.shutdown(); httpd.server_close()
+
+
 def test_summary_parses_large_config_once(monkeypatch):
     from admin import server
 

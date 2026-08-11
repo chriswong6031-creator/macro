@@ -5383,7 +5383,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema
       - name: admin health, feature flags and the config store
         run: python -m pytest tests/test_admin_health.py tests/test_admin_flags.py tests/test_admin_config_store.py -q
       # Wired 2026-07-26: run by ZERO workflows before this step — the same orphan class
@@ -5412,8 +5412,8 @@ jobs:
       # carrying a prompt to copy), never for which tripwire is currently fired: that
       # artifact is rebuilt and committed nightly, so a content assertion would turn this
       # step red the day the operator does the work the panel exists to prompt.
-      - name: admin server HTTP surface + landing summary payload contract
-        run: python -m pytest tests/test_admin_server.py tests/test_admin_program_watch.py -q
+      - name: admin server HTTP surface + private project runtime truth
+        run: python -m pytest tests/test_admin_server.py tests/test_admin_program_watch.py tests/test_project_runtime_state.py -q
       - name: brain SSE keepalive + tape decode
         run: python -m pytest tests/test_brain_sse_keepalive.py tests/test_tape_decode.py -q
 
