@@ -5538,8 +5538,8 @@ jobs:
           if [ "${#OIP_TRACKED_PATHS[@]}" -gt 0 ]; then
             git checkout HEAD -- "${OIP_TRACKED_PATHS[@]}"
           fi
-          git clean -fd -- data/options_signal_campaign
           git reset -q -- "${OIP_NARROW_PATHS[@]}"
+          git clean -fd -- data/options_signal_campaign
           # W0b (2026-07-08 stale-HK incident): US engine job must NOT commit asia-owned
           # data/ paths — asia-close.yml is the sole writer of all china*/hk* stores.
           # The GHA cache restore above (data/hk_stocks, restore-keys: hk-stocks-ohlc-)

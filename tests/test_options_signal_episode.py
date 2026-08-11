@@ -2978,6 +2978,10 @@ def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay(
     assert 'git checkout HEAD -- "${OIP_TRACKED_PATHS[@]}"' in broad_block
     assert 'git reset -q -- "${OIP_NARROW_PATHS[@]}"' in broad_block
     assert "git clean -fd -- data/options_signal_campaign" in broad_block
+    oip_restore = broad_block.index('git checkout HEAD -- "${OIP_TRACKED_PATHS[@]}"')
+    oip_reset = broad_block.index('git reset -q -- "${OIP_NARROW_PATHS[@]}"')
+    oip_clean = broad_block.index("git clean -fd -- data/options_signal_campaign")
+    assert oip_restore < oip_reset < oip_clean
     assert "data/options_signal_episode/campaigns.jsonl" not in broad_block
 
     final_gate = workflow.index(
@@ -3036,6 +3040,49 @@ def test_narrow_commit_tree_candidate_cannot_advance_head_on_interruption(
     assert subprocess.run(
         ["git", "diff", "--quiet"], cwd=lane, check=False
     ).returncode == 1
+
+
+def test_broad_cleanup_removes_first_publication_campaign_additions(
+    tmp_path: Path,
+) -> None:
+    lane = tmp_path / "lane"
+    lane.mkdir()
+
+    def git(*args: str) -> str:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=lane,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        return result.stdout.strip()
+
+    git("init", "-b", "main")
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
+    baseline = lane / "baseline.txt"
+    baseline.write_text("safe\n")
+    git("add", "baseline.txt")
+    git("commit", "-m", "baseline")
+
+    campaign_root = lane / "data/options_signal_campaign"
+    campaign_root.mkdir(parents=True)
+    paths = [
+        "data/options_signal_campaign/campaigns.jsonl",
+        "data/options_signal_campaign/outcomes.jsonl",
+        "data/options_signal_campaign/checkpoint.json",
+    ]
+    for path in paths:
+        (lane / path).write_text("{}\n")
+    git("add", "data")
+    assert {line[0] for line in git("status", "--short").splitlines()} == {"A"}
+
+    git("reset", "-q", "--", *paths)
+    git("clean", "-fd", "--", "data/options_signal_campaign")
+
+    assert git("status", "--porcelain") == ""
+    assert not campaign_root.exists()
 
 
 def test_session_outcome_registry_has_one_writer_no_authority_consumers() -> None:
