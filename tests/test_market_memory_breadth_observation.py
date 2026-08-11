@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import functools
 import hashlib
 import io
 import json
@@ -42,11 +43,25 @@ SOURCE_SCHEMA_PATH = (
 SNAPSHOT_SCHEMA_PATH = (
     ROOT / "contracts/market_memory/breadth_factors_snapshot.v1.schema.json"
 )
+_FROZEN_FIXTURE_SESSION = "2026-08-07"
 
 
 def _git_blob_oid(body: bytes) -> str:
     framed = f"blob {len(body)}\0".encode("ascii") + body
     return hashlib.sha1(framed).hexdigest()
+
+
+@functools.lru_cache(maxsize=1)
+def _frozen_breadth_body() -> bytes:
+    """Detach the unit fixture from the append-only repository tip."""
+
+    frame = pd.read_parquet(
+        ROOT / "data/breadth/breadth.parquet",
+        engine="pyarrow",
+    )
+    frozen = frame.loc[:_FROZEN_FIXTURE_SESSION].copy()
+    assert frozen.index[-1].date().isoformat() == _FROZEN_FIXTURE_SESSION
+    return _parquet_bytes(frozen)
 
 
 def _inputs(
@@ -58,7 +73,7 @@ def _inputs(
     pinned_commit: str = "1" * 40,
 ) -> breadth.PinnedBreadthInputs:
     bodies = {
-        "breadth_actual_output": (ROOT / "data/breadth/breadth.parquet").read_bytes()
+        "breadth_actual_output": _frozen_breadth_body()
         if breadth_body is None
         else breadth_body,
         "current_constituents": (
@@ -146,13 +161,21 @@ def _create_source_repository(path: Path) -> str:
 
 
 def test_projector_emits_exact_clock_free_current_tip_bundle() -> None:
-    bundle = breadth.project_current_breadth_snapshot(_inputs())
+    repo_tip_body = (ROOT / "data/breadth/breadth.parquet").read_bytes()
+    inputs = _inputs(breadth_body=repo_tip_body)
+    bundle = breadth.project_current_breadth_snapshot(inputs)
+    frame = _breadth_frame(repo_tip_body)
+    tip = frame.iloc[-1]
+    session = frame.index[-1].date().isoformat()
+    constituent_count = len(
+        pd.read_parquet(io.BytesIO(inputs.constituents_body), engine="pyarrow")
+    )
 
     assert bundle.source_observation == {
         "schema": breadth.SOURCE_OBSERVATION_SCHEMA,
         "source_observation_id": bundle.source_observation["source_observation_id"],
         "profile": "sp500_current_membership_breadth.v1",
-        "session": "2026-08-07",
+        "session": session,
         "sources": bundle.source_observation["sources"],
         "temporal_policy": {
             "current_tip_only": True,
@@ -179,17 +202,17 @@ def test_projector_emits_exact_clock_free_current_tip_bundle() -> None:
     assert bundle.source_observation_bytes == _canonical(bundle.source_observation)
     assert bundle.feature_object_bytes == _canonical(bundle.feature_object)
     assert bundle.feature_object["schema"] == breadth.SNAPSHOT_SCHEMA
-    assert bundle.feature_object["session"] == "2026-08-07"
+    assert bundle.feature_object["session"] == session
     assert bundle.feature_object["state"] == {
-        "n_members": 502,
-        "constituent_count": 503,
-        "priced_member_coverage": 502 / 503,
-        "pct_above_50": 65.8,
-        "pct_above_200": 73.48178137651821,
-        "new_highs": 21,
-        "new_lows": 1,
-        "advancers": 323,
-        "decliners": 177,
+        "n_members": int(tip["n_members"]),
+        "constituent_count": constituent_count,
+        "priced_member_coverage": int(tip["n_members"]) / constituent_count,
+        "pct_above_50": float(tip["pct_above_50"]),
+        "pct_above_200": float(tip["pct_above_200"]),
+        "new_highs": int(tip["nh"]),
+        "new_lows": int(tip["nl"]),
+        "advancers": int(tip["adv"]),
+        "decliners": int(tip["dec"]),
     }
     assert bundle.feature_object["authority"] == AUTHORITY_V1
     assert bundle.feature_object["quality"]["actual_output_source"] is True
@@ -445,9 +468,11 @@ def test_reader_requires_exact_current_git_tip_and_rejects_dirty_bytes_and_symli
         pinned_commit=commit,
     )
     assert pinned.pinned_commit == commit
+    pinned_frame = pd.read_parquet(io.BytesIO(pinned.breadth_body), engine="pyarrow")
+    pinned_tip_session = pinned_frame.index[-1].date().isoformat()
     assert (
         breadth.project_current_breadth_snapshot(pinned).feature_object["session"]
-        == "2026-08-07"
+        == pinned_tip_session
     )
 
     breadth_path = repository / "data/breadth/breadth.parquet"
