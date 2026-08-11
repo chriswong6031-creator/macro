@@ -5874,6 +5874,14 @@ jobs:
       # check on prophet_bridge.select_candidates.
       - name: US candidate-pool lanes (lossless partition + store columns + no authority leak)
         run: python -m pytest tests/test_us_candidate_lanes.py -q
+      # W1.5 board-session anchor (#5303/#5307): the earnings-blackout gate and the
+      # display-tier chip read the BOARD's session, never the render host's wall
+      # clock — hosts straddling local midnight flipped membership (78 vs 81 buy
+      # rows at one identical as_of) and the chip countdown. Rides this job because
+      # the gate prunes the same candidate pool the lanes above partition, and the
+      # suite imports the same scripts.build_stock_library this job already loads.
+      - name: US board-session anchor (earnings gate + display chip, host-clock determinism)
+        run: python -m pytest tests/test_earnings_blackout_board_anchor.py -q
       # The candidates store this job guards is TRACKED IN A PUBLIC REPO, and
       # context_api.context_frame flattens each dimension's whole `value` dict
       # with no allowlist — so a dimension that grows a paid body ships it to
