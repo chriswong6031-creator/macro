@@ -716,8 +716,12 @@ a.tk:hover{color:var(--link)}
 
   {# ══ small print — ONE merged line ══ #}
   <p class="smallprint">
-    <span class="l-en">US names only — the library counts are what similar past runs did, history rather than forecasts, and nothing on this page ranks, gates or sizes anything.{% if WH and WH.extended_n is not none and WH.universe_n %} Tonight: <b>{{ WH.extended_n }}</b> extended out of <b>{{ '{:,}'.format(WH.universe_n) }}</b> US names screened{% if WH.asof %}, read <b>{{ WH.asof }}</b>{% endif %}.{% endif %}</span>
-    <span class="l-zh">仅限美股 —— 资料库中的次数是历史上相似行情走过的路，属于历史而非预测；本页任何内容都不参与排序、准入或仓位。{% if WH and WH.extended_n is not none and WH.universe_n %}今晚：筛查 <b>{{ '{:,}'.format(WH.universe_n) }}</b> 只美股，其中 <b>{{ WH.extended_n }}</b> 只处于高位强势{% if WH.asof %}，判读日期 <b>{{ WH.asof }}</b>{% endif %}。{% endif %}</span>
+    {#- The trailing sentence is the board-membership disclosure (design authority,
+        2026-08-10): a name that has just left the extended band stays on the board
+        while its change is being read, so the count above covers slightly more than
+        "extended right now" and says so. -#}
+    <span class="l-en">US names only — the library counts are what similar past runs did, history rather than forecasts, and nothing on this page ranks, gates or sizes anything.{% if WH and WH.extended_n is not none and WH.universe_n %} Tonight: <b>{{ WH.extended_n }}</b> extended out of <b>{{ '{:,}'.format(WH.universe_n) }}</b> US names screened{% if WH.asof %}, read <b>{{ WH.asof }}</b>{% endif %}. A name that has just left the extended band stays listed only while we evaluate the change.{% endif %}</span>
+    <span class="l-zh">仅限美股 —— 资料库中的次数是历史上相似行情走过的路，属于历史而非预测；本页任何内容都不参与排序、准入或仓位。{% if WH and WH.extended_n is not none and WH.universe_n %}今晚：筛查 <b>{{ '{:,}'.format(WH.universe_n) }}</b> 只美股，其中 <b>{{ WH.extended_n }}</b> 只处于高位强势{% if WH.asof %}，判读日期 <b>{{ WH.asof }}</b>{% endif %}。刚离开高位强势区间的个股，仅在我们判读这一变化期间保留在看板上。{% endif %}</span>
   </p>
 
 </div>
