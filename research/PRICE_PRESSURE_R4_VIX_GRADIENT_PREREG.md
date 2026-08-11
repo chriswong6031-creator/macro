@@ -139,10 +139,14 @@ residual log-return. For down-side events, continuation is negative;
   arms would have starved to zero forever. A null-at-harvest stamp is
   therefore completed ONCE — null → **t0's own close percentile** under the
   §3 transform on the archival series (an exact late-arriving value, not a
-  forward-fill), at grading time or by a producer completion pass — and
-  completed counts are printed per arm. Completion never revises a non-null
-  stamp. A row whose t0 close never appears in the archival series at all is
-  excluded and printed as missing.
+  forward-fill) — only by the first subsequent nightly producer run on which
+  t0 appears and only before that row's `fwd5` endpoint matures. That producer
+  appends an immutable completion receipt binding the row identity, completed
+  percentile, `observed_at`, and exact VIXCLS source-blob hash. Grading may
+  consume that frozen receipt but may never fill or recompute a null stamp at
+  grading time. If no receipt exists before `fwd5` maturity, the row is
+  excluded forever from both arms and printed as missing. Completed counts are
+  printed per arm. Completion never revises a non-null stamp.
 
 ## §4 Inference (frozen)
 
@@ -182,18 +186,20 @@ printed; they gate nothing (§1, §10.3).
 ## §5 Floors and discipline (per masterplan §7)
 
 - Floors are **POWER-BASED** (§10.3), counted on **endpoint-complete**
-  evidence rows (finite `fwd5` for A): STRESSED arm ≥ **240** distinct event
+  evidence rows (finite `fwd5` for A): STRESSED arm ≥ **320** distinct event
   dates across ≥ **8** distinct regime runs (§4's run definition) and ≥ 200
-  episodes; CALM arm ≥ **480** distinct event dates and ≥ 200 episodes.
-  Power basis, disclosed: at the in-sample date-level variances (§0 second
-  disclosure), 240 stressed dates gives roughly 80% one-sided power at
-  α=0.05 against the sighted +0.86%; against the registered-cell backfill
-  point (+0.72%) power is ~65–70% — accepted and stated so a marginal miss
-  is read honestly. (The masterplan-§7 minimum of 200 episodes / 40 dates is
-  subsumed; grading at that minimum would have been a scheduled INCONCLUSIVE
-  at an MDE 2.4× the sighted effect.) R4-B's descriptives print whenever
-  R4-A grades, on whatever endpoint-complete rows exist then; they carry no
-  floors of their own because they gate nothing.
+  episodes; CALM arm ≥ **640** distinct event dates and ≥ 200 episodes.
+  Power basis, disclosed: passage requires the two-sided 95% interval in §4
+  to sit wholly above zero, so the power calculation uses its corresponding
+  one-sided α=0.025 boundary — not α=0.05. At the in-sample date-level
+  variances (§0 second disclosure), 320 stressed / 640 calm dates gives
+  roughly 82% power against the sighted +0.86%; against the registered-cell
+  backfill point (+0.72%) power is ~67% — accepted and stated so a marginal
+  miss is read honestly. (The masterplan-§7 minimum of 200 episodes / 40
+  dates is subsumed; grading at that minimum would have been a scheduled
+  INCONCLUSIVE at an MDE 2.4× the sighted effect.) R4-B's descriptives print
+  whenever R4-A grades, on whatever endpoint-complete rows exist then; they
+  carry no floors of their own because they gate nothing.
 - No interim outcome or significance peeking. Only eligibility/maturity counts
   may be checked while accruing. Each claim is graded once, in the first
   session after its complete floors clear, and its result is then appended.
@@ -250,8 +256,8 @@ vol-level arm, and 2017's ≥0.8 bucket had median VIX 15.55 vs the sighting's
 realized-VIX prints exist so the mandatory reviewer pass can judge whether
 the forward stressed arm was vol-comparable to the sighting's, and say so in
 the graded record. Accrual measured on the backfill era: ~167 stressed
-episodes across ~44 stressed event dates per year, so the 240-date stressed
-floor clears in ≈ **5.5 years (~2032)** at those rates; the calm floor
+episodes across ~44 stressed event dates per year, so the 320-date stressed
+floor clears in ≈ **7.3 years (~2034)** at those rates; the calm floor
 sooner. Check maturity floors each DRL session without reading outcomes
 (`research/DRL_CONTINUATION_HANDOFF_2026-08-10.md` queue); do not grade
 early, do not substitute eras.
@@ -294,7 +300,11 @@ repairs, folded into §§0–7 above:
    construction. Non-null stamps stay immutable and decide the arm; a
    null-at-harvest stamp is completed once (null → t0's own close
    percentile, an exact late-arriving value, never a forward-fill, never a
-   revision of a non-null). The recompute doubles as §3's 1% consistency
+   revision of a non-null) by the first subsequent nightly on which t0 is
+   available and before `fwd5` maturity. The producer appends an immutable
+   row/value/`observed_at`/source-blob-hash receipt; grading consumes that
+   receipt and is forbidden to complete stamps itself. A row without a timely
+   receipt is missing forever. The recompute doubles as §3's 1% consistency
    tripwire on non-null stamps.
 2. **Stressed-arm clustering unit (§4).** The backfill span's 268 stressed
    sessions form 36 contiguous regime runs; 5-date circular blocks
@@ -305,12 +315,15 @@ repairs, folded into §§0–7 above:
 3. **Power floors; R4-B demoted to descriptive (§1, §5, §6).** At the prior
    200-episode/40-date floors the MDE is 2.4× (h=5) and 4.9× (h=21) the
    sighted effect — under §5's grade-once rule, a scheduled INCONCLUSIVE
-   that would have closed the claim unread. Floors are now 240 stressed
-   dates across ≥ 8 runs / 480 calm dates (~80% one-sided power vs the
-   sighted +0.86%). R4-B measured weak in-sample (Δ_B1 +0.719%, CI [−0.572,
+   that would have closed the claim unread. Because passage requires a
+   two-sided 95% CI wholly above zero, floors are now 320 stressed dates
+   across ≥ 8 runs / 640 calm dates (~82% power at the corresponding
+   one-sided α=0.025 boundary vs the sighted +0.86%). R4-B measured weak
+   in-sample (Δ_B1 +0.719%, CI [−0.572,
    +2.009] on ~700 dates) at a horizon the sighting never tested; no
-   registerable floor powers it, so it grades and prints but can never gate,
-   and the A-pass surface sentence is scoped to the tested first week.
+   registerable floor powers it, so it is estimated and printed without a
+   PASS/FAIL verdict and can never gate; the A-pass surface sentence is scoped
+   to the tested first week.
 4. **Percentile-vs-level weakness registered (§7).** The ≥ 0.8 arm marks
    ~20% of sessions at ANY absolute vol level (27.1% of backfill event
    rows; 2017 median VIX 15.55 in that bucket vs the sighting's 24.5), and

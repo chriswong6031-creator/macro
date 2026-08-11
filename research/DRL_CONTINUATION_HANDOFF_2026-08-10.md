@@ -26,9 +26,10 @@ Watch band on the stocks hub. This doc is the session-chain state; update, don't
 3. **§8 leg 1 — R4 VIX-gradient prereg**: **DONE 2026-08-10, amended twice
    pre-evidence (§9 sibling audit + §10 red-team reconciliation, 2026-08-11)** —
    `research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md`. R4-A h=5 sole gating claim
-   at power floors (240 stressed dates across ≥8 runs / 480 calm ≈ 5.5y — stressed
+   at power floors (320 stressed dates across ≥8 runs / 640 calm ≈ 7.3y — stressed
    accrues ~44 dates/yr; the percentile arm is common at ANY vol level, not rare);
-   R4-B descriptive-only forever; VIXCLS stamp-lag completion rule; evidence =
+   R4-B descriptive-only forever; VIXCLS stamp-lag completion is producer-only,
+   source-hash-bound, and must freeze before `fwd5` maturity; evidence =
    forward-era rows dated ≥ 2026-08-11. Remaining: check maturity floors each
    session without reading outcomes.
 4. **§8 leg 4 — XBRL transitory-decomposition context** (CDE PPA case): deterministic only,

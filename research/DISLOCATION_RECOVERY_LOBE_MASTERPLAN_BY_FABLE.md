@@ -422,8 +422,8 @@ Until all five: display tier, everywhere, forever.
    `research/PRICE_PRESSURE_R4_VIX_GRADIENT_PREREG.md` (immutable t0 VIXCLS
    trailing-252d-percentile stamp with a measured lag-completion rule, calm < 0.5
    vs stressed ≥ 0.8 — the sighting's own cells; **R4-A h=5 is the sole gating
-   claim** at power-based floors — 240 stressed dates across ≥8 regime runs / 480
-   calm ≈ 5.5y clock, stressed arm resampled at run level; **R4-B h=21
+   claim** at power-based floors — 320 stressed dates across ≥8 regime runs / 640
+   calm ≈ 7.3y clock, stressed arm resampled at run level; **R4-B h=21
    descriptive-only forever**, measured weak in-sample; evidence eligibility
    begins 2026-08-11 — check maturity floors without reading outcomes, never
    grade early).
@@ -571,11 +571,14 @@ than argued) landed as the §10 amendment (#5286). Four blockers converged
 independently across the two passes. Three defects survived §9 and §10
 repaired them: (1) the stamped-only PIT rule + the measured one-session
 VIXCLS harvest lag would have starved both evidence arms to zero forever
-(lag-completion: null → t0's own value, once; non-null immutable); (2)
+(lag-completion: the first subsequent nightly may append a source-hash-bound
+receipt before `fwd5` maturity; grading never fills a stamp; non-null stamps
+are immutable); (2)
 5-date blocks on a stressed arm whose 268 sessions form 36 regime runs are
 anti-conservative exactly where a false PASS promotes (run-level resampling
 + ≥8-run floor); (3) the §7-law minimum floors grade at MDE 2.4–4.9× the
-sighted effect under grade-once semantics (power floors 240/480; R4-B,
+sighted effect under grade-once semantics (power floors 320/640 under the
+actual two-sided-95%-CI passage rule; R4-B,
 measured weak in-sample at h=21, demoted to descriptive-only forever). Plus
 the eligibility boundary made explicit (the era's first rows are dated
 2026-08-10 — the first post-merge nightly's asof — so evidence is registered
