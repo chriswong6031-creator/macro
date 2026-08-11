@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 from jsonschema import Draft202012Validator, ValidationError
+from referencing import Registry, Resource
 
 from engine import options_market_memory_context as options_context
 from engine import options_market_memory_receipt_store as options_receipt_store
@@ -1426,7 +1427,9 @@ def test_options_context_live_audit_replays_the_frozen_repository_corpus(
         audit=audit,
         repository_root=repository_root,
     )
+    receipt_schemas = {}
     for name in (
+        "options.market_memory_context_reference.v1.schema.json",
         "options.market_memory_context_reference_set.v1.schema.json",
         "options.market_memory_context_receipt_head.v1.schema.json",
     ):
@@ -1434,6 +1437,39 @@ def test_options_context_live_audit_replays_the_frozen_repository_corpus(
             (source_root / "contracts/options" / name).read_text(encoding="utf-8")
         )
         Draft202012Validator.check_schema(receipt_schema)
+        receipt_schemas[name] = receipt_schema
+    registry = Registry().with_resources(
+        (
+            schema["$id"],
+            Resource.from_contents(schema),
+        )
+        for schema in receipt_schemas.values()
+    )
+    reference_set_payload = json.loads(
+        (receipt_root / head["reference_set_object_key"]).read_text(encoding="utf-8")
+    )
+    reference_set_validator = Draft202012Validator(
+        receipt_schemas[
+            "options.market_memory_context_reference_set.v1.schema.json"
+        ],
+        registry=registry,
+    )
+    head_validator = Draft202012Validator(
+        receipt_schemas[
+            "options.market_memory_context_receipt_head.v1.schema.json"
+        ],
+        registry=registry,
+    )
+    reference_set_validator.validate(reference_set_payload)
+    head_validator.validate(head)
+    reference_mutant = copy.deepcopy(reference_set_payload)
+    reference_mutant["references"][0]["evidence_policy"]["proposal_weight"] = 1
+    with pytest.raises(ValidationError):
+        reference_set_validator.validate(reference_mutant)
+    head_mutant = copy.deepcopy(head)
+    head_mutant["authority"]["may_rank"] = True
+    with pytest.raises(ValidationError):
+        head_validator.validate(head_mutant)
     stored = options_receipt_store.read_current_publication(
         receipt_root, repository_root=repository_root
     )

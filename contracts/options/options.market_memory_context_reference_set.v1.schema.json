@@ -27,7 +27,7 @@
       "type": "array",
       "maxItems": 4096,
       "items": {
-        "$ref": "options.market_memory_context_reference/v1"
+        "$ref": "../options.market_memory_context_reference/v1"
       }
     }
   }

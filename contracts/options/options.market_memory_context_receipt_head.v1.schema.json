@@ -63,10 +63,10 @@
       "maximum": 4096
     },
     "evidence_policy": {
-      "$ref": "options.market_memory_context_reference/v1#/$defs/evidencePolicy"
+      "$ref": "../options.market_memory_context_reference/v1#/$defs/evidencePolicy"
     },
     "authority": {
-      "$ref": "options.market_memory_context_reference/v1#/$defs/authority"
+      "$ref": "../options.market_memory_context_reference/v1#/$defs/authority"
     }
   },
   "$defs": {
