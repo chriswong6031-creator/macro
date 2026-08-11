@@ -242,13 +242,13 @@
         "entities": {
           "type": "array", "items": {
             "type": "object", "additionalProperties": false,
-            "required": ["ticker", "recipient_search_text"],
+            "required": ["ticker", "recipient_search_text", "recipient_query_terms"],
             "properties": {
               "ticker": {"type": "string"},
               "recipient_search_text": {"type": "string"},
               "recipient_query_terms": {
                 "type": "array", "minItems": 1, "items": {"type": "string"},
-                "description": "Terms actually sent to the discovery rail. Producer-required: the collector always emits this (pinned by tests/test_usaspending_awards.py) and its appearance in the manifest triggers the one-time forward-event rebaseline. Schema-optional because canonical vintages committed before the field existed must stay readable; requiredness may return only after the committed store's manifest carries it."
+                "description": "Terms actually sent to the discovery rail. Producer-required: the collector always emits this (pinned by tests/test_usaspending_awards.py) and its appearance in the manifest triggered the one-time forward-event rebaseline. Schema-required again as of 2026-08-11: #4951 required it while the committed store still predated the field and #5131 had to relax it, but every entity of the canonical manifest now carries it, so the compatibility window for pre-field vintages is closed. tests/test_government_revenue_contracts.py holds the committed bytes to this contract, so a future retightening stays evidence-led rather than retroactive."
               }
             }
           }
