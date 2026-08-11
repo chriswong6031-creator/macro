@@ -24,6 +24,7 @@ EPISTEMIC LAWS (binding on this module):
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -400,6 +401,12 @@ def validate_chain_heat_feed(d: dict) -> list[str]:
 # 3. Schema: options_structure.matrix/v1
 # ===========================================================================
 
+_UNUSUAL_STATUSES = frozenset({"normal", "unusual"})
+_UNUSUAL_MIN_SAMPLES = 10
+_UNUSUAL_MAX_SAMPLES = 30
+_UNUSUAL_RATIO_THRESHOLD = 3.0
+
+
 @dataclass
 class MatrixCell:
     """One cell in the strike × expiration matrix."""
@@ -411,7 +418,7 @@ class MatrixCell:
     call_vol: int | None = None
     put_vol: int | None = None
     delta_oi: dict = field(default_factory=lambda: {"call": None, "put": None})
-    unusual: dict | None = None         # ratio, samples, side — or None if no history
+    unusual: dict | None = None         # per-side ratio/median/samples/status
 
 
 @dataclass
@@ -469,6 +476,8 @@ def validate_matrix(d: dict) -> list[str]:
         errors.append("asof is required")
     if not d.get("root"):
         errors.append("root is required")
+    if d.get("authority_tier") != AUTHORITY_DISPLAY:
+        errors.append("authority_tier must remain 'display'")
     if not isinstance(d.get("cells"), list):
         errors.append("cells must be a list")
     for i, c in enumerate(d.get("cells", [])):
@@ -476,6 +485,72 @@ def validate_matrix(d: dict) -> list[str]:
             errors.append(f"cell[{i}] missing strike")
         if "expiry" not in c:
             errors.append(f"cell[{i}] missing expiry")
+        unusual = c.get("unusual")
+        if unusual is None:
+            continue
+        if not isinstance(unusual, dict) or set(unusual) != {"call", "put"}:
+            errors.append(
+                f"cell[{i}].unusual must be null or exact call/put object"
+            )
+            continue
+        if unusual.get("call") is None and unusual.get("put") is None:
+            errors.append(f"cell[{i}].unusual must be null when neither side is eligible")
+        for side_name in ("call", "put"):
+            lens = unusual.get(side_name)
+            if lens is None:
+                continue
+            prefix = f"cell[{i}].unusual.{side_name}"
+            expected_keys = {"ratio", "median_vol_30d", "samples", "status"}
+            if not isinstance(lens, dict) or set(lens) != expected_keys:
+                errors.append(
+                    f"{prefix} must be null or exact ratio/median_vol_30d/"
+                    "samples/status object"
+                )
+                continue
+            ratio = lens.get("ratio")
+            median = lens.get("median_vol_30d")
+            samples = lens.get("samples")
+            status = lens.get("status")
+            if (
+                type(ratio) not in (int, float)
+                or not math.isfinite(float(ratio))
+                or float(ratio) < 0
+            ):
+                errors.append(f"{prefix}.ratio must be finite and non-negative")
+            if (
+                type(median) not in (int, float)
+                or not math.isfinite(float(median))
+                or float(median) <= 0
+            ):
+                errors.append(f"{prefix}.median_vol_30d must be finite and positive")
+            if (
+                type(samples) is not int
+                or not _UNUSUAL_MIN_SAMPLES <= samples <= _UNUSUAL_MAX_SAMPLES
+            ):
+                errors.append(
+                    f"{prefix}.samples must be an integer in "
+                    f"[{_UNUSUAL_MIN_SAMPLES}, {_UNUSUAL_MAX_SAMPLES}]"
+                )
+            if status not in _UNUSUAL_STATUSES:
+                errors.append(
+                    f"{prefix}.status {status!r} not in {sorted(_UNUSUAL_STATUSES)}"
+                )
+            if type(ratio) in (int, float) and math.isfinite(float(ratio)):
+                expected_status = (
+                    "unusual"
+                    if float(ratio) >= _UNUSUAL_RATIO_THRESHOLD
+                    else "normal"
+                )
+                if status in _UNUSUAL_STATUSES and status != expected_status:
+                    errors.append(
+                        f"{prefix}.status must be {expected_status!r} for ratio {ratio}"
+                    )
+            current_volume = c.get(f"{side_name}_vol")
+            if type(current_volume) is not int or current_volume < 0:
+                errors.append(
+                    f"{prefix} requires corresponding non-negative integer "
+                    f"{side_name}_vol"
+                )
     hs = d.get("heat_seeker")
     if hs and hs.get("note") != "descriptive — not a recommendation":
         errors.append("heat_seeker.note must be 'descriptive — not a recommendation'")

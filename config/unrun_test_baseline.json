@@ -625,7 +625,6 @@
   "tests/test_options_hub_oi_suite.py",
   "tests/test_options_hub_store_preflight.py",
   "tests/test_options_ivspread.py",
-  "tests/test_options_matrix.py",
   "tests/test_options_plane.py",
   "tests/test_options_positioning.py",
   "tests/test_options_skew.py",

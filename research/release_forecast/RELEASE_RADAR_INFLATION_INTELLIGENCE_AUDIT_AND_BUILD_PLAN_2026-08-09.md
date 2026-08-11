@@ -331,6 +331,40 @@ The public [Truflation US methodology](https://api.truflation.com/api/v1/docs/tr
 Exit gate: deterministic parity on a preregistered sample across ordinary and annual
 revision months, with all disagreements adjudicated.
 
+#### Wave 2A implementation checkpoint — 2026-08-10
+
+The first bounded truth cohort is now implemented as a shadow substrate, not a model
+promotion:
+
+- all seven retained ALFRED `output_type=2` matrices are sealed by exact byte length
+  and SHA-256 under one completed manifest without pretending the seal was a fresh
+  collection;
+- a frozen 15-case CPI panel retains fourteen official BLS Table 1 workbooks plus the
+  exact BLS archive-page bytes proving that October 2025 was not published;
+- the panel spans legacy XLS and XLSX formats, five January/annual seasonal-revision
+  boundaries, pandemic and high-inflation regimes, delayed publication, and
+  negative/zero headline or core prints;
+- the candidate `alfred_same_release_vintage_proxy_v1` history contains 353 headline
+  and 353 core targets from December 1996 through June 2026, with October 2025 absent
+  and November 2025 rejected because the unpublished prior month leaves no coherent
+  denominator; and
+- all 28 published headline/core comparisons in the preregistered panel match the
+  one-decimal values in the retained BLS archive release editions exactly.
+
+The ordered receipt corpus, retained source objects, preregistration, ALFRED cohort,
+history and parity report are bound into a completion manifest written last. Missing,
+extra, reordered, tampered or unretained evidence fails closed. Passing this bounded
+gate admits only the ALFRED proxy target epoch as a candidate for future research.
+`official_first_print_v1` remains withheld; no champion coefficient, combined weight,
+probability, accuracy claim or downstream authority changes in Wave 2A.
+
+The historical downloads are not labeled proven first-published bytes. The
+[BLS supplemental-file archive](https://www.bls.gov/cpi/tables/supplemental-files/home.htm)
+notes that archived files may have been revised in later editions, so every receipt
+marks first-print status unverified. A true official first-print epoch still requires
+contemporaneous or independently timestamped historical source copies and
+[BLS errata](https://www.bls.gov/errata/) adjudication.
+
 ### Wave 3: BLS-consistent CPI component bridge
 
 1. Ingest monthly Table 6 relative importance and published effects.
