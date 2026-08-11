@@ -8,6 +8,7 @@ rather than in a result.
 """
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -481,6 +482,76 @@ def test_residual_up_identity_break_resets_history_features_and_races():
     assert race.iloc[0]["sessions_available"] == 0
 
 
+def _jump_series(n: int = 700, at: int = 400, ratio: float = 25.0) -> pd.Series:
+    """A calm path with ONE bar planted at `at` whose close ratio is EXACTLY `ratio`.
+
+    The step is planted exactly (rather than by scaling the tail) so the 3.0
+    inclusive/exclusive boundary can be pinned without the drift and noise of the
+    surrounding path moving the observed ratio off the threshold.
+    """
+    v = _ramp(n, base=20.0, daily=0.0004, seed=77)
+    tail = v[at:] / v[at]
+    v[at:] = (v[at - 1] * ratio) * tail
+    return pd.Series(v, index=_cal(n))
+
+
+def _repaired_segments(bars, cal, name: str = "PAVS") -> dict:
+    return ta.split_identity_segments(
+        {name: bars}, cal, residual_up_ratio_break=ta.RESIDUAL_UP_RATIO_BREAK)
+
+
+def test_unrepaired_reverse_split_breaks_identity():
+    """A 25x single bar is a corporate action, not a move — it must split the name."""
+    s = _jump_series(ratio=25.0)
+    cal = s.index
+    bars = _bars(s.to_numpy(), cal, vol=_volumes(len(s), seed=5))
+    segs = _repaired_segments(bars, cal)
+    assert set(segs) == {"PAVS#0", "PAVS#1"}
+    assert len(segs["PAVS#0"]) == 400 and len(segs["PAVS#1"]) == 300
+    assert segs["PAVS#1"].index[0] == cal[400], "the jump bar starts the NEW identity"
+
+
+@pytest.mark.parametrize("ratio,n_segments,why", [
+    (25.0, 2, "a 25x bar is an unrepaired 1:25 reverse split"),
+    (3.0, 2, "exactly 3.0x is INCLUSIVE"),
+    (2.99, 1, "just under the floor stays one name"),
+    (2.5, 1, "a 2.5x day is a violent but real move"),
+])
+def test_up_jump_threshold_truth_table(ratio, n_segments, why):
+    s = _jump_series(ratio=ratio)
+    bars = _bars(s.to_numpy(), s.index, vol=_volumes(len(s), seed=5))
+    assert len(_repaired_segments(bars, s.index)) == n_segments, why
+
+
+def test_a_real_crash_day_never_breaks_identity():
+    """The DOWN side is deliberately unscreened — a −70% day is the real event."""
+    s = _jump_series(ratio=0.30)                 # a 70% one-day collapse
+    bars = _bars(s.to_numpy(), s.index, vol=_volumes(len(s), seed=5))
+    assert ta.residual_up_break_positions(s).size == 0
+    assert set(_repaired_segments(bars, s.index)) == {"PAVS"}
+
+
+def test_gap_and_jump_rules_compose():
+    """Both triggers on one ticker yield three independent names."""
+    cal = _cal(900)
+    keep = np.r_[np.arange(0, 300), np.arange(500, 900)]     # 200-session hole
+    v = _ramp(len(keep), base=20.0, daily=0.0004, seed=78)
+    v[500:] = v[500:] * 30.0                                 # a jump inside part 2
+    bars = _bars(v, cal[keep], vol=_volumes(len(keep), seed=6))
+    segs = _repaired_segments(bars, cal, name="DUAL")
+    assert set(segs) == {"DUAL#0", "DUAL#1", "DUAL#2"}
+    assert len(segs["DUAL#0"]) == 300                        # pre-gap
+    assert sum(len(b) for b in segs.values()) == len(keep)   # nothing lost
+
+
+def test_jump_rule_can_be_disabled_to_reproduce_the_pre_repair_arm():
+    s = _jump_series(ratio=25.0)
+    bars = _bars(s.to_numpy(), s.index, vol=_volumes(len(s), seed=8))
+    segs = ta.split_identity_segments({"PAVS": bars}, s.index,
+                                      residual_up_ratio_break=None)
+    assert set(segs) == {"PAVS"}, "the pre-repair arm must still be reproducible"
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # §3 RAW-LEVEL ELIGIBILITY + the full-series-vs-prefix parity HARD GATE
 # ══════════════════════════════════════════════════════════════════════════════
@@ -609,6 +680,95 @@ def test_prefix_parity_gate_fires_on_a_planted_leak():
     # the split factor moves — this is the failure mode the gate exists to catch.
     assert not np.isclose(full["close"].loc[d], prefix["close"].loc[d]), \
         "the fixture no longer changes the recovered factor — the gate is untested"
+
+
+# ── §6 contamination audit: the pre-repair measurement, never a spurious zero ──
+def test_jump_table_names_the_fabricated_bars_and_maps_their_positions():
+    idx = _cal(6)
+    close = pd.DataFrame({
+        "PAVS": pd.Series([2.0, 2.1, 52.5, 53.0, 54.0, 55.0], index=idx),
+        "CALM": pd.Series([10.0, 10.1, 10.2, 10.3, 10.4, 10.5], index=idx),
+    })
+    jumps, pos_map = rh.jump_table(close)
+    assert list(pos_map) == ["PAVS"] and pos_map["PAVS"].tolist() == [2]
+    assert len(jumps) == 1
+    row = jumps.iloc[0]
+    assert row["ticker"] == "PAVS" and row["date"] == idx[2]
+    assert row["ratio"] == pytest.approx(52.5 / 2.1)
+
+
+def test_contamination_audit_refuses_a_sanity_segmented_cache(tmp_path):
+    """A repaired panel holds zero jumps BY CONSTRUCTION — reporting that reads as
+    "run-1 was clean", which is the opposite of the measurement."""
+    idx = _cal(6)
+    pd.DataFrame({"T": pd.Series(np.linspace(10.0, 12.0, 6), index=idx)}).to_parquet(
+        tmp_path / "panel_close.parquet")
+    (tmp_path / "meta.json").write_text(json.dumps(
+        {"residual_up_ratio_break": ta.RESIDUAL_UP_RATIO_BREAK}))
+    out = rh.run1_contamination_audit(tmp_path)
+    assert out["available"] is False
+    assert "sanity-segmented" in out["reason"]
+    assert "n_jump_days" not in out, "a structural zero must never print as a count"
+
+
+@pytest.mark.parametrize("meta", [
+    {"identity_rules": {"max_gap_sessions": 60, "jump_ratio": 3.0}},
+    {"repair_arm": "sanity-segmented"},
+    {"n_segments": 3},                       # unstamped: caught empirically below
+])
+def test_contamination_audit_never_reports_a_jumpless_panel(tmp_path, meta):
+    """Both repaired-stamp formats AND an unstamped repaired panel are refused."""
+    idx = _cal(6)
+    pd.DataFrame({"T": pd.Series(np.linspace(10.0, 12.0, 6), index=idx)}).to_parquet(
+        tmp_path / "panel_close.parquet")
+    (tmp_path / "meta.json").write_text(json.dumps(meta))
+    out = rh.run1_contamination_audit(tmp_path)
+    assert out["available"] is False and "n_jump_days" not in out
+
+
+def test_preserved_contamination_carries_the_recorded_numbers_with_provenance(
+        tmp_path, monkeypatch):
+    src = tmp_path / "preserved.json"
+    src.write_text(json.dumps({"repair_arm": {"contamination": {
+        "available": True, "n_jump_days": 1264, "recomputed_this_run": True}}}))
+    monkeypatch.setattr(rh, "_REPO", tmp_path)
+    out = rh.preserved_contamination(src, "no pre-repair panel on disk")
+    assert out["n_jump_days"] == 1264
+    assert out["recomputed_this_run"] is False
+    assert "preserved artifact" in out["provenance"]
+    assert out["live_audit_unavailable_reason"] == "no pre-repair panel on disk"
+
+
+def test_preserved_contamination_declines_an_unavailable_block(tmp_path):
+    src = tmp_path / "preserved.json"
+    src.write_text(json.dumps({"repair_arm": {"contamination": {"available": False}}}))
+    assert rh.preserved_contamination(src) is None
+    assert rh.preserved_contamination(tmp_path / "missing.json") is None
+
+
+@pytest.mark.parametrize("meta,want,why", [
+    ({"residual_up_ratio_break": 3.0}, 3.0, "an exact stamp match is a hit"),
+    ({"residual_up_ratio_break": None}, None, "gap-only matches a gap-only stamp"),
+    ({"residual_up_ratio_break": 3.0}, None, "W's rule may not serve gap-only D"),
+    ({"residual_up_ratio_break": None}, 3.0, "a gap-only panel may not serve W"),
+    ({"identity_rules": {"jump_ratio": 3.0}}, 3.0, "another line's stamp is unstamped"),
+    ({"identity_rules": {"jump_ratio": 3.0}}, None, "same, requested gap-only"),
+])
+def test_panel_cache_is_reused_only_under_its_own_identity_rule(tmp_path, meta, want, why):
+    """An absent or different stamp REBUILDS — never runs a track on another line's panel."""
+    idx = _cal(4)
+    for leg in rh._REQUIRED_PANEL_LEGS:
+        pd.DataFrame({"T": pd.Series(np.linspace(10.0, 11.0, 4), index=idx)}).to_parquet(
+            tmp_path / f"panel_{leg}.parquet")
+    (tmp_path / "meta.json").write_text(json.dumps(meta))
+    got = rh._load_cached(tmp_path, residual_up_ratio_break=want)
+    hit = meta.get("residual_up_ratio_break", "absent") == want
+    assert (got is not None) is hit, why
+
+
+def test_todays_tape_appendix_is_uncapped():
+    """G0.5 is a COVERAGE gate — run-1's defect was found by reading the whole cohort."""
+    assert rh.TODAY_TAPE_CAP is None
 
 
 # ══════════════════════════════════════════════════════════════════════════════

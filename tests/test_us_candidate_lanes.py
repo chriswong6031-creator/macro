@@ -840,14 +840,12 @@ class TestGraduationFields:
 # --------------------------------------------------------------------------- #
 
 #: The ONLY modules allowed to name the candidate pool.  The producer, the builder that
-#: calls it, the store that carries its columns, and the schema exporter that merely
-#: registers the already-public disclosure.  Everything else — and in
+#: calls it, and the store that carries its columns.  Everything else — and in
 #: particular anything that decides membership, order, size or a gate — must not.
 POOL_ALLOWLIST = frozenset({
     "engine/us_candidate_lanes.py",
     "engine/us_context_vector.py",
     "scripts/build_stock_library.py",
-    "scripts/export_signal_contracts.py",
 })
 
 #: Modules that DECIDE things.  If any of them ever learns the pool exists, the fence is
@@ -881,6 +879,9 @@ TOKEN_COLLISION_EXEMPT = {
     # a per-desk shortlist size, and a top-anatomy DataFrame parameter
     "engine/press/desk_planner.py": {"candidate_pool"},
     "engine/top_anatomy.py": {"candidate_pool"},
+    # Contract exporter vocabulary only: this registers the board's optional
+    # display field and neither imports nor reads the candidate-pool plane.
+    "scripts/export_signal_contracts.py": {"candidate_pool"},
 }
 
 MODULE_TREES = ("engine", "scripts", "app", "admin", "lib", "collectors")
