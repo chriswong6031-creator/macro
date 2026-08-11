@@ -18,10 +18,12 @@ checkouts' git state; no bare `git stash`; secrets (.env) are sourced, never pri
 
 ## Item A — Wire `build_options_matrix` into nightly ops (task #15, PRISM freshness)
 
-`scripts/build_options_matrix.py` (merged #1820, expiry fix #1899) is a one-shot
+**Status update (2026-08-10): CLOSED and scheduled.**
+`scripts/build_options_matrix.py` (merged #1820, expiry fix #1899) is the one-shot
 publisher: ThetaData EOD store → `options_structure/matrix/<ROOT>.json` on R2, default
-10 roots (SPY QQQ IWM NVDA TSLA AAPL MSFT META AMD GOOGL). Its docstring says
-"NOT wired into any nightly schedule" — this item closes that.
+10 roots (SPY QQQ IWM NVDA TSLA AAPL MSFT META AMD GOOGL). It is wired through
+`ops/launchd/com.macro.optionsmatrix.plist` and `ops/launchd/run_options_matrix.sh`;
+it is deliberately not a `daily.yml` lane.
 
 **Home decision (settled by orchestrator recon):** a sibling **launchd** job, NOT
 daily.yml. Grounds: the GitHub self-hosted runner has a virtualized FS and cannot see
@@ -38,12 +40,12 @@ the store's latest session (SPY EOD present for today per NYSE calendar — reus
 retry (e.g. every 20 min, ≤6 tries), then runs
 `python -m scripts.build_options_matrix --publish`. Per-root failures already log+skip.
 
-Deliverables: `ops/launchd/com.macro.optionsmatrix.plist` + small runner script (repo,
-PR'd), install to `~/Library/LaunchAgents` (plist paths point at
-`/Users/chriswong/flow-ops-wt`, same as optionshub), `git -C ~/flow-ops-wt pull
---ff-only` after merge (that checkout does NOT auto-pull — known drift hazard), one
-manual `launchctl kickstart` proving fresh `options_structure/matrix/SPY.json` on R2
-(check `asof`), logs to `/tmp/optionsmatrix.*.log`.
+Delivered in-repo: `ops/launchd/com.macro.optionsmatrix.plist` + its runner script.
+The deployment pattern installs the plist under `~/Library/LaunchAgents` and points at
+`/Users/chriswong/flow-ops-wt`, same as optionshub. `git -C ~/flow-ops-wt pull
+--ff-only` remains the update rule for that checkout. Manual `launchctl kickstart`
+and `options_structure/matrix/SPY.json` re-fetch by `asof` remain the production-proof
+pattern; logs are `/tmp/optionsmatrix.*.log`.
 
 ## Item B — GICS sector + market cap into the nightly heatmap manifest
 
@@ -105,21 +107,26 @@ existing live-flow poller** (its cycle time is already strained; that lane has a
 owner). Fail-soft: any error → skip cycle, never crash-loop (ThrottleInterval). Same
 plist/install/verify pattern as Item A. Display-only.
 
-## Item F — UNUSUAL lens 30d baseline + VEX experimental field (macro, data side)
+## Item F — CLOSED: UNUSUAL baselines + VEX experimental field (macro, data side)
 
-1. **UNUSUAL 30d baseline**: today's UNUSUAL flag is a same-day heuristic. Build a
-   nightly per-root (and per-contract where cheap) 30-session volume baseline from the
-   theta EOD store → `data/live_flow_out/unusual_baseline.json` + R2
-   `live_flow/unusual_baseline.json` (schema `flow.unusual_baseline/v1`, include
-   `asof`). Poller consumption: read at startup behind an env flag
-   (`UNUSUAL_BASELINE=1`), fall back to the current heuristic when absent/stale —
-   ship the artifact ON, the poller flag OFF (poller lane owner flips it).
-2. **VEX (stretch, EXPERIMENTAL)**: add per-strike vanna exposure to
-   `engine/options_matrix.py` payloads (closed-form BS vanna from stored IV, same
-   OI[t-1] convention as GEX). Field name `vex_mn`, payload marked
-   `"experimental": true`. No UI this pass. Note: S-VANNA-RELIEF is a *registered*
-   family (OPEX adjudication) — this is display/data plumbing, not a new signal; no
-   scoring anywhere.
+1. **Flow baseline (shipped earlier):** the nightly per-root 30-session volume
+   baseline remains `data/live_flow_out/unusual_baseline.json` + R2
+   `live_flow/unusual_baseline.json` (`flow.unusual_baseline/v1`). Poller consumption
+   remains behind `UNUSUAL_BASELINE=1`, with the producer on and the poller flag off
+   until that lane's owner promotes it.
+2. **VEX (shipped, EXPERIMENTAL):** `engine/options_matrix.py` publishes per-cell
+   `vex_mn` from closed-form BS vanna and OI[t-1], with payload `experimental: true`.
+   S-VANNA-RELIEF remains only a registered family: this field is display plumbing,
+   not a new signal, and has no scoring path.
+3. **PRISM per-side UNUSUAL closure (2026-08-10):** the daily matrix measures call
+   and put independently as today's observed side volume divided by the median of its
+   observations inside the 30 most recent strictly-prior root EOD sessions for the exact
+   `(expiration, strike, right)` contract side. It requires 10 observations; an
+   explicit zero is retained, while a missing contract-day is not a zero. Ratios
+   `>=3.0` are `unusual`, otherwise `normal`, and are conservatively truncated to two
+   decimals. Each side can be null independently; the outer field is null only when
+   neither is eligible. This reliable-magnitude lens remains display/context only
+   with no score, money-path, or authority change.
 
 ## Verification gates (all lanes)
 

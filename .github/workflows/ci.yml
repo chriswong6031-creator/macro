@@ -425,6 +425,16 @@ on:
       # live_flow poller loop for the Terminal surface pane (shape ↔ surfaceContract.ts).
       - "scripts/build_flow_surface.py"
       - "tests/test_flow_surface.py"
+      # PRISM daily matrix: exact-contract-side PIT UNUSUAL baseline and its payload
+      # validator.  List every subject plus the suite explicitly even though
+      # engine/** and tests/** also start CI, so the packed-job ownership seam
+      # stays executable and reviewable.
+      - "engine/options_matrix.py"
+      - "engine/options_structure.py"
+      - "engine/thetadata_store.py"
+      - "scripts/build_options_matrix.py"
+      - "site/options_structure/examples/matrix.json"
+      - "tests/test_options_matrix.py"
       # MSC R2.2-A Light U-CHAIN: compact per-root eligibility receipts and the
       # monotonic all-root R2 discovery commit. Keep this list exact so source,
       # schema, publisher, or either adversarial suite can start their packed job.
@@ -702,6 +712,8 @@ on:
       - "config/market_memory_technical_price_basis.v1.json"
       - "config/market_memory_option_oi_source.v1.json"
       - "scripts/collect_release_target_vintages.py"
+      - "scripts/collect_release_cpi_official_truth.py"
+      - "scripts/build_release_cpi_truth_parity.py"
       - "scripts/capture_market_memory_context.py"
       - "scripts/initialize_market_memory_w1a.py"
       - "scripts/ingest_market_memory_sources.py"
@@ -766,6 +778,14 @@ on:
       - "tests/test_market_memory_context_deploy.py"
       - "tests/test_regime_latest_json_boundary.py"
       - "tests/test_release_target_truth.py"
+      - "tests/test_release_cpi_official_truth.py"
+      - "tests/test_release_cpi_target_history.py"
+      - "tests/fixtures/release_cpi_truth/**"
+      - "engine/release_cpi_official_truth.py"
+      - "engine/release_cpi_target_history.py"
+      - "data/release_forecast/cpi_truth/**"
+      - "data/release_forecast/official_actual_defects.json"
+      - "data/fred_vintage/release_targets/**"
       - "tests/test_build_market_memory_page.py"
       - "data/breadth/breadth.parquet"
       - "data/breadth/constituents.parquet"
@@ -1571,6 +1591,13 @@ on:
       - "scripts/*research_factory*.py"
       - "data/research_factory/**"
       - "tests/test_research_factory*.py"
+      # W6A Market Memory candidate conformance: keep the exact adapter/schema,
+      # hostile suite, and owner-contract amendment explicit despite broad globs.
+      - "engine/research_factory/adapter_market_memory.py"
+      - "engine/research_factory/schema.py"
+      - "tests/test_research_factory_market_memory.py"
+      - "research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md"
+      - "research/KONSEKI_CLEAN_ROOM_MARKET_MEMORY_AND_COGNITIVE_ARCHITECTURE_FOR_FABLE_2026-08-08.md"
       - "config/synapse.yml"
       # CPI P2 authority guard: no money-path module may read cycle-pattern lake.
       - "scripts/check_cycle_pattern_authority.py"
@@ -3067,6 +3094,9 @@ on:
       - "tests/test_release_actuals.py"
       - "tests/test_release_defects.py"
       - "tests/test_release_target_truth.py"
+      - "tests/test_release_cpi_official_truth.py"
+      - "tests/test_release_cpi_target_history.py"
+      - "tests/fixtures/release_cpi_truth/**"
       - "engine/inflation_intelligence.py"
       - "engine/neuralweb/ask_brain.py"
       - "engine/neuralweb/cortex.py"
@@ -3075,8 +3105,15 @@ on:
       - "engine/release_actuals.py"
       - "engine/release_defects.py"
       - "engine/release_target_truth.py"
+      - "engine/release_cpi_official_truth.py"
+      - "engine/release_cpi_target_history.py"
       - "scripts/build_inflation_intelligence.py"
       - "scripts/collect_release_target_vintages.py"
+      - "scripts/collect_release_cpi_official_truth.py"
+      - "scripts/build_release_cpi_truth_parity.py"
+      - "data/release_forecast/cpi_truth/**"
+      - "data/release_forecast/official_actual_defects.json"
+      - "data/fred_vintage/release_targets/**"
       - "scripts/reconcile_release_actuals.py"
       # unrun-brain-desks
       - "tests/test_admin_brief_gate.py"

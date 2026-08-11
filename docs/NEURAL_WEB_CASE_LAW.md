@@ -1,6 +1,6 @@
 <!-- DO NOT EDIT BY HAND — regenerate with: python3 scripts/build_ruling_graph.py -->
 <!-- Source: config/ruling_graph.yml -->
-<!-- source_sha256: 6d66cd396c7ebde7e522c2617a45d9715e57f1a71f15371179658acb9ff20e95 -->
+<!-- source_sha256: 3622ea91652e6c5233b6576012ba7d5f073c8e747bdb288395088c0066de9895 -->
 
 # Neural Web Case Law
 
@@ -9886,14 +9886,14 @@ Total rulings: 500
 
 - Status: `active_law` | Kind: `data_contract` | Nondelegable: `False`
 
-**Ruling:** The factory taxonomy field is `candidate_type` (oracle_compound|cortex_hypothesis|alpha_family|species|external_idea). `claim_shape` is RESERVED for the metabolism enum, copied verbatim from the metabolism-issued row when present, never invented by the factory.
+**Ruling:** The factory taxonomy field is `candidate_type` (oracle_compound|cortex_hypothesis|alpha_family|species|external_idea|cycle_pattern_rule|market_memory_candidate). `claim_shape` is RESERVED for the metabolism enum, copied verbatim from the metabolism-issued row when present, never invented by the factory.
 
 **Forbidden actions:**
   - invent claim_shape value
   - use claim_shape as factory taxonomy
 
 **Source:** `research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md`
-> - **RF-3 — Naming.** The factory taxonomy field is **`candidate_type`** (`oracle_compound|cortex_hypothesis|alpha_family|species|external_idea`). `claim_shape` is RESERVED for the metabolism enum, copied verbatim from the metabolism-issued row when present, never invented by the factory.
+> - **RF-3 — Naming.** The factory taxonomy field is **`candidate_type`** (`oracle_compound|cortex_hypothesis|alpha_family|species|external_idea|cycle_pattern_rule|market_memory_candidate`). `claim_shape` is RESERVED for the metabolism enum, copied verbatim from the metabolism-issued row when present, never invented by the factory.
 
 *Owner program: research-factory*
 
