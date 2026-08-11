@@ -223,12 +223,26 @@ def test_membership_authority_is_the_validated_cohort_and_committed_registry_onl
         ("query.id", ",".join(COHORT_NCT_IDS)),
         ("fields", FIXED_COHORT_FIELDS_PARAM),
         ("format", "json"),
-        ("pageSize", "3"),
+        ("pageSize", "4"),
         ("countTotal", "true"),
     )
     assert fixed_cohort_query_params(cohort) == result.query_params
     assert transport.calls[1][1] == result.query_params
     assert result.returned_nct_ids == tuple(COHORT_NCT_IDS)
+
+
+def test_page_size_reserves_one_sentinel_slot_without_widening_membership() -> None:
+    nct_ids = [f"NCT{value:08d}" for value in range(1, 26)]
+    cohort = _cohort(nct_ids)
+
+    params = dict(fixed_cohort_query_params(cohort))
+    limits = FixedCohortTransportLimits().json_limits()
+
+    assert params["pageSize"] == "26"
+    assert limits.page_size == 26
+    assert limits.max_page_records == 25
+    assert limits.max_records == 26
+    assert cohort["nct_ids"] == nct_ids
 
 
 def test_an_unvalidated_or_tampered_cohort_is_refused_before_any_request() -> None:
