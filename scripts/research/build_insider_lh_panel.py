@@ -54,6 +54,8 @@ import pandas as pd
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
+from engine.json_strict import sanitize_non_finite  # noqa: E402
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -638,7 +640,9 @@ def main() -> None:
     log.info("Wrote %s (%d rows)", _OUT_PARQUET, len(out))
 
     manifest = write_manifest(out, benchmark_stamp, args.smoke)
-    _OUT_MANIFEST.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    _OUT_MANIFEST.write_text(
+        json.dumps(sanitize_non_finite(manifest), indent=2, allow_nan=False),
+        encoding="utf-8")
     log.info("Wrote manifest %s", _OUT_MANIFEST)
 
     # Summary

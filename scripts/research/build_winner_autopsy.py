@@ -48,6 +48,8 @@ import pandas as pd
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
+from engine.json_strict import sanitize_non_finite  # noqa: E402
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -713,7 +715,8 @@ def _write_panel(
 
     if not dry_run:
         _OUT_DIR.mkdir(parents=True, exist_ok=True)
-        _PANEL_PATH.write_text(json.dumps(panel, indent=2, default=str))
+        _PANEL_PATH.write_text(json.dumps(sanitize_non_finite(panel), indent=2,
+                                          default=str, allow_nan=False))
         log.info("Wrote %s", _PANEL_PATH)
 
     return panel
@@ -770,7 +773,8 @@ def _write_episodes_manifest(
     }
     if not dry_run:
         _OUT_DIR.mkdir(parents=True, exist_ok=True)
-        _EPISODES_MANIFEST_PATH.write_text(json.dumps(manifest, indent=2))
+        _EPISODES_MANIFEST_PATH.write_text(
+            json.dumps(sanitize_non_finite(manifest), indent=2, allow_nan=False))
         log.info("Wrote %s", _EPISODES_MANIFEST_PATH)
 
 
@@ -795,7 +799,8 @@ def _write_autopsy_manifest(
     }
     if not dry_run:
         _OUT_DIR.mkdir(parents=True, exist_ok=True)
-        _AUTOPSY_MANIFEST_PATH.write_text(json.dumps(manifest, indent=2))
+        _AUTOPSY_MANIFEST_PATH.write_text(
+            json.dumps(sanitize_non_finite(manifest), indent=2, allow_nan=False))
         log.info("Wrote %s", _AUTOPSY_MANIFEST_PATH)
 
 

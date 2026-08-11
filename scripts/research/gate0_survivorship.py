@@ -80,6 +80,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_ROOT))
 
 import engine.sector_signals as ss  # noqa: E402
+from engine.json_strict import sanitize_non_finite  # noqa: E402
 from lib import config, store  # noqa: E402
 
 HORIZON = 63
@@ -314,7 +315,8 @@ def main():
            "results": summ}
     outp = config.data_dir() / "research" / "gate0_survivorship.json"
     outp.parent.mkdir(parents=True, exist_ok=True)
-    outp.write_text(json.dumps(out, indent=2))
+    outp.write_text(json.dumps(sanitize_non_finite(out), indent=2,
+                               allow_nan=False))
     print_report(summ, cov)
     print(f"\nwrote {outp}")
 

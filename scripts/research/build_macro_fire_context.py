@@ -68,6 +68,8 @@ import pandas as pd
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
+from engine.json_strict import sanitize_non_finite  # noqa: E402
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -604,7 +606,8 @@ def main() -> None:
     # Write outputs
     (_DATA / "research").mkdir(parents=True, exist_ok=True)
     panel.to_parquet(_OUT_PQ)
-    _OUT_META.write_text(json.dumps(meta, indent=2))
+    _OUT_META.write_text(json.dumps(sanitize_non_finite(meta), indent=2,
+                                    allow_nan=False))
 
     # Report
     log.info("Wrote %s (%d rows)", _OUT_PQ, len(panel))

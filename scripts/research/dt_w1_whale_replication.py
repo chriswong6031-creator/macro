@@ -45,6 +45,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from engine import dannytrades as dt  # noqa: E402 (whale_buy_fraction)
 from engine.trial_ledger import TrialLedger  # noqa: E402
+from engine.json_strict import sanitize_non_finite  # noqa: E402
 
 if __name__ == "__main__":
     # CLI-only silencer: the warnings filter list is PROCESS-GLOBAL, so at module
@@ -849,7 +850,8 @@ def run_study(store_dir: Path, pit_path: Path, out_json: Path, out_md: Path) -> 
 
     # --- write JSON output ---
     out_json.parent.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(json.dumps(results, indent=2, default=str))
+    out_json.write_text(json.dumps(sanitize_non_finite(results), indent=2,
+                                   default=str, allow_nan=False))
     print(f"[DT-W1a] wrote {out_json}", file=sys.stderr)
 
     # --- write markdown results ---

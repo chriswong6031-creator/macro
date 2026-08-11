@@ -32,6 +32,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_ROOT))
 
 from engine import short_pressure as sp  # noqa: E402
+from engine.json_strict import sanitize_non_finite  # noqa: E402
 from lib import config  # noqa: E402
 
 log = logging.getLogger(__name__)
@@ -273,7 +274,8 @@ def main() -> int:
     }
     d = config.data_dir() / "research"
     d.mkdir(parents=True, exist_ok=True)
-    (d / "sp1_short_pressure.json").write_text(json.dumps(out, indent=2) + "\n")
+    (d / "sp1_short_pressure.json").write_text(
+        json.dumps(sanitize_non_finite(out), indent=2, allow_nan=False) + "\n")
 
     lines = [f"| {r['test']} | {r['horizon']}d | {r['mean_pp']:+.3f} | "
              f"{r['t_nw']} | {r['q_bh']} | {r['h1_pp']:+.2f} / {r['h2_pp']:+.2f} | "

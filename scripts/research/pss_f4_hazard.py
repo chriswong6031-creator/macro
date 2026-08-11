@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from scripts.research import pss_f4_repair as repair  # noqa: E402
+from engine.json_strict import sanitize_non_finite  # noqa: E402
 
 
 OUT_SCORES = ROOT / "data/research/pss_f4_hazard_scores.parquet"
@@ -554,7 +555,8 @@ def main() -> None:
     scores.to_parquet(OUT_SCORES, index=False)
     action_events.to_parquet(OUT_ACTIONS, index=False)
     OUT_MANIFEST.write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        json.dumps(sanitize_non_finite(manifest), indent=2, sort_keys=True,
+                   allow_nan=False) + "\n",
         encoding="utf-8",
     )
     OUT_REPORT.write_text(

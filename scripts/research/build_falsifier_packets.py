@@ -43,6 +43,7 @@ from typing import Any
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
+from engine.json_strict import sanitize_non_finite  # noqa: E402
 from lib import config  # noqa: E402
 from lib.procutil import hard_exit  # noqa: E402
 
@@ -507,7 +508,8 @@ def main() -> int:
     # Write packets JSON
     out_p = _out_packets()
     out_p.parent.mkdir(parents=True, exist_ok=True)
-    out_p.write_text(json.dumps(packets_out, indent=2, ensure_ascii=False))
+    out_p.write_text(json.dumps(sanitize_non_finite(packets_out), indent=2,
+                                ensure_ascii=False, allow_nan=False))
     log.info("Wrote %s (%.1f KB)", out_p, out_p.stat().st_size / 1024)
 
     # Write manifest

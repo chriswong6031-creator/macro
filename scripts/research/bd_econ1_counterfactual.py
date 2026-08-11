@@ -50,6 +50,7 @@ _ROOT = _HERE.parents[2]  # repo root
 sys.path.insert(0, str(_ROOT))
 
 from engine.trial_ledger import TrialLedger  # noqa: E402
+from engine.json_strict import sanitize_non_finite  # noqa: E402
 
 log = logging.getLogger(__name__)
 
@@ -1027,7 +1028,8 @@ def _write_summary_json(results: dict[str, Any], data_root: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "bd_econ1_summary.json"
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2, default=str)
+        json.dump(sanitize_non_finite(results), f, indent=2, default=str,
+                  allow_nan=False)
     log.info("Wrote summary JSON: %s", out_path)
     return out_path
 

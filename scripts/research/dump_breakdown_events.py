@@ -84,6 +84,7 @@ from engine.grading import (  # noqa: E402
     LIFTOFF_HORIZON_21,
 )
 from engine.trial_ledger import TrialLedger  # noqa: E402
+from engine.json_strict import sanitize_non_finite  # noqa: E402
 from engine.signal_quality import fresh_breach_mask  # noqa: E402
 from engine import session_anchor as _sa  # noqa: E402  — per-market bucket calendar (R-SQ1)
 
@@ -2026,7 +2027,8 @@ def main(args=None):
         summary["runtime_seconds"] = round(elapsed_total, 1)
         summary["n_tickers_processed"] = len(universe)
 
-        OUT_SUMMARY.write_text(json.dumps(summary, indent=2, default=str))
+        OUT_SUMMARY.write_text(json.dumps(sanitize_non_finite(summary), indent=2,
+                                          default=str, allow_nan=False))
         log.info("Wrote %s", OUT_SUMMARY)
 
         # Print the §6 table to stdout (all six definitions, v3 schema)

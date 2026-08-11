@@ -67,6 +67,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from engine import country_cycles as cc  # noqa: E402
 from engine import sector_cycles as sc  # noqa: E402
 from engine.inputs import yahoo_closes  # noqa: E402
+from engine.json_strict import sanitize_non_finite  # noqa: E402
 
 # ── PRE-REGISTERED PARAMETERS — fixed before any table was read; do NOT tune ──────────
 BASIS = "tr"                    # ruling A1: TR basis, research-only cohort
@@ -693,8 +694,12 @@ def main() -> None:
         "pit_spot_checks": pit_checks, "pit_append_check": pit_append,
         "git_sha": _git_sha(),
     }
-    (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str))
-    (out_dir / "study_tables.json").write_text(json.dumps(study, indent=2, default=str))
+    (out_dir / "manifest.json").write_text(
+        json.dumps(sanitize_non_finite(manifest), indent=2, default=str,
+                   allow_nan=False))
+    (out_dir / "study_tables.json").write_text(
+        json.dumps(sanitize_non_finite(study), indent=2, default=str,
+                   allow_nan=False))
     print(f"  wrote {out_dir/'manifest.json'} + {out_dir/'study_tables.json'}", flush=True)
 
     print_verdict(study, pit_checks, pit_append)

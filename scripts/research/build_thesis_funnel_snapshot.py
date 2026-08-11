@@ -59,6 +59,8 @@ import pandas as pd
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
+from engine.json_strict import sanitize_non_finite  # noqa: E402
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -353,7 +355,8 @@ def main(argv: list[str] | None = None) -> int:
 
     manifest = _write_manifest(df, elapsed)
     log.info("build_thesis_funnel_snapshot: writing %s", _OUT_MANIFEST)
-    _OUT_MANIFEST.write_text(json.dumps(manifest, indent=2))
+    _OUT_MANIFEST.write_text(json.dumps(sanitize_non_finite(manifest), indent=2,
+                                        allow_nan=False))
 
     # Print counts table to stdout for PR body
     print("\n=== THESIS FUNNEL STATE COUNTS ===")
