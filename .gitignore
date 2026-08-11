@@ -666,7 +666,15 @@ data/institutional_13f/*
 # which every fresh clone and every new session has to rediscover — and the codex root
 # had no rule at all, so it surfaced as an untracked directory in every session's
 # `git status` and tripped the ship-loop guard on work belonging to another session.
+# 2026-08-11: the rule above shipped covering only two of the four roots, so
+# `.claire/worktrees/` (3 checkouts) and `.codex/worktrees/` (55) still surfaced as
+# untracked directories in every session's `git status` — the exact symptom the note
+# above says it was fixing. The same set is duplicated in `config/worktree_gc.json`
+# and `ship_loop_guard.AGENT_WORKTREE_ROOTS`; `tests/test_agent_worktree_roots.py`
+# pins all three in step, so extend them together.
 .claude/worktrees/
+.claire/worktrees/
+.codex/worktrees/
 .codex-worktrees/
 
 # Private paid-vendor A-share spine. The collector defaults outside the repo;
