@@ -59,10 +59,17 @@ _ISSUED_RECOVERY_OBSERVATIONS = {
 _ISSUED_RECOVERY_COHORT_SHA256 = (
     "a6a93726a9cde15da97e5d883d6f16c7c5ab6efe0ca07eecf0e414f0bef148ab"
 )
-# Frozen recovery clocks for the exact 5fc incident reconstructed below.
-CORRECTION_ACTIVATED_AT = "2026-08-10T04:35:00+00:00"
-CORRECTION_REPEAT_AT = "2026-08-10T04:36:00+00:00"
-FORWARD_DURING_ACTIVATION_AT = "2026-08-10T04:32:00+00:00"
+# Recovery clocks for the exact 5fc incident reconstructed below.  These runs
+# project over the LIVE canonical vintage `canonical_fixture_root` copies, so
+# their clocks must stay forward of that vintage — the same derivation law as
+# FROZEN_AT above (this file's own header rule: a wall-clock literal here is a
+# scheduled failure, not a constant).  The 2026-08-10T04:3xZ literals this
+# replaces detonated six minutes after #5268 merged, when the wire's next SAM
+# commit advanced canonical known_at past them.  Relative order is preserved:
+# forward-known < activation < repeat, all within the FROZEN_AT hour.
+CORRECTION_ACTIVATED_AT = shifted(FROZEN_AT, minutes=5)
+CORRECTION_REPEAT_AT = shifted(FROZEN_AT, minutes=6)
+FORWARD_DURING_ACTIVATION_AT = shifted(FROZEN_AT, minutes=2)
 _INCIDENT_FIXTURE_DIRECTORY = (
     ROOT
     / "tests/fixtures/government_revenue/issuance_incident_5fc18d5"
