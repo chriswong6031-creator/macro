@@ -826,6 +826,9 @@ lanes:
             - scripts.build_darkpool_desk
           cl_baskets:
             - scripts.build_baskets
+            # GMI W1a — US basket membership PIT side-car + parquet stamp. NIGHTLY ONLY
+            # (append-only, keep-FIRST per snapshot_date); absent from every render lane.
+            - scripts.build_baskets --snapshot
             - scripts.build_subsector_confluence
             - scripts.build_subsector_confluence --nasdaq
             - scripts.build_subsector_confluence --russell
