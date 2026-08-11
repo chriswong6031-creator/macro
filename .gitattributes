@@ -80,3 +80,8 @@ data/marketing/x_intel/corpus.jsonl merge=union
 # intentionally retains indentation-only lines, so whitespace checks belong to
 # the templates rather than to these content-addressed projections.
 site/assets/css/????????.css whitespace=-trailing-space,-blank-at-eof
+
+# CPI truth keeps exact content-addressed BLS HTML evidence. Upstream formatting
+# is part of the pinned byte receipt, so source-style whitespace checks do not
+# apply to these immutable archive objects.
+data/release_forecast/cpi_truth/official_table1_archive/documents/sha256/*.html whitespace=-trailing-space,-space-before-tab
