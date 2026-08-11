@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import sys
+import types
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -122,6 +123,541 @@ def test_shadow_item_receipts_are_public_provenance(tmp_root: Path, monkeypatch)
     assert shadow["code_receipt"] == "sha256:producer-receipt"
 
 
+def _coherent_shadow_result(
+    *,
+    release: str = "cpi_core",
+    period: str = "2026-07",
+    asof: str = "2026-08-11",
+    release_date: str = "2026-08-12",
+    lag_value: float = 0.24,
+    point_raw: float = 0.296,
+) -> dict:
+    """Synthetic result matching the governed engine/producer handoff."""
+    from engine.release_cpi_coherent_shadow import _seal_receipt
+
+    feature_receipts = {"lag_1": {"source": "coherent_target_history"}}
+    candidate_data_asof = "2026-08-10T03:31:09+00:00"
+    evidence_available_at = "2026-08-11T04:24:57+00:00"
+    input_manifest = _seal_receipt({
+        "schema": "release_cpi_coherent_input_manifest.v1",
+        "release": release,
+        "period": period,
+        "decision_asof": asof,
+        "strict_lag_features": {"lag_1": lag_value},
+        "feature_receipts": feature_receipts,
+    })
+    training_receipt = _seal_receipt({
+        "schema": "release_cpi_coherent_training_receipt.v1",
+        "release": release,
+        "period": period,
+        "model_epoch": "coherent_ridge_v1",
+        "decision_cutoff": asof,
+        "target_epoch": "alfred_same_release_vintage_proxy_v1",
+        "input_manifest_sha256": input_manifest["sha256"],
+        "n": 120,
+    })
+    interval_receipt = _seal_receipt({
+        "schema": "release_cpi_coherent_interval_receipt.v1",
+        "release": release,
+        "period": period,
+        "model_epoch": "coherent_ridge_v1",
+        "target_epoch": "alfred_same_release_vintage_proxy_v1",
+        "training_receipt_sha256": training_receipt["sha256"],
+        "point_raw": point_raw,
+    })
+    return {
+        "schema": "release_cpi_coherent_shadow.v1",
+        "status": "shadow_candidate",
+        "release": release,
+        "period": period,
+        "release_date": release_date,
+        "asof": asof,
+        "model": "coherent_ridge_v1",
+        "model_epoch": "coherent_ridge_v1",
+        "target_epoch": "alfred_same_release_vintage_proxy_v1",
+        "point": 0.30,
+        "point_raw": point_raw,
+        "p10": 0.10,
+        "p25": 0.20,
+        "p50": 0.30,
+        "p75": 0.40,
+        "p90": 0.50,
+        "confidence": 0.61,
+        "input_completeness": 1.0,
+        "inputs_hash": input_manifest["sha256"],
+        "input_manifest": input_manifest,
+        "model_receipt": _seal_receipt({
+            "schema": "release_cpi_coherent_model_receipt.v1",
+            "model_id": "coherent_ridge_v1",
+            "model_epoch": "coherent_ridge_v1",
+        }),
+        "truth_receipt": _seal_receipt({
+            "schema": "release_cpi_coherent_truth_receipt.v1",
+            "target_epoch": "alfred_same_release_vintage_proxy_v1",
+            "candidate_data_asof": candidate_data_asof,
+            "completion": {"evidence_available_at": evidence_available_at},
+        }),
+        "training_receipt": training_receipt,
+        "interval_receipt": interval_receipt,
+        "pit_provenance": {
+            "schema": "release_cpi_coherent_pit_provenance.v1",
+            "decision_cutoff": asof,
+            "candidate_data_asof": candidate_data_asof,
+            "evidence_available_at": evidence_available_at,
+            "feature_receipts": feature_receipts,
+            "display_only": True,
+            "authority": False,
+        },
+        "display_only": True,
+        "authority": False,
+        "promotion_authorized": False,
+    }
+
+
+def test_coherent_shadow_freezes_one_validated_result_in_item_and_ledger(
+    tmp_root: Path,
+    monkeypatch,
+) -> None:
+    import scripts.build_release_forecast as producer
+
+    governed = _coherent_shadow_result()
+    monkeypatch.setattr(producer, "_run_shadow_v3", lambda *a, **k: None)
+    monkeypatch.setattr(
+        producer,
+        "_run_shadow_coherent_ridge",
+        lambda *a, **k: governed,
+    )
+    item = {
+        "release_type": "cpi_core",
+        "period": "2026-07",
+        "release_date": "2026-08-12",
+        "cutoff_label": "T-1",
+        "code_receipt": "sha256:producer-receipt",
+    }
+
+    producer._attach_shadows_to_items([item], tmp_root, date(2026, 8, 11))
+    shadow = item["shadows"]["coherent_ridge_v1"]
+    for receipt in (
+        "input_manifest",
+        "model_receipt",
+        "truth_receipt",
+        "training_receipt",
+        "interval_receipt",
+        "pit_provenance",
+    ):
+        assert shadow[receipt] == governed[receipt]
+    assert shadow["authority"] is False
+    assert shadow["promotion_authorized"] is False
+    assert shadow["target_epoch"] == "alfred_same_release_vintage_proxy_v1"
+
+    # Ledger construction must consume this exact attached result, not rerun the engine.
+    monkeypatch.setattr(
+        producer,
+        "_run_shadow_coherent_ridge",
+        lambda *a, **k: pytest.fail("coherent engine was rerun during ledger build"),
+    )
+    rows = producer._build_shadow_ledger_rows(
+        date(2026, 8, 11), [item], tmp_root
+    )
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["model"] == "coherent_ridge_v1"
+    assert row["prediction_id"]
+    assert row["projection_point"] == governed["point"]
+    assert row["inputs_hash"] == governed["inputs_hash"]
+    assert row["target_epoch"] == "alfred_same_release_vintage_proxy_v1"
+    assert row["model_epoch"] == "coherent_ridge_v1"
+    assert row["authority"] is False
+    assert row["promotion_authorized"] is False
+    for receipt in (
+        "input_manifest",
+        "model_receipt",
+        "truth_receipt",
+        "training_receipt",
+        "interval_receipt",
+        "pit_provenance",
+    ):
+        assert row[receipt] == governed[receipt]
+
+    ledger_path = tmp_root / "data" / "release_forecast" / "forward_ledger.jsonl"
+    _append_ledger_rows(ledger_path, rows)
+    _append_ledger_rows(ledger_path, rows)
+    assert _load_ledger(ledger_path) == rows
+
+
+@pytest.mark.parametrize(
+    ("field", "tampered"),
+    [
+        ("authority", True),
+        ("authority", 0),
+        ("promotion_authorized", True),
+        ("display_only", 1),
+        ("schema", "release_cpi_coherent_shadow.v2"),
+        ("target_epoch", "official_first_print_v1"),
+        ("inputs_hash", "not-a-sha256"),
+        ("truth_receipt", {}),
+        ("p90", None),
+        ("p10", 0.40),
+    ],
+)
+def test_coherent_shadow_tamper_cannot_enter_ledger(
+    tmp_root: Path,
+    monkeypatch,
+    field: str,
+    tampered: object,
+) -> None:
+    import scripts.build_release_forecast as producer
+
+    result = _coherent_shadow_result()
+    result[field] = tampered
+    monkeypatch.setattr(producer, "_run_shadow_v3", lambda *a, **k: None)
+    item = {
+        "release_type": "cpi_core",
+        "period": "2026-07",
+        "release_date": "2026-08-12",
+        "shadows": {"coherent_ridge_v1": result},
+    }
+
+    rows = producer._build_shadow_ledger_rows(
+        date(2026, 8, 11), [item], tmp_root
+    )
+    assert rows == []
+
+
+@pytest.mark.parametrize(
+    "tamper",
+    ["receipt_body", "detached_inputs_hash"],
+)
+def test_coherent_shadow_receipt_tamper_cannot_enter_ledger(
+    tmp_root: Path,
+    tamper: str,
+) -> None:
+    import scripts.build_release_forecast as producer
+
+    result = _coherent_shadow_result()
+    if tamper == "receipt_body":
+        result["truth_receipt"]["target_epoch"] = "tampered_after_sealing"
+    else:
+        result["inputs_hash"] = "f" * 64
+    item = {
+        "release_type": "cpi_core",
+        "period": "2026-07",
+        "release_date": "2026-08-12",
+        "shadows": {"coherent_ridge_v1": result},
+    }
+
+    assert producer._build_shadow_ledger_rows(
+        date(2026, 8, 11), [item], tmp_root
+    ) == []
+
+
+@pytest.mark.parametrize(
+    "cross_wire",
+    [
+        "input_period",
+        "model_epoch",
+        "truth_epoch",
+        "training_epoch",
+        "interval_schema",
+        "pit_features",
+        "pit_truth_clock",
+    ],
+)
+def test_coherent_shadow_validly_resealed_cross_wiring_cannot_enter_ledger(
+    tmp_root: Path,
+    cross_wire: str,
+) -> None:
+    from engine.release_cpi_coherent_shadow import _seal_receipt
+    import scripts.build_release_forecast as producer
+
+    result = _coherent_shadow_result()
+    if cross_wire == "pit_features":
+        result["pit_provenance"]["feature_receipts"] = {"other": {"source": "wrong"}}
+    elif cross_wire == "pit_truth_clock":
+        result["pit_provenance"]["candidate_data_asof"] = "2026-08-09T00:00:00+00:00"
+    else:
+        receipt_field, field, value = {
+            "input_period": ("input_manifest", "period", "2026-06"),
+            "model_epoch": ("model_receipt", "model_epoch", "coherent_ridge_v2"),
+            "truth_epoch": ("truth_receipt", "target_epoch", "official_first_print_v1"),
+            "training_epoch": (
+                "training_receipt",
+                "target_epoch",
+                "official_first_print_v1",
+            ),
+            "interval_schema": ("interval_receipt", "schema", "interval.other.v1"),
+        }[cross_wire]
+        body = {
+            key: item
+            for key, item in result[receipt_field].items()
+            if key != "sha256"
+        }
+        body[field] = value
+        result[receipt_field] = _seal_receipt(body)
+        if receipt_field == "input_manifest":
+            result["inputs_hash"] = result[receipt_field]["sha256"]
+
+    item = {
+        "release_type": "cpi_core",
+        "period": "2026-07",
+        "release_date": "2026-08-12",
+        "shadows": {"coherent_ridge_v1": result},
+    }
+    assert producer._build_shadow_ledger_rows(
+        date(2026, 8, 11), [item], tmp_root
+    ) == []
+
+
+@pytest.mark.parametrize("receipt_field", ["training_receipt", "interval_receipt"])
+def test_coherent_shadow_swapped_valid_receipt_dag_cannot_enter_ledger(
+    tmp_root: Path,
+    receipt_field: str,
+) -> None:
+    import scripts.build_release_forecast as producer
+
+    result = _coherent_shadow_result(lag_value=0.24)
+    other_valid_run = _coherent_shadow_result(lag_value=9.99)
+    assert result[receipt_field] != other_valid_run[receipt_field]
+    result[receipt_field] = other_valid_run[receipt_field]
+
+    item = {
+        "release_type": "cpi_core",
+        "period": "2026-07",
+        "release_date": "2026-08-12",
+        "shadows": {"coherent_ridge_v1": result},
+    }
+    assert producer._build_shadow_ledger_rows(
+        date(2026, 8, 11), [item], tmp_root
+    ) == []
+
+
+def test_coherent_shadow_allows_ordered_residual_interval_away_from_point() -> None:
+    import scripts.build_release_forecast as producer
+
+    result = _coherent_shadow_result()
+    result.update({
+        "point": 0.30,
+        "p10": 0.40,
+        "p25": 0.50,
+        "p50": 0.60,
+        "p75": 0.70,
+        "p90": 0.80,
+    })
+
+    validated = producer._validate_coherent_ridge_result(
+        result,
+        "cpi_core",
+        date(2026, 8, 11),
+        "2026-07",
+        date(2026, 8, 12),
+    )
+
+    assert validated["point"] < validated["p10"]
+
+
+def test_coherent_shadow_missing_module_and_artifact_error_fail_closed(
+    tmp_root: Path,
+    monkeypatch,
+) -> None:
+    import scripts.build_release_forecast as producer
+
+    module_name = "engine.release_cpi_coherent_shadow"
+    monkeypatch.setitem(sys.modules, module_name, None)
+    assert producer._run_shadow_coherent_ridge(
+        "cpi_headline",
+        date(2026, 8, 11),
+        tmp_root,
+        "2026-07",
+        date(2026, 8, 12),
+    ) is None
+
+    fake_module = types.ModuleType(module_name)
+
+    def _artifact_failure(**kwargs):
+        raise RuntimeError("governed completion artifact unavailable")
+
+    fake_module.project_cpi_coherent_shadow = _artifact_failure
+    monkeypatch.setitem(sys.modules, module_name, fake_module)
+    assert producer._run_shadow_coherent_ridge(
+        "cpi_headline",
+        date(2026, 8, 11),
+        tmp_root,
+        "2026-07",
+        date(2026, 8, 12),
+    ) is None
+
+
+@pytest.mark.parametrize(
+    "release_date",
+    [None, date(2026, 8, 10), date(2026, 8, 11)],
+)
+def test_coherent_shadow_requires_a_future_release_date(
+    tmp_root: Path,
+    monkeypatch,
+    release_date: date | None,
+) -> None:
+    import scripts.build_release_forecast as producer
+
+    monkeypatch.setattr(
+        "engine.release_cpi_coherent_shadow.project_cpi_coherent_shadow",
+        lambda **kwargs: pytest.fail("ineligible request reached coherent engine"),
+    )
+
+    assert producer._run_shadow_coherent_ridge(
+        "cpi_core",
+        date(2026, 8, 11),
+        tmp_root,
+        "2026-07",
+        release_date,
+    ) is None
+
+
+def test_coherent_failure_preserves_existing_shadow_lane(
+    tmp_root: Path,
+    monkeypatch,
+) -> None:
+    import scripts.build_release_forecast as producer
+
+    monkeypatch.setattr(
+        producer,
+        "_run_shadow_v3",
+        lambda *a, **k: {"point": 0.22, "inputs_hash": "b" * 64},
+    )
+    monkeypatch.setattr(producer, "_run_shadow_coherent_ridge", lambda *a, **k: None)
+    item = {
+        "release_type": "cpi_core",
+        "period": "2026-07",
+        "release_date": "2026-08-12",
+        "code_receipt": "sha256:producer-receipt",
+    }
+
+    producer._attach_shadows_to_items([item], tmp_root, date(2026, 8, 11))
+    assert set(item["shadows"]) == {"v3_factor"}
+    rows = producer._build_shadow_ledger_rows(
+        date(2026, 8, 11), [item], tmp_root
+    )
+    assert [row["model"] for row in rows] == ["v3_factor"]
+
+
+def test_coherent_shadow_is_not_a_combined_v1_input(
+    tmp_root: Path,
+    monkeypatch,
+) -> None:
+    import engine.release_combined as combined_engine
+    import scripts.build_release_forecast as producer
+
+    captured: dict = {}
+
+    def _capture_inputs(inputs, scored_errors, sigma_champion):
+        captured.update(inputs)
+        used = [key for key, value in inputs.items() if value is not None]
+        return {
+            "combined_point": 0.24,
+            "p10": 0.04,
+            "p25": 0.14,
+            "p50": 0.24,
+            "p75": 0.34,
+            "p90": 0.44,
+            "combined_components": {
+                "inputs_used": used,
+                "weights": {key: 1.0 / len(used) for key in used},
+            },
+        }
+
+    monkeypatch.setattr(combined_engine, "compute_combined_point", _capture_inputs)
+    item = {
+        "release_type": "cpi_headline",
+        "period": "2026-07",
+        "projection": {"point": 0.20},
+        "inputs_hash": "a" * 64,
+        "shadows": {
+            "v3_factor": {"point": 0.21, "inputs_hash": "b" * 64},
+            "cpi_bridge": {"point": 0.22, "inputs_hash": "c" * 64},
+            "mf_energy": {"point": 0.23, "inputs_hash": "d" * 64},
+            "coherent_ridge_v1": {"point": 9.99, "inputs_hash": "e" * 64},
+        },
+        "benchmark_set": {"cleveland_nowcast": 0.25},
+        "surprise_skew": {"sigma_scale_pp": 0.30},
+        "code_receipt": "sha256:producer-receipt",
+    }
+
+    producer._attach_combined_to_items(
+        [item], [], tmp_root, date(2026, 8, 11)
+    )
+    assert set(captured) == {
+        "champion", "v3_factor", "cpi_bridge", "mf_energy", "cleveland",
+    }
+    assert "coherent_ridge_v1" not in captured
+    assert item["combined"]["authority"] is False
+
+
+def test_coherent_scoreboard_track_does_not_create_promotion_review() -> None:
+    rows: list[dict] = []
+    for model, error in (("combined_v1", 0.30), ("coherent_ridge_v1", 0.01)):
+        for month in range(1, 13):
+            row = _scored_row(
+                release="cpi_core",
+                period=f"2025-{month:02d}",
+                asof_night=f"2025-{month:02d}-15",
+            )
+            row.update({
+                "model": model,
+                "actual": 0.30,
+                "frozen_projection_point": 0.30 - error,
+                "frozen_asof_night": f"2025-{month:02d}-14",
+            })
+            rows.append(row)
+
+    scoreboard = _build_scoreboard(rows, accrual_start="2025-01-01")
+    assert scoreboard["by_shadow"]["cpi_core:coherent_ridge_v1"]["n"] == 12
+    assert scoreboard["by_shadow"]["cpi_core:coherent_ridge_v1"]["mae_ours"] == pytest.approx(0.01)
+    assert all(
+        review.get("input") != "coherent_ridge_v1"
+        for review in scoreboard["promotion_review"]
+    )
+
+
+def test_coherent_scoreboard_segments_mixed_model_and_target_epochs() -> None:
+    rows: list[dict] = []
+    variants = [
+        ("coherent_ridge_v1", "alfred_same_release_vintage_proxy_v1"),
+        ("coherent_ridge_v1", "alfred_same_release_vintage_proxy_v1"),
+        ("coherent_ridge_v2", "alfred_same_release_vintage_proxy_v1"),
+        ("coherent_ridge_v1", "official_first_print_v1"),
+    ]
+    for month, (model_epoch, target_epoch) in enumerate(variants, start=1):
+        row = _scored_row(
+            release="cpi_core",
+            period=f"2026-{month:02d}",
+            asof_night=f"2026-{month:02d}-15",
+        )
+        row.update({
+            "model": "coherent_ridge_v1",
+            "model_epoch": model_epoch,
+            "target_epoch": target_epoch,
+            "actual": 0.3,
+            "frozen_projection_point": 0.2,
+            "frozen_asof_night": f"2026-{month:02d}-14",
+        })
+        rows.append(row)
+
+    scoreboard = _build_scoreboard(rows, accrual_start="2026-01-01")
+
+    assert scoreboard["by_shadow"]["cpi_core:coherent_ridge_v1"]["n"] == 4
+    epochs = scoreboard["by_shadow_epoch"]
+    assert epochs[
+        "cpi_core:coherent_ridge_v1:coherent_ridge_v1:"
+        "alfred_same_release_vintage_proxy_v1"
+    ]["n"] == 2
+    assert epochs[
+        "cpi_core:coherent_ridge_v1:coherent_ridge_v2:"
+        "alfred_same_release_vintage_proxy_v1"
+    ]["n"] == 1
+    assert epochs[
+        "cpi_core:coherent_ridge_v1:coherent_ridge_v1:official_first_print_v1"
+    ]["n"] == 1
+
+
 def test_capture_prefers_official_actual_receipt(tmp_root: Path) -> None:
     from engine.release_actuals import normalize_publication
 
@@ -162,6 +698,77 @@ def test_capture_prefers_official_actual_receipt(tmp_root: Path) -> None:
     assert scored[0]["actual"] == -0.4
     assert scored[0]["actual_source"] == "official_release_document"
     assert scored[0]["actual_receipt_id"] == receipt["receipt_id"]
+
+
+def test_coherent_shadow_scores_under_its_frozen_candidate_epoch(
+    tmp_root: Path,
+    monkeypatch,
+) -> None:
+    from engine.release_actuals import normalize_publication
+    import scripts.build_release_forecast as producer
+
+    governed = _coherent_shadow_result(
+        release="cpi_core",
+        period="2026-06",
+        asof="2026-07-13",
+        release_date="2026-07-14",
+    )
+    # Empirical residual median need not equal the raw ridge point.
+    governed["p50"] = 0.4
+    monkeypatch.setattr(producer, "_run_shadow_v3", lambda *a, **k: None)
+    item = {
+        "release_type": "cpi_core",
+        "period": "2026-06",
+        "release_date": "2026-07-14",
+        "cutoff_label": "T-1",
+        "code_receipt": "sha256:producer-receipt",
+        "shadows": {"coherent_ridge_v1": governed},
+    }
+    projections = producer._build_shadow_ledger_rows(
+        date(2026, 7, 13), [item], tmp_root
+    )
+    assert len(projections) == 1
+
+    receipts = normalize_publication({
+        "type": "CPI",
+        "date": "2026-07-14",
+        "reference_period": "June 2026",
+        "data_ready": True,
+        "publisher": "U.S. Bureau of Labor Statistics",
+        "source_id": "bls_cpi",
+        "source_url": "https://www.bls.gov/news.release/archives/cpi_test.htm",
+        "source_sha256": "f" * 64,
+        "first_seen_at": "2026-07-14T12:30:01+00:00",
+        "source_released_at": "2026-07-14T12:30:00+00:00",
+        "verified_at": "2026-07-14T12:31:00+00:00",
+        "parser": {"name": "cpi", "version": 1},
+        "actual": {
+            "headline_mom": 0.3,
+            "core_mom": 0.2,
+            "unit": "percent",
+            "reference_period": "June 2026",
+        },
+    })
+    actual_path = tmp_root / "data" / "release_forecast" / "official_actuals.jsonl"
+    actual_path.write_text(
+        "".join(json.dumps(receipt) + "\n" for receipt in receipts),
+        encoding="utf-8",
+    )
+
+    scored = _check_release_day_capture(
+        date(2026, 7, 14), tmp_root, projections
+    )
+    assert len(scored) == 1
+    assert scored[0]["model"] == "coherent_ridge_v1"
+    assert scored[0]["frozen_prediction_id"] == projections[0]["prediction_id"]
+    assert scored[0]["frozen_projection_point"] == 0.3
+    assert scored[0]["frozen_projection_p50"] == 0.4
+    assert scored[0]["model_epoch"] == "coherent_ridge_v1"
+    assert scored[0]["target_epoch"] == "alfred_same_release_vintage_proxy_v1"
+    scoreboard = _build_scoreboard(scored, accrual_start="2026-07-13")
+    coherent_stats = scoreboard["by_shadow"]["cpi_core:coherent_ridge_v1"]
+    assert coherent_stats["n"] == 1
+    assert coherent_stats["pinball_loss_5q"] == pytest.approx(0.19)
 
 
 def test_official_actual_receipt_supersedes_legacy_score_idempotently(
@@ -419,7 +1026,13 @@ class TestContract:
         assert "scoreboard_ref" in result
         methodology = result["methodology_status"]
         assert methodology["forecast_points_changed_by_wave1"] is False
-        assert methodology["coherent_target_refit_status"].startswith("not_started")
+        assert methodology["coherent_target_refit_status"] == (
+            "shadow_candidate_withheld_no_valid_current_projection"
+        )
+        assert methodology["coherent_current_projection_n"] == 0
+        assert methodology["next_required_step"] == (
+            "accrue_clean_forward_scores_then_manual_adjudication"
+        )
         assert methodology["accuracy_claim"] == "withheld_until_clean_aligned_forward_evidence"
 
     def test_display_only_true(self, tmp_root: Path, monkeypatch):
