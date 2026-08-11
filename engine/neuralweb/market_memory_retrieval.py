@@ -324,6 +324,9 @@ def _claims(value: object) -> dict[str, bool]:
 
 def _q18(value: object, *, field: str, positive: bool = False) -> tuple[str, Decimal]:
     pattern = _POSITIVE_Q18 if positive else _Q18
+    maximum_length = 37 if positive else 38
+    if type(value) is not str or len(value) > maximum_length:
+        _fail(f"{field} exceeds the q18 lexical bound")
     text = _match(value, pattern, field=field)
     if text.startswith("-0.") and Decimal(text).is_zero():
         _fail(f"{field} must normalize negative zero")
@@ -611,7 +614,9 @@ def _strict_json_object(body: bytes, *, field: str, maximum: int) -> dict[str, A
             object_pairs_hook=_duplicate_guard,
             parse_constant=lambda token: _fail(f"{field} contains non-finite {token}"),
         )
-    except (json.JSONDecodeError, RecursionError) as exc:
+    except MarketMemoryRetrievalContractError:
+        raise
+    except (json.JSONDecodeError, RecursionError, ValueError) as exc:
         raise MarketMemoryRetrievalContractError(f"{field} is not strict JSON") from exc
     return _require_dict(value, field=field)
 
@@ -1013,6 +1018,8 @@ def _query_record(
     coordinates = _coordinate_mapping(
         payload["coordinates"], specs=specs, field="query.coordinates"
     )
+    if payload["forecast_disposition"] not in {"issued", "abstained"}:
+        _fail("query.forecast_disposition is invalid")
     return {
         "forecast_id": _match(
             payload["forecast_id"],
@@ -1301,6 +1308,19 @@ def validate_episodic_retrieval_record(value: Mapping[str, Any]) -> dict[str, An
     ):
         _fail("retrieval disposition differs from query coordinate completeness")
     for row in candidates:
+        if query_complete:
+            expected_self_reason = (
+                "self_forecast"
+                if row["forecast_id"] == query["forecast_id"]
+                else "self_context"
+                if row["context_id"] == query["context_id"]
+                else None
+            )
+            if (
+                expected_self_reason is not None
+                or row["reason"] in {"self_forecast", "self_context"}
+            ) and row["reason"] != expected_self_reason:
+                _fail("candidate self-exclusion reason differs from query identity")
         candidate_complete = all(
             coordinate["value_decimal"] is not None for coordinate in row["coordinates"]
         )

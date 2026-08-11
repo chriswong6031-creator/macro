@@ -564,6 +564,54 @@ def test_self_duplicate_late_and_maximum_results_are_deterministic() -> None:
         "not_strictly_earlier",
     }
 
+    unavailable_self = retrieval.build_episodic_retrieval_record(
+        retrieval_registration=registration,
+        trial_registration=trial,
+        query_state_snapshot=query["state_snapshot"],
+        query_forecast_record=query["forecast_record"],
+        query_exact_context_bytes=query["exact_context_bytes"],
+        query_coordinates={
+            "alpha": None,
+            "beta": "0.000000000000000000",
+        },
+        candidate_inputs=[query_candidate],
+        retrieved_at="2026-08-29T00:00:00.000000Z",
+    )
+    assert unavailable_self["candidates"][0]["reason"] == (
+        "query_coordinate_unavailable"
+    )
+    assert retrieval.validate_episodic_retrieval_record(unavailable_self) == (
+        unavailable_self
+    )
+
+    false_self = copy.deepcopy(exclusions)
+    next(
+        row
+        for row in false_self["candidates"]
+        if row["reason"] == "not_strictly_earlier"
+    )["reason"] = "self_forecast"
+    _rehash(
+        false_self,
+        field="episodic_retrieval_record_id",
+        prefix="mmepisodicretrieval_",
+    )
+    with pytest.raises(retrieval.MarketMemoryRetrievalContractError, match="self"):
+        retrieval.validate_episodic_retrieval_record(false_self)
+
+    wrong_precedence = copy.deepcopy(exclusions)
+    next(
+        row
+        for row in wrong_precedence["candidates"]
+        if row["reason"] == "self_forecast"
+    )["reason"] = "self_context"
+    _rehash(
+        wrong_precedence,
+        field="episodic_retrieval_record_id",
+        prefix="mmepisodicretrieval_",
+    )
+    with pytest.raises(retrieval.MarketMemoryRetrievalContractError, match="self"):
+        retrieval.validate_episodic_retrieval_record(wrong_precedence)
+
 
 def test_exact_join_rebuild_detects_coordinate_candidate_and_trial_tampering() -> None:
     record, registration, trial, query, candidates = _record()
@@ -623,6 +671,7 @@ def test_retrieved_at_cannot_retroactively_influence_query_forecast() -> None:
         lambda value: value["candidates"][0].__setitem__(
             "distance_value", "-1.000000000000000000"
         ),
+        lambda value: value["query"].__setitem__("forecast_disposition", "forged"),
     ],
 )
 def test_record_rejects_claim_count_effective_n_and_distance_forgery(mutation) -> None:
@@ -722,6 +771,12 @@ def test_strict_loaders_reject_duplicates_nonfinite_and_oversize() -> None:
         retrieval.load_retrieval_registration_join_json(
             b'{"value":NaN}', trial_registration=trial
         )
+    with pytest.raises(
+        retrieval.MarketMemoryRetrievalContractError, match="strict JSON"
+    ):
+        retrieval.load_retrieval_registration_join_json(
+            b'{"value":' + b"9" * 5000 + b"}", trial_registration=trial
+        )
     duplicate = body.replace(b'{"authority":', b'{"authority":{},"authority":', 1)
     with pytest.raises(retrieval.MarketMemoryRetrievalContractError, match="duplicate"):
         retrieval.load_episodic_retrieval_record_join_json(
@@ -790,6 +845,25 @@ def test_candidate_and_aggregate_context_resource_bounds_precede_deep_validation
         retrieval.build_episodic_retrieval_record(
             **common,
             candidate_inputs=[oversized],
+        )
+
+
+def test_direct_coordinate_entry_rejects_oversized_q18_before_decimal_work() -> None:
+    registration = _registration(_trial())
+    oversized = "9" * 5000 + "." + "0" * 18
+    with pytest.raises(
+        retrieval.MarketMemoryRetrievalContractError, match="lexical bound"
+    ):
+        retrieval.score_normalized_euclidean(
+            retrieval_registration=registration,
+            query_coordinates={
+                "alpha": oversized,
+                "beta": "0.000000000000000000",
+            },
+            candidate_coordinates={
+                "alpha": "0.000000000000000000",
+                "beta": "0.000000000000000000",
+            },
         )
 
 
