@@ -305,9 +305,10 @@
       }
     },
     "coverage": {
+      "description": "Unsigned packet coverage stays false; external W4 joins and exact source bytes are authenticated only by the invocation-local join validator.",
       "const": {
-        "w4_exact_join_validated": true,
-        "citation_byte_closure_validated": true,
+        "w4_exact_join_validated": false,
+        "citation_byte_closure_validated": false,
         "evidence_population_complete": false,
         "citation_semantic_entailment_evaluated": false,
         "attention_quality_evaluated": false

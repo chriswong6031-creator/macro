@@ -98,10 +98,13 @@ BOUNDS: Mapping[str, int] = MappingProxyType(
     }
 )
 
+# External W4 dependencies and caller-supplied source bytes are revalidated by
+# the exact join boundary.  The unsigned packet cannot carry either check as a
+# portable authenticated fact, so every durable coverage claim remains false.
 COVERAGE: Mapping[str, bool] = MappingProxyType(
     {
-        "w4_exact_join_validated": True,
-        "citation_byte_closure_validated": True,
+        "w4_exact_join_validated": False,
+        "citation_byte_closure_validated": False,
         "evidence_population_complete": False,
         "citation_semantic_entailment_evaluated": False,
         "attention_quality_evaluated": False,

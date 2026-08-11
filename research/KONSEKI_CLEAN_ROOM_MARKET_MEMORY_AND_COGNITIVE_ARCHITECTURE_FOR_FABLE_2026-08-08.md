@@ -1305,6 +1305,10 @@ filesystem, network, clock, LLM, store, writer, service, scheduler, or emission
 capability. The registration fixes the required evidence kinds, six-component
 salience policy, citation policy, bounded read tools, implementation hashes,
 resource limits, and zero-authority profile before a packet can be built.
+Those W4 dependency and exact-source checks are invocation-local. Because the
+packet has no operational signer, its durable W4-join and citation-byte coverage
+flags remain false; a consumer must rerun the exact join validator with every
+external dependency rather than treat packet metadata as portable provenance.
 
 Ownership boundary: this W5A kernel is not `engine/neuralweb/cortex.py`; it
 neither imports nor replaces that nightly LLM runtime and cannot read or write
@@ -1530,9 +1534,10 @@ W5A synthetic Operating Cortex additions:
 
 - `engine/neuralweb/market_memory_operating_cortex.py` and the strict
   `operating_cortex_registration.v1` and `operating_cortex_packet.v1`
-  contracts — exact W4/W2 revalidation, content-addressed evidence and citation
-  byte closure, deterministic salience, structural contradiction/missingness/
-  falsifier/citation audits, immutable bounded read views, and zero authority;
+  contracts — invocation-local exact W4/W2 and citation-byte revalidation,
+  durable external-coverage abstention, content-addressed evidence,
+  deterministic salience, structural contradiction/missingness/falsifier/
+  citation audits, immutable bounded read views, and zero authority;
 - `tests/test_market_memory_operating_cortex.py` — schema/runtime and join
   parity, content identity, source/span tamper, Decimal and permutation,
   hostile morphology, missing-component abstention, reader immutability,

@@ -524,8 +524,8 @@ def test_exact_claims_coverage_authority_and_emission_are_honest() -> None:
         assert value["input_profile"] == "synthetic_fixture_only"
     assert dict(cortex.CLAIMS) == EXPECTED_CLAIMS
     assert fixture["packet"]["coverage"] == {
-        "w4_exact_join_validated": True,
-        "citation_byte_closure_validated": True,
+        "w4_exact_join_validated": False,
+        "citation_byte_closure_validated": False,
         "evidence_population_complete": False,
         "citation_semantic_entailment_evaluated": False,
         "attention_quality_evaluated": False,
@@ -1243,7 +1243,7 @@ def test_self_validator_rejects_rehashed_derived_claim_coverage_forgery(
     [
         ("claims", "attention_quality_evaluated", 0),
         ("coverage", "evidence_population_complete", 0),
-        ("coverage", "w4_exact_join_validated", 1),
+        ("coverage", "w4_exact_join_validated", 0),
     ],
 )
 def test_packet_boolean_blocks_reject_fully_rehashed_integer_aliases(
@@ -1398,6 +1398,8 @@ def test_join_rejects_fully_rehashed_source_span_and_dependency_forgery() -> Non
         claim["claim_id"] = ""
     alternative = cortex.build_operating_cortex_packet(**alternative_kwargs)
     assert cortex.validate_operating_cortex_packet(alternative) == alternative
+    assert alternative["coverage"]["w4_exact_join_validated"] is False
+    assert alternative["coverage"]["citation_byte_closure_validated"] is False
     with pytest.raises(cortex.MarketMemoryOperatingCortexContractError):
         cortex.validate_operating_cortex_packet_join(
             alternative, **fixture["join_kwargs"]
