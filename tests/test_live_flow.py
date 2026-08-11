@@ -3670,3 +3670,423 @@ class TestNaiveTimestampEventTs:
         assert ts_et == lf._minute_key(naive, BATCH_TS) == "11:07", (
             f"event ts→ET ({ts_et}) must equal the minute key "
             f"({lf._minute_key(naive, BATCH_TS)}) for the same trade_timestamp")
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# 37. Prospective owner-time Market Memory capture
+# ────────────────────────────────────────────────────────────────────────
+
+
+class TestProspectiveOptionsMarketMemoryCapture:
+    SESSION = "2026-08-12"
+    ANCHOR_TIME = datetime(2026, 8, 12, 13, 25, tzinfo=timezone.utc)
+    EVENT_TIME = "2026-08-12T13:40:00Z"
+    AVAILABLE_AT = "2026-08-12T13:41:01Z"
+
+    @staticmethod
+    def _event(root: str = "SPY") -> dict[str, Any]:
+        return {
+            "avg_price": 11.0,
+            "baseline_source": "floor",
+            "decision_at": "2026-08-12T13:41:00Z",
+            "dte": 0,
+            "dte_bucket": "0d",
+            "exp": "2026-08-12",
+            "group": "Index/ETF",
+            "group_zh": "指数/ETF",
+            "id": "abcdef1234567890",
+            "mny_bucket": "atm",
+            "n_prints": 10,
+            "observed_at": "2026-08-12T13:40:30Z",
+            "oi_vintage": "2026-08-11",
+            "premium": 1_100_000.0,
+            "premium_z": None,
+            "repeated": False,
+            "right": "C",
+            "root": root,
+            "selection_floor_usd": 1_000_000,
+            "selection_root_class": "etf_anchor",
+            "selection_rule": "premium_floor/v1",
+            "side": "mixed",
+            "signing_source": "tape",
+            "size": 1_000,
+            "strike": 700.0,
+            "swept": False,
+            "ts": TestProspectiveOptionsMarketMemoryCapture.EVENT_TIME,
+            "vol_gt_oi": True,
+            "zerodte": True,
+        }
+
+    @classmethod
+    def _enriched_event(cls, root: str = "SPY") -> dict[str, Any]:
+        event = cls._event(root)
+        event.update(
+            {
+                "available_at": cls.AVAILABLE_AT,
+                "published_at": None,
+                "source_snapshot_asof": cls.AVAILABLE_AT,
+                "anchor_strategy": "durable_available_at",
+            }
+        )
+        return event
+
+    @classmethod
+    def _anchor(cls) -> dict[str, Any]:
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        config_path = Path(__file__).resolve().parent.parent / "config" / "market_memory_canary.v1.json"
+        return capture._anchor_projection(
+            session_date=cls.SESSION,
+            config_body=config_path.read_bytes(),
+            observed_at=cls.ANCHOR_TIME,
+        )
+
+    def test_preopen_anchor_is_private_create_once_and_not_backfillable(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        config_path = Path(__file__).resolve().parent.parent / "config" / "market_memory_canary.v1.json"
+        root = tmp_path / "private-outbox"
+        monkeypatch.setattr(capture, "_utc_now", lambda: self.ANCHOR_TIME)
+        anchor = capture.create_or_load_session_anchor(
+            root, session_date=self.SESSION, config_path=config_path,
+        )
+        anchor_path = root / "anchors" / f"{self.SESSION}.json"
+        assert stat.S_IMODE(root.stat().st_mode) == 0o700
+        assert stat.S_IMODE(anchor_path.stat().st_mode) == 0o600
+        assert capture.validate_session_anchor(anchor) == anchor
+
+        # A restart after open can reuse exact pre-open bytes, but a fresh root
+        # cannot manufacture a same-session identity vintage after the fact.
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 31, tzinfo=timezone.utc),
+        )
+        assert capture.create_or_load_session_anchor(
+            root, session_date=self.SESSION, config_path=config_path,
+        ) == anchor
+        with pytest.raises(capture.OptionsEpisodeContextCaptureError, match="before the market open"):
+            capture.create_or_load_session_anchor(
+                tmp_path / "late-root",
+                session_date=self.SESSION,
+                config_path=config_path,
+            )
+
+    def test_request_preserves_owner_clocks_and_has_zero_authority(self):
+        from engine.neuralweb import market_memory
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        request = capture.build_capture_request(
+            anchor=self._anchor(),
+            owner_event=self._enriched_event(),
+            session_date=self.SESSION,
+        )
+        assert request is not None
+        clean = capture.validate_capture_request(request)
+        packet = clean["packet"]
+        assert packet["clocks"] == {
+            "event_time": self.EVENT_TIME,
+            "as_known_at": self.AVAILABLE_AT,
+            "knowledge_cutoff": self.AVAILABLE_AT,
+        }
+        assert packet["clocks"]["event_time"] != packet["clocks"]["as_known_at"]
+        assert len(packet["feature_receipts"]) == len(
+            market_memory.CANONICAL_FEATURE_REGISTRY
+        )
+        assert all(row["status"] == "missing" for row in packet["feature_receipts"])
+        assert all(
+            row["observed_at"] == self.AVAILABLE_AT
+            and row["missing_reason"] == "adapter_not_implemented"
+            for row in packet["feature_receipts"]
+        )
+        assert packet["authority"]["proposal_weight"] == 0
+        assert all(
+            value is False
+            for key, value in packet["authority"].items()
+            if key.startswith("may_")
+        )
+        assert clean["evidence_policy"]["episode_ledger_write_allowed"] is False
+        assert clean["evidence_policy"]["selector_impact_allowed"] is False
+
+    def test_unsupported_ticker_never_enters_private_outbox(self):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        assert capture.build_capture_request(
+            anchor=self._anchor(),
+            owner_event=self._enriched_event("QQQ"),
+            session_date=self.SESSION,
+        ) is None
+
+    def test_stage_hook_precommits_then_promotes_after_availability_fsync(
+        self, tmp_path, monkeypatch,
+    ):
+        import scripts.live_flow_poller as poller
+
+        stage_root = tmp_path / "events"
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(stage_root))
+        calls: list[tuple[str, bytes]] = []
+
+        class Dispatcher:
+            def prepare(self, *, owner_event, session_date):
+                raw = (stage_root / f"{session_date}.jsonl").read_bytes()
+                assert b'"kind":"decision"' in raw
+                assert b'"kind":"availability"' not in raw
+                assert owner_event["available_at"] == self_outer.AVAILABLE_AT
+                return owner_event
+
+            def stage(self, owner_event):
+                raw = (stage_root / f"{self_outer.SESSION}.jsonl").read_bytes()
+                assert b'"kind":"availability"' not in raw
+                calls.append(("stage", raw))
+
+            def commit(self, owner_event):
+                raw = (stage_root / f"{self_outer.SESSION}.jsonl").read_bytes()
+                assert b'"kind":"availability"' in raw
+                assert raw.endswith(b"\n")
+                assert owner_event["available_at"] == self_outer.AVAILABLE_AT
+                calls.append(("commit", raw))
+
+            def recover(self, *, owner_event, session_date):
+                assert owner_event["available_at"] == self_outer.AVAILABLE_AT
+                calls.append(("recover", b""))
+
+        self_outer = self
+        monkeypatch.setattr(poller, "_OPTIONS_CONTEXT_DISPATCHER", Dispatcher())
+        times = iter(
+            [
+                datetime(2026, 8, 12, 13, 41, tzinfo=timezone.utc),
+                datetime(2026, 8, 12, 13, 41, 1, tzinfo=timezone.utc),
+            ]
+        )
+        staged = poller._stage_raw_events(
+            self.SESSION, [self._event()], now_fn=lambda: next(times),
+        )
+        assert staged[0]["available_at"] == self.AVAILABLE_AT
+        assert [kind for kind, _raw in calls] == ["stage", "commit"]
+        replay = poller._stage_raw_events(
+            self.SESSION,
+            [self._event()],
+            now_fn=lambda: datetime(2026, 8, 12, 13, 42, tzinfo=timezone.utc),
+        )
+        assert replay == staged
+        assert [kind for kind, _raw in calls] == ["stage", "commit", "recover"]
+
+    def test_replay_promotes_only_an_exact_preavailability_precommit(
+        self, tmp_path,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "capture-key"
+        key.write_text("test-only-key")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request = dispatcher.prepare(
+            owner_event=self._enriched_event(), session_date=self.SESSION,
+        )
+        assert request is not None
+        request_id = dispatcher.stage(request)
+        assert request_id is not None
+        assert (dispatcher.prepared / f"{request_id}.json").exists()
+        assert not (dispatcher.pending / f"{request_id}.json").exists()
+
+        assert dispatcher.recover(
+            owner_event=self._enriched_event(), session_date=self.SESSION,
+        ) == request_id
+        assert not (dispatcher.prepared / f"{request_id}.json").exists()
+        assert (dispatcher.pending / f"{request_id}.json").exists()
+
+        # A replay without exact precommitted bytes cannot create a request.
+        fresh = capture.OptionsContextDispatcher(
+            tmp_path / "fresh-outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        assert fresh.recover(
+            owner_event=self._enriched_event(), session_date=self.SESSION,
+        ) is None
+        assert list(fresh.prepared.iterdir()) == []
+        assert list(fresh.pending.iterdir()) == []
+
+    def test_forced_transport_acknowledges_only_exact_response(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+        from engine.neuralweb import market_memory_pit
+
+        key = tmp_path / "capture-key"
+        key.write_text("test-only-key")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request_id = dispatcher.enqueue(
+            owner_event=self._enriched_event(), session_date=self.SESSION,
+        )
+        assert request_id is not None
+        pending = dispatcher.pending / f"{request_id}.json"
+        request = capture.validate_capture_request(
+            json.loads(pending.read_text())
+        )
+        packet = request["packet"]
+        query, _event_dt, _cutoff_dt = market_memory_pit._normalize_query(
+            subject=packet["subject"],
+            event_time=packet["clocks"]["event_time"],
+            as_known_at=packet["clocks"]["as_known_at"],
+            mode="operational_pit",
+            reject_future_cutoff=False,
+        )
+        response = {
+            "schema": capture.RESPONSE_SCHEMA,
+            "status": "captured",
+            "request_id": request_id,
+            "capture_id": "mmcapture_" + "a" * 64,
+            "query_id": market_memory_pit._query_id(query),
+            "context_id": packet["context_id"],
+            "packet_sha256": hashlib.sha256(
+                capture._canonical_bytes(packet)
+            ).hexdigest(),
+            "event_time": self.EVENT_TIME,
+            "as_known_at": self.AVAILABLE_AT,
+            "store_id": "mmstore_" + "c" * 64,
+            "generation_id": "mmgeneration_" + "d" * 64,
+            "generation_sha256": "e" * 64,
+            "generation_capture_count": 1,
+            "authority": packet["authority"],
+        }
+
+        class Result:
+            returncode = 0
+            stdout = capture._canonical_bytes(response) + b"\n"
+            stderr = b""
+
+        seen: dict[str, Any] = {}
+
+        def run(command, **kwargs):
+            seen["command"] = command
+            seen["input"] = kwargs["input"]
+            return Result()
+
+        monkeypatch.setattr(capture.subprocess, "run", run)
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+        )
+        assert dispatcher.flush_pending() == {
+            "captured": 1, "expired": 0, "pending": 0,
+        }
+        assert seen["command"][-1] == "root@146.190.142.17"
+        assert "ClearAllForwardings=yes" in seen["command"]
+        assert request_id.encode() in seen["input"]
+        assert not pending.exists()
+        receipt_path = dispatcher.receipts / f"{request_id}.json"
+        assert stat.S_IMODE(receipt_path.stat().st_mode) == 0o600
+        receipt = json.loads(receipt_path.read_text())
+        assert capture.validate_transport_receipt(
+            receipt, request=request,
+        )["status"] == "captured"
+
+        # A crash after the terminal receipt fsync but before pending unlink is
+        # recoverable without changing the authenticated completion clock.
+        pending.write_bytes(capture._canonical_bytes(request))
+        pending.chmod(0o600)
+        original_receipt = receipt_path.read_bytes()
+        assert dispatcher.flush_pending() == {
+            "captured": 0, "expired": 0, "pending": 0,
+        }
+        assert receipt_path.read_bytes() == original_receipt
+
+    def test_unpromoted_precommit_expires_as_a_private_abstention(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "capture-key"
+        key.write_text("test-only-key")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request = dispatcher.prepare(
+            owner_event=self._enriched_event(), session_date=self.SESSION,
+        )
+        assert request is not None
+        request_id = dispatcher.stage(request)
+        monkeypatch.setattr(
+            capture,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 55, tzinfo=timezone.utc),
+        )
+        assert dispatcher.flush_pending() == {
+            "captured": 0, "expired": 1, "pending": 0,
+        }
+        receipt = json.loads(
+            (dispatcher.receipts / f"{request_id}.json").read_text()
+        )
+        assert capture.validate_transport_receipt(
+            receipt, request=request,
+        )["status"] == "expired_before_owner_availability"
+        assert list(dispatcher.prepared.iterdir()) == []
+
+    def test_remote_writer_is_idempotent_and_exact(self, tmp_path, monkeypatch):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+        from engine.neuralweb import market_memory_pit
+        from scripts import capture_market_memory_context as writer
+
+        request = capture.build_capture_request(
+            anchor=self._anchor(),
+            owner_event=self._enriched_event(),
+            session_date=self.SESSION,
+        )
+        assert request is not None
+        monkeypatch.setattr(
+            market_memory_pit,
+            "_utc_now",
+            lambda: datetime(2026, 8, 12, 13, 41, 2, tzinfo=timezone.utc),
+        )
+        body = capture._canonical_bytes(request) + b"\n"
+        first, rejected = writer.capture_options_request_batch(
+            body, store=tmp_path / "w1a"
+        )
+        second, rejected_again = writer.capture_options_request_batch(
+            body, store=tmp_path / "w1a"
+        )
+        assert rejected == rejected_again == 0
+        assert first == second
+        assert first[0]["event_time"] == self.EVENT_TIME
+        assert first[0]["as_known_at"] == self.AVAILABLE_AT
+        reader = market_memory_pit.FileAsKnownAtReader(tmp_path / "w1a")
+        stored = reader.read_stored_as_known_at(
+            subject=request["packet"]["subject"],
+            event_time=self.EVENT_TIME,
+            as_known_at=self.AVAILABLE_AT,
+        )
+        assert stored.packet["context_id"] == request["packet"]["context_id"]
+
+    def test_launchd_arms_only_the_forced_private_lane(self):
+        import plistlib
+
+        repo = Path(__file__).resolve().parent.parent
+        payload = plistlib.loads(
+            (repo / "ops/launchd/com.mastermind.liveflow.plist").read_bytes()
+        )
+        env = payload["EnvironmentVariables"]
+        assert env["MARKET_MEMORY_OPTIONS_CONTEXT_CAPTURE"] == "1"
+        assert env["MARKET_MEMORY_OPTIONS_CONTEXT_SSH_TARGET"] == "root@146.190.142.17"
+        assert env["MARKET_MEMORY_OPTIONS_CONTEXT_SSH_KEY"].endswith(
+            "/.ssh/market_memory_options_context_capture"
+        )
