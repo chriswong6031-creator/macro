@@ -222,7 +222,7 @@ artifact until an NBBO-signed source passes a forward ledger gate.
 ## 3. Schema: `options_structure.matrix/v1`
 
 **Artifact path (R2):** `options_structure/matrix/<ROOT>.json`
-**Producer:** matrix builder (Package E, PRISM — future)
+**Producer:** matrix builder (Package E, PRISM)
 **Cadence:** daily-engine
 **Authority tier:** `display`
 **Consumers:** Terminal PRISM tab
@@ -246,7 +246,8 @@ is the reliable read."_  The `heat_seeker.note` field is CI-enforced as
 | `levels` | dict | — | `{call_wall, put_support, hvl, gamma_flip, max_pain}` |
 | `heat_seeker` | dict\|null | — | Descriptive standout cell (see below) |
 | `authority_tier` | string | — | `"display"` |
-| `reliability` | dict | — | `{gex, delta_oi, vol, note}` |
+| `experimental` | bool | — | `true` while `vex_mn` remains experimental |
+| `reliability` | dict | — | Per-lens authority and timing disclosures, including `unusual` and `vex_mn` |
 
 ### Cell fields
 
@@ -260,7 +261,29 @@ is the reliable read."_  The `heat_seeker.note` field is CI-enforced as
 | `call_vol` | int\|null | contracts | Call volume today |
 | `put_vol` | int\|null | contracts | Put volume today |
 | `delta_oi` | dict | — | `{call: int\|null, put: int\|null}` day-over-day OI change (RELIABLE) |
-| `unusual` | dict\|null | — | `{ratio, samples, side}` or null if no 30d history |
+| `unusual` | dict\|null | — | `{call: side_record\|null, put: side_record\|null}`, or null when neither side is eligible |
+| `vex_mn` | float\|null | $mn per 1 vol point | Closed-form BS vanna × OI[t-1]; **EXPERIMENTAL**, assumption-signed |
+
+### UNUSUAL timing and authority
+
+Call and put are measured independently.  For an exact
+`(expiration, strike, right)` contract side, the side record is
+`{ratio, median_vol_30d, samples, status}`.  `ratio` is today's observed side volume
+divided by the median of that side's observations inside the 30 most recent
+**strictly prior root EOD sessions**.  An explicitly observed zero is retained as real
+volume; a missing contract-day is not imputed as zero and does not count as a sample
+or extend the 30-session comparison window.
+
+A side record is null when today's side volume was not observed, fewer than 10 prior
+observations exist, or `median_vol_30d` is non-positive.  The outer `unusual` field is
+null only when neither side is eligible.  Otherwise `status` is `"unusual"` when the
+raw ratio is `>= 3.0` and `"normal"` below that boundary.  Published ratios use
+conservative two-decimal truncation, not rounding, so a raw `2.999` remains `2.99`
+and cannot display as `3.00` while its status is normal.
+
+UNUSUAL is signing-free magnitude evidence at the `display` tier.  It does not enter
+scoring, ranking, the money path, or any authority-promotion decision.  VEX remains
+experimental under the same no-scoring fence.
 
 ### Heat Seeker fields
 

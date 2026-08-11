@@ -425,6 +425,16 @@ on:
       # live_flow poller loop for the Terminal surface pane (shape ↔ surfaceContract.ts).
       - "scripts/build_flow_surface.py"
       - "tests/test_flow_surface.py"
+      # PRISM daily matrix: exact-contract-side PIT UNUSUAL baseline and its payload
+      # validator.  List every subject plus the suite explicitly even though
+      # engine/** and tests/** also start CI, so the packed-job ownership seam
+      # stays executable and reviewable.
+      - "engine/options_matrix.py"
+      - "engine/options_structure.py"
+      - "engine/thetadata_store.py"
+      - "scripts/build_options_matrix.py"
+      - "site/options_structure/examples/matrix.json"
+      - "tests/test_options_matrix.py"
       # MSC R2.2-A Light U-CHAIN: compact per-root eligibility receipts and the
       # monotonic all-root R2 discovery commit. Keep this list exact so source,
       # schema, publisher, or either adversarial suite can start their packed job.
