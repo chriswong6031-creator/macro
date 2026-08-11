@@ -191,6 +191,73 @@ ADMISSION_CLASS_CONFIRMATION = "confirmation"
 #: signature fires under washout/leader-pullback context (engine/us_early_turn.py).
 #: It never widens admission on its own — see :func:`select_candidates`.
 ADMISSION_CLASS_EARLY_TURN = "early_turn_starter"
+#: TURN WATCH texture for a UNION-admitted row (bake-off §A2 copy law).
+#:
+#: The glance tier says WHAT was seen and what to do about it, in plain words. The numbers
+#: that produced it ride as data on the row and are never spelled into the copy — an
+#: untranslated statistic on a deck row is a stat nobody reads twice.
+#:
+#: The pre-trough line is the honest cost of a recall surface and it lives at Tier-2 depth
+#: ONLY (hover / detail), never in the headline: measured, fires that precede the low
+#: survive a stop ~1 in 10, and the operator's stop is what caps that. It is stated as a
+#: cost, not as a refutation — nothing here says a read was wrong.
+UNION_CHIP_EN = "Early turn — watch, don't chase"
+UNION_CHIP_ZH = "早期转向 — 观察，不要追高"
+UNION_WINDOW_NOTE_EN = "Windows, not certainties — re-drawn nightly."
+UNION_WINDOW_NOTE_ZH = "这是窗口，不是定论 — 每晚重新绘制。"
+UNION_PRETROUGH_NOTE_EN = ("Early fires that come before the low mostly stop out; "
+                           "the stop under the low is what caps the cost.")
+UNION_PRETROUGH_NOTE_ZH = "先于低点出现的早期信号多数会被止损；低点下方的止损用来限制成本。"
+#: Plain-word context chips, one per badge the admission carries. Proximity texture only —
+#: §A2 and the footprint study's §A3 both found no measured feature that licenses a
+#: durability read, so none of these may imply reliability, ordering, or a better outcome.
+UNION_BADGE_COPY = {
+    "zero_bound": ("Washed to the floor", "洗至底部"),
+    "deep_cross": ("Turned from deep", "自深处转向"),
+    "above_200": ("Above its 200-day line", "位于200日线上方"),
+    "below_200": ("Below its 200-day line", "位于200日线下方"),
+    "deep_decline": ("Well off its 6-month high", "远低于半年高点"),
+    "leads_market": ("Leading the market lately", "近期强于大盘"),
+    "lags_market": ("Lagging the market lately", "近期弱于大盘"),
+}
+#: A decline this deep reads as "well off" its 6-month high in the chip copy.
+UNION_DEEP_DECLINE = -0.15
+
+
+def union_admission_texture(union: Mapping[str, Any] | None) -> dict[str, Any]:
+    """TURN WATCH texture for a union-admitted row: chips + the Tier-2 honesty notes.
+
+    Returns ``{}`` when nothing admitted, so a caller can spread it unconditionally.
+    DISPLAY ONLY — the chips carry no ordering and the badges they read are context.
+    """
+    if not isinstance(union, Mapping) or not union.get("fired"):
+        return {}
+    badges = union.get("badges") or {}
+    keys: list[str] = []
+    if badges.get("zero_bound"):
+        keys.append("zero_bound")
+    k_at_cross = badges.get("k_at_cross")
+    if isinstance(k_at_cross, (int, float)) and not badges.get("zero_bound"):
+        keys.append("deep_cross")
+    above = badges.get("above_200")
+    if above is not None:
+        keys.append("above_200" if above else "below_200")
+    decline = badges.get("decline_depth")
+    if isinstance(decline, (int, float)) and decline <= UNION_DEEP_DECLINE:
+        keys.append("deep_decline")
+    rs = badges.get("rs_63")
+    if isinstance(rs, (int, float)):
+        keys.append("leads_market" if rs > 0 else "lags_market")
+    return {
+        "chip": {"en": UNION_CHIP_EN, "zh": UNION_CHIP_ZH},
+        "context_chips": [{"en": UNION_BADGE_COPY[k][0], "zh": UNION_BADGE_COPY[k][1]}
+                          for k in keys],
+        # Tier-2 depth: hover / detail. Never the headline.
+        "note": {"en": UNION_WINDOW_NOTE_EN, "zh": UNION_WINDOW_NOTE_ZH},
+        "cost_note": {"en": UNION_PRETROUGH_NOTE_EN, "zh": UNION_PRETROUGH_NOTE_ZH},
+    }
+
+
 PATIENCE_STATUSES = frozenset({"bounce_wait", "wait_pullback", "hold"})
 CONFIRMATION_STATUSES = frozenset({"buy_now", "partial"})
 ADMITTED_STATUSES = PATIENCE_STATUSES | CONFIRMATION_STATUSES
@@ -4379,6 +4446,15 @@ def originate_plans(
                 "washout_state": (early.get("washout") or {}).get("state"),
                 "leader_pullback_source": (
                     early.get("leader_pullback") or {}).get("source"),
+                # ── §A2 UNION ADMISSION — the measured recall spine ───────────────
+                # The badges are DISPLAY context (proximity, not durability) and the
+                # texture is the copy law: plain words at glance, the pre-trough cost
+                # at Tier-2 depth. Neither ever reaches a rank, tier or score.
+                "union_fired": bool(early.get("union_fired")),
+                "union_legs": early.get("union_legs") or [],
+                "admission_era": early.get("admission_era"),
+                "context_badges": early.get("context_badges"),
+                "union_texture": union_admission_texture(early.get("union")),
             },
         }
 

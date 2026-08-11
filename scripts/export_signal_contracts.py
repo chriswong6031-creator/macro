@@ -222,9 +222,9 @@ ARTIFACT_MANIFEST = [
      "kind": "per_stock_signal",
      "schema_version": "1.2.0",
      "schema_fields": [
-         "above200", "anchor_era", "asof", "early_markers", "early_now", "markers",
-         "pit", "risk_flags", "state", "tf", "ticker", "trail_breach", "trail_stop",
-         "weekly_bull",
+         "above200", "anchor_era", "asof", "early_markers", "early_now",
+         "early_signal_dates", "markers", "pit", "risk_flags", "state", "tf", "ticker",
+         "trail_breach", "trail_stop", "weekly_bull",
      ],
      "expected_max_age_td": 2,
      "as_of_field": "asof",

@@ -146,6 +146,19 @@ def validate_ticker_doc(doc, schema: dict, where: str) -> list[str]:
             errs += check_date_list(doc["risk_flags"], where, "risk_flags")
         if isinstance(doc.get("early_markers"), list):
             errs += check_date_list(doc["early_markers"], where, "early_markers")
+        # `early_signal_dates` is the ADDITIVE knowability stamp for the dots: same count,
+        # same order, each entry the last session of its dot's bucket. Optional by design
+        # (a doc predating the stamp is valid), but when present the pairing is a contract —
+        # a length drift would silently re-index every pair.
+        if isinstance(doc.get("early_signal_dates"), list):
+            errs += check_date_list(doc["early_signal_dates"], where,
+                                    "early_signal_dates")
+            if isinstance(doc.get("early_markers"), list) and \
+                    len(doc["early_signal_dates"]) != len(doc["early_markers"]):
+                errs.append(
+                    f"{where}: early_signal_dates has "
+                    f"{len(doc['early_signal_dates'])} entries but early_markers has "
+                    f"{len(doc['early_markers'])} — the lists are positionally paired")
     return errs
 
 
