@@ -424,6 +424,7 @@ ADMIN_MUST_RESTART = [
     "engine/metabolism/throttle.py",
     "engine/metabolism/budget_gate.py",
     "lib/mastermind_response_log.py",
+    "lib/project_runtime_state.py",
 ]
 
 # NOT import-cached by admin -> restarting would blip the panel for nothing.
