@@ -369,14 +369,15 @@ def test_the_surface_is_wired_and_not_inert():
 #: `THREE MONTHS` is 12 chars and renders 92px (WRAPS, because every glyph is a wide
 #: capital). Character count and rendered width disagree in exactly the range these
 #: captions live in, so a char-count assertion here would pass while the page wraps —
-#: a guard giving false confidence about the defect it was written for.
+#: a guard giving false confidence about the defect it was written for. That is why
+#: this test freezes STRINGS and not a budget; do not reinstate a character rule.
 #:
 #: A Jinja unit test has no layout engine, so this FREEZES the exact strings instead.
 #: Each was measured in-browser at 1360px; changing one fails this test and forces the
 #: re-measurement rather than letting a plausible-looking caption ship unverified.
 MEASURED_CAPTIONS = {
-    "primary": ("in six months", 90),   # 13 chars, 90px — fits, 2px of headroom
-    "r63": ("three months", 92),        # 12 chars, 92px — WRAPS; see the §4.5 amendment
+    "primary": ("in six months", 90),   # 13 chars, 90px — fits, but only 2px of headroom
+    "r63": ("three-month", 87),         # 11 chars, 87px — fits (§4.5 amendment II)
     "atrz": ("above trend", 76),        # 11 chars — fits
 }
 

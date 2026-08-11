@@ -400,7 +400,7 @@ The four W1 states — names, ZH names, stances, sub-lines — are **unchanged o
 | Cell | primary | r63 | atrz |
 |---|---|---|---|
 | figure | `+62%` directional ink | `+41%` directional ink | `7.2×` **neutral ink** |
-| caption EN | IN SIX MONTHS | THREE MONTHS | ABOVE TREND |
+| caption EN | IN SIX MONTHS | THREE-MONTH | ABOVE TREND |
 | caption ZH | 近六个月 | 近三个月 | 高于均线 |
 | missing value | `—` (unchanged honest dash) | `—` | `—` |
 
@@ -436,7 +436,16 @@ options that FIT, for the design lane to choose from (this builder did not pick 
 | `IN THREE MONTHS` *(original)* | 108 | no | yes |
 
 Note also that `IN SIX MONTHS` clears by only **2px**, so the primary caption is itself
-one font-stack change away from the same defect.
+one font-stack change away from the same defect (recorded as a watch item in §14.6).
+
+**AMENDMENT II — 2026-08-11 (commissioning-session ruling, supersedes the re-pin above).**
+The r63 caption is **`THREE-MONTH`**, measured **87px** in the 92px column: single line,
+caption 16px, row 64px, matching primary and atrz. Chosen from the measured table above as
+the one fitting candidate that keeps the spelled-word family — the elided noun is standard
+finance shorthand under a gain figure, and it holds the bar sentence's own three-month
+vocabulary rather than introducing "quarter". `THREE MONTHS` (92px) is superseded and must
+not be reinstated: it is *shorter in characters* than the caption that fits, which is
+precisely the trap §14.5 records. ZH remains 近三个月, unchanged and single-line.
 
 The trend distance is a **distance, not a direction** — it is ≥6 by construction, so directional
 ink would print a permanent green (permanent red in ZH) that means nothing. Neutral ink,
@@ -1042,16 +1051,34 @@ defects were found by looking that reading could not have found.
    odd number, and those rows already carry their own receipt in the give-back leg (§4.10
    row 13). **RULED 2026-08-11 (commissioning session): confirmed as shipped.** Recorded here
    so a later lane does not "restore" the raw value and re-introduce the false reading.
-5. **The r63 figure caption wraps, and §14.1's own ≤13-character rule does not catch it.**
-   `IN THREE MONTHS` (15 chars, 108px) measured 31px tall against primary's 16px. Re-pinned
-   to `THREE MONTHS` by the §4.5 amendment of 2026-08-11 — which is 12 characters and
-   **still wraps**, because it renders 92px in a 92px column. Character count is the wrong
-   proxy: `IN SIX MONTHS` is *longer* (13 chars) and fits, at 90px, because `I` and `X` are
-   narrow. **Measure this cell, never count it.** The design-freeze test therefore FREEZES
-   the exact measured strings rather than asserting a character budget — a char-count guard
-   passes `THREE MONTHS` while the page wraps, which is false confidence about the very
-   defect it was written for. The caption itself is an OPEN design question; measured
-   candidates are tabled in the §4.5 amendment.
+5. **The r63 figure caption wrapped twice, and §14.1's own ≤13-character rule caught
+   neither.** `IN THREE MONTHS` (15 chars, 108px) measured 31px tall against primary's 16px.
+   Re-pinned to `THREE MONTHS` — 12 characters, *inside* the stated budget, and it **still
+   wrapped** at 92px in a 92px column. RESOLVED to **`THREE-MONTH`** (11 chars, 87px, one
+   line) by §4.5 amendment II.
+
+   **Why the character proxy failed, so no later lane reinstates it.** The caption is
+   uppercased at 10px with 0.8px letter-spacing, where glyph widths vary by roughly 2:1
+   between `I`/`X` and `M`/`O`/`W`. Character count and rendered width therefore rank
+   captions *differently* in exactly the band these strings occupy: `IN SIX MONTHS` is the
+   LONGEST of the three at 13 characters and fits (90px), while `THREE MONTHS` is shorter
+   at 12 and does not (92px). A budget that admits the wrapping string and would reject the
+   fitting one is not a loose rule — it is an inverted one. **Measure this cell in a
+   browser; never count it.**
+
+   The design-freeze guard follows from that: it FREEZES the three exact strings with their
+   measured widths instead of asserting a budget. The character-budget version was written
+   first and was VACUOUS — it passed `THREE MONTHS` while the built page wrapped, i.e. it
+   gave false confidence about the one defect it existed to catch. A Jinja unit test has no
+   layout engine and cannot do better, so the freeze forces a human re-measure on any
+   change. Mutation-checked in both directions when it was written.
+
+6. **WATCH ITEM — `IN SIX MONTHS` clears the column by only 2px** (90px of 92px). It is
+   NOT changed here: the primary board is frozen and has no current defect. But it sits one
+   font-stack substitution, letter-spacing tweak or column-width change away from the same
+   two-line break. Any change to `--font-display`, to `.c-gain .cap`'s size/tracking, or to
+   the 92px figure column must **re-measure all three captions** against the column before
+   shipping — not re-count them.
 
 Also re-confirmed from W1 §9 and still binding here: anything hosting `lens()` must be a
 `<div>`; interpolated attribute *fragments* ship escaped; `.lens-receipt .r-i` is `nowrap`, so

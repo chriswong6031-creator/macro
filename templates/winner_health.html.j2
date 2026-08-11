@@ -302,12 +302,15 @@
    Tiers carry NO hue — on this page colour means wear, and a tier is not a
    severity. They are distinguished by position, name and size only.
 
-   `cap_*` is the figure-cell caption and is LENGTH-CONSTRAINED: the column is
-   92px and the caption is uppercased with letter-spacing, so anything past ~13
-   characters wraps to two lines and takes the row's baseline with it. `r63` was
-   pinned as `in three months` (15) and measured 31px against primary's 16px on
-   the built page; re-pinned to `three months` by the §4.5 amendment of
-   2026-08-11. Guarded by `test_w2b_every_tier_caption_fits_the_figure_column`.
+   `cap_*` is the figure-cell caption and is WIDTH-constrained, not
+   character-constrained: the column is 92px and the caption is uppercased at
+   10px with 0.8px letter-spacing, so a caption that RENDERS wider than 92px
+   wraps to two lines and takes the row's baseline with it. Counting characters
+   does not predict this — `IN SIX MONTHS` is 13 characters and fits at 90px,
+   while `THREE MONTHS` is 12 and wraps at 92px. MEASURE, never count. `r63` went
+   `in three months` (108px) -> `three months` (92px, still wrapped) ->
+   `three-month` (87px), per the two §4.5 amendments of 2026-08-11. Guarded by
+   `test_w2b_figure_captions_are_frozen_at_their_measured_strings`.
    ═══════════════════════════════════════════════════════════════════════════ #}
 {% set TIER_META = {
   'primary': {'slug':'six-month',
@@ -325,7 +328,7 @@
     'en':'Fast three-month runs', 'zh':'三个月急涨',
     'def_en':'Up 35% or more over the last three months.',
     'def_zh':'近三个月上涨 35% 或以上。',
-    'cap_en':'three months', 'cap_zh':'近三个月',
+    'cap_en':'three-month', 'cap_zh':'近三个月',
     'bar_en':'Up 35% or more over the last three months, and within 10% of its highest close in the past year.',
     'bar_zh':'近三个月上涨 35% 或以上，且收盘价在过去一年最高收盘价的 10% 以内。',
     'ord_en':'Inside a group, names run A to Z by ticker so you can find yours. That is not a ranking either.',
