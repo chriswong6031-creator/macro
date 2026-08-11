@@ -1561,6 +1561,17 @@ def test_prophet_marks_quote_guard_rejects_wrong_clock_and_bad_market_shape():
     assert too_old is None
     assert too_old_reason == "QUOTE_TOO_OLD"
 
+    wrong_trade_session, wrong_trade_reason = prophet_marks._validated_quote(
+        {
+            **_available_option_quote(),
+            "trade_ts_utc": "2026-08-12T13:45:45+00:00",
+        },
+        observed_at=datetime(2026, 8, 12, 14, 0, tzinfo=timezone.utc),
+        session_date=session,
+    )
+    assert wrong_trade_session is None
+    assert wrong_trade_reason == "TRADE_WRONG_SESSION"
+
 
 def test_prophet_marks_selects_latest_trade_paired_quote_deterministically(
     monkeypatch,
@@ -1901,3 +1912,23 @@ def test_prophet_marks_runtime_schema_failure_prevents_any_publication(
     assert prophet_marks.R2_KEY not in client.objects
     assert not (private_root / "current.json").exists()
     assert not (private_root / "observations").exists()
+
+
+def test_prophet_marks_refuses_a_non_private_state_directory(monkeypatch, tmp_path):
+    client = _FakeMarkR2()
+    private_root = tmp_path / "world-readable-option-marks"
+    private_root.mkdir(mode=0o755)
+    private_root.chmod(0o755)
+    monkeypatch.setenv(
+        "PROPHET_OPTION_EVIDENCE_STATE_ROOT",
+        str(private_root),
+    )
+    monkeypatch.setattr(prophet_marks, "_r2_client", lambda: client)
+
+    assert prophet_marks._publish_r2(
+        _published_mark_payload("2026-08-11T14:00:00+00:00"),
+        index=_option_mark_index(),
+        evidence_rows=[_published_mark_row()],
+    ) is None
+    assert client.puts == []
+    assert list(private_root.iterdir()) == []

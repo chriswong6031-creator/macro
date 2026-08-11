@@ -45,10 +45,10 @@ Schema: `contracts/options/prophet.option_mark_observation.v1.schema.json`.
 ## Private durability and public boundary
 
 Each observation is canonical JSON, content-addressed, backwards-linked, and stored on
-the publisher host below a caller-owned `0700` root. Observation and head files are
-caller-owned `0600`; observations use exclusive creation and the head advances through
-an fsynced atomic replace. A lock serializes publishers, and the prior bytes, digest,
-schema, and content identity are rechecked before the next link.
+the publisher host below a caller-owned `0700` root outside the repository. Observation
+and head files are caller-owned `0600`; observations use exclusive creation and the
+head advances through an fsynced atomic replace. A lock serializes publishers, and the
+prior bytes, digest, schema, and content identity are rechecked before the next link.
 
 The default private root is
 `~/.mastermind_private/prophet_option_mark_observations_v1`; operators may override it

@@ -436,8 +436,24 @@ def _fetch_contract_quote(
         )
         return None
 
+    try:
+        records = df.to_dict(orient="records")
+    except Exception as exc:  # noqa: BLE001 - one bad contract must abstain
+        log.warning(
+            "prophet_marks: trade_quote response for %s is unreadable: %s",
+            asset,
+            exc,
+        )
+        return None
+
     candidates: list[tuple[tuple[datetime, datetime, int], dict[str, object]]] = []
-    for row in df.to_dict(orient="records"):
+    for row in records:
+        if not isinstance(row, dict):
+            log.warning(
+                "prophet_marks: trade_quote response for %s contains a non-row",
+                asset,
+            )
+            return None
         try:
             quote_at = _source_datetime(row.get("quote_timestamp"))
             trade_at = _source_datetime(row.get("trade_timestamp"))
@@ -947,7 +963,13 @@ def _private_state_root() -> Path:
     )
     root = Path(raw).expanduser()
     if not root.is_absolute() or root in {Path("/"), Path.home()}:
-        raise ValueError("private option mark evidence root must be a narrow absolute path")
+        raise ValueError(
+            "private option mark evidence root must be a narrow absolute path"
+        )
+    resolved_root = root.resolve(strict=False)
+    resolved_repo = _REPO.resolve()
+    if resolved_root == resolved_repo or resolved_repo in resolved_root.parents:
+        raise ValueError("private option mark evidence root cannot be inside the repo")
     root.mkdir(mode=0o700, parents=True, exist_ok=True)
     _require_private_directory(root)
     return root
