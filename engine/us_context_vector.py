@@ -109,6 +109,42 @@ TIER_SCAN = "scan"
 #: already computes them.  Read off, never recomputed here.
 SCORE_COMPONENTS = ("signal", "entry", "edge", "runway", "quality")
 
+#: DISPLAY-TIER candidate-pool columns (operator commission 2026-08-11).  The lossless
+#: four-lane partition of tonight's cascade-eligible pool, produced by
+#: :mod:`engine.us_candidate_lanes` and READ off this same night's board — this store
+#: originates none of it, exactly like every other column here.
+#:
+#: The schema is owned HERE, by the store, and pinned equal to
+#: ``us_candidate_lanes.STORE_COLUMNS`` by
+#: ``tests/test_us_candidate_lanes.py::TestStoreSchema`` — so the producer cannot widen
+#: the store's schema by editing its own constant, and the store never imports the
+#: producer.
+#:
+#: Every ``pool_`` prefix is load-bearing: this store's existing ``lane`` column is the
+#: ARTIFACT display lane (buy / watch / leaders / laggards / not_on_board) and means
+#: something else entirely.  Null off the pool — ~144 of ~1,540 names are eligible on a
+#: given night, and a null here means "not in tonight's candidate pool", never "false".
+#:
+#: DELIBERATELY ABSENT: ``originated``.  This store is stamped by
+#: ``scripts/build_stock_library.py`` at the end of its run, i.e. BEFORE
+#: ``scripts/build_prophet.py`` has originated anything (and ``render.yml`` never runs
+#: build_prophet at all).  The store forbids retroactive backfill, and the
+#: carried-columns law forbids shipping a column that can never be populated — so
+#: origination stays build_prophet's fact, joined on ``(stamp_date, ticker)``.
+#: ``pool_open_plan`` IS stamped, because open plans persist across nights and are
+#: therefore honestly knowable here.
+POOL_COLUMNS = (
+    "pool_definition",
+    "pool_lane",
+    "pool_lane_reasons",
+    "pool_headline_reason",
+    "pool_rank",
+    "pool_display_rank",
+    "pool_in_buy_lane",
+    "pool_admission_class",
+    "pool_open_plan",
+)
+
 #: GICS pseudo-baskets mirror the SPDR sector ETFs 1:1 and are excluded from
 #: theme membership exactly as ``us_board_rank.THEME_ID_EXCLUDE_PREFIX`` does.
 THEME_ID_EXCLUDE_PREFIX = "us_sector_"
@@ -643,6 +679,7 @@ def build_records(
     regime: Mapping[str, Any] | None = None,
     tier: str = TIER_CURATED,
     liquidity: Mapping[str, Mapping[str, Any]] | None = None,
+    pool_columns: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """One flattened context row per universe name.  Pure; no I/O.
 
@@ -659,6 +696,14 @@ def build_records(
     on the way in and is free to record.  The curated lane does not read the
     whole-market store, so curated rows leave it NULL — "not measured for this
     name tonight", never zero (#4485).
+
+    ``pool_columns`` is ``{ticker: {pool_* column: value}}`` from
+    :func:`engine.us_candidate_lanes.store_columns` — the DISPLAY-TIER candidate-pool
+    lane partition, read off the board this same run already produced.  Only tonight's
+    cascade-eligible names appear in it (~144 of ~1,540), so every other row's ``pool_*``
+    columns stay null, which is this store's disclosure idiom rather than a gap.  Keys
+    are restricted to :data:`POOL_COLUMNS` so a caller can never widen the schema through
+    this door.  ZERO AUTHORITY, exactly like every other column here.
     """
     universe_meta = universe_meta or {}
     board_rows = board_rows or {}
@@ -676,6 +721,7 @@ def build_records(
     eightk_days = eightk_days or {}
     regime = regime or {}
     liquidity = liquidity or {}
+    pool_columns = pool_columns or {}
 
     records: list[dict[str, Any]] = []
     for ticker in sorted(verdicts):
@@ -809,6 +855,14 @@ def build_records(
         for component in SCORE_COMPONENTS:
             record[f"prophet_{component}"] = _finite(components.get(component))
             record[f"prophet_{component}_points"] = _finite(points.get(component))
+        # ── candidate pool (display tier) ─────────────────────────────────
+        # Every POOL_COLUMNS key is written on EVERY row, null off the pool: a column
+        # that appears only for pool members cannot be told apart from a night the
+        # partition never ran.  The whitelist is the schema fence — an unknown key from
+        # a caller is dropped, never stamped.
+        pool = _mapping(pool_columns.get(ticker))
+        for column in POOL_COLUMNS:
+            record[column] = pool.get(column) if column in pool else None
         records.append(record)
     return records
 
@@ -931,12 +985,15 @@ _OBJECT_COLUMNS = (
     "theme_primary_name", "theme_label", "theme_reco", "relay_basket_id",
     "foresight_stage", "regime_dispersion_state", "regime_market_quad",
     "regime_quad_name", "regime_vol_regime", "context_dims",
+    "pool_definition", "pool_lane", "pool_lane_reasons", "pool_headline_reason",
+    "pool_admission_class",
 )
 
 _BOOL_COLUMNS = (
     "eligible", "buyable", "gate_provisional", "htf_s1", "htf_s2", "featured",
     "reports_within_7", "earnings_stale", "in_blackout",
     "antichase_shadow_blocked", "regime_gate_go", "theme_clean_entry",
+    "pool_in_buy_lane", "pool_open_plan",
 )
 
 
@@ -971,6 +1028,7 @@ def append_candidates(
     tier: str = TIER_CURATED,
     liquidity: Mapping[str, Mapping[str, Any]] | None = None,
     volumes: pd.DataFrame | None = None,
+    pool_columns: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> int:
     """Append one settled full-universe US context snapshot.
 
@@ -986,6 +1044,11 @@ def append_candidates(
     liquidity-floored pass over the whole-market store; it appends into the SAME
     monthly part, and keep-first on ``(stamp_date, ticker, board_definition)``
     guarantees the earlier curated row wins for any name that appears in both.
+
+    ``pool_columns`` carries the display-tier candidate-pool lanes (:data:`POOL_COLUMNS`)
+    for tonight's cascade-eligible names; every other row's pool columns are null.  The
+    scan lane leaves it None — a scan-tier name is never admitted and therefore never in
+    the pool.
 
     ``volumes`` lets a caller supply the volume panel the turnover percentile is
     computed from.  The curated lane leaves it None and the builder's own
@@ -1063,6 +1126,7 @@ def append_candidates(
             regime=regime_block(gate_go, root=root),
             tier=tier,
             liquidity=liquidity,
+            pool_columns=pool_columns,
         )
         if not records:
             return 0
