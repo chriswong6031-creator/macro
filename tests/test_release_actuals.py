@@ -7,6 +7,7 @@ import pytest
 
 from engine.release_actuals import (
     canonical_actual,
+    is_scoring_truth_eligible,
     load_actual_ledger,
     normalize_publication,
     receipt_integrity_errors,
@@ -222,6 +223,58 @@ def test_canonical_actual_revalidates_persisted_truth() -> None:
     assert canonical_actual([wrong_agency], "nfp", "2026-07") is None
 
 
+def test_defect_sidecar_is_absent_open_and_matching_malformed_closed(
+    tmp_path: Path,
+) -> None:
+    missing = tmp_path / "absent.json"
+    row = normalize_publication(
+        _publication("PCE"),
+        defects_path=missing,
+    )[0]
+    assert is_scoring_truth_eligible(row, defects_path=missing)
+
+    unrelated = tmp_path / "unrelated.json"
+    unrelated.write_text(
+        json.dumps(
+            {
+                "schema": "official_actual_defects.v1",
+                "defects_by_receipt": {"official_actual:unrelated": "malformed"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert is_scoring_truth_eligible(row, defects_path=unrelated)
+
+    matching = tmp_path / "matching.json"
+    matching.write_text(
+        json.dumps(
+            {
+                "schema": "official_actual_defects.v1",
+                "defects_by_receipt": {row["receipt_id"]: "malformed"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert receipt_integrity_errors(row, defects_path=matching)[-1] == (
+        "known_source_binding_defect"
+    )
+    assert not is_scoring_truth_eligible(row, defects_path=matching)
+    assert canonical_actual(
+        [row],
+        row["release"],
+        row["period"],
+        defects_path=matching,
+    ) is None
+
+    invalid_root = tmp_path / "invalid.json"
+    invalid_root.write_text("{not-json", encoding="utf-8")
+    assert "official_actual_defect_sidecar_invalid" in receipt_integrity_errors(
+        row,
+        defects_path=invalid_root,
+    )
+    assert not is_scoring_truth_eligible(row, defects_path=invalid_root)
+
+
 def test_keep_first_and_correction_candidate() -> None:
     payload = {"schema": "release_publications.v2", "publications": [_publication("CPI")]}
     first = receipts_from_payload(payload)
@@ -236,6 +289,40 @@ def test_keep_first_and_correction_candidate() -> None:
     assert canonical_actual(first + novel, "cpi_headline", "2026-06")["actual"] == -0.4
 
 
+def test_quarantined_pce_receipts_yield_to_fresh_bound_receipts() -> None:
+    root = Path(__file__).resolve().parents[1]
+    existing = load_actual_ledger(
+        root / "data" / "release_forecast" / "official_actuals.jsonl"
+    )
+    defective_replay = _publication("PCE")
+    defective_replay["source_sha256"] = (
+        "29ae0bad7d568ca7ea59be2f74461b5dcf5da4393ff816544254cd47507f13e1"
+    )
+    assert reconcile_receipts(
+        {
+            "schema": "release_publications.v2",
+            "publications": [defective_replay],
+        },
+        [],
+    ) == []
+
+    corrected = _publication("PCE")
+    corrected["source_sha256"] = "b" * 64
+    payload = {"schema": "release_publications.v2", "publications": [corrected]}
+
+    novel = reconcile_receipts(payload, existing)
+
+    assert len(novel) == 2
+    assert all(row["row_type"] == "actual" for row in novel)
+    assert all(row["automatic_scoring_eligible"] is True for row in novel)
+    assert all(is_scoring_truth_eligible(row) for row in novel)
+    for release in ("pce_headline", "pce_core"):
+        winner = canonical_actual(existing + novel, release, "2026-06")
+        assert winner is not None
+        assert winner["source_sha256"] == "b" * 64
+        assert winner["receipt_id"] in {row["receipt_id"] for row in novel}
+
+
 def test_file_reconciliation_is_idempotent(tmp_path: Path) -> None:
     payload_path = tmp_path / "live.json"
     out = tmp_path / "actuals.jsonl"
@@ -248,9 +335,28 @@ def test_file_reconciliation_is_idempotent(tmp_path: Path) -> None:
     assert len(out.read_text(encoding="utf-8").splitlines()) == 2
 
 
-def test_committed_official_actual_ledger_contains_only_valid_truth() -> None:
+def test_committed_official_actual_ledger_quarantines_known_pce_binding_defects(
+    tmp_path: Path,
+) -> None:
     root = Path(__file__).resolve().parents[1]
     rows = load_actual_ledger(root / "data" / "release_forecast" / "official_actuals.jsonl")
     assert rows
-    assert all(receipt_integrity_errors(row) == [] for row in rows)
+    missing_sidecar = tmp_path / "absent.json"
+    assert all(
+        receipt_integrity_errors(row, defects_path=missing_sidecar) == []
+        for row in rows
+    )
+    quarantined = {
+        row["receipt_id"]
+        for row in rows
+        if "known_source_binding_defect" in receipt_integrity_errors(row)
+    }
+    assert quarantined == {
+        "official_actual:0492229833dc679fdb39494f",
+        "official_actual:3af69117d78be4d9ea46b002",
+    }
+    assert all(
+        is_scoring_truth_eligible(row) == (row["receipt_id"] not in quarantined)
+        for row in rows
+    )
     assert all(row.get("official_reference_period") != "The" for row in rows)

@@ -2711,6 +2711,96 @@ def test_options_pit_engine_and_adversarial_suites_are_ci_wired() -> None:
     assert "python -m pytest tests/test_live_flow.py -q" in manifest
 
 
+def test_committed_options_pit_ledgers_are_strict_valid_joined_shadow_data() -> None:
+    from scripts import build_options_signal_episode as builder
+
+    repo = Path(__file__).resolve().parents[1]
+    ledger_root = repo / "data/options_signal_episode"
+    episodes = load_jsonl(ledger_root / "episodes.jsonl")
+    h60_outcomes = load_jsonl(ledger_root / "outcomes_h60.jsonl")
+    session_outcomes = load_jsonl(ledger_root / "outcomes_session.jsonl")
+    checkpoint = json.loads((ledger_root / "checkpoint.json").read_text())
+
+    assert episodes
+    assert len({row["episode_id"] for row in episodes}) == len(episodes)
+    episode_by_id = {row["episode_id"]: row for row in episodes}
+    builder._validate_checkpoint_document(checkpoint)
+    assert {row["session_date"] for row in episodes} <= set(checkpoint["sessions"])
+
+    for episode in episodes:
+        validate_episode(episode)
+        assert set(episode["decision"]["authority"].values()) == {False}
+
+    assert len({row["outcome_id"] for row in h60_outcomes}) == len(h60_outcomes)
+    for outcome in h60_outcomes:
+        episode = episode_by_id[outcome["episode_id"]]
+        validate_outcome_against_episode(outcome, episode)
+        assert outcome["label_authority"] == "research_only"
+        assert outcome["option"]["status"] == "unavailable"
+
+    assert len({row["outcome_id"] for row in session_outcomes}) == len(
+        session_outcomes
+    )
+    for outcome in session_outcomes:
+        episode = episode_by_id[outcome["episode_id"]]
+        validate_session_outcome_against_episode(outcome, episode)
+        assert outcome["label_authority"] == "research_only"
+        assert outcome["measurement"]["training_eligible"] is False
+        assert outcome["option"]["status"] == "unavailable"
+
+
+def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay() -> None:
+    repo = Path(__file__).resolve().parents[1]
+    workflow = (repo / ".github/workflows/daily.yml").read_text()
+    builder_name = (
+        "      - name: OIP PIT — durable episodes + H+60 and "
+        "declared-session-close proxy accrual"
+    )
+    checkpoint_name = (
+        "      - name: OIP PIT — checkpoint the four durable episode ledgers"
+    )
+    following_name = (
+        "      - name: XSR W1 — US fast-sector rotation lens "
+        "(build_us_sector_rotation)"
+    )
+    builder_start = workflow.index(builder_name)
+    checkpoint_start = workflow.index(checkpoint_name)
+    following_start = workflow.index(following_name)
+    builder_block = workflow[builder_start:checkpoint_start]
+    checkpoint_block = workflow[checkpoint_start:following_start]
+
+    assert builder_start < checkpoint_start < following_start
+    assert "id: options_signal_episode" in builder_block
+    assert "continue-on-error: true" in builder_block
+    assert "run: python -m scripts.build_options_signal_episode" in builder_block
+    assert (
+        "if: always() && steps.options_signal_episode.outcome == 'success'"
+        in checkpoint_block
+    )
+    assert "push_on_main_ok || exit 0" in checkpoint_block
+    assert "push_metadata_replay_commit" in checkpoint_block
+    assert 'git add -- "${OIP_LEDGER_PATHS[@]}"' in checkpoint_block
+    assert 'push_staged_clean "${OIP_LEDGER_PATHS[@]}"' in checkpoint_block
+
+    expected_paths = {
+        "data/options_signal_episode/checkpoint.json",
+        "data/options_signal_episode/episodes.jsonl",
+        "data/options_signal_episode/outcomes_h60.jsonl",
+        "data/options_signal_episode/outcomes_session.jsonl",
+    }
+    declared = checkpoint_block.split("OIP_LEDGER_PATHS=(", 1)[1].split(")", 1)[0]
+    assert {line.strip() for line in declared.splitlines() if line.strip()} == expected_paths
+    for forbidden in (
+        "git pull",
+        "git rebase",
+        "git checkout",
+        "git stash",
+        "git clean",
+        "git add data/options_signal_episode",
+    ):
+        assert forbidden not in checkpoint_block
+
+
 def test_session_outcome_registry_has_one_writer_no_authority_consumers() -> None:
     yaml = pytest.importorskip("yaml")
     repo = Path(__file__).resolve().parents[1]
