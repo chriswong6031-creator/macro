@@ -1,3 +1,8 @@
+{# Shared Risk Radar card (.rrx) — the SAME macro the US modal and the China / HK / Canada
+   boards render; fed here by RADAR (scripts/build_international_macro._radar_display, which
+   normalizes this market's nightly engine/risk_radar_intl snapshot). Absent-safe: RADAR is
+   None when the market has no snapshot and every use below is guarded. #}
+{% import "_risk_radar_card.html.j2" as rrc %}
 {% macro t(en, zh='') -%}<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>{%- endmacro %}
 {% macro value(raw, suffix='') -%}
   {%- if raw is none -%}<span class="na">{{ t('Unavailable','不可用') }}</span>
@@ -89,7 +94,9 @@ nav.site-nav{position:relative;z-index:20}
 .imd-transition-list{display:grid;gap:8px;margin-top:8px}
 .imd-condition{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--imd-hair);border-radius:12px;background:color-mix(in srgb,var(--text) 3%,transparent);font-size:11.5px}
 .imd-condition b{display:grid;place-items:center;flex:0 0 22px;height:22px;border-radius:7px;color:var(--link);background:color-mix(in srgb,var(--link) 12%,transparent);font:750 10px var(--imd-num)}
-.imd-trust{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:16px}
+/* auto-fit, not repeat(5): the pullback tile stands down when the Risk Radar card below
+   owns that number, and the remaining tiles still span the row evenly. */
+.imd-trust{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
 .imd-trust-item{padding:13px 15px}
 .imd-trust-label{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:800}
 .imd-trust-value{margin-top:5px;font:750 15px var(--imd-num);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -160,6 +167,21 @@ button.imd-face:focus-visible,.imd-close:focus-visible{outline:2px solid var(--l
 .imd-bar{height:7px;border-radius:5px;background:color-mix(in srgb,var(--text) 7%,transparent);overflow:hidden}
 .imd-bar i{display:block;height:100%;background:var(--link);transform-origin:left}
 body.imd-lock{overflow:hidden}
+/* help "?" tip — the pre-upgrade fallback for the shared card's help() icons. theme.js
+   promotes canonical icons to the site popover (.help-upgraded hides .tip); these rules
+   keep the tooltip body hidden until then, and hover-usable with JS off. */
+.help{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid var(--muted);color:var(--muted);font-size:10px;font-weight:600;cursor:help;position:relative;vertical-align:middle;margin-left:4px}
+.help .tip{display:none;position:absolute;top:140%;left:50%;transform:translateX(-50%);width:280px;background:var(--panel);border:1px solid var(--line);padding:9px 11px;border-radius:8px;z-index:60;font-size:12px;line-height:1.45;color:var(--text);font-weight:400;text-transform:none;letter-spacing:normal;box-shadow:var(--popover-shadow);max-height:min(60vh,420px);overflow-y:auto;overscroll-behavior:contain}
+.help:hover::before{content:'';position:absolute;top:100%;left:-30px;right:-30px;height:10px}
+.help:hover .tip{display:block}
+/* Risk Radar section — the shared .rrx card wears this page's glass-card skin by remapping
+   --panel, so the card's own tokens (loud wash, chips, meters) all follow one swap instead
+   of a fork. Left accent + every internal rule stay exactly as the shared partial ships. */
+.imd-radar .rrx{--panel:var(--imd-panel);margin:0;padding:20px;border-radius:var(--imd-radius);border-color:var(--imd-border);box-shadow:var(--imd-shadow);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-left:4px solid var(--rc)}
+{% include "_risk_radar_card.css.j2" %}
+/* after the include: a class-pair selector outranks the card's own phone rule, so the
+   mobile padding has to be restated at this specificity to survive. */
+@media(max-width:560px){.imd-radar .rrx{padding:16px}}
 @media(max-width:1100px){
   body.imd-page{padding:16px}
   .imd-hero{grid-template-columns:1fr}.imd-transition-list{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -235,9 +257,23 @@ body.imd-lock{overflow:hidden}
     <div class="imd-card imd-trust-item"><div class="imd-trust-label">{{ t('Regime','周期') }}</div><div class="imd-trust-value word">{{ D.regime.name }}</div></div>
     <div class="imd-card imd-trust-item"><div class="imd-trust-label">{{ t('Liquidity','流动性') }}</div><div class="imd-trust-value word">{{ D.regime.liquidity|title }}</div></div>
     <div class="imd-card imd-trust-item"><div class="imd-trust-label">{{ t('Recession stress','衰退压力') }}</div><div class="imd-trust-value">{{ value(D.regime.recession_score,'') }}<small>/100</small></div></div>
+    {# The bare pullback tile stands down when the Risk Radar card renders below: the card
+       carries the same 21-session number with its escalation ladder and its normal base
+       rate, so printing it twice would just be one constant on two tiers. #}
+    {% if not RADAR %}
     <div class="imd-card imd-trust-item"><div class="imd-trust-label">{{ t('21-session pullback','21交易日回撤') }}</div><div class="imd-trust-value">{% if D.risk.h21 is not none %}{{ (D.risk.h21*100)|round(1) }}%{% else %}<span class="na">N/A</span>{% endif %}</div></div>
+    {% endif %}
     <div class="imd-card imd-trust-item"><div class="imd-trust-label">{{ t('Source state','数据状态') }}</div><div class="imd-trust-value word">{% set stale = D.health|selectattr('state','equalto','stale')|list %}{% set missing = D.health|selectattr('state','equalto','missing')|list %}{% if missing %}{{ t('Gaps visible','缺口可见') }}{% elif stale %}{{ t('Stale inputs','输入陈旧') }}{% else %}{{ t('Current','当前') }}{% endif %}</div></div>
   </section>
+
+  {% if RADAR %}
+  <section class="imd-section imd-radar" aria-label="Risk Radar">
+    {# Section names the topic; the card names the instrument ("Risk Radar" + state badge) —
+       heading and card must not print the same three words twice, 40px apart. #}
+    <div class="imd-section-head"><h2>{{ t('Pullback risk','回撤风险') }}</h2><p>{{ t("Odds measured on this market's own history — windows, not certainties, re-drawn nightly.",'概率基于本市场自身历史测算 — 是概率窗口而非定论，每晚重算。') }}</p></div>
+    {{ rrc.risk_radar_card(RADAR, RADAR.scares) }}
+  </section>
+  {% endif %}
 
   <section class="imd-section">
     <div class="imd-section-head"><h2>{{ t('Command cards','指挥卡片') }}</h2><p>{{ t('Open any card for evidence, definitions and provenance.','打开任一卡片查看证据、定义与来源。') }}</p></div>
@@ -271,7 +307,13 @@ body.imd-lock{overflow:hidden}
       <button class="imd-card imd-face" data-dialog="dlg-risk" aria-haspopup="dialog">
         <div class="imd-face-top"><span class="imd-face-icon">⌾</span><span class="imd-open">{{ t('Open risk','打开风险') }} ↗</span></div>
         <h3>{{ t('Calibrated risk monitor','校准风险监测') }}</h3><p>{{ t('Forward pullback odds stay separate from the descriptive macro score.','前瞻回撤概率与描述性宏观分数严格分开。') }}</p>
+        {# With the radar card on the page this face stops repeating its headline odds and
+           its dominant label, and counts what the receipt behind it actually adds. #}
+        {% if RADAR %}
+        <div class="imd-face-kpi"><strong>{{ D.risk.scares|length }}</strong><span>{{ t('Active scare families','活跃风险类别') }}</span></div>
+        {% else %}
         <div class="imd-face-kpi"><strong>{% if D.risk.h21 is not none %}{{ (D.risk.h21*100)|round(1) }}%{% else %}N/A{% endif %}</strong><span>{{ t(D.risk.dominant_en or 'No dominant scare',D.risk.dominant_zh or '无主导风险') }}</span></div>
+        {% endif %}
       </button>
       <button class="imd-card imd-face" data-dialog="dlg-health" aria-haspopup="dialog">
         <div class="imd-face-top"><span class="imd-face-icon">✓</span><span class="imd-open">{{ t('Open receipt','打开凭证') }} ↗</span></div>

@@ -19,7 +19,11 @@
 {%- endmacro %}
 {# plain-English name for a raw radar firing-leg code (US engine/risk_radar.py keys +
    the international engine/risk_radar_intl.py keys) so the evidence reads like English,
-   not engine internals. #}
+   not engine internals. An UNMAPPED key falls back to the raw slug, which is a Tier-1
+   machine slug (DESIGN_DOCTRINE §2 Law 2) — the 7-market extension/FX block at the end
+   was added when the five international dashboards started rendering this card and
+   printed "ext_etf" at glance. Any new profile leg in engine/risk_radar_intl.py needs a
+   row here. #}
 {% macro rr_leg(leg) -%}
 {%- set m = {
   'credit_oas_roc':   ('HY credit spreads widening','高收益利差走阔'),
@@ -42,6 +46,15 @@
   'usd_strength':     ('US dollar strength','美元走强'),
   'cn_breadth':       ('A-share breadth < 200-day','A股广度跌破200日'),
   'ca_breadth':       ('TSX breadth < 200-day','多指广度跌破200日'),
+  'ext_idx':          ('Index stretched vs 200-day','指数超买（>200日线）'),
+  'ext_etf':          ('Market ETF stretched vs 200-day','市场ETF超买（>200日线）'),
+  'jpy_depreciation': ('Yen depreciation','日元贬值'),
+  'krw_depreciation': ('Won depreciation','韩元贬值'),
+  'eur_depreciation': ('Euro depreciation','欧元贬值'),
+  'gbp_depreciation': ('Sterling depreciation','英镑贬值'),
+  'inr_depreciation': ('Rupee depreciation','卢比贬值'),
+  'twd_depreciation': ('Taiwan dollar depreciation','新台币贬值'),
+  'aud_depreciation': ('Australian dollar depreciation','澳元贬值'),
 } -%}{%- set p = m.get(leg, (leg, leg)) -%}{{ t(p[0], p[1]) }}
 {%- endmacro %}
 {# The card itself. Built only from a radar (rd = market_state.radar) + its scares.

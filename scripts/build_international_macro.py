@@ -44,6 +44,36 @@ def _load_latest() -> dict:
     return json.loads(path.read_text())
 
 
+def _radar_display(record: dict) -> dict | None:
+    """Normalize this market's nightly ``risk_radar_intl`` snapshot into the ``rd`` shape
+    the shared .rrx Risk Radar card consumes (``engine/market_state._radar_to_rd`` — the
+    one transform already used by the US modal and the China / HK / Canada boards, so the
+    five international dashboards show the same radar layer, not a second dialect).
+
+    Display-only: the transform reads what ``engine/intl_run.py`` already persisted on the
+    record (``record["risk_radar"]``) and computes nothing new. Returns ``None`` — the page
+    then renders with no card and keeps its own pullback tile — when the market carries no
+    snapshot yet (a profile that raised inside intl_run, or a ``latest.json`` written before
+    the radar was wired), so a missing radar can never fail or empty a dashboard.
+    """
+    radar = record.get("risk_radar") or {}
+    if not radar.get("state"):
+        return None
+    if (radar.get("drawdown_prob") or {}).get("h21") is None:
+        # No calibrated odds -> the card would carry less than the tile it replaces.
+        return None
+    try:
+        from engine.market_state import _radar_to_rd
+
+        return _radar_to_rd(radar)
+    except Exception:  # noqa: BLE001 — additive display layer, never fatal
+        log.warning(
+            "risk radar card transform failed for %s; rendering without it",
+            record.get("cc"),
+        )
+        return None
+
+
 def build_all(latest: dict | None = None) -> list[Path]:
     latest = latest or _load_latest()
     records = {
@@ -78,7 +108,10 @@ def build_all(latest: dict | None = None) -> list[Path]:
             json.dumps(view, indent=2, ensure_ascii=False, default=str) + "\n"
         )
         page = site / spec.route
-        write_page(page, template.render(D=view))
+        # RADAR is a render-time display variable, deliberately outside the
+        # international_macro_dashboard.v1 payload written above: it is a re-shaping of
+        # data/intl/latest.json for one card, not a new term of the data contract.
+        write_page(page, template.render(D=view, RADAR=_radar_display(records[cc])))
         outputs.append(page)
         log.info("wrote %s (%s, score=%s)", page.name, cc, view["decision"]["score"])
 

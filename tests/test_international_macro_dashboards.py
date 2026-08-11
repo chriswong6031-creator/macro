@@ -241,6 +241,94 @@ def test_builder_renders_all_five_routes_from_one_template(
         assert "Source health & data contract" in html
 
 
+def _radar_record(cc: str, **radar) -> dict:
+    """A record whose nightly risk_radar_intl snapshot carries firing legs."""
+    record = _record(cc)
+    record["risk_radar"] = {
+        "state": "caution",
+        "market": cc.lower(),
+        "top_score": 62,
+        "dominant_label_en": "Parabolic extension / exhaustion",
+        "dominant_label_zh": "抛物线伸展／透支",
+        "gross_factor": 0.9,
+        "drawdown_prob": {"h5": 0.05, "h10": 0.12, "h21": 0.21, "base_h21": 0.14,
+                          "lift_h21": 1.5, "measure": ">=5% pullback within 21 business days"},
+        "scares": [
+            {
+                "scare": "extension",
+                "tier": "A",
+                "label_en": "Parabolic extension / exhaustion",
+                "label_zh": "抛物线伸展／透支",
+                "score": 80.0,
+                "band": "caution",
+                "firing_legs": [{"leg": "ext_etf", "pctile": 0.89, "confirmed": True}],
+            }
+        ],
+        **radar,
+    }
+    return record
+
+
+def _render_jp(builder, tmp_path, records: list[dict]) -> str:
+    builder.build_all({"records": records})
+    return (tmp_path / ROUTES["JP"]).read_text()
+
+
+def test_risk_radar_card_renders_from_the_snapshot_and_is_absent_without_one(
+    tmp_path, monkeypatch
+) -> None:
+    """The shared .rrx card is the international boards' radar layer, and it is the ONLY
+    place the 21-session number appears once it renders. A market with no usable snapshot
+    (first run, or a profile that raised inside engine/intl_run.py) must keep the page it
+    has today rather than fail or empty it."""
+    from scripts import build_international_macro as builder
+
+    monkeypatch.setattr(
+        builder.config,
+        "load",
+        lambda: {
+            "storage": {"site_dir": str(tmp_path), "data_dir": str(tmp_path / "data")}
+        },
+    )
+    monkeypatch.setattr(builder, "load_history", lambda _cc: _history())
+
+    html = _render_jp(builder, tmp_path, [_radar_record(cc) for cc in REGIONS])
+    assert 'class="rrx ' in html                      # shared card markup
+    assert ".rrx .rrx-badge" in html                  # shared card CSS came with it
+    assert ".help .tip{display:none" in html          # tooltip bodies stay hidden pre-JS
+    assert "Pullback risk" in html and "回撤风险" in html
+    # The bare glance-tier prints of the same constant fold into the card: neither the
+    # trust tile nor the risk command card repeats it. Only the Tier-3 dialog receipt
+    # (which adds the calibration measure) still carries the raw figure — exactly once.
+    trust = html.split('class="imd-trust"', 1)[1].split("</section>", 1)[0]
+    assert "21-session pullback" not in trust
+    face = html.split('data-dialog="dlg-risk"', 1)[1].split("</button>", 1)[0]
+    assert "21.0%" not in face and "Active scare families" in face
+    assert html.count("21.0%") == 1
+    # firing-leg codes reach the glance tier as plain words, never as engine slugs
+    assert "Market ETF stretched vs 200-day" in html
+    assert "市场ETF超买" in html
+    assert ">ext_etf<" not in html
+
+    # no snapshot at all -> no card, and the page keeps its own pullback tile
+    bare = []
+    for cc in REGIONS:
+        record = _record(cc)
+        record.pop("risk_radar")
+        bare.append(record)
+    html = _render_jp(builder, tmp_path, bare)
+    assert 'class="rrx ' not in html
+    assert "21-session pullback" in html.split('class="imd-trust"', 1)[1]
+    assert "International macro command center" in html
+
+    # snapshot present but with no calibrated odds -> same absent-safe fallback
+    html = _render_jp(
+        builder, tmp_path, [_radar_record(cc, drawdown_prob={}) for cc in REGIONS]
+    )
+    assert 'class="rrx ' not in html
+    assert "21-session pullback" in html.split('class="imd-trust"', 1)[1]
+
+
 def test_navigation_uses_static_registry_and_has_no_placeholder_anchors() -> None:
     nav = (ROOT / "templates" / "_navlinks.html.j2").read_text()
     runtime = (ROOT / "templates" / "nav_market.js").read_text()
