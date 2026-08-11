@@ -77,6 +77,7 @@ def _scheduled_predecessor() -> dict:
     base = _load_configured_manifest()
     scheduled = deepcopy(base)
     scheduled["state"] = "soak_scheduled"
+    scheduled["effective_at"] = START
     scheduled["supersedes_manifest_id"] = base["manifest_id"]
     scheduled["supersedes_manifest_content_sha256"] = base["content_sha256"]
     scheduled["sources"][0]["activation_state"] = "armed"

@@ -6799,6 +6799,8 @@ jobs:
           tests/test_market_memory_technical_store.py
           tests/test_capture_market_memory_technicals.py
           tests/test_market_memory_technicals_deploy.py
+          tests/test_market_memory_experience_accrual.py
+          tests/test_market_memory_experience_deploy.py
           tests/test_market_memory_replay.py
           tests/test_market_memory_option_oi_observation.py
           tests/test_market_memory_option_oi_store.py

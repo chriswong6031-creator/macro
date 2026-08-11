@@ -1440,7 +1440,176 @@ W6-to-W7 edges require new owner-authenticated, evidence-bearing contract
 versions and separate review. The mere presence of a later contract is never
 operational or promotion evidence.
 
-### 11.0.14 First production-record admission: options decision episodes
+### 11.0.14 W2C bounded prospective SPY experience accrual
+
+W2C is the first production-private opportunity census and derived-outcome
+owner in this program. It is disjoint from W2A: it does not operationalize the
+synthetic forward store, reuse `as_known_at.v1` horizons, build a combined
+domain state, or admit fallback, action, Prophet, Cortex, Research Factory,
+API, or UI consumers. Its preregistration is content addressed and activates
+prospectively on 2026-08-17 only if a private installation receipt is durably
+published first. Its `installed_at` field is only a local observation and both
+`external_clock_authenticated` and `aba_resistance_authenticated` remain
+false. The denominator is exactly the first 126 XNYS sessions on or after
+activation, ending 2027-02-16; the last +5-session target is 2027-02-23. A
+missed installation makes the whole pilot no-go and requires a new forward
+registration rather than backfill. Deployment readiness authenticates the
+tracked registration, installation content ID and capacity arithmetic,
+installer-commit provenance, and manifest binding; regular-file presence is
+not attestation.
+
+Each expected session receives one immutable admitted, abstained, or missed
+row. The session calendar is XNYS_REGULAR, while the registered SPY instrument
+venue remains ARCX; those identities are separately bound. Admission uses a
+narrow macro-feature/technical-feature owner pair, never the macro packet's
+still-missing technical slot. The writer reads both authenticated current
+generation heads, samples its actual clock, and re-reads both heads. Only
+identical content-addressed IDs and hashes across that sandwich can bind a
+pair. It then loads exact-session rows from those pinned generations and
+requires every owner availability clock to be no later than the sampled
+cutoff, which must fall in the tracked 04:30-04:45Z next-calendar-day window.
+Opportunity input selection is frozen separately from outcome revision
+semantics as `earliest_distinct_owner_observation_exact_session.v1`: within
+each authenticated generation and exact subject/session, trusted rows order by
+parsed `captured_at` and technical rows by parsed `first_observed_at`, then by
+lexicographic capture ID for a deterministic total order. Any equal-clock
+multiplicity is unselectable and produces
+`abstained/owner_capture_clock_tie`; it is never broken by capture ID.
+Producer capture clocks precede HEAD publication and therefore never prove a
+fixed 04:30 as-of. A durable prepared
+object observed before the deadline may resume after a crash; otherwise later
+reconciliation records `missed/not_sealed_by_deadline` and cannot overwrite a
+timely abstention. An unstable pair is retryable, never an authenticated
+abstention; bounded retries run through the window and become
+`missed/owner_pair_not_stable_by_deadline` only after it elapses. Every
+registration, opportunity, outcome, and population claim explicitly records
+`external_clock_authenticated:false`: the calendar derivation and stable
+content-addressed generation pins can be authenticated, but the local writer
+clock cannot. The v1 sandwich proves only that the same authenticated HEAD was
+observed before and after the local sample under each owner's registered
+monotone append-only protocol. It does not observe continuous stability: a
+transient A -> B -> A between reads is undetectable, so every durable claim also
+records `aba_resistance_authenticated:false`. An authenticated owner journal is
+required before any v2 claim of ABA resistance.
+
+Every timely admitted episode also freezes the future retrieval coordinates at
+decision time. `market_memory.spy_regime_decision_state_projection.v1` binds
+the exact trusted feature snapshot ID/hash and its source transform
+`market_memory.macro_regime_transform.v1`: `growth_score.q18`,
+`inflation_score.q18`, `quad`, `liquidity_overlay`, and `cycle_tag`. JSON integer
+or float numeric inputs are normalized to exact binary64, retain hex and exact
+decimal encodings, then round half-even to q18 without ambient Decimal context.
+Future W4 distance uses Decimal precision 64 and ROUND_HALF_EVEN; numeric delta
+is `(q18_query-q18_candidate)/2.000000000000000000`, categorical delta is
+exactly 0/1, the five squared deltas are summed without intermediate
+quantization, and Decimal square root is quantized once to q18. `unknown`
+liquidity or cycle is missing, never a matching category: the opportunity and
+outcome census remain admitted, but projection is null with its raw reason and
+the episode is non-scoreable. No future W4 version may choose different
+coordinates or geometry after seeing outcomes.
+
+Only admitted rows mature, no earlier than the exact +5 XNYS session ordinal.
+The target is explicitly
+`spy.raw_unadjusted_daily_aggregate_close_ratio`: the exact target capture's
+`feature.state.end_close` divided by the sealed anchor capture's
+`feature.state.end_close`. Each mark persists its IEEE-754 binary64 hex and
+`Decimal.from_float` exact expansion; q18 uses exact integer-ratio half-even
+rounding without ambient Decimal context. It is not the ratio of two 20-day
+ratios, not a regular-session-close claim, and never reads a target from later
+historical rows. A stable target-generation sandwich persists observed,
+unavailable, or clock-tie-censored maturity facts. A missed maturity window is
+also an immutable censored receipt. If the writer crashes after publishing an
+authenticated in-window technical view but before outcome revision one,
+recovery chooses the earliest distinct `pair_observed_at` inside that maturity
+window and finishes its exact candidate batch before considering a descendant
+generation. Multiple eligible views at the same earliest clock are ambiguous
+and fail closed; view ID and later owner state never break that tie. Later
+source resolution/correction appends
+one strictly ordered active-predecessor chain and never erases the initial
+absence. An equal-clock later owner delta appends a censored active-predecessor
+revision; a strictly later unambiguous delta may then resolve it. Owner clocks
+are compared as parsed UTC instants, so an exact-second timestamp orders before
+the same second plus fractional microseconds regardless of wire spelling.
+
+Corrections are finite. Each admitted target has its initial next-calendar-day
+04:30-04:45Z maturity window; later revisions may be observed only in that same
+daily window through 2027-03-03 inclusive, never at noon through Persistent
+catch-up. Exactly five XNYS sessions form the final tail after the last target,
+through 2027-03-02, and the terminal census window is 2027-03-03
+04:30-04:45Z. Newly reachable candidates are consumed as complete owner-clock
+groups with per-generation capture-ID progress, so a crash after any revision
+resumes the unconsumed suffix. Equal clocks append an integrity censor; a newly
+published candidate older than the consumed owner-clock boundary appends a
+distinct order-integrity censor rather than bricking or rewriting the chain.
+
+Terminal publication separates denominator closure from source-revision
+closure. `denominator_and_maturity_receipts_complete` may be true even when the
+terminal owner window was missed, while
+`final_source_revision_census_authenticated` is true only for a stable terminal
+generation. If no authenticated owner pair ever exists, W2C still accounts all
+126 sessions locally as missed, seals a null-owner-reference terminal census,
+and leaves the source-revision claim false; future W4 is impossible from that
+pilot. `TERMINAL.json` is not a pathname latch. Every later invocation performs
+a read-only authentication of registration installation, manifest, exact store
+inventory, prepared seals, all 126 opportunity rows, every outcome predecessor
+chain, technical-view chain, population chain and HEAD, then recomputes the
+final receipt before doing zero owner reads, clock samples, or writes. Systemd
+has no unvalidated `ConditionPathExists` shortcut, and the updater disarms the
+timer only after the credential-free terminal verifier accepts the full ledger.
+
+This is a bounded v1 pilot, not indefinite storage. Installation requires
+`trusted_count + 126 + 32 <= 256` and
+`technical_count + 136 + 32 <= 256`; public pins admit 256 captures and fail
+before W2C mutation at 257. Every population receipt exposes current owner
+counts, exact stable generation references, and auditability policy. One
+run-scoped authenticated owner view walks each ancestry at most twice and
+reprojects only technical capture IDs newly reachable since its last cached
+generation; an unchanged HEAD reprojects and appends nothing. Authenticated checkpoint/delta generations
+must exist before either owner reaches 384 captures, with warning at 320, and
+v2 acceptance must prove that every v1 pilot source reference reloads. The
+current cumulative full-ancestry pin contract deliberately makes no indefinite
+auditability claim.
+
+Fresh-store installation and every prepared object/seal, opportunity, outcome,
+technical view, population receipt/HEAD, and terminal marker use recoverable
+same-directory publication with file and directory durability boundaries.
+Before deriving new clock-bearing bytes, the writer validates and replays a
+single safe pending artifact or cleans only explicitly unsealed staging;
+mutable HEAD recovery first authenticates its immutable target. Deterministic
+empty initialization prefixes may resume after a crash; multiple, divergent,
+tampered, noncontiguous, or capture-bearing ambiguous state fails closed.
+
+Population receipts make a future gate computable from immutable rows: timely,
+missed and reason-partitioned abstention counts; pending versus matured admitted
+episodes; receipted/observed/unavailable/censored outcomes; corrected chains;
+scoreable episodes; coordinate coverage; quad/category coverage; coordinate
+nondegeneracy; complete non-overlapping five-session blocks; and owner
+integrity failures. These are diagnostics only, never an eligibility, skill, or
+promotion claim.
+
+Current W4A/W5 remain synthetic and disconnected. A future pinned population
+reader/W4B may activate only with at least 60 matured scoreable episodes, at
+least 12 non-overlapping five-session blocks, at least two observed quads,
+nondegenerate coordinates, 100% session accounting, at least 95% timely
+coverage, at least 95% due-outcome completion, zero owner-integrity errors, and
+an authenticated final source-revision census. W4B must discover candidates
+from one pinned complete generation, apply preregistered purge/embargo, and
+abstain when fewer than eight remain. Retrieval skill waits for at least 30
+independent clusters plus preregistered paired absolute-loss improvement whose
+block-bootstrap 95% lower confidence bound is above zero against both ratio=1
+and an expanding unconditional median. The 126-session v1 pilot supplies at
+most about 25 non-overlapping five-session blocks; it can support the context
+shadow gate but cannot establish the 30-cluster skill gate. Any skill claim
+therefore requires a separately preregistered prospective renewal/version.
+
+W5 remains disconnected until at least 50 genuine W4B shadow packets have
+persistent owner-signed W4 joins, 100% citation-byte closure, and zero emitted
+unsupported claims, plus a separate preregistered attention-grade owner with at
+least 50 independently graded packets whose NDCG@5 and top-k recall beat fixed
+recency/materiality baselines with paired 95% lower confidence bounds above
+zero. No live `cortex.py`, Brain, Prophet, Research Factory, API, UI, action, or
+authority edge exists before a separate owner-signed evaluation.
+### 11.0.15 First production-record admission: options decision episodes
 
 **Boundary reconstruction.** This admission does not reinterpret W1-W7 as a
 finished cognitive pipeline. W1 owns the operational temporal/source capture
@@ -1567,7 +1736,6 @@ bitemporal evidence, W3 ThemeState/expectation owner artifacts and outcome
 semantics, and a separately reviewed theme-record contract. W2/W4 retrieval
 also remains synthetic-only. GMI continues its standalone expectation ledger
 and cannot claim Market Memory analogs until those prerequisites land.
-
 ### 11.1 File ownership
 
 Existing/frozen now:
@@ -1693,6 +1861,34 @@ W1B.3B technical actual-output additions:
 - `tests/test_{market_memory_technical_observation,market_memory_technical_store,capture_market_memory_technicals,market_memory_technicals_deploy}.py`
   — transport, ETag/body, frozen-source, resource, session, price-basis,
   freshness, crash, tamper, private-root, deploy, CI, and zero-authority guards.
+
+W2C prospective experience-accrual additions:
+
+- `config/market_memory_spy_experience_registration.v1.json` and the strict
+  registration, opportunity, outcome-revision, and population-receipt
+  contracts — byte-bound activation/calendar/window/identity/capacity/target
+  semantics with all authority false;
+- `engine/neuralweb/market_memory_experience_accrual.py` — sole owner of the
+  bounded calendar census, stable owner-pair sandwiches, durable prepared
+  seals, exact raw-close ratio receipts, append-only target revisions, finite
+  correction/terminal FSM, run-scoped incremental owner view, and population
+  coverage; it imports only public trusted/technical read and pin APIs and
+  never copies their source bodies;
+- authenticated ancestry pins in `market_memory_technical_store.py` and
+  bounded public feature/generation reads in `market_memory_trusted.py` —
+  owner hardening required by W2C, not a new source writer;
+- `scripts/accrue_market_memory_spy_experience.py` and
+  `app/deploy/macro-market-memory-experience.{service,timer}` — the only
+  production writer callsite, network-dark and credential-free, reading only
+  the two owner stores and writing only `state/experience-v1`; deferred owner
+  services complete before it during update finalization, installation is a
+  preactivation deployment gate, and a read-only full-ledger verifier—not
+  marker presence—authorizes terminal timer disarmament;
+- `tests/test_market_memory_{experience_accrual,experience_deploy}.py` plus
+  owner-store hostile additions — registration/hash/calendar, ARCX-versus-XNYS,
+  cutoff sandwich, crash/retry/miss, target absence/correction, exact numeric,
+  ancestry/cap, longevity, isolation, CI ownership, and no-runtime-consumer
+  guards.
 
 W2A private forward-contract additions:
 

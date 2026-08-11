@@ -511,6 +511,58 @@ def test_writer_requires_dedicated_seed_credentials_and_never_uses_shared_fallba
     assert isinstance(seed.build_seed_store(local_dir=tmp_path / "private"), LocalStore)
 
 
+@pytest.mark.parametrize(
+    ("name", "value", "reason"),
+    [
+        (
+            "FF_ATTESTED_R2_SEED_ENDPOINT",
+            "0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
+            "R2 endpoint is invalid",
+        ),
+        (
+            "FF_ATTESTED_R2_SEED_ACCESS_KEY_ID",
+            "not-an-access-key",
+            "R2 parent access key ID is invalid",
+        ),
+        (
+            "FF_ATTESTED_R2_SEED_SECRET_ACCESS_KEY",
+            "x" * 513,
+            "R2 parent secret access key is invalid",
+        ),
+        ("FF_ATTESTED_R2_SEED_BUCKET", "Not_A_Bucket", "R2 bucket is invalid"),
+    ],
+)
+def test_writer_reports_the_rejected_credential_field_without_its_value(
+    monkeypatch, name, value, reason
+):
+    seed = _seed_module()
+    _production_environment(monkeypatch, seed)
+    monkeypatch.setenv(name, value)
+
+    with pytest.raises(seed.AttestedHistorySeedError, match=reason) as caught:
+        seed.build_seed_store()
+
+    assert value not in str(caught.value)
+
+
+def test_writer_collapses_an_unreviewed_credential_error_message(monkeypatch):
+    seed = _seed_module()
+    _production_environment(monkeypatch, seed)
+    private_detail = "private-endpoint/private-bucket/private-key"
+
+    def reject(**_kwargs):
+        raise seed.R2TemporaryCredentialError(private_detail)
+
+    monkeypatch.setattr(seed, "mint_r2_temporary_credentials", reject)
+
+    with pytest.raises(
+        seed.AttestedHistorySeedError, match="R2 parent credential is invalid"
+    ) as caught:
+        seed.build_seed_store()
+
+    assert private_detail not in str(caught.value)
+
+
 def _production_environment(monkeypatch, seed):
     endpoint = "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com"
     values = {
