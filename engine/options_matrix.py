@@ -20,10 +20,13 @@ OI TIMING LAW (absolute):
   Only OI[t-1] is ever used.  Same-day OI is a lookahead bug.
   delta_oi = OI[t-1] − OI[t-2] (both lagged; fully PIT-safe).
 
-DEFERRED (no implementation in v1):
-  VEX lens — requires greeks-path stability verification across the ThetaData store.
-  UNUSUAL lens — requires 30d per-strike volume baseline not yet in the EOD store.
-  These are documented here so the next package stage has a clear gap list.
+LENS STATUS:
+  VEX is experimental and display-only pending greeks-path stability evidence.
+  UNUSUAL is a signing-free, call/put-separated magnitude lens: current side
+  volume divided by its observed-volume median inside the 30 most recent prior
+  root EOD sessions for the exact (expiration, strike, right) identity.  It
+  requires at least 10 observed rows and never imputes a missing contract-day
+  as zero volume.
 
 SCHEDULING NOTE:
   Wired into a nightly launchd lane: com.macro.optionsmatrix runs
@@ -37,15 +40,19 @@ import logging
 import math
 import statistics
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
 
-from engine.greeks import npdf, bs_greeks
-from engine.thetadata_store import _load_parquets, _normalise_date
+from engine.greeks import npdf
 from engine.options_structure import validate_matrix
+from engine.thetadata_store import (
+    _load_parquets,
+    _normalise_date,
+    eod_matrix_for_date,
+    eod_sessions_before,
+    eod_volume_history_before,
+)
 
 log = logging.getLogger(__name__)
 
@@ -72,6 +79,11 @@ _STANDOUT_RATIO = {
 }
 _STANDOUT_RATIO_DEFAULT = 1.2   # OURS (prism_spec lists 1.2 as default floor)
 _MIN_CONFIDENCE = 0.15          # spec explicit
+
+# ── unusual-volume baseline (prism_spec §3.5) ────────────────────────────────
+_UNUSUAL_LOOKBACK_SESSIONS = 30
+_UNUSUAL_MIN_SAMPLES = 10
+_UNUSUAL_RATIO_THRESHOLD = 3.0
 
 
 # ============================================================================ #
@@ -104,6 +116,112 @@ def _prev_date(df: pd.DataFrame, asof: str) -> str | None:
     dates = sorted(df["date"].unique())
     before = [d for d in dates if d < asof]
     return before[-1] if before else None
+
+
+def _normalise_volume_rows(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, int]]:
+    """Canonicalize EOD volume identities and quarantine ambiguous keys.
+
+    One valid row is one exact ``(date, expiration, strike_mills, right)``
+    observation.  Exact projected duplicates collapse once; distinct volumes
+    for the same identity are quarantined instead of summed because EOD volume
+    is cumulative and summing would double count.  Missing rows remain missing;
+    explicit zero rows survive.
+    """
+    columns = ("date", "expiration", "strike", "right", "volume")
+    stats = {
+        "input_rows": len(frame),
+        "invalid_rows": 0,
+        "exact_duplicates_dropped": 0,
+        "collision_keys_quarantined": 0,
+    }
+    if frame.empty or not set(columns).issubset(frame.columns):
+        return pd.DataFrame(columns=(*columns, "strike_mills")), stats
+
+    work = frame.loc[:, list(columns)].copy()
+    work["date"] = pd.to_datetime(work["date"], errors="coerce").dt.date.astype("string")
+    work["expiration"] = (
+        pd.to_datetime(work["expiration"], errors="coerce").dt.date.astype("string")
+    )
+    work["strike"] = pd.to_numeric(work["strike"], errors="coerce")
+    work["volume"] = pd.to_numeric(work["volume"], errors="coerce")
+    right = work["right"].astype("string").str.upper().str.strip()
+    work["right"] = right.map({"C": "C", "CALL": "C", "P": "P", "PUT": "P"})
+
+    strike_scaled = work["strike"] * 1000.0
+    volume = work["volume"]
+    valid = (
+        work["date"].notna()
+        & work["expiration"].notna()
+        & work["right"].notna()
+        & np.isfinite(work["strike"])
+        & (work["strike"] > 0)
+        & np.isfinite(volume)
+        & (volume >= 0)
+        & np.isclose(strike_scaled, np.rint(strike_scaled), atol=1e-6)
+        & np.isclose(volume, np.rint(volume), atol=1e-9)
+    )
+    stats["invalid_rows"] = int((~valid).sum())
+    work = work[valid].copy()
+    if work.empty:
+        return pd.DataFrame(columns=(*columns, "strike_mills")), stats
+    work["strike_mills"] = np.rint(work["strike"] * 1000.0).astype("int64")
+    work["strike"] = work["strike_mills"] / 1000.0
+    work["volume"] = np.rint(work["volume"]).astype("int64")
+
+    before = len(work)
+    work = work.drop_duplicates(
+        subset=["date", "expiration", "strike_mills", "right", "volume"]
+    )
+    stats["exact_duplicates_dropped"] = before - len(work)
+    identity = ["date", "expiration", "strike_mills", "right"]
+    collisions = work.duplicated(subset=identity, keep=False)
+    if collisions.any():
+        stats["collision_keys_quarantined"] = int(
+            work.loc[collisions, identity].drop_duplicates().shape[0]
+        )
+        work = work.loc[~collisions].copy()
+    return work.sort_values(identity).reset_index(drop=True), stats
+
+
+def _unusual_baseline_by_side(
+    history: pd.DataFrame,
+    asof: str,
+    eligible_sides: set[tuple[int, str, str]],
+    root_sessions: list[str],
+    lookback_sessions: int = _UNUSUAL_LOOKBACK_SESSIONS,
+) -> dict[tuple[int, str, str], tuple[float, int]]:
+    """Return exact-side medians inside the last N prior root EOD sessions."""
+    if (
+        history.empty
+        or not eligible_sides
+        or not root_sessions
+        or type(lookback_sessions) is not int
+        or lookback_sessions < 1
+    ):
+        return {}
+    hist = history[history["date"].astype(str) < asof].copy()
+    if hist.empty:
+        return {}
+    window = sorted(set(root_sessions))[-lookback_sessions:]
+    hist = hist[hist["date"].astype(str).isin(window)].copy()
+    row_keys = pd.MultiIndex.from_frame(
+        hist[["strike_mills", "expiration", "right"]]
+    )
+    eligible_keys = pd.MultiIndex.from_tuples(
+        sorted(eligible_sides), names=["strike_mills", "expiration", "right"]
+    )
+    hist = hist[row_keys.isin(eligible_keys)]
+    baselines: dict[tuple[int, str, str], tuple[float, int]] = {}
+    for (mills, expiry, right), group in hist.groupby(
+        ["strike_mills", "expiration", "right"], sort=False
+    ):
+        observed = group.sort_values("date")["volume"].tolist()
+        if not observed:
+            continue
+        median = float(statistics.median(observed))
+        if math.isfinite(median):
+            baselines[(int(mills), str(expiry), str(right))] = (median, len(observed))
+    return baselines
 
 
 def _bs_gamma_scalar(S: float, K: float, T_years: float,
@@ -476,7 +594,7 @@ def _heat_seeker(
 def build_matrix(
     root: str,
     store,
-    asof: Optional[str] = None,
+    asof: str | None = None,
 ) -> dict:
     """Build the options_structure.matrix/v1 payload for one underlying.
 
@@ -502,9 +620,10 @@ def build_matrix(
       delta_oi = OI[t-1] − OI[t-2] (both lagged — fully PIT-safe).
       Same-day OI is NEVER used.
 
-    DEFERRED in v1:
-      VEX lens: requires greeks-path stability verification.
-      UNUSUAL lens: requires 30d per-strike volume baseline.
+    LENS STATUS:
+      VEX remains experimental pending greeks-path stability verification.
+      UNUSUAL uses exact-side observations inside the 30 most recent prior root
+      EOD sessions; same-day and future volume can never enter its baseline.
     """
     root = root.upper()
     asof_ts = datetime.now(tz=timezone.utc).isoformat()
@@ -536,12 +655,9 @@ def build_matrix(
     else:
         oi_t2 = pd.DataFrame()
 
-    # ── EOD[t-1]: volume for latest session ─────────────────────────────────
+    # ── EOD[t-1]: narrow volume/close read for latest session ───────────────
     year = pd.Timestamp(asof).year
-    eod_all = _load_parquets("eod", root, [year], store)
-    if not eod_all.empty:
-        eod_all = _normalise_date(eod_all)
-    eod_t1 = eod_all[eod_all["date"] == asof].copy() if not eod_all.empty else pd.DataFrame()
+    eod_t1 = eod_matrix_for_date(asof, root, store)
 
     # ── greeks for IV ───────────────────────────────────────────────────────
     greeks_all = _load_parquets("greeks", root, [year], store)
@@ -563,7 +679,15 @@ def build_matrix(
         if df.empty or "strike" not in df.columns:
             return df
         df = df.copy()
-        df["strike"] = df["strike"].astype(float)
+        strike = pd.to_numeric(df["strike"], errors="coerce")
+        strike_scaled = strike * 1000.0
+        valid_strike = (
+            strike.notna()
+            & np.isfinite(strike)
+            & np.isclose(strike_scaled, np.rint(strike_scaled), atol=1e-6)
+        )
+        df = df[valid_strike].copy()
+        df["strike"] = np.rint(strike.loc[df.index] * 1000.0) / 1000.0
         df = df[(df["strike"] >= low_k) & (df["strike"] <= high_k)]
         if "expiration" in df.columns:
             df = df[df["expiration"].notna()]
@@ -578,12 +702,46 @@ def build_matrix(
 
     oi_t1_w  = _in_window(oi_t1)
     oi_t2_w  = _in_window(oi_t2) if not oi_t2.empty else pd.DataFrame()
-    eod_w    = _in_window(eod_t1)
+    current_volume_all, current_volume_stats = _normalise_volume_rows(eod_t1)
+    current_volume_rows = _in_window(current_volume_all)
     greeks_w = _in_window(greeks_t1)
 
     if oi_t1_w.empty:
         log.warning("options_matrix: no OI rows in window for %s on %s", root, asof)
         return _null_payload(root, asof_ts, "no OI rows in ±20% / ≤90DTE window")
+
+    # ── UNUSUAL: narrow exact-side history, strictly before matrix as-of ─────
+    unusual_sides = {
+        (int(row.strike_mills), str(row.expiration), str(row.right))
+        for row in current_volume_rows.itertuples(index=False)
+    }
+    expiration_max = (
+        pd.Timestamp(asof) + pd.Timedelta(days=_MAX_DTE)
+    ).date().isoformat()
+    unusual_root_sessions = eod_sessions_before(
+        asof,
+        root,
+        limit=_UNUSUAL_LOOKBACK_SESSIONS,
+        store=store,
+    )
+    unusual_history_raw = eod_volume_history_before(
+        asof,
+        root,
+        strike_min=low_k,
+        strike_max=high_k,
+        expiration_max=expiration_max,
+        date_min=unusual_root_sessions[0] if unusual_root_sessions else None,
+        store=store,
+    )
+    unusual_history, unusual_history_stats = _normalise_volume_rows(
+        unusual_history_raw
+    )
+    unusual_baselines = _unusual_baseline_by_side(
+        unusual_history,
+        asof,
+        unusual_sides,
+        unusual_root_sessions,
+    )
 
     # ── collect all IVs for median fallback ──────────────────────────────────
     all_ivs: list[float] = []
@@ -611,6 +769,8 @@ def build_matrix(
                 "put_vex":  0.0,   # VEX (experimental): put vanna exposure $mn
                 "call_oi_t2": 0,
                 "put_oi_t2":  0,
+                "_call_vol_observed": False,
+                "_put_vol_observed": False,
                 "_dte":     _dte(exp, asof),
             }
         return cell_map[key]
@@ -670,19 +830,19 @@ def build_matrix(
                 cell["put_oi_t2"]  += int(oi)
 
     # ── volume accumulation (EOD latest session) ──────────────────────────────
-    if not eod_w.empty and "volume" in eod_w.columns:
-        for _, row in eod_w.iterrows():
-            k   = float(row.get("strike", 0))
-            exp = _to_iso_date(row.get("expiration", ""))
-            vol = float(row.get("volume", 0) or 0)
-            right = str(row.get("right", "")).upper()[:1]
-            if not exp or k < low_k or k > high_k:
-                continue
+    if not current_volume_rows.empty:
+        for row in current_volume_rows.itertuples(index=False):
+            k = float(row.strike)
+            exp = str(row.expiration)
+            vol = int(row.volume)
+            right = str(row.right)
             cell = _get_cell(k, exp)
             if right == "C":
-                cell["call_vol"] += int(vol)
+                cell["call_vol"] = vol
+                cell["_call_vol_observed"] = True
             elif right == "P":
-                cell["put_vol"]  += int(vol)
+                cell["put_vol"] = vol
+                cell["_put_vol_observed"] = True
 
     # ── build strike-level aggregate for level computation ───────────────────
     by_strike: dict[float, dict] = {}
@@ -698,6 +858,35 @@ def build_matrix(
     expiry_set: set[str] = set()
     strike_set: set[float] = set()
     cells_out: list[dict] = []
+
+    def _unusual_side(cell: dict, strike: float, expiry: str, right: str) -> dict | None:
+        observed_key = (
+            "_call_vol_observed" if right == "C" else "_put_vol_observed"
+        )
+        volume_key = "call_vol" if right == "C" else "put_vol"
+        if not cell[observed_key]:
+            return None
+        baseline = unusual_baselines.get((round(strike * 1000), expiry, right))
+        if baseline is None:
+            return None
+        median_volume, samples = baseline
+        if samples < _UNUSUAL_MIN_SAMPLES or median_volume <= 0:
+            return None
+        ratio = cell[volume_key] / median_volume
+        if not math.isfinite(ratio) or ratio < 0:
+            return None
+        # Truncate, rather than round, the public two-decimal ratio so a raw
+        # 2.999x observation never displays as 3.00x while retaining the
+        # truthful "normal" classification.
+        public_ratio = math.floor((ratio + 1e-12) * 100) / 100
+        return {
+            "ratio": public_ratio,
+            "median_vol_30d": _f(median_volume, 2),
+            "samples": int(samples),
+            "status": (
+                "unusual" if ratio >= _UNUSUAL_RATIO_THRESHOLD else "normal"
+            ),
+        }
 
     for (k, exp), c in sorted(cell_map.items(), key=lambda x: (x[0][1], x[0][0])):
         # net GEX = call_gex − put_gex (dealer-short: calls +, puts −)
@@ -715,18 +904,27 @@ def build_matrix(
         # directional.  Sign is experimental and assumption-dependent; display-only.
         net_vex = c["call_vex"] + c["put_vex"]
 
+        unusual_call = _unusual_side(c, k, exp, "C")
+        unusual_put = _unusual_side(c, k, exp, "P")
+        unusual = (
+            {"call": unusual_call, "put": unusual_put}
+            if unusual_call is not None or unusual_put is not None
+            else None
+        )
+
         cells_out.append({
             "strike":   _f(k),
             "expiry":   exp,
             "gex":      _f(net_gex, 0),      # integer dollars is sufficient precision
             "call_oi":  c["call_oi"]  or None,
             "put_oi":   c["put_oi"]   or None,
-            "call_vol": c["call_vol"] or None,
-            "put_vol":  c["put_vol"]  or None,
+            "call_vol": c["call_vol"] if c["_call_vol_observed"] else None,
+            "put_vol":  c["put_vol"] if c["_put_vol_observed"] else None,
             "delta_oi": {
                 "call": d_call if c["call_oi"] > 0 or c["call_oi_t2"] > 0 else None,
                 "put":  d_put  if c["put_oi"]  > 0 or c["put_oi_t2"]  > 0 else None,
             },
+            "unusual": unusual,
             "vex_mn":   _f(net_vex, 4),      # experimental: vanna exposure $mn per 1% IV move
             "_dte":    c["_dte"],             # internal; stripped before validate
         })
@@ -767,6 +965,20 @@ def build_matrix(
     for cell in cells_out:
         cell.pop("_dte", None)
 
+    unusual_lenses = [
+        lens
+        for cell in cells_out
+        for lens in (
+            (cell.get("unusual") or {}).get("call"),
+            (cell.get("unusual") or {}).get("put"),
+        )
+        if lens is not None
+    ]
+    all_history_dates = sorted(
+        unusual_history["date"].astype(str).unique().tolist()
+    ) if not unusual_history.empty else []
+    history_dates = unusual_root_sessions
+
     # ── assemble payload ──────────────────────────────────────────────────────
     payload = {
         "schema":   "options_structure.matrix/v1",
@@ -784,13 +996,16 @@ def build_matrix(
             "gex":       "assumption-signed — display-only until GEX→vol gate (~Sept 2026)",
             "delta_oi":  "reliable — signing-free OI change (OI[t-1] − OI[t-2], both lagged)",
             "vol":       "reliable magnitude",
+            "unusual":   (
+                "reliable per-side magnitude — current exact-contract-side volume / "
+                "observed median inside the 30 latest prior root EOD sessions; "
+                "minimum 10 samples; explicit "
+                "zeros retained; missing contract-days never zero-filled"
+            ),
             "call_oi":   "reliable — OI[t-1]",
             "put_oi":    "reliable — OI[t-1]",
             "vex_mn":    "experimental — closed-form BS vanna × OI[t-1]; assumption-signed; no scoring path",
             "note":      "Sign is an assumption, not a fact. Magnitude is the reliable read.",
-        },
-        "deferred": {
-            "UNUSUAL": "deferred — requires 30d per-strike volume baseline not yet in EOD store",
         },
         "_build_meta": {
             "asof_date":    asof,
@@ -800,6 +1015,43 @@ def build_matrix(
             "n_strikes":    len(strike_set),
             "median_iv":    round(median_iv, 4),
             "spot":         _f(spot),
+            "unusual_method": (
+                "exact-expiry-strike-right observed median within latest 30 prior "
+                "root EOD sessions"
+            ),
+            "unusual_asof_session": asof,
+            "unusual_lookback_sessions": _UNUSUAL_LOOKBACK_SESSIONS,
+            "unusual_min_samples": _UNUSUAL_MIN_SAMPLES,
+            "unusual_ratio_threshold": _UNUSUAL_RATIO_THRESHOLD,
+            "unusual_ratio_serialization": "truncate_2dp",
+            "unusual_history_window_start": history_dates[0] if history_dates else None,
+            "unusual_history_window_end": history_dates[-1] if history_dates else None,
+            "unusual_history_sessions_available": len(history_dates),
+            "unusual_history_sessions_seen": len(all_history_dates),
+            "unusual_current_observed_sides": len(unusual_sides),
+            "unusual_baseline_sides": len(unusual_baselines),
+            "unusual_eligible_sides": len(unusual_lenses),
+            "unusual_insufficient_sides": len(unusual_sides) - len(unusual_lenses),
+            "unusual_flagged_sides": sum(
+                1 for lens in unusual_lenses if lens.get("status") == "unusual"
+            ),
+            "unusual_explicit_zero_sides": int(
+                (current_volume_rows["volume"] == 0).sum()
+            ) if not current_volume_rows.empty else 0,
+            "unusual_current_invalid_rows": current_volume_stats["invalid_rows"],
+            "unusual_current_exact_duplicates_dropped": current_volume_stats[
+                "exact_duplicates_dropped"
+            ],
+            "unusual_current_collision_keys_quarantined": current_volume_stats[
+                "collision_keys_quarantined"
+            ],
+            "unusual_history_invalid_rows": unusual_history_stats["invalid_rows"],
+            "unusual_history_exact_duplicates_dropped": unusual_history_stats[
+                "exact_duplicates_dropped"
+            ],
+            "unusual_history_collision_keys_quarantined": unusual_history_stats[
+                "collision_keys_quarantined"
+            ],
         },
     }
 
@@ -809,8 +1061,16 @@ def build_matrix(
         raise ValueError(f"options_matrix validate_matrix failed for {root}: {errors}")
 
     log.info(
-        "options_matrix: %s asof=%s cells=%d expiries=%d strikes=%d spot=%.2f",
-        root, asof, len(cells_out), len(expiry_set), len(strike_set), spot,
+        "options_matrix: %s asof=%s cells=%d expiries=%d strikes=%d spot=%.2f "
+        "unusual_eligible_sides=%d unusual_flagged_sides=%d",
+        root,
+        asof,
+        len(cells_out),
+        len(expiry_set),
+        len(strike_set),
+        spot,
+        payload["_build_meta"]["unusual_eligible_sides"],
+        payload["_build_meta"]["unusual_flagged_sides"],
     )
     return payload
 
@@ -842,11 +1102,13 @@ def _null_payload(root: str, asof_ts: str, reason: str) -> dict:
             "gex":       "assumption-signed — display-only until GEX→vol gate (~Sept 2026)",
             "delta_oi":  "reliable — signing-free OI change",
             "vol":       "reliable magnitude",
+            "unusual":   (
+                "reliable per-side magnitude when available — current exact-contract-"
+                "side volume / observed median inside the latest 30 prior root EOD "
+                "sessions; explicit zeros retained; "
+                "missing contract-days never zero-filled"
+            ),
             "note":      "Sign is an assumption, not a fact. Magnitude is the reliable read.",
-        },
-        "deferred": {
-            "VEX":     "deferred — requires greeks-path stability verification",
-            "UNUSUAL": "deferred — requires 30d per-strike volume baseline",
         },
         "_no_data_reason": reason,
     }

@@ -14,7 +14,8 @@ Actor law source: §3 RF-5.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+
+from engine.research_factory.schema import has_market_memory_owned_marker
 
 # ---------------------------------------------------------------------------
 # Allowed-transition matrix (§4, canonical)
@@ -219,6 +220,14 @@ def transition(
         mandatory fields, screened-without-accounting, non-monotonic as_of,
         or respin registration by a script actor.
     """
+    if has_market_memory_owned_marker(transition_row) or (
+        candidate is not None and has_market_memory_owned_marker(candidate)
+    ):
+        raise IllegalTransition(
+            "Market Memory W6A is proposed-only; generic Research Factory "
+            "state transitions are disabled until a future evidence-bearing version"
+        )
+
     # 1. Both states must be known.
     if from_state not in ALLOWED_TRANSITIONS:
         raise IllegalTransition(
