@@ -1176,3 +1176,281 @@ def test_no_directional_or_exit_language_in_the_module():
     flat = " ".join(src.split())
     assert "avoid-not-short" in flat, "the module must state its own scope fence"
     assert "zero scored authority" in flat
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# W2 tier-widening arms — research/top_anatomy/TOPA_W2_PREREG.md
+#
+# W2 moves exactly ONE variable (the §4.1 trigger term) and adds no engine
+# authority, so these pin the plumbing that could silently move something else:
+# the arm/leg inventory against the frozen prereg, the one-sided p derivation, the
+# multiplicity family boundary, the FULL/DISJOINT panel split, and the arm-keyed
+# cache stamp. Synthetic frames only — no store, no clock.
+# ══════════════════════════════════════════════════════════════════════════════
+def _w2_stats(rows: list[dict]) -> pd.DataFrame:
+    """A `matched_delta_stats`-shaped frame with only the fields W2 reads."""
+    out = []
+    for r in rows:
+        med = r["median_delta"]
+        out.append({
+            "feature": r["feature"], "family": r["feature"][0],
+            "direction": ta.FEATURE_DIRECTION.get(r["feature"], 0),
+            "n_episodes": r.get("n_episodes", 300),
+            "n_blocks": r.get("n_blocks", 40),
+            "coverage": r.get("coverage", 0.95),
+            "median_delta": med, "ci_lo": r.get("ci_lo", med - 0.01),
+            "ci_hi": r.get("ci_hi", med + 0.01),
+            "p_value": r["p_value"], "q_value": r.get("q_value", r["p_value"]),
+            "ticker_ci_lo": med - 0.02, "ticker_ci_hi": med + 0.02,
+            "interpretable": r.get("interpretable", True),
+        })
+    return pd.DataFrame(out)
+
+
+def test_w2_arms_and_legs_match_the_frozen_prereg():
+    """§1/§3 inventory: two arms, five legs with their declared signs, 31 exploratory."""
+    assert rh.W2_ARMS == ("r63", "atrz")
+    assert ta.EXT_R63_MIN == 0.35 and ta.EXT_ATRZ_MIN == 6.0
+    assert rh.W2_DECLARED_DIRECTION == {
+        "A4_r252": -1, "B2_rsi14": 1, "C6_tr5_over_tr63": -1,
+        "D1_dvol_z": -1, "D3_updown_dvol_ratio21": -1}
+    assert len(rh.W2_EXPLORATORY) == 31
+    assert set(rh.W2_EXPLORATORY) & set(rh.W2_CONFIRMATORY_LEGS) == set()
+    assert set(rh.W2_EXPLORATORY) | set(rh.W2_CONFIRMATORY_LEGS) == set(ta.FEATURES)
+    # §5's two exemplar sets, named — an absent list would make the gate unanswerable.
+    assert len(rh.TAPE_LEADERSHIP_WATCH) == 14 and len(rh.W2_MINER_WATCH) == 16
+    assert {"NEM", "GOLD", "AEM", "SBSW"} <= set(rh.W2_MINER_WATCH)
+
+
+@pytest.mark.parametrize("two_sided,median,direction,expected,why", [
+    (0.004, -0.128, -1, 0.002, "declared sign observed -> half the two-sided tail"),
+    (0.018, +1.292, +1, 0.009, "same on the positive side"),
+    (0.004, +0.128, -1, 0.998, "WRONG sign -> the complement, never a small p"),
+    (1.000, 0.0, -1, 0.500, "a median at zero has half its mass on the null side"),
+    (1.0 / 2001.0, -0.10, -1, 1.0 / 2001.0, "halving a floored p re-floors at 1/(B+1)"),
+])
+def test_w2_one_sided_p_is_the_declared_direction_tail(two_sided, median, direction,
+                                                       expected, why):
+    got = rh.w2_one_sided_p(two_sided, median, direction, b=ta.BOOTSTRAP_B)
+    assert got == pytest.approx(expected, abs=1e-9), why
+
+
+def test_w2_one_sided_p_matches_the_bootstrap_tail_it_claims_to_read():
+    """The derivation is an identity on `_median_ci`'s own two-sided formula.
+
+    Not a re-implementation of the bootstrap: this builds a draw distribution, forms
+    the two-sided p EXACTLY as `_median_ci` does, and checks that the harness's
+    algebra recovers the declared-direction tail measured straight off the draws. If
+    the engine ever changed that formula, this fails instead of a summary quietly
+    carrying a p from a different definition.
+    """
+    b = 2000
+    rng = np.random.default_rng(7)
+    for centre, direction in ((-0.05, -1), (+0.05, +1), (+0.05, -1), (0.0, -1)):
+        draws = rng.normal(centre, 0.04, size=b)
+        a = float((draws <= 0).mean())
+        c = float((draws >= 0).mean())
+        two_sided = max(min(2.0 * min(a, c), 1.0), 1.0 / (b + 1.0))
+        direct = max(min(a if direction > 0 else c, 1.0), 1.0 / (b + 1.0))
+        med = float(np.median(draws))
+        assert rh.w2_one_sided_p(two_sided, med, direction, b=b) == \
+            pytest.approx(direct, abs=1e-9), (centre, direction)
+
+
+def test_w2_confirmatory_family_is_exactly_the_five_legs():
+    """§3 multiplicity: BH runs over the 5 one-sided tests, not the 36, not by letter."""
+    stats = _w2_stats([
+        {"feature": "A4_r252", "median_delta": -0.10, "p_value": 0.004},
+        {"feature": "B2_rsi14", "median_delta": +1.20, "p_value": 0.020},
+        {"feature": "C6_tr5_over_tr63", "median_delta": -0.03, "p_value": 0.060},
+        {"feature": "D1_dvol_z", "median_delta": -0.07, "p_value": 0.090},
+        {"feature": "D3_updown_dvol_ratio21", "median_delta": +0.06, "p_value": 0.090},
+    ])
+    table = rh.w2_confirmatory_table(stats, b=ta.BOOTSTRAP_B)
+    assert [r["feature"] for r in table] == list(rh.W2_CONFIRMATORY_LEGS)
+    p1 = [r["p_value_one_sided"] for r in table]
+    want = ta.bh_fdr(np.array(p1, dtype=float))
+    assert [r["q_value_one_sided"] for r in table] == pytest.approx(list(want))
+    # D3's observed sign is POSITIVE against a declared NEGATIVE: its one-sided p is
+    # the complement, so it cannot separate however small the two-sided p was.
+    d3 = next(r for r in table if r["feature"] == "D3_updown_dvol_ratio21")
+    assert d3["sign_matches_declared"] is False
+    assert d3["p_value_one_sided"] > 0.9 and d3["separates_one_sided"] is False
+    # The engine's own two-sided q is carried, but under a name that cannot be
+    # mistaken for the grading quantity.
+    assert all("q_value_two_sided_all36_letter_family" in r for r in table)
+
+
+def test_w2_exploratory_drops_the_confirmatory_legs_and_caps_the_grade():
+    """§3: the 31 keep phase-0's two-sided within-family BH; no W2 row is REGISTERED."""
+    rows = [{"feature": f, "median_delta": -0.05, "p_value": 0.001}
+            for f in ta.FEATURES]
+    table = rh.w2_exploratory_table(_w2_stats(rows), ranked=True)
+    assert table["n_features"] == 31
+    feats = {r["feature"] for r in table["table"]}
+    assert feats & set(rh.W2_CONFIRMATORY_LEGS) == set()
+    assert all(r["grade"] in ("", "EXPLORATORY-DISCOVERY") for r in table["table"])
+    assert "REGISTERED" not in {r["grade"] for r in table["table"]}
+    # BH is over the 31 only: an A-family q here must be the step-up over the SEVEN
+    # surviving A features, not the eight phase-0 tested (A4 moved to the
+    # confirmatory family, and its trial budget must not be spent twice).
+    a_rows = [r for r in table["table"] if r["family"] == "A"]
+    assert len(a_rows) == 7
+    assert [r["q_value"] for r in sorted(a_rows, key=lambda r: r["feature"])] == \
+        pytest.approx(list(ta.bh_fdr([r["p_value"] for r in
+                                      sorted(a_rows, key=lambda r: r["feature"])])))
+
+
+def test_w2_disjoint_exploratory_table_is_printed_unranked():
+    """§3: the DISJOINT exploratory table prints in full and carries no discovery rank."""
+    rows = [{"feature": f, "median_delta": -0.05, "p_value": 0.001}
+            for f in ta.FEATURES]
+    table = rh.w2_exploratory_table(_w2_stats(rows), ranked=False)
+    assert table["ranked"] is False
+    assert table["n_features"] == 31, "unranked still means PRINTED, never dropped"
+    assert {r["grade"] for r in table["table"]} == {""}
+
+
+@pytest.mark.parametrize("disjoint,full,grade", [
+    (True, True, "W2-CONFIRMED"),
+    (True, False, "W2-CONFIRMED"),
+    (False, True, "W2-PARTIAL"),
+    (False, False, "W2-NOT-CONFIRMED"),
+])
+def test_w2_grade_ladder_puts_the_claim_on_the_disjoint_panel(disjoint, full, grade):
+    """§3: DISJOINT decides; FULL alone is explicitly weak; nothing else can grade."""
+    def _panel(sep):
+        return {"confirmatory": {"table": [
+            {"feature": f, "separates_one_sided": sep, "median_delta": -0.1,
+             "ci_lo": -0.2, "ci_hi": -0.01, "q_value_one_sided": 0.01,
+             "p_value_one_sided": 0.005, "n_episodes": 300, "n_blocks": 40,
+             "coverage": 0.9, "sign_matches_declared": True,
+             "meets_peak_month_floor": True}
+            for f in rh.W2_CONFIRMATORY_LEGS]}}
+    out = rh.w2_grade({"DISJOINT": _panel(disjoint), "FULL": _panel(full)})
+    assert set(out["grades"]) == set(rh.W2_CONFIRMATORY_LEGS)
+    assert {v["grade"] for v in out["grades"].values()} == {grade}
+    assert out["counts"][grade] == 5
+
+
+def test_w2_grade_prints_not_confirmed_when_a_panel_is_missing():
+    """A panel that never ran is NOT a pass — the grade prints, it does not vanish."""
+    out = rh.w2_grade({})
+    assert {v["grade"] for v in out["grades"].values()} == {"W2-NOT-CONFIRMED"}
+    assert all(v["disjoint"] is None for v in out["grades"].values())
+
+
+def test_w2_episode_overlap_classes_split_on_shared_ext_days():
+    """§4: DISJOINT means ZERO shared (segment, session) days, not "mostly new"."""
+    idx = _cal(10)
+    close = pd.DataFrame({"A": np.linspace(10, 12, 10), "B": np.linspace(10, 12, 10),
+                          "C": np.linspace(10, 12, 10)}, index=idx)
+    arm = pd.DataFrame(False, index=idx, columns=["A", "B", "C"])
+    prim = pd.DataFrame(False, index=idx, columns=["A", "B", "C"])
+    arm.iloc[0:4] = True                       # every name is extended on days 0..3
+    prim.loc[idx[0:4], "C"] = True             # C fully shared
+    prim.loc[idx[2:4], "B"] = True             # B partly shared
+    episodes = pd.DataFrame([
+        {"segment": s, "ticker": s, "episode_id": f"{s}|e", "start": idx[0],
+         "end": idx[3], "n_ext_days": 4, "span_sessions": 4, "micro": False}
+        for s in ("A", "B", "C")])
+    got = rh.w2_episode_overlap(arm, prim, close, episodes)
+    cls = dict(zip(got["segment"], got["overlap_class"]))
+    assert cls == {"A": "DISJOINT", "B": "PARTIAL_OVERLAP", "C": "FULLY_SHARED"}
+    assert dict(zip(got["segment"], got["n_shared_with_primary"])) == \
+        {"A": 0, "B": 2, "C": 4}
+
+
+def test_w2_panel_slice_restricts_every_population_it_owns():
+    """FULL applies NO restriction; DISJOINT restricts race, dtp AND the ruler mask."""
+    idx = _cal(6)
+    ext = pd.DataFrame(True, index=idx, columns=["A", "B"])
+    close = pd.DataFrame(10.0, index=idx, columns=["A", "B"])
+    dtp = pd.DataFrame([{"segment": s, "ticker": s, "episode_id": f"{s}|e",
+                         "date": d, "days_to_peak": 3}
+                        for s in ("A", "B") for d in idx])
+    race = pd.DataFrame([{"segment": s, "ticker": s, "date": d, "label": "CONTINUED"}
+                         for s in ("A", "B") for d in idx])
+    full = rh.w2_panel_slice("FULL", None, race, dtp, ext, close)
+    assert full["restricted"] is False
+    assert len(full["race"]) == len(race) and full["ext"].to_numpy().sum() == 12
+    dj = rh.w2_panel_slice("DISJOINT", {"A|e"}, race, dtp, ext, close)
+    assert dj["restricted"] is True
+    assert set(dj["race"]["segment"]) == {"A"} and set(dj["dtp"]["segment"]) == {"A"}
+    assert dj["ext"]["A"].all() and not dj["ext"]["B"].any()
+    assert list(dj["race"].columns) == list(race.columns), \
+        "the join key must not leak an episode_id column into the control pool"
+
+
+@pytest.mark.parametrize("meta,want,hit,why", [
+    ({"residual_up_ratio_break": 3.0}, None, True,
+     "an EXT-independent panel serves an EXT-independent request"),
+    ({"residual_up_ratio_break": 3.0, "ext_variant": None}, None, True,
+     "an explicit null stamp is the same statement"),
+    ({"residual_up_ratio_break": 3.0}, "r63", False,
+     "a panel-only cache may never serve an arm's downstream artifacts"),
+    ({"residual_up_ratio_break": 3.0, "ext_variant": "r63"}, "r63", True,
+     "same arm is a hit"),
+    ({"residual_up_ratio_break": 3.0, "ext_variant": "r63"}, "atrz", False,
+     "one arm's episodes may never be read off another arm's mask"),
+    ({"residual_up_ratio_break": 3.0, "ext_variant": "r63"}, None, False,
+     "an arm-built cache may not serve the EXT-independent request either"),
+])
+def test_cache_stamp_is_arm_keyed_for_ext_downstream_artifacts(tmp_path, meta, want,
+                                                               hit, why):
+    """W2 §2 — the identity-stamp hard check now carries the extension definition."""
+    idx = _cal(4)
+    for leg in rh._REQUIRED_PANEL_LEGS:
+        pd.DataFrame({"T": pd.Series(np.linspace(10.0, 11.0, 4), index=idx)}).to_parquet(
+            tmp_path / f"panel_{leg}.parquet")
+    (tmp_path / "meta.json").write_text(json.dumps(meta))
+    got = rh._load_cached(tmp_path, residual_up_ratio_break=3.0, ext_variant=want)
+    assert (got is not None) is hit, why
+
+
+def test_w2_summary_paths_are_arm_keyed():
+    """The only persisted W2 artifact carries its arm in the FILENAME (prereg §6)."""
+    assert rh.w2_out_json("r63").name == "top_anatomy_w2_r63_summary.json"
+    assert rh.w2_out_json("atrz").name == "top_anatomy_w2_atrz_summary.json"
+    assert rh.w2_out_json("r63") != rh.w2_out_json("atrz")
+    assert "quick7" in rh.w2_out_json("r63", 7).name
+
+
+def test_w2_coverage_gate_separates_absent_from_never_extended():
+    """§5: "not in the tape" and "in the tape, never cleared the bar" are different findings."""
+    idx = _cal(300)
+    close = pd.DataFrame({"NEM": np.linspace(10, 20, 300),
+                          "ZZZZ": np.linspace(10, 20, 300)}, index=idx)
+    ext = pd.DataFrame(False, index=idx, columns=["NEM", "ZZZZ"])
+    ext.loc[idx[-1], "ZZZZ"] = True
+    episodes = pd.DataFrame([{"segment": "ZZZZ", "ticker": "ZZZZ",
+                              "episode_id": "ZZZZ|e", "start": idx[-1], "end": idx[-1],
+                              "n_ext_days": 1, "span_sessions": 1, "micro": True}])
+    gates = pd.DataFrame(columns=["segment", "ticker", "date", "r126", "rv63", "dvol21"])
+    out = rh.w2_coverage_census(close, ext, episodes, gates, Path("/nonexistent"),
+                                arm="r63")
+    m = out["exemplars"]["gold_pgm_miners"]
+    assert "NEM" in m["in_the_tape_but_no_arm_episode"]
+    assert "NEM" not in m["not_in_the_tape_at_all"]
+    assert "AEM" in m["not_in_the_tape_at_all"]
+    assert out["vintage_date"] == str(idx[-1].date())
+    assert out["n_extended_on_vintage_date"] == 1
+    ai = out["exemplars"]["ai_leaders"]
+    assert ai["n_watched"] == len(rh.TAPE_LEADERSHIP_WATCH)
+    assert out["composition_sketch"]["mcap"]["available"] is False
+
+
+def test_w2_wall_fallback_defers_and_never_subsamples():
+    """§6: past the wall an arm is DEFERRED with its reason — never capped or thinned."""
+    assert rh.W2_WALL_LIMIT_SECONDS == 12 * 3600
+    d = rh._w2_deferral("atrz", "before the DISJOINT panel")
+    assert d["deferred"] is True and d["subsampled"] is False and d["capped"] is False
+    assert "atrz" in d["reason"] and d["wall_limit_hours"] == 12.0
+
+
+def test_w2_harness_carries_no_directional_or_exit_language():
+    """Same fence as the engine: research/display tier, AVOID-not-SHORT, no "validated"."""
+    src = (REPO / "scripts" / "research_top_anatomy_phase0.py").read_text().lower()
+    for banned in ("validated", "sell signal", "go short", "short position",
+                   "stop loss", "stop-loss", "take profit", "price target"):
+        assert banned not in src, f"forbidden phrase in the harness: {banned!r}"
