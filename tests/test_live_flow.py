@@ -4042,19 +4042,21 @@ class TestProspectiveOptionsMarketMemoryCapture:
             "authority": packet["authority"],
         }
 
-        class Result:
-            returncode = 0
-            stdout = capture._canonical_bytes(response) + b"\n"
-            stderr = b""
-
         seen: dict[str, Any] = {}
 
-        def run(command, **kwargs):
-            seen["command"] = command
-            seen["input"] = kwargs["input"]
-            return Result()
+        class Process:
+            returncode = 0
 
-        monkeypatch.setattr(capture.subprocess, "run", run)
+            def communicate(self, *, input=None, timeout=None):
+                seen["input"] = input
+                return capture._canonical_bytes(response) + b"\n", b""
+
+        def popen(command, **kwargs):
+            seen["command"] = command
+            seen["popen_kwargs"] = kwargs
+            return Process()
+
+        monkeypatch.setattr(capture.subprocess, "Popen", popen)
         monkeypatch.setattr(
             capture,
             "_utc_now",
@@ -4117,7 +4119,7 @@ class TestProspectiveOptionsMarketMemoryCapture:
         assert capture.validate_transport_receipt(
             receipt, request=request,
         )["status"] == "expired_before_owner_availability"
-        assert list(dispatcher.prepared.iterdir()) == []
+        assert list(dispatcher.prepared.glob("*.json")) == []
 
     def test_lost_ack_is_durable_unknown_and_never_false_pretransport_expiry(
         self, tmp_path, monkeypatch,
@@ -4150,16 +4152,25 @@ class TestProspectiveOptionsMarketMemoryCapture:
         monkeypatch.setattr(capture, "_utc_now", lambda: next(clocks))
         transport_calls = 0
 
+        class LostAckProcess:
+            returncode = None
+
+            def communicate(self, **_kwargs):
+                raise capture.subprocess.TimeoutExpired("ssh", 30)
+
+            def kill(self):
+                return None
+
         def lose_ack(*_args, **_kwargs):
             nonlocal transport_calls
             transport_calls += 1
-            raise capture.subprocess.TimeoutExpired("ssh", 30)
+            return LostAckProcess()
 
-        monkeypatch.setattr(capture.subprocess, "run", lose_ack)
+        monkeypatch.setattr(capture.subprocess, "Popen", lose_ack)
         assert dispatcher.flush_pending() == {
             "captured": 0, "expired": 0, "unknown": 1, "pending": 0,
         }
-        intent_paths = list(dispatcher.intents.iterdir())
+        intent_paths = list(dispatcher.intents.glob("*.json"))
         assert len(intent_paths) == 1
         intent = json.loads(intent_paths[0].read_text())
         assert capture.validate_transport_batch_intent(
@@ -4208,17 +4219,10 @@ class TestProspectiveOptionsMarketMemoryCapture:
 
         batch_sizes: list[int] = []
 
-        class Result:
-            returncode = 0
-            stderr = b""
-
-            def __init__(self, stdout):
-                self.stdout = stdout
-
-        def run(_command, **kwargs):
+        def respond(batch: bytes) -> bytes:
             requests = [
                 capture.validate_capture_request(json.loads(line))
-                for line in kwargs["input"].splitlines()
+                for line in batch.splitlines()
             ]
             batch_sizes.append(len(requests))
             responses = []
@@ -4252,14 +4256,20 @@ class TestProspectiveOptionsMarketMemoryCapture:
                         "authority": packet["authority"],
                     }
                 )
-            return Result(
-                b"".join(
-                    capture._canonical_bytes(response) + b"\n"
-                    for response in responses
-                )
+            return b"".join(
+                capture._canonical_bytes(response) + b"\n"
+                for response in responses
             )
 
-        monkeypatch.setattr(capture.subprocess, "run", run)
+        class Process:
+            returncode = 0
+
+            def communicate(self, *, input=None, timeout=None):
+                return respond(input), b""
+
+        monkeypatch.setattr(
+            capture.subprocess, "Popen", lambda *_args, **_kwargs: Process()
+        )
         monkeypatch.setattr(
             capture,
             "_utc_now",
@@ -4270,7 +4280,7 @@ class TestProspectiveOptionsMarketMemoryCapture:
             "captured": 15, "expired": 0, "unknown": 0, "pending": 0,
         }
         assert batch_sizes == [8, 7]
-        assert len(list(dispatcher.receipts.iterdir())) == 15
+        assert len(list(dispatcher.receipts.glob("*.json"))) == 15
 
     def test_remote_writer_is_idempotent_and_exact(self, tmp_path, monkeypatch):
         from engine.neuralweb import market_memory_options_episode_capture as capture
@@ -4473,10 +4483,17 @@ class TestProspectiveOptionsMarketMemoryCapture:
 
             def fail_selected_parent(directory):
                 nonlocal calls
-                if directory == child:
+                if (
+                    fault == "link_parent_fsync"
+                    and directory == child
+                    and path.exists()
+                ) or (
+                    fault == "temp_cleanup_fsync"
+                    and directory == child / capture._TEMP_DIRECTORY
+                    and path.exists()
+                ):
                     calls += 1
-                    target = 1 if fault == "link_parent_fsync" else 2
-                    if calls == target:
+                    if calls == 1:
                         raise OSError(f"injected {fault}")
                 real_sync(directory)
 
@@ -4484,7 +4501,10 @@ class TestProspectiveOptionsMarketMemoryCapture:
 
         with pytest.raises(capture.OptionsEpisodeContextCaptureError):
             capture._write_create_once(path, body, label="fault matrix object")
-        assert not list(child.glob(".*.tmp.*"))
+        temporary_files = list(
+            (child / capture._TEMP_DIRECTORY).glob("*.tmp")
+        )
+        assert temporary_files == []
         if fault in {"link_parent_fsync", "temp_cleanup_fsync"}:
             assert path.exists()
         else:
@@ -4536,6 +4556,51 @@ class TestProspectiveOptionsMarketMemoryCapture:
             capture.create_or_load_session_anchor(
                 root, session_date=self.SESSION, config_path=config_path
             )
+
+    def test_temporary_unlink_failure_is_reconciled_without_jamming_state_scan(
+        self, tmp_path, monkeypatch,
+    ):
+        from engine.neuralweb import market_memory_options_episode_capture as capture
+
+        key = tmp_path / "key"
+        key.write_text("test")
+        key.chmod(0o600)
+        dispatcher = capture.OptionsContextDispatcher(
+            tmp_path / "outbox",
+            anchor=self._anchor(),
+            ssh_target="root@146.190.142.17",
+            ssh_key=key,
+        )
+        request = dispatcher.prepare(
+            owner_event=self._enriched_event(), session_date=self.SESSION
+        )
+        assert request is not None
+        real_unlink = capture.Path.unlink
+        failed = False
+
+        def fail_temporary_unlink_once(path, *args, **kwargs):
+            nonlocal failed
+            if path.parent.name == capture._TEMP_DIRECTORY and not failed:
+                failed = True
+                raise OSError("injected temporary unlink failure")
+            return real_unlink(path, *args, **kwargs)
+
+        monkeypatch.setattr(capture.Path, "unlink", fail_temporary_unlink_once)
+        with pytest.raises(
+            capture.OptionsEpisodeContextCaptureError,
+            match="clean temporary",
+        ):
+            dispatcher.stage(request)
+        assert list((dispatcher.prepared / capture._TEMP_DIRECTORY).glob("*.tmp"))
+
+        monkeypatch.setattr(capture.Path, "unlink", real_unlink)
+        assert dispatcher.stage(request) == request["request_id"]
+        assert [path.name for path in dispatcher._files(dispatcher.prepared)] == [
+            f"{request['request_id']}.json"
+        ]
+        assert not list(
+            (dispatcher.prepared / capture._TEMP_DIRECTORY).glob("*.tmp")
+        )
 
     def test_unproven_precommit_after_owner_availability_is_terminal_abstention(
         self, tmp_path, monkeypatch,
@@ -4759,6 +4824,11 @@ class TestProspectiveOptionsMarketMemoryCapture:
                 "outcome_unknown_after_durable_transport_intent",
                 1,
             ),
+            (
+                "communicate_oserror",
+                "outcome_unknown_after_durable_transport_intent",
+                1,
+            ),
         ],
     )
     def test_transport_fault_statuses_never_invent_a_launch(
@@ -4803,21 +4873,32 @@ class TestProspectiveOptionsMarketMemoryCapture:
             def must_not_launch(*_args, **_kwargs):
                 raise AssertionError("partial intent must not launch transport")
 
-            monkeypatch.setattr(capture.subprocess, "run", must_not_launch)
+            monkeypatch.setattr(capture.subprocess, "Popen", must_not_launch)
         elif failure == "spawn":
             def spawn_error(*_args, **_kwargs):
                 nonlocal launched
                 launched += 1
                 raise OSError("exec did not spawn")
 
-            monkeypatch.setattr(capture.subprocess, "run", spawn_error)
+            monkeypatch.setattr(capture.subprocess, "Popen", spawn_error)
         else:
-            def timeout(*_args, **_kwargs):
+            class BrokenProcess:
+                returncode = None
+
+                def communicate(self, **_kwargs):
+                    if failure == "timeout":
+                        raise capture.subprocess.TimeoutExpired("ssh", 30)
+                    raise OSError("injected communicate failure after spawn")
+
+                def kill(self):
+                    return None
+
+            def spawned(*_args, **_kwargs):
                 nonlocal launched
                 launched += 1
-                raise capture.subprocess.TimeoutExpired("ssh", 30)
+                return BrokenProcess()
 
-            monkeypatch.setattr(capture.subprocess, "run", timeout)
+            monkeypatch.setattr(capture.subprocess, "Popen", spawned)
 
         result = dispatcher.flush_pending()
         assert result["unknown"] == expected_unknown
@@ -4861,7 +4942,7 @@ class TestProspectiveOptionsMarketMemoryCapture:
         monkeypatch.setattr(capture, "_utc_now", lambda: intended)
         monkeypatch.setattr(
             capture.subprocess,
-            "run",
+            "Popen",
             lambda *_args, **_kwargs: (_ for _ in ()).throw(
                 AssertionError("restart must not retry a durable intent")
             ),

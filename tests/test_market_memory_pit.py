@@ -351,7 +351,98 @@ def test_active_generation_ack_is_single_head_bounded_at_declared_cap(
         "Market Memory store manifest",
         "Market Memory store HEAD",
         "Market Memory store generation",
+        "Market Memory store HEAD",
     ]
+
+
+def test_active_generation_refreshes_when_head_advances_without_mutating_old_pin(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _fixed_clock(monkeypatch)
+    first_stored = pit.capture_context(tmp_path, _packet())
+    reader = pit.FileAsKnownAtReader(tmp_path)
+    first = reader.read_active_generation()
+    assert len(first.captures) == 1
+
+    monkeypatch.setattr(pit, "_utc_now", lambda: CAPTURED_AT + timedelta(seconds=1))
+    pit.capture_context(tmp_path, _later_packet(1))
+    second = reader.read_active_generation()
+
+    assert second is not first
+    assert len(second.captures) == 2
+    assert len(first.captures) == 1
+    assert reader.read_active_generation() is second
+    assert reader.read_pinned_capture_receipt(
+        first, query_id=first_stored.capture_receipt["query_id"]
+    ) == first_stored.capture_receipt
+
+
+@pytest.mark.parametrize(
+    "target",
+    [
+        "root",
+        "objects",
+        "objects_shard",
+        "contexts",
+        "contexts_shard",
+        "queries",
+        "queries_shard",
+        "generations",
+        "generations_shard",
+    ],
+)
+def test_w1a_rejects_nonprivate_store_owned_directory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, target: str
+) -> None:
+    _fixed_clock(monkeypatch)
+    pit.capture_context(tmp_path, _packet())
+    if target == "root":
+        path = tmp_path
+    elif target.endswith("_shard"):
+        namespace = target.removesuffix("_shard")
+        path = next(
+            child
+            for child in (tmp_path / namespace).iterdir()
+            if child.is_dir()
+        )
+    else:
+        path = tmp_path / target
+    path.chmod(0o755)
+
+    with pytest.raises(pit.MarketMemoryStoreError, match="owned 0700"):
+        pit.FileAsKnownAtReader(tmp_path).read_active_generation()
+
+
+def test_existing_create_once_retry_reproves_every_directory_link(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    root = tmp_path / "store"
+    path = root / "objects" / "aa" / "artifact.json"
+    body = b'{"value":1}'
+    assert pit._write_create_once(root, path, body, label="chain artifact")
+    real_sync = pit._directory_fsync
+    failed = False
+
+    def fail_root_link_once(directory: Path) -> None:
+        nonlocal failed
+        if directory == root.parent and not failed:
+            failed = True
+            raise OSError("injected store-root parent fsync")
+        real_sync(directory)
+
+    monkeypatch.setattr(pit, "_directory_fsync", fail_root_link_once)
+    with pytest.raises(OSError, match="store-root parent fsync"):
+        pit._write_create_once(root, path, body, label="chain artifact")
+
+    synced: list[Path] = []
+
+    def track(directory: Path) -> None:
+        real_sync(directory)
+        synced.append(directory)
+
+    monkeypatch.setattr(pit, "_directory_fsync", track)
+    assert not pit._write_create_once(root, path, body, label="chain artifact")
+    assert {root.parent, root, root / "objects", path.parent}.issubset(synced)
 
 
 def test_pinned_generation_rejects_rewritten_append_history(
@@ -558,14 +649,18 @@ def test_failed_head_root_fsync_retry_reproves_generation_and_root_before_ack(
     pit.capture_context(tmp_path, _packet())
     second = _later_packet(1)
     real_sync = pit._directory_fsync
-    root_syncs = 0
+    before_head = pit._head_path(tmp_path).read_bytes()
+    failed = False
 
     def fail_published_head_once(path: Path) -> None:
-        nonlocal root_syncs
-        if path == tmp_path:
-            root_syncs += 1
-            if root_syncs == 2:
-                raise OSError("injected HEAD root fsync")
+        nonlocal failed
+        if (
+            path == tmp_path
+            and pit._head_path(tmp_path).read_bytes() != before_head
+            and not failed
+        ):
+            failed = True
+            raise OSError("injected HEAD root fsync")
         real_sync(path)
 
     monkeypatch.setattr(pit, "_directory_fsync", fail_published_head_once)

@@ -56,6 +56,10 @@ _DATE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
 _RFC3339_UTC = re.compile(
     r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z\Z"
 )
+_TEMP_FILE = re.compile(
+    r"(?P<final>[A-Za-z0-9_.-]{1,160})\.(?P<digest>[a-f0-9]{64})\.tmp\Z"
+)
+_TEMP_DIRECTORY = ".tmp"
 
 MAX_CONFIG_BYTES = 32 * 1024
 MAX_ANCHOR_BYTES = 64 * 1024
@@ -265,6 +269,94 @@ def _unlink_durable(path: Path) -> None:
     _fsync_directory(path.parent)
 
 
+def _temporary_directory(parent: Path) -> Path:
+    """Return the private staging namespace, which is never owner state."""
+
+    temporary = parent / _TEMP_DIRECTORY
+    if temporary.is_symlink():
+        raise OptionsEpisodeContextCaptureError(
+            "capture temporary namespace is a symlink"
+        )
+    _mkdir_private_durable(temporary)
+    _validate_private_directory(
+        temporary, label="capture temporary namespace"
+    )
+    # Re-prove an interrupted mkdir even when the directory already existed.
+    _fsync_directory(parent)
+    return temporary
+
+
+def _temporary_path(parent: Path, *, final_name: str, body: bytes) -> Path:
+    if re.fullmatch(r"[A-Za-z0-9_.-]{1,160}", final_name) is None:
+        raise OptionsEpisodeContextCaptureError(
+            "capture final object name is unsafe"
+        )
+    return _temporary_directory(parent) / (
+        f"{final_name}.{sha256(body).hexdigest()}.tmp"
+    )
+
+
+def _reconcile_temporary_namespace(parent: Path) -> None:
+    """Bound and best-effort clean staging files without admitting them as state."""
+
+    temporary = parent / _TEMP_DIRECTORY
+    if not temporary.exists() and not temporary.is_symlink():
+        return
+    _validate_private_directory(
+        temporary, label="capture temporary namespace"
+    )
+    entries = sorted(temporary.iterdir(), key=lambda item: item.name)
+    if len(entries) > MAX_LIFETIME_REQUESTS + MAX_ANCHORS:
+        raise OptionsEpisodeContextCaptureError(
+            "capture temporary namespace exceeds its fixed bound"
+        )
+    for path in entries:
+        try:
+            metadata = path.lstat()
+        except OSError as exc:
+            raise OptionsEpisodeContextCaptureError(
+                "cannot inspect capture temporary object"
+            ) from exc
+        match = _TEMP_FILE.fullmatch(path.name)
+        if (
+            path.is_symlink()
+            or not stat.S_ISREG(metadata.st_mode)
+            or match is None
+            or stat.S_IMODE(metadata.st_mode) != 0o600
+            or metadata.st_uid != os.getuid()
+        ):
+            raise OptionsEpisodeContextCaptureError(
+                "capture temporary namespace contains an unowned path"
+            )
+        final = parent / match.group("final")
+        try:
+            final_metadata = final.lstat()
+        except FileNotFoundError:
+            # A pre-link staging object is recoverable by the deterministic
+            # writer path and is never interpreted as outbox state.
+            continue
+        except OSError as exc:
+            raise OptionsEpisodeContextCaptureError(
+                "cannot inspect capture final object during temporary cleanup"
+            ) from exc
+        if (
+            final.is_symlink()
+            or not stat.S_ISREG(final_metadata.st_mode)
+            or (metadata.st_dev, metadata.st_ino)
+            != (final_metadata.st_dev, final_metadata.st_ino)
+        ):
+            # Never delete an object unless it is provably only a stale hardlink
+            # to the derived immutable final path.
+            continue
+        try:
+            path.unlink()
+            _fsync_directory(temporary)
+        except OSError:
+            # A private, bounded staging hardlink is neither pending state nor
+            # a causal proof.  A cleanup fault must not permanently jam scans.
+            continue
+
+
 def _write_create_once(
     path: Path,
     body: bytes,
@@ -287,22 +379,42 @@ def _write_create_once(
             )
         _fsync_directory(path.parent)
         return
-    temporary = path.parent / f".{path.name}.tmp.{os.getpid()}.{uuid4().hex}"
+    temporary: Path | None = None
     descriptor: int | None = None
-    temporary_created = False
+    temporary_present = False
     try:
-        descriptor = os.open(
-            temporary,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
-            0o600,
+        temporary = _temporary_path(
+            path.parent, final_name=path.name, body=body
         )
-        temporary_created = True
-        view = memoryview(body)
-        while view:
-            written = os.write(descriptor, view)
-            if written <= 0:  # pragma: no cover - defensive OS boundary
-                raise OSError("short write")
-            view = view[written:]
+        if temporary.exists() or temporary.is_symlink():
+            existing = _read_file(
+                temporary,
+                maximum=len(body),
+                label=f"existing temporary {label}",
+            )
+            if existing != body:
+                raise OptionsEpisodeContextCaptureError(
+                    f"immutable temporary {label} collision"
+                )
+            descriptor = os.open(
+                temporary, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+            )
+        else:
+            descriptor = os.open(
+                temporary,
+                os.O_WRONLY
+                | os.O_CREAT
+                | os.O_EXCL
+                | getattr(os, "O_NOFOLLOW", 0),
+                0o600,
+            )
+            view = memoryview(body)
+            while view:
+                written = os.write(descriptor, view)
+                if written <= 0:  # pragma: no cover - defensive OS boundary
+                    raise OSError("short write")
+                view = view[written:]
+        temporary_present = True
         os.fsync(descriptor)
         os.close(descriptor)
         descriptor = None
@@ -329,10 +441,10 @@ def _write_create_once(
     finally:
         if descriptor is not None:
             os.close(descriptor)
-        if temporary_created and temporary.exists():
+        if temporary_present and temporary is not None and temporary.exists():
             try:
                 temporary.unlink()
-                _fsync_directory(path.parent)
+                _fsync_directory(temporary.parent)
             except OSError as exc:
                 raise OptionsEpisodeContextCaptureError(
                     f"cannot durably clean temporary {label}"
@@ -657,7 +769,15 @@ def create_or_load_session_anchor(
                     "unproven session anchor after open permanently abstains"
                 )
             return anchor
-        anchor_files = sorted(anchors.iterdir(), key=lambda item: item.name)
+        _reconcile_temporary_namespace(anchors)
+        anchor_files = sorted(
+            (
+                item
+                for item in anchors.iterdir()
+                if item.name != _TEMP_DIRECTORY
+            ),
+            key=lambda item: item.name,
+        )
         for anchor_file in anchor_files:
             if (
                 anchor_file.is_symlink()
@@ -1396,7 +1516,15 @@ class OptionsContextDispatcher:
         os.close(descriptor)
 
     def _files(self, directory: Path) -> list[Path]:
-        files = sorted(directory.iterdir(), key=lambda item: item.name)
+        _reconcile_temporary_namespace(directory)
+        files = sorted(
+            (
+                item
+                for item in directory.iterdir()
+                if item.name != _TEMP_DIRECTORY
+            ),
+            key=lambda item: item.name,
+        )
         for path in files:
             if (
                 path.is_symlink()
@@ -1410,7 +1538,15 @@ class OptionsContextDispatcher:
         return files
 
     def _intent_files(self) -> list[Path]:
-        files = sorted(self.intents.iterdir(), key=lambda item: item.name)
+        _reconcile_temporary_namespace(self.intents)
+        files = sorted(
+            (
+                item
+                for item in self.intents.iterdir()
+                if item.name != _TEMP_DIRECTORY
+            ),
+            key=lambda item: item.name,
+        )
         for path in files:
             if (
                 path.is_symlink()
@@ -2178,12 +2314,11 @@ class OptionsContextDispatcher:
                     "pending": len(self._files(self.pending)),
                 }
             try:
-                result = subprocess.run(
+                process = subprocess.Popen(
                     command,
-                    input=batch,
-                    capture_output=True,
-                    timeout=30,
-                    check=False,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
                 )
             except OSError:
                 completed = _utc_now().astimezone(timezone.utc)
@@ -2202,7 +2337,20 @@ class OptionsContextDispatcher:
                     "unknown": unknown,
                     "pending": len(self._files(self.pending)),
                 }
-            except subprocess.SubprocessError:
+            try:
+                stdout, stderr = process.communicate(input=batch, timeout=30)
+                returncode = process.returncode
+            except BaseException:
+                # Popen returning is the only defensible launch boundary.  Any
+                # later failure can hide a remote commit or a lost ACK.
+                try:
+                    process.kill()
+                except BaseException:
+                    pass
+                try:
+                    process.communicate(timeout=1)
+                except BaseException:
+                    pass
                 completed = _utc_now().astimezone(timezone.utc)
                 for path, request in selected:
                     self._complete(
@@ -2224,11 +2372,11 @@ class OptionsContextDispatcher:
             }
             responses: dict[str, dict[str, Any]] = {}
             response_invalid = (
-                len(result.stdout) > 64 * 1024 or len(result.stderr) > 64 * 1024
+                len(stdout) > 64 * 1024 or len(stderr) > 64 * 1024
             )
             if not response_invalid:
                 try:
-                    for line in result.stdout.splitlines():
+                    for line in stdout.splitlines():
                         response = _strict_object(
                             line,
                             label="capture transport response",
@@ -2263,7 +2411,7 @@ class OptionsContextDispatcher:
                 for path, request in selected
                 if request["request_id"] not in responses
             ]
-            if response_invalid or result.returncode != 0 or unresolved:
+            if response_invalid or returncode != 0 or unresolved:
                 for path, request in unresolved:
                     self._complete(
                         path=path,
