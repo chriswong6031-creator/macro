@@ -493,6 +493,17 @@ on:
       - "ops/LIVE_FLOW_RUNBOOK.md"
       - "tests/test_options_signal_episode.py"
       - "tests/test_polygon_intraday.py"
+      # Canonical campaign v2: independent immutable revisions, causal outcomes,
+      # exact-prefix checkpoint, preregistration, and hostile replay tests.
+      - "engine/options_signal_campaign.py"
+      - "engine/options_signal_episode_contract.py"
+      - "scripts/build_options_signal_campaign.py"
+      - "contracts/options/options.signal_campaign.v2.schema.json"
+      - "contracts/options/options.signal_campaign_outcome.v1.schema.json"
+      - "contracts/options/options.signal_campaign_checkpoint.v1.schema.json"
+      - "data/options_signal_campaign/**"
+      - "research/options_estate/OPTIONS_SIGNAL_CAMPAIGN_V2_PREREG.md"
+      - "tests/test_options_signal_campaign.py"
       # R6.2 private operator-reviewed Options Issue Desk. engine/** and
       # scripts/*.py cover the engine/builder halves; these exact entries close
       # the API, contract, and test-only trigger seams without widening app/**.
@@ -3155,6 +3166,8 @@ on:
       - "tests/test_release_target_truth.py"
       - "tests/test_release_cpi_official_truth.py"
       - "tests/test_release_cpi_target_history.py"
+      - "tests/test_release_cpi_coherent_governance.py"
+      - "tests/test_release_cpi_coherent_shadow.py"
       - "tests/fixtures/release_cpi_truth/**"
       - "engine/inflation_intelligence.py"
       - "engine/neuralweb/ask_brain.py"
@@ -3166,10 +3179,13 @@ on:
       - "engine/release_target_truth.py"
       - "engine/release_cpi_official_truth.py"
       - "engine/release_cpi_target_history.py"
+      - "engine/release_cpi_coherent_shadow.py"
       - "scripts/build_inflation_intelligence.py"
       - "scripts/collect_release_target_vintages.py"
       - "scripts/collect_release_cpi_official_truth.py"
       - "scripts/build_release_cpi_truth_parity.py"
+      - "config/release_forecast_model_registry.yml"
+      - "research/release_forecast/PREREG_COHERENT_RIDGE_V1.md"
       - "data/release_forecast/cpi_truth/**"
       - "data/release_forecast/official_actual_defects.json"
       - "data/fred_vintage/release_targets/**"

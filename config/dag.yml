@@ -974,13 +974,24 @@ lanes:
           live_flow event stage (never capped feed_current), validates the monotonic
           checkpoint, freezes exact decision episodes, and accrues explicitly labeled
           aligned-bar H+60 proxies plus separate EOD/1d/3d/5d/10d declared-session-close
-          outcomes from the same receipt-bound intraday cache. It then derives the
-          zero-authority exact-contract first-prefix campaign ledger from persisted
-          episodes and reloaded H+60 rows before advancing the checkpoint. The H+60
-          v1 ledger remains unchanged. All decision and training authority is false;
+          outcomes from the same receipt-bound intraday cache before advancing the
+          checkpoint. The H+60 v1 ledger and preserved legacy campaign bytes remain
+          unchanged. All decision and training authority is false;
           coarse/delayed measurements are training_eligible=false. Runs serially
           after build_session_digest and advances all committed ledgers before the
           source checkpoint, only in COLLECT_LANE=nightly. Non-fatal.
+      - id: build_options_signal_campaign
+        module: scripts.build_options_signal_campaign
+        note: >
+          OIP canonical campaign v2 learning seam. Runs only after the episode writer
+          succeeds and consumes exact immutable prefixes of episodes plus H+60 and
+          declared-session outcomes. Appends versioned exact-contract campaign
+          revisions and final-member-anchored causal outcome rows, then advances an
+          independent deterministic checkpoint last. The frozen v1 threshold cohort
+          is neither read nor written. All selection, score, rank, gate, sizing,
+          trading, publication, training, Neural Web, and Prophet authority remains
+          false. The normal nightly lane is the sole advancer; non-nightly invocation
+          fails closed.
       - id: build_us_sector_rotation
         module: scripts.build_us_sector_rotation
         note: >
@@ -1317,9 +1328,17 @@ lanes:
           from persisted regime artifacts — no LLM calls). Runs AFTER collect
           (release-day capture needs same-night ALFRED vintage refresh).
           display_only=True; all authority booleans False (MRI-R7).
+          Wave 2B adds coherent_ridge_v1 as a fail-closed CPI shadow only after
+          the frozen model registry and complete Wave 2A history/parity receipt
+          validate. It has zero combined_v1 weight and no promotion authority.
           Ledger is append-only (MRI-R8); idempotent per asof_night.
           inputs: [data/fred_vintage/vintages.parquet,
                    data/fred_vintage/release_targets/manifest.json,
+                   data/release_forecast/cpi_truth/alfred_same_release_vintage_proxy_v1.json,
+                   data/release_forecast/cpi_truth/parity_report.json,
+                   data/release_forecast/cpi_truth/build_completion.json,
+                   config/release_forecast_model_registry.yml,
+                   research/release_forecast/PREREG_COHERENT_RIDGE_V1.md,
                    data/release_forecast/official_actuals.jsonl,
                    data/release_forecast/defect_notices.json,
                    data/cleveland_nowcast/nowcast.parquet,

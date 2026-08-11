@@ -1,10 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-11T19:20:27.512269+00:00",
+  "as_of": "2026-08-11T22:05:02.513070+00:00",
   "posts_seen": 7,
-  "seen_total": 105,
-  "evaluated": 0,
+  "seen_total": 107,
+  "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-08-11-america-first-means-ohio-first-president-trump-republicans-deliver-for-ohio",
+      "importance": 28,
+      "activated": false,
+      "degraded_reason": "served_by:codex"
+    }
+  ]
 }
