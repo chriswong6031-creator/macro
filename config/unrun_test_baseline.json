@@ -223,7 +223,6 @@
   "tests/test_confluence_latch.py",
   "tests/test_confluence_warmup_floor.py",
   "tests/test_congress_entry.py",
-  "tests/test_constitution.py",
   "tests/test_context_index_incremental.py",
   "tests/test_context_index_ingest.py",
   "tests/test_context_index_multirepo.py",
