@@ -275,13 +275,32 @@ def test_theme_lists_direction_correct():
         )
 
 
-def test_theme_lists_question_present():
+def test_theme_lists_tail_present_and_is_a_statement():
+    """Every theme item carries its direction-keyed tail, and that tail is a
+    STATEMENT.
+
+    INVERTED FOR VOICE DOCTRINE v5 (2026-08-11). This used to assert
+    ``"?" in ti["question"]`` — the v4 law was that a theme_list body must end on
+    a question, because the group post was designed as reply-bait. v5 bans the
+    question mark outright (copywriter.validate_copy's requirement became a ban,
+    publish_time_content._tail_is_bait now rejects any interrogative tail), so
+    the old assertion pins a rule that no longer exists. The KEY is still called
+    "question" — it is load-bearing across content_studio, the outbox rows and
+    the {theme_question} template token — and only the VALUE's shape changed.
+    """
+    from engine.marketing import movers_source as ms
     from engine.marketing.movers_source import theme_lists
     data = _synthetic_movers_data()
     result = theme_lists(data, min_members=4)
+    assert result, "fixture produced no themes - the assertions below are vacuous"
     for ti in result:
-        assert ti.get("question"), f"Theme {ti['theme']} has no question"
-        assert "?" in ti["question"], f"Theme {ti['theme']} question has no '?'"
+        tail = ti.get("question")
+        assert tail, f"Theme {ti['theme']} has no tail"
+        assert "?" not in tail, f"Theme {ti['theme']} tail asks a question: {tail!r}"
+        assert not re.search(r"\bI\b|I'm|I'd|I'll|I've|\b(?:my|we|our|us|me)\b",
+                             tail), f"Theme {ti['theme']} tail is first person: {tail!r}"
+        pool = ms._TAIL_DOWN if ti["direction"] == "down" else ms._TAIL_UP
+        assert tail in pool, f"Theme {ti['theme']} drew a {ti['direction']} tail from the other pool"
 
 
 def test_theme_lists_min_members_filter():
@@ -352,7 +371,7 @@ def test_theme_facts_whitelist_covers_every_member_pct_and_agg():
             {"ticker": "AVGO", "pct": -3.8},
         ],
         "agg_pct": -4.9,
-        "question": "Which one comes back first?",
+        "question": "Every name on the list is lower.",   # v5 tail, not a question
     }
     result = theme_facts(theme_item)
     wl = set(result["numbers_whitelist"])
@@ -377,7 +396,7 @@ def test_theme_facts_no_indicator_vocab():
             {"ticker": "SOFI", "pct": 2.9},
         ],
         "agg_pct": 3.3,
-        "question": "Which one leads higher?",
+        "question": "Every name on the list is higher.",  # v5 tail, not a question
     }
     result = theme_facts(theme_item)
     for f in result["facts"]:
@@ -507,7 +526,11 @@ def test_validate_copy_passes_for_real_theme_list():
         "cashtags": ["$NVDA", "$AMD", "$SMCI", "$AVGO"],
     }
     headline = "Artificial Intelligence -4.9% avg today"
-    body = "$NVDA -4.5% $AMD -6.2% $SMCI -5.1% $AVGO -3.8% Which one comes back first?"
+    # v5 tail (2026-08-11): the body used to end on "Which one comes back
+    # first?" because validate_copy REQUIRED a theme_list to end on a question.
+    # That requirement is now a ban, so the v4 fixture would fail the very
+    # validator this test says passes it.
+    body = "$NVDA -4.5% $AMD -6.2% $SMCI -5.1% $AVGO -3.8% Every name on the list is lower."
     violations = validate_copy(headline, body, ctx)
     # Should have no violations
     real_v = [v for v in violations if "cashtag" not in v.lower() or "valid" in v.lower()]
@@ -526,7 +549,8 @@ def test_validate_copy_fails_for_unrelated_cashtag_in_theme_list():
     }
     headline = "AI names getting hit"
     # $TSLA is NOT in the member list
-    body = "$NVDA -4.5% $AMD -6.2% $SMCI -5.1% $AVGO -3.8% $TSLA -2.0% Which one comes back first?"
+    body = ("$NVDA -4.5% $AMD -6.2% $SMCI -5.1% $AVGO -3.8% $TSLA -2.0% "
+            "Every name on the list is lower.")
     violations = validate_copy(headline, body, ctx)
     # Must flag $TSLA as invalid cashtag
     invalid_v = [v for v in violations if "member list" in v.lower() or "cashtag" in v.lower()]
@@ -658,7 +682,11 @@ def test_top_movers_real_data_has_real_tickers():
 
 
 def test_theme_question_deterministic_across_processes():
-    """Reply-bait question must be stable run-to-run (crc32, not salted hash())."""
+    """The tail must be stable run-to-run (crc32, not salted hash()).
+
+    (The "question" key name is v4 vintage; under v5 the value is a declarative
+    breadth statement. The determinism property is unchanged.)
+    """
     import subprocess, sys
     code = (
         "from engine.marketing.movers_source import load_movers, theme_lists;"
@@ -763,10 +791,17 @@ def test_a_direction_label_cannot_override_the_sign():
     assert "higher" in text, text
 
 
-def test_every_tail_costs_the_author_and_is_direction_keyed():
-    """PINS defect 5's table. Each tail must (a) end on "?" — copywriter requires
-    it of a theme_list body — (b) put the question on the AUTHOR, and (c) carry no
-    banned language. The pre-fix pools ("Which one breaks out first?") fail (b)."""
+def test_every_tail_is_a_statement_and_is_direction_keyed():
+    """PINS defect 5's table, INVERTED FOR VOICE DOCTRINE v5 (2026-08-11).
+
+    The v4 version asserted each tail (a) ends on "?" — copywriter then REQUIRED
+    it of a theme_list body — and (b) puts the question on the AUTHOR rather than
+    the reader, which is what `_tail_is_bait` used to check. v5 deletes both
+    halves: the "?" requirement became a "?" ban and `_tail_is_bait` now rejects
+    every interrogative tail whoever it is about, so the v4 pins would fail the
+    compliant bank and pass the retired one. What SURVIVES unchanged is (c) no
+    banned language, plus the direction-keying and the disjoint pools.
+    """
     from engine.marketing import movers_source as ms
     from engine.marketing.copywriter import banned_language
     from engine.marketing.publish_time_content import _tail_is_bait
@@ -774,7 +809,8 @@ def test_every_tail_costs_the_author_and_is_direction_keyed():
     for pool in (ms._TAIL_DOWN, ms._TAIL_UP):
         assert len(pool) >= 4
         for tail in pool:
-            assert tail.rstrip().endswith("?"), tail
+            assert not tail.rstrip().endswith("?"), tail
+            assert tail.rstrip().endswith("."), tail
             assert not _tail_is_bait(tail), tail
             assert banned_language(tail) == [], (tail, banned_language(tail))
     assert not (set(ms._TAIL_DOWN) & set(ms._TAIL_UP))

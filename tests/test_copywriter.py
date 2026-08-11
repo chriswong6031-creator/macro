@@ -1099,8 +1099,12 @@ def test_llm_lane_good_output_ships_as_llm(monkeypatch):
     from engine.marketing import copywriter as cw
     monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
     monkeypatch.setattr(la, "build_providers", lambda *a, **k: [{"name": "mock"}])
+    # v5 (2026-08-11): the body used to end "Overreaction? 👀" — a rhetorical
+    # question, which `voice_v5_violations` now rejects on every non-wire kind.
+    # The property under test is that a CLEAN model answer ships as mode "llm",
+    # so the fixture answer has to be clean under the current gate.
     good = _j.dumps([{"headline": "$ISRG just got smoked",
-                      "body": "$ISRG cratered -14.2% today, worst move in the whole index. Overreaction? 👀"}])
+                      "body": "$ISRG cratered -14.2% today, worst move in the whole index. 👀"}])
     monkeypatch.setattr(la, "make_call", lambda p, d, context="": (good, None, "mock"))
     out = cw.write_posts_llm([_llm_ctx()], {"llm": {"enabled": True, "model_key": "marketing_copy"},
                                             "personas": {}, "copy_laws": []})
@@ -1200,8 +1204,12 @@ def test_plain_language_rewrite_of_the_incident_is_clean():
     body = (
         "$AAPL is -0.6% off its 52-week high and up four weeks straight. It has "
         "stayed above 328.40, the average price paid since the Jun 26 volume "
-        "spike, for 20 sessions. A close under that changes my mind."
+        "spike, for 20 sessions. A close under 328.40 ends that streak."
     )
+    # v5 (2026-08-11): the last sentence was "A close under that changes my
+    # mind." The property under test is that the CLARITY gate accepts the
+    # honest, decodable version; voice doctrine v5 moved the consequence off
+    # the author and onto the level, so the fixture states it that way.
     assert validate_copy(headline, body, ctx) == []
 
 
