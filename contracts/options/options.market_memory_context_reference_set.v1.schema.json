@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "options.market_memory_context_reference_set/v1",
+  "title": "Durable exact-query reference set for options Market Memory research",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "reference_set_sha256",
+    "reference_count",
+    "references"
+  ],
+  "properties": {
+    "schema": {
+      "const": "options.market_memory_context_reference_set/v1"
+    },
+    "reference_set_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "reference_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4096
+    },
+    "references": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "$ref": "../options.market_memory_context_reference/v1"
+      }
+    }
+  }
+}
